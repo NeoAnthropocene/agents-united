@@ -10,6 +10,7 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
+    "pretest": "npm run build",
     "dev": "tsup --watch",
     "start": "node dist/cli.js",
     "test": "vitest run",

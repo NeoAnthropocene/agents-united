@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fs from 'fs-extra';
-import parseYaml from 'yaml';
+import YAML from 'yaml';
 import { TargetAdapter } from './adapter.js';
 import type { LockfileManifest } from './types.js';
 
@@ -50,7 +50,7 @@ export class DoctorEngine {
             warnings.push(`Agent ${file} is missing YAML frontmatter.`);
           } else {
             try {
-              const meta = parseYaml.parse(frontmatterMatch[1]);
+              const meta = YAML.parse(frontmatterMatch[1]);
               if (!meta.name) issues.push(`Agent ${file} missing 'name' in frontmatter.`);
               if (!meta.description) warnings.push(`Agent ${file} missing 'description'.`);
               if (!meta.model) warnings.push(`Agent ${file} missing 'model' definition.`);
