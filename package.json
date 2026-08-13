@@ -1,10 +1,11 @@
 {
-  "name": "agents-united",
+  "name": "@neoanthropocene/agents-united",
   "version": "1.0.0",
   "description": "Universal package manager and registry CLI for open AI agents, skills, workflows, and rules (Antigravity 2.0, Claude, Cursor, Codex)",
   "main": "./dist/cli.js",
   "bin": {
-    "agents-united": "./dist/cli.js"
+    "agents-united": "./dist/cli.js",
+    "agents": "./dist/cli.js"
   },
   "type": "module",
   "scripts": {

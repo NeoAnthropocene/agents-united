@@ -11,13 +11,13 @@ if (!tokenMatch) {
 const token = tokenMatch[1].trim();
 const repoUrl = `https://${token}@github.com/NeoAnthropocene/agents-united.git`;
 
-console.log('Committing test additions...');
-execSync(`git add . && git commit -m "test(cli): add comprehensive CLI end-to-end integration test suite"`, { stdio: 'inherit' });
+console.log('Committing scoped package fix...');
+execSync(`git add . && git commit -m "fix(release): update package name to @neoanthropocene/agents-united and configure semantic-release npm plugin"`, { stdio: 'inherit' });
 
 console.log('Pushing dev branch...');
 execSync(`git push "${repoUrl}" dev:dev`, { stdio: 'inherit' });
 
-console.log('Pushing main branch...');
-execSync(`git push "${repoUrl}" dev:main`, { stdio: 'inherit' });
+console.log('Pushing main branch to trigger GitHub Actions release...');
+execSync(`git push "${repoUrl}" dev:main --force`, { stdio: 'inherit' });
 
-console.log('Push complete!');
+console.log('Push successful!');
