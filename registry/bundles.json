@@ -1,0 +1,334 @@
+{
+  "$schema": "https://agents-united.dev/schema/bundles.v1.json",
+  "version": 1,
+  "bundles": {
+    "software-engineering": {
+      "name": "software-engineering",
+      "description": "Full software engineering suite with autonomous coding orchestrator, backend & frontend architects, code reviewer, TDD, debugging, and git workflows.",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-backend-architect.md",
+        "subagent-frontend-architect.md",
+        "subagent-code-reviewer.md",
+        "subagent-repo-index.md"
+      ],
+      "workflows": [
+        "workflow-implement.md",
+        "workflow-test.md",
+        "workflow-review.md",
+        "workflow-build.md",
+        "workflow-cleanup.md",
+        "workflow-git.md"
+      ],
+      "skills": [
+        "test-driven-development",
+        "systematic-debugging",
+        "receiving-code-review",
+        "requesting-code-review",
+        "subagent-driven-development",
+        "finishing-a-development-branch",
+        "dependency-management",
+        "performance-optimization"
+      ]
+    },
+    "system-architecture": {
+      "name": "system-architecture",
+      "description": "System design and technical planning suite with architecture orchestrator, system/backend architects, specification panels, and ADR planning workflows.",
+      "orchestrator": "orchestrator-system-architecture.md",
+      "agents": [
+        "subagent-system-architect.md",
+        "subagent-backend-architect.md"
+      ],
+      "workflows": [
+        "workflow-plan.md",
+        "workflow-design-code.md",
+        "workflow-estimate.md",
+        "workflow-spec-panel.md"
+      ],
+      "skills": [
+        "architecture-design",
+        "writing-plans",
+        "executing-plans",
+        "confidence-check"
+      ]
+    },
+    "product-design": {
+      "name": "product-design",
+      "description": "Comprehensive UI/UX design suite with design orchestrator, UI designer, UX strategist, interaction designer, design systems architect, and prototyping workflows.",
+      "orchestrator": "orchestrator-design.md",
+      "agents": [
+        "subagent-ui-designer.md",
+        "subagent-ux-strategist.md",
+        "subagent-interaction-designer.md",
+        "subagent-design-systems-architect.md",
+        "subagent-design-researcher.md",
+        "subagent-design-ops-lead.md",
+        "subagent-designer-toolkit-expert.md",
+        "subagent-prototype-tester.md"
+      ],
+      "workflows": [
+        "workflow-design-orchestrate.md",
+        "workflow-ui-design--color-palette.md",
+        "workflow-ui-design--design-screen.md",
+        "workflow-ui-design--responsive-audit.md",
+        "workflow-ui-design--type-system.md",
+        "workflow-ux-strategy--benchmark.md",
+        "workflow-ux-strategy--frame-problem.md",
+        "workflow-ux-strategy--strategize.md",
+        "workflow-interaction-design--design-interaction.md",
+        "workflow-interaction-design--error-flow.md",
+        "workflow-interaction-design--map-states.md",
+        "workflow-design-systems--audit-system.md",
+        "workflow-design-systems--create-component.md",
+        "workflow-design-systems--tokenize.md",
+        "workflow-design-ops--handoff.md",
+        "workflow-design-ops--plan-sprint.md",
+        "workflow-design-ops--setup-workflow.md",
+        "workflow-prototyping-testing--evaluate.md",
+        "workflow-prototyping-testing--experiment.md",
+        "workflow-prototyping-testing--prototype-plan.md",
+        "workflow-prototyping-testing--test-plan.md"
+      ],
+      "skills": [
+        "ui-design",
+        "ux-strategy",
+        "interaction-design",
+        "design-systems",
+        "design-research",
+        "design-ops",
+        "designer-toolkit",
+        "prototyping-testing"
+      ]
+    },
+    "growth-marketing": {
+      "name": "growth-marketing",
+      "description": "Growth marketing, conversion optimization, and content strategy suite with marketing orchestrator, campaign specialists, CRO skills, and launch workflows.",
+      "orchestrator": "orchestrator-marketing.md",
+      "agents": [
+        "subagent-marketing-growth-strategist.md",
+        "subagent-marketing-content-strategist.md",
+        "subagent-marketing-conversion-specialist.md",
+        "subagent-marketing-campaign-specialist.md"
+      ],
+      "workflows": [
+        "workflow-marketing-panel.md",
+        "workflow-marketing-audit.md",
+        "workflow-marketing-campaign-builder.md",
+        "workflow-marketing-content-pipeline.md",
+        "workflow-marketing-growth-experiment.md",
+        "workflow-marketing-launch.md"
+      ],
+      "skills": [
+        "campaign-strategy",
+        "copywriting",
+        "copy-editing",
+        "marketing-ideas",
+        "marketing-psychology",
+        "launch-strategy",
+        "pricing-strategy",
+        "page-cro",
+        "onboarding-cro",
+        "signup-flow-cro",
+        "popup-cro",
+        "paywall-upgrade-cro",
+        "form-cro",
+        "ab-test-setup",
+        "analytics-tracking",
+        "paid-ads",
+        "programmatic-seo",
+        "seo-audit",
+        "schema-markup",
+        "email-sequence",
+        "social-content",
+        "referral-program",
+        "competitor-alternatives",
+        "free-tool-strategy"
+      ]
+    },
+    "security-operations": {
+      "name": "security-operations",
+      "description": "Application security & threat modeling suite with security orchestrator, security engineer subagent, security review skills, and troubleshooting workflows.",
+      "orchestrator": "orchestrator-security.md",
+      "agents": [
+        "subagent-security-engineer.md"
+      ],
+      "workflows": [
+        "workflow-troubleshoot.md",
+        "workflow-analyze.md"
+      ],
+      "skills": [
+        "security-review",
+        "confidence-check"
+      ]
+    },
+    "deep-research": {
+      "name": "deep-research",
+      "description": "Literature, codebase, and domain research suite with research orchestrator, deep research subagent, Socratic mentor, and brainstorming workflows.",
+      "orchestrator": "orchestrator-research.md",
+      "agents": [
+        "subagent-deep-research.md",
+        "subagent-socratic-mentor.md",
+        "subagent-repo-index.md"
+      ],
+      "workflows": [
+        "workflow-research.md",
+        "workflow-brainstorm.md",
+        "workflow-explain.md"
+      ],
+      "skills": [
+        "deep-research",
+        "brainstorming",
+        "browser-agent"
+      ]
+    },
+    "business-strategy": {
+      "name": "business-strategy",
+      "description": "Business evaluation, monetization, and specification panel suite with business orchestrator, expert panel subagent, and recommendation workflows.",
+      "orchestrator": "orchestrator-business.md",
+      "agents": [
+        "subagent-business-panel-experts.md"
+      ],
+      "workflows": [
+        "workflow-business-panel.md",
+        "workflow-spec-panel.md",
+        "workflow-recommend.md",
+        "workflow-estimate.md"
+      ],
+      "skills": [
+        "writing-plans",
+        "confidence-check"
+      ]
+    },
+    "full": {
+      "name": "full",
+      "description": "Complete Agents United suite containing all orchestrators, subagents, skills, rules, and workflows.",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "orchestrator-engineering.md",
+        "orchestrator-system-architecture.md",
+        "orchestrator-design.md",
+        "orchestrator-marketing.md",
+        "orchestrator-security.md",
+        "orchestrator-research.md",
+        "orchestrator-business.md",
+        "subagent-backend-architect.md",
+        "subagent-frontend-architect.md",
+        "subagent-system-architect.md",
+        "subagent-code-reviewer.md",
+        "subagent-repo-index.md",
+        "subagent-security-engineer.md",
+        "subagent-socratic-mentor.md",
+        "subagent-deep-research.md",
+        "subagent-ui-designer.md",
+        "subagent-ux-strategist.md",
+        "subagent-interaction-designer.md",
+        "subagent-design-systems-architect.md",
+        "subagent-design-researcher.md",
+        "subagent-design-ops-lead.md",
+        "subagent-designer-toolkit-expert.md",
+        "subagent-prototype-tester.md",
+        "subagent-marketing-growth-strategist.md",
+        "subagent-marketing-content-strategist.md",
+        "subagent-marketing-conversion-specialist.md",
+        "subagent-marketing-campaign-specialist.md",
+        "subagent-business-panel-experts.md"
+      ],
+      "workflows": [
+        "workflow-implement.md",
+        "workflow-test.md",
+        "workflow-review.md",
+        "workflow-build.md",
+        "workflow-cleanup.md",
+        "workflow-git.md",
+        "workflow-plan.md",
+        "workflow-design-code.md",
+        "workflow-estimate.md",
+        "workflow-spec-panel.md",
+        "workflow-design-orchestrate.md",
+        "workflow-ui-design--color-palette.md",
+        "workflow-ui-design--design-screen.md",
+        "workflow-ui-design--responsive-audit.md",
+        "workflow-ui-design--type-system.md",
+        "workflow-ux-strategy--benchmark.md",
+        "workflow-ux-strategy--frame-problem.md",
+        "workflow-ux-strategy--strategize.md",
+        "workflow-interaction-design--design-interaction.md",
+        "workflow-interaction-design--error-flow.md",
+        "workflow-interaction-design--map-states.md",
+        "workflow-design-systems--audit-system.md",
+        "workflow-design-systems--create-component.md",
+        "workflow-design-systems--tokenize.md",
+        "workflow-design-ops--handoff.md",
+        "workflow-design-ops--plan-sprint.md",
+        "workflow-design-ops--setup-workflow.md",
+        "workflow-prototyping-testing--evaluate.md",
+        "workflow-prototyping-testing--experiment.md",
+        "workflow-prototyping-testing--prototype-plan.md",
+        "workflow-prototyping-testing--test-plan.md",
+        "workflow-marketing-panel.md",
+        "workflow-marketing-audit.md",
+        "workflow-marketing-campaign-builder.md",
+        "workflow-marketing-content-pipeline.md",
+        "workflow-marketing-growth-experiment.md",
+        "workflow-marketing-launch.md",
+        "workflow-troubleshoot.md",
+        "workflow-analyze.md",
+        "workflow-research.md",
+        "workflow-brainstorm.md",
+        "workflow-explain.md",
+        "workflow-business-panel.md",
+        "workflow-recommend.md"
+      ],
+      "skills": [
+        "test-driven-development",
+        "systematic-debugging",
+        "receiving-code-review",
+        "requesting-code-review",
+        "subagent-driven-development",
+        "finishing-a-development-branch",
+        "dependency-management",
+        "performance-optimization",
+        "architecture-design",
+        "writing-plans",
+        "executing-plans",
+        "confidence-check",
+        "ui-design",
+        "ux-strategy",
+        "interaction-design",
+        "design-systems",
+        "design-research",
+        "design-ops",
+        "designer-toolkit",
+        "prototyping-testing",
+        "campaign-strategy",
+        "copywriting",
+        "copy-editing",
+        "marketing-ideas",
+        "marketing-psychology",
+        "launch-strategy",
+        "pricing-strategy",
+        "page-cro",
+        "onboarding-cro",
+        "signup-flow-cro",
+        "popup-cro",
+        "paywall-upgrade-cro",
+        "form-cro",
+        "ab-test-setup",
+        "analytics-tracking",
+        "paid-ads",
+        "programmatic-seo",
+        "seo-audit",
+        "schema-markup",
+        "email-sequence",
+        "social-content",
+        "referral-program",
+        "competitor-alternatives",
+        "free-tool-strategy",
+        "security-review",
+        "deep-research",
+        "brainstorming",
+        "browser-agent"
+      ]
+    }
+  }
+}

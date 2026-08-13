@@ -1,0 +1,70 @@
+{
+  "name": "agents-united",
+  "version": "1.0.0",
+  "description": "Universal package manager and registry CLI for open AI agents, skills, workflows, and rules (Antigravity 2.0, Claude, Cursor, Codex)",
+  "main": "./dist/cli.js",
+  "bin": {
+    "agents-united": "./dist/cli.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/cli.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "antigravity",
+    "agent",
+    "skills",
+    "ai-agents",
+    "package-manager",
+    "cli",
+    "custom-agents",
+    "workflows",
+    "claude-code",
+    "cursor",
+    "codex"
+  ],
+  "author": "NeoAnthropocene",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NeoAnthropocene/agents-united.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NeoAnthropocene/agents-united/issues"
+  },
+  "homepage": "https://github.com/NeoAnthropocene/agents-united#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "registry"
+  ],
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "cac": "^6.7.14",
+    "fast-glob": "^3.3.3",
+    "fs-extra": "^11.3.0",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.1",
+    "@semantic-release/npm": "^12.0.1",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.13.4",
+    "semantic-release": "^24.2.3",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

@@ -1,0 +1,142 @@
+import path from 'node:path';
+import fs from 'fs-extra';
+import { fileURLToPath } from 'node:url';
+import type { BundlesManifest, BundleDefinition, ResolvedAssets } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export class RegistryResolver {
+  private registryDir: string;
+  private bundlesManifest: BundlesManifest | null = null;
+
+  constructor(customRegistryDir?: string) {
+    if (customRegistryDir) {
+      this.registryDir = path.resolve(customRegistryDir);
+    } else {
+      // Check candidate paths for registry folder
+      const candidatePaths = [
+        path.resolve(__dirname, '../registry'),
+        path.resolve(__dirname, '../../registry'),
+        path.resolve(process.cwd(), 'registry'),
+      ];
+
+      const found = candidatePaths.find(p => fs.existsSync(path.join(p, 'bundles.json')));
+      this.registryDir = found || candidatePaths[0];
+    }
+  }
+
+  public getRegistryDir(): string {
+    return this.registryDir;
+  }
+
+  public async loadBundles(): Promise<BundlesManifest> {
+    if (this.bundlesManifest) {
+      return this.bundlesManifest;
+    }
+
+    const manifestPath = path.join(this.registryDir, 'bundles.json');
+    if (!await fs.pathExists(manifestPath)) {
+      throw new Error(`Registry bundles.json not found at ${manifestPath}`);
+    }
+
+    this.bundlesManifest = await fs.readJson(manifestPath);
+    return this.bundlesManifest!;
+  }
+
+  public async getBundle(bundleName: string): Promise<BundleDefinition | null> {
+    const manifest = await this.loadBundles();
+    return manifest.bundles[bundleName] || null;
+  }
+
+  public async listBundles(): Promise<BundleDefinition[]> {
+    const manifest = await this.loadBundles();
+    return Object.values(manifest.bundles);
+  }
+
+  public async resolve(identifier: string): Promise<ResolvedAssets> {
+    const manifest = await this.loadBundles();
+    const bundle = manifest.bundles[identifier];
+
+    if (bundle) {
+      const agents = new Set<string>();
+      if (bundle.orchestrator) agents.add(bundle.orchestrator);
+      if (bundle.agents) bundle.agents.forEach(a => agents.add(a));
+
+      const skills = new Set<string>(bundle.skills || []);
+      const workflows = new Set<string>(bundle.workflows || []);
+      const rules = ['GEMINI.md'];
+
+      return {
+        targetBundle: bundle.name,
+        agents: Array.from(agents),
+        skills: Array.from(skills),
+        workflows: Array.from(workflows),
+        rules,
+      };
+    }
+
+    // Check if identifier refers to a specific single item (agent, skill, or workflow)
+    const agentPath = path.join(this.registryDir, 'agents', identifier.endsWith('.md') ? identifier : `${identifier}.md`);
+    if (await fs.pathExists(agentPath)) {
+      return {
+        agents: [path.basename(agentPath)],
+        skills: [],
+        workflows: [],
+        rules: [],
+      };
+    }
+
+    const skillPath = path.join(this.registryDir, 'skills', identifier);
+    if (await fs.pathExists(skillPath)) {
+      return {
+        agents: [],
+        skills: [identifier],
+        workflows: [],
+        rules: [],
+      };
+    }
+
+    const workflowFileName = identifier.startsWith('workflow-') ? `${identifier}.md` : `workflow-${identifier}.md`;
+    const workflowPath = path.join(this.registryDir, 'workflows', workflowFileName);
+    if (await fs.pathExists(workflowPath)) {
+      return {
+        agents: [],
+        skills: [],
+        workflows: [path.basename(workflowPath)],
+        rules: [],
+      };
+    }
+
+    throw new Error(`Item or bundle "${identifier}" not found in registry.`);
+  }
+
+  public async find(query: string): Promise<{ bundles: BundleDefinition[]; agents: string[]; skills: string[] }> {
+    const manifest = await this.loadBundles();
+    const q = query.toLowerCase();
+
+    const matchedBundles = Object.values(manifest.bundles).filter(
+      b => b.name.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)
+    );
+
+    const agentsDir = path.join(this.registryDir, 'agents');
+    let matchedAgents: string[] = [];
+    if (await fs.pathExists(agentsDir)) {
+      const files = await fs.readdir(agentsDir);
+      matchedAgents = files.filter(f => f.toLowerCase().includes(q));
+    }
+
+    const skillsDir = path.join(this.registryDir, 'skills');
+    let matchedSkills: string[] = [];
+    if (await fs.pathExists(skillsDir)) {
+      const dirs = await fs.readdir(skillsDir);
+      matchedSkills = dirs.filter(d => d.toLowerCase().includes(q));
+    }
+
+    return {
+      bundles: matchedBundles,
+      agents: matchedAgents,
+      skills: matchedSkills,
+    };
+  }
+}

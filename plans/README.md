@@ -1,0 +1,58 @@
+# Agents United - Implementation Plan Index
+
+This directory contains self-contained implementation plans for building the **`agents-united`** ecosystem CLI, Antigravity 2.0 custom agent definitions, registry bundles, test suite (TDD), and automated CI/CD npm publishing pipeline.
+
+## Execution Order & Status
+
+| Plan | Title | Category | Status | Dependencies |
+| :--- | :--- | :--- | :--- | :--- |
+| [001](./001-project-setup-and-ci-release.md) | Project Scaffolding & Semantic Release CI | Tooling / CI | **READY** | None |
+| [002](./002-antigravity-2-agent-skills-workflows-porting.md) | Antigravity 2.0 Schema Porting & Bundles Hierarchy | Core / Architecture | **READY** | 001 |
+| [003](./003-cli-core-engine-and-manifest-tracking.md) | CLI Command Engine & Lockfile Manifest Manager | Core Engine | **READY** | 001, 002 |
+| [004](./004-tdd-unit-and-integration-suite.md) | TDD Test Suite (Unit & E2E) | Testing (TDD) | **READY** | 001, 003 |
+
+## Summary of Bundles Architecture
+
+1. **`software-engineering`**:
+   - Orchestrator: `orchestrator-engineering`
+   - Subagents: `subagent-backend-architect`, `subagent-frontend-architect`, `subagent-code-reviewer`, `subagent-repo-index`
+   - Workflows: `workflow-implement`, `workflow-test`, `workflow-review`, `workflow-build`, `workflow-cleanup`, `workflow-git`
+   - Skills: `test-driven-development`, `systematic-debugging`, `receiving-code-review`, `requesting-code-review`, `subagent-driven-development`, `finishing-a-development-branch`, `dependency-management`, `performance-optimization`
+
+2. **`system-architecture`**:
+   - Orchestrator: `orchestrator-system-architecture`
+   - Subagents: `subagent-system-architect`, `subagent-backend-architect`
+   - Workflows: `workflow-plan`, `workflow-design-code`, `workflow-estimate`, `workflow-spec-panel`
+   - Skills: `architecture-design`, `writing-plans`, `executing-plans`, `confidence-check`
+
+3. **`product-design`**:
+   - Orchestrator: `orchestrator-design`
+   - Subagents: `subagent-ui-designer`, `subagent-ux-strategist`, `subagent-interaction-designer`, `subagent-design-systems-architect`, `subagent-design-researcher`, `subagent-design-ops-lead`, `subagent-designer-toolkit-expert`, `subagent-prototype-tester`
+   - Workflows: `workflow-design-orchestrate`, `workflow-ui-design--*`, `workflow-ux-strategy--*`, `workflow-interaction-design--*`, `workflow-design-systems--*`, `workflow-design-ops--*`, `workflow-prototyping-testing--*`
+   - Skills: `ui-design`, `ux-strategy`, `interaction-design`, `design-systems`, `design-research`, `design-ops`, `designer-toolkit`, `prototyping-testing`
+
+4. **`growth-marketing`**:
+   - Orchestrator: `orchestrator-marketing`
+   - Subagents: `subagent-marketing-growth-strategist`, `subagent-marketing-content-strategist`, `subagent-marketing-conversion-specialist`, `subagent-marketing-campaign-specialist`
+   - Workflows: `workflow-marketing-panel`, `workflow-marketing-audit`, `workflow-marketing-campaign-builder`, `workflow-marketing-content-pipeline`, `workflow-marketing-growth-experiment`, `workflow-marketing-launch`
+   - Skills: `campaign-strategy`, `copywriting`, `copy-editing`, `marketing-ideas`, `marketing-psychology`, `launch-strategy`, `pricing-strategy`, `page-cro`, `onboarding-cro`, `signup-flow-cro`, `popup-cro`, `paywall-upgrade-cro`, `form-cro`, `ab-test-setup`, `analytics-tracking`, `paid-ads`, `programmatic-seo`, `seo-audit`, `schema-markup`, `email-sequence`, `social-content`, `referral-program`, `competitor-alternatives`, `free-tool-strategy`
+
+5. **`security-operations`**:
+   - Orchestrator: `orchestrator-security`
+   - Subagents: `subagent-security-engineer`
+   - Workflows: `workflow-troubleshoot`, `workflow-analyze`
+   - Skills: `security-review`, `confidence-check`
+
+6. **`deep-research`**:
+   - Orchestrator: `orchestrator-research`
+   - Subagents: `subagent-deep-research`, `subagent-socratic-mentor`, `subagent-repo-index`
+   - Workflows: `workflow-research`, `workflow-brainstorm`, `workflow-explain`
+   - Skills: `deep-research`, `brainstorming`, `browser-agent`
+
+7. **`business-strategy`**:
+   - Orchestrator: `orchestrator-business`
+   - Subagents: `subagent-business-panel-experts`
+   - Workflows: `workflow-business-panel`, `workflow-spec-panel`, `workflow-recommend`, `workflow-estimate`
+   - Skills: `writing-plans`, `confidence-check`
+
+8. **`full` / `all`**: Complete unified suite of all orchestrators, subagents, workflows, and skills.
