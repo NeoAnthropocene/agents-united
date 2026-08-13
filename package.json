@@ -8,6 +8,9 @@
     "agents": "./dist/cli.js"
   },
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "build": "tsup",
     "pretest": "npm run build",
