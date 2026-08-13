@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import YAML from 'yaml';
-import { TargetAdapter } from './adapter.js';
+import { AgentHostAdapter } from './adapter.js';
 import type { LockfileManifest } from './types.js';
 
 export interface HealthReport {
@@ -15,8 +15,8 @@ export interface HealthReport {
 
 export class DoctorEngine {
   public static async runDoctor(targetDir?: string): Promise<HealthReport> {
-    const root = TargetAdapter.resolveTargetDir('workspace', targetDir);
-    const subPaths = TargetAdapter.getSubPaths(root);
+    const root = AgentHostAdapter.resolveHostDir('project', 'agents', targetDir);
+    const subPaths = AgentHostAdapter.getSubPaths(root);
 
     const issues: string[] = [];
     const warnings: string[] = [];

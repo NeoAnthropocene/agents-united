@@ -1,11 +1,11 @@
 import { cac } from 'cac';
 import pc from 'picocolors';
-import { intro, outro, spinner, note } from '@clack/prompts';
+import { intro, outro, spinner, note, select, multiselect } from '@clack/prompts';
 import { RegistryResolver } from './core/registry.js';
 import { InstallEngine } from './core/installer.js';
 import { UninstallEngine } from './core/uninstaller.js';
 import { DoctorEngine } from './core/doctor.js';
-import { TargetAdapter } from './core/adapter.js';
+import type { InstallScope, InstallMethod, AgentHost } from './core/types.js';
 
 const cli = cac('agents-united');
 const registry = new RegistryResolver();
@@ -13,19 +13,71 @@ const installer = new InstallEngine(registry);
 const uninstaller = new UninstallEngine(registry);
 
 cli
-  .command('add <identifier>', 'Add a bundle, agent, skill, or workflow to workspace or global configuration')
-  .option('-g, --global', 'Install globally to ~/.gemini/config/')
+  .command('add <identifier>', 'Add a bundle, agent, skill, or workflow to project or global configuration')
+  .option('-g, --global', 'Install globally into home directory (~/.agents/)')
+  .option('-s, --symlink', 'Create symbolic links to central registry cache (default / recommended)')
+  .option('--copy', 'Create independent standalone copies of asset files')
+  .option('-t, --target <hosts>', 'Target agent host runtimes (agents, gemini, claude, cursor)', { default: 'agents' })
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force overwrite user modified files')
   .option('--dry-run', 'Simulate installation without writing files')
   .action(async (identifier: string, options: any) => {
     intro(pc.cyan('Agents United - Add Package'));
+
+    let scope: InstallScope = options.global ? 'global' : 'project';
+    let method: InstallMethod = options.copy ? 'copy' : 'symlink';
+    let hosts: AgentHost[] = options.target ? (Array.isArray(options.target) ? options.target : options.target.split(',')) : ['agents'];
+
+    // Interactive Wizard when running interactively without flags
+    if (process.stdout.isTTY && !options.yes && !options.global && !options.copy && !options.symlink && options.target === 'agents') {
+      const scopeSelection = await select({
+        message: 'Select Installation Scope:',
+        options: [
+          { value: 'project', label: 'Project Scope (Default - ./.agents/ in workspace, team-shared)', hint: 'recommended' },
+          { value: 'global', label: 'Global Scope (-g - ~/.agents/ in home directory, system-wide)' },
+        ],
+      });
+
+      if (typeof scopeSelection === 'string') {
+        scope = scopeSelection as InstallScope;
+      }
+
+      const methodSelection = await select({
+        message: 'Select Installation Method:',
+        options: [
+          { value: 'symlink', label: 'Symlink Mode (Default - Single source of truth, updates auto-sync)', hint: 'recommended' },
+          { value: 'copy', label: 'Copy Mode (Independent physical copies, supports offline edits)' },
+        ],
+      });
+
+      if (typeof methodSelection === 'string') {
+        method = methodSelection as InstallMethod;
+      }
+
+      const hostSelection = await multiselect({
+        message: 'Select Target Agent Host Runtimes:',
+        options: [
+          { value: 'agents', label: 'Universal .agents/ (Default)', hint: 'recommended' },
+          { value: 'gemini', label: 'Antigravity 2.0 / Gemini (.gemini/)' },
+          { value: 'claude', label: 'Claude Code (.claude/)' },
+          { value: 'cursor', label: 'Cursor / Codex (.cursor/)' },
+        ],
+        required: false,
+      });
+
+      if (Array.isArray(hostSelection) && hostSelection.length > 0) {
+        hosts = hostSelection as AgentHost[];
+      }
+    }
+
     const s = spinner();
     s.start(`Resolving "${identifier}"...`);
 
     try {
       const result = await installer.install(identifier, {
-        global: options.global,
+        scope,
+        method,
+        hosts,
         yes: options.yes,
         force: options.force,
         dryRun: options.dryRun,
@@ -34,15 +86,18 @@ cli
       s.stop(`Resolved assets for "${identifier}"`);
 
       if (options.dryRun) {
-        outro(pc.yellow(`[DRY RUN] Would install ${result.installed.agents.length} agents, ${result.installed.skills.length} skills to ${result.targetDir}`));
+        outro(pc.yellow(`[DRY RUN] Would install ${result.installed.agents.length} agents, ${result.installed.skills.length} skills to ${result.targetDirs.join(', ')}`));
         return;
       }
 
       note(
         `Bundle: ${result.installed.targetBundle || 'Single Item'}\n` +
+        `Scope: ${scope}\n` +
+        `Method: ${result.method}\n` +
+        `Targets: ${hosts.join(', ')}\n` +
         `Agents: ${result.installed.agents.join(', ') || 'None'}\n` +
         `Skills: ${result.installed.skills.join(', ') || 'None'}\n` +
-        `Target Directory: ${result.targetDir}`,
+        `Target Directories: ${result.targetDirs.join('\n  ')}`,
         'Installation Success'
       );
 
@@ -57,7 +112,8 @@ cli
 cli
   .command('remove <identifier>', 'Remove a bundle, agent, skill, or workflow')
   .alias('uninstall')
-  .option('-g, --global', 'Uninstall from global ~/.gemini/config/')
+  .option('-g, --global', 'Uninstall from global home directory')
+  .option('-t, --target <hosts>', 'Target agent host runtimes', { default: 'agents' })
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force removal of modified files')
   .option('--dry-run', 'Simulate removal without unlinking files')
@@ -69,6 +125,7 @@ cli
     try {
       const result = await uninstaller.uninstall(identifier, {
         global: options.global,
+        target: options.target,
         yes: options.yes,
         force: options.force,
         dryRun: options.dryRun,
@@ -77,7 +134,7 @@ cli
       s.stop(`Uninstall processed`);
 
       if (options.dryRun) {
-        outro(pc.yellow(`[DRY RUN] Would remove ${result.removed.length} assets from ${result.targetDir}`));
+        outro(pc.yellow(`[DRY RUN] Would remove ${result.removed.length} assets from ${result.targetDirs.join(', ')}`));
         return;
       }
 
@@ -125,16 +182,24 @@ cli
   });
 
 cli
-  .command('init', 'Initialize workspace .agents folder and install recommended bundle')
+  .command('init', 'Initialize project workspace directory and install recommended bundle')
   .option('-b, --bundle <bundle>', 'Default bundle to install', { default: 'software-engineering' })
+  .option('-s, --symlink', 'Use symlinks (default / recommended)')
+  .option('--copy', 'Use standalone copies')
+  .option('-t, --target <hosts>', 'Target agent hosts', { default: 'agents' })
   .action(async (options: any) => {
     intro(pc.cyan('Agents United - Initialize Workspace'));
     const s = spinner();
-    s.start(`Initializing .agents directory with bundle "${options.bundle}"...`);
+    s.start(`Initializing workspace with bundle "${options.bundle}"...`);
 
     try {
-      const result = await installer.install(options.bundle, { scope: 'workspace' });
-      s.stop(`Initialized ${result.targetDir}`);
+      const result = await installer.install(options.bundle, {
+        scope: 'project',
+        symlink: options.symlink,
+        copy: options.copy,
+        target: options.target,
+      });
+      s.stop(`Initialized ${result.targetDirs.join(', ')}`);
       outro(pc.green(`✔ Initialized workspace with "${options.bundle}" bundle!`));
     } catch (err: any) {
       s.stop(pc.red('Initialization failed'));

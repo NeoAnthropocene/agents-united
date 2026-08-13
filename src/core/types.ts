@@ -1,4 +1,9 @@
-export type Scope = 'workspace' | 'global';
+export type InstallScope = 'project' | 'global';
+export type InstallMethod = 'symlink' | 'copy';
+export type AgentHost = 'agents' | 'gemini' | 'claude' | 'cursor';
+
+// Backward compatibility alias
+export type Scope = InstallScope;
 
 export interface BundleDefinition {
   name: string;
@@ -18,12 +23,16 @@ export interface BundlesManifest {
 export interface LockfileAsset {
   hash: string;
   bundle?: string;
+  method?: InstallMethod;
   installedAt: string;
 }
 
 export interface LockfileManifest {
   $schema: string;
   version: number;
+  scope?: InstallScope;
+  method?: InstallMethod;
+  hosts?: AgentHost[];
   installed: {
     bundles: string[];
     agents: string[];
@@ -34,8 +43,13 @@ export interface LockfileManifest {
 }
 
 export interface InstallOptions {
-  scope?: Scope;
+  scope?: InstallScope;
   global?: boolean;
+  method?: InstallMethod;
+  symlink?: boolean;
+  copy?: boolean;
+  hosts?: AgentHost[];
+  target?: string | string[];
   yes?: boolean;
   force?: boolean;
   dryRun?: boolean;
@@ -43,8 +57,10 @@ export interface InstallOptions {
 }
 
 export interface UninstallOptions {
-  scope?: Scope;
+  scope?: InstallScope;
   global?: boolean;
+  hosts?: AgentHost[];
+  target?: string | string[];
   yes?: boolean;
   force?: boolean;
   dryRun?: boolean;

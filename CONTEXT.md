@@ -41,13 +41,25 @@ Event-driven interceptors (`PreInvocation`, `PostInvocation`, `PreToolUse`, `Pos
 _Avoid_: Middleware, interceptors, triggers
 
 **Installation Scope**:
-The target location where items are installed—either `workspace` (project-local `.agents/`) or `global` (user-level configuration directory e.g. `~/.gemini/config/`).
-_Avoid_: Local/global flag, install mode
+The target visibility and location where assets are installed:
+- **Project Scope** (default): Stored inside the repository (`./.agents/`, `./.gemini/`, `./.claude/`, `./.cursor/`), tracked in git, and shared across the team with lockfile verification.
+- **Global Scope** (`-g`, `--global`): Stored in the user home directory (`~/.agents/`, `~/.gemini/config/`, `~/.claude/`), available across every workspace on the developer machine.
+_Avoid_: Local/global toggle, install mode
 
-**Target Agent Platform**:
-The host agent execution environment (e.g., Antigravity 2.0 Desktop/CLI, Claude Code, Cursor, Codex) that consumes the installed definitions.
-_Avoid_: IDE, client, tool host
+**Installation Method**:
+The mechanism used to link or replicate files into target directories:
+- **Symlink Mode** (`-s`, `--symlink`, Recommended): Creates symbolic links (or directory junctions on Windows) to a canonical registry cache. Serves as a single source of truth; package updates reflect instantly without file duplication.
+- **Copy Mode** (`--copy`): Creates independent physical copies of all asset files in the destination directory, enabling local modifications and isolated edits.
+_Avoid_: File clone, hard copy
+
+**Multi-Agent Target Host**:
+The specific agent environments targeted for deployment:
+- **Antigravity 2.0 / Gemini**: `./.gemini/` or `~/.gemini/config/`
+- **Claude Code**: `./.claude/` or `~/.claude/`
+- **Cursor / Codex**: `./.cursor/` or `~/.cursor/`
+- **Universal Agents**: `./.agents/` or `~/.agents/`
+_Avoid_: IDE client, bot host
 
 **Registry Manifest**:
-The authoritative index (`manifest.json` / registry metadata) mapping bundles, agents, skills, workflows, and rules to their sources, versions, and dependencies.
+The authoritative index (`manifest.json` / `bundles.json`) mapping bundles, agents, skills, workflows, and rules to their sources, versions, and dependencies.
 _Avoid_: Package lock, catalog database

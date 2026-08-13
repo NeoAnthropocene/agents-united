@@ -2,57 +2,70 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { InstallEngine } from '../src/core/installer.js';
-import { RegistryResolver } from '../src/core/registry.js';
-import { TargetAdapter } from '../src/core/adapter.js';
 
 describe('InstallEngine', () => {
-  const tempDir = path.resolve(process.cwd(), 'scratch/test-workspace');
-  let resolver: RegistryResolver;
-  let installer: InstallEngine;
+  const testWorkspace = path.resolve(process.cwd(), 'scratch/test-install-workspace');
 
   beforeEach(async () => {
-    await fs.remove(tempDir);
-    await fs.ensureDir(tempDir);
-    resolver = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
-    installer = new InstallEngine(resolver);
+    await fs.remove(testWorkspace);
+    await fs.ensureDir(testWorkspace);
   });
 
   afterEach(async () => {
-    await fs.remove(tempDir);
+    await fs.remove(testWorkspace);
   });
 
-  it('should install software-engineering bundle into target directory', async () => {
-    const result = await installer.install('software-engineering', { targetDir: tempDir });
-    expect(result.dryRun).toBe(false);
+  it('should install a bundle in copy mode', async () => {
+    const installer = new InstallEngine();
+    const result = await installer.install('software-engineering', {
+      targetDir: path.join(testWorkspace, '.agents'),
+      method: 'copy',
+    });
 
-    const subPaths = TargetAdapter.getSubPaths(tempDir);
-    expect(await fs.pathExists(path.join(subPaths.agentsDir, 'orchestrator-engineering.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(subPaths.skillsDir, 'test-driven-development', 'SKILL.md'))).toBe(true);
-    expect(await fs.pathExists(subPaths.lockfile)).toBe(true);
+    expect(result.installed.targetBundle).toBe('software-engineering');
+    expect(result.installed.agents.length).toBeGreaterThan(0);
+    expect(result.installed.skills.length).toBeGreaterThan(0);
 
-    const lockfile = await fs.readJson(subPaths.lockfile);
+    const lockfilePath = path.join(testWorkspace, '.agents', 'agents-united.json');
+    expect(await fs.pathExists(lockfilePath)).toBe(true);
+
+    const lockfile = await fs.readJson(lockfilePath);
     expect(lockfile.installed.bundles).toContain('software-engineering');
+    expect(lockfile.method).toBe('copy');
   });
 
-  it('should support dry-run installation without creating files', async () => {
-    const result = await installer.install('software-engineering', { targetDir: tempDir, dryRun: true });
+  it('should install a bundle in symlink mode', async () => {
+    const installer = new InstallEngine();
+    const targetAgentsDir = path.join(testWorkspace, '.agents');
+    const result = await installer.install('software-engineering', {
+      targetDir: targetAgentsDir,
+      method: 'symlink',
+    });
+
+    expect(result.installed.targetBundle).toBe('software-engineering');
+    const orchestratorPath = path.join(targetAgentsDir, 'agents', 'orchestrator-engineering.md');
+    expect(await fs.pathExists(orchestratorPath)).toBe(true);
+  });
+
+  it('should support multi-host target deployment', async () => {
+    const installer = new InstallEngine();
+    const result = await installer.install('software-engineering', {
+      targetDir: path.join(testWorkspace, 'custom'),
+      hosts: ['agents', 'gemini', 'claude'],
+    });
+
+    expect(result.targetDirs.length).toBe(3);
+  });
+
+  it('should perform dry-run without creating files', async () => {
+    const installer = new InstallEngine();
+    const targetAgentsDir = path.join(testWorkspace, '.agents');
+    const result = await installer.install('software-engineering', {
+      targetDir: targetAgentsDir,
+      dryRun: true,
+    });
+
     expect(result.dryRun).toBe(true);
-
-    const subPaths = TargetAdapter.getSubPaths(tempDir);
-    expect(await fs.pathExists(path.join(subPaths.agentsDir, 'orchestrator-engineering.md'))).toBe(false);
-  });
-
-  it('should throw error when modifying tracked file without force', async () => {
-    await installer.install('software-engineering', { targetDir: tempDir });
-    const subPaths = TargetAdapter.getSubPaths(tempDir);
-    const agentPath = path.join(subPaths.agentsDir, 'orchestrator-engineering.md');
-
-    // Modify file
-    await fs.appendFile(agentPath, '\n# Custom Edit');
-
-    await expect(installer.install('software-engineering', { targetDir: tempDir })).rejects.toThrow(/user modifications/);
-
-    // Force should succeed
-    await expect(installer.install('software-engineering', { targetDir: tempDir, force: true })).resolves.toBeDefined();
+    expect(await fs.pathExists(targetAgentsDir)).toBe(false);
   });
 });

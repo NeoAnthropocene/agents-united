@@ -2,8 +2,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'fs-extra';
 import { RegistryResolver } from './registry.js';
-import { TargetAdapter } from './adapter.js';
-import type { UninstallOptions, LockfileManifest } from './types.js';
+import { AgentHostAdapter } from './adapter.js';
+import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost } from './types.js';
 
 export class UninstallEngine {
   private registry: RegistryResolver;
@@ -17,95 +17,115 @@ export class UninstallEngine {
     return 'sha256:' + crypto.createHash('sha256').update(buffer).digest('hex');
   }
 
-  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; targetDir: string; dryRun: boolean }> {
-    const scope = options.global ? 'global' : (options.scope || 'workspace');
-    const targetDir = TargetAdapter.resolveTargetDir(scope, options.targetDir);
-    const subPaths = TargetAdapter.getSubPaths(targetDir);
-
-    if (!await fs.pathExists(subPaths.lockfile)) {
-      throw new Error(`No agents-united.json lockfile found in ${targetDir}. Nothing to uninstall.`);
+  private parseHosts(options: UninstallOptions): AgentHost[] {
+    if (options.hosts && options.hosts.length > 0) return options.hosts;
+    if (options.target) {
+      const raw = Array.isArray(options.target) ? options.target.join(',') : options.target;
+      const parsed = raw.split(',').map(s => s.trim().toLowerCase()) as AgentHost[];
+      const valid = parsed.filter(h => ['agents', 'gemini', 'claude', 'cursor'].includes(h));
+      if (valid.length > 0) return valid as AgentHost[];
     }
+    return ['agents'];
+  }
 
-    const lockfile: LockfileManifest = await fs.readJson(subPaths.lockfile);
+  private parseScope(options: UninstallOptions): InstallScope {
+    if (options.global) return 'global';
+    return options.scope || 'project';
+  }
+
+  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; targetDirs: string[]; dryRun: boolean }> {
+    const scope = this.parseScope(options);
+    const hosts = this.parseHosts(options);
+
+    const targetDirs: string[] = hosts.map(h => AgentHostAdapter.resolveHostDir(scope, h, options.targetDir));
     const resolved = await this.registry.resolve(identifier).catch(() => null);
 
-    const removedFiles: string[] = [];
+    const totalRemoved: string[] = [];
 
-    // Bundle removal mode
-    if (resolved && resolved.targetBundle) {
-      const bundleName = resolved.targetBundle;
-      if (!lockfile.installed.bundles.includes(bundleName)) {
-        throw new Error(`Bundle "${bundleName}" is not currently installed.`);
+    for (const targetDir of targetDirs) {
+      const subPaths = AgentHostAdapter.getSubPaths(targetDir);
+
+      if (!await fs.pathExists(subPaths.lockfile)) {
+        continue;
       }
 
-      if (options.dryRun) {
-        return { removed: resolved.agents.concat(resolved.skills, resolved.workflows), targetDir, dryRun: true };
-      }
+      const lockfile: LockfileManifest = await fs.readJson(subPaths.lockfile);
+      const removedFiles: string[] = [];
 
-      // Identify files belonging to this bundle in lockfile
-      for (const [relPath, assetMeta] of Object.entries(lockfile.files)) {
-        if (assetMeta.bundle === bundleName) {
-          const fullPath = path.join(targetDir, relPath);
-          if (await fs.pathExists(fullPath)) {
-            if (!options.force) {
-              const currentHash = await this.calculateHash(fullPath).catch(() => null);
-              if (currentHash && currentHash !== assetMeta.hash) {
-                throw new Error(`File ${relPath} has user modifications. Use --force to remove.`);
+      // Bundle removal mode
+      if (resolved && resolved.targetBundle) {
+        const bundleName = resolved.targetBundle;
+        if (lockfile.installed.bundles.includes(bundleName)) {
+          if (!options.dryRun) {
+            for (const [relPath, assetMeta] of Object.entries(lockfile.files)) {
+              if (assetMeta.bundle === bundleName) {
+                const fullPath = path.join(targetDir, relPath);
+                if (await fs.pathExists(fullPath) || await fs.pathExists(fullPath).catch(() => false)) {
+                  if (!options.force && assetMeta.method !== 'symlink') {
+                    const currentHash = await this.calculateHash(fullPath).catch(() => null);
+                    if (currentHash && currentHash !== assetMeta.hash) {
+                      throw new Error(`File ${relPath} has user modifications. Use --force to remove.`);
+                    }
+                  }
+
+                  await fs.remove(fullPath);
+                  removedFiles.push(relPath);
+                }
+
+                delete lockfile.files[relPath];
               }
             }
 
-            await fs.remove(fullPath);
-            removedFiles.push(relPath);
+            lockfile.installed.bundles = lockfile.installed.bundles.filter(b => b !== bundleName);
+            if (resolved.agents) {
+              lockfile.installed.agents = lockfile.installed.agents.filter(a => !resolved.agents.includes(a));
+            }
+            if (resolved.skills) {
+              lockfile.installed.skills = lockfile.installed.skills.filter(s => !resolved.skills.includes(s));
+            }
+            if (resolved.workflows) {
+              lockfile.installed.workflows = lockfile.installed.workflows.filter(w => !resolved.workflows.includes(w));
+            }
+
+            await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
+          } else {
+            removedFiles.push(...resolved.agents, ...resolved.skills, ...resolved.workflows);
+          }
+        }
+      } else {
+        // Item removal mode
+        const itemTargetRelPaths = Object.keys(lockfile.files).filter(p => p.includes(identifier));
+
+        if (!options.dryRun) {
+          for (const relPath of itemTargetRelPaths) {
+            const fullPath = path.join(targetDir, relPath);
+            if (await fs.pathExists(fullPath) || await fs.pathExists(fullPath).catch(() => false)) {
+              if (!options.force && lockfile.files[relPath]?.method !== 'symlink') {
+                const currentHash = await this.calculateHash(fullPath).catch(() => null);
+                const assetMeta = lockfile.files[relPath];
+                if (currentHash && assetMeta && currentHash !== assetMeta.hash) {
+                  throw new Error(`File ${relPath} has user modifications. Use --force to remove.`);
+                }
+              }
+              await fs.remove(fullPath);
+              removedFiles.push(relPath);
+            }
+            delete lockfile.files[relPath];
           }
 
-          delete lockfile.files[relPath];
+          await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
+        } else {
+          removedFiles.push(...itemTargetRelPaths);
         }
       }
 
-      // Update lockfile installed lists
-      lockfile.installed.bundles = lockfile.installed.bundles.filter(b => b !== bundleName);
-      if (resolved.agents) {
-        lockfile.installed.agents = lockfile.installed.agents.filter(a => !resolved.agents.includes(a));
-      }
-      if (resolved.skills) {
-        lockfile.installed.skills = lockfile.installed.skills.filter(s => !resolved.skills.includes(s));
-      }
-      if (resolved.workflows) {
-        lockfile.installed.workflows = lockfile.installed.workflows.filter(w => !resolved.workflows.includes(w));
-      }
-
-      await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
-      return { removed: removedFiles, targetDir, dryRun: false };
+      totalRemoved.push(...removedFiles);
     }
 
-    // Item removal mode
-    const itemTargetRelPaths = Object.keys(lockfile.files).filter(p => p.includes(identifier));
-
-    if (itemTargetRelPaths.length === 0) {
+    if (totalRemoved.length === 0 && !options.dryRun) {
       throw new Error(`No installed assets found matching "${identifier}".`);
     }
 
-    if (options.dryRun) {
-      return { removed: itemTargetRelPaths, targetDir, dryRun: true };
-    }
-
-    for (const relPath of itemTargetRelPaths) {
-      const fullPath = path.join(targetDir, relPath);
-      if (await fs.pathExists(fullPath)) {
-        if (!options.force) {
-          const currentHash = await this.calculateHash(fullPath).catch(() => null);
-          const assetMeta = lockfile.files[relPath];
-          if (currentHash && assetMeta && currentHash !== assetMeta.hash) {
-            throw new Error(`File ${relPath} has user modifications. Use --force to remove.`);
-          }
-        }
-        await fs.remove(fullPath);
-        removedFiles.push(relPath);
-      }
-      delete lockfile.files[relPath];
-    }
-
-    await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
-    return { removed: removedFiles, targetDir, dryRun: false };
+    return { removed: totalRemoved, targetDirs, dryRun: options.dryRun || false };
   }
 }

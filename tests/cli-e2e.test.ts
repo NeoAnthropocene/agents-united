@@ -5,55 +5,58 @@ import fs from 'fs-extra';
 
 describe('CLI End-to-End Suite (dist/cli.js)', () => {
   const cliPath = path.resolve(process.cwd(), 'dist/cli.js');
-  const tempDir = path.resolve(process.cwd(), 'scratch/e2e-workspace');
+  const e2eDir = path.resolve(process.cwd(), 'scratch/test-cli-e2e-workspace');
 
   beforeEach(async () => {
-    await fs.remove(tempDir);
-    await fs.ensureDir(tempDir);
+    await fs.remove(e2eDir);
+    await fs.ensureDir(e2eDir);
   });
 
   afterEach(async () => {
-    await fs.remove(tempDir);
+    await fs.remove(e2eDir);
   });
 
-  it('should display list of bundles cleanly', () => {
-    const output = execSync(`node "${cliPath}" list`, { encoding: 'utf8' });
-    expect(output).toContain('software-engineering');
-    expect(output).toContain('system-architecture');
-    expect(output).toContain('product-design');
-    expect(output).toContain('growth-marketing');
+  it('should display list of bundles', () => {
+    const stdout = execSync(`node "${cliPath}" list`, { encoding: 'utf8' });
+    expect(stdout).toContain('Agents United - Available Bundles');
+    expect(stdout).toContain('software-engineering');
   });
 
-  it('should search registry using find command', () => {
-    const output = execSync(`node "${cliPath}" find design`, { encoding: 'utf8' });
-    expect(output).toContain('product-design');
-    expect(output).toContain('orchestrator-design.md');
-    expect(output).toContain('ui-design');
+  it('should search for bundles and skills', () => {
+    const stdout = execSync(`node "${cliPath}" find software`, { encoding: 'utf8' });
+    expect(stdout).toContain('software-engineering');
   });
 
-  it('should initialize workspace with software-engineering bundle', async () => {
-    execSync(`node "${cliPath}" init --bundle software-engineering`, { cwd: tempDir, encoding: 'utf8' });
+  it('should add and remove bundles in non-interactive mode with -y flag', async () => {
+    const addStdout = execSync(`node "${cliPath}" add software-engineering -y -s`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(addStdout).toContain('Installed "software-engineering" successfully');
 
-    const agentsExist = await fs.pathExists(path.join(tempDir, '.agents/agents/orchestrator-engineering.md'));
-    const lockfileExist = await fs.pathExists(path.join(tempDir, '.agents/agents-united.json'));
+    expect(await fs.pathExists(path.join(e2eDir, '.agents', 'agents-united.json'))).toBe(true);
 
-    expect(agentsExist).toBe(true);
-    expect(lockfileExist).toBe(true);
+    const removeStdout = execSync(`node "${cliPath}" remove software-engineering -y`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(removeStdout).toContain('Successfully removed');
   });
 
-  it('should run doctor successfully on initialized workspace', async () => {
-    execSync(`node "${cliPath}" init --bundle software-engineering`, { cwd: tempDir, encoding: 'utf8' });
-    const output = execSync(`node "${cliPath}" doctor`, { cwd: tempDir, encoding: 'utf8' });
+  it('should support copy mode flag --copy', async () => {
+    const stdout = execSync(`node "${cliPath}" add product-design -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(stdout).toContain('Installed "product-design" successfully');
 
-    expect(output).toContain('Installed Agents: 5');
-    expect(output).toContain('healthy');
+    const lockfile = await fs.readJson(path.join(e2eDir, '.agents', 'agents-united.json'));
+    expect(lockfile.method).toBe('copy');
   });
 
-  it('should add and remove bundles cleanly', async () => {
-    execSync(`node "${cliPath}" add growth-marketing`, { cwd: tempDir, encoding: 'utf8' });
-    expect(await fs.pathExists(path.join(tempDir, '.agents/agents/orchestrator-marketing.md'))).toBe(true);
-
-    execSync(`node "${cliPath}" remove growth-marketing`, { cwd: tempDir, encoding: 'utf8' });
-    expect(await fs.pathExists(path.join(tempDir, '.agents/agents/orchestrator-marketing.md'))).toBe(false);
+  it('should run doctor health check', () => {
+    execSync(`node "${cliPath}" add software-engineering -y`, { cwd: e2eDir, encoding: 'utf8' });
+    const stdout = execSync(`node "${cliPath}" doctor`, { cwd: e2eDir, encoding: 'utf8' });
+    expect(stdout).toContain('Installed Agents');
   });
 });

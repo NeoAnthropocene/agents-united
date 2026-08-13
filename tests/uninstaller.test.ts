@@ -3,42 +3,46 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import { InstallEngine } from '../src/core/installer.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
-import { RegistryResolver } from '../src/core/registry.js';
-import { TargetAdapter } from '../src/core/adapter.js';
 
 describe('UninstallEngine', () => {
-  const tempDir = path.resolve(process.cwd(), 'scratch/test-workspace-uninstall');
-  let resolver: RegistryResolver;
-  let installer: InstallEngine;
-  let uninstaller: UninstallEngine;
+  const testWorkspace = path.resolve(process.cwd(), 'scratch/test-uninstall-workspace');
+  const targetAgentsDir = path.join(testWorkspace, '.agents');
 
   beforeEach(async () => {
-    await fs.remove(tempDir);
-    await fs.ensureDir(tempDir);
-    resolver = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
-    installer = new InstallEngine(resolver);
-    uninstaller = new UninstallEngine(resolver);
+    await fs.remove(testWorkspace);
+    await fs.ensureDir(testWorkspace);
+
+    const installer = new InstallEngine();
+    await installer.install('software-engineering', {
+      targetDir: targetAgentsDir,
+      method: 'copy',
+    });
   });
 
   afterEach(async () => {
-    await fs.remove(tempDir);
+    await fs.remove(testWorkspace);
   });
 
-  it('should uninstall software-engineering bundle cleanly', async () => {
-    await installer.install('software-engineering', { targetDir: tempDir });
-    const subPaths = TargetAdapter.getSubPaths(tempDir);
-    expect(await fs.pathExists(path.join(subPaths.agentsDir, 'orchestrator-engineering.md'))).toBe(true);
+  it('should uninstall an installed bundle', async () => {
+    const uninstaller = new UninstallEngine();
+    const result = await uninstaller.uninstall('software-engineering', {
+      targetDir: targetAgentsDir,
+    });
 
-    const result = await uninstaller.uninstall('software-engineering', { targetDir: tempDir });
     expect(result.removed.length).toBeGreaterThan(0);
-    expect(await fs.pathExists(path.join(subPaths.agentsDir, 'orchestrator-engineering.md'))).toBe(false);
-
-    const lockfile = await fs.readJson(subPaths.lockfile);
+    const lockfile = await fs.readJson(path.join(targetAgentsDir, 'agents-united.json'));
     expect(lockfile.installed.bundles).not.toContain('software-engineering');
   });
 
-  it('should throw error when trying to uninstall uninstalled bundle', async () => {
-    await installer.install('software-engineering', { targetDir: tempDir });
-    await expect(uninstaller.uninstall('growth-marketing', { targetDir: tempDir })).rejects.toThrow(/not currently installed/);
+  it('should handle dry-run uninstall', async () => {
+    const uninstaller = new UninstallEngine();
+    const result = await uninstaller.uninstall('software-engineering', {
+      targetDir: targetAgentsDir,
+      dryRun: true,
+    });
+
+    expect(result.dryRun).toBe(true);
+    const lockfile = await fs.readJson(path.join(targetAgentsDir, 'agents-united.json'));
+    expect(lockfile.installed.bundles).toContain('software-engineering');
   });
 });

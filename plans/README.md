@@ -10,6 +10,7 @@ This directory contains self-contained implementation plans for building the **`
 | [002](./002-antigravity-2-agent-skills-workflows-porting.md) | Antigravity 2.0 Schema Porting & Bundles Hierarchy | Core / Architecture | **READY** | 001 |
 | [003](./003-cli-core-engine-and-manifest-tracking.md) | CLI Command Engine & Lockfile Manifest Manager | Core Engine | **READY** | 001, 002 |
 | [004](./004-tdd-unit-and-integration-suite.md) | TDD Test Suite (Unit & E2E) | Testing (TDD) | **READY** | 001, 003 |
+| [005](./005-scope-and-installation-methods.md) | Installation Scope & Methods | CLI / Scope | **READY** | 001, 003 |
 
 ## Summary of Bundles Architecture
 
