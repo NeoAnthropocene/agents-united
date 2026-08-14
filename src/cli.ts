@@ -12,6 +12,17 @@ const registry = new RegistryResolver();
 const installer = new InstallEngine(registry);
 const uninstaller = new UninstallEngine(registry);
 
+const BUNDLE_SHORT_DESCRIPTIONS: Record<string, string> = {
+  'software-engineering': 'Autonomous coding, TDD, debugging, and git workflows',
+  'system-architecture': 'Distributed systems, API schemas, and ADR planning',
+  'product-design': 'UI/UX design systems, component specs, and prototyping',
+  'growth-marketing': 'Growth strategy, conversion funnels, and copywriting',
+  'security-operations': 'App security, threat modeling, and code audit workflows',
+  'deep-research': 'Literature research, codebase indexing, and analysis',
+  'business-strategy': 'Monetization, market analysis, and spec panels',
+  'full': 'Complete suite with all 7 orchestrators, 56 skills, and rules',
+};
+
 cli
   .command('add [identifier]', 'Add a bundle, agent, skill, or workflow to project or global configuration')
   .option('-g, --global', 'Install globally into home directory (~/.agents/)')
@@ -30,8 +41,8 @@ cli
       const bundles = await registry.listBundles();
       const bundleOptions = bundles.map(b => ({
         value: b.name,
-        label: `${b.name} — ${b.description.slice(0, 65)}...`,
-        hint: b.name === 'software-engineering' ? 'recommended' : undefined,
+        label: `${b.name} — ${BUNDLE_SHORT_DESCRIPTIONS[b.name] || b.description}`,
+        hint: b.name === 'software-engineering' ? 'recommended' : b.name === 'full' ? 'all-in-one' : undefined,
       }));
 
       const selected = await select({
@@ -148,7 +159,7 @@ cli
       const bundles = await registry.listBundles();
       const bundleOptions = bundles.map(b => ({
         value: b.name,
-        label: b.name,
+        label: `${b.name} — ${BUNDLE_SHORT_DESCRIPTIONS[b.name] || b.description}`,
       }));
 
       const selected = await select({
