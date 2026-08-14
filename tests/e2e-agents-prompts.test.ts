@@ -107,7 +107,7 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
     it('should validate system prompt line count and structure for all 28 agent files', async () => {
       const files = await fs.readdir(agentsDir);
       const agentFiles = files.filter(f => f.endsWith('.md'));
-      expect(agentFiles.length).toBe(28);
+      expect(agentFiles.length).toBe(30);
 
       for (const file of agentFiles) {
         const filePath = path.join(agentsDir, file);
@@ -228,9 +228,9 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
         if (result.hooksFound.length > 0) report.withLifecycleHooksCount++;
       }
 
-      expect(report.totalAgents).toBe(28);
+      expect(report.totalAgents).toBe(30);
       expect(report.orchestratorsCount).toBe(7);
-      expect(report.subagentsCount).toBe(21);
+      expect(report.subagentsCount).toBe(23);
       expect(report.expandedPromptsCount).toBeGreaterThan(0);
     });
   });

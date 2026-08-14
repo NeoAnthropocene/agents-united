@@ -249,12 +249,53 @@
         "technical-documentation"
       ]
     },
+    "devops-engineering": {
+      "name": "devops-engineering",
+      "domain": "engineering",
+      "category": "CI/CD & Delivery Pipeline Engineering",
+      "parentBundle": "software-engineering",
+      "aliases": ["devops", "ci-cd"],
+      "description": "CI/CD automation, Docker/K8s, Infrastructure as Code & release engineering",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-devops-engineer.md"
+      ],
+      "workflows": [
+        "workflow-deploy-staging.md",
+        "workflow-build.md",
+        "workflow-git.md"
+      ],
+      "skills": [
+        "ci-cd-pipeline-automation",
+        "docker-deployment",
+        "git-guardrails"
+      ]
+    },
+    "sysops-sre": {
+      "name": "sysops-sre",
+      "domain": "architecture",
+      "category": "System Operations & Site Reliability Engineering",
+      "parentBundle": "system-architecture",
+      "aliases": ["sysops", "sre"],
+      "description": "99.999% uptime, Prometheus telemetry, incident triage & disaster recovery",
+      "orchestrator": "orchestrator-system-architecture.md",
+      "agents": [
+        "subagent-sysops-sre-lead.md"
+      ],
+      "workflows": [
+        "workflow-incident-triage.md"
+      ],
+      "skills": [
+        "telemetry-monitoring",
+        "architecture-design"
+      ]
+    },
     "full": {
       "name": "full",
       "domain": "universal",
       "category": "Complete Autonomous Department",
       "aliases": ["all", "complete"],
-      "description": "Complete suite with all 7 team leads, 28 agents, and 56 skills",
+      "description": "Complete suite with all 9 team leads, 30 agents, and 58 skills",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
         "orchestrator-engineering.md",
@@ -270,6 +311,8 @@
         "subagent-code-reviewer.md",
         "subagent-repo-index.md",
         "subagent-security-engineer.md",
+        "subagent-devops-engineer.md",
+        "subagent-sysops-sre-lead.md",
         "subagent-socratic-mentor.md",
         "subagent-deep-research.md",
         "subagent-ui-designer.md",
@@ -333,7 +376,9 @@
         "workflow-recommend.md",
         "workflow-grill.md",
         "workflow-spec.md",
-        "workflow-diagnose.md"
+        "workflow-diagnose.md",
+        "workflow-deploy-staging.md",
+        "workflow-incident-triage.md"
       ],
       "skills": [
         "architecture-design",
@@ -391,7 +436,9 @@
         "to-tickets",
         "diagnosing-bugs",
         "git-guardrails",
-        "handoff"
+        "handoff",
+        "ci-cd-pipeline-automation",
+        "telemetry-monitoring"
       ]
     }
   }

@@ -114,7 +114,7 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
       const files = await fs.readdir(workflowsDir);
       const workflowFiles = files.filter(f => f.startsWith('workflow-') && f.endsWith('.md'));
 
-      expect(workflowFiles.length).toBe(47);
+      expect(workflowFiles.length).toBe(49);
 
       for (const file of workflowFiles) {
         const filePath = path.join(workflowsDir, file);
@@ -181,7 +181,7 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
       const bundlesJson = await fs.readJson(bundlesPath);
       const fullBundleWorkflows: string[] = bundlesJson.bundles.full.workflows;
 
-      expect(fullBundleWorkflows.length).toBe(47);
+      expect(fullBundleWorkflows.length).toBe(49);
 
       for (const workflowFile of fullBundleWorkflows) {
         const workflowFilePath = path.join(workflowsDir, workflowFile);
@@ -206,7 +206,7 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
       const files = await fs.readdir(workflowsDir);
       const workflowFiles = files.filter(f => f.startsWith('workflow-') && f.endsWith('.md'));
 
-      expect(workflowFiles.length).toBe(47);
+      expect(workflowFiles.length).toBe(49);
 
       const report = {
         totalWorkflows: workflowFiles.length,
@@ -224,8 +224,8 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
         if (result.hasRollbackProtocols) report.withRollbackProtocols++;
       }
 
-      expect(report.totalWorkflows).toBe(47);
-      expect(report.withPhasesCount).toBe(47);
+      expect(report.totalWorkflows).toBe(49);
+      expect(report.withPhasesCount).toBe(49);
     });
   });
 });

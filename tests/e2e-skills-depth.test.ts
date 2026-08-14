@@ -133,7 +133,7 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
       const entries = await fs.readdir(skillsDir, { withFileTypes: true });
       const skillDirs = entries.filter(e => e.isDirectory()).map(e => e.name);
 
-      expect(skillDirs.length).toBe(56);
+      expect(skillDirs.length).toBe(58);
 
       let foundSkillCount = 0;
       for (const skillName of skillDirs) {
@@ -211,7 +211,7 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
       const bundlesJson = await fs.readJson(bundlesPath);
       const fullBundleSkills: string[] = bundlesJson.bundles.full.skills;
 
-      expect(fullBundleSkills.length).toBe(56);
+      expect(fullBundleSkills.length).toBe(58);
 
       for (const skillName of fullBundleSkills) {
         const skillFolderPath = path.join(skillsDir, skillName);
@@ -241,7 +241,7 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
       const entries = await fs.readdir(skillsDir, { withFileTypes: true });
       const skillDirs = entries.filter(e => e.isDirectory()).map(e => e.name);
 
-      expect(skillDirs.length).toBe(56);
+      expect(skillDirs.length).toBe(58);
 
       const healthReport = {
         totalSkillDirectories: skillDirs.length,
@@ -262,7 +262,7 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
         }
       }
 
-      expect(healthReport.totalSkillDirectories).toBe(56);
+      expect(healthReport.totalSkillDirectories).toBe(58);
       expect(healthReport.withSkillMdFile).toBeGreaterThan(0);
     });
   });

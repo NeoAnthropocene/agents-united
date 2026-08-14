@@ -28,6 +28,14 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
     title: 'Software Engineering Team',
     summary: 'Autonomous dev lead, backend/frontend architects, TDD & git guardrails',
   },
+  'devops-engineering': {
+    title: 'DevOps & Delivery Pipeline Team',
+    summary: 'CI/CD automation, Docker/K8s, Infrastructure as Code & release engineering',
+  },
+  'sysops-sre': {
+    title: 'SysOps & Site Reliability Team',
+    summary: '99.999% uptime, Prometheus telemetry, incident triage & disaster recovery',
+  },
   'system-architecture': {
     title: 'System Architecture Team',
     summary: 'High-level distributed systems, API schemas, and ADR planning',
@@ -54,7 +62,7 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
   },
   'full': {
     title: 'All-in-One Autonomous Department',
-    summary: 'Complete suite with all 7 team leads, 28 agents, and 56 skills',
+    summary: 'Complete suite with all 9 team leads, 30 agents, and 58 skills',
   },
 };
 
