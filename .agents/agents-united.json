@@ -2,12 +2,80 @@
   "$schema": "https://agents-united.dev/schema/lockfile.v1.json",
   "version": 1,
   "installed": {
-    "bundles": [],
-    "agents": [],
-    "skills": [],
-    "workflows": []
+    "bundles": [
+      "business-strategy"
+    ],
+    "agents": [
+      "orchestrator-business.md",
+      "subagent-business-panel-experts.md"
+    ],
+    "skills": [
+      "architecture-design",
+      "technical-documentation"
+    ],
+    "workflows": [
+      "workflow-business-panel.md",
+      "workflow-spec-panel.md",
+      "workflow-recommend.md",
+      "workflow-estimate.md"
+    ]
   },
-  "files": {},
+  "files": {
+    "agents\\orchestrator-business.md": {
+      "hash": "sha256:d8c1f27d358ac93ba72de19c92437cb73bd81447ed6a99adc4baf4278f67368f",
+      "bundle": "business-strategy",
+      "method": "copy",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    },
+    "agents\\subagent-business-panel-experts.md": {
+      "hash": "sha256:7533a118f5742f2621a451b9f28bcf0948a108d80dfa4030c3b30a59c7ee0337",
+      "bundle": "business-strategy",
+      "method": "copy",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    },
+    "skills\\architecture-design\\SKILL.md": {
+      "hash": "sha256:6a688067d779559664006da66c8ac3775ab8e218daf376af4424d8e1c49df595",
+      "bundle": "business-strategy",
+      "method": "symlink",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    },
+    "skills\\technical-documentation\\SKILL.md": {
+      "hash": "sha256:6b01bd170089eb4e9c17be62cd8e7fbe6f3ad104d9e862613f3596e6af8d91fd",
+      "bundle": "business-strategy",
+      "method": "symlink",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    },
+    "workflows\\workflow-business-panel.md": {
+      "hash": "sha256:1df41f216aeed024b0fd480889150e997b9a2ebe7008e9b3060f4d63e4bff0e5",
+      "bundle": "business-strategy",
+      "method": "copy",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    },
+    "workflows\\workflow-spec-panel.md": {
+      "hash": "sha256:14c8de186c256c89f08fd35a8db2c796895436185aae6e8e3128d2056cbe3aab",
+      "bundle": "business-strategy",
+      "method": "copy",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    },
+    "workflows\\workflow-recommend.md": {
+      "hash": "sha256:dee7e012a22732888882271bd7959ddd312ccd599e58b55d4de1f83feb4fee73",
+      "bundle": "business-strategy",
+      "method": "copy",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    },
+    "workflows\\workflow-estimate.md": {
+      "hash": "sha256:81bc83ddb305d47dc7fe3210cceb0ffbb497d5f1edfdf706aabc69d70e9e8f51",
+      "bundle": "business-strategy",
+      "method": "copy",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    },
+    "rules\\GEMINI.md": {
+      "hash": "sha256:59de050c8f10b115722081768ca4b23d7eded39347d7622513de08f05f5e3eff",
+      "bundle": "business-strategy",
+      "method": "copy",
+      "installedAt": "2026-08-14T09:36:10.004Z"
+    }
+  },
   "scope": "project",
   "method": "symlink",
   "hosts": [
