@@ -79,3 +79,16 @@ export interface ResolvedAssets {
   workflows: string[];
   rules: string[];
 }
+
+export interface SearchOptions {
+  domain?: string;
+  type?: 'bundle' | 'agent' | 'skill' | 'workflow';
+}
+
+export interface SearchResults {
+  bundles: BundleDefinition[];
+  agents: string[];
+  skills: string[];
+  workflows: string[];
+}
+

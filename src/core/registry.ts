@@ -126,36 +126,68 @@ export class RegistryResolver {
     throw new Error(`Item or bundle "${identifier}" not found in registry.`);
   }
 
-  public async find(query: string): Promise<{ bundles: BundleDefinition[]; agents: string[]; skills: string[] }> {
+  public async find(query: string = '', options?: SearchOptions): Promise<SearchResults> {
     const manifest = await this.loadBundles();
-    const q = query.toLowerCase();
+    const q = query.trim().toLowerCase();
 
-    const matchedBundles = Object.values(manifest.bundles).filter(
-      b => b.name.toLowerCase().includes(q) ||
-           b.description.toLowerCase().includes(q) ||
-           b.category?.toLowerCase().includes(q) ||
-           b.domain?.toLowerCase().includes(q) ||
-           b.aliases?.some(a => a.toLowerCase().includes(q))
-    );
+    let matchedBundles: BundleDefinition[] = [];
+    if (!options?.type || options.type === 'bundle') {
+      matchedBundles = Object.values(manifest.bundles).filter(b => {
+        if (options?.domain && b.domain?.toLowerCase() !== options.domain.toLowerCase()) {
+          return false;
+        }
+        if (!q) return true;
+        return (
+          b.name.toLowerCase().includes(q) ||
+          b.description.toLowerCase().includes(q) ||
+          b.category?.toLowerCase().includes(q) ||
+          b.domain?.toLowerCase().includes(q) ||
+          b.aliases?.some(a => a.toLowerCase().includes(q))
+        );
+      });
+    }
 
     const agentsDir = path.join(this.registryDir, 'agents');
     let matchedAgents: string[] = [];
-    if (await fs.pathExists(agentsDir)) {
-      const files = await fs.readdir(agentsDir);
-      matchedAgents = files.filter(f => f.toLowerCase().includes(q));
+    if (!options?.type || options.type === 'agent') {
+      if (await fs.pathExists(agentsDir)) {
+        const files = await fs.readdir(agentsDir);
+        matchedAgents = files.filter(f => {
+          if (!q) return true;
+          return f.toLowerCase().includes(q);
+        });
+      }
     }
 
     const skillsDir = path.join(this.registryDir, 'skills');
     let matchedSkills: string[] = [];
-    if (await fs.pathExists(skillsDir)) {
-      const dirs = await fs.readdir(skillsDir);
-      matchedSkills = dirs.filter(d => d.toLowerCase().includes(q));
+    if (!options?.type || options.type === 'skill') {
+      if (await fs.pathExists(skillsDir)) {
+        const dirs = await fs.readdir(skillsDir);
+        matchedSkills = dirs.filter(d => {
+          if (!q) return true;
+          return d.toLowerCase().includes(q);
+        });
+      }
+    }
+
+    const workflowsDir = path.join(this.registryDir, 'workflows');
+    let matchedWorkflows: string[] = [];
+    if (!options?.type || options.type === 'workflow') {
+      if (await fs.pathExists(workflowsDir)) {
+        const files = await fs.readdir(workflowsDir);
+        matchedWorkflows = files.filter(f => f.endsWith('.md')).filter(f => {
+          if (!q) return true;
+          return f.toLowerCase().includes(q);
+        });
+      }
     }
 
     return {
       bundles: matchedBundles,
       agents: matchedAgents,
       skills: matchedSkills,
+      workflows: matchedWorkflows,
     };
   }
 }

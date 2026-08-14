@@ -16,15 +16,27 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     await fs.remove(e2eDir);
   });
 
-  it('should display list of bundles', () => {
+  it('should display list of bundles grouped by domain', () => {
     const stdout = execSync(`node "${cliPath}" list`, { encoding: 'utf8' });
-    expect(stdout).toContain('Agents United - Available Bundles');
+    expect(stdout).toContain('Agents United - Registry Bundles by Domain');
     expect(stdout).toContain('software-engineering');
+    expect(stdout).toContain('mobile-development');
   });
 
-  it('should search for bundles and skills', () => {
+  it('should search for bundles and skills with find command and support --json', () => {
     const stdout = execSync(`node "${cliPath}" find software`, { encoding: 'utf8' });
     expect(stdout).toContain('software-engineering');
+
+    const jsonStdout = execSync(`node "${cliPath}" find playwright --json`, { encoding: 'utf8' });
+    const parsed = JSON.parse(jsonStdout);
+    expect(parsed.skills).toContain('playwright-best-practices');
+  });
+
+  it('should support listing bundles as JSON with list --json', () => {
+    const stdout = execSync(`node "${cliPath}" list --json`, { encoding: 'utf8' });
+    const parsed = JSON.parse(stdout);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed.some((b: any) => b.name === 'software-engineering')).toBe(true);
   });
 
   it('should add and remove bundles in non-interactive mode with -y flag', async () => {

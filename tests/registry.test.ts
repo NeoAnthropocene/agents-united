@@ -70,4 +70,18 @@ describe('RegistryResolver', () => {
 
     delete manifest.bundles['mobile-development-test'];
   });
+
+  it('should filter search results by domain and type', async () => {
+    const engineeringBundles = await resolver.find('', { domain: 'engineering', type: 'bundle' });
+    expect(engineeringBundles.bundles.length).toBeGreaterThan(0);
+    expect(engineeringBundles.bundles.every(b => b.domain === 'engineering')).toBe(true);
+    expect(engineeringBundles.agents.length).toBe(0);
+
+    const skillsOnly = await resolver.find('playwright', { type: 'skill' });
+    expect(skillsOnly.skills).toContain('playwright-best-practices');
+    expect(skillsOnly.bundles.length).toBe(0);
+
+    const workflows = await resolver.find('audit', { type: 'workflow' });
+    expect(workflows.workflows.some(w => w.includes('audit'))).toBe(true);
+  });
 });

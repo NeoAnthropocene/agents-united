@@ -7,7 +7,7 @@ import { RegistryResolver } from './core/registry.js';
 import { InstallEngine } from './core/installer.js';
 import { UninstallEngine } from './core/uninstaller.js';
 import { DoctorEngine } from './core/doctor.js';
-import type { InstallScope, InstallMethod, AgentHost } from './core/types.js';
+import type { InstallScope, InstallMethod, AgentHost, BundleDefinition } from './core/types.js';
 
 const cli = cac('agents-united');
 const registry = new RegistryResolver();
@@ -316,48 +316,142 @@ cli
   });
 
 cli
-  .command('list', 'List available and installed bundles')
+  .command('list', 'List available bundles grouped by department domain')
   .alias('ls')
-  .action(async () => {
-    intro(pc.cyan('Agents United - Available Bundles'));
+  .option('--json', 'Output bundles in JSON format')
+  .action(async (options: any = {}) => {
     const bundles = await registry.listBundles();
 
-    for (const b of bundles) {
-      console.log(`  ${pc.bold(pc.green(b.name))}`);
-      console.log(`    ${pc.dim(b.description)}`);
-      console.log(`    ${pc.gray(`Orchestrator: ${b.orchestrator} | Skills: ${b.skills?.length || 0} | Workflows: ${b.workflows?.length || 0}`)}\n`);
-    }
-
-    outro(pc.cyan('Run "npx agents-united add <bundle>" to install a bundle.'));
-  });
-
-cli
-  .command('find [query]', 'Search for agents, skills, or bundles in the registry')
-  .alias('search')
-  .action(async (query?: string) => {
-    if (!query) {
-      intro(pc.cyan('Agents United - Available Bundles'));
-      const bundles = await registry.listBundles();
-      for (const b of bundles) {
-        console.log(`  - ${pc.green(b.name)}: ${pc.dim(b.description)}`);
-      }
-      outro(pc.cyan('Use "npx agents-united add <name>" to install any bundle.'));
+    if (options.json) {
+      console.log(JSON.stringify(bundles, null, 2));
       return;
     }
 
-    intro(pc.cyan(`Agents United - Search: "${query}"`));
-    const results = await registry.find(query);
+    intro(pc.cyan('Agents United - Registry Bundles by Domain'));
 
-    console.log(pc.bold('\nMatching Bundles:'));
-    results.bundles.forEach(b => console.log(`  - ${pc.green(b.name)}: ${pc.dim(b.description)}`));
+    const domainTitles: Record<string, string> = {
+      engineering: '🛠️  Software Engineering & Delivery',
+      architecture: '🏛️  System Architecture & SRE',
+      design: '🎨  Product Design & UI/UX',
+      marketing: '📈  Growth & Marketing Operations',
+      security: '🔒  Security & Vulnerability Audits',
+      research: '🔬  Deep Technical Research',
+      business: '💼  Business Strategy & Economics',
+      universal: '🌐  Universal Autonomous Department',
+    };
 
-    console.log(pc.bold('\nMatching Agents:'));
-    results.agents.forEach(a => console.log(`  - ${pc.blue(a)}`));
+    const grouped: Record<string, typeof bundles> = {};
+    for (const b of bundles) {
+      const d = b.domain || 'other';
+      if (!grouped[d]) grouped[d] = [];
+      grouped[d].push(b);
+    }
 
-    console.log(pc.bold('\nMatching Skills:'));
-    results.skills.forEach(s => console.log(`  - ${pc.yellow(s)}`));
+    for (const [domain, items] of Object.entries(grouped)) {
+      const header = domainTitles[domain] || `📁  ${domain.toUpperCase()}`;
+      console.log(`\n${pc.bold(pc.magenta(header))}`);
 
-    outro(pc.cyan('\nUse "npx agents-united add <name>" to install any match.'));
+      for (const b of items) {
+        const meta = BUNDLE_DISPLAY_NAMES[b.name];
+        const title = meta?.title || b.name;
+        const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
+        const aliasesTag = b.aliases && b.aliases.length > 0 ? pc.gray(` [alias: ${b.aliases.join(', ')}]`) : '';
+
+        console.log(`  ${pc.bold(pc.green(title))} ${pc.dim(`(${b.name})`)}${parentTag}${aliasesTag}`);
+        console.log(`    ${pc.white(b.description)}`);
+        console.log(`    ${pc.gray(`Orchestrator: ${b.orchestrator || 'None'} | Agents: ${(b.agents?.length || 0) + (b.orchestrator ? 1 : 0)} | Skills: ${b.skills?.length || 0} | Workflows: ${b.workflows?.length || 0}`)}`);
+      }
+    }
+
+    outro(pc.cyan('\nRun "agents add <bundle>" to install a bundle into your workspace.'));
+  });
+
+cli
+  .command('find [query]', 'Search for agents, skills, workflows, or bundles in the registry')
+  .alias('search')
+  .option('-c, --category <domain>', 'Filter search by domain (e.g. engineering, architecture, design)')
+  .option('-t, --type <type>', 'Filter by item type (bundle, agent, skill, workflow)')
+  .option('--json', 'Output results in JSON format')
+  .option('-i, --interactive', 'Interactive selection to install matching item')
+  .action(async (query?: string, options: any = {}) => {
+    const q = query || '';
+    const results = await registry.find(q, {
+      domain: options.category || options.domain,
+      type: options.type,
+    });
+
+    if (options.json) {
+      console.log(JSON.stringify(results, null, 2));
+      return;
+    }
+
+    const totalCount =
+      results.bundles.length + results.agents.length + results.skills.length + results.workflows.length;
+
+    intro(pc.cyan(`Agents United - Search Results: "${q || '*'}" (${totalCount} found)`));
+
+    if (results.bundles.length > 0) {
+      console.log(pc.bold(`\n📦 Bundles (${results.bundles.length}):`));
+      results.bundles.forEach((b: BundleDefinition) => {
+        const meta = BUNDLE_DISPLAY_NAMES[b.name];
+        console.log(`  - ${pc.green(pc.bold(b.name))}: ${pc.white(meta?.title || b.name)} — ${pc.dim(b.description)}`);
+      });
+    }
+
+    if (results.agents.length > 0) {
+      console.log(pc.bold(`\n🤖 Agents (${results.agents.length}):`));
+      results.agents.forEach((a: string) => {
+        const stem = a.replace(/\.md$/, '');
+        console.log(`  - ${pc.blue(stem)} ${pc.gray(`(${a})`)}`);
+      });
+    }
+
+    if (results.skills.length > 0) {
+      console.log(pc.bold(`\n⚡ Skills (${results.skills.length}):`));
+      results.skills.forEach((s: string) => console.log(`  - ${pc.yellow(s)}`));
+    }
+
+    if (results.workflows.length > 0) {
+      console.log(pc.bold(`\n🔄 Workflows (${results.workflows.length}):`));
+      results.workflows.forEach((w: string) => {
+        const stem = w.replace(/\.md$/, '');
+        console.log(`  - ${pc.magenta(stem)} ${pc.gray(`(${w})`)}`);
+      });
+    }
+
+    if (totalCount === 0) {
+      console.log(pc.yellow(`\nNo matching items found for "${q}". Try searching without filters or using "agents list".`));
+    }
+
+    if (options.interactive && totalCount > 0) {
+      const items: Array<{ value: string; label: string }> = [
+        ...results.bundles.map((b: BundleDefinition) => ({ value: b.name, label: `[Bundle] ${b.name} — ${b.description}` })),
+        ...results.agents.map((a: string) => ({ value: a.replace(/\.md$/, ''), label: `[Agent] ${a}` })),
+        ...results.skills.map((s: string) => ({ value: s, label: `[Skill] ${s}` })),
+        ...results.workflows.map((w: string) => ({ value: w.replace(/\.md$/, ''), label: `[Workflow] ${w}` })),
+      ];
+
+      const selected = await select({
+        message: 'Select an item to install:',
+        options: items,
+      });
+
+      if (typeof selected === 'string') {
+        const s = spinner();
+        s.start(`Installing "${selected}"...`);
+        try {
+          const res = await installer.install(selected, { scope: 'project' });
+          s.stop(`Installed ${selected}`);
+          outro(pc.green(`✔ Successfully installed "${selected}"!`));
+        } catch (err: any) {
+          s.stop(pc.red('Installation failed'));
+          outro(pc.red(`Error: ${err.message}`));
+        }
+        return;
+      }
+    }
+
+    outro(pc.cyan('\nUse "agents add <name>" to install any match.'));
   });
 
 cli
