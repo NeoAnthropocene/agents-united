@@ -230,7 +230,7 @@
     },
     "business-strategy": {
       "name": "business-strategy",
-      "domain": "strategy",
+      "domain": "business",
       "category": "Business & Product Strategy",
       "aliases": ["business", "strategy"],
       "description": "Market analysts, monetization experts, and executive spec panels",

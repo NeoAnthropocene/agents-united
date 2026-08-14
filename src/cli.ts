@@ -1,6 +1,6 @@
 import { cac } from 'cac';
 import pc from 'picocolors';
-import { intro, outro, spinner, note, select, multiselect } from '@clack/prompts';
+import { intro, outro, spinner, note, select, multiselect, confirm, text } from '@clack/prompts';
 import fs from 'fs-extra';
 import path from 'node:path';
 import { RegistryResolver } from './core/registry.js';
@@ -187,30 +187,180 @@ cli
       }
     }
 
-    // Step 4: Bundle Selection (if identifier was not passed as argument)
+    // Step 4: Two-Stage Hierarchical Department & Bundle Selection
     if (!identifier) {
       const bundles = await registry.listBundles();
-      const bundleOptions = bundles.map(b => {
-        const meta = BUNDLE_DISPLAY_NAMES[b.name];
-        const label = meta ? `${meta.title} (${b.name}) — ${meta.summary}` : `${b.name} — ${b.description}`;
-        return {
-          value: b.name,
-          label,
-          hint: b.name === 'software-engineering' ? 'recommended' : b.name === 'full' ? 'all-in-one' : undefined,
-        };
-      });
 
-      const selected = await select({
-        message: '4. Select a Bundle to install:',
-        options: bundleOptions,
-      });
+      const domainMeta: Record<string, { label: string; icon: string }> = {
+        engineering: { label: 'Software Engineering & Delivery', icon: '🛠️ ' },
+        architecture: { label: 'System Architecture & SRE', icon: '🏛️ ' },
+        design: { label: 'Product Design & UI/UX', icon: '🎨 ' },
+        marketing: { label: 'Growth & Marketing Operations', icon: '📈 ' },
+        security: { label: 'Security Operations', icon: '🔒 ' },
+        research: { label: 'Deep Technical Research', icon: '🔬 ' },
+        business: { label: 'Business Strategy & Economics', icon: '💼 ' },
+        universal: { label: 'Universal Autonomous Department', icon: '🌐 ' },
+      };
 
-      if (typeof selected === 'string') {
-        identifier = selected;
-      } else {
-        outro(pc.yellow('Installation cancelled.'));
-        return;
+      let selectedBundle: string | undefined;
+
+      while (!selectedBundle) {
+        // Stage 4a: Department Domain Selection
+        const domainOptions = Object.entries(domainMeta).map(([domainKey, meta]) => {
+          const count = bundles.filter(b => b.domain === domainKey).length;
+          return {
+            value: domainKey,
+            label: `${meta.icon} ${meta.label}`,
+            hint: domainKey === 'universal' ? 'full suite (38 agents, 65 skills)' : `${count} specialized team${count > 1 ? 's' : ''}`,
+          };
+        });
+
+        domainOptions.push({
+          value: '__search__',
+          label: '🔍 Search by name / keyword...',
+          hint: 'custom keyword search',
+        });
+
+        const selectedDomain = await select({
+          message: '4. Select Department Domain:',
+          options: domainOptions,
+        });
+
+        if (typeof selectedDomain !== 'string') {
+          outro(pc.yellow('Installation cancelled.'));
+          return;
+        }
+
+        if (selectedDomain === '__search__') {
+          const searchQuery = await text({
+            message: 'Enter keyword to search:',
+            placeholder: 'e.g. mobile, playwright, react, backend',
+          });
+
+          if (typeof searchQuery !== 'string' || !searchQuery.trim()) {
+            continue;
+          }
+
+          const searchResults = await registry.find(searchQuery.trim());
+          const matchOptions: Array<{ value: string; label: string; hint?: string }> = [
+            ...searchResults.bundles.map((b: BundleDefinition) => ({
+              value: b.name,
+              label: `[Bundle] ${BUNDLE_DISPLAY_NAMES[b.name]?.title || b.name} (${b.name})`,
+              hint: b.description,
+            })),
+            ...searchResults.agents.map((a: string) => ({
+              value: a.replace(/\.md$/, ''),
+              label: `[Agent] ${a}`,
+              hint: 'autonomous agent',
+            })),
+            ...searchResults.skills.map((s: string) => ({
+              value: s,
+              label: `[Skill] ${s}`,
+              hint: 'specialized skill',
+            })),
+            ...searchResults.workflows.map((w: string) => ({
+              value: w.replace(/\.md$/, ''),
+              label: `[Workflow] ${w}`,
+              hint: 'guided workflow',
+            })),
+            {
+              value: '__back__',
+              label: '🔙 Back to Department Selection',
+              hint: '',
+            },
+          ];
+
+          if (matchOptions.length === 1) {
+            note(`No items found matching "${searchQuery}".`, 'Search Results');
+            continue;
+          }
+
+          const chosenMatch = await select({
+            message: `Search Results for "${searchQuery}":`,
+            options: matchOptions,
+          });
+
+          if (typeof chosenMatch === 'string' && chosenMatch !== '__back__') {
+            selectedBundle = chosenMatch;
+            break;
+          }
+          continue;
+        }
+
+        const domainBundles = bundles.filter(b => b.domain === selectedDomain);
+
+        if (domainBundles.length === 1 && selectedDomain !== 'engineering' && selectedDomain !== 'architecture') {
+          // If only 1 bundle exists in this domain (e.g. product-design, security-operations, full)
+          selectedBundle = domainBundles[0].name;
+          break;
+        }
+
+        // Stage 4b: Sub-Team Selection inside Selected Domain
+        const subTeamOptions: Array<{ value: string; label: string; hint?: string }> = [];
+
+        // Option to install entire department if multiple bundles exist
+        if (domainBundles.length > 1) {
+          subTeamOptions.push({
+            value: `__all_domain__:${selectedDomain}`,
+            label: `🌟 Install Entire ${domainMeta[selectedDomain]?.label || selectedDomain} (${domainBundles.length} Bundles)`,
+            hint: 'installs all sub-teams under this domain',
+          });
+        }
+
+        for (const b of domainBundles) {
+          const meta = BUNDLE_DISPLAY_NAMES[b.name];
+          const isEssentials = !b.parentBundle && (b.name === 'software-engineering' || b.name === 'system-architecture');
+          const prefix = isEssentials ? '📦 Essentials: ' : '├── ';
+          const title = meta ? meta.title : b.name;
+          const summary = meta ? meta.summary : b.description;
+          subTeamOptions.push({
+            value: b.name,
+            label: `${prefix}${title} (${b.name})`,
+            hint: summary,
+          });
+        }
+
+        subTeamOptions.push({
+          value: '__back__',
+          label: '🔙 Back to Department Selection',
+          hint: '',
+        });
+
+        const chosenSubTeam = await select({
+          message: `Select Team Bundle in ${domainMeta[selectedDomain]?.label || selectedDomain}:`,
+          options: subTeamOptions,
+        });
+
+        if (typeof chosenSubTeam !== 'string') {
+          outro(pc.yellow('Installation cancelled.'));
+          return;
+        }
+
+        if (chosenSubTeam === '__back__') {
+          continue;
+        }
+
+        if (chosenSubTeam.startsWith('__all_domain__:')) {
+          const dName = chosenSubTeam.replace('__all_domain__:', '');
+          const dTitle = domainMeta[dName]?.label || dName;
+          const proceed = await confirm({
+            message: `⚠️  You are about to install ALL ${domainBundles.length} sub-teams under "${dTitle}". Proceed?`,
+            initialValue: true,
+          });
+
+          if (!proceed || typeof proceed !== 'boolean') {
+            continue;
+          }
+
+          selectedBundle = `domain:${dName}`;
+          break;
+        }
+
+        selectedBundle = chosenSubTeam;
+        break;
       }
+
+      identifier = selectedBundle;
     }
 
     const s = spinner();
@@ -327,18 +477,29 @@ cli
       return;
     }
 
-    intro(pc.cyan('Agents United - Registry Bundles by Domain'));
+    intro(pc.cyan('Agents United — Registry Catalog Tree'));
 
     const domainTitles: Record<string, string> = {
       engineering: '🛠️  Software Engineering & Delivery',
       architecture: '🏛️  System Architecture & SRE',
       design: '🎨  Product Design & UI/UX',
       marketing: '📈  Growth & Marketing Operations',
-      security: '🔒  Security & Vulnerability Audits',
+      security: '🔒  Security Operations',
       research: '🔬  Deep Technical Research',
       business: '💼  Business Strategy & Economics',
       universal: '🌐  Universal Autonomous Department',
     };
+
+    const domainOrder = [
+      'engineering',
+      'architecture',
+      'design',
+      'marketing',
+      'security',
+      'research',
+      'business',
+      'universal',
+    ];
 
     const grouped: Record<string, typeof bundles> = {};
     for (const b of bundles) {
@@ -347,23 +508,65 @@ cli
       grouped[d].push(b);
     }
 
-    for (const [domain, items] of Object.entries(grouped)) {
-      const header = domainTitles[domain] || `📁  ${domain.toUpperCase()}`;
-      console.log(`\n${pc.bold(pc.magenta(header))}`);
+    for (const domainKey of domainOrder) {
+      const items = grouped[domainKey];
+      if (!items || items.length === 0) continue;
 
-      for (const b of items) {
+      const header = domainTitles[domainKey] || `📁  ${domainKey.toUpperCase()}`;
+      console.log(`\n${pc.bold(pc.magenta(header))} ${pc.dim(`(${items.length} bundle${items.length > 1 ? 's' : ''})`)}`);
+
+      items.forEach((b: BundleDefinition, bIdx: number) => {
+        const isLastBundle = bIdx === items.length - 1;
+        const bBranch = isLastBundle ? '└──' : '├──';
+        const subIndent = isLastBundle ? '    ' : '│   ';
+
         const meta = BUNDLE_DISPLAY_NAMES[b.name];
-        const title = meta?.title || b.name;
+        const isEssentials = !b.parentBundle && (b.name === 'software-engineering' || b.name === 'system-architecture');
+        const titleSuffix = isEssentials ? pc.cyan(' (Essentials)') : '';
         const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
         const aliasesTag = b.aliases && b.aliases.length > 0 ? pc.gray(` [alias: ${b.aliases.join(', ')}]`) : '';
 
-        console.log(`  ${pc.bold(pc.green(title))} ${pc.dim(`(${b.name})`)}${parentTag}${aliasesTag}`);
-        console.log(`    ${pc.white(b.description)}`);
-        console.log(`    ${pc.gray(`Orchestrator: ${b.orchestrator || 'None'} | Agents: ${(b.agents?.length || 0) + (b.orchestrator ? 1 : 0)} | Skills: ${b.skills?.length || 0} | Workflows: ${b.workflows?.length || 0}`)}`);
-      }
+        console.log(`${bBranch} 📦 ${pc.bold(pc.green(b.name))}${titleSuffix}${parentTag}${aliasesTag}`);
+        console.log(`${subIndent}│   ${pc.white(b.description)}`);
+
+        // Lead / Orchestrator
+        if (b.orchestrator) {
+          const orchName = b.orchestrator.replace(/\.md$/, '');
+          console.log(`${subIndent}├── 🤖 Lead: ${pc.blue(orchName)}`);
+        }
+
+        // Subagents
+        if (b.agents && b.agents.length > 0) {
+          const subNames = b.agents.map(a => a.replace(/^subagent-/, '').replace(/\.md$/, ''));
+          const displaySubs =
+            subNames.length > 3 ? `${subNames.slice(0, 3).join(', ')} (+${subNames.length - 3} more)` : subNames.join(', ');
+          console.log(`${subIndent}├── 🤖 Sub-agents: ${pc.blue(displaySubs)}`);
+        }
+
+        // Skills
+        if (b.skills && b.skills.length > 0) {
+          const displaySkills =
+            b.skills.length > 3 ? `${b.skills.slice(0, 3).join(', ')} (+${b.skills.length - 3} more)` : b.skills.join(', ');
+          console.log(`${subIndent}├── ⚡ Skills: ${pc.yellow(displaySkills)}`);
+        }
+
+        // Workflows
+        if (b.workflows && b.workflows.length > 0) {
+          const wfNames = b.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
+          const displayWfs =
+            wfNames.length > 3 ? `${wfNames.slice(0, 3).join(', ')} (+${wfNames.length - 3} more)` : wfNames.join(', ');
+          console.log(`${subIndent}└── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
+        } else {
+          console.log(`${subIndent}└── 🔄 Workflows: ${pc.dim('Inherited from parent')}`);
+        }
+
+        if (!isLastBundle) {
+          console.log(`${subIndent}`);
+        }
+      });
     }
 
-    outro(pc.cyan('\nRun "agents add <bundle>" to install a bundle into your workspace.'));
+    outro(pc.cyan('\nRun "agents add <bundle>" or select interactively to install.'));
   });
 
 cli

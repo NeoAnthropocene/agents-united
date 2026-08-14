@@ -18,7 +18,7 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
 
   it('should display list of bundles grouped by domain', () => {
     const stdout = execSync(`node "${cliPath}" list`, { encoding: 'utf8' });
-    expect(stdout).toContain('Agents United - Registry Bundles by Domain');
+    expect(stdout).toContain('Agents United — Registry Catalog Tree');
     expect(stdout).toContain('software-engineering');
     expect(stdout).toContain('mobile-development');
   });

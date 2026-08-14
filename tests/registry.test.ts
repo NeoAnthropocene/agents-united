@@ -84,4 +84,15 @@ describe('RegistryResolver', () => {
     const workflows = await resolver.find('audit', { type: 'workflow' });
     expect(workflows.workflows.some(w => w.includes('audit'))).toBe(true);
   });
+
+  it('should resolve entire department domain with domain:<name>', async () => {
+    const resolved = await resolver.resolve('domain:engineering');
+    expect(resolved.targetBundle).toBe('domain:engineering');
+    expect(resolved.agents).toContain('orchestrator-engineering.md');
+    expect(resolved.agents).toContain('subagent-ios-architect.md');
+    expect(resolved.agents).toContain('subagent-qa-automation-lead.md');
+    expect(resolved.skills).toContain('mobile-ios-design');
+    expect(resolved.skills).toContain('playwright-best-practices');
+    expect(resolved.workflows).toContain('workflow-mobile-build.md');
+  });
 });

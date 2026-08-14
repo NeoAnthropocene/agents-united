@@ -60,7 +60,39 @@ export class RegistryResolver {
     return Object.values(manifest.bundles);
   }
 
+  public async getBundlesByDomain(domain: string): Promise<BundleDefinition[]> {
+    const manifest = await this.loadBundles();
+    const d = domain.toLowerCase();
+    return Object.values(manifest.bundles).filter(b => b.domain?.toLowerCase() === d);
+  }
+
   public async resolve(identifier: string): Promise<ResolvedAssets> {
+    // Check if identifier refers to an entire department domain (e.g. "domain:engineering")
+    if (identifier.startsWith('domain:')) {
+      const domainName = identifier.replace(/^domain:/, '').toLowerCase();
+      const domainBundles = await this.getBundlesByDomain(domainName);
+      if (domainBundles.length > 0) {
+        const agents = new Set<string>();
+        const skills = new Set<string>();
+        const workflows = new Set<string>();
+
+        for (const b of domainBundles) {
+          const resolved = await this.resolve(b.name);
+          resolved.agents.forEach(a => agents.add(a));
+          resolved.skills.forEach(s => skills.add(s));
+          resolved.workflows.forEach(w => workflows.add(w));
+        }
+
+        return {
+          targetBundle: `domain:${domainName}`,
+          agents: Array.from(agents),
+          skills: Array.from(skills),
+          workflows: Array.from(workflows),
+          rules: ['GEMINI.md'],
+        };
+      }
+    }
+
     const bundle = await this.getBundle(identifier);
 
     if (bundle) {
