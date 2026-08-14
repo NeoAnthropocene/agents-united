@@ -4,6 +4,10 @@
   "bundles": {
     "software-engineering": {
       "name": "software-engineering",
+      "domain": "engineering",
+      "category": "Core Software Development",
+      "aliases": ["software-engineering-essentials", "engineering-essentials", "engineering"],
+      "recommendedAddons": ["mobile-development", "frontend-engineering", "backend-distributed-systems", "qa-automation", "devops-engineering"],
       "description": "Autonomous dev lead, backend/frontend architects, TDD & git guardrails",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
@@ -54,6 +58,10 @@
     },
     "system-architecture": {
       "name": "system-architecture",
+      "domain": "architecture",
+      "category": "System & Infrastructure Architecture",
+      "aliases": ["architecture", "sys-arch"],
+      "recommendedAddons": ["sysops-sre"],
       "description": "High-level distributed systems, API schemas, and ADR planning",
       "orchestrator": "orchestrator-system-architecture.md",
       "agents": [
@@ -84,6 +92,9 @@
     },
     "product-design": {
       "name": "product-design",
+      "domain": "design",
+      "category": "UI/UX & Product Design",
+      "aliases": ["design", "ui-ux"],
       "description": "UI/UX designers, design systems architect, and prototyping",
       "orchestrator": "orchestrator-design.md",
       "agents": [
@@ -140,6 +151,9 @@
     },
     "growth-marketing": {
       "name": "growth-marketing",
+      "domain": "marketing",
+      "category": "Growth & Content Marketing",
+      "aliases": ["marketing", "growth"],
       "description": "Growth strategists, content pipeline, and conversion optimization",
       "orchestrator": "orchestrator-marketing.md",
       "agents": [
@@ -171,6 +185,9 @@
     },
     "security-operations": {
       "name": "security-operations",
+      "domain": "security",
+      "category": "Application Security & Threat Modeling",
+      "aliases": ["security", "secops"],
       "description": "AppSec engineer, threat modeling, and vulnerability audits",
       "orchestrator": "orchestrator-security.md",
       "agents": [
@@ -187,6 +204,9 @@
     },
     "deep-research": {
       "name": "deep-research",
+      "domain": "research",
+      "category": "Research & Technical Intelligence",
+      "aliases": ["research"],
       "description": "Technical research lead, literature review, and Socratic mentor",
       "orchestrator": "orchestrator-research.md",
       "agents": [
@@ -210,6 +230,9 @@
     },
     "business-strategy": {
       "name": "business-strategy",
+      "domain": "strategy",
+      "category": "Business & Product Strategy",
+      "aliases": ["business", "strategy"],
       "description": "Market analysts, monetization experts, and executive spec panels",
       "orchestrator": "orchestrator-business.md",
       "agents": [
@@ -228,6 +251,9 @@
     },
     "full": {
       "name": "full",
+      "domain": "universal",
+      "category": "Complete Autonomous Department",
+      "aliases": ["all", "complete"],
       "description": "Complete suite with all 7 team leads, 28 agents, and 56 skills",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [

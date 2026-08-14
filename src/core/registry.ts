@@ -46,7 +46,13 @@ export class RegistryResolver {
 
   public async getBundle(bundleName: string): Promise<BundleDefinition | null> {
     const manifest = await this.loadBundles();
-    return manifest.bundles[bundleName] || null;
+    if (manifest.bundles[bundleName]) {
+      return manifest.bundles[bundleName];
+    }
+    const found = Object.values(manifest.bundles).find(
+      b => b.aliases?.includes(bundleName)
+    );
+    return found || null;
   }
 
   public async listBundles(): Promise<BundleDefinition[]> {
@@ -55,17 +61,26 @@ export class RegistryResolver {
   }
 
   public async resolve(identifier: string): Promise<ResolvedAssets> {
-    const manifest = await this.loadBundles();
-    const bundle = manifest.bundles[identifier];
+    const bundle = await this.getBundle(identifier);
 
     if (bundle) {
       const agents = new Set<string>();
-      if (bundle.orchestrator) agents.add(bundle.orchestrator);
-      if (bundle.agents) bundle.agents.forEach(a => agents.add(a));
-
       const skills = new Set<string>(bundle.skills || []);
       const workflows = new Set<string>(bundle.workflows || []);
       const rules = ['GEMINI.md'];
+
+      if (bundle.parentBundle) {
+        const parent = await this.getBundle(bundle.parentBundle);
+        if (parent) {
+          if (parent.orchestrator) agents.add(parent.orchestrator);
+          if (parent.agents) parent.agents.forEach(a => agents.add(a));
+          if (parent.skills) parent.skills.forEach(s => skills.add(s));
+          if (parent.workflows) parent.workflows.forEach(w => workflows.add(w));
+        }
+      }
+
+      if (bundle.orchestrator) agents.add(bundle.orchestrator);
+      if (bundle.agents) bundle.agents.forEach(a => agents.add(a));
 
       return {
         targetBundle: bundle.name,
@@ -116,7 +131,11 @@ export class RegistryResolver {
     const q = query.toLowerCase();
 
     const matchedBundles = Object.values(manifest.bundles).filter(
-      b => b.name.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)
+      b => b.name.toLowerCase().includes(q) ||
+           b.description.toLowerCase().includes(q) ||
+           b.category?.toLowerCase().includes(q) ||
+           b.domain?.toLowerCase().includes(q) ||
+           b.aliases?.some(a => a.toLowerCase().includes(q))
     );
 
     const agentsDir = path.join(this.registryDir, 'agents');

@@ -40,4 +40,34 @@ describe('RegistryResolver', () => {
     expect(results.bundles.some(b => b.name === 'software-engineering')).toBe(true);
     expect(results.agents.some(a => a.includes('engineering'))).toBe(true);
   });
+
+  it('should resolve bundle aliases like software-engineering-essentials', async () => {
+    const bundle = await resolver.getBundle('software-engineering-essentials');
+    expect(bundle).toBeDefined();
+    expect(bundle?.name).toBe('software-engineering');
+    expect(bundle?.domain).toBe('engineering');
+    expect(bundle?.recommendedAddons).toContain('mobile-development');
+
+    const resolved = await resolver.resolve('software-engineering-essentials');
+    expect(resolved.targetBundle).toBe('software-engineering');
+    expect(resolved.agents).toContain('orchestrator-engineering.md');
+  });
+
+  it('should resolve parentBundle composition properly', async () => {
+    const manifest = await resolver.loadBundles();
+    // Simulate a child bundle extending software-engineering
+    manifest.bundles['mobile-development-test'] = {
+      name: 'mobile-development-test',
+      description: 'Mobile test extension',
+      parentBundle: 'software-engineering',
+      skills: ['mobile-first-design'],
+    };
+
+    const resolved = await resolver.resolve('mobile-development-test');
+    expect(resolved.skills).toContain('mobile-first-design');
+    expect(resolved.skills).toContain('test-driven-development');
+    expect(resolved.agents).toContain('orchestrator-engineering.md');
+
+    delete manifest.bundles['mobile-development-test'];
+  });
 });

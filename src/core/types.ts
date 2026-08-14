@@ -8,6 +8,11 @@ export type Scope = InstallScope;
 export interface BundleDefinition {
   name: string;
   description: string;
+  category?: string;
+  domain?: string;
+  parentBundle?: string;
+  recommendedAddons?: string[];
+  aliases?: string[];
   orchestrator?: string;
   agents?: string[];
   workflows?: string[];
