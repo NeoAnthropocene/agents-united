@@ -13,7 +13,7 @@ const installer = new InstallEngine(registry);
 const uninstaller = new UninstallEngine(registry);
 
 cli
-  .command('add <identifier>', 'Add a bundle, agent, skill, or workflow to project or global configuration')
+  .command('add [identifier]', 'Add a bundle, agent, skill, or workflow to project or global configuration')
   .option('-g, --global', 'Install globally into home directory (~/.agents/)')
   .option('-s, --symlink', 'Create symbolic links to central registry cache (default / recommended)')
   .option('--copy', 'Create independent standalone copies of asset files')
@@ -21,8 +21,31 @@ cli
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force overwrite user modified files')
   .option('--dry-run', 'Simulate installation without writing files')
-  .action(async (identifier: string, options: any) => {
+  .action(async (targetIdentifier?: string, options: any = {}) => {
     intro(pc.cyan('Agents United - Add Package'));
+
+    let identifier = targetIdentifier;
+
+    if (!identifier) {
+      const bundles = await registry.listBundles();
+      const bundleOptions = bundles.map(b => ({
+        value: b.name,
+        label: `${b.name} — ${b.description.slice(0, 65)}...`,
+        hint: b.name === 'software-engineering' ? 'recommended' : undefined,
+      }));
+
+      const selected = await select({
+        message: 'Select a Bundle to install:',
+        options: bundleOptions,
+      });
+
+      if (typeof selected === 'string') {
+        identifier = selected;
+      } else {
+        outro(pc.yellow('Installation cancelled.'));
+        return;
+      }
+    }
 
     let scope: InstallScope = options.global ? 'global' : 'project';
     let method: InstallMethod = options.copy ? 'copy' : 'symlink';
@@ -110,15 +133,37 @@ cli
   });
 
 cli
-  .command('remove <identifier>', 'Remove a bundle, agent, skill, or workflow')
+  .command('remove [identifier]', 'Remove a bundle, agent, skill, or workflow')
   .alias('uninstall')
   .option('-g, --global', 'Uninstall from global home directory')
   .option('-t, --target <hosts>', 'Target agent host runtimes', { default: 'agents' })
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force removal of modified files')
   .option('--dry-run', 'Simulate removal without unlinking files')
-  .action(async (identifier: string, options: any) => {
+  .action(async (targetIdentifier?: string, options: any = {}) => {
     intro(pc.cyan('Agents United - Remove Package'));
+
+    let identifier = targetIdentifier;
+    if (!identifier) {
+      const bundles = await registry.listBundles();
+      const bundleOptions = bundles.map(b => ({
+        value: b.name,
+        label: b.name,
+      }));
+
+      const selected = await select({
+        message: 'Select a Bundle to remove:',
+        options: bundleOptions,
+      });
+
+      if (typeof selected === 'string') {
+        identifier = selected;
+      } else {
+        outro(pc.yellow('Removal cancelled.'));
+        return;
+      }
+    }
+
     const s = spinner();
     s.start(`Removing "${identifier}"...`);
 
@@ -163,9 +208,19 @@ cli
   });
 
 cli
-  .command('find <query>', 'Search for agents, skills, or bundles in the registry')
+  .command('find [query]', 'Search for agents, skills, or bundles in the registry')
   .alias('search')
-  .action(async (query: string) => {
+  .action(async (query?: string) => {
+    if (!query) {
+      intro(pc.cyan('Agents United - Available Bundles'));
+      const bundles = await registry.listBundles();
+      for (const b of bundles) {
+        console.log(`  - ${pc.green(b.name)}: ${pc.dim(b.description)}`);
+      }
+      outro(pc.cyan('Use "npx agents-united add <name>" to install any bundle.'));
+      return;
+    }
+
     intro(pc.cyan(`Agents United - Search: "${query}"`));
     const results = await registry.find(query);
 
