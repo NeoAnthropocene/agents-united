@@ -33,6 +33,39 @@ export class UninstallEngine {
     return options.scope || 'project';
   }
 
+  private async safeRemove(targetDir: string, relPath: string): Promise<void> {
+    const fullPath = path.join(targetDir, relPath);
+
+    // If relPath is inside skills, check if skill directory itself is a symlink/junction
+    if (relPath.startsWith('skills' + path.sep) || relPath.startsWith('skills/')) {
+      const parts = relPath.split(/[/\\]/);
+      if (parts.length >= 2) {
+        const skillDir = path.join(targetDir, parts[0], parts[1]);
+        try {
+          const lstat = await fs.lstat(skillDir);
+          if (lstat.isSymbolicLink()) {
+            await fs.unlink(skillDir);
+            return;
+          }
+        } catch {
+          // not a symlink directory
+        }
+      }
+    }
+
+    try {
+      const lstat = await fs.lstat(fullPath);
+      if (lstat.isSymbolicLink()) {
+        await fs.unlink(fullPath);
+        return;
+      }
+    } catch {
+      // not a symlink
+    }
+
+    await fs.remove(fullPath);
+  }
+
   public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; targetDirs: string[]; dryRun: boolean }> {
     const scope = this.parseScope(options);
     const hosts = this.parseHosts(options);
@@ -68,7 +101,7 @@ export class UninstallEngine {
                     }
                   }
 
-                  await fs.remove(fullPath);
+                  await this.safeRemove(targetDir, relPath);
                   removedFiles.push(relPath);
                 }
 
@@ -107,7 +140,7 @@ export class UninstallEngine {
                   throw new Error(`File ${relPath} has user modifications. Use --force to remove.`);
                 }
               }
-              await fs.remove(fullPath);
+              await this.safeRemove(targetDir, relPath);
               removedFiles.push(relPath);
             }
             delete lockfile.files[relPath];

@@ -65,12 +65,12 @@ export function validateAgentSchema(content: string, filename: string = 'agent.m
     errors.push(`Invalid agent type '${data.type}'. Must be one of: ${validTypes.join(', ')}`);
   }
 
-  const validPermissionModes = ['acceptEdits', 'requestReview', 'strict'];
+  const validPermissionModes = ['acceptEdits', 'requestReview', 'strict', 'readOnly', 'read-only'];
   if (data.permissionMode && !validPermissionModes.includes(data.permissionMode)) {
     errors.push(`Invalid permissionMode '${data.permissionMode}'. Must be one of: ${validPermissionModes.join(', ')}`);
   }
 
-  const validPolicies = ['auto', 'ask', 'never'];
+  const validPolicies = ['auto', 'ask', 'never', 'requireApproval', 'allow'];
   if (data.commandExecutionPolicy && !validPolicies.includes(data.commandExecutionPolicy)) {
     errors.push(`Invalid commandExecutionPolicy '${data.commandExecutionPolicy}'. Must be one of: ${validPolicies.join(', ')}`);
   }

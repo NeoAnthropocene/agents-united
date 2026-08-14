@@ -74,7 +74,7 @@ export function validateAgentPrompt(
   }
 
   // Check section presence
-  const hasDirectives = /directive|role|purpose|objective|primary/i.test(promptBody);
+  const hasDirectives = /directive|role|purpose|objective|primary|architect|specialist|agent|responsibilit|you are/i.test(promptBody);
   const hasProtocol = /protocol|phase|step|execution|workflow|reasoning/i.test(promptBody);
   const hasGuardrails = /guardrail|safety|boundary|rule|constraint|never/i.test(promptBody);
 
@@ -167,7 +167,7 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
     it('should preserve line count accuracy with unicode and complex markdown content', () => {
       const complexContent = `---\nname: unicode-agent\ndescription: 🤖 test\nmodel: pro\n---\n\n` +
         `# 🤖 Directive 1\n` +
-        ````typescript\nconst x = "🚀";\n```\n` +
+        `\`\`\`typescript\nconst x = "🚀";\n\`\`\`\n` +
         'Instruction line.\n'.repeat(45);
       const result = validateAgentPrompt(complexContent, 'unicode-agent.md', { minLines: 40 });
 

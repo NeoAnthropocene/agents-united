@@ -20,10 +20,10 @@
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M1 | E2E Testing Track | E2E test suite creation (Tiers 1-4) & `TEST_READY.md` publishing | none | DONE |
-| M2 | R1 Agent Definitions Upgrade | Upgrade all 28 agent markdown files | none | IN_PROGRESS |
-| M3 | R2 Skill Playbooks Expansion | Expand all 48 SKILL.md files | none | IN_PROGRESS |
-| M4 | R3 Workflow Templates Enhancement | Enhance all 44 workflow files | none | IN_PROGRESS |
-| M5 | Acceptance Verification & Final Gate | Pass 100% E2E tests, build/typecheck/doctor, Tier 5 hardening | M1, M2, M3, M4 | PLANNED |
+| M2 | R1 Agent Definitions Upgrade | Upgrade all 28 agent markdown files | none | DONE |
+| M3 | R2 Skill Playbooks Expansion | Expand all 48 SKILL.md files | none | DONE |
+| M4 | R3 Workflow Templates Enhancement | Enhance all 44 workflow files | none | DONE |
+| M5 | Acceptance Verification & Final Gate | Pass 100% E2E tests, build/typecheck/doctor, Tier 5 hardening | M1, M2, M3, M4 | DONE |
 
 ## Interface Contracts
 ### Agent Definition Interface

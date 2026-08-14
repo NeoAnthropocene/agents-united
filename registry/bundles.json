@@ -18,17 +18,38 @@
         "workflow-review.md",
         "workflow-build.md",
         "workflow-cleanup.md",
-        "workflow-git.md"
+        "workflow-git.md",
+        "workflow-grill.md",
+        "workflow-spec.md",
+        "workflow-diagnose.md"
       ],
       "skills": [
-        "test-driven-development",
-        "systematic-debugging",
+        "architecture-design",
+        "backend-api-design",
+        "code-refactoring",
+        "database-design",
+        "dependency-management",
+        "diagnosing-bugs",
+        "docker-deployment",
+        "domain-modeling",
+        "finishing-a-development-branch",
+        "frontend-component-design",
+        "git-guardrails",
+        "graphql-schema-design",
+        "grill-me",
+        "grill-with-docs",
+        "handoff",
+        "microservices-architecture",
+        "performance-optimization",
         "receiving-code-review",
         "requesting-code-review",
+        "security-audit",
         "subagent-driven-development",
-        "finishing-a-development-branch",
-        "dependency-management",
-        "performance-optimization"
+        "systematic-debugging",
+        "technical-documentation",
+        "test-driven-development",
+        "to-spec",
+        "to-tickets"
       ]
     },
     "system-architecture": {
@@ -43,13 +64,22 @@
         "workflow-plan.md",
         "workflow-design-code.md",
         "workflow-estimate.md",
-        "workflow-spec-panel.md"
+        "workflow-spec-panel.md",
+        "workflow-grill.md",
+        "workflow-spec.md"
       ],
       "skills": [
         "architecture-design",
-        "writing-plans",
-        "executing-plans",
-        "confidence-check"
+        "backend-api-design",
+        "code-refactoring",
+        "database-design",
+        "docker-deployment",
+        "domain-modeling",
+        "grill-with-docs",
+        "microservices-architecture",
+        "technical-documentation",
+        "to-spec",
+        "to-tickets"
       ]
     },
     "product-design": {
@@ -90,14 +120,22 @@
         "workflow-prototyping-testing--test-plan.md"
       ],
       "skills": [
-        "ui-design",
-        "ux-strategy",
-        "interaction-design",
-        "design-systems",
-        "design-research",
-        "design-ops",
-        "designer-toolkit",
-        "prototyping-testing"
+        "accessibility-audit",
+        "component-library-management",
+        "design-system-governance",
+        "design-system-tokens",
+        "design-tokens-management",
+        "design-version-control",
+        "design-ops-workflow",
+        "interaction-pattern-library",
+        "micro-interaction-design",
+        "mobile-first-design",
+        "responsive-design-audit",
+        "state-driven-ui-animation",
+        "ui-component-spec",
+        "user-flow-mapping",
+        "user-journey-mapping",
+        "usability-testing-protocol"
       ]
     },
     "growth-marketing": {
@@ -119,30 +157,16 @@
         "workflow-marketing-launch.md"
       ],
       "skills": [
-        "campaign-strategy",
-        "copywriting",
-        "copy-editing",
-        "marketing-ideas",
-        "marketing-psychology",
-        "launch-strategy",
-        "pricing-strategy",
-        "page-cro",
-        "onboarding-cro",
-        "signup-flow-cro",
-        "popup-cro",
-        "paywall-upgrade-cro",
-        "form-cro",
         "ab-test-setup",
-        "analytics-tracking",
-        "paid-ads",
-        "programmatic-seo",
+        "content-calendar-strategy",
+        "conversion-funnel-optimization",
+        "copywriting-frameworks",
+        "email-marketing-automation",
+        "growth-experiment-design",
+        "product-launch-playbook",
         "seo-audit",
-        "schema-markup",
-        "email-sequence",
-        "social-content",
-        "referral-program",
-        "competitor-alternatives",
-        "free-tool-strategy"
+        "signup-flow-cro",
+        "social-media-campaign"
       ]
     },
     "security-operations": {
@@ -157,8 +181,8 @@
         "workflow-analyze.md"
       ],
       "skills": [
-        "security-review",
-        "confidence-check"
+        "security-audit",
+        "architecture-design"
       ]
     },
     "deep-research": {
@@ -173,12 +197,15 @@
       "workflows": [
         "workflow-research.md",
         "workflow-brainstorm.md",
-        "workflow-explain.md"
+        "workflow-explain.md",
+        "workflow-grill.md"
       ],
       "skills": [
-        "deep-research",
-        "brainstorming",
-        "browser-agent"
+        "technical-documentation",
+        "systematic-debugging",
+        "grill-me",
+        "domain-modeling",
+        "handoff"
       ]
     },
     "business-strategy": {
@@ -195,8 +222,8 @@
         "workflow-estimate.md"
       ],
       "skills": [
-        "writing-plans",
-        "confidence-check"
+        "architecture-design",
+        "technical-documentation"
       ]
     },
     "full": {
@@ -277,57 +304,68 @@
         "workflow-brainstorm.md",
         "workflow-explain.md",
         "workflow-business-panel.md",
-        "workflow-recommend.md"
+        "workflow-recommend.md",
+        "workflow-grill.md",
+        "workflow-spec.md",
+        "workflow-diagnose.md"
       ],
       "skills": [
-        "test-driven-development",
-        "systematic-debugging",
+        "architecture-design",
+        "backend-api-design",
+        "code-refactoring",
+        "database-design",
+        "dependency-management",
+        "docker-deployment",
+        "finishing-a-development-branch",
+        "frontend-component-design",
+        "graphql-schema-design",
+        "microservices-architecture",
+        "performance-optimization",
         "receiving-code-review",
         "requesting-code-review",
+        "security-audit",
         "subagent-driven-development",
-        "finishing-a-development-branch",
-        "dependency-management",
-        "performance-optimization",
-        "architecture-design",
-        "writing-plans",
-        "executing-plans",
-        "confidence-check",
-        "ui-design",
-        "ux-strategy",
-        "interaction-design",
-        "design-systems",
-        "design-research",
-        "design-ops",
-        "designer-toolkit",
-        "prototyping-testing",
-        "campaign-strategy",
-        "copywriting",
-        "copy-editing",
-        "marketing-ideas",
-        "marketing-psychology",
-        "launch-strategy",
-        "pricing-strategy",
-        "page-cro",
-        "onboarding-cro",
-        "signup-flow-cro",
-        "popup-cro",
-        "paywall-upgrade-cro",
-        "form-cro",
+        "systematic-debugging",
+        "technical-documentation",
+        "test-driven-development",
+        "accessibility-audit",
+        "component-library-management",
+        "design-system-governance",
+        "design-system-tokens",
+        "design-tokens-management",
+        "design-version-control",
+        "design-ops-workflow",
+        "interaction-pattern-library",
+        "micro-interaction-design",
+        "mobile-first-design",
+        "responsive-design-audit",
+        "state-driven-ui-animation",
+        "ui-component-spec",
+        "user-flow-mapping",
+        "user-journey-mapping",
+        "usability-testing-protocol",
         "ab-test-setup",
-        "analytics-tracking",
-        "paid-ads",
-        "programmatic-seo",
+        "content-calendar-strategy",
+        "conversion-funnel-optimization",
+        "copywriting-frameworks",
+        "email-marketing-automation",
+        "growth-experiment-design",
+        "product-launch-playbook",
         "seo-audit",
-        "schema-markup",
-        "email-sequence",
-        "social-content",
-        "referral-program",
-        "competitor-alternatives",
-        "free-tool-strategy",
-        "security-review",
-        "deep-research",
-        "brainstorming",
-        "browser-agent"
+        "signup-flow-cro",
+        "social-media-campaign",
+        "clickable-prototype-spec",
+        "component-playground-setup",
+        "design-handoff-spec",
+        "interactive-prototype-builder",
+        "grill-with-docs",
+        "grill-me",
+        "domain-modeling",
+        "to-spec",
+        "to-tickets",
+        "diagnosing-bugs",
+        "git-guardrails",
+        "handoff"
       ]
     }
   }
