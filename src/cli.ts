@@ -289,12 +289,6 @@ cli
 
         const domainBundles = bundles.filter(b => b.domain === selectedDomain);
 
-        if (domainBundles.length === 1 && selectedDomain !== 'engineering' && selectedDomain !== 'architecture') {
-          // If only 1 bundle exists in this domain (e.g. product-design, security-operations, full)
-          selectedBundle = domainBundles[0].name;
-          break;
-        }
-
         // Stage 4b: Sub-Team Selection inside Selected Domain
         const subTeamOptions: Array<{ value: string; label: string; hint?: string }> = [];
 
@@ -303,22 +297,31 @@ cli
           subTeamOptions.push({
             value: `__all_domain__:${selectedDomain}`,
             label: `🌟 Install Entire ${domainMeta[selectedDomain]?.label || selectedDomain} (${domainBundles.length} Bundles)`,
-            hint: 'installs all sub-teams under this domain',
+            hint: 'installs all sub-teams under this department',
           });
         }
 
-        for (const b of domainBundles) {
+        // Sort so Essentials is always at the top
+        const sortedBundles = [...domainBundles].sort((a, b) => {
+          if (!a.parentBundle && b.parentBundle) return -1;
+          if (a.parentBundle && !b.parentBundle) return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        sortedBundles.forEach((b, idx) => {
+          const isLast = idx === sortedBundles.length - 1;
+          const branch = sortedBundles.length > 1 ? (isLast ? '└── ' : '├── ') : '';
           const meta = BUNDLE_DISPLAY_NAMES[b.name];
           const isEssentials = !b.parentBundle && (b.name === 'software-engineering' || b.name === 'system-architecture');
-          const prefix = isEssentials ? '📦 Essentials: ' : '├── ';
           const title = meta ? meta.title : b.name;
+          const labelText = isEssentials ? `Essentials: ${title}` : title;
           const summary = meta ? meta.summary : b.description;
           subTeamOptions.push({
             value: b.name,
-            label: `${prefix}${title} (${b.name})`,
+            label: `${branch}📦 ${labelText} (${b.name})`,
             hint: summary,
           });
-        }
+        });
 
         subTeamOptions.push({
           value: '__back__',
@@ -327,7 +330,7 @@ cli
         });
 
         const chosenSubTeam = await select({
-          message: `Select Team Bundle in ${domainMeta[selectedDomain]?.label || selectedDomain}:`,
+          message: `Select Package / Team Bundle to install in ${domainMeta[selectedDomain]?.label || selectedDomain}:`,
           options: subTeamOptions,
         });
 
