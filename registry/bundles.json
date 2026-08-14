@@ -4,7 +4,7 @@
   "bundles": {
     "software-engineering": {
       "name": "software-engineering",
-      "description": "Full software engineering suite with autonomous coding orchestrator, backend & frontend architects, code reviewer, TDD, debugging, and git workflows.",
+      "description": "Autonomous dev lead, backend/frontend architects, TDD & git guardrails",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
         "subagent-backend-architect.md",
@@ -54,7 +54,7 @@
     },
     "system-architecture": {
       "name": "system-architecture",
-      "description": "System design and technical planning suite with architecture orchestrator, system/backend architects, specification panels, and ADR planning workflows.",
+      "description": "High-level distributed systems, API schemas, and ADR planning",
       "orchestrator": "orchestrator-system-architecture.md",
       "agents": [
         "subagent-system-architect.md",
@@ -84,7 +84,7 @@
     },
     "product-design": {
       "name": "product-design",
-      "description": "Comprehensive UI/UX design suite with design orchestrator, UI designer, UX strategist, interaction designer, design systems architect, and prototyping workflows.",
+      "description": "UI/UX designers, design systems architect, and prototyping",
       "orchestrator": "orchestrator-design.md",
       "agents": [
         "subagent-ui-designer.md",
@@ -140,7 +140,7 @@
     },
     "growth-marketing": {
       "name": "growth-marketing",
-      "description": "Growth marketing, conversion optimization, and content strategy suite with marketing orchestrator, campaign specialists, CRO skills, and launch workflows.",
+      "description": "Growth strategists, content pipeline, and conversion optimization",
       "orchestrator": "orchestrator-marketing.md",
       "agents": [
         "subagent-marketing-growth-strategist.md",
@@ -171,7 +171,7 @@
     },
     "security-operations": {
       "name": "security-operations",
-      "description": "Application security & threat modeling suite with security orchestrator, security engineer subagent, security review skills, and troubleshooting workflows.",
+      "description": "AppSec engineer, threat modeling, and vulnerability audits",
       "orchestrator": "orchestrator-security.md",
       "agents": [
         "subagent-security-engineer.md"
@@ -187,7 +187,7 @@
     },
     "deep-research": {
       "name": "deep-research",
-      "description": "Literature, codebase, and domain research suite with research orchestrator, deep research subagent, Socratic mentor, and brainstorming workflows.",
+      "description": "Technical research lead, literature review, and Socratic mentor",
       "orchestrator": "orchestrator-research.md",
       "agents": [
         "subagent-deep-research.md",
@@ -210,7 +210,7 @@
     },
     "business-strategy": {
       "name": "business-strategy",
-      "description": "Business evaluation, monetization, and specification panel suite with business orchestrator, expert panel subagent, and recommendation workflows.",
+      "description": "Market analysts, monetization experts, and executive spec panels",
       "orchestrator": "orchestrator-business.md",
       "agents": [
         "subagent-business-panel-experts.md"
@@ -228,7 +228,7 @@
     },
     "full": {
       "name": "full",
-      "description": "Complete Agents United suite containing all orchestrators, subagents, skills, rules, and workflows.",
+      "description": "Complete suite with all 7 team leads, 28 agents, and 56 skills",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
         "orchestrator-engineering.md",

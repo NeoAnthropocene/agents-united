@@ -12,15 +12,39 @@ const registry = new RegistryResolver();
 const installer = new InstallEngine(registry);
 const uninstaller = new UninstallEngine(registry);
 
-const BUNDLE_SHORT_DESCRIPTIONS: Record<string, string> = {
-  'software-engineering': 'Autonomous coding, TDD, debugging, and git workflows',
-  'system-architecture': 'Distributed systems, API schemas, and ADR planning',
-  'product-design': 'UI/UX design systems, component specs, and prototyping',
-  'growth-marketing': 'Growth strategy, conversion funnels, and copywriting',
-  'security-operations': 'App security, threat modeling, and code audit workflows',
-  'deep-research': 'Literature research, codebase indexing, and analysis',
-  'business-strategy': 'Monetization, market analysis, and spec panels',
-  'full': 'Complete suite with all 7 orchestrators, 56 skills, and rules',
+const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> = {
+  'software-engineering': {
+    title: 'Software Engineering Team',
+    summary: 'Autonomous dev lead, backend/frontend architects, TDD & git guardrails',
+  },
+  'system-architecture': {
+    title: 'System Architecture Team',
+    summary: 'High-level distributed systems, API schemas, and ADR planning',
+  },
+  'product-design': {
+    title: 'Product Design Team',
+    summary: 'UI/UX designers, design systems architect, and prototyping',
+  },
+  'growth-marketing': {
+    title: 'Growth & Marketing Team',
+    summary: 'Growth strategists, content pipeline, and conversion optimization',
+  },
+  'security-operations': {
+    title: 'Security Operations Team',
+    summary: 'AppSec engineer, threat modeling, and vulnerability audits',
+  },
+  'deep-research': {
+    title: 'Deep Research Team',
+    summary: 'Technical research lead, literature review, and Socratic mentor',
+  },
+  'business-strategy': {
+    title: 'Business Strategy Team',
+    summary: 'Market analysts, monetization experts, and executive spec panels',
+  },
+  'full': {
+    title: 'All-in-One Autonomous Department',
+    summary: 'Complete suite with all 7 team leads, 28 agents, and 56 skills',
+  },
 };
 
 cli
@@ -39,11 +63,15 @@ cli
 
     if (!identifier) {
       const bundles = await registry.listBundles();
-      const bundleOptions = bundles.map(b => ({
-        value: b.name,
-        label: `${b.name} — ${BUNDLE_SHORT_DESCRIPTIONS[b.name] || b.description}`,
-        hint: b.name === 'software-engineering' ? 'recommended' : b.name === 'full' ? 'all-in-one' : undefined,
-      }));
+      const bundleOptions = bundles.map(b => {
+        const meta = BUNDLE_DISPLAY_NAMES[b.name];
+        const label = meta ? `${meta.title} (${b.name}) — ${meta.summary}` : `${b.name} — ${b.description}`;
+        return {
+          value: b.name,
+          label,
+          hint: b.name === 'software-engineering' ? 'recommended' : b.name === 'full' ? 'all-in-one' : undefined,
+        };
+      });
 
       const selected = await select({
         message: 'Select a Bundle to install:',
@@ -157,10 +185,14 @@ cli
     let identifier = targetIdentifier;
     if (!identifier) {
       const bundles = await registry.listBundles();
-      const bundleOptions = bundles.map(b => ({
-        value: b.name,
-        label: `${b.name} — ${BUNDLE_SHORT_DESCRIPTIONS[b.name] || b.description}`,
-      }));
+      const bundleOptions = bundles.map(b => {
+        const meta = BUNDLE_DISPLAY_NAMES[b.name];
+        const label = meta ? `${meta.title} (${b.name}) — ${meta.summary}` : `${b.name} — ${b.description}`;
+        return {
+          value: b.name,
+          label,
+        };
+      });
 
       const selected = await select({
         message: 'Select a Bundle to remove:',
