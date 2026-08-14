@@ -290,12 +290,103 @@
         "architecture-design"
       ]
     },
+    "mobile-development": {
+      "name": "mobile-development",
+      "domain": "engineering",
+      "category": "Native & Cross-Platform Mobile Engineering",
+      "parentBundle": "software-engineering",
+      "aliases": ["mobile", "ios", "android", "react-native", "flutter"],
+      "description": "iOS (Swift/SwiftUI), Android (Kotlin/Compose), and Cross-Platform (React Native/Flutter)",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-ios-architect.md",
+        "subagent-android-architect.md",
+        "subagent-cross-platform-specialist.md"
+      ],
+      "workflows": [
+        "workflow-mobile-build.md",
+        "workflow-app-store-release.md"
+      ],
+      "skills": [
+        "mobile-ios-design",
+        "mobile-android-design",
+        "mobile-platform-offline-validate",
+        "maestro-mobile-testing",
+        "mobile-first-design"
+      ]
+    },
+    "frontend-engineering": {
+      "name": "frontend-engineering",
+      "domain": "engineering",
+      "category": "Modern Frontend & UI Architecture",
+      "parentBundle": "software-engineering",
+      "aliases": ["frontend", "web", "react", "nextjs"],
+      "description": "Next.js/React architecture, Server Components, Core Web Vitals & Accessibility",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-frontend-architect.md",
+        "subagent-accessibility-lead.md"
+      ],
+      "workflows": [
+        "workflow-frontend-audit.md"
+      ],
+      "skills": [
+        "react-best-practices",
+        "micro-interaction-design",
+        "accessibility-audit",
+        "state-driven-ui-animation",
+        "frontend-component-design"
+      ]
+    },
+    "backend-distributed-systems": {
+      "name": "backend-distributed-systems",
+      "domain": "engineering",
+      "category": "Distributed Backend & Event Streaming Architecture",
+      "parentBundle": "software-engineering",
+      "aliases": ["backend", "distributed", "microservices", "events"],
+      "description": "Microservices, event streams (Kafka/RabbitMQ), gRPC & database migrations",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-distributed-systems-architect.md",
+        "subagent-data-engineer.md"
+      ],
+      "workflows": [
+        "workflow-api-contract-design.md"
+      ],
+      "skills": [
+        "microservices-architecture",
+        "graphql-schema-design",
+        "database-design",
+        "backend-api-design"
+      ]
+    },
+    "qa-automation": {
+      "name": "qa-automation",
+      "domain": "engineering",
+      "category": "Quality Assurance & End-to-End Test Automation",
+      "parentBundle": "software-engineering",
+      "aliases": ["qa", "testing", "e2e", "playwright"],
+      "description": "Playwright E2E browser automation, test matrix planning & chaos engineering",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-qa-automation-lead.md",
+        "subagent-e2e-tester.md"
+      ],
+      "workflows": [
+        "workflow-e2e-testing.md"
+      ],
+      "skills": [
+        "playwright-best-practices",
+        "chaos-engineering",
+        "test-driven-development"
+      ]
+    },
     "full": {
       "name": "full",
       "domain": "universal",
       "category": "Complete Autonomous Department",
       "aliases": ["all", "complete"],
-      "description": "Complete suite with all 9 team leads, 30 agents, and 58 skills",
+      "description": "Complete suite with all 13 team leads, 38 agents, and 65 skills",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
         "orchestrator-engineering.md",
@@ -313,6 +404,14 @@
         "subagent-security-engineer.md",
         "subagent-devops-engineer.md",
         "subagent-sysops-sre-lead.md",
+        "subagent-ios-architect.md",
+        "subagent-android-architect.md",
+        "subagent-cross-platform-specialist.md",
+        "subagent-accessibility-lead.md",
+        "subagent-distributed-systems-architect.md",
+        "subagent-data-engineer.md",
+        "subagent-qa-automation-lead.md",
+        "subagent-e2e-tester.md",
         "subagent-socratic-mentor.md",
         "subagent-deep-research.md",
         "subagent-ui-designer.md",
@@ -378,7 +477,12 @@
         "workflow-spec.md",
         "workflow-diagnose.md",
         "workflow-deploy-staging.md",
-        "workflow-incident-triage.md"
+        "workflow-incident-triage.md",
+        "workflow-mobile-build.md",
+        "workflow-app-store-release.md",
+        "workflow-frontend-audit.md",
+        "workflow-api-contract-design.md",
+        "workflow-e2e-testing.md"
       ],
       "skills": [
         "architecture-design",
@@ -438,7 +542,14 @@
         "git-guardrails",
         "handoff",
         "ci-cd-pipeline-automation",
-        "telemetry-monitoring"
+        "telemetry-monitoring",
+        "mobile-ios-design",
+        "mobile-android-design",
+        "mobile-platform-offline-validate",
+        "maestro-mobile-testing",
+        "react-best-practices",
+        "playwright-best-practices",
+        "chaos-engineering"
       ]
     }
   }

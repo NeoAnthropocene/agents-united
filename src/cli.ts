@@ -28,6 +28,22 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
     title: 'Software Engineering Team',
     summary: 'Autonomous dev lead, backend/frontend architects, TDD & git guardrails',
   },
+  'mobile-development': {
+    title: 'Mobile Development Team',
+    summary: 'iOS (SwiftUI), Android (Compose) & Cross-Platform (React Native/Flutter)',
+  },
+  'frontend-engineering': {
+    title: 'Frontend Architecture Team',
+    summary: 'Next.js/React App Router, Server Components & Web Vitals',
+  },
+  'backend-distributed-systems': {
+    title: 'Backend & Distributed Systems Team',
+    summary: 'Microservices, Kafka/RabbitMQ event streams & DB migrations',
+  },
+  'qa-automation': {
+    title: 'QA & Test Automation Team',
+    summary: 'Playwright E2E automation, test matrix planning & chaos engineering',
+  },
   'devops-engineering': {
     title: 'DevOps & Delivery Pipeline Team',
     summary: 'CI/CD automation, Docker/K8s, Infrastructure as Code & release engineering',
@@ -62,7 +78,7 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
   },
   'full': {
     title: 'All-in-One Autonomous Department',
-    summary: 'Complete suite with all 9 team leads, 30 agents, and 58 skills',
+    summary: 'Complete suite with all 13 team leads, 38 agents, and 65 skills',
   },
 };
 
