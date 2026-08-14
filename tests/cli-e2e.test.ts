@@ -59,4 +59,15 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     const stdout = execSync(`node "${cliPath}" doctor`, { cwd: e2eDir, encoding: 'utf8' });
     expect(stdout).toContain('Installed Agents');
   });
+
+  it('should detect existing agent hosts in workspace correctly', async () => {
+    const { detectWorkspaceHosts } = await import('../src/cli.js');
+    await fs.ensureDir(path.join(e2eDir, '.gemini'));
+    await fs.ensureDir(path.join(e2eDir, '.claude'));
+
+    const detected = detectWorkspaceHosts(e2eDir);
+    expect(detected).toContain('gemini');
+    expect(detected).toContain('claude');
+    expect(detected).not.toContain('cursor');
+  });
 });

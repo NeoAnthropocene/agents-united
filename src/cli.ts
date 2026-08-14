@@ -1,6 +1,8 @@
 import { cac } from 'cac';
 import pc from 'picocolors';
 import { intro, outro, spinner, note, select, multiselect } from '@clack/prompts';
+import fs from 'fs-extra';
+import path from 'node:path';
 import { RegistryResolver } from './core/registry.js';
 import { InstallEngine } from './core/installer.js';
 import { UninstallEngine } from './core/uninstaller.js';
@@ -11,6 +13,15 @@ const cli = cac('agents-united');
 const registry = new RegistryResolver();
 const installer = new InstallEngine(registry);
 const uninstaller = new UninstallEngine(registry);
+
+export function detectWorkspaceHosts(cwd: string = process.cwd()): AgentHost[] {
+  const detected: AgentHost[] = [];
+  if (fs.pathExistsSync(path.join(cwd, '.gemini'))) detected.push('gemini');
+  if (fs.pathExistsSync(path.join(cwd, '.claude'))) detected.push('claude');
+  if (fs.pathExistsSync(path.join(cwd, '.cursor'))) detected.push('cursor');
+  if (fs.pathExistsSync(path.join(cwd, '.agents'))) detected.push('agents');
+  return detected;
+}
 
 const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> = {
   'software-engineering': {
@@ -57,10 +68,102 @@ cli
   .option('-f, --force', 'Force overwrite user modified files')
   .option('--dry-run', 'Simulate installation without writing files')
   .action(async (targetIdentifier?: string, options: any = {}) => {
-    intro(pc.cyan('Agents United - Add Package'));
+    intro(pc.cyan('Agents United — AI Agent Ecosystem'));
 
     let identifier = targetIdentifier;
+    let scope: InstallScope = options.global ? 'global' : 'project';
+    let method: InstallMethod = options.copy ? 'copy' : 'symlink';
+    let hosts: AgentHost[] = options.target ? (Array.isArray(options.target) ? options.target : options.target.split(',')) : ['agents'];
 
+    // Interactive Wizard when running interactively without flags
+    const isInteractive = process.stdout.isTTY && !options.yes;
+
+    if (isInteractive && !options.global && !options.copy && !options.symlink && options.target === 'agents') {
+      const detectedHosts = detectWorkspaceHosts();
+      if (detectedHosts.length > 0) {
+        note(
+          detectedHosts.map(h => `  ✔ Detected ./${h === 'gemini' ? '.gemini/' : h === 'claude' ? '.claude/' : h === 'cursor' ? '.cursor/' : '.agents/'}`).join('\n'),
+          'Workspace Environment Discovery'
+        );
+      }
+
+      // Step 1: AI Assistant Host Selection
+      const hostSelection = await multiselect({
+        message: '1. Which AI Assistant / IDE do you want to equip?',
+        options: [
+          {
+            value: 'agents',
+            label: 'Universal Multi-Agent (.agents/)',
+            hint: detectedHosts.includes('agents') ? 'detected in workspace' : 'recommended standard',
+          },
+          {
+            value: 'gemini',
+            label: 'Antigravity 2.0 / Gemini (.gemini/)',
+            hint: detectedHosts.includes('gemini') ? 'detected in workspace' : 'Google Antigravity',
+          },
+          {
+            value: 'claude',
+            label: 'Claude Code (.claude/)',
+            hint: detectedHosts.includes('claude') ? 'detected in workspace' : 'Anthropic Claude Code',
+          },
+          {
+            value: 'cursor',
+            label: 'Cursor / Codex (.cursor/)',
+            hint: detectedHosts.includes('cursor') ? 'detected in workspace' : 'Cursor IDE / Codex',
+          },
+        ],
+        initialValues: detectedHosts.length > 0 ? detectedHosts : ['agents'],
+        required: true,
+      });
+
+      if (Array.isArray(hostSelection) && hostSelection.length > 0) {
+        hosts = hostSelection as AgentHost[];
+      }
+
+      // Step 2: Scope Selection with Clear Guidance
+      const scopeSelection = await select({
+        message: '2. Select Installation Scope:',
+        options: [
+          {
+            value: 'project',
+            label: 'Project Scope (Recommended)',
+            hint: 'Workspace directory; tracked in Git & shared with team via lockfile',
+          },
+          {
+            value: 'global',
+            label: 'Global Scope (-g / --global)',
+            hint: 'User home directory (~/.agents/); available across all workspaces on machine',
+          },
+        ],
+      });
+
+      if (typeof scopeSelection === 'string') {
+        scope = scopeSelection as InstallScope;
+      }
+
+      // Step 3: Installation Method
+      const methodSelection = await select({
+        message: '3. Select Installation Method:',
+        options: [
+          {
+            value: 'symlink',
+            label: 'Symlink Mode (Recommended)',
+            hint: 'Single source of truth; package updates reflect instantly',
+          },
+          {
+            value: 'copy',
+            label: 'Copy Mode',
+            hint: 'Independent standalone files; supports offline isolated modifications',
+          },
+        ],
+      });
+
+      if (typeof methodSelection === 'string') {
+        method = methodSelection as InstallMethod;
+      }
+    }
+
+    // Step 4: Bundle Selection (if identifier was not passed as argument)
     if (!identifier) {
       const bundles = await registry.listBundles();
       const bundleOptions = bundles.map(b => {
@@ -74,7 +177,7 @@ cli
       });
 
       const selected = await select({
-        message: 'Select a Bundle to install:',
+        message: '4. Select a Bundle to install:',
         options: bundleOptions,
       });
 
@@ -83,52 +186,6 @@ cli
       } else {
         outro(pc.yellow('Installation cancelled.'));
         return;
-      }
-    }
-
-    let scope: InstallScope = options.global ? 'global' : 'project';
-    let method: InstallMethod = options.copy ? 'copy' : 'symlink';
-    let hosts: AgentHost[] = options.target ? (Array.isArray(options.target) ? options.target : options.target.split(',')) : ['agents'];
-
-    // Interactive Wizard when running interactively without flags
-    if (process.stdout.isTTY && !options.yes && !options.global && !options.copy && !options.symlink && options.target === 'agents') {
-      const scopeSelection = await select({
-        message: 'Select Installation Scope:',
-        options: [
-          { value: 'project', label: 'Project Scope (Default - ./.agents/ in workspace, team-shared)', hint: 'recommended' },
-          { value: 'global', label: 'Global Scope (-g - ~/.agents/ in home directory, system-wide)' },
-        ],
-      });
-
-      if (typeof scopeSelection === 'string') {
-        scope = scopeSelection as InstallScope;
-      }
-
-      const methodSelection = await select({
-        message: 'Select Installation Method:',
-        options: [
-          { value: 'symlink', label: 'Symlink Mode (Default - Single source of truth, updates auto-sync)', hint: 'recommended' },
-          { value: 'copy', label: 'Copy Mode (Independent physical copies, supports offline edits)' },
-        ],
-      });
-
-      if (typeof methodSelection === 'string') {
-        method = methodSelection as InstallMethod;
-      }
-
-      const hostSelection = await multiselect({
-        message: 'Select Target Agent Host Runtimes:',
-        options: [
-          { value: 'agents', label: 'Universal .agents/ (Default)', hint: 'recommended' },
-          { value: 'gemini', label: 'Antigravity 2.0 / Gemini (.gemini/)' },
-          { value: 'claude', label: 'Claude Code (.claude/)' },
-          { value: 'cursor', label: 'Cursor / Codex (.cursor/)' },
-        ],
-        required: false,
-      });
-
-      if (Array.isArray(hostSelection) && hostSelection.length > 0) {
-        hosts = hostSelection as AgentHost[];
       }
     }
 
