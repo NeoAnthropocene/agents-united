@@ -8,6 +8,8 @@ import type { ClineCapabilityReport, LockfileManifest } from './types.js';
 
 export interface HealthReport {
   valid: boolean;
+  targetDir: string;
+  isInitialized: boolean;
   issues: string[];
   warnings: string[];
   agentsCount: number;
@@ -37,20 +39,25 @@ export class DoctorEngine {
     let workflowsCount = 0;
     let manifest: LockfileManifest | undefined;
     let clineCapability: ClineCapabilityReport | undefined;
+    let isInitialized = false;
+
+    const lockfileExists = await fs.pathExists(subPaths.lockfile);
+    const agentsDirExists = await fs.pathExists(subPaths.agentsDir);
 
     // Check Lockfile
-    if (!await fs.pathExists(subPaths.lockfile)) {
-      warnings.push(`No lockfile found at ${subPaths.lockfile}. Workspace might not be initialized.`);
-    } else {
+    if (lockfileExists) {
       try {
         const parsed: LockfileManifest = await fs.readJson(subPaths.lockfile);
         manifest = parsed;
-        agentsCount = parsed.installed.agents.length;
-        skillsCount = parsed.installed.skills.length;
-        workflowsCount = parsed.installed.workflows.length;
+        agentsCount = parsed.installed?.agents?.length || 0;
+        skillsCount = parsed.installed?.skills?.length || 0;
+        workflowsCount = parsed.installed?.workflows?.length || 0;
+        isInitialized = true;
       } catch (err: any) {
         issues.push(`Corrupt lockfile at ${subPaths.lockfile}: ${err.message}`);
       }
+    } else if (agentsDirExists) {
+      warnings.push(`No lockfile found at ${subPaths.lockfile}, but agent files were detected in ${subPaths.agentsDir}. Run 'agents update' to sync.`);
     }
 
     // Validate Agents YAML Frontmatter
@@ -128,6 +135,8 @@ export class DoctorEngine {
 
     return {
       valid: issues.length === 0,
+      targetDir: root,
+      isInitialized,
       issues,
       warnings,
       agentsCount,

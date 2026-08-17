@@ -63,4 +63,28 @@ describe('DoctorEngine', () => {
     const report = await DoctorEngine.runDoctor(tempDir);
     expect(report.warnings.some(w => w.includes('user-modified projection'))).toBe(true);
   });
+
+  it('should report uninitialized workspace cleanly when empty', async () => {
+    const report = await DoctorEngine.runDoctor(tempDir);
+    expect(report.valid).toBe(true);
+    expect(report.isInitialized).toBe(false);
+    expect(report.agentsCount).toBe(0);
+    expect(report.skillsCount).toBe(0);
+    expect(report.workflowsCount).toBe(0);
+    expect(report.issues.length).toBe(0);
+    expect(report.warnings.length).toBe(0);
+    expect(report.targetDir).toBe(tempDir);
+  });
+
+  it('should report warning when agents directory exists without lockfile', async () => {
+    await fs.ensureDir(path.join(tempDir, 'agents'));
+    await fs.writeFile(
+      path.join(tempDir, 'agents', 'orchestrator-engineering.md'),
+      '---\nname: orchestrator-engineering\nmodel: inherit\ndescription: Test agent\n---\nBody'
+    );
+
+    const report = await DoctorEngine.runDoctor(tempDir);
+    expect(report.valid).toBe(true);
+    expect(report.warnings.some(w => w.includes('No lockfile found'))).toBe(true);
+  });
 });
