@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import { fileURLToPath } from 'node:url';
-import type { BundlesManifest, BundleDefinition, ResolvedAssets } from './types.js';
+import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -11,6 +11,17 @@ This directory contains self-contained implementation plans for building the **`
 | [003](./003-cli-core-engine-and-manifest-tracking.md) | CLI Command Engine & Lockfile Manifest Manager | Core Engine | **READY** | 001, 002 |
 | [004](./004-tdd-unit-and-integration-suite.md) | TDD Test Suite (Unit & E2E) | Testing (TDD) | **READY** | 001, 003 |
 | [005](./005-scope-and-installation-methods.md) | Installation Scope & Methods | CLI / Scope | **READY** | 001, 003 |
+| [006](./006-sync-agent-structure-documentation.md) | Sync Agent Structure & Documentation | Documentation | **DONE** | None |
+| [007](./007-universal-multi-agent-host-projection.md) | Universal Multi-Agent Host Projection (`.agents/` → Claude/Cursor/Cline/OpenCode/Codex) | Core / Architecture | **DONE** | 003, 005 |
+| [008](./008-cline-native-projection-and-team-activation.md) | Cline-Native Compound Projection & Smart Team Activation | Core / Runtime Integration | **DONE** | 007 |
+| [009](./009-essentials-composition-audit.md) | Essentials Bundle Composition Audit & Decomposition (`software-engineering` & `product-design`) | Tech Debt / Architecture | **DONE** | 003 |
+
+### Plan 008 execution order
+
+Plan 008 corrects and extends only the Cline branch of Plan 007. Execute its milestones in order:
+compatibility spike/ADR correction → typed compound projection → lifecycle migration → capability
+probe/launcher → CLI/TUI → addon consent → doctor/docs. Do not start launcher work before compound
+projection ownership and migration tests are green.
 
 ## Summary of Bundles Architecture
 

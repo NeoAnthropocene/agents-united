@@ -45,4 +45,32 @@ describe('UninstallEngine', () => {
     const lockfile = await fs.readJson(path.join(targetAgentsDir, 'agents-united.json'));
     expect(lockfile.installed.bundles).toContain('software-engineering');
   });
+
+  it('removes projectedTo files on bundle uninstall', async () => {
+    const ws = path.resolve(process.cwd(), 'scratch/test-uninstall-proj');
+    const agentsDir = path.join(ws, '.agents');
+    try {
+      const installer = new InstallEngine();
+      await installer.install('software-engineering', {
+        targetDir: agentsDir,
+        method: 'copy',
+        fanout: ['claude', 'cline'],
+      });
+
+      const claudeProj = path.join(ws, '.claude', 'agents', 'orchestrator-engineering.md');
+      const clineProj = path.join(ws, '.cline', 'agents', 'orchestrator-engineering.md');
+      expect(await fs.pathExists(claudeProj)).toBe(true);
+      expect(await fs.pathExists(clineProj)).toBe(true);
+
+      const uninstaller = new UninstallEngine();
+      await uninstaller.uninstall('software-engineering', { targetDir: agentsDir });
+
+      expect(await fs.pathExists(claudeProj)).toBe(false);
+      expect(await fs.pathExists(clineProj)).toBe(false);
+      expect(await fs.pathExists(path.join(ws, '.claude'))).toBe(false);
+      expect(await fs.pathExists(path.join(ws, '.cline'))).toBe(false);
+    } finally {
+      await fs.remove(ws);
+    }
+  });
 });

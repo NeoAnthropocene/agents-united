@@ -1,6 +1,11 @@
 import path from 'node:path';
 import os from 'node:os';
 import type { InstallScope, AgentHost } from './types.js';
+import {
+  isKnownHost,
+  resolveHostProjectDir,
+  resolveHostGlobalDir,
+} from './hosts.js';
 
 export class AgentHostAdapter {
   public static resolveHostDir(scope: InstallScope = 'project', host: AgentHost = 'agents', overrideDir?: string): string {
@@ -8,35 +13,20 @@ export class AgentHostAdapter {
       return path.resolve(overrideDir);
     }
 
+    // Behaviour back-compat: default to the canonical 'agents' dir for unknown ids.
+    if (!isKnownHost(host)) {
+      host = 'agents';
+    }
+
     const home = os.homedir();
     const cwd = process.cwd();
 
     if (scope === 'global') {
-      switch (host) {
-        case 'gemini':
-          return path.join(home, '.gemini', 'config');
-        case 'claude':
-          return path.join(home, '.claude');
-        case 'cursor':
-          return path.join(home, '.cursor');
-        case 'agents':
-        default:
-          return path.join(home, '.agents');
-      }
+      return resolveHostGlobalDir(host, home);
     }
 
     // Project scope
-    switch (host) {
-      case 'gemini':
-        return path.resolve(cwd, '.gemini');
-      case 'claude':
-        return path.resolve(cwd, '.claude');
-      case 'cursor':
-        return path.resolve(cwd, '.cursor');
-      case 'agents':
-      default:
-        return path.resolve(cwd, '.agents');
-    }
+    return resolveHostProjectDir(host, cwd);
   }
 
   public static getSubPaths(targetDir: string) {

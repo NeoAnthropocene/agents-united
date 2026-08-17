@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
 
 describe('CLI End-to-End Suite (dist/cli.js)', () => {
@@ -21,6 +21,9 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(stdout).toContain('Agents United — Registry Catalog Tree');
     expect(stdout).toContain('software-engineering');
     expect(stdout).toContain('mobile-development');
+    expect(stdout).toContain('ai-ml-engineering');
+    expect(stdout).toContain('growth-marketing');
+    expect(stdout).toContain('seo-content-marketing');
   });
 
   it('should search for bundles and skills with find command and support --json', () => {
@@ -66,6 +69,113 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lockfile.method).toBe('copy');
   });
 
+  it('should print the projection plan for --fanout in dry-run mode', async () => {
+    const stdout = execSync(
+      `node "${cliPath}" add software-engineering -t agents --fanout claude,cline -y --copy --dry-run`,
+      { cwd: e2eDir, encoding: 'utf8' }
+    );
+    expect(stdout).toContain('[DRY RUN]');
+    expect(stdout).toContain('Projection');
+    expect(stdout).toContain('claude');
+    expect(stdout).toContain('.claude/');
+    // dry-run must not write anything anywhere
+    expect(await fs.pathExists(path.join(e2eDir, '.claude'))).toBe(false);
+    expect(await fs.pathExists(path.join(e2eDir, '.cline'))).toBe(false);
+  });
+
+  it('should not print projection lines without --fanout', async () => {
+    const stdout = execSync(
+      `node "${cliPath}" add software-engineering -t agents -y --copy --dry-run`,
+      { cwd: e2eDir, encoding: 'utf8' }
+    );
+    expect(stdout).toContain('[DRY RUN]');
+    expect(stdout).not.toMatch(/Projection/i);
+    expect(stdout).not.toContain('.claude/');
+  });
+
+  it('should warn and drop invalid --fanout hosts while keeping exit code 0', () => {
+    const res = spawnSync(process.execPath, [
+      cliPath,
+      'add',
+      'software-engineering',
+      '-t',
+      'agents',
+      '--fanout',
+      'nope',
+      '-y',
+      '--copy',
+      '--dry-run',
+    ], { cwd: e2eDir, encoding: 'utf8' });
+    const output = (res.stdout || '') + (res.stderr || '');
+    expect(res.status).toBe(0);
+    expect(output).toMatch(/invalid|unknown|ignoring/i);
+    expect(output).toContain('valid');
+  });
+
+  it('update --fanout projects a bundle that was installed without fanout (fix scenario)', async () => {
+    // Original install: Universal (.agents) only, no fanout — the reported bug scenario
+    execSync(`node "${cliPath}" add software-engineering -t agents -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(await fs.pathExists(path.join(e2eDir, '.cline'))).toBe(false);
+
+    // Update WITH fanout repairs the install by projecting into Cline
+    const stdout = execSync(`node "${cliPath}" update software-engineering --fanout cline -y`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(stdout).toContain('Successfully processed update');
+
+    const clineProj = path.join(e2eDir, '.cline', 'agents', 'orchestrator-engineering.md');
+    expect(await fs.pathExists(clineProj)).toBe(true);
+    expect(await fs.readFile(clineProj, 'utf8')).toContain('managed-by: agents-united');
+
+    // And the fanout is now persisted in the lockfile for future updates
+    const lockfile = await fs.readJson(path.join(e2eDir, '.agents', 'agents-united.json'));
+    expect(lockfile.fanout).toContain('cline');
+  });
+
+  it('reroutes -t cline to the main library + translated copies', async () => {
+    const stdout = execSync(`node "${cliPath}" add software-engineering -t cline -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(stdout).toContain('Installed "software-engineering" successfully');
+    expect(stdout).toMatch(/main library/i);
+
+    // Canonical store installed AND translated Cline copies written
+    expect(await fs.pathExists(path.join(e2eDir, '.agents', 'agents-united.json'))).toBe(true);
+    const proj = await fs.readFile(
+      path.join(e2eDir, '.cline', 'agents', 'orchestrator-engineering.md'),
+      'utf8'
+    );
+    expect(proj).toContain('managed-by: agents-united');
+    expect(proj).not.toContain('hooks:');
+  });
+
+  it('prints a plain-language sync tip when installing without fanout', async () => {
+    const stdout = execSync(`node "${cliPath}" add software-engineering -t agents -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(stdout).toMatch(/only Antigravity reads/i);
+    expect(stdout).toContain('--fanout');
+  });
+
+  it('prints a sync tip after update when the bundle is not synced to other assistants', async () => {
+    execSync(`node "${cliPath}" add software-engineering -t agents -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    const stdout = execSync(`node "${cliPath}" update software-engineering -y`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(stdout).toContain('Successfully processed update');
+    expect(stdout).toContain('--fanout');
+  });
+
   it('should run doctor health check', () => {
     execSync(`node "${cliPath}" add software-engineering -y`, { cwd: e2eDir, encoding: 'utf8' });
     const stdout = execSync(`node "${cliPath}" doctor`, { cwd: e2eDir, encoding: 'utf8' });
@@ -76,10 +186,90 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     const { detectWorkspaceHosts } = await import('../src/cli.js');
     await fs.ensureDir(path.join(e2eDir, '.gemini'));
     await fs.ensureDir(path.join(e2eDir, '.claude'));
+    await fs.ensureDir(path.join(e2eDir, '.cline'));
+    await fs.ensureDir(path.join(e2eDir, '.opencode'));
+    await fs.writeFile(path.join(e2eDir, 'AGENTS.md'), '# ws\n');
 
     const detected = detectWorkspaceHosts(e2eDir);
     expect(detected).toContain('gemini');
     expect(detected).toContain('claude');
     expect(detected).not.toContain('cursor');
+    expect(detected).toContain('cline');
+    expect(detected).toContain('opencode');
+    expect(detected).toContain('codex');
+  });
+
+  it('should handle update command with --all and --dry-run', async () => {
+    // Install first
+    execSync(`node "${cliPath}" add software-engineering -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+
+    const updateDryRun = execSync(`node "${cliPath}" update --dry-run`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(updateDryRun).toContain('[DRY RUN]');
+
+    const updateAll = execSync(`node "${cliPath}" update --all -y`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(updateAll).toContain('Successfully processed update');
+  });
+
+  it('should report no packages found when running update in an empty workspace', () => {
+    const stdout = execSync(`node "${cliPath}" update --all -y`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(stdout).toContain('No installed packages found');
+  });
+
+  it('runs agents start in --dry-run mode reporting team name, strategy, and safe argv', async () => {
+    execSync(`node "${cliPath}" add software-engineering -t cline -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+
+    const stdout = execSync(
+      `node "${cliPath}" start software-engineering "Review & analyze codebase" --dry-run`,
+      {
+        cwd: e2eDir,
+        encoding: 'utf8',
+      }
+    );
+
+    expect(stdout).toContain('Activation Plan (dry run)');
+    expect(stdout).toContain('Bundle: software-engineering');
+    expect(stdout).toMatch(/Team Name: au-software-engineering-[a-f0-9]{8}/);
+    expect(stdout).toContain('Review & analyze codebase');
+  });
+
+  it('runs add with --dry-run and --start without launching processes', async () => {
+    const stdout = execSync(`node "${cliPath}" add software-engineering -t cline -y --dry-run --start`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(stdout).toContain('[DRY RUN]');
+    expect(stdout).toContain('Start in Cline (dry run)');
+  });
+
+  it('runs doctor --host cline reporting Cline runtime audit', async () => {
+    execSync(`node "${cliPath}" add software-engineering -t cline -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+
+    const stdout = execSync(`node "${cliPath}" doctor --host cline`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+
+    expect(stdout).toContain('Installed Agents');
+    expect(stdout).toContain('Cline Runtime & Compound Projection Audit:');
+    expect(stdout).toContain('Role Definitions:');
   });
 });
+

@@ -1,0 +1,64 @@
+schemaVersion: 1
+bundle: software-engineering
+scope: project
+coordinator:
+  name: orchestrator-engineering
+  canonicalPath: agents/orchestrator-engineering.md
+roles:
+  - name: subagent-backend-architect
+    canonicalPath: agents/subagent-backend-architect.md
+  - name: subagent-frontend-architect
+    canonicalPath: agents/subagent-frontend-architect.md
+  - name: subagent-code-reviewer
+    canonicalPath: agents/subagent-code-reviewer.md
+  - name: subagent-repo-index
+    canonicalPath: agents/subagent-repo-index.md
+skills:
+  - architecture-design
+  - backend-api-design
+  - code-refactoring
+  - database-design
+  - dependency-management
+  - diagnosing-bugs
+  - docker-deployment
+  - domain-modeling
+  - finishing-a-development-branch
+  - frontend-component-design
+  - git-guardrails
+  - graphql-schema-design
+  - grill-me
+  - grill-with-docs
+  - handoff
+  - microservices-architecture
+  - performance-optimization
+  - receiving-code-review
+  - requesting-code-review
+  - security-audit
+  - subagent-driven-development
+  - systematic-debugging
+  - technical-documentation
+  - test-driven-development
+  - to-spec
+  - to-tickets
+workflows:
+  - workflow-build.md
+  - workflow-cleanup.md
+  - workflow-diagnose.md
+  - workflow-git.md
+  - workflow-grill.md
+  - workflow-implement.md
+  - workflow-review.md
+  - workflow-spec.md
+  - workflow-test.md
+recommendedAddons:
+  - mobile-development
+  - frontend-engineering
+  - backend-distributed-systems
+  - qa-automation
+  - devops-engineering
+  - ai-ml-engineering
+activation:
+  preferred: named-team
+  fallbacks:
+    - adaptive-session
+    - single-orchestrator

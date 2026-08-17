@@ -6,21 +6,47 @@ import path from 'node:path';
 import { RegistryResolver } from './core/registry.js';
 import { InstallEngine } from './core/installer.js';
 import { UninstallEngine } from './core/uninstaller.js';
+import { InventoryScanner } from './core/inventory.js';
+import { UpdateEngine } from './core/updater.js';
 import { DoctorEngine } from './core/doctor.js';
-import type { InstallScope, InstallMethod, AgentHost, BundleDefinition } from './core/types.js';
+import { ClineLauncher } from './core/cline-launcher.js';
+import { ClineCapabilityProbe } from './core/cline-capabilities.js';
+import { PrerequisiteChecker } from './core/prerequisites.js';
+import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets } from './core/hosts.js';
+import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, InstalledPackageRecord, ProjectionInfo, ExecutionMode } from './core/types.js';
 
 const cli = cac('agents-united');
 const registry = new RegistryResolver();
 const installer = new InstallEngine(registry);
 const uninstaller = new UninstallEngine(registry);
+const scanner = new InventoryScanner(registry);
+const updater = new UpdateEngine(registry, scanner, installer);
 
 export function detectWorkspaceHosts(cwd: string = process.cwd()): AgentHost[] {
   const detected: AgentHost[] = [];
-  if (fs.pathExistsSync(path.join(cwd, '.gemini'))) detected.push('gemini');
-  if (fs.pathExistsSync(path.join(cwd, '.claude'))) detected.push('claude');
-  if (fs.pathExistsSync(path.join(cwd, '.cursor'))) detected.push('cursor');
-  if (fs.pathExistsSync(path.join(cwd, '.agents'))) detected.push('agents');
+  for (const host of Object.values(HOST_REGISTRY)) {
+    const found = host.detectionMarkers.some(marker => fs.pathExistsSync(path.join(cwd, marker)));
+    if (found) detected.push(host.id as AgentHost);
+  }
   return detected;
+}
+
+function renderProjections(projections: ProjectionInfo[]): string {
+  const byHost = new Map<string, ProjectionInfo[]>();
+  for (const p of projections) {
+    const list = byHost.get(p.host) ?? [];
+    list.push(p);
+    byHost.set(p.host, list);
+  }
+  const lines: string[] = [];
+  for (const [host, items] of byHost) {
+    lines.push(`${HOST_REGISTRY[host]?.label ?? host} — ${items.length} file${items.length > 1 ? 's' : ''}`);
+    for (const p of items) {
+      lines.push(`  → ${p.path}`);
+      for (const w of p.warnings) lines.push(pc.yellow(`  ⚠ ${w}`));
+    }
+  }
+  return lines.join('\n');
 }
 
 const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> = {
@@ -48,6 +74,10 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
     title: 'DevOps & Delivery Pipeline Team',
     summary: 'CI/CD automation, Docker/K8s, Infrastructure as Code & release engineering',
   },
+  'ai-ml-engineering': {
+    title: 'AI & Machine Learning Engineering Team',
+    summary: 'Serverless GPU deployment, LLM fine-tuning, RAG vector pipelines & AI safety guardrails',
+  },
   'sysops-sre': {
     title: 'SysOps & Site Reliability Team',
     summary: '99.999% uptime, Prometheus telemetry, incident triage & disaster recovery',
@@ -62,7 +92,23 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
   },
   'growth-marketing': {
     title: 'Growth & Marketing Team',
-    summary: 'Growth strategists, content pipeline, and conversion optimization',
+    summary: 'Growth strategists, creative visual designer, content pipeline & conversion optimization',
+  },
+  'seo-content-marketing': {
+    title: 'SEO & Content Marketing Team',
+    summary: 'Programmatic SEO, technical SEO audits, content pipeline automation & schema markup',
+  },
+  'performance-paid-acquisition': {
+    title: 'Performance & Paid Acquisition Team',
+    summary: 'Multi-channel PPC (Google/Meta/LinkedIn), ROAS/CAC attribution & ad copy testing',
+  },
+  'product-led-growth': {
+    title: 'Product-Led Growth Team',
+    summary: 'Onboarding CRO, signup funnel optimization, viral referral loops & paywalls',
+  },
+  'lifecycle-email-marketing': {
+    title: 'Lifecycle & Email Marketing Team',
+    summary: 'Automated email drip sequences, churn prevention playbooks & newsletter workflows',
   },
   'security-operations': {
     title: 'Security Operations Team',
@@ -76,9 +122,25 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
     title: 'Business Strategy Team',
     summary: 'Market analysts, monetization experts, and executive spec panels',
   },
+  'digital-agency': {
+    title: 'Digital Agency (TBA soon)',
+    summary: 'Full-service digital product agency with web dev, mobile, design, SEO, and growth marketing',
+  },
+  'universal-skills': {
+    title: 'Universal Meta-Skills',
+    summary: 'Domain-agnostic Socratic grilling, spec generation, handoff, and domain modeling',
+  },
+  'design-systems-ops': {
+    title: 'Design Systems & Ops Team',
+    summary: 'Token governance, component libraries, design handoff & version control workflows',
+  },
+  'design-research-testing': {
+    title: 'Design Research & Testing Team',
+    summary: 'Usability testing, user journey mapping, interactive prototypes & AI prototype refactoring',
+  },
   'full': {
     title: 'All-in-One Autonomous Department',
-    summary: 'Complete suite with all 13 team leads, 38 agents, and 65 skills',
+    summary: 'Complete suite with all 7 team leads, 38 agents, and all skills & workflows',
   },
 };
 
@@ -87,9 +149,14 @@ cli
   .option('-g, --global', 'Install globally into home directory (~/.agents/)')
   .option('-s, --symlink', 'Create symbolic links to central registry cache (default / recommended)')
   .option('--copy', 'Create independent standalone copies of asset files')
-  .option('-t, --target <hosts>', 'Target agent host runtimes (agents, gemini, claude, cursor)', { default: 'agents' })
+  .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
+  .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cursor, cline, opencode, codex')
+  .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
+  .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
+  .option('--allow-under-construction', 'Allow installation of bundles marked as under construction')
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force overwrite user modified files')
+  .option('--start', 'Start the installed team in Cline immediately after setup')
   .option('--dry-run', 'Simulate installation without writing files')
   .action(async (targetIdentifier?: string, options: any = {}) => {
     intro(pc.cyan('Agents United — AI Agent Ecosystem'));
@@ -97,7 +164,47 @@ cli
     let identifier = targetIdentifier;
     let scope: InstallScope = options.global ? 'global' : 'project';
     let method: InstallMethod = options.copy ? 'copy' : 'symlink';
-    let hosts: AgentHost[] = options.target ? (Array.isArray(options.target) ? options.target : options.target.split(',')) : ['agents'];
+    let hosts: AgentHost[] = options.target
+      ? (Array.isArray(options.target) ? options.target : options.target.split(',')).map(
+          (h: string) => h.trim().toLowerCase()
+        )
+      : ['agents'];
+    // Warn + drop unknown host ids instead of silently casting them to a type.
+    const unknownHosts = hosts.filter(h => !isKnownHost(h));
+    if (unknownHosts.length > 0) {
+      note(`Ignoring unknown host id(s): ${unknownHosts.join(', ')}`, 'Invalid target');
+      hosts = hosts.filter(isKnownHost);
+      if (hosts.length === 0) hosts = ['agents'];
+    }
+
+    // Turn the target list into a plan: the main library (.agents/) plus translated
+    // copies for each assistant that can't read it directly. Never installs
+    // untranslated Antigravity frontmatter into another assistant's folder.
+    const flagPlan = planInstallTargets(hosts);
+    hosts = flagPlan.hosts;
+    if (flagPlan.addedCanonicalStore) {
+      note(
+        'Added .agents/ — the main library your assistants share.\n' +
+          'Each assistant you picked gets its own translated copy. Edit only .agents/.',
+        'Main library'
+      );
+    }
+
+    // Parse --fanout like hosts above but validated against HOST_REGISTRY; only
+    // projection-capable host ids are honored. Warn + drop invalid ids, never a silent cast.
+    let fanout: string[] = flagPlan.fanout;
+    if (options.fanout) {
+      const rawFanout: string[] = Array.isArray(options.fanout) ? options.fanout : String(options.fanout).split(',');
+      const parsedFanout: string[] = rawFanout.map((h: string) => h.trim().toLowerCase());
+      const invalidFanout: string[] = parsedFanout.filter(h => !isKnownHost(h) || !HOST_REGISTRY[h].projectionCapable);
+      if (invalidFanout.length > 0) {
+        note(
+          `Ignoring invalid fanout host id(s): ${invalidFanout.join(', ')}. Valid ids: ${KNOWN_HOST_IDS.filter(h => HOST_REGISTRY[h].projectionCapable).join(', ')}`,
+          'Invalid fanout'
+        );
+      }
+      fanout = Array.from(new Set([...fanout, ...parsedFanout.filter(h => isKnownHost(h) && HOST_REGISTRY[h].projectionCapable)]));
+    }
 
     // Interactive Wizard when running interactively without flags
     const isInteractive = process.stdout.isTTY && !options.yes;
@@ -106,34 +213,51 @@ cli
       const detectedHosts = detectWorkspaceHosts();
       if (detectedHosts.length > 0) {
         note(
-          detectedHosts.map(h => `  ✔ Detected ./${h === 'gemini' ? '.gemini/' : h === 'claude' ? '.claude/' : h === 'cursor' ? '.cursor/' : '.agents/'}`).join('\n'),
+          detectedHosts.map(h => `  ✔ Detected .${HOST_REGISTRY[h].projectDir === '.' ? '' : '/'}${HOST_REGISTRY[h].projectDir === '.' ? 'AGENTS.md' : HOST_REGISTRY[h].projectDir}`).join('\n'),
           'Workspace Environment Discovery'
         );
       }
 
-      // Step 1: AI Assistant Host Selection
+      // Step 1: Which assistants will you work with? One question, plain language.
+      // The main library (.agents/) is always included when another assistant is
+      // chosen — it is the single source every translated copy is generated from.
       const hostSelection = await multiselect({
-        message: '1. Which AI Assistant / IDE do you want to equip?',
+        message: '1. Which AI assistants will you work with?',
         options: [
           {
             value: 'agents',
-            label: 'Universal Multi-Agent (.agents/)',
-            hint: detectedHosts.includes('agents') ? 'detected in workspace' : 'recommended standard',
+            label: HOST_REGISTRY.agents.label,
+            hint: detectedHosts.includes('agents') ? 'found in this project' : 'the one folder you edit — always included',
           },
           {
             value: 'gemini',
-            label: 'Antigravity 2.0 / Gemini (.gemini/)',
-            hint: detectedHosts.includes('gemini') ? 'detected in workspace' : 'Google Antigravity',
+            label: HOST_REGISTRY.gemini.label,
+            hint: detectedHosts.includes('gemini') ? 'found in this project' : 'older Antigravity folder',
           },
           {
             value: 'claude',
-            label: 'Claude Code (.claude/)',
-            hint: detectedHosts.includes('claude') ? 'detected in workspace' : 'Anthropic Claude Code',
+            label: HOST_REGISTRY.claude.label,
+            hint: detectedHosts.includes('claude') ? 'found in this project' : 'gets its own translated copies',
           },
           {
             value: 'cursor',
-            label: 'Cursor / Codex (.cursor/)',
-            hint: detectedHosts.includes('cursor') ? 'detected in workspace' : 'Cursor IDE / Codex',
+            label: HOST_REGISTRY.cursor.label,
+            hint: detectedHosts.includes('cursor') ? 'found in this project' : 'gets its own translated copies',
+          },
+          {
+            value: 'cline',
+            label: HOST_REGISTRY.cline.label,
+            hint: detectedHosts.includes('cline') ? 'found in this project' : 'gets its own translated copies',
+          },
+          {
+            value: 'opencode',
+            label: HOST_REGISTRY.opencode.label,
+            hint: detectedHosts.includes('opencode') ? 'found in this project' : 'gets its own translated copies',
+          },
+          {
+            value: 'codex',
+            label: HOST_REGISTRY.codex.label,
+            hint: detectedHosts.includes('codex') ? 'found in this project' : 'an index file many tools read',
           },
         ],
         initialValues: detectedHosts.length > 0 ? detectedHosts : ['agents'],
@@ -141,7 +265,17 @@ cli
       });
 
       if (Array.isArray(hostSelection) && hostSelection.length > 0) {
-        hosts = hostSelection as AgentHost[];
+        const wizardPlan = planInstallTargets(hostSelection as string[]);
+        hosts = wizardPlan.hosts;
+        // Merge with any explicitly-passed --fanout rather than discarding it.
+        fanout = Array.from(new Set([...fanout, ...wizardPlan.fanout]));
+        if (wizardPlan.addedCanonicalStore) {
+          note(
+            'Added .agents/ — the main library your assistants share.\n' +
+              'Each assistant you picked gets its own translated copy. Edit only .agents/.',
+            'Main library'
+          );
+        }
       }
 
       // Step 2: Scope Selection with Clear Guidance
@@ -192,6 +326,7 @@ cli
       const bundles = await registry.listBundles();
 
       const domainMeta: Record<string, { label: string; icon: string }> = {
+        universal: { label: 'Universal Autonomous Department', icon: '🌐 ' },
         engineering: { label: 'Software Engineering & Delivery', icon: '🛠️ ' },
         architecture: { label: 'System Architecture & SRE', icon: '🏛️ ' },
         design: { label: 'Product Design & UI/UX', icon: '🎨 ' },
@@ -199,7 +334,7 @@ cli
         security: { label: 'Security Operations', icon: '🔒 ' },
         research: { label: 'Deep Technical Research', icon: '🔬 ' },
         business: { label: 'Business Strategy & Economics', icon: '💼 ' },
-        universal: { label: 'Universal Autonomous Department', icon: '🌐 ' },
+        organization: { label: 'Organization Bundles (Experimental / Cross-Functional)', icon: '🏢 ' },
       };
 
       let selectedBundle: string | undefined;
@@ -207,11 +342,11 @@ cli
       while (!selectedBundle) {
         // Stage 4a: Department Domain Selection
         const domainOptions = Object.entries(domainMeta).map(([domainKey, meta]) => {
-          const count = bundles.filter(b => b.domain === domainKey).length;
+          const count = bundles.filter(b => (b.domain === domainKey || (domainKey === 'organization' && b.tier === 'organization'))).length;
           return {
             value: domainKey,
             label: `${meta.icon} ${meta.label}`,
-            hint: domainKey === 'universal' ? 'full suite (38 agents, 65 skills)' : `${count} specialized team${count > 1 ? 's' : ''}`,
+            hint: domainKey === 'universal' ? 'meta-skills baseline + full suite' : domainKey === 'organization' ? 'cross-functional teams with prerequisites' : `${count} specialized team${count > 1 ? 's' : ''}`,
           };
         });
 
@@ -222,7 +357,7 @@ cli
         });
 
         const selectedDomain = await select({
-          message: '4. Select Department Domain:',
+          message: '4. Select Department Domain / Category:',
           options: domainOptions,
         });
 
@@ -234,7 +369,7 @@ cli
         if (selectedDomain === '__search__') {
           const searchQuery = await text({
             message: 'Enter keyword to search:',
-            placeholder: 'e.g. mobile, playwright, react, backend',
+            placeholder: 'e.g. mobile, playwright, react, backend, agency',
           });
 
           if (typeof searchQuery !== 'string' || !searchQuery.trim()) {
@@ -287,13 +422,13 @@ cli
           continue;
         }
 
-        const domainBundles = bundles.filter(b => b.domain === selectedDomain);
+        const domainBundles = bundles.filter(b => b.domain === selectedDomain || (selectedDomain === 'organization' && b.tier === 'organization'));
 
         // Stage 4b: Sub-Team Selection inside Selected Domain
         const subTeamOptions: Array<{ value: string; label: string; hint?: string }> = [];
 
-        // Option to install entire department if multiple bundles exist
-        if (domainBundles.length > 1) {
+        // Option to install entire department if multiple bundles exist (exclude organization and universal)
+        if (domainBundles.length > 1 && selectedDomain !== 'organization' && selectedDomain !== 'universal') {
           subTeamOptions.push({
             value: `__all_domain__:${selectedDomain}`,
             label: `🌟 Install Entire ${domainMeta[selectedDomain]?.label || selectedDomain} (${domainBundles.length} Bundles)`,
@@ -301,8 +436,10 @@ cli
           });
         }
 
-        // Sort so Essentials is always at the top
+        // Sort so Essentials/universal-skills are always at the top
         const sortedBundles = [...domainBundles].sort((a, b) => {
+          if (a.name === 'universal-skills') return -1;
+          if (b.name === 'universal-skills') return 1;
           if (!a.parentBundle && b.parentBundle) return -1;
           if (a.parentBundle && !b.parentBundle) return 1;
           return a.name.localeCompare(b.name);
@@ -312,9 +449,17 @@ cli
           const isLast = idx === sortedBundles.length - 1;
           const branch = sortedBundles.length > 1 ? (isLast ? '└── ' : '├── ') : '';
           const meta = BUNDLE_DISPLAY_NAMES[b.name];
-          const isEssentials = !b.parentBundle && (b.name === 'software-engineering' || b.name === 'system-architecture');
+          const isEssentials = !b.parentBundle && b.name !== 'full' && b.tier !== 'organization' && b.name !== 'universal-skills';
           const title = meta ? meta.title : b.name;
-          const labelText = isEssentials ? `Essentials: ${title}` : title;
+
+          let statusBadge = '';
+          if (b.name === 'universal-skills') statusBadge = pc.green(' ⭐ [Recommended Baseline]');
+          else if (b.status === 'under-construction') statusBadge = pc.yellow(' 🚧 [Under Construction]');
+          else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
+          else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
+          else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
+
+          const labelText = isEssentials ? `Essentials: ${title}${statusBadge}` : `${title}${statusBadge}`;
           const summary = meta ? meta.summary : b.description;
           subTeamOptions.push({
             value: b.name,
@@ -366,6 +511,139 @@ cli
       identifier = selectedBundle;
     }
 
+    if (!identifier) {
+      outro(pc.yellow('No package specified.'));
+      return;
+    }
+
+    const targetBundleDef = await registry.getBundle(identifier);
+
+    // 1. Under Construction Gate Evaluation
+    if (targetBundleDef && targetBundleDef.status === 'under-construction') {
+      if (isInteractive) {
+        note(
+          `The bundle "${targetBundleDef.name}" is currently under active construction (status: under-construction).\n` +
+          `Its orchestrators, workflows, and specialized skills are being authored and are not ready for production use.\n\n` +
+          `Planned Capabilities:\n` +
+          `• Lead Orchestrator with Firecrawl & GitHub MCP tool calling\n` +
+          `• Full-stack web, design & SEO delivery workflows\n` +
+          `• Dual Execution Modes (Operational / Brainstorming)`,
+          '🚧 Under Construction Gate'
+        );
+
+        const underConstructionChoice = await select({
+          message: pc.yellow(`"${targetBundleDef.name}" is currently under construction. How would you like to proceed?`),
+          options: [
+            {
+              value: 'abort',
+              label: '🛑 Abort installation (Recommended)',
+              hint: 'return without modifying workspace files',
+            },
+            {
+              value: 'allow',
+              label: '⚠️  Install in-development draft anyway (--allow-under-construction)',
+              hint: 'proceed with in-progress placeholder assets',
+            },
+          ],
+        });
+
+        if (underConstructionChoice === 'abort' || typeof underConstructionChoice !== 'string') {
+          outro(pc.yellow(`Installation cancelled. "${targetBundleDef.name}" is under construction.`));
+          return;
+        }
+      } else {
+        // Headless / Non-interactive
+        if (!options.allowUnderConstruction && !options.force) {
+          outro(
+            pc.red(
+              `Error: Cannot install "${targetBundleDef.name}" — this bundle is currently under construction.\n` +
+              `To bypass this gate and install draft assets anyway, pass: --allow-under-construction or --force`
+            )
+          );
+          process.exit(1);
+        }
+      }
+    }
+
+    // 2. Prerequisite Gate Evaluation
+    let executionMode: ExecutionMode = (options.mode as ExecutionMode) || 'operational';
+
+    if (targetBundleDef && (targetBundleDef.prerequisites || targetBundleDef.tier === 'organization')) {
+      const checker = new PrerequisiteChecker();
+      const prereqEval = await checker.evaluate(targetBundleDef);
+
+      if (prereqEval.hasPrerequisites) {
+        const checkLines: string[] = [];
+        for (const item of prereqEval.items) {
+          const typeLabel = item.type === 'mcp' ? 'MCP' : item.type === 'env' ? 'Env' : 'Pkg';
+          const icon = item.satisfied ? pc.green('✓') : pc.red('✗');
+          const details = pc.dim(`(${item.details || ''})`);
+          checkLines.push(`  ${icon} [${typeLabel}] ${pc.bold(item.name)}: ${item.satisfied ? pc.green('Detected') : pc.red('Missing')} ${details}`);
+        }
+
+        note(
+          checkLines.join('\n'),
+          `Prerequisite Evaluation: ${targetBundleDef.name} (${targetBundleDef.tier === 'organization' ? 'Organization Bundle' : 'Prerequisites Required'})`
+        );
+
+        if (!prereqEval.allSatisfied) {
+          if (isInteractive) {
+            const gateChoice = await select({
+              message: pc.yellow(`Prerequisites not fully satisfied for "${targetBundleDef.name}". How would you like to proceed?`),
+              options: [
+                {
+                  value: 'abort',
+                  label: '🛑 Abort and configure missing prerequisites (Recommended)',
+                  hint: 'exit and configure MCP servers, packages, or environment variables',
+                },
+                {
+                  value: 'brainstorming',
+                  label: '💡 Install in Brainstorming Mode (Advisory & Spec generation only)',
+                  hint: 'runs in idea/planning mode without requiring live MCP tool connections',
+                },
+                {
+                  value: 'force',
+                  label: '⚠️  Force install in Operational Mode anyway',
+                  hint: 'proceed despite missing prerequisites (may fail during runtime calls)',
+                },
+              ],
+            });
+
+            if (gateChoice === 'abort' || typeof gateChoice !== 'string') {
+              outro(pc.yellow('Installation aborted. Please configure required MCPs and environment variables, then retry.'));
+              return;
+            }
+
+            if (gateChoice === 'brainstorming') {
+              executionMode = 'brainstorming';
+              note(pc.cyan('Switched execution mode to "brainstorming" (idea/spec fallback mode).'), 'Mode Selected');
+            } else if (gateChoice === 'force') {
+              executionMode = 'operational';
+              note(pc.yellow('Proceeding in "operational" mode with missing prerequisites.'), 'Warning');
+            }
+          } else {
+            // Headless / Non-interactive
+            if (options.mode === 'brainstorming') {
+              executionMode = 'brainstorming';
+            } else if (options.force || options.allowMissingPrereqs) {
+              executionMode = 'operational';
+            } else {
+              const missingList = prereqEval.items.filter(i => !i.satisfied).map(i => `${i.type}:${i.name}`).join(', ');
+              outro(
+                pc.red(
+                  `Error: Prerequisites not satisfied for "${targetBundleDef.name}".\n` +
+                  `Missing items: ${missingList}\n\n` +
+                  `To install in fallback mode: agents add ${identifier} --mode brainstorming\n` +
+                  `To bypass prerequisite gate: agents add ${identifier} --allow-missing-prereqs`
+                )
+              );
+              process.exit(1);
+            }
+          }
+        }
+      }
+    }
+
     const s = spinner();
     s.start(`Resolving "${identifier}"...`);
 
@@ -374,6 +652,9 @@ cli
         scope,
         method,
         hosts,
+        fanout,
+        mode: executionMode,
+        allowMissingPrereqs: options.allowMissingPrereqs,
         yes: options.yes,
         force: options.force,
         dryRun: options.dryRun,
@@ -383,6 +664,13 @@ cli
 
       if (options.dryRun) {
         outro(pc.yellow(`[DRY RUN] Would install ${result.installed.agents.length} agents, ${result.installed.skills.length} skills to ${result.targetDirs.join(', ')}`));
+        if (result.projections.length > 0) {
+          note(renderProjections(result.projections), 'Projection Plan (dry run)');
+        }
+        if (options.start && result.projections.some(p => p.host === 'cline')) {
+          const bundleName = result.installed.targetBundle || identifier;
+          note(`Would start Cline team for bundle "${bundleName}".`, 'Start in Cline (dry run)');
+        }
         return;
       }
 
@@ -393,9 +681,83 @@ cli
         `Targets: ${hosts.join(', ')}\n` +
         `Agents: ${result.installed.agents.join(', ') || 'None'}\n` +
         `Skills: ${result.installed.skills.join(', ') || 'None'}\n` +
-        `Target Directories: ${result.targetDirs.join('\n  ')}`,
+        `Target Directories: ${result.targetDirs.join('\n  ')}` +
+        (result.projections.length > 0 ? `\n\nProjections:\n${renderProjections(result.projections)}` : ''),
         'Installation Success'
       );
+
+      const hasClineProjection = result.projections.some(p => p.host === 'cline');
+
+      if (options.start && !hasClineProjection) {
+        throw new Error('--start requires Cline projection. Add -t cline or --fanout cline.');
+      }
+
+      if (hasClineProjection) {
+        const bundleName = result.installed.targetBundle || identifier;
+        if (options.start) {
+          if (options.dryRun) {
+            note(`Would start Cline team for bundle "${bundleName}".`, 'Start in Cline (dry run)');
+          } else {
+            note(`Launching Cline team for "${bundleName}"...`, 'Starting Cline');
+            const launcher = new ClineLauncher();
+            const probe = new ClineCapabilityProbe();
+            const probeReport = await probe.probe();
+            if (probeReport.installed) {
+              const plan = launcher.planActivation({
+                bundleName: bundleName!,
+                workspace: process.cwd(),
+                scope,
+                report: probeReport,
+              });
+              await launcher.launch(plan);
+            } else {
+              note(pc.yellow('Cline executable not detected. Install Cline CLI to run: agents start ' + bundleName), 'Cline Not Found');
+            }
+          }
+        } else if (isInteractive && !options.dryRun) {
+          const startChoice = await select({
+            message: `Start the ${bundleName} team in Cline now?`,
+            options: [
+              { value: 'start', label: '🚀 Start in Cline' },
+              { value: 'copy', label: `📋 Copy command (agents start ${bundleName})` },
+              { value: 'later', label: '⏳ Later' },
+            ],
+          });
+
+          if (startChoice === 'start') {
+            const launcher = new ClineLauncher();
+            const probe = new ClineCapabilityProbe();
+            const probeReport = await probe.probe();
+            if (probeReport.installed) {
+              const plan = launcher.planActivation({
+                bundleName: bundleName!,
+                workspace: process.cwd(),
+                scope,
+                report: probeReport,
+              });
+              await launcher.launch(plan);
+            } else {
+              note(pc.yellow('Cline executable not detected. Install Cline CLI to run: agents start ' + bundleName), 'Cline Not Found');
+            }
+          } else if (startChoice === 'copy') {
+            note(`Run 'agents start ${bundleName}' to launch the team in Cline anytime.`, 'Start Command');
+          }
+        } else if (!options.dryRun) {
+          note(pc.cyan(`Tip: Run 'agents start ${bundleName}' to launch the team in Cline.`), 'Start in Cline');
+        }
+      }
+
+      // Plain-language tip when the main library is the only thing installed and no
+      // translated copies were requested — sets the right expectation up front.
+      if (!options.dryRun && hosts.includes('agents') && result.projections.length === 0) {
+        note(
+          pc.yellow(
+            `Tip: only Antigravity reads the main library (.agents/) directly.\n` +
+              `To use this bundle in Cline, Claude Code & others: agents update ${identifier} --fanout cline,claude`
+          ),
+          'One library, every assistant'
+        );
+      }
 
       outro(pc.green(`✔ Installed "${identifier}" successfully!`));
     } catch (err: any) {
@@ -406,7 +768,7 @@ cli
   });
 
 cli
-  .command('remove [identifier]', 'Remove a bundle, agent, skill, or workflow')
+  .command('remove [identifier]', 'Remove an installed bundle, agent, skill, or workflow')
   .alias('uninstall')
   .option('-g, --global', 'Uninstall from global home directory')
   .option('-t, --target <hosts>', 'Target agent host runtimes', { default: 'agents' })
@@ -414,30 +776,58 @@ cli
   .option('-f, --force', 'Force removal of modified files')
   .option('--dry-run', 'Simulate removal without unlinking files')
   .action(async (targetIdentifier?: string, options: any = {}) => {
-    intro(pc.cyan('Agents United - Remove Package'));
+    intro(pc.cyan('Agents United — Remove Package'));
 
     let identifier = targetIdentifier;
+    let selectedRecord: InstalledPackageRecord | undefined;
+    const isInteractive = process.stdout.isTTY && !options.yes;
+
     if (!identifier) {
-      const bundles = await registry.listBundles();
-      const bundleOptions = bundles.map(b => {
-        const meta = BUNDLE_DISPLAY_NAMES[b.name];
-        const label = meta ? `${meta.title} (${b.name}) — ${meta.summary}` : `${b.name} — ${b.description}`;
+      const inventory = await scanner.scan({
+        global: options.global,
+        target: options.target,
+      });
+
+      if (inventory.records.length === 0) {
+        outro(pc.yellow('No installed packages found in project or global configuration.'));
+        return;
+      }
+
+      if (!isInteractive) {
+        outro(pc.red('Package identifier required in non-interactive mode. Usage: agents remove <identifier>'));
+        return;
+      }
+
+      const itemOptions = inventory.records.map(record => {
+        const meta = BUNDLE_DISPLAY_NAMES[record.name];
+        const title = meta?.title || record.title || record.name;
+        const icon = record.type === 'bundle' ? '📦' : record.type === 'skill' ? '⚡' : '🤖';
+        const typeLabel = record.type !== 'bundle' ? `[${record.type}] ` : '';
+        const badge = pc.cyan(record.displayLocation);
+        const versionTag = pc.dim(`(v${record.installedVersion})`);
+
         return {
-          value: b.name,
-          label,
+          value: record.id,
+          label: `${icon} ${typeLabel}${title} ${badge} ${versionTag}`,
+          hint: `${record.fileCount} file${record.fileCount > 1 ? 's' : ''} — ${record.description || record.name}`,
         };
       });
 
-      const selected = await select({
-        message: 'Select a Bundle to remove:',
-        options: bundleOptions,
+      const selectedId = await select({
+        message: 'Select an installed package to remove:',
+        options: itemOptions,
       });
 
-      if (typeof selected === 'string') {
-        identifier = selected;
-      } else {
+      if (typeof selectedId !== 'string') {
         outro(pc.yellow('Removal cancelled.'));
         return;
+      }
+
+      selectedRecord = inventory.records.find(r => r.id === selectedId);
+      if (selectedRecord) {
+        identifier = selectedRecord.name;
+      } else {
+        identifier = selectedId;
       }
     }
 
@@ -446,8 +836,10 @@ cli
 
     try {
       const result = await uninstaller.uninstall(identifier, {
+        scope: selectedRecord?.scope || (options.global ? 'global' : 'project'),
         global: options.global,
-        target: options.target,
+        target: selectedRecord ? [selectedRecord.host] : options.target,
+        targetDir: selectedRecord?.targetDir,
         yes: options.yes,
         force: options.force,
         dryRun: options.dryRun,
@@ -463,6 +855,200 @@ cli
       outro(pc.green(`✔ Successfully removed ${result.removed.length} files matching "${identifier}"`));
     } catch (err: any) {
       s.stop(pc.red('Uninstall failed'));
+      outro(pc.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+cli
+  .command('update [identifier]', 'Update installed packages to upstream registry versions')
+  .alias('upgrade')
+  .option('-g, --global', 'Update global packages in home directory')
+  .option('-t, --target <hosts>', 'Target agent host runtimes')
+  .option('--fanout <hosts>', 'Also project the canonical .agents/ store into these runtimes during update (claude, cursor, cline, opencode, codex)')
+  .option('-a, --all', 'Update all installed packages without prompting')
+  .option('-y, --yes', 'Skip confirmation prompts')
+  .option('-f, --force', 'Force overwrite user modified files')
+  .option('--start', 'Start the updated team in Cline immediately after update')
+  .option('--dry-run', 'Simulate update without writing files')
+  .action(async (targetIdentifier?: string, options: any = {}) => {
+    intro(pc.cyan('Agents United — Package Update Engine'));
+
+    // Parse --fanout like the add command: validated against the registry,
+    // unknown/non-projection-capable ids are dropped with a warning.
+    let updateFanout: string[] | undefined;
+    if (options.fanout !== undefined) {
+      const rawFanout: string[] = Array.isArray(options.fanout) ? options.fanout : String(options.fanout).split(',');
+      const parsedFanout: string[] = rawFanout.map((h: string) => h.trim().toLowerCase()).filter(Boolean);
+      const invalidFanout: string[] = parsedFanout.filter(h => !isKnownHost(h) || !HOST_REGISTRY[h].projectionCapable);
+      if (invalidFanout.length > 0) {
+        note(
+          pc.yellow(
+            `Ignoring invalid fanout host id(s): ${invalidFanout.join(', ')}. Valid ids: ${KNOWN_HOST_IDS.filter(h => HOST_REGISTRY[h].projectionCapable).join(', ')}`
+          ),
+          'Invalid fanout'
+        );
+      }
+      updateFanout = parsedFanout.filter(h => isKnownHost(h) && HOST_REGISTRY[h].projectionCapable);
+    }
+
+    const s = spinner();
+    s.start('Checking installed package inventory & upstream drift...');
+
+    const report = await updater.checkUpdates({
+      global: options.global,
+      target: options.target,
+    });
+
+    s.stop('Inventory discovery complete');
+
+    if (report.totalCount === 0) {
+      outro(pc.yellow('No installed packages found in project or global configuration.'));
+      return;
+    }
+
+    const isInteractive = process.stdout.isTTY && !options.yes && !options.all;
+    let targetsToUpdate: string[] | '__all__' = [];
+
+    if (targetIdentifier) {
+      targetsToUpdate = [targetIdentifier];
+    } else if (options.all || options.yes || !isInteractive) {
+      targetsToUpdate = '__all__';
+    } else {
+      // Interactive Mode
+      const statusMessage =
+        `Total Installed Packages: ${report.totalCount}\n` +
+        `Updates Available: ${report.outdatedCount > 0 ? pc.yellow(pc.bold(`${report.outdatedCount} package${report.outdatedCount > 1 ? 's' : ''} can be updated`)) : pc.green('0 (All up to date)')}`;
+
+      note(statusMessage, 'Inventory Status');
+
+      const menuOptions: Array<{ value: string; label: string; hint?: string }> = [];
+
+      if (report.outdatedCount > 0) {
+        menuOptions.push({
+          value: '__all_outdated__',
+          label: `⚡ Update All Outdated Packages (${report.outdatedCount} available)`,
+          hint: 'batch upgrade all packages with newer upstream versions',
+        });
+      }
+
+      menuOptions.push({
+        value: '__selective__',
+        label: '📦 Selectively Pick Packages to Update',
+        hint: 'choose specific bundles or items from an interactive list',
+      });
+
+      menuOptions.push({
+        value: '__resync_all__',
+        label: `🔄 Re-sync / Repair All Packages (${report.totalCount})`,
+        hint: 're-link or re-copy all packages to guarantee full integrity',
+      });
+
+      const action = await select({
+        message: 'Select update action:',
+        options: menuOptions,
+      });
+
+      if (typeof action !== 'string') {
+        outro(pc.yellow('Update cancelled.'));
+        return;
+      }
+
+      if (action === '__all_outdated__') {
+        targetsToUpdate = report.items.filter(i => i.hasUpdate).map(i => i.record.name);
+      } else if (action === '__resync_all__') {
+        targetsToUpdate = '__all__';
+      } else if (action === '__selective__') {
+        const itemOptions = report.items.map(item => {
+          const meta = BUNDLE_DISPLAY_NAMES[item.record.name];
+          const title = meta?.title || item.record.title || item.record.name;
+          const badge = pc.cyan(item.record.displayLocation);
+          const versionDiff = item.hasUpdate
+            ? pc.yellow(`(v${item.installedVersion} → v${item.upstreamVersion}) [UPDATE]`)
+            : pc.dim(`(v${item.installedVersion}) [UP TO DATE]`);
+
+          return {
+            value: item.record.name,
+            label: `📦 ${title} ${badge} ${versionDiff}`,
+            hint: item.record.description || item.record.name,
+          };
+        });
+
+        const initialValues = report.items.filter(i => i.hasUpdate).map(i => i.record.name);
+
+        const selection = await multiselect({
+          message: 'Select packages to update:',
+          options: itemOptions,
+          initialValues: initialValues.length > 0 ? initialValues : undefined,
+          required: true,
+        });
+
+        if (!Array.isArray(selection) || selection.length === 0) {
+          outro(pc.yellow('No packages selected for update.'));
+          return;
+        }
+
+        targetsToUpdate = selection as string[];
+      }
+    }
+
+    const updateSpinner = spinner();
+    updateSpinner.start('Updating packages...');
+
+    try {
+      const result = await updater.update(targetsToUpdate, {
+        global: options.global,
+        target: options.target,
+        force: options.force,
+        dryRun: options.dryRun,
+        fanout: updateFanout,
+      });
+
+      updateSpinner.stop('Update completed');
+
+      if (options.dryRun) {
+        outro(pc.yellow(`[DRY RUN] Would update ${result.updated.length} packages in ${result.targetDirs.join(', ')}`));
+        return;
+      }
+
+      if (result.updated.length > 0) {
+        // Plain-language sync tip for any updated bundle still living only in .agents/.
+        const unprojected: string[] = [];
+        for (const rec of result.updated) {
+          try {
+            const lf = await fs.readJson(path.join(rec.targetDir, 'agents-united.json'));
+            if (!lf.fanout || lf.fanout.length === 0) unprojected.push(rec.name);
+          } catch { /* ignore */ }
+        }
+        if (unprojected.length > 0) {
+          note(
+            pc.yellow(
+              `Tip: not synced to other assistants yet (only Antigravity reads .agents/).\n` +
+                `To add Cline & friends: agents update ${unprojected[0]} --fanout cline,claude`
+            ),
+            'One library, every assistant'
+          );
+        }
+        const updatedList = result.updated
+          .map(u => `  ✔ ${pc.bold(u.name)} ${pc.cyan(u.displayLocation)} ${pc.green(`(v${u.installedVersion})`)}`)
+          .join('\n');
+        note(updatedList, 'Updated Packages');
+      }
+
+      if (result.skipped.length > 0) {
+        const skippedList = result.skipped
+          .map(s => `  ⚠ ${pc.yellow(s.record.name)}: ${s.reason}`)
+          .join('\n');
+        note(skippedList, 'Skipped Packages (User Modifications)');
+      }
+
+      if (result.updated.length === 0 && result.skipped.length === 0) {
+        outro(pc.yellow('All packages are already up to date.'));
+      } else {
+        outro(pc.green(`✔ Successfully processed update for ${result.updated.length} package${result.updated.length > 1 ? 's' : ''}!`));
+      }
+    } catch (err: any) {
+      updateSpinner.stop(pc.red('Update failed'));
       outro(pc.red(`Error: ${err.message}`));
       process.exit(1);
     }
@@ -494,6 +1080,7 @@ cli
     };
 
     const domainOrder = [
+      'universal',
       'engineering',
       'architecture',
       'design',
@@ -501,11 +1088,16 @@ cli
       'security',
       'research',
       'business',
-      'universal',
     ];
 
     const grouped: Record<string, typeof bundles> = {};
+    const orgBundles: typeof bundles = [];
+
     for (const b of bundles) {
+      if (b.tier === 'organization' || b.domain === 'organization') {
+        orgBundles.push(b);
+        continue;
+      }
       const d = b.domain || 'other';
       if (!grouped[d]) grouped[d] = [];
       grouped[d].push(b);
@@ -524,12 +1116,19 @@ cli
         const subIndent = isLastBundle ? '    ' : '│   ';
 
         const meta = BUNDLE_DISPLAY_NAMES[b.name];
-        const isEssentials = !b.parentBundle && (b.name === 'software-engineering' || b.name === 'system-architecture');
+        const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills';
         const titleSuffix = isEssentials ? pc.cyan(' (Essentials)') : '';
         const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
         const aliasesTag = b.aliases && b.aliases.length > 0 ? pc.gray(` [alias: ${b.aliases.join(', ')}]`) : '';
 
-        console.log(`${bBranch} 📦 ${pc.bold(pc.green(b.name))}${titleSuffix}${parentTag}${aliasesTag}`);
+        let statusBadge = '';
+        if (b.name === 'universal-skills') statusBadge = pc.green(' ⭐ [Recommended]');
+        else if (b.status === 'under-construction') statusBadge = pc.yellow(' 🚧 [Under Construction]');
+        else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
+        else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
+        else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
+
+        console.log(`${bBranch} 📦 ${pc.bold(pc.green(b.name))}${titleSuffix}${statusBadge}${parentTag}${aliasesTag}`);
         console.log(`${subIndent}│   ${pc.white(b.description)}`);
 
         // Lead / Orchestrator
@@ -561,6 +1160,83 @@ cli
           console.log(`${subIndent}└── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
         } else {
           console.log(`${subIndent}└── 🔄 Workflows: ${pc.dim('Inherited from parent')}`);
+        }
+
+        if (!isLastBundle) {
+          console.log(`${subIndent}`);
+        }
+      });
+    }
+
+    // Dedicated Organization Bundles Section
+    if (orgBundles.length > 0) {
+      console.log(`\n${pc.bold(pc.cyan('🏢  Organization Bundles (Experimental / Cross-Functional)'))} ${pc.dim(`(${orgBundles.length} bundle${orgBundles.length > 1 ? 's' : ''})`)}`);
+      console.log(pc.dim('   Cross-domain teams modeled after real organizations. Require runtime prerequisites (MCPs/packages).'));
+
+      orgBundles.forEach((b: BundleDefinition, bIdx: number) => {
+        const isLastBundle = bIdx === orgBundles.length - 1;
+        const bBranch = isLastBundle ? '└──' : '├──';
+        const subIndent = isLastBundle ? '    ' : '│   ';
+
+        let statusBadge = '';
+        if (b.status === 'under-construction') statusBadge = pc.yellow(' 🚧 [Under Construction (TBA)]');
+        else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
+        else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
+        else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
+        else statusBadge = pc.green(' [Stable]');
+
+        const prereqBadge = pc.dim(' [Prerequisites Required]');
+
+        console.log(`${bBranch} 🏢 ${pc.bold(pc.cyan(b.name))}${statusBadge}${prereqBadge}`);
+        console.log(`${subIndent}│   ${pc.white(b.description)}`);
+
+        if (b.orchestrator) {
+          const orchName = b.orchestrator.replace(/\.md$/, '');
+          console.log(`${subIndent}├── 🤖 Lead: ${pc.blue(orchName)}`);
+        }
+
+        if (b.agents && b.agents.length > 0) {
+          const subNames = b.agents.map(a => a.replace(/^subagent-/, '').replace(/\.md$/, ''));
+          const displaySubs =
+            subNames.length > 3 ? `${subNames.slice(0, 3).join(', ')} (+${subNames.length - 3} more)` : subNames.join(', ');
+          console.log(`${subIndent}├── 🤖 Sub-agents: ${pc.blue(displaySubs)}`);
+        }
+
+        if (b.skills && b.skills.length > 0) {
+          const displaySkills =
+            b.skills.length > 3 ? `${b.skills.slice(0, 3).join(', ')} (+${b.skills.length - 3} more)` : b.skills.join(', ');
+          console.log(`${subIndent}├── ⚡ Skills: ${pc.yellow(displaySkills)}`);
+        }
+
+        if (b.workflows && b.workflows.length > 0) {
+          const wfNames = b.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
+          const displayWfs =
+            wfNames.length > 3 ? `${wfNames.slice(0, 3).join(', ')} (+${wfNames.length - 3} more)` : wfNames.join(', ');
+          console.log(`${subIndent}├── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
+        }
+
+        // Prerequisites Summary
+        if (b.prerequisites) {
+          const prereqParts: string[] = [];
+          if (b.prerequisites.requiredMcps && b.prerequisites.requiredMcps.length > 0) {
+            prereqParts.push(`MCPs: ${b.prerequisites.requiredMcps.map(m => m.name).join(', ')}`);
+          }
+          if (b.prerequisites.requiredPackages && b.prerequisites.requiredPackages.length > 0) {
+            prereqParts.push(`Packages: ${b.prerequisites.requiredPackages.join(', ')}`);
+          }
+          if (b.prerequisites.requiredEnvVars && b.prerequisites.requiredEnvVars.length > 0) {
+            prereqParts.push(`Env: ${b.prerequisites.requiredEnvVars.join(', ')}`);
+          }
+          if (prereqParts.length > 0) {
+            console.log(`${subIndent}├── 🔌 Prerequisites: ${pc.yellow(prereqParts.join(' | '))}`);
+          }
+        }
+
+        // Modes Summary
+        if (b.modes) {
+          console.log(`${subIndent}└── 💡 Execution Modes: ${pc.green('Operational')} (live MCPs) / ${pc.cyan('Brainstorming')} (advisory fallback)`);
+        } else {
+          console.log(`${subIndent}└── 💡 Execution Modes: ${pc.green('Operational')}`);
         }
 
         if (!isLastBundle) {
@@ -672,11 +1348,15 @@ cli
     s.start(`Initializing workspace with bundle "${options.bundle}"...`);
 
     try {
+      const initTargets = (Array.isArray(options.target) ? options.target : String(options.target || 'agents').split(','))
+        .map((h: string) => h.trim().toLowerCase());
+      const initPlan = planInstallTargets(initTargets);
       const result = await installer.install(options.bundle, {
         scope: 'project',
         symlink: options.symlink,
         copy: options.copy,
-        target: options.target,
+        hosts: initPlan.hosts,
+        fanout: initPlan.fanout,
       });
       s.stop(`Initialized ${result.targetDirs.join(', ')}`);
       outro(pc.green(`✔ Initialized workspace with "${options.bundle}" bundle!`));
@@ -688,14 +1368,92 @@ cli
   });
 
 cli
+  .command('start <bundle> [prompt]', 'Start an installed bundle team in its host runtime (e.g. Cline)')
+  .option('--host <host>', 'Host runtime (default: auto-detect from lockfile fanout)')
+  .option('-g, --global', 'Select global installation')
+  .option('--team <name>', 'Override generated team name')
+  .option('--allow-addons', 'Pre-authorize recommended addon installations for this session')
+  .option('--headless', 'Run non-interactively without interactive TUI')
+  .option('--dry-run', 'Print activation resolution and argv summary without launching')
+  .action(async (bundle: string, prompt?: string, options: any = {}) => {
+    intro(pc.cyan('Agents United — Runtime Activation'));
+
+    const launcher = new ClineLauncher();
+    const probe = new ClineCapabilityProbe();
+
+    try {
+      const resolution = await launcher.resolveInstallation(bundle, {
+        global: options.global,
+        cwd: process.cwd(),
+      });
+
+      const probeReport = await probe.probe();
+      if (!probeReport.installed) {
+        outro(pc.red(`Cline executable was not found on PATH or via CLINE_BIN_PATH. Please install Cline CLI or ensure it is accessible.`));
+        process.exit(1);
+      }
+
+      const plan = launcher.planActivation({
+        bundleName: bundle,
+        workspace: resolution.workspace,
+        scope: resolution.scope,
+        report: probeReport,
+        prompt,
+        teamName: options.team,
+        allowAddons: options.allowAddons,
+        headless: options.headless,
+      });
+
+      if (options.dryRun) {
+        note(
+          `Bundle: ${plan.bundleName}\n` +
+          `Scope: ${plan.scope}\n` +
+          `Workspace: ${plan.workspace}\n` +
+          `Team Name: ${plan.teamName}\n` +
+          `Strategy: ${plan.strategy}\n` +
+          `Executable: ${plan.executable}\n` +
+          `Argv: ${plan.argv.map(a => (a.includes(' ') || a.includes('\n') ? `"${a.replace(/\n/g, '\\n')}"` : a)).join(' ')}`,
+          'Activation Plan (dry run)'
+        );
+        outro(pc.yellow('Dry run complete. No processes launched.'));
+        return;
+      }
+
+      note(
+        `Team: ${pc.bold(plan.teamName)}\n` +
+        `Strategy: ${pc.cyan(plan.strategy)}\n` +
+        `Workspace: ${plan.workspace}`,
+        'Starting Cline Team'
+      );
+
+      await launcher.launch(plan);
+      outro(pc.green(`✔ Cline session finished.`));
+    } catch (err: any) {
+      outro(pc.red(`Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+cli
   .command('doctor', 'Verify health of installed agents, frontmatter schemas, and hooks')
-  .action(async () => {
+  .option('--host <host>', 'Audit specific host runtime (e.g. cline)')
+  .action(async (options: any = {}) => {
     intro(pc.cyan('Agents United - Health Doctor'));
-    const report = await DoctorEngine.runDoctor();
+    const report = await DoctorEngine.runDoctor(undefined, options.host);
 
     console.log(`  Installed Agents: ${report.agentsCount}`);
     console.log(`  Installed Skills: ${report.skillsCount}`);
     console.log(`  Installed Workflows: ${report.workflowsCount}\n`);
+
+    if (report.clineCapability) {
+      console.log(pc.bold(pc.cyan('Cline Runtime & Compound Projection Audit:')));
+      console.log(`  Installed: ${report.clineCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
+      if (report.clineCapability.version) {
+        console.log(`  Version: ${report.clineCapability.version}`);
+      }
+      console.log(`  Named Teams: ${report.clineCapability.namedTeams ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported (Adaptive fallback)')}`);
+      console.log(`  Role Definitions: ${report.agentsCount} prepared (activation via "agents start")\n`);
+    }
 
     if (report.issues.length > 0) {
       console.log(pc.red(pc.bold('Issues Found:')));

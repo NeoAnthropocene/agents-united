@@ -1,4 +1,4 @@
-# Master Operational Rules for Agents United
+# Master Operational Rules for Agents United (Gemini / Antigravity Edition)
 
 ## 1. Test-Driven Development (TDD)
 - **Mandatory Red-Green-Refactor**: Write failing unit or E2E tests before implementing functional logic or bug fixes.

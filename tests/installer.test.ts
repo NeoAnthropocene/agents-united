@@ -68,4 +68,18 @@ describe('InstallEngine', () => {
     expect(result.dryRun).toBe(true);
     expect(await fs.pathExists(targetAgentsDir)).toBe(false);
   });
+
+  it('should not record projectedTo when fanout is omitted (backward-compat guard)', async () => {
+    const installer = new InstallEngine();
+    const targetAgentsDir = path.join(testWorkspace, '.agents');
+    await installer.install('software-engineering', {
+      targetDir: targetAgentsDir,
+      method: 'copy',
+    });
+
+    const lockfile = await fs.readJson(path.join(targetAgentsDir, 'agents-united.json'));
+    for (const asset of Object.values(lockfile.files)) {
+      expect(asset.projectedTo).toBeUndefined();
+    }
+  });
 });

@@ -3,7 +3,11 @@ import crypto from 'node:crypto';
 import fs from 'fs-extra';
 import { RegistryResolver } from './registry.js';
 import { AgentHostAdapter } from './adapter.js';
+import { isKnownHost } from './hosts.js';
+import { HostProjector } from './projector.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost } from './types.js';
+
+const FRONTMATTER_REGEX = /^---\r?\n([\s\S]+?)\r?\n---/;
 
 export class UninstallEngine {
   private registry: RegistryResolver;
@@ -17,13 +21,82 @@ export class UninstallEngine {
     return 'sha256:' + crypto.createHash('sha256').update(buffer).digest('hex');
   }
 
+  /**
+   * Determines whether a projected file still carries our managed marker. Agent
+   * projections have YAML frontmatter with the marker as the first body line; the
+   * AGENTS.md bridge (agentsmd profile) is a plain markdown index with no
+   * frontmatter, so the marker is checked against the whole content.
+   */
+  private async isManagedProjection(absPath: string, isAgentsMd: boolean): Promise<boolean> {
+    const content = await fs.readFile(absPath, 'utf8');
+    if (isAgentsMd) {
+      return content.includes('managed-by: agents-united');
+    }
+    return HostProjector.hasManagedMarker(content);
+  }
+
+  /**
+   * Removes empty projection dirs left behind after deleting a projected file
+   * (e.g. `.claude/agents/` and then `.claude/`). Only ever removes empty dirs.
+   */
+  private async removeEmptyProjectionDirs(workspaceRoot: string, projPath: string): Promise<void> {
+    let dir = path.dirname(path.join(workspaceRoot, projPath));
+    while (dir !== workspaceRoot && dir.startsWith(workspaceRoot)) {
+      try {
+        const entries = await fs.readdir(dir);
+        if (entries.length > 0) break;
+        await fs.rmdir(dir);
+      } catch {
+        break;
+      }
+      dir = path.dirname(dir);
+    }
+  }
+
+  /**
+   * Removes every recorded projection for a canonical asset, guarding against
+   * clobbering user-modified files. Mirrors the hash-conflict error pattern.
+   */
+  private async removeProjections(workspaceRoot: string, projectedTo: string[], force?: boolean): Promise<void> {
+    for (const projPath of projectedTo) {
+      const absProjection = path.join(workspaceRoot, projPath);
+      if (!await fs.pathExists(absProjection)) {
+        continue;
+      }
+
+      const isAgentsMd = projPath === 'AGENTS.md';
+      const managed = await this.isManagedProjection(absProjection, isAgentsMd);
+      if (!managed && !force) {
+        throw new Error(
+          `Projection ${projPath} has user modifications. Use --force to remove.`
+        );
+      }
+
+      await this.safeRemoveProjection(absProjection);
+      await this.removeEmptyProjectionDirs(workspaceRoot, projPath);
+    }
+  }
+
+  private async safeRemoveProjection(absPath: string): Promise<void> {
+    try {
+      const lstat = await fs.lstat(absPath);
+      if (lstat.isSymbolicLink()) {
+        await fs.unlink(absPath);
+        return;
+      }
+    } catch {
+      // not a symlink
+    }
+    await fs.remove(absPath);
+  }
+
   private parseHosts(options: UninstallOptions): AgentHost[] {
     if (options.hosts && options.hosts.length > 0) return options.hosts;
     if (options.target) {
       const raw = Array.isArray(options.target) ? options.target.join(',') : options.target;
       const parsed = raw.split(',').map(s => s.trim().toLowerCase()) as AgentHost[];
-      const valid = parsed.filter(h => ['agents', 'gemini', 'claude', 'cursor'].includes(h));
-      if (valid.length > 0) return valid as AgentHost[];
+      const valid = parsed.filter(isKnownHost);
+      if (valid.length > 0) return valid;
     }
     return ['agents'];
   }
@@ -90,8 +163,45 @@ export class UninstallEngine {
         const bundleName = resolved.targetBundle;
         if (lockfile.installed.bundles.includes(bundleName)) {
           if (!options.dryRun) {
+            const workspaceRoot = path.resolve(path.dirname(targetDir));
+
+            // Clean up compound projections using owner refcounting
+            if (lockfile.projections) {
+              for (const [projRelPath, proj] of Object.entries(lockfile.projections)) {
+                if (proj.owners.includes(bundleName)) {
+                  proj.owners = proj.owners.filter(o => o !== bundleName);
+                  if (proj.owners.length === 0) {
+                    const absProjection = path.join(workspaceRoot, projRelPath);
+                    if (await fs.pathExists(absProjection)) {
+                      if (proj.managedMarker) {
+                        const managed = await this.isManagedProjection(absProjection, projRelPath === 'AGENTS.md');
+                        if (!managed && !options.force) {
+                          throw new Error(`Projection ${projRelPath} has user modifications. Use --force to remove.`);
+                        }
+                      } else {
+                        const currentHash = await this.calculateHash(absProjection).catch(() => null);
+                        if (currentHash && currentHash !== proj.hash && !options.force) {
+                          throw new Error(`Projection ${projRelPath} has user modifications. Use --force to remove.`);
+                        }
+                      }
+                      await this.safeRemoveProjection(absProjection);
+                      await this.removeEmptyProjectionDirs(workspaceRoot, projRelPath);
+                    }
+                    delete lockfile.projections[projRelPath];
+                  }
+                }
+              }
+            }
+
             for (const [relPath, assetMeta] of Object.entries(lockfile.files)) {
               if (assetMeta.bundle === bundleName) {
+                // Remove every recorded legacy projection BEFORE the canonical entry is
+                // deleted from the lockfile (plan 007 M5). Managed marker verified
+                // before deletion; user-modified projections require --force.
+                if (assetMeta.projectedTo && assetMeta.projectedTo.length > 0) {
+                  await this.removeProjections(workspaceRoot, assetMeta.projectedTo, options.force);
+                }
+
                 const fullPath = path.join(targetDir, relPath);
                 if (await fs.pathExists(fullPath) || await fs.pathExists(fullPath).catch(() => false)) {
                   if (!options.force && assetMeta.method !== 'symlink') {
@@ -110,6 +220,9 @@ export class UninstallEngine {
             }
 
             lockfile.installed.bundles = lockfile.installed.bundles.filter(b => b !== bundleName);
+            if (lockfile.bundleVersions) {
+              delete lockfile.bundleVersions[bundleName];
+            }
             if (resolved.agents) {
               lockfile.installed.agents = lockfile.installed.agents.filter(a => !resolved.agents.includes(a));
             }

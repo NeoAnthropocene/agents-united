@@ -95,4 +95,32 @@ describe('RegistryResolver', () => {
     expect(resolved.skills).toContain('playwright-best-practices');
     expect(resolved.workflows).toContain('workflow-mobile-build.md');
   });
+
+  it('should resolve domain:marketing with all marketing addons and agents', async () => {
+    const resolved = await resolver.resolve('domain:marketing');
+    expect(resolved.targetBundle).toBe('domain:marketing');
+    expect(resolved.agents).toContain('orchestrator-marketing.md');
+    expect(resolved.agents).toContain('subagent-marketing-creative-designer.md');
+    expect(resolved.agents).toContain('subagent-seo-specialist.md');
+    expect(resolved.agents).toContain('subagent-paid-acquisition-specialist.md');
+    expect(resolved.agents).toContain('subagent-plg-strategist.md');
+    expect(resolved.agents).toContain('subagent-lifecycle-email-specialist.md');
+    expect(resolved.skills).toContain('programmatic-seo');
+    expect(resolved.skills).toContain('paid-acquisition-ppc');
+    expect(resolved.skills).toContain('onboarding-cro');
+    expect(resolved.skills).toContain('email-drip-sequences');
+  });
+
+  it('should resolve ai-ml-engineering bundle assets and inherit parent software-engineering', async () => {
+    const resolved = await resolver.resolve('ai-ml-engineering');
+    expect(resolved.targetBundle).toBe('ai-ml-engineering');
+    expect(resolved.agents).toContain('subagent-ml-platform-engineer.md');
+    expect(resolved.agents).toContain('subagent-ai-model-architect.md');
+    expect(resolved.skills).toContain('modal-serverless-python');
+    expect(resolved.skills).toContain('rag-vector-pipeline');
+    expect(resolved.workflows).toContain('workflow-ml-eval.md');
+    // Inherited from parentBundle software-engineering
+    expect(resolved.agents).toContain('orchestrator-engineering.md');
+    expect(resolved.skills).toContain('test-driven-development');
+  });
 });

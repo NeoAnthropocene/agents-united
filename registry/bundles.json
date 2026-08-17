@@ -5,9 +5,21 @@
     "software-engineering": {
       "name": "software-engineering",
       "domain": "engineering",
+      "status": "stable",
       "category": "Core Software Development",
-      "aliases": ["software-engineering-essentials", "engineering-essentials", "engineering"],
-      "recommendedAddons": ["mobile-development", "frontend-engineering", "backend-distributed-systems", "qa-automation", "devops-engineering"],
+      "aliases": [
+        "software-engineering-essentials",
+        "engineering-essentials",
+        "engineering"
+      ],
+      "recommendedAddons": [
+        "mobile-development",
+        "frontend-engineering",
+        "backend-distributed-systems",
+        "qa-automation",
+        "devops-engineering",
+        "ai-ml-engineering"
+      ],
       "description": "Autonomous dev lead, backend/frontend architects, TDD & git guardrails",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
@@ -34,16 +46,8 @@
         "database-design",
         "dependency-management",
         "diagnosing-bugs",
-        "docker-deployment",
-        "domain-modeling",
         "finishing-a-development-branch",
-        "frontend-component-design",
         "git-guardrails",
-        "graphql-schema-design",
-        "grill-me",
-        "grill-with-docs",
-        "handoff",
-        "microservices-architecture",
         "performance-optimization",
         "receiving-code-review",
         "requesting-code-review",
@@ -51,17 +55,23 @@
         "subagent-driven-development",
         "systematic-debugging",
         "technical-documentation",
-        "test-driven-development",
-        "to-spec",
-        "to-tickets"
-      ]
+        "test-driven-development"
+      ],
+      "version": "1.0.0"
     },
     "system-architecture": {
       "name": "system-architecture",
       "domain": "architecture",
       "category": "System & Infrastructure Architecture",
-      "aliases": ["architecture", "sys-arch"],
-      "recommendedAddons": ["sysops-sre"],
+      "aliases": [
+        "architecture",
+        "sys-arch",
+        "system-architecture-essentials",
+        "architecture-essentials"
+      ],
+      "recommendedAddons": [
+        "sysops-sre"
+      ],
       "description": "High-level distributed systems, API schemas, and ADR planning",
       "orchestrator": "orchestrator-system-architecture.md",
       "agents": [
@@ -88,24 +98,30 @@
         "technical-documentation",
         "to-spec",
         "to-tickets"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "product-design": {
       "name": "product-design",
       "domain": "design",
+      "status": "stable",
       "category": "UI/UX & Product Design",
-      "aliases": ["design", "ui-ux"],
-      "description": "UI/UX designers, design systems architect, and prototyping",
+      "aliases": [
+        "design",
+        "ui-ux",
+        "product-design-essentials",
+        "design-essentials"
+      ],
+      "recommendedAddons": [
+        "design-systems-ops",
+        "design-research-testing"
+      ],
+      "description": "UI/UX designers, interaction designers & rapid product design workflows",
       "orchestrator": "orchestrator-design.md",
       "agents": [
         "subagent-ui-designer.md",
         "subagent-ux-strategist.md",
-        "subagent-interaction-designer.md",
-        "subagent-design-systems-architect.md",
-        "subagent-design-researcher.md",
-        "subagent-design-ops-lead.md",
-        "subagent-designer-toolkit-expert.md",
-        "subagent-prototype-tester.md"
+        "subagent-interaction-designer.md"
       ],
       "workflows": [
         "workflow-design-orchestrate.md",
@@ -113,51 +129,43 @@
         "workflow-ui-design--design-screen.md",
         "workflow-ui-design--responsive-audit.md",
         "workflow-ui-design--type-system.md",
-        "workflow-ux-strategy--benchmark.md",
-        "workflow-ux-strategy--frame-problem.md",
         "workflow-ux-strategy--strategize.md",
         "workflow-interaction-design--design-interaction.md",
         "workflow-interaction-design--error-flow.md",
-        "workflow-interaction-design--map-states.md",
-        "workflow-design-systems--audit-system.md",
-        "workflow-design-systems--create-component.md",
-        "workflow-design-systems--tokenize.md",
-        "workflow-design-ops--handoff.md",
-        "workflow-design-ops--plan-sprint.md",
-        "workflow-design-ops--setup-workflow.md",
-        "workflow-prototyping-testing--evaluate.md",
-        "workflow-prototyping-testing--experiment.md",
-        "workflow-prototyping-testing--prototype-plan.md",
-        "workflow-prototyping-testing--test-plan.md"
+        "workflow-interaction-design--map-states.md"
       ],
       "skills": [
-        "accessibility-audit",
-        "component-library-management",
-        "design-system-governance",
-        "design-system-tokens",
-        "design-tokens-management",
-        "design-version-control",
-        "design-ops-workflow",
-        "interaction-pattern-library",
-        "micro-interaction-design",
-        "mobile-first-design",
-        "responsive-design-audit",
-        "state-driven-ui-animation",
         "ui-component-spec",
         "user-flow-mapping",
-        "user-journey-mapping",
-        "usability-testing-protocol"
-      ]
+        "mobile-first-design",
+        "responsive-design-audit",
+        "interaction-pattern-library",
+        "micro-interaction-design",
+        "state-driven-ui-animation"
+      ],
+      "version": "1.0.0"
     },
     "growth-marketing": {
       "name": "growth-marketing",
       "domain": "marketing",
       "category": "Growth & Content Marketing",
-      "aliases": ["marketing", "growth"],
-      "description": "Growth strategists, content pipeline, and conversion optimization",
+      "aliases": [
+        "marketing",
+        "growth",
+        "growth-marketing-essentials",
+        "marketing-essentials"
+      ],
+      "recommendedAddons": [
+        "seo-content-marketing",
+        "performance-paid-acquisition",
+        "product-led-growth",
+        "lifecycle-email-marketing"
+      ],
+      "description": "Growth strategists, visual creative designer, copywriters, and launch playbooks",
       "orchestrator": "orchestrator-marketing.md",
       "agents": [
         "subagent-marketing-growth-strategist.md",
+        "subagent-marketing-creative-designer.md",
         "subagent-marketing-content-strategist.md",
         "subagent-marketing-conversion-specialist.md",
         "subagent-marketing-campaign-specialist.md"
@@ -172,6 +180,8 @@
       ],
       "skills": [
         "ab-test-setup",
+        "ad-creative-design",
+        "marketing-creative-design",
         "content-calendar-strategy",
         "conversion-funnel-optimization",
         "copywriting-frameworks",
@@ -181,13 +191,160 @@
         "seo-audit",
         "signup-flow-cro",
         "social-media-campaign"
-      ]
+      ],
+      "version": "1.0.0"
+    },
+    "seo-content-marketing": {
+      "name": "seo-content-marketing",
+      "domain": "marketing",
+      "category": "Search Engine Optimization & Content Pipelines",
+      "parentBundle": "growth-marketing",
+      "aliases": [
+        "seo",
+        "content-marketing",
+        "programmatic-seo",
+        "organic-growth"
+      ],
+      "description": "Programmatic SEO, technical SEO audits, schema JSON-LD, and content editorial engines",
+      "orchestrator": "orchestrator-marketing.md",
+      "agents": [
+        "subagent-seo-specialist.md",
+        "subagent-marketing-content-strategist.md"
+      ],
+      "workflows": [
+        "workflow-seo-content-pipeline.md",
+        "workflow-seo-audit-pipeline.md",
+        "workflow-marketing-content-pipeline.md",
+        "workflow-marketing-audit.md"
+      ],
+      "skills": [
+        "programmatic-seo",
+        "technical-seo-audit",
+        "schema-markup-strategy",
+        "seo-audit",
+        "content-calendar-strategy",
+        "copywriting-frameworks"
+      ],
+      "version": "1.0.0"
+    },
+    "performance-paid-acquisition": {
+      "name": "performance-paid-acquisition",
+      "domain": "marketing",
+      "category": "Performance Marketing & Paid Ad Acquisition",
+      "parentBundle": "growth-marketing",
+      "aliases": [
+        "paid-ads",
+        "ppc",
+        "google-ads",
+        "meta-ads",
+        "performance",
+        "paid-acquisition",
+        "ads",
+        "paid-media"
+      ],
+      "description": "Multi-channel PPC (Google Ads, Meta Ads, LinkedIn Ads), ROAS/CAC attribution modeling, and ad copy testing",
+      "orchestrator": "orchestrator-marketing.md",
+      "agents": [
+        "subagent-paid-acquisition-specialist.md",
+        "subagent-marketing-creative-designer.md",
+        "subagent-marketing-campaign-specialist.md",
+        "subagent-marketing-conversion-specialist.md"
+      ],
+      "workflows": [
+        "workflow-paid-acquisition-campaign.md",
+        "workflow-paid-campaign-launch.md",
+        "workflow-marketing-campaign-builder.md",
+        "workflow-marketing-growth-experiment.md"
+      ],
+      "skills": [
+        "paid-acquisition-ppc",
+        "ad-attribution-modeling",
+        "google-ads-optimization",
+        "meta-ad-creative-testing",
+        "ad-creative-design",
+        "ab-test-setup",
+        "conversion-funnel-optimization",
+        "social-media-campaign"
+      ],
+      "version": "1.0.0"
+    },
+    "product-led-growth": {
+      "name": "product-led-growth",
+      "domain": "marketing",
+      "category": "Product-Led Growth & Conversion Optimization",
+      "parentBundle": "growth-marketing",
+      "aliases": [
+        "plg",
+        "cro",
+        "onboarding",
+        "referral",
+        "product-growth",
+        "cro-funnels",
+        "funnel-optimization"
+      ],
+      "description": "Onboarding CRO, signup funnel optimization, viral referral loops, and paywall upgrades",
+      "orchestrator": "orchestrator-marketing.md",
+      "agents": [
+        "subagent-plg-strategist.md",
+        "subagent-marketing-growth-strategist.md",
+        "subagent-marketing-conversion-specialist.md"
+      ],
+      "workflows": [
+        "workflow-onboarding-funnel-cro.md",
+        "workflow-marketing-growth-experiment.md"
+      ],
+      "skills": [
+        "onboarding-cro",
+        "viral-referral-loops",
+        "signup-flow-cro",
+        "conversion-funnel-optimization",
+        "growth-experiment-design"
+      ],
+      "version": "1.0.0"
+    },
+    "lifecycle-email-marketing": {
+      "name": "lifecycle-email-marketing",
+      "domain": "marketing",
+      "category": "Lifecycle Marketing & Retention Engineering",
+      "parentBundle": "growth-marketing",
+      "aliases": [
+        "lifecycle",
+        "email",
+        "retention",
+        "drip",
+        "email-marketing",
+        "drip-campaigns",
+        "retention-marketing"
+      ],
+      "description": "Automated email drip sequences, churn prevention playbooks, and newsletter workflows",
+      "orchestrator": "orchestrator-marketing.md",
+      "agents": [
+        "subagent-lifecycle-email-specialist.md",
+        "subagent-marketing-campaign-specialist.md"
+      ],
+      "workflows": [
+        "workflow-email-drip-sequence.md",
+        "workflow-marketing-launch.md",
+        "workflow-marketing-campaign-builder.md"
+      ],
+      "skills": [
+        "email-drip-sequences",
+        "churn-prevention-playbook",
+        "email-marketing-automation",
+        "copywriting-frameworks"
+      ],
+      "version": "1.0.0"
     },
     "security-operations": {
       "name": "security-operations",
       "domain": "security",
       "category": "Application Security & Threat Modeling",
-      "aliases": ["security", "secops"],
+      "aliases": [
+        "security",
+        "secops",
+        "security-operations-essentials",
+        "security-essentials"
+      ],
       "description": "AppSec engineer, threat modeling, and vulnerability audits",
       "orchestrator": "orchestrator-security.md",
       "agents": [
@@ -200,13 +357,18 @@
       "skills": [
         "security-audit",
         "architecture-design"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "deep-research": {
       "name": "deep-research",
       "domain": "research",
       "category": "Research & Technical Intelligence",
-      "aliases": ["research"],
+      "aliases": [
+        "research",
+        "deep-research-essentials",
+        "research-essentials"
+      ],
       "description": "Technical research lead, literature review, and Socratic mentor",
       "orchestrator": "orchestrator-research.md",
       "agents": [
@@ -226,13 +388,19 @@
         "grill-me",
         "domain-modeling",
         "handoff"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "business-strategy": {
       "name": "business-strategy",
       "domain": "business",
       "category": "Business & Product Strategy",
-      "aliases": ["business", "strategy"],
+      "aliases": [
+        "business",
+        "strategy",
+        "business-strategy-essentials",
+        "business-essentials"
+      ],
       "description": "Market analysts, monetization experts, and executive spec panels",
       "orchestrator": "orchestrator-business.md",
       "agents": [
@@ -247,14 +415,18 @@
       "skills": [
         "architecture-design",
         "technical-documentation"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "devops-engineering": {
       "name": "devops-engineering",
       "domain": "engineering",
       "category": "CI/CD & Delivery Pipeline Engineering",
       "parentBundle": "software-engineering",
-      "aliases": ["devops", "ci-cd"],
+      "aliases": [
+        "devops",
+        "ci-cd"
+      ],
       "description": "CI/CD automation, Docker/K8s, Infrastructure as Code & release engineering",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
@@ -266,17 +438,22 @@
         "workflow-git.md"
       ],
       "skills": [
+        "azure-infrastructure-bicep",
         "ci-cd-pipeline-automation",
         "docker-deployment",
         "git-guardrails"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "sysops-sre": {
       "name": "sysops-sre",
       "domain": "architecture",
       "category": "System Operations & Site Reliability Engineering",
       "parentBundle": "system-architecture",
-      "aliases": ["sysops", "sre"],
+      "aliases": [
+        "sysops",
+        "sre"
+      ],
       "description": "99.999% uptime, Prometheus telemetry, incident triage & disaster recovery",
       "orchestrator": "orchestrator-system-architecture.md",
       "agents": [
@@ -288,14 +465,21 @@
       "skills": [
         "telemetry-monitoring",
         "architecture-design"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "mobile-development": {
       "name": "mobile-development",
       "domain": "engineering",
       "category": "Native & Cross-Platform Mobile Engineering",
       "parentBundle": "software-engineering",
-      "aliases": ["mobile", "ios", "android", "react-native", "flutter"],
+      "aliases": [
+        "mobile",
+        "ios",
+        "android",
+        "react-native",
+        "flutter"
+      ],
       "description": "iOS (Swift/SwiftUI), Android (Kotlin/Compose), and Cross-Platform (React Native/Flutter)",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
@@ -313,14 +497,20 @@
         "mobile-platform-offline-validate",
         "maestro-mobile-testing",
         "mobile-first-design"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "frontend-engineering": {
       "name": "frontend-engineering",
       "domain": "engineering",
       "category": "Modern Frontend & UI Architecture",
       "parentBundle": "software-engineering",
-      "aliases": ["frontend", "web", "react", "nextjs"],
+      "aliases": [
+        "frontend",
+        "web",
+        "react",
+        "nextjs"
+      ],
       "description": "Next.js/React architecture, Server Components, Core Web Vitals & Accessibility",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
@@ -332,18 +522,26 @@
       ],
       "skills": [
         "react-best-practices",
+        "vercel-deploy-best-practices",
+        "ai-prototype-refactoring",
         "micro-interaction-design",
         "accessibility-audit",
         "state-driven-ui-animation",
         "frontend-component-design"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "backend-distributed-systems": {
       "name": "backend-distributed-systems",
       "domain": "engineering",
       "category": "Distributed Backend & Event Streaming Architecture",
       "parentBundle": "software-engineering",
-      "aliases": ["backend", "distributed", "microservices", "events"],
+      "aliases": [
+        "backend",
+        "distributed",
+        "microservices",
+        "events"
+      ],
       "description": "Microservices, event streams (Kafka/RabbitMQ), gRPC & database migrations",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
@@ -354,18 +552,26 @@
         "workflow-api-contract-design.md"
       ],
       "skills": [
+        "supabase-backend-architecture",
+        "turso-distributed-sqlite",
         "microservices-architecture",
         "graphql-schema-design",
         "database-design",
         "backend-api-design"
-      ]
+      ],
+      "version": "1.0.0"
     },
     "qa-automation": {
       "name": "qa-automation",
       "domain": "engineering",
       "category": "Quality Assurance & End-to-End Test Automation",
       "parentBundle": "software-engineering",
-      "aliases": ["qa", "testing", "e2e", "playwright"],
+      "aliases": [
+        "qa",
+        "testing",
+        "e2e",
+        "playwright"
+      ],
       "description": "Playwright E2E browser automation, test matrix planning & chaos engineering",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
@@ -379,14 +585,55 @@
         "playwright-best-practices",
         "chaos-engineering",
         "test-driven-development"
-      ]
+      ],
+      "version": "1.0.0"
+    },
+    "ai-ml-engineering": {
+      "name": "ai-ml-engineering",
+      "domain": "engineering",
+      "category": "AI / Machine Learning & Vector Data Engineering",
+      "parentBundle": "software-engineering",
+      "aliases": [
+        "ai",
+        "ml",
+        "mlops",
+        "ai-engineering",
+        "rag",
+        "ai-ml",
+        "llm"
+      ],
+      "description": "Serverless GPU deployment, LLM fine-tuning, RAG vector pipelines, and scoped AI safety guardrails",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-ml-platform-engineer.md",
+        "subagent-ai-model-architect.md"
+      ],
+      "workflows": [
+        "workflow-ml-eval.md",
+        "workflow-rag-pipeline-deploy.md",
+        "workflow-serverless-gpu-deploy.md"
+      ],
+      "skills": [
+        "modal-serverless-python",
+        "replicate-model-inference",
+        "runpod-gpu-orchestration",
+        "rag-vector-pipeline",
+        "local-llm-inference",
+        "vector-database-design",
+        "hf-model-evaluation"
+      ],
+      "version": "1.0.0"
     },
     "full": {
       "name": "full",
       "domain": "universal",
       "category": "Complete Autonomous Department",
-      "aliases": ["all", "complete"],
-      "description": "Complete suite with all 13 team leads, 38 agents, and 65 skills",
+      "aliases": [
+        "all",
+        "complete",
+        "full-suite"
+      ],
+      "description": "Complete suite with all 7 lead orchestrators, 38 subagents, and all skills and workflows",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
         "orchestrator-engineering.md",
@@ -423,134 +670,325 @@
         "subagent-designer-toolkit-expert.md",
         "subagent-prototype-tester.md",
         "subagent-marketing-growth-strategist.md",
+        "subagent-marketing-creative-designer.md",
         "subagent-marketing-content-strategist.md",
         "subagent-marketing-conversion-specialist.md",
         "subagent-marketing-campaign-specialist.md",
+        "subagent-seo-specialist.md",
+        "subagent-paid-acquisition-specialist.md",
+        "subagent-plg-strategist.md",
+        "subagent-lifecycle-email-specialist.md",
+        "subagent-ml-platform-engineer.md",
+        "subagent-ai-model-architect.md",
         "subagent-business-panel-experts.md"
       ],
       "workflows": [
-        "workflow-implement.md",
-        "workflow-test.md",
-        "workflow-review.md",
+        "workflow-analyze.md",
+        "workflow-api-contract-design.md",
+        "workflow-app-store-release.md",
+        "workflow-brainstorm.md",
         "workflow-build.md",
+        "workflow-business-panel.md",
         "workflow-cleanup.md",
-        "workflow-git.md",
-        "workflow-plan.md",
+        "workflow-deploy-staging.md",
         "workflow-design-code.md",
-        "workflow-estimate.md",
-        "workflow-spec-panel.md",
+        "workflow-design-ops--handoff.md",
+        "workflow-design-ops--plan-sprint.md",
+        "workflow-design-ops--setup-workflow.md",
         "workflow-design-orchestrate.md",
+        "workflow-design-systems--audit-system.md",
+        "workflow-design-systems--create-component.md",
+        "workflow-design-systems--tokenize.md",
+        "workflow-diagnose.md",
+        "workflow-e2e-testing.md",
+        "workflow-email-drip-sequence.md",
+        "workflow-estimate.md",
+        "workflow-explain.md",
+        "workflow-frontend-audit.md",
+        "workflow-git.md",
+        "workflow-grill.md",
+        "workflow-implement.md",
+        "workflow-incident-triage.md",
+        "workflow-interaction-design--design-interaction.md",
+        "workflow-interaction-design--error-flow.md",
+        "workflow-interaction-design--map-states.md",
+        "workflow-marketing-audit.md",
+        "workflow-marketing-campaign-builder.md",
+        "workflow-marketing-content-pipeline.md",
+        "workflow-marketing-growth-experiment.md",
+        "workflow-marketing-launch.md",
+        "workflow-marketing-panel.md",
+        "workflow-ml-eval.md",
+        "workflow-mobile-build.md",
+        "workflow-onboarding-funnel-cro.md",
+        "workflow-paid-acquisition-campaign.md",
+        "workflow-paid-campaign-launch.md",
+        "workflow-plan.md",
+        "workflow-prototyping-testing--evaluate.md",
+        "workflow-prototyping-testing--experiment.md",
+        "workflow-prototyping-testing--prototype-plan.md",
+        "workflow-prototyping-testing--test-plan.md",
+        "workflow-rag-pipeline-deploy.md",
+        "workflow-recommend.md",
+        "workflow-research.md",
+        "workflow-review.md",
+        "workflow-seo-audit-pipeline.md",
+        "workflow-seo-content-pipeline.md",
+        "workflow-serverless-gpu-deploy.md",
+        "workflow-spec-panel.md",
+        "workflow-spec.md",
+        "workflow-test.md",
+        "workflow-troubleshoot.md",
         "workflow-ui-design--color-palette.md",
         "workflow-ui-design--design-screen.md",
         "workflow-ui-design--responsive-audit.md",
         "workflow-ui-design--type-system.md",
         "workflow-ux-strategy--benchmark.md",
         "workflow-ux-strategy--frame-problem.md",
-        "workflow-ux-strategy--strategize.md",
-        "workflow-interaction-design--design-interaction.md",
-        "workflow-interaction-design--error-flow.md",
-        "workflow-interaction-design--map-states.md",
+        "workflow-ux-strategy--strategize.md"
+      ],
+      "skills": [
+        "ab-test-setup",
+        "accessibility-audit",
+        "ad-attribution-modeling",
+        "ad-creative-design",
+        "ai-prototype-refactoring",
+        "architecture-design",
+        "azure-infrastructure-bicep",
+        "backend-api-design",
+        "chaos-engineering",
+        "churn-prevention-playbook",
+        "ci-cd-pipeline-automation",
+        "clickable-prototype-spec",
+        "code-refactoring",
+        "component-library-management",
+        "component-playground-setup",
+        "content-calendar-strategy",
+        "conversion-funnel-optimization",
+        "copywriting-frameworks",
+        "database-design",
+        "dependency-management",
+        "design-handoff-spec",
+        "design-ops-workflow",
+        "design-system-governance",
+        "design-system-tokens",
+        "design-tokens-management",
+        "design-version-control",
+        "diagnosing-bugs",
+        "docker-deployment",
+        "domain-modeling",
+        "email-drip-sequences",
+        "email-marketing-automation",
+        "finishing-a-development-branch",
+        "frontend-component-design",
+        "git-guardrails",
+        "google-ads-optimization",
+        "graphql-schema-design",
+        "grill-me",
+        "grill-with-docs",
+        "growth-experiment-design",
+        "handoff",
+        "hf-model-evaluation",
+        "interaction-pattern-library",
+        "interactive-prototype-builder",
+        "local-llm-inference",
+        "maestro-mobile-testing",
+        "marketing-creative-design",
+        "meta-ad-creative-testing",
+        "micro-interaction-design",
+        "microservices-architecture",
+        "mobile-android-design",
+        "mobile-first-design",
+        "mobile-ios-design",
+        "mobile-platform-offline-validate",
+        "modal-serverless-python",
+        "onboarding-cro",
+        "paid-acquisition-ppc",
+        "performance-optimization",
+        "playwright-best-practices",
+        "product-launch-playbook",
+        "programmatic-seo",
+        "rag-vector-pipeline",
+        "react-best-practices",
+        "receiving-code-review",
+        "replicate-model-inference",
+        "requesting-code-review",
+        "responsive-design-audit",
+        "runpod-gpu-orchestration",
+        "schema-markup-strategy",
+        "security-audit",
+        "seo-audit",
+        "signup-flow-cro",
+        "social-media-campaign",
+        "state-driven-ui-animation",
+        "subagent-driven-development",
+        "supabase-backend-architecture",
+        "systematic-debugging",
+        "technical-documentation",
+        "technical-seo-audit",
+        "telemetry-monitoring",
+        "test-driven-development",
+        "to-spec",
+        "to-tickets",
+        "turso-distributed-sqlite",
+        "ui-component-spec",
+        "usability-testing-protocol",
+        "user-flow-mapping",
+        "user-journey-mapping",
+        "vector-database-design",
+        "vercel-deploy-best-practices",
+        "viral-referral-loops"
+      ],
+      "version": "1.0.0"
+    },
+    "digital-agency": {
+      "name": "digital-agency",
+      "tier": "organization",
+      "status": "under-construction",
+      "domain": "organization",
+      "category": "Cross-Functional Digital Agency (Experimental)",
+      "aliases": [
+        "agency",
+        "digital-agency-tba"
+      ],
+      "description": "Full-service digital product agency with web dev, mobile, design, SEO, and growth marketing (TBA soon)",
+      "prerequisites": {
+        "requiredMcps": [
+          {
+            "name": "firecrawl",
+            "purpose": "Web research, competitive scraping, and technical SEO crawling",
+            "optionalForBrainstorming": true
+          },
+          {
+            "name": "github",
+            "purpose": "Repository scaffolding and automated PR management",
+            "optionalForBrainstorming": true
+          }
+        ],
+        "requiredPackages": [
+          "@playwright/test"
+        ],
+        "requiredEnvVars": [
+          "FIRECRAWL_API_KEY"
+        ]
+      },
+      "modes": {
+        "operational": "Full execution with live MCP tool calling, scraping, and browser automation",
+        "brainstorming": "Advisory and ideation mode generating project scopes, wireframe specs, and marketing plans"
+      },
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-backend-architect.md",
+        "subagent-frontend-architect.md",
+        "subagent-ui-designer.md",
+        "subagent-marketing-growth-strategist.md",
+        "subagent-seo-specialist.md"
+      ],
+      "workflows": [
+        "workflow-implement.md",
+        "workflow-marketing-launch.md",
+        "workflow-design-orchestrate.md"
+      ],
+      "skills": [
+        "architecture-design",
+        "test-driven-development",
+        "seo-audit",
+        "marketing-creative-design",
+        "ai-prototype-refactoring"
+      ],
+      "version": "0.1.0"
+    },
+    "universal-skills": {
+      "name": "universal-skills",
+      "domain": "universal",
+      "category": "Shared Meta-Skills & Cross-Domain Utilities",
+      "aliases": [
+        "meta-skills",
+        "universal-meta",
+        "meta"
+      ],
+      "description": "Domain-agnostic meta-skills shared across all orchestrators: Socratic grilling, spec generation, handoff, and domain modeling",
+      "skills": [
+        "grill-me",
+        "grill-with-docs",
+        "domain-modeling",
+        "to-spec",
+        "to-tickets",
+        "handoff"
+      ],
+      "version": "1.0.0"
+    },
+    "design-systems-ops": {
+      "name": "design-systems-ops",
+      "domain": "design",
+      "category": "Design Systems Governance & DesignOps Workflows",
+      "parentBundle": "product-design",
+      "aliases": [
+        "design-systems",
+        "design-ops",
+        "design-tokens"
+      ],
+      "description": "Token governance, component libraries, design handoff & version control workflows",
+      "orchestrator": "orchestrator-design.md",
+      "agents": [
+        "subagent-design-systems-architect.md",
+        "subagent-design-ops-lead.md"
+      ],
+      "workflows": [
         "workflow-design-systems--audit-system.md",
         "workflow-design-systems--create-component.md",
         "workflow-design-systems--tokenize.md",
         "workflow-design-ops--handoff.md",
         "workflow-design-ops--plan-sprint.md",
-        "workflow-design-ops--setup-workflow.md",
+        "workflow-design-ops--setup-workflow.md"
+      ],
+      "skills": [
+        "design-system-tokens",
+        "design-tokens-management",
+        "design-system-governance",
+        "component-library-management",
+        "design-ops-workflow",
+        "design-version-control",
+        "design-handoff-spec"
+      ],
+      "version": "1.0.0"
+    },
+    "design-research-testing": {
+      "name": "design-research-testing",
+      "domain": "design",
+      "category": "User Research, Usability Testing & Interactive Prototyping",
+      "parentBundle": "product-design",
+      "aliases": [
+        "user-research",
+        "prototyping-testing",
+        "design-research",
+        "prototype-testing"
+      ],
+      "description": "Usability testing, user journey mapping, interactive prototypes & AI prototype refactoring",
+      "orchestrator": "orchestrator-design.md",
+      "agents": [
+        "subagent-design-researcher.md",
+        "subagent-designer-toolkit-expert.md",
+        "subagent-prototype-tester.md"
+      ],
+      "workflows": [
+        "workflow-ux-strategy--benchmark.md",
+        "workflow-ux-strategy--frame-problem.md",
         "workflow-prototyping-testing--evaluate.md",
         "workflow-prototyping-testing--experiment.md",
         "workflow-prototyping-testing--prototype-plan.md",
-        "workflow-prototyping-testing--test-plan.md",
-        "workflow-marketing-panel.md",
-        "workflow-marketing-audit.md",
-        "workflow-marketing-campaign-builder.md",
-        "workflow-marketing-content-pipeline.md",
-        "workflow-marketing-growth-experiment.md",
-        "workflow-marketing-launch.md",
-        "workflow-troubleshoot.md",
-        "workflow-analyze.md",
-        "workflow-research.md",
-        "workflow-brainstorm.md",
-        "workflow-explain.md",
-        "workflow-business-panel.md",
-        "workflow-recommend.md",
-        "workflow-grill.md",
-        "workflow-spec.md",
-        "workflow-diagnose.md",
-        "workflow-deploy-staging.md",
-        "workflow-incident-triage.md",
-        "workflow-mobile-build.md",
-        "workflow-app-store-release.md",
-        "workflow-frontend-audit.md",
-        "workflow-api-contract-design.md",
-        "workflow-e2e-testing.md"
+        "workflow-prototyping-testing--test-plan.md"
       ],
       "skills": [
-        "architecture-design",
-        "backend-api-design",
-        "code-refactoring",
-        "database-design",
-        "dependency-management",
-        "docker-deployment",
-        "finishing-a-development-branch",
-        "frontend-component-design",
-        "graphql-schema-design",
-        "microservices-architecture",
-        "performance-optimization",
-        "receiving-code-review",
-        "requesting-code-review",
-        "security-audit",
-        "subagent-driven-development",
-        "systematic-debugging",
-        "technical-documentation",
-        "test-driven-development",
-        "accessibility-audit",
-        "component-library-management",
-        "design-system-governance",
-        "design-system-tokens",
-        "design-tokens-management",
-        "design-version-control",
-        "design-ops-workflow",
-        "interaction-pattern-library",
-        "micro-interaction-design",
-        "mobile-first-design",
-        "responsive-design-audit",
-        "state-driven-ui-animation",
-        "ui-component-spec",
-        "user-flow-mapping",
-        "user-journey-mapping",
         "usability-testing-protocol",
-        "ab-test-setup",
-        "content-calendar-strategy",
-        "conversion-funnel-optimization",
-        "copywriting-frameworks",
-        "email-marketing-automation",
-        "growth-experiment-design",
-        "product-launch-playbook",
-        "seo-audit",
-        "signup-flow-cro",
-        "social-media-campaign",
+        "accessibility-audit",
+        "user-journey-mapping",
+        "interactive-prototype-builder",
         "clickable-prototype-spec",
         "component-playground-setup",
-        "design-handoff-spec",
-        "interactive-prototype-builder",
-        "grill-with-docs",
-        "grill-me",
-        "domain-modeling",
-        "to-spec",
-        "to-tickets",
-        "diagnosing-bugs",
-        "git-guardrails",
-        "handoff",
-        "ci-cd-pipeline-automation",
-        "telemetry-monitoring",
-        "mobile-ios-design",
-        "mobile-android-design",
-        "mobile-platform-offline-validate",
-        "maestro-mobile-testing",
-        "react-best-practices",
-        "playwright-best-practices",
-        "chaos-engineering"
-      ]
+        "ai-prototype-refactoring"
+      ],
+      "version": "1.0.0"
     }
   }
 }

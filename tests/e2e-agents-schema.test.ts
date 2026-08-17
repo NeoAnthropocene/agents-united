@@ -204,17 +204,17 @@ describe('E2E Agent Frontmatter & Schema Validation (Tier 1-4)', () => {
 
   // Tier 4: Real-World Inventory Audit
   describe('Tier 4: Real-World Full Inventory Audit', () => {
-    it('should confirm total inventory contains exactly 38 agent files with 0 duplicates', async () => {
+    it('should confirm total inventory contains exactly 45 agent files with 0 duplicates', async () => {
       const files = await fs.readdir(agentsDir);
       const agentFiles = files.filter(f => f.endsWith('.md'));
 
-      expect(agentFiles.length).toBe(38);
+      expect(agentFiles.length).toBe(45);
 
       const orchestrators = agentFiles.filter(f => f.startsWith('orchestrator-'));
       const subagents = agentFiles.filter(f => f.startsWith('subagent-'));
 
       expect(orchestrators.length).toBe(7);
-      expect(subagents.length).toBe(31);
+      expect(subagents.length).toBe(38);
 
       const names = new Set<string>();
       for (const file of agentFiles) {
@@ -225,7 +225,7 @@ describe('E2E Agent Frontmatter & Schema Validation (Tier 1-4)', () => {
         names.add(name!);
       }
 
-      expect(names.size).toBe(38);
+      expect(names.size).toBe(45);
     });
   });
 });

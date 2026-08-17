@@ -110,11 +110,11 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 1: Feature Coverage (Happy Path)
   describe('Tier 1: Feature Coverage (Workflow Parsing & Phase Gates)', () => {
-    it('should locate and parse all 44 workflow files in registry/workflows/', async () => {
+    it('should locate and parse all 63 workflow files in registry/workflows/', async () => {
       const files = await fs.readdir(workflowsDir);
       const workflowFiles = files.filter(f => f.startsWith('workflow-') && f.endsWith('.md'));
 
-      expect(workflowFiles.length).toBe(54);
+      expect(workflowFiles.length).toBe(63);
 
       for (const file of workflowFiles) {
         const filePath = path.join(workflowsDir, file);
@@ -177,11 +177,11 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 3: Cross-Feature Pairwise Audit
   describe('Tier 3: Cross-Feature Pairwise Audit', () => {
-    it('should cross-validate all 44 workflows referenced in bundles.json against registry/workflows/', async () => {
+    it('should cross-validate all 63 workflows referenced in bundles.json against registry/workflows/', async () => {
       const bundlesJson = await fs.readJson(bundlesPath);
       const fullBundleWorkflows: string[] = bundlesJson.bundles.full.workflows;
 
-      expect(fullBundleWorkflows.length).toBe(54);
+      expect(fullBundleWorkflows.length).toBe(63);
 
       for (const workflowFile of fullBundleWorkflows) {
         const workflowFilePath = path.join(workflowsDir, workflowFile);
@@ -202,11 +202,11 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 4: Real-World Scenario Audit
   describe('Tier 4: Real-World Scenario Audit', () => {
-    it('should perform complete audit of all 44 workflow files in registry/workflows/', async () => {
+    it('should perform complete audit of all 63 workflow files in registry/workflows/', async () => {
       const files = await fs.readdir(workflowsDir);
       const workflowFiles = files.filter(f => f.startsWith('workflow-') && f.endsWith('.md'));
 
-      expect(workflowFiles.length).toBe(54);
+      expect(workflowFiles.length).toBe(63);
 
       const report = {
         totalWorkflows: workflowFiles.length,
@@ -224,8 +224,8 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
         if (result.hasRollbackProtocols) report.withRollbackProtocols++;
       }
 
-      expect(report.totalWorkflows).toBe(54);
-      expect(report.withPhasesCount).toBe(54);
+      expect(report.totalWorkflows).toBe(63);
+      expect(report.withPhasesCount).toBe(63);
     });
   });
 });
