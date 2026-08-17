@@ -146,6 +146,7 @@ vite.config.ts.timestamp-*
 
 # Design Assets
 .assets/
+!.assets/image/
 
 # Test Scratch Workspaces
 scratch/

@@ -1388,7 +1388,7 @@ cli
       });
 
       const probeReport = await probe.probe();
-      if (!probeReport.installed) {
+      if (!probeReport.installed && !options.dryRun) {
         outro(pc.red(`Cline executable was not found on PATH or via CLINE_BIN_PATH. Please install Cline CLI or ensure it is accessible.`));
         process.exit(1);
       }

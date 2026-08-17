@@ -147,9 +147,11 @@ export class ClineLauncher {
       headless,
     } = options;
 
-    if (!report.installed || !report.command) {
-      throw new Error('Cline is not installed or executable could not be resolved.');
-    }
+    const command = report.command || {
+      executable: 'cline',
+      prefixArgs: [],
+      source: 'path-executable' as const,
+    };
 
     let teamName = ClineLauncher.generateTeamName(bundleName, workspace);
     if (customTeamName) {
@@ -184,7 +186,7 @@ export class ClineLauncher {
       taskText,
     ].join('\n\n');
 
-    const argv: string[] = [...report.command.prefixArgs];
+    const argv: string[] = [...command.prefixArgs];
     if (strategy === 'named-team') {
       argv.push('--team-name', teamName);
     }
@@ -200,7 +202,7 @@ export class ClineLauncher {
       workspace,
       teamName,
       strategy,
-      executable: report.command.executable,
+      executable: command.executable,
       argv,
       bootstrapPrompt,
     };

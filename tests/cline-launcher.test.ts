@@ -109,6 +109,30 @@ describe('Milestone 4: ClineLauncher', () => {
       const bootstrap = plan.argv[plan.argv.length - 1];
       expect(bootstrap).toContain('Addon auto-installation is pre-authorized for this session');
     });
+
+    it('builds plan with fallback executable when Cline is not locally installed (e.g. for dry-run simulation)', () => {
+      const launcher = new ClineLauncher();
+      const uninstalledReport: ClineCapabilityReport = {
+        installed: false,
+        namedTeams: false,
+        rolePresetConsumer: 'unknown',
+        diagnostics: ['Executable not found'],
+      };
+
+      const plan = launcher.planActivation({
+        bundleName: 'software-engineering',
+        workspace: testWorkspace,
+        scope: 'project',
+        report: uninstalledReport,
+        prompt: 'Review & analyze codebase',
+      });
+
+      expect(plan.bundleName).toBe('software-engineering');
+      expect(plan.executable).toBe('cline');
+      expect(plan.strategy).toBe('adaptive-session');
+      expect(plan.argv).toContain('--cwd');
+      expect(plan.argv[plan.argv.length - 1]).toContain('Review & analyze codebase');
+    });
   });
 
   describe('Installation resolution and error reporting', () => {

@@ -190,7 +190,7 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
     it.each(m1Skills)('skill %s should contain structured code exemplars with valid language tags', async (skillName) => {
       const skillFile = path.join(skillsDir, skillName, 'SKILL.md');
       const content = await fs.readFile(skillFile, 'utf8');
-      const codeBlocks = content.match(/```[a-z0-9_-]+\n[\s\S]*?```/gi);
+      const codeBlocks = content.match(/```[a-z0-9_-]+\r?\n[\s\S]*?```/gi);
       expect(codeBlocks).not.toBeNull();
       expect(codeBlocks!.length).toBeGreaterThanOrEqual(1);
     });
@@ -212,7 +212,7 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
     it.each(m1Workflows)('workflow %s should contain valid Mermaid flowchart syntax', async (wfFile) => {
       const wfPath = path.join(workflowsDir, wfFile);
       const content = await fs.readFile(wfPath, 'utf8');
-      const mermaidMatch = content.match(/```mermaid\n([\s\S]+?)\n```/);
+      const mermaidMatch = content.match(/```mermaid\r?\n([\s\S]+?)\r?\n```/);
       expect(mermaidMatch, `Mermaid block missing in ${wfFile}`).not.toBeNull();
 
       const mermaidCode = mermaidMatch![1];
