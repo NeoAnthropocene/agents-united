@@ -1054,10 +1054,500 @@ cli
     }
   });
 
+function renderBundleDetailTree(bundle: BundleDefinition): string {
+  // Special-case full universal suite for clean, structured high-level breakdown
+  if (bundle.name === 'full') {
+    const lines: string[] = [];
+    lines.push(`📦 ${pc.bold(pc.green('full'))} ${pc.cyan('(Universal Autonomous Department)')} ${pc.green('⭐ [Recommended]')}`);
+    lines.push(`│   ${pc.white('Complete suite with all 7 lead orchestrators, 38 subagents, 90 skills, and 63 workflows.')}`);
+    lines.push(`│`);
+    lines.push(`├── 🤖 Lead Orchestrators (7 department domains):`);
+    lines.push(`│   ├── 🛠️  ${pc.blue('orchestrator-engineering')} ${pc.dim('(Software Engineering & Delivery)')}`);
+    lines.push(`│   ├── 🏛️  ${pc.blue('orchestrator-system-architecture')} ${pc.dim('(System Architecture & SRE)')}`);
+    lines.push(`│   ├── 🎨  ${pc.blue('orchestrator-design')} ${pc.dim('(Product Design & UI/UX)')}`);
+    lines.push(`│   ├── 📈  ${pc.blue('orchestrator-marketing')} ${pc.dim('(Growth & Marketing Operations)')}`);
+    lines.push(`│   ├── 🔒  ${pc.blue('orchestrator-security')} ${pc.dim('(Security Operations)')}`);
+    lines.push(`│   ├── 🔬  ${pc.blue('orchestrator-research')} ${pc.dim('(Deep Technical Research)')}`);
+    lines.push(`│   └── 💼  ${pc.blue('orchestrator-business')} ${pc.dim('(Business Strategy & Economics)')}`);
+    lines.push(`├── 🤖 Specialized Sub-Agents: ${pc.blue('38 worker agents across all 8 departments')}`);
+    lines.push(`├── ⚡ Skills: ${pc.yellow('90 modular skills & runbooks')}`);
+    lines.push(`├── 🔄 Workflows: ${pc.magenta('63 guided multi-step workflows')}`);
+    lines.push(`├── 🔌 Prerequisites: ${pc.dim('None (Self-contained universal suite)')}`);
+    lines.push(`└── 💡 Execution Modes: ${pc.green('Operational')}`);
+    return lines.join('\n');
+  }
+
+  const meta = BUNDLE_DISPLAY_NAMES[bundle.name];
+  const isEssentials = !bundle.parentBundle && bundle.name !== 'full' && bundle.name !== 'universal-skills' && bundle.tier !== 'organization';
+  const titleSuffix = isEssentials ? pc.cyan(' (Essentials Base)') : '';
+  const parentTag = bundle.parentBundle ? pc.gray(` [inherits: ${bundle.parentBundle}]`) : '';
+  const aliasesTag = bundle.aliases && bundle.aliases.length > 0 ? pc.gray(` [alias: ${bundle.aliases.join(', ')}]`) : '';
+
+  let statusBadge = '';
+  if (bundle.name === 'universal-skills') statusBadge = pc.green(' ⭐ [Recommended]');
+  else if (bundle.status === 'under-construction') statusBadge = pc.yellow(' 🚧 [Under Construction]');
+  else if (bundle.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
+  else if (bundle.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
+  else if (bundle.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
+  else statusBadge = pc.green(' [Stable]');
+
+  const lines: string[] = [];
+  lines.push(`📦 ${pc.bold(pc.green(bundle.name))}${titleSuffix}${statusBadge}${parentTag}${aliasesTag}`);
+  lines.push(`│   ${pc.white(bundle.description || meta?.summary || '')}`);
+  lines.push(`│`);
+
+  // Lead / Orchestrator
+  if (bundle.orchestrator) {
+    const orchName = bundle.orchestrator.replace(/\.md$/, '');
+    lines.push(`├── 🤖 Lead: ${pc.blue(pc.bold(orchName))}`);
+  } else {
+    lines.push(`├── 🤖 Lead: ${pc.dim('None (Self-directed meta-skills)')}`);
+  }
+
+  // Subagents
+  if (bundle.agents && bundle.agents.length > 0) {
+    const subNames = bundle.agents.map(a => a.replace(/^subagent-/, '').replace(/\.md$/, ''));
+    lines.push(`├── 🤖 Sub-agents (${bundle.agents.length}):`);
+    if (subNames.length <= 5) {
+      subNames.forEach((name, sIdx) => {
+        const isLastSub = sIdx === subNames.length - 1;
+        const subBranch = isLastSub ? '└──' : '├──';
+        lines.push(`│   ${subBranch} 🤖 ${pc.blue(name)}`);
+      });
+    } else {
+      subNames.slice(0, 4).forEach(name => {
+        lines.push(`│   ├── 🤖 ${pc.blue(name)}`);
+      });
+      lines.push(`│   └── 🤖 ${pc.dim(`(+${subNames.length - 4} more: ${subNames.slice(4).join(', ')})`)}`);
+    }
+  } else {
+    lines.push(`├── 🤖 Sub-agents: ${pc.dim('None')}`);
+  }
+
+  // Skills
+  if (bundle.skills && bundle.skills.length > 0) {
+    lines.push(`├── ⚡ Skills (${bundle.skills.length}):`);
+    if (bundle.skills.length <= 5) {
+      lines.push(`│   └── ${pc.yellow(bundle.skills.join(', '))}`);
+    } else {
+      lines.push(`│   ├── ${pc.yellow(bundle.skills.slice(0, 5).join(', '))}`);
+      lines.push(`│   └── ${pc.dim(`(+${bundle.skills.length - 5} more: ${bundle.skills.slice(5).join(', ')})`)}`);
+    }
+  } else {
+    lines.push(`├── ⚡ Skills: ${pc.dim('Inherited from base bundle')}`);
+  }
+
+  // Workflows
+  if (bundle.workflows && bundle.workflows.length > 0) {
+    const wfNames = bundle.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
+    lines.push(`├── 🔄 Workflows (${bundle.workflows.length}):`);
+    if (wfNames.length <= 4) {
+      lines.push(`│   └── ${pc.magenta(wfNames.join(', '))}`);
+    } else {
+      lines.push(`│   ├── ${pc.magenta(wfNames.slice(0, 4).join(', '))}`);
+      lines.push(`│   └── ${pc.dim(`(+${wfNames.length - 4} more: ${wfNames.slice(4).join(', ')})`)}`);
+    }
+  } else {
+    lines.push(`├── 🔄 Workflows: ${pc.dim('Inherited from base bundle')}`);
+  }
+
+  // Prerequisites
+  if (bundle.prerequisites) {
+    const prereqParts: string[] = [];
+    if (bundle.prerequisites.requiredMcps && bundle.prerequisites.requiredMcps.length > 0) {
+      prereqParts.push(`MCPs: ${bundle.prerequisites.requiredMcps.map(m => m.name).join(', ')}`);
+    }
+    if (bundle.prerequisites.requiredPackages && bundle.prerequisites.requiredPackages.length > 0) {
+      prereqParts.push(`Packages: ${bundle.prerequisites.requiredPackages.join(', ')}`);
+    }
+    if (bundle.prerequisites.requiredEnvVars && bundle.prerequisites.requiredEnvVars.length > 0) {
+      prereqParts.push(`Env: ${bundle.prerequisites.requiredEnvVars.join(', ')}`);
+    }
+    if (prereqParts.length > 0) {
+      lines.push(`├── 🔌 Prerequisites: ${pc.yellow(prereqParts.join(' | '))}`);
+    }
+  } else {
+    lines.push(`├── 🔌 Prerequisites: ${pc.dim('None (Self-contained domain bundle)')}`);
+  }
+
+  // Execution Modes
+  if (bundle.modes) {
+    lines.push(`└── 💡 Execution Modes: ${pc.green('Operational')} (live MCPs) / ${pc.cyan('Brainstorming')} (advisory fallback)`);
+  } else {
+    lines.push(`└── 💡 Execution Modes: ${pc.green('Operational')}`);
+  }
+
+  return lines.join('\n');
+}
+
+function renderFullCatalogTree(bundles: BundleDefinition[]): void {
+  intro(pc.cyan('Agents United — Registry Catalog Tree'));
+
+  const domainTitles: Record<string, string> = {
+    engineering: '🛠️  Software Engineering & Delivery',
+    architecture: '🏛️  System Architecture & SRE',
+    design: '🎨  Product Design & UI/UX',
+    marketing: '📈  Growth & Marketing Operations',
+    security: '🔒  Security Operations',
+    research: '🔬  Deep Technical Research',
+    business: '💼  Business Strategy & Economics',
+    universal: '🌐  Universal Autonomous Department',
+  };
+
+  const domainOrder = [
+    'universal',
+    'engineering',
+    'architecture',
+    'design',
+    'marketing',
+    'security',
+    'research',
+    'business',
+  ];
+
+  const grouped: Record<string, typeof bundles> = {};
+  const orgBundles: typeof bundles = [];
+
+  for (const b of bundles) {
+    if (b.tier === 'organization' || b.domain === 'organization') {
+      orgBundles.push(b);
+      continue;
+    }
+    const d = b.domain || 'other';
+    if (!grouped[d]) grouped[d] = [];
+    grouped[d].push(b);
+  }
+
+  for (const domainKey of domainOrder) {
+    const items = grouped[domainKey];
+    if (!items || items.length === 0) continue;
+
+    const header = domainTitles[domainKey] || `📁  ${domainKey.toUpperCase()}`;
+    console.log(`\n${pc.bold(pc.magenta(header))} ${pc.dim(`(${items.length} bundle${items.length > 1 ? 's' : ''})`)}`);
+
+    items.forEach((b: BundleDefinition, bIdx: number) => {
+      const isLastBundle = bIdx === items.length - 1;
+      const bBranch = isLastBundle ? '└──' : '├──';
+      const subIndent = isLastBundle ? '    ' : '│   ';
+
+      const meta = BUNDLE_DISPLAY_NAMES[b.name];
+      const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills';
+      const titleSuffix = isEssentials ? pc.cyan(' (Essentials)') : '';
+      const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
+      const aliasesTag = b.aliases && b.aliases.length > 0 ? pc.gray(` [alias: ${b.aliases.join(', ')}]`) : '';
+
+      let statusBadge = '';
+      if (b.name === 'universal-skills') statusBadge = pc.green(' ⭐ [Recommended]');
+      else if (b.status === 'under-construction') statusBadge = pc.yellow(' 🚧 [Under Construction]');
+      else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
+      else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
+      else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
+
+      console.log(`${bBranch} 📦 ${pc.bold(pc.green(b.name))}${titleSuffix}${statusBadge}${parentTag}${aliasesTag}`);
+      console.log(`${subIndent}│   ${pc.white(b.description)}`);
+
+      // Lead / Orchestrator
+      if (b.orchestrator) {
+        const orchName = b.orchestrator.replace(/\.md$/, '');
+        console.log(`${subIndent}├── 🤖 Lead: ${pc.blue(orchName)}`);
+      }
+
+      // Subagents
+      if (b.agents && b.agents.length > 0) {
+        const subNames = b.agents.map(a => a.replace(/^subagent-/, '').replace(/\.md$/, ''));
+        const displaySubs =
+          subNames.length > 3 ? `${subNames.slice(0, 3).join(', ')} (+${subNames.length - 3} more)` : subNames.join(', ');
+        console.log(`${subIndent}├── 🤖 Sub-agents: ${pc.blue(displaySubs)}`);
+      }
+
+      // Skills
+      if (b.skills && b.skills.length > 0) {
+        const displaySkills =
+          b.skills.length > 3 ? `${b.skills.slice(0, 3).join(', ')} (+${b.skills.length - 3} more)` : b.skills.join(', ');
+        console.log(`${subIndent}├── ⚡ Skills: ${pc.yellow(displaySkills)}`);
+      }
+
+      // Workflows
+      if (b.workflows && b.workflows.length > 0) {
+        const wfNames = b.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
+        const displayWfs =
+          wfNames.length > 3 ? `${wfNames.slice(0, 3).join(', ')} (+${wfNames.length - 3} more)` : wfNames.join(', ');
+        console.log(`${subIndent}└── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
+      } else {
+        console.log(`${subIndent}└── 🔄 Workflows: ${pc.dim('Inherited from parent')}`);
+      }
+
+      if (!isLastBundle) {
+        console.log(`${subIndent}`);
+      }
+    });
+  }
+
+  // Dedicated Organization Bundles Section
+  if (orgBundles.length > 0) {
+    console.log(`\n${pc.bold(pc.cyan('🏢  Organization Bundles (Experimental / Cross-Functional)'))} ${pc.dim(`(${orgBundles.length} bundle${orgBundles.length > 1 ? 's' : ''})`)}`);
+    console.log(pc.dim('   Cross-domain teams modeled after real organizations. Require runtime prerequisites (MCPs/packages).'));
+
+    orgBundles.forEach((b: BundleDefinition, bIdx: number) => {
+      const isLastBundle = bIdx === orgBundles.length - 1;
+      const bBranch = isLastBundle ? '└──' : '├──';
+      const subIndent = isLastBundle ? '    ' : '│   ';
+
+      let statusBadge = '';
+      if (b.status === 'under-construction') statusBadge = pc.yellow(' 🚧 [Under Construction (TBA)]');
+      else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
+      else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
+      else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
+      else statusBadge = pc.green(' [Stable]');
+
+      const prereqBadge = pc.dim(' [Prerequisites Required]');
+
+      console.log(`${bBranch} 🏢 ${pc.bold(pc.cyan(b.name))}${statusBadge}${prereqBadge}`);
+      console.log(`${subIndent}│   ${pc.white(b.description)}`);
+
+      if (b.orchestrator) {
+        const orchName = b.orchestrator.replace(/\.md$/, '');
+        console.log(`${subIndent}├── 🤖 Lead: ${pc.blue(orchName)}`);
+      }
+
+      if (b.agents && b.agents.length > 0) {
+        const subNames = b.agents.map(a => a.replace(/^subagent-/, '').replace(/\.md$/, ''));
+        const displaySubs =
+          subNames.length > 3 ? `${subNames.slice(0, 3).join(', ')} (+${subNames.length - 3} more)` : subNames.join(', ');
+        console.log(`${subIndent}├── 🤖 Sub-agents: ${pc.blue(displaySubs)}`);
+      }
+
+      if (b.skills && b.skills.length > 0) {
+        const displaySkills =
+          b.skills.length > 3 ? `${b.skills.slice(0, 3).join(', ')} (+${b.skills.length - 3} more)` : b.skills.join(', ');
+        console.log(`${subIndent}├── ⚡ Skills: ${pc.yellow(displaySkills)}`);
+      }
+
+      if (b.workflows && b.workflows.length > 0) {
+        const wfNames = b.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
+        const displayWfs =
+          wfNames.length > 3 ? `${wfNames.slice(0, 3).join(', ')} (+${wfNames.length - 3} more)` : wfNames.join(', ');
+        console.log(`${subIndent}├── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
+      }
+
+      // Prerequisites Summary
+      if (b.prerequisites) {
+        const prereqParts: string[] = [];
+        if (b.prerequisites.requiredMcps && b.prerequisites.requiredMcps.length > 0) {
+          prereqParts.push(`MCPs: ${b.prerequisites.requiredMcps.map(m => m.name).join(', ')}`);
+        }
+        if (b.prerequisites.requiredPackages && b.prerequisites.requiredPackages.length > 0) {
+          prereqParts.push(`Packages: ${b.prerequisites.requiredPackages.join(', ')}`);
+        }
+        if (b.prerequisites.requiredEnvVars && b.prerequisites.requiredEnvVars.length > 0) {
+          prereqParts.push(`Env: ${b.prerequisites.requiredEnvVars.join(', ')}`);
+        }
+        if (prereqParts.length > 0) {
+          console.log(`${subIndent}├── 🔌 Prerequisites: ${pc.yellow(prereqParts.join(' | '))}`);
+        }
+      }
+
+      // Modes Summary
+      if (b.modes) {
+        console.log(`${subIndent}└── 💡 Execution Modes: ${pc.green('Operational')} (live MCPs) / ${pc.cyan('Brainstorming')} (advisory fallback)`);
+      } else {
+        console.log(`${subIndent}└── 💡 Execution Modes: ${pc.green('Operational')}`);
+      }
+
+      if (!isLastBundle) {
+        console.log(`${subIndent}`);
+      }
+    });
+  }
+
+  outro(pc.cyan('\nRun "agents add <bundle>" or select interactively to install.'));
+}
+
+async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back_bundle__' | '__back_dept__' | '__exit__'> {
+  const treeOutput = renderBundleDetailTree(bundle);
+  console.log(`\n${pc.bold(pc.cyan('┌── 📋 Bundle Detail: ' + pc.green(bundle.name) + ' ' + '─'.repeat(Math.max(2, 40 - bundle.name.length))))}`);
+  console.log(treeOutput);
+  console.log(`${pc.bold(pc.cyan('└' + '─'.repeat(60)))}\n`);
+
+  const actionOptions = [
+    {
+      value: 'install',
+      label: `🚀 Install "${bundle.name}" bundle`,
+      hint: `run installer for ${bundle.name}`,
+    },
+    {
+      value: 'back_bundle',
+      label: `🔙 Back to ${bundle.domain || 'Department'} bundle list`,
+      hint: 'explore other bundles in this category',
+    },
+    {
+      value: 'back_dept',
+      label: `🏛️ Back to Department selection`,
+      hint: 'explore other departments',
+    },
+    {
+      value: 'exit',
+      label: `🚪 Exit explorer`,
+      hint: 'return to shell',
+    },
+  ];
+
+  const action = await select({
+    message: `Action for ${pc.bold(pc.green(bundle.name))}:`,
+    options: actionOptions,
+  });
+
+  if (action === 'install') {
+    // 1. Under Construction Gate Evaluation
+    if (bundle.status === 'under-construction') {
+      note(
+        `The bundle "${bundle.name}" is currently under active construction (status: under-construction).\n` +
+        `Its orchestrators, workflows, and specialized skills are being authored and are not ready for production use.\n\n` +
+        `Planned Capabilities:\n` +
+        `• Lead Orchestrator with Firecrawl & GitHub MCP tool calling\n` +
+        `• Full-stack web, design & SEO delivery workflows\n` +
+        `• Dual Execution Modes (Operational / Brainstorming)`,
+        '🚧 Under Construction Gate'
+      );
+
+      const underConstructionChoice = await select({
+        message: pc.yellow(`"${bundle.name}" is currently under construction. How would you like to proceed?`),
+        options: [
+          {
+            value: 'abort',
+            label: '🛑 Abort installation (Recommended)',
+            hint: 'return without modifying workspace files',
+          },
+          {
+            value: 'allow',
+            label: '⚠️  Install in-development draft anyway (--allow-under-construction)',
+            hint: 'proceed with in-progress placeholder assets',
+          },
+        ],
+      });
+
+      if (underConstructionChoice === 'abort' || typeof underConstructionChoice !== 'string') {
+        outro(pc.yellow(`Installation cancelled. "${bundle.name}" is under construction.`));
+        return '__back_bundle__';
+      }
+    }
+
+    // 2. Prerequisite Gate Evaluation
+    let executionMode: ExecutionMode = 'operational';
+
+    if (bundle.prerequisites || bundle.tier === 'organization') {
+      const checker = new PrerequisiteChecker();
+      const prereqEval = await checker.evaluate(bundle);
+
+      if (prereqEval.hasPrerequisites) {
+        const checkLines: string[] = [];
+        for (const item of prereqEval.items) {
+          const typeLabel = item.type === 'mcp' ? 'MCP' : item.type === 'env' ? 'Env' : 'Pkg';
+          const icon = item.satisfied ? pc.green('✓') : pc.red('✗');
+          const details = pc.dim(`(${item.details || ''})`);
+          checkLines.push(`  ${icon} [${typeLabel}] ${pc.bold(item.name)}: ${item.satisfied ? pc.green('Detected') : pc.red('Missing')} ${details}`);
+        }
+
+        note(
+          checkLines.join('\n'),
+          `Prerequisite Evaluation: ${bundle.name} (${bundle.tier === 'organization' ? 'Organization Bundle' : 'Prerequisites Required'})`
+        );
+
+        if (!prereqEval.allSatisfied) {
+          const gateChoice = await select({
+            message: pc.yellow(`Prerequisites not fully satisfied for "${bundle.name}". How would you like to proceed?`),
+            options: [
+              {
+                value: 'abort',
+                label: '🛑 Abort and configure missing prerequisites (Recommended)',
+                hint: 'exit and configure MCP servers, packages, or environment variables',
+              },
+              {
+                value: 'brainstorming',
+                label: '💡 Install in Brainstorming Mode (Advisory & Spec generation only)',
+                hint: 'runs in idea/planning mode without requiring live MCP tool connections',
+              },
+              {
+                value: 'force',
+                label: '⚠️  Force install in Operational Mode anyway',
+                hint: 'proceed despite missing prerequisites (may fail during runtime calls)',
+              },
+            ],
+          });
+
+          if (gateChoice === 'abort' || typeof gateChoice !== 'string') {
+            outro(pc.yellow('Installation aborted. Please configure required MCPs and environment variables, then retry.'));
+            return '__back_bundle__';
+          }
+
+          if (gateChoice === 'brainstorming') {
+            executionMode = 'brainstorming';
+            note(pc.cyan('Switched execution mode to "brainstorming" (idea/spec fallback mode).'), 'Mode Selected');
+          } else if (gateChoice === 'force') {
+            executionMode = 'operational';
+            note(pc.yellow('Proceeding in "operational" mode with missing prerequisites.'), 'Warning');
+          }
+        }
+      }
+    }
+
+    // 3. Workspace Host & Fan-out Configuration
+    const detectedHosts = detectWorkspaceHosts();
+    let installHosts: AgentHost[] = ['agents'];
+    let installFanout: string[] = [];
+
+    if (detectedHosts.length > 0) {
+      const projectionHosts = detectedHosts.filter(h => HOST_REGISTRY[h].projectionCapable);
+      installFanout = projectionHosts;
+      installHosts = detectedHosts.filter(h => !HOST_REGISTRY[h].projectionCapable) as AgentHost[];
+      if (!installHosts.includes('agents')) installHosts.unshift('agents');
+    }
+
+    const installSpinner = spinner();
+    installSpinner.start(`Installing "${bundle.name}"...`);
+
+    try {
+      const result = await installer.install(bundle.name, {
+        scope: 'project',
+        hosts: installHosts,
+        fanout: installFanout,
+        mode: executionMode,
+        method: 'symlink',
+      });
+
+      installSpinner.stop(pc.green(`✔ Successfully installed ${bundle.name}!`));
+      note(
+        `Bundle: ${result.installed.targetBundle || bundle.name}\n` +
+        `Scope: project\n` +
+        `Method: ${result.method}\n` +
+        `Targets: ${installHosts.join(', ')}\n` +
+        `Agents: ${result.installed.agents.join(', ') || 'None'}\n` +
+        `Skills: ${result.installed.skills.join(', ') || 'None'}\n` +
+        `Target Directories: ${result.targetDirs.join('\n  ')}` +
+        (result.projections.length > 0 ? `\n\nProjections:\n${renderProjections(result.projections)}` : ''),
+        'Installation Success'
+      );
+      outro(pc.green(`✨ Installation of "${bundle.name}" complete!`));
+    } catch (err: any) {
+      installSpinner.stop(pc.red('Installation failed'));
+      outro(pc.red(`Error: ${err.message}`));
+    }
+    return '__exit__';
+  } else if (action === 'back_dept') {
+    return '__back_dept__';
+  } else if (action === 'exit' || typeof action !== 'string') {
+    return '__exit__';
+  }
+
+  return '__back_bundle__';
+}
+
 cli
   .command('list', 'List available bundles grouped by department domain')
   .alias('ls')
   .option('--json', 'Output bundles in JSON format')
+  .option('--tree', 'Output full static catalog tree')
+  .option('--all', 'Output full static catalog tree')
   .action(async (options: any = {}) => {
     const bundles = await registry.listBundles();
 
@@ -1066,186 +1556,194 @@ cli
       return;
     }
 
-    intro(pc.cyan('Agents United — Registry Catalog Tree'));
+    const isInteractive = process.stdout.isTTY && !options.tree && !options.all;
 
-    const domainTitles: Record<string, string> = {
-      engineering: '🛠️  Software Engineering & Delivery',
-      architecture: '🏛️  System Architecture & SRE',
-      design: '🎨  Product Design & UI/UX',
-      marketing: '📈  Growth & Marketing Operations',
-      security: '🔒  Security Operations',
-      research: '🔬  Deep Technical Research',
-      business: '💼  Business Strategy & Economics',
-      universal: '🌐  Universal Autonomous Department',
+    if (!isInteractive) {
+      renderFullCatalogTree(bundles);
+      return;
+    }
+
+    // Interactive 2-Stage Catalog Explorer
+    intro(pc.cyan('🌐 Agents United — Interactive Catalog Explorer'));
+
+    const domainMeta: Record<string, { label: string; icon: string }> = {
+      universal: { label: 'Universal Autonomous Department', icon: '🌐 ' },
+      engineering: { label: 'Software Engineering & Delivery', icon: '🛠️ ' },
+      architecture: { label: 'System Architecture & SRE', icon: '🏛️ ' },
+      design: { label: 'Product Design & UI/UX', icon: '🎨 ' },
+      marketing: { label: 'Growth & Marketing Operations', icon: '📈 ' },
+      security: { label: 'Security Operations', icon: '🔒 ' },
+      research: { label: 'Deep Technical Research', icon: '🔬 ' },
+      business: { label: 'Business Strategy & Economics', icon: '💼 ' },
+      organization: { label: 'Organization Bundles (Experimental / Cross-Functional)', icon: '🏢 ' },
     };
 
-    const domainOrder = [
-      'universal',
-      'engineering',
-      'architecture',
-      'design',
-      'marketing',
-      'security',
-      'research',
-      'business',
-    ];
+    let activeDomain: string | undefined;
 
-    const grouped: Record<string, typeof bundles> = {};
-    const orgBundles: typeof bundles = [];
+    while (true) {
+      // Stage 1: Department Domain Selection (if none selected)
+      if (!activeDomain) {
+        const domainOptions = Object.entries(domainMeta).map(([domainKey, meta]) => {
+          const count = bundles.filter(b => (b.domain === domainKey || (domainKey === 'organization' && b.tier === 'organization'))).length;
+          return {
+            value: domainKey,
+            label: `${meta.icon} ${meta.label}`,
+            hint: domainKey === 'universal' ? 'meta-skills baseline + full suite' : domainKey === 'organization' ? 'cross-functional teams with prerequisites' : `${count} specialized bundle${count > 1 ? 's' : ''}`,
+          };
+        });
 
-    for (const b of bundles) {
-      if (b.tier === 'organization' || b.domain === 'organization') {
-        orgBundles.push(b);
+        domainOptions.push({
+          value: '__search__',
+          label: '🔍 Search by name / keyword...',
+          hint: 'find bundles, agents, skills or workflows',
+        });
+
+        domainOptions.push({
+          value: '__full_tree__',
+          label: '🌳 View Full Static Catalog Tree',
+          hint: 'expand all 18 bundles and 8 departments at once',
+        });
+
+        const selectedDomain = await select({
+          message: 'Select Department Domain to explore:',
+          options: domainOptions,
+        });
+
+        if (typeof selectedDomain !== 'string') {
+          outro(pc.cyan('Catalog explorer closed.'));
+          return;
+        }
+
+        if (selectedDomain === '__full_tree__') {
+          renderFullCatalogTree(bundles);
+          continue;
+        }
+
+        if (selectedDomain === '__search__') {
+          const query = await text({
+            message: 'Enter keyword to search:',
+            placeholder: 'e.g. mobile, playwright, react, backend, seo',
+          });
+
+          if (typeof query !== 'string' || !query.trim()) {
+            continue;
+          }
+
+          const results = await registry.find(query.trim());
+          if (results.bundles.length === 0 && results.agents.length === 0 && results.skills.length === 0 && results.workflows.length === 0) {
+            note(`No items found matching "${query.trim()}".`, 'Search Results');
+            continue;
+          }
+
+          const searchOptions: Array<{ value: string; label: string; hint?: string }> = [
+            ...results.bundles.map((b: BundleDefinition) => ({
+              value: `bundle:${b.name}`,
+              label: `📦 [Bundle] ${BUNDLE_DISPLAY_NAMES[b.name]?.title || b.name} (${b.name})`,
+              hint: b.description,
+            })),
+            {
+              value: '__back__',
+              label: '🔙 Back to Department Selection',
+              hint: '',
+            },
+          ];
+
+          if (searchOptions.length === 1) {
+            note(`Found related agents/skills for "${query}", but no top-level bundles. Try browsing by department.`, 'Search Results');
+            continue;
+          }
+
+          const chosen = await select({
+            message: `Search Results for "${query.trim()}":`,
+            options: searchOptions,
+          });
+
+          if (typeof chosen === 'string' && chosen.startsWith('bundle:')) {
+            const bundleName = chosen.replace(/^bundle:/, '');
+            const b = await registry.getBundle(bundleName);
+            if (b) {
+              const action = await handleBundleDetailView(b);
+              if (action === '__exit__') {
+                outro(pc.cyan('Catalog explorer closed.'));
+                return;
+              }
+            }
+          }
+          continue;
+        }
+
+        activeDomain = selectedDomain;
+      }
+
+      // Stage 2: Collapsed Bundle Selection within Active Domain
+      const domainBundles = bundles.filter(b => b.domain === activeDomain || (activeDomain === 'organization' && b.tier === 'organization'));
+
+      // Sort so Essentials/universal-skills are first
+      const sortedBundles = [...domainBundles].sort((a, b) => {
+        if (a.name === 'universal-skills') return -1;
+        if (b.name === 'universal-skills') return 1;
+        if (!a.parentBundle && b.parentBundle) return -1;
+        if (a.parentBundle && !b.parentBundle) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      const bundleOptions: Array<{ value: string; label: string; hint?: string }> = sortedBundles.map((b, idx) => {
+        const isLast = idx === sortedBundles.length - 1;
+        const branch = sortedBundles.length > 1 ? (isLast ? '└── ' : '├── ') : '';
+        const meta = BUNDLE_DISPLAY_NAMES[b.name];
+        const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills' && b.tier !== 'organization';
+        const titleSuffix = isEssentials ? pc.cyan(' (Essentials Base)') : '';
+        const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
+
+        let badge = '';
+        if (b.name === 'universal-skills') badge = pc.green(' ⭐ [Recommended]');
+        else if (b.status === 'under-construction') badge = pc.yellow(' 🚧 [Under Construction]');
+        else if (b.status === 'needs-audit') badge = pc.magenta(' ⚠️ [Needs Audit]');
+        else if (b.status === 'experimental') badge = pc.cyan(' [Experimental]');
+        else if (b.status === 'deprecated') badge = pc.red(' [Deprecated]');
+
+        return {
+          value: b.name,
+          label: `${branch}📦 ${meta?.title || b.name}${titleSuffix}${badge}${parentTag}`,
+          hint: b.description || meta?.summary || b.name,
+        };
+      });
+
+      bundleOptions.push({
+        value: '__back_domain__',
+        label: '🔙 Back to Department Selection',
+        hint: 'choose another department domain',
+      });
+
+      const selectedBundleName = await select({
+        message: `${domainMeta[activeDomain]?.label || activeDomain} — Select bundle to open:`,
+        options: bundleOptions,
+      });
+
+      if (typeof selectedBundleName !== 'string') {
+        outro(pc.cyan('Catalog explorer closed.'));
+        return;
+      }
+
+      if (selectedBundleName === '__back_domain__') {
+        activeDomain = undefined;
         continue;
       }
-      const d = b.domain || 'other';
-      if (!grouped[d]) grouped[d] = [];
-      grouped[d].push(b);
+
+      const bundle = await registry.getBundle(selectedBundleName);
+      if (!bundle) continue;
+
+      // Stage 3: Render Open Tree View & Handle Action
+      const action = await handleBundleDetailView(bundle);
+      if (action === '__exit__') {
+        outro(pc.cyan('Catalog explorer closed.'));
+        return;
+      }
+      if (action === '__back_dept__') {
+        activeDomain = undefined;
+      }
+      // If action === '__back_bundle__', stays in activeDomain loop
     }
-
-    for (const domainKey of domainOrder) {
-      const items = grouped[domainKey];
-      if (!items || items.length === 0) continue;
-
-      const header = domainTitles[domainKey] || `📁  ${domainKey.toUpperCase()}`;
-      console.log(`\n${pc.bold(pc.magenta(header))} ${pc.dim(`(${items.length} bundle${items.length > 1 ? 's' : ''})`)}`);
-
-      items.forEach((b: BundleDefinition, bIdx: number) => {
-        const isLastBundle = bIdx === items.length - 1;
-        const bBranch = isLastBundle ? '└──' : '├──';
-        const subIndent = isLastBundle ? '    ' : '│   ';
-
-        const meta = BUNDLE_DISPLAY_NAMES[b.name];
-        const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills';
-        const titleSuffix = isEssentials ? pc.cyan(' (Essentials)') : '';
-        const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
-        const aliasesTag = b.aliases && b.aliases.length > 0 ? pc.gray(` [alias: ${b.aliases.join(', ')}]`) : '';
-
-        let statusBadge = '';
-        if (b.name === 'universal-skills') statusBadge = pc.green(' ⭐ [Recommended]');
-        else if (b.status === 'under-construction') statusBadge = pc.yellow(' 🚧 [Under Construction]');
-        else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
-        else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
-        else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
-
-        console.log(`${bBranch} 📦 ${pc.bold(pc.green(b.name))}${titleSuffix}${statusBadge}${parentTag}${aliasesTag}`);
-        console.log(`${subIndent}│   ${pc.white(b.description)}`);
-
-        // Lead / Orchestrator
-        if (b.orchestrator) {
-          const orchName = b.orchestrator.replace(/\.md$/, '');
-          console.log(`${subIndent}├── 🤖 Lead: ${pc.blue(orchName)}`);
-        }
-
-        // Subagents
-        if (b.agents && b.agents.length > 0) {
-          const subNames = b.agents.map(a => a.replace(/^subagent-/, '').replace(/\.md$/, ''));
-          const displaySubs =
-            subNames.length > 3 ? `${subNames.slice(0, 3).join(', ')} (+${subNames.length - 3} more)` : subNames.join(', ');
-          console.log(`${subIndent}├── 🤖 Sub-agents: ${pc.blue(displaySubs)}`);
-        }
-
-        // Skills
-        if (b.skills && b.skills.length > 0) {
-          const displaySkills =
-            b.skills.length > 3 ? `${b.skills.slice(0, 3).join(', ')} (+${b.skills.length - 3} more)` : b.skills.join(', ');
-          console.log(`${subIndent}├── ⚡ Skills: ${pc.yellow(displaySkills)}`);
-        }
-
-        // Workflows
-        if (b.workflows && b.workflows.length > 0) {
-          const wfNames = b.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
-          const displayWfs =
-            wfNames.length > 3 ? `${wfNames.slice(0, 3).join(', ')} (+${wfNames.length - 3} more)` : wfNames.join(', ');
-          console.log(`${subIndent}└── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
-        } else {
-          console.log(`${subIndent}└── 🔄 Workflows: ${pc.dim('Inherited from parent')}`);
-        }
-
-        if (!isLastBundle) {
-          console.log(`${subIndent}`);
-        }
-      });
-    }
-
-    // Dedicated Organization Bundles Section
-    if (orgBundles.length > 0) {
-      console.log(`\n${pc.bold(pc.cyan('🏢  Organization Bundles (Experimental / Cross-Functional)'))} ${pc.dim(`(${orgBundles.length} bundle${orgBundles.length > 1 ? 's' : ''})`)}`);
-      console.log(pc.dim('   Cross-domain teams modeled after real organizations. Require runtime prerequisites (MCPs/packages).'));
-
-      orgBundles.forEach((b: BundleDefinition, bIdx: number) => {
-        const isLastBundle = bIdx === orgBundles.length - 1;
-        const bBranch = isLastBundle ? '└──' : '├──';
-        const subIndent = isLastBundle ? '    ' : '│   ';
-
-        let statusBadge = '';
-        if (b.status === 'under-construction') statusBadge = pc.yellow(' 🚧 [Under Construction (TBA)]');
-        else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
-        else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
-        else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
-        else statusBadge = pc.green(' [Stable]');
-
-        const prereqBadge = pc.dim(' [Prerequisites Required]');
-
-        console.log(`${bBranch} 🏢 ${pc.bold(pc.cyan(b.name))}${statusBadge}${prereqBadge}`);
-        console.log(`${subIndent}│   ${pc.white(b.description)}`);
-
-        if (b.orchestrator) {
-          const orchName = b.orchestrator.replace(/\.md$/, '');
-          console.log(`${subIndent}├── 🤖 Lead: ${pc.blue(orchName)}`);
-        }
-
-        if (b.agents && b.agents.length > 0) {
-          const subNames = b.agents.map(a => a.replace(/^subagent-/, '').replace(/\.md$/, ''));
-          const displaySubs =
-            subNames.length > 3 ? `${subNames.slice(0, 3).join(', ')} (+${subNames.length - 3} more)` : subNames.join(', ');
-          console.log(`${subIndent}├── 🤖 Sub-agents: ${pc.blue(displaySubs)}`);
-        }
-
-        if (b.skills && b.skills.length > 0) {
-          const displaySkills =
-            b.skills.length > 3 ? `${b.skills.slice(0, 3).join(', ')} (+${b.skills.length - 3} more)` : b.skills.join(', ');
-          console.log(`${subIndent}├── ⚡ Skills: ${pc.yellow(displaySkills)}`);
-        }
-
-        if (b.workflows && b.workflows.length > 0) {
-          const wfNames = b.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
-          const displayWfs =
-            wfNames.length > 3 ? `${wfNames.slice(0, 3).join(', ')} (+${wfNames.length - 3} more)` : wfNames.join(', ');
-          console.log(`${subIndent}├── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
-        }
-
-        // Prerequisites Summary
-        if (b.prerequisites) {
-          const prereqParts: string[] = [];
-          if (b.prerequisites.requiredMcps && b.prerequisites.requiredMcps.length > 0) {
-            prereqParts.push(`MCPs: ${b.prerequisites.requiredMcps.map(m => m.name).join(', ')}`);
-          }
-          if (b.prerequisites.requiredPackages && b.prerequisites.requiredPackages.length > 0) {
-            prereqParts.push(`Packages: ${b.prerequisites.requiredPackages.join(', ')}`);
-          }
-          if (b.prerequisites.requiredEnvVars && b.prerequisites.requiredEnvVars.length > 0) {
-            prereqParts.push(`Env: ${b.prerequisites.requiredEnvVars.join(', ')}`);
-          }
-          if (prereqParts.length > 0) {
-            console.log(`${subIndent}├── 🔌 Prerequisites: ${pc.yellow(prereqParts.join(' | '))}`);
-          }
-        }
-
-        // Modes Summary
-        if (b.modes) {
-          console.log(`${subIndent}└── 💡 Execution Modes: ${pc.green('Operational')} (live MCPs) / ${pc.cyan('Brainstorming')} (advisory fallback)`);
-        } else {
-          console.log(`${subIndent}└── 💡 Execution Modes: ${pc.green('Operational')}`);
-        }
-
-        if (!isLastBundle) {
-          console.log(`${subIndent}`);
-        }
-      });
-    }
-
-    outro(pc.cyan('\nRun "agents add <bundle>" or select interactively to install.'));
   });
 
 cli
@@ -1438,12 +1936,40 @@ cli
   .command('doctor', 'Verify health of installed agents, frontmatter schemas, and hooks')
   .option('--host <host>', 'Audit specific host runtime (e.g. cline)')
   .action(async (options: any = {}) => {
-    intro(pc.cyan('Agents United - Health Doctor'));
+    intro(pc.cyan('🩺 Agents United — Health Doctor'));
     const report = await DoctorEngine.runDoctor(undefined, options.host);
 
-    console.log(`  Installed Agents: ${report.agentsCount}`);
-    console.log(`  Installed Skills: ${report.skillsCount}`);
-    console.log(`  Installed Workflows: ${report.workflowsCount}\n`);
+    if (!report.isInitialized || (report.agentsCount === 0 && report.skillsCount === 0 && report.workflowsCount === 0 && report.issues.length === 0)) {
+      console.log(`  ${pc.bold('📦 Status:')}   ${pc.yellow('No agents or bundles installed in this workspace.')}`);
+      console.log(`  ${pc.bold('📍 Location:')} ${pc.dim(report.targetDir)}\n`);
+
+      console.log(pc.bold(pc.cyan('💡 Get Started:')));
+      console.log(`  👉 ${pc.bold('agents add')}                      Launch the interactive installation wizard`);
+      console.log(`  👉 ${pc.bold('agents add software-engineering')} Install the engineering essentials team`);
+      console.log(`  👉 ${pc.bold('agents list')}                     Browse all 18 bundles and 8 departments\n`);
+
+      if (report.clineCapability) {
+        console.log(pc.bold(pc.cyan('Cline Runtime & Compound Projection Audit:')));
+        console.log(`  Installed: ${report.clineCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
+        if (report.clineCapability.version) {
+          console.log(`  Version: ${report.clineCapability.version}`);
+        }
+        console.log(`  Named Teams: ${report.clineCapability.namedTeams ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported (Adaptive fallback)')}\n`);
+      }
+
+      if (report.warnings.length > 0) {
+        console.log(pc.yellow(pc.bold('⚠️  Warnings:')));
+        report.warnings.forEach(w => console.log(`  ⚠ ${w}`));
+        console.log();
+      }
+
+      outro(pc.blue('✨ Workspace is ready for initialization.'));
+      return;
+    }
+
+    console.log(`  🤖 Installed Agents:    ${pc.bold(report.agentsCount.toString())}`);
+    console.log(`  ⚡ Installed Skills:    ${pc.bold(report.skillsCount.toString())}`);
+    console.log(`  🔄 Installed Workflows: ${pc.bold(report.workflowsCount.toString())}\n`);
 
     if (report.clineCapability) {
       console.log(pc.bold(pc.cyan('Cline Runtime & Compound Projection Audit:')));
@@ -1456,13 +1982,15 @@ cli
     }
 
     if (report.issues.length > 0) {
-      console.log(pc.red(pc.bold('Issues Found:')));
+      console.log(pc.red(pc.bold('❌ Issues Found:')));
       report.issues.forEach(i => console.log(`  ✖ ${i}`));
+      console.log();
     }
 
     if (report.warnings.length > 0) {
-      console.log(pc.yellow(pc.bold('Warnings:')));
+      console.log(pc.yellow(pc.bold('⚠️  Warnings:')));
       report.warnings.forEach(w => console.log(`  ⚠ ${w}`));
+      console.log();
     }
 
     if (report.valid && report.issues.length === 0) {

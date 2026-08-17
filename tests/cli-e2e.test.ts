@@ -42,6 +42,13 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(parsed.some((b: any) => b.name === 'software-engineering')).toBe(true);
   });
 
+  it('should support listing full static catalog tree with list --tree', () => {
+    const stdout = execSync(`node "${cliPath}" list --tree`, { encoding: 'utf8' });
+    expect(stdout).toContain('Agents United — Registry Catalog Tree');
+    expect(stdout).toContain('software-engineering');
+    expect(stdout).toContain('universal-skills');
+  });
+
   it('should add and remove bundles in non-interactive mode with -y flag', async () => {
     const addStdout = execSync(`node "${cliPath}" add software-engineering -y -s`, {
       cwd: e2eDir,
