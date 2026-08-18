@@ -218,46 +218,46 @@ cli
         );
       }
 
-      // Step 1: Which assistants will you work with? One question, plain language.
-      // The main library (.agents/) is always included when another assistant is
+      // Step 1: Which AI tools should we configure agent teams & personas for?
+      // The master library (.agents/) is always included when another tool is
       // chosen — it is the single source every translated copy is generated from.
       const hostSelection = await multiselect({
-        message: '1. Which AI assistants will you work with?',
+        message: '1. Which AI tools should we configure agent teams & personas for?',
         options: [
           {
             value: 'agents',
             label: HOST_REGISTRY.agents.label,
-            hint: detectedHosts.includes('agents') ? 'found in this project' : 'the one folder you edit — always included',
-          },
-          {
-            value: 'gemini',
-            label: HOST_REGISTRY.gemini.label,
-            hint: detectedHosts.includes('gemini') ? 'found in this project' : 'older Antigravity folder',
+            hint: detectedHosts.includes('agents') ? 'found in this project' : 'the master library where all skills & agents live — always included',
           },
           {
             value: 'claude',
             label: HOST_REGISTRY.claude.label,
-            hint: detectedHosts.includes('claude') ? 'found in this project' : 'gets its own translated copies',
+            hint: detectedHosts.includes('claude') ? 'found in this project' : 'orchestrator & subagent personas for Claude Code',
           },
           {
             value: 'cursor',
             label: HOST_REGISTRY.cursor.label,
-            hint: detectedHosts.includes('cursor') ? 'found in this project' : 'gets its own translated copies',
+            hint: detectedHosts.includes('cursor') ? 'found in this project' : 'orchestrator & subagent personas for Cursor IDE',
           },
           {
             value: 'cline',
             label: HOST_REGISTRY.cline.label,
-            hint: detectedHosts.includes('cline') ? 'found in this project' : 'gets its own translated copies',
+            hint: detectedHosts.includes('cline') ? 'found in this project' : 'roles, skills, coordinator rules & team manifests for Cline',
           },
           {
             value: 'opencode',
             label: HOST_REGISTRY.opencode.label,
-            hint: detectedHosts.includes('opencode') ? 'found in this project' : 'gets its own translated copies',
+            hint: detectedHosts.includes('opencode') ? 'found in this project' : 'orchestrator & subagent personas for OpenCode',
           },
           {
             value: 'codex',
             label: HOST_REGISTRY.codex.label,
-            hint: detectedHosts.includes('codex') ? 'found in this project' : 'an index file many tools read',
+            hint: detectedHosts.includes('codex') ? 'found in this project' : 'root index linking orchestrators, subagents & skills for Codex, Copilot, Aider & Zed',
+          },
+          {
+            value: 'gemini',
+            label: HOST_REGISTRY.gemini.label,
+            hint: detectedHosts.includes('gemini') ? 'found in this project' : 'older Antigravity 1.0 / Gemini folder',
           },
         ],
         initialValues: detectedHosts.length > 0 ? detectedHosts : ['agents'],
@@ -271,9 +271,9 @@ cli
         fanout = Array.from(new Set([...fanout, ...wizardPlan.fanout]));
         if (wizardPlan.addedCanonicalStore) {
           note(
-            'Added .agents/ — the main library your assistants share.\n' +
-              'Each assistant you picked gets its own translated copy. Edit only .agents/.',
-            'Main library'
+            'Added .agents/ — the master repository library your tools share.\n' +
+              'Each tool you selected gets its own orchestrators and subagents. Edit only .agents/.',
+            'Master library'
           );
         }
       }

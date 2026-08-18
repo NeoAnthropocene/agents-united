@@ -23,7 +23,7 @@ export interface HostDefinition {
 export const HOST_REGISTRY: Record<string, HostDefinition> = {
   agents: {
     id: 'agents',
-    label: 'Antigravity — main library (.agents/)',
+    label: 'Google Antigravity & Master Library (📁 .agents/)',
     projectDir: '.agents',
     globalDirSegments: ['.agents'],
     agentsSubdir: 'agents',
@@ -33,7 +33,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
   },
   gemini: {
     id: 'gemini',
-    label: 'Antigravity legacy (.gemini/)',
+    label: 'Antigravity legacy (📁 .gemini/)',
     projectDir: '.gemini',
     globalDirSegments: ['.gemini', 'config'],
     agentsSubdir: 'agents',
@@ -43,7 +43,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
   },
   claude: {
     id: 'claude',
-    label: 'Claude Code (.claude/)',
+    label: 'Anthropic Claude Code (📁 .claude/)',
     projectDir: '.claude',
     globalDirSegments: ['.claude'],
     agentsSubdir: 'agents',
@@ -53,7 +53,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
   },
   cursor: {
     id: 'cursor',
-    label: 'Cursor (.cursor/)',
+    label: 'Cursor IDE (📁 .cursor/)',
     projectDir: '.cursor',
     globalDirSegments: ['.cursor'],
     agentsSubdir: 'agents',
@@ -63,7 +63,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
   },
   cline: {
     id: 'cline',
-    label: 'Cline (.cline/)',
+    label: 'Cline (📁 .cline/)',
     projectDir: '.cline',
     globalDirSegments: ['.cline'],
     agentsSubdir: 'agents',
@@ -73,7 +73,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
   },
   opencode: {
     id: 'opencode',
-    label: 'OpenCode (.opencode/)',
+    label: 'OpenCode (📁 .opencode/)',
     projectDir: '.opencode',
     globalDirSegments: ['.config', 'opencode'],
     agentsSubdir: 'agent',
@@ -83,7 +83,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
   },
   codex: {
     id: 'codex',
-    label: 'Codex & AGENTS.md tools (AGENTS.md)',
+    label: 'OpenAI Codex, Copilot, Aider & Zed (📄 ./AGENTS.md)',
     projectDir: '.',
     globalDirSegments: ['.codex'],
     agentsSubdir: undefined,
