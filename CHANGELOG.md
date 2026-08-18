@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.0...v1.1.1) (2026-08-18)
+
+
+### Bug Fixes
+
+* **ci:** add registry-url to setup-node in release workflow ([8d4da60](https://github.com/NeoAnthropocene/agents-united/commit/8d4da608417a7a52d0627722d2526a96a3b5a461))
+
 # [1.1.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.0.0...v1.1.0) (2026-08-18)
 
 
