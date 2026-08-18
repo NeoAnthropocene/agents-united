@@ -2,7 +2,7 @@
 
 # Agents United
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.0-blue.svg)](https://www.npmjs.com/package/agents-united)
+[![npm version](https://img.shields.io/npm/v/agents-united.svg?color=blue)](https://www.npmjs.com/package/agents-united)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests: Vitest](https://img.shields.io/badge/tests-128%2B%20passing-brightgreen.svg)](https://vitest.dev/)
 [![TypeScript: Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
@@ -15,31 +15,41 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 
 ## 🌟 Key Features
 
-- **🪶 Small Footprint by Default, On-Demand Growth**: Every department installs as a lean **Essentials bundle** by default. When a task exceeds the installed capability, the Lead Orchestrator automatically detects the gap, names the addon bundle that covers it, and — in CLI-enabled environments — installs it directly into the scope of the active main domain (e.g. `agents add seo-content-marketing`) without any manual discovery needed.
-- **Department Domain Hierarchy**: Discover and install curated teams organized into 8 functional departments (Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Research, Business Strategy, and Universal Suite).
-- **18 Curated Bundles**: 8 Essentials foundational base bundles + 10 specialized sub-team addons (including AI/ML Engineering, Mobile, DevOps, SRE, SEO, Paid PPC, PLG, and Lifecycle Email).
-- **Cross-Bundle Dynamic Recommendation Protocol**: All 7 Lead Orchestrators possess real-time knowledge of specialized sub-domain bundles and recommend precise `agents add <bundle>` or `agents add domain:<dept>` commands when complex domain tasks are requested.
-- **Modern Cloud Platform & AI Ecosystem**: First-class runbooks for Modal.com, Replicate, RunPod, Ollama, vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Lovable/v0, Supabase, Turso, and Azure Bicep.
-- **Scoped AI Safety Policies**: Built-in zero secret exposure, GPU cost ceilings (scale-to-zero timeouts), and training data PII scrubbing.
-- **Two-Stage Progressive TUI**: Interactive `@clack/prompts` drill-down menu for effortless browsing without command-line parameter memorization.
-- **Folder Tree Visualizations**: Human-friendly terminal catalog view (`agents list`) displaying orchestrators, sub-agents, skills, workflows, and bundle inheritance.
-- **Multi-Host Target Adapters**: Simultaneously equip `.agents/`, `.gemini/`, `.claude/`, and `.cursor/` runtimes with automatic workspace detection.
-- **Flexible Scopes & Installation Modes**: Support for **Project Scope** (Git-tracked team lockfiles) and **Global Scope** (`~/.agents/`), with zero-duplication **Symlink Mode** or isolated **Copy Mode**.
-- **Whole-Department Installation**: One-click installation of entire department suites (`domain:engineering`, `domain:marketing`, `domain:architecture`) with interactive safety confirmation prompts.
-- **Fast Search & Discovery**: Powerful query engine (`agents find`) with category/type filters and interactive one-click installation.
-- **Strict Git Guardrails & Zero-Trust Safety**: Built-in protection against commits to protected branches (`main`/`master`), accidental force pushes, and secret exposure.
-- **Deterministic Health Doctor**: Automatic validation of frontmatter schema compliance, lifecycle hooks, and lockfile synchronization (`agents doctor`).
+- **🪶 Essentials-First & On-Demand Growth**: Every department installs as a lean **Essentials bundle** by default. When a task requires specialized capabilities, the Lead Orchestrator automatically detects the gap, recommends the exact addon, and can auto-install it directly into your project scope.
+- **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
+- **🚀 Cline Native Activation**: Launch specialized teams into Cline CLI sessions with `agents start`, featuring compound role projections, skill toolkits, coordinator rules, and declarative team manifests.
+- **🏛️ 8 Department Domains & 22 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
+- **🤖 45 Specialized Agents & 90+ Skills**: 7 Lead Orchestrators coordinating 38 domain sub-agents, backed by 90 production-grade runbooks and 63 deterministic workflows.
+- **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
+- **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional teams (e.g. `digital-agency`) powered by live MCP server tool integrations (Firecrawl, GitHub) with dual Operational vs. Brainstorming execution modes.
+- **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
+- **🧙 Interactive 2-Stage TUI Wizard**: Guided terminal interface powered by `@clack/prompts`, visual Unicode catalog tree (`agents list`), and fast search (`agents find`).
+- **📦 Flexible Scopes & Installation Modes**: Install to **Project Scope** (Git-tracked team lockfiles) or **Global Scope** (`~/.agents/`), using instant **Symlink Mode** or standalone **Copy Mode**.
+- **🩺 Deterministic Health Doctor**: Comprehensive diagnostic suite (`agents doctor`) validating frontmatter schemas, declarative lifecycle hooks, host capabilities, and lockfile synchronization.
 
 ---
 
 ## 🚀 Quickstart
 
-### Run with `npx` (Zero Installation)
+### 1. Run with `npx` (Zero Installation)
+Try immediately without installing anything:
 ```bash
 npx agents-united add
 ```
 
-### Global Installation
+### 2. Project-Level Installation (Recommended for Teams)
+Install into your project repository to track agents and share lockfiles with your team:
+```bash
+# Install as a dev dependency
+npm install -D agents-united
+# or: pnpm add -D agents-united | yarn add -D agents-united
+
+# Launch interactive setup for your repository (installs into ./.agents/)
+npx agents add
+```
+
+### 3. Global Installation
+Install globally to use the `agents` CLI anywhere on your machine:
 ```bash
 npm install -g agents-united
 ```
@@ -99,17 +109,72 @@ This model gives you:
 
 Agents United provides **22 curated bundles**, **45 specialized agents** (7 Lead Orchestrators + 38 Sub-Agents), **90 skills**, and **63 workflows** across 8 department domains:
 
-| Department Domain | Bundles | Description | Orchestrator & Key Roles |
-|---|---|---|---|
-| **🌐 Universal Autonomous Department** | `universal-skills` ⭐ *(Recommended Baseline)*<br>`full` (Universal Suite) | Domain-agnostic meta-skills (Socratic grilling, PRD generation, ADRs, session handoff) and complete enterprise suite containing all 22 bundles and 45 agents. | All 7 Lead Orchestrators + 38 Sub-Agents |
-| **🛠️ Software Engineering & Delivery** | `software-engineering` (Essentials Base)<br>`ai-ml-engineering`<br>`mobile-development`<br>`frontend-engineering`<br>`backend-distributed-systems`<br>`qa-automation`<br>`devops-engineering` | Full lifecycle software engineering, AI/ML platform engineering & serverless GPU orchestration, mobile (iOS/Android/Cross-Platform), modern web frontend, microservices, Playwright E2E automation, and CI/CD delivery pipelines. | `orchestrator-engineering`<br>`subagent-backend-architect`<br>`subagent-frontend-architect`<br>`subagent-code-reviewer`<br>`subagent-repo-index`<br>`subagent-ml-platform-engineer`<br>`subagent-ai-model-architect`<br>`subagent-ios-architect`<br>`subagent-android-architect`<br>`subagent-cross-platform-specialist`<br>`subagent-accessibility-lead`<br>`subagent-distributed-systems-architect`<br>`subagent-data-engineer`<br>`subagent-qa-automation-lead`<br>`subagent-e2e-tester`<br>`subagent-devops-engineer` |
-| **🏛️ System Architecture & SRE** | `system-architecture` (Essentials Base)<br>`sysops-sre` | High-level system design, distributed data models, ADR governance, 99.999% uptime, Prometheus telemetry, incident triage, and disaster recovery. | `orchestrator-system-architecture`<br>`subagent-system-architect`<br>`subagent-backend-architect`<br>`subagent-sysops-sre-lead` |
-| **🎨 Product Design & UI/UX** | `product-design` (Essentials Base)<br>`design-systems-ops`<br>`design-research-testing` | User research, wireframing, design systems governance, token management, sprint handoffs, micro-interactions, and AI prototype refactoring. | `orchestrator-design`<br>`subagent-ui-designer`<br>`subagent-ux-strategist`<br>`subagent-interaction-designer`<br>`subagent-design-systems-architect`<br>`subagent-design-ops-lead`<br>`subagent-design-researcher`<br>`subagent-designer-toolkit-expert`<br>`subagent-prototype-tester` |
-| **📈 Growth & Marketing Operations** | `growth-marketing` (Essentials Base)<br>`seo-content-marketing`<br>`performance-paid-acquisition`<br>`product-led-growth`<br>`lifecycle-email-marketing` | Growth strategy, visual creative design, programmatic SEO, multi-channel paid acquisition (Google/Meta/LinkedIn), onboarding funnel CRO, viral loops, and behavioral email nurture sequences. | `orchestrator-marketing`<br>`subagent-marketing-growth-strategist`<br>`subagent-marketing-content-strategist`<br>`subagent-marketing-conversion-specialist`<br>`subagent-marketing-campaign-specialist`<br>`subagent-marketing-creative-designer`<br>`subagent-seo-specialist`<br>`subagent-paid-acquisition-specialist`<br>`subagent-plg-strategist`<br>`subagent-lifecycle-email-specialist` |
-| **🔒 Security Operations** | `security-operations` (Essentials Base) | Application security audits, STRIDE threat modeling, dependency vulnerability scanning, secret redaction, and infrastructure hardening. | `orchestrator-security`<br>`subagent-security-engineer` |
-| **🔬 Deep Technical Research** | `deep-research` (Essentials Base) | Technical literature review, deep research synthesis, Socratic mentoring, and repository indexing. | `orchestrator-research`<br>`subagent-deep-research`<br>`subagent-socratic-mentor`<br>`subagent-repo-index` |
-| **💼 Business Strategy & Economics** | `business-strategy` (Essentials Base) | Market sizing, unit economics, SaaS monetization models, and executive technical specification panels. | `orchestrator-business`<br>`subagent-business-panel-experts` |
-| **🏢 Organization Bundles (Tier 2 / Experimental)** | `digital-agency` 🚧 *(Under Construction)* | Cross-functional digital product agency combining web dev, mobile, UI/UX, SEO, and paid growth. Requires MCP servers (`firecrawl`, `github`) and packages. Supports Dual Execution Modes (Operational vs Brainstorming). | `orchestrator-engineering`<br>`subagent-backend-architect`<br>`subagent-frontend-architect`<br>`subagent-ui-designer`<br>`subagent-marketing-growth-strategist`<br>`subagent-seo-specialist` |
+| Department Domain | Essentials Base | Specialized Addon Bundles | Lead Orchestrator |
+| :--- | :--- | :--- | :--- |
+| **🌐 Universal Department** | `universal-skills` ⭐ | `full` (Universal Suite) | Multi-Agent Coordination |
+| **🛠️ Software Engineering & Delivery** | `software-engineering` | `ai-ml-engineering`, `mobile-development`, `frontend-engineering`, `backend-distributed-systems`, `qa-automation`, `devops-engineering` | `orchestrator-engineering` |
+| **🏛️ System Architecture & SRE** | `system-architecture` | `sysops-sre` | `orchestrator-system-architecture` |
+| **🎨 Product Design & UI/UX** | `product-design` | `design-systems-ops`, `design-research-testing` | `orchestrator-design` |
+| **📈 Growth & Marketing Operations** | `growth-marketing` | `seo-content-marketing`, `performance-paid-acquisition`, `product-led-growth`, `lifecycle-email-marketing` | `orchestrator-marketing` |
+| **🔒 Security Operations** | `security-operations` | — | `orchestrator-security` |
+| **🔬 Deep Technical Research** | `deep-research` | — | `orchestrator-research` |
+| **💼 Business Strategy & Economics** | `business-strategy` | — | `orchestrator-business` |
+| **🏢 Organization Bundles (Experimental)** | `digital-agency` 🚧 | *(Cross-functional agency: Web, Mobile, Design, Growth, SEO)* | `orchestrator-engineering` |
+
+<details>
+<summary><strong>🔍 Click to expand full Department & Agent Roster Breakdown</strong></summary>
+
+<br>
+
+#### 🌐 Universal Autonomous Department
+- **Baseline**: `universal-skills` ⭐ *(Recommended Baseline — Socratic grilling, PRD generation, ADRs, session handoff)*
+- **Universal Suite**: `full` *(Complete enterprise suite containing all 22 bundles, 45 agents, 90 skills, 63 workflows)*
+
+#### 🛠️ Software Engineering & Delivery
+- **Lead Orchestrator**: `orchestrator-engineering`
+- **Essentials Base (`software-engineering`)**: `subagent-backend-architect`, `subagent-frontend-architect`, `subagent-code-reviewer`, `subagent-repo-index`
+- **AI/ML Engineering (`ai-ml-engineering`)**: `subagent-ml-platform-engineer`, `subagent-ai-model-architect`
+- **Mobile Development (`mobile-development`)**: `subagent-ios-architect`, `subagent-android-architect`, `subagent-cross-platform-specialist`
+- **Frontend Engineering (`frontend-engineering`)**: `subagent-frontend-architect`, `subagent-accessibility-lead`
+- **Backend & Distributed Systems (`backend-distributed-systems`)**: `subagent-distributed-systems-architect`, `subagent-data-engineer`
+- **QA Automation (`qa-automation`)**: `subagent-qa-automation-lead`, `subagent-e2e-tester`
+- **DevOps Engineering (`devops-engineering`)**: `subagent-devops-engineer`
+
+#### 🏛️ System Architecture & SRE
+- **Lead Orchestrator**: `orchestrator-system-architecture`
+- **Essentials Base (`system-architecture`)**: `subagent-system-architect`, `subagent-backend-architect`
+- **SysOps & SRE (`sysops-sre`)**: `subagent-sysops-sre-lead`
+
+#### 🎨 Product Design & UI/UX
+- **Lead Orchestrator**: `orchestrator-design`
+- **Essentials Base (`product-design`)**: `subagent-ui-designer`, `subagent-ux-strategist`, `subagent-interaction-designer`, `subagent-design-systems-architect`, `subagent-design-researcher`, `subagent-design-ops-lead`, `subagent-designer-toolkit-expert`, `subagent-prototype-tester`
+- **Design Systems Ops (`design-systems-ops`)**: `subagent-design-systems-architect`, `subagent-design-ops-lead`
+- **Design Research & Testing (`design-research-testing`)**: `subagent-design-researcher`, `subagent-prototype-tester`
+
+#### 📈 Growth & Marketing Operations
+- **Lead Orchestrator**: `orchestrator-marketing`
+- **Essentials Base (`growth-marketing`)**: `subagent-marketing-growth-strategist`, `subagent-marketing-content-strategist`, `subagent-marketing-conversion-specialist`, `subagent-marketing-campaign-specialist`, `subagent-marketing-creative-designer`
+- **SEO & Content Marketing (`seo-content-marketing`)**: `subagent-seo-specialist`
+- **Performance & Paid Acquisition (`performance-paid-acquisition`)**: `subagent-paid-acquisition-specialist`
+- **Product-Led Growth (`product-led-growth`)**: `subagent-plg-strategist`
+- **Lifecycle & Email Marketing (`lifecycle-email-marketing`)**: `subagent-lifecycle-email-specialist`
+
+#### 🔒 Security Operations
+- **Lead Orchestrator**: `orchestrator-security`
+- **Essentials Base (`security-operations`)**: `subagent-security-engineer`
+
+#### 🔬 Deep Technical Research
+- **Lead Orchestrator**: `orchestrator-research`
+- **Essentials Base (`deep-research`)**: `subagent-deep-research`, `subagent-socratic-mentor`, `subagent-repo-index`
+
+#### 💼 Business Strategy & Economics
+- **Lead Orchestrator**: `orchestrator-business`
+- **Essentials Base (`business-strategy`)**: `subagent-business-panel-experts`
+
+#### 🏢 Organization Bundles (Tier 2 / Experimental)
+- **Digital Product Agency (`digital-agency` 🚧)**: Cross-functional team (`orchestrator-engineering`, `subagent-backend-architect`, `subagent-frontend-architect`, `subagent-ui-designer`, `subagent-marketing-growth-strategist`, `subagent-seo-specialist`). Requires MCP tools (`firecrawl`, `github`). Supports Dual Execution Modes (Operational vs Brainstorming).
+
+</details>
 
 ---
 
@@ -450,46 +515,113 @@ When contributing new skills or adapting external skills:
 
 Agents United proudly builds upon, adapts, and integrates contributions from creators across the open AI agent, cloud platform, and developer tooling ecosystem:
 
-- **Matt Pocock** ([@mattpocock](https://github.com/mattpocock) / [mattpocock/skills](https://github.com/mattpocock/skills)):
-  - **`/grill-with-docs`** & **`/grill-me`**: Socratic alignment grilling, requirements clarification, and ADR authoring.
-  - **`/domain-modeling`**: Ubiquitous language definition and `CONTEXT.md` domain dictionary maintenance.
-  - **`/to-spec`** & **`/to-tickets`**: PRD/spec generation and task ticket decomposition.
-  - **`/diagnosing-bugs`**: Evidence-driven bug diagnosis and root-cause analysis.
-  - **`/git-guardrails`**: Version control safety rules and protection policies.
-  - **`/handoff`**: Session progress persistence and context handoff notes.
-- **Modal Labs** ([@modal-labs](https://github.com/modal-labs) / [modal.com](https://modal.com)):
-  - **`modal-serverless-python`**: Serverless Python execution, container image definition, and GPU acceleration patterns.
-- **Replicate** ([@replicate](https://github.com/replicate) / [replicate.com](https://replicate.com)):
-  - **`replicate-model-inference`**: Hosted machine learning model inference API, webhook callbacks, and prediction streaming.
-- **RunPod** ([@runpod](https://github.com/runpod) / [runpod.io](https://runpod.io)):
-  - **`runpod-gpu-orchestration`**: Serverless GPU handler architecture and containerized worker management.
-- **Ollama & vLLM Teams** ([ollama.com](https://ollama.com) / [vllm.ai](https://vllm.ai)):
-  - **`local-llm-inference`**: Self-hosted LLM execution, quantization formats, and high-throughput PagedAttention serving.
-- **LangChain & LlamaIndex** ([langchain.com](https://langchain.com) / [llamaindex.ai](https://llamaindex.ai)):
-  - **`rag-vector-pipeline`**: Retrieval-Augmented Generation architectures, hybrid retrieval, and re-ranking pipelines.
-- **Hugging Face** ([@huggingface](https://github.com/huggingface) / [huggingface.co](https://huggingface.co)):
-  - **`hf-model-evaluation`**: Model benchmarking, Evaluate metrics, and model scorecard methodologies.
-- **Qdrant, Pinecone & Chroma** ([qdrant.tech](https://qdrant.tech) / [pinecone.io](https://pinecone.io) / [trychroma.com](https://www.trychroma.com)):
-  - **`vector-database-design`**: Production vector indexing, HNSW graph tuning, and payload filtering.
-- **Vercel Engineering** ([@vercel](https://github.com/vercel) / [vercel.com](https://vercel.com)):
-  - **`vercel-deploy-best-practices`**: Edge Middleware routing, Server Actions, and Preview environments.
-  - **`react-best-practices`**: Next.js App Router, Server Components & Core Web Vitals optimization.
-- **Lovable, v0 (Vercel) & Bolt (StackBlitz)** ([lovable.dev](https://lovable.dev) / [v0.dev](https://v0.dev) / [bolt.new](https://bolt.new)):
-  - **`ai-prototype-refactoring`**: Ingestion and modularization methodologies for rapid AI-generated frontend prototypes.
-- **Supabase** ([@supabase](https://github.com/supabase) / [supabase.com](https://supabase.com)):
-  - **`supabase-backend-architecture`**: PostgreSQL database design, Row Level Security (RLS), Edge Functions, and Realtime sync.
-- **ChiselStrike & Turso Community** ([@tursodatabase](https://github.com/tursodatabase) / [turso.tech](https://turso.tech)):
-  - **`turso-distributed-sqlite`**: LibSQL distributed SQLite, embedded replicas with auto-sync, and database branching.
-- **Microsoft Azure Community** ([learn.microsoft.com/azure/bicep](https://learn.microsoft.com/azure/azure-resource-manager/bicep)):
-  - **`azure-infrastructure-bicep`**: Enterprise Bicep Infrastructure-as-Code, Azure Container Apps (ACA), and Azure OpenAI private networking.
-- **Currents & Microsoft Playwright Community** ([currents-dev/playwright-best-practices-skill](https://github.com/currents-dev/playwright-best-practices-skill)):
-  - **`playwright-best-practices`**: Resilient Page Object Models and deterministic auto-waiting browser tests.
-- **wshobson** ([wshobson/agents](https://github.com/wshobson/agents)):
-  - **`mobile-ios-design`** & **`mobile-android-design`**: SwiftUI & Jetpack Compose design system patterns.
-- **Salesforce** ([forcedotcom/sf-skills](https://github.com/forcedotcom/sf-skills)):
-  - **`mobile-platform-offline-validate`**: Offline-first local database caching and conflict resolution.
-- **tovimx** ([tovimx/maestro-mobile-testing-skill](https://github.com/tovimx/maestro-mobile-testing-skill)):
-  - **`maestro-mobile-testing`**: Declarative cross-platform mobile UI test automation.
+<details>
+<summary><strong>Matt Pocock (<a href="https://github.com/mattpocock">@mattpocock</a> / <a href="https://github.com/mattpocock/skills">mattpocock/skills</a>)</strong></summary>
+
+- **`/grill-with-docs`** & **`/grill-me`**: Socratic alignment grilling, requirements clarification, and ADR authoring.
+- **`/domain-modeling`**: Ubiquitous language definition and `CONTEXT.md` domain dictionary maintenance.
+- **`/to-spec`** & **`/to-tickets`**: PRD/spec generation and task ticket decomposition.
+- **`/diagnosing-bugs`**: Evidence-driven bug diagnosis and root-cause analysis.
+- **`/git-guardrails`**: Version control safety rules and protection policies.
+- **`/handoff`**: Session progress persistence and context handoff notes.
+</details>
+
+<details>
+<summary><strong>Modal Labs (<a href="https://github.com/modal-labs">@modal-labs</a> / <a href="https://modal.com">modal.com</a>)</strong></summary>
+
+- **`modal-serverless-python`**: Serverless Python execution, container image definition, and GPU acceleration patterns.
+</details>
+
+<details>
+<summary><strong>Replicate (<a href="https://github.com/replicate">@replicate</a> / <a href="https://replicate.com">replicate.com</a>)</strong></summary>
+
+- **`replicate-model-inference`**: Hosted machine learning model inference API, webhook callbacks, and prediction streaming.
+</details>
+
+<details>
+<summary><strong>RunPod (<a href="https://github.com/runpod">@runpod</a> / <a href="https://runpod.io">runpod.io</a>)</strong></summary>
+
+- **`runpod-gpu-orchestration`**: Serverless GPU handler architecture and containerized worker management.
+</details>
+
+<details>
+<summary><strong>Ollama & vLLM Teams (<a href="https://ollama.com">ollama.com</a> / <a href="https://vllm.ai">vllm.ai</a>)</strong></summary>
+
+- **`local-llm-inference`**: Self-hosted LLM execution, quantization formats, and high-throughput PagedAttention serving.
+</details>
+
+<details>
+<summary><strong>LangChain & LlamaIndex (<a href="https://langchain.com">langchain.com</a> / <a href="https://llamaindex.ai">llamaindex.ai</a>)</strong></summary>
+
+- **`rag-vector-pipeline`**: Retrieval-Augmented Generation architectures, hybrid retrieval, and re-ranking pipelines.
+</details>
+
+<details>
+<summary><strong>Hugging Face (<a href="https://github.com/huggingface">@huggingface</a> / <a href="https://huggingface.co">huggingface.co</a>)</strong></summary>
+
+- **`hf-model-evaluation`**: Model benchmarking, Evaluate metrics, and model scorecard methodologies.
+</details>
+
+<details>
+<summary><strong>Qdrant, Pinecone & Chroma (<a href="https://qdrant.tech">qdrant.tech</a> / <a href="https://pinecone.io">pinecone.io</a> / <a href="https://www.trychroma.com">trychroma.com</a>)</strong></summary>
+
+- **`vector-database-design`**: Production vector indexing, HNSW graph tuning, and payload filtering.
+</details>
+
+<details>
+<summary><strong>Vercel Engineering (<a href="https://github.com/vercel">@vercel</a> / <a href="https://vercel.com">vercel.com</a>)</strong></summary>
+
+- **`vercel-deploy-best-practices`**: Edge Middleware routing, Server Actions, and Preview environments.
+- **`react-best-practices`**: Next.js App Router, Server Components & Core Web Vitals optimization.
+</details>
+
+<details>
+<summary><strong>Lovable, v0 (Vercel) & Bolt (StackBlitz) (<a href="https://lovable.dev">lovable.dev</a> / <a href="https://v0.dev">v0.dev</a> / <a href="https://bolt.new">bolt.new</a>)</strong></summary>
+
+- **`ai-prototype-refactoring`**: Ingestion and modularization methodologies for rapid AI-generated frontend prototypes.
+</details>
+
+<details>
+<summary><strong>Supabase (<a href="https://github.com/supabase">@supabase</a> / <a href="https://supabase.com">supabase.com</a>)</strong></summary>
+
+- **`supabase-backend-architecture`**: PostgreSQL database design, Row Level Security (RLS), Edge Functions, and Realtime sync.
+</details>
+
+<details>
+<summary><strong>ChiselStrike & Turso Community (<a href="https://github.com/tursodatabase">@tursodatabase</a> / <a href="https://turso.tech">turso.tech</a>)</strong></summary>
+
+- **`turso-distributed-sqlite`**: LibSQL distributed SQLite, embedded replicas with auto-sync, and database branching.
+</details>
+
+<details>
+<summary><strong>Microsoft Azure Community (<a href="https://learn.microsoft.com/azure/bicep">learn.microsoft.com/azure/bicep</a>)</strong></summary>
+
+- **`azure-infrastructure-bicep`**: Enterprise Bicep Infrastructure-as-Code, Azure Container Apps (ACA), and Azure OpenAI private networking.
+</details>
+
+<details>
+<summary><strong>Currents & Microsoft Playwright Community (<a href="https://github.com/currents-dev/playwright-best-practices-skill">currents-dev/playwright-best-practices-skill</a>)</strong></summary>
+
+- **`playwright-best-practices`**: Resilient Page Object Models and deterministic auto-waiting browser tests.
+</details>
+
+<details>
+<summary><strong>wshobson (<a href="https://github.com/wshobson/agents">wshobson/agents</a>)</strong></summary>
+
+- **`mobile-ios-design`** & **`mobile-android-design`**: SwiftUI & Jetpack Compose design system patterns.
+</details>
+
+<details>
+<summary><strong>Salesforce (<a href="https://github.com/forcedotcom/sf-skills">forcedotcom/sf-skills</a>)</strong></summary>
+
+- **`mobile-platform-offline-validate`**: Offline-first local database caching and conflict resolution.
+</details>
+
+<details>
+<summary><strong>tovimx (<a href="https://github.com/tovimx/maestro-mobile-testing-skill">tovimx/maestro-mobile-testing-skill</a>)</strong></summary>
+
+- **`maestro-mobile-testing`**: Declarative cross-platform mobile UI test automation.
+</details>
 
 ---
 
