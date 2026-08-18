@@ -41,10 +41,18 @@ jobs:
       - name: Run Tests
         run: npm test
 
+      - name: Verify NPM & GitHub Tokens
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "Checking npm auth..."
+          npm whoami || echo "WARNING: npm whoami failed. Verify that NPM_TOKEN secret is set with a valid npm automation token in GitHub Secrets."
+
       - name: Semantic Release to NPM & GitHub
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx --yes semantic-release
+        run: npx --yes semantic-release --debug
