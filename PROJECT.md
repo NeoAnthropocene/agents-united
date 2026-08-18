@@ -137,7 +137,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 | ADR | Title | Status | Core Architectural Decision |
 | :--- | :--- | :--- | :--- |
-| **[0001](./docs/adr/0001-cli-distribution-and-runtime.md)** | CLI Distribution & Runtime | Accepted | TypeScript Node.js ESM binary published to npm as `@neoanthropocene/agents-united`, executed via `npx agents-united` or global CLI. |
+| **[0001](./docs/adr/0001-cli-distribution-and-runtime.md)** | CLI Distribution & Runtime | Accepted | TypeScript Node.js ESM binary published to npm as `agents-united`, executed via `npx agents-united` or global CLI. |
 | **[0002](./docs/adr/0002-antigravity-2-agent-specification.md)** | Antigravity 2.0 Agent Schema Adoption | Accepted | Adopt Antigravity 2.0 markdown + frontmatter standard (`model`, `tools`, `permissionMode`, `commandExecutionPolicy`, `hooks`) as canonical format. |
 | **[0003](./docs/adr/0003-manifest-and-bundle-architecture.md)** | Manifest & Installation Tracking | Accepted | Centralized `bundles.json` catalog and per-workspace `agents-united.json` lockfile to guarantee clean, deterministic uninstallation and drift detection. |
 | **[0004](./docs/adr/0004-hierarchical-orchestrator-subagent-architecture.md)** | Hierarchical Orchestrator-Subagent Bundle Architecture | Accepted | Strict hierarchy: `orchestrator-<domain>.md` coordinating specialized `subagent-<role>.md`, guided by `workflow-<task>.md` and `skills/<skill>/SKILL.md`. |
