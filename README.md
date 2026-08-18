@@ -119,7 +119,7 @@ Agents United provides **22 curated bundles**, **45 specialized agents** (7 Lead
 | **🔒 Security Operations** | `security-operations` | — | `orchestrator-security` |
 | **🔬 Deep Technical Research** | `deep-research` | — | `orchestrator-research` |
 | **💼 Business Strategy & Economics** | `business-strategy` | — | `orchestrator-business` |
-| **🏢 Organization Bundles (Experimental)** | `digital-agency` 🚧 | *(Currently under development)* | `orchestrator-engineering` |
+| **🏢 Organization Bundles (Experimental)** | `digital-agency` 🚧 | *(Currently under development)* | `orchestrator-digital-agency-director` |
 
 <details>
 <summary><strong>🔍 Click to expand full Department & Agent Roster Breakdown</strong></summary>

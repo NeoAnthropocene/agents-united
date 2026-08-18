@@ -876,13 +876,17 @@
         "operational": "Full execution with live MCP tool calling, scraping, and browser automation",
         "brainstorming": "Advisory and ideation mode generating project scopes, wireframe specs, and marketing plans"
       },
-      "orchestrator": "orchestrator-engineering.md",
+      "orchestrator": "orchestrator-digital-agency-director.md",
       "agents": [
-        "subagent-backend-architect.md",
-        "subagent-frontend-architect.md",
-        "subagent-ui-designer.md",
-        "subagent-marketing-growth-strategist.md",
-        "subagent-seo-specialist.md"
+        "subagent-digitalagency-strategy-planner.md",
+        "subagent-digitalagency-lead-intelligence.md",
+        "subagent-digitalagency-creative-copywriter.md",
+        "subagent-digitalagency-design-uiux.md",
+        "subagent-digitalagency-dev-frontend.md",
+        "subagent-digitalagency-growth-marketer.md",
+        "subagent-digitalagency-privacy-engineer.md",
+        "subagent-digitalagency-adtech-compliance.md",
+        "subagent-digitalagency-qa-compliance.md"
       ],
       "workflows": [
         "workflow-implement.md",

@@ -204,8 +204,8 @@ The ecosystem catalog maintains **45 specialized agents** (7 Lead Orchestrators 
 │       └── 🤖 Sub-agents: business-panel-experts
 ├── 🏢  Organization Bundles (Experimental / Cross-Functional) (1 bundle)
 │   └── 📦 digital-agency 🚧 [Under Construction (TBA)] [Prerequisites Required]
-│       ├── 🤖 Lead: orchestrator-engineering
-│       ├── 🤖 Sub-agents: backend-architect, frontend-architect, ui-designer, growth-strategist, seo-specialist
+│       ├── 🤖 Lead: orchestrator-digital-agency-director
+│       ├── 🤖 Sub-agents: strategy-planner, lead-intelligence, creative-copywriter, design-uiux, dev-frontend, growth-marketer, privacy-engineer, adtech-compliance, qa-compliance
 │       ├── 🔌 Prerequisites: firecrawl (MCP), github (MCP), @playwright/test (Pkg), FIRECRAWL_API_KEY (Env)
 │       └── 💡 Execution Modes: Operational / Brainstorming
 └── 🌐  Universal Autonomous Department (1 bundle)
