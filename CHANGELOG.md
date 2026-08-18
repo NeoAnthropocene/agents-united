@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.2...v1.1.3) (2026-08-18)
+
+
+### Bug Fixes
+
+* **release:** publish release 1.1.3 to npm registry ([9049055](https://github.com/NeoAnthropocene/agents-united/commit/9049055b5ea6e795ca1d1e15899db93c2d000964))
+
 ## [1.1.2](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.1...v1.1.2) (2026-08-18)
 
 
