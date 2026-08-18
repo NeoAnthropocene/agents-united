@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.3...v1.1.4) (2026-08-18)
+
+
+### Bug Fixes
+
+* **ci:** adopt tokenless OIDC Trusted Publishing with npm provenance ([da546ba](https://github.com/NeoAnthropocene/agents-united/commit/da546ba9029fdc85626b2659da478d79470cd89a))
+
 ## [1.1.3](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.2...v1.1.3) (2026-08-18)
 
 
