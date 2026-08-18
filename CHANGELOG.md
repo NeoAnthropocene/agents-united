@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.0.0...v1.1.0) (2026-08-18)
+
+
+### Bug Fixes
+
+* **release:** align package name to agents-united for npm publishing ([0a7e02f](https://github.com/NeoAnthropocene/agents-united/commit/0a7e02f173e962eaf3809f9ea53bacb999c2343d))
+
+
+### Features
+
+* **cli:** interactive catalog explorer in list, safety gate parity, and doctor empty-state UX ([4ac18d5](https://github.com/NeoAnthropocene/agents-united/commit/4ac18d53edb1022e0863cafa3c64bf677ce35ce5))
+
 # 1.0.0 (2026-08-17)
 
 
