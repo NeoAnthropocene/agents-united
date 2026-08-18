@@ -2,7 +2,7 @@
 
 # Agents United
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.0-blue.svg)](https://www.npmjs.com/package/@neoanthropocene/agents-united)
+[![npm version](https://img.shields.io/badge/npm-v1.0.0-blue.svg)](https://www.npmjs.com/package/agents-united)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests: Vitest](https://img.shields.io/badge/tests-128%2B%20passing-brightgreen.svg)](https://vitest.dev/)
 [![TypeScript: Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
@@ -36,12 +36,12 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 
 ### Run with `npx` (Zero Installation)
 ```bash
-npx @neoanthropocene/agents-united add
+npx agents-united add
 ```
 
 ### Global Installation
 ```bash
-npm install -g @neoanthropocene/agents-united
+npm install -g agents-united
 ```
 
 Once installed, use the `agents` CLI command anywhere:

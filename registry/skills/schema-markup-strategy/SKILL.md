@@ -131,7 +131,7 @@ Following this skill structures interconnected entity graphs (`@graph`), linking
           "name": "How do I install Agents United?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Run npm install -g @neoanthropocene/agents-united to install globally."
+            "text": "Run npm install -g agents-united to install globally."
           }
         }
       ]
