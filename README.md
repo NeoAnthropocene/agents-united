@@ -21,7 +21,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 - **🏛️ 8 Department Domains & 22 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
 - **🤖 45 Specialized Agents & 90+ Skills**: 7 Lead Orchestrators coordinating 38 domain sub-agents, backed by 90 production-grade runbooks and 63 deterministic workflows.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
-- **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional teams (e.g. `digital-agency`) powered by live MCP server tool integrations (Firecrawl, GitHub) with dual Operational vs. Brainstorming execution modes.
+- **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams *(Currently under development)*.
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
 - **🧙 Interactive 2-Stage TUI Wizard**: Guided terminal interface powered by `@clack/prompts`, visual Unicode catalog tree (`agents list`), and fast search (`agents find`).
 - **📦 Flexible Scopes & Installation Modes**: Install to **Project Scope** (Git-tracked team lockfiles) or **Global Scope** (`~/.agents/`), using instant **Symlink Mode** or standalone **Copy Mode**.
@@ -119,7 +119,7 @@ Agents United provides **22 curated bundles**, **45 specialized agents** (7 Lead
 | **🔒 Security Operations** | `security-operations` | — | `orchestrator-security` |
 | **🔬 Deep Technical Research** | `deep-research` | — | `orchestrator-research` |
 | **💼 Business Strategy & Economics** | `business-strategy` | — | `orchestrator-business` |
-| **🏢 Organization Bundles (Experimental)** | `digital-agency` 🚧 | *(Cross-functional agency: Web, Mobile, Design, Growth, SEO)* | `orchestrator-engineering` |
+| **🏢 Organization Bundles (Experimental)** | `digital-agency` 🚧 | *(Currently under development)* | `orchestrator-engineering` |
 
 <details>
 <summary><strong>🔍 Click to expand full Department & Agent Roster Breakdown</strong></summary>
@@ -172,7 +172,7 @@ Agents United provides **22 curated bundles**, **45 specialized agents** (7 Lead
 - **Essentials Base (`business-strategy`)**: `subagent-business-panel-experts`
 
 #### 🏢 Organization Bundles (Tier 2 / Experimental)
-- **Digital Product Agency (`digital-agency` 🚧)**: Cross-functional team (`orchestrator-engineering`, `subagent-backend-architect`, `subagent-frontend-architect`, `subagent-ui-designer`, `subagent-marketing-growth-strategist`, `subagent-seo-specialist`). Requires MCP tools (`firecrawl`, `github`). Supports Dual Execution Modes (Operational vs Brainstorming).
+- **Digital Product Agency (`digital-agency` 🚧)**: *(Currently under development)*
 
 </details>
 
@@ -209,9 +209,6 @@ agents add
 agents add software-engineering
 agents add mobile-development
 agents add ai-ml-engineering
-
-# Install organization bundle in Brainstorming mode (ideation only, skips live MCP checks)
-agents add digital-agency --mode brainstorming
 
 # Install whole department domain
 agents add domain:engineering
