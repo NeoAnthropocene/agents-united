@@ -1,3 +1,10 @@
+## [1.1.6](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.5...v1.1.6) (2026-08-18)
+
+
+### Bug Fixes
+
+* **release:** configure semantic-release npm publishing with new NPM_TOKEN ([a195f2b](https://github.com/NeoAnthropocene/agents-united/commit/a195f2b02b70a4085b216455adeb75024b454fcf))
+
 ## [1.1.5](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.4...v1.1.5) (2026-08-18)
 
 
