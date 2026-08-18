@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.6...v1.2.0) (2026-08-18)
+
+
+### Features
+
+* **cli:** refine multi-tool wizard prompts and host labels for orchestrator and subagent personas ([7e2032c](https://github.com/NeoAnthropocene/agents-united/commit/7e2032c368b4aadf725ca07867b73142f8d346b7))
+
 ## [1.1.6](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.5...v1.1.6) (2026-08-18)
 
 
