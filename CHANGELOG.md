@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.1...v1.1.2) (2026-08-18)
+
+
+### Bug Fixes
+
+* **release:** sync package metadata and publish agents-united to npm registry ([14d1541](https://github.com/NeoAnthropocene/agents-united/commit/14d15414244d482baa2ae02460d60b126cd73a96))
+
 ## [1.1.1](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.0...v1.1.1) (2026-08-18)
 
 
