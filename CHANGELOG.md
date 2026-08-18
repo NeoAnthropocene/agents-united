@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.4...v1.1.5) (2026-08-18)
+
+
+### Bug Fixes
+
+* **ci:** enable pure tokenless OIDC exchange for npm publish ([bd24fe5](https://github.com/NeoAnthropocene/agents-united/commit/bd24fe5f02a3e3cdc160ce605110cf6e3e1d2bb2))
+
 ## [1.1.4](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.3...v1.1.4) (2026-08-18)
 
 
