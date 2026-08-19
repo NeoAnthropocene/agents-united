@@ -5,7 +5,8 @@ import { RegistryResolver } from './registry.js';
 import { AgentHostAdapter } from './adapter.js';
 import { isKnownHost } from './hosts.js';
 import { HostProjector } from './projector.js';
-import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost } from './types.js';
+import { ClineProjector } from './cline-projector.js';
+import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]+?)\r?\n---/;
 
@@ -88,6 +89,50 @@ export class UninstallEngine {
       // not a symlink
     }
     await fs.remove(absPath);
+  }
+
+  /**
+   * Installed-addon freshness (plan 003): after a child bundle (one with a
+   * `parentBundle`) is removed, re-render the parent's coordinator rule + team
+   * manifest excluding every remaining installed bundle in the lockfile, so the
+   * removed addon returns to the parent's recommendedAddons. Presentation-free:
+   * the two projection files carry the managed marker trustees inside (rule) and
+   * are overwritten directly via fs-extra. If a parent artifact does not exist in
+   * the workspace (parent not installed as its own bundle), it is skipped.
+   */
+  private async refreshParentCoordination(
+    bundleName: string,
+    workspaceRoot: string,
+    lockfile: LockfileManifest,
+    scope: InstallScope
+  ): Promise<void> {
+    const bundleDef: BundleDefinition | null = await this.registry.getBundle(bundleName);
+    if (!bundleDef?.parentBundle) return;
+    const parentDef = await this.registry.getBundle(bundleDef.parentBundle);
+    if (!parentDef) return;
+    const parentResolved = await this.registry.resolve(parentDef.name).catch(() => null);
+    if (!parentResolved) return;
+
+    const registryDir = this.registry.getRegistryDir();
+    const projection = await ClineProjector.planCompoundProjection(
+      parentDef,
+      scope,
+      parentResolved,
+      registryDir,
+      lockfile.installed.bundles
+    );
+
+    for (const artifact of projection) {
+      if (artifact.kind !== 'rule' && artifact.kind !== 'team-manifest') continue;
+      if (artifact.content === undefined) continue;
+      const dest = path.join(workspaceRoot, artifact.relPath);
+      if (!await fs.pathExists(dest)) continue; // parent not installed as its own bundle
+      await fs.writeFile(dest, artifact.content, 'utf8');
+      const hash = await this.calculateHash(dest);
+      if (lockfile.projections?.[artifact.relPath]) {
+        lockfile.projections[artifact.relPath].hash = hash;
+      }
+    }
   }
 
   private parseHosts(options: UninstallOptions): AgentHost[] {
@@ -254,6 +299,10 @@ export class UninstallEngine {
             lockfile.installed.agents = lockfile.installed.agents.filter(a => survival.has(`agents/${a}`));
             lockfile.installed.skills = lockfile.installed.skills.filter(s => survival.has(`skills/${s}/SKILL.md`));
             lockfile.installed.workflows = lockfile.installed.workflows.filter(w => survival.has(`workflows/${w}`));
+
+            // Installed-addon freshness (plan 003): a removed child bundle restores
+            // its addon into the parent's recommendedAddons via a re-render here.
+            await this.refreshParentCoordination(bundleName, workspaceRoot, lockfile, scope);
 
             await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
           } else {

@@ -87,8 +87,10 @@ export class ClineProjector {
 
   /**
    * Render Team Manifest YAML matching ClineTeamManifest schema.
+   * @param excludeAddons optional addon names to omit from `recommendedAddons`
+   *   (used to stop advertising bundles already present in the workspace).
    */
-  static renderTeamManifest(bundle: BundleDefinition, scope: InstallScope): string {
+  static renderTeamManifest(bundle: BundleDefinition, scope: InstallScope, excludeAddons: string[] = []): string {
     const coordinatorFile = bundle.orchestrator || `${bundle.name}.md`;
     const coordinatorName = coordinatorFile.replace(/\.md$/, '');
     const coordinatorCanonical = `agents/${coordinatorFile}`;
@@ -100,7 +102,7 @@ export class ClineProjector {
 
     const sortedSkills = [...(bundle.skills || [])].sort();
     const sortedWorkflows = [...(bundle.workflows || [])].sort();
-    const recommendedAddons = bundle.recommendedAddons || [];
+    const recommendedAddons = (bundle.recommendedAddons || []).filter(a => !excludeAddons.includes(a));
 
     const manifest: ClineTeamManifest = {
       schemaVersion: 1,
@@ -125,8 +127,10 @@ export class ClineProjector {
 
   /**
    * Render the coordinator rule file (.cline/rules/agents-united-<bundle>.md).
+   * @param excludeAddons optional addon names to omit from the "Recommended Addon
+   *   Policy" list (used to stop advertising bundles already installed).
    */
-  static renderCoordinatorRule(bundle: BundleDefinition, scope: InstallScope): string {
+  static renderCoordinatorRule(bundle: BundleDefinition, scope: InstallScope, excludeAddons: string[] = []): string {
     const marker = `<!-- managed-by: agents-united | profile: cline | bundle: ${bundle.name} | do not edit -->`;
     const manifestRelPath = scope === 'global'
       ? `~/.cline/agents-united/teams/${bundle.name}.yaml`
@@ -141,7 +145,7 @@ export class ClineProjector {
       return `- **${name}**: \`.agents/agents/${agentFile}\``;
     });
 
-    const addons = bundle.recommendedAddons || [];
+    const addons = (bundle.recommendedAddons || []).filter(a => !excludeAddons.includes(a));
     const addonSection = addons.length > 0
       ? `\n### Recommended Addon Policy\nWhen user tasks require capabilities from: ${addons.join(', ')}, explain the capability and request user confirmation to install via \`agents add <addon> -t cline -y\` before running the installation.`
       : '';
@@ -165,12 +169,15 @@ ${addonSection}
 
   /**
    * Plan all compound artifacts for a bundle installation into Cline.
+   * @param excludeAddons optional addon names forwarded to the coordinator rule and
+   *   team manifest renderers so already-installed bundles are not advertised.
    */
   static async planCompoundProjection(
     bundle: BundleDefinition,
     scope: InstallScope,
     resolved: ResolvedAssets,
-    registryDir: string
+    registryDir: string,
+    excludeAddons: string[] = []
   ): Promise<PlannedClineArtifact[]> {
     const artifacts: PlannedClineArtifact[] = [];
     const baseDir = scope === 'global' ? '.cline' : '.cline';
@@ -230,7 +237,7 @@ ${addonSection}
     }
 
     // 3. Coordinator Rule (.cline/rules/agents-united-<bundle>.md)
-    const ruleContent = this.renderCoordinatorRule(bundle, scope);
+    const ruleContent = this.renderCoordinatorRule(bundle, scope, excludeAddons);
     artifacts.push({
       kind: 'rule',
       relPath: `${baseDir}/rules/agents-united-${bundle.name}.md`.replace(/\\/g, '/'),
@@ -239,7 +246,7 @@ ${addonSection}
     });
 
     // 4. Team Manifest (.cline/agents-united/teams/<bundle>.yaml)
-    const manifestContent = this.renderTeamManifest(bundle, scope);
+    const manifestContent = this.renderTeamManifest(bundle, scope, excludeAddons);
     artifacts.push({
       kind: 'team-manifest',
       relPath: `${baseDir}/agents-united/teams/${bundle.name}.yaml`.replace(/\\/g, '/'),

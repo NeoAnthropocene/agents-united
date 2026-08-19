@@ -319,6 +319,46 @@ private toPosix(p: string): string {
               this.recordProjectedTo(lockfile, artifact.canonical, artifact.relPath);
             }
           }
+
+          // Installed-addon freshness (plan 003): when the installed bundle extends a
+          // parent essentials with its own coordinator rule + team manifest already
+          // projected, re-render those two coordination artifacts excluding every
+          // installed bundle listed in the lockfile, so the coordinator stops prompting
+          // for addons already present. Ownership is left untouched (the parent stays
+          // the sole owner). If the parent rule/manifest don't exist yet (parent not
+          // installed as its own bundle), skip silently.
+          if (bundleDef.parentBundle) {
+            const parentDef = await this.registry.getBundle(bundleDef.parentBundle);
+            if (parentDef) {
+              const parentProjection = await ClineProjector.planCompoundProjection(
+                parentDef,
+                scope,
+                resolved,
+                registryDir,
+                lockfile.installed.bundles
+              );
+              for (const artifact of parentProjection) {
+                if (artifact.kind !== 'rule' && artifact.kind !== 'team-manifest') continue;
+                if (artifact.content === undefined) continue;
+                const dest = path.join(root, artifact.relPath);
+                if (!await fs.pathExists(dest)) continue; // parent not installed as its own bundle
+                await this.deployProjection(dest, artifact.content);
+                const deployedHash = await this.calculateHash(dest);
+                lockfile.projections = lockfile.projections || {};
+                const existingProj = lockfile.projections[artifact.relPath];
+                lockfile.projections[artifact.relPath] = {
+                  host: 'cline',
+                  kind: artifact.kind,
+                  canonical: artifact.canonical,
+                  // Preserve existing ownership; the parent remains the sole owner.
+                  owners: existingProj?.owners ?? [],
+                  hash: deployedHash,
+                  installedAt: existingProj?.installedAt ?? now,
+                  managedMarker: artifact.managedMarker,
+                };
+              }
+            }
+          }
           continue;
         }
       }
