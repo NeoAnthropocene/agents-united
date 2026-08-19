@@ -62,3 +62,24 @@ read-only probe, pinned to a tested CLI version." Start here:
 - A follow-up spike (interactive / `--new-project` agy probe) is required to fully settle the two
   candidates in §Context.
 - We stop reporting unverified per-host behavior as product fact.
+---
+## Addendum (2026-08-19) — Spike 006 resolution
+
+The interactive / `--new-project` probe (`advisor-plans/006-agy-interactive-project-spike.md`, executed 2026-08-19
+on `agy` **1.1.15**, Windows) discriminated the two root-cause candidates in §Context and resolved **neither**:
+
+- **Candidate B (project/session store) — refuted.** `--new-project` created a project *registration* only
+  (`~/.gemini/config/projects/<id>.json`: id, name, `folderUri`; no agent definitions). With the store populated,
+  `agy agents` stayed empty and the marker stayed `NOT_FOUND`.
+- **Candidate A (mode) — refuted for the scriptable case.** A genuine `stream-json` conversational session
+  (`--agent` resolved, real `agent_response` turn, 17,718 input tokens) still did **not** inject the
+  `.agents/agents/*.md` prompt — the model self-identified "Antigravity" and quoted `NOT_FOUND`. `--agent` is
+  accepted into the session but not validated and not injected.
+- **Interactive `-i` TUI** could not be driven headlessly (blocks on a real TTY, no error text), so interactive
+  loading was **not demonstrated**; `stream-json`, which shares the session/agent pipeline, showed no loading.
+
+**Resolved scope:** the Antigravity "reads `./.agents/` natively" claim is **unverified and not
+automated-CI-verifiable** in both headless and scripted-interactive modes, and is **not** upgraded to
+"interactive-scoped (confirmed)". Antigravity should be treated as requiring a **projection shim / install into
+its own agent store** until a human confirms an interactive TUI load. Cline remains the reference conformant
+host. Pin `agy 1.1.15` in the conformance record.
