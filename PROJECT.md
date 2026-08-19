@@ -8,7 +8,7 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 1. [Executive Overview & Core Philosophy](#1-executive-overview--core-philosophy)
 2. [Complete Granular Feature Inventory](#2-complete-granular-feature-inventory)
 3. [Master Implementation Plans Index (plans/001–008)](#3-master-implementation-plans-index-plans001008)
-4. [Architectural Decision Records (ADRs 0001–0008)](#4-architectural-decision-records-adrs-00010008)
+4. [Architectural Decision Records (ADRs 0001–0009)](#4-architectural-decision-records-adrs-00010009)
 5. [Ecosystem Architecture & Department Domains](#5-ecosystem-architecture--department-domains)
 6. [Host Projection & Runtime Activation Engine](#6-host-projection--runtime-activation-engine)
 7. [Interface Contracts & Specifications](#7-interface-contracts--specifications)
@@ -22,7 +22,7 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 
 ### 1.1 The "One Library, Every Assistant" Architecture
 AI assistants read different folder structures and frontmatter dialects:
-- **Google Antigravity**: Reads `./.agents/` natively (agents, skills, workflows, rules).
+- **Google Antigravity**: Reads `./.agents/` natively in interactive sessions (CLI TUI panel + Antigravity 2.0 desktop). Headless CLI mode (`-p` / `agy agents`) on agy 1.1.15 reads only the user-global store — see [ADR 0009](./docs/adr/0009-host-conformance-targets.md).
 - **Anthropic Claude Code**: Reads `./.claude/agents/` with `tools: [...]` frontmatter.
 - **Cursor**: Reads `./.cursor/agents/` and `.cursor/rules/*.mdc`.
 - **Cline**: Reads `.cline/agents/`, `.cline/skills/`, `.cline/rules/`, and `.cline/agents-united/teams/`.
@@ -131,7 +131,7 @@ All 9 foundational implementation plans have been fully realized, tested under s
 
 ---
 
-## 4. Architectural Decision Records (ADRs 0001–0008)
+## 4. Architectural Decision Records (ADRs 0001–0009)
 
 All architectural decisions recorded in `docs/adr/` are indexed and summarized below:
 
@@ -145,6 +145,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 | **[0006](./docs/adr/0006-scope-and-installation-methods-architecture.md)** | Installation Scope & Methods Architecture | Accepted | Dual scope (`project` vs `global`), dual installation methods (`symlink` vs `copy`), and multi-host target adapters (`agents`, `claude`, `cursor`, `gemini`). |
 | **[0007](./docs/adr/0007-package-inventory-removal-and-update-engine.md)** | Package Inventory, Removal & Update Engine | Accepted | `InventoryScanner` for active package discovery, scope-aware `agents remove` listing only installed packages, and interactive `UpdateEngine` with drift detection. |
 | **[0008](./docs/adr/0008-universal-host-projection-architecture.md)** | Universal Host Projection & Cline Runtime Activation | Accepted | Canonical store (`.agents/`) with copy-only stamp-managed projections, AGENTS.md bridge, Cline 4-part compound artifacts, read-only capability probing, and safe runtime activation (`agents start`). |
+| | **[0009](./docs/adr/0009-host-conformance-targets.md)** | Host Conformance Targets | Accepted | Per-host conformance probes pinned to tested CLI versions: Cline = conformant (headless CI), Antigravity = interactive-scoped confirmed on agy 1.1.15 (CLI TUI + desktop read `.agents/` natively; headless `-p` not a target). No projection shim required for Antigravity. |
 
 ---
 
@@ -369,8 +370,8 @@ c:/github/agents-united/
 │       ├── cline-projector.ts    # ClineProjector (compound manifest & rules)
 │       ├── cline-capabilities.ts # ClineCapabilityProbe (read-only probe)
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
-├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0008)
-├── plans/                        # Implementation Plan Specifications (001–008)
+├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0009)
+├── plans/                        # Implementation Plan Specifications (001–009)
 ├── tests/                        # 4-Tier Vitest Test Suite (22 test suites, 211 tests)
 ├── CONTEXT.md                    # Ubiquitous Domain Dictionary
 ├── README.md                     # Public Project Documentation

@@ -368,7 +368,7 @@ agents doctor --host cline
 ---
 ## 🌐 One Library, Every Assistant
 
-The `.agents/` folder is the **main library** — the *one* folder you edit. **Antigravity reads it directly**; every other assistant (Claude Code, Cursor, Cline, OpenCode, Codex) can't read it natively, so Agents United writes **translated copies** it keeps in sync for you.
+The `.agents/` folder is the **main library** — the *one* folder you edit. **Antigravity reads it directly** for interactive sessions (CLI TUI and desktop); see [ADR 0009](./docs/adr/0009-host-conformance-targets.md). Every other assistant (Claude Code, Cursor, Cline, OpenCode, Codex) can't read it natively, so Agents United writes **translated copies** it keeps in sync for you.
 
 - **Edit only `.agents/`.** That's your source of truth — the `agents-united.json` lockfile tracks it.
 - **Other assistants get their own translated copies**, in their own folders (`.claude/agents/`, `.cline/agents/`, …). Don't edit those — they're machine-managed and rewritten on every `agents update`.

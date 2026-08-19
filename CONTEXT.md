@@ -243,7 +243,7 @@ The standardized TUI terminal badge displaying installation scope and resolved p
 The core engine (`src/core/updater.ts`) responsible for checking version drift, orchestrating batch and selective package updates, preserving user-modified files with conflict guardrails, and synchronizing lockfiles.
 
 **Canonical Store**:
-`.agents/` — the **main library**. It is the single source of truth the lockfile tracks, and the *one* folder you edit. Every other assistant's translated copies are derived from — never diverging from — this store. (Antigravity reads it directly; other runtimes only via `--fanout` copies.)
+`.agents/` — the **main library**. It is the single source of truth the lockfile tracks, and the *one* folder you edit. Every other assistant's translated copies are derived from — never diverging from — this store. (Antigravity reads it directly in interactive sessions — CLI TUI panel and desktop; see ADR 0009. Other runtimes only via `--fanout` copies.)
 _Avoid_: Source of record ambiguity, duplicated truth
 
 **Host Registry**:
