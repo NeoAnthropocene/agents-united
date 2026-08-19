@@ -1,0 +1,44 @@
+name: Sync main to dev
+
+# Opens a pull request from `main` into `dev` after every successful
+# semantic-release run on `main`, so `dev` never drifts behind the
+# release commits (version bumps, CHANGELOG.md) that CI writes only to `main`.
+# Using `workflow_run` (not `push`) means the sync fires even though the
+# release commit message carries `[skip ci]`.
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Open main → dev sync PR
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Open sync pull request (main → dev)
+        uses: repo-sync/pull@v2
+        with:
+          source_branch: main
+          destination_branch: dev
+          pr_title: "chore(auto): sync main → dev after release"
+          pr_body: |
+            Automated pull request bringing upstream `main` changes (semantic-release
+            version bumps, `CHANGELOG.md`) back into `dev`.
+
+            Merge this to keep `main` and `dev` in lockstep so `dev` no longer drifts
+            behind release commits. Created by the "Sync main to dev" workflow after
+            the Release workflow completed successfully on `main`.
+          pr_label: "auto-sync"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
