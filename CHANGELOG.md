@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.3.0...v1.4.0) (2026-08-19)
+
+
+### Features
+
+* **registry:** universal-orchestration bundle, Prime Orchestrator & contract-tested Domain Atlas (ADR 0010) ([3537b8a](https://github.com/NeoAnthropocene/agents-united/commit/3537b8af7470c4dd8fe29d3cfabf43c6e61dc07d))
+
 # [1.3.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.2.0...v1.3.0) (2026-08-19)
 
 
