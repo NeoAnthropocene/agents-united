@@ -165,6 +165,17 @@ export class UninstallEngine {
           if (!options.dryRun) {
             const workspaceRoot = path.resolve(path.dirname(targetDir));
 
+            // Transactional validation BEFORE any write: if this bundle owns zero file
+            // records and zero projections, reject without mutating the lockfile.
+            const ownedFiles = Object.entries(lockfile.files)
+              .filter(([, m]) => (m.owners ?? (m.bundle ? [m.bundle] : [])).includes(bundleName));
+            const ownedProjections = lockfile.projections
+              ? Object.values(lockfile.projections).filter(p => p.owners.includes(bundleName)).length
+              : 0;
+            if (ownedFiles.length === 0 && ownedProjections === 0) {
+              throw new Error(`No installed assets found matching "${bundleName}".`);
+            }
+
             // Clean up compound projections using owner refcounting
             if (lockfile.projections) {
               for (const [projRelPath, proj] of Object.entries(lockfile.projections)) {
@@ -194,10 +205,12 @@ export class UninstallEngine {
             }
 
             for (const [relPath, assetMeta] of Object.entries(lockfile.files)) {
-              if (assetMeta.bundle === bundleName) {
-                // Remove every recorded legacy projection BEFORE the canonical entry is
-                // deleted from the lockfile (plan 007 M5). Managed marker verified
-                // before deletion; user-modified projections require --force.
+              const assetOwners = assetMeta.owners ?? (assetMeta.bundle ? [assetMeta.bundle] : []);
+              if (!assetOwners.includes(bundleName)) continue;
+
+              const newOwners = assetOwners.filter(o => o !== bundleName);
+              if (newOwners.length === 0) {
+                // Last owner removed: drop the recorded projections, then the canonical file.
                 if (assetMeta.projectedTo && assetMeta.projectedTo.length > 0) {
                   await this.removeProjections(workspaceRoot, assetMeta.projectedTo, options.force);
                 }
@@ -216,6 +229,9 @@ export class UninstallEngine {
                 }
 
                 delete lockfile.files[relPath];
+              } else {
+                // A surviving bundle still owns this file: keep it on disk, shrink owners.
+                lockfile.files[relPath] = { ...assetMeta, owners: newOwners };
               }
             }
 
@@ -223,15 +239,21 @@ export class UninstallEngine {
             if (lockfile.bundleVersions) {
               delete lockfile.bundleVersions[bundleName];
             }
-            if (resolved.agents) {
-              lockfile.installed.agents = lockfile.installed.agents.filter(a => !resolved.agents.includes(a));
+            // Survival set: only entries still declared by a surviving bundle stay on the
+            // roster (declared asset sets, not the removed bundle's resolved superset).
+            const surviving = lockfile.installed.bundles.filter(b => b !== bundleName);
+            const survival = new Set<string>();
+            for (const b of surviving) {
+              const bdef = await this.registry.getBundle(b);
+              if (!bdef) continue;
+              if (bdef.orchestrator) survival.add(`agents/${bdef.orchestrator}`);
+              (bdef.agents || []).forEach(a => survival.add(`agents/${a}`));
+              (bdef.skills || []).forEach(s => survival.add(`skills/${s}/SKILL.md`));
+              (bdef.workflows || []).forEach(w => survival.add(`workflows/${w}`));
             }
-            if (resolved.skills) {
-              lockfile.installed.skills = lockfile.installed.skills.filter(s => !resolved.skills.includes(s));
-            }
-            if (resolved.workflows) {
-              lockfile.installed.workflows = lockfile.installed.workflows.filter(w => !resolved.workflows.includes(w));
-            }
+            lockfile.installed.agents = lockfile.installed.agents.filter(a => survival.has(`agents/${a}`));
+            lockfile.installed.skills = lockfile.installed.skills.filter(s => survival.has(`skills/${s}/SKILL.md`));
+            lockfile.installed.workflows = lockfile.installed.workflows.filter(w => survival.has(`workflows/${w}`));
 
             await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
           } else {

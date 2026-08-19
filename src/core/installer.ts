@@ -255,6 +255,15 @@ private toPosix(p: string): string {
       if (host === 'cline') {
         const bundleDef = resolved.targetBundle ? await this.registry.getBundle(resolved.targetBundle) : undefined;
         if (bundleDef) {
+          // Declared Asset Set of this bundle (its own bundles.json fields, NOT the
+          // inherited/resolved superset). Projections for inherited artifacts are not
+          // owned by this bundle — only those it actually declares (plus its own
+          // coordinator rule and team manifest).
+          const declared = new Set<string>();
+          if (bundleDef.orchestrator) declared.add(`agents/${bundleDef.orchestrator}`);
+          (bundleDef.agents || []).forEach(a => declared.add(`agents/${a}`));
+          (bundleDef.skills || []).forEach(s => declared.add(`skills/${s}/SKILL.md`));
+          (bundleDef.workflows || []).forEach(w => declared.add(`workflows/${w}`));
           const artifacts = await ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
           for (const artifact of artifacts) {
             const dest = path.join(root, artifact.relPath);
@@ -287,9 +296,12 @@ private toPosix(p: string): string {
             lockfile.projections = lockfile.projections || {};
             const existingProj = lockfile.projections[artifact.relPath];
             const bundleName = bundleDef.name;
-            const owners = existingProj?.owners
-              ? Array.from(new Set([...existingProj.owners, bundleName]))
-              : [bundleName];
+            const declares = artifact.kind === 'rule' || artifact.kind === 'team-manifest'
+              || (artifact.canonical ? declared.has(artifact.canonical) : false);
+            const priorOwners = existingProj?.owners ?? [];
+            const owners = declares
+              ? Array.from(new Set([...priorOwners, bundleName]))
+              : priorOwners;
 
             lockfile.projections[artifact.relPath] = {
               host: 'cline',
@@ -297,7 +309,7 @@ private toPosix(p: string): string {
               canonical: artifact.canonical,
               owners,
               hash: deployedHash,
-              installedAt: now,
+              installedAt: existingProj?.installedAt ?? now,
               managedMarker: artifact.managedMarker,
             };
 
@@ -384,6 +396,20 @@ private toPosix(p: string): string {
         lockfile.fanout = effectiveFanout;
       }
 
+      // Declared Asset Set of the bundle being installed (its own bundles.json fields,
+      // NOT the inherited/resolved superset). Inherited parent assets are deployed but
+      // are NOT owned by this bundle, so a child install never over-claims provenance.
+      const declared = new Set<string>();
+      if (resolved.targetBundle) {
+        const bundleDef = await this.registry.getBundle(resolved.targetBundle);
+        if (bundleDef) {
+          if (bundleDef.orchestrator) declared.add(`agents/${bundleDef.orchestrator}`);
+          (bundleDef.agents || []).forEach(a => declared.add(`agents/${a}`));
+          (bundleDef.skills || []).forEach(s => declared.add(`skills/${s}/SKILL.md`));
+          (bundleDef.workflows || []).forEach(w => declared.add(`workflows/${w}`));
+        }
+      }
+
       // Copy/Symlink Agents
       for (const agentFile of resolved.agents) {
         const src = path.join(registryDir, 'agents', agentFile);
@@ -399,16 +425,22 @@ private toPosix(p: string): string {
 
         const actualMethod = await this.deployFile(src, dest, method, options.force);
         const hash = await this.calculateHash(src);
-        const relPath = path.relative(targetDir, dest);
-        // Preserve projection tracking across re-installs; applyFanout re-records the
-        // current fan-out below (deduplicated).
-        const previousProjections = lockfile.files[relPath]?.projectedTo;
+        const relPath = this.toPosix(path.relative(targetDir, dest));
+        // Preserve projection tracking and co-ownership across re-installs;
+        // applyFanout re-records the current fan-out below (deduplicated).
+        const existing = lockfile.files[relPath];
+        const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
+        const declaresAsset = declared.has(`agents/${agentFile}`);
+        const owners = resolved.targetBundle && declaresAsset
+          ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
+          : existingOwners;
         lockfile.files[relPath] = {
           hash,
-          bundle: resolved.targetBundle,
+          bundle: existing?.bundle ?? resolved.targetBundle,
+          owners,
           method: actualMethod,
-          installedAt: now,
-          ...(previousProjections ? { projectedTo: previousProjections } : {}),
+          installedAt: existing?.installedAt ?? now,
+          ...(existing?.projectedTo ? { projectedTo: existing.projectedTo } : {}),
         };
 
         if (!lockfile.installed.agents.includes(agentFile)) {
@@ -425,14 +457,20 @@ private toPosix(p: string): string {
         const skillFile = path.join(src, 'SKILL.md');
         if (await fs.pathExists(skillFile)) {
           const hash = await this.calculateHash(skillFile);
-          const relPath = path.relative(targetDir, path.join(subPaths.skillsDir, skillName, 'SKILL.md'));
-          const previousProjections = lockfile.files[relPath]?.projectedTo;
+          const relPath = this.toPosix(path.relative(targetDir, path.join(subPaths.skillsDir, skillName, 'SKILL.md')));
+          const existing = lockfile.files[relPath];
+          const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
+          const declaresAsset = declared.has(`skills/${skillName}/SKILL.md`);
+          const owners = resolved.targetBundle && declaresAsset
+            ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
+            : existingOwners;
           lockfile.files[relPath] = {
             hash,
-            bundle: resolved.targetBundle,
+            bundle: existing?.bundle ?? resolved.targetBundle,
+            owners,
             method: actualMethod,
-            installedAt: now,
-            ...(previousProjections ? { projectedTo: previousProjections } : {}),
+            installedAt: existing?.installedAt ?? now,
+            ...(existing?.projectedTo ? { projectedTo: existing.projectedTo } : {}),
           };
         }
 
@@ -448,14 +486,20 @@ private toPosix(p: string): string {
 
         const actualMethod = await this.deployFile(src, dest, method, options.force);
         const hash = await this.calculateHash(src);
-        const relPath = path.relative(targetDir, dest);
-        const previousProjections = lockfile.files[relPath]?.projectedTo;
+        const relPath = this.toPosix(path.relative(targetDir, dest));
+        const existing = lockfile.files[relPath];
+        const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
+        const declaresAsset = declared.has(`workflows/${workflowFile}`);
+        const owners = resolved.targetBundle && declaresAsset
+          ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
+          : existingOwners;
         lockfile.files[relPath] = {
           hash,
-          bundle: resolved.targetBundle,
+          bundle: existing?.bundle ?? resolved.targetBundle,
+          owners,
           method: actualMethod,
-          installedAt: now,
-          ...(previousProjections ? { projectedTo: previousProjections } : {}),
+          installedAt: existing?.installedAt ?? now,
+          ...(existing?.projectedTo ? { projectedTo: existing.projectedTo } : {}),
         };
 
         if (!lockfile.installed.workflows.includes(workflowFile)) {
@@ -471,12 +515,22 @@ private toPosix(p: string): string {
         if (await fs.pathExists(src)) {
           const actualMethod = await this.deployFile(src, dest, method, options.force);
           const hash = await this.calculateHash(src);
-          const relPath = path.relative(targetDir, dest);
+          const relPath = this.toPosix(path.relative(targetDir, dest));
+          const existing = lockfile.files[relPath];
+          const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
+          // Rule files are bundle-derived coordination artifacts, not members of the
+          // declared asset set: every installing bundle always owns the rule it deploys.
+          const declaresAsset = true;
+          const owners = resolved.targetBundle && declaresAsset
+            ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
+            : existingOwners;
           lockfile.files[relPath] = {
             hash,
-            bundle: resolved.targetBundle,
+            bundle: existing?.bundle ?? resolved.targetBundle,
+            owners,
             method: actualMethod,
-            installedAt: now,
+            installedAt: existing?.installedAt ?? now,
+            ...(existing?.projectedTo ? { projectedTo: existing.projectedTo } : {}),
           };
         }
       }

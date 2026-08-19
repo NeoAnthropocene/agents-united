@@ -74,6 +74,8 @@ export interface BundlesManifest {
 export interface LockfileAsset {
   hash: string;
   bundle?: string;
+  /** Every bundle whose Declared Asset Set contains this file. Absent ⇒ [bundle]. */
+  owners?: string[];
   method?: InstallMethod;
   installedAt: string;
   /** Workspace-root-relative paths (forward slashes) of translated copies fanned out

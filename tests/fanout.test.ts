@@ -44,7 +44,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
 
     // Lockfile projectedTo recorded (forward slashes, workspace-root-relative)
     const lockfile = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
-    const asset = lockfile.files[path.join('agents', 'orchestrator-engineering.md')];
+    const asset = lockfile.files[['agents', 'orchestrator-engineering.md'].join('/')];
     expect(asset).toBeDefined();
     expect(asset.projectedTo).toContain('.claude/agents/orchestrator-engineering.md');
     expect(asset.projectedTo).toContain('.cline/agents/orchestrator-engineering.md');
@@ -172,7 +172,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
     expect(bridge).toContain('orchestrator-engineering');
 
     const lockfile = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
-    const asset = lockfile.files[path.join('agents', 'orchestrator-engineering.md')];
+    const asset = lockfile.files[['agents', 'orchestrator-engineering.md'].join('/')];
     expect(asset.projectedTo).toContain('AGENTS.md');
 
     expect(result.projections.some(p => p.host === 'codex' && p.path === 'AGENTS.md')).toBe(true);

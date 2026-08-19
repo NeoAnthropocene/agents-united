@@ -122,6 +122,38 @@ export class DoctorEngine {
           }
         }
       }
+
+      // 3. Ownership cross-validation
+      const installedBundles = manifest.installed?.bundles ?? [];
+      const fileOwnersOf = (rec: { owners?: string[]; bundle?: string }): string[] =>
+        rec.owners ?? (rec.bundle ? [rec.bundle] : []);
+
+      // 3a. Projection owned by a bundle absent from installed.bundles
+      if (manifest.projections) {
+        for (const [projRelPath, proj] of Object.entries(manifest.projections)) {
+          for (const owner of proj.owners) {
+            if (!installedBundles.includes(owner)) {
+              warnings.push(`Projection ${projRelPath} is owned by bundle "${owner}" which is not in installed.bundles.`);
+            }
+          }
+        }
+      }
+      // 3b. File-record owner absent from installed.bundles
+      for (const [relPath, rec] of Object.entries(manifest.files)) {
+        for (const owner of fileOwnersOf(rec)) {
+          if (!installedBundles.includes(owner)) {
+            warnings.push(`File record ${relPath} is owned by bundle "${owner}" which is not in installed.bundles.`);
+          }
+        }
+      }
+      // 3c. Installed bundle with zero owned file records
+      for (const bundleName of installedBundles) {
+        const fileCount = Object.values(manifest.files)
+          .filter(m => fileOwnersOf(m).includes(bundleName)).length;
+        if (fileCount === 0) {
+          warnings.push(`Installed bundle "${bundleName}" owns zero file records.`);
+        }
+      }
     }
 
     // Host-specific checks (e.g. --host cline)

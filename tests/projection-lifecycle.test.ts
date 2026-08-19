@@ -221,7 +221,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
 
     // projectedTo tracking preserved after update
     const lf2: LockfileManifest = await fs.readJson(lockfilePath);
-    const asset = lf2.files[path.join('agents', 'orchestrator-engineering.md')];
+    const asset = lf2.files[['agents', 'orchestrator-engineering.md'].join('/')];
     expect(asset.projectedTo).toContain('.cline/agents/orchestrator-engineering.md');
 
     // And uninstall after update removes the projection (no orphans)
@@ -260,7 +260,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
     expect(await fs.readFile(clineProj, 'utf8')).toContain('managed-by: agents-united');
 
     const lf2: LockfileManifest = await fs.readJson(lockfilePath);
-    expect(lf2.files[path.join('agents', 'orchestrator-engineering.md')].projectedTo).toContain(
+    expect(lf2.files[['agents', 'orchestrator-engineering.md'].join('/')].projectedTo).toContain(
       '.cline/agents/orchestrator-engineering.md'
     );
     // Fanout choice persisted so future updates keep projections in sync
