@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.2.0...v1.3.0) (2026-08-19)
+
+
+### Bug Fixes
+
+* **lockfile:** multi-owner provenance, declared-set projection ownership, transactional remove, POSIX keys (plan 001) ([cfab929](https://github.com/NeoAnthropocene/agents-united/commit/cfab929561c927cad38b2a5467f94c204da6a064))
+
+
+### Features
+
+* **cli:** recommendation-contract tests + installed-addon freshness (plan 003) ([d74fae2](https://github.com/NeoAnthropocene/agents-united/commit/d74fae22d4bf1959f6d93bc31b6b136bf7b59fc5))
+
 # [1.2.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.1.6...v1.2.0) (2026-08-18)
 
 
