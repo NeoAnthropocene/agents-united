@@ -110,6 +110,20 @@ describe('Milestone 4: ClineLauncher', () => {
       expect(bootstrap).toContain('Addon auto-installation is pre-authorized for this session');
     });
 
+    it('uses the bundle-specific orchestrator as coordinator when provided (fix: no more hardcoded engineering coordinator)', () => {
+      const launcher = new ClineLauncher();
+      const plan = launcher.planActivation({
+        bundleName: 'universal-orchestration',
+        workspace: testWorkspace,
+        scope: 'project',
+        report: fakeProbeReport,
+        orchestrator: 'orchestrator-universal.md',
+      });
+      const bootstrap = plan.argv[plan.argv.length - 1];
+      expect(bootstrap).toContain('.agents/agents/orchestrator-universal.md');
+      expect(bootstrap).not.toContain('orchestrator-engineering.md');
+    });
+
     it('builds plan with fallback executable when Cline is not locally installed (e.g. for dry-run simulation)', () => {
       const launcher = new ClineLauncher();
       const uninstalledReport: ClineCapabilityReport = {

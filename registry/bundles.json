@@ -902,6 +902,23 @@
       ],
       "version": "0.1.0"
     },
+    "universal-orchestration": {
+      "name": "universal-orchestration",
+      "domain": "universal",
+      "status": "stable",
+      "category": "Universal Orchestration & Guided Routing",
+      "aliases": [
+        "orchestration",
+        "router"
+      ],
+      "description": "Prime Orchestrator front door: grills ambiguous requests, consults the Domain Atlas to route to the correct department Essentials bundle, installs with consent, and hands off (Route & Instruct)",
+      "orchestrator": "orchestrator-universal.md",
+      "skills": [
+        "handoff",
+        "grill-me"
+      ],
+      "version": "1.0.0"
+    },
     "universal-skills": {
       "name": "universal-skills",
       "domain": "universal",

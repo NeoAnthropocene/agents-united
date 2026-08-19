@@ -104,10 +104,10 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
 
   // Tier 1: Feature Coverage (Happy Path)
   describe('Tier 1: Feature Coverage (Prompt & Hooks Evaluation)', () => {
-    it('should validate system prompt line count and structure for all 45 agent files', async () => {
+    it('should validate system prompt line count and structure for all 46 agent files', async () => {
       const files = await fs.readdir(agentsDir);
       const agentFiles = files.filter(f => f.endsWith('.md'));
-      expect(agentFiles.length).toBe(45);
+      expect(agentFiles.length).toBe(46);
 
       for (const file of agentFiles) {
         const filePath = path.join(agentsDir, file);
@@ -205,7 +205,7 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
 
   // Tier 4: Real-World Inventory Audit
   describe('Tier 4: Real-World Inventory Audit', () => {
-    it('should perform comprehensive prompt and lifecycle hooks audit across all 45 agents', async () => {
+    it('should perform comprehensive prompt and lifecycle hooks audit across all 46 agents', async () => {
       const files = await fs.readdir(agentsDir);
       const agentFiles = files.filter(f => f.endsWith('.md'));
 
@@ -228,8 +228,8 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
         if (result.hooksFound.length > 0) report.withLifecycleHooksCount++;
       }
 
-      expect(report.totalAgents).toBe(45);
-      expect(report.orchestratorsCount).toBe(7);
+      expect(report.totalAgents).toBe(46);
+      expect(report.orchestratorsCount).toBe(8);
       expect(report.subagentsCount).toBe(38);
       expect(report.expandedPromptsCount).toBeGreaterThan(0);
     });

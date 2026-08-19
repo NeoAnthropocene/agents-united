@@ -32,6 +32,8 @@ export interface PlanActivationOptions {
   teamName?: string;
   allowAddons?: boolean;
   headless?: boolean;
+  /** Optional coordinator agent filename (e.g. "orchestrator-universal.md"). Resolved from the bundle definition by the caller; defaults to orchestrator-engineering.md for backward compatibility. */
+  orchestrator?: string;
 }
 
 export interface ResolveInstallationOptions {
@@ -145,6 +147,7 @@ export class ClineLauncher {
       teamName: customTeamName,
       allowAddons,
       headless,
+      orchestrator,
     } = options;
 
     const command = report.command || {
@@ -168,7 +171,10 @@ export class ClineLauncher {
     const manifestRel = scope === 'global'
       ? `~/.cline/agents-united/teams/${bundleName}.yaml`
       : `.cline/agents-united/teams/${bundleName}.yaml`;
-    const coordinatorCanonical = `.agents/agents/orchestrator-engineering.md`;
+    // Coordinator role = the bundle's declared orchestrator when available; fall back to
+    // orchestrator-engineering.md only to preserve pre-existing platform-manifest behavior.
+    const coordinatorFile = (orchestrator || 'orchestrator-engineering.md').replace(/\.md$/, '');
+    const coordinatorCanonical = `.agents/agents/${coordinatorFile}.md`;
 
     const addonPolicyText = allowAddons
       ? 'Addon auto-installation is pre-authorized for this session.'

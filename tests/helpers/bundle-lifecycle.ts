@@ -219,7 +219,7 @@ export interface DomainSpec {
   addons: string[];
 }
 
-const NON_ESSENTIALS = new Set(['full', 'universal-skills']);
+const NON_ESSENTIALS = new Set(['full', 'universal-skills', 'universal-orchestration']);
 
 export function deriveAddons(essentialsName: string): string[] {
   const e = entry(essentialsName);

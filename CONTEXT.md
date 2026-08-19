@@ -73,6 +73,22 @@ _Avoid_: Base pack, core bundle
 A domain-agnostic baseline bundle containing shared, universal meta-skills (`grill-me`, `grill-with-docs`, `domain-modeling`, `to-spec`, `to-tickets`, `handoff`). It has no orchestrator or dedicated agents — it serves as a lightweight capability layer installable locally into projects or globally across machine environments (`agents add universal-skills -g`).
 _Avoid_: Global bot pack, miscellaneous tools
 
+**Prime Orchestrator**:
+A tier of orchestrator *above* the Lead Orchestrators. A Prime Orchestrator does not execute a single department's work; it has a compact Domain Atlas, triages ambiguous requests, routes across Department Domains, and hands off to the correct department's Lead Orchestrator as the **main agent of a fresh session**. Sole instance: `orchestrator-universal.md` in the `universal-orchestration` bundle.
+_Avoid_: Meta-orchestrator, all-seeing agent, super-boss
+
+**Domain Atlas**:
+The generated, compact **Department Domain → Essentials Bundle** routing map embedded in the Prime Orchestrator (`orchestrator-universal.md`). Contract-tested against the Registry Manifest (`bundles.json`); never fetched remotely. When the Atlas is stale, the Prime Orchestrator consults the installed registry via `agents find <task> --json` / `agents list --json` and reports drift. Organizational Bundles are excluded from the Atlas by construction.
+_Avoid_: Routing codex, capability table, registry mirror
+
+**Universal Orchestration Bundle (`universal-orchestration`)**:
+An optional guided-routing bundle in the Universal Autonomous Department containing the Prime Orchestrator (`orchestrator-universal.md`) plus the `handoff` and `grill-me` skills. It does not install or execute work itself — it triages, routes to the correct department Essentials bundle (with explicit consent), and hands off. Distinct from `universal-skills` (skills-only baseline) and `full` (aggregate suite). Aliases: `orchestration`, `router`.
+_Avoid_: Universal agent pack, super skills, router-only bot
+
+**Route & Instruct Contract**:
+The guaranteed cross-host activation contract enforced by the Prime Orchestrator: **triage → consented Essentials-bundle install → `/handoff` note → presentation of the exact `agents start <bundle> "<task>"` command** so the department Lead Orchestrator activates as the main agent of a fresh session. In-session persona-swap and sub-agent masking are prohibited.
+_Avoid_: Auto-launch promise, in-session takeover, silent reroute
+
 **Inherited Sub-Team Bundle**:
 A specialized sub-team bundle that extends an Essentials bundle via `parentBundle` inheritance (e.g. `ai-ml-engineering`, `mobile-development`, `frontend-engineering`, `backend-distributed-systems`, `qa-automation`, `devops-engineering`, `sysops-sre`, `design-systems-ops`, `design-research-testing`, `seo-content-marketing`, `performance-paid-acquisition`, `product-led-growth`, `lifecycle-email-marketing`), inheriting base capabilities without duplicating asset definitions.
 _Avoid_: Child bundle, sub-plugin
@@ -154,6 +170,8 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
    - `business-strategy` (Essentials Base): `subagent-business-panel-experts.md`
 
 8. **🌐 Universal Autonomous Department** (`universal`):
+   - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
+   - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
    - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), 90 skills, and 63 workflows.
 
 ---
@@ -184,7 +202,7 @@ A deterministic test verification hierarchy:
 - **Tier 1 (Feature Coverage)**: Happy path validation of exported functions, interfaces, frontmatter schemas, and expected return types.
 - **Tier 2 (Boundary & Corner Cases)**: Negative testing covering empty inputs, malformed files, invalid enums, and graceful error handling.
 - **Tier 3 (Cross-Feature Pairwise)**: Interoperability testing between Registry, Installer, Adapters, Lockfile Engine, and CLI.
-- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 18 bundles, 45 agents, 90 skills, and 63 workflows.
+- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 24 bundles, 46 agents, 90 skills, and 63 workflows.
 
 **Deterministic Verification**:
 Testing practices that eliminate arbitrary timeouts (`setTimeout`) in favor of auto-waiting assertions, isolated test workspaces, predictable mock factories, and clean teardowns.
@@ -285,7 +303,7 @@ The dynamically selected session launch strategy:
 _Avoid_: Hard-coded command line, brittle argv
 
 **Addon Consent Policy**:
-The security and permission policy governing recommended addons during runtime execution. In default mode, coordinators are instructed to explain requirements and seek explicit user consent before executing `agents add <addon> -t cline -y`. Pre-authorization is granted ephemerally via `--allow-addons` without being persisted in lockfiles.
+The security and permission policy governing recommended addons during runtime execution. In default mode, coordinators are instructed to explain requirements and seek explicit user consent before executing `agents add <addon> -t cline -y`. Pre-authorization is granted ephemerally via `--allow-addons` without being persisted in lockfiles. The same consent contract applies to the Prime Orchestrator when it installs a department **Essentials bundle** at domain scope: `agents add <essentials-bundle> -y` requires explicit in-session confirmation (Route & Instruct Contract).
 _Avoid_: Silent auto-install, unconsented mutation
 
 **Projection Profile**:
