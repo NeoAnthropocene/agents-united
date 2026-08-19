@@ -63,23 +63,46 @@ read-only probe, pinned to a tested CLI version." Start here:
   candidates in §Context.
 - We stop reporting unverified per-host behavior as product fact.
 ---
-## Addendum (2026-08-19) — Spike 006 resolution
+## Addendum (2026-08-19) — Spike 008 resolution (supersedes spike-006 addendum)
 
-The interactive / `--new-project` probe (`advisor-plans/006-agy-interactive-project-spike.md`, executed 2026-08-19
-on `agy` **1.1.15**, Windows) discriminated the two root-cause candidates in §Context and resolved **neither**:
+**Status:** Resolved. Spike 008 (executed 2026-08-19 on `agy` **1.1.15**, Windows) settled all three
+unknowns (mode, store, layout) from the spike-006 addendum, plus user-provided interactive-panel evidence.
 
-- **Candidate B (project/session store) — refuted.** `--new-project` created a project *registration* only
-  (`~/.gemini/config/projects/<id>.json`: id, name, `folderUri`; no agent definitions). With the store populated,
-  `agy agents` stayed empty and the marker stayed `NOT_FOUND`.
-- **Candidate A (mode) — refuted for the scriptable case.** A genuine `stream-json` conversational session
-  (`--agent` resolved, real `agent_response` turn, 17,718 input tokens) still did **not** inject the
-  `.agents/agents/*.md` prompt — the model self-identified "Antigravity" and quoted `NOT_FOUND`. `--agent` is
-  accepted into the session but not validated and not injected.
-- **Interactive `-i` TUI** could not be driven headlessly (blocks on a real TTY, no error text), so interactive
-  loading was **not demonstrated**; `stream-json`, which shares the session/agent pipeline, showed no loading.
+**Evidence summary:**
+- **Interactive `/agents` TUI panel** reads the **workspace** `.agents/agents/` path (flat `.md`
+  format confirmed; human-observed listing `orchestrator-engineering.md` in a live project).
+- **Headless `-p` / stream-json / `agy agents` subcommand** on 1.1.15 reads agents **only from
+  the user-global store** `~/.gemini/config/agents/` (both flat `<name>.md` and folder
+  `<name>/agent.md` proven); per-project `.agents/agents/` and `.gemini/config/agents/` are
+  invisible to the headless path.
+- **Wire format** — `stream-json` input uses `{"event":"user","message":{"role":"user","content":"…"}}`
+  NDJSON (discovered iteratively; the `--output-format stream-json` emits `init`/`step_update`/
+  `result` events). `-p` text/JSON output work as documented.
+- `--agent` is accepted but **not validated** for unknown names (silent fall-through to
+  default); it injects when the name matches a discovered agent in the applicable store.
 
-**Resolved scope:** the Antigravity "reads `./.agents/` natively" claim is **unverified and not
-automated-CI-verifiable** in both headless and scripted-interactive modes, and is **not** upgraded to
-"interactive-scoped (confirmed)". Antigravity should be treated as requiring a **projection shim / install into
-its own agent store** until a human confirms an interactive TUI load. Cline remains the reference conformant
-host. Pin `agy 1.1.15` in the conformance record.
+**Resolved stance:**
+1. **Antigravity conformance = interactive-scoped (confirmed).** The canonical `.agents/agents/`
+   is read natively by the interactive CLI TUI panel and by the Antigravity 2.0 desktop
+   (shared agent harness). No projection shim or store install is required — the canonical
+   layout works out of the box for the surfaces Antigravity users actually use.
+2. **Headless `-p` / `agy agents` is NOT a conformance target for Antigravity.** Per-project
+   agents are invisible to the headless path on 1.1.15; making them visible would require an
+   install into the user-global store `~/.gemini/config/agents/`, which breaks the zero-config
+   per-project model and is not warranted for a CI scripting surface. CI-verifiable headless
+   conformance remains with **Cline** (`ClineCapabilityProbe` + `agents start`, tested green),
+   which is already the reference probes-based host.
+3. **The spike-006 addendum is retracted.** Its "not loadable headless or scripted-interactive"
+   conclusion was a wrong-store artifact (fixtures were placed in the workspace `.agents/agents/`
+   path, which headless 1.1.15 does not read; the global store, where headless does read, was
+   never tested in that spike). Its "projection shim / install into agy's own agent store"
+   recommendation is withdrawn — no shim is needed for interactive, and a global-store install
+   is the wrong tradeoff for headless.
+4. **Pin `agy 1.1.15`** in the conformance record. Interactive loading was human-observed, not
+   automated-CI-verifiable; the conformance probe for Antigravity interactive remains a
+   human-run check until agy exposes a machine-readable agent-discovery surface.
+
+**Action tracking:** (a) update PROJECT.md §1.1 / README to describe Antigravity conformance as
+interactive-scoped (confirmed); (b) keep `agents doctor` per-host probes with Cline as the
+automated-CI host and Antigravity as a human-verified interactive host; (c) no projection shim
+or global-store install is required for Antigravity — the canonical layout works natively.
