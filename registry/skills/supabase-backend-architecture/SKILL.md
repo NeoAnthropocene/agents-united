@@ -1,10 +1,13 @@
 ---
 name: supabase-backend-architecture
-description: PostgreSQL database modeling, Row Level Security (RLS) policies, Edge Functions (Deno), Auth hooks, and Realtime subscriptions on Supabase.
+description: PostgreSQL database modeling, Row Level Security (RLS) policies,
+  Edge Functions (Deno), Auth hooks, and Realtime subscriptions on Supabase.
 metadata:
-  author: "Agents United Backend Group"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United Backend Group
+  version: 1.0.0
+  license: MIT
+  icon: ⚡
+disable-slash-command: true
 ---
 
 # Supabase Backend Architecture Playbook

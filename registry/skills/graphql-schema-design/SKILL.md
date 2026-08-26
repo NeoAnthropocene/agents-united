@@ -1,9 +1,12 @@
 ---
 name: graphql-schema-design
-description: Production-grade GraphQL Schema Design playbook for scalable type systems, DataLoader batching, and Apollo Federation.
+description: Production-grade GraphQL Schema Design playbook for scalable type
+  systems, DataLoader batching, and Apollo Federation.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🕸️
+disable-slash-command: true
 ---
 
 # GraphQL Schema Architecture, Resolvers & Federation

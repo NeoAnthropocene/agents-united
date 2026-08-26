@@ -4,7 +4,8 @@ version: 1.0.0
 type: subagent
 description: >
   Paid Acquisition & Performance Marketing Specialist Subagent for Google Ads,
-  Meta Ads, LinkedIn B2B campaigns, ROAS/CAC analytics, and multi-touch attribution.
+  Meta Ads, LinkedIn B2B campaigns, ROAS/CAC analytics, and multi-touch
+  attribution.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,15 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "Paid Acquisition Specialist activated — reviewing campaign targeting, budget allocations, and bid strategies."
+    - log: Paid Acquisition Specialist activated — reviewing campaign targeting,
+        budget allocations, and bid strategies.
   PostInvocation:
-    - log: "Performance campaign plan complete — ready for execution."
+    - log: Performance campaign plan complete — ready for execution.
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

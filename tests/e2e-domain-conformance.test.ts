@@ -70,9 +70,9 @@ describe('007 — Cross-domain generalization of the lifecycle conformance suite
     ]);
   });
 
-  it('derives exactly 13 addons total across all domains', () => {
+  it('derives exactly 23 addons total across all domains', () => {
     const total = DOMAINS.reduce((s, d) => s + d.addons.length, 0);
-    expect(total).toBe(13);
+    expect(total).toBe(23);
   });
 
   it('every addon referenced is present in bundles.json', () => {

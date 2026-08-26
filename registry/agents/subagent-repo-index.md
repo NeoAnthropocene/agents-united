@@ -4,28 +4,30 @@ version: 2.0.0
 type: subagent
 description: >
   Codebase indexer and symbol explorer. Maps module dependency graphs, resolves
-  symbol definitions, detects circular dependencies, and produces architecture maps
-  in a read-only capacity.
+  symbol definitions, detects circular dependencies, and produces architecture
+  maps in a read-only capacity.
 model: inherit
 permissionMode: strict
 commandExecutionPolicy: ask
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - grep_search
   - list_dir
-
 hooks:
   PreInvocation:
-    - log: "subagent-repo-index invoked — beginning codebase indexing"
+    - log: subagent-repo-index invoked — beginning codebase indexing
   PostInvocation:
-    - log: "subagent-repo-index finished — index report ready"
+    - log: subagent-repo-index finished — index report ready
   PreToolUse:
-    - guard: "Deny any tool that would mutate the filesystem"
+    - guard: Deny any tool that would mutate the filesystem
   PostToolUse:
-    - log: "Tool completed indexing step"
+    - log: Tool completed indexing step
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # subagent-repo-index — System Prompt

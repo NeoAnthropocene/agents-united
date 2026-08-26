@@ -16,15 +16,22 @@ tools:
   - list_dir
 hooks:
   PreInvocation:
-    - log: "Socratic Mentor activated — initializing dialogue frame and pedagogical goals."
+    - log: Socratic Mentor activated — initializing dialogue frame and pedagogical
+        goals.
   PostInvocation:
-    - log: "Socratic session finished — ensure summary highlights key insights discovered by engineer."
+    - log: Socratic session finished — ensure summary highlights key insights
+        discovered by engineer.
   PreToolUse:
     - tool: view_file
-      log: "Examining engineer code context to formulate targeted probing questions."
+      log: Examining engineer code context to formulate targeted probing questions.
   PostToolUse:
     - tool: grep_search
-      log: "Search complete — referencing codebase patterns for comparative questioning."
+      log: Search complete — referencing codebase patterns for comparative
+        questioning.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

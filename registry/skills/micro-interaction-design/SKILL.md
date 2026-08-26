@@ -1,9 +1,12 @@
 ---
 name: micro-interaction-design
-description: Production-grade Micro Interaction Design playbook for design operations, UX systems, and growth strategy.
+description: Production-grade Micro Interaction Design playbook for design
+  operations, UX systems, and growth strategy.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 💫
+disable-slash-command: true
 ---
 
 # Micro Interaction Design

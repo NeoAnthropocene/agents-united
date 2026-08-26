@@ -1,9 +1,12 @@
 ---
 name: code-refactoring
-description: Production-grade Code Refactoring playbook for safely modernizing legacy codebases with zero regressions.
+description: Production-grade Code Refactoring playbook for safely modernizing
+  legacy codebases with zero regressions.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: ♻️
+disable-slash-command: true
 ---
 
 # Systematic Code Refactoring & Tech Debt Remediation

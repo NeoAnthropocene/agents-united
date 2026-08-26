@@ -1,9 +1,12 @@
 ---
 name: backend-api-design
-description: Production-grade Backend API Design playbook for RESTful, gRPC, and GraphQL enterprise architectures.
+description: Production-grade Backend API Design playbook for RESTful, gRPC, and
+  GraphQL enterprise architectures.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🔌
+disable-slash-command: true
 ---
 
 # Backend API Design & Contract Specification

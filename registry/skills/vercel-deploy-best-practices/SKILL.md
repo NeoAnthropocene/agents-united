@@ -1,10 +1,14 @@
 ---
 name: vercel-deploy-best-practices
-description: Next.js and frontend deployment optimization on Vercel, Edge Middleware, Incremental Static Regeneration (ISR), Server Actions, and Preview environments.
+description: Next.js and frontend deployment optimization on Vercel, Edge
+  Middleware, Incremental Static Regeneration (ISR), Server Actions, and Preview
+  environments.
 metadata:
-  author: "Agents United Frontend Group"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United Frontend Group
+  version: 1.0.0
+  license: MIT
+  icon: ▲
+disable-slash-command: true
 ---
 
 # Vercel Deployment Best Practices Playbook

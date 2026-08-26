@@ -1,10 +1,14 @@
 ---
 name: vector-database-design
-description: Designing vector database schemas, HNSW index parameter tuning, metadata filtering, and collection partitioning on Qdrant, Pinecone, and Chroma.
+description: Designing vector database schemas, HNSW index parameter tuning,
+  metadata filtering, and collection partitioning on Qdrant, Pinecone, and
+  Chroma.
 metadata:
-  author: "Qdrant & Pinecone Community / agents-united"
-  version: "2.0.0"
-  license: "MIT"
+  author: Qdrant & Pinecone Community / agents-united
+  version: 2.0.0
+  license: MIT
+  icon: 🎯
+disable-slash-command: true
 ---
 
 # Vector Database Design Playbook

@@ -12,23 +12,27 @@ permissionMode: acceptEdits
 commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
-
 tools:
   - search_web
   - view_file
   - write_to_file
-
 hooks:
   PreInvocation:
-    - log: "subagent-marketing-growth-strategist invoked — loading context files and prior experiment logs"
+    - log: subagent-marketing-growth-strategist invoked — loading context files and
+        prior experiment logs
   PostInvocation:
-    - log: "subagent-marketing-growth-strategist complete — playbook and experiment backlog written"
+    - log: subagent-marketing-growth-strategist complete — playbook and experiment
+        backlog written
   PreToolUse:
     - tool: search_web
-      log: "Filtering web searches for recent SaaS growth benchmark data"
+      log: Filtering web searches for recent SaaS growth benchmark data
   PostToolUse:
     - tool: write_to_file
-      log: "Growth playbook written to filesystem"
+      log: Growth playbook written to filesystem
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # subagent-marketing-growth-strategist — System Prompt

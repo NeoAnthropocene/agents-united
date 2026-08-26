@@ -1,10 +1,14 @@
 ---
 name: mobile-platform-offline-validate
-description: Offline-first architecture patterns, background sync, local database persistence, and conflict resolution strategies for mobile applications.
+description: Offline-first architecture patterns, background sync, local
+  database persistence, and conflict resolution strategies for mobile
+  applications.
 metadata:
-  author: "Salesforce (forcedotcom/sf-skills)"
-  version: "1.0.0"
-  source: "https://skills.sh/forcedotcom/sf-skills/mobile-platform-offline-validate"
+  author: Salesforce (forcedotcom/sf-skills)
+  version: 1.0.0
+  source: https://skills.sh/forcedotcom/sf-skills/mobile-platform-offline-validate
+  icon: 📶
+disable-slash-command: true
 ---
 
 # Mobile Offline-First & Sync Playbook

@@ -1,10 +1,13 @@
 ---
 name: technical-seo-audit
-description: Technical SEO audits covering Core Web Vitals, crawl budget, robots.txt directives, structured JSON-LD data, and indexing hygiene.
+description: Technical SEO audits covering Core Web Vitals, crawl budget,
+  robots.txt directives, structured JSON-LD data, and indexing hygiene.
 metadata:
-  author: "Agents United SEO Group"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United SEO Group
+  version: 1.0.0
+  license: MIT
+  icon: ⚙️
+disable-slash-command: true
 ---
 
 # Technical SEO Audit Playbook

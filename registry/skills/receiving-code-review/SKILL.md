@@ -1,9 +1,12 @@
 ---
 name: receiving-code-review
-description: Production-grade Receiving Code Review playbook for processing feedback, addressing revisions, and maintaining codebase standards.
+description: Production-grade Receiving Code Review playbook for processing
+  feedback, addressing revisions, and maintaining codebase standards.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 👀
+disable-slash-command: true
 ---
 
 # Receiving Code Review Feedback & Constructive Revision

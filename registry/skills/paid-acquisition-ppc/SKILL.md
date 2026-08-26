@@ -1,9 +1,13 @@
 ---
 name: paid-acquisition-ppc
-description: Production-grade Paid Acquisition PPC playbook for multi-channel ad campaign structure, bidding algorithms, audience segmentation, UTM taxonomy, and ad copy matrix.
+description: Production-grade Paid Acquisition PPC playbook for multi-channel ad
+  campaign structure, bidding algorithms, audience segmentation, UTM taxonomy,
+  and ad copy matrix.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 💰
+disable-slash-command: true
 ---
 
 # Multi-Channel Paid Acquisition & PPC Campaign Management

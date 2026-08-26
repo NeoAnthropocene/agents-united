@@ -3,8 +3,9 @@ name: subagent-cross-platform-specialist
 version: 1.0.0
 type: subagent
 description: >
-  Cross-Platform Mobile Specialist subagent for building React Native (Expo) and Flutter
-  applications, bridging native iOS/Android modules, and optimizing multi-platform runtime performance.
+  Cross-Platform Mobile Specialist subagent for building React Native (Expo) and
+  Flutter applications, bridging native iOS/Android modules, and optimizing
+  multi-platform runtime performance.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,15 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "Cross-Platform Specialist activated — inspecting Expo/React Native/Flutter configurations."
+    - log: Cross-Platform Specialist activated — inspecting Expo/React Native/Flutter
+        configurations.
   PostInvocation:
-    - log: "Cross-platform task complete — verify multi-platform compatibility across iOS and Android."
+    - log: Cross-platform task complete — verify multi-platform compatibility across
+        iOS and Android.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

@@ -18,15 +18,20 @@ tools:
   - generate_image
 hooks:
   PreInvocation:
-    - log: "UI Designer activated — loading design constraints and style guide."
+    - log: UI Designer activated — loading design constraints and style guide.
   PostInvocation:
-    - log: "UI Designer completed — verify visual output meets brand standards."
+    - log: UI Designer completed — verify visual output meets brand standards.
   PreToolUse:
     - tool: generate_image
-      log: "Generating visual asset — ensure prompt follows brand guardrails."
+      log: Generating visual asset — ensure prompt follows brand guardrails.
   PostToolUse:
     - tool: write_to_file
-      log: "File written — confirm CSS variable names follow taxonomy."
+      log: File written — confirm CSS variable names follow taxonomy.
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

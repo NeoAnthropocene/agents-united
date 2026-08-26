@@ -17,6 +17,7 @@
     "dev": "tsup --watch",
     "start": "node dist/cli.js",
     "test": "vitest run",
+    "test:evals": "vitest run tests/e2e-evals/",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"

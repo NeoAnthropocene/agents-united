@@ -1,9 +1,13 @@
 ---
 name: ad-attribution-modeling
-description: Production-grade Ad Attribution Modeling playbook for multi-touch attribution (MTA), ROAS/CAC calculation, marketing mix modeling (MMM), and Server-to-Server Conversions API integration.
+description: Production-grade Ad Attribution Modeling playbook for multi-touch
+  attribution (MTA), ROAS/CAC calculation, marketing mix modeling (MMM), and
+  Server-to-Server Conversions API integration.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🎯
+disable-slash-command: true
 ---
 
 # Multi-Touch Ad Attribution Modeling & ROAS/CAC Analytics Engine

@@ -1,9 +1,13 @@
 ---
 name: onboarding-cro
-description: Production-grade Onboarding Conversion Rate Optimization (CRO) playbook for time-to-value (TTV) acceleration, activation milestone gamification, and drop-off reduction.
+description: Production-grade Onboarding Conversion Rate Optimization (CRO)
+  playbook for time-to-value (TTV) acceleration, activation milestone
+  gamification, and drop-off reduction.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: ✨
+disable-slash-command: true
 ---
 
 # Product Onboarding CRO & Time-to-Value (TTV) Acceleration

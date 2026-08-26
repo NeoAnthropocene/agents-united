@@ -1,10 +1,14 @@
 ---
 name: runpod-gpu-orchestration
-description: On-demand GPU instance provisioning, serverless worker handler creation, network volume configuration, and spot pricing optimization on RunPod.io.
+description: On-demand GPU instance provisioning, serverless worker handler
+  creation, network volume configuration, and spot pricing optimization on
+  RunPod.io.
 metadata:
-  author: "RunPod / agents-united"
-  version: "2.0.0"
-  license: "MIT"
+  author: RunPod / agents-united
+  version: 2.0.0
+  license: MIT
+  icon: 🖥️
+disable-slash-command: true
 ---
 
 # RunPod GPU Orchestration Playbook

@@ -3,8 +3,9 @@ name: subagent-deep-research
 version: 2.0.0
 type: subagent
 description: >
-  Deep Technical Researcher subagent for synthesizing multi-source web documentation,
-  academic papers, RFC specifications, and GitHub issue threads into structured research reports.
+  Deep Technical Researcher subagent for synthesizing multi-source web
+  documentation, academic papers, RFC specifications, and GitHub issue threads
+  into structured research reports.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
@@ -15,17 +16,24 @@ tools:
   - write_to_file
   - search_web
   - read_url_content
+  - manage_task
+  - schedule
 hooks:
   PreInvocation:
-    - log: "Deep Research subagent activated — initializing search parameters and citation engine."
+    - log: Deep Research subagent activated — initializing search parameters and
+        citation engine.
   PostInvocation:
-    - log: "Research completed — verify all claims include primary source citations."
+    - log: Research completed — verify all claims include primary source citations.
   PreToolUse:
     - tool: search_web
-      log: "Executing web search query — validating domain reputation."
+      log: Executing web search query — validating domain reputation.
   PostToolUse:
     - tool: read_url_content
-      log: "URL content fetched — extracting key facts and technical citations."
+      log: URL content fetched — extracting key facts and technical citations.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition
@@ -72,3 +80,15 @@ release notes, and web sources into high-density, structured technical research 
 - **PostInvocation**: Emits research completion signal and verifies citations.
 - **PreToolUse**: Validates domain reputation before executing web search calls.
 - **PostToolUse**: Extracts key technical facts following URL content fetch.
+
+
+---
+
+## ⚡ Task Delegation & Reactive Liveness Protocol
+
+When executing long-running background tasks (e.g. test suites, build pipelines, migrations, daemon watchers) or coordinating subagents:
+1. **Background Execution**: Launch long-running operations via `run_command` with appropriate timeouts. The command runs as an asynchronous background task returning a `task-id`.
+2. **Task Management**: Use `manage_task` (`action: 'status' | 'list' | 'kill' | 'send_input'`) to inspect logs or send input without blocking the main session.
+3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
+4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
+

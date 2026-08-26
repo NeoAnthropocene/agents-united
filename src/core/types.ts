@@ -297,4 +297,47 @@ export interface SearchResults {
   workflows: string[];
 }
 
+export type ModelTier = 'inherit' | 'pro' | 'flash';
+export type ReasoningEffort = 'low' | 'medium' | 'high';
+export type PermissionMode = 'acceptEdits' | 'requestReview' | 'strict' | 'readOnly';
+export type CommandExecutionPolicy = 'auto' | 'ask' | 'never';
+
+export interface AgentHook {
+  matcher: string;
+  action: string;
+}
+
+export interface AgentFrontmatter {
+  name: string;
+  version?: string;
+  type?: 'orchestrator' | 'subagent';
+  description?: string;
+  model?: ModelTier;
+  effort?: ReasoningEffort;
+  permissionMode?: PermissionMode;
+  commandExecutionPolicy?: CommandExecutionPolicy;
+  mainAgent?: boolean;
+  subagent?: boolean;
+  inheritCustomizations?: boolean;
+  rules?: string[];
+  tools?: string[];
+  hooks?: Record<string, AgentHook[]>;
+}
+
+export interface SkillMetadata {
+  author?: string;
+  version?: string;
+  icon?: string;
+  source?: string;
+  license?: string;
+}
+
+export interface SkillFrontmatter {
+  name: string;
+  description: string;
+  'disable-slash-command'?: boolean;
+  disableSlashCommand?: boolean;
+  metadata?: SkillMetadata;
+}
+
 

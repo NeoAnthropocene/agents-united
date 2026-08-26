@@ -1,10 +1,12 @@
 ---
 name: to-tickets
-description: Decompose technical specifications and PRDs into actionable, prioritized backlog issues and task tickets.
+description: Decompose technical specifications and PRDs into actionable,
+  prioritized backlog issues and task tickets.
 metadata:
-  author: "Matt Pocock (mattpocock/skills)"
-  version: "1.0.0"
-  source: "https://github.com/mattpocock/skills"
+  author: Matt Pocock (mattpocock/skills)
+  version: 1.0.0
+  source: https://github.com/mattpocock/skills
+  icon: 🎫
 ---
 
 # Ticket & Work Breakdown Generator

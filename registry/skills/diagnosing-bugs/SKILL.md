@@ -1,10 +1,12 @@
 ---
 name: diagnosing-bugs
-description: Evidence-based bug diagnosis and root-cause analysis workflow to isolate defect origins without blind guesswork.
+description: Evidence-based bug diagnosis and root-cause analysis workflow to
+  isolate defect origins without blind guesswork.
 metadata:
-  author: "Matt Pocock (mattpocock/skills)"
-  version: "1.0.0"
-  source: "https://github.com/mattpocock/skills"
+  author: Matt Pocock (mattpocock/skills)
+  version: 1.0.0
+  source: https://github.com/mattpocock/skills
+  icon: 🔍
 ---
 
 # Evidence-Driven Bug Diagnosis

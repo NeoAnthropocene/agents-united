@@ -301,4 +301,128 @@ export class PrerequisiteChecker {
       modes: bundle.modes,
     };
   }
+
+  /**
+   * Returns canonical command and environment definitions for known MCP servers
+   */
+  public static getMcpDefinition(
+    mcpName: string,
+    mode: 'operational' | 'limited-operational' = 'operational',
+    envVars: Record<string, string | undefined> = {}
+  ): { command: string; args: string[]; env?: Record<string, string> } {
+    const norm = mcpName.trim().toLowerCase();
+    switch (norm) {
+      case 'github':
+        return {
+          command: 'npx',
+          args: ['-y', '@modelcontextprotocol/server-github'],
+          ...(mode === 'operational' && (envVars.GITHUB_PERSONAL_ACCESS_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN)
+            ? { env: { GITHUB_PERSONAL_ACCESS_TOKEN: envVars.GITHUB_PERSONAL_ACCESS_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN || '' } }
+            : {}),
+        };
+      case 'firecrawl':
+        return {
+          command: 'npx',
+          args: ['-y', 'firecrawl-mcp'],
+          ...(mode === 'operational' && (envVars.FIRECRAWL_API_KEY || process.env.FIRECRAWL_API_KEY)
+            ? { env: { FIRECRAWL_API_KEY: envVars.FIRECRAWL_API_KEY || process.env.FIRECRAWL_API_KEY || '' } }
+            : mode === 'limited-operational' && envVars.FIRECRAWL_API_URL
+            ? { env: { FIRECRAWL_API_URL: envVars.FIRECRAWL_API_URL } }
+            : {}),
+        };
+      case 'context7':
+        return {
+          command: 'npx',
+          args: ['-y', '@upstash/context7-mcp'],
+          ...(mode === 'operational' && envVars.UPSTASH_REDIS_REST_URL && envVars.UPSTASH_REDIS_REST_TOKEN
+            ? { env: { UPSTASH_REDIS_REST_URL: envVars.UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN: envVars.UPSTASH_REDIS_REST_TOKEN } }
+            : {}),
+        };
+      case 'playwright':
+        return {
+          command: 'npx',
+          args: ['-y', '@modelcontextprotocol/server-playwright'],
+        };
+      case 'markitdown':
+        return {
+          command: 'uvx',
+          args: ['markitdown-mcp'],
+        };
+      case 'chrome-devtools-mcp':
+      case 'chrome-devtools':
+        return {
+          command: 'npx',
+          args: ['-y', 'chrome-devtools-mcp'],
+        };
+      case 'stitch':
+        return {
+          command: 'npx',
+          args: ['-y', '@google/stitch-mcp'],
+          ...(mode === 'operational' && (envVars.STITCH_API_KEY || process.env.STITCH_API_KEY)
+            ? { env: { STITCH_API_KEY: envVars.STITCH_API_KEY || process.env.STITCH_API_KEY || '' } }
+            : {}),
+        };
+      case 'figma':
+        return {
+          command: 'npx',
+          args: ['-y', '@modelcontextprotocol/server-figma'],
+          ...(mode === 'operational' && (envVars.FIGMA_ACCESS_TOKEN || process.env.FIGMA_ACCESS_TOKEN)
+            ? { env: { FIGMA_ACCESS_TOKEN: envVars.FIGMA_ACCESS_TOKEN || process.env.FIGMA_ACCESS_TOKEN || '' } }
+            : {}),
+        };
+      default:
+        return {
+          command: 'npx',
+          args: ['-y', norm],
+        };
+    }
+  }
+
+  /**
+   * Generates client-specific MCP configuration objects for Cursor, Cline, Claude, or Antigravity
+   */
+  public static generateClientConfig(
+    client: 'cursor' | 'cline' | 'claude' | 'antigravity',
+    mcpNames: string[],
+    mode: 'operational' | 'limited-operational' = 'operational',
+    envVars: Record<string, string | undefined> = {}
+  ): Record<string, any> {
+    const servers: Record<string, any> = {};
+
+    for (const name of mcpNames) {
+      const def = PrerequisiteChecker.getMcpDefinition(name, mode, envVars);
+      if (client === 'cline') {
+        servers[name] = {
+          ...def,
+          disabled: false,
+          autoApprove: [],
+        };
+      } else {
+        servers[name] = def;
+      }
+    }
+
+    return { mcpServers: servers };
+  }
+
+  /**
+   * Attempts to automatically provision a missing MCP server using the native CLI.
+   */
+  public static async provisionMcpServer(
+    mcpName: string,
+    options: { cwd?: string; env?: Record<string, string | undefined> } = {}
+  ): Promise<{ success: boolean; output?: string }> {
+    try {
+      const { execSync } = await import('node:child_process');
+      const cmd = `npx @antigravity/cli mcp add ${mcpName} --type stdio`;
+      const output = execSync(cmd, { 
+        cwd: options.cwd || process.cwd(), 
+        env: options.env || process.env,
+        encoding: 'utf8' 
+      });
+      return { success: true, output };
+    } catch (err: any) {
+      return { success: false, output: err.message || String(err) };
+    }
+  }
 }

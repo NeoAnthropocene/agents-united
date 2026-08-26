@@ -1,10 +1,13 @@
 ---
 name: git-guardrails
-description: Operational safety policies and git guardrails to prevent destructive force-pushes, unintended commits to main branches, and secret leaks.
+description: Operational safety policies and git guardrails to prevent
+  destructive force-pushes, unintended commits to main branches, and secret
+  leaks.
 metadata:
-  author: "Matt Pocock (mattpocock/skills)"
-  version: "1.0.0"
-  source: "https://github.com/mattpocock/skills"
+  author: Matt Pocock (mattpocock/skills)
+  version: 1.0.0
+  source: https://github.com/mattpocock/skills
+  icon: 🛡️
 ---
 
 # Git Safety & Guardrails Playbook

@@ -1,9 +1,12 @@
 ---
 name: user-journey-mapping
-description: Production-grade User Journey Mapping playbook for design operations, UX systems, and growth strategy.
+description: Production-grade User Journey Mapping playbook for design
+  operations, UX systems, and growth strategy.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🧭
+disable-slash-command: true
 ---
 
 # User Journey Mapping

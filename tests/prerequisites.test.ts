@@ -38,7 +38,7 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     const agencyBundle = await registry.getBundle('digital-agency');
     expect(agencyBundle).toBeDefined();
     expect(agencyBundle?.tier).toBe('organization');
-    expect(agencyBundle?.status).toBe('under-construction');
+    expect(agencyBundle?.status).toBe('experimental');
     expect(agencyBundle?.prerequisites?.requiredMcps).toBeDefined();
     expect(agencyBundle?.modes?.operational).toBeDefined();
     expect(agencyBundle?.modes?.brainstorming).toBeDefined();
@@ -56,12 +56,6 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     const firecrawlCheck = result.items.find(i => i.name === 'firecrawl');
     expect(firecrawlCheck).toBeDefined();
     expect(firecrawlCheck?.type).toBe('mcp');
-
-    // Env check
-    const envCheck = result.items.find(i => i.name === 'FIRECRAWL_API_KEY');
-    expect(envCheck).toBeDefined();
-    expect(envCheck?.type).toBe('env');
-    expect(envCheck?.satisfied).toBe(false);
   });
 
   it('should detect MCP when configured in .cursor/mcp.json', async () => {
@@ -130,6 +124,8 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
     const stdout = execSync(`node "${cliPath}" list`, { encoding: 'utf8' });
     expect(stdout).toContain('Organization Bundles (Experimental / Cross-Functional)');
     expect(stdout).toContain('digital-agency');
+    expect(stdout).toContain('[Experimental]');
+    expect(stdout).toContain('mock-organization-under-construction');
     expect(stdout).toContain('[Under Construction (TBA)]');
     expect(stdout).toContain('[Prerequisites Required]');
     expect(stdout).toContain('universal-skills');
@@ -142,16 +138,21 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
     const stdout = execSync(`node "${cliPath}" list --json`, { encoding: 'utf8' });
     const bundles = JSON.parse(stdout);
     const agency = bundles.find((b: any) => b.name === 'digital-agency');
+    const mock = bundles.find((b: any) => b.name === 'mock-organization-under-construction');
     const engineering = bundles.find((b: any) => b.name === 'software-engineering');
     const design = bundles.find((b: any) => b.name === 'product-design');
     const universalSkills = bundles.find((b: any) => b.name === 'universal-skills');
 
     expect(agency).toBeDefined();
     expect(agency.tier).toBe('organization');
-    expect(agency.status).toBe('under-construction');
+    expect(agency.status).toBe('experimental');
     expect(agency.prerequisites.requiredMcps.length).toBeGreaterThan(0);
     expect(agency.modes.operational).toBeDefined();
+    expect(agency.modes.limitedOperational || agency.modes['limited-operational']).toBeDefined();
     expect(agency.modes.brainstorming).toBeDefined();
+    
+    expect(mock).toBeDefined();
+    expect(mock.status).toBe('under-construction');
 
     expect(engineering).toBeDefined();
     expect(engineering.status).toBe('stable');
@@ -164,7 +165,7 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
   });
 
   it('should block headless install for under-construction bundles', () => {
-    const res = spawnSync('node', [cliPath, 'add', 'digital-agency', '-y', '--dry-run'], {
+    const res = spawnSync('node', [cliPath, 'add', 'mock-organization-under-construction', '-y', '--dry-run'], {
       encoding: 'utf8',
     });
     expect(res.status).toBe(1);
@@ -173,7 +174,7 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
 
   it('should allow install when --allow-under-construction and --mode brainstorming are passed', () => {
     const stdout = execSync(
-      `node "${cliPath}" add digital-agency --allow-under-construction --mode brainstorming -y --dry-run`,
+      `node "${cliPath}" add mock-organization-under-construction --allow-under-construction --mode brainstorming -y --dry-run`,
       { encoding: 'utf8' }
     );
     expect(stdout).toContain('[DRY RUN] Would install');
@@ -181,7 +182,7 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
 
   it('should allow forced install with --allow-under-construction and --allow-missing-prereqs', () => {
     const stdout = execSync(
-      `node "${cliPath}" add digital-agency --allow-under-construction --allow-missing-prereqs -y --dry-run`,
+      `node "${cliPath}" add mock-organization-under-construction --allow-under-construction --allow-missing-prereqs -y --dry-run`,
       { encoding: 'utf8' }
     );
     expect(stdout).toContain('[DRY RUN] Would install');

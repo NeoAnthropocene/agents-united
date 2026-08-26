@@ -46,11 +46,21 @@ _Avoid_: Mega bundle, company bot
 A blocking verification mechanism evaluated by the CLI (`PrerequisiteChecker`) and Lead Orchestrators before installing or activating Organization Bundles. It inspects host MCP configurations across Cursor, Cline, Antigravity/Gemini, and Claude Code, alongside npm packages and environment variables. If prerequisites are unsatisfied, it presents a 3-way resolution: abort and show setup guidance, degrade to Brainstorming Mode, or force Operational install.
 _Avoid_: Dependency blocker, install hook
 
-**Dual Execution Modes (Operational vs Brainstorming)**:
-The two operational envelopes supported by Organization Bundles:
-- **Fully Operational Mode**: All prerequisite MCP servers, CLI packages, and API keys are verified and active, enabling real-world web research, browser automation, git operations, and code deployment.
-- **Brainstorming Mode (Fallback)**: A resilient, read-only ideation and planning envelope activated when prerequisites are missing or incomplete. Orchestrators and agents produce full architecture designs, wireframe specifications, and marketing strategy deliverables without executing live MCP tool mutations.
-_Avoid_: Read-only mode, offline mock
+**Organization Bundle Execution Tiers & Graceful MCP Degradation**:
+The operational envelopes supported by all Organization Bundles (`digital-agency` and future cross-functional enterprise bundles):
+- **1. Fully Operational Mode (Authenticated MCP)**: All prerequisite MCP servers, CLI binaries, and bearer tokens/API keys (e.g. `FIRECRAWL_API_KEY`, GitHub PAT, Figma Access Token) are verified and active, unlocking full-scale web crawling, automated PR merges, live design token extraction, and cloud analytics.
+- **2. Limited Operational Mode (Unauthenticated / Community MCP)**: MCP servers run in free, local, or unauthenticated mode without API keys (e.g. Context7 public library queries, unauthenticated GitHub rate-limited public inspection, local Playwright headless browser testing, local MarkItDown document conversion, and local Chrome DevTools inspection). The team executes automated workflows within provider public rate limits.
+- **3. Brainstorming Mode (Native Fallback)**: A zero-MCP fallback envelope activated when the user declines to install or configure MCP servers, or operates in offline/isolated environments. The Lead Orchestrator explicitly notifies the user of the reduced capability envelope, and all agents switch to native workspace tools (`run_command` with git/curl, `write_to_file`, `grep_search`, and local simulation templates).
+- **Dynamic Mode Switching**: Lead Orchestrators allow users to seamlessly switch between operational modes mid-session (e.g., `/mode operational` or `/mode brainstorming`) and provide guided prompts to add missing tokens without restarting the conversation.
+_Avoid_: Rigid binary mode, silent error failing, unnotified degradation
+
+**Continuous Evaluation Harness (Stream-JSON Evals)**:
+An automated benchmarking and regression testing pipeline executing agent interactions in headless streaming JSON mode (`--input-format stream-json --output-format stream-json --json-schema`). It reconstructs fragmented NDJSON streams, traces multi-hop DAG message graphs (`send_message` with `/handoff` and `/design-handoff-spec`), and asserts runtime compliance across Tri-Tier execution boundaries.
+_Avoid_: Static prompt test, mock scraper
+
+**Two-Stage Hybrid Evaluator (LLM Judge & Gatekeeper)**:
+A dual-phase evaluation architecture combining a 0ms deterministic gatekeeper (verifying tool invocation syntax, recipient validity, character thresholds, and `/handoff` directives) with a schema-constrained semantic LLM evaluator enforcing structured Zod rubrics and returning strictly typed `EvaluationVerdict` objects.
+_Avoid_: Unstructured LLM grader, regex-only validator
 
 **Bundle Lifecycle State**:
 The formal release maturity status of a bundle:
@@ -317,6 +327,39 @@ _Avoid_: Root index hack, static readme
 **Managed Projection Marker**:
 An HTML comment stamp identifying a file as machine-managed (e.g. `<!-- managed-by: agents-united | profile: claude-code | canonical: .agents/agents/<file> | do not edit -->`) placed as the first line of a projected file's body. Its presence gates deletion/overwrite so user-modified files are never clobbered.
 _Avoid_: Dirty edit flag, unmarked copy
+
+**Scoped Rule Binding (`rules: [...]`)**:
+The declarative frontmatter property enabling agents to explicitly bind a curated array of relevant rule files (e.g. `rules: [git-guardrails.md, tdd-protocol.md]`), preventing full workspace rule trees from bloating the agent's context window.
+_Avoid_: Global rule flood, untyped rule inclusion
+
+**Customization Isolation (`inheritCustomizations: false / true`)**:
+The boolean frontmatter switch controlling whether a specialized subagent adopts workspace-level customizations (skills, rules, plugins, subagents) or runs in an isolated, minimal runtime container.
+_Avoid_: Context dumping, unbounded tool inheritance
+
+**Skill Icon Branding (`metadata.icon`)**:
+A visual Unicode emoji attribute declared in `SKILL.md` frontmatter (e.g. `icon: "🛡️"`) rendered in catalog list views, inspection headers, and slash command autocompletions.
+_Avoid_: Unstyled skill text, raw icon paths
+
+**Internal Skill Slash-Suppression (`disable-slash-command: true`)**:
+A frontmatter flag in `SKILL.md` that hides internal or subagent-specialized skills from the interactive `/` autocomplete popup while keeping them fully discoverable and invocable by models.
+_Avoid_: Command palette bloat, hidden skill deletion
+
+**Declarative Reasoning Effort (`effort: low | medium | high`)**:
+The frontmatter parameter mapping agent tasks to specific model reasoning budget tiers on supported models (e.g. Gemini 3.6/3.7 Flash and Pro), allowing high-latency deep reasoning for lead orchestrators and rapid low-latency execution for worker subagents.
+_Avoid_: Fixed model thinking, uncontrolled latency
+
+**Live URL Artifact Card**:
+A specialized markdown artifact card format that opens web server endpoints (`http://localhost:3000`) or cloud docs directly inside Antigravity's in-app preview pane without switching application windows.
+_Avoid_: Plain text link, external browser tab mandate
+
+**Visual Multi-Modal Review Loop**:
+An iterative design and QA review workflow combining side-by-side SVG/image visual diffs and region-selection commenting, allowing users to draw bounding boxes on generated UI screens and submit feedback with cropped previews.
+_Avoid_: Pure text UI feedback, blind pixel review
+
+**Native MCP Provisioning (`agy mcp`)**:
+The automated configuration lifecycle where the CLI evaluates bundle prerequisites and leverages native host commands (`agy mcp add --type stdio|http`) to provision required tool servers (e.g. Firecrawl, GitHub) into `mcp_config.json`.
+_Avoid_: Manual JSON editing, unverified MCP startup
+
 ## Usage Examples
 
 Universal install with fan-out to every supported runtime:

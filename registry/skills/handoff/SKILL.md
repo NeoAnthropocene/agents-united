@@ -1,10 +1,13 @@
 ---
 name: handoff
-description: Capture session progress, active context, decision logs, and remaining tasks to pass context seamlessly between subagents or future sessions.
+description: Capture session progress, active context, decision logs, and
+  remaining tasks to pass context seamlessly between subagents or future
+  sessions.
 metadata:
-  author: "Matt Pocock (mattpocock/skills)"
-  version: "1.0.0"
-  source: "https://github.com/mattpocock/skills"
+  author: Matt Pocock (mattpocock/skills)
+  version: 1.0.0
+  source: https://github.com/mattpocock/skills
+  icon: 🤝
 ---
 
 # Session Handoff & Context Persistence

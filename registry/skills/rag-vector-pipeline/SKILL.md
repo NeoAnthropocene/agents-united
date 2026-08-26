@@ -1,10 +1,14 @@
 ---
 name: rag-vector-pipeline
-description: Advanced Retrieval-Augmented Generation (RAG) pipelines with LangChain, LlamaIndex, hybrid search (dense + sparse), and cross-encoder re-ranking.
+description: Advanced Retrieval-Augmented Generation (RAG) pipelines with
+  LangChain, LlamaIndex, hybrid search (dense + sparse), and cross-encoder
+  re-ranking.
 metadata:
-  author: "LangChain & LlamaIndex / agents-united"
-  version: "2.0.0"
-  license: "MIT"
+  author: LangChain & LlamaIndex / agents-united
+  version: 2.0.0
+  license: MIT
+  icon: 🧠
+disable-slash-command: true
 ---
 
 # RAG Vector Pipeline Playbook

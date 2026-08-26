@@ -1,10 +1,13 @@
 ---
 name: react-best-practices
-description: Modern React 19 and Next.js App Router performance patterns, Server Components, streaming SSR, and client state boundaries.
+description: Modern React 19 and Next.js App Router performance patterns, Server
+  Components, streaming SSR, and client state boundaries.
 metadata:
-  author: "Vercel Engineering (vercel-labs/agent-skills)"
-  version: "1.0.0"
-  source: "https://skills.sh/vercel-labs/agent-skills/react-best-practices"
+  author: Vercel Engineering (vercel-labs/agent-skills)
+  version: 1.0.0
+  source: https://skills.sh/vercel-labs/agent-skills/react-best-practices
+  icon: ⚛️
+disable-slash-command: true
 ---
 
 # React & Next.js Best Practices Playbook

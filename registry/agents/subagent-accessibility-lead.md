@@ -3,8 +3,9 @@ name: subagent-accessibility-lead
 version: 1.0.0
 type: subagent
 description: >
-  Accessibility (A11y) Lead subagent for ensuring WCAG 2.1 AA/AAA compliance, screen reader
-  usability, keyboard navigation flows, color contrast ratios, and ARIA semantics.
+  Accessibility (A11y) Lead subagent for ensuring WCAG 2.1 AA/AAA compliance,
+  screen reader usability, keyboard navigation flows, color contrast ratios, and
+  ARIA semantics.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,15 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "Accessibility Lead activated — loading WCAG 2.1 AA audit checklists and ARIA rules."
+    - log: Accessibility Lead activated — loading WCAG 2.1 AA audit checklists and
+        ARIA rules.
   PostInvocation:
-    - log: "A11y audit complete — verify keyboard focus traps and color contrast ratios."
+    - log: A11y audit complete — verify keyboard focus traps and color contrast
+        ratios.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

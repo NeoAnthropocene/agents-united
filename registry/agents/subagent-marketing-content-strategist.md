@@ -3,30 +3,35 @@ name: subagent-marketing-content-strategist
 version: 2.0.0
 type: subagent
 description: >
-  Content marketing and SEO strategist. Designs developer-native content engines,
-  topic clusters, keyword architecture, content calendars, and documentation SEO audits.
+  Content marketing and SEO strategist. Designs developer-native content
+  engines, topic clusters, keyword architecture, content calendars, and
+  documentation SEO audits.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
-
 tools:
   - search_web
   - view_file
   - write_to_file
-
 hooks:
   PreInvocation:
-    - log: "subagent-marketing-content-strategist invoked — auditing content inventory and keywords"
+    - log: subagent-marketing-content-strategist invoked — auditing content inventory
+        and keywords
   PostInvocation:
-    - log: "subagent-marketing-content-strategist complete — strategy and editorial calendar ready"
+    - log: subagent-marketing-content-strategist complete — strategy and editorial
+        calendar ready
   PreToolUse:
     - tool: search_web
-      log: "Validating search intent and keyword search volume data"
+      log: Validating search intent and keyword search volume data
   PostToolUse:
     - tool: write_to_file
-      log: "Content strategy or brief artifact written to workspace"
+      log: Content strategy or brief artifact written to workspace
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Subagent: Content Marketing and SEO Strategist

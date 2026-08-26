@@ -4,32 +4,35 @@ version: 2.0.0
 type: subagent
 description: >
   Static analysis and code review specialist. Audits codebases for OWASP Top 10
-  vulnerabilities, performance anti-patterns, dead code, memory leaks, broken error
-  handling, and style violations. Produces a structured, severity-rated review report
-  without modifying any files.
+  vulnerabilities, performance anti-patterns, dead code, memory leaks, broken
+  error handling, and style violations. Produces a structured, severity-rated
+  review report without modifying any files.
 model: inherit
 permissionMode: strict
 commandExecutionPolicy: ask
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - grep_search
   - list_dir
   - run_command
-
 hooks:
   PreInvocation:
-    - log: "subagent-code-reviewer invoked — beginning static analysis"
+    - log: subagent-code-reviewer invoked — beginning static analysis
   PostInvocation:
-    - log: "subagent-code-reviewer finished — review report ready"
+    - log: subagent-code-reviewer finished — review report ready
   PreToolUse:
     - tool: run_command
-      guard: "Deny run_command if CommandLine matches /(rm|del|DROP|shutdown|curl|wget|sudo)/i"
+      guard: Deny run_command if CommandLine matches
+        /(rm|del|DROP|shutdown|curl|wget|sudo)/i
   PostToolUse:
     - tool: "*"
-      log: "Tool execution completed"
+      log: Tool execution completed
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # subagent-code-reviewer — System Prompt

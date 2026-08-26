@@ -1,10 +1,12 @@
 ---
 name: grill-me
-description: Pure Socratic alignment questioning to interrogate requirements, uncover blind spots, and eliminate ambiguity before taking action.
+description: Pure Socratic alignment questioning to interrogate requirements,
+  uncover blind spots, and eliminate ambiguity before taking action.
 metadata:
-  author: "Matt Pocock (mattpocock/skills)"
-  version: "1.0.0"
-  source: "https://github.com/mattpocock/skills"
+  author: Matt Pocock (mattpocock/skills)
+  version: 1.0.0
+  source: https://github.com/mattpocock/skills
+  icon: 🔥
 ---
 
 # Grill Me: Socratic Alignment Interview
@@ -24,18 +26,21 @@ metadata:
 ### Inputs
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `goal` | String | Yes | High-level goal or requirement prompt |
+| `goal` | String / Audio (.mp3, .wav, .m4a) | Yes | High-level goal, text prompt, voice note, or audio recording (up to 20MB) |
 
 ### Outputs
 | Artifact | Path / Format | Description |
 |---|---|---|
 | Clarified Requirements | Console / Inline | Refined specification and agreed approach |
+| Audio Transcript Notes (if audio attached) | Inline | Key transcription points extracted from audio intake |
 
 ## Step-by-Step Execution Runbook
 
-### Phase 1 — Problem Framing
-1. Read the user's initial prompt and identify open questions or implicit assumptions.
-2. Ask 2–4 concise, direct questions focusing on user outcomes and technical constraints.
+### Phase 1 — Problem Framing & Multimodal Ingestion
+1. Ingest the user's initial prompt, voice recording, or audio attachment.
+2. If an audio file or `/voice` memo is provided, transcribe key requirements, goals, and constraints before grilling.
+3. Identify open questions or implicit assumptions.
+4. Ask 2–4 concise, direct questions focusing on user outcomes and technical constraints.
 
 ### Phase 2 — Iterative Grilling
 1. Process user responses.
@@ -49,3 +54,4 @@ metadata:
 ## Verification & Validation Checklist
 - [ ] Frontmatter contains author attribution to Matt Pocock.
 - [ ] Grilling questions are targeted and non-redundant.
+- [ ] Audio inputs (voice notes/files) are transcribed and synthesized accurately.

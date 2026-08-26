@@ -3,8 +3,9 @@ name: subagent-distributed-systems-architect
 version: 1.0.0
 type: subagent
 description: >
-  Distributed Systems & Microservices Architect subagent for event-driven streaming (Kafka/RabbitMQ),
-  gRPC/protobuf services, idempotent API contracts, and high-concurrency distributed backends.
+  Distributed Systems & Microservices Architect subagent for event-driven
+  streaming (Kafka/RabbitMQ), gRPC/protobuf services, idempotent API contracts,
+  and high-concurrency distributed backends.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,15 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "Distributed Systems Architect activated — analyzing service topology and event schemas."
+    - log: Distributed Systems Architect activated — analyzing service topology and
+        event schemas.
   PostInvocation:
-    - log: "Architecture task complete — verify message ordering and idempotency guarantees."
+    - log: Architecture task complete — verify message ordering and idempotency
+        guarantees.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

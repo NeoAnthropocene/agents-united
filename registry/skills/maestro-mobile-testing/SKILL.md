@@ -1,10 +1,13 @@
 ---
 name: maestro-mobile-testing
-description: Declarative mobile UI testing with Maestro, automated mobile regression flows, deep linking, and cross-platform verification.
+description: Declarative mobile UI testing with Maestro, automated mobile
+  regression flows, deep linking, and cross-platform verification.
 metadata:
-  author: "tovimx (tovimx/maestro-mobile-testing-skill)"
-  version: "1.0.0"
-  source: "https://skills.sh/tovimx/maestro-mobile-testing-skill/maestro-mobile-testing"
+  author: tovimx (tovimx/maestro-mobile-testing-skill)
+  version: 1.0.0
+  source: https://skills.sh/tovimx/maestro-mobile-testing-skill/maestro-mobile-testing
+  icon: 🧪
+disable-slash-command: true
 ---
 
 # Maestro Mobile E2E Testing Playbook

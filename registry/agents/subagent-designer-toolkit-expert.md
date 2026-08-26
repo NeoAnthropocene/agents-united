@@ -3,33 +3,41 @@ name: subagent-designer-toolkit-expert
 version: 2.0.0
 type: subagent
 description: >
-  Designer Toolkit Expert subagent generating high-impact design presentations, case studies,
-  Design Decision Records (DDRs), Tailwind design tokens, Supabase Storage asset management,
-  Vercel preview URL design reviews, Turso design-analytics schemas, and refactoring AI
-  prototypes (Lovable, v0) into production design systems.
+  Designer Toolkit Expert subagent generating high-impact design presentations,
+  case studies, Design Decision Records (DDRs), Tailwind design tokens, Supabase
+  Storage asset management, Vercel preview URL design reviews, Turso
+  design-analytics schemas, and refactoring AI prototypes (Lovable, v0) into
+  production design systems.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - write_to_file
   - replace_file_content
   - grep_search
-
+  - manage_task
+  - schedule
 hooks:
   PreInvocation:
-    - log: "subagent-designer-toolkit-expert activated — preparing design documentation & token extraction assets"
+    - log: subagent-designer-toolkit-expert activated — preparing design documentation
+        & token extraction assets
   PostInvocation:
-    - log: "subagent-designer-toolkit-expert complete — design rationale, tokens, DDR and deck delivered"
+    - log: subagent-designer-toolkit-expert complete — design rationale, tokens, DDR
+        and deck delivered
   PreToolUse:
     - tool: write_to_file
-      log: "Generating design case study, token config, or presentation document"
+      log: Generating design case study, token config, or presentation document
   PostToolUse:
     - tool: "*"
-      log: "Toolkit document or token file updated"
+      log: Toolkit document or token file updated
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 # subagent-designer-toolkit-expert — System Prompt
@@ -341,3 +349,15 @@ az staticwebapp environment swap \
 - **PostInvocation**: Emits completion log confirming design rationale, tokens, DDR, and deck delivery.
 - **PreToolUse**: Logs generation step before creating presentation, token config, or case study document.
 - **PostToolUse**: Confirms toolkit document or token file updated in workspace.
+
+
+---
+
+## ⚡ Task Delegation & Reactive Liveness Protocol
+
+When executing long-running background tasks (e.g. test suites, build pipelines, migrations, daemon watchers) or coordinating subagents:
+1. **Background Execution**: Launch long-running operations via `run_command` with appropriate timeouts. The command runs as an asynchronous background task returning a `task-id`.
+2. **Task Management**: Use `manage_task` (`action: 'status' | 'list' | 'kill' | 'send_input'`) to inspect logs or send input without blocking the main session.
+3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
+4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
+

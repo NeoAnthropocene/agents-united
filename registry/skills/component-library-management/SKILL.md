@@ -1,9 +1,12 @@
 ---
 name: component-library-management
-description: Production-grade Component Library Management playbook for design operations, UX systems, and growth strategy.
+description: Production-grade Component Library Management playbook for design
+  operations, UX systems, and growth strategy.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 📚
+disable-slash-command: true
 ---
 
 # Component Library Management

@@ -1,9 +1,12 @@
 ---
 name: finishing-a-development-branch
-description: Production-grade Branch Finalization playbook for clean git history, squash hygiene, and automated release validation.
+description: Production-grade Branch Finalization playbook for clean git
+  history, squash hygiene, and automated release validation.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🏁
+disable-slash-command: true
 ---
 
 # Development Branch Finalization, Cleanup & PR Readiness

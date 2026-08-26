@@ -1,10 +1,13 @@
 ---
 name: telemetry-monitoring
-description: Configures Prometheus metrics, Grafana dashboards, OpenTelemetry distributed tracing, log aggregation, and SLO/SLA alert thresholds.
+description: Configures Prometheus metrics, Grafana dashboards, OpenTelemetry
+  distributed tracing, log aggregation, and SLO/SLA alert thresholds.
 metadata:
-  author: "Agents United Core Team"
-  version: "1.0.0"
-  source: "https://github.com/NeoAnthropocene/agents-united"
+  author: Agents United Core Team
+  version: 1.0.0
+  source: https://github.com/NeoAnthropocene/agents-united
+  icon: 📊
+disable-slash-command: true
 ---
 
 # Telemetry & Observability Playbook

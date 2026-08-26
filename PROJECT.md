@@ -7,8 +7,8 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 ## 📑 Table of Contents
 1. [Executive Overview & Core Philosophy](#1-executive-overview--core-philosophy)
 2. [Complete Granular Feature Inventory](#2-complete-granular-feature-inventory)
-3. [Master Implementation Plans Index (plans/001–008)](#3-master-implementation-plans-index-plans001008)
-4. [Architectural Decision Records (ADRs 0001–0009)](#4-architectural-decision-records-adrs-00010009)
+3. [Master Implementation Plans Index (plans/001–010)](#3-master-implementation-plans-index-plans001010)
+4. [Architectural Decision Records (ADRs 0001–0011)](#4-architectural-decision-records-adrs-00010011)
 5. [Ecosystem Architecture & Department Domains](#5-ecosystem-architecture--department-domains)
 6. [Host Projection & Runtime Activation Engine](#6-host-projection--runtime-activation-engine)
 7. [Interface Contracts & Specifications](#7-interface-contracts--specifications)
@@ -109,13 +109,27 @@ Architectural separation between delivery and reliability:
 | 57 | Plan 009: Universal Meta-Skills Extraction | Extracted 6 domain-agnostic meta-skills into shared `universal-skills` baseline (`status: "stable"`) | M8 | DONE | PLAN_009 |
 | 58 | Plan 009: Software Engineering Slim-Down | Slimmed `software-engineering` from 26 to 16 core skills and graduated to `status: "stable"` | M8 | DONE | PLAN_009 |
 | 59 | Plan 009: Product Design Decomposition | Decomposed monolithic `product-design` into Essentials + 2 Addons (`design-systems-ops`, `design-research-testing`) | M8 | DONE | PLAN_009 |
-| 60 | Plan 009: Universal Department Priority | Positioned Universal Department first in TUI wizard and catalog list with `[Recommended]` badge | M8 | DONE | PLAN_009 |
+| 61 | Antigravity Schema Enhancement | Added typed `rules:`, `inheritCustomizations`, `disable-slash-command`, and `icon` | M1 | DONE | PLAN_010 |
+| 62 | Catalog Frontmatter Modernization | Standardized 58 agents with `rules:` & reasoning `/effort`, 91 skills with `icon` & slash flags | M2 | DONE | PLAN_010 |
+| 63 | Security Operations Subagent Expansion | Created `cloud-security-architect`, `appsec-penetration-tester`, `compliance-grc-specialist` | M3 | DONE | PLAN_010 |
+| 64 | Business Strategy Subagent Expansion | Created `financial-analyst`, `market-intelligence-analyst`, `legal-contract-analyst`, `operations-strategist` | M3 | DONE | PLAN_010 |
+| 65 | Deep Research Subagent Expansion | Created `statistical-analyst` and `literature-patent-analyst` | M3 | DONE | PLAN_010 |
+| 66 | System Architecture Subagent Expansion | Created `cloud-infrastructure-architect`, `database-administrator`, `finops-cost-engineer` | M3 | DONE | PLAN_010 |
+| 67 | Multimodal Tooling & Audio Ingestion | Formally integrated voice/audio memo intake into `grill-with-docs`, `grill-me`, and `to-spec` | M4 | DONE | PLAN_010 |
+| 68 | Live Preview URL Cards & Visual Diffs | Integrated Storybook dev server cards, live URL previews, and visual diff checks | M4 | DONE | PLAN_010 |
+| 69 | Reactive Liveness Timers & Task Delegation | Injected `manage_task` delegation and reactive `schedule` liveness timers across all 58 agents | M4 | DONE | PLAN_010 |
+| 70 | Digital Agency 10-Agent Roster | Graduated `digital-agency` to `experimental` with 10-agent cross-functional AstrolabsAI team | M5 | DONE | PLAN_010 |
+| 71 | Tri-Tier Execution Framework | Formalized Fully Operational, Limited Operational, and Brainstorming Fallback modes | M5 | DONE | PLAN_010 |
+| 72 | Multi-Client MCP Auto-Provisioning | Upgraded `PrerequisiteChecker` to dynamically generate Cursor, Cline, Claude, & Antigravity configs | M5 | DONE | PLAN_010 |
+| 73 | MCP Setup Runbook Skill | Authored comprehensive `mcp-setup` runbook for 8 ecosystem MCPs | M5 | DONE | PLAN_010 |
+| 74 | Two-Stage Hybrid Evaluator Engine | Fast-fail deterministic gatekeeper (0ms) + schema-constrained semantic LLM judge (`zod`) | M6 | DONE | PLAN_010 |
+| 75 | Stream-JSON Continuous Evaluation Harness | Built `tests/e2e-evals/runner.ts` and multi-hop DAG evaluation test suite for `digital-agency` | M6 | DONE | PLAN_010 |
 
 ---
 
-## 3. Master Implementation Plans Index (`plans/001`–`009`)
+## 3. Master Implementation Plans Index (`plans/001`–`010`)
 
-All 9 foundational implementation plans have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production:
+All 10 foundational implementation plans have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production:
 
 | Plan | Title | Category | Status | Key Deliverables & Milestones |
 | :--- | :--- | :--- | :--- | :--- |
@@ -126,12 +140,13 @@ All 9 foundational implementation plans have been fully realized, tested under s
 | **[005](./plans/005-scope-and-installation-methods.md)** | Installation Scope & Methods | CLI / Scope | **DONE** | Project scope (`./.agents/`), Global scope (`~/.agents/`), Symlink mode (instant sync), Copy mode (standalone isolation), host target adapters. |
 | **[006](./plans/006-sync-agent-structure-documentation.md)** | Ecosystem Docs & Attributions | Documentation | **DONE** | Complete ubiquitous domain vocabulary in `CONTEXT.md`, catalog tree visualizations, external platform attribution standards. |
 | **[007](./plans/007-universal-multi-agent-host-projection.md)** | Universal Host Projection Engine | Core Engine | **DONE** | Host projection engine (`HostProjector`), `--fanout` flag, `projectedTo` refcounting, managed marker stamps, root `AGENTS.md` bridge. |
-| **[008](./plans/008-cline-native-projection-and-team-activation.md)** | Cline Compound Projection & Team Activation | Runtime Integration | **DONE** | 4-part compound artifacts (`.cline/agents/`, `.cline/skills/`, `.cline/rules/`, `.cline/agents-united/teams/`), `lockfile.projections` refcounting, `ClineCapabilityProbe`, `ClineLauncher`, `agents start`, `--start`, `doctor --host cline`. |
+| **[008](./plans/008-cline-native-projection-and-team-activation.md)** | Cline Compound Projection & Team Activation | Runtime Integration | **DONE** | 4-part compound artifacts (`.cline/agents/`, `.cline/skills/`, `.cline/rules/`, `.cline/agents-united/teams/`), `lockfile.projections` refcounting, `ClineCapabilityProbe`, `ClineLauncher`. |
 | **[009](./plans/009-essentials-composition-audit.md)** | Essentials Bundle Composition Audit & Modularization | Architecture / Catalog | **DONE** | `universal-skills` extraction, `software-engineering` slimmed to 16 skills, `product-design` 2-addon decomposition, graduated to `stable`. |
+| **[010](./plans/010-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Core / Architecture | **DONE** | Scoped `rules:`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards, department roster expansion across Security, Business, Research, Architecture, and Continuous Stream-JSON Evals harness. |
 
 ---
 
-## 4. Architectural Decision Records (ADRs 0001–0009)
+## 4. Architectural Decision Records (ADRs 0001–0011)
 
 All architectural decisions recorded in `docs/adr/` are indexed and summarized below:
 
@@ -145,13 +160,15 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 | **[0006](./docs/adr/0006-scope-and-installation-methods-architecture.md)** | Installation Scope & Methods Architecture | Accepted | Dual scope (`project` vs `global`), dual installation methods (`symlink` vs `copy`), and multi-host target adapters (`agents`, `claude`, `cursor`, `gemini`). |
 | **[0007](./docs/adr/0007-package-inventory-removal-and-update-engine.md)** | Package Inventory, Removal & Update Engine | Accepted | `InventoryScanner` for active package discovery, scope-aware `agents remove` listing only installed packages, and interactive `UpdateEngine` with drift detection. |
 | **[0008](./docs/adr/0008-universal-host-projection-architecture.md)** | Universal Host Projection & Cline Runtime Activation | Accepted | Canonical store (`.agents/`) with copy-only stamp-managed projections, AGENTS.md bridge, Cline 4-part compound artifacts, read-only capability probing, and safe runtime activation (`agents start`). |
-| | **[0009](./docs/adr/0009-host-conformance-targets.md)** | Host Conformance Targets | Accepted | Per-host conformance probes pinned to tested CLI versions: Cline = conformant (headless CI), Antigravity = interactive-scoped confirmed on agy 1.1.15 (CLI TUI + desktop read `.agents/` natively; headless `-p` not a target). No projection shim required for Antigravity. |
+| **[0009](./docs/adr/0009-host-conformance-targets.md)** | Host Conformance Targets | Accepted | Per-host conformance probes pinned to tested CLI versions: Cline = conformant (headless CI), Antigravity = interactive-scoped confirmed on agy 1.1.15 (CLI TUI + desktop read `.agents/` natively; headless `-p` not a target). No projection shim required for Antigravity. |
+| **[0010](./docs/adr/0010-universal-orchestration-bundle-and-domain-atlas.md)** | Universal Orchestration Bundle & Domain Atlas | Accepted | Prime Orchestrator (`orchestrator-universal.md`) with compact Domain Atlas, `handoff` / `grill-me`, and Route & Instruct Contract. |
+| **[0011](./docs/adr/0011-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Accepted | Adoption of Antigravity 2.10 / CLI 1.1.21 schema enhancements (`rules: [...]`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards) and department subagent expansion. |
 
 ---
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **45 specialized agents** (7 Lead Orchestrators + 38 Sub-Agents), **90 skills**, and **63 workflows** structured into **18 curated bundles** across **8 department domains**:
+The ecosystem catalog maintains **58 specialized agents** (8 Lead/Prime Orchestrators + 50 Sub-Agents), **91 skills**, and **63 workflows** structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
 
 ```
 🌐 Agents United Registry Catalog Tree
@@ -173,16 +190,24 @@ The ecosystem catalog maintains **45 specialized agents** (7 Lead Orchestrators 
 │   │   └── 🤖 Sub-agents: qa-automation-lead, e2e-tester
 │   └── 📦 devops-engineering [inherits: software-engineering]
 │       └── 🤖 Sub-agents: devops-engineer
-├── 🏛️  System Architecture & SRE (2 bundles)
+├── 🏛️  System Architecture & SRE (5 bundles)
 │   ├── 📦 system-architecture (Essentials Base)
 │   │   ├── 🤖 Lead: orchestrator-system-architecture
 │   │   └── 🤖 Sub-agents: system-architect, backend-architect
-│   └── 📦 sysops-sre [inherits: system-architecture]
-│       └── 🤖 Sub-agents: sysops-sre-lead
-├── 🎨  Product Design & UI/UX (1 bundle)
-│   └── 📦 product-design (Essentials Base)
-│       ├── 🤖 Lead: orchestrator-design
-│       └── 🤖 Sub-agents: ui-designer, ux-strategist, interaction-designer, design-systems-architect, ...
+│   ├── 📦 sysops-sre [inherits: system-architecture]
+│   │   └── 🤖 Sub-agents: sysops-sre-lead
+│   ├── 📦 system-architecture-cloud [inherits: system-architecture]
+│   │   └── 🤖 Sub-agents: cloud-infrastructure-architect
+│   ├── 📦 system-architecture-data [inherits: system-architecture]
+│   │   └── 🤖 Sub-agents: database-administrator
+│   └── 📦 system-architecture-finops [inherits: system-architecture]
+│       └── 🤖 Sub-agents: finops-cost-engineer
+├── 🎨  Product Design & UI/UX (3 bundles)
+│   ├── 📦 product-design (Essentials Base)
+│   │   ├── 🤖 Lead: orchestrator-design
+│   │   └── 🤖 Sub-agents: ui-designer, ux-strategist, interaction-designer, design-systems-architect, ...
+│   ├── 📦 design-systems-ops [inherits: product-design]
+│   └── 📦 interactive-prototyping [inherits: product-design]
 ├── 📈  Growth & Marketing Operations (5 bundles)
 │   ├── 📦 growth-marketing (Essentials Base)
 │   │   ├── 🤖 Lead: orchestrator-marketing
@@ -191,26 +216,44 @@ The ecosystem catalog maintains **45 specialized agents** (7 Lead Orchestrators 
 │   ├── 📦 performance-paid-acquisition [inherits: growth-marketing]
 │   ├── 📦 product-led-growth [inherits: growth-marketing]
 │   └── 📦 lifecycle-email-marketing [inherits: growth-marketing]
-├── 🔒  Security Operations (1 bundle)
-│   └── 📦 security-operations (Essentials Base)
-│       ├── 🤖 Lead: orchestrator-security
-│       └── 🤖 Sub-agents: security-engineer
-├── 🔬  Deep Technical Research (1 bundle)
-│   └── 📦 deep-research (Essentials Base)
-│       ├── 🤖 Lead: orchestrator-research
-│       └── 🤖 Sub-agents: deep-research, socratic-mentor, repo-index
-├── 💼  Business Strategy & Economics (1 bundle)
-│   └── 📦 business-strategy (Essentials Base)
-│       ├── 🤖 Lead: orchestrator-business
-│       └── 🤖 Sub-agents: business-panel-experts
+├── 🔒  Security Operations (4 bundles)
+│   ├── 📦 security-operations (Essentials Base)
+│   │   ├── 🤖 Lead: orchestrator-security
+│   │   └── 🤖 Sub-agents: security-engineer
+│   ├── 📦 secops-cloud-security [inherits: security-operations]
+│   │   └── 🤖 Sub-agents: cloud-security-architect
+│   ├── 📦 secops-application-security [inherits: security-operations]
+│   │   └── 🤖 Sub-agents: appsec-penetration-tester
+│   └── 📦 secops-compliance-grc [inherits: security-operations]
+│       └── 🤖 Sub-agents: compliance-grc-specialist
+├── 🔬  Deep Technical Research (2 bundles)
+│   ├── 📦 deep-research (Essentials Base)
+│   │   ├── 🤖 Lead: orchestrator-research
+│   │   └── 🤖 Sub-agents: deep-research, socratic-mentor, repo-index
+│   └── 📦 deep-research-analytics [inherits: deep-research]
+│       └── 🤖 Sub-agents: statistical-analyst, literature-patent-analyst
+├── 💼  Business Strategy & Economics (4 bundles)
+│   ├── 📦 business-strategy (Essentials Base)
+│   │   ├── 🤖 Lead: orchestrator-business
+│   │   └── 🤖 Sub-agents: business-panel-experts
+│   ├── 📦 business-financial-modeling [inherits: business-strategy]
+│   │   └── 🤖 Sub-agents: financial-analyst
+│   ├── 📦 business-market-intelligence [inherits: business-strategy]
+│   │   └── 🤖 Sub-agents: market-intelligence-analyst
+│   └── 📦 business-operations-legal [inherits: business-strategy]
+│       └── 🤖 Sub-agents: legal-contract-analyst, operations-strategist
 ├── 🏢  Organization Bundles (Experimental / Cross-Functional) (1 bundle)
-│   └── 📦 digital-agency 🚧 [Under Construction (TBA)] [Prerequisites Required]
-│       ├── 🤖 Lead: orchestrator-digital-agency-director
-│       ├── 🤖 Sub-agents: strategy-planner, lead-intelligence, creative-copywriter, design-uiux, dev-frontend, growth-marketer, privacy-engineer, adtech-compliance, qa-compliance
-│       ├── 🔌 Prerequisites: firecrawl (MCP), github (MCP), @playwright/test (Pkg), FIRECRAWL_API_KEY (Env)
-│       └── 💡 Execution Modes: Operational / Brainstorming
-└── 🌐  Universal Autonomous Department (1 bundle)
-    └── 📦 full (Universal Suite — all 45 agents, 90 skills, 63 workflows)
+│   └── 📦 digital-agency ⚡ [Experimental] [Tri-Tier Execution Framework]
+│       ├── 🤖 Lead: orchestrator-marketing (Campaign Director / Chris)
+│       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Anya), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), backend-architect, frontend-architect, e2e-tester, sysops-sre-lead
+│       ├── 🔌 Prerequisites: github (MCP), firecrawl (MCP), context7 (MCP), playwright (MCP), markitdown (MCP), chrome-devtools (MCP), stitch (MCP), figma (MCP)
+│       └── 💡 Execution Tiers: Fully Operational (API Keys) / Limited Operational (Free/Public MCP) / Brainstorming (Native Fallback)
+├── 🌐  Universal Autonomous Department (1 bundle)
+│   └── 📦 universal-skills (Global Capability Layer)
+│       ├── 🤖 Lead: orchestrator-universal (Domain Atlas Dispatcher)
+│       └── ⚡ Skills: grill-me, grill-with-docs, domain-modeling, to-spec, to-tickets, handoff
+└── 🌟  Complete Suite
+    └── 📦 full (Universal Suite — all 58 agents, 91 skills, 63 workflows)
 ```
 
 ---
@@ -350,8 +393,8 @@ c:/github/agents-united/
 ├── .agents/                      # Local Canonical Store (main library)
 ├── .cline/                       # Local Cline Projections (compound artifacts)
 ├── registry/                     # Canonical Ecosystem Catalog
-│   ├── agents/                   # 45 Antigravity 2.0 agent definitions
-│   ├── skills/                   # 90 modular skill runbooks with SKILL.md
+│   ├── agents/                   # 58 Antigravity 2.0 agent definitions
+│   ├── skills/                   # 91 modular skill runbooks with SKILL.md
 │   ├── workflows/                # 63 guided workflows with Mermaid flowcharts
 │   ├── rules/                    # Cross-cutting ecosystem rules
 │   └── bundles.json              # Authoritative bundle index & inheritance
@@ -366,13 +409,16 @@ c:/github/agents-united/
 │       ├── updater.ts            # UpdateEngine (version drift & sync)
 │       ├── doctor.ts             # DoctorEngine (health & host audits)
 │       ├── hosts.ts              # HOST_REGISTRY & target definitions
+│       ├── prerequisites.ts      # PrerequisiteChecker (MCP auto-provisioning & config generator)
 │       ├── projector.ts          # HostProjector (dialects & AGENTS.md)
 │       ├── cline-projector.ts    # ClineProjector (compound manifest & rules)
 │       ├── cline-capabilities.ts # ClineCapabilityProbe (read-only probe)
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
-├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0009)
-├── plans/                        # Implementation Plan Specifications (001–009)
-├── tests/                        # 4-Tier Vitest Test Suite (22 test suites, 211 tests)
+├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0011)
+├── plans/                        # Implementation Plan Specifications (001–010)
+├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 403 tests)
+│   ├── e2e-evals/                # Stream-JSON Continuous Evaluation Harness (schemas, judge, runner)
+│   └── helpers/                  # Test helpers and mock fixtures
 ├── CONTEXT.md                    # Ubiquitous Domain Dictionary
 ├── README.md                     # Public Project Documentation
 └── PROJECT.md                    # Master Project Guideline & Architecture Blueprint
@@ -389,29 +435,35 @@ The codebase adheres to zero technical debt, strict typing, and 100% test pass r
 > tsup (ESM + DTS generation)
 > vitest run
 
- ✓ tests/cline-compatibility.test.ts (4 tests)
- ✓ tests/m3-worker1-validation.test.ts (12 tests)
- ✓ tests/registry.test.ts (11 tests)
- ✓ tests/m1-challenger-stress.test.ts (35 tests)
- ✓ tests/cline-projector.test.ts (7 tests)
- ✓ tests/projector.test.ts (16 tests)
- ✓ tests/e2e-agents-prompts.test.ts (10 tests)
- ✓ tests/e2e-workflows-gates.test.ts (9 tests)
- ✓ tests/hosts.test.ts (12 tests)
- ✓ tests/e2e-agents-schema.test.ts (11 tests)
- ✓ tests/adapter.test.ts (4 tests)
- ✓ tests/cline-capabilities.test.ts (4 tests)
- ✓ tests/e2e-skills-depth.test.ts (10 tests)
- ✓ tests/inventory.test.ts (5 tests)
- ✓ tests/cline-launcher.test.ts (8 tests)
- ✓ tests/doctor.test.ts (3 tests)
- ✓ tests/installer.test.ts (5 tests)
- ✓ tests/uninstaller.test.ts (3 tests)
- ✓ tests/updater.test.ts (5 tests)
- ✓ tests/fanout.test.ts (7 tests)
- ✓ tests/projection-lifecycle.test.ts (11 tests)
- ✓ tests/cli-e2e.test.ts (19 tests)
+ ✓ tests/cline-compatibility.test.ts
+ ✓ tests/m3-worker1-validation.test.ts
+ ✓ tests/registry.test.ts
+ ✓ tests/m1-challenger-stress.test.ts
+ ✓ tests/cline-projector.test.ts
+ ✓ tests/projector.test.ts
+ ✓ tests/e2e-agents-prompts.test.ts
+ ✓ tests/e2e-workflows-gates.test.ts
+ ✓ tests/hosts.test.ts
+ ✓ tests/e2e-agents-schema.test.ts
+ ✓ tests/adapter.test.ts
+ ✓ tests/cline-capabilities.test.ts
+ ✓ tests/e2e-skills-depth.test.ts
+ ✓ tests/inventory.test.ts
+ ✓ tests/cline-launcher.test.ts
+ ✓ tests/doctor.test.ts
+ ✓ tests/installer.test.ts
+ ✓ tests/uninstaller.test.ts
+ ✓ tests/updater.test.ts
+ ✓ tests/fanout.test.ts
+ ✓ tests/projection-lifecycle.test.ts
+ ✓ tests/cli-e2e.test.ts
+ ✓ tests/prerequisites.test.ts
+ ✓ tests/domain-atlas-contract.test.ts
+ ✓ tests/recommendation-contract.test.ts
+ ✓ tests/e2e-sed-bundle-lifecycle.test.ts
+ ✓ tests/e2e-domain-conformance.test.ts
+ ✓ tests/e2e-evals/e2e-stream-evals.test.ts
 
- Test Files  22 passed (22)
-      Tests  211 passed (211)
+ Test Files  28 passed (28)
+      Tests  403 passed | 208 skipped (611)
 ```

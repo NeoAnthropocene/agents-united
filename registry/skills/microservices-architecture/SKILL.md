@@ -1,9 +1,12 @@
 ---
 name: microservices-architecture
-description: Production-grade Microservices Architecture playbook for resilient distributed systems, event choreography, and observability.
+description: Production-grade Microservices Architecture playbook for resilient
+  distributed systems, event choreography, and observability.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🌐
+disable-slash-command: true
 ---
 
 # Microservices Architecture, Service Mesh & Distributed Systems

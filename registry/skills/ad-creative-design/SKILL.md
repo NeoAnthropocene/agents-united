@@ -1,10 +1,13 @@
 ---
 name: ad-creative-design
-description: High-converting advertising visual layouts, social banner design systems, aspect ratio formatting, and visual hook variations.
+description: High-converting advertising visual layouts, social banner design
+  systems, aspect ratio formatting, and visual hook variations.
 metadata:
-  author: "Agents United Creative Team"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United Creative Team
+  version: 1.0.0
+  license: MIT
+  icon: 🖼️
+disable-slash-command: true
 ---
 
 # Ad Creative Design Playbook

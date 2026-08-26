@@ -1,10 +1,13 @@
 ---
 name: mobile-ios-design
-description: iOS design system conventions, SwiftUI component patterns, Apple Human Interface Guidelines, and navigation ergonomics.
+description: iOS design system conventions, SwiftUI component patterns, Apple
+  Human Interface Guidelines, and navigation ergonomics.
 metadata:
-  author: "wshobson (wshobson/agents)"
-  version: "1.0.0"
-  source: "https://skills.sh/wshobson/agents/mobile-ios-design"
+  author: wshobson (wshobson/agents)
+  version: 1.0.0
+  source: https://skills.sh/wshobson/agents/mobile-ios-design
+  icon: 🍏
+disable-slash-command: true
 ---
 
 # iOS Design & SwiftUI Engineering Playbook

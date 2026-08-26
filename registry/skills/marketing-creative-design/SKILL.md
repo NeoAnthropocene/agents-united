@@ -1,9 +1,13 @@
 ---
 name: marketing-creative-design
-description: Production-grade Marketing Creative Design playbook for multi-channel ad creative layouts, visual hierarchy, aspect ratio adaptation, brand asset generation, and export optimization.
+description: Production-grade Marketing Creative Design playbook for
+  multi-channel ad creative layouts, visual hierarchy, aspect ratio adaptation,
+  brand asset generation, and export optimization.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🎨
+disable-slash-command: true
 ---
 
 # Marketing Creative Design & Multi-Channel Visual Asset Generation

@@ -70,7 +70,10 @@
         "architecture-essentials"
       ],
       "recommendedAddons": [
-        "sysops-sre"
+        "sysops-sre",
+        "system-architecture-cloud",
+        "system-architecture-data",
+        "system-architecture-finops"
       ],
       "description": "High-level distributed systems, API schemas, and ADR planning",
       "orchestrator": "orchestrator-system-architecture.md",
@@ -358,7 +361,12 @@
         "security-audit",
         "architecture-design"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "recommendedAddons": [
+        "secops-cloud-security",
+        "secops-application-security",
+        "secops-compliance-grc"
+      ]
     },
     "deep-research": {
       "name": "deep-research",
@@ -389,7 +397,10 @@
         "domain-modeling",
         "handoff"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "recommendedAddons": [
+        "deep-research-analytics"
+      ]
     },
     "business-strategy": {
       "name": "business-strategy",
@@ -416,7 +427,12 @@
         "architecture-design",
         "technical-documentation"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "recommendedAddons": [
+        "business-financial-modeling",
+        "business-market-intelligence",
+        "business-operations-legal"
+      ]
     },
     "devops-engineering": {
       "name": "devops-engineering",
@@ -636,51 +652,63 @@
       "description": "Complete suite with all 7 lead orchestrators, 38 subagents, and all skills and workflows",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
-        "orchestrator-engineering.md",
-        "orchestrator-system-architecture.md",
-        "orchestrator-design.md",
-        "orchestrator-marketing.md",
-        "orchestrator-security.md",
-        "orchestrator-research.md",
         "orchestrator-business.md",
-        "subagent-backend-architect.md",
-        "subagent-frontend-architect.md",
-        "subagent-system-architect.md",
-        "subagent-code-reviewer.md",
-        "subagent-repo-index.md",
-        "subagent-security-engineer.md",
-        "subagent-devops-engineer.md",
-        "subagent-sysops-sre-lead.md",
-        "subagent-ios-architect.md",
-        "subagent-android-architect.md",
-        "subagent-cross-platform-specialist.md",
+        "orchestrator-design.md",
+        "orchestrator-engineering.md",
+        "orchestrator-marketing.md",
+        "orchestrator-research.md",
+        "orchestrator-security.md",
+        "orchestrator-system-architecture.md",
         "subagent-accessibility-lead.md",
-        "subagent-distributed-systems-architect.md",
+        "subagent-ai-model-architect.md",
+        "subagent-android-architect.md",
+        "subagent-appsec-penetration-tester.md",
+        "subagent-backend-architect.md",
+        "subagent-business-panel-experts.md",
+        "subagent-cloud-infrastructure-architect.md",
+        "subagent-cloud-security-architect.md",
+        "subagent-code-reviewer.md",
+        "subagent-compliance-grc-specialist.md",
+        "subagent-cross-platform-specialist.md",
         "subagent-data-engineer.md",
-        "subagent-qa-automation-lead.md",
-        "subagent-e2e-tester.md",
-        "subagent-socratic-mentor.md",
+        "subagent-database-administrator.md",
         "subagent-deep-research.md",
-        "subagent-ui-designer.md",
-        "subagent-ux-strategist.md",
-        "subagent-interaction-designer.md",
-        "subagent-design-systems-architect.md",
-        "subagent-design-researcher.md",
         "subagent-design-ops-lead.md",
+        "subagent-design-researcher.md",
+        "subagent-design-systems-architect.md",
         "subagent-designer-toolkit-expert.md",
-        "subagent-prototype-tester.md",
-        "subagent-marketing-growth-strategist.md",
-        "subagent-marketing-creative-designer.md",
+        "subagent-devops-engineer.md",
+        "subagent-distributed-systems-architect.md",
+        "subagent-e2e-tester.md",
+        "subagent-financial-analyst.md",
+        "subagent-finops-cost-engineer.md",
+        "subagent-frontend-architect.md",
+        "subagent-interaction-designer.md",
+        "subagent-ios-architect.md",
+        "subagent-legal-contract-analyst.md",
+        "subagent-lifecycle-email-specialist.md",
+        "subagent-literature-patent-analyst.md",
+        "subagent-market-intelligence-analyst.md",
+        "subagent-marketing-campaign-specialist.md",
         "subagent-marketing-content-strategist.md",
         "subagent-marketing-conversion-specialist.md",
-        "subagent-marketing-campaign-specialist.md",
-        "subagent-seo-specialist.md",
+        "subagent-marketing-creative-designer.md",
+        "subagent-marketing-growth-strategist.md",
+        "subagent-ml-platform-engineer.md",
+        "subagent-operations-strategist.md",
         "subagent-paid-acquisition-specialist.md",
         "subagent-plg-strategist.md",
-        "subagent-lifecycle-email-specialist.md",
-        "subagent-ml-platform-engineer.md",
-        "subagent-ai-model-architect.md",
-        "subagent-business-panel-experts.md"
+        "subagent-prototype-tester.md",
+        "subagent-qa-automation-lead.md",
+        "subagent-repo-index.md",
+        "subagent-security-engineer.md",
+        "subagent-seo-specialist.md",
+        "subagent-socratic-mentor.md",
+        "subagent-statistical-analyst.md",
+        "subagent-sysops-sre-lead.md",
+        "subagent-system-architect.md",
+        "subagent-ui-designer.md",
+        "subagent-ux-strategist.md"
       ],
       "workflows": [
         "workflow-analyze.md",
@@ -794,6 +822,7 @@
         "local-llm-inference",
         "maestro-mobile-testing",
         "marketing-creative-design",
+        "mcp-setup",
         "meta-ad-creative-testing",
         "micro-interaction-design",
         "microservices-architecture",
@@ -841,66 +870,116 @@
       ],
       "version": "1.0.0"
     },
-    "digital-agency": {
-      "name": "digital-agency",
+    "mock-organization-under-construction": {
+      "name": "mock-organization-under-construction",
       "tier": "organization",
       "status": "under-construction",
       "domain": "organization",
+      "category": "Mock Testing Bundle",
+      "aliases": ["mock-tba"],
+      "description": "A dummy under-construction bundle for testing the CLI gate",
+      "prerequisites": {},
+      "modes": {},
+      "orchestrator": "orchestrator-universal.md",
+      "agents": [],
+      "workflows": [],
+      "skills": [],
+      "version": "1.0.0"
+    },
+    "digital-agency": {
+      "name": "digital-agency",
+      "tier": "organization",
+      "status": "experimental",
+      "domain": "organization",
       "category": "Cross-Functional Digital Agency (Experimental)",
       "aliases": [
-        "agency",
-        "digital-agency-tba"
+        "agency"
       ],
-      "description": "Full-service digital product agency with web dev, mobile, design, SEO, and growth marketing (TBA soon)",
+      "description": "Full-service digital product agency powered by the AstrolabsAI persona team (Chris, Ava, Jamileh, Kaan). Features dynamic DAG orchestration and Tri-Tier Execution Modes with 8 MCP servers.",
       "prerequisites": {
         "requiredMcps": [
+          {
+            "name": "github",
+            "purpose": "Repository scaffolding and automated PR management",
+            "optionalForBrainstorming": true
+          },
           {
             "name": "firecrawl",
             "purpose": "Web research, competitive scraping, and technical SEO crawling",
             "optionalForBrainstorming": true
           },
           {
-            "name": "github",
-            "purpose": "Repository scaffolding and automated PR management",
+            "name": "context7",
+            "purpose": "Documentation library resolution and context retrieval",
+            "optionalForBrainstorming": true
+          },
+          {
+            "name": "playwright",
+            "purpose": "Headless browser automation and CRO funnel testing",
+            "optionalForBrainstorming": true
+          },
+          {
+            "name": "markitdown",
+            "purpose": "Ingestion of client PDF/DOCX pitch decks",
+            "optionalForBrainstorming": true
+          },
+          {
+            "name": "chrome-devtools-mcp",
+            "purpose": "Core Web Vitals and live DOM performance audits",
+            "optionalForBrainstorming": true
+          },
+          {
+            "name": "stitch",
+            "purpose": "AI UI generation and design token construction",
+            "optionalForBrainstorming": true
+          },
+          {
+            "name": "figma",
+            "purpose": "Extraction of design systems and canvas frames",
             "optionalForBrainstorming": true
           }
         ],
         "requiredPackages": [
           "@playwright/test"
         ],
-        "requiredEnvVars": [
-          "FIRECRAWL_API_KEY"
-        ]
+        "requiredEnvVars": []
       },
       "modes": {
-        "operational": "Full execution with live MCP tool calling, scraping, and browser automation",
-        "brainstorming": "Advisory and ideation mode generating project scopes, wireframe specs, and marketing plans"
+        "operational": "Full execution with authenticated MCP tool calling, live web scraping, and browser automation",
+        "limited-operational": "Execution with unauthenticated / community-tier MCP servers",
+        "brainstorming": "Zero-MCP native fallback mode generating project scopes and specifications"
       },
-      "orchestrator": "orchestrator-digital-agency-director.md",
+      "orchestrator": "orchestrator-marketing.md",
       "agents": [
-        "subagent-digitalagency-strategy-planner.md",
-        "subagent-digitalagency-lead-intelligence.md",
-        "subagent-digitalagency-creative-copywriter.md",
-        "subagent-digitalagency-design-uiux.md",
-        "subagent-digitalagency-dev-frontend.md",
-        "subagent-digitalagency-growth-marketer.md",
-        "subagent-digitalagency-privacy-engineer.md",
-        "subagent-digitalagency-adtech-compliance.md",
-        "subagent-digitalagency-qa-compliance.md"
+        "subagent-marketing-growth-strategist.md",
+        "subagent-marketing-campaign-specialist.md",
+        "subagent-marketing-content-strategist.md",
+        "subagent-marketing-creative-designer.md",
+        "subagent-marketing-conversion-specialist.md",
+        "subagent-seo-specialist.md",
+        "subagent-frontend-architect.md",
+        "subagent-qa-automation-lead.md",
+        "subagent-compliance-grc-specialist.md"
       ],
       "workflows": [
-        "workflow-implement.md",
-        "workflow-marketing-launch.md",
-        "workflow-design-orchestrate.md"
+        "workflow-agency-full-campaign.md",
+        "workflow-agency-ad-creative-sprint.md",
+        "workflow-agency-seo-content-engine.md",
+        "workflow-agency-cro-funnel-teardown.md",
+        "workflow-agency-brand-design-system.md",
+        "workflow-agency-client-pitch-proposal.md"
       ],
       "skills": [
-        "architecture-design",
-        "test-driven-development",
-        "seo-audit",
+        "mcp-setup",
+        "handoff",
+        "design-handoff-spec",
+        "ab-test-setup",
         "marketing-creative-design",
-        "ai-prototype-refactoring"
+        "seo-audit",
+        "conversion-funnel-optimization",
+        "copywriting-frameworks"
       ],
-      "version": "0.1.0"
+      "version": "1.0.0"
     },
     "universal-orchestration": {
       "name": "universal-orchestration",
@@ -914,6 +993,7 @@
       "description": "Prime Orchestrator front door: grills ambiguous requests, consults the Domain Atlas to route to the correct department Essentials bundle, installs with consent, and hands off (Route & Instruct)",
       "orchestrator": "orchestrator-universal.md",
       "skills": [
+        "mcp-setup",
         "handoff",
         "grill-me"
       ],
@@ -930,6 +1010,7 @@
       ],
       "description": "Domain-agnostic meta-skills shared across all orchestrators: Socratic grilling, spec generation, handoff, and domain modeling",
       "skills": [
+        "mcp-setup",
         "grill-me",
         "grill-with-docs",
         "domain-modeling",
@@ -1008,6 +1089,290 @@
         "clickable-prototype-spec",
         "component-playground-setup",
         "ai-prototype-refactoring"
+      ],
+      "version": "1.0.0"
+    },
+    "secops-cloud-security": {
+      "name": "secops-cloud-security",
+      "domain": "security",
+      "category": "Cloud Security Posture & IAM Hardening",
+      "parentBundle": "security-operations",
+      "aliases": [
+        "cloud-security",
+        "cloud-secops",
+        "iam-security"
+      ],
+      "description": "Cloud infrastructure security, IAM least privilege, and IaC posture hardening",
+      "orchestrator": "orchestrator-security.md",
+      "agents": [
+        "subagent-cloud-security-architect.md",
+        "subagent-security-engineer.md"
+      ],
+      "workflows": [
+        "workflow-analyze.md",
+        "workflow-troubleshoot.md"
+      ],
+      "skills": [
+        "security-audit",
+        "azure-infrastructure-bicep",
+        "docker-deployment"
+      ],
+      "version": "1.0.0"
+    },
+    "secops-application-security": {
+      "name": "secops-application-security",
+      "domain": "security",
+      "category": "Application Security & Penetration Testing",
+      "parentBundle": "security-operations",
+      "aliases": [
+        "appsec",
+        "pentest",
+        "vulnerability-testing"
+      ],
+      "description": "OWASP Top 10 auditing, AST security analysis (Semgrep), API fuzzing & PoC remediation",
+      "orchestrator": "orchestrator-security.md",
+      "agents": [
+        "subagent-appsec-penetration-tester.md",
+        "subagent-security-engineer.md"
+      ],
+      "workflows": [
+        "workflow-troubleshoot.md",
+        "workflow-analyze.md",
+        "workflow-test.md"
+      ],
+      "skills": [
+        "security-audit",
+        "test-driven-development",
+        "systematic-debugging",
+        "diagnosing-bugs"
+      ],
+      "version": "1.0.0"
+    },
+    "secops-compliance-grc": {
+      "name": "secops-compliance-grc",
+      "domain": "security",
+      "category": "Governance, Risk & Compliance (SOC2 / ISO / HIPAA / GDPR)",
+      "parentBundle": "security-operations",
+      "aliases": [
+        "compliance",
+        "grc",
+        "soc2",
+        "privacy-gdpr"
+      ],
+      "description": "SOC 2 Type II, ISO 27001, HIPAA, GDPR/CCPA privacy pipelines & automated evidence collection",
+      "orchestrator": "orchestrator-security.md",
+      "agents": [
+        "subagent-compliance-grc-specialist.md",
+        "subagent-security-engineer.md"
+      ],
+      "workflows": [
+        "workflow-analyze.md",
+        "workflow-grill.md",
+        "workflow-spec.md"
+      ],
+      "skills": [
+        "security-audit",
+        "technical-documentation",
+        "domain-modeling",
+        "to-spec"
+      ],
+      "version": "1.0.0"
+    },
+    "business-financial-modeling": {
+      "name": "business-financial-modeling",
+      "domain": "business",
+      "category": "SaaS Financial Modeling & Unit Economics",
+      "parentBundle": "business-strategy",
+      "aliases": [
+        "financial-modeling",
+        "unit-economics",
+        "pricing-model",
+        "saas-metrics"
+      ],
+      "description": "SaaS metric modeling (MRR/ARR/NRR), unit economics (CAC/LTV), pricing elasticity & cloud COGS margins",
+      "orchestrator": "orchestrator-business.md",
+      "agents": [
+        "subagent-financial-analyst.md",
+        "subagent-business-panel-experts.md"
+      ],
+      "workflows": [
+        "workflow-estimate.md",
+        "workflow-business-panel.md"
+      ],
+      "skills": [
+        "architecture-design",
+        "technical-documentation"
+      ],
+      "version": "1.0.0"
+    },
+    "business-market-intelligence": {
+      "name": "business-market-intelligence",
+      "domain": "business",
+      "category": "Market Intelligence & Competitive Strategy",
+      "parentBundle": "business-strategy",
+      "aliases": [
+        "market-intelligence",
+        "tam-sam-som",
+        "competitive-analysis",
+        "battlecards"
+      ],
+      "description": "TAM/SAM/SOM market sizing, competitor feature teardowns, Porter's Five Forces & positioning battlecards",
+      "orchestrator": "orchestrator-business.md",
+      "agents": [
+        "subagent-market-intelligence-analyst.md",
+        "subagent-business-panel-experts.md"
+      ],
+      "workflows": [
+        "workflow-recommend.md",
+        "workflow-business-panel.md",
+        "workflow-spec-panel.md"
+      ],
+      "skills": [
+        "architecture-design",
+        "technical-documentation",
+        "domain-modeling"
+      ],
+      "version": "1.0.0"
+    },
+    "business-operations-legal": {
+      "name": "business-operations-legal",
+      "domain": "business",
+      "category": "Commercial Contracts & Operations Strategy",
+      "parentBundle": "business-strategy",
+      "aliases": [
+        "legal-contracts",
+        "operations-strategy",
+        "okrs",
+        "licensing"
+      ],
+      "description": "Commercial MSA/SLA contract analysis, OSS license compatibility, OKRs, and operating cadences",
+      "orchestrator": "orchestrator-business.md",
+      "agents": [
+        "subagent-legal-contract-analyst.md",
+        "subagent-operations-strategist.md",
+        "subagent-business-panel-experts.md"
+      ],
+      "workflows": [
+        "workflow-business-panel.md",
+        "workflow-spec-panel.md"
+      ],
+      "skills": [
+        "architecture-design",
+        "technical-documentation",
+        "domain-modeling",
+        "to-spec"
+      ],
+      "version": "1.0.0"
+    },
+    "deep-research-analytics": {
+      "name": "deep-research-analytics",
+      "domain": "research",
+      "category": "Quantitative Statistics & Academic Prior Art",
+      "parentBundle": "deep-research",
+      "aliases": [
+        "research-analytics",
+        "statistics",
+        "patent-research",
+        "academic-research"
+      ],
+      "description": "Quantitative statistical modeling, hypothesis testing, A/B power calculations & academic patent prior art",
+      "orchestrator": "orchestrator-research.md",
+      "agents": [
+        "subagent-statistical-analyst.md",
+        "subagent-literature-patent-analyst.md",
+        "subagent-deep-research.md"
+      ],
+      "workflows": [
+        "workflow-research.md",
+        "workflow-brainstorm.md",
+        "workflow-explain.md"
+      ],
+      "skills": [
+        "technical-documentation",
+        "systematic-debugging",
+        "domain-modeling"
+      ],
+      "version": "1.0.0"
+    },
+    "system-architecture-cloud": {
+      "name": "system-architecture-cloud",
+      "domain": "architecture",
+      "category": "Multi-Cloud Infrastructure & Network Topology",
+      "parentBundle": "system-architecture",
+      "aliases": [
+        "cloud-architecture",
+        "vpc-topology",
+        "ha-dr-cloud"
+      ],
+      "description": "Multi-region cloud topologies, global transit gateways, Kubernetes cluster design & HA/DR architectures",
+      "orchestrator": "orchestrator-system-architecture.md",
+      "agents": [
+        "subagent-cloud-infrastructure-architect.md",
+        "subagent-system-architect.md"
+      ],
+      "workflows": [
+        "workflow-plan.md",
+        "workflow-design-code.md"
+      ],
+      "skills": [
+        "architecture-design",
+        "docker-deployment",
+        "microservices-architecture",
+        "technical-documentation"
+      ],
+      "version": "1.0.0"
+    },
+    "system-architecture-data": {
+      "name": "system-architecture-data",
+      "domain": "architecture",
+      "category": "Database Administration & Zero-Downtime Persistence",
+      "parentBundle": "system-architecture",
+      "aliases": [
+        "dba",
+        "database-admin",
+        "zero-downtime-migrations"
+      ],
+      "description": "Database performance tuning (WAL, buffers), zero-downtime Expand/Contract migrations & connection pooling",
+      "orchestrator": "orchestrator-system-architecture.md",
+      "agents": [
+        "subagent-database-administrator.md",
+        "subagent-backend-architect.md"
+      ],
+      "workflows": [
+        "workflow-plan.md",
+        "workflow-design-code.md"
+      ],
+      "skills": [
+        "database-design",
+        "backend-api-design",
+        "architecture-design",
+        "code-refactoring"
+      ],
+      "version": "1.0.0"
+    },
+    "system-architecture-finops": {
+      "name": "system-architecture-finops",
+      "domain": "architecture",
+      "category": "Cloud FinOps & Infrastructure Cost Optimization",
+      "parentBundle": "system-architecture",
+      "aliases": [
+        "finops",
+        "cloud-cost-optimization",
+        "cloud-spend"
+      ],
+      "description": "Cloud FinOps spend attribution, compute rightsizing, spot orchestration & data egress elimination",
+      "orchestrator": "orchestrator-system-architecture.md",
+      "agents": [
+        "subagent-finops-cost-engineer.md",
+        "subagent-system-architect.md"
+      ],
+      "workflows": [
+        "workflow-estimate.md",
+        "workflow-plan.md"
+      ],
+      "skills": [
+        "architecture-design",
+        "technical-documentation"
       ],
       "version": "1.0.0"
     }
