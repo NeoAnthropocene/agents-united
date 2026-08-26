@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/NeoAnthropocene/agents-united/compare/v1.4.0...v1.4.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **ci:** replace repo-sync/pull with native gh pr create in sync workflow ([d2f07ae](https://github.com/NeoAnthropocene/agents-united/commit/d2f07ae89625b2f8a9aa25db8ac201064eb177c7))
+
 # [1.4.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.3.0...v1.4.0) (2026-08-19)
 
 
