@@ -171,7 +171,7 @@ agents add digital-agency --allow-under-construction --mode brainstorming --dry-
 | `growth-accelerator` Organization Bundle — performance marketing, PLG funnels & paid acquisition multi-agent squad | Multi-Agent Org | Organization taxonomy expansion |
 | Agent hot-reload — detect .agents/ changes and re-load without restarting host | CLI / DX | Common dev pain point |
 | `agents publish` — CLI command to publish a local bundle to a personal registry | Registry | Community-contributed bundles |
-| `agents chat` — conversational TUI routing to the right orchestrator by intent | CLI | Reduces time-to-delegation |
+| `agents chat` — conversational TUI routing to the right orchestrator by intent | CLI | Reduces time-to-delegation. The in-session counterpart is the `universal-orchestration` bundle (Prime Orchestrator / Domain Atlas). |
 | VS Code / Cursor extension — sidebar for browsing and installing bundles | IDE Integration | Wider discoverability surface |
 | Webhook-driven self-update — agents self-update when registry publishes new version | Automation | Reduces manual `agents update` friction |
 

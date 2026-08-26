@@ -126,6 +126,10 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
     title: 'Digital Agency (TBA soon)',
     summary: 'Full-service digital product agency with web dev, mobile, design, SEO, and growth marketing',
   },
+  'universal-orchestration': {
+    title: 'Universal Orchestration',
+    summary: 'Prime Orchestrator front door: routes to the correct department Essentials bundle and hands off',
+  },
   'universal-skills': {
     title: 'Universal Meta-Skills',
     summary: 'Domain-agnostic Socratic grilling, spec generation, handoff, and domain modeling',
@@ -438,6 +442,8 @@ cli
 
         // Sort so Essentials/universal-skills are always at the top
         const sortedBundles = [...domainBundles].sort((a, b) => {
+          if (a.name === 'universal-orchestration') return -1;
+          if (b.name === 'universal-orchestration') return 1;
           if (a.name === 'universal-skills') return -1;
           if (b.name === 'universal-skills') return 1;
           if (!a.parentBundle && b.parentBundle) return -1;
@@ -449,7 +455,7 @@ cli
           const isLast = idx === sortedBundles.length - 1;
           const branch = sortedBundles.length > 1 ? (isLast ? '└── ' : '├── ') : '';
           const meta = BUNDLE_DISPLAY_NAMES[b.name];
-          const isEssentials = !b.parentBundle && b.name !== 'full' && b.tier !== 'organization' && b.name !== 'universal-skills';
+          const isEssentials = !b.parentBundle && b.name !== 'full' && b.tier !== 'organization' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration';
           const title = meta ? meta.title : b.name;
 
           let statusBadge = '';
@@ -703,11 +709,13 @@ cli
             const probe = new ClineCapabilityProbe();
             const probeReport = await probe.probe();
             if (probeReport.installed) {
+              const targetBundleDef = await registry.getBundle(bundleName!);
               const plan = launcher.planActivation({
                 bundleName: bundleName!,
                 workspace: process.cwd(),
                 scope,
                 report: probeReport,
+                orchestrator: targetBundleDef?.orchestrator,
               });
               await launcher.launch(plan);
             } else {
@@ -729,11 +737,13 @@ cli
             const probe = new ClineCapabilityProbe();
             const probeReport = await probe.probe();
             if (probeReport.installed) {
+              const targetBundleDef = await registry.getBundle(bundleName!);
               const plan = launcher.planActivation({
                 bundleName: bundleName!,
                 workspace: process.cwd(),
                 scope,
                 report: probeReport,
+                orchestrator: targetBundleDef?.orchestrator,
               });
               await launcher.launch(plan);
             } else {
@@ -1078,7 +1088,7 @@ function renderBundleDetailTree(bundle: BundleDefinition): string {
   }
 
   const meta = BUNDLE_DISPLAY_NAMES[bundle.name];
-  const isEssentials = !bundle.parentBundle && bundle.name !== 'full' && bundle.name !== 'universal-skills' && bundle.tier !== 'organization';
+  const isEssentials = !bundle.parentBundle && bundle.name !== 'full' && bundle.name !== 'universal-skills' && bundle.name !== 'universal-orchestration' && bundle.tier !== 'organization';
   const titleSuffix = isEssentials ? pc.cyan(' (Essentials Base)') : '';
   const parentTag = bundle.parentBundle ? pc.gray(` [inherits: ${bundle.parentBundle}]`) : '';
   const aliasesTag = bundle.aliases && bundle.aliases.length > 0 ? pc.gray(` [alias: ${bundle.aliases.join(', ')}]`) : '';
@@ -1231,7 +1241,7 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
       const subIndent = isLastBundle ? '    ' : '│   ';
 
       const meta = BUNDLE_DISPLAY_NAMES[b.name];
-      const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills';
+      const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration';
       const titleSuffix = isEssentials ? pc.cyan(' (Essentials)') : '';
       const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
       const aliasesTag = b.aliases && b.aliases.length > 0 ? pc.gray(` [alias: ${b.aliases.join(', ')}]`) : '';
@@ -1680,6 +1690,8 @@ cli
 
       // Sort so Essentials/universal-skills are first
       const sortedBundles = [...domainBundles].sort((a, b) => {
+        if (a.name === 'universal-orchestration') return -1;
+        if (b.name === 'universal-orchestration') return 1;
         if (a.name === 'universal-skills') return -1;
         if (b.name === 'universal-skills') return 1;
         if (!a.parentBundle && b.parentBundle) return -1;
@@ -1691,7 +1703,7 @@ cli
         const isLast = idx === sortedBundles.length - 1;
         const branch = sortedBundles.length > 1 ? (isLast ? '└── ' : '├── ') : '';
         const meta = BUNDLE_DISPLAY_NAMES[b.name];
-        const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills' && b.tier !== 'organization';
+        const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration' && b.tier !== 'organization';
         const titleSuffix = isEssentials ? pc.cyan(' (Essentials Base)') : '';
         const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
 
@@ -1891,6 +1903,7 @@ cli
         process.exit(1);
       }
 
+      const bundleDef = await registry.getBundle(bundle);
       const plan = launcher.planActivation({
         bundleName: bundle,
         workspace: resolution.workspace,
@@ -1900,6 +1913,7 @@ cli
         teamName: options.team,
         allowAddons: options.allowAddons,
         headless: options.headless,
+        orchestrator: bundleDef?.orchestrator,
       });
 
       if (options.dryRun) {
@@ -1946,7 +1960,7 @@ cli
       console.log(pc.bold(pc.cyan('💡 Get Started:')));
       console.log(`  👉 ${pc.bold('agents add')}                      Launch the interactive installation wizard`);
       console.log(`  👉 ${pc.bold('agents add software-engineering')} Install the engineering essentials team`);
-      console.log(`  👉 ${pc.bold('agents list')}                     Browse all 18 bundles and 8 departments\n`);
+      console.log(`  👉 ${pc.bold('agents list')}                     Browse all 23 bundles and 8 departments\n`);
 
       if (report.clineCapability) {
         console.log(pc.bold(pc.cyan('Cline Runtime & Compound Projection Audit:')));

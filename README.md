@@ -107,11 +107,11 @@ This model gives you:
 ---
 
 
-Agents United provides **22 curated bundles**, **45 specialized agents** (7 Lead Orchestrators + 38 Sub-Agents), **90 skills**, and **63 workflows** across 8 department domains:
+Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orchestrators — 7 Lead + 1 Prime + 38 Sub-Agents), **90 skills**, and **63 workflows** across 8 department domains:
 
 | Department Domain | Essentials Base | Specialized Addon Bundles | Lead Orchestrator |
 | :--- | :--- | :--- | :--- |
-| **🌐 Universal Department** | `universal-skills` ⭐ | `full` (Universal Suite) | Multi-Agent Coordination |
+| **🌐 Universal Department** | `universal-skills` ⭐ | `universal-orchestration` (guided routing), `full` (Universal Suite) | `orchestrator-universal` (Prime) |
 | **🛠️ Software Engineering & Delivery** | `software-engineering` | `ai-ml-engineering`, `mobile-development`, `frontend-engineering`, `backend-distributed-systems`, `qa-automation`, `devops-engineering` | `orchestrator-engineering` |
 | **🏛️ System Architecture & SRE** | `system-architecture` | `sysops-sre` | `orchestrator-system-architecture` |
 | **🎨 Product Design & UI/UX** | `product-design` | `design-systems-ops`, `design-research-testing` | `orchestrator-design` |
@@ -128,7 +128,8 @@ Agents United provides **22 curated bundles**, **45 specialized agents** (7 Lead
 
 #### 🌐 Universal Autonomous Department
 - **Baseline**: `universal-skills` ⭐ *(Recommended Baseline — Socratic grilling, PRD generation, ADRs, session handoff)*
-- **Universal Suite**: `full` *(Complete enterprise suite containing all 22 bundles, 45 agents, 90 skills, 63 workflows)*
+- **Guided Routing (optional)**: `universal-orchestration` *(Prime Orchestrator front door — grills ambiguous requests, routes to the correct department Essentials bundle via its Domain Atlas, installs with consent, and hands off. An optional way to use Agents United without the full suite.)*
+- **Universal Suite**: `full` *(Complete enterprise suite containing all bundles, agents, skills, workflows)*
 
 #### 🛠️ Software Engineering & Delivery
 - **Lead Orchestrator**: `orchestrator-engineering`
