@@ -168,7 +168,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **58 specialized agents** (8 Lead/Prime Orchestrators + 50 Sub-Agents), **91 skills**, and **63 workflows** structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
+The ecosystem catalog maintains **58 specialized agents** (8 Lead/Prime Orchestrators + 50 Sub-Agents), **91 skills**, and **69 workflows** structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
 
 ```
 🌐 Agents United Registry Catalog Tree
@@ -253,7 +253,7 @@ The ecosystem catalog maintains **58 specialized agents** (8 Lead/Prime Orchestr
 │       ├── 🤖 Lead: orchestrator-universal (Domain Atlas Dispatcher)
 │       └── ⚡ Skills: grill-me, grill-with-docs, domain-modeling, to-spec, to-tickets, handoff
 └── 🌟  Complete Suite
-    └── 📦 full (Universal Suite — all 58 agents, 91 skills, 63 workflows)
+    └── 📦 full (Universal Suite — all 58 agents, 91 skills, 69 workflows)
 ```
 
 ---
@@ -395,7 +395,7 @@ c:/github/agents-united/
 ├── registry/                     # Canonical Ecosystem Catalog
 │   ├── agents/                   # 58 Antigravity 2.0 agent definitions
 │   ├── skills/                   # 91 modular skill runbooks with SKILL.md
-│   ├── workflows/                # 63 guided workflows with Mermaid flowcharts
+│   ├── workflows/                # 69 guided workflows with Mermaid flowcharts
 │   ├── rules/                    # Cross-cutting ecosystem rules
 │   └── bundles.json              # Authoritative bundle index & inheritance
 ├── src/                          # TypeScript CLI Engine Source

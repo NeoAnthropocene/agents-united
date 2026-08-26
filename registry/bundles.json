@@ -773,7 +773,13 @@
         "workflow-ui-design--type-system.md",
         "workflow-ux-strategy--benchmark.md",
         "workflow-ux-strategy--frame-problem.md",
-        "workflow-ux-strategy--strategize.md"
+        "workflow-ux-strategy--strategize.md",
+        "workflow-agency-full-campaign.md",
+        "workflow-agency-ad-creative-sprint.md",
+        "workflow-agency-seo-content-engine.md",
+        "workflow-agency-cro-funnel-teardown.md",
+        "workflow-agency-brand-design-system.md",
+        "workflow-agency-client-pitch-proposal.md"
       ],
       "skills": [
         "ab-test-setup",
