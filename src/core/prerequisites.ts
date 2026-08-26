@@ -425,4 +425,73 @@ export class PrerequisiteChecker {
       return { success: false, output: err.message || String(err) };
     }
   }
+
+  /**
+   * Automatically configures missing MCP servers into a specific AI host's configuration file.
+   */
+  public static async autoConfigureHost(
+    host: string,
+    mcpNames: string[],
+    cwd: string = process.cwd(),
+    mode: 'operational' | 'limited-operational' = 'operational',
+    envVars: Record<string, string | undefined> = {}
+  ): Promise<{ configured: boolean; targetFile: string; addedServers: string[] }> {
+    let targetFile = '';
+    let format: 'cursor' | 'cline' | 'claude' | 'antigravity' = 'cursor';
+
+    if (host === 'cline') {
+      targetFile = path.join(cwd, 'cline_mcp_settings.json');
+      format = 'cline';
+    } else if (host === 'claude') {
+      targetFile = path.join(cwd, '.claude', 'mcp.json');
+      format = 'claude';
+    } else if (host === 'gemini' || host === 'agents') {
+      targetFile = path.join(cwd, '.cursor', 'mcp.json');
+      format = 'cursor';
+    } else {
+      targetFile = path.join(cwd, '.cursor', 'mcp.json');
+      format = 'cursor';
+    }
+
+    await fs.ensureDir(path.dirname(targetFile));
+    let existingConfig: any = {};
+    if (await fs.pathExists(targetFile)) {
+      try {
+        existingConfig = await fs.readJson(targetFile);
+      } catch {
+        existingConfig = {};
+      }
+    }
+
+    const existingServers = existingConfig.mcpServers || {};
+    const newConfig = PrerequisiteChecker.generateClientConfig(format, mcpNames, mode, envVars);
+    const mergedServers = {
+      ...existingServers,
+      ...newConfig.mcpServers,
+    };
+
+    await fs.writeJson(targetFile, { ...existingConfig, mcpServers: mergedServers }, { spaces: 2 });
+    return {
+      configured: true,
+      targetFile,
+      addedServers: Object.keys(newConfig.mcpServers || {}),
+    };
+  }
+
+  /**
+   * Automatically installs missing NPM packages into the workspace.
+   */
+  public static async autoInstallPackages(
+    packages: string[],
+    cwd: string = process.cwd()
+  ): Promise<{ success: boolean; output: string }> {
+    try {
+      const { execSync } = await import('node:child_process');
+      const cmd = `npm install -D ${packages.join(' ')}`;
+      const output = execSync(cmd, { cwd, encoding: 'utf8' });
+      return { success: true, output };
+    } catch (err: any) {
+      return { success: false, output: err.message || String(err) };
+    }
+  }
 }

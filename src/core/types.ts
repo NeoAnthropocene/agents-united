@@ -7,7 +7,7 @@ export type Scope = InstallScope;
 
 export type BundleTier = 'domain' | 'organization';
 export type BundleStatus = 'stable' | 'experimental' | 'under-construction' | 'needs-audit' | 'deprecated';
-export type ExecutionMode = 'operational' | 'brainstorming';
+export type ExecutionMode = 'operational' | 'limited-operational' | 'brainstorming';
 
 export interface RequiredMcp {
   name: string;

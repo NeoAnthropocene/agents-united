@@ -115,6 +115,22 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     const check = await PrerequisiteChecker.isPackageInstalled('@playwright/test', testWorkspace);
     expect(check.installed).toBe(true);
   });
+
+  it('should auto-configure host MCP settings file in workspace via autoConfigureHost', async () => {
+    const res = await PrerequisiteChecker.autoConfigureHost(
+      'cursor',
+      ['github', 'firecrawl', 'context7'],
+      testWorkspace,
+      'operational'
+    );
+    expect(res.configured).toBe(true);
+    expect(res.addedServers).toEqual(['github', 'firecrawl', 'context7']);
+
+    const targetJson = await fs.readJson(path.join(testWorkspace, '.cursor', 'mcp.json'));
+    expect(targetJson.mcpServers.github).toBeDefined();
+    expect(targetJson.mcpServers.firecrawl).toBeDefined();
+    expect(targetJson.mcpServers.context7).toBeDefined();
+  });
 });
 
 describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
@@ -180,11 +196,21 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
     expect(stdout).toContain('[DRY RUN] Would install');
   });
 
-  it('should allow forced install with --allow-under-construction and --allow-missing-prereqs', () => {
+  it('should allow install when --allow-under-construction and --allow-missing-prereqs', () => {
     const stdout = execSync(
       `node "${cliPath}" add mock-organization-under-construction --allow-under-construction --allow-missing-prereqs -y --dry-run`,
       { encoding: 'utf8' }
     );
     expect(stdout).toContain('[DRY RUN] Would install');
   });
+
+  it('should allow install of organization bundle in limited-operational mode', () => {
+    const stdout = execSync(
+      `node "${cliPath}" add digital-agency --mode limited-operational -y --dry-run`,
+      { encoding: 'utf8' }
+    );
+    expect(stdout).toContain('[DRY RUN] Would install');
+  });
 });
+
+

@@ -592,27 +592,58 @@ cli
           `Prerequisite Evaluation: ${targetBundleDef.name} (${targetBundleDef.tier === 'organization' ? 'Organization Bundle' : 'Prerequisites Required'})`
         );
 
-        if (!prereqEval.allSatisfied) {
+        let currentEval = prereqEval;
+        while (!currentEval.allSatisfied) {
           if (isInteractive) {
+            const missingMcps = currentEval.items.filter(i => i.type === 'mcp' && !i.satisfied).map(i => i.name);
+            const missingPkgs = currentEval.items.filter(i => i.type === 'package' && !i.satisfied).map(i => i.name);
+            const detectedCount = currentEval.items.filter(i => i.satisfied).length;
+
+            const gateOptions: Array<{ value: string; label: string; hint?: string }> = [];
+
+            if (missingMcps.length > 0 || missingPkgs.length > 0) {
+              gateOptions.push({
+                value: 'auto-remediate',
+                label: pc.green('⚡ Auto-configure missing MCPs & packages (Recommended)'),
+                hint: `writes host config for ${missingMcps.length} MCPs and installs ${missingPkgs.length} packages`,
+              });
+            }
+
+            if (detectedCount > 0) {
+              gateOptions.push({
+                value: 'limited-operational',
+                label: pc.cyan('🌿 Proceed in Limited Operational Mode (Partial MCPs)'),
+                hint: `uses ${detectedCount} detected tools; native fallback for missing MCPs`,
+              });
+            }
+
+            gateOptions.push({
+              value: 'show-config',
+              label: '📋 View copy-paste MCP configuration & setup commands',
+              hint: 'shows JSON snippets for Cursor, Cline, Claude, & Antigravity',
+            });
+
+            gateOptions.push({
+              value: 'brainstorming',
+              label: '💡 Install in Brainstorming Mode (Advisory & Spec generation only)',
+              hint: 'runs in idea/planning mode without requiring live MCP tool connections',
+            });
+
+            gateOptions.push({
+              value: 'force',
+              label: '⚠️  Force install in Operational Mode anyway',
+              hint: 'proceed despite missing prerequisites (may fail during runtime calls)',
+            });
+
+            gateOptions.push({
+              value: 'abort',
+              label: '🛑 Abort installation',
+              hint: 'exit without modifying workspace files',
+            });
+
             const gateChoice = await select({
               message: pc.yellow(`Prerequisites not fully satisfied for "${targetBundleDef.name}". How would you like to proceed?`),
-              options: [
-                {
-                  value: 'abort',
-                  label: '🛑 Abort and configure missing prerequisites (Recommended)',
-                  hint: 'exit and configure MCP servers, packages, or environment variables',
-                },
-                {
-                  value: 'brainstorming',
-                  label: '💡 Install in Brainstorming Mode (Advisory & Spec generation only)',
-                  hint: 'runs in idea/planning mode without requiring live MCP tool connections',
-                },
-                {
-                  value: 'force',
-                  label: '⚠️  Force install in Operational Mode anyway',
-                  hint: 'proceed despite missing prerequisites (may fail during runtime calls)',
-                },
-              ],
+              options: gateOptions,
             });
 
             if (gateChoice === 'abort' || typeof gateChoice !== 'string') {
@@ -620,31 +651,84 @@ cli
               return;
             }
 
+            if (gateChoice === 'auto-remediate') {
+              const sp = spinner();
+              sp.start('Auto-configuring missing MCP servers and packages...');
+
+              const targetHost = hosts.find(h => h === 'cursor' || h === 'cline' || h === 'claude') || 'cursor';
+              if (missingMcps.length > 0) {
+                await PrerequisiteChecker.autoConfigureHost(targetHost, missingMcps, process.cwd(), 'operational');
+              }
+              if (missingPkgs.length > 0) {
+                await PrerequisiteChecker.autoInstallPackages(missingPkgs, process.cwd());
+              }
+              sp.stop('Auto-configuration complete.');
+
+              note(
+                `✔ Configured MCPs: ${missingMcps.join(', ') || 'none'}\n` +
+                `✔ Installed Packages: ${missingPkgs.join(', ') || 'none'}\n` +
+                `Updated workspace host MCP configuration.`,
+                'Auto-Remediation Success'
+              );
+
+              // Re-evaluate
+              currentEval = await checker.evaluate(targetBundleDef);
+              executionMode = 'operational';
+              if (currentEval.allSatisfied) {
+                note(pc.green('All prerequisites are now satisfied! Proceeding with installation.'), 'Prerequisites Ready');
+                break;
+              }
+              continue;
+            }
+
+            if (gateChoice === 'show-config') {
+              const clientSnippet = PrerequisiteChecker.generateClientConfig('cursor', missingMcps, 'operational');
+              note(
+                JSON.stringify(clientSnippet, null, 2),
+                'Copy-Paste MCP Config (.cursor/mcp.json or cline_mcp_settings.json)'
+              );
+              continue;
+            }
+
+            if (gateChoice === 'limited-operational') {
+              executionMode = 'limited-operational';
+              note(pc.cyan('Switched execution mode to "limited-operational" (graceful MCP degradation).'), 'Mode Selected');
+              break;
+            }
+
             if (gateChoice === 'brainstorming') {
               executionMode = 'brainstorming';
               note(pc.cyan('Switched execution mode to "brainstorming" (idea/spec fallback mode).'), 'Mode Selected');
-            } else if (gateChoice === 'force') {
+              break;
+            }
+
+            if (gateChoice === 'force') {
               executionMode = 'operational';
               note(pc.yellow('Proceeding in "operational" mode with missing prerequisites.'), 'Warning');
+              break;
             }
           } else {
             // Headless / Non-interactive
             if (options.mode === 'brainstorming') {
               executionMode = 'brainstorming';
+            } else if (options.mode === 'limited-operational' || options.mode === 'limited') {
+              executionMode = 'limited-operational';
             } else if (options.force || options.allowMissingPrereqs) {
               executionMode = 'operational';
             } else {
-              const missingList = prereqEval.items.filter(i => !i.satisfied).map(i => `${i.type}:${i.name}`).join(', ');
+              const missingList = currentEval.items.filter(i => !i.satisfied).map(i => `${i.type}:${i.name}`).join(', ');
               outro(
                 pc.red(
                   `Error: Prerequisites not satisfied for "${targetBundleDef.name}".\n` +
                   `Missing items: ${missingList}\n\n` +
+                  `To install in limited operational mode: agents add ${identifier} --mode limited-operational\n` +
                   `To install in fallback mode: agents add ${identifier} --mode brainstorming\n` +
                   `To bypass prerequisite gate: agents add ${identifier} --allow-missing-prereqs`
                 )
               );
               process.exit(1);
             }
+            break;
           }
         }
       }
