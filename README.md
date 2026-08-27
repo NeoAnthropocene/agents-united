@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/agents-united.svg?color=blue)](https://www.npmjs.com/package/agents-united)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: Vitest](https://img.shields.io/badge/tests-128%2B%20passing-brightgreen.svg)](https://vitest.dev/)
+[![Tests: Vitest](https://img.shields.io/badge/tests-405%2B%20passing-brightgreen.svg)](https://vitest.dev/)
 [![TypeScript: Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
 
 ### The universal package manager for AI agents.
@@ -18,10 +18,10 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 - **🪶 Essentials-First & On-Demand Growth**: Every department installs as a lean **Essentials bundle** by default. When a task requires specialized capabilities, the Lead Orchestrator automatically detects the gap, recommends the exact addon, and can auto-install it directly into your project scope.
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
 - **🚀 Cline Native Activation**: Launch specialized teams into Cline CLI sessions with `agents start`, featuring compound role projections, skill toolkits, coordinator rules, and declarative team manifests.
-- **🏛️ 8 Department Domains & 22 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 45 Specialized Agents & 90+ Skills**: 7 Lead Orchestrators coordinating 38 domain sub-agents, backed by 90 production-grade runbooks and 63 deterministic workflows.
+- **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
+- **🤖 58 Specialized Agents, 91 Skills & 69 Workflows**: 8 Lead Orchestrators coordinating 50 domain sub-agents, backed by 91 production-grade runbooks and 69 deterministic workflows.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
-- **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams *(Currently under development)*.
+- **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
 - **🧙 Interactive 2-Stage TUI Wizard**: Guided terminal interface powered by `@clack/prompts`, visual Unicode catalog tree (`agents list`), and fast search (`agents find`).
 - **📦 Flexible Scopes & Installation Modes**: Install to **Project Scope** (Git-tracked team lockfiles) or **Global Scope** (`~/.agents/`), using instant **Symlink Mode** or standalone **Copy Mode**.
@@ -232,7 +232,7 @@ agents add full -t gemini,claude,cursor -y
 - `--copy`: Create independent standalone copies of asset files.
 - `-t, --target <hosts>`: Target agent host runtimes (`agents`, `gemini`, `claude`, `cursor`, `cline`, `opencode`, `codex`). Default: `agents`.
 - `--fanout <hosts>`: Also project translated copies into other assistant folders.
-- `--mode <operational|brainstorming>`: Execution mode for organization bundles. Default: `operational`.
+- `--mode <operational|limited-operational|brainstorming>`: Execution mode for organization bundles. Default: `operational`.
 - `--allow-missing-prereqs`: Proceed with installation even if some prerequisites are missing.
 - `--allow-under-construction`: Bypass the Under-Construction Gate for in-development bundles.
 - `-y, --yes`: Skip confirmation prompts.
@@ -364,7 +364,37 @@ agents doctor
 # Audit Cline runtime installation, capability probe, and compound projection integrity
 agents doctor --host cline
 ```
+
+---
+
+## 🏢 Organization Bundles & Tri-Tier Execution Framework
+
+Organization Bundles (Tier 2 / Experimental, such as `digital-agency`) orchestrate cross-functional teams spanning Strategy, Copywriting, Design, Engineering, and Compliance. They integrate **Model Context Protocol (MCP)** tool calling, external packages, and APIs.
+
+When installing an organization bundle (`agents add <bundle>`), the CLI evaluates prerequisites (MCP servers, npm packages, environment variables). If items are missing, the interactive wizard provides dynamic remediation options:
+
+```text
+o Prerequisite Evaluation: digital-agency (Organization Bundle) ----------+
+|   ✗ [MCP] github: Missing (Not found in host MCP configuration)         |
+|   ✓ [MCP] firecrawl: Detected (Configured in gemini)                     |
+|   ✓ [MCP] context7: Detected (Configured in gemini)                      |
+|   ✗ [MCP] playwright: Missing (Not found in host MCP configuration)     |
+|   ✗ [MCP] markitdown: Missing (Not found in host MCP configuration)     |
+|   ✓ [MCP] chrome-devtools-mcp: Detected (Configured in gemini)          |
+|   ✗ [MCP] stitch: Missing (Not found in host MCP configuration)          |
+|   ✗ [MCP] figma: Missing (Not found in host MCP configuration)           |
+|   ✗ [Pkg] @playwright/test: Missing (Not found in node_modules)         |
++-------------------------------------------------------------------------+
 ```
+
+### Dynamic Prerequisite Options Comparison
+
+| Option | What It Does | Best For |
+| :--- | :--- | :--- |
+| **⚡ Auto-configure (Recommended)** | Automatically writes missing MCP definitions to your client config (`.cursor/mcp.json`, `cline_mcp_settings.json`, `.claude/mcp.json`) & installs missing packages | One-click instant setup |
+| **🌿 Limited Operational** | Uses the MCPs you already have; subagents gracefully use native fallbacks (`git`, `curl`) for the rest | Partial setups where you only want some tools |
+| **💡 Brainstorming Mode** | Pure ideation/planning; turns off all MCP tool-calling | Offline / air-gapped environments |
+| **⚠️ Force Operational** | Installs full live tool definitions as-is without touching your files | Custom setups, remote MCP proxies, or manual config later |
 
 ---
 ## 🌐 One Library, Every Assistant
