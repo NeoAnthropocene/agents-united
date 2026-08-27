@@ -18,7 +18,7 @@ permissions:
 jobs:
   sync:
     name: Open main → dev sync PR
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -30,7 +30,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git fetch origin main dev
+          # Fetch full remote branch refs
+          git fetch origin main:refs/remotes/origin/main dev:refs/remotes/origin/dev
+
           BEHIND_COUNT=$(git rev-list --count origin/dev..origin/main)
           if [ "$BEHIND_COUNT" -eq "0" ]; then
             echo "dev is already up to date with main (0 new commits). No PR needed."
@@ -43,13 +45,15 @@ jobs:
             exit 0
           fi
 
-          gh label create "auto-sync" --description "Automated sync PRs" --color "0e8a16" --force || true
+          gh label create "auto-sync" --description "Automated sync PRs" --color "0e8a16" --force 2>/dev/null || true
 
           gh pr create \
             --base dev \
             --head main \
             --title "chore(auto): sync main → dev after release" \
-            --body "Automated pull request bringing upstream \`main\` changes (semantic-release version bumps, \`CHANGELOG.md\`) back into \`dev\`.
+            --label "auto-sync" \
+            --body-file - << 'EOF'
+          Automated pull request bringing upstream `main` changes (semantic-release version bumps, `CHANGELOG.md`) back into `dev`.
 
-Merge this to keep \`main\` and \`dev\` in lockstep so \`dev\` no longer drifts behind release commits. Created by the \"Sync main to dev\" workflow after the Release workflow completed successfully on \`main\`." \
-            --label "auto-sync"
+          Merge this to keep `main` and `dev` in lockstep so `dev` no longer drifts behind release commits. Created by the "Sync main to dev" workflow after the Release workflow completed successfully on `main`.
+          EOF
