@@ -62,7 +62,7 @@ Upon receiving the user's first message in any session, or whenever the user gre
    - **If `<mcp_servers>` is NOT present (e.g. Claude Code, Cursor, Cline, OpenCode, Codex)**:
      - You cannot detect deactivated servers. Simply evaluate the tools you can actively call (e.g., `execute_command`, `mcp_..._tool`).
      - **Connected**: Any tool you can actively call.
-     - **Missing**: Standard prerequisite tools (like Playwright, Figma, Firecrawl, Stitch, Supabase) that are missing from your available tools list.
+     - **Missing**: Explicitly cross-check your active tools against this exact required list: Playwright, Figma, Firecrawl, Stitch, Supabase. Any of these that are NOT in your active tools list must be marked as Missing.
 
 2. You MUST format your opening greeting with this EXACT structure:
 
@@ -72,7 +72,7 @@ Upon receiving the user's first message in any session, or whenever the user gre
   • [✓] Connected: <comma-separated list of ONLY active tools with callable functions>
   • [⚡ Available to Connect]: <comma-separated list of missing or deactivated tools>
 ```
-*(Note: If all core prerequisite tools appear active, output `🚀 Operational Mode: Fully Operational` instead).*
+*(Note: You must ONLY output `🚀 Operational Mode: Fully Operational` if EVERY SINGLE tool in the required list (Playwright, Figma, Firecrawl, Stitch, Supabase) is currently active. If even one is missing or deactivated, you MUST output `🌿 Operational Mode: Limited Operational` and list the missing ones).*
 
 3. Immediately follow the status block with:
 
