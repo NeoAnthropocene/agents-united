@@ -120,7 +120,7 @@ It defines exact configuration patterns for:
   ```json
   "playwright": {
     "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-playwright"]
+    "args": ["-y", "@executeautomation/playwright-mcp-server"]
   }
   ```
 - **Fallback (No MCP)**: Agents run Playwright scripts via terminal (`npx playwright test`) using `run_command`.
@@ -167,17 +167,20 @@ It defines exact configuration patterns for:
   ```json
   "stitch": {
     "command": "npx",
-    "args": ["-y", "@google/stitch-mcp"],
-    "env": {
-      "STITCH_API_KEY": "your-google-stitch-api-key"
-    }
+    "args": [
+      "-y",
+      "mcp-remote",
+      "https://stitch.googleapis.com/mcp",
+      "--header",
+      "X-Goog-Api-Key: your-google-stitch-api-key"
+    ]
   }
   ```
-- **Limited Operational (Unauthenticated)**:
+- **Limited Operational (Unauthenticated / Remote Endpoint)**:
   ```json
   "stitch": {
     "command": "npx",
-    "args": ["-y", "@google/stitch-mcp"]
+    "args": ["-y", "mcp-remote", "https://stitch.googleapis.com/mcp"]
   }
   ```
 - **Fallback (No MCP)**: Agents generate Tailwind CSS / HTML / React code directly in workspace files.
@@ -190,14 +193,19 @@ It defines exact configuration patterns for:
   ```json
   "figma": {
     "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-figma"],
+    "args": ["-y", "ai-figma-mcp"],
     "env": {
       "FIGMA_ACCESS_TOKEN": "figd_yourFigmaAccessTokenHere"
     }
   }
   ```
-- **Limited Operational (Public Community Mode)**:
+- **Limited Operational (Community Server)**:
   ```json
+  "figma": {
+    "command": "npx",
+    "args": ["-y", "ai-figma-mcp"]
+  }
+  ```
   "figma": {
     "command": "npx",
     "args": ["-y", "@modelcontextprotocol/server-figma"]

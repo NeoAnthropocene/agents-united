@@ -371,7 +371,7 @@ agents doctor --host cline
 
 Organization Bundles (Tier 2 / Experimental, such as `digital-agency`) orchestrate cross-functional teams spanning Strategy, Copywriting, Design, Engineering, and Compliance. They integrate **Model Context Protocol (MCP)** tool calling, external packages, and APIs.
 
-When installing an organization bundle (`agents add <bundle>`), the CLI evaluates prerequisites (MCP servers, npm packages, environment variables). If items are missing, the interactive wizard provides dynamic remediation options:
+When installing an organization bundle (`agents add <bundle>`), the CLI displays an informative evaluation of prerequisites (MCP servers, npm packages, environment variables), and immediately completes installation into your workspace in under a second with zero blocking prompts:
 
 ```text
 o Prerequisite Evaluation: digital-agency (Organization Bundle) -------------------+
@@ -387,17 +387,27 @@ o Prerequisite Evaluation: digital-agency (Organization Bundle) ----------------
 |   ✗ [Pkg] @playwright/test: Missing (Not found in node_modules or package.json)  |
 |                                                                                   |
 +-----------------------------------------------------------------------------------+
+|
+o  Adaptive Tooling -----------------------------------------------------------------------------------------+
+|                                                                                                            |
+|  ⚡ Operational Envelope: Limited Operational / Brainstorming Mode ready.                                  |
+|  Your Lead Orchestrator will automatically detect active tools and guide in-session setup seamlessly.     |
+|                                                                                                            |
++------------------------------------------------------------------------------------------------------------+
 ```
 
-### Dynamic Prerequisite Options Comparison
+### In-Session Adaptive Tooling & Tri-Tier Execution Modes
 
-| Option | What It Does | Best For |
+Organization bundles operate across three dynamic execution envelopes:
+
+| Mode | Capability Envelope | In-Session Behavior |
 | :--- | :--- | :--- |
-| **⚡ Auto-configure (Fast-Path)** | 1-Click auto-setup: injects missing MCPs directly into the active host config selected in Step 1 (Antigravity `~/.gemini/config/mcp_config.json`, Cline CLI `~/.cline/data/settings/cline_mcp_settings.json`, Cursor `.cursor/mcp.json`, etc.) & installs missing packages | Blazing fast instant setup without extra prompts |
-| **⚙️ Auto-configure (Power-Path)** | Opens interactive multi-select to choose specific discovered host config files on your machine or enter custom JSON paths | Multi-client & custom environment setups |
-| **🌿 Limited Operational** | Uses the MCPs you already have; subagents gracefully use native fallbacks (`git`, `curl`) for the rest | Partial setups where you only want some tools |
-| **💡 Brainstorming Mode** | Pure ideation/planning; turns off all MCP tool-calling | Offline / air-gapped environments |
-| **⚠️ Force Operational** | Installs full live tool definitions as-is without touching your files | Custom setups, remote MCP proxies, or manual config later |
+| **🚀 Fully Operational** | Authenticated live MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `stitch`, `figma`) | Subagents execute live browser automation, deep web crawling, design token extraction, and automated GitHub PRs. |
+| **🌿 Limited Operational** | Unauthenticated MCP tools + Native CLI Fallbacks (`git`, `curl`, code generators) | Executes immediate real-world work using local browsers and terminal tools without requiring API keys or cloud tokens. |
+| **💡 Brainstorming Mode** | Pure architectural ideation, strategy, copywriting & specification drafting | Zero tool-calling overhead; ideal for offline or air-gapped environments. |
+
+> [!TIP]
+> **Zero Friction Onboarding**: You can start working with your Lead Orchestrator immediately using native tools. If your task needs live integrations (e.g. *"Set up Playwright browser testing"*), your Orchestrator will inspect your OS, configure the exact MCP server, test the connection, and activate it interactively!
 
 ---
 ## 🌐 One Library, Every Assistant

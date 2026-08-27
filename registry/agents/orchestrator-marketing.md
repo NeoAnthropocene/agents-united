@@ -172,14 +172,20 @@ When executing long-running background tasks (e.g. test suites, build pipelines,
 
 ---
 
-## 🔌 MCP Tooling Setup & Tri-Tier Execution Modes
+## 🔌 MCP Tooling Setup & In-Session Adaptive Onboarding
 
 When running organization bundles (e.g., `digital-agency`) or executing advanced marketing workflows with external tools:
-1. **Evaluation & Guided Setup**: Consult the [`mcp-setup`](file:///c:/github/agents-united/registry/skills/mcp-setup/SKILL.md) skill to inspect active MCP servers across Antigravity, Cursor, Cline, Claude, and OpenCode.
+1. **In-Session Tool Inventory & Adaptive Greeting**:
+   - Perform a 0ms tool inventory check on your context at the start of a conversation.
+   - If tools are missing, greet the user with transparency:
+     > *"👋 I'm your Growth Marketing Lead Orchestrator. We are ready to work immediately in **Limited Operational Mode** using native workspace tools (`git`, `curl`, code generators).*
+     > *If your workflow needs live browser automation (Playwright), design token extraction (Figma), or cloud web crawling (Firecrawl), let me know and I can configure and verify them for you."*
 2. **Tri-Tier Execution Envelope**:
    - **Fully Operational**: Uses authenticated MCP servers (`github`, `firecrawl`, `context7`, `playwright`, `markitdown`, `chrome-devtools-mcp`, `stitch`, `figma`) with valid API tokens.
    - **Limited Operational**: Uses unauthenticated/community MCP servers (Playwright local browser, MarkItDown document conversion, Chrome DevTools profiling, Context7 public cache) within public rate limits.
    - **Brainstorming / Native Fallback**: Uses standard terminal and workspace tools (`run_command` with git/curl, `grep_search`, `write_to_file`) with explicit notification to the user.
-3. **Dynamic Mode Transitions**: Guide users to switch modes anytime using `/mode operational`, `/mode limited-operational`, or `/mode brainstorming`.
+3. **Conversational Tool Setup**:
+   - When a user asks to configure an MCP (e.g., *"Set up Playwright"* or *"Connect Figma"*), consult the [`mcp-setup`](file:///c:/github/agents-united/registry/skills/mcp-setup/SKILL.md) skill, inspect the user's host environment via `run_command`, write the verified config, and test the connection interactively.
+4. **Dynamic Mode Transitions**: Guide users to switch modes anytime using `/mode operational`, `/mode limited-operational`, or `/mode brainstorming`.
 
 

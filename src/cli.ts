@@ -572,7 +572,7 @@ cli
       }
     }
 
-    // 2. Prerequisite Gate Evaluation
+    // 2. Prerequisite Gate Evaluation & Informative Visibility
     let executionMode: ExecutionMode = (options.mode as ExecutionMode) || 'operational';
 
     if (targetBundleDef && (targetBundleDef.prerequisites || targetBundleDef.tier === 'organization')) {
@@ -603,226 +603,18 @@ cli
           `Prerequisite Evaluation: ${targetBundleDef.name} (${targetBundleDef.tier === 'organization' ? 'Organization Bundle' : 'Prerequisites Required'})`
         );
 
-        let currentEval = prereqEval;
-        while (!currentEval.allSatisfied) {
-          if (isInteractive) {
-            const missingMcps = currentEval.items.filter(i => i.type === 'mcp' && !i.satisfied).map(i => i.name);
-            const missingPkgs = currentEval.items.filter(i => i.type === 'package' && !i.satisfied).map(i => i.name);
-            const detectedCount = currentEval.items.filter(i => i.satisfied).length;
-
-            const hostLabelMap: Record<string, string> = {
-              agents: 'Google Antigravity',
-              gemini: 'Google Antigravity & Gemini',
-              cursor: 'Cursor',
-              cline: 'Cline',
-              claude: 'Claude Code',
-              opencode: 'OpenCode',
-              codex: 'Codex',
-            };
-            const targetHostSummary = hosts.map(h => hostLabelMap[h] || h).join(' & ') || 'Google Antigravity';
-
-            const gateOptions: Array<{ value: string; label: string; hint?: string }> = [];
-
-            if (missingMcps.length > 0 || missingPkgs.length > 0) {
-              gateOptions.push({
-                value: 'auto-remediate-fast',
-                label: pc.green(`⚡ Auto-configure for ${targetHostSummary} (1-Click Fast Setup)`),
-                hint: `injects missing MCPs into active host config and installs ${missingPkgs.length} packages`,
-              });
-
-              gateOptions.push({
-                value: 'auto-remediate-custom',
-                label: '⚙️  Auto-configure for other / custom MCP config files...',
-                hint: 'select specific host configuration files or enter custom path',
-              });
-            }
-
-            if (detectedCount > 0) {
-              gateOptions.push({
-                value: 'limited-operational',
-                label: pc.cyan('🌿 Proceed in Limited Operational Mode (Partial MCPs)'),
-                hint: `uses ${detectedCount} detected tools; native fallback for missing MCPs`,
-              });
-            }
-
-            gateOptions.push({
-              value: 'show-config',
-              label: '📋 View copy-paste MCP configuration & setup commands',
-              hint: 'shows JSON snippets for Cursor, Cline, Claude, & Antigravity',
-            });
-
-            gateOptions.push({
-              value: 'brainstorming',
-              label: '💡 Install in Brainstorming Mode (Advisory & Spec generation only)',
-              hint: 'runs in idea/planning mode without requiring live MCP tool connections',
-            });
-
-            gateOptions.push({
-              value: 'force',
-              label: '⚠️  Force install in Operational Mode anyway',
-              hint: 'proceed despite missing prerequisites (may fail during runtime calls)',
-            });
-
-            gateOptions.push({
-              value: 'abort',
-              label: '🛑 Abort installation',
-              hint: 'exit without modifying workspace files',
-            });
-
-            const gateChoice = await select({
-              message: pc.yellow(`Prerequisites not fully satisfied for "${targetBundleDef.name}". How would you like to proceed?`),
-              options: gateOptions,
-            });
-
-            if (gateChoice === 'abort' || typeof gateChoice !== 'string') {
-              outro(pc.yellow('Installation aborted. Please configure required MCPs and environment variables, then retry.'));
-              return;
-            }
-
-            if (gateChoice === 'auto-remediate-fast' || gateChoice === 'auto-remediate-custom') {
-              let targetFilesToConfigure: string[] = [];
-
-              if (gateChoice === 'auto-remediate-custom') {
-                const discovered = await PrerequisiteChecker.discoverHostConfigFiles(process.cwd());
-                const existingFiles = discovered.filter(f => f.exists);
-
-                if (existingFiles.length > 0) {
-                  const optionsList = [
-                    ...existingFiles.map(f => ({
-                      value: f.path,
-                      label: `${f.label} (${pc.dim(f.path)})`,
-                      hint: `${f.serverCount || 0} active servers`,
-                    })),
-                    {
-                      value: '__custom__',
-                      label: '➕ Enter custom MCP JSON path...',
-                      hint: 'specify a custom configuration file location',
-                    },
-                  ];
-
-                  const initialValues = existingFiles
-                    .filter(f => hosts.includes(f.host as AgentHost) || (hosts.includes('agents') && f.host === 'gemini'))
-                    .map(f => f.path);
-
-                  const selected = await multiselect({
-                    message: 'Select MCP configuration file(s) to update/inject into:',
-                    options: optionsList,
-                    initialValues: initialValues.length > 0 ? initialValues : [existingFiles[0].path],
-                    required: false,
-                  });
-
-                  if (typeof selected !== 'object') {
-                    outro(pc.yellow('Auto-configuration cancelled.'));
-                    return;
-                  }
-
-                  targetFilesToConfigure = (selected as string[]).filter(p => p !== '__custom__');
-
-                  if ((selected as string[]).includes('__custom__')) {
-                    const customPathInput = await text({
-                      message: 'Enter path to custom MCP JSON configuration file:',
-                      placeholder: path.join(process.cwd(), '.cursor', 'mcp.json'),
-                      validate: val => (!val || val.trim() === '' ? 'Path cannot be empty' : undefined),
-                    });
-                    if (typeof customPathInput === 'string' && customPathInput.trim() !== '') {
-                      targetFilesToConfigure.push(path.resolve(process.cwd(), customPathInput.trim()));
-                    }
-                  }
-                }
-              } else {
-                // Fast Path: Primary target write paths
-                const primaryHosts = hosts.length > 0 ? hosts : (['agents'] as AgentHost[]);
-                for (const h of primaryHosts) {
-                  const targetPath = McpLocationRegistry.getPrimaryWritePath(h, process.cwd());
-                  targetFilesToConfigure.push(targetPath);
-                }
-              }
-
-              const sp = spinner();
-              sp.start('Auto-configuring missing MCP servers and packages...');
-
-              const updatedConfigs: string[] = [];
-              if (targetFilesToConfigure.length > 0) {
-                for (const targetFilePath of targetFilesToConfigure) {
-                  const res = await PrerequisiteChecker.autoConfigureConfigFile(targetFilePath, missingMcps, 'operational');
-                  if (res.success) {
-                    updatedConfigs.push(targetFilePath);
-                  }
-                }
-              }
-
-              if (missingPkgs.length > 0) {
-                await PrerequisiteChecker.autoInstallPackages(missingPkgs, process.cwd());
-              }
-              sp.stop('Auto-configuration complete.');
-
-              const configLines = updatedConfigs.map(c => `  • ${pc.cyan(c)}`).join('\n');
-              note(
-                `✔ Configured MCPs: ${missingMcps.join(', ') || 'none'}\n` +
-                `✔ Installed Packages: ${missingPkgs.join(', ') || 'none'}\n` +
-                `Updated target config(s):\n${configLines || '  • (workspace)'}`,
-                'Auto-Remediation Success'
-              );
-
-              // Re-evaluate
-              currentEval = await checker.evaluate(targetBundleDef, { cwd: process.cwd(), targetHosts: hosts });
-              executionMode = 'operational';
-              if (currentEval.allSatisfied) {
-                note(pc.green('All prerequisites are now satisfied! Proceeding with installation.'), 'Prerequisites Ready');
-                break;
-              }
-              continue;
-            }
-
-            if (gateChoice === 'show-config') {
-              const clientSnippet = PrerequisiteChecker.generateClientConfig('cursor', missingMcps, 'operational');
-              note(
-                JSON.stringify(clientSnippet, null, 2),
-                'Copy-Paste MCP Config (.cursor/mcp.json or cline_mcp_settings.json)'
-              );
-              continue;
-            }
-
-            if (gateChoice === 'limited-operational') {
-              executionMode = 'limited-operational';
-              note(pc.cyan('Switched execution mode to "limited-operational" (graceful MCP degradation).'), 'Mode Selected');
-              break;
-            }
-
-            if (gateChoice === 'brainstorming') {
-              executionMode = 'brainstorming';
-              note(pc.cyan('Switched execution mode to "brainstorming" (idea/spec fallback mode).'), 'Mode Selected');
-              break;
-            }
-
-            if (gateChoice === 'force') {
-              executionMode = 'operational';
-              note(pc.yellow('Proceeding in "operational" mode with missing prerequisites.'), 'Warning');
-              break;
-            }
-          } else {
-            // Headless / Non-interactive
-            if (options.mode === 'brainstorming') {
-              executionMode = 'brainstorming';
-            } else if (options.mode === 'limited-operational' || options.mode === 'limited') {
-              executionMode = 'limited-operational';
-            } else if (options.force || options.allowMissingPrereqs) {
-              executionMode = 'operational';
-            } else {
-              const missingList = currentEval.items.filter(i => !i.satisfied).map(i => `${i.type}:${i.name}`).join(', ');
-              outro(
-                pc.red(
-                  `Error: Prerequisites not satisfied for "${targetBundleDef.name}".\n` +
-                  `Missing items: ${missingList}\n\n` +
-                  `To install in limited operational mode: agents add ${identifier} --mode limited-operational\n` +
-                  `To install in fallback mode: agents add ${identifier} --mode brainstorming\n` +
-                  `To bypass prerequisite gate: agents add ${identifier} --allow-missing-prereqs`
-                )
-              );
-              process.exit(1);
-            }
-            break;
-          }
+        if (prereqEval.allSatisfied) {
+          executionMode = (options.mode as ExecutionMode) || 'operational';
+          note(pc.green('All prerequisites are satisfied! Running in Fully Operational Mode.'), 'Prerequisites Ready');
+        } else {
+          executionMode = (options.mode as ExecutionMode) || 'limited-operational';
+          note(
+            pc.cyan(
+              '⚡ Adaptive Tooling: Limited Operational / Brainstorming Mode ready.\n' +
+              'Your Lead Orchestrator will automatically detect active tools and guide in-session configuration seamlessly.'
+            ),
+            'Operational Envelope'
+          );
         }
       }
     }
@@ -943,6 +735,16 @@ cli
               `To use this bundle in Cline, Claude Code & others: agents update ${identifier} --fanout cline,claude`
           ),
           'One library, every assistant'
+        );
+      }
+
+      if (!options.dryRun && targetBundleDef?.tier === 'organization') {
+        note(
+          pc.cyan(
+            '💡 In-Session MCP Setup: Your Lead Orchestrator will automatically check your runtime tools\n' +
+            'and guide configuration of live browser automation, design tokens, or cloud APIs on demand.'
+          ),
+          'Adaptive Tooling'
         );
       }
 

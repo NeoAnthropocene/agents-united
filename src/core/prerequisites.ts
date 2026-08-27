@@ -441,7 +441,7 @@ export class PrerequisiteChecker {
       case 'playwright':
         return {
           command: 'npx',
-          args: ['-y', '@modelcontextprotocol/server-playwright'],
+          args: ['-y', '@executeautomation/playwright-mcp-server'],
         };
       case 'markitdown':
         return {
@@ -457,7 +457,7 @@ export class PrerequisiteChecker {
       case 'stitch':
         return {
           command: 'npx',
-          args: ['-y', '@google/stitch-mcp'],
+          args: ['-y', 'mcp-remote', 'https://stitch.googleapis.com/mcp'],
           ...(mode === 'operational' && (envVars.STITCH_API_KEY || process.env.STITCH_API_KEY)
             ? { env: { STITCH_API_KEY: envVars.STITCH_API_KEY || process.env.STITCH_API_KEY || '' } }
             : {}),
@@ -465,7 +465,7 @@ export class PrerequisiteChecker {
       case 'figma':
         return {
           command: 'npx',
-          args: ['-y', '@modelcontextprotocol/server-figma'],
+          args: ['-y', 'ai-figma-mcp'],
           ...(mode === 'operational' && (envVars.FIGMA_ACCESS_TOKEN || process.env.FIGMA_ACCESS_TOKEN)
             ? { env: { FIGMA_ACCESS_TOKEN: envVars.FIGMA_ACCESS_TOKEN || process.env.FIGMA_ACCESS_TOKEN || '' } }
             : {}),

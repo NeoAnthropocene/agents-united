@@ -42,9 +42,13 @@ _Avoid_: Simple pack, basic bundle
 A cross-functional composite team modeled after real-world professional organizations (e.g. `digital-agency`, `venture-studio`). Unlike domain bundles, organization bundles orchestrate cross-discipline agents and integrate **Model Context Protocol (MCP) server tool calling**, external packages, and API keys. Because they require runtime prerequisites, they are not recommended autonomously by global orchestrators and require explicit user opt-in.
 _Avoid_: Mega bundle, company bot
 
-**Prerequisite Gate**:
-A blocking verification mechanism evaluated by the CLI (`PrerequisiteChecker`) and Lead Orchestrators before installing or activating Organization Bundles. It inspects host MCP configurations across Cursor, Cline (CLI & Extension), Antigravity/Gemini (App & CLI), Claude Code, OpenCode, and Windsurf via `McpLocationRegistry`, alongside npm packages and environment variables. If prerequisites are unsatisfied, it presents dynamic remediation options: 1-click Fast-Path auto-configuration for the active host, Power-Path multi-select for custom host files, Limited Operational Mode, Brainstorming Mode, or Force Operational.
-_Avoid_: Dependency blocker, install hook
+**Prerequisite Gate & Informative Visibility**:
+An informative verification mechanism evaluated by the CLI (`PrerequisiteChecker`) and Lead Orchestrators when installing or activating Organization Bundles. It inspects host MCP configurations across Cursor, Cline (CLI & Extension), Antigravity/Gemini (App & CLI), Claude Code, OpenCode, and Windsurf via `McpLocationRegistry`, alongside npm packages and environment variables. In the CLI installer, it displays an informative evaluation status without blocking installation. In conversational sessions, the Lead Orchestrator adapts dynamically to available tools and guides live MCP setup conversationally via the `mcp-setup` skill.
+_Avoid_: Rigid blocking installer, dependency blocker
+
+**In-Session Agentic MCP Onboarding**:
+The conversational onboarding protocol executed by Lead Orchestrators at session initialization. The orchestrator performs a tool inventory check, transparently presents its operational envelope (Limited Operational / Native Fallback Mode ready immediately), and offers to configure, test, and activate live MCP integrations (e.g. Playwright browser automation, Figma design token extraction, Firecrawl web crawling) on demand using OS-specific diagnostics.
+_Avoid_: Static CLI injection, manual JSON troubleshooting
 
 **Multi-Host MCP Evaluation & Partial Detection**:
 The multi-signal capability of the `PrerequisiteChecker` that evaluates prerequisite presence across all target hosts selected in the installation session. When an MCP is detected in some targets (e.g. Antigravity) but missing in others (e.g. Cline CLI), it is marked as `~ Partial` with an explicit platform breakdown (`Detected in Antigravity; Missing in Cline CLI`), guiding targeted differential injection.
