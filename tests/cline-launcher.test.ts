@@ -110,6 +110,21 @@ describe('Milestone 4: ClineLauncher', () => {
       expect(bootstrap).toContain('Addon auto-installation is pre-authorized for this session');
     });
 
+    it('includes plugin installation instruction in bootstrap prompt', () => {
+      const launcher = new ClineLauncher();
+      const plan = launcher.planActivation({
+        bundleName: 'software-engineering',
+        workspace: testWorkspace,
+        scope: 'project',
+        report: fakeProbeReport,
+      });
+
+      const bootstrap = plan.argv[plan.argv.length - 1];
+      expect(bootstrap).toContain(
+        "Before proceeding, ensure you have installed this bundle's plugin by running: cline plugin install .agents/plugins/software-engineering"
+      );
+    });
+
     it('uses the bundle-specific orchestrator as coordinator when provided (fix: no more hardcoded engineering coordinator)', () => {
       const launcher = new ClineLauncher();
       const plan = launcher.planActivation({

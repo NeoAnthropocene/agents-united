@@ -16,6 +16,7 @@ This directory contains self-contained implementation plans for building the **`
 | [008](./008-cline-native-projection-and-team-activation.md) | Cline-Native Compound Projection & Smart Team Activation | Core / Runtime Integration | **DONE** | 007 |
 | [009](./009-essentials-composition-audit.md) | Essentials Bundle Composition Audit & Decomposition (`software-engineering` & `product-design`) | Tech Debt / Architecture | **DONE** | 003 |
 | [010](./010-antigravity-august-features-and-department-expansion.md) | Antigravity August 2026 Features Adoption & Department Subagent Ecosystem Expansion | Core / Architecture | **DONE** | 002, 007, 009 |
+| [011](./011-cline-plugins-projection-migration.md) | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **DONE** | 008 |
 
 ### Plan 008 execution order
 
@@ -69,3 +70,4 @@ projection ownership and migration tests are green.
    - Skills: `writing-plans`, `confidence-check`
 
 8. **`full` / `all`**: Complete unified suite of all orchestrators, subagents, workflows, and skills.
+

@@ -151,6 +151,20 @@ private toPosix(p: string): string {
     }
   }
 
+  private removeProjectedTo(lockfile: LockfileManifest, canonicalRelPath: string, projectedRelPath: string): void {
+    const normProj = this.toPosix(projectedRelPath);
+    const posixKey = canonicalRelPath.replace(/\\/g, '/');
+    const sysKey = canonicalRelPath.replace(/\//g, path.sep);
+    const targetKey = lockfile.files[posixKey] ? posixKey : (lockfile.files[sysKey] ? sysKey : canonicalRelPath);
+    const asset = lockfile.files[targetKey];
+    if (asset && asset.projectedTo) {
+      asset.projectedTo = asset.projectedTo.filter(p => p !== normProj);
+      if (asset.projectedTo.length === 0) {
+        delete asset.projectedTo;
+      }
+    }
+  }
+
   private async removeEmptyProjectionDirs(workspaceRoot: string, projPath: string): Promise<void> {
     let dir = path.dirname(path.join(workspaceRoot, projPath));
     while (dir !== workspaceRoot && dir.startsWith(workspaceRoot)) {
@@ -265,6 +279,45 @@ private toPosix(p: string): string {
           (bundleDef.skills || []).forEach(s => declared.add(`skills/${s}/SKILL.md`));
           (bundleDef.workflows || []).forEach(w => declared.add(`workflows/${w}`));
           const artifacts = await ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+          const newPaths = new Set(artifacts.map(a => a.relPath));
+
+          // Clean up legacy or obsolete projections previously owned by this bundle
+          if (lockfile.projections) {
+            for (const [projRelPath, proj] of Object.entries(lockfile.projections)) {
+              if (proj.host === 'cline' && !newPaths.has(projRelPath) && proj.owners.includes(bundleDef.name)) {
+                proj.owners = proj.owners.filter(o => o !== bundleDef.name);
+                if (proj.owners.length === 0) {
+                  const absProjection = path.join(root, projRelPath);
+                  if (await fs.pathExists(absProjection)) {
+                    await fs.remove(absProjection);
+                    await this.removeEmptyProjectionDirs(root, projRelPath);
+                  }
+                  delete lockfile.projections[projRelPath];
+                }
+                if (proj.canonical) {
+                  this.removeProjectedTo(lockfile, proj.canonical, projRelPath);
+                }
+              }
+            }
+          }
+
+          // Clean up any legacy .cline/ projectedTo entries in lockfile.files
+          if (lockfile.files) {
+            for (const [canonKey, fileMeta] of Object.entries(lockfile.files)) {
+              if (fileMeta.projectedTo) {
+                const staleClinePaths = fileMeta.projectedTo.filter(p => p.startsWith('.cline/'));
+                for (const stalePath of staleClinePaths) {
+                  const absPath = path.join(root, stalePath);
+                  if (await fs.pathExists(absPath)) {
+                    await fs.remove(absPath);
+                    await this.removeEmptyProjectionDirs(root, stalePath);
+                  }
+                  this.removeProjectedTo(lockfile, canonKey, stalePath);
+                }
+              }
+            }
+          }
+
           for (const artifact of artifacts) {
             const dest = path.join(root, artifact.relPath);
             if (await fs.pathExists(dest) && !options.force) {
@@ -297,6 +350,7 @@ private toPosix(p: string): string {
             const existingProj = lockfile.projections[artifact.relPath];
             const bundleName = bundleDef.name;
             const declares = artifact.kind === 'rule' || artifact.kind === 'team-manifest'
+              || artifact.kind === 'plugin-manifest'
               || (artifact.canonical ? declared.has(artifact.canonical) : false);
             const priorOwners = existingProj?.owners ?? [];
             const owners = declares

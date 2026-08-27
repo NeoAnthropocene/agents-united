@@ -146,9 +146,60 @@ Follow REST standards.
     it('renders concise rule with bundle reference, manifest path, and activation guidelines', () => {
       const rule = ClineProjector.renderCoordinatorRule(sampleBundle, 'project');
       expect(rule).toContain('software-engineering');
-      expect(rule).toContain('.cline/agents-united/teams/software-engineering.yaml');
+      expect(rule).toContain('.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml');
       expect(rule).toContain('orchestrator-engineering');
       expect(rule).toContain('<!-- managed-by: agents-united | profile: cline');
+    });
+  });
+
+  describe('planCompoundProjection', () => {
+    it('generates self-contained plugin artifacts including package.json manifest under .agents/plugins/<bundle-name>/', async () => {
+      const resolved = {
+        agents: ['subagent-backend-architect.md'],
+        skills: ['backend-api-design'],
+        workflows: ['workflow-implement.md'],
+      };
+      const registryDir = 'registry';
+      const artifacts = await ClineProjector.planCompoundProjection(
+        sampleBundle,
+        'project',
+        resolved,
+        registryDir
+      );
+
+      const manifestArtifact = artifacts.find(a => a.kind === 'plugin-manifest');
+      expect(manifestArtifact).toBeDefined();
+      expect(manifestArtifact?.relPath).toBe('.agents/plugins/software-engineering/package.json');
+      expect(manifestArtifact?.managedMarker).toBe(false);
+
+      const parsedManifest = JSON.parse(manifestArtifact!.content!);
+      expect(parsedManifest.name).toBe('agents-united-software-engineering');
+      expect(parsedManifest.version).toBe('1.0.0');
+      expect(parsedManifest.description).toBe('Autonomous software engineering team');
+      expect(parsedManifest.cline).toEqual({
+        plugins: [
+          {
+            capabilities: ['skills', 'tools', 'workflows'],
+            skills: ['./skills'],
+          },
+        ],
+      });
+
+      // Role artifact target path
+      const roleArtifact = artifacts.find(a => a.kind === 'role');
+      expect(roleArtifact?.relPath).toBe('.agents/plugins/software-engineering/agents/subagent-backend-architect.md');
+
+      // Skill artifact target path
+      const skillArtifact = artifacts.find(a => a.kind === 'skill');
+      expect(skillArtifact?.relPath).toContain('.agents/plugins/software-engineering/skills/backend-api-design/');
+
+      // Rule artifact target path
+      const ruleArtifact = artifacts.find(a => a.kind === 'rule');
+      expect(ruleArtifact?.relPath).toBe('.agents/plugins/software-engineering/rules/agents-united-software-engineering.md');
+
+      // Team manifest artifact target path
+      const teamManifestArtifact = artifacts.find(a => a.kind === 'team-manifest');
+      expect(teamManifestArtifact?.relPath).toBe('.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml');
     });
   });
 

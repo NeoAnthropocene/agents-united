@@ -86,7 +86,7 @@ export interface LockfileAsset {
   projectedTo?: string[];
 }
 
-export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'bridge';
+export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'bridge' | 'plugin-manifest';
 
 export interface LockfileProjection {
   host: string;
@@ -341,5 +341,19 @@ export interface SkillFrontmatter {
   disableSlashCommand?: boolean;
   metadata?: SkillMetadata;
 }
+
+export interface ClinePluginManifest {
+  name: string;
+  version: string;
+  description: string;
+  cline: {
+    plugins: Array<{
+      paths?: string[];
+      capabilities: string[];
+      skills?: string[];
+    }>;
+  };
+}
+
 
 

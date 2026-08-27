@@ -65,18 +65,19 @@ export function canonicalOf(b: BundleEntry): string[] {
   return [...agents, ...skills, ...workflows];
 }
 
-/** Workspace-root-relative POSIX `.cline` projection paths declared by a bundle
- *  entry: role projections, SKILL.md projections, coordinator rule, team manifest. */
+/** Workspace-root-relative POSIX Cline native plugin projection paths declared by a bundle
+ *  entry: package.json manifest, role projections, SKILL.md projections, coordinator rule, team manifest. */
 export function projectionsOf(b: BundleEntry): string[] {
-  const roles = declaredAgents(b).map(a => `.cline/agents/${a}`);
+  const roles = declaredAgents(b).map(a => `.agents/plugins/${b.name}/agents/${a}`);
   const skills = (b.skills ?? [])
     .filter(s => fs.existsSync(path.join(REGISTRY_DIR, 'skills', s, 'SKILL.md')))
-    .map(s => `.cline/skills/${s}/SKILL.md`);
+    .map(s => `.agents/plugins/${b.name}/skills/${s}/SKILL.md`);
   return [
+    `.agents/plugins/${b.name}/package.json`,
     ...roles,
     ...skills,
-    `.cline/rules/agents-united-${b.name}.md`,
-    `.cline/agents-united/teams/${b.name}.yaml`,
+    `.agents/plugins/${b.name}/rules/agents-united-${b.name}.md`,
+    `.agents/plugins/${b.name}/agents-united/teams/${b.name}.yaml`,
   ];
 }
 
@@ -409,11 +410,12 @@ export function createHarness(opts: {
     expect(lock.installed.skills).toEqual([]);
     expect(lock.installed.workflows).toEqual([]);
 
-    for (const sub of ['agents', 'skills', 'workflows', 'rules']) {
+    for (const sub of ['agents', 'skills', 'workflows', 'rules', 'plugins']) {
       const leftovers = await collectFiles(path.join(agentsDir, sub));
       expect(leftovers, `leftover managed files in .agents/${sub}`).toEqual([]);
     }
     expect(await fs.pathExists(path.join(testWorkspace, '.cline'))).toBe(false);
+    expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(false);
   }
 
   return {

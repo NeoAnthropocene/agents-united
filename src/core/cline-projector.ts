@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import type {
   BundleDefinition,
+  ClinePluginManifest,
   ClineTeamManifest,
   InstallScope,
   ProjectionKind,
@@ -126,15 +127,15 @@ export class ClineProjector {
   }
 
   /**
-   * Render the coordinator rule file (.cline/rules/agents-united-<bundle>.md).
+   * Render the coordinator rule file (.agents/plugins/<bundle>/rules/agents-united-<bundle>.md).
    * @param excludeAddons optional addon names to omit from the "Recommended Addon
    *   Policy" list (used to stop advertising bundles already installed).
    */
   static renderCoordinatorRule(bundle: BundleDefinition, scope: InstallScope, excludeAddons: string[] = []): string {
     const marker = `<!-- managed-by: agents-united | profile: cline | bundle: ${bundle.name} | do not edit -->`;
     const manifestRelPath = scope === 'global'
-      ? `~/.cline/agents-united/teams/${bundle.name}.yaml`
-      : `.cline/agents-united/teams/${bundle.name}.yaml`;
+      ? `~/.agents/plugins/${bundle.name}/agents-united/teams/${bundle.name}.yaml`
+      : `.agents/plugins/${bundle.name}/agents-united/teams/${bundle.name}.yaml`;
 
     const coordinatorFile = bundle.orchestrator || `${bundle.name}.md`;
     const coordinatorName = coordinatorFile.replace(/\.md$/, '');
@@ -180,9 +181,30 @@ ${addonSection}
     excludeAddons: string[] = []
   ): Promise<PlannedClineArtifact[]> {
     const artifacts: PlannedClineArtifact[] = [];
-    const baseDir = scope === 'global' ? '.cline' : '.cline';
+    const baseDir = `.agents/plugins/${bundle.name}`;
 
-    // 1. Role definitions (.cline/agents/*.md)
+    // 0. Plugin manifest (.agents/plugins/<bundle-name>/package.json)
+    const pluginManifest: ClinePluginManifest = {
+      name: `agents-united-${bundle.name}`,
+      version: '1.0.0',
+      description: bundle.description || '',
+      cline: {
+        plugins: [
+          {
+            capabilities: ['skills', 'tools', 'workflows'],
+            skills: ['./skills'],
+          },
+        ],
+      },
+    };
+    artifacts.push({
+      kind: 'plugin-manifest',
+      relPath: `${baseDir}/package.json`.replace(/\\/g, '/'),
+      content: JSON.stringify(pluginManifest, null, 2),
+      managedMarker: false,
+    });
+
+    // 1. Role definitions (.agents/plugins/<bundle-name>/agents/*.md)
     for (const agentFile of resolved.agents) {
       const canonicalRel = `agents/${agentFile}`;
       const srcPath = path.join(registryDir, 'agents', agentFile);
@@ -199,7 +221,7 @@ ${addonSection}
       }
     }
 
-    // 2. Skills (.cline/skills/<skill>/**)
+    // 2. Skills (.agents/plugins/<bundle-name>/skills/<skill>/**)
     for (const skillName of resolved.skills) {
       const skillSrcDir = path.join(registryDir, 'skills', skillName);
       if (await fs.pathExists(skillSrcDir)) {
@@ -236,7 +258,7 @@ ${addonSection}
       }
     }
 
-    // 3. Coordinator Rule (.cline/rules/agents-united-<bundle>.md)
+    // 3. Coordinator Rule (.agents/plugins/<bundle-name>/rules/agents-united-<bundle>.md)
     const ruleContent = this.renderCoordinatorRule(bundle, scope, excludeAddons);
     artifacts.push({
       kind: 'rule',
@@ -245,7 +267,7 @@ ${addonSection}
       managedMarker: true,
     });
 
-    // 4. Team Manifest (.cline/agents-united/teams/<bundle>.yaml)
+    // 4. Team Manifest (.agents/plugins/<bundle-name>/agents-united/teams/<bundle>.yaml)
     const manifestContent = this.renderTeamManifest(bundle, scope, excludeAddons);
     artifacts.push({
       kind: 'team-manifest',

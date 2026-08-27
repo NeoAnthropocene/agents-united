@@ -1,5 +1,5 @@
 /**
- * Plan 002 � Software Engineering & Delivery lifecycle conformance suite.
+ * Plan 002 � Software Engineering & Delivery lifecycle conformance suite.
  *
  * Essentials bundle (software-engineering) + one recommended addon installed
  * into the same workspace with a cline fan-out. Written RED at 7e2032c to
@@ -173,9 +173,9 @@ describe('002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7
         expect(await fs.pathExists(path.join(testWorkspace, rel)), `${rel} removed`).toBe(false);
       }
 
-      // .cline stays (addon artifacts remain) but no empty dirs are left behind.
-      expect(await fs.pathExists(path.join(testWorkspace, '.cline'))).toBe(true);
-      expect(await collectEmptyDirs(path.join(testWorkspace, '.cline'))).toEqual([]);
+      // .agents/plugins stays (addon artifacts remain) but no empty dirs are left behind.
+      expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(true);
+      expect(await collectEmptyDirs(path.join(testWorkspace, '.agents', 'plugins'))).toEqual([]);
     });
 
     it.each(ADDONS)('B2: %s — essentials then addon removal leaves zero managed files', async (addon) => {
