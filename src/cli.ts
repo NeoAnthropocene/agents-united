@@ -652,22 +652,86 @@ cli
             }
 
             if (gateChoice === 'auto-remediate') {
+              let targetFilesToConfigure: string[] = [];
+
+              if (isInteractive) {
+                const discovered = await PrerequisiteChecker.discoverHostConfigFiles(process.cwd());
+                const existingFiles = discovered.filter(f => f.exists);
+
+                if (existingFiles.length > 0) {
+                  const optionsList = [
+                    ...existingFiles.map(f => ({
+                      value: f.path,
+                      label: `${f.label} (${pc.dim(f.path)})`,
+                      hint: `${f.serverCount || 0} active servers`,
+                    })),
+                    {
+                      value: '__custom__',
+                      label: '➕ Enter custom MCP JSON path...',
+                      hint: 'specify a custom configuration file location',
+                    },
+                  ];
+
+                  const initialValues = existingFiles
+                    .filter(f => hosts.includes(f.host as AgentHost) || (hosts.includes('agents') && f.host === 'gemini'))
+                    .map(f => f.path);
+
+                  const selected = await multiselect({
+                    message: 'Select MCP configuration file(s) to update/inject into:',
+                    options: optionsList,
+                    initialValues: initialValues.length > 0 ? initialValues : [existingFiles[0].path],
+                    required: false,
+                  });
+
+                  if (typeof selected !== 'object') {
+                    outro(pc.yellow('Auto-configuration cancelled.'));
+                    return;
+                  }
+
+                  targetFilesToConfigure = (selected as string[]).filter(p => p !== '__custom__');
+
+                  if ((selected as string[]).includes('__custom__')) {
+                    const customPathInput = await text({
+                      message: 'Enter path to custom MCP JSON configuration file:',
+                      placeholder: path.join(process.cwd(), '.cursor', 'mcp.json'),
+                      validate: val => (!val || val.trim() === '' ? 'Path cannot be empty' : undefined),
+                    });
+                    if (typeof customPathInput === 'string' && customPathInput.trim() !== '') {
+                      targetFilesToConfigure.push(path.resolve(process.cwd(), customPathInput.trim()));
+                    }
+                  }
+                }
+              }
+
               const sp = spinner();
               sp.start('Auto-configuring missing MCP servers and packages...');
 
-              const targetHost = hosts.find(h => h === 'cursor' || h === 'cline' || h === 'claude') || 'cursor';
-              if (missingMcps.length > 0) {
-                await PrerequisiteChecker.autoConfigureHost(targetHost, missingMcps, process.cwd(), 'operational');
+              const updatedConfigs: string[] = [];
+              if (targetFilesToConfigure.length > 0) {
+                for (const targetFilePath of targetFilesToConfigure) {
+                  const res = await PrerequisiteChecker.autoConfigureConfigFile(targetFilePath, missingMcps, 'operational');
+                  if (res.success) {
+                    updatedConfigs.push(targetFilePath);
+                  }
+                }
+              } else {
+                const targetHost = hosts.find(h => h === 'cursor' || h === 'cline' || h === 'claude' || h === 'gemini' || h === 'agents') || 'agents';
+                const res = await PrerequisiteChecker.autoConfigureHost(targetHost, missingMcps, process.cwd(), 'operational');
+                if (res.configured) {
+                  updatedConfigs.push(res.targetFile);
+                }
               }
+
               if (missingPkgs.length > 0) {
                 await PrerequisiteChecker.autoInstallPackages(missingPkgs, process.cwd());
               }
               sp.stop('Auto-configuration complete.');
 
+              const configLines = updatedConfigs.map(c => `  • ${pc.cyan(c)}`).join('\n');
               note(
                 `✔ Configured MCPs: ${missingMcps.join(', ') || 'none'}\n` +
                 `✔ Installed Packages: ${missingPkgs.join(', ') || 'none'}\n` +
-                `Updated workspace host MCP configuration.`,
+                `Updated target config(s):\n${configLines}`,
                 'Auto-Remediation Success'
               );
 

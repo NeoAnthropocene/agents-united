@@ -131,6 +131,64 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     expect(targetJson.mcpServers.firecrawl).toBeDefined();
     expect(targetJson.mcpServers.context7).toBeDefined();
   });
+
+  it('should match MCP servers using multi-signal hybrid matching (aliases, docker, URLs)', async () => {
+    // 1. Key alias matches
+    expect(PrerequisiteChecker.matchesMcpServer('github', 'github-mcp-server')).toBe(true);
+    expect(PrerequisiteChecker.matchesMcpServer('stitch', 'StitchMCP')).toBe(true);
+    expect(PrerequisiteChecker.matchesMcpServer('playwright', 'playwright-mcp')).toBe(true);
+
+    // 2. Executable / Docker image matches
+    expect(
+      PrerequisiteChecker.matchesMcpServer('github', 'custom-name', {
+        command: 'docker',
+        args: ['run', 'ghcr.io/github/github-mcp-server'],
+      })
+    ).toBe(true);
+
+    // 3. Remote URL matches
+    expect(
+      PrerequisiteChecker.matchesMcpServer('stitch', 'my-remote-ui', {
+        url: 'https://stitch.googleapis.com/mcp',
+      })
+    ).toBe(true);
+
+    expect(
+      PrerequisiteChecker.matchesMcpServer('context7', 'c7', {
+        serverUrl: 'https://mcp.context7.com/mcp',
+      })
+    ).toBe(true);
+  });
+
+  it('should auto-enable disabled MCP servers without overwriting credentials', async () => {
+    const configPath = path.join(testWorkspace, 'mcp_test_config.json');
+    await fs.writeJson(configPath, {
+      mcpServers: {
+        StitchMCP: {
+          command: 'npx',
+          args: ['-y', 'mcp-remote', 'https://stitch.googleapis.com/mcp', '--header', 'X-Goog-Api-Key: secret123'],
+          disabled: true,
+        },
+      },
+    });
+
+    const res = await PrerequisiteChecker.autoConfigureConfigFile(configPath, ['stitch', 'figma'], 'operational');
+    expect(res.success).toBe(true);
+    expect(res.enabledServers).toContain('StitchMCP');
+    expect(res.addedServers).toContain('figma');
+
+    const updated = await fs.readJson(configPath);
+    expect(updated.mcpServers.StitchMCP.disabled).toBe(false);
+    expect(updated.mcpServers.StitchMCP.args).toContain('X-Goog-Api-Key: secret123');
+    expect(updated.mcpServers.figma).toBeDefined();
+  });
+
+  it('should discover host config files across workspace and system candidates', async () => {
+    const discovered = await PrerequisiteChecker.discoverHostConfigFiles(testWorkspace);
+    expect(discovered.length).toBeGreaterThan(0);
+    const geminiCandidate = discovered.find(d => d.host === 'gemini');
+    expect(geminiCandidate).toBeDefined();
+  });
 });
 
 describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
