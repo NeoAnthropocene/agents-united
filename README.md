@@ -17,7 +17,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 
 - **🪶 Essentials-First & On-Demand Growth**: Every department installs as a lean **Essentials bundle** by default. When a task requires specialized capabilities, the Lead Orchestrator automatically detects the gap, recommends the exact addon, and can auto-install it directly into your project scope.
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
-- **🚀 Cline Native Activation**: Launch specialized teams into Cline CLI sessions with `agents start`, featuring compound role projections, skill toolkits, coordinator rules, and declarative team manifests.
+- **🚀 Cline Native Activation**: Launch specialized teams into Cline CLI sessions with `agents start`, featuring packaged native plugins with `package.json` manifests in `.agents/plugins/<bundle>/`, skill toolkits, coordinator rules, and declarative team manifests.
 - **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
 - **🤖 58 Specialized Agents, 91 Skills & 69 Workflows**: 8 Lead Orchestrators coordinating 50 domain sub-agents, backed by 91 production-grade runbooks and 69 deterministic workflows.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
@@ -417,7 +417,7 @@ Organization bundles operate across three dynamic execution envelopes:
 The `.agents/` folder is the **main library** — the *one* folder you edit. **Antigravity reads it directly** for interactive sessions (CLI TUI and desktop); see [ADR 0009](./docs/adr/0009-host-conformance-targets.md). Every other assistant (Claude Code, Cursor, Cline, OpenCode, Codex) can't read it natively, so Agents United writes **translated copies** it keeps in sync for you.
 
 - **Edit only `.agents/`.** That's your source of truth — the `agents-united.json` lockfile tracks it.
-- **Other assistants get their own translated copies**, in their own folders (`.claude/agents/`, `.cline/agents/`, …). Don't edit those — they're machine-managed and rewritten on every `agents update`.
+- **Other assistants get their own translated copies**, in their own folders (`.claude/agents/`, `.agents/plugins/<bundle>/`, …). Don't edit those — they're machine-managed and rewritten on every `agents update`.
 - **`--fanout` tells Agents United which assistants to make copies for.** It's remembered in the lockfile, so a plain `agents update` keeps them in sync afterwards.
 
 ```bash
@@ -449,7 +449,7 @@ agents add software-engineering -t agents --fanout claude,cursor -y --copy --dry
 What each runtime receives:
 - **Claude Code** → `.claude/agents/`
 - **Cursor** → `.cursor/agents/`
-- **Cline** → `.cline/agents/`
+- **Cline** → native plugin package in `.agents/plugins/<bundle>/` (`package.json`, `agents/`, `skills/`, `rules/`, and `agents-united/teams/`)
 - **OpenCode** → `.opencode/agent/`
 - **Codex & AGENTS.md readers** → a generated root **`AGENTS.md`** bridge indexing the canonical `.agents/` tree (no subagent loader exists for these).
 

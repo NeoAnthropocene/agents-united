@@ -25,7 +25,7 @@ AI assistants read different folder structures and frontmatter dialects:
 - **Google Antigravity**: Reads `./.agents/` natively in interactive sessions (CLI TUI panel + Antigravity 2.0 desktop). Headless CLI mode (`-p` / `agy agents`) on agy 1.1.15 reads only the user-global store — see [ADR 0009](./docs/adr/0009-host-conformance-targets.md).
 - **Anthropic Claude Code**: Reads `./.claude/agents/` with `tools: [...]` frontmatter.
 - **Cursor**: Reads `./.cursor/agents/` and `.cursor/rules/*.mdc`.
-- **Cline**: Reads `.cline/agents/`, `.cline/skills/`, `.cline/rules/`, and `.cline/agents-united/teams/`.
+- **Cline**: Reads packaged native plugins with manifests from `.agents/plugins/<bundle>/` (`package.json`, `agents/`, `skills/`, `rules/`, and `agents-united/teams/`).
 - **OpenCode**: Reads `./.opencode/agent/`.
 - **Codex & AGENTS.md Readers**: Reads root `AGENTS.md` standard index.
 
@@ -143,10 +143,11 @@ All 10 foundational implementation plans have been fully realized, tested under 
 | **[008](./plans/008-cline-native-projection-and-team-activation.md)** | Cline Compound Projection & Team Activation | Runtime Integration | **DONE** | 4-part compound artifacts (`.cline/agents/`, `.cline/skills/`, `.cline/rules/`, `.cline/agents-united/teams/`), `lockfile.projections` refcounting, `ClineCapabilityProbe`, `ClineLauncher`. |
 | **[009](./plans/009-essentials-composition-audit.md)** | Essentials Bundle Composition Audit & Modularization | Architecture / Catalog | **DONE** | `universal-skills` extraction, `software-engineering` slimmed to 16 skills, `product-design` 2-addon decomposition, graduated to `stable`. |
 | **[010](./plans/010-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Core / Architecture | **DONE** | Scoped `rules:`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards, department roster expansion across Security, Business, Research, Architecture, and Continuous Stream-JSON Evals harness. |
+| **[011](./plans/011-cline-plugins-projection-migration.md)** | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **DONE** | Local packaged Cline plugins in `.agents/plugins/<bundle>/` with `package.json` manifests, legacy `.cline/` migration, and automated `cline plugin install` bootstrap instructions. |
 
 ---
 
-## 4. Architectural Decision Records (ADRs 0001–0011)
+## 4. Architectural Decision Records (ADRs 0001–0012)
 
 All architectural decisions recorded in `docs/adr/` are indexed and summarized below:
 
@@ -163,6 +164,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 | **[0009](./docs/adr/0009-host-conformance-targets.md)** | Host Conformance Targets | Accepted | Per-host conformance probes pinned to tested CLI versions: Cline = conformant (headless CI), Antigravity = interactive-scoped confirmed on agy 1.1.15 (CLI TUI + desktop read `.agents/` natively; headless `-p` not a target). No projection shim required for Antigravity. |
 | **[0010](./docs/adr/0010-universal-orchestration-bundle-and-domain-atlas.md)** | Universal Orchestration Bundle & Domain Atlas | Accepted | Prime Orchestrator (`orchestrator-universal.md`) with compact Domain Atlas, `handoff` / `grill-me`, and Route & Instruct Contract. |
 | **[0011](./docs/adr/0011-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Accepted | Adoption of Antigravity 2.10 / CLI 1.1.21 schema enhancements (`rules: [...]`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards) and department subagent expansion. |
+| **[0012](./docs/adr/0012-cline-native-plugins-projection.md)** | Cline Native Plugins Projection Architecture | Accepted | Project Cline bundles as self-contained native plugins in `.agents/plugins/<bundle>/` with deterministic `package.json` manifests, skills, roles, rules, and team manifests, with automatic migration of legacy `.cline/` projections. |
 
 ---
 
@@ -329,7 +331,7 @@ Every skill requires frontmatter and 7 mandatory sections:
 6. `Edge Cases & Error Recovery`
 7. `Verification Checklist`
 
-### 7.3 Team Manifest Schema (`.cline/agents-united/teams/<bundle>.yaml`)
+### 7.3 Team Manifest Schema (`.agents/plugins/<bundle>/agents-united/teams/<bundle>.yaml`)
 ```yaml
 schema_version: 1
 bundle: software-engineering
@@ -343,7 +345,7 @@ specialists:
     purpose: API routes, DB schemas, server-side data models.
 skills:
   - name: test-driven-development
-    path: .cline/skills/test-driven-development
+    path: .agents/plugins/software-engineering/skills/test-driven-development
 integrity_mode: development # "strict" | "balanced" | "development"
 recommended_addons:
   - mobile-development
@@ -391,7 +393,7 @@ agents doctor --host cline
 ```
 c:/github/agents-united/
 ├── .agents/                      # Local Canonical Store (main library)
-├── .cline/                       # Local Cline Projections (compound artifacts)
+│   └── plugins/                  # Local Cline Native Plugin Projections (package.json, skills, roles, rules)
 ├── registry/                     # Canonical Ecosystem Catalog
 │   ├── agents/                   # 58 Antigravity 2.0 agent definitions
 │   ├── skills/                   # 91 modular skill runbooks with SKILL.md
@@ -412,12 +414,12 @@ c:/github/agents-united/
 │       ├── mcp-locations.ts      # McpLocationRegistry (dynamic cross-platform host config catalog)
 │       ├── prerequisites.ts      # PrerequisiteChecker (MCP auto-provisioning & config generator)
 │       ├── projector.ts          # HostProjector (dialects & AGENTS.md)
-│       ├── cline-projector.ts    # ClineProjector (compound manifest & rules)
+│       ├── cline-projector.ts    # ClineProjector (native plugin package.json, manifests & rules)
 │       ├── cline-capabilities.ts # ClineCapabilityProbe (read-only probe)
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
-├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0011)
-├── plans/                        # Implementation Plan Specifications (001–010)
-├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 410 tests)
+├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0012)
+├── plans/                        # Implementation Plan Specifications (001–011)
+├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 413 tests)
 │   ├── e2e-evals/                # Stream-JSON Continuous Evaluation Harness (schemas, judge, runner)
 │   └── helpers/                  # Test helpers and mock fixtures
 ├── CONTEXT.md                    # Ubiquitous Domain Dictionary

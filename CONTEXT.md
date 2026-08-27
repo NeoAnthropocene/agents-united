@@ -291,23 +291,24 @@ The single table (`src/core/hosts.ts`) describing every known host runtime (dirs
 _Avoid_: Hard-coded host list, scattered host literals
 
 **Host Projection**:
-A **translated copy** a user-facing assistant needs before it can read the main library — written to that runtime's own loader directory (`.claude/agents/`, `.cline/agents/`, …). Projections are always copies (never symlinks), machine-managed (they carry the managed marker), refcounted across bundles, and kept in sync by `agents update`.
+A **translated copy** a user-facing assistant needs before it can read the main library — written to that runtime's own loader directory (`.claude/agents/`, `.agents/plugins/<bundle>/`, …). Projections are always copies (never symlinks), machine-managed (they carry the managed marker), refcounted across bundles, and kept in sync by `agents update`.
 _Avoid_: Foreign copy, mirror, symlink fan-out
 
-**Cline Compound Projection**:
-The 4-part machine-managed artifact structure emitted when projecting into Cline:
-1. **Role Definitions** (`.cline/agents/<role>.md`): Frontmatter containing `name` and `description` with full system instructions, stripped of Claude-specific tool lists and Antigravity-only keys.
-2. **Skills** (`.cline/skills/<skill>/`): Preserved `SKILL.md` documents with progressive disclosure guidelines and auxiliary resources copied byte-for-byte.
-3. **Coordinator Rule** (`.cline/rules/agents-united-<bundle>.md`): Workspace instruction file instructing Cline sessions on bundle team coordination, manifest path, and role delegations.
-4. **Team Manifest** (`.cline/agents-united/teams/<bundle>.yaml`): Declarative manifest specifying coordinator role, specialist roles, skills, recommended addons, integrity mode, and fallback strategies.
-_Avoid_: Single-role Cline mirror, unmanaged rule drop
+**Cline Native Plugin Projection**:
+The machine-managed native plugin package structure emitted when projecting into Cline under `.agents/plugins/<bundle>/`:
+1. **Plugin Manifest** (`.agents/plugins/<bundle>/package.json`): Deterministic manifest adhering to `ClinePluginManifest` declaring capabilities (`skills`, `tools`, `workflows`) and skill paths.
+2. **Role Definitions** (`.agents/plugins/<bundle>/agents/<role>.md`): Frontmatter containing `name` and `description` with full system instructions, stripped of Claude-specific tool lists and Antigravity-only keys.
+3. **Skills** (`.agents/plugins/<bundle>/skills/<skill>/`): Preserved `SKILL.md` documents with progressive disclosure guidelines and auxiliary resources copied byte-for-byte.
+4. **Coordinator Rule** (`.agents/plugins/<bundle>/rules/agents-united-<bundle>.md`): Workspace instruction file instructing Cline sessions on bundle team coordination, manifest path, and role delegations.
+5. **Team Manifest** (`.agents/plugins/<bundle>/agents-united/teams/<bundle>.yaml`): Declarative manifest specifying coordinator role, specialist roles, skills, recommended addons, integrity mode, and fallback strategies.
+_Avoid_: Loose .cline file dump, single-role Cline mirror, unmanaged rule drop
 
 **Coordinator Role Projection**:
-The primary orchestrator role projected into `.cline/agents/` acting as the team's central dispatcher, responsible for decomposing vertical slices, reading team manifests, and routing specialized work to role definitions.
+The primary orchestrator role projected into `.agents/plugins/<bundle>/agents/` acting as the team's central dispatcher, responsible for decomposing vertical slices, reading team manifests, and routing specialized work to role definitions.
 _Avoid_: Master agent, boss prompt
 
 **Team Manifest**:
-The authoritative YAML document (`.cline/agents-united/teams/<bundle>.yaml`) declaring team membership, role descriptions, required skills, recommended addon bundles, and execution integrity modes (`strict`, `balanced`, `development`).
+The authoritative YAML document (`.agents/plugins/<bundle>/agents-united/teams/<bundle>.yaml`) declaring team membership, role descriptions, required skills, recommended addon bundles, and execution integrity modes (`strict`, `balanced`, `development`).
 _Avoid_: Config file, prompt snippet
 
 **Runtime Activation**:
@@ -381,7 +382,7 @@ agents add software-engineering -t agents --fanout claude,cursor,cline,opencode,
 ```
 
 Produces the canonical `.agents/` tree (unchanged format) plus translated copies in
-`.claude/agents/`, `.cursor/agents/`, `.cline/agents/` (plus compound skills, rules, and team manifest),
+`.claude/agents/`, `.cursor/agents/`, `.agents/plugins/<bundle>/` (with native plugin package.json, skills, rules, and team manifest),
 `.opencode/agent/`, and a generated root `AGENTS.md` bridge — all tracked in the lockfile under
 `projectedTo` and `projections`, refcounted, and removable with a single `agents remove software-engineering`.
 
