@@ -374,24 +374,27 @@ Organization Bundles (Tier 2 / Experimental, such as `digital-agency`) orchestra
 When installing an organization bundle (`agents add <bundle>`), the CLI evaluates prerequisites (MCP servers, npm packages, environment variables). If items are missing, the interactive wizard provides dynamic remediation options:
 
 ```text
-o Prerequisite Evaluation: digital-agency (Organization Bundle) ----------+
-|   ✗ [MCP] github: Missing (Not found in host MCP configuration)         |
-|   ✓ [MCP] firecrawl: Detected (Configured in gemini)                     |
-|   ✓ [MCP] context7: Detected (Configured in gemini)                      |
-|   ✗ [MCP] playwright: Missing (Not found in host MCP configuration)     |
-|   ✗ [MCP] markitdown: Missing (Not found in host MCP configuration)     |
-|   ✓ [MCP] chrome-devtools-mcp: Detected (Configured in gemini)          |
-|   ✗ [MCP] stitch: Missing (Not found in host MCP configuration)          |
-|   ✗ [MCP] figma: Missing (Not found in host MCP configuration)           |
-|   ✗ [Pkg] @playwright/test: Missing (Not found in node_modules)         |
-+-------------------------------------------------------------------------+
+o Prerequisite Evaluation: digital-agency (Organization Bundle) -------------------+
+|                                                                                   |
+|   ✓ [MCP] github: Detected (Configured in Antigravity)                           |
+|   ✓ [MCP] firecrawl: Detected (Configured in Antigravity)                        |
+|   ✓ [MCP] context7: Detected (Configured in Antigravity)                         |
+|   ~ [MCP] stitch: Partial (Configured in Antigravity; Missing in Cline CLI)      |
+|   ✗ [MCP] playwright: Missing (Not found in host MCP configuration)              |
+|   ✗ [MCP] markitdown: Missing (Not found in host MCP configuration)              |
+|   ✓ [MCP] chrome-devtools-mcp: Detected (Configured in Antigravity)              |
+|   ✗ [MCP] figma: Missing (Not found in host MCP configuration)                   |
+|   ✗ [Pkg] @playwright/test: Missing (Not found in node_modules or package.json)  |
+|                                                                                   |
++-----------------------------------------------------------------------------------+
 ```
 
 ### Dynamic Prerequisite Options Comparison
 
 | Option | What It Does | Best For |
 | :--- | :--- | :--- |
-| **⚡ Auto-configure (Recommended)** | Automatically writes missing MCP definitions to your client config (`.cursor/mcp.json`, `cline_mcp_settings.json`, `.claude/mcp.json`) & installs missing packages | One-click instant setup |
+| **⚡ Auto-configure (Fast-Path)** | 1-Click auto-setup: injects missing MCPs directly into the active host config selected in Step 1 (Antigravity `~/.gemini/config/mcp_config.json`, Cline CLI `~/.cline/data/settings/cline_mcp_settings.json`, Cursor `.cursor/mcp.json`, etc.) & installs missing packages | Blazing fast instant setup without extra prompts |
+| **⚙️ Auto-configure (Power-Path)** | Opens interactive multi-select to choose specific discovered host config files on your machine or enter custom JSON paths | Multi-client & custom environment setups |
 | **🌿 Limited Operational** | Uses the MCPs you already have; subagents gracefully use native fallbacks (`git`, `curl`) for the rest | Partial setups where you only want some tools |
 | **💡 Brainstorming Mode** | Pure ideation/planning; turns off all MCP tool-calling | Offline / air-gapped environments |
 | **⚠️ Force Operational** | Installs full live tool definitions as-is without touching your files | Custom setups, remote MCP proxies, or manual config later |

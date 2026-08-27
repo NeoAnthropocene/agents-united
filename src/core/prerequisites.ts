@@ -1,24 +1,37 @@
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'fs-extra';
+import { McpLocationRegistry, type DiscoveredMcpConfig } from './mcp-locations.js';
 import type {
   BundleDefinition,
   PrerequisiteEvaluation,
   PrerequisiteItemCheck,
   BundlePrerequisites,
+  AgentHost,
 } from './types.js';
 
 export interface PrerequisiteCheckOptions {
   cwd?: string;
   env?: Record<string, string | undefined>;
+  targetHosts?: (AgentHost | string)[];
 }
 
 export interface DiscoveredConfigFile {
-  host: 'gemini' | 'cursor' | 'cline' | 'claude' | 'opencode' | 'custom';
+  host: 'gemini' | 'cursor' | 'cline' | 'claude' | 'opencode' | 'custom' | string;
   label: string;
   path: string;
   exists: boolean;
   serverCount?: number;
+}
+
+export interface McpCheckResult {
+  configured: boolean;
+  host?: string;
+  location?: string;
+  disabled?: boolean;
+  serverKey?: string;
+  foundInConfigs: Array<{ id: string; host: string; label: string; path: string; disabled?: boolean; serverKey: string }>;
+  missingInConfigs: Array<{ id: string; host: string; label: string; path: string }>;
 }
 
 export class PrerequisiteChecker {
@@ -26,112 +39,14 @@ export class PrerequisiteChecker {
    * Discovers all candidate and existing MCP configuration files across AI hosts
    */
   public static async discoverHostConfigFiles(cwd: string = process.cwd()): Promise<DiscoveredConfigFile[]> {
-    const homeDir = os.homedir();
-    const appData = process.env.APPDATA || (process.platform === 'darwin' ? path.join(homeDir, 'Library', 'Application Support') : path.join(homeDir, '.config'));
-
-    const candidates: Array<{ host: DiscoveredConfigFile['host']; label: string; path: string }> = [
-      // Google Antigravity / Gemini
-      {
-        host: 'gemini',
-        label: 'Google Antigravity / Gemini Global Config',
-        path: path.join(homeDir, '.gemini', 'config', 'mcp_config.json'),
-      },
-      {
-        host: 'gemini',
-        label: 'Google Antigravity System Config',
-        path: path.join(homeDir, '.gemini', 'antigravity', 'mcp_config.json'),
-      },
-      {
-        host: 'gemini',
-        label: 'Google Antigravity Local Workspace Config',
-        path: path.join(cwd, '.gemini', 'config', 'mcp_config.json'),
-      },
-      // Cursor
-      {
-        host: 'cursor',
-        label: 'Cursor Workspace Config',
-        path: path.join(cwd, '.cursor', 'mcp.json'),
-      },
-      {
-        host: 'cursor',
-        label: 'Cursor Global Config',
-        path: path.join(homeDir, '.cursor', 'mcp.json'),
-      },
-      // Cline & Roo Code
-      {
-        host: 'cline',
-        label: 'Cline Workspace Config',
-        path: path.join(cwd, 'cline_mcp_settings.json'),
-      },
-      {
-        host: 'cline',
-        label: 'Cline Extension Global Settings',
-        path: path.join(appData, 'Code', 'User', 'globalStorage', 'saoudrizwan.claude-dev', 'settings', 'cline_mcp_settings.json'),
-      },
-      {
-        host: 'cline',
-        label: 'Roo Code Global Settings',
-        path: path.join(appData, 'Code', 'User', 'globalStorage', 'rooveterinaryinc.roo-cline', 'settings', 'cline_mcp_settings.json'),
-      },
-      {
-        host: 'cline',
-        label: 'Cline Global Config',
-        path: path.join(homeDir, 'cline_mcp_settings.json'),
-      },
-      // Claude Code & Desktop
-      {
-        host: 'claude',
-        label: 'Claude Workspace Config',
-        path: path.join(cwd, '.claude', 'mcp.json'),
-      },
-      {
-        host: 'claude',
-        label: 'Claude Global Config',
-        path: path.join(homeDir, '.claude', 'mcp.json'),
-      },
-      {
-        host: 'claude',
-        label: 'Claude Desktop Global Config',
-        path: path.join(appData, 'Claude', 'claude_desktop_config.json'),
-      },
-      // OpenCode
-      {
-        host: 'opencode',
-        label: 'OpenCode Workspace Config',
-        path: path.join(cwd, '.opencode', 'mcp.json'),
-      },
-    ];
-
-    const results: DiscoveredConfigFile[] = [];
-    const seenPaths = new Set<string>();
-
-    for (const cand of candidates) {
-      const normalizedPath = path.normalize(cand.path);
-      if (seenPaths.has(normalizedPath.toLowerCase())) continue;
-      seenPaths.add(normalizedPath.toLowerCase());
-
-      const exists = await fs.pathExists(normalizedPath);
-      let serverCount = 0;
-      if (exists) {
-        try {
-          const config = await fs.readJson(normalizedPath);
-          const servers = config?.mcpServers || config?.servers || config;
-          if (servers && typeof servers === 'object') {
-            serverCount = Object.keys(servers).length;
-          }
-        } catch {}
-      }
-
-      results.push({
-        host: cand.host,
-        label: cand.label,
-        path: normalizedPath,
-        exists,
-        serverCount,
-      });
-    }
-
-    return results;
+    const discovered = await McpLocationRegistry.discoverAll(cwd);
+    return discovered.map(d => ({
+      host: d.host,
+      label: d.label,
+      path: d.path,
+      exists: d.exists,
+      serverCount: d.serverCount,
+    }));
   }
 
   /**
@@ -146,8 +61,9 @@ export class PrerequisiteChecker {
     if (keyNorm.includes(targetNorm)) return true;
     if (targetNorm.includes(keyNorm)) return true;
 
-    // Stripping common prefixes / suffixes: mcp, server, mcpserver
+    // Stripping common prefixes / suffixes: mcp, server, mcpserver, domain prefixes
     const strippedKey = keyNorm
+      .replace(/^githubcom/g, '')
       .replace(/^mcp/g, '')
       .replace(/mcp$/g, '')
       .replace(/^server/g, '')
@@ -209,31 +125,49 @@ export class PrerequisiteChecker {
   public static async isMcpConfigured(
     mcpName: string,
     cwd: string = process.cwd()
-  ): Promise<{ configured: boolean; host?: string; location?: string; disabled?: boolean; serverKey?: string }> {
-    const discovered = await PrerequisiteChecker.discoverHostConfigFiles(cwd);
+  ): Promise<McpCheckResult> {
+    const discovered = await McpLocationRegistry.discoverAll(cwd);
+    const foundInConfigs: McpCheckResult['foundInConfigs'] = [];
+    const missingInConfigs: McpCheckResult['missingInConfigs'] = [];
 
     // 1. Check all discovered configuration files
     for (const file of discovered) {
-      if (!file.exists) continue;
-      try {
-        const config = await fs.readJson(file.path);
-        const servers = config?.mcpServers || config?.servers || config;
-        if (servers && typeof servers === 'object') {
-          for (const [key, serverDef] of Object.entries(servers)) {
-            if (PrerequisiteChecker.matchesMcpServer(mcpName, key, serverDef)) {
-              const isDisabled = (serverDef as any)?.disabled === true;
-              return {
-                configured: true,
-                host: file.host,
-                location: file.path,
-                disabled: isDisabled,
-                serverKey: key,
-              };
-            }
+      if (!file.exists) {
+        missingInConfigs.push({
+          id: file.id,
+          host: file.host,
+          label: file.label,
+          path: file.path,
+        });
+        continue;
+      }
+
+      let matched = false;
+      if (file.servers && typeof file.servers === 'object') {
+        for (const [key, serverDef] of Object.entries(file.servers)) {
+          if (PrerequisiteChecker.matchesMcpServer(mcpName, key, serverDef)) {
+            const isDisabled = (serverDef as any)?.disabled === true;
+            foundInConfigs.push({
+              id: file.id,
+              host: file.host,
+              label: file.label,
+              path: file.path,
+              disabled: isDisabled,
+              serverKey: key,
+            });
+            matched = true;
+            break;
           }
         }
-      } catch {
-        // Ignore read errors
+      }
+
+      if (!matched) {
+        missingInConfigs.push({
+          id: file.id,
+          host: file.host,
+          label: file.label,
+          path: file.path,
+        });
       }
     }
 
@@ -248,19 +182,32 @@ export class PrerequisiteChecker {
         const entries = await fs.readdir(dir).catch(() => []);
         for (const entry of entries) {
           if (PrerequisiteChecker.matchesMcpServer(mcpName, entry, {})) {
-            return {
-              configured: true,
+            foundInConfigs.push({
+              id: 'antigravity-dir',
               host: 'gemini',
-              location: path.join(dir, entry),
+              label: 'Google Antigravity MCP Directory',
+              path: path.join(dir, entry),
               disabled: false,
               serverKey: entry,
-            };
+            });
+            break;
           }
         }
       }
     }
 
-    return { configured: false };
+    const isConfigured = foundInConfigs.length > 0;
+    const firstFound = foundInConfigs[0];
+
+    return {
+      configured: isConfigured,
+      host: firstFound?.host,
+      location: firstFound?.path,
+      disabled: firstFound?.disabled,
+      serverKey: firstFound?.serverKey,
+      foundInConfigs,
+      missingInConfigs,
+    };
   }
 
   /**
@@ -339,7 +286,7 @@ export class PrerequisiteChecker {
   }
 
   /**
-   * Evaluates all prerequisites declared on a bundle
+   * Evaluates all prerequisites declared on a bundle, supporting target host scoping and multi-host partial breakdowns
    */
   public async evaluate(
     bundle: BundleDefinition,
@@ -350,20 +297,62 @@ export class PrerequisiteChecker {
     const tier = bundle.tier || 'domain';
     const prereqs: BundlePrerequisites = bundle.prerequisites || {};
 
+    const targetHosts = options.targetHosts || ['agents'];
+    const targetHostKeys = new Set(targetHosts.map(h => (h === 'agents' ? 'gemini' : h)));
+
     const items: PrerequisiteItemCheck[] = [];
 
     // 1. Evaluate Required MCPs
     if (prereqs.requiredMcps && prereqs.requiredMcps.length > 0) {
       for (const mcp of prereqs.requiredMcps) {
         const check = await PrerequisiteChecker.isMcpConfigured(mcp.name, cwd);
+
+        // Discovered configs filtered by target host(s)
+        const relevantFound = check.foundInConfigs.filter(c => targetHostKeys.has(c.host));
+        const hostCleanNames: Record<string, string> = {
+          gemini: 'Google Antigravity',
+          agents: 'Google Antigravity',
+          cline: 'Cline',
+          cursor: 'Cursor',
+          claude: 'Claude Code',
+          opencode: 'OpenCode',
+          windsurf: 'Windsurf',
+        };
+
+        const detectedHostLabels = Array.from(new Set(relevantFound.map(c => hostCleanNames[c.host] || c.host)));
+        const detectedHostKeys = new Set(relevantFound.map(c => c.host));
+        const missingHostKeys = Array.from(targetHostKeys).filter(h => !detectedHostKeys.has(h));
+        const missingHostLabels = missingHostKeys.map(h => hostCleanNames[h] || h);
+
+        let satisfied = false;
+        let status: 'ok' | 'missing' | 'partial' = 'missing';
+        let details = 'Not found in host MCP configuration';
+
+        if (relevantFound.length > 0 && missingHostKeys.length === 0) {
+          satisfied = true;
+          status = 'ok';
+          details = `Configured in ${detectedHostLabels.join(', ')}`;
+        } else if (relevantFound.length > 0 && missingHostKeys.length > 0) {
+          satisfied = false;
+          status = 'partial';
+          details = `Detected in ${detectedHostLabels.join(', ')}; Missing in ${missingHostLabels.join(', ')}`;
+        } else if (check.foundInConfigs.length > 0 && relevantFound.length === 0) {
+          const otherLabels = Array.from(new Set(check.foundInConfigs.map(c => hostCleanNames[c.host] || c.host)));
+          satisfied = false;
+          status = 'partial';
+          details = `Detected in ${otherLabels.join(', ')}; Missing in target (${Array.from(targetHostKeys).map(h => hostCleanNames[h] || h).join(', ')})`;
+        }
+
         items.push({
           type: 'mcp',
           name: mcp.name,
           purpose: mcp.purpose,
-          satisfied: check.configured,
-          status: check.configured ? 'ok' : 'missing',
-          details: check.configured ? `Configured in ${check.host || 'host'}` : 'Not found in host MCP configuration',
+          satisfied,
+          status,
+          details,
           optionalForBrainstorming: mcp.optionalForBrainstorming ?? true,
+          detectedInHosts: detectedHostLabels,
+          missingInHosts: missingHostLabels,
         });
       }
     }
@@ -607,19 +596,7 @@ export class PrerequisiteChecker {
     mode: 'operational' | 'limited-operational' = 'operational',
     envVars: Record<string, string | undefined> = {}
   ): Promise<{ configured: boolean; targetFile: string; addedServers: string[] }> {
-    const homeDir = os.homedir();
-    let targetFile = '';
-
-    if (host === 'gemini' || host === 'agents') {
-      targetFile = path.join(homeDir, '.gemini', 'config', 'mcp_config.json');
-    } else if (host === 'cline') {
-      targetFile = path.join(cwd, 'cline_mcp_settings.json');
-    } else if (host === 'claude') {
-      targetFile = path.join(cwd, '.claude', 'mcp.json');
-    } else {
-      targetFile = path.join(cwd, '.cursor', 'mcp.json');
-    }
-
+    const targetFile = McpLocationRegistry.getPrimaryWritePath(host as AgentHost, cwd);
     const res = await PrerequisiteChecker.autoConfigureConfigFile(targetFile, mcpNames, mode, envVars);
     return {
       configured: res.success,

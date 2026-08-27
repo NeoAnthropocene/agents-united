@@ -12,6 +12,7 @@ import { DoctorEngine } from './core/doctor.js';
 import { ClineLauncher } from './core/cline-launcher.js';
 import { ClineCapabilityProbe } from './core/cline-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
+import { McpLocationRegistry } from './core/mcp-locations.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, InstalledPackageRecord, ProjectionInfo, ExecutionMode } from './core/types.js';
 
@@ -576,15 +577,25 @@ cli
 
     if (targetBundleDef && (targetBundleDef.prerequisites || targetBundleDef.tier === 'organization')) {
       const checker = new PrerequisiteChecker();
-      const prereqEval = await checker.evaluate(targetBundleDef);
+      const prereqEval = await checker.evaluate(targetBundleDef, { cwd: process.cwd(), targetHosts: hosts });
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
         for (const item of prereqEval.items) {
           const typeLabel = item.type === 'mcp' ? 'MCP' : item.type === 'env' ? 'Env' : 'Pkg';
-          const icon = item.satisfied ? pc.green('✓') : pc.red('✗');
+          let icon = pc.green('✓');
+          let statusText = pc.green('Detected');
+          if (!item.satisfied) {
+            if (item.status === 'partial') {
+              icon = pc.yellow('~');
+              statusText = pc.yellow('Partial');
+            } else {
+              icon = pc.red('✗');
+              statusText = pc.red('Missing');
+            }
+          }
           const details = pc.dim(`(${item.details || ''})`);
-          checkLines.push(`  ${icon} [${typeLabel}] ${pc.bold(item.name)}: ${item.satisfied ? pc.green('Detected') : pc.red('Missing')} ${details}`);
+          checkLines.push(`  ${icon} [${typeLabel}] ${pc.bold(item.name)}: ${statusText} ${details}`);
         }
 
         note(
@@ -599,13 +610,30 @@ cli
             const missingPkgs = currentEval.items.filter(i => i.type === 'package' && !i.satisfied).map(i => i.name);
             const detectedCount = currentEval.items.filter(i => i.satisfied).length;
 
+            const hostLabelMap: Record<string, string> = {
+              agents: 'Google Antigravity',
+              gemini: 'Google Antigravity & Gemini',
+              cursor: 'Cursor',
+              cline: 'Cline',
+              claude: 'Claude Code',
+              opencode: 'OpenCode',
+              codex: 'Codex',
+            };
+            const targetHostSummary = hosts.map(h => hostLabelMap[h] || h).join(' & ') || 'Google Antigravity';
+
             const gateOptions: Array<{ value: string; label: string; hint?: string }> = [];
 
             if (missingMcps.length > 0 || missingPkgs.length > 0) {
               gateOptions.push({
-                value: 'auto-remediate',
-                label: pc.green('⚡ Auto-configure missing MCPs & packages (Recommended)'),
-                hint: `writes host config for ${missingMcps.length} MCPs and installs ${missingPkgs.length} packages`,
+                value: 'auto-remediate-fast',
+                label: pc.green(`⚡ Auto-configure for ${targetHostSummary} (1-Click Fast Setup)`),
+                hint: `injects missing MCPs into active host config and installs ${missingPkgs.length} packages`,
+              });
+
+              gateOptions.push({
+                value: 'auto-remediate-custom',
+                label: '⚙️  Auto-configure for other / custom MCP config files...',
+                hint: 'select specific host configuration files or enter custom path',
               });
             }
 
@@ -651,10 +679,10 @@ cli
               return;
             }
 
-            if (gateChoice === 'auto-remediate') {
+            if (gateChoice === 'auto-remediate-fast' || gateChoice === 'auto-remediate-custom') {
               let targetFilesToConfigure: string[] = [];
 
-              if (isInteractive) {
+              if (gateChoice === 'auto-remediate-custom') {
                 const discovered = await PrerequisiteChecker.discoverHostConfigFiles(process.cwd());
                 const existingFiles = discovered.filter(f => f.exists);
 
@@ -701,6 +729,13 @@ cli
                     }
                   }
                 }
+              } else {
+                // Fast Path: Primary target write paths
+                const primaryHosts = hosts.length > 0 ? hosts : (['agents'] as AgentHost[]);
+                for (const h of primaryHosts) {
+                  const targetPath = McpLocationRegistry.getPrimaryWritePath(h, process.cwd());
+                  targetFilesToConfigure.push(targetPath);
+                }
               }
 
               const sp = spinner();
@@ -714,12 +749,6 @@ cli
                     updatedConfigs.push(targetFilePath);
                   }
                 }
-              } else {
-                const targetHost = hosts.find(h => h === 'cursor' || h === 'cline' || h === 'claude' || h === 'gemini' || h === 'agents') || 'agents';
-                const res = await PrerequisiteChecker.autoConfigureHost(targetHost, missingMcps, process.cwd(), 'operational');
-                if (res.configured) {
-                  updatedConfigs.push(res.targetFile);
-                }
               }
 
               if (missingPkgs.length > 0) {
@@ -731,12 +760,12 @@ cli
               note(
                 `✔ Configured MCPs: ${missingMcps.join(', ') || 'none'}\n` +
                 `✔ Installed Packages: ${missingPkgs.join(', ') || 'none'}\n` +
-                `Updated target config(s):\n${configLines}`,
+                `Updated target config(s):\n${configLines || '  • (workspace)'}`,
                 'Auto-Remediation Success'
               );
 
               // Re-evaluate
-              currentEval = await checker.evaluate(targetBundleDef);
+              currentEval = await checker.evaluate(targetBundleDef, { cwd: process.cwd(), targetHosts: hosts });
               executionMode = 'operational';
               if (currentEval.allSatisfied) {
                 note(pc.green('All prerequisites are now satisfied! Proceeding with installation.'), 'Prerequisites Ready');

@@ -409,6 +409,7 @@ c:/github/agents-united/
 │       ├── updater.ts            # UpdateEngine (version drift & sync)
 │       ├── doctor.ts             # DoctorEngine (health & host audits)
 │       ├── hosts.ts              # HOST_REGISTRY & target definitions
+│       ├── mcp-locations.ts      # McpLocationRegistry (dynamic cross-platform host config catalog)
 │       ├── prerequisites.ts      # PrerequisiteChecker (MCP auto-provisioning & config generator)
 │       ├── projector.ts          # HostProjector (dialects & AGENTS.md)
 │       ├── cline-projector.ts    # ClineProjector (compound manifest & rules)
@@ -416,7 +417,7 @@ c:/github/agents-united/
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
 ├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0011)
 ├── plans/                        # Implementation Plan Specifications (001–010)
-├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 403 tests)
+├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 410 tests)
 │   ├── e2e-evals/                # Stream-JSON Continuous Evaluation Harness (schemas, judge, runner)
 │   └── helpers/                  # Test helpers and mock fixtures
 ├── CONTEXT.md                    # Ubiquitous Domain Dictionary
@@ -465,5 +466,5 @@ The codebase adheres to zero technical debt, strict typing, and 100% test pass r
  ✓ tests/e2e-evals/e2e-stream-evals.test.ts
 
  Test Files  28 passed (28)
-      Tests  403 passed | 208 skipped (611)
+      Tests  410 passed | 208 skipped (618)
 ```

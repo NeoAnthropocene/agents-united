@@ -43,8 +43,16 @@ A cross-functional composite team modeled after real-world professional organiza
 _Avoid_: Mega bundle, company bot
 
 **Prerequisite Gate**:
-A blocking verification mechanism evaluated by the CLI (`PrerequisiteChecker`) and Lead Orchestrators before installing or activating Organization Bundles. It inspects host MCP configurations across Cursor, Cline, Antigravity/Gemini, and Claude Code, alongside npm packages and environment variables. If prerequisites are unsatisfied, it presents a 3-way resolution: abort and show setup guidance, degrade to Brainstorming Mode, or force Operational install.
+A blocking verification mechanism evaluated by the CLI (`PrerequisiteChecker`) and Lead Orchestrators before installing or activating Organization Bundles. It inspects host MCP configurations across Cursor, Cline (CLI & Extension), Antigravity/Gemini (App & CLI), Claude Code, OpenCode, and Windsurf via `McpLocationRegistry`, alongside npm packages and environment variables. If prerequisites are unsatisfied, it presents dynamic remediation options: 1-click Fast-Path auto-configuration for the active host, Power-Path multi-select for custom host files, Limited Operational Mode, Brainstorming Mode, or Force Operational.
 _Avoid_: Dependency blocker, install hook
+
+**Multi-Host MCP Evaluation & Partial Detection**:
+The multi-signal capability of the `PrerequisiteChecker` that evaluates prerequisite presence across all target hosts selected in the installation session. When an MCP is detected in some targets (e.g. Antigravity) but missing in others (e.g. Cline CLI), it is marked as `~ Partial` with an explicit platform breakdown (`Detected in Antigravity; Missing in Cline CLI`), guiding targeted differential injection.
+_Avoid_: Binary present/missing check, single-file assumption
+
+**McpLocationRegistry**:
+A declarative, maintainable registry in `src/core/mcp-locations.ts` maintaining cross-platform resolvers for all known MCP JSON configuration locations (Antigravity global/system, Cline CLI data settings, Cline/Roo Code VS Code extensions, Cursor workspace/global, Claude Code workspace/global, Claude Desktop, Windsurf, OpenCode, and Zed).
+_Avoid_: Hardcoded paths, single-host settings
 
 **Organization Bundle Execution Tiers & Graceful MCP Degradation**:
 The operational envelopes supported by all Organization Bundles (`digital-agency` and future cross-functional enterprise bundles):

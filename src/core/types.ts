@@ -31,9 +31,11 @@ export interface PrerequisiteItemCheck {
   name: string;
   purpose?: string;
   satisfied: boolean;
-  status: 'ok' | 'missing';
+  status: 'ok' | 'missing' | 'partial';
   details?: string;
   optionalForBrainstorming?: boolean;
+  detectedInHosts?: string[];
+  missingInHosts?: string[];
 }
 
 export interface PrerequisiteEvaluation {

@@ -4,6 +4,7 @@ import os from 'node:os';
 import fs from 'fs-extra';
 import { execSync, spawnSync } from 'node:child_process';
 import { PrerequisiteChecker } from '../src/core/prerequisites.js';
+import { McpLocationRegistry } from '../src/core/mcp-locations.js';
 import { RegistryResolver } from '../src/core/registry.js';
 
 describe('PrerequisiteChecker & Organization Bundles', () => {
@@ -188,6 +189,54 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     expect(discovered.length).toBeGreaterThan(0);
     const geminiCandidate = discovered.find(d => d.host === 'gemini');
     expect(geminiCandidate).toBeDefined();
+  });
+
+  it('should resolve primary write path for hosts in McpLocationRegistry', () => {
+    const geminiPath = McpLocationRegistry.getPrimaryWritePath('gemini', testWorkspace);
+    expect(geminiPath).toContain('mcp_config.json');
+
+    const clinePath = McpLocationRegistry.getPrimaryWritePath('cline', testWorkspace);
+    expect(clinePath).toContain('cline_mcp_settings.json');
+
+    const cursorPath = McpLocationRegistry.getPrimaryWritePath('cursor', testWorkspace);
+    expect(cursorPath).toContain('.cursor');
+  });
+
+  it('should evaluate partial status when MCP is present in one target host and missing in another', async () => {
+    const checker = new PrerequisiteChecker();
+    const mockBundle: BundleDefinition = {
+      name: 'test-partial-bundle',
+      tier: 'organization',
+      prerequisites: {
+        requiredMcps: [{ name: 'custom-partial-mcp' }],
+      },
+    };
+
+    // Create a mock Antigravity config containing custom-partial-mcp
+    const geminiDir = path.join(testWorkspace, '.gemini', 'config');
+    await fs.ensureDir(geminiDir);
+    await fs.writeJson(path.join(geminiDir, 'mcp_config.json'), {
+      mcpServers: {
+        'custom-partial-mcp': {
+          command: 'npx',
+          args: ['-y', 'custom-partial-mcp'],
+        },
+      },
+    });
+
+    // Evaluate for both Antigravity ('agents') and 'cursor'
+    const evalResult = await checker.evaluate(mockBundle, {
+      cwd: testWorkspace,
+      targetHosts: ['agents', 'cursor'],
+    });
+
+    const mcpCheck = evalResult.items.find(i => i.name === 'custom-partial-mcp');
+    expect(mcpCheck).toBeDefined();
+    // It is detected in Antigravity, but missing in Cursor -> Partial
+    expect(mcpCheck?.status).toBe('partial');
+    expect(mcpCheck?.satisfied).toBe(false);
+    expect(mcpCheck?.details).toContain('Google Antigravity');
+    expect(mcpCheck?.details).toContain('Cursor');
   });
 });
 
