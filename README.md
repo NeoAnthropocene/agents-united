@@ -297,7 +297,9 @@ agents remove mobile-development -g -y
 ---
 
 ### `agents start <bundle> [prompt]`
-Starts an installed team bundle in its host runtime (such as Cline CLI). Automatically resolves project vs. global installations, verifies compound projection integrity, probes host runtime capabilities, constructs safe non-shell evaluated arguments, and launches the session.
+Starts an installed team bundle in its host runtime. **By design, this command currently targets the Cline CLI** because Cline provides an open, programmatic CLI (`cline "prompt"`) that allows us to inject a team context directly from the terminal (unlike other editors which do not yet expose this). 
+
+It automatically resolves project vs. global installations, verifies that Cline projections are up-to-date, probes for the `cline` executable on your system, constructs safe non-shell evaluated arguments, and launches the session.
 
 ```bash
 # Start an installed team in Cline
