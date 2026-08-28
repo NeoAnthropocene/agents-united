@@ -1,9 +1,12 @@
 ---
 name: systematic-debugging
-description: Production-grade Systematic Debugging playbook for isolating elusive bugs, root-cause analysis, and regression prevention.
+description: Production-grade Systematic Debugging playbook for isolating
+  elusive bugs, root-cause analysis, and regression prevention.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🐞
+disable-slash-command: true
 ---
 
 # Hypothesis-Driven Systematic Debugging & Root Cause Isolation

@@ -58,7 +58,7 @@ describe('UninstallEngine', () => {
       });
 
       const claudeProj = path.join(ws, '.claude', 'agents', 'orchestrator-engineering.md');
-      const clineProj = path.join(ws, '.cline', 'agents', 'orchestrator-engineering.md');
+      const clineProj = path.join(ws, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
       expect(await fs.pathExists(claudeProj)).toBe(true);
       expect(await fs.pathExists(clineProj)).toBe(true);
 
@@ -68,7 +68,7 @@ describe('UninstallEngine', () => {
       expect(await fs.pathExists(claudeProj)).toBe(false);
       expect(await fs.pathExists(clineProj)).toBe(false);
       expect(await fs.pathExists(path.join(ws, '.claude'))).toBe(false);
-      expect(await fs.pathExists(path.join(ws, '.cline'))).toBe(false);
+      expect(await fs.pathExists(path.join(ws, '.agents', 'plugins'))).toBe(false);
     } finally {
       await fs.remove(ws);
     }

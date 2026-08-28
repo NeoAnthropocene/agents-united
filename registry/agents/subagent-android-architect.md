@@ -3,8 +3,9 @@ name: subagent-android-architect
 version: 1.0.0
 type: subagent
 description: >
-  Android Architecture & Kotlin Subagent for building native Android applications,
-  Jetpack Compose UI, Material 3 design systems, Coroutines/Flow, and Gradle build optimizations.
+  Android Architecture & Kotlin Subagent for building native Android
+  applications, Jetpack Compose UI, Material 3 design systems, Coroutines/Flow,
+  and Gradle build optimizations.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,15 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "Android Architect activated — inspecting Kotlin/Compose files and Gradle configurations."
+    - log: Android Architect activated — inspecting Kotlin/Compose files and Gradle
+        configurations.
   PostInvocation:
-    - log: "Android task complete — verify Compose recomposition performance and Material 3 tokens."
+    - log: Android task complete — verify Compose recomposition performance and
+        Material 3 tokens.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

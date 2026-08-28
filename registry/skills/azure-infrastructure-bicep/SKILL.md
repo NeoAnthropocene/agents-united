@@ -1,10 +1,14 @@
 ---
 name: azure-infrastructure-bicep
-description: Enterprise cloud infrastructure automation on Microsoft Azure using Bicep IaC, Azure Container Apps, AKS, Azure OpenAI services, and Managed Identities.
+description: Enterprise cloud infrastructure automation on Microsoft Azure using
+  Bicep IaC, Azure Container Apps, AKS, Azure OpenAI services, and Managed
+  Identities.
 metadata:
-  author: "Agents United DevOps Group"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United DevOps Group
+  version: 1.0.0
+  license: MIT
+  icon: ☁️
+disable-slash-command: true
 ---
 
 # Azure Infrastructure with Bicep Playbook

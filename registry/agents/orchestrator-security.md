@@ -2,7 +2,10 @@
 name: orchestrator-security
 version: 2.0.0
 type: orchestrator
-description: Autonomous Security Operations & Vulnerability Auditing Orchestrator across universal agent ecosystems. Conducts static code analysis (SAST), dependency vulnerability scans, secrets detection, path traversal auditing, and security policy hardening.
+description: Autonomous Security Operations & Vulnerability Auditing
+  Orchestrator across universal agent ecosystems. Conducts static code analysis
+  (SAST), dependency vulnerability scans, secrets detection, path traversal
+  auditing, and security policy hardening.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
@@ -16,6 +19,8 @@ tools:
   - list_dir
   - invoke_subagent
   - send_message
+  - manage_task
+  - schedule
 mainAgent: true
 subagent: true
 hooks:
@@ -34,7 +39,13 @@ hooks:
     - matcher: replace_file_content
       hooks:
         - type: command
-          command: echo "[Verification Gate] Security remediation detected. Running regression tests..."
+          command: echo "[Verification Gate] Security remediation detected. Running
+            regression tests..."
+effort: high
+rules:
+  - git-guardrails.md
+  - clean-code-and-architecture.md
+  - multi-agent-coordination.md
 ---
 
 # 🛡️ Autonomous Security Operations Lead Orchestrator
@@ -165,3 +176,15 @@ All security audits and vulnerability assessments must follow this standardized 
 - **PostInvocation**: Emits security audit completion notification.
 - **PreToolUse**: Validates tool safety gates prior to executing security shell commands.
 - **PostToolUse**: Triggers test suite validation following code patch modifications.
+
+
+---
+
+## ⚡ Task Delegation & Reactive Liveness Protocol
+
+When executing long-running background tasks (e.g. test suites, build pipelines, migrations, daemon watchers) or coordinating subagents:
+1. **Background Execution**: Launch long-running operations via `run_command` with appropriate timeouts. The command runs as an asynchronous background task returning a `task-id`.
+2. **Task Management**: Use `manage_task` (`action: 'status' | 'list' | 'kill' | 'send_input'`) to inspect logs or send input without blocking the main session.
+3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
+4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
+

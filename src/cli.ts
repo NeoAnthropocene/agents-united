@@ -12,6 +12,7 @@ import { DoctorEngine } from './core/doctor.js';
 import { ClineLauncher } from './core/cline-launcher.js';
 import { ClineCapabilityProbe } from './core/cline-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
+import { McpLocationRegistry } from './core/mcp-locations.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, InstalledPackageRecord, ProjectionInfo, ExecutionMode } from './core/types.js';
 
@@ -571,20 +572,30 @@ cli
       }
     }
 
-    // 2. Prerequisite Gate Evaluation
+    // 2. Prerequisite Gate Evaluation & Informative Visibility
     let executionMode: ExecutionMode = (options.mode as ExecutionMode) || 'operational';
 
     if (targetBundleDef && (targetBundleDef.prerequisites || targetBundleDef.tier === 'organization')) {
       const checker = new PrerequisiteChecker();
-      const prereqEval = await checker.evaluate(targetBundleDef);
+      const prereqEval = await checker.evaluate(targetBundleDef, { cwd: process.cwd(), targetHosts: hosts });
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
         for (const item of prereqEval.items) {
           const typeLabel = item.type === 'mcp' ? 'MCP' : item.type === 'env' ? 'Env' : 'Pkg';
-          const icon = item.satisfied ? pc.green('✓') : pc.red('✗');
+          let icon = pc.green('✓');
+          let statusText = pc.green('Detected');
+          if (!item.satisfied) {
+            if (item.status === 'partial') {
+              icon = pc.yellow('~');
+              statusText = pc.yellow('Partial');
+            } else {
+              icon = pc.red('✗');
+              statusText = pc.red('Missing');
+            }
+          }
           const details = pc.dim(`(${item.details || ''})`);
-          checkLines.push(`  ${icon} [${typeLabel}] ${pc.bold(item.name)}: ${item.satisfied ? pc.green('Detected') : pc.red('Missing')} ${details}`);
+          checkLines.push(`  ${icon} [${typeLabel}] ${pc.bold(item.name)}: ${statusText} ${details}`);
         }
 
         note(
@@ -592,60 +603,18 @@ cli
           `Prerequisite Evaluation: ${targetBundleDef.name} (${targetBundleDef.tier === 'organization' ? 'Organization Bundle' : 'Prerequisites Required'})`
         );
 
-        if (!prereqEval.allSatisfied) {
-          if (isInteractive) {
-            const gateChoice = await select({
-              message: pc.yellow(`Prerequisites not fully satisfied for "${targetBundleDef.name}". How would you like to proceed?`),
-              options: [
-                {
-                  value: 'abort',
-                  label: '🛑 Abort and configure missing prerequisites (Recommended)',
-                  hint: 'exit and configure MCP servers, packages, or environment variables',
-                },
-                {
-                  value: 'brainstorming',
-                  label: '💡 Install in Brainstorming Mode (Advisory & Spec generation only)',
-                  hint: 'runs in idea/planning mode without requiring live MCP tool connections',
-                },
-                {
-                  value: 'force',
-                  label: '⚠️  Force install in Operational Mode anyway',
-                  hint: 'proceed despite missing prerequisites (may fail during runtime calls)',
-                },
-              ],
-            });
-
-            if (gateChoice === 'abort' || typeof gateChoice !== 'string') {
-              outro(pc.yellow('Installation aborted. Please configure required MCPs and environment variables, then retry.'));
-              return;
-            }
-
-            if (gateChoice === 'brainstorming') {
-              executionMode = 'brainstorming';
-              note(pc.cyan('Switched execution mode to "brainstorming" (idea/spec fallback mode).'), 'Mode Selected');
-            } else if (gateChoice === 'force') {
-              executionMode = 'operational';
-              note(pc.yellow('Proceeding in "operational" mode with missing prerequisites.'), 'Warning');
-            }
-          } else {
-            // Headless / Non-interactive
-            if (options.mode === 'brainstorming') {
-              executionMode = 'brainstorming';
-            } else if (options.force || options.allowMissingPrereqs) {
-              executionMode = 'operational';
-            } else {
-              const missingList = prereqEval.items.filter(i => !i.satisfied).map(i => `${i.type}:${i.name}`).join(', ');
-              outro(
-                pc.red(
-                  `Error: Prerequisites not satisfied for "${targetBundleDef.name}".\n` +
-                  `Missing items: ${missingList}\n\n` +
-                  `To install in fallback mode: agents add ${identifier} --mode brainstorming\n` +
-                  `To bypass prerequisite gate: agents add ${identifier} --allow-missing-prereqs`
-                )
-              );
-              process.exit(1);
-            }
-          }
+        if (prereqEval.allSatisfied) {
+          executionMode = (options.mode as ExecutionMode) || 'operational';
+          note(pc.green('All prerequisites are satisfied! Running in Fully Operational Mode.'), 'Prerequisites Ready');
+        } else {
+          executionMode = (options.mode as ExecutionMode) || 'limited-operational';
+          note(
+            pc.cyan(
+              '⚡ Adaptive Tooling: Limited Operational / Brainstorming Mode ready.\n' +
+              'Your Lead Orchestrator will automatically detect active tools and guide in-session configuration seamlessly.'
+            ),
+            'Operational Envelope'
+          );
         }
       }
     }
@@ -766,6 +735,16 @@ cli
               `To use this bundle in Cline, Claude Code & others: agents update ${identifier} --fanout cline,claude`
           ),
           'One library, every assistant'
+        );
+      }
+
+      if (!options.dryRun && targetBundleDef?.tier === 'organization') {
+        note(
+          pc.cyan(
+            '💡 In-Session MCP Setup: Your Lead Orchestrator will automatically check your runtime tools\n' +
+            'and guide configuration of live browser automation, design tokens, or cloud APIs on demand.'
+          ),
+          'Adaptive Tooling'
         );
       }
 

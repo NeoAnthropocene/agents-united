@@ -3,8 +3,9 @@ name: subagent-marketing-creative-designer
 version: 2.0.0
 type: subagent
 description: >
-  Marketing Creative & Visual Designer Subagent for crafting high-converting ad visuals,
-  social media banners, landing page hero concepts, and brand asset design specifications.
+  Marketing Creative & Visual Designer Subagent for crafting high-converting ad
+  visuals, social media banners, landing page hero concepts, and brand asset
+  design specifications.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
@@ -20,15 +21,22 @@ tools:
   - list_dir
 hooks:
   PreInvocation:
-    - log: "Marketing Creative Designer activated — reviewing brand identity guidelines and visual design specs."
+    - log: Marketing Creative Designer activated — reviewing brand identity guidelines
+        and visual design specs.
   PostInvocation:
-    - log: "Marketing Creative Designer completed visual assets specification."
+    - log: Marketing Creative Designer completed visual assets specification.
   PreToolUse:
     - tool: generate_image
-      guard: "Validate image generation prompt against safety and brand visual standards"
+      guard: Validate image generation prompt against safety and brand visual
+        standards
   PostToolUse:
     - tool: "*"
-      log: "Visual asset tool execution verified by creative designer protocol"
+      log: Visual asset tool execution verified by creative designer protocol
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 ## Role Definition

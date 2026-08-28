@@ -1,10 +1,13 @@
 ---
 name: replicate-model-inference
-description: Integrating hosted open-source AI models, streaming responses, webhook handlers, and fine-tuning jobs on Replicate.com.
+description: Integrating hosted open-source AI models, streaming responses,
+  webhook handlers, and fine-tuning jobs on Replicate.com.
 metadata:
-  author: "Replicate / agents-united"
-  version: "2.0.0"
-  license: "MIT"
+  author: Replicate / agents-united
+  version: 2.0.0
+  license: MIT
+  icon: 🔮
+disable-slash-command: true
 ---
 
 # Replicate Model Inference Playbook

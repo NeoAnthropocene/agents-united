@@ -3,32 +3,37 @@ name: subagent-design-systems-architect
 version: 2.0.0
 type: subagent
 description: >
-  Design Systems Architect subagent specializing in design token architecture (W3C format),
-  CSS variable scoping, component library primitive design, accessibility guidelines (WCAG 2.1 AAA),
-  and design system documentation.
+  Design Systems Architect subagent specializing in design token architecture
+  (W3C format), CSS variable scoping, component library primitive design,
+  accessibility guidelines (WCAG 2.1 AAA), and design system documentation.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - replace_file_content
   - write_to_file
   - grep_search
-
 hooks:
   PreInvocation:
-    - log: "subagent-design-systems-architect activated — loading design system tokens and component specs"
+    - log: subagent-design-systems-architect activated — loading design system tokens
+        and component specs
   PostInvocation:
-    - log: "subagent-design-systems-architect complete — design system architecture delivered"
+    - log: subagent-design-systems-architect complete — design system architecture
+        delivered
   PreToolUse:
     - tool: write_to_file
-      log: "Writing design system token file or component primitive specification"
+      log: Writing design system token file or component primitive specification
   PostToolUse:
     - tool: replace_file_content
-      log: "Design system specification updated — checking token consistency"
+      log: Design system specification updated — checking token consistency
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 # subagent-design-systems-architect — System Prompt

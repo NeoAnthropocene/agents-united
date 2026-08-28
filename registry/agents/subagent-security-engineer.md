@@ -19,15 +19,23 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "Security Engineer activated — loading vulnerability rulesets and OWASP taxonomy."
+    - log: Security Engineer activated — loading vulnerability rulesets and OWASP
+        taxonomy.
   PostInvocation:
-    - log: "Security audit complete — verify all findings include CVSS risk scores and remediation diffs."
+    - log: Security audit complete — verify all findings include CVSS risk scores and
+        remediation diffs.
   PreToolUse:
     - tool: replace_file_content
-      log: "Applying security patch — verify patch does not introduce secondary vulnerabilities."
+      log: Applying security patch — verify patch does not introduce secondary
+        vulnerabilities.
   PostToolUse:
     - tool: grep_search
-      log: "Secret scan query finished — analyze matches for false positives."
+      log: Secret scan query finished — analyze matches for false positives.
+inheritCustomizations: false
+effort: medium
+rules:
+  - git-guardrails.md
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

@@ -62,6 +62,9 @@ const ANTIGRAVITY_ONLY_KEYS = [
   'mainAgent',
   'subagent',
   'hooks',
+  'inheritCustomizations',
+  'rules',
+  'effort',
 ] as const;
 
 /** Reused from src/core/doctor.ts:48. */

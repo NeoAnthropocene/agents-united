@@ -3,8 +3,9 @@ name: subagent-seo-specialist
 version: 1.0.0
 type: subagent
 description: >
-  Search Engine Optimization (SEO) & Organic Growth Specialist Subagent for technical SEO audits,
-  programmatic SEO architectures, schema markup, and keyword search intent modeling.
+  Search Engine Optimization (SEO) & Organic Growth Specialist Subagent for
+  technical SEO audits, programmatic SEO architectures, schema markup, and
+  keyword search intent modeling.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,14 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "SEO Specialist activated — auditing crawlability, indexing, and on-page ranking factors."
+    - log: SEO Specialist activated — auditing crawlability, indexing, and on-page
+        ranking factors.
   PostInvocation:
-    - log: "SEO analysis complete — recommendations and schema specifications ready."
+    - log: SEO analysis complete — recommendations and schema specifications ready.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

@@ -1,9 +1,12 @@
 ---
 name: technical-documentation
-description: Production-grade Technical Documentation playbook for Diátaxis framework, developer onboarding, and living architecture manuals.
+description: Production-grade Technical Documentation playbook for Diátaxis
+  framework, developer onboarding, and living architecture manuals.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 📄
+disable-slash-command: true
 ---
 
 # Technical Documentation, Architecture Specs & API Reference Authoring

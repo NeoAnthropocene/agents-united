@@ -4,7 +4,8 @@ version: 1.0.0
 type: subagent
 description: >
   iOS Architecture & Swift Subagent for building native iOS applications,
-  SwiftUI components, Xcode build pipelines, and Apple Human Interface Guidelines compliance.
+  SwiftUI components, Xcode build pipelines, and Apple Human Interface
+  Guidelines compliance.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,14 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "iOS Architect activated — inspecting Swift source files and Xcode project structure."
+    - log: iOS Architect activated — inspecting Swift source files and Xcode project
+        structure.
   PostInvocation:
-    - log: "iOS task complete — verify SwiftUI memory management and HIG compliance."
+    - log: iOS task complete — verify SwiftUI memory management and HIG compliance.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

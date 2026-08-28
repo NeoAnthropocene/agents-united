@@ -2,7 +2,10 @@
 name: orchestrator-engineering
 version: 2.0.0
 type: orchestrator
-description: Autonomous Software Engineering Lead Orchestrator across universal agent ecosystems. Manages end-to-end SDLC workflows, TDD execution loops, architectural engineering, multi-subagent coordination, and automated code quality auditing.
+description: Autonomous Software Engineering Lead Orchestrator across universal
+  agent ecosystems. Manages end-to-end SDLC workflows, TDD execution loops,
+  architectural engineering, multi-subagent coordination, and automated code
+  quality auditing.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
@@ -17,6 +20,7 @@ tools:
   - list_dir
   - invoke_subagent
   - send_message
+  - schedule
 mainAgent: true
 subagent: true
 hooks:
@@ -35,7 +39,14 @@ hooks:
     - matcher: replace_file_content
       hooks:
         - type: command
-          command: echo "[Verification Gate] Code mutation detected. Verifying build status..."
+          command: echo "[Verification Gate] Code mutation detected. Verifying build
+            status..."
+effort: high
+rules:
+  - git-guardrails.md
+  - clean-code-and-architecture.md
+  - multi-agent-coordination.md
+  - test-driven-development.md
 ---
 
 # 🤖 Autonomous Software Engineering Lead Orchestrator
@@ -158,3 +169,15 @@ All engineering plans, execution summaries, and handoff reports must follow this
 - **PostInvocation**: Emits engineering lifecycle completion signal.
 - **PreToolUse**: Evaluates safety gates before shell command execution.
 - **PostToolUse**: Triggers verification checks following file content mutations.
+
+
+---
+
+## ⚡ Task Delegation & Reactive Liveness Protocol
+
+When executing long-running background tasks (e.g. test suites, build pipelines, migrations, daemon watchers) or coordinating subagents:
+1. **Background Execution**: Launch long-running operations via `run_command` with appropriate timeouts. The command runs as an asynchronous background task returning a `task-id`.
+2. **Task Management**: Use `manage_task` (`action: 'status' | 'list' | 'kill' | 'send_input'`) to inspect logs or send input without blocking the main session.
+3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
+4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
+

@@ -3,8 +3,8 @@ name: subagent-marketing-conversion-specialist
 version: 2.0.0
 type: subagent
 description: >
-  Conversion Rate Optimization (CRO) Specialist subagent analyzing landing page conversion,
-  signups, paywall upgrades, and form completion funnels.
+  Conversion Rate Optimization (CRO) Specialist subagent analyzing landing page
+  conversion, signups, paywall upgrades, and form completion funnels.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
@@ -16,15 +16,20 @@ tools:
   - replace_file_content
 hooks:
   PreInvocation:
-    - log: "Conversion Specialist activated — loading conversion funnel data and landing pages."
+    - log: Conversion Specialist activated — loading conversion funnel data and
+        landing pages.
   PostInvocation:
-    - log: "CRO audit complete — CRO recommendations and A/B test hypotheses logged."
+    - log: CRO audit complete — CRO recommendations and A/B test hypotheses logged.
   PreToolUse:
     - tool: view_file
-      log: "Analyzing landing page copy and form structure."
+      log: Analyzing landing page copy and form structure.
   PostToolUse:
     - tool: write_to_file
-      log: "Saved CRO audit report — verify ICE prioritization matrix."
+      log: Saved CRO audit report — verify ICE prioritization matrix.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

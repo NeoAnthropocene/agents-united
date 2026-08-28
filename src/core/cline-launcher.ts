@@ -117,7 +117,7 @@ export class ClineLauncher {
 
     // Check Cline fanout and Team Manifest presence
     const hasClineFanout = (lockfile.fanout || []).includes('cline');
-    const manifestRel = `.cline/agents-united/teams/${bundleName}.yaml`;
+    const manifestRel = `.agents/plugins/${bundleName}/agents-united/teams/${bundleName}.yaml`;
     const manifestPath = path.join(workspace, manifestRel);
 
     if (!hasClineFanout || !await fs.pathExists(manifestPath)) {
@@ -169,8 +169,8 @@ export class ClineLauncher {
     const strategy: ClineActivationStrategy = report.namedTeams ? 'named-team' : 'adaptive-session';
 
     const manifestRel = scope === 'global'
-      ? `~/.cline/agents-united/teams/${bundleName}.yaml`
-      : `.cline/agents-united/teams/${bundleName}.yaml`;
+      ? `~/.agents/plugins/${bundleName}/agents-united/teams/${bundleName}.yaml`
+      : `.agents/plugins/${bundleName}/agents-united/teams/${bundleName}.yaml`;
     // Coordinator role = the bundle's declared orchestrator when available; fall back to
     // orchestrator-engineering.md only to preserve pre-existing platform-manifest behavior.
     const coordinatorFile = (orchestrator || 'orchestrator-engineering.md').replace(/\.md$/, '');
@@ -179,6 +179,8 @@ export class ClineLauncher {
     const addonPolicyText = allowAddons
       ? 'Addon auto-installation is pre-authorized for this session.'
       : `Before installing any recommended addon, explain the requirement to the user and request explicit confirmation to run: agents add <addon> -t cline ${scope === 'global' ? '-g ' : ''}-y.`;
+
+    const pluginInstallText = `Before proceeding, ensure you have installed this bundle's plugin by running: cline plugin install .agents/plugins/${bundleName}`;
 
     const taskText = prompt && prompt.trim().length > 0
       ? `User task: ${prompt.trim()}`
@@ -189,6 +191,7 @@ export class ClineLauncher {
       `Read the Team Manifest at "${manifestRel}" and your coordinator role definition at "${coordinatorCanonical}" before acting.`,
       `Use specialist roles only when necessary.`,
       addonPolicyText,
+      pluginInstallText,
       taskText,
     ].join('\n\n');
 

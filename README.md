@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/agents-united.svg?color=blue)](https://www.npmjs.com/package/agents-united)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: Vitest](https://img.shields.io/badge/tests-128%2B%20passing-brightgreen.svg)](https://vitest.dev/)
+[![Tests: Vitest](https://img.shields.io/badge/tests-405%2B%20passing-brightgreen.svg)](https://vitest.dev/)
 [![TypeScript: Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
 
 ### The universal package manager for AI agents.
@@ -17,11 +17,11 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 
 - **🪶 Essentials-First & On-Demand Growth**: Every department installs as a lean **Essentials bundle** by default. When a task requires specialized capabilities, the Lead Orchestrator automatically detects the gap, recommends the exact addon, and can auto-install it directly into your project scope.
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
-- **🚀 Cline Native Activation**: Launch specialized teams into Cline CLI sessions with `agents start`, featuring compound role projections, skill toolkits, coordinator rules, and declarative team manifests.
-- **🏛️ 8 Department Domains & 22 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 45 Specialized Agents & 90+ Skills**: 7 Lead Orchestrators coordinating 38 domain sub-agents, backed by 90 production-grade runbooks and 63 deterministic workflows.
+- **🚀 Cline Native Activation**: Launch specialized teams into Cline CLI sessions with `agents start`, featuring packaged native plugins with `package.json` manifests in `.agents/plugins/<bundle>/`, skill toolkits, coordinator rules, and declarative team manifests.
+- **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
+- **🤖 58 Specialized Agents, 91 Skills & 69 Workflows**: 8 Lead Orchestrators coordinating 50 domain sub-agents, backed by 91 production-grade runbooks and 69 deterministic workflows.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
-- **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams *(Currently under development)*.
+- **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
 - **🧙 Interactive 2-Stage TUI Wizard**: Guided terminal interface powered by `@clack/prompts`, visual Unicode catalog tree (`agents list`), and fast search (`agents find`).
 - **📦 Flexible Scopes & Installation Modes**: Install to **Project Scope** (Git-tracked team lockfiles) or **Global Scope** (`~/.agents/`), using instant **Symlink Mode** or standalone **Copy Mode**.
@@ -232,7 +232,7 @@ agents add full -t gemini,claude,cursor -y
 - `--copy`: Create independent standalone copies of asset files.
 - `-t, --target <hosts>`: Target agent host runtimes (`agents`, `gemini`, `claude`, `cursor`, `cline`, `opencode`, `codex`). Default: `agents`.
 - `--fanout <hosts>`: Also project translated copies into other assistant folders.
-- `--mode <operational|brainstorming>`: Execution mode for organization bundles. Default: `operational`.
+- `--mode <operational|limited-operational|brainstorming>`: Execution mode for organization bundles. Default: `operational`.
 - `--allow-missing-prereqs`: Proceed with installation even if some prerequisites are missing.
 - `--allow-under-construction`: Bypass the Under-Construction Gate for in-development bundles.
 - `-y, --yes`: Skip confirmation prompts.
@@ -297,7 +297,9 @@ agents remove mobile-development -g -y
 ---
 
 ### `agents start <bundle> [prompt]`
-Starts an installed team bundle in its host runtime (such as Cline CLI). Automatically resolves project vs. global installations, verifies compound projection integrity, probes host runtime capabilities, constructs safe non-shell evaluated arguments, and launches the session.
+Starts an installed team bundle in its host runtime. **By design, this command currently targets the Cline CLI** because Cline provides an open, programmatic CLI (`cline "prompt"`) that allows us to inject a team context directly from the terminal (unlike other editors which do not yet expose this). 
+
+It automatically resolves project vs. global installations, verifies that Cline projections are up-to-date, probes for the `cline` executable on your system, constructs safe non-shell evaluated arguments, and launches the session.
 
 ```bash
 # Start an installed team in Cline
@@ -364,7 +366,50 @@ agents doctor
 # Audit Cline runtime installation, capability probe, and compound projection integrity
 agents doctor --host cline
 ```
+
+---
+
+## 🏢 Organization Bundles & Tri-Tier Execution Framework
+
+Organization Bundles (Tier 2 / Experimental, such as `digital-agency`) orchestrate cross-functional teams spanning Strategy, Copywriting, Design, Engineering, and Compliance. They integrate **Model Context Protocol (MCP)** tool calling, external packages, and APIs.
+
+When installing an organization bundle (`agents add <bundle>`), the CLI displays an informative evaluation of prerequisites (MCP servers, npm packages, environment variables), and immediately completes installation into your workspace in under a second with zero blocking prompts:
+
+```text
+o Prerequisite Evaluation: digital-agency (Organization Bundle) -------------------+
+|                                                                                   |
+|   ✓ [MCP] github: Detected (Configured in Antigravity)                           |
+|   ✓ [MCP] firecrawl: Detected (Configured in Antigravity)                        |
+|   ✓ [MCP] context7: Detected (Configured in Antigravity)                         |
+|   ~ [MCP] stitch: Partial (Configured in Antigravity; Missing in Cline CLI)      |
+|   ✗ [MCP] playwright: Missing (Not found in host MCP configuration)              |
+|   ✗ [MCP] markitdown: Missing (Not found in host MCP configuration)              |
+|   ✓ [MCP] chrome-devtools-mcp: Detected (Configured in Antigravity)              |
+|   ✗ [MCP] figma: Missing (Not found in host MCP configuration)                   |
+|   ✗ [Pkg] @playwright/test: Missing (Not found in node_modules or package.json)  |
+|                                                                                   |
++-----------------------------------------------------------------------------------+
+|
+o  Adaptive Tooling -----------------------------------------------------------------------------------------+
+|                                                                                                            |
+|  ⚡ Operational Envelope: Limited Operational / Brainstorming Mode ready.                                  |
+|  Your Lead Orchestrator will automatically detect active tools and guide in-session setup seamlessly.     |
+|                                                                                                            |
++------------------------------------------------------------------------------------------------------------+
 ```
+
+### In-Session Adaptive Tooling & Tri-Tier Execution Modes
+
+Organization bundles operate across three dynamic execution envelopes:
+
+| Mode | Capability Envelope | In-Session Behavior |
+| :--- | :--- | :--- |
+| **🚀 Fully Operational** | Authenticated live MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `stitch`, `figma`) | Subagents execute live browser automation, deep web crawling, design token extraction, and automated GitHub PRs. |
+| **🌿 Limited Operational** | Unauthenticated MCP tools + Native CLI Fallbacks (`git`, `curl`, code generators) | Executes immediate real-world work using local browsers and terminal tools without requiring API keys or cloud tokens. |
+| **💡 Brainstorming Mode** | Pure architectural ideation, strategy, copywriting & specification drafting | Zero tool-calling overhead; ideal for offline or air-gapped environments. |
+
+> [!TIP]
+> **Zero Friction Onboarding**: You can start working with your Lead Orchestrator immediately using native tools. If your task needs live integrations (e.g. *"Set up Playwright browser testing"*), your Orchestrator will inspect your OS, configure the exact MCP server, test the connection, and activate it interactively!
 
 ---
 ## 🌐 One Library, Every Assistant
@@ -372,7 +417,7 @@ agents doctor --host cline
 The `.agents/` folder is the **main library** — the *one* folder you edit. **Antigravity reads it directly** for interactive sessions (CLI TUI and desktop); see [ADR 0009](./docs/adr/0009-host-conformance-targets.md). Every other assistant (Claude Code, Cursor, Cline, OpenCode, Codex) can't read it natively, so Agents United writes **translated copies** it keeps in sync for you.
 
 - **Edit only `.agents/`.** That's your source of truth — the `agents-united.json` lockfile tracks it.
-- **Other assistants get their own translated copies**, in their own folders (`.claude/agents/`, `.cline/agents/`, …). Don't edit those — they're machine-managed and rewritten on every `agents update`.
+- **Other assistants get their own translated copies**, in their own folders (`.claude/agents/`, `.agents/plugins/<bundle>/`, …). Don't edit those — they're machine-managed and rewritten on every `agents update`.
 - **`--fanout` tells Agents United which assistants to make copies for.** It's remembered in the lockfile, so a plain `agents update` keeps them in sync afterwards.
 
 ```bash
@@ -404,7 +449,7 @@ agents add software-engineering -t agents --fanout claude,cursor -y --copy --dry
 What each runtime receives:
 - **Claude Code** → `.claude/agents/`
 - **Cursor** → `.cursor/agents/`
-- **Cline** → `.cline/agents/`
+- **Cline** → native plugin package in `.agents/plugins/<bundle>/` (`package.json`, `agents/`, `skills/`, `rules/`, and `agents-united/teams/`)
 - **OpenCode** → `.opencode/agent/`
 - **Codex & AGENTS.md readers** → a generated root **`AGENTS.md`** bridge indexing the canonical `.agents/` tree (no subagent loader exists for these).
 

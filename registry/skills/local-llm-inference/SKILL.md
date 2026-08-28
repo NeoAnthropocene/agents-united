@@ -1,10 +1,13 @@
 ---
 name: local-llm-inference
-description: Local and on-premise LLM inference with Ollama, vLLM, GGUF quantizations, PagedAttention, and OpenAI-compatible API servers.
+description: Local and on-premise LLM inference with Ollama, vLLM, GGUF
+  quantizations, PagedAttention, and OpenAI-compatible API servers.
 metadata:
-  author: "Ollama & vLLM Community / agents-united"
-  version: "2.0.0"
-  license: "MIT"
+  author: Ollama & vLLM Community / agents-united
+  version: 2.0.0
+  license: MIT
+  icon: 🦙
+disable-slash-command: true
 ---
 
 # Local LLM Inference Playbook

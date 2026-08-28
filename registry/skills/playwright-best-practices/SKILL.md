@@ -1,10 +1,13 @@
 ---
 name: playwright-best-practices
-description: Playwright E2E browser automation standards, Page Object Models, auto-waiting locators, test fixtures, and visual regression.
+description: Playwright E2E browser automation standards, Page Object Models,
+  auto-waiting locators, test fixtures, and visual regression.
 metadata:
-  author: "Currents / Microsoft (currents-dev/playwright-best-practices-skill)"
-  version: "1.0.0"
-  source: "https://skills.sh/currents-dev/playwright-best-practices-skill/playwright-best-practices"
+  author: Currents / Microsoft (currents-dev/playwright-best-practices-skill)
+  version: 1.0.0
+  source: https://skills.sh/currents-dev/playwright-best-practices-skill/playwright-best-practices
+  icon: 🎭
+disable-slash-command: true
 ---
 
 # Playwright E2E Testing Best Practices Playbook

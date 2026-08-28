@@ -1,10 +1,14 @@
 ---
 name: ai-prototype-refactoring
-description: Refactoring rapid AI-generated prototypes from Lovable, v0, and Bolt into production-ready modular React components, typed design tokens, and clean architectures.
+description: Refactoring rapid AI-generated prototypes from Lovable, v0, and
+  Bolt into production-ready modular React components, typed design tokens, and
+  clean architectures.
 metadata:
-  author: "Agents United Frontend Group"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United Frontend Group
+  version: 1.0.0
+  license: MIT
+  icon: 🧩
+disable-slash-command: true
 ---
 
 # AI Prototype Refactoring Playbook (Lovable / v0 / Bolt)

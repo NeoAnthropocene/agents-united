@@ -1,9 +1,13 @@
 ---
 name: programmatic-seo
-description: Production-grade Programmatic SEO playbook for data-driven landing page templates, dynamic URL routing, database seeding, schema JSON-LD, and anti-thin-content guardrails.
+description: Production-grade Programmatic SEO playbook for data-driven landing
+  page templates, dynamic URL routing, database seeding, schema JSON-LD, and
+  anti-thin-content guardrails.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🤖
+disable-slash-command: true
 ---
 
 # Programmatic SEO & Data-Driven Landing Page Generation Architecture

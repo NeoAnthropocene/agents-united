@@ -4,7 +4,8 @@ version: 2.0.0
 type: subagent
 description: >
   Marketing Campaign Specialist subagent orchestrating email nurture sequences,
-  Product Hunt launch checklists, press releases, and multi-channel campaign rollouts.
+  Product Hunt launch checklists, press releases, and multi-channel campaign
+  rollouts.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
@@ -16,15 +17,20 @@ tools:
   - replace_file_content
 hooks:
   PreInvocation:
-    - log: "Campaign Specialist activated — loading campaign brief and target audience segments."
+    - log: Campaign Specialist activated — loading campaign brief and target audience
+        segments.
   PostInvocation:
-    - log: "Campaign copy written — verify messaging aligns with brand guidelines."
+    - log: Campaign copy written — verify messaging aligns with brand guidelines.
   PreToolUse:
     - tool: write_to_file
-      log: "Writing campaign asset — checking copy structure and CTA clarity."
+      log: Writing campaign asset — checking copy structure and CTA clarity.
   PostToolUse:
     - tool: replace_file_content
-      log: "Updated campaign document — confirming formatting integrity."
+      log: Updated campaign document — confirming formatting integrity.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

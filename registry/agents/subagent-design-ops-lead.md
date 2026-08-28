@@ -3,31 +3,35 @@ name: subagent-design-ops-lead
 version: 2.0.0
 type: subagent
 description: >
-  Design Operations Lead subagent managing design-to-engineering handoffs, sprint planning,
-  design token synchronization, design system governance, and workflow automation.
+  Design Operations Lead subagent managing design-to-engineering handoffs,
+  sprint planning, design token synchronization, design system governance, and
+  workflow automation.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - write_to_file
   - grep_search
   - list_dir
-
 hooks:
   PreInvocation:
-    - log: "subagent-design-ops-lead activated — auditing design operations pipeline"
+    - log: subagent-design-ops-lead activated — auditing design operations pipeline
   PostInvocation:
-    - log: "subagent-design-ops-lead complete — design handoff and workflow plan ready"
+    - log: subagent-design-ops-lead complete — design handoff and workflow plan ready
   PreToolUse:
     - tool: write_to_file
-      log: "Writing design system governance or sprint planning document"
+      log: Writing design system governance or sprint planning document
   PostToolUse:
     - tool: "*"
-      log: "Design ops task step updated"
+      log: Design ops task step updated
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 # subagent-design-ops-lead — System Prompt

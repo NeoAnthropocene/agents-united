@@ -1,10 +1,14 @@
 ---
 name: turso-distributed-sqlite
-description: Edge-distributed SQLite databases with LibSQL, embedded replicas, multi-tenant database-per-user architectures, and low-latency replication on Turso.
+description: Edge-distributed SQLite databases with LibSQL, embedded replicas,
+  multi-tenant database-per-user architectures, and low-latency replication on
+  Turso.
 metadata:
-  author: "Agents United Backend Group"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United Backend Group
+  version: 1.0.0
+  license: MIT
+  icon: 🪶
+disable-slash-command: true
 ---
 
 # Turso Distributed SQLite Playbook

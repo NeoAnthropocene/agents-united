@@ -4,7 +4,8 @@ version: 1.0.0
 type: subagent
 description: >
   Lifecycle Email Marketing Specialist Subagent for behavioral drip campaigns,
-  churn prevention salvage flows, newsletter distribution, and subscriber retention engineering.
+  churn prevention salvage flows, newsletter distribution, and subscriber
+  retention engineering.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,14 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "Lifecycle Email Specialist activated — reviewing customer lifecycle stages and trigger events."
+    - log: Lifecycle Email Specialist activated — reviewing customer lifecycle stages
+        and trigger events.
   PostInvocation:
-    - log: "Email sequences and retention flows authored."
+    - log: Email sequences and retention flows authored.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

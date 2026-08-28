@@ -1,9 +1,12 @@
 ---
 name: product-launch-playbook
-description: Production-grade Product Launch Playbook playbook for design operations, UX systems, and growth strategy.
+description: Production-grade Product Launch Playbook playbook for design
+  operations, UX systems, and growth strategy.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🚀
+disable-slash-command: true
 ---
 
 # Product Launch Playbook

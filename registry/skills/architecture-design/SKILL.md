@@ -1,9 +1,11 @@
 ---
 name: architecture-design
-description: Production-grade Architecture Design playbook for microservices, event-driven backends, and C4 domain modeling.
+description: Production-grade Architecture Design playbook for microservices,
+  event-driven backends, and C4 domain modeling.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 📐
 ---
 
 # System Architecture Design & ADR Management

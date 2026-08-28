@@ -1,9 +1,13 @@
 ---
 name: churn-prevention-playbook
-description: Production-grade Churn Prevention Playbook for customer health scoring, early warning detection, automated retention workflows, and exit survey salvage offers.
+description: Production-grade Churn Prevention Playbook for customer health
+  scoring, early warning detection, automated retention workflows, and exit
+  survey salvage offers.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🛡️
+disable-slash-command: true
 ---
 
 # Customer Churn Prevention Playbook & Retention Automation

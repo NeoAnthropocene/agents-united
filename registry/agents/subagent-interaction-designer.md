@@ -11,23 +11,29 @@ permissionMode: acceptEdits
 commandExecutionPolicy: ask
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - replace_file_content
   - write_to_file
-
 hooks:
   PreInvocation:
-    - log: "Interaction Designer activated — loading motion system and component inventory."
+    - log: Interaction Designer activated — loading motion system and component
+        inventory.
   PostInvocation:
-    - log: "Interaction Designer complete — verify reduced-motion fallbacks are in place."
+    - log: Interaction Designer complete — verify reduced-motion fallbacks are in
+        place.
   PreToolUse:
     - tool: write_to_file
-      log: "Writing animation code — confirm prefers-reduced-motion block is included."
+      log: Writing animation code — confirm prefers-reduced-motion block is included.
   PostToolUse:
     - tool: replace_file_content
-      log: "Animation updated — check for performance regressions (compositor vs main-thread)."
+      log: Animation updated — check for performance regressions (compositor vs
+        main-thread).
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

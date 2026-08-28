@@ -3,8 +3,9 @@ name: subagent-plg-strategist
 version: 1.0.0
 type: subagent
 description: >
-  Product-Led Growth (PLG) & Conversion Rate Optimization Strategist Subagent for self-serve onboarding,
-  viral referral loops, feature discovery telemetry, and paywall upgrade flows.
+  Product-Led Growth (PLG) & Conversion Rate Optimization Strategist Subagent
+  for self-serve onboarding, viral referral loops, feature discovery telemetry,
+  and paywall upgrade flows.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,14 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "PLG Strategist activated — analyzing activation milestones and user journey friction points."
+    - log: PLG Strategist activated — analyzing activation milestones and user journey
+        friction points.
   PostInvocation:
-    - log: "PLG strategy blueprint finalized."
+    - log: PLG strategy blueprint finalized.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

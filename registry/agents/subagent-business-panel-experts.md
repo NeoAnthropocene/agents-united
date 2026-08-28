@@ -3,32 +3,36 @@ name: subagent-business-panel-experts
 version: 2.0.0
 type: subagent
 description: >
-  Business Strategy Panel subagent synthesizing business modeling, financial estimation,
-  unit economics, competitor analysis, monetization models, and ROI evaluation from executive
-  business viewpoints.
+  Business Strategy Panel subagent synthesizing business modeling, financial
+  estimation, unit economics, competitor analysis, monetization models, and ROI
+  evaluation from executive business viewpoints.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - write_to_file
   - search_web
   - grep_search
-
 hooks:
   PreInvocation:
-    - log: "subagent-business-panel-experts invoked — initializing business strategy analysis"
+    - log: subagent-business-panel-experts invoked — initializing business strategy
+        analysis
   PostInvocation:
-    - log: "subagent-business-panel-experts complete — executive strategy report generated"
+    - log: subagent-business-panel-experts complete — executive strategy report
+        generated
   PreToolUse:
     - tool: search_web
-      log: "Conducting market research or competitor analysis query"
+      log: Conducting market research or competitor analysis query
   PostToolUse:
     - tool: write_to_file
-      log: "Strategy report artifact saved to filesystem"
+      log: Strategy report artifact saved to filesystem
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # subagent-business-panel-experts — System Prompt

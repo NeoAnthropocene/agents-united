@@ -1,10 +1,14 @@
 ---
 name: hf-model-evaluation
-description: Automated evaluation, benchmarking, dataset curation, and leaderboard metric verification using the Hugging Face ecosystem (Evaluate, Datasets, Transformers).
+description: Automated evaluation, benchmarking, dataset curation, and
+  leaderboard metric verification using the Hugging Face ecosystem (Evaluate,
+  Datasets, Transformers).
 metadata:
-  author: "Hugging Face / agents-united"
-  version: "2.0.0"
-  license: "MIT"
+  author: Hugging Face / agents-united
+  version: 2.0.0
+  license: MIT
+  icon: 🤗
+disable-slash-command: true
 ---
 
 # Hugging Face Model Evaluation Playbook

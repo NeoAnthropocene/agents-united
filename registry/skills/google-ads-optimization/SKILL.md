@@ -1,10 +1,13 @@
 ---
 name: google-ads-optimization
-description: Google Search & Performance Max campaign optimization, keyword match types, negative keyword sculpting, and Quality Score improvement.
+description: Google Search & Performance Max campaign optimization, keyword
+  match types, negative keyword sculpting, and Quality Score improvement.
 metadata:
-  author: "Agents United Performance Group"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United Performance Group
+  version: 1.0.0
+  license: MIT
+  icon: 📈
+disable-slash-command: true
 ---
 
 # Google Ads Optimization Playbook

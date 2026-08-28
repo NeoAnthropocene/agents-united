@@ -1,9 +1,13 @@
 ---
 name: viral-referral-loops
-description: Production-grade Viral Referral Loops playbook for double-sided incentive architectures, K-factor viral loop equations, in-app share mechanics, and fraud-resistant referral engines.
+description: Production-grade Viral Referral Loops playbook for double-sided
+  incentive architectures, K-factor viral loop equations, in-app share
+  mechanics, and fraud-resistant referral engines.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🔄
+disable-slash-command: true
 ---
 
 # Viral Referral Loops & Product-Led Organic Expansion Architecture

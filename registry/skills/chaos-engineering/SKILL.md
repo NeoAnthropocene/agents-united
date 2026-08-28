@@ -1,10 +1,13 @@
 ---
 name: chaos-engineering
-description: Chaos engineering methodology, fault injection, network latency simulation, service degradation tests, and disaster recovery validation.
+description: Chaos engineering methodology, fault injection, network latency
+  simulation, service degradation tests, and disaster recovery validation.
 metadata:
-  author: "Agents United Core Team"
-  version: "1.0.0"
-  source: "https://github.com/NeoAnthropocene/agents-united"
+  author: Agents United Core Team
+  version: 1.0.0
+  source: https://github.com/NeoAnthropocene/agents-united
+  icon: 💥
+disable-slash-command: true
 ---
 
 # Chaos Engineering & Fault Injection Playbook

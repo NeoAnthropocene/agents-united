@@ -7,7 +7,7 @@ export type Scope = InstallScope;
 
 export type BundleTier = 'domain' | 'organization';
 export type BundleStatus = 'stable' | 'experimental' | 'under-construction' | 'needs-audit' | 'deprecated';
-export type ExecutionMode = 'operational' | 'brainstorming';
+export type ExecutionMode = 'operational' | 'limited-operational' | 'brainstorming';
 
 export interface RequiredMcp {
   name: string;
@@ -31,9 +31,11 @@ export interface PrerequisiteItemCheck {
   name: string;
   purpose?: string;
   satisfied: boolean;
-  status: 'ok' | 'missing';
+  status: 'ok' | 'missing' | 'partial';
   details?: string;
   optionalForBrainstorming?: boolean;
+  detectedInHosts?: string[];
+  missingInHosts?: string[];
 }
 
 export interface PrerequisiteEvaluation {
@@ -84,7 +86,7 @@ export interface LockfileAsset {
   projectedTo?: string[];
 }
 
-export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'bridge';
+export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'bridge' | 'plugin-manifest';
 
 export interface LockfileProjection {
   host: string;
@@ -296,5 +298,62 @@ export interface SearchResults {
   skills: string[];
   workflows: string[];
 }
+
+export type ModelTier = 'inherit' | 'pro' | 'flash';
+export type ReasoningEffort = 'low' | 'medium' | 'high';
+export type PermissionMode = 'acceptEdits' | 'requestReview' | 'strict' | 'readOnly';
+export type CommandExecutionPolicy = 'auto' | 'ask' | 'never';
+
+export interface AgentHook {
+  matcher: string;
+  action: string;
+}
+
+export interface AgentFrontmatter {
+  name: string;
+  version?: string;
+  type?: 'orchestrator' | 'subagent';
+  description?: string;
+  model?: ModelTier;
+  effort?: ReasoningEffort;
+  permissionMode?: PermissionMode;
+  commandExecutionPolicy?: CommandExecutionPolicy;
+  mainAgent?: boolean;
+  subagent?: boolean;
+  inheritCustomizations?: boolean;
+  rules?: string[];
+  tools?: string[];
+  hooks?: Record<string, AgentHook[]>;
+}
+
+export interface SkillMetadata {
+  author?: string;
+  version?: string;
+  icon?: string;
+  source?: string;
+  license?: string;
+}
+
+export interface SkillFrontmatter {
+  name: string;
+  description: string;
+  'disable-slash-command'?: boolean;
+  disableSlashCommand?: boolean;
+  metadata?: SkillMetadata;
+}
+
+export interface ClinePluginManifest {
+  name: string;
+  version: string;
+  description: string;
+  cline: {
+    plugins: Array<{
+      paths?: string[];
+      capabilities: string[];
+      skills?: string[];
+    }>;
+  };
+}
+
 
 

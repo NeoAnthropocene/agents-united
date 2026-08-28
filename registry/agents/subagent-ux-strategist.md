@@ -4,8 +4,8 @@ version: 2.0.0
 type: subagent
 description: >
   UX Strategy and information architecture expert. Maps user journeys, optimizes
-  task flows, reduces onboarding friction, implements progressive disclosure, and
-  analyses conversion funnels to produce research-backed UX recommendations.
+  task flows, reduces onboarding friction, implements progressive disclosure,
+  and analyses conversion funnels to produce research-backed UX recommendations.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -17,15 +17,20 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "UX Strategist activated — loading product context and user data."
+    - log: UX Strategist activated — loading product context and user data.
   PostInvocation:
-    - log: "UX Strategist complete — ensure recommendations are logged in strategy doc."
+    - log: UX Strategist complete — ensure recommendations are logged in strategy doc.
   PreToolUse:
     - tool: write_to_file
-      log: "Writing strategy artifact — confirm audience and scope are correct."
+      log: Writing strategy artifact — confirm audience and scope are correct.
   PostToolUse:
     - tool: replace_file_content
-      log: "Content updated — validate that user journey integrity is preserved."
+      log: Content updated — validate that user journey integrity is preserved.
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

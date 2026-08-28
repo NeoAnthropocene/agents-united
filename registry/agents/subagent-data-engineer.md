@@ -3,8 +3,9 @@ name: subagent-data-engineer
 version: 1.0.0
 type: subagent
 description: >
-  Data Engineer subagent for relational database design (PostgreSQL/MySQL), schema migrations (Prisma/Drizzle/Flyway),
-  indexing strategy, query execution plan optimization, and data pipelines.
+  Data Engineer subagent for relational database design (PostgreSQL/MySQL),
+  schema migrations (Prisma/Drizzle/Flyway), indexing strategy, query execution
+  plan optimization, and data pipelines.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -18,9 +19,14 @@ tools:
   - write_to_file
 hooks:
   PreInvocation:
-    - log: "Data Engineer activated — inspecting schema definitions and SQL queries."
+    - log: Data Engineer activated — inspecting schema definitions and SQL queries.
   PostInvocation:
-    - log: "Data task complete — verify migration backward compatibility and index efficiency."
+    - log: Data task complete — verify migration backward compatibility and index
+        efficiency.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

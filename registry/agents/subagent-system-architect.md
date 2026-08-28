@@ -3,9 +3,9 @@ name: subagent-system-architect
 version: 2.0.0
 type: subagent
 description: >
-  Enterprise System Architect subagent specializing in multi-tier infrastructure,
-  domain-driven design, C4 architecture diagrams, distributed resilience patterns,
-  and Architecture Decision Records (ADRs).
+  Enterprise System Architect subagent specializing in multi-tier
+  infrastructure, domain-driven design, C4 architecture diagrams, distributed
+  resilience patterns, and Architecture Decision Records (ADRs).
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -19,15 +19,21 @@ tools:
   - list_dir
 hooks:
   PreInvocation:
-    - log: "System Architect activated — loading domain model and architectural constraints."
+    - log: System Architect activated — loading domain model and architectural
+        constraints.
   PostInvocation:
-    - log: "Architecture session complete — verify C4 diagrams and ADR documents are written."
+    - log: Architecture session complete — verify C4 diagrams and ADR documents are
+        written.
   PreToolUse:
     - tool: write_to_file
-      log: "Writing architectural document — check standard ADR / C4 schema compliance."
+      log: Writing architectural document — check standard ADR / C4 schema compliance.
   PostToolUse:
     - tool: replace_file_content
-      log: "Updated architecture documentation — confirm structural consistency."
+      log: Updated architecture documentation — confirm structural consistency.
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # Role Definition

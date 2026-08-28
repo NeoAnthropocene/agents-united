@@ -70,9 +70,9 @@ describe('007 — Cross-domain generalization of the lifecycle conformance suite
     ]);
   });
 
-  it('derives exactly 13 addons total across all domains', () => {
+  it('derives exactly 23 addons total across all domains', () => {
     const total = DOMAINS.reduce((s, d) => s + d.addons.length, 0);
-    expect(total).toBe(13);
+    expect(total).toBe(23);
   });
 
   it('every addon referenced is present in bundles.json', () => {
@@ -219,8 +219,8 @@ describe('007 — Cross-domain generalization of the lifecycle conformance suite
             for (const rel of h.projEssentialsOnly(addon)) {
               expect(await fs.pathExists(path.join(testWorkspace, rel))).toBe(false);
             }
-            expect(await fs.pathExists(path.join(testWorkspace, '.cline'))).toBe(true);
-            expect(await collectEmptyDirs(path.join(testWorkspace, '.cline'))).toEqual([]);
+            expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(true);
+            expect(await collectEmptyDirs(path.join(testWorkspace, '.agents', 'plugins'))).toEqual([]);
           });
 
           itm('B2: essentials then addon — zero managed files', async () => {

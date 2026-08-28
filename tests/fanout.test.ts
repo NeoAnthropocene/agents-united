@@ -39,7 +39,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
     expect(claude).toContain('Read');
 
     // Cline projection present
-    const clineProj = path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.md');
+    const clineProj = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
     expect(await fs.pathExists(clineProj)).toBe(true);
 
     // Lockfile projectedTo recorded (forward slashes, workspace-root-relative)
@@ -47,7 +47,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
     const asset = lockfile.files[['agents', 'orchestrator-engineering.md'].join('/')];
     expect(asset).toBeDefined();
     expect(asset.projectedTo).toContain('.claude/agents/orchestrator-engineering.md');
-    expect(asset.projectedTo).toContain('.cline/agents/orchestrator-engineering.md');
+    expect(asset.projectedTo).toContain('.agents/plugins/software-engineering/agents/orchestrator-engineering.md');
 
     // result.projections surfaced to the CLI caller
     expect(result.projections.some(p => p.host === 'claude' && p.path === '.claude/agents/orchestrator-engineering.md')).toBe(true);
@@ -87,7 +87,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
 
   it('throws on a pre-existing user file at the projection destination without --force', async () => {
     const installer = new InstallEngine();
-    const clineDir = path.join(testWorkspace, '.cline', 'agents');
+    const clineDir = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents');
     await fs.ensureDir(clineDir);
     await fs.writeFile(path.join(clineDir, 'orchestrator-engineering.md'), 'user file', 'utf8');
 
@@ -111,7 +111,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
       fanout: ['cline'],
     });
 
-    // Second install with fanout, NO force: the existing .cline files are our own
+    // Second install with fanout, NO force: the existing .agents/plugins files are our own
     // managed projections (deterministic content), so they must be regenerated, not collided.
     const result = await installer.install('software-engineering', {
       targetDir: agentsDir,
@@ -121,7 +121,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
 
     expect(result.projections.some(p => p.host === 'cline')).toBe(true);
     const proj = await fs.readFile(
-      path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.md'),
+      path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md'),
       'utf8'
     );
     expect(proj).toContain('managed-by: agents-united');

@@ -1,10 +1,13 @@
 ---
 name: ci-cd-pipeline-automation
-description: Automates CI/CD delivery pipelines, GitHub Actions workflows, container builds, and staging preview deployments.
+description: Automates CI/CD delivery pipelines, GitHub Actions workflows,
+  container builds, and staging preview deployments.
 metadata:
-  author: "Agents United Core Team"
-  version: "1.0.0"
-  source: "https://github.com/NeoAnthropocene/agents-united"
+  author: Agents United Core Team
+  version: 1.0.0
+  source: https://github.com/NeoAnthropocene/agents-united
+  icon: 🚀
+disable-slash-command: true
 ---
 
 # CI/CD Pipeline Automation Playbook

@@ -1,10 +1,13 @@
 ---
 name: grill-with-docs
-description: Interactive alignment grilling session that asks deep probing questions before coding, establishes ubiquitous domain vocabulary (CONTEXT.md), and records architectural decisions (ADRs).
+description: Interactive alignment grilling session that asks deep probing
+  questions before coding, establishes ubiquitous domain vocabulary
+  (CONTEXT.md), and records architectural decisions (ADRs).
 metadata:
-  author: "Matt Pocock (mattpocock/skills)"
-  version: "1.0.0"
-  source: "https://github.com/mattpocock/skills"
+  author: Matt Pocock (mattpocock/skills)
+  version: 2.0.0
+  source: https://github.com/mattpocock/skills
+  icon: 📚
 ---
 
 # Grill With Docs: Socratic Alignment & Domain Documentation
@@ -26,7 +29,7 @@ metadata:
 ### Inputs
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `topic` | String | Yes | Feature, task, or architectural change to align on |
+| `topic` | String / Audio (.mp3, .wav, .m4a) | Yes | Feature, task, architecture doc, or audio voice memo / recording to align on |
 | `issue_tracker` | String | Optional | Target tracker (`github`, `linear`, or `local`) |
 | `doc_path` | String | Optional | Path for documentation output (default: `docs/adr/`) |
 
@@ -38,10 +41,12 @@ metadata:
 
 ## Step-by-Step Execution Runbook
 
-### Phase 1 — Socratic Alignment Interview
-1. Ask 3–5 probing, targeted questions about the requested feature (e.g., boundaries, data flow, edge cases, failure modes).
-2. Wait for developer responses before proceeding.
-3. Challenge ambiguous assumptions or underspecified constraints.
+### Phase 1 — Socratic Alignment Interview & Multimodal Ingestion
+1. Ingest input topic, design documents, or audio voice recordings.
+2. If audio recordings or dictations are provided, extract architectural requirements and terminology before questioning.
+3. Ask 3–5 probing, targeted questions about the requested feature (e.g., boundaries, data flow, edge cases, failure modes).
+4. Wait for developer responses before proceeding.
+5. Challenge ambiguous assumptions or underspecified constraints.
 
 ### Phase 2 — Ubiquitous Language & Domain Modeling
 1. Identify new domain concepts, entity names, or system jargon surfaced during grilling.
@@ -76,3 +81,4 @@ Reduces human-in-the-loop overhead while keeping security constraints explicit.
 - [ ] Frontmatter includes `author: "Matt Pocock (mattpocock/skills)"`.
 - [ ] `CONTEXT.md` updated with any newly introduced domain terms.
 - [ ] ADR document saved with proper sequence number under `docs/adr/`.
+- [ ] Audio inputs (voice notes/files) are transcribed and synthesized accurately.

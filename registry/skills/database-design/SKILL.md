@@ -1,9 +1,12 @@
 ---
 name: database-design
-description: Production-grade Database Design playbook for high-throughput transactional schemas, indexing, and migrations.
+description: Production-grade Database Design playbook for high-throughput
+  transactional schemas, indexing, and migrations.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🗄️
+disable-slash-command: true
 ---
 
 # Relational & NoSQL Database Schema Design

@@ -4,6 +4,7 @@ import os from 'node:os';
 import fs from 'fs-extra';
 import { execSync, spawnSync } from 'node:child_process';
 import { PrerequisiteChecker } from '../src/core/prerequisites.js';
+import { McpLocationRegistry } from '../src/core/mcp-locations.js';
 import { RegistryResolver } from '../src/core/registry.js';
 
 describe('PrerequisiteChecker & Organization Bundles', () => {
@@ -38,7 +39,7 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     const agencyBundle = await registry.getBundle('digital-agency');
     expect(agencyBundle).toBeDefined();
     expect(agencyBundle?.tier).toBe('organization');
-    expect(agencyBundle?.status).toBe('under-construction');
+    expect(agencyBundle?.status).toBe('experimental');
     expect(agencyBundle?.prerequisites?.requiredMcps).toBeDefined();
     expect(agencyBundle?.modes?.operational).toBeDefined();
     expect(agencyBundle?.modes?.brainstorming).toBeDefined();
@@ -56,12 +57,6 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     const firecrawlCheck = result.items.find(i => i.name === 'firecrawl');
     expect(firecrawlCheck).toBeDefined();
     expect(firecrawlCheck?.type).toBe('mcp');
-
-    // Env check
-    const envCheck = result.items.find(i => i.name === 'FIRECRAWL_API_KEY');
-    expect(envCheck).toBeDefined();
-    expect(envCheck?.type).toBe('env');
-    expect(envCheck?.satisfied).toBe(false);
   });
 
   it('should detect MCP when configured in .cursor/mcp.json', async () => {
@@ -121,6 +116,128 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     const check = await PrerequisiteChecker.isPackageInstalled('@playwright/test', testWorkspace);
     expect(check.installed).toBe(true);
   });
+
+  it('should auto-configure host MCP settings file in workspace via autoConfigureHost', async () => {
+    const res = await PrerequisiteChecker.autoConfigureHost(
+      'cursor',
+      ['github', 'firecrawl', 'context7'],
+      testWorkspace,
+      'operational'
+    );
+    expect(res.configured).toBe(true);
+    expect(res.addedServers).toEqual(['github', 'firecrawl', 'context7']);
+
+    const targetJson = await fs.readJson(path.join(testWorkspace, '.cursor', 'mcp.json'));
+    expect(targetJson.mcpServers.github).toBeDefined();
+    expect(targetJson.mcpServers.firecrawl).toBeDefined();
+    expect(targetJson.mcpServers.context7).toBeDefined();
+  });
+
+  it('should match MCP servers using multi-signal hybrid matching (aliases, docker, URLs)', async () => {
+    // 1. Key alias matches
+    expect(PrerequisiteChecker.matchesMcpServer('github', 'github-mcp-server')).toBe(true);
+    expect(PrerequisiteChecker.matchesMcpServer('stitch', 'StitchMCP')).toBe(true);
+    expect(PrerequisiteChecker.matchesMcpServer('playwright', 'playwright-mcp')).toBe(true);
+
+    // 2. Executable / Docker image matches
+    expect(
+      PrerequisiteChecker.matchesMcpServer('github', 'custom-name', {
+        command: 'docker',
+        args: ['run', 'ghcr.io/github/github-mcp-server'],
+      })
+    ).toBe(true);
+
+    // 3. Remote URL matches
+    expect(
+      PrerequisiteChecker.matchesMcpServer('stitch', 'my-remote-ui', {
+        url: 'https://stitch.googleapis.com/mcp',
+      })
+    ).toBe(true);
+
+    expect(
+      PrerequisiteChecker.matchesMcpServer('context7', 'c7', {
+        serverUrl: 'https://mcp.context7.com/mcp',
+      })
+    ).toBe(true);
+  });
+
+  it('should auto-enable disabled MCP servers without overwriting credentials', async () => {
+    const configPath = path.join(testWorkspace, 'mcp_test_config.json');
+    await fs.writeJson(configPath, {
+      mcpServers: {
+        StitchMCP: {
+          command: 'npx',
+          args: ['-y', 'mcp-remote', 'https://stitch.googleapis.com/mcp', '--header', 'X-Goog-Api-Key: secret123'],
+          disabled: true,
+        },
+      },
+    });
+
+    const res = await PrerequisiteChecker.autoConfigureConfigFile(configPath, ['stitch', 'figma'], 'operational');
+    expect(res.success).toBe(true);
+    expect(res.enabledServers).toContain('StitchMCP');
+    expect(res.addedServers).toContain('figma');
+
+    const updated = await fs.readJson(configPath);
+    expect(updated.mcpServers.StitchMCP.disabled).toBe(false);
+    expect(updated.mcpServers.StitchMCP.args).toContain('X-Goog-Api-Key: secret123');
+    expect(updated.mcpServers.figma).toBeDefined();
+  });
+
+  it('should discover host config files across workspace and system candidates', async () => {
+    const discovered = await PrerequisiteChecker.discoverHostConfigFiles(testWorkspace);
+    expect(discovered.length).toBeGreaterThan(0);
+    const geminiCandidate = discovered.find(d => d.host === 'gemini');
+    expect(geminiCandidate).toBeDefined();
+  });
+
+  it('should resolve primary write path for hosts in McpLocationRegistry', () => {
+    const geminiPath = McpLocationRegistry.getPrimaryWritePath('gemini', testWorkspace);
+    expect(geminiPath).toContain('mcp_config.json');
+
+    const clinePath = McpLocationRegistry.getPrimaryWritePath('cline', testWorkspace);
+    expect(clinePath).toContain('cline_mcp_settings.json');
+
+    const cursorPath = McpLocationRegistry.getPrimaryWritePath('cursor', testWorkspace);
+    expect(cursorPath).toContain('.cursor');
+  });
+
+  it('should evaluate partial status when MCP is present in one target host and missing in another', async () => {
+    const checker = new PrerequisiteChecker();
+    const mockBundle: BundleDefinition = {
+      name: 'test-partial-bundle',
+      tier: 'organization',
+      prerequisites: {
+        requiredMcps: [{ name: 'custom-partial-mcp' }],
+      },
+    };
+
+    // Create a mock Antigravity config containing custom-partial-mcp
+    const geminiDir = path.join(testWorkspace, '.gemini', 'config');
+    await fs.ensureDir(geminiDir);
+    await fs.writeJson(path.join(geminiDir, 'mcp_config.json'), {
+      mcpServers: {
+        'custom-partial-mcp': {
+          command: 'npx',
+          args: ['-y', 'custom-partial-mcp'],
+        },
+      },
+    });
+
+    // Evaluate for both Antigravity ('agents') and 'cursor'
+    const evalResult = await checker.evaluate(mockBundle, {
+      cwd: testWorkspace,
+      targetHosts: ['agents', 'cursor'],
+    });
+
+    const mcpCheck = evalResult.items.find(i => i.name === 'custom-partial-mcp');
+    expect(mcpCheck).toBeDefined();
+    // It is detected in Antigravity, but missing in Cursor -> Partial
+    expect(mcpCheck?.status).toBe('partial');
+    expect(mcpCheck?.satisfied).toBe(false);
+    expect(mcpCheck?.details).toContain('Google Antigravity');
+    expect(mcpCheck?.details).toContain('Cursor');
+  });
 });
 
 describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
@@ -130,6 +247,8 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
     const stdout = execSync(`node "${cliPath}" list`, { encoding: 'utf8' });
     expect(stdout).toContain('Organization Bundles (Experimental / Cross-Functional)');
     expect(stdout).toContain('digital-agency');
+    expect(stdout).toContain('[Experimental]');
+    expect(stdout).toContain('mock-organization-under-construction');
     expect(stdout).toContain('[Under Construction (TBA)]');
     expect(stdout).toContain('[Prerequisites Required]');
     expect(stdout).toContain('universal-skills');
@@ -142,16 +261,21 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
     const stdout = execSync(`node "${cliPath}" list --json`, { encoding: 'utf8' });
     const bundles = JSON.parse(stdout);
     const agency = bundles.find((b: any) => b.name === 'digital-agency');
+    const mock = bundles.find((b: any) => b.name === 'mock-organization-under-construction');
     const engineering = bundles.find((b: any) => b.name === 'software-engineering');
     const design = bundles.find((b: any) => b.name === 'product-design');
     const universalSkills = bundles.find((b: any) => b.name === 'universal-skills');
 
     expect(agency).toBeDefined();
     expect(agency.tier).toBe('organization');
-    expect(agency.status).toBe('under-construction');
+    expect(agency.status).toBe('experimental');
     expect(agency.prerequisites.requiredMcps.length).toBeGreaterThan(0);
     expect(agency.modes.operational).toBeDefined();
+    expect(agency.modes.limitedOperational || agency.modes['limited-operational']).toBeDefined();
     expect(agency.modes.brainstorming).toBeDefined();
+    
+    expect(mock).toBeDefined();
+    expect(mock.status).toBe('under-construction');
 
     expect(engineering).toBeDefined();
     expect(engineering.status).toBe('stable');
@@ -164,7 +288,7 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
   });
 
   it('should block headless install for under-construction bundles', () => {
-    const res = spawnSync('node', [cliPath, 'add', 'digital-agency', '-y', '--dry-run'], {
+    const res = spawnSync('node', [cliPath, 'add', 'mock-organization-under-construction', '-y', '--dry-run'], {
       encoding: 'utf8',
     });
     expect(res.status).toBe(1);
@@ -173,17 +297,27 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
 
   it('should allow install when --allow-under-construction and --mode brainstorming are passed', () => {
     const stdout = execSync(
-      `node "${cliPath}" add digital-agency --allow-under-construction --mode brainstorming -y --dry-run`,
+      `node "${cliPath}" add mock-organization-under-construction --allow-under-construction --mode brainstorming -y --dry-run`,
       { encoding: 'utf8' }
     );
     expect(stdout).toContain('[DRY RUN] Would install');
   });
 
-  it('should allow forced install with --allow-under-construction and --allow-missing-prereqs', () => {
+  it('should allow install when --allow-under-construction and --allow-missing-prereqs', () => {
     const stdout = execSync(
-      `node "${cliPath}" add digital-agency --allow-under-construction --allow-missing-prereqs -y --dry-run`,
+      `node "${cliPath}" add mock-organization-under-construction --allow-under-construction --allow-missing-prereqs -y --dry-run`,
+      { encoding: 'utf8' }
+    );
+    expect(stdout).toContain('[DRY RUN] Would install');
+  });
+
+  it('should allow install of organization bundle in limited-operational mode', () => {
+    const stdout = execSync(
+      `node "${cliPath}" add digital-agency --mode limited-operational -y --dry-run`,
       { encoding: 'utf8' }
     );
     expect(stdout).toContain('[DRY RUN] Would install');
   });
 });
+
+

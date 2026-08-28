@@ -1,9 +1,11 @@
 ---
 name: test-driven-development
-description: Production-grade Test-Driven Development playbook for Red-Green-Refactor discipline, unit testing, and contract assertions.
+description: Production-grade Test-Driven Development playbook for
+  Red-Green-Refactor discipline, unit testing, and contract assertions.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🧪
 ---
 
 # Test-Driven Development (TDD) Red-Green-Refactor Protocol

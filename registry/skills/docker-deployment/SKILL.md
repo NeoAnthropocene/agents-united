@@ -1,9 +1,12 @@
 ---
 name: docker-deployment
-description: Production-grade Docker Deployment playbook for minimal footprint, rootless execution, and multi-stage builds.
+description: Production-grade Docker Deployment playbook for minimal footprint,
+  rootless execution, and multi-stage builds.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🐳
+disable-slash-command: true
 ---
 
 # Containerization, Dockerfile Hardening & Multi-Stage Deployment

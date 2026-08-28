@@ -1,9 +1,12 @@
 ---
 name: requesting-code-review
-description: Production-grade Requesting Code Review playbook for authoring high-context PRs, reviewer routing, and accelerating velocity.
+description: Production-grade Requesting Code Review playbook for authoring
+  high-context PRs, reviewer routing, and accelerating velocity.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 📨
+disable-slash-command: true
 ---
 
 # Requesting Code Review & Authoring High-Context Pull Requests

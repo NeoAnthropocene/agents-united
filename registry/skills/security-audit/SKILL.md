@@ -1,9 +1,12 @@
 ---
 name: security-audit
-description: Production-grade Security Audit playbook for vulnerability assessment, SAST scanning, and zero-trust verification.
+description: Production-grade Security Audit playbook for vulnerability
+  assessment, SAST scanning, and zero-trust verification.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🔒
+disable-slash-command: true
 ---
 
 # Application Security Audit, Threat Modeling & OWASP Top 10

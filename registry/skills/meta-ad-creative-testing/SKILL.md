@@ -1,10 +1,13 @@
 ---
 name: meta-ad-creative-testing
-description: Meta Ads creative testing frameworks, dynamic creative optimization (DCO), video hook retention analysis, and scaling rules.
+description: Meta Ads creative testing frameworks, dynamic creative optimization
+  (DCO), video hook retention analysis, and scaling rules.
 metadata:
-  author: "Agents United Performance Group"
-  version: "1.0.0"
-  license: "MIT"
+  author: Agents United Performance Group
+  version: 1.0.0
+  license: MIT
+  icon: 🎨
+disable-slash-command: true
 ---
 
 # Meta Ad Creative Testing Playbook

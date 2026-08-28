@@ -1,9 +1,13 @@
 ---
 name: email-drip-sequences
-description: Production-grade Email Drip Sequences playbook for automated lifecycle nurturing, behavioral trigger branching, deliverability optimization (DKIM/DMARC), and trial-to-paid conversion.
+description: Production-grade Email Drip Sequences playbook for automated
+  lifecycle nurturing, behavioral trigger branching, deliverability optimization
+  (DKIM/DMARC), and trial-to-paid conversion.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 💧
+disable-slash-command: true
 ---
 
 # Automated Lifecycle Email Drip Sequences & Behavioral Nurturing

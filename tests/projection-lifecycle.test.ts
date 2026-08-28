@@ -35,7 +35,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
     });
 
     const claudeProj = path.join(testWorkspace, '.claude', 'agents', 'orchestrator-engineering.md');
-    const clineProj = path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.md');
+    const clineProj = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
     expect(await fs.pathExists(claudeProj)).toBe(true);
     expect(await fs.pathExists(clineProj)).toBe(true);
 
@@ -46,7 +46,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
     expect(await fs.pathExists(claudeProj)).toBe(false);
     expect(await fs.pathExists(clineProj)).toBe(false);
     expect(await fs.pathExists(path.join(testWorkspace, '.claude'))).toBe(false);
-    expect(await fs.pathExists(path.join(testWorkspace, '.cline'))).toBe(false);
+    expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(false);
 
     const lockfile = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
     for (const asset of Object.values(lockfile.files)) {
@@ -196,7 +196,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
       fanout: ['cline'],
     });
 
-    const clineProj = path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.md');
+    const clineProj = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
     expect(await fs.pathExists(clineProj)).toBe(true);
 
     // Make the bundle look outdated so update actually re-installs
@@ -222,12 +222,12 @@ describe('Projection lifecycle (plan 007 M5)', () => {
     // projectedTo tracking preserved after update
     const lf2: LockfileManifest = await fs.readJson(lockfilePath);
     const asset = lf2.files[['agents', 'orchestrator-engineering.md'].join('/')];
-    expect(asset.projectedTo).toContain('.cline/agents/orchestrator-engineering.md');
+    expect(asset.projectedTo).toContain('.agents/plugins/software-engineering/agents/orchestrator-engineering.md');
 
     // And uninstall after update removes the projection (no orphans)
     const uninstaller = new UninstallEngine();
     await uninstaller.uninstall('software-engineering', { targetDir: agentsDir });
-    expect(await fs.pathExists(path.join(testWorkspace, '.cline'))).toBe(false);
+    expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(false);
   });
 
   it('update with fanout projects a bundle that was installed without fanout', async () => {
@@ -239,7 +239,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
       hosts: ['agents'],
       method: 'copy',
     });
-    expect(await fs.pathExists(path.join(testWorkspace, '.cline'))).toBe(false);
+    expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(false);
 
     const lockfilePath = path.join(agentsDir, 'agents-united.json');
     const lockfile: LockfileManifest = await fs.readJson(lockfilePath);
@@ -255,13 +255,13 @@ describe('Projection lifecycle (plan 007 M5)', () => {
       fanout: ['cline'],
     });
 
-    const clineProj = path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.md');
+    const clineProj = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
     expect(await fs.pathExists(clineProj)).toBe(true);
     expect(await fs.readFile(clineProj, 'utf8')).toContain('managed-by: agents-united');
 
     const lf2: LockfileManifest = await fs.readJson(lockfilePath);
     expect(lf2.files[['agents', 'orchestrator-engineering.md'].join('/')].projectedTo).toContain(
-      '.cline/agents/orchestrator-engineering.md'
+      '.agents/plugins/software-engineering/agents/orchestrator-engineering.md'
     );
     // Fanout choice persisted so future updates keep projections in sync
     expect(lf2.fanout).toContain('cline');
@@ -276,7 +276,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
       hosts: ['agents'],
       method: 'symlink',
     });
-    expect(await fs.pathExists(path.join(testWorkspace, '.cline'))).toBe(false);
+    expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(false);
 
     const lockfilePath = path.join(agentsDir, 'agents-united.json');
     const lockfile: LockfileManifest = await fs.readJson(lockfilePath);
@@ -295,7 +295,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
 
     expect(result.skipped).toEqual([]);
     expect(result.updated.length).toBe(1);
-    const clineProj = path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.md');
+    const clineProj = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
     expect(await fs.pathExists(clineProj)).toBe(true);
     expect(await fs.readFile(clineProj, 'utf8')).toContain('managed-by: agents-united');
 
@@ -321,15 +321,18 @@ describe('Projection lifecycle (plan 007 M5)', () => {
       fanout: ['cline'],
     });
 
-    const manifestPath = path.join(testWorkspace, '.cline', 'agents-united', 'teams', 'software-engineering.yaml');
-    const rulePath = path.join(testWorkspace, '.cline', 'rules', 'agents-united-software-engineering.md');
+    const manifestPath = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents-united', 'teams', 'software-engineering.yaml');
+    const rulePath = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'rules', 'agents-united-software-engineering.md');
+    const packageJsonPath = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'package.json');
     expect(await fs.pathExists(manifestPath)).toBe(true);
     expect(await fs.pathExists(rulePath)).toBe(true);
+    expect(await fs.pathExists(packageJsonPath)).toBe(true);
 
     const lockfilePath = path.join(agentsDir, 'agents-united.json');
     const lf: LockfileManifest = await fs.readJson(lockfilePath);
     expect(lf.projections).toBeDefined();
-    expect(lf.projections?.['.cline/agents-united/teams/software-engineering.yaml'].owners).toEqual(['software-engineering']);
+    expect(lf.projections?.['.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml'].owners).toEqual(['software-engineering']);
+    expect(lf.projections?.['.agents/plugins/software-engineering/package.json'].owners).toEqual(['software-engineering']);
 
     // Uninstall software-engineering removes its manifest and rule
     const uninstaller = new UninstallEngine();
@@ -337,6 +340,112 @@ describe('Projection lifecycle (plan 007 M5)', () => {
 
     expect(await fs.pathExists(manifestPath)).toBe(false);
     expect(await fs.pathExists(rulePath)).toBe(false);
+    expect(await fs.pathExists(packageJsonPath)).toBe(false);
+    expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(false);
+  });
+
+  it('migrates legacy .cline/ projections to native plugin structure during update', async () => {
+    // Setup legacy workspace with .cline projections and legacy lockfile
+    const legacyClineAgent = path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.md');
+    const legacyClineRule = path.join(testWorkspace, '.cline', 'rules', 'agents-united-software-engineering.md');
+    const legacyClineTeam = path.join(testWorkspace, '.cline', 'agents-united', 'teams', 'software-engineering.yaml');
+    await fs.ensureDir(path.dirname(legacyClineAgent));
+    await fs.ensureDir(path.dirname(legacyClineRule));
+    await fs.ensureDir(path.dirname(legacyClineTeam));
+
+    await fs.writeFile(legacyClineAgent, '---\nname: orchestrator-engineering\n---\n<!-- managed-by: agents-united | profile: cline -->\nLegacy body', 'utf8');
+    await fs.writeFile(legacyClineRule, '<!-- managed-by: agents-united | profile: cline -->\nLegacy rule', 'utf8');
+    await fs.writeFile(legacyClineTeam, 'schemaVersion: 1\nbundle: software-engineering', 'utf8');
+
+    // Create legacy lockfile
+    const legacyLockfile: LockfileManifest = {
+      $schema: 'https://agents-united.dev/schemas/lockfile.json',
+      version: 1,
+      scope: 'project',
+      fanout: ['cline'],
+      installed: {
+        bundles: ['software-engineering'],
+        agents: ['orchestrator-engineering.md'],
+        skills: [],
+        workflows: [],
+      },
+      bundleVersions: {
+        'software-engineering': '0.9.0',
+      },
+      files: {
+        'agents/orchestrator-engineering.md': {
+          hash: 'legacyhash',
+          bundle: 'software-engineering',
+          owners: ['software-engineering'],
+          installedAt: '2026-08-14T00:00:00.000Z',
+          projectedTo: ['.cline/agents/orchestrator-engineering.md'],
+        },
+      },
+      projections: {
+        '.cline/agents/orchestrator-engineering.md': {
+          host: 'cline',
+          kind: 'role',
+          canonical: 'agents/orchestrator-engineering.md',
+          owners: ['software-engineering'],
+          hash: 'legacyhash',
+          installedAt: '2026-08-14T00:00:00.000Z',
+          managedMarker: true,
+        },
+        '.cline/rules/agents-united-software-engineering.md': {
+          host: 'cline',
+          kind: 'rule',
+          owners: ['software-engineering'],
+          hash: 'legacyhash',
+          installedAt: '2026-08-14T00:00:00.000Z',
+          managedMarker: true,
+        },
+        '.cline/agents-united/teams/software-engineering.yaml': {
+          host: 'cline',
+          kind: 'team-manifest',
+          owners: ['software-engineering'],
+          hash: 'legacyhash',
+          installedAt: '2026-08-14T00:00:00.000Z',
+          managedMarker: false,
+        },
+      },
+    };
+
+    await fs.ensureDir(agentsDir);
+    // Write canonical agent in .agents
+    await fs.ensureDir(path.join(agentsDir, 'agents'));
+    await fs.writeFile(path.join(agentsDir, 'agents', 'orchestrator-engineering.md'), '---\nname: orchestrator-engineering\n---\nCanonical content', 'utf8');
+    await fs.writeJson(path.join(agentsDir, 'agents-united.json'), legacyLockfile, { spaces: 2 });
+
+    const updater = new UpdateEngine();
+    const result = await updater.update('software-engineering', {
+      targetDir: agentsDir,
+      scope: 'project',
+      hosts: ['agents'],
+      cwd: testWorkspace,
+    });
+
+    expect(result.updated.length).toBe(1);
+
+    // Old .cline directory should be completely removed
     expect(await fs.pathExists(path.join(testWorkspace, '.cline'))).toBe(false);
+
+    // New plugin directory should be populated with package.json, agents, rules, team manifest
+    const pluginBase = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering');
+    expect(await fs.pathExists(path.join(pluginBase, 'package.json'))).toBe(true);
+    expect(await fs.pathExists(path.join(pluginBase, 'agents', 'orchestrator-engineering.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(pluginBase, 'rules', 'agents-united-software-engineering.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(pluginBase, 'agents-united', 'teams', 'software-engineering.yaml'))).toBe(true);
+
+    // Lockfile should reflect new projections
+    const updatedLock: LockfileManifest = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
+    expect(updatedLock.projections?.['.agents/plugins/software-engineering/package.json']).toBeDefined();
+    expect(updatedLock.projections?.['.agents/plugins/software-engineering/package.json'].owners).toEqual(['software-engineering']);
+    expect(updatedLock.projections?.['.cline/agents/orchestrator-engineering.md']).toBeUndefined();
+    expect(updatedLock.files['agents/orchestrator-engineering.md'].projectedTo).toContain(
+      '.agents/plugins/software-engineering/agents/orchestrator-engineering.md'
+    );
+    expect(updatedLock.files['agents/orchestrator-engineering.md'].projectedTo).not.toContain(
+      '.cline/agents/orchestrator-engineering.md'
+    );
   });
 });

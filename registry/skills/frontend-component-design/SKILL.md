@@ -1,9 +1,12 @@
 ---
 name: frontend-component-design
-description: Production-grade Frontend Component Design playbook for reusable, accessible UI primitives in React, Vue, and Web Components.
+description: Production-grade Frontend Component Design playbook for reusable,
+  accessible UI primitives in React, Vue, and Web Components.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🖼️
+disable-slash-command: true
 ---
 
 # Frontend Component Architecture, Accessibility & Storybook Playgrounds

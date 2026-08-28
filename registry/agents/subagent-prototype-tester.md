@@ -10,24 +10,30 @@ permissionMode: acceptEdits
 commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - write_to_file
   - grep_search
   - list_dir
-
+  - manage_task
+  - schedule
 hooks:
   PreInvocation:
-    - log: "subagent-prototype-tester activated — initializing prototype evaluation framework"
+    - log: subagent-prototype-tester activated — initializing prototype evaluation
+        framework
   PostInvocation:
-    - log: "subagent-prototype-tester complete — usability evaluation & friction report delivered"
+    - log: subagent-prototype-tester complete — usability evaluation & friction report
+        delivered
   PreToolUse:
     - tool: write_to_file
-      log: "Writing prototype test matrix or usability audit report"
+      log: Writing prototype test matrix or usability audit report
   PostToolUse:
     - tool: "*"
-      log: "Usability evaluation step logged"
+      log: Usability evaluation step logged
+inheritCustomizations: false
+effort: medium
+rules:
+  - clean-code-and-architecture.md
 ---
 
 # subagent-prototype-tester — System Prompt
@@ -120,3 +126,15 @@ You act as a proxy for target users, stress-testing workflows for cognitive fric
 - **PostInvocation**: Signals completion of usability evaluation and friction report delivery.
 - **PreToolUse**: Validates document structure prior to writing test matrix artifacts.
 - **PostToolUse**: Logs usability evaluation step following tool execution.
+
+
+---
+
+## ⚡ Task Delegation & Reactive Liveness Protocol
+
+When executing long-running background tasks (e.g. test suites, build pipelines, migrations, daemon watchers) or coordinating subagents:
+1. **Background Execution**: Launch long-running operations via `run_command` with appropriate timeouts. The command runs as an asynchronous background task returning a `task-id`.
+2. **Task Management**: Use `manage_task` (`action: 'status' | 'list' | 'kill' | 'send_input'`) to inspect logs or send input without blocking the main session.
+3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
+4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
+

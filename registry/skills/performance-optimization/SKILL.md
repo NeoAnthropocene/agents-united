@@ -1,9 +1,12 @@
 ---
 name: performance-optimization
-description: Production-grade Performance Optimization playbook for Core Web Vitals, Node.js event-loop tuning, and caching layers.
+description: Production-grade Performance Optimization playbook for Core Web
+  Vitals, Node.js event-loop tuning, and caching layers.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: ⚡
+disable-slash-command: true
 ---
 
 # Full-Stack Performance Profiling & Latency Optimization

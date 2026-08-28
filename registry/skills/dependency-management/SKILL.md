@@ -1,9 +1,12 @@
 ---
 name: dependency-management
-description: Production-grade Dependency Management playbook for secure supply-chain integrity, semver updates, and lockfile hygiene.
+description: Production-grade Dependency Management playbook for secure
+  supply-chain integrity, semver updates, and lockfile hygiene.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 📦
+disable-slash-command: true
 ---
 
 # Dependency Management, Vulnerability Auditing & Upgrades

@@ -1,10 +1,12 @@
 ---
 name: domain-modeling
-description: Build and sharpen project domain terminology, entity relationships, and ubiquitous language documented in CONTEXT.md.
+description: Build and sharpen project domain terminology, entity relationships,
+  and ubiquitous language documented in CONTEXT.md.
 metadata:
-  author: "Matt Pocock (mattpocock/skills)"
-  version: "1.0.0"
-  source: "https://github.com/mattpocock/skills"
+  author: Matt Pocock (mattpocock/skills)
+  version: 1.0.0
+  source: https://github.com/mattpocock/skills
+  icon: 🏛️
 ---
 
 # Domain Modeling & Ubiquitous Language

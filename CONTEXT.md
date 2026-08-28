@@ -42,15 +42,37 @@ _Avoid_: Simple pack, basic bundle
 A cross-functional composite team modeled after real-world professional organizations (e.g. `digital-agency`, `venture-studio`). Unlike domain bundles, organization bundles orchestrate cross-discipline agents and integrate **Model Context Protocol (MCP) server tool calling**, external packages, and API keys. Because they require runtime prerequisites, they are not recommended autonomously by global orchestrators and require explicit user opt-in.
 _Avoid_: Mega bundle, company bot
 
-**Prerequisite Gate**:
-A blocking verification mechanism evaluated by the CLI (`PrerequisiteChecker`) and Lead Orchestrators before installing or activating Organization Bundles. It inspects host MCP configurations across Cursor, Cline, Antigravity/Gemini, and Claude Code, alongside npm packages and environment variables. If prerequisites are unsatisfied, it presents a 3-way resolution: abort and show setup guidance, degrade to Brainstorming Mode, or force Operational install.
-_Avoid_: Dependency blocker, install hook
+**Prerequisite Gate & Informative Visibility**:
+An informative verification mechanism evaluated by the CLI (`PrerequisiteChecker`) and Lead Orchestrators when installing or activating Organization Bundles. It inspects host MCP configurations across Cursor, Cline (CLI & Extension), Antigravity/Gemini (App & CLI), Claude Code, OpenCode, and Windsurf via `McpLocationRegistry`, alongside npm packages and environment variables. In the CLI installer, it displays an informative evaluation status without blocking installation. In conversational sessions, the Lead Orchestrator adapts dynamically to available tools and guides live MCP setup conversationally via the `mcp-setup` skill.
+_Avoid_: Rigid blocking installer, dependency blocker
 
-**Dual Execution Modes (Operational vs Brainstorming)**:
-The two operational envelopes supported by Organization Bundles:
-- **Fully Operational Mode**: All prerequisite MCP servers, CLI packages, and API keys are verified and active, enabling real-world web research, browser automation, git operations, and code deployment.
-- **Brainstorming Mode (Fallback)**: A resilient, read-only ideation and planning envelope activated when prerequisites are missing or incomplete. Orchestrators and agents produce full architecture designs, wireframe specifications, and marketing strategy deliverables without executing live MCP tool mutations.
-_Avoid_: Read-only mode, offline mock
+**In-Session Agentic MCP Onboarding**:
+The conversational onboarding protocol executed by Lead Orchestrators at session initialization. The orchestrator performs a tool inventory check, transparently presents its operational envelope (Limited Operational / Native Fallback Mode ready immediately), and offers to configure, test, and activate live MCP integrations (e.g. Playwright browser automation, Figma design token extraction, Firecrawl web crawling) on demand using OS-specific diagnostics.
+_Avoid_: Static CLI injection, manual JSON troubleshooting
+
+**Multi-Host MCP Evaluation & Partial Detection**:
+The multi-signal capability of the `PrerequisiteChecker` that evaluates prerequisite presence across all target hosts selected in the installation session. When an MCP is detected in some targets (e.g. Antigravity) but missing in others (e.g. Cline CLI), it is marked as `~ Partial` with an explicit platform breakdown (`Detected in Antigravity; Missing in Cline CLI`), guiding targeted differential injection.
+_Avoid_: Binary present/missing check, single-file assumption
+
+**McpLocationRegistry**:
+A declarative, maintainable registry in `src/core/mcp-locations.ts` maintaining cross-platform resolvers for all known MCP JSON configuration locations (Antigravity global/system, Cline CLI data settings, Cline/Roo Code VS Code extensions, Cursor workspace/global, Claude Code workspace/global, Claude Desktop, Windsurf, OpenCode, and Zed).
+_Avoid_: Hardcoded paths, single-host settings
+
+**Organization Bundle Execution Tiers & Graceful MCP Degradation**:
+The operational envelopes supported by all Organization Bundles (`digital-agency` and future cross-functional enterprise bundles):
+- **1. Fully Operational Mode (Authenticated MCP)**: All prerequisite MCP servers, CLI binaries, and bearer tokens/API keys (e.g. `FIRECRAWL_API_KEY`, GitHub PAT, Figma Access Token) are verified and active, unlocking full-scale web crawling, automated PR merges, live design token extraction, and cloud analytics.
+- **2. Limited Operational Mode (Unauthenticated / Community MCP)**: MCP servers run in free, local, or unauthenticated mode without API keys (e.g. Context7 public library queries, unauthenticated GitHub rate-limited public inspection, local Playwright headless browser testing, local MarkItDown document conversion, and local Chrome DevTools inspection). The team executes automated workflows within provider public rate limits.
+- **3. Brainstorming Mode (Native Fallback)**: A zero-MCP fallback envelope activated when the user declines to install or configure MCP servers, or operates in offline/isolated environments. The Lead Orchestrator explicitly notifies the user of the reduced capability envelope, and all agents switch to native workspace tools (`run_command` with git/curl, `write_to_file`, `grep_search`, and local simulation templates).
+- **Dynamic Mode Switching**: Lead Orchestrators allow users to seamlessly switch between operational modes mid-session (e.g., `/mode operational` or `/mode brainstorming`) and provide guided prompts to add missing tokens without restarting the conversation.
+_Avoid_: Rigid binary mode, silent error failing, unnotified degradation
+
+**Continuous Evaluation Harness (Stream-JSON Evals)**:
+An automated benchmarking and regression testing pipeline executing agent interactions in headless streaming JSON mode (`--input-format stream-json --output-format stream-json --json-schema`). It reconstructs fragmented NDJSON streams, traces multi-hop DAG message graphs (`send_message` with `/handoff` and `/design-handoff-spec`), and asserts runtime compliance across Tri-Tier execution boundaries.
+_Avoid_: Static prompt test, mock scraper
+
+**Two-Stage Hybrid Evaluator (LLM Judge & Gatekeeper)**:
+A dual-phase evaluation architecture combining a 0ms deterministic gatekeeper (verifying tool invocation syntax, recipient validity, character thresholds, and `/handoff` directives) with a schema-constrained semantic LLM evaluator enforcing structured Zod rubrics and returning strictly typed `EvaluationVerdict` objects.
+_Avoid_: Unstructured LLM grader, regex-only validator
 
 **Bundle Lifecycle State**:
 The formal release maturity status of a bundle:
@@ -269,23 +291,24 @@ The single table (`src/core/hosts.ts`) describing every known host runtime (dirs
 _Avoid_: Hard-coded host list, scattered host literals
 
 **Host Projection**:
-A **translated copy** a user-facing assistant needs before it can read the main library — written to that runtime's own loader directory (`.claude/agents/`, `.cline/agents/`, …). Projections are always copies (never symlinks), machine-managed (they carry the managed marker), refcounted across bundles, and kept in sync by `agents update`.
+A **translated copy** a user-facing assistant needs before it can read the main library — written to that runtime's own loader directory (`.claude/agents/`, `.agents/plugins/<bundle>/`, …). Projections are always copies (never symlinks), machine-managed (they carry the managed marker), refcounted across bundles, and kept in sync by `agents update`.
 _Avoid_: Foreign copy, mirror, symlink fan-out
 
-**Cline Compound Projection**:
-The 4-part machine-managed artifact structure emitted when projecting into Cline:
-1. **Role Definitions** (`.cline/agents/<role>.md`): Frontmatter containing `name` and `description` with full system instructions, stripped of Claude-specific tool lists and Antigravity-only keys.
-2. **Skills** (`.cline/skills/<skill>/`): Preserved `SKILL.md` documents with progressive disclosure guidelines and auxiliary resources copied byte-for-byte.
-3. **Coordinator Rule** (`.cline/rules/agents-united-<bundle>.md`): Workspace instruction file instructing Cline sessions on bundle team coordination, manifest path, and role delegations.
-4. **Team Manifest** (`.cline/agents-united/teams/<bundle>.yaml`): Declarative manifest specifying coordinator role, specialist roles, skills, recommended addons, integrity mode, and fallback strategies.
-_Avoid_: Single-role Cline mirror, unmanaged rule drop
+**Cline Native Plugin Projection**:
+The machine-managed native plugin package structure emitted when projecting into Cline under `.agents/plugins/<bundle>/`:
+1. **Plugin Manifest** (`.agents/plugins/<bundle>/package.json`): Deterministic manifest adhering to `ClinePluginManifest` declaring capabilities (`skills`, `tools`, `workflows`) and skill paths.
+2. **Role Definitions** (`.agents/plugins/<bundle>/agents/<role>.md`): Frontmatter containing `name` and `description` with full system instructions, stripped of Claude-specific tool lists and Antigravity-only keys.
+3. **Skills** (`.agents/plugins/<bundle>/skills/<skill>/`): Preserved `SKILL.md` documents with progressive disclosure guidelines and auxiliary resources copied byte-for-byte.
+4. **Coordinator Rule** (`.agents/plugins/<bundle>/rules/agents-united-<bundle>.md`): Workspace instruction file instructing Cline sessions on bundle team coordination, manifest path, and role delegations.
+5. **Team Manifest** (`.agents/plugins/<bundle>/agents-united/teams/<bundle>.yaml`): Declarative manifest specifying coordinator role, specialist roles, skills, recommended addons, integrity mode, and fallback strategies.
+_Avoid_: Loose .cline file dump, single-role Cline mirror, unmanaged rule drop
 
 **Coordinator Role Projection**:
-The primary orchestrator role projected into `.cline/agents/` acting as the team's central dispatcher, responsible for decomposing vertical slices, reading team manifests, and routing specialized work to role definitions.
+The primary orchestrator role projected into `.agents/plugins/<bundle>/agents/` acting as the team's central dispatcher, responsible for decomposing vertical slices, reading team manifests, and routing specialized work to role definitions.
 _Avoid_: Master agent, boss prompt
 
 **Team Manifest**:
-The authoritative YAML document (`.cline/agents-united/teams/<bundle>.yaml`) declaring team membership, role descriptions, required skills, recommended addon bundles, and execution integrity modes (`strict`, `balanced`, `development`).
+The authoritative YAML document (`.agents/plugins/<bundle>/agents-united/teams/<bundle>.yaml`) declaring team membership, role descriptions, required skills, recommended addon bundles, and execution integrity modes (`strict`, `balanced`, `development`).
 _Avoid_: Config file, prompt snippet
 
 **Runtime Activation**:
@@ -317,6 +340,39 @@ _Avoid_: Root index hack, static readme
 **Managed Projection Marker**:
 An HTML comment stamp identifying a file as machine-managed (e.g. `<!-- managed-by: agents-united | profile: claude-code | canonical: .agents/agents/<file> | do not edit -->`) placed as the first line of a projected file's body. Its presence gates deletion/overwrite so user-modified files are never clobbered.
 _Avoid_: Dirty edit flag, unmarked copy
+
+**Scoped Rule Binding (`rules: [...]`)**:
+The declarative frontmatter property enabling agents to explicitly bind a curated array of relevant rule files (e.g. `rules: [git-guardrails.md, tdd-protocol.md]`), preventing full workspace rule trees from bloating the agent's context window.
+_Avoid_: Global rule flood, untyped rule inclusion
+
+**Customization Isolation (`inheritCustomizations: false / true`)**:
+The boolean frontmatter switch controlling whether a specialized subagent adopts workspace-level customizations (skills, rules, plugins, subagents) or runs in an isolated, minimal runtime container.
+_Avoid_: Context dumping, unbounded tool inheritance
+
+**Skill Icon Branding (`metadata.icon`)**:
+A visual Unicode emoji attribute declared in `SKILL.md` frontmatter (e.g. `icon: "🛡️"`) rendered in catalog list views, inspection headers, and slash command autocompletions.
+_Avoid_: Unstyled skill text, raw icon paths
+
+**Internal Skill Slash-Suppression (`disable-slash-command: true`)**:
+A frontmatter flag in `SKILL.md` that hides internal or subagent-specialized skills from the interactive `/` autocomplete popup while keeping them fully discoverable and invocable by models.
+_Avoid_: Command palette bloat, hidden skill deletion
+
+**Declarative Reasoning Effort (`effort: low | medium | high`)**:
+The frontmatter parameter mapping agent tasks to specific model reasoning budget tiers on supported models (e.g. Gemini 3.6/3.7 Flash and Pro), allowing high-latency deep reasoning for lead orchestrators and rapid low-latency execution for worker subagents.
+_Avoid_: Fixed model thinking, uncontrolled latency
+
+**Live URL Artifact Card**:
+A specialized markdown artifact card format that opens web server endpoints (`http://localhost:3000`) or cloud docs directly inside Antigravity's in-app preview pane without switching application windows.
+_Avoid_: Plain text link, external browser tab mandate
+
+**Visual Multi-Modal Review Loop**:
+An iterative design and QA review workflow combining side-by-side SVG/image visual diffs and region-selection commenting, allowing users to draw bounding boxes on generated UI screens and submit feedback with cropped previews.
+_Avoid_: Pure text UI feedback, blind pixel review
+
+**Native MCP Provisioning (`agy mcp`)**:
+The automated configuration lifecycle where the CLI evaluates bundle prerequisites and leverages native host commands (`agy mcp add --type stdio|http`) to provision required tool servers (e.g. Firecrawl, GitHub) into `mcp_config.json`.
+_Avoid_: Manual JSON editing, unverified MCP startup
+
 ## Usage Examples
 
 Universal install with fan-out to every supported runtime:
@@ -326,7 +382,7 @@ agents add software-engineering -t agents --fanout claude,cursor,cline,opencode,
 ```
 
 Produces the canonical `.agents/` tree (unchanged format) plus translated copies in
-`.claude/agents/`, `.cursor/agents/`, `.cline/agents/` (plus compound skills, rules, and team manifest),
+`.claude/agents/`, `.cursor/agents/`, `.agents/plugins/<bundle>/` (with native plugin package.json, skills, rules, and team manifest),
 `.opencode/agent/`, and a generated root `AGENTS.md` bridge — all tracked in the lockfile under
 `projectedTo` and `projections`, refcounted, and removable with a single `agents remove software-engineering`.
 

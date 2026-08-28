@@ -6,13 +6,13 @@ description: >
   TypeScript/Node.js backend API architect. Designs, implements, and validates
   REST, GraphQL, gRPC, Supabase PostgreSQL (RLS & Edge Functions), Turso
   distributed LibSQL/SQLite, Vercel Edge Functions, and Azure Container Apps
-  (Azure OpenAI) services with high scalability, low latency, and zero-trust security.
+  (Azure OpenAI) services with high scalability, low latency, and zero-trust
+  security.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - replace_file_content
@@ -20,18 +20,26 @@ tools:
   - run_command
   - grep_search
   - list_dir
-
 hooks:
   PreInvocation:
-    - log: "subagent-backend-architect invoked — auditing project structure & database configurations"
+    - log: subagent-backend-architect invoked — auditing project structure & database
+        configurations
   PostInvocation:
-    - log: "subagent-backend-architect finished — returning architecture report to orchestrator"
+    - log: subagent-backend-architect finished — returning architecture report to
+        orchestrator
   PreToolUse:
     - tool: run_command
-      guard: "Deny run_command if CommandLine matches /(rm -rf|DROP DATABASE|shutdown|sudo)/i"
+      guard: Deny run_command if CommandLine matches /(rm -rf|DROP
+        DATABASE|shutdown|sudo)/i
   PostToolUse:
     - tool: "*"
-      log: "Tool execution completed with status report"
+      log: Tool execution completed with status report
+inheritCustomizations: false
+effort: medium
+rules:
+  - git-guardrails.md
+  - clean-code-and-architecture.md
+  - test-driven-development.md
 ---
 
 # subagent-backend-architect — System Prompt

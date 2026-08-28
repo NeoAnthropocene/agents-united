@@ -125,7 +125,7 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
       cwd: e2eDir,
       encoding: 'utf8',
     });
-    expect(await fs.pathExists(path.join(e2eDir, '.cline'))).toBe(false);
+    expect(await fs.pathExists(path.join(e2eDir, '.agents', 'plugins'))).toBe(false);
 
     // Update WITH fanout repairs the install by projecting into Cline
     const stdout = execSync(`node "${cliPath}" update software-engineering --fanout cline -y`, {
@@ -134,7 +134,7 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     });
     expect(stdout).toContain('Successfully processed update');
 
-    const clineProj = path.join(e2eDir, '.cline', 'agents', 'orchestrator-engineering.md');
+    const clineProj = path.join(e2eDir, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
     expect(await fs.pathExists(clineProj)).toBe(true);
     expect(await fs.readFile(clineProj, 'utf8')).toContain('managed-by: agents-united');
 
@@ -154,7 +154,7 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     // Canonical store installed AND translated Cline copies written
     expect(await fs.pathExists(path.join(e2eDir, '.agents', 'agents-united.json'))).toBe(true);
     const proj = await fs.readFile(
-      path.join(e2eDir, '.cline', 'agents', 'orchestrator-engineering.md'),
+      path.join(e2eDir, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md'),
       'utf8'
     );
     expect(proj).toContain('managed-by: agents-united');

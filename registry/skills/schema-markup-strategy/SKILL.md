@@ -1,9 +1,13 @@
 ---
 name: schema-markup-strategy
-description: Production-grade Schema Markup Strategy playbook for JSON-LD structured data architecture, Schema.org entities, rich snippet qualification, and SERP visibility.
+description: Production-grade Schema Markup Strategy playbook for JSON-LD
+  structured data architecture, Schema.org entities, rich snippet qualification,
+  and SERP visibility.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🏷️
+disable-slash-command: true
 ---
 
 # Schema Markup Strategy & JSON-LD Structured Data Architecture

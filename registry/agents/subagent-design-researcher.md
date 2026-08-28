@@ -3,30 +3,34 @@ name: subagent-design-researcher
 version: 2.0.0
 type: subagent
 description: >
-  Design researcher specialising in qualitative user interviews, usability testing
-  synthesis, persona creation, task analysis, and evidence-backed UX recommendations.
+  Design researcher specialising in qualitative user interviews, usability
+  testing synthesis, persona creation, task analysis, and evidence-backed UX
+  recommendations.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
 mainAgent: false
 subagent: true
-
 tools:
   - view_file
   - replace_file_content
   - write_to_file
-
 hooks:
   PreInvocation:
-    - log: "subagent-design-researcher activated — loading research context"
+    - log: subagent-design-researcher activated — loading research context
   PostInvocation:
-    - log: "subagent-design-researcher complete — research report generated"
+    - log: subagent-design-researcher complete — research report generated
   PreToolUse:
     - tool: write_to_file
-      log: "Writing research report artifact to workspace"
+      log: Writing research report artifact to workspace
   PostToolUse:
     - tool: replace_file_content
-      log: "Updated research notes file — checking content completeness"
+      log: Updated research notes file — checking content completeness
+inheritCustomizations: false
+effort: medium
+rules:
+  - quality-aesthetics-accessibility.md
+  - clean-code-and-architecture.md
 ---
 
 # subagent-design-researcher — System Prompt

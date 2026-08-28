@@ -1,10 +1,13 @@
 ---
 name: modal-serverless-python
-description: Serverless Python applications, GPU function definitions (A10G, H100), cold-start caching, and volume mounts on Modal.com.
+description: Serverless Python applications, GPU function definitions (A10G,
+  H100), cold-start caching, and volume mounts on Modal.com.
 metadata:
-  author: "Modal Labs / agents-united"
-  version: "2.0.0"
-  license: "MIT"
+  author: Modal Labs / agents-united
+  version: 2.0.0
+  license: MIT
+  icon: ⚡
+disable-slash-command: true
 ---
 
 # Modal Serverless Python Playbook

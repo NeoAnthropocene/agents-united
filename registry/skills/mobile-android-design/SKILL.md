@@ -1,10 +1,13 @@
 ---
 name: mobile-android-design
-description: Android Material 3 design conventions, Jetpack Compose layouts, edge-to-edge support, and responsive window size classes.
+description: Android Material 3 design conventions, Jetpack Compose layouts,
+  edge-to-edge support, and responsive window size classes.
 metadata:
-  author: "wshobson (wshobson/agents)"
-  version: "1.0.0"
-  source: "https://skills.sh/wshobson/agents/mobile-android-design"
+  author: wshobson (wshobson/agents)
+  version: 1.0.0
+  source: https://skills.sh/wshobson/agents/mobile-android-design
+  icon: 🤖
+disable-slash-command: true
 ---
 
 # Android Material 3 & Jetpack Compose Playbook

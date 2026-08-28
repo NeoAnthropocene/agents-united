@@ -1,9 +1,12 @@
 ---
 name: email-marketing-automation
-description: Production-grade Email Marketing Automation playbook for design operations, UX systems, and growth strategy.
+description: Production-grade Email Marketing Automation playbook for design
+  operations, UX systems, and growth strategy.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 📧
+disable-slash-command: true
 ---
 
 # Email Marketing Automation

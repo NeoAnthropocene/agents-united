@@ -1,9 +1,12 @@
 ---
 name: subagent-driven-development
-description: Production-grade Multi-Agent Orchestration playbook for task decomposition, parallel execution, and boundary isolation.
+description: Production-grade Multi-Agent Orchestration playbook for task
+  decomposition, parallel execution, and boundary isolation.
 metadata:
-  author: "agents-united"
-  version: "2.0.0"
+  author: agents-united
+  version: 2.0.0
+  icon: 🤖
+disable-slash-command: true
 ---
 
 # Subagent-Driven Development & Autonomous Task Orchestration
