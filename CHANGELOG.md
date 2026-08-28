@@ -1,3 +1,29 @@
+# [1.5.0](https://github.com/NeoAnthropocene/agents-united/compare/v1.4.1...v1.5.0) (2026-08-28)
+
+
+### Bug Fixes
+
+* **ci:** fix yaml indentation and heredoc syntax in sync-main-to-dev workflow ([8db5e03](https://github.com/NeoAnthropocene/agents-united/commit/8db5e0347fa8fb2c5b18a0457c211dc24c252372))
+* **orchestrator-marketing:** enforce strict tool checklist for Fully Operational status ([ea69c46](https://github.com/NeoAnthropocene/agents-united/commit/ea69c469e79379bafa8965d7d302d04ced1adc36))
+* **orchestrator:** detect deactivated MCPs and enforce vertical markdown bullet list formatting ([0b52ea7](https://github.com/NeoAnthropocene/agents-united/commit/0b52ea7b0cb836cbbcd0921165422bb2641fd0fe))
+* **orchestrator:** enforce mandatory Turn-1 dynamic MCP response template and portable skill path ([55eb479](https://github.com/NeoAnthropocene/agents-united/commit/55eb479e0bee4d0d950c7d74ee18ff8df2e8ff95))
+* **orchestrator:** strictly filter dynamic missing opportunities list based only on absent tools ([e134b6f](https://github.com/NeoAnthropocene/agents-united/commit/e134b6fccdaee5e2a318f5432938ce938a8b9b20))
+
+
+### Features
+
+* **cli:** add smart prerequisite auto-remediation wizard and limited operational mode ([3dba5a6](https://github.com/NeoAnthropocene/agents-united/commit/3dba5a61b0657b5472fb427daafe2164f8cb1f2b))
+* **cline:** project bundles as native plugins ([8fd227b](https://github.com/NeoAnthropocene/agents-united/commit/8fd227b7163bb02bff5202b86c0f1b888fdc5f2a))
+* **ecosystem:** complete Plan 010 Antigravity August features, department expansion & continuous evals ([d495886](https://github.com/NeoAnthropocene/agents-united/commit/d49588690bad6970216e59031dad8c5be46684a4))
+* **mcp:** dynamic cross-platform McpLocationRegistry, multi-host partial evaluation & 1-click fast auto-remediate ([d914b03](https://github.com/NeoAnthropocene/agents-united/commit/d914b0358fb3bf5790b7b4aeac990e2212182f1d))
+* **orchestrator-marketing:** dynamically generate missing tools superpowers using world knowledge ([5453903](https://github.com/NeoAnthropocene/agents-united/commit/5453903e6493b860ee529a4b551633a3bb3ed70a))
+* **orchestrator-marketing:** support cross-platform missing tool detection ([9972a97](https://github.com/NeoAnthropocene/agents-united/commit/9972a97d056d2857a0fefc7b17091f99969ae9f3))
+* **orchestrator:** add dynamic connected tools vs missing opportunities greeting in orchestrator-marketing.md ([23f0ee5](https://github.com/NeoAnthropocene/agents-united/commit/23f0ee5739aa6780268e861cc2a1c3f6e2f576bf))
+* **orchestrator:** mandate Turn-1 tool inventory check & operational mode greeting in orchestrator-marketing.md ([bf200a5](https://github.com/NeoAnthropocene/agents-united/commit/bf200a52d115893336efcfce308c1999e702df44))
+* **prerequisites:** add multi-signal MCP matching and interactive host config discovery ([6ebfba9](https://github.com/NeoAnthropocene/agents-united/commit/6ebfba967fc7e790c8b5e1adcd84db66d8b71e99))
+* **ux:** lean frictionless CLI install + in-session adaptive agentic MCP onboarding ([67f48ed](https://github.com/NeoAnthropocene/agents-united/commit/67f48ed12054bc6b49d6f36f2c88db61d2a4e68e))
+* **workflows:** add 6 digital-agency workflows and update full suite ([10ebbd7](https://github.com/NeoAnthropocene/agents-united/commit/10ebbd7ed1579487ee9f68061c9324163663823a))
+
 ## [1.4.1](https://github.com/NeoAnthropocene/agents-united/compare/v1.4.0...v1.4.1) (2026-08-26)
 
 
