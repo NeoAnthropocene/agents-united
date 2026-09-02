@@ -1,6 +1,6 @@
 {
   "name": "agents-united",
-  "version": "1.4.0",
+  "version": "0.5.0",
   "description": "The universal package manager for AI agents.",
   "main": "./dist/cli.js",
   "bin": {

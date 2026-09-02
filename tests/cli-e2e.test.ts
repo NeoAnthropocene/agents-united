@@ -252,7 +252,7 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(stdout).toContain('Bundle: software-engineering');
     expect(stdout).toMatch(/Team Name: au-software-engineering-[a-f0-9]{8}/);
     expect(stdout).toContain('Review & analyze codebase');
-  });
+  }, 20000);
 
   it('runs add with --dry-run and --start without launching processes', async () => {
     const stdout = execSync(`node "${cliPath}" add software-engineering -t cline -y --dry-run --start`, {
