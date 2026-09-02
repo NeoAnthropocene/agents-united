@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.4.0...v0.5.0) (2026-09-02)
+
+
+### Features
+
+* **core:** initialize agents-united 0.5.0 universal agent package manager ([133d4ea](https://github.com/NeoAnthropocene/agents-united/commit/133d4eaadf18d8e7cbff1e16eae5eb48b9943439))
+
 # [0.5.0](https://github.com/NeoAnthropocene/agents-united/releases/tag/v0.5.0) (2026-09-02)
 
 ### Features
