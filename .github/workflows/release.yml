@@ -39,22 +39,11 @@ jobs:
       - name: Run Tests
         run: npm test
 
-      - name: Release to NPM & GitHub
+      - name: Semantic Release to NPM & GitHub
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          echo "Current package.json version: $PKG_VERSION"
-          if ! npm view agents-united@$PKG_VERSION version > /dev/null 2>&1; then
-            echo "Version $PKG_VERSION is not on NPM registry. Publishing baseline..."
-            npm publish --access public --provenance || npm publish --access public
-            npm dist-tag add agents-united@$PKG_VERSION latest
-            gh release create v$PKG_VERSION --title "v$PKG_VERSION" --notes-file CHANGELOG.md || true
-          else
-            echo "Version $PKG_VERSION already exists on NPM. Running semantic-release..."
-            npx --yes semantic-release --debug
-          fi
+        run: npx --yes semantic-release --debug
 
