@@ -301,22 +301,12 @@ private toPosix(p: string): string {
             }
           }
 
-          // Clean up any legacy .cline/ projectedTo entries in lockfile.files
-          if (lockfile.files) {
-            for (const [canonKey, fileMeta] of Object.entries(lockfile.files)) {
-              if (fileMeta.projectedTo) {
-                const staleClinePaths = fileMeta.projectedTo.filter(p => p.startsWith('.cline/'));
-                for (const stalePath of staleClinePaths) {
-                  const absPath = path.join(root, stalePath);
-                  if (await fs.pathExists(absPath)) {
-                    await fs.remove(absPath);
-                    await this.removeEmptyProjectionDirs(root, stalePath);
-                  }
-                  this.removeProjectedTo(lockfile, canonKey, stalePath);
-                }
-              }
-            }
-          }
+          // ADR 0013: the previous ADR 0012 migration pruned `.cline/` paths as
+          // "legacy" - that was wrong: `.cline/` is where Cline natively discovers
+          // agents/rules/workflows. Migration is now handled purely by the
+          // lockfile.projections obsolete-artifact cleanup above (the new artifact
+          // set no longer includes package.json / agents/*.md / rules/*.md inside
+          // the plugin package, so those are pruned automatically).
 
           for (const artifact of artifacts) {
             const dest = path.join(root, artifact.relPath);
@@ -423,7 +413,12 @@ private toPosix(p: string): string {
         const content = await fs.readFile(path.join(registryDir, 'agents', agentFile), 'utf8');
         const canonicalRel = this.canonicalRelAgent(agentFile);
         const res = HostProjector.projectAgent(content, HOST_REGISTRY[host].profile, canonicalRel);
-        const dest = path.join(base, subdir, agentFile);
+        // ADR 0013: the Cline fallback path (unbundled installs) emits configured
+        // agent YAML - same naming rules as the compound projection.
+        const projName = host === 'cline'
+          ? `${agentFile.replace(/\.md$/i, '').replace(/^subagent-/, '')}.yml`
+          : agentFile;
+        const dest = path.join(base, subdir, projName);
         if (await fs.pathExists(dest) && !options.force) {
           const existing = await fs.readFile(dest, 'utf8');
           if (!HostProjector.hasManagedMarker(existing)) {

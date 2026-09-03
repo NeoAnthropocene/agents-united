@@ -147,11 +147,12 @@ describe('HostProjector.projectAgent (profile-specific key sets)', () => {
     });
   }
 
-  it('produces the tool-less role projection + preamble for cline', () => {
+  it('produces the configured-agent YAML projection + preamble for cline (ADR 0013)', () => {
     const res = HostProjector.projectAgent(SAMPLE, 'cline', CANONICAL_PATH);
     const { meta, body } = parsedProjection(res);
 
-    expect(meta.name).toBe('subagent-backend-architect');
+    // The canonical subagent- prefix is stripped; Cline adds its own subagent_ tool prefix
+    expect(meta.name).toBe('backend-architect');
     expect(meta.tools).toBeUndefined();
     expect('model' in meta).toBe(false);
     expect('hooks' in meta).toBe(false);

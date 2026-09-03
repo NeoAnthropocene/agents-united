@@ -65,18 +65,38 @@ export function canonicalOf(b: BundleEntry): string[] {
   return [...agents, ...skills, ...workflows];
 }
 
-/** Workspace-root-relative POSIX Cline native plugin projection paths declared by a bundle
- *  entry: package.json manifest, role projections, SKILL.md projections, coordinator rule, team manifest. */
+/** Workspace-root-relative POSIX Cline projection paths declared by a bundle
+ *  entry, per ADR 0013: plugin.json (Agent Plugin manifest), .cline/agents/*.yml
+ *  configured agents, skills inside the package, .cline/rules/ coordinator rule,
+ *  .cline/workflows/<slug>.md, and the vendor-namespace team manifest. */
 export function projectionsOf(b: BundleEntry): string[] {
-  const roles = declaredAgents(b).map(a => `.agents/plugins/${b.name}/agents/${a}`);
+  const roles = declaredAgents(b).map(a => {
+    const roleName = a.replace(/\.md$/i, '').replace(/^subagent-/, '');
+    return `.cline/agents/${roleName}.yml`;
+  });
   const skills = (b.skills ?? [])
     .filter(s => fs.existsSync(path.join(REGISTRY_DIR, 'skills', s, 'SKILL.md')))
     .map(s => `.agents/plugins/${b.name}/skills/${s}/SKILL.md`);
+  const workflows = (b.workflows ?? [])
+    .filter(w => fs.existsSync(path.join(REGISTRY_DIR, 'workflows', w)))
+    .map(w => {
+      const content = fs.readFileSync(path.join(REGISTRY_DIR, 'workflows', w), 'utf8');
+      const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      let name: string | undefined;
+      if (m) {
+        const nameLine = m[1].match(/^\s*name:\s*["']?([^"'\r\n]+)["']?\s*$/m);
+        if (nameLine) name = nameLine[1].trim();
+      }
+      const slug = (name ?? w.replace(/\.md$/i, ''))
+        .trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      return `.cline/workflows/${slug}.md`;
+    });
   return [
-    `.agents/plugins/${b.name}/package.json`,
+    `.agents/plugins/${b.name}/plugin.json`,
     ...roles,
     ...skills,
-    `.agents/plugins/${b.name}/rules/agents-united-${b.name}.md`,
+    ...workflows,
+    `.cline/rules/agents-united-${b.name}.md`,
     `.agents/plugins/${b.name}/agents-united/teams/${b.name}.yaml`,
   ];
 }
