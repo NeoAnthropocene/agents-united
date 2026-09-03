@@ -58,8 +58,16 @@ jobs:
             )
           fi
 
-          # Fully automatic: merge the sync PR (retry briefly in case GitHub is
-          # still computing mergeability right after creation).
+          # Prefer auto-merge: with branch protection + required checks, GitHub
+          # merges the moment CI passes. Falls back to an immediate merge when
+          # the repo's "Allow auto-merge" setting is off (pre-protection repos).
+          if gh pr merge "$PR_NUMBER" --auto --merge 2>/dev/null; then
+            echo "Sync PR #$PR_NUMBER set to auto-merge. dev will be in lockstep with main."
+            exit 0
+          fi
+
+          # Fallback: immediate merge with a short retry loop (mergeability may
+          # still be computing right after PR creation).
           for i in 1 2 3 4 5; do
             if gh pr merge "$PR_NUMBER" --merge; then
               echo "Sync PR #$PR_NUMBER merged. dev is in lockstep with main."
