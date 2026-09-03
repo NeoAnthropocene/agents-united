@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.5.0...v0.6.0) (2026-09-03)
+
+
+### Features
+
+* **cline:** native discovery projection per ADR 0013 ([869fe48](https://github.com/NeoAnthropocene/agents-united/commit/869fe486c6efb4151eff31217ad411c3f15a0a16))
+
 # [0.5.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.4.0...v0.5.0) (2026-09-02)
 
 
