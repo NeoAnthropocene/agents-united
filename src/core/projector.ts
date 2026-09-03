@@ -147,7 +147,9 @@ export class HostProjector {
     }
 
     if (profile === 'cline') {
-      const content = ClineProjector.renderRole(md, canonicalRelPath);
+      // ADR 0013: Cline consumes configured-agent YAML (.cline/agents/<role>.yml),
+      // not markdown role copies.
+      const content = ClineProjector.renderConfiguredAgent(md, canonicalRelPath);
       return { content, warnings };
     }
 

@@ -2,8 +2,8 @@ import yaml from 'yaml';
 import path from 'node:path';
 import fs from 'fs-extra';
 import type {
+  AgentPluginManifest,
   BundleDefinition,
-  ClinePluginManifest,
   ClineTeamManifest,
   InstallScope,
   ProjectionKind,
@@ -21,41 +21,116 @@ export interface PlannedClineArtifact {
 
 export class ClineProjector {
   /**
-   * Render a Cline role definition from canonical agent markdown content.
+   * Managed marker inserted after YAML frontmatter in every rendered artifact.
    */
-  static renderRole(canonicalContent: string, canonicalRelPath: string): string {
+  private static marker(canonicalRelPath: string): string {
     const normCanonical = canonicalRelPath.replace(/\\/g, '/');
-    const marker = `<!-- managed-by: agents-united | profile: cline | canonical: ${normCanonical} | do not edit -->`;
-    const preamble = `## Cline runtime note\n\nUse the equivalent capabilities available in this Cline session. Canonical tool names describe\nintent and may differ from Cline's runtime tool names. For delegation, prefer Agent Teams when\navailable, then session subagents; otherwise complete the role in the main session.`;
+    return `<!-- managed-by: agents-united | profile: cline | canonical: ${normCanonical} | do not edit -->`;
+  }
 
+  private static runtimeNote = `## Cline runtime note\n\nUse the equivalent capabilities available in this Cline session. Canonical tool names describe\nintent and may differ from Cline's runtime tool names. For delegation, prefer the configured\nsubagent_* agent tools (projected under .cline/agents/), then session subagents; otherwise\ncomplete the role in the main session.`;
+
+  /**
+   * Strip the canonical `subagent-` prefix. Cline prefixes configured-agent tool
+   * names with `subagent_` itself, so keeping the prefix would produce names like
+   * `subagent_subagent_marketing_growth_strategist`.
+   */
+  static stripSubagentPrefix(name: string): string {
+    return name.trim().replace(/^subagent-/, '');
+  }
+
+  /**
+   * Slugify a workflow display name into a usable slash-command name
+   * (e.g. "Digital Agency Full-Funnel Campaign Orchestration" -> "digital-agency-full-funnel-campaign-orchestration").
+   */
+  static slugifyWorkflowName(name: string): string {
+    return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  /**
+   * Render a Cline Configured Agent definition (.cline/agents/<role>.yml) from
+   * canonical agent markdown content. Cline 3.x consumes YAML files with
+   * frontmatter (name, description) and treats the body as the agent system prompt.
+   */
+  static renderConfiguredAgent(canonicalContent: string, canonicalRelPath: string): string {
     const match = canonicalContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
     if (!match) {
-      return `${marker}\n\n${preamble}\n\n${canonicalContent.trim()}`;
+      throw new Error(`Canonical agent ${canonicalRelPath} is missing YAML frontmatter.`);
     }
-
-    const rawYaml = match[1];
-    const rawBody = match[2];
 
     let parsed: Record<string, unknown> = {};
     try {
-      parsed = (yaml.parse(rawYaml) as Record<string, unknown>) || {};
+      parsed = (yaml.parse(match[1]) as Record<string, unknown>) || {};
     } catch {
       parsed = {};
     }
 
-    // Keep only name and description (and optional providerId, modelId, cwd, maxIterations if present)
-    const cleanFrontmatter: Record<string, unknown> = {};
-    if (parsed.name) cleanFrontmatter.name = parsed.name;
-    if (parsed.description) cleanFrontmatter.description = parsed.description;
-    if (parsed.providerId) cleanFrontmatter.providerId = parsed.providerId;
-    if (parsed.modelId) cleanFrontmatter.modelId = parsed.modelId;
-    if (parsed.cwd) cleanFrontmatter.cwd = parsed.cwd;
-    if (parsed.maxIterations) cleanFrontmatter.maxIterations = parsed.maxIterations;
+    const baseName = canonicalRelPath.replace(/\\/g, '/').split('/').pop() ?? '';
+    const rawName = typeof parsed.name === 'string' && parsed.name.trim().length > 0
+      ? parsed.name.trim()
+      : baseName.replace(/\.md$/i, '');
+    const cleanFrontmatter: Record<string, unknown> = {
+      name: this.stripSubagentPrefix(rawName),
+    };
+    if (typeof parsed.description === 'string' && parsed.description.trim().length > 0) {
+      cleanFrontmatter.description = parsed.description.trim();
+    }
 
     const frontmatterStr = yaml.stringify(cleanFrontmatter).trim();
-    const bodyStr = rawBody.trim();
+    const bodyStr = match[2].trim();
 
-    return `---\n${frontmatterStr}\n---\n${marker}\n\n${preamble}\n\n${bodyStr}\n`;
+    return `---\n${frontmatterStr}\n---\n${this.marker(canonicalRelPath)}\n\n${this.runtimeNote}\n\n${bodyStr}\n`;
+  }
+
+  /**
+   * Derive the slash-command slug for a workflow from its frontmatter name,
+   * falling back to the canonical filename. Kept separate from the renderer so the
+   * projection filename and the frontmatter `name` are guaranteed to match.
+   */
+  static workflowSlug(canonicalContent: string, canonicalRelPath: string): string {
+    const match = canonicalContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+    let humanName: string | undefined;
+    if (match) {
+      try {
+        const parsed = (yaml.parse(match[1]) as Record<string, unknown>) || {};
+        if (typeof parsed.name === 'string' && parsed.name.trim().length > 0) {
+          humanName = parsed.name.trim();
+        }
+      } catch {
+        // fall through to filename fallback
+      }
+    }
+    const baseName = canonicalRelPath.replace(/\\/g, '/').split('/').pop() ?? '';
+    return this.slugifyWorkflowName(humanName ?? baseName.replace(/\.md$/i, ''));
+  }
+
+  /**
+   * Render a Cline workflow projection (.cline/workflows/<slug>.md). The frontmatter
+   * `name` is slugified so the workflow surfaces as a usable /<slug> command; the
+   * human-readable title stays in `description` and the untouched body.
+   */
+  static renderWorkflowProjection(canonicalContent: string, canonicalRelPath: string): string {
+    const slug = this.workflowSlug(canonicalContent, canonicalRelPath);
+    const match = canonicalContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+    let description: string | undefined;
+    if (match) {
+      try {
+        const parsed = (yaml.parse(match[1]) as Record<string, unknown>) || {};
+        if (typeof parsed.description === 'string' && parsed.description.trim().length > 0) {
+          description = parsed.description.trim();
+        }
+      } catch {
+        // description stays undefined
+      }
+    }
+
+    const cleanFrontmatter: Record<string, unknown> = { name: slug };
+    if (description) cleanFrontmatter.description = description;
+
+    const frontmatterStr = yaml.stringify(cleanFrontmatter).trim();
+    const bodyStr = match ? match[2].trim() : canonicalContent.trim();
+
+    return `---\n${frontmatterStr}\n---\n${this.marker(canonicalRelPath)}\n\n${bodyStr}\n`;
   }
 
   /**
@@ -160,7 +235,7 @@ ${marker}
 
 ## Activation Protocol
 1. At session start, read the Team Manifest (\`${manifestRelPath}\`) and coordinator role prompt (\`.agents/${coordinatorCanonical}\`).
-2. Delegate specialist tasks using **Agent Teams** (\`team_spawn_teammate\`, \`team_delegate_task\`) when available, assigning non-overlapping scopes.
+2. Delegate specialist tasks using the configured \`subagent_*\` agent tools (projected under \`.cline/agents/\`) when available, assigning non-overlapping scopes; fall back to Agent Teams (\`team_spawn_teammate\`) or session subagents as needed.
 3. For lightweight read-only research, use session subagents.
 4. Only specialist roles declared in the Team Manifest are active in this workspace.
 ${specialistLines.length > 0 ? `\n### Installed Specialist Roles\n${specialistLines.join('\n')}` : ''}
@@ -183,45 +258,46 @@ ${addonSection}
     const artifacts: PlannedClineArtifact[] = [];
     const baseDir = `.agents/plugins/${bundle.name}`;
 
-    // 0. Plugin manifest (.agents/plugins/<bundle-name>/package.json)
-    const pluginManifest: ClinePluginManifest = {
-      name: `agents-united-${bundle.name}`,
-      version: '1.0.0',
+    // 0. Agent Plugin manifest (.agents/plugins/<bundle-name>/plugin.json)
+    //    agent-plugins.org v1.0.0. Its presence hard-stops Cline's code-plugin
+    //    scanner for this directory (isAgentPluginDirectory) and makes the package
+    //    portable to other Agent Plugins-conforming clients.
+    const agentPluginManifest: AgentPluginManifest = {
+      $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json',
+      name: bundle.name,
+      version: bundle.version || '1.0.0',
       description: bundle.description || '',
-      cline: {
-        plugins: [
-          {
-            capabilities: ['skills', 'tools', 'workflows'],
-            skills: ['./skills'],
-          },
-        ],
-      },
     };
     artifacts.push({
       kind: 'plugin-manifest',
-      relPath: `${baseDir}/package.json`.replace(/\\/g, '/'),
-      content: JSON.stringify(pluginManifest, null, 2),
+      relPath: `${baseDir}/plugin.json`.replace(/\\/g, '/'),
+      content: JSON.stringify(agentPluginManifest, null, 2),
       managedMarker: false,
     });
 
-    // 1. Role definitions (.agents/plugins/<bundle-name>/agents/*.md)
+    // 1. Configured agent roles (.cline/agents/<role>.yml) - Cline 3.x natively
+    //    discovers these and exposes each as a spawnable subagent_<name> tool.
     for (const agentFile of resolved.agents) {
       const canonicalRel = `agents/${agentFile}`;
       const srcPath = path.join(registryDir, 'agents', agentFile);
       if (await fs.pathExists(srcPath)) {
         const content = await fs.readFile(srcPath, 'utf8');
-        const rendered = this.renderRole(content, canonicalRel);
+        const rendered = this.renderConfiguredAgent(content, canonicalRel);
+        const roleName = this.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
         artifacts.push({
           kind: 'role',
           canonical: canonicalRel,
-          relPath: `${baseDir}/agents/${agentFile}`.replace(/\\/g, '/'),
+          relPath: `.cline/agents/${roleName}.yml`.replace(/\\/g, '/'),
           content: rendered,
           managedMarker: true,
         });
       }
     }
 
-    // 2. Skills (.agents/plugins/<bundle-name>/skills/<skill>/**)
+    // 2. Skills (.agents/plugins/<bundle-name>/skills/<skill>/**) - kept inside the
+    //    Agent Plugin package for cross-client portability (ADR 0013, decision 1).
+    //    Cline discovers the canonical .agents/skills/ copies natively, so no
+    //    additional Cline-side skill projection is emitted.
     for (const skillName of resolved.skills) {
       const skillSrcDir = path.join(registryDir, 'skills', skillName);
       if (await fs.pathExists(skillSrcDir)) {
@@ -258,16 +334,36 @@ ${addonSection}
       }
     }
 
-    // 3. Coordinator Rule (.agents/plugins/<bundle-name>/rules/agents-united-<bundle>.md)
+    // 3. Workflows (.cline/workflows/<slug>.md) - natively surfaced as /<slug>
+    //    slash commands by Cline 3.x (no .agents lane exists for workflows).
+    for (const workflowFile of resolved.workflows) {
+      const canonicalRel = `workflows/${workflowFile}`;
+      const srcPath = path.join(registryDir, 'workflows', workflowFile);
+      if (await fs.pathExists(srcPath)) {
+        const content = await fs.readFile(srcPath, 'utf8');
+        const slug = this.workflowSlug(content, canonicalRel);
+        const rendered = this.renderWorkflowProjection(content, canonicalRel);
+        artifacts.push({
+          kind: 'workflow',
+          canonical: canonicalRel,
+          relPath: `.cline/workflows/${slug}.md`.replace(/\\/g, '/'),
+          content: rendered,
+          managedMarker: true,
+        });
+      }
+    }
+
+    // 4. Coordinator Rule (.cline/rules/agents-united-<bundle>.md) - natively
+    //    loaded as an always-active rule by Cline 3.x.
     const ruleContent = this.renderCoordinatorRule(bundle, scope, excludeAddons);
     artifacts.push({
       kind: 'rule',
-      relPath: `${baseDir}/rules/agents-united-${bundle.name}.md`.replace(/\\/g, '/'),
+      relPath: `.cline/rules/agents-united-${bundle.name}.md`.replace(/\\/g, '/'),
       content: ruleContent,
       managedMarker: true,
     });
 
-    // 4. Team Manifest (.agents/plugins/<bundle-name>/agents-united/teams/<bundle>.yaml)
+    // 5. Team Manifest (.agents/plugins/<bundle-name>/agents-united/teams/<bundle>.yaml)
     const manifestContent = this.renderTeamManifest(bundle, scope, excludeAddons);
     artifacts.push({
       kind: 'team-manifest',

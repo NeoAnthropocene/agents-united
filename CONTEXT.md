@@ -294,26 +294,30 @@ _Avoid_: Hard-coded host list, scattered host literals
 A **translated copy** a user-facing assistant needs before it can read the main library — written to that runtime's own loader directory (`.claude/agents/`, `.agents/plugins/<bundle>/`, …). Projections are always copies (never symlinks), machine-managed (they carry the managed marker), refcounted across bundles, and kept in sync by `agents update`.
 _Avoid_: Foreign copy, mirror, symlink fan-out
 
-**Cline Native Plugin Projection**:
-The machine-managed native plugin package structure emitted when projecting into Cline under `.agents/plugins/<bundle>/`:
-1. **Plugin Manifest** (`.agents/plugins/<bundle>/package.json`): Deterministic manifest adhering to `ClinePluginManifest` declaring capabilities (`skills`, `tools`, `workflows`) and skill paths.
-2. **Role Definitions** (`.agents/plugins/<bundle>/agents/<role>.md`): Frontmatter containing `name` and `description` with full system instructions, stripped of Claude-specific tool lists and Antigravity-only keys.
-3. **Skills** (`.agents/plugins/<bundle>/skills/<skill>/`): Preserved `SKILL.md` documents with progressive disclosure guidelines and auxiliary resources copied byte-for-byte.
-4. **Coordinator Rule** (`.agents/plugins/<bundle>/rules/agents-united-<bundle>.md`): Workspace instruction file instructing Cline sessions on bundle team coordination, manifest path, and role delegations.
-5. **Team Manifest** (`.agents/plugins/<bundle>/agents-united/teams/<bundle>.yaml`): Declarative manifest specifying coordinator role, specialist roles, skills, recommended addons, integrity mode, and fallback strategies.
-_Avoid_: Loose .cline file dump, single-role Cline mirror, unmanaged rule drop
+**Cline Native Discovery Projection**:
+The dual-lane machine-managed structure emitted when projecting into Cline (ADR 0013), matching Cline 3.x's verified discovery registry:
+1. **Agent Plugin Package** (`.agents/plugins/<bundle>/`): A `plugin.json` manifest (agent-plugins.org v1.0.0) that hard-stops Cline's code-plugin scanner and makes the package portable to conforming clients; `skills/<skill>/` copies for cross-client portability; and the vendor-namespace Team Manifest under `agents-united/teams/`.
+2. **Configured Agent Roles** (`.cline/agents/<role>.yml`): YAML files with `name` (canonical `subagent-` prefix stripped) and `description` frontmatter plus a system-prompt body — natively loaded by Cline and exposed as spawnable `subagent_<name>` tools.
+3. **Coordinator Rule** (`.cline/rules/agents-united-<bundle>.md`): Always-active workspace rule instructing Cline sessions on bundle team coordination, manifest path, and role delegation.
+4. **Workflows** (`.cline/workflows/<slug>.md`): Slugified-name workflow markdown surfaced natively as `/<slug>` slash commands.
+5. **Skills**: No additional projection — Cline natively discovers the canonical `.agents/skills/` store.
+_Avoid_: Cline code-plugin packaging (`package.json` + `cline.plugins[].paths`), loose `.cline` file dump, `cline plugin install` bootstrap steps
 
-**Coordinator Role Projection**:
-The primary orchestrator role projected into `.agents/plugins/<bundle>/agents/` acting as the team's central dispatcher, responsible for decomposing vertical slices, reading team manifests, and routing specialized work to role definitions.
-_Avoid_: Master agent, boss prompt
+**Configured Agent (Cline)**:
+A Cline-native role definition (`<workspace>/.cline/agents/<role>.yml` or `~/.cline/agents/`) with YAML frontmatter (`name`, `description`, optional `tools`, `skills`, `providerId`, `modelId`, `maxIterations`) and a system-prompt body. Cline exposes each configured agent as a spawnable `subagent_<name>` tool for team delegation.
+_Avoid_: Markdown role copy, agent preset dump
 
 **Team Manifest**:
 The authoritative YAML document (`.agents/plugins/<bundle>/agents-united/teams/<bundle>.yaml`) declaring team membership, role descriptions, required skills, recommended addon bundles, and execution integrity modes (`strict`, `balanced`, `development`).
 _Avoid_: Config file, prompt snippet
 
-**Runtime Activation**:
-The CLI execution lifecycle (`agents start <bundle> [prompt]` or `agents add --start`) that discovers local workspace/global installations, checks Cline compound projections, validates local binary capabilities, constructs safe non-shell evaluated argument arrays, and launches the host assistant session.
-_Avoid_: Shell wrapper, blind launcher
+**Native Activation (Cline)**:
+The zero-step activation model (ADR 0013) where an installed bundle becomes immediately usable in any Cline session: skills are discovered from the canonical `.agents/skills/` store, configured-agent `.yml` roles surface as spawnable `subagent_*` tools from `.cline/agents/`, the coordinator rule is always-on from `.cline/rules/`, and workflows appear as `/<slug>` slash commands from `.cline/workflows/`. No plugin-install or launch step exists or is required.
+_Avoid_: Plugin install bootstrap, activation gate, manual `cline plugin install`
+
+**Team Session Launcher**:
+The optional CLI execution lifecycle (`agents start <bundle> [prompt]` or `agents add --start`) that discovers local workspace/global installations, validates local binary capabilities, constructs safe non-shell evaluated argument arrays, and launches a Cline session pre-seeded with the coordinator persona, Team Manifest context, persistent named-team state, and addon pre-authorization. Purely a convenience on top of Native Activation.
+_Avoid_: Activation step, required initializer, shell wrapper
 
 **Host Capability Probe**:
 A side-effect-free, read-only probing engine (`ClineCapabilityProbe`) that validates binary presence, queries semantic versioning, and performs safe parser checks (e.g. `--team-name` validation) under strict timeouts without spawning interactive sessions or mutating workspace files.
@@ -420,7 +424,7 @@ Auditing workspace health and host runtime status:
 # Audit project workspace
 agents doctor
 
-# Audit Cline runtime capabilities and compound projection status
+# Audit Cline runtime capabilities and native discovery projection status
 agents doctor --host cline
 ```
 

@@ -180,7 +180,7 @@ export class ClineLauncher {
       ? 'Addon auto-installation is pre-authorized for this session.'
       : `Before installing any recommended addon, explain the requirement to the user and request explicit confirmation to run: agents add <addon> -t cline ${scope === 'global' ? '-g ' : ''}-y.`;
 
-    const pluginInstallText = `Before proceeding, ensure you have installed this bundle's plugin by running: cline plugin install .agents/plugins/${bundleName}`;
+    const deploymentNoteText = `Deployment note: this bundle is already projected natively for this workspace (skills, rules, workflows, and configured subagent roles) - no "cline plugin install" step is needed.`;
 
     const taskText = prompt && prompt.trim().length > 0
       ? `User task: ${prompt.trim()}`
@@ -191,7 +191,7 @@ export class ClineLauncher {
       `Read the Team Manifest at "${manifestRel}" and your coordinator role definition at "${coordinatorCanonical}" before acting.`,
       `Use specialist roles only when necessary.`,
       addonPolicyText,
-      pluginInstallText,
+      deploymentNoteText,
       taskText,
     ].join('\n\n');
 

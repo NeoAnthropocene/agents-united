@@ -38,8 +38,8 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
     expect(claude).toContain('managed-by: agents-united');
     expect(claude).toContain('Read');
 
-    // Cline projection present
-    const clineProj = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
+    // Cline projection present (configured agent YAML, ADR 0013)
+    const clineProj = path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.yml');
     expect(await fs.pathExists(clineProj)).toBe(true);
 
     // Lockfile projectedTo recorded (forward slashes, workspace-root-relative)
@@ -47,7 +47,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
     const asset = lockfile.files[['agents', 'orchestrator-engineering.md'].join('/')];
     expect(asset).toBeDefined();
     expect(asset.projectedTo).toContain('.claude/agents/orchestrator-engineering.md');
-    expect(asset.projectedTo).toContain('.agents/plugins/software-engineering/agents/orchestrator-engineering.md');
+    expect(asset.projectedTo).toContain('.cline/agents/orchestrator-engineering.yml');
 
     // result.projections surfaced to the CLI caller
     expect(result.projections.some(p => p.host === 'claude' && p.path === '.claude/agents/orchestrator-engineering.md')).toBe(true);
@@ -87,9 +87,9 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
 
   it('throws on a pre-existing user file at the projection destination without --force', async () => {
     const installer = new InstallEngine();
-    const clineDir = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents');
+    const clineDir = path.join(testWorkspace, '.cline', 'agents');
     await fs.ensureDir(clineDir);
-    await fs.writeFile(path.join(clineDir, 'orchestrator-engineering.md'), 'user file', 'utf8');
+    await fs.writeFile(path.join(clineDir, 'orchestrator-engineering.yml'), 'user file', 'utf8');
 
     await expect(
       installer.install('software-engineering', {
@@ -100,7 +100,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
     ).rejects.toThrow(/--force/);
 
     // User file preserved
-    expect((await fs.readFile(path.join(clineDir, 'orchestrator-engineering.md'), 'utf8')).startsWith('user file')).toBe(true);
+    expect((await fs.readFile(path.join(clineDir, 'orchestrator-engineering.yml'), 'utf8')).startsWith('user file')).toBe(true);
   });
 
   it('re-installing with fanout over our own managed projections does NOT require --force', async () => {
@@ -121,7 +121,7 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
 
     expect(result.projections.some(p => p.host === 'cline')).toBe(true);
     const proj = await fs.readFile(
-      path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md'),
+      path.join(testWorkspace, '.cline', 'agents', 'orchestrator-engineering.yml'),
       'utf8'
     );
     expect(proj).toContain('managed-by: agents-united');

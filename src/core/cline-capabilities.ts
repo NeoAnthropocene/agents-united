@@ -114,6 +114,17 @@ export class ClineCapabilityProbe {
               };
             }
 
+            // Windows hardening (ADR 0013 §5): Node >= 18.20 / 20.12 / 24 rejects
+            // spawning .cmd/.bat shims with shell:false (EINVAL), so bridge through
+            // cmd.exe while keeping the argv array shell-safe.
+            const ext = path.extname(fullPath).toLowerCase();
+            if (ext === '.cmd' || ext === '.bat') {
+              return {
+                executable: 'cmd.exe',
+                prefixArgs: ['/c', fullPath],
+                source: 'path-executable',
+              };
+            }
             return {
               executable: fullPath,
               prefixArgs: [],

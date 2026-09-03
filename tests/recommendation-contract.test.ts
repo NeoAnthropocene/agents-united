@@ -163,7 +163,7 @@ describe('Part 1 — Recommendation contract (Cross-Bundle Dynamic Recommendatio
       const bundle = (await resolver.getBundle('software-engineering'))!;
       const registryAddons = bundle.recommendedAddons ?? [];
 
-      const rulePath = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'rules', 'agents-united-software-engineering.md');
+      const rulePath = path.join(testWorkspace, '.cline', 'rules', 'agents-united-software-engineering.md');
       const manifestPath = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents-united', 'teams', 'software-engineering.yaml');
       expect(await fs.pathExists(rulePath)).toBe(true);
       expect(await fs.pathExists(manifestPath)).toBe(true);
@@ -227,7 +227,7 @@ describe('Part 1 — Recommendation contract (Cross-Bundle Dynamic Recommendatio
 describe('Part 2 — installed-addon freshness (parent rule + manifest stop recommending installed addons)', () => {
   const testWorkspace = path.resolve(process.cwd(), 'scratch/test-recommendation-freshness');
   const agentsDir = path.join(testWorkspace, '.agents');
-  const parentRulePath = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'rules', 'agents-united-software-engineering.md');
+  const parentRulePath = path.join(testWorkspace, '.cline', 'rules', 'agents-united-software-engineering.md');
   const parentManifestPath = path.join(testWorkspace, '.agents', 'plugins', 'software-engineering', 'agents-united', 'teams', 'software-engineering.yaml');
 
   async function readParentState(): Promise<{ ruleAddons: string[]; manifestAddons: string[] }> {

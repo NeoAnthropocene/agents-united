@@ -71,8 +71,8 @@ describe('Milestone 1: ClineProjector', () => {
     });
   });
 
-  describe('Role definition rendering', () => {
-    it('strips Claude-style tools, Antigravity keys, and injects Cline preamble and managed marker', () => {
+  describe('Configured Agent (.yml) rendering', () => {
+    it('emits Cline configured-agent YAML with name/description frontmatter, stripped Antigravity keys, marker, and runtime note', () => {
       const canonicalAgent = `---
 name: backend-architect
 description: Expert backend architect
@@ -89,12 +89,12 @@ You are a specialized backend architect.
 Always design clean APIs.
 `;
 
-      const rendered = ClineProjector.renderRole(
+      const rendered = ClineProjector.renderConfiguredAgent(
         canonicalAgent,
         'agents/subagent-backend-architect.md'
       );
 
-      // Must have frontmatter
+      // Must have YAML frontmatter
       expect(rendered).toMatch(/^---\r?\n/);
       const parts = rendered.split(/---\r?\n/);
       const frontmatter = yaml.parse(parts[1]);
@@ -106,11 +106,83 @@ Always design clean APIs.
       expect(frontmatter.hooks).toBeUndefined();
       expect(frontmatter.version).toBeUndefined();
 
-      // Body contains managed marker as first line
+      // Body contains managed marker and runtime note
       const body = parts.slice(2).join('---');
       expect(body).toContain('<!-- managed-by: agents-united | profile: cline | canonical: agents/subagent-backend-architect.md | do not edit -->');
       expect(body).toContain('## Cline runtime note');
       expect(body).toContain('Always design clean APIs.');
+    });
+
+    it('strips the subagent- prefix from the frontmatter name (ADR 0013 decision 2)', () => {
+      const canonicalAgent = `---
+name: subagent-marketing-growth-strategist
+description: Growth funnel architecture specialist
+---
+Build funnels.
+`;
+      const rendered = ClineProjector.renderConfiguredAgent(
+        canonicalAgent,
+        'agents/subagent-marketing-growth-strategist.md'
+      );
+      const parts = rendered.split(/---\r?\n/);
+      const frontmatter = yaml.parse(parts[1]);
+      expect(frontmatter.name).toBe('marketing-growth-strategist');
+    });
+
+    it('throws when canonical agent lacks frontmatter (configured agents require a name)', () => {
+      expect(() =>
+        ClineProjector.renderConfiguredAgent('No frontmatter here.', 'agents/broken.md')
+      ).toThrow(/missing YAML frontmatter/i);
+    });
+  });
+
+  describe('Workflow projection rendering', () => {
+    it('slugifies the frontmatter name and keeps the human title in description', () => {
+      const canonicalWorkflow = `---
+name: "Digital Agency Full-Funnel Campaign Orchestration"
+description: "End-to-end cross-functional campaign workflow."
+bundle: "digital-agency"
+---
+# Workflow body
+Execute phases.
+`;
+      const slug = ClineProjector.workflowSlug(
+        canonicalWorkflow,
+        'workflows/workflow-agency-full-campaign.md'
+      );
+      expect(slug).toBe('digital-agency-full-funnel-campaign-orchestration');
+
+      const rendered = ClineProjector.renderWorkflowProjection(
+        canonicalWorkflow,
+        'workflows/workflow-agency-full-campaign.md'
+      );
+      const parts = rendered.split(/---\r?\n/);
+      const frontmatter = yaml.parse(parts[1]);
+      expect(frontmatter.name).toBe('digital-agency-full-funnel-campaign-orchestration');
+      expect(frontmatter.description).toBe('End-to-end cross-functional campaign workflow.');
+      expect(frontmatter.bundle).toBeUndefined();
+
+      const body = parts.slice(2).join('---');
+      expect(body).toContain('<!-- managed-by: agents-united | profile: cline | canonical: workflows/workflow-agency-full-campaign.md | do not edit -->');
+      expect(body).toContain('# Workflow body');
+    });
+
+    it('falls back to slugified filename when frontmatter name is missing', () => {
+      const canonicalWorkflow = `---
+description: "No name field here."
+---
+Body.
+`;
+      const slug = ClineProjector.workflowSlug(
+        canonicalWorkflow,
+        'workflows/workflow-review.md'
+      );
+      expect(slug).toBe('workflow-review');
+    });
+
+    it('slugifyWorkflowName collapses separators and trims dashes', () => {
+      expect(ClineProjector.slugifyWorkflowName('  A  B -- C__D  ')).toBe('a-b-c-d');
+      expect(ClineProjector.slugifyWorkflowName('--edge--case--')).toBe('edge-case');
     });
   });
 
@@ -153,7 +225,7 @@ Follow REST standards.
   });
 
   describe('planCompoundProjection', () => {
-    it('generates self-contained plugin artifacts including package.json manifest under .agents/plugins/<bundle-name>/', async () => {
+    it('generates the ADR 0013 artifact set: plugin.json Agent Plugin manifest, .cline/agents/*.yml, .cline/rules/, .cline/workflows/, skills in package, team manifest', async () => {
       const resolved = {
         agents: ['subagent-backend-architect.md'],
         skills: ['backend-api-design'],
@@ -167,37 +239,47 @@ Follow REST standards.
         registryDir
       );
 
+      // Agent Plugin manifest (.agents/plugins/<bundle>/plugin.json, agent-plugins.org schema)
       const manifestArtifact = artifacts.find(a => a.kind === 'plugin-manifest');
       expect(manifestArtifact).toBeDefined();
-      expect(manifestArtifact?.relPath).toBe('.agents/plugins/software-engineering/package.json');
+      expect(manifestArtifact?.relPath).toBe('.agents/plugins/software-engineering/plugin.json');
       expect(manifestArtifact?.managedMarker).toBe(false);
 
       const parsedManifest = JSON.parse(manifestArtifact!.content!);
-      expect(parsedManifest.name).toBe('agents-united-software-engineering');
+      expect(parsedManifest.$schema).toBe('https://agent-plugins.org/schemas/1.0.0/plugin.schema.json');
+      expect(parsedManifest.name).toBe('software-engineering');
       expect(parsedManifest.version).toBe('1.0.0');
       expect(parsedManifest.description).toBe('Autonomous software engineering team');
-      expect(parsedManifest.cline).toEqual({
-        plugins: [
-          {
-            capabilities: ['skills', 'tools', 'workflows'],
-            skills: ['./skills'],
-          },
-        ],
-      });
+      expect(parsedManifest.cline).toBeUndefined();
 
-      // Role artifact target path
+      // No legacy package.json projection
+      expect(artifacts.find(a => a.relPath.endsWith('/package.json'))).toBeUndefined();
+
+      // Configured agent role -> .cline/agents/backend-architect.yml (subagent- prefix stripped)
       const roleArtifact = artifacts.find(a => a.kind === 'role');
-      expect(roleArtifact?.relPath).toBe('.agents/plugins/software-engineering/agents/subagent-backend-architect.md');
+      expect(roleArtifact?.relPath).toBe('.cline/agents/backend-architect.yml');
+      expect(roleArtifact?.canonical).toBe('agents/subagent-backend-architect.md');
+      expect(roleArtifact?.managedMarker).toBe(true);
 
-      // Skill artifact target path
+      // Skill artifact stays inside the Agent Plugin package (portability lane)
       const skillArtifact = artifacts.find(a => a.kind === 'skill');
       expect(skillArtifact?.relPath).toContain('.agents/plugins/software-engineering/skills/backend-api-design/');
 
-      // Rule artifact target path
+      // Coordinator rule -> .cline/rules/
       const ruleArtifact = artifacts.find(a => a.kind === 'rule');
-      expect(ruleArtifact?.relPath).toBe('.agents/plugins/software-engineering/rules/agents-united-software-engineering.md');
+      expect(ruleArtifact?.relPath).toBe('.cline/rules/agents-united-software-engineering.md');
+      expect(ruleArtifact?.managedMarker).toBe(true);
 
-      // Team manifest artifact target path
+      // Workflows -> .cline/workflows/<slug>.md (kind workflow, slugified)
+      const workflowArtifacts = artifacts.filter(a => a.kind === 'workflow');
+      for (const wf of workflowArtifacts) {
+        expect(wf.relPath).toMatch(/^\.cline\/workflows\/[a-z0-9-]+\.md$/);
+        expect(wf.managedMarker).toBe(true);
+        const wfFrontmatter = yaml.parse(wf.content!.split(/---\r?\n/)[1]);
+        expect(wfFrontmatter.name).toBeTruthy();
+      }
+
+      // Team manifest artifact target path (unchanged vendor-namespace location)
       const teamManifestArtifact = artifacts.find(a => a.kind === 'team-manifest');
       expect(teamManifestArtifact?.relPath).toBe('.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml');
     });

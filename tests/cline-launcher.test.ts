@@ -110,7 +110,7 @@ describe('Milestone 4: ClineLauncher', () => {
       expect(bootstrap).toContain('Addon auto-installation is pre-authorized for this session');
     });
 
-    it('includes plugin installation instruction in bootstrap prompt', () => {
+    it('omits the cline plugin install instruction and includes the native projection note (ADR 0013)', () => {
       const launcher = new ClineLauncher();
       const plan = launcher.planActivation({
         bundleName: 'software-engineering',
@@ -120,9 +120,9 @@ describe('Milestone 4: ClineLauncher', () => {
       });
 
       const bootstrap = plan.argv[plan.argv.length - 1];
-      expect(bootstrap).toContain(
-        "Before proceeding, ensure you have installed this bundle's plugin by running: cline plugin install .agents/plugins/software-engineering"
-      );
+      expect(bootstrap).not.toContain('cline plugin install .agents/plugins/');
+      expect(bootstrap).toContain('already projected natively');
+      expect(bootstrap).toContain('no "cline plugin install" step is needed');
     });
 
     it('uses the bundle-specific orchestrator as coordinator when provided (fix: no more hardcoded engineering coordinator)', () => {

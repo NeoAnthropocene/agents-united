@@ -86,7 +86,7 @@ export interface LockfileAsset {
   projectedTo?: string[];
 }
 
-export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'bridge' | 'plugin-manifest';
+export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'workflow' | 'bridge' | 'plugin-manifest';
 
 export interface LockfileProjection {
   host: string;
@@ -342,17 +342,18 @@ export interface SkillFrontmatter {
   metadata?: SkillMetadata;
 }
 
-export interface ClinePluginManifest {
+/**
+ * agent-plugins.org v1.0.0 Agent Plugin manifest (`plugin.json`) written at the root
+ * of `.agents/plugins/<bundle>/`. Its presence is the discriminator Cline uses to
+ * hard-stop code-plugin scanning of the directory (see `isAgentPluginDirectory` in
+ * Cline's `@cline/shared/storage`), and it makes the package portable to other
+ * Agent Plugins-conforming clients.
+ */
+export interface AgentPluginManifest {
+  $schema: string;
   name: string;
   version: string;
   description: string;
-  cline: {
-    plugins: Array<{
-      paths?: string[];
-      capabilities: string[];
-      skills?: string[];
-    }>;
-  };
 }
 
 
