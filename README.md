@@ -17,7 +17,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 
 - **🪶 Essentials-First & On-Demand Growth**: Every department installs as a lean **Essentials bundle** by default. When a task requires specialized capabilities, the Lead Orchestrator automatically detects the gap, recommends the exact addon, and can auto-install it directly into your project scope.
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
-- **🚀 Cline Native Activation**: Launch specialized teams into Cline CLI sessions with `agents start`, featuring packaged native plugins with `package.json` manifests in `.agents/plugins/<bundle>/`, skill toolkits, coordinator rules, and declarative team manifests.
+- **🚀 Cline Native Activation**: Bundles activate **automatically** in any Cline CLI session — skills discovered natively from `.agents/skills/`, configured-agent roles (`.cline/agents/*.yml`) exposed as spawnable `subagent_*` tools, coordinator rules (`.cline/rules/`), slash-command workflows (`.cline/workflows/`), and spec-conformant Agent Plugin packages (`plugin.json`, agent-plugins.org) in `.agents/plugins/<bundle>/`. No install step required; `agents start` remains available as an optional pre-seeded team-session launcher.
 - **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
 - **🤖 58 Specialized Agents, 91 Skills & 69 Workflows**: 8 Lead Orchestrators coordinating 50 domain sub-agents, backed by 91 production-grade runbooks and 69 deterministic workflows.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
@@ -297,9 +297,13 @@ agents remove mobile-development -g -y
 ---
 
 ### `agents start <bundle> [prompt]`
-Starts an installed team bundle in its host runtime. **By design, this command currently targets the Cline CLI** because Cline provides an open, programmatic CLI (`cline "prompt"`) that allows us to inject a team context directly from the terminal (unlike other editors which do not yet expose this). 
+Launches an **optional pre-seeded team session** in the Cline CLI. Activation itself is automatic (ADR 0013 native discovery): after `agents add`, *any* `cline` session in the workspace already sees the bundle's skills, `subagent_*` agent tools, rules, and workflow commands. What `agents start` adds on top:
 
-It automatically resolves project vs. global installations, verifies that Cline projections are up-to-date, probes for the `cline` executable on your system, constructs safe non-shell evaluated arguments, and launches the session.
+1. **Coordinator persona bootstrap** — the session starts *as* the bundle's Lead Orchestrator (reads the Team Manifest and coordinator role prompt).
+2. **Persistent team state** — `--team-name au-<bundle>-<hash>` gives a resumable team board (`~/.cline/data/teams/`).
+3. **Addon pre-authorization** — `--allow-addons` skips per-addon consent prompts for the session.
+
+**By design, this command currently targets the Cline CLI** because Cline provides an open, programmatic CLI (`cline "prompt"`) that allows us to inject a team context directly from the terminal (unlike other editors which do not yet expose this). It automatically resolves project vs. global installations, probes for the `cline` executable on your system (Windows node-wrapper, `cmd.exe` shim bridge, or POSIX binary), constructs safe non-shell evaluated arguments, and launches the session.
 
 ```bash
 # Start an installed team in Cline
@@ -363,7 +367,7 @@ Audits workspace agent directories, verifies frontmatter schema validity, valida
 # General workspace health audit
 agents doctor
 
-# Audit Cline runtime installation, capability probe, and compound projection integrity
+# Audit Cline runtime installation, capability probe, and native discovery projection integrity
 agents doctor --host cline
 ```
 

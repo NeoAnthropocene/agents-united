@@ -247,7 +247,7 @@ cli
           {
             value: 'cline',
             label: HOST_REGISTRY.cline.label,
-            hint: detectedHosts.includes('cline') ? 'found in this project' : 'roles, skills, coordinator rules & team manifests for Cline',
+            hint: detectedHosts.includes('cline') ? 'found in this project' : 'configured agents, skills, rules, workflows & team manifests for Cline',
           },
           {
             value: 'opencode',
@@ -663,6 +663,13 @@ cli
 
       const hasClineProjection = result.projections.some(p => p.host === 'cline');
 
+      if (hasClineProjection && !options.dryRun) {
+        note(
+          pc.green(`Already active: any Cline session in this workspace now sees this bundle's skills, subagent_* agent tools, rules & workflow commands (ADR 0013 native discovery).`),
+          'Native Activation'
+        );
+      }
+
       if (options.start && !hasClineProjection) {
         throw new Error('--start requires Cline projection. Add -t cline or --fanout cline.');
       }
@@ -728,11 +735,15 @@ cli
 
       // Plain-language tip when the main library is the only thing installed and no
       // translated copies were requested — sets the right expectation up front.
+      // ADR 0013: Cline natively discovers skills from .agents/skills/, so the old
+      // "only Antigravity reads the main library" claim is no longer accurate.
       if (!options.dryRun && hosts.includes('agents') && result.projections.length === 0) {
         note(
           pc.yellow(
-            `Tip: only Antigravity reads the main library (.agents/) directly.\n` +
-              `To use this bundle in Cline, Claude Code & others: agents update ${identifier} --fanout cline,claude`
+            `Tip: Antigravity reads the main library (.agents/) directly, and Cline natively\n` +
+              `discovers skills from .agents/skills/ (ADR 0013). For Cline configured agents,\n` +
+              `rules & workflows run: agents update ${identifier} --fanout cline\n` +
+              `(add claude, cursor, opencode, codex for other assistants)`
           ),
           'One library, every assistant'
         );
@@ -1012,8 +1023,8 @@ cli
         if (unprojected.length > 0) {
           note(
             pc.yellow(
-              `Tip: not synced to other assistants yet (only Antigravity reads .agents/).\n` +
-                `To add Cline & friends: agents update ${unprojected[0]} --fanout cline,claude`
+              `Tip: not fully synced to other assistants yet (Antigravity reads .agents/ directly; Cline natively discovers .agents/skills/).\n` +
+                `For Cline configured agents, rules & workflows: agents update ${unprojected[0]} --fanout cline`
             ),
             'One library, every assistant'
           );
@@ -1516,6 +1527,12 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
         (result.projections.length > 0 ? `\n\nProjections:\n${renderProjections(result.projections)}` : ''),
         'Installation Success'
       );
+      if (result.projections.some(p => p.host === 'cline')) {
+        note(
+          pc.green(`Already active: any Cline session in this workspace now sees this bundle's skills, subagent_* agent tools, rules & workflow commands (ADR 0013 native discovery). Use "agents start ${bundle.name}" for a pre-seeded team session.`),
+          'Native Activation'
+        );
+      }
       outro(pc.green(`✨ Installation of "${bundle.name}" complete!`));
     } catch (err: any) {
       installSpinner.stop(pc.red('Installation failed'));
@@ -1590,7 +1607,7 @@ cli
         domainOptions.push({
           value: '__full_tree__',
           label: '🌳 View Full Static Catalog Tree',
-          hint: 'expand all 18 bundles and 8 departments at once',
+          hint: `expand all ${bundles.length} bundles and ${new Set(bundles.map(b => b.domain).filter(Boolean)).size} departments at once`,
         });
 
         const selectedDomain = await select({
@@ -1939,10 +1956,11 @@ cli
       console.log(pc.bold(pc.cyan('💡 Get Started:')));
       console.log(`  👉 ${pc.bold('agents add')}                      Launch the interactive installation wizard`);
       console.log(`  👉 ${pc.bold('agents add software-engineering')} Install the engineering essentials team`);
-      console.log(`  👉 ${pc.bold('agents list')}                     Browse all 23 bundles and 8 departments\n`);
+      const bundleCount = (await registry.listBundles()).length;
+      console.log(`  👉 ${pc.bold('agents list')}                     Browse all ${bundleCount} bundles by department\n`);
 
       if (report.clineCapability) {
-        console.log(pc.bold(pc.cyan('Cline Runtime & Compound Projection Audit:')));
+        console.log(pc.bold(pc.cyan('Cline Runtime & Native Discovery Audit:')));
         console.log(`  Installed: ${report.clineCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
         if (report.clineCapability.version) {
           console.log(`  Version: ${report.clineCapability.version}`);
@@ -1965,13 +1983,13 @@ cli
     console.log(`  🔄 Installed Workflows: ${pc.bold(report.workflowsCount.toString())}\n`);
 
     if (report.clineCapability) {
-      console.log(pc.bold(pc.cyan('Cline Runtime & Compound Projection Audit:')));
+      console.log(pc.bold(pc.cyan('Cline Runtime & Native Discovery Audit:')));
       console.log(`  Installed: ${report.clineCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
       if (report.clineCapability.version) {
         console.log(`  Version: ${report.clineCapability.version}`);
       }
       console.log(`  Named Teams: ${report.clineCapability.namedTeams ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported (Adaptive fallback)')}`);
-      console.log(`  Role Definitions: ${report.agentsCount} prepared (activation via "agents start")\n`);
+      console.log(`  Configured Agents: ${report.agentsCount} active natively in any Cline session ("agents start" = optional team-session launcher)\n`);
     }
 
     if (report.issues.length > 0) {

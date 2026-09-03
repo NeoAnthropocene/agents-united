@@ -134,7 +134,7 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     });
     expect(stdout).toContain('Successfully processed update');
 
-    const clineProj = path.join(e2eDir, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md');
+    const clineProj = path.join(e2eDir, '.cline', 'agents', 'orchestrator-engineering.yml');
     expect(await fs.pathExists(clineProj)).toBe(true);
     expect(await fs.readFile(clineProj, 'utf8')).toContain('managed-by: agents-united');
 
@@ -154,7 +154,7 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     // Canonical store installed AND translated Cline copies written
     expect(await fs.pathExists(path.join(e2eDir, '.agents', 'agents-united.json'))).toBe(true);
     const proj = await fs.readFile(
-      path.join(e2eDir, '.agents', 'plugins', 'software-engineering', 'agents', 'orchestrator-engineering.md'),
+      path.join(e2eDir, '.cline', 'agents', 'orchestrator-engineering.yml'),
       'utf8'
     );
     expect(proj).toContain('managed-by: agents-united');
@@ -166,7 +166,8 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
       cwd: e2eDir,
       encoding: 'utf8',
     });
-    expect(stdout).toMatch(/only Antigravity reads/i);
+    expect(stdout).toMatch(/Antigravity reads the main library/i);
+    expect(stdout).toMatch(/\.agents\/skills\//i);
     expect(stdout).toContain('--fanout');
   });
 
@@ -275,8 +276,8 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     });
 
     expect(stdout).toContain('Installed Agents');
-    expect(stdout).toContain('Cline Runtime & Compound Projection Audit:');
-    expect(stdout).toContain('Role Definitions:');
+    expect(stdout).toContain('Cline Runtime & Native Discovery Audit:');
+    expect(stdout).toContain('Configured Agents:');
   });
 });
 

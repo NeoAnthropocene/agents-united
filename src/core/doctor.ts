@@ -111,7 +111,7 @@ export class DoctorEngine {
         for (const [projRelPath, proj] of Object.entries(manifest.projections)) {
           const absPath = path.join(workspaceRoot, projRelPath);
           if (!await fs.pathExists(absPath)) {
-            warnings.push(`Missing compound projection ${projRelPath} (owners: ${proj.owners.join(', ')}).`);
+            warnings.push(`Missing Cline projection ${projRelPath} (owners: ${proj.owners.join(', ')}).`);
             continue;
           }
           if (proj.managedMarker) {

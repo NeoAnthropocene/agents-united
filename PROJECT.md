@@ -25,7 +25,7 @@ AI assistants read different folder structures and frontmatter dialects:
 - **Google Antigravity**: Reads `./.agents/` natively in interactive sessions (CLI TUI panel + Antigravity 2.0 desktop). Headless CLI mode (`-p` / `agy agents`) on agy 1.1.15 reads only the user-global store — see [ADR 0009](./docs/adr/0009-host-conformance-targets.md).
 - **Anthropic Claude Code**: Reads `./.claude/agents/` with `tools: [...]` frontmatter.
 - **Cursor**: Reads `./.cursor/agents/` and `.cursor/rules/*.mdc`.
-- **Cline**: Reads packaged native plugins with manifests from `.agents/plugins/<bundle>/` (`package.json`, `agents/`, `skills/`, `rules/`, and `agents-united/teams/`).
+- **Cline**: Reads the canonical `.agents/skills/` store natively, plus per-bundle projections: configured-agent YAML in `.cline/agents/*.yml` (exposed as spawnable `subagent_*` tools), coordinator rules in `.cline/rules/`, workflows in `.cline/workflows/`, and agent-plugins.org packages (`plugin.json`, `skills/`, `agents-united/teams/`) in `.agents/plugins/<bundle>/`.
 - **OpenCode**: Reads `./.opencode/agent/`.
 - **Codex & AGENTS.md Readers**: Reads root `AGENTS.md` standard index.
 
@@ -143,11 +143,11 @@ All 10 foundational implementation plans have been fully realized, tested under 
 | **[008](./plans/008-cline-native-projection-and-team-activation.md)** | Cline Compound Projection & Team Activation | Runtime Integration | **DONE** | 4-part compound artifacts (`.cline/agents/`, `.cline/skills/`, `.cline/rules/`, `.cline/agents-united/teams/`), `lockfile.projections` refcounting, `ClineCapabilityProbe`, `ClineLauncher`. |
 | **[009](./plans/009-essentials-composition-audit.md)** | Essentials Bundle Composition Audit & Modularization | Architecture / Catalog | **DONE** | `universal-skills` extraction, `software-engineering` slimmed to 16 skills, `product-design` 2-addon decomposition, graduated to `stable`. |
 | **[010](./plans/010-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Core / Architecture | **DONE** | Scoped `rules:`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards, department roster expansion across Security, Business, Research, Architecture, and Continuous Stream-JSON Evals harness. |
-| **[011](./plans/011-cline-plugins-projection-migration.md)** | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **DONE** | Local packaged Cline plugins in `.agents/plugins/<bundle>/` with `package.json` manifests, legacy `.cline/` migration, and automated `cline plugin install` bootstrap instructions. |
+| **[011](./plans/011-cline-plugins-projection-migration.md)** | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **SUPERSEDED (ADR 0013)** | The assumed "Cline 4.0.0+ plugin architecture" does not exist (latest CLI = 3.0.61); `cline plugin install` is a code-plugin installer and the `package.json` manifest contract was invalid. Replaced by ADR 0013 native discovery projection. |
 
 ---
 
-## 4. Architectural Decision Records (ADRs 0001–0012)
+## 4. Architectural Decision Records (ADRs 0001–0013)
 
 All architectural decisions recorded in `docs/adr/` are indexed and summarized below:
 
@@ -164,7 +164,8 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 | **[0009](./docs/adr/0009-host-conformance-targets.md)** | Host Conformance Targets | Accepted | Per-host conformance probes pinned to tested CLI versions: Cline = conformant (headless CI), Antigravity = interactive-scoped confirmed on agy 1.1.15 (CLI TUI + desktop read `.agents/` natively; headless `-p` not a target). No projection shim required for Antigravity. |
 | **[0010](./docs/adr/0010-universal-orchestration-bundle-and-domain-atlas.md)** | Universal Orchestration Bundle & Domain Atlas | Accepted | Prime Orchestrator (`orchestrator-universal.md`) with compact Domain Atlas, `handoff` / `grill-me`, and Route & Instruct Contract. |
 | **[0011](./docs/adr/0011-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Accepted | Adoption of Antigravity 2.10 / CLI 1.1.21 schema enhancements (`rules: [...]`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards) and department subagent expansion. |
-| **[0012](./docs/adr/0012-cline-native-plugins-projection.md)** | Cline Native Plugins Projection Architecture | Accepted | Project Cline bundles as self-contained native plugins in `.agents/plugins/<bundle>/` with deterministic `package.json` manifests, skills, roles, rules, and team manifests, with automatic migration of legacy `.cline/` projections. |
+| **[0012](./docs/adr/0012-cline-native-plugins-projection.md)** | Cline Native Plugins Projection Architecture | Superseded by [0013](./docs/adr/0013-cline-native-discovery-projection.md) | Project Cline bundles as self-contained native plugins in `.agents/plugins/<bundle>/` with deterministic `package.json` manifests, skills, roles, rules, and team manifests, with automatic migration of legacy `.cline/` projections. Premise (Cline 4.0.0+ markdown plugin capabilities) disproved by runtime verification. |
+| **[0013](./docs/adr/0013-cline-native-discovery-projection.md)** | Cline 3.x Native Discovery Projection & Agent Plugin Packaging | Accepted | Dual-lane Cline integration: agent-plugins.org `plugin.json` packages under `.agents/plugins/<bundle>/` (scanner hard-stop + cross-client portability) plus native discovery projections — configured agents `.cline/agents/*.yml` (spawnable `subagent_*` tools), coordinator rules `.cline/rules/`, slugified workflows `.cline/workflows/`, skills natively discovered from `.agents/skills/`. Verified against Cline CLI 3.0.61 (source commit `c853844` + binary analysis). |
 
 ---
 
@@ -268,20 +269,20 @@ When a user runs `agents add <bundle> --fanout claude,cursor,cline,opencode,code
 2. **Translation Matrix**:
    - `claude`: Translates frontmatter to Claude Code dialect (`tools`, `model`), strips Antigravity execution keys.
    - `cursor`: Generates Cursor agent definitions and `.cursor/rules/*.mdc`.
-   - `cline`: Emits **Compound Projection** (Role definitions, skills, coordinator rule, and team manifest).
+   - `cline`: Emits the **ADR 0013 dual-lane projection** (Agent Plugin package `plugin.json` + native discovery: configured agents, rules, slugified workflows; skills activate natively from `.agents/skills/`).
    - `opencode`: Translates to OpenCode agent dialect in `.opencode/agent/`.
    - `codex`: Generates root `AGENTS.md` bridge indexing all canonical capabilities.
 3. **Managed Marker Stamping**: Every projected markdown file receives a top comment:
    `<!-- managed-by: agents-united | profile: <profile> | canonical: .agents/... | do not edit -->`
 4. **Ownership Refcounting**: Recorded in `lockfile.projections[relPath].owners = [bundle1, bundle2]`. Removing `bundle1` preserves the file if `bundle2` still depends on it.
 
-### 6.2 Safe Capability Probing & Runtime Activation
-When running `agents start <bundle> [prompt]`:
+### 6.2 Safe Capability Probing & Optional Team-Session Launch
+Bundles are **natively active** in any Cline session after installation (ADR 0013 discovery — no launch step required). `agents start <bundle> [prompt]` is the optional team-session launcher:
 1. **Capability Probing (`ClineCapabilityProbe`)**:
-   - Resolves executable via `CLINE_BIN_PATH`, Windows Node wrapper (`<shim>/node_modules/cline/bin/cline`), or POSIX binary.
+   - Resolves executable via `CLINE_BIN_PATH`, Windows Node wrapper (`<shim>/node_modules/cline/bin/cline`), Windows `cmd.exe` bridge for `.cmd`/`.bat` shims (Node ≥18.20 rejects spawning them with `shell: false`), or the POSIX binary.
    - Executes read-only semantic versioning check (`version`).
    - Executes parser probe (`--team-name agents-united-capability-probe version`) under 5000ms timeout.
-2. **Activation Strategy**:
+2. **Launch Strategy**:
    - `named-team`: Uses `--team-name au-<bundle>-<hash8>` if probe succeeds.
    - `adaptive-session`: Falls back to standard session with coordinator prompt.
 3. **Safe Execution (`ClineLauncher`)**:
@@ -414,10 +415,10 @@ c:/github/agents-united/
 │       ├── mcp-locations.ts      # McpLocationRegistry (dynamic cross-platform host config catalog)
 │       ├── prerequisites.ts      # PrerequisiteChecker (MCP auto-provisioning & config generator)
 │       ├── projector.ts          # HostProjector (dialects & AGENTS.md)
-│       ├── cline-projector.ts    # ClineProjector (native plugin package.json, manifests & rules)
+│       ├── cline-projector.ts    # ClineProjector (agent-plugins.org plugin.json, configured-agent .yml, rules, workflows & team manifests)
 │       ├── cline-capabilities.ts # ClineCapabilityProbe (read-only probe)
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
-├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0012)
+├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0013)
 ├── plans/                        # Implementation Plan Specifications (001–011)
 ├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 413 tests)
 │   ├── e2e-evals/                # Stream-JSON Continuous Evaluation Harness (schemas, judge, runner)
