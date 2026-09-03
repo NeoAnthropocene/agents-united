@@ -1,10 +1,11 @@
 name: Sync main to dev
 
-# Opens a pull request from `main` into `dev` after every successful
-# semantic-release run on `main`, so `dev` never drifts behind the
-# release commits (version bumps, CHANGELOG.md) that CI writes only to `main`.
-# Using `workflow_run` (not `push`) means the sync fires even though the
-# release commit message carries `[skip ci]`.
+# After every successful semantic-release run on `main`, this workflow syncs the
+# release commits (version bumps, CHANGELOG.md — written only to `main`) back
+# into `dev` so the two branches never drift. It opens the sync pull request
+# AND merges it immediately — fully automatic, no manual step. Using
+# `workflow_run` (not `push`) means the sync fires even though the release
+# commit message carries `[skip ci]`.
 
 on:
   workflow_run:
@@ -17,7 +18,7 @@ permissions:
 
 jobs:
   sync:
-    name: Open main → dev sync PR
+    name: Sync main → dev (PR + auto-merge)
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Open sync pull request (main → dev)
+      - name: Sync dev with main (open + auto-merge PR)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -35,25 +36,46 @@ jobs:
 
           BEHIND_COUNT=$(git rev-list --count origin/dev..origin/main)
           if [ "$BEHIND_COUNT" -eq "0" ]; then
-            echo "dev is already up to date with main (0 new commits). No PR needed."
-            exit 0
-          fi
-
-          EXISTING_PR=$(gh pr list --base dev --head main --state open --json number --jq '.[0].number')
-          if [ -n "$EXISTING_PR" ]; then
-            echo "PR #$EXISTING_PR is already open from main to dev."
+            echo "dev is already up to date with main (0 new commits). Nothing to sync."
             exit 0
           fi
 
           gh label create "auto-sync" --description "Automated sync PRs" --color "0e8a16" --force 2>/dev/null || true
 
-          gh pr create \
-            --base dev \
-            --head main \
-            --title "chore(auto): sync main → dev after release" \
-            --label "auto-sync" \
-            --body-file - << 'EOF'
+          # Reuse an open sync PR if one exists, otherwise create it.
+          PR_NUMBER=$(gh pr list --base dev --head main --state open --json number --jq '.[0].number')
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER=$(gh pr create \
+              --base dev \
+              --head main \
+              --title "chore(auto): sync main → dev after release" \
+              --label "auto-sync" \
+              --body-file - << 'EOF'
           Automated pull request bringing upstream `main` changes (semantic-release version bumps, `CHANGELOG.md`) back into `dev`.
 
-          Merge this to keep `main` and `dev` in lockstep so `dev` no longer drifts behind release commits. Created by the "Sync main to dev" workflow after the Release workflow completed successfully on `main`.
+          Auto-merged by the "Sync main to dev" workflow to keep `main` and `dev` in lockstep after every release.
           EOF
+            )
+          fi
+
+          # Prefer auto-merge: with branch protection + required checks, GitHub
+          # merges the moment CI passes. Falls back to an immediate merge when
+          # the repo's "Allow auto-merge" setting is off (pre-protection repos).
+          if gh pr merge "$PR_NUMBER" --auto --merge 2>/dev/null; then
+            echo "Sync PR #$PR_NUMBER set to auto-merge. dev will be in lockstep with main."
+            exit 0
+          fi
+
+          # Fallback: immediate merge with a short retry loop (mergeability may
+          # still be computing right after PR creation).
+          for i in 1 2 3 4 5; do
+            if gh pr merge "$PR_NUMBER" --merge; then
+              echo "Sync PR #$PR_NUMBER merged. dev is in lockstep with main."
+              exit 0
+            fi
+            echo "Merge attempt $i failed (PR may not be mergeable yet); retrying in 10s..."
+            sleep 10
+          done
+
+          echo "::warning::Sync PR #$PR_NUMBER could not be auto-merged after retries. Leaving it open for manual merge."
+          exit 1
