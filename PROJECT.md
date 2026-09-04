@@ -147,7 +147,7 @@ All foundational implementation plans (001–011) have been fully realized, test
 | **[009](./plans/009-essentials-composition-audit.md)** | Essentials Bundle Composition Audit & Modularization | Architecture / Catalog | **DONE** | `universal-skills` extraction, `software-engineering` slimmed to 16 skills, `product-design` 2-addon decomposition, graduated to `stable`. |
 | **[010](./plans/010-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Core / Architecture | **DONE** | Scoped `rules:`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards, department roster expansion across Security, Business, Research, Architecture, and Continuous Stream-JSON Evals harness. |
 | **[011](./plans/011-cline-plugins-projection-migration.md)** | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **SUPERSEDED (ADR 0013)** | The assumed "Cline 4.0.0+ plugin architecture" does not exist (latest CLI = 3.0.61); `cline plugin install` is a code-plugin installer and the `package.json` manifest contract was invalid. Replaced by ADR 0013 native discovery projection. |
-| **[012](./plans/012-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue (`digital-agency` first) | Runtime Integration / Catalog / Evals | **READY (gated)** | Opt-in `planningLoop` block + Consultation Budget rendered into the coordinator rule, Cline `maxIterations` hard cap, Planning Dialogue Loop prompts, persona alias map, and planning-loop eval criteria. Per ADR 0014; digital-agency only, rollout deferred. |
+| **[012](./plans/012-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue (`digital-agency` first) | Runtime Integration / Catalog / Evals | **DONE** (Cline manual test passed; Antigravity round pending) | Opt-in `planningLoop` block + Consultation Budget rendered into the coordinator rule, Cline `maxIterations` hard cap, Planning Dialogue Loop prompts, persona alias map, and planning-loop eval criteria. Per ADR 0014; digital-agency only, rollout deferred. |
 
 ---
 
@@ -427,8 +427,8 @@ c:/github/agents-united/
 ├── docs/                         # Documentation
 │   ├── adr/                      # Architectural Decision Records (ADRs 0001–0014)
 │   └── workflow-guide.md         # Developer workflow guide (branching, protected dev, PRs, releases)
-├── plans/                        # Implementation Plan Specifications (001–011)
-├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 413 tests)
+├── plans/                        # Implementation Plan Specifications (001–012)
+├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 430 passing tests)
 │   ├── e2e-evals/                # Stream-JSON Continuous Evaluation Harness (schemas, judge, runner)
 │   └── helpers/                  # Test helpers and mock fixtures
 ├── CONTEXT.md                    # Ubiquitous Domain Dictionary
@@ -477,7 +477,7 @@ The codebase adheres to zero technical debt, strict typing, and 100% test pass r
  ✓ tests/e2e-evals/e2e-stream-evals.test.ts
 
  Test Files  28 passed (28)
-      Tests  410 passed | 208 skipped (618)
+      Tests  430 passed | 208 skipped (638)
 ```
 
 ---

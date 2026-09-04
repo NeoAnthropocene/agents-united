@@ -119,7 +119,7 @@ Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orch
 | **🔒 Security Operations** | `security-operations` | — | `orchestrator-security` |
 | **🔬 Deep Technical Research** | `deep-research` | — | `orchestrator-research` |
 | **💼 Business Strategy & Economics** | `business-strategy` | — | `orchestrator-business` |
-| **🏢 Organization Bundles (Experimental)** | `digital-agency` 🚧 | *(Currently under development)* | `orchestrator-digital-agency-director` |
+| **🏢 Organization Bundles (Experimental)** | `digital-agency` ⚡ | *(Cross-functional composite)* | `orchestrator-marketing` (Campaign Director / Chris) |
 
 <details>
 <summary><strong>🔍 Click to expand full Department & Agent Roster Breakdown</strong></summary>
@@ -173,7 +173,7 @@ Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orch
 - **Essentials Base (`business-strategy`)**: `subagent-business-panel-experts`
 
 #### 🏢 Organization Bundles (Tier 2 / Experimental)
-- **Digital Product Agency (`digital-agency` 🚧)**: *(Currently under development)*
+- **Digital Product Agency (`digital-agency` ⚡)**: 10-agent cross-functional AstrolabsAI team (Chris / Ava / Kaan / Jamileh / Yavuz / Jale + engineering, QA & compliance) with Tri-Tier MCP execution modes and the Subagent-First Planning Dialogue Loop (ADR 0014).
 
 </details>
 

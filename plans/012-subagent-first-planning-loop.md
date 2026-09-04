@@ -6,9 +6,10 @@
 > report — do not improvise. When done, update the status row for this plan
 > in `plans/README.md`.
 >
-> **USER GATE**: This plan is approved in design (Option B, maintainer-ratified
-> 2026-09-04) but execution **must not begin until the maintainer explicitly
-> gives the go-ahead**. Do not self-start.
+> **USER GATE**: **LIFTED 2026-09-04** — the maintainer approved execution (Option B) and
+> Steps 1–7 are implemented and verified (full suite 430 passed | 0 failures). Step 8
+> (maintainer manual round) is partially complete: **Cline manual test passed**;
+> Antigravity manual round pending.
 >
 > **Drift check (run first)**:
 > `git diff --stat 55e7593..HEAD -- src/core/cline-projector.ts src/core/types.ts registry/bundles.json registry/agents/orchestrator-marketing.md tests/e2e-evals/ tests/cline-projector.test.ts`
@@ -341,16 +342,16 @@ are applied to `bundles.json` only.
 
 ## Done criteria
 
-- [ ] ADR 0014 accepted & indexed; 6 CONTEXT.md terms registered.
-- [ ] `planningLoop` + `personaAliases` in `bundles.json` (digital-agency only) with typed schema in `types.ts`.
-- [ ] Coordinator rule for `digital-agency` contains the Subagent-First Delegation Policy, Planning Dialogue Loop, Consultation Budget, and persona → tool table.
-- [ ] Coordinator rules for all other bundles byte-identical to pre-change render (regression test).
-- [ ] Configured-agent `.yml` for the digital-agency roster carries `maxIterations`.
-- [ ] Orchestrator + 9 subagents + 6 workflows carry the planning-loop protocol.
-- [ ] Eval harness asserts delegation-first, budget compliance, council scope statements, and gates budget overflow.
-- [ ] `npm run typecheck && npm test && npm run build` → 100% pass.
-- [ ] Dry-run artifacts inspected; manual test round completed by maintainer.
-- [ ] `plans/README.md` status row updated.
+- [x] ADR 0014 accepted & indexed; 6 CONTEXT.md terms registered.
+- [x] `planningLoop` + `personaAliases` in `bundles.json` (digital-agency only) with typed schema in `types.ts`.
+- [x] Coordinator rule for `digital-agency` contains the Subagent-First Delegation Policy, Planning Dialogue Loop, Consultation Budget, and persona → tool table.
+- [x] Coordinator rules for all other bundles byte-identical to pre-change render (regression test).
+- [x] Configured-agent `.yml` for the digital-agency roster carries `maxIterations`.
+- [x] Orchestrator + 9 subagents + 6 workflows carry the planning-loop protocol.
+- [x] Eval harness asserts delegation-first, budget compliance, council scope statements, and gates budget overflow.
+- [x] `npm run typecheck && npm test && npm run build` → 100% pass.
+- [x] Dry-run artifacts inspected (scratch workspace `au-scratch-digital-agency`: coordinator rule, 10× `.yml` with `maxIterations: 8`, team manifest).
+- [ ] Manual test round: **Cline passed** (maintainer, 2026-09-04); Antigravity round pending.
 
 ## STOP conditions
 
