@@ -125,6 +125,8 @@ Architectural separation between delivery and reliability:
 | 73 | MCP Setup Runbook Skill | Authored comprehensive `mcp-setup` runbook for 8 ecosystem MCPs | M5 | DONE | PLAN_010 |
 | 74 | Two-Stage Hybrid Evaluator Engine | Fast-fail deterministic gatekeeper (0ms) + schema-constrained semantic LLM judge (`zod`) | M6 | DONE | PLAN_010 |
 | 75 | Stream-JSON Continuous Evaluation Harness | Built `tests/e2e-evals/runner.ts` and multi-hop DAG evaluation test suite for `digital-agency` | M6 | DONE | PLAN_010 |
+| 76 | Subagent-First Planning Dialogue Loop | Opt-in `planningLoop` block (Consultation Budget + persona aliases) rendered into the coordinator rule, team manifest, and configured-agent `maxIterations`; Planning Dialogue Loop prompts across orchestrator, 9 roster subagents, and 6 agency workflows | M7 | DONE | PLAN_012 |
+| 77 | Planning Loop Eval Gatekeeper | `PlanningLoopCriteriaSchema` + deterministic Stage-1 `PlanningLoopGatekeeper` (delegation-first, sidekick, council, budget-overflow, delegation-map) with adversarial stream scenarios | M7 | DONE | PLAN_012 |
 
 ---
 
@@ -249,11 +251,12 @@ The ecosystem catalog maintains **58 specialized agents** (8 Lead/Prime Orchestr
 │   └── 📦 business-operations-legal [inherits: business-strategy]
 │       └── 🤖 Sub-agents: legal-contract-analyst, operations-strategist
 ├── 🏢  Organization Bundles (Experimental / Cross-Functional) (1 bundle)
-│   └── 📦 digital-agency ⚡ [Experimental] [Tri-Tier Execution Framework]
+│   └── 📦 digital-agency ⚡ [Experimental] [Tri-Tier Execution Framework] [Planning Dialogue Loop (ADR 0014)]
 │       ├── 🤖 Lead: orchestrator-marketing (Campaign Director / Chris)
 │       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Anya), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), backend-architect, frontend-architect, e2e-tester, sysops-sre-lead
 │       ├── 🔌 Prerequisites: github (MCP), firecrawl (MCP), context7 (MCP), playwright (MCP), markitdown (MCP), chrome-devtools (MCP), stitch (MCP), figma (MCP)
-│       └── 💡 Execution Tiers: Fully Operational (API Keys) / Limited Operational (Free/Public MCP) / Brainstorming (Native Fallback)
+│       ├── 💡 Execution Tiers: Fully Operational (API Keys) / Limited Operational (Free/Public MCP) / Brainstorming (Native Fallback)
+│       └── 🔁 Planning Dialogue Loop: grill → sidekicks (≤2) → Specialist Council → Delegation Map (Budget: 2 rounds / 2 peer exchanges per pair / 150 words / maxIterations 8)
 ├── 🌐  Universal Autonomous Department (1 bundle)
 │   └── 📦 universal-skills (Global Capability Layer)
 │       ├── 🤖 Lead: orchestrator-universal (Domain Atlas Dispatcher)
