@@ -541,20 +541,25 @@ When contributing new skills or adapting external skills:
 3. **Deterministic Verifications**: Include clear validation commands, error recovery procedures, and code exemplars.
 
 ### 6. Pull Request (PR) Workflow
-1. **Create a Feature Branch**: Always branch from `dev`:
+
+We use a two-line branch model — `main` is the release line, `dev` is the **protected** integration line. Full walkthrough: [`docs/workflow-guide.md`](docs/workflow-guide.md).
+
+1. **Branch from a fresh `dev`** (direct pushes to `dev` are rejected — changes arrive via PR only):
    ```bash
-   git checkout dev
-   git pull origin dev
-   git checkout -b feat/your-feature-name
+   git switch dev && git pull origin dev
+   git switch -c feat/your-feature-name   # or fix/, docs/, ci/
    ```
 2. **Follow TDD (Red-Green-Refactor)**: Author failing unit/E2E tests in `tests/` before implementing code.
 3. **Run Pre-PR Verification**:
    ```bash
+   npm run typecheck && npm test
    npm run build
-   npm test
    git diff --cached   # Audit staged files for accidental secrets or temp files
    ```
-4. **Submit Pull Request**: Open a PR targeting the `dev` branch with a concise description of changes and test results.
+4. **Push early & open PR #1 → base `dev`**: CI runs automatically (typecheck, build, full Vitest suite on `ubuntu-latest`). The PR can only merge once the required **`test`** status check passes.
+5. **Release via PR #2 → base `main`** (compare `dev`): merging triggers **semantic-release** — `feat:` bumps the minor version, `fix:` the patch — then the sync workflow auto-merges `main` back into `dev`.
+
+> Commit messages follow **Conventional Commits**: `feat:` / `fix:` drive releases; `docs:`, `ci:`, `chore:`, `refactor:`, `test:`, `perf:` accumulate without releasing. Emergency production hotfixes branch from `main` and PR directly into it.
 
 ---
 
@@ -675,4 +680,3 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 ## 📄 License
 
 MIT © [NeoAnthropocene & Agents United Contributors](LICENSE)
-test  

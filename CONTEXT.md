@@ -377,6 +377,32 @@ _Avoid_: Pure text UI feedback, blind pixel review
 The automated configuration lifecycle where the CLI evaluates bundle prerequisites and leverages native host commands (`agy mcp add --type stdio|http`) to provision required tool servers (e.g. Firecrawl, GitHub) into `mcp_config.json`.
 _Avoid_: Manual JSON editing, unverified MCP startup
 
+### Git & Release Workflow
+
+**Release Line (`main`)**:
+The production branch of this repository. Accepts merges only from `dev` via PR; `semantic-release` publishes the npm package, Git tag, and `CHANGELOG.md` from it.
+_Avoid_: Trunk, production-branch edits, default-branch direct commits
+
+**Integration Line (`dev`)**:
+The protected integration branch where all work lands before release. Kept in lockstep with `main` by the `Sync main to dev` auto-merge workflow after every release.
+_Avoid_: Development branch, staging branch, WIP branch
+
+**Branch Ruleset (Protected Branch)**:
+The GitHub branch ruleset on `dev` requiring pull requests and a passing `test` status check (typecheck + build + Vitest) before merge, with admin bypass as the emergency escape hatch.
+_Avoid_: Soft guideline, honorary protection, local hook enforcement
+
+**Work Branch (`feat/…` `fix/…` `docs/…` `ci/…`)**:
+A short-lived branch always cut from a fresh `origin/dev` (or `origin/main` for emergency hotfixes), pushed early as backup and CI trigger, and deleted after merge.
+_Avoid_: Long-lived branch, personal branch, direct dev commits
+
+**Two-Step Release Flow**:
+The mandatory release path: PR #1 merges the work branch into `dev` (CI gate), then PR #2 merges `dev` into `main`, triggering semantic-release and the automated `main → dev` sync.
+_Avoid_: Direct release push, manual versioning, one-step merge to main
+
+**Conventional Commit Release Trigger**:
+The rule that only `feat:` commits trigger a minor release and `fix:` commits a patch release on `main`; `docs:`, `ci:`, `chore:`, `refactor:`, `test:`, and `perf:` commits accumulate on `dev` and ride into the next release.
+_Avoid_: Free-form commit messages, manual changelog editing
+
 ## Usage Examples
 
 Universal install with fan-out to every supported runtime:

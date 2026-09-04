@@ -15,6 +15,7 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 8. [CLI Commands & Lifecycle Guide](#8-cli-commands--lifecycle-guide)
 9. [Codebase Layout & Component Map](#9-codebase-layout--component-map)
 10. [Verification Matrix & Project Health](#10-verification-matrix--project-health)
+11. [Branching Model, Protected `dev` & Release Automation](#11-branching-model-protected-dev--release-automation)
 
 ---
 
@@ -418,7 +419,9 @@ c:/github/agents-united/
 │       ├── cline-projector.ts    # ClineProjector (agent-plugins.org plugin.json, configured-agent .yml, rules, workflows & team manifests)
 │       ├── cline-capabilities.ts # ClineCapabilityProbe (read-only probe)
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
-├── docs/adr/                     # Architectural Decision Records (ADRs 0001–0013)
+├── docs/                         # Documentation
+│   ├── adr/                      # Architectural Decision Records (ADRs 0001–0013)
+│   └── workflow-guide.md         # Developer workflow guide (branching, protected dev, PRs, releases)
 ├── plans/                        # Implementation Plan Specifications (001–011)
 ├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 413 tests)
 │   ├── e2e-evals/                # Stream-JSON Continuous Evaluation Harness (schemas, judge, runner)
@@ -471,3 +474,22 @@ The codebase adheres to zero technical debt, strict typing, and 100% test pass r
  Test Files  28 passed (28)
       Tests  410 passed | 208 skipped (618)
 ```
+
+---
+
+## 11. Branching Model, Protected `dev` & Release Automation
+
+The repository follows a two-line branch model with a protected integration branch and automated releases. The full developer walkthrough (feature flow, small changes, hotfix path, troubleshooting) lives in [`docs/workflow-guide.md`](./docs/workflow-guide.md).
+
+| Branch | Purpose |
+| :--- | :--- |
+| `main` | **The release line.** Only merges from `dev` via PR. `semantic-release` publishes the npm package, Git tag, and `CHANGELOG.md` from here (ADR 0005). |
+| `dev` | **The integration line.** Protected by a GitHub branch ruleset: PR-only merges with the required **`test`** status check (CI: typecheck + build + Vitest on `ubuntu-latest`), admin bypass as emergency escape hatch. The `Sync main to dev` workflow auto-merges `main` back into `dev` after every release, keeping the lines in lockstep. |
+| `feat/…` `fix/…` `docs/…` `ci/…` | Short-lived work branches, always cut from a fresh `origin/dev`. |
+
+Key rules:
+
+- **Never commit directly to `dev` or `main`** — all changes arrive via PR; GitHub rejects direct pushes to `dev`.
+- **Conventional Commits drive releases**: `feat:` → minor bump, `fix:` → patch bump; `docs:` / `ci:` / `chore:` / `refactor:` / `test:` / `perf:` accumulate without releasing.
+- **Two-step release flow**: PR #1 into `dev` (CI gate) → PR #2 `dev` → `main` (release + auto-sync back to `dev`).
+- **Emergency hotfix**: branch from `main`, PR → base `main`; release + sync automation updates `dev` automatically.
