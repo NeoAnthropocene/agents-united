@@ -124,3 +124,60 @@ describe('RegistryResolver', () => {
     expect(resolved.skills).toContain('test-driven-development');
   });
 });
+
+describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)', () => {
+  let resolver: RegistryResolver;
+
+  beforeAll(() => {
+    resolver = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
+  });
+
+  it('should declare planningLoop enabled on digital-agency with the approved Consultation Budget defaults', async () => {
+    const bundle = await resolver.getBundle('digital-agency');
+    expect(bundle).toBeDefined();
+    expect(bundle?.planningLoop?.enabled).toBe(true);
+
+    const budget = bundle?.planningLoop?.budget;
+    expect(budget).toBeDefined();
+    expect(budget?.maxPlanningRounds).toBe(2);
+    expect(budget?.maxPeerExchangesPerPair).toBe(2);
+    expect(budget?.summaryWordCap).toBe(150);
+    expect(budget?.maxIterations).toBe(8);
+
+    expect(bundle?.planningLoop?.sidekicks?.max).toBe(2);
+  });
+
+  it('should map every AstrolabsAI persona to a role present in the digital-agency roster', async () => {
+    const bundle = await resolver.getBundle('digital-agency');
+    expect(bundle).toBeDefined();
+
+    const personas = bundle?.personaAliases ?? {};
+    // The six personas referenced by the workflow-agency-*.md files.
+    for (const persona of [
+      'chris-director',
+      'ava-manager',
+      'kaan-copy',
+      'jamileh-design',
+      'yavuz-content',
+      'jale-social',
+    ]) {
+      expect(personas[persona], `missing persona alias: ${persona}`).toBeDefined();
+    }
+
+    // Every alias target must exist in the bundle roster (orchestrator or agent, .md stripped).
+    const roster = new Set(
+      [bundle?.orchestrator, ...(bundle?.agents ?? [])]
+        .filter((f): f is string => typeof f === 'string')
+        .map((f) => f.replace(/\.md$/i, ''))
+    );
+    for (const [persona, role] of Object.entries(personas)) {
+      expect(roster.has(role), `persona ${persona} maps to unknown role ${role}`).toBe(true);
+    }
+  });
+
+  it('should keep planningLoop opt-in: no bundle other than digital-agency declares it', async () => {
+    const manifest = await resolver.loadBundles();
+    const enabled = Object.values(manifest.bundles).filter((b) => b.planningLoop?.enabled === true);
+    expect(enabled.map((b) => b.name)).toEqual(['digital-agency']);
+  });
+});
