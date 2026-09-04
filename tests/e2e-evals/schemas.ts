@@ -43,6 +43,31 @@ export const HandoffCriteriaSchema = z.object({
 export type HandoffCriteria = z.infer<typeof HandoffCriteriaSchema>;
 
 /**
+ * Planning Dialogue Loop rubric (Plan 012 / ADR 0014)
+ * Enforced by the deterministic Stage-1 Planning Loop Gatekeeper.
+ */
+export const PlanningLoopCriteriaSchema = z.object({
+  delegation_first: z.boolean(),
+  sidekick_used_when_ambiguous: z.boolean(),
+  council_scope_statements_present: z.boolean(),
+  budget_respected: z.boolean(),
+  delegation_map_before_execution: z.boolean(),
+});
+
+export type PlanningLoopCriteria = z.infer<typeof PlanningLoopCriteriaSchema>;
+
+export const PlanningLoopVerdictSchema = z.object({
+  passed: z.boolean(),
+  score: z.number().min(0).max(10),
+  stage1_gatekeeper_passed: z.boolean(),
+  failure_reason: z.string().nullable(),
+  criteria: PlanningLoopCriteriaSchema,
+  feedback: z.string(),
+});
+
+export type PlanningLoopVerdict = z.infer<typeof PlanningLoopVerdictSchema>;
+
+/**
  * Overall Evaluation Output Contract
  */
 export const EvaluationVerdictSchema = z.object({
@@ -63,7 +88,7 @@ export type EvaluationVerdict = z.infer<typeof EvaluationVerdictSchema>;
 export interface DagNodeTrace {
   sender: string;
   recipient: string;
-  skill_used: 'handoff' | 'design-handoff-spec' | 'grill-me' | 'to-spec' | 'general';
+  skill_used: 'handoff' | 'design-handoff-spec' | 'grill-me' | 'to-spec' | 'planning-consultation' | 'general';
   raw_payload: string;
   verdict: EvaluationVerdict;
 }
