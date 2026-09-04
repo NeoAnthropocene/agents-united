@@ -7,8 +7,8 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 ## 📑 Table of Contents
 1. [Executive Overview & Core Philosophy](#1-executive-overview--core-philosophy)
 2. [Complete Granular Feature Inventory](#2-complete-granular-feature-inventory)
-3. [Master Implementation Plans Index (plans/001–010)](#3-master-implementation-plans-index-plans001010)
-4. [Architectural Decision Records (ADRs 0001–0011)](#4-architectural-decision-records-adrs-00010011)
+3. [Master Implementation Plans Index (plans/001–012)](#3-master-implementation-plans-index-plans001012)
+4. [Architectural Decision Records (ADRs 0001–0014)](#4-architectural-decision-records-adrs-00010014)
 5. [Ecosystem Architecture & Department Domains](#5-ecosystem-architecture--department-domains)
 6. [Host Projection & Runtime Activation Engine](#6-host-projection--runtime-activation-engine)
 7. [Interface Contracts & Specifications](#7-interface-contracts--specifications)
@@ -125,12 +125,14 @@ Architectural separation between delivery and reliability:
 | 73 | MCP Setup Runbook Skill | Authored comprehensive `mcp-setup` runbook for 8 ecosystem MCPs | M5 | DONE | PLAN_010 |
 | 74 | Two-Stage Hybrid Evaluator Engine | Fast-fail deterministic gatekeeper (0ms) + schema-constrained semantic LLM judge (`zod`) | M6 | DONE | PLAN_010 |
 | 75 | Stream-JSON Continuous Evaluation Harness | Built `tests/e2e-evals/runner.ts` and multi-hop DAG evaluation test suite for `digital-agency` | M6 | DONE | PLAN_010 |
+| 76 | Subagent-First Planning Dialogue Loop | Opt-in `planningLoop` block (Consultation Budget + persona aliases) rendered into the coordinator rule, team manifest, and configured-agent `maxIterations`; Planning Dialogue Loop prompts across orchestrator, 9 roster subagents, and 6 agency workflows | M7 | DONE | PLAN_012 |
+| 77 | Planning Loop Eval Gatekeeper | `PlanningLoopCriteriaSchema` + deterministic Stage-1 `PlanningLoopGatekeeper` (delegation-first, sidekick, council, budget-overflow, delegation-map) with adversarial stream scenarios | M7 | DONE | PLAN_012 |
 
 ---
 
-## 3. Master Implementation Plans Index (`plans/001`–`010`)
+## 3. Master Implementation Plans Index (`plans/001`–`012`)
 
-All 10 foundational implementation plans have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production:
+All foundational implementation plans (001–011) have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production. Plan 012 is approved and gated on the maintainer's execution go-ahead:
 
 | Plan | Title | Category | Status | Key Deliverables & Milestones |
 | :--- | :--- | :--- | :--- | :--- |
@@ -145,10 +147,11 @@ All 10 foundational implementation plans have been fully realized, tested under 
 | **[009](./plans/009-essentials-composition-audit.md)** | Essentials Bundle Composition Audit & Modularization | Architecture / Catalog | **DONE** | `universal-skills` extraction, `software-engineering` slimmed to 16 skills, `product-design` 2-addon decomposition, graduated to `stable`. |
 | **[010](./plans/010-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Core / Architecture | **DONE** | Scoped `rules:`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards, department roster expansion across Security, Business, Research, Architecture, and Continuous Stream-JSON Evals harness. |
 | **[011](./plans/011-cline-plugins-projection-migration.md)** | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **SUPERSEDED (ADR 0013)** | The assumed "Cline 4.0.0+ plugin architecture" does not exist (latest CLI = 3.0.61); `cline plugin install` is a code-plugin installer and the `package.json` manifest contract was invalid. Replaced by ADR 0013 native discovery projection. |
+| **[012](./plans/012-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue (`digital-agency` first) | Runtime Integration / Catalog / Evals | **DONE** (Cline manual test passed; Antigravity round pending) | Opt-in `planningLoop` block + Consultation Budget rendered into the coordinator rule, Cline `maxIterations` hard cap, Planning Dialogue Loop prompts, persona alias map, and planning-loop eval criteria. Per ADR 0014; digital-agency only, rollout deferred. |
 
 ---
 
-## 4. Architectural Decision Records (ADRs 0001–0013)
+## 4. Architectural Decision Records (ADRs 0001–0014)
 
 All architectural decisions recorded in `docs/adr/` are indexed and summarized below:
 
@@ -167,6 +170,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 | **[0011](./docs/adr/0011-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Accepted | Adoption of Antigravity 2.10 / CLI 1.1.21 schema enhancements (`rules: [...]`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards) and department subagent expansion. |
 | **[0012](./docs/adr/0012-cline-native-plugins-projection.md)** | Cline Native Plugins Projection Architecture | Superseded by [0013](./docs/adr/0013-cline-native-discovery-projection.md) | Project Cline bundles as self-contained native plugins in `.agents/plugins/<bundle>/` with deterministic `package.json` manifests, skills, roles, rules, and team manifests, with automatic migration of legacy `.cline/` projections. Premise (Cline 4.0.0+ markdown plugin capabilities) disproved by runtime verification. |
 | **[0013](./docs/adr/0013-cline-native-discovery-projection.md)** | Cline 3.x Native Discovery Projection & Agent Plugin Packaging | Accepted | Dual-lane Cline integration: agent-plugins.org `plugin.json` packages under `.agents/plugins/<bundle>/` (scanner hard-stop + cross-client portability) plus native discovery projections — configured agents `.cline/agents/*.yml` (spawnable `subagent_*` tools), coordinator rules `.cline/rules/`, slugified workflows `.cline/workflows/`, skills natively discovered from `.agents/skills/`. Verified against Cline CLI 3.0.61 (source commit `c853844` + binary analysis). |
+| **[0014](./docs/adr/0014-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue | Accepted | Lead Orchestrators delegate to specialists **by default during planning**: opt-in per-bundle `planningLoop` flag (`digital-agency` first) declaring a Consultation Budget (`maxPlanningRounds`, `maxPeerExchangesPerPair`, `summaryWordCap`) rendered into the always-active coordinator rule, plus a host hard-cap layer (Cline `maxIterations` in configured-agent `.yml`), the Planning Dialogue Loop (grill → sidekick clarification → specialist council → delegation map), a persona alias map for the AstrolabsAI roster, and byte-identical rendering guarantees for non-planning-loop bundles. |
 
 ---
 
@@ -247,11 +251,12 @@ The ecosystem catalog maintains **58 specialized agents** (8 Lead/Prime Orchestr
 │   └── 📦 business-operations-legal [inherits: business-strategy]
 │       └── 🤖 Sub-agents: legal-contract-analyst, operations-strategist
 ├── 🏢  Organization Bundles (Experimental / Cross-Functional) (1 bundle)
-│   └── 📦 digital-agency ⚡ [Experimental] [Tri-Tier Execution Framework]
+│   └── 📦 digital-agency ⚡ [Experimental] [Tri-Tier Execution Framework] [Planning Dialogue Loop (ADR 0014)]
 │       ├── 🤖 Lead: orchestrator-marketing (Campaign Director / Chris)
 │       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Anya), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), backend-architect, frontend-architect, e2e-tester, sysops-sre-lead
 │       ├── 🔌 Prerequisites: github (MCP), firecrawl (MCP), context7 (MCP), playwright (MCP), markitdown (MCP), chrome-devtools (MCP), stitch (MCP), figma (MCP)
-│       └── 💡 Execution Tiers: Fully Operational (API Keys) / Limited Operational (Free/Public MCP) / Brainstorming (Native Fallback)
+│       ├── 💡 Execution Tiers: Fully Operational (API Keys) / Limited Operational (Free/Public MCP) / Brainstorming (Native Fallback)
+│       └── 🔁 Planning Dialogue Loop: grill → sidekicks (≤2) → Specialist Council → Delegation Map (Budget: 2 rounds / 2 peer exchanges per pair / 150 words / maxIterations 8)
 ├── 🌐  Universal Autonomous Department (1 bundle)
 │   └── 📦 universal-skills (Global Capability Layer)
 │       ├── 🤖 Lead: orchestrator-universal (Domain Atlas Dispatcher)
@@ -420,10 +425,10 @@ c:/github/agents-united/
 │       ├── cline-capabilities.ts # ClineCapabilityProbe (read-only probe)
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
 ├── docs/                         # Documentation
-│   ├── adr/                      # Architectural Decision Records (ADRs 0001–0013)
+│   ├── adr/                      # Architectural Decision Records (ADRs 0001–0014)
 │   └── workflow-guide.md         # Developer workflow guide (branching, protected dev, PRs, releases)
-├── plans/                        # Implementation Plan Specifications (001–011)
-├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 413 tests)
+├── plans/                        # Implementation Plan Specifications (001–012)
+├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 430 passing tests)
 │   ├── e2e-evals/                # Stream-JSON Continuous Evaluation Harness (schemas, judge, runner)
 │   └── helpers/                  # Test helpers and mock fixtures
 ├── CONTEXT.md                    # Ubiquitous Domain Dictionary
@@ -472,7 +477,7 @@ The codebase adheres to zero technical debt, strict typing, and 100% test pass r
  ✓ tests/e2e-evals/e2e-stream-evals.test.ts
 
  Test Files  28 passed (28)
-      Tests  410 passed | 208 skipped (618)
+      Tests  430 passed | 208 skipped (638)
 ```
 
 ---

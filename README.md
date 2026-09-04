@@ -119,7 +119,7 @@ Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orch
 | **🔒 Security Operations** | `security-operations` | — | `orchestrator-security` |
 | **🔬 Deep Technical Research** | `deep-research` | — | `orchestrator-research` |
 | **💼 Business Strategy & Economics** | `business-strategy` | — | `orchestrator-business` |
-| **🏢 Organization Bundles (Experimental)** | `digital-agency` 🚧 | *(Currently under development)* | `orchestrator-digital-agency-director` |
+| **🏢 Organization Bundles (Experimental)** | `digital-agency` ⚡ | *(Cross-functional composite)* | `orchestrator-marketing` (Campaign Director / Chris) |
 
 <details>
 <summary><strong>🔍 Click to expand full Department & Agent Roster Breakdown</strong></summary>
@@ -173,7 +173,7 @@ Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orch
 - **Essentials Base (`business-strategy`)**: `subagent-business-panel-experts`
 
 #### 🏢 Organization Bundles (Tier 2 / Experimental)
-- **Digital Product Agency (`digital-agency` 🚧)**: *(Currently under development)*
+- **Digital Product Agency (`digital-agency` ⚡)**: 10-agent cross-functional AstrolabsAI team (Chris / Ava / Kaan / Jamileh / Yavuz / Jale + engineering, QA & compliance) with Tri-Tier MCP execution modes and the Subagent-First Planning Dialogue Loop (ADR 0014).
 
 </details>
 
@@ -414,6 +414,19 @@ Organization bundles operate across three dynamic execution envelopes:
 
 > [!TIP]
 > **Zero Friction Onboarding**: You can start working with your Lead Orchestrator immediately using native tools. If your task needs live integrations (e.g. *"Set up Playwright browser testing"*), your Orchestrator will inspect your OS, configure the exact MCP server, test the connection, and activate it interactively!
+
+### Subagent-First Planning Dialogue Loop (ADR 0014)
+
+Organization bundles can opt into a **delegation-first planning protocol**: the Lead Orchestrator plans *with the user* (Socratic grilling via `/grill-me` / `/grill-with-docs`) and *with the team* — spawning up to 2 **Planning Sidekicks** into the planning conversation, running a bounded **Specialist Council** (every relevant specialist returns a ≤150-word Scope-of-Work Statement), and presenting a **Delegation Map** before any execution starts. Inter-specialist discussion is bounded by a declarative **Consultation Budget**, and each specialist's per-invocation run is hard-capped via Cline `maxIterations`:
+
+| Budget cap | Default | Meaning |
+| :--- | :--- | :--- |
+| `maxPlanningRounds` | 2 | Orchestrator ↔ council cycles per task |
+| `maxPeerExchangesPerPair` | 2 | Directed questions per specialist pair |
+| `summaryWordCap` | 150 | Words per Scope-of-Work Statement |
+| `maxIterations` | 8 | Per-invocation iteration cap (`.cline/agents/*.yml`) |
+
+Currently enabled for `digital-agency` (`planningLoop.enabled` in `registry/bundles.json`); rollout to the remaining bundles is tracked in [`ROADMAP.md`](ROADMAP.md). See [ADR 0014](./docs/adr/0014-subagent-first-planning-loop.md) and [Plan 012](./plans/012-subagent-first-planning-loop.md).
 
 ---
 ## 🌐 One Library, Every Assistant

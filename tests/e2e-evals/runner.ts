@@ -65,7 +65,9 @@ export class StreamJsonEvalRunner {
           );
 
           let skillUsed: DagNodeTrace['skill_used'] = 'general';
-          if (event.payload?.includes('/design-handoff-spec')) {
+          if (event.payload?.includes('/planning-consultation')) {
+            skillUsed = 'planning-consultation';
+          } else if (event.payload?.includes('/design-handoff-spec')) {
             skillUsed = 'design-handoff-spec';
           } else if (event.payload?.includes('/handoff')) {
             skillUsed = 'handoff';
@@ -119,6 +121,14 @@ export class StreamJsonEvalRunner {
       executionMode: this.currentMode,
       allPassed: totalHandoffs > 0 ? passedHandoffs === totalHandoffs : true,
     };
+  }
+
+  /**
+   * All events parsed so far (for whole-stream evaluations such as the
+   * Planning Dialogue Loop gatekeeper).
+   */
+  public getEvents(): StreamJsonEvent[] {
+    return [...this.events];
   }
 
   /**

@@ -146,6 +146,30 @@ The systematic process of converting rapid AI-generated single-file prototypes (
 **Distributed Edge Database & Embedded Replicas**:
 An edge-first persistence pattern (e.g. Turso / LibSQL) combining microsecond read latencies from local in-process SQLite embedded replicas with automated background WAL synchronization to global primary databases and ephemeral PR database branching.
 
+**Subagent-First Delegation Policy**:
+The mandatory delegation posture of a Lead Orchestrator in a planning-loop bundle: specialist tasks are executed by the bundle's spawnable `subagent_*` agents, and the coordinator completes specialist work in the main session **only if** the subagent tools are genuinely absent from the runtime or the task is trivial (single-file read, one-line answer, formatting). Never as a convenience, speed choice, or fallback of habit.
+_Avoid_: Solo orchestrator, convenience self-execution, lazy fallback
+
+**Planning Dialogue Loop**:
+The closed orchestration cycle of a planning-loop bundle, executed before any substantive work: **Phase 0 — User Alignment** (Socratic grilling via `/grill-me` for strategy or `/grill-with-docs` for code/docs), **Phase 0.5 — Sidekick Clarification** (spawn ≤ `sidekicks.max` relevant specialists into the planning conversation to resolve remaining ambiguity; they advise the orchestrator, who relays to the user), **Phase 1 — Specialist Council** (every relevant specialist returns a bounded Scope-of-Work Statement), **Phase 2 — Delegation Map** (task→specialist map synthesized and presented to the user before execution).
+_Avoid_: Ad-hoc planning, post-plan delegation, silent task splitting
+
+**Planning Sidekick**:
+A specialist subagent spawned by the Lead Orchestrator **during the planning conversation itself** (Phase 0.5) to clarify an ambiguous user brief. Sidekicks advise the orchestrator with targeted clarifying input; the orchestrator relays their questions to the user. At most `sidekicks.max` sidekicks may be active per planning cycle.
+_Avoid_: Silent shadow agent, full-time co-pilot, second orchestrator
+
+**Specialist Council**:
+The planning round (Phase 1 of the Planning Dialogue Loop) in which every relevant specialist of a planning-loop bundle returns a **Scope-of-Work Statement** — a bounded declaration of (1) its scope, (2) inputs needed from peers, (3) its deliverable per its own workflows, and (4) at most two open questions — so the orchestrator synthesizes the delegation map from expert inputs rather than a solo guess.
+_Avoid_: Team meeting theater, unstructured brainstorm dump, voting body
+
+**Scope-of-Work Statement**:
+The capped, structured contribution a specialist makes to a Specialist Council round: scope, peer dependencies, deliverable definition, and open questions — limited to `summaryWordCap` words. It is a planning artifact, not a deliverable; execution still follows the specialist's own workflows.
+_Avoid_: Mini-PRD, full implementation plan, uncapped essay
+
+**Consultation Budget**:
+The declarative cap set that bounds all inter-agent planning dialogue in a planning-loop bundle, declared once in `registry/bundles.json` (`planningLoop.budget`) and rendered into the coordinator rule, Team Manifest, and subagent prompts: `maxPlanningRounds` (orchestrator↔council cycles per task), `maxPeerExchangesPerPair` (directed questions per specialist pair), `summaryWordCap` (per Scope-of-Work Statement), and `maxIterations` (the host-enforced per-invocation hard cap rendered into Cline configured-agent `.yml`; inert on hosts that ignore it — documented, not faked).
+_Avoid_: Token counter, open-ended discussion, silent infinite chatter
+
 ---
 
 ### Agent Registry & Department Hierarchy

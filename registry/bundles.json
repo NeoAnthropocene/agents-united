@@ -955,6 +955,26 @@
         "limited-operational": "Execution with unauthenticated / community-tier MCP servers",
         "brainstorming": "Zero-MCP native fallback mode generating project scopes and specifications"
       },
+      "planningLoop": {
+        "enabled": true,
+        "budget": {
+          "maxPlanningRounds": 2,
+          "maxPeerExchangesPerPair": 2,
+          "summaryWordCap": 150,
+          "maxIterations": 8
+        },
+        "sidekicks": {
+          "max": 2
+        }
+      },
+      "personaAliases": {
+        "chris-director": "orchestrator-marketing",
+        "ava-manager": "subagent-marketing-growth-strategist",
+        "kaan-copy": "subagent-marketing-conversion-specialist",
+        "jamileh-design": "subagent-marketing-creative-designer",
+        "yavuz-content": "subagent-marketing-content-strategist",
+        "jale-social": "subagent-marketing-campaign-specialist"
+      },
       "orchestrator": "orchestrator-marketing.md",
       "agents": [
         "subagent-marketing-growth-strategist.md",

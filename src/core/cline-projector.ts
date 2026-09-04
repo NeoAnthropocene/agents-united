@@ -52,7 +52,7 @@ export class ClineProjector {
    * canonical agent markdown content. Cline 3.x consumes YAML files with
    * frontmatter (name, description) and treats the body as the agent system prompt.
    */
-  static renderConfiguredAgent(canonicalContent: string, canonicalRelPath: string): string {
+  static renderConfiguredAgent(canonicalContent: string, canonicalRelPath: string, defaultMaxIterations?: number): string {
     const match = canonicalContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
     if (!match) {
       throw new Error(`Canonical agent ${canonicalRelPath} is missing YAML frontmatter.`);
@@ -74,6 +74,13 @@ export class ClineProjector {
     };
     if (typeof parsed.description === 'string' && parsed.description.trim().length > 0) {
       cleanFrontmatter.description = parsed.description.trim();
+    }
+    // ADR 0014 — canonical frontmatter is the single source of truth; the bundle
+    // Consultation Budget `maxIterations` is only a default when frontmatter omits it.
+    if (typeof parsed.maxIterations === 'number') {
+      cleanFrontmatter.maxIterations = parsed.maxIterations;
+    } else if (typeof defaultMaxIterations === 'number') {
+      cleanFrontmatter.maxIterations = defaultMaxIterations;
     }
 
     const frontmatterStr = yaml.stringify(cleanFrontmatter).trim();
@@ -198,6 +205,14 @@ export class ClineProjector {
       },
     };
 
+    // ADR 0014 — planning-loop bundles declare the loop config and persona map.
+    if (bundle.planningLoop?.enabled) {
+      manifest.planningLoop = bundle.planningLoop;
+      if (bundle.personaAliases && Object.keys(bundle.personaAliases).length > 0) {
+        manifest.personas = Object.entries(bundle.personaAliases).map(([persona, role]) => ({ persona, role }));
+      }
+    }
+
     return yaml.stringify(manifest);
   }
 
@@ -226,6 +241,54 @@ export class ClineProjector {
       ? `\n### Recommended Addon Policy\nWhen user tasks require capabilities from: ${addons.join(', ')}, explain the capability and request user confirmation to install via \`agents add <addon> -t cline -y\` before running the installation.`
       : '';
 
+    // ADR 0014 — planning-loop bundles replace the soft delegation hint with a
+    // mandatory Subagent-First policy and the bounded Planning Dialogue Loop.
+    // Bundles without the flag render byte-identical output to the legacy rule.
+    const planning = bundle.planningLoop?.enabled === true ? bundle.planningLoop : undefined;
+    const budget = planning?.budget;
+    const delegationStep = planning
+      ? '2. **Subagent-First Delegation Policy (ADR 0014)**: execute specialist work through the configured `subagent_*` agent tools (projected under `.cline/agents/`), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.'
+      : '2. Delegate specialist tasks using the configured `subagent_*` agent tools (projected under `.cline/agents/`) when available, assigning non-overlapping scopes; fall back to Agent Teams (`team_spawn_teammate`) or session subagents as needed.';
+
+    const planningSection = planning
+      ? `
+
+## Subagent-First Planning Dialogue Loop (ADR 0014)
+Run this loop BEFORE any substantive execution on a non-trivial task. Delegation-first is mandatory, not advisory.
+
+### Phase 0 — User Alignment
+If the user's brief is ambiguous, grill it Socratically with the user first: \`/grill-me\` (strategy / non-code) or \`/grill-with-docs\` (code & docs; writes ADRs and updates CONTEXT.md).
+
+### Phase 0.5 — Sidekick Clarification
+Spawn at most ${planning.sidekicks?.max ?? 2} relevant specialists (spawnable \`subagent_*\` tools) INTO this planning conversation to resolve remaining ambiguity. Sidekicks advise you; you relay their questions to the user.
+
+### Phase 1 — Specialist Council
+Have every relevant specialist return a Scope-of-Work Statement (max ${budget?.summaryWordCap ?? 150} words): (1) my scope, (2) inputs I need from peers, (3) my deliverable per my own workflows, (4) at most 2 open questions.
+
+### Phase 2 — Delegation Map
+Synthesize the council output into a task → specialist map and present it to the user BEFORE execution. Then delegate per the map.
+
+### Consultation Budget (hard caps)
+- Planning rounds (orchestrator ↔ council): max ${budget?.maxPlanningRounds ?? 2}
+- Peer exchanges per specialist pair: max ${budget?.maxPeerExchangesPerPair ?? 2} directed questions
+- Scope-of-Work statement length: max ${budget?.summaryWordCap ?? 150} words
+- Specialist per-invocation iteration cap: maxIterations: ${budget?.maxIterations ?? 8} (rendered into .cline/agents/*.yml)`
+      : '';
+
+    const personaSection = planning && bundle.personaAliases && Object.keys(bundle.personaAliases).length > 0
+      ? `
+
+### Persona → Spawnable Tool Map
+| Persona | Role / Spawnable tool |
+|---|---|
+${Object.entries(bundle.personaAliases).map(([persona, role]) => {
+  const target = role.startsWith('subagent-')
+    ? `${role} → \`subagent_${this.stripSubagentPrefix(role).replace(/-/g, '_')}\``
+    : `${role} (you, the coordinator)`;
+  return `| ${persona} | ${target} |`;
+}).join('\n')}`
+      : '';
+
     return `# Agents United — ${bundle.name} Coordinator Rule
 ${marker}
 
@@ -235,9 +298,10 @@ ${marker}
 
 ## Activation Protocol
 1. At session start, read the Team Manifest (\`${manifestRelPath}\`) and coordinator role prompt (\`.agents/${coordinatorCanonical}\`).
-2. Delegate specialist tasks using the configured \`subagent_*\` agent tools (projected under \`.cline/agents/\`) when available, assigning non-overlapping scopes; fall back to Agent Teams (\`team_spawn_teammate\`) or session subagents as needed.
+${delegationStep}
 3. For lightweight read-only research, use session subagents.
 4. Only specialist roles declared in the Team Manifest are active in this workspace.
+${planningSection}${personaSection}
 ${specialistLines.length > 0 ? `\n### Installed Specialist Roles\n${specialistLines.join('\n')}` : ''}
 ${addonSection}
 `;
@@ -282,7 +346,11 @@ ${addonSection}
       const srcPath = path.join(registryDir, 'agents', agentFile);
       if (await fs.pathExists(srcPath)) {
         const content = await fs.readFile(srcPath, 'utf8');
-        const rendered = this.renderConfiguredAgent(content, canonicalRel);
+        const rendered = this.renderConfiguredAgent(
+          content,
+          canonicalRel,
+          bundle.planningLoop?.enabled === true ? bundle.planningLoop.budget?.maxIterations : undefined
+        );
         const roleName = this.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
         artifacts.push({
           kind: 'role',
