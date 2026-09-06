@@ -8,6 +8,8 @@ on:
 
 jobs:
   test:
+    # Skip CI for automated main -> dev sync PRs (release commits already passed CI on main)
+    if: github.event_name != 'pull_request' || github.head_ref != 'main' || github.base_ref != 'dev'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
