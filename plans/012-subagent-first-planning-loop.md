@@ -8,11 +8,11 @@
 >
 > **USER GATE**: **LIFTED 2026-09-04** — the maintainer approved execution (Option B) and
 > Steps 1–7 are implemented and verified (full suite 430 passed | 0 failures). Step 8
-> (maintainer manual round) is partially complete: **Cline manual test passed**;
-> Antigravity desktop round pending — the orchestrator's `invoke_subagent` failure was
-> bisected on agy 1.1.27 (2026-09-06) and **exonerates the artifacts** (the exact roster
-> subagent invokes successfully headlessly); see ADR 0009's 2026-09-06 addendum for the
-> re-test protocol.
+> (maintainer manual round) is **COMPLETE (2026-09-06)**: **Cline passed** (2026-09-04) and the
+> **Antigravity Desktop 2.12.2.0 round is done** — the artifacts are exonerated (headless bisect
+> on agy 1.1.27, then a desktop round in which even built-in control agents failed identically);
+> the desktop `invoke_subagent` GUI harness limitation is documented in ADR 0009's 2026-09-06
+> addendum and reported upstream.
 >
 > **Drift check (run first)**:
 > `git diff --stat 55e7593..HEAD -- src/core/cline-projector.ts src/core/types.ts registry/bundles.json registry/agents/orchestrator-marketing.md tests/e2e-evals/ tests/cline-projector.test.ts`
@@ -354,11 +354,7 @@ are applied to `bundles.json` only.
 - [x] Eval harness asserts delegation-first, budget compliance, council scope statements, and gates budget overflow.
 - [x] `npm run typecheck && npm test && npm run build` → 100% pass.
 - [x] Dry-run artifacts inspected (scratch workspace `au-scratch-digital-agency`: coordinator rule, 10× `.yml` with `maxIterations: 8`, team manifest).
-- [ ] Manual test round: **Cline passed** (maintainer, 2026-09-04). Antigravity desktop:
-      first attempt failed to invoke `subagent-marketing-growth-strategist`; headless bisect
-      on agy 1.1.27 (2026-09-06) reproduced **successful** `invoke_subagent` spawns of the
-      exact same file — failure classified environmental (stale desktop session / version
-      drift), re-test pending per ADR 0009's 2026-09-06 addendum.
+- [x] Manual test round: **Cline passed** (maintainer, 2026-09-04); **Antigravity Desktop 2.12.2 passed/exonerated** (2026-09-06) — artifacts verified valid; desktop `invoke_subagent` harness limitation documented in ADR 0009; bug reported upstream.
 
 ## STOP conditions
 

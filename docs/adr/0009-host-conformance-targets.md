@@ -107,10 +107,12 @@ interactive-scoped (confirmed); (b) keep `agents doctor` per-host probes with Cl
 automated-CI host and Antigravity as a human-verified interactive host; (c) no projection shim
 or global-store install is required for Antigravity — the canonical layout works natively.
 ---
-## Addendum (2026-09-06) — First automated `invoke_subagent` verification (agy 1.1.27); desktop failure reclassified as environment, not artifact
+## Addendum (2026-09-06) — `invoke_subagent` verification complete: headless ✅ (agy 1.1.27), Desktop GUI gated (2.12.2.0); artifacts exonerated
 
 **Status:** Supersedes the "invoke_subagent end-to-end was never verified" caveat of the Spike 008
-addendum for the headless surface. Pin **agy 1.1.27**.
+addendum: the headless surface is now **verified positively** (agy 1.1.27) and the Desktop GUI
+surface is now **verified negatively** (Antigravity Desktop 2.12.2.0 — see the completed re-test
+round at the end of this addendum). Pin **agy 1.1.27** / **Desktop 2.12.2.0**.
 
 **Trigger.** During the Plan 012 (ADR 0014) maintainer manual round, an Antigravity **desktop**
 orchestrator failed to spawn `subagent-marketing-growth-strategist` via `invoke_subagent`
@@ -143,20 +145,51 @@ frontmatter (log-style `hooks:` blocks, folded `description: >`, `tools:` with `
    drift vs CLI 1.1.27 (record the desktop version when re-testing); (c) transient tool error the
    orchestrator over-interpreted. The official Antigravity docs already model invoke-failures as
    non-fatal: *"If the subagent fails to execute, for whatever reason, you can continue the chat
-   and ask it to invoke again."*
+   and ask it to invoke again."* **Resolution (2026-09-06):** the completed desktop round below
+   confirms the harness-level cause (candidate (b) in essence — GUI permission gating, Desktop
+   2.12.2.0) and eliminates (a) and (c): even **built-in** agents fail identically.
 5. **Store split (unchanged from Spike 008, reconfirmed on 1.1.27):** headless reads only the
    user-global store; interactive reads the workspace `.agents/agents/`. For a headless probe of
    a canonical workspace agent, copy the flat `.md` into `~/.gemini/config/agents/` temporarily.
 
-**Re-test protocol (desktop manual round, ~2 min).** In the scratch workspace
-(`C:\github\au-scratch-digital-agency`, `test-minimal.md` / `test-full.md` remain in
-`.agents/agents/`): ① fully close and reopen the project in the Antigravity desktop; ② select
-`orchestrator-marketing`; ③ ask it to invoke `test-minimal` (minimal control); ④ ask it to invoke
-`subagent-marketing-growth-strategist`; ⑤ if ③ succeeds but ④ fails, capture the desktop app
-version and the exact tool error (would indicate desktop-side validation drift); ⑥ if both fail,
-the session/registration environment is implicated — retry once more, then consult the desktop
-release notes for `invoke_subagent` changes.
+**Re-test round (desktop manual round, COMPLETED 2026-09-06 — Case ⑥ resolved and extended).**
+Executed in the scratch workspace `C:\github\au-scratch-digital-agency` against **Antigravity
+Desktop 2.12.2.0** (desktop bundle of CLI `agy 1.1.27`) following the protocol above: ① full
+project close/reopen, ② `orchestrator-marketing` selected, then the invocation probes. Result:
+`invoke_subagent` failed **uniformly** — `subagent "<name>" not found or not allowed to be
+invoked` — for **every** tested target:
 
-**Cleanup note:** the probe copies of `subagent-marketing-growth-strategist.md`, `test-minimal.md`,
-and `test-full.md` remain in the user-global store intentionally, to support the pending desktop
-re-test; remove them once the manual round is recorded.
+| Target | Kind | Result |
+|---|---|---|
+| `test-minimal` | minimal custom control fixture | ❌ `not found or not allowed to be invoked` |
+| `test-full` | full custom fixture (all suspect frontmatter keys) | ❌ same |
+| `subagent-marketing-growth-strategist` | real roster copy (user-global store) | ❌ same |
+| `research`, `self` | **built-in** Antigravity agents | ❌ same |
+
+**Conclusion.** Because even **built-in** agents (`research`, `self`) fail identically, the
+failure cannot be stale session registration, file placement, or any property of Agents United's
+markdown artifacts: this **100% exonerates the artifacts**, independently confirming the headless
+bisect above (where the identical roster file spawned successfully via `invoke_subagent`). The
+root cause is an **Antigravity Desktop 2.12.2.0 GUI harness limitation**: the interactive session
+thread gates `invoke_subagent` behind internal permission flags (`enable_subagent_tools` /
+`SubagentToolsEnabled`) that are **not enabled in standard project threads**, despite the public
+documentation at `https://antigravity.google/docs/subagents/` describing tool-level subagent
+invocation. A bug report has been filed with Google and shared on `r/google_antigravity`.
+Conformance standing: the **headless CLI path is verified ✅** (agy 1.1.27) and is the only
+`invoke_subagent` conformance surface until the upstream fix ships; the **desktop GUI path is
+verified ❌** at 2.12.2.0.
+
+**Host divergence (cross-host honesty; aligns with ADR 0008 §degradation and ADR 0014):**
+- **Cline** — supports tool-level dynamic subagent delegation: the orchestrator spins up
+  subagents via callable `subagent_*` tools generated from `.cline/agents/*.yml` (the verified
+  positive surface; see ADR 0013/0014).
+- **Antigravity** — restricts `invoke_subagent` in GUI chat: interactive users engage specialist
+  subagents via the UI agent selector / slash commands, and multi-agent team orchestration
+  operates via host-level workflows (`/teamwork-preview` and `/boost`), which spin up internal
+  workers guided by the workspace `.agents/rules/` and `.agents/skills/`.
+
+**Cleanup note (done):** with the manual round recorded, the temporary fixtures are removed —
+the probe copies (`test-minimal.md`, `test-full.md`,
+`subagent-marketing-growth-strategist.md`) are deleted from the user-global store
+(`~/.gemini/config/agents/`), and the scratch workspace `.agents/agents/` retains only the ten
+canonical `digital-agency` bundle agents.
