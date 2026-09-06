@@ -106,3 +106,57 @@ unknowns (mode, store, layout) from the spike-006 addendum, plus user-provided i
 interactive-scoped (confirmed); (b) keep `agents doctor` per-host probes with Cline as the
 automated-CI host and Antigravity as a human-verified interactive host; (c) no projection shim
 or global-store install is required for Antigravity — the canonical layout works natively.
+---
+## Addendum (2026-09-06) — First automated `invoke_subagent` verification (agy 1.1.27); desktop failure reclassified as environment, not artifact
+
+**Status:** Supersedes the "invoke_subagent end-to-end was never verified" caveat of the Spike 008
+addendum for the headless surface. Pin **agy 1.1.27**.
+
+**Trigger.** During the Plan 012 (ADR 0014) maintainer manual round, an Antigravity **desktop**
+orchestrator failed to spawn `subagent-marketing-growth-strategist` via `invoke_subagent`
+("either non-existence or restricted access"). Initial suspicion fell on the roster subagents'
+frontmatter (log-style `hooks:` blocks, folded `description: >`, `tools:` with `search_web`,
+`inheritCustomizations: false`, dangling `rules:` references, or misc extra keys).
+
+**Headless bisect (Windows, `agy` 1.1.27, user-global store `~/.gemini/config/agents/`):**
+
+| Fixture | Content | Result |
+|---|---|---|
+| `test-minimal` | name + single-line description | ✅ registered; `--agent` injected (replied with body instruction); `invoke_subagent` spawn **succeeded** |
+| v1…v6 | each suspect key isolated (hooks / folded desc / tools / inheritCustomizations / rules / misc extra keys) | ✅ **all** registered (all appeared in `agy agents`) |
+| fake name | `--agent zzz-nonexistent` control | silent fall-through to default ("Antigravity") — reconfirms Spike 008 |
+| `test-full` / real roster copy | exact `subagent-marketing-growth-strategist.md` (`mainAgent: false`, all keys) | `agy agents` hides it (expected: that subcommand lists mainAgent-selectable agents only); `--agent` does not inject (expected: `--agent` selects a *primary* agent); **`invoke_subagent` spawn by name SUCCEEDED** (task-faithful reply `SUBOK-2`) |
+| ⚠ method note | fixtures written via Windows PowerShell 5.1 `Set-Content -Encoding utf8` | a UTF-8 **BOM** before `---` made the *script-generated* fixtures fail listing even when their content was valid — always write fixtures BOM-free (`[IO.File]::WriteAllText` with `UTF8Encoding($false)`) |
+
+**Findings.**
+1. **Every roster subagent frontmatter key is valid for agy 1.1.27** — registration,
+   `--agent` injection (for mainAgent agents), and `invoke_subagent` resolution all accept the
+   canonical format. **No projection shim is warranted** (and the initial log-style-`hooks`
+   hypothesis is retracted).
+2. **Headless `invoke_subagent` works against the user-global store on agy 1.1.27** —
+   custom markdown subagents can be spawned by name from a `-p` run. New conformance datum.
+3. **`agy agents` ≠ the full registry**: it lists mainAgent-selectable agents only, so it cannot
+   be used to assert subagent registration; use an `invoke_subagent` spawn probe instead.
+4. **Therefore the desktop failure is environmental, not artifact-level.** Ranked candidates:
+   (a) stale session registration — files installed while the desktop project session was already
+   open (remedy: fully close/reopen the project, then retry); (b) desktop-app harness version
+   drift vs CLI 1.1.27 (record the desktop version when re-testing); (c) transient tool error the
+   orchestrator over-interpreted. The official Antigravity docs already model invoke-failures as
+   non-fatal: *"If the subagent fails to execute, for whatever reason, you can continue the chat
+   and ask it to invoke again."*
+5. **Store split (unchanged from Spike 008, reconfirmed on 1.1.27):** headless reads only the
+   user-global store; interactive reads the workspace `.agents/agents/`. For a headless probe of
+   a canonical workspace agent, copy the flat `.md` into `~/.gemini/config/agents/` temporarily.
+
+**Re-test protocol (desktop manual round, ~2 min).** In the scratch workspace
+(`C:\github\au-scratch-digital-agency`, `test-minimal.md` / `test-full.md` remain in
+`.agents/agents/`): ① fully close and reopen the project in the Antigravity desktop; ② select
+`orchestrator-marketing`; ③ ask it to invoke `test-minimal` (minimal control); ④ ask it to invoke
+`subagent-marketing-growth-strategist`; ⑤ if ③ succeeds but ④ fails, capture the desktop app
+version and the exact tool error (would indicate desktop-side validation drift); ⑥ if both fail,
+the session/registration environment is implicated — retry once more, then consult the desktop
+release notes for `invoke_subagent` changes.
+
+**Cleanup note:** the probe copies of `subagent-marketing-growth-strategist.md`, `test-minimal.md`,
+and `test-full.md` remain in the user-global store intentionally, to support the pending desktop
+re-test; remove them once the manual round is recorded.

@@ -9,7 +9,10 @@
 > **USER GATE**: **LIFTED 2026-09-04** — the maintainer approved execution (Option B) and
 > Steps 1–7 are implemented and verified (full suite 430 passed | 0 failures). Step 8
 > (maintainer manual round) is partially complete: **Cline manual test passed**;
-> Antigravity manual round pending.
+> Antigravity desktop round pending — the orchestrator's `invoke_subagent` failure was
+> bisected on agy 1.1.27 (2026-09-06) and **exonerates the artifacts** (the exact roster
+> subagent invokes successfully headlessly); see ADR 0009's 2026-09-06 addendum for the
+> re-test protocol.
 >
 > **Drift check (run first)**:
 > `git diff --stat 55e7593..HEAD -- src/core/cline-projector.ts src/core/types.ts registry/bundles.json registry/agents/orchestrator-marketing.md tests/e2e-evals/ tests/cline-projector.test.ts`
@@ -351,7 +354,11 @@ are applied to `bundles.json` only.
 - [x] Eval harness asserts delegation-first, budget compliance, council scope statements, and gates budget overflow.
 - [x] `npm run typecheck && npm test && npm run build` → 100% pass.
 - [x] Dry-run artifacts inspected (scratch workspace `au-scratch-digital-agency`: coordinator rule, 10× `.yml` with `maxIterations: 8`, team manifest).
-- [ ] Manual test round: **Cline passed** (maintainer, 2026-09-04); Antigravity round pending.
+- [ ] Manual test round: **Cline passed** (maintainer, 2026-09-04). Antigravity desktop:
+      first attempt failed to invoke `subagent-marketing-growth-strategist`; headless bisect
+      on agy 1.1.27 (2026-09-06) reproduced **successful** `invoke_subagent` spawns of the
+      exact same file — failure classified environmental (stale desktop session / version
+      drift), re-test pending per ADR 0009's 2026-09-06 addendum.
 
 ## STOP conditions
 
