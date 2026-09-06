@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.6.0...v0.7.0) (2026-09-06)
+
+
+### Features
+
+* Subagent-First Planning Loop (Plan 012), developer docs & CI sync fix ([#17](https://github.com/NeoAnthropocene/agents-united/issues/17)) ([c21fa88](https://github.com/NeoAnthropocene/agents-united/commit/c21fa88d67425c952328d71c34fc41f42cc4924a)), closes [#1](https://github.com/NeoAnthropocene/agents-united/issues/1) [#2](https://github.com/NeoAnthropocene/agents-united/issues/2) [#12](https://github.com/NeoAnthropocene/agents-united/issues/12) [#16](https://github.com/NeoAnthropocene/agents-united/issues/16)
+
 # [0.6.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.5.0...v0.6.0) (2026-09-03)
 
 
