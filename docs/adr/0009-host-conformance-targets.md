@@ -106,3 +106,90 @@ unknowns (mode, store, layout) from the spike-006 addendum, plus user-provided i
 interactive-scoped (confirmed); (b) keep `agents doctor` per-host probes with Cline as the
 automated-CI host and Antigravity as a human-verified interactive host; (c) no projection shim
 or global-store install is required for Antigravity — the canonical layout works natively.
+---
+## Addendum (2026-09-06) — `invoke_subagent` verification complete: headless ✅ (agy 1.1.27), Desktop GUI gated (2.12.2.0); artifacts exonerated
+
+**Status:** Supersedes the "invoke_subagent end-to-end was never verified" caveat of the Spike 008
+addendum: the headless surface is now **verified positively** (agy 1.1.27) and the Desktop GUI
+surface is now **verified negatively** (Antigravity Desktop 2.12.2.0 — see the completed re-test
+round at the end of this addendum). Pin **agy 1.1.27** / **Desktop 2.12.2.0**.
+
+**Trigger.** During the Plan 012 (ADR 0014) maintainer manual round, an Antigravity **desktop**
+orchestrator failed to spawn `subagent-marketing-growth-strategist` via `invoke_subagent`
+("either non-existence or restricted access"). Initial suspicion fell on the roster subagents'
+frontmatter (log-style `hooks:` blocks, folded `description: >`, `tools:` with `search_web`,
+`inheritCustomizations: false`, dangling `rules:` references, or misc extra keys).
+
+**Headless bisect (Windows, `agy` 1.1.27, user-global store `~/.gemini/config/agents/`):**
+
+| Fixture | Content | Result |
+|---|---|---|
+| `test-minimal` | name + single-line description | ✅ registered; `--agent` injected (replied with body instruction); `invoke_subagent` spawn **succeeded** |
+| v1…v6 | each suspect key isolated (hooks / folded desc / tools / inheritCustomizations / rules / misc extra keys) | ✅ **all** registered (all appeared in `agy agents`) |
+| fake name | `--agent zzz-nonexistent` control | silent fall-through to default ("Antigravity") — reconfirms Spike 008 |
+| `test-full` / real roster copy | exact `subagent-marketing-growth-strategist.md` (`mainAgent: false`, all keys) | `agy agents` hides it (expected: that subcommand lists mainAgent-selectable agents only); `--agent` does not inject (expected: `--agent` selects a *primary* agent); **`invoke_subagent` spawn by name SUCCEEDED** (task-faithful reply `SUBOK-2`) |
+| ⚠ method note | fixtures written via Windows PowerShell 5.1 `Set-Content -Encoding utf8` | a UTF-8 **BOM** before `---` made the *script-generated* fixtures fail listing even when their content was valid — always write fixtures BOM-free (`[IO.File]::WriteAllText` with `UTF8Encoding($false)`) |
+
+**Findings.**
+1. **Every roster subagent frontmatter key is valid for agy 1.1.27** — registration,
+   `--agent` injection (for mainAgent agents), and `invoke_subagent` resolution all accept the
+   canonical format. **No projection shim is warranted** (and the initial log-style-`hooks`
+   hypothesis is retracted).
+2. **Headless `invoke_subagent` works against the user-global store on agy 1.1.27** —
+   custom markdown subagents can be spawned by name from a `-p` run. New conformance datum.
+3. **`agy agents` ≠ the full registry**: it lists mainAgent-selectable agents only, so it cannot
+   be used to assert subagent registration; use an `invoke_subagent` spawn probe instead.
+4. **Therefore the desktop failure is environmental, not artifact-level.** Ranked candidates:
+   (a) stale session registration — files installed while the desktop project session was already
+   open (remedy: fully close/reopen the project, then retry); (b) desktop-app harness version
+   drift vs CLI 1.1.27 (record the desktop version when re-testing); (c) transient tool error the
+   orchestrator over-interpreted. The official Antigravity docs already model invoke-failures as
+   non-fatal: *"If the subagent fails to execute, for whatever reason, you can continue the chat
+   and ask it to invoke again."* **Resolution (2026-09-06):** the completed desktop round below
+   confirms the harness-level cause (candidate (b) in essence — GUI permission gating, Desktop
+   2.12.2.0) and eliminates (a) and (c): even **built-in** agents fail identically.
+5. **Store split (unchanged from Spike 008, reconfirmed on 1.1.27):** headless reads only the
+   user-global store; interactive reads the workspace `.agents/agents/`. For a headless probe of
+   a canonical workspace agent, copy the flat `.md` into `~/.gemini/config/agents/` temporarily.
+
+**Re-test round (desktop manual round, COMPLETED 2026-09-06 — Case ⑥ resolved and extended).**
+Executed in the scratch workspace `C:\github\au-scratch-digital-agency` against **Antigravity
+Desktop 2.12.2.0** (desktop bundle of CLI `agy 1.1.27`) following the protocol above: ① full
+project close/reopen, ② `orchestrator-marketing` selected, then the invocation probes. Result:
+`invoke_subagent` failed **uniformly** — `subagent "<name>" not found or not allowed to be
+invoked` — for **every** tested target:
+
+| Target | Kind | Result |
+|---|---|---|
+| `test-minimal` | minimal custom control fixture | ❌ `not found or not allowed to be invoked` |
+| `test-full` | full custom fixture (all suspect frontmatter keys) | ❌ same |
+| `subagent-marketing-growth-strategist` | real roster copy (user-global store) | ❌ same |
+| `research`, `self` | **built-in** Antigravity agents | ❌ same |
+
+**Conclusion.** Because even **built-in** agents (`research`, `self`) fail identically, the
+failure cannot be stale session registration, file placement, or any property of Agents United's
+markdown artifacts: this **100% exonerates the artifacts**, independently confirming the headless
+bisect above (where the identical roster file spawned successfully via `invoke_subagent`). The
+root cause is an **Antigravity Desktop 2.12.2.0 GUI harness limitation**: the interactive session
+thread gates `invoke_subagent` behind internal permission flags (`enable_subagent_tools` /
+`SubagentToolsEnabled`) that are **not enabled in standard project threads**, despite the public
+documentation at `https://antigravity.google/docs/subagents/` describing tool-level subagent
+invocation. A bug report has been filed with Google and shared on `r/google_antigravity`.
+Conformance standing: the **headless CLI path is verified ✅** (agy 1.1.27) and is the only
+`invoke_subagent` conformance surface until the upstream fix ships; the **desktop GUI path is
+verified ❌** at 2.12.2.0.
+
+**Host divergence (cross-host honesty; aligns with ADR 0008 §degradation and ADR 0014):**
+- **Cline** — supports tool-level dynamic subagent delegation: the orchestrator spins up
+  subagents via callable `subagent_*` tools generated from `.cline/agents/*.yml` (the verified
+  positive surface; see ADR 0013/0014).
+- **Antigravity** — restricts `invoke_subagent` in GUI chat: interactive users engage specialist
+  subagents via the UI agent selector / slash commands, and multi-agent team orchestration
+  operates via host-level workflows (`/teamwork-preview` and `/boost`), which spin up internal
+  workers guided by the workspace `.agents/rules/` and `.agents/skills/`.
+
+**Cleanup note (done):** with the manual round recorded, the temporary fixtures are removed —
+the probe copies (`test-minimal.md`, `test-full.md`,
+`subagent-marketing-growth-strategist.md`) are deleted from the user-global store
+(`~/.gemini/config/agents/`), and the scratch workspace `.agents/agents/` retains only the ten
+canonical `digital-agency` bundle agents.

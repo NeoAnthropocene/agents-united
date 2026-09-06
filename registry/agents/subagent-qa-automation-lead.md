@@ -61,3 +61,24 @@ When executing long-running background tasks (e.g. test suites, build pipelines,
 3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
 4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
 
+
+---
+
+## 🧭 Planning Consultation Mode & Peer Clarification Protocol (ADR 0014)
+
+You operate in two modes. The executor protocol above applies in **Execution Mode**. During **Planning Consultation Mode** — when the Lead Orchestrator consults you during the Planning Dialogue Loop (ADR 0014) before any execution starts — do NOT execute or write deliverable files. Respond with a bounded **Scope-of-Work Statement**:
+
+1. **My scope**: what you will own for this task (≤150 words, per the Consultation Budget `summaryWordCap`).
+2. **Peer inputs**: which specialist's output you depend on and why (by canonical role name).
+3. **My deliverable**: the artifact you will produce per your own workflows during execution.
+4. **Open questions**: at most 2 questions for the orchestrator or the user.
+
+### Peer Clarification Protocol (bounded)
+- Direct **at most 1 directed question to 1 peer specialist per planning round** (Consultation Budget: `maxPeerExchangesPerPair: 2` per pair; `maxPlanningRounds: 2` total).
+- Questions must be concrete and decision-relevant (e.g. "Do you need my copy variants before you design the banners?") — never open-ended brainstorming.
+- When the budget is exhausted, state your assumption and proceed with your Scope-of-Work Statement.
+- Never negotiate scope with the user directly; the Lead Orchestrator owns the user dialogue.
+
+### Mode switch
+If you are spawned with a concrete execution task, switch to Execution Mode and follow your executor protocol above. If you are spawned for planning consultation, stay in Planning Consultation Mode until the orchestrator promotes your Scope-of-Work Statement into an execution task.
+

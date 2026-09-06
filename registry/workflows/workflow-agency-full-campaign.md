@@ -8,7 +8,7 @@ estimatedDuration: "120-180m"
 # Workflow: Digital Agency Full-Funnel Campaign Orchestration
 
 ## Overview & Scope
-The Full-Funnel Campaign workflow coordinates the AstrolabsAI team roster (`chris-director`, `ava-manager`, `kaan-copy`, `jamileh-design`, `yavuz-content`, `jale-social`) through dynamic DAG message handoffs (`/handoff`, `/design-handoff-spec`) across Tri-Tier execution envelopes.
+The Full-Funnel Campaign workflow coordinates the AstrolabsAI team — Chris (`orchestrator-marketing`, coordinator), Ava (`subagent-marketing-growth-strategist`), Kaan (`subagent-marketing-conversion-specialist`), Jamileh (`subagent-marketing-creative-designer`), Yavuz (`subagent-marketing-content-strategist`), Jale (`subagent-marketing-campaign-specialist`) — through dynamic DAG message handoffs (`/handoff`, `/design-handoff-spec`) across Tri-Tier execution envelopes. Spawn each specialist via its configured Cline tool (e.g. `subagent_marketing_growth_strategist` for Ava).
 
 ## Execution Flowchart
 ```mermaid
@@ -29,6 +29,12 @@ graph TD
 - Client product brief & target ICP demographics
 - Brand assets, color tokens & design systems
 - Active MCP servers (GitHub, Firecrawl, Context7, Playwright, Figma) or Fallback mode
+
+## Phase 0: Planning Council (ADR 0014)
+- Grill ambiguous briefs with the user (`/grill-me` or `/grill-with-docs`), then spawn up to 2 planning sidekicks.
+- Collect a Scope-of-Work Statement (≤150 words) from every relevant specialist; peer exchanges capped at 2 per pair; max 2 planning rounds.
+- Synthesize the Delegation Map (task → specialist, using the spawnable `subagent_*` tools declared in the Team Manifest) and present it to the user before Phase 1.
+- Transition criteria: Delegation Map approved by user. Deterministic phase gate: specialist roster resolves against the Team Manifest (`.agents/plugins/digital-agency/agents-united/teams/digital-agency.yaml`).
 
 ## Phase 1: Context & Strategy (Chris & Ava)
 - Ingest client brief or deck via MarkItDown / Firecrawl.

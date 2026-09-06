@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { StreamJsonEvalRunner } from './runner.js';
+import { PlanningLoopGatekeeper } from './judge.js';
 import { StreamJsonEvent } from './schemas.js';
 
 describe('Milestone 6: Stream-JSON Continuous Evaluation & DAG Verification', () => {
@@ -195,5 +196,153 @@ Approved creative assets, copy variants, and landing page prototype.
     expect(summary.totalEventsProcessed).toBe(3);
     expect(summary.totalHandoffsEvaluated).toBe(0);
     expect(summary.allPassed).toBe(true);
+  });
+});
+
+describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
+  const coordinator = 'orchestrator-marketing';
+
+  const happyPathEvents = (): StreamJsonEvent[] => [
+    { type: 'thought', payload: 'User brief is ambiguous — running the Planning Dialogue Loop.' },
+    {
+      type: 'tool_call',
+      agent: coordinator,
+      tool: 'send_message',
+      recipient: 'subagent-marketing-growth-strategist',
+      payload:
+        '/planning-consultation Council round 1: state your scope-of-work for the Q4 campaign (max 150 words).',
+    },
+    {
+      type: 'tool_call',
+      agent: 'subagent-marketing-growth-strategist',
+      tool: 'send_message',
+      recipient: 'subagent-marketing-content-strategist',
+      payload:
+        '/planning-consultation Peer question (1/2): do you need my funnel map before drafting the content brief?',
+    },
+    {
+      type: 'tool_call',
+      agent: 'subagent-marketing-content-strategist',
+      tool: 'send_message',
+      recipient: 'subagent-marketing-growth-strategist',
+      payload: '/planning-consultation Peer answer: yes — send the funnel map with the keyword clusters.',
+    },
+    {
+      type: 'tool_call',
+      agent: 'subagent-marketing-growth-strategist',
+      tool: 'send_message',
+      recipient: coordinator,
+      payload:
+        '/planning-consultation Scope-of-Work Statement: my scope is the acquisition funnel architecture and channel mix.',
+    },
+    {
+      type: 'tool_call',
+      agent: 'subagent-marketing-content-strategist',
+      tool: 'send_message',
+      recipient: coordinator,
+      payload:
+        '/planning-consultation Scope-of-Work Statement: my scope is the content calendar and SEO topic clusters.',
+    },
+    {
+      type: 'tool_call',
+      agent: coordinator,
+      tool: 'send_message',
+      recipient: 'user',
+      payload:
+        '/delegation-map Delegation Map: funnel → Ava, content → Yavuz, creative → Jamileh, copy → Kaan.',
+    },
+    {
+      type: 'tool_call',
+      agent: coordinator,
+      tool: 'send_message',
+      recipient: 'subagent-marketing-growth-strategist',
+      payload: '/handoff Execute the funnel architecture task now.',
+    },
+  ];
+
+  it('1. Happy path: ambiguous brief ⇒ grill/sidekick ⇒ council ⇒ delegation map ⇒ execution passes all criteria', () => {
+    const verdict = PlanningLoopGatekeeper.evaluate(happyPathEvents(), {
+      coordinatorAgent: coordinator,
+      ambiguousBrief: true,
+      budget: { maxPeerExchangesPerPair: 2 },
+    });
+
+    expect(verdict.passed).toBe(true);
+    expect(verdict.score).toBe(10);
+    expect(verdict.criteria.delegation_first).toBe(true);
+    expect(verdict.criteria.sidekick_used_when_ambiguous).toBe(true);
+    expect(verdict.criteria.council_scope_statements_present).toBe(true);
+    expect(verdict.criteria.budget_respected).toBe(true);
+    expect(verdict.criteria.delegation_map_before_execution).toBe(true);
+    expect(verdict.failure_reason).toBeNull();
+  });
+
+  it('2. Budget overflow adversarial: a third peer exchange between the same pair trips the gatekeeper', () => {
+    const events = happyPathEvents();
+    events.splice(4, 0, {
+      type: 'tool_call',
+      agent: 'subagent-marketing-content-strategist',
+      tool: 'send_message',
+      recipient: 'subagent-marketing-growth-strategist',
+      payload: '/planning-consultation Peer question again: actually, also send the CAC benchmarks.',
+    });
+
+    const verdict = PlanningLoopGatekeeper.evaluate(events, {
+      coordinatorAgent: coordinator,
+      ambiguousBrief: true,
+      budget: { maxPeerExchangesPerPair: 2 },
+    });
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.criteria.budget_respected).toBe(false);
+    expect(verdict.failure_reason).toContain('budget_respected');
+    expect(verdict.failure_reason).toContain(
+      'subagent-marketing-content-strategist<->subagent-marketing-growth-strategist=3'
+    );
+  });
+
+  it('3. Solo self-execution fails delegation-first fast (0-token deterministic diagnosis)', () => {
+    const soloEvents: StreamJsonEvent[] = [
+      { type: 'thought', payload: 'I will just do the campaign myself.' },
+      {
+        type: 'tool_call',
+        agent: coordinator,
+        tool: 'write_to_file',
+        payload: 'Writing the full campaign plan myself without consulting specialists.',
+      },
+      {
+        type: 'tool_call',
+        agent: coordinator,
+        tool: 'send_message',
+        recipient: 'subagent-marketing-growth-strategist',
+        payload: '/handoff Review my plan when you can.',
+      },
+    ];
+
+    const verdict = PlanningLoopGatekeeper.evaluate(soloEvents, {
+      coordinatorAgent: coordinator,
+      ambiguousBrief: true,
+      budget: { maxPeerExchangesPerPair: 2 },
+    });
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.criteria.delegation_first).toBe(false);
+    expect(verdict.failure_reason).toContain('delegation_first');
+  });
+
+  it('4. Runner integration: consultation traces are tagged and the gate evaluates the full parsed stream', async () => {
+    const runner = new StreamJsonEvalRunner('fully-operational');
+    await runner.feedChunk(StreamJsonEvalRunner.toNdjson(happyPathEvents()));
+    const summary = await runner.finalize();
+
+    expect(summary.totalEventsProcessed).toBe(happyPathEvents().length);
+    expect(summary.traces.filter((t) => t.skill_used === 'planning-consultation').length).toBe(5);
+
+    const verdict = PlanningLoopGatekeeper.evaluate(runner.getEvents(), {
+      coordinatorAgent: coordinator,
+      ambiguousBrief: true,
+      budget: { maxPeerExchangesPerPair: 2 },
+    });
+    expect(verdict.passed).toBe(true);
   });
 });
