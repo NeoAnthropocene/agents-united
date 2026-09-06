@@ -146,6 +146,30 @@ The systematic process of converting rapid AI-generated single-file prototypes (
 **Distributed Edge Database & Embedded Replicas**:
 An edge-first persistence pattern (e.g. Turso / LibSQL) combining microsecond read latencies from local in-process SQLite embedded replicas with automated background WAL synchronization to global primary databases and ephemeral PR database branching.
 
+**Subagent-First Delegation Policy**:
+The mandatory delegation posture of a Lead Orchestrator in a planning-loop bundle: specialist tasks are executed by the bundle's spawnable `subagent_*` agents, and the coordinator completes specialist work in the main session **only if** the subagent tools are genuinely absent from the runtime or the task is trivial (single-file read, one-line answer, formatting). Never as a convenience, speed choice, or fallback of habit.
+_Avoid_: Solo orchestrator, convenience self-execution, lazy fallback
+
+**Planning Dialogue Loop**:
+The closed orchestration cycle of a planning-loop bundle, executed before any substantive work: **Phase 0 — User Alignment** (Socratic grilling via `/grill-me` for strategy or `/grill-with-docs` for code/docs), **Phase 0.5 — Sidekick Clarification** (spawn ≤ `sidekicks.max` relevant specialists into the planning conversation to resolve remaining ambiguity; they advise the orchestrator, who relays to the user), **Phase 1 — Specialist Council** (every relevant specialist returns a bounded Scope-of-Work Statement), **Phase 2 — Delegation Map** (task→specialist map synthesized and presented to the user before execution).
+_Avoid_: Ad-hoc planning, post-plan delegation, silent task splitting
+
+**Planning Sidekick**:
+A specialist subagent spawned by the Lead Orchestrator **during the planning conversation itself** (Phase 0.5) to clarify an ambiguous user brief. Sidekicks advise the orchestrator with targeted clarifying input; the orchestrator relays their questions to the user. At most `sidekicks.max` sidekicks may be active per planning cycle.
+_Avoid_: Silent shadow agent, full-time co-pilot, second orchestrator
+
+**Specialist Council**:
+The planning round (Phase 1 of the Planning Dialogue Loop) in which every relevant specialist of a planning-loop bundle returns a **Scope-of-Work Statement** — a bounded declaration of (1) its scope, (2) inputs needed from peers, (3) its deliverable per its own workflows, and (4) at most two open questions — so the orchestrator synthesizes the delegation map from expert inputs rather than a solo guess.
+_Avoid_: Team meeting theater, unstructured brainstorm dump, voting body
+
+**Scope-of-Work Statement**:
+The capped, structured contribution a specialist makes to a Specialist Council round: scope, peer dependencies, deliverable definition, and open questions — limited to `summaryWordCap` words. It is a planning artifact, not a deliverable; execution still follows the specialist's own workflows.
+_Avoid_: Mini-PRD, full implementation plan, uncapped essay
+
+**Consultation Budget**:
+The declarative cap set that bounds all inter-agent planning dialogue in a planning-loop bundle, declared once in `registry/bundles.json` (`planningLoop.budget`) and rendered into the coordinator rule, Team Manifest, and subagent prompts: `maxPlanningRounds` (orchestrator↔council cycles per task), `maxPeerExchangesPerPair` (directed questions per specialist pair), `summaryWordCap` (per Scope-of-Work Statement), and `maxIterations` (the host-enforced per-invocation hard cap rendered into Cline configured-agent `.yml`; inert on hosts that ignore it — documented, not faked).
+_Avoid_: Token counter, open-ended discussion, silent infinite chatter
+
 ---
 
 ### Agent Registry & Department Hierarchy
@@ -376,6 +400,32 @@ _Avoid_: Pure text UI feedback, blind pixel review
 **Native MCP Provisioning (`agy mcp`)**:
 The automated configuration lifecycle where the CLI evaluates bundle prerequisites and leverages native host commands (`agy mcp add --type stdio|http`) to provision required tool servers (e.g. Firecrawl, GitHub) into `mcp_config.json`.
 _Avoid_: Manual JSON editing, unverified MCP startup
+
+### Git & Release Workflow
+
+**Release Line (`main`)**:
+The production branch of this repository. Accepts merges only from `dev` via PR; `semantic-release` publishes the npm package, Git tag, and `CHANGELOG.md` from it.
+_Avoid_: Trunk, production-branch edits, default-branch direct commits
+
+**Integration Line (`dev`)**:
+The protected integration branch where all work lands before release. Kept in lockstep with `main` by the `Sync main to dev` auto-merge workflow after every release.
+_Avoid_: Development branch, staging branch, WIP branch
+
+**Branch Ruleset (Protected Branch)**:
+The GitHub branch ruleset on `dev` requiring pull requests and a passing `test` status check (typecheck + build + Vitest) before merge, with admin bypass as the emergency escape hatch.
+_Avoid_: Soft guideline, honorary protection, local hook enforcement
+
+**Work Branch (`feat/…` `fix/…` `docs/…` `ci/…`)**:
+A short-lived branch always cut from a fresh `origin/dev` (or `origin/main` for emergency hotfixes), pushed early as backup and CI trigger, and deleted after merge.
+_Avoid_: Long-lived branch, personal branch, direct dev commits
+
+**Two-Step Release Flow**:
+The mandatory release path: PR #1 merges the work branch into `dev` (CI gate), then PR #2 merges `dev` into `main`, triggering semantic-release and the automated `main → dev` sync.
+_Avoid_: Direct release push, manual versioning, one-step merge to main
+
+**Conventional Commit Release Trigger**:
+The rule that only `feat:` commits trigger a minor release and `fix:` commits a patch release on `main`; `docs:`, `ci:`, `chore:`, `refactor:`, `test:`, and `perf:` commits accumulate on `dev` and ride into the next release.
+_Avoid_: Free-form commit messages, manual changelog editing
 
 ## Usage Examples
 

@@ -3,7 +3,26 @@ import {
   EvaluationVerdict,
   EvaluationVerdictSchema,
   HandoffCriteria,
+  PlanningLoopCriteria,
+  PlanningLoopVerdict,
+  PlanningLoopVerdictSchema,
 } from './schemas.js';
+
+/** Consultation directive used by specialists during the Planning Dialogue Loop. */
+export const PLANNING_CONSULTATION_DIRECTIVE = '/planning-consultation';
+
+export interface PlanningLoopBudget {
+  maxPeerExchangesPerPair: number;
+}
+
+export interface PlanningLoopScenarioOptions {
+  /** Coordinator agent name — its messages are delegation, never peer chatter. */
+  coordinatorAgent?: string;
+  /** Whether the user brief is ambiguous (then grill/sidekick usage is required). */
+  ambiguousBrief?: boolean;
+  /** Consultation Budget caps (defaults per ADR 0014). */
+  budget?: PlanningLoopBudget;
+}
 
 export interface JudgeOptions {
   customRubric?: string;
@@ -171,5 +190,112 @@ export class HybridHandoffJudge {
 
     const effectiveMode = event.execution_mode || mode || 'fully-operational';
     return await this.evaluateStage2(event.payload!, recipientRole, effectiveMode, options);
+  }
+}
+
+/**
+ * Stage 1 deterministic gatekeeper for the Planning Dialogue Loop (Plan 012 / ADR 0014).
+ * Cost: 0ms, 0 API tokens. Evaluates a whole event stream against the PlanningLoopCriteria.
+ */
+export class PlanningLoopGatekeeper {
+  static evaluate(events: StreamJsonEvent[], options: PlanningLoopScenarioOptions = {}): PlanningLoopVerdict {
+    const coordinator = options.coordinatorAgent;
+    const maxPeerExchanges = options.budget?.maxPeerExchangesPerPair ?? 2;
+    const directive = PLANNING_CONSULTATION_DIRECTIVE;
+    const lower = (s: string) => s.toLowerCase();
+
+    // C1 — delegation_first: the first substantive action is a subagent spawn or send_message.
+    const substantive = events.filter(
+      (e) => e.type === 'tool_call' || e.type === 'subagent_spawn' || e.type === 'handoff_event'
+    );
+    const first = substantive[0];
+    const delegation_first =
+      !!first &&
+      (first.type === 'subagent_spawn' ||
+        (first.tool ?? '').startsWith('subagent_') ||
+        (first.tool === 'send_message' && !!first.recipient && first.recipient.trim().length > 0));
+
+    // C2 — sidekick_used_when_ambiguous: grill directive or a consultation event is present.
+    const hasUserAlignmentOrSidekick = events.some(
+      (e) =>
+        typeof e.payload === 'string' &&
+        (lower(e.payload).includes('/grill-me') ||
+          lower(e.payload).includes('/grill-with-docs') ||
+          e.payload.includes(directive))
+    );
+    const sidekick_used_when_ambiguous = options.ambiguousBrief ? hasUserAlignmentOrSidekick : true;
+
+    // C3 — council: ≥2 distinct non-coordinator agents returned consultation contributions.
+    const consultationSenders = new Set(
+      events
+        .filter((e) => typeof e.payload === 'string' && e.payload.includes(directive))
+        .map((e) => e.agent ?? 'orchestrator')
+    );
+    const specialistSenders = coordinator
+      ? [...consultationSenders].filter((s) => s !== coordinator)
+      : [...consultationSenders];
+    const council_scope_statements_present = specialistSenders.length >= 2;
+
+    // C4 — budget: peer exchanges are send_message between two non-coordinator parties.
+    const pairCounts = new Map<string, number>();
+    for (const e of events) {
+      if (e.type !== 'tool_call' || e.tool !== 'send_message' || !e.agent || !e.recipient) continue;
+      const senderIsCoordinator = coordinator ? e.agent === coordinator : false;
+      const recipientIsCoordinator = coordinator ? e.recipient === coordinator : false;
+      if (senderIsCoordinator || recipientIsCoordinator) continue;
+      const pair = [e.agent, e.recipient].sort().join('<->');
+      pairCounts.set(pair, (pairCounts.get(pair) ?? 0) + 1);
+    }
+    const overflow = [...pairCounts.entries()].filter(([, count]) => count > maxPeerExchanges);
+    const budget_respected = overflow.length === 0;
+
+    // C5 — delegation map is emitted before the first execution handoff.
+    const hasDelegationMap = (e: StreamJsonEvent) =>
+      typeof e.payload === 'string' &&
+      (lower(e.payload).includes('delegation map') || lower(e.payload).includes('/delegation-map'));
+    const isExecutionHandoff = (e: StreamJsonEvent) =>
+      typeof e.payload === 'string' &&
+      (e.payload.includes('/handoff') || e.payload.includes('/design-handoff-spec')) &&
+      !hasDelegationMap(e);
+    const mapIdx = events.findIndex(hasDelegationMap);
+    const execIdx = events.findIndex(isExecutionHandoff);
+    const delegation_map_before_execution = mapIdx !== -1 && (execIdx === -1 || mapIdx < execIdx);
+
+    const criteria: PlanningLoopCriteria = {
+      delegation_first,
+      sidekick_used_when_ambiguous,
+      council_scope_statements_present,
+      budget_respected,
+      delegation_map_before_execution,
+    };
+
+    const score =
+      Number(delegation_first) * 2 +
+      Number(sidekick_used_when_ambiguous) * 2 +
+      Number(council_scope_statements_present) * 2 +
+      Number(budget_respected) * 2 +
+      Number(delegation_map_before_execution) * 2;
+
+    const passed = Object.values(criteria).every(Boolean);
+    const failedKeys = Object.entries(criteria)
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+
+    return PlanningLoopVerdictSchema.parse({
+      passed,
+      score,
+      stage1_gatekeeper_passed: true,
+      failure_reason: passed
+        ? null
+        : `Planning loop violated: ${failedKeys.join(', ')}${
+            overflow.length > 0
+              ? ` (peer-pair overflow: ${overflow.map(([pair, count]) => `${pair}=${count}`).join(', ')})`
+              : ''
+          }`,
+      criteria,
+      feedback: passed
+        ? 'Planning Dialogue Loop satisfied: delegation-first, bounded council, delegation map before execution.'
+        : 'Planning Dialogue Loop violated — see failure_reason for the deterministic diagnosis.',
+    });
   }
 }

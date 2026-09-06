@@ -26,6 +26,12 @@ graph TD
 - Figma MCP / Stitch MCP / local CSS token definitions
 - Storybook / component playground configs
 
+## Phase 0: Planning Council (ADR 0014)
+- Grill ambiguous briefs with the user (`/grill-me` or `/grill-with-docs`), then spawn up to 2 planning sidekicks.
+- Collect a Scope-of-Work Statement (≤150 words) from every relevant specialist; peer exchanges capped at 2 per pair; max 2 planning rounds.
+- Synthesize the Delegation Map (task → specialist, using the spawnable `subagent_*` tools declared in the Team Manifest) and present it to the user before Phase 1.
+- Transition criteria: Delegation Map approved by user. Deterministic phase gate: specialist roster resolves against the Team Manifest (`.agents/plugins/digital-agency/agents-united/teams/digital-agency.yaml`).
+
 ## Phase 1: Token Architecture
 - Define semantic tokens (colors, spacing, radii, typography ramps, shadows).
 - Establish light/dark mode color pairings.

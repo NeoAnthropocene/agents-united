@@ -214,13 +214,126 @@ Follow REST standards.
     });
   });
 
-  describe('Coordinator Rule rendering', () => {
-    it('renders concise rule with bundle reference, manifest path, and activation guidelines', () => {
-      const rule = ClineProjector.renderCoordinatorRule(sampleBundle, 'project');
-      expect(rule).toContain('software-engineering');
-      expect(rule).toContain('.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml');
-      expect(rule).toContain('orchestrator-engineering');
-      expect(rule).toContain('<!-- managed-by: agents-united | profile: cline');
+  describe('Planning Dialogue Loop rendering (Plan 012 / ADR 0014)', () => {
+    const planningBundle: BundleDefinition = {
+      name: 'digital-agency',
+      description: 'Full-service digital product agency powered by the AstrolabsAI persona team',
+      orchestrator: 'orchestrator-marketing.md',
+      agents: [
+        'subagent-marketing-growth-strategist.md',
+        'subagent-marketing-content-strategist.md',
+        'subagent-marketing-creative-designer.md',
+        'subagent-marketing-conversion-specialist.md',
+        'subagent-marketing-campaign-specialist.md',
+      ],
+      skills: ['handoff'],
+      workflows: ['workflow-agency-full-campaign.md'],
+      planningLoop: {
+        enabled: true,
+        budget: { maxPlanningRounds: 2, maxPeerExchangesPerPair: 2, summaryWordCap: 150, maxIterations: 8 },
+        sidekicks: { max: 2 },
+      },
+      personaAliases: {
+        'chris-director': 'orchestrator-marketing',
+        'ava-manager': 'subagent-marketing-growth-strategist',
+        'kaan-copy': 'subagent-marketing-conversion-specialist',
+        'jamileh-design': 'subagent-marketing-creative-designer',
+        'yavuz-content': 'subagent-marketing-content-strategist',
+        'jale-social': 'subagent-marketing-campaign-specialist',
+      },
+    };
+
+    it('renders the Subagent-First Delegation Policy and Planning Dialogue Loop for planning-loop bundles', () => {
+      const rule = ClineProjector.renderCoordinatorRule(planningBundle, 'project');
+
+      expect(rule).toContain('Subagent-First Delegation Policy');
+      expect(rule).toContain('Planning Dialogue Loop');
+      expect(rule).toContain('Phase 0 — User Alignment');
+      expect(rule).toContain('/grill-me');
+      expect(rule).toContain('/grill-with-docs');
+      expect(rule).toContain('Phase 0.5 — Sidekick Clarification');
+      expect(rule).toContain('Phase 1 — Specialist Council');
+      expect(rule).toContain('Phase 2 — Delegation Map');
+      // Consultation Budget numbers rendered from the bundle declaration
+      expect(rule).toContain('max 2');
+      expect(rule).toContain('150 words');
+      expect(rule).toContain('maxIterations: 8');
+      // Persona → spawnable tool map
+      expect(rule).toContain('ava-manager');
+      expect(rule).toContain('subagent_marketing_growth_strategist');
+    });
+
+    it('removes the soft self-execution escape hatch for planning-loop bundles', () => {
+      const rule = ClineProjector.renderCoordinatorRule(planningBundle, 'project');
+      expect(rule).not.toContain('when available');
+    });
+
+    it('keeps non-planning-loop bundle rules byte-identical (regression guarantee)', () => {
+      const disabled = ClineProjector.renderCoordinatorRule(
+        { ...sampleBundle, planningLoop: { enabled: false } },
+        'project'
+      );
+      const absent = ClineProjector.renderCoordinatorRule(sampleBundle, 'project');
+      expect(disabled).toBe(absent);
+    });
+
+    it('emits planningLoop and personas into the Team Manifest when enabled', () => {
+      const parsed = yaml.parse(ClineProjector.renderTeamManifest(planningBundle, 'project')) as Record<string, any>;
+
+      expect(parsed.planningLoop).toEqual({
+        enabled: true,
+        budget: { maxPlanningRounds: 2, maxPeerExchangesPerPair: 2, summaryWordCap: 150, maxIterations: 8 },
+        sidekicks: { max: 2 },
+      });
+      expect(parsed.personas).toEqual(
+        expect.arrayContaining([
+          { persona: 'ava-manager', role: 'subagent-marketing-growth-strategist' },
+          { persona: 'chris-director', role: 'orchestrator-marketing' },
+        ])
+      );
+      expect(parsed.personas).toHaveLength(6);
+    });
+
+    it('omits planningLoop and personas from the Team Manifest when not enabled', () => {
+      const parsed = yaml.parse(ClineProjector.renderTeamManifest(sampleBundle, 'project')) as Record<string, any>;
+      expect(parsed.planningLoop).toBeUndefined();
+      expect(parsed.personas).toBeUndefined();
+    });
+
+    it('emits maxIterations in configured-agent .yml: bundle default applies, canonical frontmatter wins', () => {
+      const canonicalAgent = `---
+name: subagent-marketing-growth-strategist
+description: Growth funnel architecture specialist
+---
+You are a growth strategist.
+`;
+
+      // No canonical maxIterations -> bundle budget default (8)
+      const defaulted = ClineProjector.renderConfiguredAgent(
+        canonicalAgent,
+        'agents/subagent-marketing-growth-strategist.md',
+        8
+      );
+      const defaultedFm = yaml.parse(defaulted.split(/---\r?\n/)[1]) as Record<string, any>;
+      expect(defaultedFm.maxIterations).toBe(8);
+
+      // Canonical frontmatter is the single source of truth when present
+      const canonical = canonicalAgent.replace(
+        'description: Growth funnel architecture specialist',
+        'description: Growth funnel architecture specialist\nmaxIterations: 4'
+      );
+      const withCanonical = ClineProjector.renderConfiguredAgent(
+        canonical,
+        'agents/subagent-marketing-growth-strategist.md',
+        8
+      );
+      const withCanonicalFm = yaml.parse(withCanonical.split(/---\r?\n/)[1]) as Record<string, any>;
+      expect(withCanonicalFm.maxIterations).toBe(4);
+
+      // No default provided -> key absent (backward compatible)
+      const plain = ClineProjector.renderConfiguredAgent(canonicalAgent, 'agents/subagent-marketing-growth-strategist.md');
+      const plainFm = yaml.parse(plain.split(/---\r?\n/)[1]) as Record<string, any>;
+      expect(plainFm.maxIterations).toBeUndefined();
     });
   });
 

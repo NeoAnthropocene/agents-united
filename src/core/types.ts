@@ -48,6 +48,20 @@ export interface PrerequisiteEvaluation {
   modes?: BundleModes;
 }
 
+/** ADR 0014 — declarative caps bounding all inter-agent planning dialogue. */
+export interface ConsultationBudget {
+  maxPlanningRounds: number;
+  maxPeerExchangesPerPair: number;
+  summaryWordCap: number;
+  maxIterations: number;
+}
+
+export interface PlanningLoopConfig {
+  enabled: boolean;
+  budget?: ConsultationBudget;
+  sidekicks?: { max: number };
+}
+
 export interface BundleDefinition {
   name: string;
   version?: string;
@@ -65,6 +79,10 @@ export interface BundleDefinition {
   skills?: string[];
   prerequisites?: BundlePrerequisites;
   modes?: BundleModes;
+  /** ADR 0014 — opt-in Subagent-First Planning Dialogue Loop (digital-agency first). */
+  planningLoop?: PlanningLoopConfig;
+  /** ADR 0014 — AstrolabsAI persona → canonical roster role (`.md` stripped) map. */
+  personaAliases?: Record<string, string>;
 }
 
 export interface BundlesManifest {
@@ -111,6 +129,10 @@ export interface ClineTeamManifest {
     preferred: 'named-team';
     fallbacks: Array<'adaptive-session' | 'single-orchestrator'>;
   };
+  /** ADR 0014 — present when the bundle opts into the Planning Dialogue Loop. */
+  planningLoop?: PlanningLoopConfig;
+  /** ADR 0014 — persona → role pairs rendered from `BundleDefinition.personaAliases`. */
+  personas?: Array<{ persona: string; role: string }>;
 }
 
 export type ResolvedClineCommand =
