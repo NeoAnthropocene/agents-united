@@ -57,7 +57,11 @@
         "technical-documentation",
         "test-driven-development"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "system-architecture": {
       "name": "system-architecture",
@@ -102,7 +106,11 @@
         "to-spec",
         "to-tickets"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "product-design": {
       "name": "product-design",
@@ -146,7 +154,11 @@
         "micro-interaction-design",
         "state-driven-ui-animation"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "growth-marketing": {
       "name": "growth-marketing",
@@ -195,7 +207,11 @@
         "signup-flow-cro",
         "social-media-campaign"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "seo-content-marketing": {
       "name": "seo-content-marketing",
@@ -228,7 +244,11 @@
         "content-calendar-strategy",
         "copywriting-frameworks"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "performance-paid-acquisition": {
       "name": "performance-paid-acquisition",
@@ -269,7 +289,11 @@
         "conversion-funnel-optimization",
         "social-media-campaign"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "product-led-growth": {
       "name": "product-led-growth",
@@ -303,7 +327,11 @@
         "conversion-funnel-optimization",
         "growth-experiment-design"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "lifecycle-email-marketing": {
       "name": "lifecycle-email-marketing",
@@ -336,7 +364,11 @@
         "email-marketing-automation",
         "copywriting-frameworks"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "security-operations": {
       "name": "security-operations",
@@ -366,7 +398,11 @@
         "secops-cloud-security",
         "secops-application-security",
         "secops-compliance-grc"
-      ]
+      ],
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "deep-research": {
       "name": "deep-research",
@@ -400,7 +436,11 @@
       "version": "1.0.0",
       "recommendedAddons": [
         "deep-research-analytics"
-      ]
+      ],
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "business-strategy": {
       "name": "business-strategy",
@@ -432,7 +472,11 @@
         "business-financial-modeling",
         "business-market-intelligence",
         "business-operations-legal"
-      ]
+      ],
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "devops-engineering": {
       "name": "devops-engineering",
@@ -459,7 +503,11 @@
         "docker-deployment",
         "git-guardrails"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "sysops-sre": {
       "name": "sysops-sre",
@@ -482,7 +530,11 @@
         "telemetry-monitoring",
         "architecture-design"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "mobile-development": {
       "name": "mobile-development",
@@ -514,7 +566,11 @@
         "maestro-mobile-testing",
         "mobile-first-design"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "frontend-engineering": {
       "name": "frontend-engineering",
@@ -545,7 +601,11 @@
         "state-driven-ui-animation",
         "frontend-component-design"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "backend-distributed-systems": {
       "name": "backend-distributed-systems",
@@ -575,7 +635,11 @@
         "database-design",
         "backend-api-design"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "qa-automation": {
       "name": "qa-automation",
@@ -602,7 +666,11 @@
         "chaos-engineering",
         "test-driven-development"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "ai-ml-engineering": {
       "name": "ai-ml-engineering",
@@ -638,7 +706,11 @@
         "vector-database-design",
         "hf-model-evaluation"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "full": {
       "name": "full",
@@ -882,7 +954,9 @@
       "status": "under-construction",
       "domain": "organization",
       "category": "Mock Testing Bundle",
-      "aliases": ["mock-tba"],
+      "aliases": [
+        "mock-tba"
+      ],
       "description": "A dummy under-construction bundle for testing the CLI gate",
       "prerequisites": {},
       "modes": {},
@@ -965,7 +1039,8 @@
         },
         "sidekicks": {
           "max": 2
-        }
+        },
+        "mode": "subagent-first"
       },
       "personaAliases": {
         "chris-director": "orchestrator-marketing",
@@ -1079,7 +1154,11 @@
         "design-version-control",
         "design-handoff-spec"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "design-research-testing": {
       "name": "design-research-testing",
@@ -1116,7 +1195,11 @@
         "component-playground-setup",
         "ai-prototype-refactoring"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "secops-cloud-security": {
       "name": "secops-cloud-security",
@@ -1143,7 +1226,11 @@
         "azure-infrastructure-bicep",
         "docker-deployment"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "secops-application-security": {
       "name": "secops-application-security",
@@ -1172,7 +1259,11 @@
         "systematic-debugging",
         "diagnosing-bugs"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "secops-compliance-grc": {
       "name": "secops-compliance-grc",
@@ -1202,7 +1293,11 @@
         "domain-modeling",
         "to-spec"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "business-financial-modeling": {
       "name": "business-financial-modeling",
@@ -1229,7 +1324,11 @@
         "architecture-design",
         "technical-documentation"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "business-market-intelligence": {
       "name": "business-market-intelligence",
@@ -1258,7 +1357,11 @@
         "technical-documentation",
         "domain-modeling"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "business-operations-legal": {
       "name": "business-operations-legal",
@@ -1288,7 +1391,11 @@
         "domain-modeling",
         "to-spec"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "deep-research-analytics": {
       "name": "deep-research-analytics",
@@ -1318,7 +1425,11 @@
         "systematic-debugging",
         "domain-modeling"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "system-architecture-cloud": {
       "name": "system-architecture-cloud",
@@ -1346,7 +1457,11 @@
         "microservices-architecture",
         "technical-documentation"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "system-architecture-data": {
       "name": "system-architecture-data",
@@ -1374,7 +1489,11 @@
         "architecture-design",
         "code-refactoring"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     },
     "system-architecture-finops": {
       "name": "system-architecture-finops",
@@ -1400,7 +1519,11 @@
         "architecture-design",
         "technical-documentation"
       ],
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
     }
   }
 }

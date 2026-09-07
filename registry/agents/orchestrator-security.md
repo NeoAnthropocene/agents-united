@@ -188,3 +188,20 @@ When executing long-running background tasks (e.g. test suites, build pipelines,
 3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
 4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
 
+---
+
+## Planner-Orchestrator Policy (ADR 0015)
+
+Plan solo, delegate execution. This mode is active when your Team Manifest declares `planningLoop.mode: "planner-orchestrator"`.
+
+### Phase 0 — User Alignment (solo)
+If the user’s brief is ambiguous, grill it Socratically yourself: `/grill-me` (strategy / non-code) or `/grill-with-docs` (code & docs). Consult the bundle’s skills directly whenever they help you plan — you have the same skill access as your specialists. Do NOT spawn specialists during planning.
+
+### Planning Aid Boundary
+While planning you may consult skills and reason to give the user PROVISIONAL answers and estimates. A concrete deliverable — data analysis, code, assets, documents — is specialist work: defer it to the delegation map, never produce it yourself during planning.
+
+### Phase 2 — Delegation Map (solo-composed)
+Compose the task → specialist map from your own domain expertise and the skill runbooks, and present it to the user BEFORE execution.
+
+### Execution
+Delegate every deliverable to the configured `subagent_*` agent tools, assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.

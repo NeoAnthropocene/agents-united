@@ -152,7 +152,7 @@ To protect the user experience and prevent broken runtime executions, Organizati
 - [ ] Implement digital agency specialized workflows (`workflow-client-pitch.md`, `workflow-fullstack-delivery.md`, `workflow-seo-audit.md`).
 - [ ] Add E2E multi-agent integration tests verifying tool dispatch in both Operational and Brainstorming modes.
 - [x] Implement the Subagent-First Planning Dialogue Loop for `digital-agency` (ADR 0014 / Plan 012): opt-in `planningLoop` Consultation Budget + persona aliases in `bundles.json`, rendered coordinator rule & team manifest, Cline `maxIterations` hard cap, Planning Consultation Mode across the roster, workflow Planning Councils, and the `PlanningLoopGatekeeper` eval suite.
-- [ ] Roll out the Subagent-First Planning Dialogue Loop to the remaining domain bundles (follow-up plan, gated on virtual eval + maintainer manual test results).
+- [x] Roll out planning-loop posture to remaining domain bundles via Planner-Orchestrator Mode (ADR 0015 / Plan 013): 30 Tier-1 bundles adopt `planningLoop.mode: 'planner-orchestrator'` with solo planning (Planning Aid Boundary, solo-composed delegation map) and delegated execution. Digital-agency migrated to explicit `mode: 'subagent-first'`. 7 shared orchestrator prompts updated with mode-conditional prose. Parallel `PlannerOrchestratorGatekeeper` eval suite. 85 tests pass.
 
 #### Verification
 ```bash

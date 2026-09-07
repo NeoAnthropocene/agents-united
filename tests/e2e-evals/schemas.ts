@@ -68,6 +68,30 @@ export const PlanningLoopVerdictSchema = z.object({
 export type PlanningLoopVerdict = z.infer<typeof PlanningLoopVerdictSchema>;
 
 /**
+ * Planner-Orchestrator Mode rubric (Plan 013 / ADR 0015).
+ * Enforced by the deterministic Stage-1 PlannerOrchestratorGatekeeper.
+ */
+export const PlannerOrchestratorCriteriaSchema = z.object({
+  solo_planning: z.boolean(),
+  planning_aid_boundary_respected: z.boolean(),
+  delegation_map_before_execution: z.boolean(),
+  execution_delegation_first: z.boolean(),
+});
+
+export type PlannerOrchestratorCriteria = z.infer<typeof PlannerOrchestratorCriteriaSchema>;
+
+export const PlannerOrchestratorVerdictSchema = z.object({
+  passed: z.boolean(),
+  score: z.number().min(0).max(10),
+  stage1_gatekeeper_passed: z.boolean(),
+  failure_reason: z.string().nullable(),
+  criteria: PlannerOrchestratorCriteriaSchema,
+  feedback: z.string(),
+});
+
+export type PlannerOrchestratorVerdict = z.infer<typeof PlannerOrchestratorVerdictSchema>;
+
+/**
  * Overall Evaluation Output Contract
  */
 export const EvaluationVerdictSchema = z.object({
@@ -88,7 +112,7 @@ export type EvaluationVerdict = z.infer<typeof EvaluationVerdictSchema>;
 export interface DagNodeTrace {
   sender: string;
   recipient: string;
-  skill_used: 'handoff' | 'design-handoff-spec' | 'grill-me' | 'to-spec' | 'planning-consultation' | 'general';
+  skill_used: 'handoff' | 'design-handoff-spec' | 'grill-me' | 'to-spec' | 'planning-consultation' | 'planning-aid' | 'general';
   raw_payload: string;
   verdict: EvaluationVerdict;
 }

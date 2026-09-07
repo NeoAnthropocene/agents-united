@@ -1,4 +1,4 @@
-import {
+﻿import {
   StreamJsonEvent,
   EvaluationVerdict,
   EvaluationVerdictSchema,
@@ -6,6 +6,9 @@ import {
   PlanningLoopCriteria,
   PlanningLoopVerdict,
   PlanningLoopVerdictSchema,
+  PlannerOrchestratorCriteria,
+  PlannerOrchestratorVerdict,
+  PlannerOrchestratorVerdictSchema,
 } from './schemas.js';
 
 /** Consultation directive used by specialists during the Planning Dialogue Loop. */
@@ -295,7 +298,87 @@ export class PlanningLoopGatekeeper {
       criteria,
       feedback: passed
         ? 'Planning Dialogue Loop satisfied: delegation-first, bounded council, delegation map before execution.'
-        : 'Planning Dialogue Loop violated — see failure_reason for the deterministic diagnosis.',
+        : 'Planning Dialogue Loop violated — see failure_reason for the deterministic diagnosis.',    });
+  }
+}
+
+
+/**
+ * Stage 1 deterministic gatekeeper for the Planner-Orchestrator Mode (Plan 013 / ADR 0015).
+ * Cost: 0ms, 0 API tokens. Evaluates a whole event stream against the PlannerOrchestratorCriteria.
+ * The PlanningLoopGatekeeper remains untouched — this is a parallel gatekeeper for different mode.
+ */
+export class PlannerOrchestratorGatekeeper {
+  static evaluate(events: StreamJsonEvent[]): PlannerOrchestratorVerdict {
+    const lower = (s: string) => s.toLowerCase();
+
+    // C1 — solo_planning: no subagent_spawn or send_message to a specialist before the delegation map.
+    const hasDelegationMap = (e: StreamJsonEvent) =>
+      typeof e.payload === 'string' &&
+      (lower(e.payload).includes('delegation map') || lower(e.payload).includes('/delegation-map'));
+    const mapIdx = events.findIndex(hasDelegationMap);
+
+    const preMapSpawns = events.slice(0, mapIdx === -1 ? events.length : mapIdx).filter(
+      (e) => e.type === 'subagent_spawn' || e.tool === 'send_message'
+    );
+    const solo_planning = preMapSpawns.length === 0;
+
+    // C2 — planning_aid_boundary_respected: no deliverable-shaped tool calls before the delegation map.
+    // Deliverable-shaped = write_to_file, replace_file_content, multi_replace_file_content.
+    const deliverableTools = ['write_to_file', 'replace_file_content', 'multi_replace_file_content'];
+    const preMapDeliverables = events.slice(0, mapIdx === -1 ? events.length : mapIdx).filter(
+      (e) => e.type === 'tool_call' && deliverableTools.includes(e.tool ?? '')
+    );
+    const planning_aid_boundary_respected = preMapDeliverables.length === 0;
+
+    // C3 — delegation_map_before_execution: delegation map exists and no execution handoff precedes it.
+    const isExecutionHandoff = (e: StreamJsonEvent) =>
+      typeof e.payload === 'string' &&
+      (e.payload.includes('/handoff') || e.payload.includes('/design-handoff-spec')) &&
+      !hasDelegationMap(e);
+    const execIdx = events.findIndex(isExecutionHandoff);
+    const delegation_map_before_execution = mapIdx !== -1 && (execIdx === -1 || mapIdx < execIdx);
+
+    // C4 — execution_delegation_first: first substantive action after the map is a subagent spawn.
+    const afterMap = mapIdx === -1 ? [] : events.slice(mapIdx + 1);
+    const afterMapSubstantive = afterMap.filter(
+      (e) => e.type === 'subagent_spawn' || e.type === 'tool_call'
+    );
+    const firstAfterMap = afterMapSubstantive[0];
+    const execution_delegation_first =
+      !!firstAfterMap &&
+      (firstAfterMap.type === 'subagent_spawn' ||
+        (firstAfterMap.tool ?? '').startsWith('subagent_'));
+
+    const criteria: PlannerOrchestratorCriteria = {
+      solo_planning,
+      planning_aid_boundary_respected,
+      delegation_map_before_execution,
+      execution_delegation_first,
+    };
+
+    const score =
+      Number(solo_planning) * 3 +
+      Number(planning_aid_boundary_respected) * 3 +
+      Number(delegation_map_before_execution) * 2 +
+      Number(execution_delegation_first) * 2;
+
+    const passed = Object.values(criteria).every(Boolean);
+    const failedKeys = Object.entries(criteria)
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+
+    return PlannerOrchestratorVerdictSchema.parse({
+      passed,
+      score,
+      stage1_gatekeeper_passed: true,
+      failure_reason: passed
+        ? null
+        : `Planner-orchestrator mode violated: ${failedKeys.join(', ')}`,
+      criteria,
+      feedback: passed
+        ? 'Planner-Orchestrator Mode satisfied: solo planning, Planning Aid Boundary respected, delegation map before execution, execution delegated.'
+        : 'Planner-Orchestrator Mode violated — see failure_reason for the deterministic diagnosis.',
     });
   }
 }
