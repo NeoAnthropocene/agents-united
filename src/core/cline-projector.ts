@@ -270,9 +270,9 @@ export class ClineProjector {
         ? '\n\n## Subagent-First Planning Dialogue Loop (ADR 0014)' +
           'Run this loop BEFORE any substantive execution on a non-trivial task. Delegation-first is mandatory, not advisory.\n\n' +
           '### Phase 0 — User Alignment\n' +
-          'If the user\'s brief is ambiguous, grill it Socratically with the user first: /grill-me (strategy / non-code) or /grill-with-docs (code & docs; writes ADRs and updates CONTEXT.md).\n\n' +
+          'If the user\'s brief is ambiguous, grill it Socratically with the user first: `/grill-me` (strategy / non-code) or `/grill-with-docs` (code & docs; writes ADRs and updates CONTEXT.md).\n\n' +
           '### Phase 0.5 — Sidekick Clarification\n' +
-          'Spawn at most ' + (planning.sidekicks?.max ?? 2) + ' relevant specialists (spawnable subagent_* tools) INTO this planning conversation to resolve remaining ambiguity. Sidekicks advise you; you relay their questions to the user.\n\n' +
+          'Spawn at most ' + (planning.sidekicks?.max ?? 2) + ' relevant specialists (spawnable `subagent_*` tools) INTO this planning conversation to resolve remaining ambiguity. Sidekicks advise you; you relay their questions to the user.\n\n' +
           '### Phase 1 — Specialist Council\n' +
           'Have every relevant specialist return a Scope-of-Work Statement (max ' + (budget?.summaryWordCap ?? 150) + ' words): (1) my scope, (2) inputs I need from peers, (3) my deliverable per my own workflows, (4) at most 2 open questions.\n\n' +
           '### Phase 2 — Delegation Map\n' +
@@ -285,13 +285,13 @@ export class ClineProjector {
         : '\n\n## Planner-Orchestrator Policy (ADR 0015)' +
           'Plan solo, delegate execution. This mode replaces the Subagent-First Planning Dialogue Loop for single-discipline domain bundles.\n\n' +
           '### Phase 0 — User Alignment (solo)\n' +
-          'If the user\'s brief is ambiguous, grill it Socratically yourself: /grill-me (strategy / non-code) or /grill-with-docs (code & docs). Consult the bundle\'s skills directly whenever they help you plan — you have the same skill access as your specialists. Do NOT spawn specialists during planning.\n\n' +
+          'If the user\'s brief is ambiguous, grill it Socratically yourself: `/grill-me` (strategy / non-code) or `/grill-with-docs` (code & docs). Consult the bundle\'s skills directly whenever they help you plan — you have the same skill access as your specialists. Do NOT spawn specialists during planning.\n\n' +
           '### Planning Aid Boundary\n' +
           'While planning you may consult skills and reason to give the user PROVISIONAL answers and estimates. A concrete deliverable — data analysis, code, assets, documents — is specialist work: defer it to the delegation map, never produce it yourself during planning.\n\n' +
           '### Phase 2 — Delegation Map (solo-composed)\n' +
           'Compose the task → specialist map from your own domain expertise and the skill runbooks, and present it to the user BEFORE execution.\n\n' +
           '### Execution\n' +
-          'Delegate every deliverable to the configured subagent_* agent tools (projected under .cline/agents/), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.')
+          'Delegate every deliverable to the configured `subagent_*` agent tools (projected under `.cline/agents/`), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.')
       : '';
 
     const personaSection = planning && bundle.personaAliases && Object.keys(bundle.personaAliases).length > 0
