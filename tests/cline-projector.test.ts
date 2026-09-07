@@ -282,6 +282,7 @@ Follow REST standards.
 
       expect(parsed.planningLoop).toEqual({
         enabled: true,
+        mode: 'subagent-first',
         budget: { maxPlanningRounds: 2, maxPeerExchangesPerPair: 2, summaryWordCap: 150, maxIterations: 8 },
         sidekicks: { max: 2 },
       });
@@ -334,6 +335,95 @@ You are a growth strategist.
       const plain = ClineProjector.renderConfiguredAgent(canonicalAgent, 'agents/subagent-marketing-growth-strategist.md');
       const plainFm = yaml.parse(plain.split(/---\r?\n/)[1]) as Record<string, any>;
       expect(plainFm.maxIterations).toBeUndefined();
+    });
+  });
+describe('Planner-Orchestrator rendering (Plan 013 / ADR 0015)', () => {
+    const plannerOrchBundle: BundleDefinition = {
+      name: 'software-engineering',
+      description: 'Software engineering bundle',
+      orchestrator: 'orchestrator-engineering.md',
+      agents: ['subagent-backend-architect.md', 'subagent-frontend-engineer.md', 'subagent-qa-engineer.md'],
+      skills: ['test-driven-development', 'backend-api-design'],
+      workflows: ['workflow-implement.md'],
+      planningLoop: { enabled: true, mode: 'planner-orchestrator' },
+    };
+
+    it('renders the Planner-Orchestrator Policy, Planning Aid Boundary, and delegation map', () => {
+      const rule = ClineProjector.renderCoordinatorRule(plannerOrchBundle, 'project');
+
+      expect(rule).toContain('Planner-Orchestrator Policy');
+      expect(rule).toContain('Planner-Orchestrator Delegation Policy');
+      expect(rule).toContain('Planning Aid Boundary');
+      expect(rule).toContain('Phase 0 — User Alignment (solo)');
+      expect(rule).toContain('/grill-me');
+      expect(rule).toContain('/grill-with-docs');
+      expect(rule).toContain('Phase 2 — Delegation Map (solo-composed)');
+      expect(rule).toContain('PROVISIONAL answers');
+      expect(rule).toContain('defer it to the delegation map');
+    });
+
+    it('does NOT contain Sidekick, Specialist Council, Consultation Budget, or maxIterations', () => {
+      const rule = ClineProjector.renderCoordinatorRule(plannerOrchBundle, 'project');
+
+      expect(rule).not.toContain('Sidekick');
+      expect(rule).not.toContain('Specialist Council');
+      expect(rule).not.toContain('Consultation Budget');
+      expect(rule).not.toContain('maxIterations');
+    });
+
+    it('removes the soft escape hatch ("when available") for planner-orchestrator bundles', () => {
+      const rule = ClineProjector.renderCoordinatorRule(plannerOrchBundle, 'project');
+      expect(rule).not.toContain('when available');
+    });
+
+    it('migration regression: mode absent === subagent-first (byte-identical)', () => {
+      // A bundle with planningLoop enabled but no mode declared renders subagent-first
+      const explicit: BundleDefinition = {
+        ...plannerOrchBundle,
+        planningLoop: { enabled: true, mode: 'subagent-first', budget: { maxPlanningRounds: 2, maxPeerExchangesPerPair: 2, summaryWordCap: 150, maxIterations: 8 }, sidekicks: { max: 2 } },
+      };
+      const implicit: BundleDefinition = {
+        ...plannerOrchBundle,
+        planningLoop: { enabled: true, budget: { maxPlanningRounds: 2, maxPeerExchangesPerPair: 2, summaryWordCap: 150, maxIterations: 8 }, sidekicks: { max: 2 } },
+      };
+      const explicitRule = ClineProjector.renderCoordinatorRule(explicit, 'project');
+      const implicitRule = ClineProjector.renderCoordinatorRule(implicit, 'project');
+      expect(explicitRule).toBe(implicitRule);
+    });
+
+    it('unflagged bundle rules stay byte-identical (regression guarantee)', () => {
+      const current = ClineProjector.renderCoordinatorRule(sampleBundle, 'project');
+      expect(current).toContain('when available');
+      expect(current).not.toContain('Subagent-First');
+      expect(current).not.toContain('Planner-Orchestrator');
+    });
+
+    it('manifest emits planningLoop with mode and no budget/sidekicks keys', () => {
+      const manifest = yaml.parse(ClineProjector.renderTeamManifest(plannerOrchBundle, 'project')) as Record<string, any>;
+
+      expect(manifest.planningLoop).toEqual({
+        enabled: true,
+        mode: 'planner-orchestrator',
+      });
+      expect(manifest.planningLoop.budget).toBeUndefined();
+      expect(manifest.planningLoop.sidekicks).toBeUndefined();
+    });
+
+    it('configured-agent .yml for planner-orchestrator bundle has no maxIterations default', () => {
+      const canonicalAgent = `---
+name: subagent-backend-architect
+description: Backend architect
+---
+You are a backend architect.
+`;
+      // planner-orchestrator bundle has no budget → defaultMaxIterations is undefined
+      const rendered = ClineProjector.renderConfiguredAgent(
+        canonicalAgent,
+        'agents/subagent-backend-architect.md',
+        undefined // planner-orchestrator has no budget
+      );
+      const fm = yaml.parse(rendered.split(/---\r?\n/)[1]) as Record<string, any>;
+      expect(fm.maxIterations).toBeUndefined();
     });
   });
 

@@ -426,7 +426,11 @@ Organization bundles can opt into a **delegation-first planning protocol**: the 
 | `summaryWordCap` | 150 | Words per Scope-of-Work Statement |
 | `maxIterations` | 8 | Per-invocation iteration cap (`.cline/agents/*.yml`) |
 
-Currently enabled for `digital-agency` (`planningLoop.enabled` in `registry/bundles.json`); rollout to the remaining bundles is tracked in [`ROADMAP.md`](ROADMAP.md). See [ADR 0014](./docs/adr/0014-subagent-first-planning-loop.md) and [Plan 012](./plans/012-subagent-first-planning-loop.md).
+Enabled for `digital-agency`. See [ADR 0014](./docs/adr/0014-subagent-first-planning-loop.md) and [Plan 012](./plans/012-subagent-first-planning-loop.md).
+
+### Planner-Orchestrator Mode (ADR 0015)
+
+**Tier-1 Domain Bundles** operate in **Planner-Orchestrator Mode**: the orchestrator plans **solo** with the user — Socratic alignment via `/grill-me` / `/grill-with-docs`, direct skill consultation, no specialist spawns during planning. A **Planning Aid Boundary** allows provisional estimates during planning but defers concrete deliverables to the delegation map. Execution is then delegated to `subagent_*` tools via a solo-composed **Delegation Map**. This mode is the default for all 30 domain bundles (engineering, design, security, business, research, architecture, marketing); `digital-agency` and future Organization Bundles remain in Subagent-First Mode. See [ADR 0015](./docs/adr/0015-planner-orchestrator-mode-for-domain-bundles.md) and [Plan 013](./plans/013-planner-orchestrator-mode-for-domain-bundles.md).
 
 ---
 ## 🌐 One Library, Every Assistant

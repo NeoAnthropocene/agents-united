@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import { fileURLToPath } from 'node:url';
-import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults } from './types.js';
+import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults, PlanningLoopMode } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +41,7 @@ export class RegistryResolver {
     }
 
     this.bundlesManifest = await fs.readJson(manifestPath);
+    this.validateBundles(this.bundlesManifest!);
     return this.bundlesManifest!;
   }
 
@@ -221,5 +222,43 @@ export class RegistryResolver {
       skills: matchedSkills,
       workflows: matchedWorkflows,
     };
+  }
+
+  /**
+   * ADR 0015 — fail-fast validation of planningLoop configuration.
+   * @throws if any bundle violates planner-orchestrator invariants.
+   */
+  private validateBundles(manifest: BundlesManifest): void {
+    const validModes: string[] = ['subagent-first', 'planner-orchestrator'];
+
+    for (const [name, bundle] of Object.entries(manifest.bundles)) {
+      const pl = bundle.planningLoop;
+      if (!pl || !pl.enabled) continue;               // no planning → skip
+
+      // resolve mode: absent → subagent-first (ADR 0014 backward compat)
+      const mode: string = pl.mode ?? 'subagent-first';
+
+      if (!validModes.includes(mode)) {
+        throw new Error(
+          `Registry validation error: bundle "${name}" has unknown planningLoop.mode "${mode}". ` +
+          `Valid modes: ${validModes.join(', ')}`
+        );
+      }
+
+      if (mode === 'planner-orchestrator') {
+        if (pl.budget) {
+          throw new Error(
+            `Registry validation error: bundle "${name}" has planningLoop.mode "planner-orchestrator" ` +
+            'but also declares a Consultation Budget (budget). Planner-orchestrator bundles must not declare budget.'
+          );
+        }
+        if (pl.sidekicks) {
+          throw new Error(
+            `Registry validation error: bundle "${name}" has planningLoop.mode "planner-orchestrator" ` +
+            'but also declares sidekicks. Planner-orchestrator bundles must not declare sidekicks.'
+          );
+        }
+      }
+    }
   }
 }

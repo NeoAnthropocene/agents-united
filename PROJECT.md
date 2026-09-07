@@ -127,12 +127,14 @@ Architectural separation between delivery and reliability:
 | 75 | Stream-JSON Continuous Evaluation Harness | Built `tests/e2e-evals/runner.ts` and multi-hop DAG evaluation test suite for `digital-agency` | M6 | DONE | PLAN_010 |
 | 76 | Subagent-First Planning Dialogue Loop | Opt-in `planningLoop` block (Consultation Budget + persona aliases) rendered into the coordinator rule, team manifest, and configured-agent `maxIterations`; Planning Dialogue Loop prompts across orchestrator, 9 roster subagents, and 6 agency workflows | M7 | DONE | PLAN_012 |
 | 77 | Planning Loop Eval Gatekeeper | `PlanningLoopCriteriaSchema` + deterministic Stage-1 `PlanningLoopGatekeeper` (delegation-first, sidekick, council, budget-overflow, delegation-map) with adversarial stream scenarios | M7 | DONE | PLAN_012 |
+| 78 | Planner-Orchestrator Mode for Tier-1 Domain Bundles | 30 Tier-1 bundles adopt `planningLoop.mode: 'planner-orchestrator'` — solo planning with direct skill consultation (Planning Aid Boundary), solo-composed delegation map, delegated execution. Renderer branches on mode; registry validation rejects budget/sidekicks for planner-orchestrator. Digital-agency migrated to explicit `mode: 'subagent-first'`. 7 shared orchestrator prompts updated with mode-conditional prose. | M7 | DONE | PLAN_013 |
+| 79 | Planner-Orchestrator Eval Gatekeeper | `PlannerOrchestratorCriteriaSchema` + deterministic Stage-1 `PlannerOrchestratorGatekeeper` (solo-planning, planning-aid-boundary, delegation-map, execution-delegation-first) with 3 adversarial eval scenarios | M7 | DONE | PLAN_013 |
 
 ---
 
-## 3. Master Implementation Plans Index (`plans/001`–`012`)
+## 3. Master Implementation Plans Index (`plans/001`–`013`)
 
-All foundational implementation plans (001–011) have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production. Plan 012 is approved and gated on the maintainer's execution go-ahead:
+All foundational implementation plans (001–011) have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production. Plan 012 is DONE — Cline + Antigravity manual rounds complete. Plan 013 is DONE — 30 Tier-1 bundles adopted Planner-Orchestrator Mode:
 
 | Plan | Title | Category | Status | Key Deliverables & Milestones |
 | :--- | :--- | :--- | :--- | :--- |
@@ -147,7 +149,8 @@ All foundational implementation plans (001–011) have been fully realized, test
 | **[009](./plans/009-essentials-composition-audit.md)** | Essentials Bundle Composition Audit & Modularization | Architecture / Catalog | **DONE** | `universal-skills` extraction, `software-engineering` slimmed to 16 skills, `product-design` 2-addon decomposition, graduated to `stable`. |
 | **[010](./plans/010-antigravity-august-features-and-department-expansion.md)** | Antigravity August Features Adoption & Department Expansion | Core / Architecture | **DONE** | Scoped `rules:`, `inheritCustomizations`, `disable-slash-command: true`, `metadata.icon`, `manage_task`, URL preview cards, department roster expansion across Security, Business, Research, Architecture, and Continuous Stream-JSON Evals harness. |
 | **[011](./plans/011-cline-plugins-projection-migration.md)** | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **SUPERSEDED (ADR 0013)** | The assumed "Cline 4.0.0+ plugin architecture" does not exist (latest CLI = 3.0.61); `cline plugin install` is a code-plugin installer and the `package.json` manifest contract was invalid. Replaced by ADR 0013 native discovery projection. |
-| **[012](./plans/012-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue (`digital-agency` first) | Runtime Integration / Catalog / Evals | **DONE** (Cline + Antigravity manual rounds complete; desktop `invoke_subagent` harness limitation documented in ADR 0009) | Opt-in `planningLoop` block + Consultation Budget rendered into the coordinator rule, Cline `maxIterations` hard cap, Planning Dialogue Loop prompts, persona alias map, and planning-loop eval criteria. Per ADR 0014; digital-agency only, rollout deferred. |
+| **[012](./plans/012-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue (`digital-agency` first) | Runtime Integration / Catalog / Evals | **DONE** (Cline + Antigravity manual rounds complete; desktop `invoke_subagent` harness limitation documented in ADR 0009) | Opt-in `planningLoop` block + Consultation Budget rendered into the coordinator rule, Cline `maxIterations` hard cap, Planning Dialogue Loop prompts, persona alias map, and planning-loop eval criteria. Per ADR 0014; digital-agency first, rollout to domain bundles completed in Plan 013 via Planner-Orchestrator Mode. |
+| **[013](./plans/013-planner-orchestrator-mode-for-domain-bundles.md)** | Planner-Orchestrator Mode for Tier-1 Domain Bundles (ADR 0015) | Runtime Integration / Catalog / Evals | **DONE** (Cline manual rounds complete) | 30 Tier-1 bundles adopt `planningLoop.mode: 'planner-orchestrator'` with Planner-Orchestrator Policy (solo planning, Planning Aid Boundary, solo-composed delegation map, delegated execution). Renderer branches on mode; registry validation rejects budget/sidekicks for planner-orchestrator. Digital-agency migrated to explicit `mode: 'subagent-first'`. Parallel `PlannerOrchestratorGatekeeper` eval suite + 3 adversarial scenarios. 85 tests pass. |
 
 ---
 
@@ -171,6 +174,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 | **[0012](./docs/adr/0012-cline-native-plugins-projection.md)** | Cline Native Plugins Projection Architecture | Superseded by [0013](./docs/adr/0013-cline-native-discovery-projection.md) | Project Cline bundles as self-contained native plugins in `.agents/plugins/<bundle>/` with deterministic `package.json` manifests, skills, roles, rules, and team manifests, with automatic migration of legacy `.cline/` projections. Premise (Cline 4.0.0+ markdown plugin capabilities) disproved by runtime verification. |
 | **[0013](./docs/adr/0013-cline-native-discovery-projection.md)** | Cline 3.x Native Discovery Projection & Agent Plugin Packaging | Accepted | Dual-lane Cline integration: agent-plugins.org `plugin.json` packages under `.agents/plugins/<bundle>/` (scanner hard-stop + cross-client portability) plus native discovery projections — configured agents `.cline/agents/*.yml` (spawnable `subagent_*` tools), coordinator rules `.cline/rules/`, slugified workflows `.cline/workflows/`, skills natively discovered from `.agents/skills/`. Verified against Cline CLI 3.0.61 (source commit `c853844` + binary analysis). |
 | **[0014](./docs/adr/0014-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue | Accepted | Lead Orchestrators delegate to specialists **by default during planning**: opt-in per-bundle `planningLoop` flag (`digital-agency` first) declaring a Consultation Budget (`maxPlanningRounds`, `maxPeerExchangesPerPair`, `summaryWordCap`) rendered into the always-active coordinator rule, plus a host hard-cap layer (Cline `maxIterations` in configured-agent `.yml`), the Planning Dialogue Loop (grill → sidekick clarification → specialist council → delegation map), a persona alias map for the AstrolabsAI roster, and byte-identical rendering guarantees for non-planning-loop bundles. |
+| **[0015](./docs/adr/0015-planner-orchestrator-mode-for-domain-bundles.md)** | Planner-Orchestrator Mode for Tier-1 Domain Bundles | Accepted | Tier-1 Domain Bundles adopt a second delegation posture: **Planner-Orchestrator Mode** — solo planning with direct skill consultation (Planning Aid Boundary: provisional answers allowed, concrete deliverables deferred), solo-composed Delegation Map, delegated execution via `subagent_*` tools. No Sidekicks, no Specialist Council, no Consultation Budget. Schema discriminator `planningLoop.mode: 'subagent-first' | 'planner-orchestrator'`; absent → `'subagent-first'` (ADR 0014 backward compat). Extends, does not supersede, ADR 0014. |
 
 ---
 
@@ -425,9 +429,9 @@ c:/github/agents-united/
 │       ├── cline-capabilities.ts # ClineCapabilityProbe (read-only probe)
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
 ├── docs/                         # Documentation
-│   ├── adr/                      # Architectural Decision Records (ADRs 0001–0014)
+│   ├── adr/                      # Architectural Decision Records (ADRs 0001–0015)
 │   └── workflow-guide.md         # Developer workflow guide (branching, protected dev, PRs, releases)
-├── plans/                        # Implementation Plan Specifications (001–012)
+├── plans/                        # Implementation Plan Specifications (001–013)
 ├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 430 passing tests)
 │   ├── e2e-evals/                # Stream-JSON Continuous Evaluation Harness (schemas, judge, runner)
 │   └── helpers/                  # Test helpers and mock fixtures

@@ -151,7 +151,7 @@ The mandatory delegation posture of a Lead Orchestrator in a planning-loop bundl
 _Avoid_: Solo orchestrator, convenience self-execution, lazy fallback
 
 **Planning Dialogue Loop**:
-The closed orchestration cycle of a planning-loop bundle, executed before any substantive work: **Phase 0 — User Alignment** (Socratic grilling via `/grill-me` for strategy or `/grill-with-docs` for code/docs), **Phase 0.5 — Sidekick Clarification** (spawn ≤ `sidekicks.max` relevant specialists into the planning conversation to resolve remaining ambiguity; they advise the orchestrator, who relays to the user), **Phase 1 — Specialist Council** (every relevant specialist returns a bounded Scope-of-Work Statement), **Phase 2 — Delegation Map** (task→specialist map synthesized and presented to the user before execution).
+The closed orchestration cycle of a planning-loop bundle, executed before any substantive work. In **subagent-first mode** it runs four phases: **Phase 0 — User Alignment** (Socratic grilling via `/grill-me` for strategy or `/grill-with-docs` for code/docs), **Phase 0.5 — Sidekick Clarification** (spawn ≤ `sidekicks.max` relevant specialists into the planning conversation to resolve remaining ambiguity; they advise the orchestrator, who relays to the user), **Phase 1 — Specialist Council** (every relevant specialist returns a bounded Scope-of-Work Statement), **Phase 2 — Delegation Map** (task→specialist map synthesized and presented to the user before execution). In **planner-orchestrator mode** only Phase 0 and Phase 2 run — both performed solo by the orchestrator.
 _Avoid_: Ad-hoc planning, post-plan delegation, silent task splitting
 
 **Planning Sidekick**:
@@ -169,6 +169,14 @@ _Avoid_: Mini-PRD, full implementation plan, uncapped essay
 **Consultation Budget**:
 The declarative cap set that bounds all inter-agent planning dialogue in a planning-loop bundle, declared once in `registry/bundles.json` (`planningLoop.budget`) and rendered into the coordinator rule, Team Manifest, and subagent prompts: `maxPlanningRounds` (orchestrator↔council cycles per task), `maxPeerExchangesPerPair` (directed questions per specialist pair), `summaryWordCap` (per Scope-of-Work Statement), and `maxIterations` (the host-enforced per-invocation hard cap rendered into Cline configured-agent `.yml`; inert on hosts that ignore it — documented, not faked).
 _Avoid_: Token counter, open-ended discussion, silent infinite chatter
+
+**Planner-Orchestrator Mode**:
+The Tier-1 Domain Bundle delegation posture (ADR 0015): the Lead Orchestrator plans solo with the user — Socratic alignment plus direct consultation of the bundle's shared skills — and composes the delegation map alone, without spawning Planning Sidekicks or convening a Specialist Council; execution deliverables are then delegated to the bundle's `subagent_*` agents. Planning is solo; execution is not.
+_Avoid_: Solo execution, one-agent team, subagent-first planning
+
+**Planning Aid Boundary**:
+The estimate-versus-deliverable line governing an orchestrator's skill use while planning (ADR 0015): consulting skills and reasoning to give provisional answers and estimates is planning aid and stays in the main session; producing a concrete deliverable — data analysis, code, assets, documents — is specialist work, deferred to the delegation map for subagent execution.
+_Avoid_: Planning-time self-execution, anything-goes skill use, provisional deliverables
 
 ---
 
