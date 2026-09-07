@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-09-07). Decided via grilling session on branch `fix/domain-bundles-cline-projection-fix`; implementation plan to follow. Extends — does not supersede — [ADR 0014](0014-subagent-first-planning-loop.md), which remains in force for Organization Bundles.
+**Accepted** (2026-09-07). Implementation per [Plan 013](../plans/013-planner-orchestrator-mode-for-domain-bundles.md) — 30 Tier-1 bundles adopted Planner-Orchestrator Mode via `planningLoop.mode: 'planner-orchestrator'`; 7 shared orchestrator prompts updated with mode-conditional prose; parallel `PlannerOrchestratorGatekeeper` eval suite deployed. Digital-agency migrated to explicit `mode: 'subagent-first'`. Extends — does not supersede — [ADR 0014](0014-subagent-first-planning-loop.md), which remains in force for Organization Bundles.
 
 > Records the decision that Tier-1 Domain Bundles adopt a **Planner-Orchestrator Mode** — solo planning with the user (direct skill consultation, no specialist spawns), delegated execution — as the Tier-1 variant of the Subagent-First framework, replacing ADR 0014's deferred "rollout the digital-agency pattern to remaining bundles" intent.
 

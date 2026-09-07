@@ -175,9 +175,94 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
     }
   });
 
-  it('should keep planningLoop opt-in: no bundle other than digital-agency declares it', async () => {
+  it('should keep planningLoop opt-in: 30 Tier-1 bundles declare planner-orchestrator, digital-agency declares subagent-first', async () => {
     const manifest = await resolver.loadBundles();
     const enabled = Object.values(manifest.bundles).filter((b) => b.planningLoop?.enabled === true);
-    expect(enabled.map((b) => b.name)).toEqual(['digital-agency']);
+
+    // digital-agency: subagent-first with budget/sidekicks
+    const da = enabled.find((b) => b.name === 'digital-agency');
+    expect(da).toBeDefined();
+    expect(da!.planningLoop?.mode).toBe('subagent-first');
+    expect(da!.planningLoop?.budget).toBeDefined();
+    expect(da!.planningLoop?.sidekicks).toBeDefined();
+
+    // 30 Tier-1 bundles: planner-orchestrator without budget/sidekicks
+    const tier1 = enabled.filter((b) => b.name !== 'digital-agency');
+    expect(tier1.length).toBe(30);
+    for (const b of tier1) {
+      expect(b.planningLoop?.mode).toBe('planner-orchestrator');
+      expect(b.planningLoop?.budget).toBeUndefined();
+      expect(b.planningLoop?.sidekicks).toBeUndefined();
+    }
+
+    // excluded bundles (universal-orchestration, universal-skills, full,
+    // mock-organization-under-construction)
+    const excluded = Object.values(manifest.bundles).filter((b) => b.planningLoop?.enabled !== true);
+    expect(excluded.length).toBe(4);
+  });
+
+  it('should reject planner-orchestrator bundle with budget', () => {
+    const bad = {
+      version: 1,
+      bundles: {
+        'bad-bundle': {
+          name: 'bad-bundle',
+          description: 'bad',
+          planningLoop: { enabled: true, mode: 'planner-orchestrator', budget: { maxPlanningRounds: 2, maxPeerExchangesPerPair: 2, summaryWordCap: 150, maxIterations: 8 } },
+        },
+      },
+    };
+    const r = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
+    // Override the internal manifest with the bad data
+    (r as any).bundlesManifest = bad;
+    expect(() => (r as any).validateBundles(bad)).toThrow('budget');
+  });
+
+  it('should reject planner-orchestrator bundle with sidekicks', () => {
+    const bad = {
+      version: 1,
+      bundles: {
+        'bad-bundle': {
+          name: 'bad-bundle',
+          description: 'bad',
+          planningLoop: { enabled: true, mode: 'planner-orchestrator', sidekicks: { max: 2 } },
+        },
+      },
+    };
+    const r = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
+    (r as any).bundlesManifest = bad;
+    expect(() => (r as any).validateBundles(bad)).toThrow('sidekicks');
+  });
+
+  it('should reject unknown planningLoop mode', async () => {
+    const bad = {
+      version: 1,
+      bundles: {
+        'bad-bundle': {
+          name: 'bad-bundle',
+          description: 'bad',
+          planningLoop: { enabled: true, mode: 'bogus' },
+        },
+      },
+    };
+    const r = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
+    (r as any).bundlesManifest = bad;
+    expect(() => (r as any).validateBundles(bad)).toThrow('unknown');
+  });
+
+  it('should accept planner-orchestrator without budget/sidekicks', () => {
+    const good = {
+      version: 1,
+      bundles: {
+        'good-bundle': {
+          name: 'good-bundle',
+          description: 'good',
+          planningLoop: { enabled: true, mode: 'planner-orchestrator' },
+        },
+      },
+    };
+    const r = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
+    (r as any).bundlesManifest = good;
+    expect(() => (r as any).validateBundles(good)).not.toThrow();
   });
 });

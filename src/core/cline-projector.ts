@@ -1,4 +1,4 @@
-import yaml from 'yaml';
+﻿import yaml from 'yaml';
 import path from 'node:path';
 import fs from 'fs-extra';
 import type {
@@ -6,6 +6,7 @@ import type {
   BundleDefinition,
   ClineTeamManifest,
   InstallScope,
+  PlanningLoopMode,
   ProjectionKind,
   ResolvedAssets,
 } from './types.js';
@@ -205,9 +206,18 @@ export class ClineProjector {
       },
     };
 
-    // ADR 0014 — planning-loop bundles declare the loop config and persona map.
+    // ADR 0014/0015 — planning-loop bundles declare the loop config and persona map.
+    // ADR 0015 defense-in-depth: omit budget/sidekicks from manifest YAML for
+    // planner-orchestrator bundles (loader validation should already reject these).
     if (bundle.planningLoop?.enabled) {
-      manifest.planningLoop = bundle.planningLoop;
+      const mode = bundle.planningLoop.mode ?? 'subagent-first';
+      manifest.planningLoop = {
+        enabled: true,
+        mode,
+        // Only emit budget/sidekicks for subagent-first bundles
+        ...(mode === 'subagent-first' && bundle.planningLoop.budget ? { budget: bundle.planningLoop.budget } : {}),
+        ...(mode === 'subagent-first' && bundle.planningLoop.sidekicks ? { sidekicks: bundle.planningLoop.sidekicks } : {}),
+      };
       if (bundle.personaAliases && Object.keys(bundle.personaAliases).length > 0) {
         manifest.personas = Object.entries(bundle.personaAliases).map(([persona, role]) => ({ persona, role }));
       }
@@ -241,38 +251,47 @@ export class ClineProjector {
       ? `\n### Recommended Addon Policy\nWhen user tasks require capabilities from: ${addons.join(', ')}, explain the capability and request user confirmation to install via \`agents add <addon> -t cline -y\` before running the installation.`
       : '';
 
-    // ADR 0014 — planning-loop bundles replace the soft delegation hint with a
-    // mandatory Subagent-First policy and the bounded Planning Dialogue Loop.
-    // Bundles without the flag render byte-identical output to the legacy rule.
+    // ADR 0014/0015 — planning-loop bundles replace the soft delegation hint with a
+    // mandatory planning policy. Bundles without the flag render byte-identical
+    // output to the legacy rule. Mode determines which planning policy is rendered.
     const planning = bundle.planningLoop?.enabled === true ? bundle.planningLoop : undefined;
+    const mode: PlanningLoopMode = planning?.mode ?? 'subagent-first';
     const budget = planning?.budget;
     const delegationStep = planning
-      ? '2. **Subagent-First Delegation Policy (ADR 0014)**: execute specialist work through the configured `subagent_*` agent tools (projected under `.cline/agents/`), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.'
+      ? (mode === 'subagent-first'
+        ? '2. **Subagent-First Delegation Policy (ADR 0014)**: execute specialist work through the configured `subagent_*` agent tools (projected under `.cline/agents/`), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.'
+        : '2. **Planner-Orchestrator Delegation Policy (ADR 0015)**: execute specialist work through the configured `subagent_*` agent tools (projected under `.cline/agents/`), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.')
       : '2. Delegate specialist tasks using the configured `subagent_*` agent tools (projected under `.cline/agents/`) when available, assigning non-overlapping scopes; fall back to Agent Teams (`team_spawn_teammate`) or session subagents as needed.';
 
+    
+    
     const planningSection = planning
-      ? `
-
-## Subagent-First Planning Dialogue Loop (ADR 0014)
-Run this loop BEFORE any substantive execution on a non-trivial task. Delegation-first is mandatory, not advisory.
-
-### Phase 0 — User Alignment
-If the user's brief is ambiguous, grill it Socratically with the user first: \`/grill-me\` (strategy / non-code) or \`/grill-with-docs\` (code & docs; writes ADRs and updates CONTEXT.md).
-
-### Phase 0.5 — Sidekick Clarification
-Spawn at most ${planning.sidekicks?.max ?? 2} relevant specialists (spawnable \`subagent_*\` tools) INTO this planning conversation to resolve remaining ambiguity. Sidekicks advise you; you relay their questions to the user.
-
-### Phase 1 — Specialist Council
-Have every relevant specialist return a Scope-of-Work Statement (max ${budget?.summaryWordCap ?? 150} words): (1) my scope, (2) inputs I need from peers, (3) my deliverable per my own workflows, (4) at most 2 open questions.
-
-### Phase 2 — Delegation Map
-Synthesize the council output into a task → specialist map and present it to the user BEFORE execution. Then delegate per the map.
-
-### Consultation Budget (hard caps)
-- Planning rounds (orchestrator ↔ council): max ${budget?.maxPlanningRounds ?? 2}
-- Peer exchanges per specialist pair: max ${budget?.maxPeerExchangesPerPair ?? 2} directed questions
-- Scope-of-Work statement length: max ${budget?.summaryWordCap ?? 150} words
-- Specialist per-invocation iteration cap: maxIterations: ${budget?.maxIterations ?? 8} (rendered into .cline/agents/*.yml)`
+      ? (mode === 'subagent-first'
+        ? '\n\n## Subagent-First Planning Dialogue Loop (ADR 0014)' +
+          'Run this loop BEFORE any substantive execution on a non-trivial task. Delegation-first is mandatory, not advisory.\n\n' +
+          '### Phase 0 — User Alignment\n' +
+          'If the user\'s brief is ambiguous, grill it Socratically with the user first: /grill-me (strategy / non-code) or /grill-with-docs (code & docs; writes ADRs and updates CONTEXT.md).\n\n' +
+          '### Phase 0.5 — Sidekick Clarification\n' +
+          'Spawn at most ' + (planning.sidekicks?.max ?? 2) + ' relevant specialists (spawnable subagent_* tools) INTO this planning conversation to resolve remaining ambiguity. Sidekicks advise you; you relay their questions to the user.\n\n' +
+          '### Phase 1 — Specialist Council\n' +
+          'Have every relevant specialist return a Scope-of-Work Statement (max ' + (budget?.summaryWordCap ?? 150) + ' words): (1) my scope, (2) inputs I need from peers, (3) my deliverable per my own workflows, (4) at most 2 open questions.\n\n' +
+          '### Phase 2 — Delegation Map\n' +
+          'Synthesize the council output into a task → specialist map and present it to the user BEFORE execution. Then delegate per the map.\n\n' +
+          '### Consultation Budget (hard caps)\n' +
+          '- Planning rounds (orchestrator ↔ council): max ' + (budget?.maxPlanningRounds ?? 2) + '\n' +
+          '- Peer exchanges per specialist pair: max ' + (budget?.maxPeerExchangesPerPair ?? 2) + ' directed questions\n' +
+          '- Scope-of-Work statement length: max ' + (budget?.summaryWordCap ?? 150) + ' words\n' +
+          '- Specialist per-invocation iteration cap: maxIterations: ' + (budget?.maxIterations ?? 8) + ' (rendered into .cline/agents/*.yml)'
+        : '\n\n## Planner-Orchestrator Policy (ADR 0015)' +
+          'Plan solo, delegate execution. This mode replaces the Subagent-First Planning Dialogue Loop for single-discipline domain bundles.\n\n' +
+          '### Phase 0 — User Alignment (solo)\n' +
+          'If the user\'s brief is ambiguous, grill it Socratically yourself: /grill-me (strategy / non-code) or /grill-with-docs (code & docs). Consult the bundle\'s skills directly whenever they help you plan — you have the same skill access as your specialists. Do NOT spawn specialists during planning.\n\n' +
+          '### Planning Aid Boundary\n' +
+          'While planning you may consult skills and reason to give the user PROVISIONAL answers and estimates. A concrete deliverable — data analysis, code, assets, documents — is specialist work: defer it to the delegation map, never produce it yourself during planning.\n\n' +
+          '### Phase 2 — Delegation Map (solo-composed)\n' +
+          'Compose the task → specialist map from your own domain expertise and the skill runbooks, and present it to the user BEFORE execution.\n\n' +
+          '### Execution\n' +
+          'Delegate every deliverable to the configured subagent_* agent tools (projected under .cline/agents/), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.')
       : '';
 
     const personaSection = planning && bundle.personaAliases && Object.keys(bundle.personaAliases).length > 0
@@ -349,7 +368,7 @@ ${addonSection}
         const rendered = this.renderConfiguredAgent(
           content,
           canonicalRel,
-          bundle.planningLoop?.enabled === true ? bundle.planningLoop.budget?.maxIterations : undefined
+          bundle.planningLoop?.enabled === true ? bundle.planningLoop.budget?.maxIterations : undefined, // ADR 0015: planner-orchestrator has no budget → undefined → key absent from .yml
         );
         const roleName = this.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
         artifacts.push({

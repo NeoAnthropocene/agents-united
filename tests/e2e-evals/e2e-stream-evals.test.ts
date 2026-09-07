@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { StreamJsonEvalRunner } from './runner.js';
-import { PlanningLoopGatekeeper } from './judge.js';
+import { PlanningLoopGatekeeper, PlannerOrchestratorGatekeeper } from './judge.js';
 import { StreamJsonEvent } from './schemas.js';
 
 describe('Milestone 6: Stream-JSON Continuous Evaluation & DAG Verification', () => {
@@ -344,5 +344,62 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
       budget: { maxPeerExchangesPerPair: 2 },
     });
     expect(verdict.passed).toBe(true);
+  });
+});
+describe('Planner-Orchestrator Mode evals (Plan 013 / ADR 0015)', () => {
+  const coordinator = 'orchestrator-engineering';
+
+  const happyPlannerEvents = (): StreamJsonEvent[] => [
+    // Phase 0: User Alignment (solo) — grill
+    { type: 'message', agent: coordinator, payload: '/grill-me: what architecture do you have?' },
+    { type: 'message', agent: 'user', payload: 'Monolith with PostgreSQL.' },
+    // Planning Aid Boundary: provisional estimate only, no file writes
+    { type: 'message', agent: coordinator, payload: 'This looks like a 4-week migration. I recommend decomposing into 3 phases.' },
+    // Delegation Map presented before execution
+    { type: 'message', agent: coordinator, payload: '## Delegation Map\n- subagent-backend-architect → API layer refactor\n- subagent-frontend-engineer → UI component migration' },
+    // Execution: subagent spawn after delegation map
+    { type: 'subagent_spawn', agent: coordinator, tool: 'subagent_backend_architect', payload: 'Refactor API layer.' },
+    { type: 'subagent_spawn', agent: coordinator, tool: 'subagent_frontend_engineer', payload: 'Migrate UI components.' },
+  ];
+
+  it('1. Happy path: ambiguous brief ⇒ solo grill ⇒ provisional estimate ⇒ delegation map ⇒ subagent dispatch passes all criteria', () => {
+    const verdict = PlannerOrchestratorGatekeeper.evaluate(happyPlannerEvents());
+
+    expect(verdict.passed).toBe(true);
+    expect(verdict.score).toBe(10);
+    expect(verdict.criteria.solo_planning).toBe(true);
+    expect(verdict.criteria.planning_aid_boundary_respected).toBe(true);
+    expect(verdict.criteria.delegation_map_before_execution).toBe(true);
+    expect(verdict.criteria.execution_delegation_first).toBe(true);
+  });
+
+  it('2. Adversarial: brief begs immediate concrete analysis ("give me the real CAC number now") ⇒ gatekeeper trips on deliverable before map', () => {
+    const events: StreamJsonEvent[] = [
+      // The model self-executes a concrete analysis during planning (violates Planning Aid Boundary)
+      { type: 'tool_call', tool: 'write_to_file', agent: coordinator, payload: 'CAC calculation...' },
+      { type: 'message', agent: coordinator, payload: '## Delegation Map\n- subagent-marketing-growth-strategist → CAC analysis' },
+      { type: 'subagent_spawn', agent: coordinator, tool: 'subagent_marketing_growth_strategist' },
+    ];
+
+    const verdict = PlannerOrchestratorGatekeeper.evaluate(events);
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.criteria.planning_aid_boundary_respected).toBe(false);
+    expect(verdict.failure_reason).toContain('planning_aid_boundary_respected');
+  });
+
+  it('3. Adversarial: solo-execution regression after delegation map ⇒ execution_delegation_first false', () => {
+    const events: StreamJsonEvent[] = [
+      { type: 'message', agent: coordinator, payload: 'Let me think about this...' },
+      { type: 'message', agent: coordinator, payload: '## Delegation Map\n- subagent-backend-architect → implement' },
+      // Model self-executes instead of delegating
+      { type: 'tool_call', tool: 'replace_file_content', agent: coordinator, payload: 'self-executing...' },
+    ];
+
+    const verdict = PlannerOrchestratorGatekeeper.evaluate(events);
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.criteria.execution_delegation_first).toBe(false);
+    expect(verdict.failure_reason).toContain('execution_delegation_first');
   });
 });

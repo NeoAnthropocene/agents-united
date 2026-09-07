@@ -6,10 +6,11 @@
 > report — do not improvise. When done, update the status row for this plan
 > in `plans/README.md`.
 >
-> **USER GATE**: **PENDING** — plan drafted 2026-09-07 on branch
-> `fix/domain-bundles-cline-projection-fix` (commit of record: `a7c912e`).
-> ADR 0015 is *Proposed*. Do not execute Steps 2–9 until the maintainer
-> approves the plan and flips ADR 0015 to *Accepted*.
+> **USER GATE**: **APPROVED** and being executed (2026-09-07 on branch
+> `fix/domain-bundles-cline-projection-fix`). ADR 0015 flipped to *Accepted*
+> during execution. Steps 1–6 complete (types + validation → renderer +
+> byte-identical regression tests → catalog → orchestrator prompts → eval
+> gatekeeper); Step 7 documentation/commit pending.
 >
 > **Drift check (run first)**:
 > `git diff --stat a7c912e..HEAD -- src/core/cline-projector.ts src/core/types.ts src/core/registry.ts registry/bundles.json registry/agents/orchestrator-*.md tests/cline-projector.test.ts tests/registry.test.ts tests/e2e-evals/`

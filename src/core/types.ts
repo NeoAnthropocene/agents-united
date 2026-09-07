@@ -56,8 +56,12 @@ export interface ConsultationBudget {
   maxIterations: number;
 }
 
+/** ADR 0014/0015 — declarative planning-loop posture. Mode absent ⇒ 'subagent-first' (backward compat). */
+export type PlanningLoopMode = 'subagent-first' | 'planner-orchestrator';
+
 export interface PlanningLoopConfig {
   enabled: boolean;
+  mode?: PlanningLoopMode;
   budget?: ConsultationBudget;
   sidekicks?: { max: number };
 }
