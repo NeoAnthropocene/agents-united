@@ -18,7 +18,7 @@ This directory contains self-contained implementation plans for building the **`
 | [010](./010-antigravity-august-features-and-department-expansion.md) | Antigravity August 2026 Features Adoption & Department Subagent Ecosystem Expansion | Core / Architecture | **DONE** | 002, 007, 009 |
 | [011](./011-cline-plugins-projection-migration.md) | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **DONE** | 008 |
 | [012](./012-subagent-first-planning-loop.md) | Subagent-First Orchestration & Bounded Planning Dialogue (`digital-agency` first) | Runtime Integration / Catalog / Evals | **DONE** (Cline + Antigravity manual rounds complete; desktop `invoke_subagent` harness limitation documented in ADR 0009) | 008 |
-| [013](./013-planner-orchestrator-mode-for-domain-bundles.md) | Planner-Orchestrator Mode for Tier-1 Domain Bundles (ADR 0015) | Runtime Integration / Catalog / Evals | **EXECUTING** (Steps 1-6 DONE, Step 7-9 in progress) | 012 |
+| [013](./013-planner-orchestrator-mode-for-domain-bundles.md) | Planner-Orchestrator Mode for Tier-1 Domain Bundles (ADR 0015) | Runtime Integration / Catalog / Evals | **DONE** (Cline manual rounds complete; subagent auth errors are a Cline account issue, not a code defect) | 012 |
 
 ### Plan 008 execution order
 

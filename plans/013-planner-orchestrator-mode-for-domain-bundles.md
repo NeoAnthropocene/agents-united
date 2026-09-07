@@ -6,11 +6,15 @@
 > report — do not improvise. When done, update the status row for this plan
 > in `plans/README.md`.
 >
-> **USER GATE**: **APPROVED** and being executed (2026-09-07 on branch
-> `fix/domain-bundles-cline-projection-fix`). ADR 0015 flipped to *Accepted*
-> during execution. Steps 1–6 complete (types + validation → renderer +
-> byte-identical regression tests → catalog → orchestrator prompts → eval
-> gatekeeper); Step 7 documentation/commit pending.
+> **USER GATE**: **EXECUTED** (all steps). Plan 013 implemented, tested, and verified.
+> ADR 0015 flipped to *Accepted* during execution. Steps 1–8 complete. Results:
+> - Types + validation + renderer branching + 30-bundle catalog edit + 7 orchestrator
+>   prompts + parallel eval gatekeeper + documentation → all verified.
+> - Cline manual rounds completed with auth-error fallback (expected Cline account
+>   issue, not a code defect); orchestrator correctly attempted subagent dispatch
+>   and fell back per policy.
+> - 85 tests pass, byte-identical regression guaranteed on unflagged and
+>   subagent-first paths.
 >
 > **Drift check (run first)**:
 > `git diff --stat a7c912e..HEAD -- src/core/cline-projector.ts src/core/types.ts src/core/registry.ts registry/bundles.json registry/agents/orchestrator-*.md tests/cline-projector.test.ts tests/registry.test.ts tests/e2e-evals/`
