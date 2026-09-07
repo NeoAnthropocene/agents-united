@@ -1,3 +1,10 @@
+## [0.7.1](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.0...v0.7.1) (2026-09-07)
+
+
+### Bug Fixes
+
+* Planner-Orchestrator Mode for Tier-1 Domain Bundles (Plan 013 / ADR 0015) ([#23](https://github.com/NeoAnthropocene/agents-united/issues/23)) ([7ac051b](https://github.com/NeoAnthropocene/agents-united/commit/7ac051b78bae6f2adc378327945494e649faedf0)), closes [#1](https://github.com/NeoAnthropocene/agents-united/issues/1) [#2](https://github.com/NeoAnthropocene/agents-united/issues/2) [#12](https://github.com/NeoAnthropocene/agents-united/issues/12) [#16](https://github.com/NeoAnthropocene/agents-united/issues/16) [#19](https://github.com/NeoAnthropocene/agents-united/issues/19) [#22](https://github.com/NeoAnthropocene/agents-united/issues/22)
+
 # [0.7.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.6.0...v0.7.0) (2026-09-06)
 
 
