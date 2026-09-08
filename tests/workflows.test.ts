@@ -25,6 +25,9 @@ describe('Workflow: sync-main-to-dev.yml', () => {
 
     expect(parsed.permissions.contents).toBe('write');
     expect(parsed.permissions['pull-requests']).toBe('write');
+
+    // Asserts SYNC_TOKEN is wired for checkout and sync actions
+    expect(content).toContain('secrets.SYNC_TOKEN || secrets.GITHUB_TOKEN');
   });
 
   it('includes direct merge and push step to avoid PR overhead and unapproved CI runs', () => {
