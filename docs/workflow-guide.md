@@ -13,12 +13,13 @@
 
 ## One-time setup
 
-**A. Protect `dev`** (Settings → Branches → Add branch ruleset):
+**A. Protect `dev`** (Settings → Rules → Rulesets or Settings → Branches):
 
 - Branch name pattern: `dev`
 - ✅ Require a pull request before merging
 - ✅ Require status checks to pass → select **`test`**
-- ✅ Allow admins to bypass (emergency escape hatch)
+- ✅ Bypass list:
+  - **Repository admin** (Always allow — provides emergency escape hatch & enables automated sync direct merge)
 
 **B. Enable auto-merge** (Settings → General → Pull Requests):
 
@@ -67,8 +68,9 @@ Open Pull Request #2: **base = `main`**, compare = `dev`. Merge → automation t
    - `fix: …` → patch version (`v0.6.0` → `v0.6.1`)
    - Publishes the npm package, Git tag, and `CHANGELOG.md`.
 2. **Sync workflow** (`Sync main to dev`):
-   - Opens the `main → dev` sync PR **and auto-merges it** once its CI passes.
-   - `dev` returns to lockstep with `main`. No manual step.
+   - Opens the `main → dev` sync PR **and merges it immediately**.
+   - Release commits (version bump, `CHANGELOG.md`) have already passed full CI on `main`, so redundant CI on `main → dev` is skipped to prevent approval deadlocks.
+   - `dev` returns to lockstep with `main` in under 10 seconds. No manual step.
 
 ## Walkthrough 2 — Small changes (typos, docs, CI tweaks)
 
@@ -134,5 +136,5 @@ PR → base `main` → merge → release + auto-sync to `dev`.
 |---|---|
 | Push rejected "non-fast-forward" | Remote moved → `git pull --rebase origin <branch>`, resolve, push again. |
 | CI fails on the PR but passes locally | Usually a Linux-only issue. Reproduce in WSL: `wsl -d Ubuntu`, `cd /mnt/c/github/agents-united`, run `npm test`. |
-| Sync PR left open with a warning in Actions | Auto-merge failed after retries (rare). Merge it manually. |
-| Version did not bump after merging to `main` | Only `feat:`/`fix:` commits release. Check your commit types. |
+| Sync PR left open with a warning or "blocked" status | Auto-merge waited on skipped CI checks. The workflow now attempts an immediate merge with `--admin --merge`. To clear an existing one manually: click **Merge pull request** (admin bypass) or run `gh pr merge <PR_NUMBER> --admin --merge`. |
+| Version did not bump after merging to `main` | Only `feat:`, `fix:`, or `Release:` commits trigger a release. Check your commit types or `.releaserc.json` releaseRules. |
