@@ -1,3 +1,10 @@
+## [0.7.2](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.1...v0.7.2) (2026-09-08)
+
+
+### Bug Fixes
+
+* **ci:** direct merge and push in sync workflow to eliminate bot PR approval failures ([#32](https://github.com/NeoAnthropocene/agents-united/issues/32)) ([43efa60](https://github.com/NeoAnthropocene/agents-united/commit/43efa606cb3e439dc2c5ab508a076a7607fbea04)), closes [#1](https://github.com/NeoAnthropocene/agents-united/issues/1) [#2](https://github.com/NeoAnthropocene/agents-united/issues/2) [#12](https://github.com/NeoAnthropocene/agents-united/issues/12) [#16](https://github.com/NeoAnthropocene/agents-united/issues/16) [#19](https://github.com/NeoAnthropocene/agents-united/issues/19) [#22](https://github.com/NeoAnthropocene/agents-united/issues/22)
+
 ## [0.7.1](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.0...v0.7.1) (2026-09-07)
 
 
