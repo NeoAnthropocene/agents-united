@@ -26,7 +26,12 @@
 
 - ✅ Allow auto-merge
 
-**C. Authentication** — completed once via Git Credential Manager; pushes now run silently.
+**C. Release Sync Token (Optional but Recommended)** (Settings → Secrets and variables → Actions):
+
+- Add repository secret `SYNC_TOKEN` containing a Personal Access Token (PAT) belonging to Repository Admin (with `repo` / `Contents: Read & Write` scope).
+- Enables the automated `Sync main to dev` workflow to authenticate as Repository Admin, bypass `dev` rulesets, and sync directly in 1 second without opening PRs.
+
+**D. Authentication** — completed once via Git Credential Manager; pushes now run silently.
 
 ## Walkthrough 1 — Adding a new feature
 
