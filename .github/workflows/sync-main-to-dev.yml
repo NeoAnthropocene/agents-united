@@ -41,16 +41,27 @@ jobs:
             exit 0
           fi
 
-          # 1. Preferred fast path: Direct fast-forward push
-          # With Write role in dev ruleset bypass, this fast-forwards dev directly in 1s.
-          # Bypasses PR creation completely, preventing any phantom PR-approval CI runs.
+          # 1. Fast path A: Direct fast-forward push (when main is an ancestor of dev)
           echo "Attempting direct fast-forward push of main into dev..."
           if git push origin origin/main:refs/heads/dev 2>/dev/null; then
             echo "dev fast-forwarded directly to main. Lockstep achieved in 1s without PR overhead."
             exit 0
           fi
 
-          echo "Direct push was rejected by branch rules; falling back to automated PR sync..."
+          # 2. Fast path B: Direct merge & push (handles squash-merged releases where main and dev diverged)
+          # With Write role in dev ruleset bypass, we merge main into dev locally and push directly.
+          # This completely avoids creating a PR, preventing phantom unapproved CI runs on github-actions[bot].
+          echo "Direct fast-forward push not applicable (diverged history); attempting direct merge and push into dev..."
+          git checkout -B dev origin/dev
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git merge origin/main --no-edit -m "chore(auto): sync main → dev after release [skip ci]" 2>/dev/null && git push origin dev 2>/dev/null; then
+            echo "dev merged and pushed directly to origin/dev. Lockstep achieved without PR overhead."
+            exit 0
+          fi
+
+          git merge --abort 2>/dev/null || true
+          echo "Direct merge/push was rejected or encountered conflicts; falling back to automated PR sync..."
 
           gh label create "auto-sync" --description "Automated sync PRs" --color "0e8a16" --force 2>/dev/null || true
 
