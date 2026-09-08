@@ -11,6 +11,7 @@ on:
   workflow_run:
     workflows: ["Release"]
     types: [completed]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,7 +20,7 @@ permissions:
 jobs:
   sync:
     name: Sync main → dev (PR + auto-merge)
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -39,6 +40,17 @@ jobs:
             echo "dev is already up to date with main (0 new commits). Nothing to sync."
             exit 0
           fi
+
+          # 1. Preferred fast path: Direct fast-forward push
+          # With Write role in dev ruleset bypass, this fast-forwards dev directly in 1s.
+          # Bypasses PR creation completely, preventing any phantom PR-approval CI runs.
+          echo "Attempting direct fast-forward push of main into dev..."
+          if git push origin origin/main:refs/heads/dev 2>/dev/null; then
+            echo "dev fast-forwarded directly to main. Lockstep achieved in 1s without PR overhead."
+            exit 0
+          fi
+
+          echo "Direct push was rejected by branch rules; falling back to automated PR sync..."
 
           gh label create "auto-sync" --description "Automated sync PRs" --color "0e8a16" --force 2>/dev/null || true
 
