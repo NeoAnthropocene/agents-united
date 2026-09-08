@@ -1,3 +1,10 @@
+## [0.7.3](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.2...v0.7.3) (2026-09-08)
+
+
+### Bug Fixes
+
+* **ci:** wire SYNC_TOKEN with fallback in sync-main-to-dev workflow ([#35](https://github.com/NeoAnthropocene/agents-united/issues/35)) ([786a302](https://github.com/NeoAnthropocene/agents-united/commit/786a302e95d3cc26418bc64dfb06ddf713f778a2)), closes [#1](https://github.com/NeoAnthropocene/agents-united/issues/1) [#2](https://github.com/NeoAnthropocene/agents-united/issues/2) [#12](https://github.com/NeoAnthropocene/agents-united/issues/12) [#16](https://github.com/NeoAnthropocene/agents-united/issues/16) [#19](https://github.com/NeoAnthropocene/agents-united/issues/19) [#22](https://github.com/NeoAnthropocene/agents-united/issues/22)
+
 ## [0.7.2](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.1...v0.7.2) (2026-09-08)
 
 
