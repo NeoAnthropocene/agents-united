@@ -19,7 +19,8 @@
 - ✅ Require a pull request before merging
 - ✅ Require status checks to pass → select **`test`**
 - ✅ Bypass list:
-  - **Repository admin** (Always allow — provides emergency escape hatch & enables automated sync direct merge)
+  - **Repository admin** (Always allow — provides emergency escape hatch)
+  - **Write (Roles)** (Allows the automated `Sync main to dev` workflow to sync directly without creating PRs)
 
 **B. Enable auto-merge** (Settings → General → Pull Requests):
 
@@ -68,9 +69,10 @@ Open Pull Request #2: **base = `main`**, compare = `dev`. Merge → automation t
    - `fix: …` → patch version (`v0.6.0` → `v0.6.1`)
    - Publishes the npm package, Git tag, and `CHANGELOG.md`.
 2. **Sync workflow** (`Sync main to dev`):
-   - Opens the `main → dev` sync PR **and merges it immediately**.
-   - Release commits (version bump, `CHANGELOG.md`) have already passed full CI on `main`, so redundant CI on `main → dev` is skipped to prevent approval deadlocks.
-   - `dev` returns to lockstep with `main` in under 10 seconds. No manual step.
+   - Merges upstream `main` changes into `dev` and pushes directly using the `Write` role bypass.
+   - Zero pull requests opened, preventing redundant unapproved bot CI runs.
+   - Falls back to automated PR creation and immediate merge only if direct push is blocked.
+   - `dev` returns to lockstep with `main` in under 5 seconds. No manual step.
 
 ## Walkthrough 2 — Small changes (typos, docs, CI tweaks)
 
