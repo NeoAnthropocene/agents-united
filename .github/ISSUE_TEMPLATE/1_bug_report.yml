@@ -1,0 +1,140 @@
+name: "🐛 Bug Report"
+description: Report a defect, CLI crash, projection failure, or unexpected behavior in Agents United.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report an issue!
+        
+        Before submitting:
+        - Check existing issues to see if this has already been reported.
+        - Run `agents doctor` (or `npx agents-united doctor`) to check for frontmatter, lockfile, or host projection issues.
+        - Consult the [Developer Workflow Guide](https://github.com/NeoAnthropocene/agents-united/blob/dev/docs/workflow-guide.md) if this relates to CI, branching, or testing.
+
+  - type: input
+    id: version
+    attributes:
+      label: Agents United Version
+      description: What version of Agents United are you running? (Run `agents --version` or check `package.json`)
+      placeholder: "e.g., 0.6.1 or git commit hash"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: host
+    attributes:
+      label: Target Host / Assistant Environment
+      description: Which host environment were you using when the issue occurred?
+      options:
+        - "Google Antigravity 2.0 / Gemini (Desktop App)"
+        - "Google Antigravity CLI (Interactive TUI)"
+        - "Anthropic Claude Code"
+        - "Cursor (.cursor/rules and agent definitions)"
+        - "Cline (CLI)"
+        - "Cline (VS Code / Roo Code Extension)"
+        - "OpenCode"
+        - "Codex / AGENTS.md Reader"
+        - "CLI Engine Only (npx agents-united / global)"
+        - "Multiple Hosts / Projections Fanout (--fanout)"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: domain_bundle
+    attributes:
+      label: Affected Department Domain or Bundle
+      description: Which department domain or bundle is involved?
+      options:
+        - "Software Engineering & Delivery (software-engineering, ai-ml, mobile, frontend, backend, qa, devops)"
+        - "System Architecture & SRE (system-architecture, sysops-sre, cloud, data, finops)"
+        - "Product Design & UI/UX (product-design, design-systems-ops, interactive-prototyping)"
+        - "Growth & Marketing Operations (growth-marketing, seo, performance, plg, lifecycle)"
+        - "Security Operations (security-operations, cloud-security, appsec, compliance-grc)"
+        - "Deep Technical Research (deep-research, deep-research-analytics)"
+        - "Business Strategy & Economics (business-strategy, financial, market-intel, legal-ops)"
+        - "Organization Bundles (digital-agency / Tri-Tier MCP)"
+        - "Universal Autonomous Department (universal-skills, universal-orchestration, full)"
+        - "Core CLI Engine / Installer / Lockfile / Inventory / Doctor"
+        - "Not sure / All bundles"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_method_scope
+    attributes:
+      label: Installation Scope & Method
+      description: How was the bundle installed?
+      options:
+        - "Project Scope (`./.agents/`) with Symlink Mode (`-s` / `--symlink`)"
+        - "Project Scope (`./.agents/`) with Copy Mode (`--copy`)"
+        - "Global Scope (`~/.agents/`) with Symlink Mode (`-g -s`)"
+        - "Global Scope (`~/.agents/`) with Copy Mode (`-g --copy`)"
+        - "Direct execution via `npx agents-united`"
+        - "Development workspace (`npm run build` / local checkout)"
+        - "Not applicable / N/A"
+    validations:
+      required: true
+
+  - type: input
+    id: os_node
+    attributes:
+      label: Operating System & Node.js Version
+      description: Provide your OS, shell, and Node.js version.
+      placeholder: "e.g., Windows 11 (pwsh 7.4) / Node v20.11.0 or Ubuntu 22.04 LTS (bash) / Node v22.2.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Clear and concise description of the bug.
+      placeholder: "Describe what went wrong, including unexpected agent behavior, CLI crashes, or missing projection files."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the problem.
+      placeholder: |
+        1. Run `agents add software-engineering --fanout cline`
+        2. Run `agents start software-engineering "Implement unit test"`
+        3. Observe error ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_vs_actual
+    attributes:
+      label: Expected vs. Actual Behavior
+      description: What did you expect to happen, and what happened instead?
+      placeholder: "Expected: ...\nActual: ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Diagnostic Logs / `agents doctor` Output
+      description: Paste any terminal logs, stack traces, or `agents doctor` diagnostic output here.
+      render: shell
+      placeholder: "Paste output here..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Contributor Checklist
+      options:
+        - label: "I have checked existing issues to make sure this is not a duplicate."
+          required: true
+        - label: "I have provided all relevant environment details (OS, Node version, host target)."
+          required: true
+        - label: "I am willing to submit a pull request with a fix (if applicable)."
+          required: false

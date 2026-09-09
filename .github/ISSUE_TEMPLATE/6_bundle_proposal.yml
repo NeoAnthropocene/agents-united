@@ -1,0 +1,128 @@
+name: "📦 New Bundle Proposal"
+description: Propose a new curated team bundle (Domain Bundle Tier 1 or Organization Bundle Tier 2).
+title: "[Bundle]: "
+labels: ["bundle", "catalog", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing a new bundle for Agents United!
+        
+        Before submitting, review:
+        - **Bundle Hierarchy** ([PROJECT.md §5](https://github.com/NeoAnthropocene/agents-united#5-ecosystem-architecture--department-domains)): Essentials base vs inherited addon bundles.
+        - **Bundle Lifecycle Taxonomy** (`CONTEXT.md`): `stable`, `experimental`, `under-construction`, `needs-audit`.
+        - **Planning Loop Posture** ([ADR 0014](https://github.com/NeoAnthropocene/agents-united/blob/dev/docs/adr/0014-subagent-first-planning-loop.md) & [ADR 0015](https://github.com/NeoAnthropocene/agents-united/blob/dev/docs/adr/0015-planner-orchestrator-mode-for-domain-bundles.md)): `planner-orchestrator` (solo planning + delegated execution) vs `subagent-first` (inter-agent dialogue with consultation budget).
+
+  - type: input
+    id: bundle_name
+    attributes:
+      label: Bundle Identifier
+      description: Kebab-case identifier matching `registry/bundles.json`.
+      placeholder: "e.g., embedded-systems or fintech-compliance"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: bundle_tier
+    attributes:
+      label: Bundle Tier & Type
+      description: Is this a single-discipline Domain Bundle (Tier 1) or an MCP-integrated Organization Bundle (Tier 2)?
+      options:
+        - "Tier 1: Domain Bundle — Essentials Base (Standalone foundation for a department domain)"
+        - "Tier 1: Domain Bundle — Inherited Addon (Extends an existing Essentials base via parentBundle)"
+        - "Tier 2: Organization Bundle — Cross-functional composite with MCP server integration"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: department_domain
+    attributes:
+      label: Department Domain
+      description: Department domain grouping this bundle.
+      options:
+        - "Software Engineering & Delivery"
+        - "System Architecture & SRE"
+        - "Product Design & UI/UX"
+        - "Growth & Marketing Operations"
+        - "Security Operations"
+        - "Deep Technical Research"
+        - "Business Strategy & Economics"
+        - "Organization Bundles (Cross-functional)"
+        - "Universal Autonomous Department"
+    validations:
+      required: true
+
+  - type: input
+    id: parent_bundle
+    attributes:
+      label: Parent Bundle (if inherited addon)
+      description: If this is an addon, specify the parent Essentials bundle it inherits from.
+      placeholder: "e.g., software-engineering, system-architecture, or 'None'"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: planning_loop_mode
+    attributes:
+      label: Planning Loop Mode
+      description: Delegation mode according to ADR 0014 and ADR 0015.
+      options:
+        - "planner-orchestrator (Solo planning + Planning Aid Boundary + solo delegation map + delegated execution per ADR 0015)"
+        - "subagent-first (Multi-agent Planning Dialogue Loop with Sidekicks, Specialist Council & Consultation Budget per ADR 0014)"
+        - "None (Static or skills-only bundle like universal-skills)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: lifecycle_state
+    attributes:
+      label: Proposed Lifecycle State
+      description: Initial maturity state in `registry/bundles.json`.
+      options:
+        - "under-construction (Design phase, protected by Under-Construction Gate)"
+        - "experimental (Functional, initial testing phase)"
+        - "stable (Production-ready, comprehensive 4-Tier test coverage)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: bundle_roster
+    attributes:
+      label: Planned Bundle Roster & Assets
+      description: List the Lead Orchestrator, Subagents, Skills, Workflows, and Rules to be included.
+      placeholder: |
+        Lead Orchestrator:
+        - orchestrator-...
+
+        Subagents:
+        - subagent-...
+
+        Skills:
+        - skill-1
+        - skill-2
+
+        Workflows:
+        - workflow-...
+    validations:
+      required: true
+
+  - type: textarea
+    id: mcp_prerequisites
+    attributes:
+      label: MCP Prerequisites & Tri-Tier Execution (if Tier 2 Organization Bundle)
+      description: If this is an Organization Bundle, list required MCP servers, API keys, and graceful fallback envelopes.
+      placeholder: "e.g., Requires github and context7 MCP servers. Degrades to Brainstorming mode if unconfigured."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Bundle Quality Checklist
+      options:
+        - label: "Conforms to registry schema in `registry/bundles.json`."
+          required: true
+        - label: "Tested with `npm run typecheck && npm test`."
+          required: true
+        - label: "Respects the Essentials-First philosophy (minimal token footprint, on-demand growth)."
+          required: true

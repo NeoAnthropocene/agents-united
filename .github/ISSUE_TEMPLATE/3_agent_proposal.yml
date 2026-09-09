@@ -1,0 +1,112 @@
+name: "🤖 New Agent Proposal"
+description: Propose a new Lead Orchestrator or specialized Subagent for the ecosystem catalog.
+title: "[Agent]: "
+labels: ["agent", "catalog", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for contributing to the Agents United agent roster!
+        
+        All agents in Agents United follow the **Antigravity 2.0 Agent Specification** ([ADR 0002](https://github.com/NeoAnthropocene/agents-united/blob/dev/docs/adr/0002-antigravity-2-agent-specification.md) & [ADR 0011](https://github.com/NeoAnthropocene/agents-united/blob/dev/docs/adr/0011-antigravity-august-features-and-department-expansion.md)), including structured YAML frontmatter, scoped AI safety policies, declarative lifecycle hooks, and projection compatibility.
+        
+        Naming conventions:
+        - Lead Orchestrators: `registry/agents/orchestrator-<domain>.md`
+        - Domain Subagents: `registry/agents/subagent-<role>.md`
+
+  - type: input
+    id: agent_name
+    attributes:
+      label: Agent Name & Proposed Filename
+      description: Follow the naming convention `orchestrator-<name>.md` or `subagent-<role>.md`.
+      placeholder: "e.g., subagent-cloud-security-architect.md"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: agent_type
+    attributes:
+      label: Agent Type
+      description: Is this an orchestrator (coordinates workflows and delegates tasks) or a subagent (executes specialized tasks)?
+      options:
+        - "subagent (Specialized worker agent with subagent: true)"
+        - "orchestrator (Lead orchestrator with mainAgent: true, subagent: true)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: department_domain
+    attributes:
+      label: Department Domain
+      description: Which department domain does this agent belong to?
+      options:
+        - "Software Engineering & Delivery"
+        - "System Architecture & SRE"
+        - "Product Design & UI/UX"
+        - "Growth & Marketing Operations"
+        - "Security Operations"
+        - "Deep Technical Research"
+        - "Business Strategy & Economics"
+        - "Organization Bundles (Cross-functional, e.g., digital-agency)"
+        - "Universal Autonomous Department"
+    validations:
+      required: true
+
+  - type: input
+    id: target_bundle
+    attributes:
+      label: Target Bundle
+      description: Which existing or proposed bundle will include this agent?
+      placeholder: "e.g., secops-cloud-security, software-engineering, or new bundle"
+    validations:
+      required: true
+
+  - type: textarea
+    id: role_mission
+    attributes:
+      label: Operational Role & Core Mission
+      description: Describe what this agent does, its primary responsibilities, and vertical slice boundaries.
+      placeholder: "Describe the agent's purpose, specialization, and why it is needed..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: tools_and_hooks
+    attributes:
+      label: Tools & Declarative Lifecycle Hooks
+      description: List required tools and declarative lifecycle hooks (`PreInvocation`, `PostInvocation`, etc.).
+      placeholder: |
+        Tools:
+        - run_command
+        - view_file
+        - replace_file_content
+        - write_to_file
+        - grep_search
+        - list_dir
+
+        Hooks:
+        - PreInvocation: audit_workspace
+        - PostInvocation: signal_completion
+    validations:
+      required: true
+
+  - type: textarea
+    id: safety_and_guardrails
+    attributes:
+      label: Scoped AI Safety & Guardrails
+      description: Does this agent interact with sensitive APIs, serverless GPUs, credentials, or protected branches?
+      placeholder: "e.g., Enforces secret redaction for cloud tokens, restricts commands to git-guardrails, etc."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contract_checklist
+    attributes:
+      label: Interface Contract & Quality Checklist
+      options:
+        - label: "Conforms to Antigravity 2.0 schema (name, version, type, model, permissionMode, commandExecutionPolicy)."
+          required: true
+        - label: "Follows ubiquitous domain terminology defined in CONTEXT.md."
+          required: true
+        - label: "Ready to be covered by 4-Tier test suite (tests/e2e-agents-schema.test.ts, tests/hosts.test.ts)."
+          required: true
