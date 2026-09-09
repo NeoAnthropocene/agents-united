@@ -1,3 +1,10 @@
+## [0.7.4](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.3...v0.7.4) (2026-09-09)
+
+
+### Bug Fixes
+
+* prevent tui box overflow on add/init and enhance update inventory reporting ([#37](https://github.com/NeoAnthropocene/agents-united/issues/37)) ([c8b50a5](https://github.com/NeoAnthropocene/agents-united/commit/c8b50a5d33297a9d83dc34d69d6bceea5af6374d)), closes [#1](https://github.com/NeoAnthropocene/agents-united/issues/1) [#2](https://github.com/NeoAnthropocene/agents-united/issues/2) [#12](https://github.com/NeoAnthropocene/agents-united/issues/12) [#16](https://github.com/NeoAnthropocene/agents-united/issues/16) [#19](https://github.com/NeoAnthropocene/agents-united/issues/19) [#22](https://github.com/NeoAnthropocene/agents-united/issues/22)
+
 ## [0.7.3](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.2...v0.7.3) (2026-09-08)
 
 
