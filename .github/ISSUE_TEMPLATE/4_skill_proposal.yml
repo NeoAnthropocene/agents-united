@@ -1,0 +1,119 @@
+name: "⚡ New Skill Proposal"
+description: Propose a modular capability runbook (SKILL.md) adhering to the 7 mandatory sections and attribution standards.
+title: "[Skill]: "
+labels: ["skill", "catalog", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for contributing a skill to Agents United!
+        
+        Every skill in Agents United lives under `registry/skills/<skill-name>/SKILL.md` and must satisfy two critical standards:
+        1. **Skill Attribution Standard** ([README.md §5](https://github.com/NeoAnthropocene/agents-united#5-skill-attribution-standard) & `CONTEXT.md`): External creator attribution in YAML frontmatter (`author`, `version`, `source`, `license`) and acknowledgment in `README.md`.
+        2. **The 7 Mandatory Sections** ([PROJECT.md §7.2](https://github.com/NeoAnthropocene/agents-united#72-skill-runbook-interface-registryskillsnameskillmd)):
+           - 1. Overview & Purpose
+           - 2. Execution Triggers
+           - 3. Input/Output Requirements
+           - 4. Step-by-Step Runbook
+           - 5. Code & Config Exemplars
+           - 6. Edge Cases & Error Recovery
+           - 7. Verification Checklist
+
+  - type: input
+    id: skill_name
+    attributes:
+      label: Skill Name
+      description: Kebab-case directory identifier (e.g., `turso-distributed-sqlite`, `graphql-schema-design`).
+      placeholder: "e.g., kafka-event-streaming"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: target_domain
+    attributes:
+      label: Target Department Domain
+      description: Which department domain or bundle will use this skill?
+      options:
+        - "Software Engineering & Delivery"
+        - "System Architecture & SRE"
+        - "Product Design & UI/UX"
+        - "Growth & Marketing Operations"
+        - "Security Operations"
+        - "Deep Technical Research"
+        - "Business Strategy & Economics"
+        - "Universal Autonomous Department (Shared Meta-Skill)"
+        - "Organization Bundles (Cross-functional, e.g., digital-agency)"
+    validations:
+      required: true
+
+  - type: input
+    id: target_bundle
+    attributes:
+      label: Target Bundle(s)
+      description: Name of the bundle(s) this skill should be added to in `registry/bundles.json`.
+      placeholder: "e.g., backend-distributed-systems or universal-skills"
+    validations:
+      required: true
+
+  - type: textarea
+    id: overview_purpose
+    attributes:
+      label: 1. Overview & Purpose
+      description: What specific capability does this skill provide, and why is it needed?
+      placeholder: "Clear overview of the technology, architecture pattern, or runbook utility..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: execution_triggers
+    attributes:
+      label: 2. Execution Triggers
+      description: When should an agent or developer invoke this skill? (User intent, file patterns, error symptoms).
+      placeholder: "Invoked when user requests [...], or when modifying files matching [...]"
+    validations:
+      required: true
+
+  - type: textarea
+    id: attribution_metadata
+    attributes:
+      label: Skill Attribution Standard Metadata
+      description: If adapted from an open-source creator, community library, or platform docs, provide attribution details.
+      placeholder: |
+        author: "Creator Name (@github-handle)"
+        source: "https://github.com/org/repo or documentation link"
+        license: "MIT / Apache-2.0 / etc."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: mandatory_sections_check
+    attributes:
+      label: Mandatory Section Verification
+      description: "Please verify that your proposed SKILL.md implementation will include all 7 mandatory sections:"
+      options:
+        - label: "1. Overview & Purpose"
+          required: true
+        - label: "2. Execution Triggers"
+          required: true
+        - label: "3. Input/Output Requirements"
+          required: true
+        - label: "4. Step-by-Step Runbook"
+          required: true
+        - label: "5. Code & Config Exemplars"
+          required: true
+        - label: "6. Edge Cases & Error Recovery"
+          required: true
+        - label: "7. Verification Checklist (with deterministic commands)"
+          required: true
+
+  - type: checkboxes
+    id: contributor_checklist
+    attributes:
+      label: Contributor Checklist
+      options:
+        - label: "Frontmatter contains valid YAML with name, description, and metadata (author, version, source, license)."
+          required: true
+        - label: "Will add creator attribution entry to README.md under 'Credits & Acknowledgments' (if external)."
+          required: true
+        - label: "Passes test suite validation (tests/e2e-skills-depth.test.ts)."
+          required: true

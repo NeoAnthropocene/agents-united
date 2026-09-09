@@ -1,0 +1,94 @@
+name: "🔄 New Workflow Proposal"
+description: Propose a deterministic multi-phase workflow with verification gates and Mermaid flowchart.
+title: "[Workflow]: "
+labels: ["workflow", "catalog", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing a workflow for Agents United!
+        
+        Workflows in Agents United (`registry/workflows/workflow-<task>.md`) are multi-step procedural templates defining deterministic phase transitions, verification gates, human review checkpoints, and rollback protocols.
+
+  - type: input
+    id: workflow_name
+    attributes:
+      label: Workflow Filename
+      description: Must follow the pattern `workflow-<task>.md`.
+      placeholder: "e.g., workflow-kubernetes-helm-deploy.md"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: department_domain
+    attributes:
+      label: Department Domain
+      description: Which domain does this workflow serve?
+      options:
+        - "Software Engineering & Delivery"
+        - "System Architecture & SRE"
+        - "Product Design & UI/UX"
+        - "Growth & Marketing Operations"
+        - "Security Operations"
+        - "Deep Technical Research"
+        - "Business Strategy & Economics"
+        - "Organization Bundles (Cross-functional, e.g., digital-agency)"
+        - "Universal Autonomous Department"
+    validations:
+      required: true
+
+  - type: input
+    id: target_bundle
+    attributes:
+      label: Target Bundle
+      description: Which bundle will register this workflow?
+      placeholder: "e.g., devops-engineering or sysops-sre"
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow_overview
+    attributes:
+      label: Workflow Summary & Objectives
+      description: What end-to-end task does this workflow orchestrate?
+      placeholder: "Describe the purpose, target outputs, and agents involved..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: phase_breakdown
+    attributes:
+      label: Phase Transitions & Verification Gates
+      description: Break down the phases, verification gates, and rollback conditions.
+      placeholder: |
+        - Phase 1: Reconnaissance & Environment Audit (Gate: cluster access confirmed)
+        - Phase 2: Manifest Rendering & Dry-Run (Gate: helm lint passes)
+        - Phase 3: Canary Rollout & Health Probe (Gate: 200 OK on healthz)
+        - Phase 4: Full Promotion or Rollback Protocol
+    validations:
+      required: true
+
+  - type: textarea
+    id: mermaid_diagram
+    attributes:
+      label: Mermaid Flowchart Diagram
+      description: Provide the Mermaid flowchart representing the phase transitions and gates.
+      placeholder: |
+        ```mermaid
+        flowchart TD
+            A[Start: Trigger] --> B[Phase 1: Audit]
+            B --> C{Verification Gate}
+            C -- Pass --> D[Phase 2: Execution]
+            C -- Fail --> E[Rollback Protocol]
+        ```
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Quality & Validation Checklist
+      options:
+        - label: "Includes deterministic verification gates between major phases."
+        - label: "Defines an explicit rollback or recovery procedure."
+        - label: "Validated against `tests/e2e-workflows-gates.test.ts`."

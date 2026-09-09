@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Agents United Documentation & Architecture
+    url: https://github.com/NeoAnthropocene/agents-united#readme
+    about: Read the official documentation, bundle catalog, and project architecture.
+  - name: 🛠️ Developer Workflow Guide (Branching & PRs)
+    url: https://github.com/NeoAnthropocene/agents-united/blob/dev/docs/workflow-guide.md
+    about: Learn about the two-line branch model, protected dev, TDD, and PR submission rules.
+  - name: 🏛️ Architectural Decision Records (ADRs)
+    url: https://github.com/NeoAnthropocene/agents-united/tree/dev/docs/adr
+    about: Review established architectural decisions, interface contracts, and host target specifications.
+  - name: 💬 GitHub Discussions & Community Q&A
+    url: https://github.com/NeoAnthropocene/agents-united/discussions
+    about: Ask questions, share ideas, and discuss agent architectures with the community.
