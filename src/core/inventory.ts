@@ -12,6 +12,7 @@ import type {
   InstallScope,
   AgentHost,
   VersionDriftStatus,
+  ScannedLocationSummary,
 } from './types.js';
 
 export class InventoryScanner {
@@ -21,7 +22,7 @@ export class InventoryScanner {
     this.registry = registry || new RegistryResolver();
   }
 
-  public static formatDisplayLocation(scope: InstallScope, host: AgentHost, targetDir: string): string {
+  public static formatDisplayLocation(scope: InstallScope, host: AgentHost, targetDir: string, fanout?: string[]): string {
     const home = os.homedir();
     const cwd = process.cwd();
 
@@ -34,7 +35,8 @@ export class InventoryScanner {
       prettyPath = `~/${rel.replace(/\\/g, '/')}`;
     }
 
-    return `[${scope}: ${prettyPath}]`;
+    const fanoutSuffix = fanout && fanout.length > 0 ? ` + ${fanout.join(', ')}` : '';
+    return `[${scope}: ${prettyPath}${fanoutSuffix}]`;
   }
 
   private parseHosts(options: InventoryOptions): AgentHost[] {
@@ -82,6 +84,27 @@ export class InventoryScanner {
     const bundleRecords: InstalledPackageRecord[] = [];
     const standaloneRecords: InstalledPackageRecord[] = [];
     const scannedTargetDirs: Set<string> = new Set();
+    const scannedLocationsMap = new Map<string, ScannedLocationSummary>();
+
+    const home = os.homedir();
+    for (const scope of scopes) {
+      const canonicalDir = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
+      let displayLoc = canonicalDir;
+      if (canonicalDir.startsWith(cwd)) {
+        const rel = path.relative(cwd, canonicalDir);
+        displayLoc = rel ? `./${rel.replace(/\\/g, '/')}` : '.';
+      } else if (canonicalDir.startsWith(home)) {
+        const rel = path.relative(home, canonicalDir);
+        displayLoc = `~/${rel.replace(/\\/g, '/')}`;
+      }
+      scannedLocationsMap.set(`${scope}:${canonicalDir}`, {
+        scope,
+        targetDir: canonicalDir,
+        displayLocation: displayLoc,
+        packageCount: 0,
+        fanout: [],
+      });
+    }
 
     for (const item of candidateDirs) {
       const lockfilePath = path.join(item.dir, 'agents-united.json');
@@ -97,7 +120,23 @@ export class InventoryScanner {
         continue;
       }
 
-      const displayLocation = InventoryScanner.formatDisplayLocation(item.scope, item.host, item.dir);
+      const lockfileFanout = lockfile.fanout || [];
+      const displayLocation = InventoryScanner.formatDisplayLocation(item.scope, item.host, item.dir, lockfileFanout);
+
+      const locKey = `${item.scope}:${item.dir}`;
+      const locSummary = scannedLocationsMap.get(locKey) || {
+        scope: item.scope,
+        targetDir: item.dir,
+        displayLocation: InventoryScanner.formatDisplayLocation(item.scope, item.host, item.dir),
+        packageCount: 0,
+        fanout: [],
+      };
+      for (const f of lockfileFanout) {
+        if (!locSummary.fanout.includes(f)) {
+          locSummary.fanout.push(f);
+        }
+      }
+      scannedLocationsMap.set(locKey, locSummary);
 
       // Track all skills/agents/workflows mapped to installed bundles
       const bundleOwnedSkills = new Set<string>();
@@ -150,6 +189,8 @@ export class InventoryScanner {
           });
         }
 
+        locSummary.packageCount++;
+
         const record: InstalledPackageRecord = {
           id: `${bundleName}@${item.scope}:${item.host}`,
           name: bundleName,
@@ -165,6 +206,8 @@ export class InventoryScanner {
           fileCount,
           title: bundleDef?.name || bundleName,
           description: bundleDef?.description,
+          fanout: lockfileFanout,
+          projections: lockfileFanout,
         };
 
         allRecords.push(record);
@@ -175,6 +218,8 @@ export class InventoryScanner {
       const installedSkills = lockfile.installed?.skills || [];
       for (const skillName of installedSkills) {
         if (bundleOwnedSkills.has(skillName)) continue;
+
+        locSummary.packageCount++;
 
         const record: InstalledPackageRecord = {
           id: `skill:${skillName}@${item.scope}:${item.host}`,
@@ -191,6 +236,8 @@ export class InventoryScanner {
           fileCount: 1,
           title: skillName,
           description: `Standalone skill (${skillName})`,
+          fanout: lockfileFanout,
+          projections: lockfileFanout,
         };
 
         allRecords.push(record);
@@ -202,6 +249,8 @@ export class InventoryScanner {
       for (const agentFile of installedAgents) {
         if (bundleOwnedAgents.has(agentFile)) continue;
         const agentName = agentFile.replace(/\.md$/, '');
+
+        locSummary.packageCount++;
 
         const record: InstalledPackageRecord = {
           id: `agent:${agentName}@${item.scope}:${item.host}`,
@@ -218,6 +267,8 @@ export class InventoryScanner {
           fileCount: 1,
           title: agentName,
           description: `Standalone agent (${agentFile})`,
+          fanout: lockfileFanout,
+          projections: lockfileFanout,
         };
 
         allRecords.push(record);
@@ -230,6 +281,9 @@ export class InventoryScanner {
       bundles: bundleRecords,
       standaloneItems: standaloneRecords,
       targetDirs: Array.from(scannedTargetDirs),
+      scannedScopes: scopes,
+      scannedLocations: Array.from(scannedLocationsMap.values()),
     };
   }
 }
+
