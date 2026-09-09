@@ -209,6 +209,16 @@ export interface InstalledPackageRecord {
   fileCount: number;
   title?: string;
   description?: string;
+  fanout?: string[];
+  projections?: string[];
+}
+
+export interface ScannedLocationSummary {
+  scope: InstallScope;
+  targetDir: string;
+  displayLocation: string;
+  packageCount: number;
+  fanout: string[];
 }
 
 export interface PackageInventory {
@@ -216,6 +226,8 @@ export interface PackageInventory {
   bundles: InstalledPackageRecord[];
   standaloneItems: InstalledPackageRecord[];
   targetDirs: string[];
+  scannedScopes?: InstallScope[];
+  scannedLocations?: ScannedLocationSummary[];
 }
 
 export interface InventoryOptions {
@@ -255,6 +267,8 @@ export interface UpdateCheckReport {
   outdatedCount: number;
   upToDateCount: number;
   totalCount: number;
+  scannedScopes?: InstallScope[];
+  scannedLocations?: ScannedLocationSummary[];
 }
 
 export interface UpdateResult {
@@ -262,7 +276,9 @@ export interface UpdateResult {
   skipped: Array<{ record: InstalledPackageRecord; reason: string }>;
   targetDirs: string[];
   dryRun: boolean;
+  projections: ProjectionInfo[];
 }
+
 
 export interface InstallOptions {
   scope?: InstallScope;

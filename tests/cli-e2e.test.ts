@@ -2,6 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import path from 'node:path';
 import { execSync, spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
+import {
+  formatWrappedList,
+  formatInstallationSummary,
+  wrapText,
+  getTerminalContentWidth,
+} from '../dist/cli.js';
 
 describe('CLI End-to-End Suite (dist/cli.js)', () => {
   const cliPath = path.resolve(process.cwd(), 'dist/cli.js');
@@ -133,6 +139,8 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
       encoding: 'utf8',
     });
     expect(stdout).toContain('Successfully processed update');
+    expect(stdout).toContain('Updated Projections');
+    expect(stdout).toContain('+ cline');
 
     const clineProj = path.join(e2eDir, '.cline', 'agents', 'orchestrator-engineering.yml');
     expect(await fs.pathExists(clineProj)).toBe(true);
@@ -141,6 +149,15 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     // And the fanout is now persisted in the lockfile for future updates
     const lockfile = await fs.readJson(path.join(e2eDir, '.agents', 'agents-united.json'));
     expect(lockfile.fanout).toContain('cline');
+
+    // Subsequent update without flags inherits fanout from lockfile and prints Updated Projections
+    const stdout2 = execSync(`node "${cliPath}" update software-engineering -y`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    expect(stdout2).toContain('Successfully processed update');
+    expect(stdout2).toContain('Updated Projections');
+    expect(stdout2).toContain('+ cline');
   });
 
   it('reroutes -t cline to the main library + translated copies', async () => {
@@ -278,6 +295,122 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(stdout).toContain('Installed Agents');
     expect(stdout).toContain('Cline Runtime & Native Discovery Audit:');
     expect(stdout).toContain('Configured Agents:');
+  });
+
+  it('formatWrappedList wraps long lists cleanly without exceeding maxLineLen', () => {
+    const skills = [
+      'diagnosing-bugs',
+      'git-guardrails',
+      'grill-me',
+      'grill-with-docs',
+      'handoff',
+      'managing-git-worktrees',
+      'managing-pull-requests',
+      'managing-worktrees',
+      'node-cli',
+      'npm-monorepo',
+      'package-json-scripts',
+      'preparing-for-code-review',
+      'receiving-code-review',
+      'resolving-git-conflicts',
+      'subagent-delegation',
+      'to-spec',
+      'to-tickets',
+    ];
+
+    const wrapped = formatWrappedList(skills, '  ', 68);
+    expect(wrapped.length).toBeGreaterThan(1);
+    for (const line of wrapped) {
+      expect(line.length).toBeLessThanOrEqual(68);
+      expect(line.startsWith('  ')).toBe(true);
+    }
+
+    // Handles empty list
+    expect(formatWrappedList([])).toEqual([]);
+
+    // Handles single item
+    expect(formatWrappedList(['single-skill'], '  ', 68)).toEqual(['  single-skill']);
+  });
+
+  it('wrapText wraps text paragraphs at limit without word breaks', () => {
+    const longText = 'This is a very long descriptive warning message that needs to wrap properly across multiple lines so that the terminal borders in clack prompts do not get corrupted or overflow the screen.';
+    const wrapped = wrapText(longText, 60, '  ');
+    expect(wrapped.length).toBeGreaterThan(1);
+    for (const line of wrapped) {
+      expect(line.length).toBeLessThanOrEqual(60);
+      expect(line.startsWith('  ')).toBe(true);
+    }
+  });
+
+  it('formatInstallationSummary prevents line overflow and formats counts & projections cleanly', () => {
+    const summary = formatInstallationSummary({
+      bundleName: 'software-engineering',
+      scope: 'project',
+      method: 'symlink',
+      hosts: ['agents'],
+      agents: [
+        'subagent-backend-architect',
+        'subagent-code-reviewer',
+        'subagent-frontend-architect',
+        'subagent-repo-index',
+      ],
+      skills: [
+        'diagnosing-bugs',
+        'git-guardrails',
+        'grill-me',
+        'grill-with-docs',
+        'handoff',
+        'managing-git-worktrees',
+        'managing-pull-requests',
+        'managing-worktrees',
+        'node-cli',
+        'npm-monorepo',
+        'package-json-scripts',
+        'preparing-for-code-review',
+        'receiving-code-review',
+        'resolving-git-conflicts',
+        'subagent-delegation',
+        'to-spec',
+        'to-tickets',
+      ],
+      targetDirs: ['c:\\github\\agents-united\\.agents'],
+      projections: [
+        { host: 'cline', path: '.clinerules', warnings: [] },
+        { host: 'cline', path: '.roomodes', warnings: [] },
+      ],
+    });
+
+    expect(summary).toContain('Bundle: software-engineering');
+    expect(summary).toContain('Agents (4):');
+    expect(summary).toContain('Skills (17):');
+    expect(summary).toContain('Target Directories: c:\\github\\agents-united\\.agents');
+    expect(summary).toMatch(/Projections: Cline.*\(2 files\)/);
+
+    // Crucial check: NO line in the entire summary exceeds 72 characters!
+    const lines = summary.split('\n');
+    for (const line of lines) {
+      expect(line.length).toBeLessThanOrEqual(72);
+    }
+  });
+
+  it('agents add renders clean Installation Success note without line overflow', async () => {
+    const stdout = execSync(`node "${cliPath}" add software-engineering -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+
+    expect(stdout).toContain('Installation Success');
+    expect(stdout).toContain('Skills (');
+    expect(stdout).toContain('Agents (');
+    expect(stdout).toContain('Target Directories');
+
+    // Split into lines and check that no line in stdout exceeds 95 characters
+    const lines = stdout.split(/\r?\n/);
+    for (const line of lines) {
+      // Strip ANSI escape codes to measure true printable character length
+      const cleanLine = line.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').trimEnd();
+      expect(cleanLine.length, `Line exceeded 95 chars: "${cleanLine}"`).toBeLessThanOrEqual(95);
+    }
   });
 });
 

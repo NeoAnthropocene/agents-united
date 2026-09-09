@@ -13,6 +13,7 @@ import type {
   InstalledPackageRecord,
   LockfileManifest,
   InventoryOptions,
+  ProjectionInfo,
 } from './types.js';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]+?)\r?\n---/;
@@ -26,6 +27,19 @@ export class UpdateEngine {
     this.registry = registry || new RegistryResolver();
     this.scanner = scanner || new InventoryScanner(this.registry);
     this.installer = installer || new InstallEngine(this.registry);
+  }
+
+  private deduplicateProjections(projections: ProjectionInfo[]): ProjectionInfo[] {
+    const seen = new Set<string>();
+    const deduplicated: ProjectionInfo[] = [];
+    for (const p of projections) {
+      const key = `${p.host}:${p.path}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicated.push(p);
+      }
+    }
+    return deduplicated;
   }
 
   private async calculateHash(filePath: string): Promise<string> {
@@ -93,6 +107,8 @@ export class UpdateEngine {
       outdatedCount,
       upToDateCount,
       totalCount: items.length,
+      scannedScopes: inventory.scannedScopes,
+      scannedLocations: inventory.scannedLocations,
     };
   }
 
@@ -123,20 +139,41 @@ export class UpdateEngine {
         skipped: [],
         targetDirs: inventory.targetDirs,
         dryRun: options.dryRun || false,
+        projections: [],
       };
     }
 
     if (options.dryRun) {
+      const dryProjections: ProjectionInfo[] = [];
+      for (const record of recordsToUpdate) {
+        const lockfilePath = path.join(record.targetDir, 'agents-united.json');
+        if (await fs.pathExists(lockfilePath)) {
+          const dryResult = await this.installer.install(record.name, {
+            scope: record.scope,
+            method: record.method,
+            hosts: [record.host],
+            targetDir: record.targetDir,
+            fanout: options.fanout,
+            dryRun: true,
+          });
+          if (dryResult.projections) {
+            dryProjections.push(...dryResult.projections);
+          }
+        }
+      }
       return {
         updated: recordsToUpdate,
         skipped: [],
         targetDirs: inventory.targetDirs,
         dryRun: true,
+        projections: this.deduplicateProjections(dryProjections),
       };
     }
 
+
     const updated: InstalledPackageRecord[] = [];
     const skipped: Array<{ record: InstalledPackageRecord; reason: string }> = [];
+    const collectedProjections: ProjectionInfo[] = [];
 
     for (const record of recordsToUpdate) {
       const lockfilePath = path.join(record.targetDir, 'agents-united.json');
@@ -190,7 +227,7 @@ export class UpdateEngine {
 
       // Re-install with upstream version. Fan-out flows from --fanout if given,
       // otherwise the installer inherits the fanout recorded in the lockfile.
-      await this.installer.install(record.name, {
+      const installResult = await this.installer.install(record.name, {
         scope: record.scope,
         method: record.method,
         hosts: [record.host],
@@ -199,12 +236,26 @@ export class UpdateEngine {
         force: true, // force overwrite since we passed collision check above
       });
 
+      if (installResult.projections) {
+        collectedProjections.push(...installResult.projections);
+      }
+
       // Synchronize bundleVersion in lockfile
       if (await fs.pathExists(lockfilePath)) {
         const updatedLockfile: LockfileManifest = await fs.readJson(lockfilePath);
         updatedLockfile.bundleVersions = updatedLockfile.bundleVersions || {};
         updatedLockfile.bundleVersions[record.name] = record.upstreamVersion;
         await fs.writeJson(lockfilePath, updatedLockfile, { spaces: 2 });
+        if (updatedLockfile.fanout) {
+          record.fanout = updatedLockfile.fanout;
+          record.projections = updatedLockfile.fanout;
+          record.displayLocation = InventoryScanner.formatDisplayLocation(
+            record.scope,
+            record.host,
+            record.targetDir,
+            updatedLockfile.fanout
+          );
+        }
       }
 
       record.installedVersion = record.upstreamVersion;
@@ -217,6 +268,8 @@ export class UpdateEngine {
       skipped,
       targetDirs: inventory.targetDirs,
       dryRun: false,
+      projections: this.deduplicateProjections(collectedProjections),
     };
+
   }
 }
