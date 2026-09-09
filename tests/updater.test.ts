@@ -201,4 +201,56 @@ describe('UpdateEngine (TDD)', () => {
     const unchangedLockfile: LockfileManifest = await fs.readJson(lockfilePath);
     expect(unchangedLockfile.bundleVersions?.['software-engineering']).toBe('0.9.0');
   });
+
+  it('Tier 3: should return regenerated projections and report scanned locations in checkUpdates', async () => {
+    const agentsDir = path.join(testDir, '.agents');
+    await installer.install('software-engineering', {
+      targetDir: agentsDir,
+      scope: 'project',
+      hosts: ['agents'],
+      method: 'copy',
+      fanout: ['cline'],
+    });
+
+    const report = await updater.checkUpdates({
+      targetDir: agentsDir,
+      scope: 'project',
+      hosts: ['agents'],
+      cwd: testDir,
+    });
+
+    expect(report.scannedScopes).toBeDefined();
+    expect(report.scannedLocations).toBeDefined();
+    expect(report.items[0].record.fanout).toContain('cline');
+    expect(report.items[0].record.displayLocation).toContain('+ cline');
+
+    // Run update with __all__ (e.g. Re-sync / Repair All Packages)
+    const result = await updater.update('__all__', {
+      targetDir: agentsDir,
+      scope: 'project',
+      hosts: ['agents'],
+      cwd: testDir,
+    });
+
+    expect(result.updated).toHaveLength(1);
+    expect(result.updated[0].displayLocation).toContain('+ cline');
+    expect(result.projections).toBeDefined();
+    expect(result.projections.length).toBeGreaterThan(0);
+    expect(result.projections.some(p => p.host === 'cline')).toBe(true);
+
+    // Also verify dryRun returns simulated projections
+    const dryResult = await updater.update('__all__', {
+      targetDir: agentsDir,
+      scope: 'project',
+      hosts: ['agents'],
+      cwd: testDir,
+      dryRun: true,
+    });
+
+    expect(dryResult.dryRun).toBe(true);
+    expect(dryResult.projections).toBeDefined();
+    expect(dryResult.projections.length).toBeGreaterThan(0);
+  });
 });
+
+

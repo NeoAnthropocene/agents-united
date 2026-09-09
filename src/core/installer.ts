@@ -452,11 +452,24 @@ private toPosix(p: string): string {
       .filter(h => isKnownHost(h) && HOST_REGISTRY[h]?.projectionCapable);
 
     if (options.dryRun) {
+      let effectiveDryFanout = fanoutHosts;
+      if (options.fanout === undefined && hasCanonicalAgents) {
+        const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
+        const lockfilePath = path.join(agentsTarget, 'agents-united.json');
+        if (await fs.pathExists(lockfilePath)) {
+          const lockfile = await fs.readJson(lockfilePath).catch(() => null);
+          if (lockfile?.fanout) {
+            effectiveDryFanout = (lockfile.fanout as string[])
+              .filter(h => isKnownHost(h) && HOST_REGISTRY[h]?.projectionCapable);
+          }
+        }
+      }
       const projections = hasCanonicalAgents
-        ? await this.buildProjections(fanoutHosts, resolved, registryDir, scope, options.targetDir)
+        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, options.targetDir)
         : [];
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }
+
 
     const now = new Date().toISOString();
     // Collect projections across target-dir iterations (dedup by host+path).

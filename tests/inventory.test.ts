@@ -119,7 +119,39 @@ describe('InventoryScanner (TDD)', () => {
     const loc = InventoryScanner.formatDisplayLocation('project', 'agents', './.agents');
     expect(loc).toBe('[project: ./.agents]');
 
+    const locWithFanout = InventoryScanner.formatDisplayLocation('project', 'agents', './.agents', ['cline']);
+    expect(locWithFanout).toBe('[project: ./.agents + cline]');
+
     const globalLoc = InventoryScanner.formatDisplayLocation('global', 'gemini', '~/.gemini/config');
     expect(globalLoc).toBe('[global: ~/.gemini/config]');
   });
+
+  it('Tier 3: should record fanout and scannedLocations in PackageInventory', async () => {
+    const agentsDir = path.join(testDir, '.agents');
+    await installer.install('software-engineering', {
+      targetDir: agentsDir,
+      scope: 'project',
+      hosts: ['agents'],
+      method: 'copy',
+      fanout: ['cline'],
+    });
+
+    const inv = await scanner.scan({
+      targetDir: agentsDir,
+      scope: 'project',
+      hosts: ['agents'],
+      cwd: testDir,
+    });
+
+    expect(inv.bundles).toHaveLength(1);
+    expect(inv.bundles[0].fanout).toEqual(['cline']);
+    expect(inv.bundles[0].displayLocation).toContain('+ cline');
+    expect(inv.scannedScopes).toContain('project');
+    expect(inv.scannedLocations).toBeDefined();
+    expect(inv.scannedLocations?.length).toBeGreaterThan(0);
+    const loc = inv.scannedLocations?.find(l => l.scope === 'project');
+    expect(loc?.packageCount).toBe(1);
+    expect(loc?.fanout).toContain('cline');
+  });
 });
+

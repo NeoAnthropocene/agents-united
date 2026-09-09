@@ -32,7 +32,150 @@ export function detectWorkspaceHosts(cwd: string = process.cwd()): AgentHost[] {
   return detected;
 }
 
-function renderProjections(projections: ProjectionInfo[]): string {
+export function getTerminalContentWidth(): number {
+  const cols = typeof process !== 'undefined' && process.stdout?.columns ? process.stdout.columns : 80;
+  return Math.max(40, Math.min(cols - 8, 68));
+}
+
+export function wrapText(text: string, maxLen?: number, indent: string = ''): string[] {
+  if (!text) return [];
+  const limit = maxLen ?? getTerminalContentWidth();
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = indent;
+
+  for (const word of words) {
+    if (!word) continue;
+    if (current.length > indent.length && (current.length + 1 + word.length > limit)) {
+      lines.push(current);
+      current = indent + word;
+    } else {
+      current = current.length === indent.length ? current + word : current + ' ' + word;
+    }
+  }
+
+  if (current.trim().length > 0) {
+    lines.push(current);
+  }
+
+  return lines;
+}
+
+export function formatWrappedList(
+  items: string[],
+  indent: string = '  ',
+  maxLineLen?: number
+): string[] {
+  if (!items || items.length === 0) return [];
+
+  const limit = maxLineLen ?? getTerminalContentWidth();
+  const lines: string[] = [];
+  let currentLine = indent;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const isLast = i === items.length - 1;
+    const token = isLast ? item : `${item}, `;
+
+    if (currentLine.length > indent.length && (currentLine.length + token.length > limit)) {
+      lines.push(currentLine.trimEnd());
+      currentLine = indent + token;
+    } else {
+      currentLine += token;
+    }
+  }
+
+  if (currentLine.trim().length > 0) {
+    lines.push(currentLine.trimEnd());
+  }
+
+  return lines;
+}
+
+export interface InstallationSummaryOptions {
+  bundleName: string;
+  scope: string;
+  method: string;
+  hosts: string[];
+  agents: string[];
+  skills: string[];
+  targetDirs: string[];
+  projections?: ProjectionInfo[];
+}
+
+export function formatInstallationSummary(options: InstallationSummaryOptions): string {
+  const { bundleName, scope, method, hosts, agents, skills, targetDirs, projections } = options;
+  const limit = getTerminalContentWidth();
+
+  const lines: string[] = [
+    `Bundle: ${bundleName}`,
+    `Scope: ${scope}`,
+    `Method: ${method}`,
+    `Targets: ${hosts.join(', ')}`,
+  ];
+
+  // Agents
+  if (agents.length === 0) {
+    lines.push(`Agents: None`);
+  } else {
+    const inlineAgents = `Agents (${agents.length}): ${agents.join(', ')}`;
+    if (inlineAgents.length <= limit) {
+      lines.push(inlineAgents);
+    } else {
+      lines.push(`Agents (${agents.length}):`);
+      lines.push(...formatWrappedList(agents, '  ', limit));
+    }
+  }
+
+  // Skills
+  if (skills.length === 0) {
+    lines.push(`Skills: None`);
+  } else {
+    const inlineSkills = `Skills (${skills.length}): ${skills.join(', ')}`;
+    if (inlineSkills.length <= limit) {
+      lines.push(inlineSkills);
+    } else {
+      lines.push(`Skills (${skills.length}):`);
+      lines.push(...formatWrappedList(skills, '  ', limit));
+    }
+  }
+
+  // Target Directories
+  if (targetDirs.length === 0) {
+    lines.push('Target Directories: None');
+  } else if (targetDirs.length === 1) {
+    const singleDirLine = `Target Directories: ${targetDirs[0]}`;
+    if (singleDirLine.length <= limit) {
+      lines.push(singleDirLine);
+    } else {
+      lines.push('Target Directories:');
+      lines.push(`  ${targetDirs[0]}`);
+    }
+  } else {
+    lines.push(`Target Directories (${targetDirs.length}):`);
+    for (const dir of targetDirs) {
+      lines.push(`  ${dir}`);
+    }
+  }
+
+  // Projections summary
+  if (projections && projections.length > 0) {
+    const byHost = new Map<string, number>();
+    for (const p of projections) {
+      byHost.set(p.host, (byHost.get(p.host) ?? 0) + 1);
+    }
+    const hostSummaries: string[] = [];
+    for (const [host, count] of byHost) {
+      const label = HOST_REGISTRY[host]?.label ?? host;
+      hostSummaries.push(`${label} (${count} file${count > 1 ? 's' : ''})`);
+    }
+    lines.push(`Projections: ${hostSummaries.join(', ')}`);
+  }
+
+  return lines.join('\n');
+}
+
+export function renderProjections(projections: ProjectionInfo[]): string {
   const byHost = new Map<string, ProjectionInfo[]>();
   for (const p of projections) {
     const list = byHost.get(p.host) ?? [];
@@ -44,7 +187,12 @@ function renderProjections(projections: ProjectionInfo[]): string {
     lines.push(`${HOST_REGISTRY[host]?.label ?? host} — ${items.length} file${items.length > 1 ? 's' : ''}`);
     for (const p of items) {
       lines.push(`  → ${p.path}`);
-      for (const w of p.warnings) lines.push(pc.yellow(`  ⚠ ${w}`));
+      for (const w of p.warnings) {
+        const wrapped = wrapText(`⚠ ${w}`, 68, '  ');
+        for (const wl of wrapped) {
+          lines.push(pc.yellow(wl));
+        }
+      }
     }
   }
   return lines.join('\n');
@@ -650,22 +798,31 @@ cli
       }
 
       note(
-        `Bundle: ${result.installed.targetBundle || 'Single Item'}\n` +
-        `Scope: ${scope}\n` +
-        `Method: ${result.method}\n` +
-        `Targets: ${hosts.join(', ')}\n` +
-        `Agents: ${result.installed.agents.join(', ') || 'None'}\n` +
-        `Skills: ${result.installed.skills.join(', ') || 'None'}\n` +
-        `Target Directories: ${result.targetDirs.join('\n  ')}` +
-        (result.projections.length > 0 ? `\n\nProjections:\n${renderProjections(result.projections)}` : ''),
+        formatInstallationSummary({
+          bundleName: result.installed.targetBundle || 'Single Item',
+          scope,
+          method: result.method,
+          hosts,
+          agents: result.installed.agents,
+          skills: result.installed.skills,
+          targetDirs: result.targetDirs,
+          projections: result.projections,
+        }),
         'Installation Success'
       );
+
+      if (result.projections.length > 0) {
+        note(renderProjections(result.projections), 'Installed Projections');
+      }
 
       const hasClineProjection = result.projections.some(p => p.host === 'cline');
 
       if (hasClineProjection && !options.dryRun) {
         note(
-          pc.green(`Already active: any Cline session in this workspace now sees this bundle's skills, subagent_* agent tools, rules & workflow commands (ADR 0013 native discovery).`),
+          pc.green(
+            `Already active: any Cline session in this workspace now sees this bundle's\n` +
+            `skills, subagent_* agent tools, rules & workflow commands (ADR 0013 native discovery).`
+          ),
           'Native Activation'
         );
       }
@@ -752,8 +909,9 @@ cli
       if (!options.dryRun && targetBundleDef?.tier === 'organization') {
         note(
           pc.cyan(
-            '💡 In-Session MCP Setup: Your Lead Orchestrator will automatically check your runtime tools\n' +
-            'and guide configuration of live browser automation, design tokens, or cloud APIs on demand.'
+            '💡 In-Session MCP Setup: Your Lead Orchestrator will automatically check\n' +
+            'your runtime tools and guide configuration of live browser automation,\n' +
+            'design tokens, or cloud APIs on demand.'
           ),
           'Adaptive Tooling'
         );
@@ -916,7 +1074,29 @@ cli
       targetsToUpdate = '__all__';
     } else {
       // Interactive Mode
+      const locationLines: string[] = [];
+      if (report.scannedLocations && report.scannedLocations.length > 0) {
+        for (const loc of report.scannedLocations) {
+          const scopeLabel = loc.scope === 'project' ? 'Project' : 'Global';
+          const fanoutStr = loc.fanout.length > 0 ? ` ${pc.magenta(`(projections: ${loc.fanout.join(', ')})`)}` : '';
+          locationLines.push(`  • ${scopeLabel} (${loc.displayLocation}): ${pc.bold(loc.packageCount)} package${loc.packageCount !== 1 ? 's' : ''}${fanoutStr}`);
+        }
+      } else {
+        const projectCount = report.items.filter(i => i.record.scope === 'project').length;
+        const globalCount = report.items.filter(i => i.record.scope === 'global').length;
+        if (!options.global) {
+          locationLines.push(`  • Project (./.agents): ${pc.bold(projectCount)} package${projectCount !== 1 ? 's' : ''}`);
+        }
+        locationLines.push(`  • Global (~/.agents): ${pc.bold(globalCount)} package${globalCount !== 1 ? 's' : ''}`);
+      }
+
+      const allDetectedFanouts = Array.from(new Set(report.items.flatMap(i => i.record.fanout || [])));
+      const fanoutSummary = allDetectedFanouts.length > 0
+        ? `\nActive Projections: ${allDetectedFanouts.map(h => `${pc.cyan(h)} (./.${h}/)`).join(', ')}`
+        : '';
+
       const statusMessage =
+        `Locations Checked:\n${locationLines.join('\n')}${fanoutSummary}\n\n` +
         `Total Installed Packages: ${report.totalCount}\n` +
         `Updates Available: ${report.outdatedCount > 0 ? pc.yellow(pc.bold(`${report.outdatedCount} package${report.outdatedCount > 1 ? 's' : ''} can be updated`)) : pc.green('0 (All up to date)')}`;
 
@@ -1008,6 +1188,9 @@ cli
 
       if (options.dryRun) {
         outro(pc.yellow(`[DRY RUN] Would update ${result.updated.length} packages in ${result.targetDirs.join(', ')}`));
+        if (result.projections && result.projections.length > 0) {
+          note(renderProjections(result.projections), 'Projection Plan (dry run)');
+        }
         return;
       }
 
@@ -1033,7 +1216,12 @@ cli
           .map(u => `  ✔ ${pc.bold(u.name)} ${pc.cyan(u.displayLocation)} ${pc.green(`(v${u.installedVersion})`)}`)
           .join('\n');
         note(updatedList, 'Updated Packages');
+
+        if (result.projections && result.projections.length > 0) {
+          note(renderProjections(result.projections), 'Updated Projections');
+        }
       }
+
 
       if (result.skipped.length > 0) {
         const skippedList = result.skipped
@@ -1517,19 +1705,28 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
 
       installSpinner.stop(pc.green(`✔ Successfully installed ${bundle.name}!`));
       note(
-        `Bundle: ${result.installed.targetBundle || bundle.name}\n` +
-        `Scope: project\n` +
-        `Method: ${result.method}\n` +
-        `Targets: ${installHosts.join(', ')}\n` +
-        `Agents: ${result.installed.agents.join(', ') || 'None'}\n` +
-        `Skills: ${result.installed.skills.join(', ') || 'None'}\n` +
-        `Target Directories: ${result.targetDirs.join('\n  ')}` +
-        (result.projections.length > 0 ? `\n\nProjections:\n${renderProjections(result.projections)}` : ''),
+        formatInstallationSummary({
+          bundleName: result.installed.targetBundle || bundle.name,
+          scope: 'project',
+          method: result.method,
+          hosts: installHosts,
+          agents: result.installed.agents,
+          skills: result.installed.skills,
+          targetDirs: result.targetDirs,
+          projections: result.projections,
+        }),
         'Installation Success'
       );
+      if (result.projections.length > 0) {
+        note(renderProjections(result.projections), 'Installed Projections');
+      }
       if (result.projections.some(p => p.host === 'cline')) {
         note(
-          pc.green(`Already active: any Cline session in this workspace now sees this bundle's skills, subagent_* agent tools, rules & workflow commands (ADR 0013 native discovery). Use "agents start ${bundle.name}" for a pre-seeded team session.`),
+          pc.green(
+            `Already active: any Cline session in this workspace now sees this bundle's\n` +
+            `skills, subagent_* agent tools, rules & workflow commands (ADR 0013 native discovery).\n` +
+            `Use "agents start ${bundle.name}" for a pre-seeded team session.`
+          ),
           'Native Activation'
         );
       }
