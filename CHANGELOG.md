@@ -1,3 +1,21 @@
+# [0.8.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.4...v0.8.0) (2026-09-09)
+
+
+### Bug Fixes
+
+* **ci:** add direct fast-forward push and workflow_dispatch to sync workflow ([#28](https://github.com/NeoAnthropocene/agents-united/issues/28)) ([8e39deb](https://github.com/NeoAnthropocene/agents-united/commit/8e39deb6685c271a8d1626deb32c6dbb52f2bddc))
+* **ci:** direct merge and push in sync workflow to eliminate bot PR approval failures ([#31](https://github.com/NeoAnthropocene/agents-united/issues/31)) ([3414363](https://github.com/NeoAnthropocene/agents-united/commit/3414363ce1fb7ac0c44d1b0b6fb81fa7ac8d6517))
+* **ci:** prefer immediate merge for sync PRs and update workflow guide ([#25](https://github.com/NeoAnthropocene/agents-united/issues/25)) ([a56df1e](https://github.com/NeoAnthropocene/agents-united/commit/a56df1e1357ce06ea0fe065683e21450587c92e6))
+* **ci:** wire SYNC_TOKEN with fallback in sync-main-to-dev workflow ([#34](https://github.com/NeoAnthropocene/agents-united/issues/34)) ([cfc1512](https://github.com/NeoAnthropocene/agents-united/commit/cfc1512c4c9fe705a8bad0dd3b5f1f24fc6aab42))
+* Planner-Orchestrator Mode for Tier-1 Domain Bundles (Plan 013 / ADR 0015) ([#22](https://github.com/NeoAnthropocene/agents-united/issues/22)) ([2d6c7ac](https://github.com/NeoAnthropocene/agents-united/commit/2d6c7aced7edb337a18848c07ff9976107819b21))
+* prevent tui box overflow on add/init and enhance update inventory reporting ([#36](https://github.com/NeoAnthropocene/agents-united/issues/36)) ([4b29f3b](https://github.com/NeoAnthropocene/agents-united/commit/4b29f3bce0b2069e8e8bbae4fecf7b8c0531bb3c))
+
+
+### Features
+
+* **release:** configure releaseRules in .releaserc.json to treat Release: as minor releases ([#19](https://github.com/NeoAnthropocene/agents-united/issues/19)) ([c818c69](https://github.com/NeoAnthropocene/agents-united/commit/c818c696507d83491f32051a39bd7cb621194c2b))
+* Subagent-First Planning Dialogue Loop for digital-agency (Plan 012 / ADR 0014) ([#12](https://github.com/NeoAnthropocene/agents-united/issues/12)) ([9daf529](https://github.com/NeoAnthropocene/agents-united/commit/9daf5290224c22a9cb09f1b9cdf8d0f827193229))
+
 ## [0.7.4](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.3...v0.7.4) (2026-09-09)
 
 
