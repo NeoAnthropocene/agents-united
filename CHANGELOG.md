@@ -1,3 +1,11 @@
+# [0.9.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.8.0...v0.9.0) (2026-09-09)
+
+
+### Features
+
+* add comprehensive GitHub issue forms and PR templates ([#39](https://github.com/NeoAnthropocene/agents-united/issues/39)) ([7b3cbb8](https://github.com/NeoAnthropocene/agents-united/commit/7b3cbb8203259a706b5439b7d17d493468df3f6b))
+* add comprehensive GitHub issue forms and PR templates for contributors ([ee34311](https://github.com/NeoAnthropocene/agents-united/commit/ee34311813196096608949e9e3ee3ea93e8f3086))
+
 # [0.8.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.7.4...v0.8.0) (2026-09-09)
 
 
