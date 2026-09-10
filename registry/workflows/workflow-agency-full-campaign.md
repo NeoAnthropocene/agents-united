@@ -8,7 +8,7 @@ estimatedDuration: "120-180m"
 # Workflow: Digital Agency Full-Funnel Campaign Orchestration
 
 ## Overview & Scope
-The Full-Funnel Campaign workflow coordinates the AstrolabsAI team — Chris (`orchestrator-marketing`, coordinator), Ava (`subagent-marketing-growth-strategist`), Kaan (`subagent-marketing-conversion-specialist`), Jamileh (`subagent-marketing-creative-designer`), Yavuz (`subagent-marketing-content-strategist`), Jale (`subagent-marketing-campaign-specialist`) — through dynamic DAG message handoffs (`/handoff`, `/design-handoff-spec`) across Tri-Tier execution envelopes. Spawn each specialist via its configured Cline tool (e.g. `subagent_marketing_growth_strategist` for Ava).
+The Full-Funnel Campaign workflow coordinates the AstrolabsAI team — Chris (`orchestrator-digital-agency`, coordinator), Ava (`subagent-marketing-growth-strategist`), Kaan (`subagent-marketing-conversion-specialist`), Jamileh (`subagent-marketing-creative-designer`), Yavuz (`subagent-marketing-content-strategist`), Jale (`subagent-marketing-campaign-specialist`) — through dynamic DAG message handoffs (`/handoff`, `/design-handoff-spec`) across Tri-Tier execution envelopes. Spawn each specialist via its configured Cline tool (e.g. `subagent_marketing_growth_strategist` for Ava).
 
 ## Execution Flowchart
 ```mermaid

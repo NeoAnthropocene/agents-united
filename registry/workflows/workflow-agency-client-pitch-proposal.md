@@ -41,7 +41,7 @@ graph TD
 - Define Acceptance Criteria, SLA expectations, and risk contingencies.
 
 ## Phase 3: Verification & Packaging
-- Verify timeline feasibility and budget alignment with the Director (Chris / `orchestrator-marketing`).
+- Verify timeline feasibility and budget alignment with the Director (Chris / `orchestrator-digital-agency`).
 - Output executive markdown proposal and client presentation outline.
 
 ## Phase Transition Criteria & Deterministic Verification Gates

@@ -218,7 +218,7 @@ Follow REST standards.
     const planningBundle: BundleDefinition = {
       name: 'digital-agency',
       description: 'Full-service digital product agency powered by the AstrolabsAI persona team',
-      orchestrator: 'orchestrator-marketing.md',
+      orchestrator: 'orchestrator-digital-agency.md',
       agents: [
         'subagent-marketing-growth-strategist.md',
         'subagent-marketing-content-strategist.md',
@@ -234,7 +234,7 @@ Follow REST standards.
         sidekicks: { max: 2 },
       },
       personaAliases: {
-        'chris-director': 'orchestrator-marketing',
+        'chris-director': 'orchestrator-digital-agency',
         'ava-manager': 'subagent-marketing-growth-strategist',
         'kaan-copy': 'subagent-marketing-conversion-specialist',
         'jamileh-design': 'subagent-marketing-creative-designer',
@@ -289,7 +289,7 @@ Follow REST standards.
       expect(parsed.personas).toEqual(
         expect.arrayContaining([
           { persona: 'ava-manager', role: 'subagent-marketing-growth-strategist' },
-          { persona: 'chris-director', role: 'orchestrator-marketing' },
+          { persona: 'chris-director', role: 'orchestrator-digital-agency' },
         ])
       );
       expect(parsed.personas).toHaveLength(6);

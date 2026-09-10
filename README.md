@@ -19,7 +19,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
 - **🚀 Cline Native Activation**: Bundles activate **automatically** in any Cline CLI session — skills discovered natively from `.agents/skills/`, configured-agent roles (`.cline/agents/*.yml`) exposed as spawnable `subagent_*` tools, coordinator rules (`.cline/rules/`), slash-command workflows (`.cline/workflows/`), and spec-conformant Agent Plugin packages (`plugin.json`, agent-plugins.org) in `.agents/plugins/<bundle>/`. No install step required; `agents start` remains available as an optional pre-seeded team-session launcher.
 - **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 58 Specialized Agents, 91 Skills & 69 Workflows**: 8 Lead Orchestrators coordinating 50 domain sub-agents, backed by 91 production-grade runbooks and 69 deterministic workflows.
+- **🤖 59 Specialized Agents, 91 Skills & 69 Workflows**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 91 production-grade runbooks and 69 deterministic workflows.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
 - **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
@@ -119,7 +119,10 @@ Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orch
 | **🔒 Security Operations** | `security-operations` | — | `orchestrator-security` |
 | **🔬 Deep Technical Research** | `deep-research` | — | `orchestrator-research` |
 | **💼 Business Strategy & Economics** | `business-strategy` | — | `orchestrator-business` |
-| **🏢 Organization Bundles (Experimental)** | `digital-agency` ⚡ | *(Cross-functional composite)* | `orchestrator-marketing` (Campaign Director / Chris) |
+| **🏢 Organization Bundles (Experimental)** | `digital-agency` ⚡ | *(Cross-functional composite)* | `orchestrator-digital-agency` (Campaign Director / Chris) |
+
+> [!NOTE]
+> **Bundle Development Status**: Currently, `software-engineering` and `digital-agency` are actively implemented and production-verified. Except for these two bundles, all other domain bundles are currently under active development.
 
 <details>
 <summary><strong>🔍 Click to expand full Department & Agent Roster Breakdown</strong></summary>
@@ -481,6 +484,9 @@ Every projected file is a **copy** (never a symlink) stamped with a managed mark
 All projections are recorded in `agents-united.json` under `projectedTo`, so `remove`, `update`, and `doctor` stay deterministic — they rewrite or delete exactly the managed files and never touch unmanaged/user-modified ones (unless `--force`).
 
 > ⚠️ **Per-runtime caveats.** Antigravity-only frontmatter keys — `hooks:`, `permissionMode:`, `commandExecutionPolicy:`, `mainAgent:`, `subagent:`, and `type:` — **do not execute** in other runtimes. Projected orchestrator agents degrade gracefully to "system prompt + tool list" subagents; behavior is documented, not faked. Cross-agent `invoke_subagent` orchestration works only in Antigravity and is dropped elsewhere with a warning. To add more runtimes later, re-run `agents add <bundle> -t agents --fanout <hosts>`.
+
+> [!IMPORTANT]
+> **Host Testing & Community Feedback**: Agents United has been tested manually on **Cline**, the **Google Antigravity Desktop App**, and the **Antigravity CLI**. Projections for other environments (Anthropic Claude Code, Cursor, OpenCode, Codex / AGENTS.md) are generated according to their platform specifications. We are actively looking for user feedback across other CLIs and runtimes!
 
 ---
 

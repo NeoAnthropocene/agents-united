@@ -200,7 +200,7 @@ Approved creative assets, copy variants, and landing page prototype.
 });
 
 describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
-  const coordinator = 'orchestrator-marketing';
+  const coordinator = 'orchestrator-digital-agency';
 
   const happyPathEvents = (): StreamJsonEvent[] => [
     { type: 'thought', payload: 'User brief is ambiguous — running the Planning Dialogue Loop.' },

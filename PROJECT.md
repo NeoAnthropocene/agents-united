@@ -180,7 +180,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **58 specialized agents** (8 Lead/Prime Orchestrators + 50 Sub-Agents), **91 skills**, and **69 workflows** structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
+The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), **91 skills**, and **69 workflows** structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
 
 ```
 🌐 Agents United Registry Catalog Tree
@@ -256,7 +256,7 @@ The ecosystem catalog maintains **58 specialized agents** (8 Lead/Prime Orchestr
 │       └── 🤖 Sub-agents: legal-contract-analyst, operations-strategist
 ├── 🏢  Organization Bundles (Experimental / Cross-Functional) (1 bundle)
 │   └── 📦 digital-agency ⚡ [Experimental] [Tri-Tier Execution Framework] [Planning Dialogue Loop (ADR 0014)]
-│       ├── 🤖 Lead: orchestrator-marketing (Campaign Director / Chris)
+│       ├── 🤖 Lead: orchestrator-digital-agency (Campaign Director / Chris)
 │       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Anya), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), backend-architect, frontend-architect, e2e-tester, sysops-sre-lead
 │       ├── 🔌 Prerequisites: github (MCP), firecrawl (MCP), context7 (MCP), playwright (MCP), markitdown (MCP), chrome-devtools (MCP), stitch (MCP), figma (MCP)
 │       ├── 💡 Execution Tiers: Fully Operational (API Keys) / Limited Operational (Free/Public MCP) / Brainstorming (Native Fallback)
