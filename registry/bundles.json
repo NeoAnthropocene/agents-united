@@ -1043,14 +1043,14 @@
         "mode": "subagent-first"
       },
       "personaAliases": {
-        "chris-director": "orchestrator-marketing",
+        "chris-director": "orchestrator-digital-agency",
         "ava-manager": "subagent-marketing-growth-strategist",
         "kaan-copy": "subagent-marketing-conversion-specialist",
         "jamileh-design": "subagent-marketing-creative-designer",
         "yavuz-content": "subagent-marketing-content-strategist",
         "jale-social": "subagent-marketing-campaign-specialist"
       },
-      "orchestrator": "orchestrator-marketing.md",
+      "orchestrator": "orchestrator-digital-agency.md",
       "agents": [
         "subagent-marketing-growth-strategist.md",
         "subagent-marketing-campaign-specialist.md",

@@ -272,7 +272,7 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
     summary: 'Market analysts, monetization experts, and executive spec panels',
   },
   'digital-agency': {
-    title: 'Digital Agency (TBA soon)',
+    title: 'Digital Agency',
     summary: 'Full-service digital product agency with web dev, mobile, design, SEO, and growth marketing',
   },
   'universal-orchestration': {

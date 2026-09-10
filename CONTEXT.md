@@ -39,7 +39,7 @@ A single-discipline team package scoped to one expertise domain (e.g. `software-
 _Avoid_: Simple pack, basic bundle
 
 **Organization Bundle (Tier 2 / Experimental)**:
-A cross-functional composite team modeled after real-world professional organizations (e.g. `digital-agency`, `venture-studio`). Unlike domain bundles, organization bundles orchestrate cross-discipline agents and integrate **Model Context Protocol (MCP) server tool calling**, external packages, and API keys. Because they require runtime prerequisites, they are not recommended autonomously by global orchestrators and require explicit user opt-in.
+A cross-functional composite team modeled after real-world professional organizations (e.g. `digital-agency`, `venture-studio`). Unlike domain bundles, organization bundles orchestrate cross-discipline agents and integrate **Model Context Protocol (MCP) server tool calling**, external packages, and API keys. Because they require runtime prerequisites, they are not recommended autonomously by global orchestrators and require explicit user opt-in. Led by dedicated Tier-2 organization orchestrators such as `orchestrator-digital-agency.md` (Campaign Director / Chris).
 _Avoid_: Mega bundle, company bot
 
 **Prerequisite Gate & Informative Visibility**:
@@ -227,6 +227,10 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
    - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), 90 skills, and 63 workflows.
+
+9. **🏢 Organization Bundles** (`organization`):
+   - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
+   - `digital-agency` (Cross-Functional Composite): `subagent-marketing-growth-strategist.md`, `subagent-marketing-campaign-specialist.md`, `subagent-marketing-content-strategist.md`, `subagent-marketing-creative-designer.md`, `subagent-marketing-conversion-specialist.md`, `subagent-seo-specialist.md`, `subagent-frontend-architect.md`, `subagent-qa-automation-lead.md`, `subagent-compliance-grc-specialist.md`
 
 ---
 
