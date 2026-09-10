@@ -1,3 +1,11 @@
+## [0.9.1](https://github.com/NeoAnthropocene/agents-united/compare/v0.9.0...v0.9.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* rename digital-agency orchestrator to orchestrator-digital-agency and update docs ([8756bf4](https://github.com/NeoAnthropocene/agents-united/commit/8756bf46df9467fadb8bc1b56b1562a223becdbb))
+* renaming the digital-agency orchestrator  ([#40](https://github.com/NeoAnthropocene/agents-united/issues/40)) ([a928618](https://github.com/NeoAnthropocene/agents-united/commit/a9286182e6fe91f0e8d413fba90f85e4338a67f6))
+
 # [0.9.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.8.0...v0.9.0) (2026-09-09)
 
 
