@@ -41,6 +41,8 @@ effort: medium
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
+  - multi-agent-coordination.md
+  - domain-modeling-and-adr.md
 ---
 
 # subagent-frontend-architect — System Prompt

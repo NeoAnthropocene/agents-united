@@ -32,6 +32,7 @@ rules:
   - clean-code-and-architecture.md
   - test-driven-development.md
   - domain-modeling-and-adr.md
+  - multi-agent-coordination.md
 ---
 
 # subagent-qa-automation-lead — System Prompt

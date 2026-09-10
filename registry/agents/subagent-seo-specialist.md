@@ -18,6 +18,8 @@ tools:
   - replace_file_content
   - write_to_file
   - run_command
+  - search_web
+  - read_url_content
 hooks:
   PreInvocation:
     - log: SEO Specialist activated — auditing crawlability, indexing, and on-page ranking factors.
@@ -28,6 +30,7 @@ effort: medium
 rules:
   - clean-code-and-architecture.md
   - domain-modeling-and-adr.md
+  - multi-agent-coordination.md
 ---
 
 # subagent-seo-specialist — System Prompt

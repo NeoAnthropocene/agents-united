@@ -18,6 +18,7 @@ rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
   - domain-modeling-and-adr.md
+  - multi-agent-coordination.md
 tools:
   - view_file
   - replace_file_content
@@ -25,6 +26,8 @@ tools:
   - run_command
   - grep_search
   - list_dir
+  - search_web
+  - read_url_content
 hooks:
   PreInvocation:
     - log: subagent-compliance-grc-specialist invoked — auditing compliance policies and data controls
