@@ -1,6 +1,6 @@
 # Agents United
 
-The universal package manager for AI agents. Curated teams of orchestrators, sub-agents, skills, and workflows — installed once, projected across Gemini, Claude, Cursor, Cline, and Codex.
+The universal package manager for AI agents. Curated teams of orchestrators, sub-agents, skills, and workflows — installed once, projected across Google Antigravity, Claude Code, Cursor, Cline, OpenCode, and Codex / AGENTS.md.
 
 ## Language & Ubiquitous Domain Dictionary
 
@@ -177,6 +177,36 @@ _Avoid_: Solo execution, one-agent team, subagent-first planning
 **Planning Aid Boundary**:
 The estimate-versus-deliverable line governing an orchestrator's skill use while planning (ADR 0015): consulting skills and reasoning to give provisional answers and estimates is planning aid and stays in the main session; producing a concrete deliverable — data analysis, code, assets, documents — is specialist work, deferred to the delegation map for subagent execution.
 _Avoid_: Planning-time self-execution, anything-goes skill use, provisional deliverables
+
+**Agency Assembly Line (Deterministic Execution DAG)**:
+The 4-tier deterministic execution pipeline governing `digital-agency` campaign fulfillment:
+- **Tier 1 (Strategy & Unit Economics)**: Ava + Chris
+- **Tier 2 (Creative, Copy & Content Engine)**: Kaan + Jamileh + Yavuz
+- **Tier 3 (Production, Code & Distribution)**: Frontend Architect + SEO Specialist + Jale
+- **Tier 4 (Verification, Quality & Compliance)**: QA Automation Lead + Compliance GRC Specialist
+Enforces strict data cross-pollination contracts (`design-tokens.json` to Tailwind, typed section props to React, `data-testid` & `dataLayer` to Playwright, email/ad assets to FTC/CAN-SPAM/CMP gating).
+_Avoid_: Random agent dispatch, circular handoffs, untracked asset passing
+
+**Canonical Agency MCP Suite**:
+The 8 canonical Model Context Protocol tool servers declared in `registry/bundles.json` for the `digital-agency` bundle: `github` (PR management), `firecrawl` (web research & competitive crawling), `context7` (framework documentation), `playwright` (headless browser & CRO funnel testing), `markitdown` (pitch deck & document conversion), `chrome-devtools-mcp` (Core Web Vitals & live DOM profiling), `stitch` (AI UI generation & token construction), and `figma` (design system extraction).
+_Avoid_: Arbitrary tool injection, undocumented MCP dependencies
+
+**Multimodal Asset Inlining (`@path/to/file`)**:
+The unified cross-host asset intake standard supported across Google Antigravity (2.11.0+) and Cline (4.1.x), allowing agents to ingest local PDF pitch decks (`@deck.pdf` via `StartPage`/`EndPage`), spreadsheets (`@metrics.csv`), and high-resolution UI screenshots (`@screenshot.png`) directly into prompt context without context bloat.
+_Avoid_: External OCR scripts, blind asset generation
+
+**Advertising Policy & Consent Guardrails**:
+The mandatory regulatory compliance checks enforced by `orchestrator-digital-agency` and `subagent-compliance-grc-specialist`: FTC 16 CFR § 255 conspicuous disclosures (`#ad`, `#sponsored`, `rel="sponsored"`), GDPR/ePrivacy Cookie Consent Management Platform (CMP) gating before marketing tracking pixels fire, and CAN-SPAM/CASL single-click automated unsubscribe headers and physical postal addresses.
+_Avoid_: Deceptive dark patterns, ungated tracking pixels, spam email sequences
+
+**Cross-Platform Capability Projection (Antigravity ↔ Cline)**:
+The deterministic translation architecture implemented by `ClineProjector` (ADR 0013) that bridges Google Antigravity native capabilities into Cline:
+- Strips unsupported Antigravity frontmatter keys (`rules`, `inheritCustomizations`, `effort`, `hooks`) while preserving execution semantics.
+- Projects frontmatter `rules:` into `.cline/rules/` and active coordinator markdown rules (`.agents/plugins/<bundle>/rules/`).
+- Maps Antigravity tool primitives (`view_file`, `replace_file_content`, `run_command`, `grep_search`, `list_dir`) to Cline equivalents (`read_file`, `replace_in_file`, `execute_command`, `search_files`, `list_files`) via injected runtime translation notes.
+- Projects subagents into configured `.cline/agents/*.yml` with `maxIterations: 8` and exposes them as callable `subagent_*` tools.
+- Leverages cross-host standards for multimodal inlining (`@path/to/file`) and KaTeX math formatting.
+_Avoid_: Leaking Antigravity-specific YAML keys into Cline, assuming identical tool call signatures across hosts
 
 ---
 

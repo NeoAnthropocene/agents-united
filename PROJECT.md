@@ -129,6 +129,8 @@ Architectural separation between delivery and reliability:
 | 77 | Planning Loop Eval Gatekeeper | `PlanningLoopCriteriaSchema` + deterministic Stage-1 `PlanningLoopGatekeeper` (delegation-first, sidekick, council, budget-overflow, delegation-map) with adversarial stream scenarios | M7 | DONE | PLAN_012 |
 | 78 | Planner-Orchestrator Mode for Tier-1 Domain Bundles | 30 Tier-1 bundles adopt `planningLoop.mode: 'planner-orchestrator'` — solo planning with direct skill consultation (Planning Aid Boundary), solo-composed delegation map, delegated execution. Renderer branches on mode; registry validation rejects budget/sidekicks for planner-orchestrator. Digital-agency migrated to explicit `mode: 'subagent-first'`. 7 shared orchestrator prompts updated with mode-conditional prose. | M7 | DONE | PLAN_013 |
 | 79 | Planner-Orchestrator Eval Gatekeeper | `PlannerOrchestratorCriteriaSchema` + deterministic Stage-1 `PlannerOrchestratorGatekeeper` (solo-planning, planning-aid-boundary, delegation-map, execution-delegation-first) with 3 adversarial eval scenarios | M7 | DONE | PLAN_013 |
+| 80 | Digital Agency Orchestrator DAG Assembly Line & 8 Canonical MCPs | Upgraded `orchestrator-digital-agency.md` (Campaign Director / Chris) with 4-tier deterministic execution DAG (Strategy → Creative/Copy → Production → QA/GRC), 8 canonical MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `markitdown`, `chrome-devtools-mcp`, `stitch`, `figma`), 6 campaign workflows, and Plan/Act mode safety (`cline -p`) | M7 | DONE | USER_REQUEST |
+| 81 | Subagent Platform Modernization (Google Antigravity & Cline CLI) | Modernized all 9 digital-agency subagents with AstrolabsAI persona aliases (`ava-manager`, `kaan-copy`, `jamileh-design`, `yavuz-content`, `jale-social`), peer clarification protocols (ADR 0014), KaTeX math formulas ($LTV$, $CAC$, $K$, sample size $n$), multimodal ingestion (`@path/to/file`), frontmatter `rules:` bindings, tool parity (`search_web`, `read_url_content`, `grep_search`, `list_dir`, `replace_file_content`), ad carousels, UTM taxonomy, and CAN-SPAM/FTC rules | M7 | DONE | USER_REQUEST |
 
 ---
 
@@ -154,7 +156,7 @@ All foundational implementation plans (001–011) have been fully realized, test
 
 ---
 
-## 4. Architectural Decision Records (ADRs 0001–0014)
+## 4. Architectural Decision Records (ADRs 0001–0015)
 
 All architectural decisions recorded in `docs/adr/` are indexed and summarized below:
 
@@ -257,7 +259,7 @@ The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organiza
 ├── 🏢  Organization Bundles (Experimental / Cross-Functional) (1 bundle)
 │   └── 📦 digital-agency ⚡ [Experimental] [Tri-Tier Execution Framework] [Planning Dialogue Loop (ADR 0014)]
 │       ├── 🤖 Lead: orchestrator-digital-agency (Campaign Director / Chris)
-│       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Anya), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), backend-architect, frontend-architect, e2e-tester, sysops-sre-lead
+│       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Kaan), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), seo-specialist, frontend-architect, qa-automation-lead, compliance-grc-specialist
 │       ├── 🔌 Prerequisites: github (MCP), firecrawl (MCP), context7 (MCP), playwright (MCP), markitdown (MCP), chrome-devtools (MCP), stitch (MCP), figma (MCP)
 │       ├── 💡 Execution Tiers: Fully Operational (API Keys) / Limited Operational (Free/Public MCP) / Brainstorming (Native Fallback)
 │       └── 🔁 Planning Dialogue Loop: grill → sidekicks (≤2) → Specialist Council → Delegation Map (Budget: 2 rounds / 2 peer exchanges per pair / 150 words / maxIterations 8)
@@ -297,6 +299,20 @@ Bundles are **natively active** in any Cline session after installation (ADR 001
    - `adaptive-session`: Falls back to standard session with coordinator prompt.
 3. **Safe Execution (`ClineLauncher`)**:
    - Pass argument array directly (`shell: false`), guaranteeing immunity from shell injection even when prompt strings contain `$()`, quotes, newlines, or pipes.
+
+### 6.3 Antigravity ↔ Cline Feature Projection Mapping
+When Antigravity-specific capabilities (introduced in Google Antigravity 2.10–2.12+) are authored in canonical `.agents/` definitions, `ClineProjector` (ADR 0013) deterministically translates them for Cline CLI (3.0.x / 4.x):
+
+| Feature / Primitive | Google Antigravity Native | Cline Projected Equivalent | Translation Mechanism |
+| :--- | :--- | :--- | :--- |
+| **Frontmatter Rules** | `rules: [multi-agent-coordination.md, ...]` | `.cline/rules/` + `.agents/plugins/<bundle>/rules/` | Stripped from agent YAML to prevent parser crash; injected into active session coordinator rule |
+| **Tool Calling Primitives** | `view_file`, `replace_file_content`, `run_command`, `grep_search`, `list_dir` | `read_file`, `replace_in_file`, `execute_command`, `search_files`, `list_files` | Injected `## Cline runtime note` maps tool intents transparently without modifying canonical prompts |
+| **Subagent Delegation** | Native `invoke_subagent(name, prompt)` | Spawnable `subagent_<role>` tool | Generated `.cline/agents/<role>.yml` with `maxIterations: 8` hard cap and role definitions |
+| **Planning Dialogue Loop** | In-prompt consultation protocol | Active Coordinator Rule | Consultation Budget (`maxPlanningRounds`, `maxPeerExchangesPerPair`, `summaryWordCap`) rendered into session rule |
+| **Multimodal Asset Intake** | `@path/to/file` (`StartPage`/`EndPage` for PDFs) | `@path/to/file` context inlining | Fully standard across both platforms; referenced via direct relative file paths in prompt |
+| **Econometric & Math Formulas** | Inline `\(...\)` / `$...$`, block `\[...\]` / `$$...$$` | KaTeX markdown rendering | Standard GitHub Flavored Markdown math rendering across both runtimes |
+| **Ad Carousels & Visuals** | 4-backtick ````carousel ... ```` block | Markdown carousels with fallback slides | Valid markdown with `<!-- slide -->` comments parsed gracefully across both clients |
+| **Execution Policy / Plan Mode** | `permissionMode: acceptEdits` | `cline -p` (Plan Mode) vs Act Mode | Phase 0 & 1 Socratic grilling marked `[Plan Mode Safe]`; execution deferred to Phase 2+ Act mode |
 
 ---
 
