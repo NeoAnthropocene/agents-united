@@ -124,6 +124,9 @@ Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orch
 > [!NOTE]
 > **Bundle Development Status**: Currently, `software-engineering` and `digital-agency` are actively implemented and production-verified. Except for these two bundles, all other domain bundles are currently under active development.
 
+> [!IMPORTANT]
+> **Tested Environments & Community Feedback**: Agents United has been manually tested and verified on **Cline** (CLI & VS Code Extension), **Google Antigravity Desktop App**, and **Google Antigravity CLI**. We are actively looking for user feedback, issue reports, and telemetry for other environments (Claude Code, Cursor, OpenCode, Codex).
+
 <details>
 <summary><strong>🔍 Click to expand full Department & Agent Roster Breakdown</strong></summary>
 
@@ -176,7 +179,7 @@ Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orch
 - **Essentials Base (`business-strategy`)**: `subagent-business-panel-experts`
 
 #### 🏢 Organization Bundles (Tier 2 / Experimental)
-- **Digital Product Agency (`digital-agency` ⚡)**: 10-agent cross-functional AstrolabsAI team (Chris / Ava / Kaan / Jamileh / Yavuz / Jale + engineering, QA & compliance) with Tri-Tier MCP execution modes and the Subagent-First Planning Dialogue Loop (ADR 0014).
+- **Digital Product Agency (`digital-agency` ⚡)**: 10-agent cross-functional AstrolabsAI team (Chris / Ava / Kaan / Jamileh / Yavuz / Jale + frontend architect, SEO specialist, QA automation lead, and compliance GRC specialist) with Tri-Tier MCP execution modes and the Subagent-First Planning Dialogue Loop (ADR 0014).
 
 </details>
 
@@ -411,7 +414,7 @@ Organization bundles operate across three dynamic execution envelopes:
 
 | Mode | Capability Envelope | In-Session Behavior |
 | :--- | :--- | :--- |
-| **🚀 Fully Operational** | Authenticated live MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `stitch`, `figma`) | Subagents execute live browser automation, deep web crawling, design token extraction, and automated GitHub PRs. |
+| **🚀 Fully Operational** | Authenticated live MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `markitdown`, `chrome-devtools-mcp`, `stitch`, `figma`) | Subagents execute live browser automation, deep web crawling, design token extraction, and automated GitHub PRs. |
 | **🌿 Limited Operational** | Unauthenticated MCP tools + Native CLI Fallbacks (`git`, `curl`, code generators) | Executes immediate real-world work using local browsers and terminal tools without requiring API keys or cloud tokens. |
 | **💡 Brainstorming Mode** | Pure architectural ideation, strategy, copywriting & specification drafting | Zero tool-calling overhead; ideal for offline or air-gapped environments. |
 
@@ -430,6 +433,28 @@ Organization bundles can opt into a **delegation-first planning protocol**: the 
 | `maxIterations` | 8 | Per-invocation iteration cap (`.cline/agents/*.yml`) |
 
 Enabled for `digital-agency`. See [ADR 0014](./docs/adr/0014-subagent-first-planning-loop.md) and [Plan 012](./plans/012-subagent-first-planning-loop.md).
+
+### 4-Tier Agency Assembly Line (Deterministic Execution DAG)
+
+The `digital-agency` bundle executes through a structured 4-tier delivery pipeline ensuring that technical and creative assets are rigorously cross-pollinated:
+
+```text
+Ava (Growth / LTV:CAC) + Chris (Director)
+  │ (Audience brief, target economics, core offer)
+  ▼
+Kaan (Direct Response CRO) + Jamileh (Design System) + Yavuz (SEO Content)
+  │ (Design tokens, persuasive hooks, article pillars, copy schemas)
+  ▼
+Frontend Architect (React / Tailwind) + SEO Specialist + Jale (Social / Ads)
+  │ (Production components, data-testid, GTM dataLayer, ad carousels, UTM taxonomy)
+  ▼
+QA Automation Lead (Playwright E2E) + Compliance GRC Specialist (FTC / GDPR / CASL)
+  │ (100% green test assertions, CMP gating verification, disclosure compliance)
+  ▼
+🚀 Production-Ready Campaign Artifacts & Verified PR
+```
+
+- **Cross-Host Capability Projection**: Google Antigravity features are seamlessly mapped to Cline CLI (ADR 0013) — mapping tool primitives (`view_file` → `read_file`, `replace_file_content` → `replace_in_file`, `run_command` → `execute_command`), converting frontmatter rules to native `.cline/rules/`, capping subagent iterations (`maxIterations: 8`), and preserving `@path/to/file` multimodal asset ingestion and KaTeX econometric calculations across both platforms.
 
 ### Planner-Orchestrator Mode (ADR 0015)
 
