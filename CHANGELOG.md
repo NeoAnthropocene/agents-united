@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.9.1...v0.10.0) (2026-09-10)
+
+
+### Features
+
+* (digital-agency) platform modernization, 4-tier execution DAG, and Antigravity-to-Cline projection  ([#41](https://github.com/NeoAnthropocene/agents-united/issues/41)) ([776e14a](https://github.com/NeoAnthropocene/agents-united/commit/776e14a1b68c01207c0670db3443ea77ba7a2b7c))
+
 ## [0.9.1](https://github.com/NeoAnthropocene/agents-united/compare/v0.9.0...v0.9.1) (2026-09-10)
 
 
