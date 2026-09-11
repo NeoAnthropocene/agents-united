@@ -15,6 +15,8 @@ tools:
   - view_file
   - replace_file_content
   - write_to_file
+  - find_by_name
+  - ask_question
 hooks:
   PreInvocation:
     - log: subagent-design-researcher activated — loading research context
@@ -31,6 +33,12 @@ effort: medium
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
+skills:
+  - usability-testing-protocol
+  - user-journey-mapping
+  - user-flow-mapping
+mcpServers:
+  - name: firecrawl
 ---
 
 # subagent-design-researcher — System Prompt

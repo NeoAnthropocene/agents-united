@@ -17,6 +17,7 @@ tools:
   - list_dir
   - replace_file_content
   - write_to_file
+  - find_by_name
 hooks:
   PreInvocation:
     - log: Paid Acquisition Specialist activated — reviewing campaign targeting,
@@ -28,6 +29,13 @@ effort: medium
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
+skills:
+  - paid-acquisition-ppc
+  - google-ads-optimization
+  - meta-ad-creative-testing
+  - ad-attribution-modeling
+mcpServers:
+  - name: context7
 ---
 
 # Role Definition

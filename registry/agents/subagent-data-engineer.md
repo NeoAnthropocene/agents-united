@@ -17,6 +17,7 @@ tools:
   - list_dir
   - replace_file_content
   - write_to_file
+  - find_by_name
 hooks:
   PreInvocation:
     - log: Data Engineer activated — inspecting schema definitions and SQL queries.
@@ -27,6 +28,13 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - database-design
+  - rag-vector-pipeline
+  - vector-database-design
+  - telemetry-monitoring
+mcpServers:
+  - name: context7
 ---
 
 # Role Definition

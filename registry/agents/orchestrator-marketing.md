@@ -15,9 +15,15 @@ tools:
   - multi_replace_file_content
   - write_to_file
   - run_command
+  - grep_search
+  - find_by_name
+  - list_dir
   - search_web
   - read_url_content
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - manage_task
   - schedule
@@ -31,18 +37,25 @@ hooks:
     - type: command
       command: echo "[Lifecycle] Growth Marketing Orchestration Complete."
   PreToolUse:
-    - matcher: write_to_file
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Safety Gate] Validating marketing content and SEO copy
-            generation..."
+          command: echo "[Safety Gate] Validating marketing content and SEO copy generation..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] Copy mutation detected. Verifying marketing
-            artifacts..."
+          command: echo "[Verification Gate] Copy mutation detected. Verifying marketing artifacts..."
 effort: high
+skills:
+  - growth-experiment-design
+  - copywriting-frameworks
+  - seo-audit
+  - conversion-funnel-optimization
+mcpServers:
+  - name: firecrawl
+  - name: markitdown
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

@@ -16,6 +16,7 @@ tools:
   - write_to_file
   - grep_search
   - list_dir
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-design-ops-lead activated — auditing design operations pipeline
@@ -32,6 +33,14 @@ effort: medium
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
+skills:
+  - design-ops-workflow
+  - design-system-governance
+  - design-version-control
+  - design-tokens-management
+mcpServers:
+  - name: figma
+  - name: stitch
 ---
 
 # subagent-design-ops-lead — System Prompt

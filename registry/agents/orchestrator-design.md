@@ -17,9 +17,13 @@ tools:
   - run_command
   - manage_task
   - grep_search
+  - find_by_name
   - list_dir
   - generate_image
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - schedule
 mainAgent: true
@@ -37,12 +41,21 @@ hooks:
         - type: command
           command: echo "[Safety Gate] Validating UI asset generation prompt..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] UI design mutation detected. Verifying
-            CSS/layout integrity..."
+          command: echo "[Verification Gate] UI design mutation detected. Verifying CSS/layout integrity..."
 effort: high
+skills:
+  - frontend-design
+  - stitch-design-taste
+  - ui-component-spec
+  - user-flow-mapping
+  - mobile-first-design
+mcpServers:
+  - name: stitch
+  - name: figma
+  - name: chrome-devtools-mcp
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

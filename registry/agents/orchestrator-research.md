@@ -15,9 +15,15 @@ tools:
   - multi_replace_file_content
   - write_to_file
   - run_command
+  - grep_search
+  - find_by_name
+  - list_dir
   - search_web
   - read_url_content
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - manage_task
   - schedule
@@ -36,12 +42,20 @@ hooks:
         - type: command
           command: echo "[Safety Gate] Validating research query parameters..."
   PostToolUse:
-    - matcher: write_to_file
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] Research report generated. Verifying citation
-            integrity..."
+          command: echo "[Verification Gate] Research report generated. Verifying citation integrity..."
 effort: high
+skills:
+  - technical-documentation
+  - domain-modeling
+  - grill-me
+  - handoff
+mcpServers:
+  - name: firecrawl
+  - name: context7
+  - name: markitdown
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

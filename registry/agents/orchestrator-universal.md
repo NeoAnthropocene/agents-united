@@ -18,10 +18,14 @@ tools:
   - run_command
   - manage_task
   - grep_search
+  - find_by_name
   - list_dir
+  - ask_question
   - send_message
   - schedule
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
 mainAgent: true
 subagent: true
 hooks:
@@ -36,7 +40,19 @@ hooks:
       hooks:
         - type: command
           command: echo "[Safety Gate] Validating shell command execution..."
+  PostToolUse:
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
+      hooks:
+        - type: command
+          command: echo "[Verification Gate] Artifact mutation detected. Verifying workspace integrity..."
 effort: high
+skills:
+  - mcp-setup
+  - handoff
+  - grill-me
+mcpServers:
+  - name: github
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

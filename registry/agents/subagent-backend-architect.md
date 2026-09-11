@@ -19,6 +19,7 @@ tools:
   - write_to_file
   - run_command
   - grep_search
+  - find_by_name
   - list_dir
 hooks:
   PreInvocation:
@@ -36,6 +37,15 @@ hooks:
       log: Tool execution completed with status report
 inheritCustomizations: false
 effort: medium
+skills:
+  - backend-api-design
+  - database-design
+  - architecture-design
+  - code-refactoring
+  - performance-optimization
+mcpServers:
+  - name: github
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

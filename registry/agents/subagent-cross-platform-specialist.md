@@ -17,6 +17,7 @@ tools:
   - list_dir
   - replace_file_content
   - write_to_file
+  - find_by_name
 hooks:
   PreInvocation:
     - log: Cross-Platform Specialist activated — inspecting Expo/React Native/Flutter
@@ -28,6 +29,15 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - mobile-ios-design
+  - mobile-android-design
+  - react-best-practices
+  - mobile-platform-offline-validate
+  - maestro-mobile-testing
+mcpServers:
+  - name: github
+  - name: context7
 ---
 
 # Role Definition

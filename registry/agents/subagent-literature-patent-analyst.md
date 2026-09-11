@@ -3,9 +3,10 @@ name: subagent-literature-patent-analyst
 version: 2.1.0
 type: subagent
 description: >
-  Academic literature and patent prior art analyst. Conducts scientific literature
-  reviews (arXiv, Semantic Scholar, IEEE, ACM), synthesizes empirical methodologies
-  and benchmark ablation studies, maps citation networks, and assesses patent claims.
+  Academic literature and patent prior art analyst. Conducts scientific
+  literature reviews (arXiv, Semantic Scholar, IEEE, ACM), synthesizes empirical
+  methodologies and benchmark ablation studies, maps citation networks, and
+  assesses patent claims.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -23,11 +24,20 @@ tools:
   - run_command
   - grep_search
   - list_dir
+  - find_by_name
 hooks:
   PreInvocation:
-    - log: subagent-literature-patent-analyst invoked — reviewing academic literature and patent prior art
+    - log: subagent-literature-patent-analyst invoked — reviewing academic literature
+        and patent prior art
   PostInvocation:
-    - log: subagent-literature-patent-analyst finished — returning literature synthesis to orchestrator
+    - log: subagent-literature-patent-analyst finished — returning literature
+        synthesis to orchestrator
+skills:
+  - technical-documentation
+  - domain-modeling
+mcpServers:
+  - name: firecrawl
+  - name: markitdown
 ---
 
 # subagent-literature-patent-analyst — System Prompt

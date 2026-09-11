@@ -13,6 +13,7 @@ subagent: true
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - write_to_file
   - replace_file_content
@@ -32,6 +33,15 @@ hooks:
       log: Saved CRO audit report — verify ICE prioritization matrix.
 inheritCustomizations: false
 effort: medium
+skills:
+  - conversion-funnel-optimization
+  - copywriting-frameworks
+  - ab-test-setup
+  - signup-flow-cro
+  - onboarding-cro
+mcpServers:
+  - name: playwright
+  - name: chrome-devtools-mcp
 rules:
   - clean-code-and-architecture.md
   - quality-aesthetics-accessibility.md

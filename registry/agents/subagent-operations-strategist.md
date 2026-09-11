@@ -23,11 +23,20 @@ tools:
   - run_command
   - grep_search
   - list_dir
+  - find_by_name
 hooks:
   PreInvocation:
-    - log: subagent-operations-strategist invoked — drafting operations plan and OKR frameworks
+    - log: subagent-operations-strategist invoked — drafting operations plan and OKR
+        frameworks
   PostInvocation:
-    - log: subagent-operations-strategist finished — returning operations strategy to orchestrator
+    - log: subagent-operations-strategist finished — returning operations strategy to
+        orchestrator
+skills:
+  - technical-documentation
+  - to-tickets
+  - to-spec
+mcpServers:
+  - name: github
 ---
 
 # subagent-operations-strategist — System Prompt

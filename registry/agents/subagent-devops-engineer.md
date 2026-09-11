@@ -22,6 +22,7 @@ tools:
   - run_command
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: DevOps Engineer activated — inspecting CI/CD configuration files, cloud
@@ -41,6 +42,14 @@ effort: medium
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
+skills:
+  - ci-cd-pipeline-automation
+  - docker-deployment
+  - azure-infrastructure-bicep
+  - telemetry-monitoring
+  - git-guardrails
+mcpServers:
+  - name: github
 ---
 
 # subagent-devops-engineer — System Prompt

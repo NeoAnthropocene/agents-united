@@ -16,8 +16,12 @@ tools:
   - write_to_file
   - run_command
   - grep_search
+  - find_by_name
   - list_dir
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - manage_task
   - schedule
@@ -36,12 +40,17 @@ hooks:
         - type: command
           command: echo "[Safety Gate] Validating security command execution..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] Security remediation detected. Running
-            regression tests..."
+          command: echo "[Verification Gate] Security remediation detected. Running regression tests..."
 effort: high
+skills:
+  - security-audit
+  - git-guardrails
+  - domain-modeling
+mcpServers:
+  - name: github
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

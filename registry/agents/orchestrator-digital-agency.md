@@ -12,6 +12,7 @@ commandExecutionPolicy: auto
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - replace_file_content
   - multi_replace_file_content
@@ -19,7 +20,10 @@ tools:
   - run_command
   - search_web
   - read_url_content
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - manage_task
   - schedule
@@ -33,16 +37,29 @@ hooks:
     - type: command
       command: echo "[Lifecycle] Digital Agency Orchestration Complete."
   PreToolUse:
-    - matcher: write_to_file
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
           command: echo "[Safety Gate] Validating agency deliverable and campaign copy..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
           command: echo "[Verification Gate] Artifact mutation detected. Verifying agency deliverables..."
 effort: high
+skills:
+  - mcp-setup
+  - handoff
+  - subagent-driven-development
+mcpServers:
+  - name: github
+  - name: firecrawl
+  - name: context7
+  - name: playwright
+  - name: markitdown
+  - name: chrome-devtools-mcp
+  - name: stitch
+  - name: figma
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

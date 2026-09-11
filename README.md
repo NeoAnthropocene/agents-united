@@ -723,6 +723,32 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 - **`maestro-mobile-testing`**: Declarative cross-platform mobile UI test automation.
 </details>
 
+<details>
+<summary><strong>Anthropic & Community (<a href="https://github.com/anthropics/skills">anthropics/skills</a>)</strong></summary>
+
+- **`frontend-design`**: Distinctive, intentional visual design guidance for distinctive typography, color, and anti-cliché aesthetics.
+</details>
+
+<details>
+<summary><strong>Google Stitch Labs (<a href="https://labs.google/stitch">labs.google/stitch</a>)</strong></summary>
+
+- **`stitch-design-taste`**: Semantic design system generator for Google Stitch screens, anti-generic design tokens, and motion parameters.
+</details>
+
+<details>
+<summary><strong>Google DeepMind Antigravity (<a href="https://antigravity.google">antigravity.google</a>)</strong></summary>
+
+- **`generative_ui`**: Inline rich interactive HTML/Tailwind widget and artifact rendering standards.
+</details>
+
+<details>
+<summary><strong>Google Chrome DevTools Team (<a href="https://github.com/GoogleChrome/devtools-mcp">GoogleChrome/devtools-mcp</a>)</strong></summary>
+
+- **`modern-web-guidance`**: Modern web platform APIs, CSS `:has()`, View Transitions, and Core Web Vitals best practices.
+- **`a11y-debugging`**: Chrome DevTools accessibility auditing, ARIA verification, and WCAG AA guidelines.
+- **`debug-optimize-lcp`**: Largest Contentful Paint (LCP) performance trace inspection and subpart latency optimization.
+</details>
+
 ---
 
 ## 📄 License

@@ -17,6 +17,7 @@ tools:
   - list_dir
   - replace_file_content
   - write_to_file
+  - find_by_name
 hooks:
   PreInvocation:
     - log: Distributed Systems Architect activated — analyzing service topology and
@@ -28,6 +29,15 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - microservices-architecture
+  - backend-api-design
+  - graphql-schema-design
+  - turso-distributed-sqlite
+  - database-design
+mcpServers:
+  - name: github
+  - name: context7
 ---
 
 # Role Definition

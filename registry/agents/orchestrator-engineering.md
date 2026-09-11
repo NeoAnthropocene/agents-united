@@ -17,8 +17,12 @@ tools:
   - run_command
   - manage_task
   - grep_search
+  - find_by_name
   - list_dir
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - schedule
 mainAgent: true
@@ -36,12 +40,21 @@ hooks:
         - type: command
           command: echo "[Safety Gate] Validating terminal command execution..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] Code mutation detected. Verifying build
-            status..."
+          command: echo "[Verification Gate] Code mutation detected. Verifying build status..."
 effort: high
+skills:
+  - subagent-driven-development
+  - test-driven-development
+  - git-guardrails
+  - architecture-design
+  - code-refactoring
+mcpServers:
+  - name: github
+  - name: context7
+  - name: chrome-devtools-mcp
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

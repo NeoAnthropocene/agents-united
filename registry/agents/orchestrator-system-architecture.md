@@ -17,8 +17,12 @@ tools:
   - run_command
   - manage_task
   - grep_search
+  - find_by_name
   - list_dir
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - schedule
 mainAgent: true
@@ -36,12 +40,20 @@ hooks:
         - type: command
           command: echo "[Safety Gate] Validating architectural verification command..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] Architectural file mutation detected.
-            Validating type safety..."
+          command: echo "[Verification Gate] Architectural file mutation detected. Validating type safety..."
 effort: high
+skills:
+  - architecture-design
+  - microservices-architecture
+  - domain-modeling
+  - backend-api-design
+  - database-design
+mcpServers:
+  - name: github
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

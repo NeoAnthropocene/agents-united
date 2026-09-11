@@ -14,6 +14,7 @@ subagent: true
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - replace_file_content
   - write_to_file
@@ -27,6 +28,15 @@ hooks:
     - log: SEO analysis complete — technical recommendations, schemas, and audit report ready.
 inheritCustomizations: false
 effort: medium
+skills:
+  - seo-audit
+  - technical-seo-audit
+  - programmatic-seo
+  - schema-markup-strategy
+  - debug-optimize-lcp
+mcpServers:
+  - name: firecrawl
+  - name: chrome-devtools-mcp
 rules:
   - clean-code-and-architecture.md
   - domain-modeling-and-adr.md

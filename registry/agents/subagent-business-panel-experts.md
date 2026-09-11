@@ -16,6 +16,9 @@ tools:
   - write_to_file
   - search_web
   - grep_search
+  - find_by_name
+  - list_dir
+  - ask_question
 hooks:
   PreInvocation:
     - log: subagent-business-panel-experts invoked — initializing business strategy
@@ -31,6 +34,11 @@ hooks:
       log: Strategy report artifact saved to filesystem
 inheritCustomizations: false
 effort: medium
+skills:
+  - technical-documentation
+  - domain-modeling
+mcpServers:
+  - name: markitdown
 rules:
   - clean-code-and-architecture.md
 ---

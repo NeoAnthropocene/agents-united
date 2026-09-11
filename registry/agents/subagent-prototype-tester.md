@@ -17,6 +17,7 @@ tools:
   - list_dir
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-prototype-tester activated — initializing prototype evaluation
@@ -34,6 +35,13 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - interactive-prototype-builder
+  - clickable-prototype-spec
+  - usability-testing-protocol
+mcpServers:
+  - name: chrome-devtools-mcp
+  - name: playwright
 ---
 
 # subagent-prototype-tester — System Prompt

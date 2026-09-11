@@ -15,6 +15,9 @@ tools:
   - view_file
   - replace_file_content
   - write_to_file
+  - grep_search
+  - find_by_name
+  - list_dir
 hooks:
   PreInvocation:
     - log: UX Strategist activated — loading product context and user data.
@@ -28,6 +31,13 @@ hooks:
       log: Content updated — validate that user journey integrity is preserved.
 inheritCustomizations: false
 effort: medium
+skills:
+  - user-flow-mapping
+  - mobile-first-design
+  - responsive-design-audit
+  - interaction-pattern-library
+mcpServers:
+  - name: figma
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
