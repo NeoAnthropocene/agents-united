@@ -193,3 +193,27 @@ the probe copies (`test-minimal.md`, `test-full.md`,
 `subagent-marketing-growth-strategist.md`) are deleted from the user-global store
 (`~/.gemini/config/agents/`), and the scratch workspace `.agents/agents/` retains only the ten
 canonical `digital-agency` bundle agents.
+
+---
+## Addendum (2026-09-11) — Deep Forensic Disassembly of `language_server.exe`: `findAgentByName` and `CalculateAllowedSubagents`
+
+**Status:** Confirmed & Root-Caused at Binary Level.
+
+During maintainer testing of `orchestrator-engineering` in Antigravity Desktop GUI, we conducted a reverse-engineering audit of `language_server.exe` (PE binary at `%LOCALAPPDATA%\Programs\antigravity\resources\bin\language_server.exe`):
+
+1. **Exact Rejection Path**:
+   In `google3/third_party/jetski/cortex/handlers.(*InvokeSubagentHandler).findAgentByName` (VA `0x141db13c0`), subagent names requested via `invoke_subagent` are validated against:
+   - `CalculateAllowedSubagents()` (VA `0x141940b20`): In standard project threads, this returns **only** `defaultBuiltinSubagentNames` (`self`, `research`).
+   - `Manager.GetDefinedAgentByName()`: Checks agents created dynamically in the conversation via `define_subagent`.
+   - If the requested agent is not built-in and was not defined via `define_subagent`, `findAgentByName` jumps directly to:
+     `NewWithDepthf("subagent %q not found or not allowed to be invoked")` at VA `0x141db1940`.
+
+2. **The `define_subagent` Workaround Evaluation**:
+   - An orchestrator can technically register subagents on the fly using `define_subagent`.
+   - However, doing so forces the model to synthesize shallow ~25-line inline prompts, discarding the rich 350+ line blueprints (skills, rules, lifecycle hooks, and type safety constraints) installed in `.agents/agents/`.
+   - Furthermore, it consumes redundant round-trip tokens every conversation.
+
+3. **Decision & Upstream Action**:
+   - **Do not compromise Agents United blueprints**: Maintain our full-fidelity, modular agent definitions in `.agents/agents/`.
+   - **Upstream Feedback**: Detailed bug report submitted directly to the Google Antigravity engineering team via the in-app *Settings > Provide Feedback* channel, providing the disassembly details and requesting that `CalculateAllowedSubagents()` or `findAgentByName` resolve project-local `.agents/agents/*.md` definitions natively.
+   - **Cross-Host Standing**: Cline remains the fully functional tool-level delegation reference (`subagent_*`), while Antigravity users engage specialists via direct selector invocation or high-level workflows until the upstream resolution ships.

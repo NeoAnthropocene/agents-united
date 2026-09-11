@@ -344,6 +344,14 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
       expect(content, 'orchestrator-engineering.md must have subagent delegation phase before verification').toMatch(
         /Phase 3: Subagent Delegation/i
       );
+
+      // 4. Must enforce Subagent Delegation & Host Routing (ADR 0009 / ADR 0014)
+      expect(content, 'orchestrator-engineering.md must declare Subagent Delegation and Host Routing').toMatch(
+        /Subagent Delegation & Host Routing|ADR 0009/i
+      );
+      expect(content, 'orchestrator-engineering.md must mandate invoke_subagent for dispatching tasks').toMatch(
+        /invoke_subagent/
+      );
     });
 
     it('should configure engineering subagents with commandExecutionPolicy: auto and permissionMode: acceptEdits for autonomous background dispatch', async () => {
