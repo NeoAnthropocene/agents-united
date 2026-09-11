@@ -327,6 +327,25 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
       }
     });
 
+    it('should enforce subagent-first delegation policy and invoke_subagent tool commands in orchestrator-engineering', async () => {
+      const content = await fs.readFile(path.join(agentsDir, 'orchestrator-engineering.md'), 'utf8');
+      
+      // 1. Must include Subagent-First Delegation Policy (ADR 0014)
+      expect(content, 'orchestrator-engineering.md must declare Subagent-First Delegation Policy').toMatch(
+        /Subagent-First Delegation Policy|Subagent-First/i
+      );
+
+      // 2. Must explicitly command invoke_subagent in its execution protocol
+      expect(content, 'orchestrator-engineering.md must explicitly command invoke_subagent').toMatch(
+        /invoke_subagent/
+      );
+
+      // 3. Phase 3 must be Subagent Delegation before verification, and forbid self-execution
+      expect(content, 'orchestrator-engineering.md must have subagent delegation phase before verification').toMatch(
+        /Phase 3: Subagent Delegation/i
+      );
+    });
+
     it('should equip Tier-1 foundational subagents with find_by_name, skills, and mcpServers', async () => {
       const coreSubagents = [
         'subagent-backend-architect.md',
