@@ -346,6 +346,24 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
       );
     });
 
+    it('should configure engineering subagents with commandExecutionPolicy: auto and permissionMode: acceptEdits for autonomous background dispatch', async () => {
+      const engineeringSubagents = [
+        'subagent-backend-architect.md',
+        'subagent-frontend-architect.md',
+        'subagent-code-reviewer.md',
+        'subagent-repo-index.md'
+      ];
+
+      for (const file of engineeringSubagents) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+        const parsed = YAML.parse(match![1]);
+
+        expect(parsed.commandExecutionPolicy, `${file} must have commandExecutionPolicy: auto`).toBe('auto');
+        expect(parsed.permissionMode, `${file} must have permissionMode: acceptEdits`).toBe('acceptEdits');
+      }
+    });
+
     it('should equip Tier-1 foundational subagents with find_by_name, skills, and mcpServers', async () => {
       const coreSubagents = [
         'subagent-backend-architect.md',

@@ -7,8 +7,8 @@ description: >
   symbol definitions, detects circular dependencies, and produces architecture
   maps in a read-only capacity.
 model: inherit
-permissionMode: strict
-commandExecutionPolicy: ask
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
 tools:

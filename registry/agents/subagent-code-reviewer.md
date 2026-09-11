@@ -8,8 +8,8 @@ description: >
   error handling, and style violations. Produces a structured, severity-rated
   review report without modifying any files.
 model: inherit
-permissionMode: strict
-commandExecutionPolicy: ask
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
 tools:

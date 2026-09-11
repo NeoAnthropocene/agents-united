@@ -10,7 +10,7 @@ description: >
   security.
 model: inherit
 permissionMode: acceptEdits
-commandExecutionPolicy: ask
+commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
 tools:
