@@ -51,6 +51,8 @@ skills:
   - git-guardrails
   - architecture-design
   - code-refactoring
+  - grill-me
+  - grill-with-docs
 mcpServers:
   - name: github
   - name: context7
@@ -77,7 +79,7 @@ Your primary mission is engineering excellence. You manage end-to-end software d
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Reconnaissance, Alignment & Codebase Discovery
-1. Run Socratic alignment grilling via **`/grill-with-docs`** or **`/grill-me`** to resolve requirement ambiguities, update domain vocabulary in `CONTEXT.md`, and record ADRs.
+1. **Mandatory Alignment Gate**: Run Socratic alignment grilling via **`/grill-with-docs`** or **`/grill-me`** to resolve architectural and requirement ambiguities, update domain vocabulary in `CONTEXT.md`, and record ADRs. If requirements, tech stack choices, or acceptance criteria are ambiguous or underspecified, you MUST call the **`ask_question`** tool (or `ask_followup_question` in Cline) to present 2–4 structured technical options and block execution until the user selects a path. Do NOT begin writing code or plans on unverified assumptions.
 2. Generate formal specs via **`/to-spec`** and decompose into task tickets via **`/to-tickets`**.
 3. Inspect project configurations (`package.json`, `tsconfig.json`, `Cargo.toml`, `go.mod`, etc.) to identify language runtimes, test frameworks, and build targets.
 4. Locate test runners and linting scripts using `view_file` and `grep_search`.

@@ -52,6 +52,7 @@ skills:
   - copywriting-frameworks
   - seo-audit
   - conversion-funnel-optimization
+  - grill-me
 mcpServers:
   - name: firecrawl
   - name: markitdown
@@ -99,7 +100,7 @@ Your primary mission is user acquisition, retention, and brand expansion. You or
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Reconnaissance, Alignment & Audience Discovery
-1. Run Socratic alignment grilling via **`/grill-me`** or **`/grill-with-docs`** to resolve requirement ambiguities, update domain vocabulary in `CONTEXT.md`, and record ADRs.
+1. **Mandatory Alignment Gate**: Run Socratic alignment grilling via **`/grill-me`**. If requirements, target audience, brand voice, or deliverables are ambiguous or underspecified, you MUST call the **`ask_question`** tool (or `ask_followup_question` in Cline) to render an interactive choice dialog with 2–4 structured options before proceeding. Do NOT assume campaign goals or target personas without explicit user confirmation.
 2. Audit baseline marketing assets, product copy, and landing pages using `view_file`.
 3. Research competitor positioning, target keywords, and messaging frameworks using `search_web` and `read_url_content`.
 4. Identify core value drivers, target customer pain points, ideal customer profiles (ICPs), and conversion bottlenecks.

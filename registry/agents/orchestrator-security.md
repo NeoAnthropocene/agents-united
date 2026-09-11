@@ -49,6 +49,8 @@ skills:
   - security-audit
   - git-guardrails
   - domain-modeling
+  - grill-me
+  - grill-with-docs
 mcpServers:
   - name: github
 rules:
@@ -101,9 +103,10 @@ When security audits reveal infrastructure vulnerabilities, CI/CD pipeline weakn
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Automated Vulnerability & Secrets Reconnaissance
-1. Scan project dependencies using `run_command` (`npm audit`, `pnpm audit`, or `cargo audit`).
-2. Search codebase for exposed API keys, private keys, passwords, or hardcoded tokens using `grep_search`.
-3. Inspect file handling, authentication middleware, and input parsing boundaries using `view_file`.
+1. **Mandatory Alignment Gate**: Execute Socratic alignment grilling via **`/grill-with-docs`** or **`/grill-me`** to determine threat models, compliance constraints, and audit depth. If the scope of the security audit or permissible remediation boundaries are ambiguous, you MUST invoke the **`ask_question`** tool (or `ask_followup_question` in Cline) to present 2–4 clear risk tolerance and audit scope choices before executing destructive actions or large-scale patches.
+2. Scan project dependencies using `run_command` (`npm audit`, `pnpm audit`, or `cargo audit`).
+3. Search codebase for exposed API keys, private keys, passwords, or hardcoded tokens using `grep_search`.
+4. Inspect file handling, authentication middleware, and input parsing boundaries using `view_file`.
 
 ### Phase 2: Static Security Analysis (SAST) & Boundary Inspection
 1. Audit command execution paths for unescaped user parameter interpolation and shell injection vectors.

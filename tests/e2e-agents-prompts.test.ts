@@ -295,6 +295,38 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
       }
     });
 
+    it('should configure grill-me vs grill-with-docs appropriately and enforce ask_question in alignment protocols', async () => {
+      const groupA = [
+        'orchestrator-universal.md',
+        'orchestrator-marketing.md',
+        'orchestrator-business.md',
+        'orchestrator-design.md',
+        'orchestrator-research.md'
+      ];
+      const groupB = [
+        'orchestrator-engineering.md',
+        'orchestrator-system-architecture.md',
+        'orchestrator-security.md',
+        'orchestrator-digital-agency.md'
+      ];
+
+      for (const file of groupA) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const parsed = YAML.parse(content.match(/^---\r?\n([\s\S]+?)\r?\n---/)![1]);
+        expect(parsed.skills, `${file} should include grill-me`).toContain('grill-me');
+        expect(parsed.skills, `${file} must NOT include grill-with-docs (role confusion)`).not.toContain('grill-with-docs');
+        expect(content, `${file} should command ask_question tool in alignment protocol`).toMatch(/ask_question/);
+      }
+
+      for (const file of groupB) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const parsed = YAML.parse(content.match(/^---\r?\n([\s\S]+?)\r?\n---/)![1]);
+        expect(parsed.skills, `${file} should include grill-me`).toContain('grill-me');
+        expect(parsed.skills, `${file} should include grill-with-docs`).toContain('grill-with-docs');
+        expect(content, `${file} should command ask_question tool in alignment protocol`).toMatch(/ask_question/);
+      }
+    });
+
     it('should equip Tier-1 foundational subagents with find_by_name, skills, and mcpServers', async () => {
       const coreSubagents = [
         'subagent-backend-architect.md',
