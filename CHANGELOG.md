@@ -1,3 +1,10 @@
+# [0.11.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.10.0...v0.11.0) (2026-09-12)
+
+
+### Features
+
+* **registry:** modernize all 50 subagents and 9 orchestrators with self-contained skills and autonomous delegation gates ([#42](https://github.com/NeoAnthropocene/agents-united/issues/42)) ([a611b63](https://github.com/NeoAnthropocene/agents-united/commit/a611b631a592cb8fb0bec5756050222b0d674394))
+
 # [0.10.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.9.1...v0.10.0) (2026-09-10)
 
 
