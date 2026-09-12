@@ -27,6 +27,7 @@ tools:
   - list_dir
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-appsec-penetration-tester invoked — starting application security
@@ -37,6 +38,12 @@ hooks:
   PreToolUse:
     - tool: run_command
       guard: Deny run_command if CommandLine matches /(rm -rf|DROP|shutdown|sudo)/i
+skills:
+  - security-audit
+  - systematic-debugging
+  - git-guardrails
+mcpServers:
+  - name: github
 ---
 
 # subagent-appsec-penetration-tester — System Prompt

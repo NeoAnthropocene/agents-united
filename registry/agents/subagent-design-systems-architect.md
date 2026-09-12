@@ -16,6 +16,7 @@ tools:
   - replace_file_content
   - write_to_file
   - grep_search
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-design-systems-architect activated — loading design system tokens
@@ -34,6 +35,14 @@ effort: medium
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
+skills:
+  - design-system-tokens
+  - design-tokens-management
+  - component-library-management
+  - ui-component-spec
+mcpServers:
+  - name: figma
+  - name: stitch
 ---
 
 # subagent-design-systems-architect — System Prompt

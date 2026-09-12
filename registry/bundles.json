@@ -854,6 +854,7 @@
         "workflow-agency-client-pitch-proposal.md"
       ],
       "skills": [
+        "a11y-debugging",
         "ab-test-setup",
         "accessibility-audit",
         "ad-attribution-modeling",
@@ -873,6 +874,7 @@
         "conversion-funnel-optimization",
         "copywriting-frameworks",
         "database-design",
+        "debug-optimize-lcp",
         "dependency-management",
         "design-handoff-spec",
         "design-ops-workflow",
@@ -887,6 +889,8 @@
         "email-marketing-automation",
         "finishing-a-development-branch",
         "frontend-component-design",
+        "frontend-design",
+        "generative_ui",
         "git-guardrails",
         "google-ads-optimization",
         "graphql-schema-design",
@@ -909,6 +913,7 @@
         "mobile-ios-design",
         "mobile-platform-offline-validate",
         "modal-serverless-python",
+        "modern-web-guidance",
         "onboarding-cro",
         "paid-acquisition-ppc",
         "performance-optimization",
@@ -928,6 +933,7 @@
         "signup-flow-cro",
         "social-media-campaign",
         "state-driven-ui-animation",
+        "stitch-design-taste",
         "subagent-driven-development",
         "supabase-backend-architecture",
         "systematic-debugging",
@@ -1034,11 +1040,11 @@
         "budget": {
           "maxPlanningRounds": 2,
           "maxPeerExchangesPerPair": 2,
-          "summaryWordCap": 150,
+          "summaryWordCap": 300,
           "maxIterations": 8
         },
         "sidekicks": {
-          "max": 2
+          "max": 5
         },
         "mode": "subagent-first"
       },

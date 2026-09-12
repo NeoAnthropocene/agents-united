@@ -7,8 +7,8 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 ## 📑 Table of Contents
 1. [Executive Overview & Core Philosophy](#1-executive-overview--core-philosophy)
 2. [Complete Granular Feature Inventory](#2-complete-granular-feature-inventory)
-3. [Master Implementation Plans Index (plans/001–012)](#3-master-implementation-plans-index-plans001012)
-4. [Architectural Decision Records (ADRs 0001–0014)](#4-architectural-decision-records-adrs-00010014)
+3. [Master Implementation Plans Index (plans/001–013)](#3-master-implementation-plans-index-plans001013)
+4. [Architectural Decision Records (ADRs 0001–0015)](#4-architectural-decision-records-adrs-00010015)
 5. [Ecosystem Architecture & Department Domains](#5-ecosystem-architecture--department-domains)
 6. [Host Projection & Runtime Activation Engine](#6-host-projection--runtime-activation-engine)
 7. [Interface Contracts & Specifications](#7-interface-contracts--specifications)
@@ -378,6 +378,54 @@ recommended_addons:
   - mobile-development
   - frontend-engineering
 ```
+
+### 7.4 Planning Loop & Delegation Protocols (ADR 0014 / 0015)
+
+To prevent orchestrator models from slipping into unassisted solo execution (bypassing specialist subagents) or unbounded inter-agent chatter, `registry/bundles.json` configures the declarative `planningLoop` contract. This protocol establishes two distinct delegation postures based on bundle discipline and scope:
+
+#### 7.4.1 Schema Definition (`registry/bundles.json`)
+
+```typescript
+// src/core/types.ts
+export type PlanningLoopMode = 'subagent-first' | 'planner-orchestrator';
+
+export interface ConsultationBudget {
+  maxPlanningRounds: number;        // Max orchestrator ↔ council dialogue iterations
+  maxPeerExchangesPerPair: number;  // Max directed questions between any two specialists
+  summaryWordCap: number;           // Word ceiling per Scope-of-Work Statement
+  maxIterations: number;            // Projected hard cap in .cline/agents/*.yml
+}
+
+export interface PlanningLoopConfig {
+  enabled: boolean;
+  mode?: PlanningLoopMode;          // Defaults to 'subagent-first' if absent
+  budget?: ConsultationBudget;      // Only valid for 'subagent-first'
+  sidekicks?: { max: number };      // Only valid for 'subagent-first'
+}
+```
+
+#### 7.4.2 Operational Modes & Phase Lifecycle
+
+| Phase | `subagent-first` Mode (Organization Bundles) | `planner-orchestrator` Mode (Tier-1 Domain Bundles) |
+| :--- | :--- | :--- |
+| **Applicability** | Cross-functional bundles (`digital-agency`) with multi-disciplinary agents and MCP prerequisites. | 30 single-discipline domain bundles (`software-engineering`, `system-architecture`, `product-design`, etc.). |
+| **Phase 0: User Alignment** | Socratic grilling via `/grill-me` (strategy) or `/grill-with-docs` (code/ADRs). | Socratic grilling handled solo by the orchestrator. May directly consult bundle skills. |
+| **Phase 0.5: Sidekick Clarification** | Spawns $\le \text{sidekicks.max}$ (default 2) specialists into planning conversation to clarify ambiguity. | **Skipped** — No specialists are spawned during planning. |
+| **Phase 1: Specialist Council** | Every relevant specialist returns a bounded Scope-of-Work Statement ($\le \text{summaryWordCap}$ words). | **Skipped** — Orchestrator shares the exact same skill pool as its specialists. |
+| **Planning Aid Boundary** | Inter-specialist dialogue bounded by `ConsultationBudget`. | **Enforced**: Orchestrator may consult skills for *provisional estimates/designs*; concrete deliverables are deferred. |
+| **Phase 2: Delegation Map** | Synthesizes council statements into a Task $\to$ Specialist matrix presented to the user before execution. | Composed solo by the orchestrator from domain skills and presented to the user before execution. |
+| **Execution Delegation** | Mandatory execution delegation to `subagent_*` tools. | Mandatory execution delegation to `subagent_*` tools. Main-session fallback only if tools absent or task trivial. |
+
+#### 7.4.3 Fail-Fast Registry Validation (`src/core/registry.ts`)
+`RegistryResolver.validateBundles` asserts structural invariants across the catalog:
+- Validates `mode` against `['subagent-first', 'planner-orchestrator']`.
+- Enforces that `planner-orchestrator` bundles must **never** declare `budget` or `sidekicks` (throws validation errors during catalog load if violated).
+
+#### 7.4.4 Host Projection & Deterministic Evaluation
+- **Projection Rendering (`ClineProjector`)**: Automatically compiles the mode-specific rules into `.cline/rules/agents-united-<bundle>.md`, updates the Team Manifest (`.agents/plugins/<bundle>/agents-united/teams/<bundle>.yaml`), and maps `budget.maxIterations` into configured-agent frontmatter (`.cline/agents/*.yml`). Non-planning bundles remain byte-identical.
+- **Stage-1 Deterministic Gatekeepers (`tests/e2e-evals/judge.ts`)**:
+  - `PlanningLoopGatekeeper`: Asserts `delegation_first`, `sidekick_used_when_ambiguous`, `council_scope_statements_present`, `budget_respected`, and `delegation_map_before_execution`.
+  - `PlannerOrchestratorGatekeeper`: Asserts `solo_planning` (no pre-map spawns), `planning_aid_boundary_respected` (no pre-map write/edit tools), `delegation_map_before_execution`, and `execution_delegation_first`.
 
 ---
 

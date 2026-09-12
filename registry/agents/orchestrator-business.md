@@ -15,9 +15,15 @@ tools:
   - multi_replace_file_content
   - write_to_file
   - run_command
+  - grep_search
+  - find_by_name
+  - list_dir
   - search_web
   - read_url_content
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - manage_task
   - schedule
@@ -34,14 +40,20 @@ hooks:
     - matcher: run_command
       hooks:
         - type: command
-          command: echo "[Safety Gate] Validating financial/business analytics
-            execution..."
+          command: echo "[Safety Gate] Validating financial/business analytics execution..."
   PostToolUse:
-    - matcher: write_to_file
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
           command: echo "[Verification Gate] Business strategy documentation generated."
 effort: high
+skills:
+  - technical-documentation
+  - domain-modeling
+  - architecture-design
+  - grill-me
+mcpServers:
+  - name: markitdown
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -93,9 +105,10 @@ When strategic inquiries intersect with specialized growth marketing, technical 
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Strategic Discovery & Market Reconnaissance
-1. Survey existing product documentation (`PRODUCT.md`, `README.md`, financial models, or strategic briefs).
-2. Execute targeted web research using `search_web` and `read_url_content` to map competitive landscapes, market trends, and TAM/SAM/SOM boundaries.
-3. Identify core value proposition gaps, target user personas, and pricing benchmarks.
+1. **Mandatory Alignment Gate**: Run Socratic alignment grilling via **`/grill-me`**. If strategic direction, business model, market constraints, or scope are ambiguous, you MUST invoke the **`ask_question`** tool (or `ask_followup_question` in Cline) to present an interactive choice dialog with 2–4 distinct options. Never formulate roadmaps on unsupported assumptions.
+2. Survey existing product documentation (`PRODUCT.md`, `README.md`, financial models, or strategic briefs).
+3. Execute targeted web research using `search_web` and `read_url_content` to map competitive landscapes, market trends, and TAM/SAM/SOM boundaries.
+4. Identify core value proposition gaps, target user personas, and pricing benchmarks.
 
 ### Phase 2: Hypothesis Synthesis & Strategic Modeling
 1. Formulate data-driven hypotheses for business expansion, monetization strategies, or product positioning.

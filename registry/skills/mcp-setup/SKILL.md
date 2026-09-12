@@ -38,8 +38,11 @@ It defines exact configuration patterns for:
 
 ## MCP Server Matrix & Setup Modes
 
-### 1. GitHub MCP (`github`)
+### 1. GitHub MCP (`github` / `github-mcp-server`)
 - **Purpose**: Repository management, branch creation, pull request workflows, issue triage.
+- **Host Naming Note**:
+  - In **Google Antigravity**, the server directory identifier is `github-mcp-server` (`~/.gemini/antigravity/mcp/github-mcp-server` or `agy mcp add github-mcp-server ...`).
+  - In **Cursor, Cline, and Claude Desktop**, standard configuration keys use `"github"`.
 - **Fully Operational (Auth)**:
   ```json
   "github": {
@@ -49,6 +52,10 @@ It defines exact configuration patterns for:
       "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_yourPersonalAccessTokenHere"
     }
   }
+  ```
+  *For Antigravity CLI*:
+  ```bash
+  agy mcp add github-mcp-server --type stdio --command npx --args -y,@modelcontextprotocol/server-github --env GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...
   ```
 - **Limited Operational (Unauthenticated)**:
   ```json
@@ -203,16 +210,24 @@ It defines exact configuration patterns for:
   ```json
   "figma": {
     "command": "npx",
-    "args": ["-y", "ai-figma-mcp"]
-  }
-  ```
-  "figma": {
-    "command": "npx",
     "args": ["-y", "@modelcontextprotocol/server-figma"]
   }
   ```
   *(Queries public Community files by file ID without private organization access).*
-- **Fallback (No MCP)**: Agents use local design tokens defined in `registry/skills/design-system-tokens`.
+- **Fallback (No MCP)**: Agents use local design tokens defined in `registry/skills/design-system-tokens` and native Antigravity skill `/generative_ui` for rich visual widgets, Tailwind layouts, and interactive UI previews.
+
+---
+
+## Antigravity Subagent MCP & Tool Safety Guardrails
+
+> [!WARNING]
+> **Tool Validation Hang Safeguard**:
+> In Google Antigravity, specifying an unmapped, misspelled, or unavailable tool name in a custom subagent's `tools:` list causes the subagent execution to **hang indefinitely** during startup.
+>
+> **Subagent Configuration Rules**:
+> 1. **Strictly Native Tools in `tools:`**: Only list verified built-in tools (`view_file`, `write_to_file`, `replace_file_content`, `grep_search`, `list_dir`, `run_command`, `search_web`, `read_url_content`, `generate_image`, `manage_task`, `schedule`).
+> 2. **Never Hardcode MCP Tool Names in `tools:`**: Do not list hypothetical or speculative MCP tool names (e.g. `mcp_stitch_generate_screen`, `figma_get_file`) in subagent frontmatter. MCP servers should be configured via the `mcpServers:` array or invoked via `call_mcp_tool`.
+> 3. **Declare Domain Skills for Zero-MCP Fallback**: Equip subagents with domain skills (`skills:` frontmatter) so that in Brainstorming or Limited Operational modes (where MCPs are omitted), the specialist executes deterministic playbooks using native tools (`/generative_ui` for design, `run_command("npx playwright test")` for QA, `search_web` for growth).
 
 ---
 

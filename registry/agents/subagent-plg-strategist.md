@@ -17,6 +17,7 @@ tools:
   - list_dir
   - replace_file_content
   - write_to_file
+  - find_by_name
 hooks:
   PreInvocation:
     - log: PLG Strategist activated — analyzing activation milestones and user journey
@@ -27,6 +28,13 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - viral-referral-loops
+  - onboarding-cro
+  - signup-flow-cro
+  - churn-prevention-playbook
+mcpServers:
+  - name: context7
 ---
 
 # Role Definition

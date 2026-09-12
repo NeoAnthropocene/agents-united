@@ -17,8 +17,12 @@ tools:
   - run_command
   - manage_task
   - grep_search
+  - find_by_name
   - list_dir
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - schedule
 mainAgent: true
@@ -36,12 +40,22 @@ hooks:
         - type: command
           command: echo "[Safety Gate] Validating architectural verification command..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] Architectural file mutation detected.
-            Validating type safety..."
+          command: echo "[Verification Gate] Architectural file mutation detected. Validating type safety..."
 effort: high
+skills:
+  - architecture-design
+  - microservices-architecture
+  - domain-modeling
+  - backend-api-design
+  - database-design
+  - grill-me
+  - grill-with-docs
+mcpServers:
+  - name: github
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -64,7 +78,7 @@ Your primary mission is architectural integrity and system longevity. You govern
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Architectural Reconnaissance & Alignment
-1. Execute Socratic grilling via **`/grill-with-docs`** to align on high-level system requirements, data boundaries, and non-functional requirements.
+1. **Mandatory Alignment Gate**: Execute Socratic grilling via **`/grill-with-docs`** or **`/grill-me`** to align on high-level system requirements, data boundaries, and non-functional requirements. If system constraints, scalability goals, or tech stack tradeoffs are unresolved, you MUST call the **`ask_question`** tool (or `ask_followup_question` in Cline) to render an interactive multiple-choice prompt with 2–4 architectural trade-off options before drafting specs or committing to designs.
 2. Build and update the shared domain vocabulary in `CONTEXT.md` using **`/domain-modeling`**.
 3. Inspect workspace structure, package organization, and system entry points using `list_dir` and `view_file`.
 4. Map current service boundaries, data flows, and component dependencies using `grep_search`.

@@ -4,9 +4,9 @@ version: 2.1.0
 type: subagent
 description: >
   Technology and commercial contract analyst. Reviews Master Services Agreements
-  (MSA), Statements of Work (SOW), Service Level Agreements (SLA uptime/credits),
-  Terms of Service (ToS), open-source license compatibility (MIT, Apache, GPL, AGPL),
-  and software vendor compliance clauses.
+  (MSA), Statements of Work (SOW), Service Level Agreements (SLA
+  uptime/credits), Terms of Service (ToS), open-source license compatibility
+  (MIT, Apache, GPL, AGPL), and software vendor compliance clauses.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -24,11 +24,19 @@ tools:
   - run_command
   - grep_search
   - list_dir
+  - find_by_name
 hooks:
   PreInvocation:
-    - log: subagent-legal-contract-analyst invoked — reviewing legal contracts and license compatibility
+    - log: subagent-legal-contract-analyst invoked — reviewing legal contracts and
+        license compatibility
   PostInvocation:
-    - log: subagent-legal-contract-analyst finished — returning contract analysis to orchestrator
+    - log: subagent-legal-contract-analyst finished — returning contract analysis to
+        orchestrator
+skills:
+  - technical-documentation
+  - git-guardrails
+mcpServers:
+  - name: markitdown
 ---
 
 # subagent-legal-contract-analyst — System Prompt

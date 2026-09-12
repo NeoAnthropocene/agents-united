@@ -18,10 +18,14 @@ tools:
   - run_command
   - manage_task
   - grep_search
+  - find_by_name
   - list_dir
+  - ask_question
   - send_message
   - schedule
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
 mainAgent: true
 subagent: true
 hooks:
@@ -36,7 +40,19 @@ hooks:
       hooks:
         - type: command
           command: echo "[Safety Gate] Validating shell command execution..."
+  PostToolUse:
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
+      hooks:
+        - type: command
+          command: echo "[Verification Gate] Artifact mutation detected. Verifying workspace integrity..."
 effort: high
+skills:
+  - mcp-setup
+  - handoff
+  - grill-me
+mcpServers:
+  - name: github
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -66,7 +82,7 @@ You are deliberately a **front door**: a minimal-footprint guide with a compact 
 
 ### Phase 1: Triage & Alignment
 1. Read the user's request. If intent is clear and single-domain, proceed to Phase 2.
-2. If the request is ambiguous, spans unclear domains, or mixes disciplines, run a focused **`/grill-me`** round: ask 1–3 sharp questions to pin down the *domain*, the *deliverable*, and the *scope*. Do not over-grill.
+2. **Mandatory Alignment Gate**: If the request is ambiguous, spans unclear domains, or mixes disciplines, execute a focused **`/grill-me`** round. You MUST call the **`ask_question`** tool (or `ask_followup_question` in Cline) to render an interactive multiple-choice alignment modal with 2–4 structured options to pin down the *domain*, the *deliverable*, and the *scope*. Do not over-grill or proceed on assumptions.
 3. Classify into exactly one **Department Domain** (or the Universal route).
 
 ### Phase 2: Atlas Lookup & Capability Match

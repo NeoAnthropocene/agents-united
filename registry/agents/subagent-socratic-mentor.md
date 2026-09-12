@@ -13,7 +13,9 @@ subagent: true
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
+  - ask_question
 hooks:
   PreInvocation:
     - log: Socratic Mentor activated — initializing dialogue frame and pedagogical
@@ -30,6 +32,11 @@ hooks:
         questioning.
 inheritCustomizations: false
 effort: medium
+skills:
+  - grill-me
+  - technical-documentation
+mcpServers:
+  - name: context7
 rules:
   - clean-code-and-architecture.md
 ---

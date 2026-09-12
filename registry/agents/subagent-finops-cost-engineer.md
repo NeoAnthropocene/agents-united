@@ -26,6 +26,7 @@ tools:
   - list_dir
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-finops-cost-engineer invoked — analyzing cloud infrastructure cost
@@ -33,6 +34,12 @@ hooks:
   PostInvocation:
     - log: subagent-finops-cost-engineer finished — returning FinOps cost optimization
         report to orchestrator
+skills:
+  - telemetry-monitoring
+  - architecture-design
+  - runpod-gpu-orchestration
+mcpServers:
+  - name: context7
 ---
 
 # subagent-finops-cost-engineer — System Prompt

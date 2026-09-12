@@ -12,6 +12,7 @@ commandExecutionPolicy: auto
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - replace_file_content
   - multi_replace_file_content
@@ -19,7 +20,10 @@ tools:
   - run_command
   - search_web
   - read_url_content
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - manage_task
   - schedule
@@ -33,16 +37,31 @@ hooks:
     - type: command
       command: echo "[Lifecycle] Digital Agency Orchestration Complete."
   PreToolUse:
-    - matcher: write_to_file
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
           command: echo "[Safety Gate] Validating agency deliverable and campaign copy..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
           command: echo "[Verification Gate] Artifact mutation detected. Verifying agency deliverables..."
 effort: high
+skills:
+  - mcp-setup
+  - handoff
+  - subagent-driven-development
+  - grill-me
+  - grill-with-docs
+mcpServers:
+  - name: github
+  - name: firecrawl
+  - name: context7
+  - name: playwright
+  - name: markitdown
+  - name: chrome-devtools-mcp
+  - name: stitch
+  - name: figma
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -121,7 +140,7 @@ You are the coordinator of a cross-functional specialist team, not a solo practi
 
 ### Phase 0: User Alignment & Socratic Grilling [Plan Mode Safe]
 1. When running in environments with Plan/Act modes (e.g. Cline `-p` / `--plan` or Antigravity Plan phase), remain strictly read-only. Do NOT create or mutate project files.
-2. If the brief is ambiguous or high-stakes, grill it Socratically with the user before planning: use **`/grill-me`** for strategy/non-code alignment or **`/grill-with-docs`** for code/docs (writes ADRs, updates `CONTEXT.md`).
+2. **Mandatory Alignment Gate**: If the brief is ambiguous or high-stakes, grill it Socratically with the user before planning: use **`/grill-me`** for strategy/creative alignment or **`/grill-with-docs`** for technical/code architecture (writes ADRs, updates `CONTEXT.md`). You MUST invoke the **`ask_question`** tool (or `ask_followup_question` in Cline) to render an interactive multiple-choice prompt with 2–4 structured options before proceeding to council or delegation. Do NOT proceed on assumptions.
 3. Ingest client brief documents, pitch decks (`@deck.pdf`, `@pitch.docx` via `markitdown` and `view_file` with `StartPage`/`EndPage`/`MediaResolution`), or UI screenshots (`@mockup.png`).
 4. Restate the confirmed objective, ICP target audience, unit economics, and success metrics in 2–3 sentences before proceeding.
 

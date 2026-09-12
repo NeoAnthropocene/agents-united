@@ -14,6 +14,7 @@ subagent: true
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - replace_file_content
   - write_to_file
@@ -33,6 +34,11 @@ hooks:
       log: Secret scan query finished — analyze matches for false positives.
 inheritCustomizations: false
 effort: medium
+skills:
+  - security-audit
+  - git-guardrails
+mcpServers:
+  - name: github
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

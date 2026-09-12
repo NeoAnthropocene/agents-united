@@ -15,9 +15,15 @@ tools:
   - multi_replace_file_content
   - write_to_file
   - run_command
+  - grep_search
+  - find_by_name
+  - list_dir
   - search_web
   - read_url_content
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - manage_task
   - schedule
@@ -36,12 +42,20 @@ hooks:
         - type: command
           command: echo "[Safety Gate] Validating research query parameters..."
   PostToolUse:
-    - matcher: write_to_file
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] Research report generated. Verifying citation
-            integrity..."
+          command: echo "[Verification Gate] Research report generated. Verifying citation integrity..."
 effort: high
+skills:
+  - technical-documentation
+  - domain-modeling
+  - grill-me
+  - handoff
+mcpServers:
+  - name: firecrawl
+  - name: context7
+  - name: markitdown
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -92,7 +106,7 @@ When user requests involve specialized technical execution or deep cross-domain 
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Topic Decomposition & Socratic Alignment
-1. Engage in Socratic questioning via **`/grill-me`** to interrogate research goals and uncover implicit assumptions.
+1. **Mandatory Alignment Gate**: Engage in Socratic questioning via **`/grill-me`**. If research objectives, scope, methodology, or desired deliverables are ambiguous, you MUST invoke the **`ask_question`** tool (or `ask_followup_question` in Cline) to render an interactive multiple-choice question dialog with 2–4 distinct options before beginning web searches or synthesis.
 2. Update domain terminology in `CONTEXT.md` using **`/domain-modeling`**.
 3. Deconstruct the user's research request into targeted sub-questions, empirical hypotheses, and key concepts.
 4. Formulate multi-perspective search queries across technical documentation, academic papers, and benchmark reports.

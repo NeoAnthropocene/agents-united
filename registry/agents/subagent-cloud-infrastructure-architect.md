@@ -26,6 +26,7 @@ tools:
   - list_dir
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-cloud-infrastructure-architect invoked — architecting multi-region
@@ -33,6 +34,14 @@ hooks:
   PostInvocation:
     - log: subagent-cloud-infrastructure-architect finished — returning infrastructure
         topology design to orchestrator
+skills:
+  - azure-infrastructure-bicep
+  - docker-deployment
+  - architecture-design
+  - telemetry-monitoring
+mcpServers:
+  - name: github
+  - name: context7
 ---
 
 # subagent-cloud-infrastructure-architect — System Prompt

@@ -141,10 +141,10 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
     expect(budget).toBeDefined();
     expect(budget?.maxPlanningRounds).toBe(2);
     expect(budget?.maxPeerExchangesPerPair).toBe(2);
-    expect(budget?.summaryWordCap).toBe(150);
+    expect(budget?.summaryWordCap).toBe(300);
     expect(budget?.maxIterations).toBe(8);
 
-    expect(bundle?.planningLoop?.sidekicks?.max).toBe(2);
+    expect(bundle?.planningLoop?.sidekicks?.max).toBe(5);
   });
 
   it('should map every AstrolabsAI persona to a role present in the digital-agency roster', async () => {

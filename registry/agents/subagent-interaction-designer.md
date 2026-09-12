@@ -15,6 +15,9 @@ tools:
   - view_file
   - replace_file_content
   - write_to_file
+  - grep_search
+  - find_by_name
+  - list_dir
 hooks:
   PreInvocation:
     - log: Interaction Designer activated — loading motion system and component
@@ -31,6 +34,13 @@ hooks:
         main-thread).
 inheritCustomizations: false
 effort: medium
+skills:
+  - interaction-pattern-library
+  - micro-interaction-design
+  - state-driven-ui-animation
+mcpServers:
+  - name: stitch
+  - name: figma
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md

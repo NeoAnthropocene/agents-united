@@ -5,7 +5,8 @@ type: subagent
 description: >
   Market intelligence and competitive strategy analyst. Sizes total addressable
   markets (TAM/SAM/SOM), performs competitor feature teardowns and moat
-  evaluations, models Porter's Five Forces, and creates strategic positioning battlecards.
+  evaluations, models Porter's Five Forces, and creates strategic positioning
+  battlecards.
 model: inherit
 permissionMode: acceptEdits
 commandExecutionPolicy: ask
@@ -23,11 +24,20 @@ tools:
   - run_command
   - grep_search
   - list_dir
+  - find_by_name
 hooks:
   PreInvocation:
-    - log: subagent-market-intelligence-analyst invoked — conducting market sizing and competitive teardown
+    - log: subagent-market-intelligence-analyst invoked — conducting market sizing and
+        competitive teardown
   PostInvocation:
-    - log: subagent-market-intelligence-analyst finished — returning market intelligence report to orchestrator
+    - log: subagent-market-intelligence-analyst finished — returning market
+        intelligence report to orchestrator
+skills:
+  - technical-documentation
+  - growth-experiment-design
+mcpServers:
+  - name: firecrawl
+  - name: markitdown
 ---
 
 # subagent-market-intelligence-analyst — System Prompt

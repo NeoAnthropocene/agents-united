@@ -26,6 +26,7 @@ tools:
   - list_dir
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-cloud-security-architect invoked — auditing cloud infrastructure
@@ -36,6 +37,13 @@ hooks:
   PreToolUse:
     - tool: run_command
       guard: Deny run_command if CommandLine matches /(rm -rf|DROP|shutdown|sudo)/i
+skills:
+  - security-audit
+  - azure-infrastructure-bicep
+  - docker-deployment
+  - telemetry-monitoring
+mcpServers:
+  - name: github
 ---
 
 # subagent-cloud-security-architect — System Prompt
