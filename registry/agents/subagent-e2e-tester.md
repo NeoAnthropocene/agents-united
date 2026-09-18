@@ -19,6 +19,7 @@ tools:
   - write_to_file
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: E2E Tester activated — inspecting web pages and Playwright test specs.
@@ -29,6 +30,14 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - playwright-best-practices
+  - test-driven-development
+  - diagnosing-bugs
+  - systematic-debugging
+mcpServers:
+  - name: playwright
+  - name: chrome-devtools-mcp
 ---
 
 # Role Definition

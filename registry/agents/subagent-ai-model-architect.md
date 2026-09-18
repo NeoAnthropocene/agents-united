@@ -20,6 +20,7 @@ tools:
   - run_command
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: AI Model Architect activated — inspecting model evaluation benchmarks,
@@ -37,6 +38,13 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - hf-model-evaluation
+  - rag-vector-pipeline
+  - vector-database-design
+  - local-llm-inference
+mcpServers:
+  - name: context7
 ---
 
 # Role Definition & Primary Directives

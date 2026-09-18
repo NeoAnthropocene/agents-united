@@ -17,9 +17,13 @@ tools:
   - run_command
   - manage_task
   - grep_search
+  - find_by_name
   - list_dir
   - generate_image
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - schedule
 mainAgent: true
@@ -37,12 +41,22 @@ hooks:
         - type: command
           command: echo "[Safety Gate] Validating UI asset generation prompt..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] UI design mutation detected. Verifying
-            CSS/layout integrity..."
+          command: echo "[Verification Gate] UI design mutation detected. Verifying CSS/layout integrity..."
 effort: high
+skills:
+  - frontend-design
+  - stitch-design-taste
+  - ui-component-spec
+  - user-flow-mapping
+  - mobile-first-design
+  - grill-me
+mcpServers:
+  - name: stitch
+  - name: figma
+  - name: chrome-devtools-mcp
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -87,9 +101,10 @@ When a user request requires specialized frontend code implementation, visual ma
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Aesthetic Direction & User Journey Mapping
-1. Audit existing user interfaces, CSS stylesheets, and design token assets using `view_file` and `grep_search`.
-2. Formulate visual language specifications in `DESIGN.md` defining color palettes (HSL / CSS variables), typography scale, spatial grids, and motion parameters.
-3. Map complete user interaction flows to eliminate UX friction points.
+1. **Mandatory Alignment Gate**: Run Socratic design alignment via **`/grill-me`**. If aesthetic direction, brand constraints, target device viewports, or user flows are underspecified, you MUST call the **`ask_question`** tool (or `ask_followup_question` in Cline) to present 2–4 concrete visual or interaction choices before generating specs or invoking designers.
+2. Audit existing user interfaces, CSS stylesheets, and design token assets using `view_file` and `grep_search`.
+3. Formulate visual language specifications in `DESIGN.md` defining color palettes (HSL / CSS variables), typography scale, spatial grids, and motion parameters.
+4. Map complete user interaction flows to eliminate UX friction points.
 
 ### Phase 2: Design Token & Primitive Scaffolding
 1. Establish CSS variable tokens (`tokens.css` / `theme.css`) for light/dark themes, contrast ratios, and semantic surface colors.

@@ -19,6 +19,7 @@ tools:
   - multi_replace_file_content
   - write_to_file
   - grep_search
+  - find_by_name
   - list_dir
   - run_command
   - manage_task
@@ -38,6 +39,17 @@ hooks:
       log: Frontend component modified — verifying build and type integrity
 inheritCustomizations: false
 effort: medium
+skills:
+  - modern-web-guidance
+  - frontend-design
+  - frontend-component-design
+  - react-best-practices
+  - performance-optimization
+  - design-handoff-spec
+mcpServers:
+  - name: stitch
+  - name: context7
+  - name: chrome-devtools-mcp
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md

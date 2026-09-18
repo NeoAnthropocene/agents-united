@@ -20,7 +20,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
 - **🚀 Cline Native Activation**: Bundles activate **automatically** in any Cline CLI session — skills discovered natively from `.agents/skills/`, configured-agent roles (`.cline/agents/*.yml`) exposed as spawnable `subagent_*` tools, coordinator rules (`.cline/rules/`), slash-command workflows (`.cline/workflows/`), and spec-conformant Agent Plugin packages (`plugin.json`, agent-plugins.org) in `.agents/plugins/<bundle>/`. No install step required; `agents start` remains available as an optional pre-seeded team-session launcher.
 - **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 59 Specialized Agents & 160 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 160 production-grade runbooks (91 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
+- **🤖 59 Specialized Agents & 166 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 166 production-grade runbooks (97 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
 - **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
@@ -108,7 +108,7 @@ This model gives you:
 ---
 
 
-Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **160 modular skills & runbooks** (91 domain skills + 69 workflow playbooks) across 8 department domains:
+Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **166 modular skills & runbooks** (97 domain skills + 69 workflow playbooks) across 8 department domains:
 
 | Department Domain | Essentials Base | Specialized Addon Bundles | Lead Orchestrator |
 | :--- | :--- | :--- | :--- |
@@ -722,6 +722,32 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 <summary><strong>tovimx (<a href="https://github.com/tovimx/maestro-mobile-testing-skill">tovimx/maestro-mobile-testing-skill</a>)</strong></summary>
 
 - **`maestro-mobile-testing`**: Declarative cross-platform mobile UI test automation.
+</details>
+
+<details>
+<summary><strong>Anthropic & Community (<a href="https://github.com/anthropics/skills">anthropics/skills</a>)</strong></summary>
+
+- **`frontend-design`**: Distinctive, intentional visual design guidance for distinctive typography, color, and anti-cliché aesthetics.
+</details>
+
+<details>
+<summary><strong>Google Stitch Labs (<a href="https://labs.google/stitch">labs.google/stitch</a>)</strong></summary>
+
+- **`stitch-design-taste`**: Semantic design system generator for Google Stitch screens, anti-generic design tokens, and motion parameters.
+</details>
+
+<details>
+<summary><strong>Google DeepMind Antigravity (<a href="https://antigravity.google">antigravity.google</a>)</strong></summary>
+
+- **`generative_ui`**: Inline rich interactive HTML/Tailwind widget and artifact rendering standards.
+</details>
+
+<details>
+<summary><strong>Google Chrome DevTools Team (<a href="https://github.com/GoogleChrome/devtools-mcp">GoogleChrome/devtools-mcp</a>)</strong></summary>
+
+- **`modern-web-guidance`**: Modern web platform APIs, CSS `:has()`, View Transitions, and Core Web Vitals best practices.
+- **`a11y-debugging`**: Chrome DevTools accessibility auditing, ARIA verification, and WCAG AA guidelines.
+- **`debug-optimize-lcp`**: Largest Contentful Paint (LCP) performance trace inspection and subpart latency optimization.
 </details>
 
 ---

@@ -28,6 +28,7 @@ tools:
   - list_dir
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-database-administrator invoked — analyzing database configuration
@@ -35,6 +36,13 @@ hooks:
   PostInvocation:
     - log: subagent-database-administrator finished — returning database performance
         report to orchestrator
+skills:
+  - database-design
+  - turso-distributed-sqlite
+  - supabase-backend-architecture
+  - performance-optimization
+mcpServers:
+  - name: context7
 ---
 
 # subagent-database-administrator — System Prompt

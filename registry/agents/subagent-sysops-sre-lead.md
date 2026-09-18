@@ -19,6 +19,7 @@ tools:
   - write_to_file
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: SysOps SRE Lead activated — analyzing system health metrics, SLAs, and
@@ -31,6 +32,13 @@ effort: medium
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
+skills:
+  - telemetry-monitoring
+  - chaos-engineering
+  - ci-cd-pipeline-automation
+  - docker-deployment
+mcpServers:
+  - name: github
 ---
 
 # Role Definition

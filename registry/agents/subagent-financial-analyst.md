@@ -23,11 +23,19 @@ tools:
   - run_command
   - grep_search
   - list_dir
+  - find_by_name
 hooks:
   PreInvocation:
-    - log: subagent-financial-analyst invoked — building financial model and unit economics projections
+    - log: subagent-financial-analyst invoked — building financial model and unit
+        economics projections
   PostInvocation:
-    - log: subagent-financial-analyst finished — returning financial assessment to orchestrator
+    - log: subagent-financial-analyst finished — returning financial assessment to
+        orchestrator
+skills:
+  - technical-documentation
+  - domain-modeling
+mcpServers:
+  - name: markitdown
 ---
 
 # subagent-financial-analyst — System Prompt

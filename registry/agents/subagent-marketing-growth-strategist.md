@@ -17,6 +17,7 @@ tools:
   - read_url_content
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - write_to_file
   - replace_file_content
@@ -35,6 +36,13 @@ hooks:
       log: Growth playbook written to filesystem
 inheritCustomizations: false
 effort: medium
+skills:
+  - growth-experiment-design
+  - viral-referral-loops
+  - product-launch-playbook
+  - ab-test-setup
+mcpServers:
+  - name: firecrawl
 rules:
   - clean-code-and-architecture.md
   - multi-agent-coordination.md

@@ -16,6 +16,9 @@ tools:
   - write_to_file
   - search_web
   - read_url_content
+  - grep_search
+  - find_by_name
+  - list_dir
   - manage_task
   - schedule
 hooks:
@@ -32,6 +35,12 @@ hooks:
       log: URL content fetched — extracting key facts and technical citations.
 inheritCustomizations: false
 effort: medium
+skills:
+  - technical-documentation
+  - domain-modeling
+mcpServers:
+  - name: firecrawl
+  - name: context7
 rules:
   - clean-code-and-architecture.md
 ---

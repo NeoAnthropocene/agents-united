@@ -14,6 +14,7 @@ subagent: true
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - replace_file_content
   - write_to_file
@@ -27,6 +28,15 @@ hooks:
     - log: QA strategy task complete — verify test matrix completeness and CI gate criteria.
 inheritCustomizations: false
 effort: medium
+skills:
+  - playwright-best-practices
+  - accessibility-audit
+  - a11y-debugging
+  - responsive-design-audit
+  - test-driven-development
+mcpServers:
+  - name: playwright
+  - name: chrome-devtools-mcp
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

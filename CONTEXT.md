@@ -256,7 +256,7 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 160 modular skills (91 domain skills + 69 workflow playbooks).
+   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 166 modular skills (97 domain skills + 69 workflow playbooks).
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
@@ -290,7 +290,7 @@ A deterministic test verification hierarchy:
 - **Tier 1 (Feature Coverage)**: Happy path validation of exported functions, interfaces, frontmatter schemas, and expected return types.
 - **Tier 2 (Boundary & Corner Cases)**: Negative testing covering empty inputs, malformed files, invalid enums, and graceful error handling.
 - **Tier 3 (Cross-Feature Pairwise)**: Interoperability testing between Registry, Installer, Adapters, Lockfile Engine, and CLI.
-- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 160 skills.
+- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 166 skills.
 
 **Deterministic Verification**:
 Testing practices that eliminate arbitrary timeouts (`setTimeout`) in favor of auto-waiting assertions, isolated test workspaces, predictable mock factories, and clean teardowns.

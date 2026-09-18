@@ -8,13 +8,14 @@ description: >
   error handling, and style violations. Produces a structured, severity-rated
   review report without modifying any files.
 model: inherit
-permissionMode: strict
-commandExecutionPolicy: ask
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - run_command
 hooks:
@@ -31,6 +32,14 @@ hooks:
       log: Tool execution completed
 inheritCustomizations: false
 effort: medium
+skills:
+  - security-audit
+  - git-guardrails
+  - receiving-code-review
+  - requesting-code-review
+  - code-refactoring
+mcpServers:
+  - name: github
 rules:
   - clean-code-and-architecture.md
 ---

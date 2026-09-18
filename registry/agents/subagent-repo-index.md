@@ -7,13 +7,14 @@ description: >
   symbol definitions, detects circular dependencies, and produces architecture
   maps in a read-only capacity.
 model: inherit
-permissionMode: strict
-commandExecutionPolicy: ask
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
 hooks:
   PreInvocation:
@@ -26,6 +27,11 @@ hooks:
     - log: Tool completed indexing step
 inheritCustomizations: false
 effort: medium
+skills:
+  - technical-documentation
+  - domain-modeling
+mcpServers:
+  - name: github
 rules:
   - clean-code-and-architecture.md
 ---

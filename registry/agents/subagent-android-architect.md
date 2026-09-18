@@ -17,6 +17,7 @@ tools:
   - list_dir
   - replace_file_content
   - write_to_file
+  - find_by_name
 hooks:
   PreInvocation:
     - log: Android Architect activated — inspecting Kotlin/Compose files and Gradle
@@ -28,6 +29,14 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - mobile-android-design
+  - mobile-platform-offline-validate
+  - maestro-mobile-testing
+  - mobile-first-design
+  - test-driven-development
+mcpServers:
+  - name: github
 ---
 
 # Role Definition

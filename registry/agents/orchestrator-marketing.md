@@ -15,9 +15,15 @@ tools:
   - multi_replace_file_content
   - write_to_file
   - run_command
+  - grep_search
+  - find_by_name
+  - list_dir
   - search_web
   - read_url_content
+  - ask_question
   - invoke_subagent
+  - define_subagent
+  - manage_subagents
   - send_message
   - manage_task
   - schedule
@@ -31,18 +37,26 @@ hooks:
     - type: command
       command: echo "[Lifecycle] Growth Marketing Orchestration Complete."
   PreToolUse:
-    - matcher: write_to_file
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Safety Gate] Validating marketing content and SEO copy
-            generation..."
+          command: echo "[Safety Gate] Validating marketing content and SEO copy generation..."
   PostToolUse:
-    - matcher: replace_file_content
+    - matcher: "write_to_file|replace_file_content|multi_replace_file_content"
       hooks:
         - type: command
-          command: echo "[Verification Gate] Copy mutation detected. Verifying marketing
-            artifacts..."
+          command: echo "[Verification Gate] Copy mutation detected. Verifying marketing artifacts..."
 effort: high
+skills:
+  - growth-experiment-design
+  - copywriting-frameworks
+  - seo-audit
+  - conversion-funnel-optimization
+  - grill-me
+mcpServers:
+  - name: firecrawl
+  - name: markitdown
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -86,7 +100,7 @@ Your primary mission is user acquisition, retention, and brand expansion. You or
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Reconnaissance, Alignment & Audience Discovery
-1. Run Socratic alignment grilling via **`/grill-me`** or **`/grill-with-docs`** to resolve requirement ambiguities, update domain vocabulary in `CONTEXT.md`, and record ADRs.
+1. **Mandatory Alignment Gate**: Run Socratic alignment grilling via **`/grill-me`**. If requirements, target audience, brand voice, or deliverables are ambiguous or underspecified, you MUST call the **`ask_question`** tool (or `ask_followup_question` in Cline) to render an interactive choice dialog with 2–4 structured options before proceeding. Do NOT assume campaign goals or target personas without explicit user confirmation.
 2. Audit baseline marketing assets, product copy, and landing pages using `view_file`.
 3. Research competitor positioning, target keywords, and messaging frameworks using `search_web` and `read_url_content`.
 4. Identify core value drivers, target customer pain points, ideal customer profiles (ICPs), and conversion bottlenecks.

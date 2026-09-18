@@ -14,6 +14,13 @@ mainAgent: false
 subagent: true
 inheritCustomizations: false
 effort: medium
+skills:
+  - security-audit
+  - domain-modeling
+  - technical-documentation
+mcpServers:
+  - name: markitdown
+  - name: github
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -25,6 +32,7 @@ tools:
   - write_to_file
   - run_command
   - grep_search
+  - find_by_name
   - list_dir
   - search_web
   - read_url_content

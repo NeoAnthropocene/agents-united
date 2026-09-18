@@ -16,6 +16,7 @@ tools:
   - write_to_file
   - replace_file_content
   - grep_search
+  - find_by_name
   - list_dir
 hooks:
   PreInvocation:
@@ -32,6 +33,14 @@ hooks:
       log: Updated architecture documentation — confirm structural consistency.
 inheritCustomizations: false
 effort: medium
+skills:
+  - architecture-design
+  - microservices-architecture
+  - domain-modeling
+  - database-design
+  - technical-documentation
+mcpServers:
+  - name: github
 rules:
   - clean-code-and-architecture.md
 ---

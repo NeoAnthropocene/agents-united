@@ -201,6 +201,272 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
       expect(parsed.hooks).toBeDefined();
       expect(parsed.hooks.PreInvocation[0].command).toContain('git status');
     });
+
+    it('should configure regex tool matchers on digital-agency orchestrator hooks and match mutation tools', async () => {
+      const agencyPath = path.join(agentsDir, 'orchestrator-digital-agency.md');
+      const content = await fs.readFile(agencyPath, 'utf8');
+      const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+      expect(match).toBeDefined();
+
+      const parsed = YAML.parse(match![1]);
+      expect(parsed.hooks).toBeDefined();
+
+      const preTool = parsed.hooks.PreToolUse[0];
+      const postTool = parsed.hooks.PostToolUse[0];
+
+      // TDD Red Assertion: Expect regex matcher covering all mutation operations
+      expect(preTool.matcher).toBe('write_to_file|replace_file_content|multi_replace_file_content');
+      expect(postTool.matcher).toBe('write_to_file|replace_file_content|multi_replace_file_content');
+
+      // Test regex evaluation against tool names per Antigravity hooks specification
+      const regex = new RegExp(`^(${preTool.matcher})$`);
+      expect(regex.test('write_to_file')).toBe(true);
+      expect(regex.test('replace_file_content')).toBe(true);
+      expect(regex.test('multi_replace_file_content')).toBe(true);
+      expect(regex.test('run_command')).toBe(false);
+      expect(regex.test('search_web')).toBe(false);
+    });
+
+    it('should equip digital-agency orchestrator and subagents with advanced Antigravity tools', async () => {
+      const agencyPath = path.join(agentsDir, 'orchestrator-digital-agency.md');
+      const content = await fs.readFile(agencyPath, 'utf8');
+      const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+      expect(match).toBeDefined();
+
+      const parsed = YAML.parse(match![1]);
+      expect(parsed.tools).toContain('ask_question');
+      expect(parsed.tools).toContain('find_by_name');
+      expect(parsed.tools).toContain('define_subagent');
+      expect(parsed.tools).toContain('manage_subagents');
+
+      // Check subagents have find_by_name
+      const subagentFiles = [
+        'subagent-marketing-creative-designer.md',
+        'subagent-marketing-content-strategist.md',
+        'subagent-frontend-architect.md',
+        'subagent-qa-automation-lead.md',
+        'subagent-seo-specialist.md',
+        'subagent-compliance-grc-specialist.md',
+        'subagent-marketing-growth-strategist.md',
+        'subagent-marketing-conversion-specialist.md',
+        'subagent-marketing-campaign-specialist.md'
+      ];
+
+      for (const subFile of subagentFiles) {
+        const subContent = await fs.readFile(path.join(agentsDir, subFile), 'utf8');
+        const subMatch = subContent.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+        const subParsed = YAML.parse(subMatch![1]);
+        expect(subParsed.tools, `${subFile} should have find_by_name`).toContain('find_by_name');
+      }
+    });
+
+    it('should equip all 8 Tier-1 orchestrators with advanced Antigravity tools, regex hook matchers, skills, and mcpServers', async () => {
+      const tier1Orchestrators = [
+        'orchestrator-engineering.md',
+        'orchestrator-system-architecture.md',
+        'orchestrator-design.md',
+        'orchestrator-marketing.md',
+        'orchestrator-security.md',
+        'orchestrator-research.md',
+        'orchestrator-business.md',
+        'orchestrator-universal.md'
+      ];
+
+      for (const file of tier1Orchestrators) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+        expect(match, `${file} should have valid frontmatter`).toBeDefined();
+
+        const parsed = YAML.parse(match![1]);
+        expect(parsed.tools, `${file} missing ask_question`).toContain('ask_question');
+        expect(parsed.tools, `${file} missing find_by_name`).toContain('find_by_name');
+        expect(parsed.tools, `${file} missing define_subagent`).toContain('define_subagent');
+        expect(parsed.tools, `${file} missing manage_subagents`).toContain('manage_subagents');
+
+        expect(Array.isArray(parsed.skills) && parsed.skills.length > 0, `${file} should declare skills`).toBe(true);
+        expect(Array.isArray(parsed.mcpServers) && parsed.mcpServers.length > 0, `${file} should declare mcpServers`).toBe(true);
+
+        expect(parsed.hooks).toBeDefined();
+        const postToolHooks = parsed.hooks.PostToolUse || [];
+        const postToolMatcher = postToolHooks.find((h: any) => typeof h.matcher === 'string')?.matcher;
+        expect(postToolMatcher, `${file} PostToolUse matcher should be regex covering mutation tools`).toBe(
+          'write_to_file|replace_file_content|multi_replace_file_content'
+        );
+      }
+    });
+
+    it('should configure grill-me vs grill-with-docs appropriately and enforce ask_question in alignment protocols', async () => {
+      const groupA = [
+        'orchestrator-universal.md',
+        'orchestrator-marketing.md',
+        'orchestrator-business.md',
+        'orchestrator-design.md',
+        'orchestrator-research.md'
+      ];
+      const groupB = [
+        'orchestrator-engineering.md',
+        'orchestrator-system-architecture.md',
+        'orchestrator-security.md',
+        'orchestrator-digital-agency.md'
+      ];
+
+      for (const file of groupA) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const parsed = YAML.parse(content.match(/^---\r?\n([\s\S]+?)\r?\n---/)![1]);
+        expect(parsed.skills, `${file} should include grill-me`).toContain('grill-me');
+        expect(parsed.skills, `${file} must NOT include grill-with-docs (role confusion)`).not.toContain('grill-with-docs');
+        expect(content, `${file} should command ask_question tool in alignment protocol`).toMatch(/ask_question/);
+      }
+
+      for (const file of groupB) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const parsed = YAML.parse(content.match(/^---\r?\n([\s\S]+?)\r?\n---/)![1]);
+        expect(parsed.skills, `${file} should include grill-me`).toContain('grill-me');
+        expect(parsed.skills, `${file} should include grill-with-docs`).toContain('grill-with-docs');
+        expect(content, `${file} should command ask_question tool in alignment protocol`).toMatch(/ask_question/);
+      }
+    });
+
+    it('should enforce subagent-first delegation policy and invoke_subagent tool commands in orchestrator-engineering', async () => {
+      const content = await fs.readFile(path.join(agentsDir, 'orchestrator-engineering.md'), 'utf8');
+      
+      // 1. Must include Subagent-First Delegation Policy (ADR 0014)
+      expect(content, 'orchestrator-engineering.md must declare Subagent-First Delegation Policy').toMatch(
+        /Subagent-First Delegation Policy|Subagent-First/i
+      );
+
+      // 2. Must explicitly command invoke_subagent in its execution protocol
+      expect(content, 'orchestrator-engineering.md must explicitly command invoke_subagent').toMatch(
+        /invoke_subagent/
+      );
+
+      // 3. Phase 3 must be Subagent Delegation before verification, and forbid self-execution
+      expect(content, 'orchestrator-engineering.md must have subagent delegation phase before verification').toMatch(
+        /Phase 3: Subagent Delegation/i
+      );
+
+      // 4. Must enforce Subagent Delegation & Host Routing (ADR 0009 / ADR 0014)
+      expect(content, 'orchestrator-engineering.md must declare Subagent Delegation and Host Routing').toMatch(
+        /Subagent Delegation & Host Routing|ADR 0009/i
+      );
+      expect(content, 'orchestrator-engineering.md must mandate invoke_subagent for dispatching tasks').toMatch(
+        /invoke_subagent/
+      );
+    });
+
+    it('should configure engineering subagents with commandExecutionPolicy: auto and permissionMode: acceptEdits for autonomous background dispatch', async () => {
+      const engineeringSubagents = [
+        'subagent-backend-architect.md',
+        'subagent-frontend-architect.md',
+        'subagent-code-reviewer.md',
+        'subagent-repo-index.md'
+      ];
+
+      for (const file of engineeringSubagents) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+        const parsed = YAML.parse(match![1]);
+
+        expect(parsed.commandExecutionPolicy, `${file} must have commandExecutionPolicy: auto`).toBe('auto');
+        expect(parsed.permissionMode, `${file} must have permissionMode: acceptEdits`).toBe('acceptEdits');
+      }
+    });
+
+    it('should equip Tier-1 foundational subagents with find_by_name, skills, and mcpServers', async () => {
+      const coreSubagents = [
+        'subagent-backend-architect.md',
+        'subagent-system-architect.md',
+        'subagent-code-reviewer.md',
+        'subagent-repo-index.md',
+        'subagent-ui-designer.md',
+        'subagent-ux-strategist.md',
+        'subagent-interaction-designer.md',
+        'subagent-security-engineer.md',
+        'subagent-deep-research.md',
+        'subagent-socratic-mentor.md',
+        'subagent-business-panel-experts.md'
+      ];
+
+      for (const file of coreSubagents) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+        expect(match, `${file} should have valid frontmatter`).toBeDefined();
+
+        const parsed = YAML.parse(match![1]);
+        expect(parsed.tools, `${file} missing find_by_name`).toContain('find_by_name');
+        expect(Array.isArray(parsed.skills) && parsed.skills.length > 0, `${file} should declare skills`).toBe(true);
+        expect(Array.isArray(parsed.mcpServers) && parsed.mcpServers.length > 0, `${file} should declare mcpServers`).toBe(true);
+      }
+    });
+
+    it('should equip all 30 modular add-on subagents with find_by_name, skills, and mcpServers', async () => {
+      const addonSubagents = [
+        'subagent-ios-architect.md',
+        'subagent-android-architect.md',
+        'subagent-cross-platform-specialist.md',
+        'subagent-accessibility-lead.md',
+        'subagent-distributed-systems-architect.md',
+        'subagent-data-engineer.md',
+        'subagent-e2e-tester.md',
+        'subagent-devops-engineer.md',
+        'subagent-ml-platform-engineer.md',
+        'subagent-ai-model-architect.md',
+        'subagent-sysops-sre-lead.md',
+        'subagent-cloud-infrastructure-architect.md',
+        'subagent-database-administrator.md',
+        'subagent-finops-cost-engineer.md',
+        'subagent-design-ops-lead.md',
+        'subagent-design-systems-architect.md',
+        'subagent-designer-toolkit-expert.md',
+        'subagent-design-researcher.md',
+        'subagent-prototype-tester.md',
+        'subagent-paid-acquisition-specialist.md',
+        'subagent-plg-strategist.md',
+        'subagent-lifecycle-email-specialist.md',
+        'subagent-cloud-security-architect.md',
+        'subagent-appsec-penetration-tester.md',
+        'subagent-financial-analyst.md',
+        'subagent-market-intelligence-analyst.md',
+        'subagent-operations-strategist.md',
+        'subagent-legal-contract-analyst.md',
+        'subagent-statistical-analyst.md',
+        'subagent-literature-patent-analyst.md'
+      ];
+
+      for (const file of addonSubagents) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+        expect(match, `${file} should have valid frontmatter`).toBeDefined();
+
+        const parsed = YAML.parse(match![1]);
+        expect(parsed.tools, `${file} missing find_by_name`).toContain('find_by_name');
+        expect(Array.isArray(parsed.skills) && parsed.skills.length > 0, `${file} should declare skills`).toBe(true);
+        expect(Array.isArray(parsed.mcpServers) && parsed.mcpServers.length > 0, `${file} should declare mcpServers`).toBe(true);
+      }
+    });
+
+    it('should verify that all skills declared across all agents exist in registry/skills', async () => {
+      const skillsDir = path.resolve(process.cwd(), 'registry', 'skills');
+      const agentFiles = (await fs.readdir(agentsDir)).filter(f => f.endsWith('.md'));
+      const missing: Array<{ file: string; skill: string }> = [];
+
+      for (const file of agentFiles) {
+        const content = await fs.readFile(path.join(agentsDir, file), 'utf8');
+        const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+        if (!match) continue;
+        const parsed = YAML.parse(match[1]);
+        if (Array.isArray(parsed.skills)) {
+          for (const s of parsed.skills) {
+            const skillPath = path.join(skillsDir, s, 'SKILL.md');
+            if (!(await fs.pathExists(skillPath))) {
+              missing.push({ file, skill: s });
+            }
+          }
+        }
+      }
+
+      expect(missing, `Skills missing in registry/skills: ${missing.map(m => `${m.file} -> ${m.skill}`).join(', ')}`).toEqual([]);
+    });
   });
 
   // Tier 4: Real-World Inventory Audit

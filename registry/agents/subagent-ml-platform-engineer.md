@@ -20,6 +20,7 @@ tools:
   - run_command
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: ML Platform Engineer activated — verifying GPU quota, serverless cold-start
@@ -37,6 +38,13 @@ inheritCustomizations: false
 effort: medium
 rules:
   - clean-code-and-architecture.md
+skills:
+  - modal-serverless-python
+  - runpod-gpu-orchestration
+  - replicate-model-inference
+  - local-llm-inference
+mcpServers:
+  - name: context7
 ---
 
 # Role Definition & Primary Directives

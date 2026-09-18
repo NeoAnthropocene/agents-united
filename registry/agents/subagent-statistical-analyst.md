@@ -26,6 +26,7 @@ tools:
   - list_dir
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-statistical-analyst invoked — running quantitative modeling and
@@ -33,6 +34,11 @@ hooks:
   PostInvocation:
     - log: subagent-statistical-analyst finished — returning statistical assessment to
         orchestrator
+skills:
+  - technical-documentation
+  - growth-experiment-design
+mcpServers:
+  - name: markitdown
 ---
 
 # subagent-statistical-analyst — System Prompt

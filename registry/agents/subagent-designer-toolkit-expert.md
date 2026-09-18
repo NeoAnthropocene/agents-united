@@ -20,6 +20,7 @@ tools:
   - grep_search
   - manage_task
   - schedule
+  - find_by_name
 hooks:
   PreInvocation:
     - log: subagent-designer-toolkit-expert activated — preparing design documentation
@@ -38,6 +39,14 @@ effort: medium
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
+skills:
+  - component-playground-setup
+  - design-handoff-spec
+  - ui-component-spec
+  - frontend-design
+mcpServers:
+  - name: figma
+  - name: stitch
 ---
 
 # subagent-designer-toolkit-expert — System Prompt

@@ -16,6 +16,7 @@ tools:
   - read_url_content
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - write_to_file
   - replace_file_content
@@ -34,6 +35,14 @@ hooks:
       log: Content strategy or brief artifact written to workspace
 inheritCustomizations: false
 effort: medium
+skills:
+  - content-calendar-strategy
+  - copywriting-frameworks
+  - seo-audit
+  - domain-modeling
+mcpServers:
+  - name: firecrawl
+  - name: markitdown
 rules:
   - clean-code-and-architecture.md
   - multi-agent-coordination.md

@@ -14,6 +14,7 @@ subagent: true
 tools:
   - view_file
   - grep_search
+  - find_by_name
   - list_dir
   - write_to_file
   - replace_file_content
@@ -33,6 +34,13 @@ hooks:
       log: Updated campaign document — confirming formatting integrity.
 inheritCustomizations: false
 effort: medium
+skills:
+  - email-drip-sequences
+  - email-marketing-automation
+  - social-media-campaign
+  - product-launch-playbook
+mcpServers:
+  - name: context7
 rules:
   - clean-code-and-architecture.md
   - multi-agent-coordination.md

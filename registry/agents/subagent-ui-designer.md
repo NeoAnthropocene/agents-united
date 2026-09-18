@@ -16,6 +16,9 @@ tools:
   - replace_file_content
   - write_to_file
   - generate_image
+  - grep_search
+  - find_by_name
+  - list_dir
 hooks:
   PreInvocation:
     - log: UI Designer activated — loading design constraints and style guide.
@@ -29,6 +32,15 @@ hooks:
       log: File written — confirm CSS variable names follow taxonomy.
 inheritCustomizations: false
 effort: medium
+skills:
+  - frontend-design
+  - stitch-design-taste
+  - ui-component-spec
+  - design-system-tokens
+  - generative_ui
+mcpServers:
+  - name: stitch
+  - name: figma
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
