@@ -1,3 +1,10 @@
+# [0.12.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.11.0...v0.12.0) (2026-09-18)
+
+
+### Features
+
+* migrate workflows to Agent Skills and enforce workflow runtime (ADR 0016, ADR 0017) ([#43](https://github.com/NeoAnthropocene/agents-united/issues/43)) ([ab361da](https://github.com/NeoAnthropocene/agents-united/commit/ab361daa8e17bd1b269945fea1344a7e8672b74a))
+
 # [0.11.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.10.0...v0.11.0) (2026-09-12)
 
 
