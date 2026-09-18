@@ -19,6 +19,8 @@ This directory contains self-contained implementation plans for building the **`
 | [011](./011-cline-plugins-projection-migration.md) | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **DONE** | 008 |
 | [012](./012-subagent-first-planning-loop.md) | Subagent-First Orchestration & Bounded Planning Dialogue (`digital-agency` first) | Runtime Integration / Catalog / Evals | **DONE** (Cline + Antigravity manual rounds complete; desktop `invoke_subagent` harness limitation documented in ADR 0009) | 008 |
 | [013](./013-planner-orchestrator-mode-for-domain-bundles.md) | Planner-Orchestrator Mode for Tier-1 Domain Bundles (ADR 0015) | Runtime Integration / Catalog / Evals | **DONE** (Cline manual rounds complete; subagent auth errors are a Cline account issue, not a code defect) | 012 |
+| [014](./014-workflows-to-skills-migration.md) | Workflows to Skills Complete Cutover & Ecosystem Migration (ADR 0016) | Core / Catalog / Migration | **DONE** | 013 |
+| [015](./015-workflow-runtime-enforcement-and-rules-projection.md) | Workflow Runtime Enforcement, Dynamic Rules Resolution & Cross-Client Projection Hardening | Core / Runtime Integration / Catalog | **DONE — all open items closed** (peer-reviewed; C1–C9 applied; Steps 1–6a; 015c `projectedTo` reconcile; 015d doctor workflow-skill counting; 015e catalog portability + stale-vs-missing classification; 015b renderer-backed staleness detection — **ADR 0017**). Suite: `doctor` 17/17, catalog guards 31/31, regressions 120/120 + 51/51; `tsc` clean, tsup build success; both real workspaces 0 warnings. **Live-Cline multi-file rule loading empirically confirmed** via canary probe (Cline 3.0.62, `toolCallCount: 0` invariant) | 014, 008 |
 
 ### Plan 008 execution order
 

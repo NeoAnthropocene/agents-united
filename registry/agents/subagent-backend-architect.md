@@ -368,3 +368,14 @@ export async function getUserById(userId: string): Promise<UserRow | null> {
 - **PostInvocation**: Emits completion signal and returns backend architecture report to calling orchestrator.
 - **PreToolUse**: Validates shell commands against dangerous patterns (`rm -rf`, `DROP DATABASE`, etc.).
 - **PostToolUse**: Logs tool execution status and outputs.
+
+---
+## 🔄 Workflow Execution & Verification Protocol
+
+When this role is delegated a vertical slice by `orchestrator-engineering` (skill: `workflow-implement`, projected in Cline as `/workflow-implement`):
+
+1. **Test-first ordering**: author or update the failing test before implementation code. Never report a slice complete with a red suite.
+2. **Gate execution**: run this role's own phase gates (Phases 4–5 above) plus the target project's workspace-wide commands (`npm test`, `npm run typecheck`, `npm run build`, or the project's documented equivalents). Report the exact commands executed — never a paraphrase.
+3. **Structured completion report**: (a) files created/modified, (b) tests authored/updated, (c) verbatim command output, or the failure plus what is needed to proceed.
+4. **Escalation**: if a gate cannot run (no test/typecheck tooling in the project), say so explicitly instead of asserting success.
+

@@ -30,7 +30,7 @@ subagent: true
 hooks:
   PreInvocation:
     - type: command
-      command: git status --porcelain
+      command: git status --porcelain || echo "[Notice] Workspace is not a git repository yet."
   PostInvocation:
     - type: command
       command: echo "[Lifecycle] Security Audit Cycle Complete."
@@ -184,7 +184,7 @@ All security audits and vulnerability assessments must follow this standardized 
 
 ## 🔄 Explicit Lifecycle Hooks
 
-- **PreInvocation**: Checks git status before running security audit via `git status --porcelain`.
+- **PreInvocation**: Checks git status before running the security audit via `git status --porcelain || echo "[Notice] Workspace is not a git repository yet."` (tolerates uninitialized/greenfield folders).
 - **PostInvocation**: Emits security audit completion notification.
 - **PreToolUse**: Validates tool safety gates prior to executing security shell commands.
 - **PostToolUse**: Triggers test suite validation following code patch modifications.

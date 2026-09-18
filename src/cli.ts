@@ -293,7 +293,7 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
   },
   'full': {
     title: 'All-in-One Autonomous Department',
-    summary: 'Complete suite with all 7 team leads, 38 agents, and all skills & workflows',
+    summary: 'Complete suite with all 7 team leads, 38 agents, and all 160 modular skills & workflows',
   },
 };
 
@@ -1247,7 +1247,7 @@ function renderBundleDetailTree(bundle: BundleDefinition): string {
   if (bundle.name === 'full') {
     const lines: string[] = [];
     lines.push(`📦 ${pc.bold(pc.green('full'))} ${pc.cyan('(Universal Autonomous Department)')} ${pc.green('⭐ [Recommended]')}`);
-    lines.push(`│   ${pc.white('Complete suite with all 7 lead orchestrators, 38 subagents, 90 skills, and 63 workflows.')}`);
+    lines.push(`│   ${pc.white('Complete suite with all 7 lead orchestrators, 38 subagents, and 160 modular skills (91 domain skills + 69 workflow playbooks).')}`);
     lines.push(`│`);
     lines.push(`├── 🤖 Lead Orchestrators (7 department domains):`);
     lines.push(`│   ├── 🛠️  ${pc.blue('orchestrator-engineering')} ${pc.dim('(Software Engineering & Delivery)')}`);
@@ -1258,8 +1258,8 @@ function renderBundleDetailTree(bundle: BundleDefinition): string {
     lines.push(`│   ├── 🔬  ${pc.blue('orchestrator-research')} ${pc.dim('(Deep Technical Research)')}`);
     lines.push(`│   └── 💼  ${pc.blue('orchestrator-business')} ${pc.dim('(Business Strategy & Economics)')}`);
     lines.push(`├── 🤖 Specialized Sub-Agents: ${pc.blue('38 worker agents across all 8 departments')}`);
-    lines.push(`├── ⚡ Skills: ${pc.yellow('90 modular skills & runbooks')}`);
-    lines.push(`├── 🔄 Workflows: ${pc.magenta('63 guided multi-step workflows')}`);
+    lines.push(`├── ⚡ Skills: ${pc.yellow('91 modular domain skills & runbooks')}`);
+    lines.push(`├── 🔄 Workflows: ${pc.magenta('69 guided multi-step workflow playbooks')}`);
     lines.push(`├── 🔌 Prerequisites: ${pc.dim('None (Self-contained universal suite)')}`);
     lines.push(`└── 💡 Execution Modes: ${pc.green('Operational')}`);
     return lines.join('\n');
@@ -1312,30 +1312,39 @@ function renderBundleDetailTree(bundle: BundleDefinition): string {
     lines.push(`├── 🤖 Sub-agents: ${pc.dim('None')}`);
   }
 
+  // Partition skills into domain skills and workflow playbooks (ADR 0016)
+  const domainSkills = (bundle.skills || []).filter(s => !s.startsWith('workflow-'));
+  const workflowSkills = [
+    ...(bundle.skills || []).filter(s => s.startsWith('workflow-')),
+    ...(bundle.workflows || []),
+  ];
+
   // Skills
-  if (bundle.skills && bundle.skills.length > 0) {
-    lines.push(`├── ⚡ Skills (${bundle.skills.length}):`);
-    if (bundle.skills.length <= 5) {
-      lines.push(`│   └── ${pc.yellow(bundle.skills.join(', '))}`);
+  if (domainSkills.length > 0) {
+    lines.push(`├── ⚡ Skills (${domainSkills.length}):`);
+    if (domainSkills.length <= 5) {
+      lines.push(`│   └── ${pc.yellow(domainSkills.join(', '))}`);
     } else {
-      lines.push(`│   ├── ${pc.yellow(bundle.skills.slice(0, 5).join(', '))}`);
-      lines.push(`│   └── ${pc.dim(`(+${bundle.skills.length - 5} more: ${bundle.skills.slice(5).join(', ')})`)}`);
+      lines.push(`│   ├── ${pc.yellow(domainSkills.slice(0, 5).join(', '))}`);
+      lines.push(`│   └── ${pc.dim(`(+${domainSkills.length - 5} more: ${domainSkills.slice(5).join(', ')})`)}`);
     }
-  } else {
+  } else if (!bundle.parentBundle && workflowSkills.length === 0) {
+    lines.push(`├── ⚡ Skills: ${pc.dim('None')}`);
+  } else if (bundle.parentBundle && domainSkills.length === 0) {
     lines.push(`├── ⚡ Skills: ${pc.dim('Inherited from base bundle')}`);
   }
 
   // Workflows
-  if (bundle.workflows && bundle.workflows.length > 0) {
-    const wfNames = bundle.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
-    lines.push(`├── 🔄 Workflows (${bundle.workflows.length}):`);
+  if (workflowSkills.length > 0) {
+    const wfNames = workflowSkills.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
+    lines.push(`├── 🔄 Workflows (${workflowSkills.length}):`);
     if (wfNames.length <= 4) {
       lines.push(`│   └── ${pc.magenta(wfNames.join(', '))}`);
     } else {
       lines.push(`│   ├── ${pc.magenta(wfNames.slice(0, 4).join(', '))}`);
       lines.push(`│   └── ${pc.dim(`(+${wfNames.length - 4} more: ${wfNames.slice(4).join(', ')})`)}`);
     }
-  } else {
+  } else if (bundle.parentBundle) {
     lines.push(`├── 🔄 Workflows: ${pc.dim('Inherited from base bundle')}`);
   }
 
@@ -1448,20 +1457,27 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
         console.log(`${subIndent}├── 🤖 Sub-agents: ${pc.blue(displaySubs)}`);
       }
 
+      // Skills & Workflows (ADR 0016)
+      const domainSkills = (b.skills || []).filter(s => !s.startsWith('workflow-'));
+      const workflowSkills = [
+        ...(b.skills || []).filter(s => s.startsWith('workflow-')),
+        ...(b.workflows || []),
+      ];
+
       // Skills
-      if (b.skills && b.skills.length > 0) {
+      if (domainSkills.length > 0) {
         const displaySkills =
-          b.skills.length > 3 ? `${b.skills.slice(0, 3).join(', ')} (+${b.skills.length - 3} more)` : b.skills.join(', ');
+          domainSkills.length > 3 ? `${domainSkills.slice(0, 3).join(', ')} (+${domainSkills.length - 3} more)` : domainSkills.join(', ');
         console.log(`${subIndent}├── ⚡ Skills: ${pc.yellow(displaySkills)}`);
       }
 
       // Workflows
-      if (b.workflows && b.workflows.length > 0) {
-        const wfNames = b.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
+      if (workflowSkills.length > 0) {
+        const wfNames = workflowSkills.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
         const displayWfs =
           wfNames.length > 3 ? `${wfNames.slice(0, 3).join(', ')} (+${wfNames.length - 3} more)` : wfNames.join(', ');
         console.log(`${subIndent}└── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
-      } else {
+      } else if (b.parentBundle) {
         console.log(`${subIndent}└── 🔄 Workflows: ${pc.dim('Inherited from parent')}`);
       }
 
@@ -1505,14 +1521,21 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
         console.log(`${subIndent}├── 🤖 Sub-agents: ${pc.blue(displaySubs)}`);
       }
 
-      if (b.skills && b.skills.length > 0) {
+      // Skills & Workflows (ADR 0016)
+      const orgDomainSkills = (b.skills || []).filter(s => !s.startsWith('workflow-'));
+      const orgWorkflowSkills = [
+        ...(b.skills || []).filter(s => s.startsWith('workflow-')),
+        ...(b.workflows || []),
+      ];
+
+      if (orgDomainSkills.length > 0) {
         const displaySkills =
-          b.skills.length > 3 ? `${b.skills.slice(0, 3).join(', ')} (+${b.skills.length - 3} more)` : b.skills.join(', ');
+          orgDomainSkills.length > 3 ? `${orgDomainSkills.slice(0, 3).join(', ')} (+${orgDomainSkills.length - 3} more)` : orgDomainSkills.join(', ');
         console.log(`${subIndent}├── ⚡ Skills: ${pc.yellow(displaySkills)}`);
       }
 
-      if (b.workflows && b.workflows.length > 0) {
-        const wfNames = b.workflows.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
+      if (orgWorkflowSkills.length > 0) {
+        const wfNames = orgWorkflowSkills.map(w => w.replace(/^workflow-/, '').replace(/\.md$/, ''));
         const displayWfs =
           wfNames.length > 3 ? `${wfNames.slice(0, 3).join(', ')} (+${wfNames.length - 3} more)` : wfNames.join(', ');
         console.log(`${subIndent}├── 🔄 Workflows: ${pc.magenta(displayWfs)}`);
@@ -2177,7 +2200,7 @@ cli
 
     console.log(`  🤖 Installed Agents:    ${pc.bold(report.agentsCount.toString())}`);
     console.log(`  ⚡ Installed Skills:    ${pc.bold(report.skillsCount.toString())}`);
-    console.log(`  🔄 Installed Workflows: ${pc.bold(report.workflowsCount.toString())}\n`);
+    console.log(`  🔄 Installed Workflow Skills: ${pc.bold(report.workflowsCount.toString())}\n`);
 
     if (report.clineCapability) {
       console.log(pc.bold(pc.cyan('Cline Runtime & Native Discovery Audit:')));

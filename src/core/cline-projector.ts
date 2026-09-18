@@ -1,4 +1,4 @@
-﻿import yaml from 'yaml';
+import yaml from 'yaml';
 import path from 'node:path';
 import fs from 'fs-extra';
 import type {
@@ -185,7 +185,10 @@ export class ClineProjector {
     }));
 
     const sortedSkills = [...(bundle.skills || [])].sort();
-    const sortedWorkflows = [...(bundle.workflows || [])].sort();
+    const rawWorkflows = bundle.workflows && bundle.workflows.length > 0
+      ? bundle.workflows
+      : (bundle.skills || []).filter(s => s.startsWith('workflow-'));
+    const sortedWorkflows = [...rawWorkflows].sort();
     const recommendedAddons = (bundle.recommendedAddons || []).filter(a => !excludeAddons.includes(a));
 
     const manifest: ClineTeamManifest = {
@@ -245,6 +248,18 @@ export class ClineProjector {
       const name = agentFile.replace(/\.md$/, '');
       return `- **${name}**: \`.agents/agents/${agentFile}\``;
     });
+
+    const rawWorkflows = [
+      ...((bundle.workflows || []).map(w => w.replace(/\.md$/i, ''))),
+      ...((bundle.skills || []).filter(s => s.startsWith('workflow-'))),
+    ];
+    const uniqueWorkflows = Array.from(new Set(rawWorkflows)).sort();
+    const workflowSection = uniqueWorkflows.length > 0
+      ? `\n### Installed Workflows & Workflow Skills\n` +
+        `Execute multi-step engineering procedures by consulting the corresponding workflow skill runbook (\`.agents/skills/<name>/SKILL.md\`) or triggering its slash command (\`/<name>\`):\n` +
+        uniqueWorkflows.map(w => `- **${w}**: \`.cline/workflows/${w}.md\` | \`.agents/skills/${w}/SKILL.md\``).join('\n') +
+        '\n'
+      : '';
 
     const addons = (bundle.recommendedAddons || []).filter(a => !excludeAddons.includes(a));
     const addonSection = addons.length > 0
@@ -322,7 +337,7 @@ ${delegationStep}
 4. Only specialist roles declared in the Team Manifest are active in this workspace.
 ${planningSection}${personaSection}
 ${specialistLines.length > 0 ? `\n### Installed Specialist Roles\n${specialistLines.join('\n')}` : ''}
-${addonSection}
+${workflowSection}${addonSection}
 `;
   }
 
@@ -422,8 +437,29 @@ ${addonSection}
     }
 
     // 3. Workflows (.cline/workflows/<slug>.md) - natively surfaced as /<slug>
-    //    slash commands by Cline 3.x (no .agents lane exists for workflows).
-    for (const workflowFile of resolved.workflows) {
+    //    slash commands by Cline 3.x.
+    //    ADR 0016: Project workflow skills (name starting with workflow-) into .cline/workflows/
+    //    retaining the workflow-* prefix so Cline users retain /workflow-* slash commands.
+    const workflowSkillNames = resolved.skills.filter(s => s.startsWith('workflow-'));
+    for (const skillName of workflowSkillNames) {
+      const canonicalRel = `skills/${skillName}/SKILL.md`;
+      const skillFilePath = path.join(registryDir, 'skills', skillName, 'SKILL.md');
+      if (await fs.pathExists(skillFilePath)) {
+        const content = await fs.readFile(skillFilePath, 'utf8');
+        const slug = skillName;
+        const rendered = this.renderWorkflowProjection(content, canonicalRel);
+        artifacts.push({
+          kind: 'workflow',
+          canonical: canonicalRel,
+          relPath: `.cline/workflows/${slug}.md`.replace(/\\/g, '/'),
+          content: rendered,
+          managedMarker: true,
+        });
+      }
+    }
+
+    // Fallback for any legacy resolved.workflows entries
+    for (const workflowFile of resolved.workflows || []) {
       const canonicalRel = `workflows/${workflowFile}`;
       const srcPath = path.join(registryDir, 'workflows', workflowFile);
       if (await fs.pathExists(srcPath)) {
@@ -450,7 +486,32 @@ ${addonSection}
       managedMarker: true,
     });
 
-    // 5. Team Manifest (.agents/plugins/<bundle-name>/agents-united/teams/<bundle>.yaml)
+    // 5. Projected Domain Rules (.cline/rules/<rule-file>)
+    //    Plan 015 Step 2 / §0/C6d + §0/C7. Cline has no per-agent rule scoping,
+    //    so `.cline/rules/` is the only lane available: project ONLY the
+    //    deduplicated, agent-referenced rule set (never the whole registry/rules
+    //    tree), sorted for byte-stable lockfile hashes and `agents doctor`.
+    //    Host entrypoint rules belong to their own hosts and are skipped.
+    const hostEntrypointRules = new Set(['GEMINI.md', 'AGENTS.md', 'CLAUDE.md', 'CURSOR.md']);
+    for (const ruleFile of [...(resolved.rules || [])].sort()) {
+      if (hostEntrypointRules.has(ruleFile)) continue;
+      const ruleSrcPath = path.join(registryDir, 'rules', ruleFile);
+      if (await fs.pathExists(ruleSrcPath)) {
+        const ruleFileContent = await fs.readFile(ruleSrcPath, 'utf8');
+        // Rule modules carry no YAML frontmatter, so the managed marker is line 1.
+        // HostProjector.hasManagedMarker() accepts that (its no-frontmatter path is
+        // a plain includes('managed-by: agents-united')).
+        artifacts.push({
+          kind: 'rule',
+          canonical: `rules/${ruleFile}`,
+          relPath: `.cline/rules/${ruleFile}`.replace(/\\/g, '/'),
+          content: `${ClineProjector.marker(`rules/${ruleFile}`)}\n\n${ruleFileContent.trim()}\n`,
+          managedMarker: true,
+        });
+      }
+    }
+
+    // 6. Team Manifest (.agents/plugins/<bundle-name>/agents-united/teams/<bundle>.yaml)
     const manifestContent = this.renderTeamManifest(bundle, scope, excludeAddons);
     artifacts.push({
       kind: 'team-manifest',

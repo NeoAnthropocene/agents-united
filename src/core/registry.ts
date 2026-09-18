@@ -1,5 +1,6 @@
 import path from 'node:path';
 import fs from 'fs-extra';
+import yaml from 'yaml';
 import { fileURLToPath } from 'node:url';
 import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults, PlanningLoopMode } from './types.js';
 
@@ -7,8 +8,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export class RegistryResolver {
+  /**
+   * Host entrypoint rules (Plan 015 §0/C7). `GEMINI.md` is always resolved so
+   * Antigravity-family hosts keep their entrypoint; it is never declared in an
+   * agent's frontmatter.
+   */
+  private static readonly BASELINE_RULES = ['GEMINI.md'];
+
   private registryDir: string;
   private bundlesManifest: BundlesManifest | null = null;
+  /** Memoized agent file -> declared rules (Plan 015 §0/C6). */
+  private agentRuleCache = new Map<string, string[]>();
 
   constructor(customRegistryDir?: string) {
     if (customRegistryDir) {
@@ -76,12 +86,14 @@ export class RegistryResolver {
         const agents = new Set<string>();
         const skills = new Set<string>();
         const workflows = new Set<string>();
+        const rules = new Set<string>(RegistryResolver.BASELINE_RULES);
 
         for (const b of domainBundles) {
           const resolved = await this.resolve(b.name);
           resolved.agents.forEach(a => agents.add(a));
           resolved.skills.forEach(s => skills.add(s));
           resolved.workflows.forEach(w => workflows.add(w));
+          resolved.rules.forEach(r => rules.add(r));
         }
 
         return {
@@ -89,7 +101,7 @@ export class RegistryResolver {
           agents: Array.from(agents),
           skills: Array.from(skills),
           workflows: Array.from(workflows),
-          rules: ['GEMINI.md'],
+          rules: Array.from(rules).sort(),
         };
       }
     }
@@ -100,7 +112,11 @@ export class RegistryResolver {
       const agents = new Set<string>();
       const skills = new Set<string>(bundle.skills || []);
       const workflows = new Set<string>(bundle.workflows || []);
-      const rules = ['GEMINI.md'];
+      const rules = new Set<string>(RegistryResolver.BASELINE_RULES);
+
+      // Forward-compatible only: no bundle in registry/bundles.json declares
+      // `rules` today (verified: 0 occurrences); the type allows it (types.ts:369).
+      (bundle.rules || []).forEach(r => rules.add(r));
 
       if (bundle.parentBundle) {
         const parent = await this.getBundle(bundle.parentBundle);
@@ -109,18 +125,34 @@ export class RegistryResolver {
           if (parent.agents) parent.agents.forEach(a => agents.add(a));
           if (parent.skills) parent.skills.forEach(s => skills.add(s));
           if (parent.workflows) parent.workflows.forEach(w => workflows.add(w));
+          (parent.rules || []).forEach(r => rules.add(r));
         }
       }
 
       if (bundle.orchestrator) agents.add(bundle.orchestrator);
       if (bundle.agents) bundle.agents.forEach(a => agents.add(a));
 
+      // Plan 015 §0/C6 — agent frontmatter `rules:` bindings are the single
+      // source of truth and were previously ignored entirely. Collect them from
+      // the orchestrator, every subagent, and the inherited parent's agents so
+      // `resolved.agents` and `resolved.rules` can never disagree.
+      for (const agentFile of agents) {
+        for (const rule of await this.extractRulesFromAgent(agentFile)) {
+          rules.add(rule);
+        }
+      }
+
+      // Plan 015 §0/D2 — fail fast instead of letting installer.ts silently skip
+      // a rule file that does not exist under registry/rules/.
+      const sortedRules = Array.from(rules).sort();
+      this.assertRulesExist(sortedRules, `bundle "${bundle.name}"`);
+
       return {
         targetBundle: bundle.name,
         agents: Array.from(agents),
         skills: Array.from(skills),
         workflows: Array.from(workflows),
-        rules,
+        rules: sortedRules,
       };
     }
 
@@ -135,7 +167,9 @@ export class RegistryResolver {
       };
     }
 
+    const sanitizedSkillId = identifier.replace(/\.md$/, '').replace(/--/g, '-');
     const skillPath = path.join(this.registryDir, 'skills', identifier);
+    const sanitizedSkillPath = path.join(this.registryDir, 'skills', sanitizedSkillId);
     if (await fs.pathExists(skillPath)) {
       return {
         agents: [],
@@ -143,8 +177,26 @@ export class RegistryResolver {
         workflows: [],
         rules: [],
       };
+    } else if (await fs.pathExists(sanitizedSkillPath)) {
+      return {
+        agents: [],
+        skills: [sanitizedSkillId],
+        workflows: [],
+        rules: [],
+      };
     }
 
+    const workflowSkillPath = path.join(this.registryDir, 'skills', `workflow-${sanitizedSkillId}`);
+    if (await fs.pathExists(workflowSkillPath)) {
+      return {
+        agents: [],
+        skills: [`workflow-${sanitizedSkillId}`],
+        workflows: [],
+        rules: [],
+      };
+    }
+
+    // Legacy fallback check for standalone workflow file if present
     const workflowFileName = identifier.startsWith('workflow-') ? `${identifier}.md` : `workflow-${identifier}.md`;
     const workflowPath = path.join(this.registryDir, 'workflows', workflowFileName);
     if (await fs.pathExists(workflowPath)) {
@@ -194,7 +246,7 @@ export class RegistryResolver {
 
     const skillsDir = path.join(this.registryDir, 'skills');
     let matchedSkills: string[] = [];
-    if (!options?.type || options.type === 'skill') {
+    if (!options?.type || options.type === 'skill' || options.type === 'workflow') {
       if (await fs.pathExists(skillsDir)) {
         const dirs = await fs.readdir(skillsDir);
         matchedSkills = dirs.filter(d => {
@@ -204,14 +256,19 @@ export class RegistryResolver {
       }
     }
 
-    const workflowsDir = path.join(this.registryDir, 'workflows');
+    // Support workflow search: matches skills with workflow- prefix or any legacy workflows folder
     let matchedWorkflows: string[] = [];
     if (!options?.type || options.type === 'workflow') {
+      matchedWorkflows = matchedSkills.filter(s => s.startsWith('workflow-'));
+      const workflowsDir = path.join(this.registryDir, 'workflows');
       if (await fs.pathExists(workflowsDir)) {
         const files = await fs.readdir(workflowsDir);
-        matchedWorkflows = files.filter(f => f.endsWith('.md')).filter(f => {
+        const legacyMatches = files.filter(f => f.endsWith('.md')).filter(f => {
           if (!q) return true;
           return f.toLowerCase().includes(q);
+        });
+        legacyMatches.forEach(f => {
+          if (!matchedWorkflows.includes(f)) matchedWorkflows.push(f);
         });
       }
     }
@@ -225,6 +282,59 @@ export class RegistryResolver {
   }
 
   /**
+   * Plan 015 Step 1 / §0/C6 — extract the `rules:` binding from an agent's YAML
+   * frontmatter. Rules are declared as a BLOCK SEQUENCE:
+   *   rules:
+   *     - git-guardrails.md
+   * Never regex for an inline `rules: [a, b]`. Returns `[]` (never throws) when
+   * the file is missing, has no frontmatter, or the YAML is unparsable so that
+   * resolution stays resilient; existence of the referenced rule files is
+   * enforced separately by `assertRulesExist`.
+   */
+  private async extractRulesFromAgent(agentFileName: string): Promise<string[]> {
+    const cached = this.agentRuleCache.get(agentFileName);
+    if (cached) {
+      return cached;
+    }
+
+    let declared: string[] = [];
+    const agentPath = path.join(this.registryDir, 'agents', agentFileName);
+    if (await fs.pathExists(agentPath)) {
+      const content = await fs.readFile(agentPath, 'utf8');
+      const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      if (match) {
+        try {
+          const meta = (yaml.parse(match[1]) as { rules?: unknown } | null) ?? {};
+          if (Array.isArray(meta.rules)) {
+            declared = meta.rules.filter((r): r is string => typeof r === 'string');
+          }
+        } catch {
+          declared = [];
+        }
+      }
+    }
+
+    this.agentRuleCache.set(agentFileName, declared);
+    return declared;
+  }
+
+  /**
+   * Plan 015 §0/D2 — a declared rule binding that cannot be satisfied is a
+   * configuration defect, not something to skip silently: installer.ts guards
+   * its copy loop with `pathExists`, so a typo would otherwise deploy no rule at
+   * all with no error surfaced anywhere.
+   */
+  private assertRulesExist(rules: string[], context: string): void {
+    for (const rule of rules) {
+      if (!fs.existsSync(path.join(this.registryDir, 'rules', rule))) {
+        throw new Error(
+          `Registry validation error: ${context} references rule "${rule}" which does not exist in registry/rules/.`
+        );
+      }
+    }
+  }
+
+  /**
    * ADR 0015 — fail-fast validation of planningLoop configuration.
    * @throws if any bundle violates planner-orchestrator invariants.
    */
@@ -232,6 +342,17 @@ export class RegistryResolver {
     const validModes: string[] = ['subagent-first', 'planner-orchestrator'];
 
     for (const [name, bundle] of Object.entries(manifest.bundles)) {
+      // Plan 015 §0/D2 — declared rule bindings must resolve on disk.
+      if (Array.isArray(bundle.rules)) {
+        for (const rule of bundle.rules) {
+          if (!fs.existsSync(path.join(this.registryDir, 'rules', rule))) {
+            throw new Error(
+              `Registry validation error: bundle "${name}" references rule "${rule}" which does not exist in registry/rules/.`
+            );
+          }
+        }
+      }
+
       const pl = bundle.planningLoop;
       if (!pl || !pl.enabled) continue;               // no planning → skip
 

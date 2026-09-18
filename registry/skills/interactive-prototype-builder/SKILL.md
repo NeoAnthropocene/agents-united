@@ -93,7 +93,7 @@ Following this skill ensures high usability, visual consistency, rapid iteration
 4. Verify zero accessibility violations (WCAG 2.2 AA) and zero broken layout references.
 5. Execute CLI health doctor check.
    ```bash
-   node dist/cli.js doctor
+   npx agents-united doctor
    ```
 
 ### Phase 5: Post-Execution Cleanup & Artifact Generation

@@ -59,3 +59,14 @@ Cross-confirmed against (a) `sdk/packages/shared/src/storage/paths.ts` at commit
 - `agents doctor --host cline` gains checks for the new projection set (`.cline/agents/*.yml` schema, `.cline/rules/`, `.cline/workflows/`, `plugin.json` presence).
 - Test suites (`cline-projector`, `cline-launcher`, `projection-lifecycle`, `cli-e2e`, `cline-compatibility`) are updated to the new artifact set and bootstrap prompt.
 - End-to-end verification runs in a scratch workspace against the installed Cline 3.0.61: skills, `subagent_*` tools, active rules, and workflow commands are enumerated from a live session before the change ships.
+
+## Empirical confirmation (2026-09-18, Cline CLI 3.0.62)
+
+The "always-active instructions" claim for `.cline/rules/` (Verified discovery registry, above) is now **empirically confirmed for multiple files**, not just the discovery root:
+
+- Two canary rule files were injected into `.cline/rules/` in a real workspace, each mandating a unique token in every reply.
+- A headless one-shot session (`cline --json -t 60 "Reply with exactly: OK"`) returned **both** tokens, with **`toolCallCount: 0`** — zero tool calls, so the content cannot have been read from disk and must have been present in the injected context.
+- Corroboration: `inputTokens` rose from **34,817 → 34,899 (+82)** for an identical prompt, matching the two canaries' size.
+- Negative control: an identical canary in a non-scanned `.cline/rules-disabled/` directory produced **zero** matches.
+
+Consequence: the ADR 0013 rule-projection decision stands on empirical footing, and the Plan 015 Step 2 projection of agent-declared rule modules into `.cline/rules/` is verified to reach a live host. See Plan 015 §5.11 for the reusable canary-probe recipe (its `toolCallCount: 0` invariant is what makes the test conclusive rather than suggestive).
