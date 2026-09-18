@@ -56,8 +56,6 @@ function validateWorkflow(content: string, filename: string) {
 
   if (!fm.name) errors.push('Missing frontmatter name');
   if (!fm.description) errors.push('Missing frontmatter description');
-  if (!fm.bundle) errors.push('Missing frontmatter bundle');
-  if (!fm.estimatedDuration) errors.push('Missing frontmatter estimatedDuration');
 
   const body = content.slice(fmMatch[0].length).trim();
   const lines = content.split(/\r?\n/).length;
@@ -84,7 +82,6 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
   const rootDir = process.cwd();
   const agentsDir = path.join(rootDir, 'registry/agents');
   const skillsDir = path.join(rootDir, 'registry/skills');
-  const workflowsDir = path.join(rootDir, 'registry/workflows');
 
   const m1Agent = 'subagent-marketing-creative-designer.md';
   const m1Skills = [
@@ -99,10 +96,10 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
     'churn-prevention-playbook',
   ];
   const m1Workflows = [
-    'workflow-seo-content-pipeline.md',
-    'workflow-paid-acquisition-campaign.md',
-    'workflow-onboarding-funnel-cro.md',
-    'workflow-email-drip-sequence.md',
+    'workflow-seo-content-pipeline',
+    'workflow-paid-acquisition-campaign',
+    'workflow-onboarding-funnel-cro',
+    'workflow-email-drip-sequence',
   ];
 
   describe('1. Creative Designer Agent Empirical Stress Tests', () => {
@@ -197,23 +194,23 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
   });
 
   describe('3. Marketing Workflows Phase Gates & Schema Tests', () => {
-    it.each(m1Workflows)('workflow %s should validate deterministic gates and flowchart', async (wfFile) => {
-      const wfPath = path.join(workflowsDir, wfFile);
+    it.each(m1Workflows)('workflow %s should validate deterministic gates and flowchart', async (wfName) => {
+      const wfPath = path.join(skillsDir, wfName, 'SKILL.md');
       const exists = await fs.pathExists(wfPath);
-      expect(exists, `Workflow file must exist: ${wfFile}`).toBe(true);
+      expect(exists, `Workflow skill must exist: ${wfName}`).toBe(true);
 
       const content = await fs.readFile(wfPath, 'utf8');
-      const result = validateWorkflow(content, wfFile);
+      const result = validateWorkflow(content, wfName);
 
-      expect(result.valid, `Errors in ${wfFile}: ${result.errors.join(', ')}`).toBe(true);
+      expect(result.valid, `Errors in ${wfName}: ${result.errors.join(', ')}`).toBe(true);
       expect(result.lines).toBeGreaterThanOrEqual(50);
     });
 
-    it.each(m1Workflows)('workflow %s should contain valid Mermaid flowchart syntax', async (wfFile) => {
-      const wfPath = path.join(workflowsDir, wfFile);
+    it.each(m1Workflows)('workflow %s should contain valid Mermaid flowchart syntax', async (wfName) => {
+      const wfPath = path.join(skillsDir, wfName, 'SKILL.md');
       const content = await fs.readFile(wfPath, 'utf8');
       const mermaidMatch = content.match(/```mermaid\r?\n([\s\S]+?)\r?\n```/);
-      expect(mermaidMatch, `Mermaid block missing in ${wfFile}`).not.toBeNull();
+      expect(mermaidMatch, `Mermaid block missing in ${wfName}`).not.toBeNull();
 
       const mermaidCode = mermaidMatch![1];
       expect(mermaidCode).toContain('graph TD');
@@ -234,8 +231,8 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
     });
 
     it('should confirm all 4 workflows have zero placeholder tokens (TODO, TBD, FIXME, lorem ipsum)', async () => {
-      for (const wfFile of m1Workflows) {
-        const wfPath = path.join(workflowsDir, wfFile);
+      for (const wfName of m1Workflows) {
+        const wfPath = path.join(skillsDir, wfName, 'SKILL.md');
         const content = await fs.readFile(wfPath, 'utf8');
         expect(content).not.toMatch(/\bTODO\b/i);
         expect(content).not.toMatch(/\bTBD\b/i);
@@ -245,6 +242,7 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
     });
 
     it('should confirm all workflows reference valid marketing bundles', async () => {
+      const bundlesJson = await fs.readJson(path.join(rootDir, 'registry/bundles.json'));
       const validBundles = [
         'growth-marketing',
         'seo-content-marketing',
@@ -252,13 +250,10 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
         'product-led-growth',
         'lifecycle-email-marketing',
       ];
+      const allMarketingSkills = validBundles.flatMap(b => bundlesJson.bundles[b]?.skills || []);
 
-      for (const wfFile of m1Workflows) {
-        const wfPath = path.join(workflowsDir, wfFile);
-        const content = await fs.readFile(wfPath, 'utf8');
-        const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
-        const fm = YAML.parse(match![1]);
-        expect(validBundles).toContain(fm.bundle);
+      for (const wfName of m1Workflows) {
+        expect(allMarketingSkills).toContain(wfName);
       }
     });
 
@@ -272,11 +267,11 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
     });
 
     it('should confirm all 4 workflows have line counts >= 60 lines with deterministic gates', async () => {
-      for (const wfFile of m1Workflows) {
-        const wfPath = path.join(workflowsDir, wfFile);
+      for (const wfName of m1Workflows) {
+        const wfPath = path.join(skillsDir, wfName, 'SKILL.md');
         const content = await fs.readFile(wfPath, 'utf8');
         const lineCount = content.split('\n').length;
-        expect(lineCount, `Workflow ${wfFile} line count ${lineCount} is less than 60`).toBeGreaterThanOrEqual(60);
+        expect(lineCount, `Workflow ${wfName} line count ${lineCount} is less than 60`).toBeGreaterThanOrEqual(60);
       }
     });
   });

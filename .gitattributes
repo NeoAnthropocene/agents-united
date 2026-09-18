@@ -1,0 +1,23 @@
+# ==============================================================================
+# Line endings & binary handling
+# ==============================================================================
+# Repo convention: LF in the index (CI runs on ubuntu-latest). On Windows,
+# `core.autocrlf=true` already stores LF and checks files out as CRLF, so this
+# file deliberately does NOT renormalize the existing tree — a repo-wide
+# `* text=auto eol=lf` would rewrite ~500 CRLF files and belongs in its own
+# dedicated PR. It pins only the files where byte-stability actually matters.
+
+# Machine-generated manifest — keep LF so it stays byte-stable across platforms
+registry/bundles.json text eol=lf
+
+# Binary assets — never apply text conversion (protects README hero images and
+# any future branding assets; a CRLF "conversion" would corrupt them)
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary

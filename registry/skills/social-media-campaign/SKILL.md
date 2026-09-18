@@ -88,7 +88,7 @@ Following this skill ensures high usability, visual consistency, rapid iteration
 2. Verify zero lint errors, type warnings, or broken references.
 3. Execute CLI health doctor check.
    ```bash
-   node dist/cli.js doctor
+   npx agents-united doctor
    ```
 4. Assert all acceptance criteria are satisfied.
 

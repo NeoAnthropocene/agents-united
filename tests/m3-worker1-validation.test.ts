@@ -127,8 +127,6 @@ function validateWorkflowGates(content: string, filename: string = 'wf.md', opti
   if (options.requireAllGates) {
     if (!frontmatter?.name) errors.push('Missing name');
     if (!frontmatter?.description) errors.push('Missing description');
-    if (!frontmatter?.bundle) errors.push('Missing bundle');
-    if (!frontmatter?.estimatedDuration) errors.push('Missing estimatedDuration');
     if (!hasFlowchart) errors.push('Missing flowchart');
     if (!hasPhaseTransitions) errors.push('Missing transitions');
     if (!hasPhaseGates) errors.push('Missing phase gates');
@@ -142,7 +140,6 @@ function validateWorkflowGates(content: string, filename: string = 'wf.md', opti
 describe('Milestone 3 (Worker 1) Deliverables Validation', () => {
   const agentsDir = path.resolve(process.cwd(), 'registry/agents');
   const skillsDir = path.resolve(process.cwd(), 'registry/skills');
-  const workflowsDir = path.resolve(process.cwd(), 'registry/workflows');
 
   describe('Sub-Agents Validation', () => {
     const agents = [
@@ -214,21 +211,24 @@ describe('Milestone 3 (Worker 1) Deliverables Validation', () => {
 
   describe('3 AI/ML Workflows Validation', () => {
     const workflows = [
-      { file: 'workflow-ml-eval.md', duration: '30-60m' },
-      { file: 'workflow-rag-pipeline-deploy.md', duration: '25-45m' },
-      { file: 'workflow-serverless-gpu-deploy.md', duration: '15-30m' },
+      'workflow-ml-eval',
+      'workflow-rag-pipeline-deploy',
+      'workflow-serverless-gpu-deploy',
     ];
 
-    for (const wf of workflows) {
-      it(`should strictly validate workflow ${wf.file}`, async () => {
-        const wfPath = path.join(workflowsDir, wf.file);
-        expect(await fs.pathExists(wfPath), `Workflow file ${wf.file} must exist`).toBe(true);
+    for (const wfName of workflows) {
+      it(`should strictly validate workflow ${wfName}`, async () => {
+        const wfPath = path.join(skillsDir, wfName, 'SKILL.md');
+        expect(await fs.pathExists(wfPath), `Workflow skill ${wfName}/SKILL.md must exist`).toBe(true);
 
         const content = await fs.readFile(wfPath, 'utf8');
-        const wfRes = validateWorkflowGates(content, wf.file, { requireAllGates: true });
-        expect(wfRes.valid, `Workflow validation failed for ${wf.file}: ${wfRes.errors.join('; ')}`).toBe(true);
-        expect(wfRes.frontmatter?.bundle).toBe('ai-ml-engineering');
-        expect(wfRes.frontmatter?.estimatedDuration).toBe(wf.duration);
+        const wfRes = validateWorkflowGates(content, wfName, { requireAllGates: true });
+        expect(wfRes.valid, `Workflow validation failed for ${wfName}: ${wfRes.errors.join('; ')}`).toBe(true);
+        expect(wfRes.frontmatter?.name).toBe(wfName);
+
+        const bundlesJson = await fs.readJson(path.resolve(process.cwd(), 'registry/bundles.json'));
+        expect(bundlesJson.bundles['ai-ml-engineering'].skills).toContain(wfName);
+
         expect(wfRes.hasFlowchart).toBe(true);
         expect(wfRes.hasPhaseTransitions).toBe(true);
         expect(wfRes.hasPhaseGates).toBe(true);

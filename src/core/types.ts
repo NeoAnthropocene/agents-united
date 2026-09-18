@@ -79,6 +79,7 @@ export interface BundleDefinition {
   aliases?: string[];
   orchestrator?: string;
   agents?: string[];
+  /** @deprecated ADR 0016: Workflows are unified into `skills`. Preserved for backward compatibility with legacy manifests. */
   workflows?: string[];
   skills?: string[];
   prerequisites?: BundlePrerequisites;
@@ -87,6 +88,14 @@ export interface BundleDefinition {
   planningLoop?: PlanningLoopConfig;
   /** ADR 0014 — AstrolabsAI persona → canonical roster role (`.md` stripped) map. */
   personaAliases?: Record<string, string>;
+  /**
+   * Plan 015 §0/C6d — optional bundle-level rule bindings. Forward-compatible:
+   * no bundle in `registry/bundles.json` declares this today (agent frontmatter
+   * `rules:` is the single source of truth). Adding it here keeps
+   * `RegistryResolver.resolve()` ready for a future catalog-level declaration
+   * without another schema change.
+   */
+  rules?: string[];
 }
 
 export interface BundlesManifest {
@@ -127,7 +136,8 @@ export interface ClineTeamManifest {
   coordinator: { name: string; canonicalPath: string };
   roles: Array<{ name: string; canonicalPath: string }>;
   skills: string[];
-  workflows: string[];
+  /** @deprecated ADR 0016: Workflows are unified into `skills`. Preserved for backward compatibility. */
+  workflows?: string[];
   recommendedAddons: string[];
   activation: {
     preferred: 'named-team';
@@ -183,7 +193,8 @@ export interface LockfileManifest {
     bundles: string[];
     agents: string[];
     skills: string[];
-    workflows: string[];
+    /** @deprecated ADR 0016: Workflows are unified into `skills`. Preserved for backward compatibility with existing lockfiles. */
+    workflows?: string[];
   };
   bundleVersions?: Record<string, string>;
   bundleModes?: Record<string, ExecutionMode>;

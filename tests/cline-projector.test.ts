@@ -1,7 +1,114 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import yaml from 'yaml';
 import { ClineProjector } from '../src/core/cline-projector.js';
 import type { BundleDefinition, InstallScope, LockfileManifest } from '../src/core/types.js';
+
+// ─ Plan 015 Step 2 / §0/C7: projected domain rules (.cline/rules/<rule-file>) ──
+describe('Projected domain rules (Plan 015 Step 2)', () => {
+  const bundle: BundleDefinition = {
+    name: 'software-engineering',
+    description: 'Software engineering bundle',
+    orchestrator: 'orchestrator-engineering.md',
+    agents: ['subagent-backend-architect.md'],
+    skills: ['test-driven-development'],
+  };
+
+  const resolved = {
+    targetBundle: 'software-engineering',
+    agents: ['orchestrator-engineering.md', 'subagent-backend-architect.md'],
+    skills: ['test-driven-development'],
+    workflows: [],
+    rules: ['GEMINI.md', 'git-guardrails.md', 'test-driven-development.md'],
+  };
+
+  const registryDir = path.resolve(process.cwd(), 'registry');
+
+  it('projects agent-referenced rules into .cline/rules/ and skips host entrypoints', async () => {
+    const artifacts = await ClineProjector.planCompoundProjection(bundle, 'project', resolved, registryDir);
+    const rulePaths = artifacts.filter(a => a.relPath.startsWith('.cline/rules/')).map(a => a.relPath);
+
+    expect(rulePaths).toContain('.cline/rules/git-guardrails.md');
+    expect(rulePaths).toContain('.cline/rules/test-driven-development.md');
+    expect(rulePaths).not.toContain('.cline/rules/GEMINI.md');
+    expect(rulePaths).toContain('.cline/rules/agents-united-software-engineering.md');
+  });
+
+  it('marks rule artifacts with kind "rule", canonical path, and a line-1 managed marker', async () => {
+    const artifacts = await ClineProjector.planCompoundProjection(bundle, 'project', resolved, registryDir);
+    const gitRule = artifacts.find(a => a.relPath === '.cline/rules/git-guardrails.md');
+
+    expect(gitRule).toBeDefined();
+    expect(gitRule!.kind).toBe('rule');
+    expect(gitRule!.canonical).toBe('rules/git-guardrails.md');
+    expect(gitRule!.managedMarker).toBe(true);
+    expect(gitRule!.content!.split('\n')[0]).toBe(
+      '<!-- managed-by: agents-united | profile: cline | canonical: rules/git-guardrails.md | do not edit -->'
+    );
+    expect(gitRule!.content).toContain('# Persistent Rule: Git Guardrails & Safety Policy');
+  });
+
+  it('is deterministic and ignores a rule that is absent from registry/rules/', async () => {
+    const withMissing = { ...resolved, rules: [...resolved.rules, 'not-a-real-rule.md'] };
+    const first = await ClineProjector.planCompoundProjection(bundle, 'project', withMissing, registryDir);
+    const second = await ClineProjector.planCompoundProjection(bundle, 'project', withMissing, registryDir);
+
+    expect(first.map(a => a.relPath)).not.toContain('.cline/rules/not-a-real-rule.md');
+    expect(second.map(a => `${a.relPath}:${a.content ?? ''}`)).toEqual(
+      first.map(a => `${a.relPath}:${a.content ?? ''}`)
+    );
+  });
+});
+
+// ─ Plan 015 Step 6a / §0/C9: workflow-discoverability contract (catalog-wide) ──
+describe('Workflow-discoverability contract (Plan 015 Step 6a)', () => {
+  const registryDir = path.resolve(process.cwd(), 'registry');
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(registryDir, 'bundles.json'), 'utf8')
+  ) as { bundles: Record<string, BundleDefinition> };
+
+  const declaredWorkflows = (bundle: BundleDefinition): string[] => [
+    ...(bundle.workflows || []).map(w => w.replace(/\.md$/i, '')),
+    ...(bundle.skills || []).filter(s => s.startsWith('workflow-')),
+  ];
+
+  it('renders the workflow section iff the bundle declares workflow skills', () => {
+    const bundles = Object.values(manifest.bundles);
+    expect(bundles.length).toBeGreaterThan(0);
+
+    for (const bundle of bundles) {
+      const rule = ClineProjector.renderCoordinatorRule(bundle, 'project');
+      if (declaredWorkflows(bundle).length > 0) {
+        expect(rule, `${bundle.name} must advertise its workflow skills`).toContain(
+          '### Installed Workflows & Workflow Skills'
+        );
+      } else {
+        expect(rule, `${bundle.name} ships no workflows`).not.toContain(
+          '### Installed Workflows & Workflow Skills'
+        );
+      }
+    }
+  });
+
+  it('has no dangling workflow declarations (every declared workflow skill exists on disk)', () => {
+    for (const bundle of Object.values(manifest.bundles)) {
+      for (const name of declaredWorkflows(bundle)) {
+        expect(
+          fs.existsSync(path.join(registryDir, 'skills', name, 'SKILL.md')),
+          `${bundle.name} declares missing workflow skill ${name}`
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('renders the coordinator rule deterministically', () => {
+    const bundle = manifest.bundles['software-engineering'];
+    expect(ClineProjector.renderCoordinatorRule(bundle, 'project')).toBe(
+      ClineProjector.renderCoordinatorRule(bundle, 'project')
+    );
+  });
+});
 
 describe('Milestone 1: ClineProjector', () => {
   const sampleBundle: BundleDefinition = {

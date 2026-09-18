@@ -105,24 +105,32 @@ export function validateWorkflowGates(
 }
 
 describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
-  const workflowsDir = path.resolve(process.cwd(), 'registry/workflows');
+  const skillsDir = path.resolve(process.cwd(), 'registry/skills');
   const bundlesPath = path.resolve(process.cwd(), 'registry/bundles.json');
+
+  // Helper to discover all workflow skill directory names
+  async function getWorkflowSkillDirs(): Promise<string[]> {
+    const entries = await fs.readdir(skillsDir, { withFileTypes: true });
+    return entries.filter(e => e.isDirectory() && e.name.startsWith('workflow-')).map(e => e.name);
+  }
 
   // Tier 1: Feature Coverage (Happy Path)
   describe('Tier 1: Feature Coverage (Workflow Parsing & Phase Gates)', () => {
-    it('should locate and parse all 69 workflow files in registry/workflows/', async () => {
-      const files = await fs.readdir(workflowsDir);
-      const workflowFiles = files.filter(f => f.startsWith('workflow-') && f.endsWith('.md'));
+    it('should locate and parse all 69 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
+      const workflowDirs = await getWorkflowSkillDirs();
 
-      expect(workflowFiles.length).toBe(69);
+      expect(workflowDirs.length).toBe(69);
 
-      for (const file of workflowFiles) {
-        const filePath = path.join(workflowsDir, file);
+      for (const dirName of workflowDirs) {
+        const filePath = path.join(skillsDir, dirName, 'SKILL.md');
+        const exists = await fs.pathExists(filePath);
+        expect(exists, `Workflow skill SKILL.md must exist in ${dirName}`).toBe(true);
+
         const content = await fs.readFile(filePath, 'utf8');
-        const result = validateWorkflowGates(content, file);
+        const result = validateWorkflowGates(content, dirName);
 
-        expect(result.totalLines, `Workflow ${file} line count should be non-zero`).toBeGreaterThan(5);
-        expect(result.phasesCount, `Workflow ${file} should contain phase sections`).toBeGreaterThan(0);
+        expect(result.totalLines, `Workflow ${dirName} line count should be non-zero`).toBeGreaterThan(5);
+        expect(result.phasesCount, `Workflow ${dirName} should contain phase sections`).toBeGreaterThan(0);
       }
     });
 
@@ -177,47 +185,45 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 3: Cross-Feature Pairwise Audit
   describe('Tier 3: Cross-Feature Pairwise Audit', () => {
-    it('should cross-validate all 69 workflows referenced in bundles.json against registry/workflows/', async () => {
+    it('should cross-validate all 69 workflow skills referenced in bundles.json against registry/skills/ directory', async () => {
       const bundlesJson = await fs.readJson(bundlesPath);
-      const fullBundleWorkflows: string[] = bundlesJson.bundles.full.workflows;
+      const fullBundleWorkflows: string[] = (bundlesJson.bundles.full.skills || []).filter((s: string) => s.startsWith('workflow-'));
 
       expect(fullBundleWorkflows.length).toBe(69);
 
-      for (const workflowFile of fullBundleWorkflows) {
-        const workflowFilePath = path.join(workflowsDir, workflowFile);
-        const exists = await fs.pathExists(workflowFilePath);
-        expect(exists, `Workflow file '${workflowFile}' referenced in bundles.json does not exist in registry/workflows/`).toBe(true);
+      for (const workflowName of fullBundleWorkflows) {
+        const workflowSkillPath = path.join(skillsDir, workflowName, 'SKILL.md');
+        const exists = await fs.pathExists(workflowSkillPath);
+        expect(exists, `Workflow skill '${workflowName}' referenced in bundles.json does not exist in registry/skills/${workflowName}/SKILL.md`).toBe(true);
       }
     });
 
-    it('should verify workflow filenames follow workflow-*.md naming convention', async () => {
-      const files = await fs.readdir(workflowsDir);
-      const workflowFiles = files.filter(f => f.endsWith('.md'));
+    it('should verify workflow folder names follow workflow-* naming convention', async () => {
+      const workflowDirs = await getWorkflowSkillDirs();
 
-      for (const file of workflowFiles) {
-        expect(file.startsWith('workflow-'), `Workflow file '${file}' does not start with 'workflow-'`).toBe(true);
+      for (const dir of workflowDirs) {
+        expect(dir.startsWith('workflow-'), `Workflow folder '${dir}' does not start with 'workflow-'`).toBe(true);
       }
     });
   });
 
   // Tier 4: Real-World Scenario Audit
   describe('Tier 4: Real-World Scenario Audit', () => {
-    it('should perform complete audit of all 69 workflow files in registry/workflows/', async () => {
-      const files = await fs.readdir(workflowsDir);
-      const workflowFiles = files.filter(f => f.startsWith('workflow-') && f.endsWith('.md'));
+    it('should perform complete audit of all 69 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
+      const workflowDirs = await getWorkflowSkillDirs();
 
-      expect(workflowFiles.length).toBe(69);
+      expect(workflowDirs.length).toBe(69);
 
       const report = {
-        totalWorkflows: workflowFiles.length,
+        totalWorkflows: workflowDirs.length,
         withPhasesCount: 0,
         withMermaidFlowcharts: 0,
         withRollbackProtocols: 0,
       };
 
-      for (const file of workflowFiles) {
-        const content = await fs.readFile(path.join(workflowsDir, file), 'utf8');
-        const result = validateWorkflowGates(content, file);
+      for (const dir of workflowDirs) {
+        const content = await fs.readFile(path.join(skillsDir, dir, 'SKILL.md'), 'utf8');
+        const result = validateWorkflowGates(content, dir);
 
         if (result.phasesCount > 0) report.withPhasesCount++;
         if (result.hasFlowchart) report.withMermaidFlowcharts++;

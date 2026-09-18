@@ -41,7 +41,7 @@ Adopt an explicit **Host Conformance Target** per host: "what we promise about X
 read-only probe, pinned to a tested CLI version." Start here:
 
 1. **Cline** — conforms for activation via `ClineCapabilityProbe` + `agents start` (named-team /
-   adaptive-session / single-orchestrator). Keep as the reference conformant host.
+   adaptive-session / single-orchestrator). Keep as the reference conformant host. **2026-09-18 (Cline CLI 3.0.62):** additionally confirmed that **multiple** `.cline/rules/` files are injected as always-active context — canary probe returned both injected tokens with `toolCallCount: 0` (no tool calls, so no file read could explain it), negative control matched zero, and `inputTokens` rose +82 for an identical prompt. The only confirmed Cline gap remains the Account/auth-dependent subagent runtime. See ADR 0013 "Empirical confirmation" and Plan 015 §5.11 for the reproducible recipe.
 2. **Antigravity** — the headless `-p` loading claim is **retracted** until proven. Scope the
    "reads `.agents/` natively" claim to **interactive sessions**, pending one interactive spike to
    discriminate the two candidates. If interactive loading works, keep the (interactive-scoped) claim

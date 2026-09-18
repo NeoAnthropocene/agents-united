@@ -65,7 +65,7 @@ Following this skill ensures high quality, zero-regression execution, rigorous t
 1. Run complete TypeScript typecheck: npm run typecheck.
 2. Execute full test suite: npm test.
 3. Execute production build: npm run build.
-4. Execute workspace doctor check: node dist/cli.js doctor.
+4. Execute workspace doctor check: npx agents-united doctor.
 5. Confirm 100% test pass rate with zero lint or build errors.
 
 ### Phase 4: Pull Request Description & Documentation Assembly
