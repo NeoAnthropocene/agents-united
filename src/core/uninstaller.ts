@@ -298,7 +298,9 @@ export class UninstallEngine {
             }
             lockfile.installed.agents = lockfile.installed.agents.filter(a => survival.has(`agents/${a}`));
             lockfile.installed.skills = lockfile.installed.skills.filter(s => survival.has(`skills/${s}/SKILL.md`));
-            lockfile.installed.workflows = lockfile.installed.workflows.filter(w => survival.has(`workflows/${w}`));
+            if (lockfile.installed.workflows) {
+              lockfile.installed.workflows = lockfile.installed.workflows.filter(w => survival.has(`workflows/${w}`));
+            }
 
             // Installed-addon freshness (plan 003): a removed child bundle restores
             // its addon into the parent's recommendedAddons via a re-render here.

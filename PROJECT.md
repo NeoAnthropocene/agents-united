@@ -7,8 +7,8 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 ## 📑 Table of Contents
 1. [Executive Overview & Core Philosophy](#1-executive-overview--core-philosophy)
 2. [Complete Granular Feature Inventory](#2-complete-granular-feature-inventory)
-3. [Master Implementation Plans Index (plans/001–012)](#3-master-implementation-plans-index-plans001012)
-4. [Architectural Decision Records (ADRs 0001–0014)](#4-architectural-decision-records-adrs-00010014)
+3. [Master Implementation Plans Index (plans/001–014)](#3-master-implementation-plans-index-plans001014)
+4. [Architectural Decision Records (ADRs 0001–0016)](#4-architectural-decision-records-adrs-00010016)
 5. [Ecosystem Architecture & Department Domains](#5-ecosystem-architecture--department-domains)
 6. [Host Projection & Runtime Activation Engine](#6-host-projection--runtime-activation-engine)
 7. [Interface Contracts & Specifications](#7-interface-contracts--specifications)
@@ -131,12 +131,13 @@ Architectural separation between delivery and reliability:
 | 79 | Planner-Orchestrator Eval Gatekeeper | `PlannerOrchestratorCriteriaSchema` + deterministic Stage-1 `PlannerOrchestratorGatekeeper` (solo-planning, planning-aid-boundary, delegation-map, execution-delegation-first) with 3 adversarial eval scenarios | M7 | DONE | PLAN_013 |
 | 80 | Digital Agency Orchestrator DAG Assembly Line & 8 Canonical MCPs | Upgraded `orchestrator-digital-agency.md` (Campaign Director / Chris) with 4-tier deterministic execution DAG (Strategy → Creative/Copy → Production → QA/GRC), 8 canonical MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `markitdown`, `chrome-devtools-mcp`, `stitch`, `figma`), 6 campaign workflows, and Plan/Act mode safety (`cline -p`) | M7 | DONE | USER_REQUEST |
 | 81 | Subagent Platform Modernization (Google Antigravity & Cline CLI) | Modernized all 9 digital-agency subagents with AstrolabsAI persona aliases (`ava-manager`, `kaan-copy`, `jamileh-design`, `yavuz-content`, `jale-social`), peer clarification protocols (ADR 0014), KaTeX math formulas ($LTV$, $CAC$, $K$, sample size $n$), multimodal ingestion (`@path/to/file`), frontmatter `rules:` bindings, tool parity (`search_web`, `read_url_content`, `grep_search`, `list_dir`, `replace_file_content`), ad carousels, UTM taxonomy, and CAN-SPAM/FTC rules | M7 | DONE | USER_REQUEST |
+| 82 | Workflows to Skills Full Cutover (ADR 0016) | Converted all 69 legacy workflows into standard Agent Skills (`registry/skills/workflow-*/SKILL.md`), total 160 skills, bundles.json catalog cutover, silent workspace auto-migration on update, Cline dual-benefit projection, and retired registry/workflows | M7 | DONE | ADR_0016 |
 
 ---
 
-## 3. Master Implementation Plans Index (`plans/001`–`013`)
+## 3. Master Implementation Plans Index (`plans/001`–`014`)
 
-All foundational implementation plans (001–011) have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production. Plan 012 is DONE — Cline + Antigravity manual rounds complete. Plan 013 is DONE — 30 Tier-1 bundles adopted Planner-Orchestrator Mode:
+All foundational implementation plans (001–011) have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production. Plan 012 is DONE — Cline + Antigravity manual rounds complete. Plan 013 is DONE — 30 Tier-1 bundles adopted Planner-Orchestrator Mode. Plan 014 is DONE — Workflows to Skills migration complete:
 
 | Plan | Title | Category | Status | Key Deliverables & Milestones |
 | :--- | :--- | :--- | :--- | :--- |
@@ -153,10 +154,11 @@ All foundational implementation plans (001–011) have been fully realized, test
 | **[011](./plans/011-cline-plugins-projection-migration.md)** | Migrate Cline Projection to Native Plugins (v4.0.0+) | Core / Runtime Integration | **SUPERSEDED (ADR 0013)** | The assumed "Cline 4.0.0+ plugin architecture" does not exist (latest CLI = 3.0.61); `cline plugin install` is a code-plugin installer and the `package.json` manifest contract was invalid. Replaced by ADR 0013 native discovery projection. |
 | **[012](./plans/012-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue (`digital-agency` first) | Runtime Integration / Catalog / Evals | **DONE** (Cline + Antigravity manual rounds complete; desktop `invoke_subagent` harness limitation documented in ADR 0009) | Opt-in `planningLoop` block + Consultation Budget rendered into the coordinator rule, Cline `maxIterations` hard cap, Planning Dialogue Loop prompts, persona alias map, and planning-loop eval criteria. Per ADR 0014; digital-agency first, rollout to domain bundles completed in Plan 013 via Planner-Orchestrator Mode. |
 | **[013](./plans/013-planner-orchestrator-mode-for-domain-bundles.md)** | Planner-Orchestrator Mode for Tier-1 Domain Bundles (ADR 0015) | Runtime Integration / Catalog / Evals | **DONE** (Cline manual rounds complete) | 30 Tier-1 bundles adopt `planningLoop.mode: 'planner-orchestrator'` with Planner-Orchestrator Policy (solo planning, Planning Aid Boundary, solo-composed delegation map, delegated execution). Renderer branches on mode; registry validation rejects budget/sidekicks for planner-orchestrator. Digital-agency migrated to explicit `mode: 'subagent-first'`. Parallel `PlannerOrchestratorGatekeeper` eval suite + 3 adversarial scenarios. 85 tests pass. |
+| **[014](./plans/014-workflows-to-skills-migration.md)** | Workflows to Skills Migration (ADR 0016) | Core Catalog / Migration | **DONE** | Full canonical cutover of 69 legacy workflows to standard Agent Skills (`agentskills.io`, `SKILL.md`), total 160 skills, `bundles.json` catalog synchronization, silent workspace auto-migration on update, Cline dual-benefit projection, and 4-tier test suite validation (160 skills). |
 
 ---
 
-## 4. Architectural Decision Records (ADRs 0001–0015)
+## 4. Architectural Decision Records (ADRs 0001–0017)
 
 All architectural decisions recorded in `docs/adr/` are indexed and summarized below:
 
@@ -177,12 +179,14 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 | **[0013](./docs/adr/0013-cline-native-discovery-projection.md)** | Cline 3.x Native Discovery Projection & Agent Plugin Packaging | Accepted | Dual-lane Cline integration: agent-plugins.org `plugin.json` packages under `.agents/plugins/<bundle>/` (scanner hard-stop + cross-client portability) plus native discovery projections — configured agents `.cline/agents/*.yml` (spawnable `subagent_*` tools), coordinator rules `.cline/rules/`, slugified workflows `.cline/workflows/`, skills natively discovered from `.agents/skills/`. Verified against Cline CLI 3.0.61 (source commit `c853844` + binary analysis). |
 | **[0014](./docs/adr/0014-subagent-first-planning-loop.md)** | Subagent-First Orchestration & Bounded Planning Dialogue | Accepted | Lead Orchestrators delegate to specialists **by default during planning**: opt-in per-bundle `planningLoop` flag (`digital-agency` first) declaring a Consultation Budget (`maxPlanningRounds`, `maxPeerExchangesPerPair`, `summaryWordCap`) rendered into the always-active coordinator rule, plus a host hard-cap layer (Cline `maxIterations` in configured-agent `.yml`), the Planning Dialogue Loop (grill → sidekick clarification → specialist council → delegation map), a persona alias map for the AstrolabsAI roster, and byte-identical rendering guarantees for non-planning-loop bundles. |
 | **[0015](./docs/adr/0015-planner-orchestrator-mode-for-domain-bundles.md)** | Planner-Orchestrator Mode for Tier-1 Domain Bundles | Accepted | Tier-1 Domain Bundles adopt a second delegation posture: **Planner-Orchestrator Mode** — solo planning with direct skill consultation (Planning Aid Boundary: provisional answers allowed, concrete deliverables deferred), solo-composed Delegation Map, delegated execution via `subagent_*` tools. No Sidekicks, no Specialist Council, no Consultation Budget. Schema discriminator `planningLoop.mode: 'subagent-first' | 'planner-orchestrator'`; absent → `'subagent-first'` (ADR 0014 backward compat). Extends, does not supersede, ADR 0014. |
+| **[0016](./docs/adr/0016-workflows-to-skills-migration.md)** | Workflows to Skills Migration | Accepted | Deprecate standalone Markdown workflows in favor of open Agent Skills standard (`agentskills.io`). Convert all 69 workflows to canonical skills with `workflow-` prefix (`registry/skills/workflow-*/SKILL.md`), total 160 skills, silent auto-migration in workspace installer/updater, dual-benefit projection for Cline (`/workflow-<slug>` slash command autocompletion), and complete catalog cutover. |
+| **[0017](./docs/adr/0017-projection-staleness-detection.md)** | Renderer-Backed Projection Staleness Detection in `agents doctor` | Accepted | `DoctorEngine` re-renders the compound projection set for installed bundle owners (`RegistryResolver` + `ClineProjector`) and diffs it against disk, adding two previously undetectable diagnostic classes: **Projection Content Drift** (managed projection edited with its marker intact, caught via `LockfileProjection.hash`) and **Outdated Projection** (content matches its recorded hash but not the current render) — exactly one warning per path, each printing the self-healing remedy, and with **no lockfile schema change**. Surfaced and fixed a latent dual-writer defect in which the generic fanout lane overwrote compound-lane `.cline/agents/*.yml` roles (reproducible via the `domain:*` pseudo-bundle). |
 
 ---
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), **91 skills**, and **69 workflows** structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
+The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **160 modular skills & runbooks** (91 domain skills + 69 workflow playbooks) structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
 
 ```
 🌐 Agents United Registry Catalog Tree
@@ -445,7 +449,7 @@ c:/github/agents-united/
 │       ├── cline-capabilities.ts # ClineCapabilityProbe (read-only probe)
 │       └── cline-launcher.ts     # ClineLauncher (safe process launcher)
 ├── docs/                         # Documentation
-│   ├── adr/                      # Architectural Decision Records (ADRs 0001–0015)
+│   ├── adr/                      # Architectural Decision Records (ADRs 0001–0017)
 │   └── workflow-guide.md         # Developer workflow guide (branching, protected dev, PRs, releases)
 ├── plans/                        # Implementation Plan Specifications (001–013)
 ├── tests/                        # 4-Tier Vitest Test Suite (28 test suites, 430 passing tests)
@@ -494,10 +498,11 @@ The codebase adheres to zero technical debt, strict typing, and 100% test pass r
  ✓ tests/recommendation-contract.test.ts
  ✓ tests/e2e-sed-bundle-lifecycle.test.ts
  ✓ tests/e2e-domain-conformance.test.ts
- ✓ tests/e2e-evals/e2e-stream-evals.test.ts
+  ✓ tests/e2e-evals/e2e-stream-evals.test.ts
+  ✓ tests/workflows-to-skills-migration.test.ts
 
- Test Files  28 passed (28)
-      Tests  430 passed | 208 skipped (638)
+ Test Files  32 passed (32)
+      Tests  471 passed | 208 skipped (679)
 ```
 
 ---

@@ -74,4 +74,36 @@ describe('UninstallEngine', () => {
       await fs.remove(ws);
     }
   });
+
+  it('prunes a shared rule only after its last owner is removed (Plan 015 §4/3)', async () => {
+    const ws = path.resolve(process.cwd(), 'scratch/test-uninstaller-rules');
+    const agentsDir = path.join(ws, '.agents');
+    try {
+      await fs.remove(ws);
+      await fs.ensureDir(ws);
+
+      const installer = new InstallEngine();
+      // frontend-engineering inherits software-engineering, so both own the same rules.
+      await installer.install('software-engineering', { targetDir: agentsDir, method: 'copy' });
+      await installer.install('frontend-engineering', { targetDir: agentsDir, method: 'copy' });
+
+      const ruleFile = path.join(agentsDir, 'rules', 'git-guardrails.md');
+      expect(await fs.pathExists(ruleFile)).toBe(true);
+
+      const uninstaller = new UninstallEngine();
+      await uninstaller.uninstall('software-engineering', { targetDir: agentsDir });
+
+      // frontend-engineering still owns it → the shared rule must survive.
+      expect(await fs.pathExists(ruleFile)).toBe(true);
+      const lock = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
+      expect(lock.files['rules/git-guardrails.md'].owners).toContain('frontend-engineering');
+
+      await uninstaller.uninstall('frontend-engineering', { targetDir: agentsDir });
+
+      // Last owner removed → the rule file is pruned.
+      expect(await fs.pathExists(ruleFile)).toBe(false);
+    } finally {
+      await fs.remove(ws);
+    }
+  });
 });

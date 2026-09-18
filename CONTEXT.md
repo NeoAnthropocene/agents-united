@@ -18,9 +18,9 @@ _Avoid_: Child agent, slave agent, helper script
 A modular capability folder containing a `SKILL.md` file with progressive disclosure frontmatter (`name`, `description`, `metadata: { author, version, source, license }`), execution runbooks, code exemplars, and error recovery procedures.
 _Avoid_: Action, toolset, capability-pack
 
-**Workflow**:
-A multi-step procedural template or interactive orchestration prompt (`workflow-<task>.md`) defining deterministic phase transitions, verification gates, human review checkpoints, and rollback protocols.
-_Avoid_: Pipeline, playbook, recipe
+**Workflow Skill** (formerly Workflow):
+A multi-step procedural runbook or interactive orchestration skill (`skills/workflow-<task>/SKILL.md`) defining deterministic phase transitions, Mermaid execution flowcharts, verification gates, human review checkpoints, and automated rollback protocols. Conforms to the open Agent Skills standard (`agentskills.io`) while retaining `/workflow-<task>` slash command projection across host environments (ADR 0016).
+_Avoid_: Standalone legacy workflow markdown file, pipeline script, recipe
 
 **Rule**:
 A persistent guideline or constraint file (`GEMINI.md`, `AGENTS.md`, `CLAUDE.md`, `CURSOR.md`, or `registry/rules/*.md`) injected hierarchically into agent contexts (e.g. Git Guardrails, TDD Protocol, Skill Attribution Standard, Multi-Agent Coordination).
@@ -256,7 +256,7 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), 90 skills, and 63 workflows.
+   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 160 modular skills (91 domain skills + 69 workflow playbooks).
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
@@ -290,10 +290,14 @@ A deterministic test verification hierarchy:
 - **Tier 1 (Feature Coverage)**: Happy path validation of exported functions, interfaces, frontmatter schemas, and expected return types.
 - **Tier 2 (Boundary & Corner Cases)**: Negative testing covering empty inputs, malformed files, invalid enums, and graceful error handling.
 - **Tier 3 (Cross-Feature Pairwise)**: Interoperability testing between Registry, Installer, Adapters, Lockfile Engine, and CLI.
-- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 24 bundles, 46 agents, 90 skills, and 63 workflows.
+- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 160 skills.
 
 **Deterministic Verification**:
 Testing practices that eliminate arbitrary timeouts (`setTimeout`) in favor of auto-waiting assertions, isolated test workspaces, predictable mock factories, and clean teardowns.
+
+**Gate Command Portability**:
+The convention that phase-gate commands in workflow runbooks are written to tolerate absent project tooling (`npm run <script> --if-present`), and that a gate whose command cannot run is recorded as `N/A` rather than silently reported as passing.
+_Avoid_: Gate literals that assume the maintainer's own `package.json`, silently skipped gates.
 
 ---
 
@@ -410,6 +414,14 @@ _Avoid_: Root index hack, static readme
 **Managed Projection Marker**:
 An HTML comment stamp identifying a file as machine-managed (e.g. `<!-- managed-by: agents-united | profile: claude-code | canonical: .agents/agents/<file> | do not edit -->`) placed as the first line of a projected file's body. Its presence gates deletion/overwrite so user-modified files are never clobbered.
 _Avoid_: Dirty edit flag, unmarked copy
+
+**Projection Content Drift**:
+A managed projection whose on-disk bytes no longer match the hash recorded for it at projection time (`lockfile.projections[path].hash`) — the file was edited after installation while its **Managed Projection Marker** was left intact, so marker-integrity checks cannot see it. Detected by `agents doctor` (ADR 0017); repaired with `agents update <bundle> --fanout <host>`.
+_Avoid_: Silent local edit, unmanaged tweak, marker-valid so assumed correct
+
+**Outdated Projection**:
+A managed projection whose content still matches its recorded hash but differs from what the current renderer produces for the same bundle — normally produced by an older bundle definition or CLI version, which is why no stored field can reveal it: detection requires **re-rendering** the projection set and diffing (ADR 0017). Reported by `agents doctor` with the self-healing remedy `agents update <bundle> --fanout <host>`.
+_Avoid_: Stale projection (a superseded projection *path*, Plan 015e), Missing projection (a deleted file), stale-render assumption from version numbers alone
 
 **Scoped Rule Binding (`rules: [...]`)**:
 The declarative frontmatter property enabling agents to explicitly bind a curated array of relevant rule files (e.g. `rules: [git-guardrails.md, tdd-protocol.md]`), preventing full workspace rule trees from bloating the agent's context window.

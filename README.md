@@ -1,4 +1,5 @@
-![Agents United](.assets/image/agents-united-hero-banner.jpg)
+![Agents United](.assets/image/agents-united-hero-banner_name.png)
+![Agents United](.assets/image/agents-united-hero-banner_diagram.jpg)
 
 # Agents United
 
@@ -19,7 +20,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
 - **🚀 Cline Native Activation**: Bundles activate **automatically** in any Cline CLI session — skills discovered natively from `.agents/skills/`, configured-agent roles (`.cline/agents/*.yml`) exposed as spawnable `subagent_*` tools, coordinator rules (`.cline/rules/`), slash-command workflows (`.cline/workflows/`), and spec-conformant Agent Plugin packages (`plugin.json`, agent-plugins.org) in `.agents/plugins/<bundle>/`. No install step required; `agents start` remains available as an optional pre-seeded team-session launcher.
 - **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 59 Specialized Agents, 91 Skills & 69 Workflows**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 91 production-grade runbooks and 69 deterministic workflows.
+- **🤖 59 Specialized Agents & 160 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 160 production-grade runbooks (91 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
 - **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
@@ -107,7 +108,7 @@ This model gives you:
 ---
 
 
-Agents United provides **24 curated bundles**, **46 specialized agents** (8 Orchestrators — 7 Lead + 1 Prime + 38 Sub-Agents), **90 skills**, and **63 workflows** across 8 department domains:
+Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **160 modular skills & runbooks** (91 domain skills + 69 workflow playbooks) across 8 department domains:
 
 | Department Domain | Essentials Base | Specialized Addon Bundles | Lead Orchestrator |
 | :--- | :--- | :--- | :--- |

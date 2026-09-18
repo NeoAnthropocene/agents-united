@@ -77,7 +77,7 @@ Following this skill ensures high quality, zero-regression execution, rigorous t
 
 ### Phase 5: Master Verification & Final Deliverable Reporting
 1. Execute full project verification pipeline: npm run typecheck && npm test && npm run build.
-2. Run workspace health check: node dist/cli.js doctor.
+2. Run workspace health check: npx agents-united doctor.
 3. Compile comprehensive orchestration walkthrough summarizing all subagent contributions.
 4. Commit all unified changes to git with structured conventional commit message.
 5. Present final deliverables to user.

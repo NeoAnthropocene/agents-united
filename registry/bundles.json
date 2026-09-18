@@ -28,17 +28,6 @@
         "subagent-code-reviewer.md",
         "subagent-repo-index.md"
       ],
-      "workflows": [
-        "workflow-implement.md",
-        "workflow-test.md",
-        "workflow-review.md",
-        "workflow-build.md",
-        "workflow-cleanup.md",
-        "workflow-git.md",
-        "workflow-grill.md",
-        "workflow-spec.md",
-        "workflow-diagnose.md"
-      ],
       "skills": [
         "architecture-design",
         "backend-api-design",
@@ -55,7 +44,16 @@
         "subagent-driven-development",
         "systematic-debugging",
         "technical-documentation",
-        "test-driven-development"
+        "test-driven-development",
+        "workflow-implement",
+        "workflow-test",
+        "workflow-review",
+        "workflow-build",
+        "workflow-cleanup",
+        "workflow-git",
+        "workflow-grill",
+        "workflow-spec",
+        "workflow-diagnose"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -85,14 +83,6 @@
         "subagent-system-architect.md",
         "subagent-backend-architect.md"
       ],
-      "workflows": [
-        "workflow-plan.md",
-        "workflow-design-code.md",
-        "workflow-estimate.md",
-        "workflow-spec-panel.md",
-        "workflow-grill.md",
-        "workflow-spec.md"
-      ],
       "skills": [
         "architecture-design",
         "backend-api-design",
@@ -104,7 +94,13 @@
         "microservices-architecture",
         "technical-documentation",
         "to-spec",
-        "to-tickets"
+        "to-tickets",
+        "workflow-plan",
+        "workflow-design-code",
+        "workflow-estimate",
+        "workflow-spec-panel",
+        "workflow-grill",
+        "workflow-spec"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -134,17 +130,6 @@
         "subagent-ux-strategist.md",
         "subagent-interaction-designer.md"
       ],
-      "workflows": [
-        "workflow-design-orchestrate.md",
-        "workflow-ui-design--color-palette.md",
-        "workflow-ui-design--design-screen.md",
-        "workflow-ui-design--responsive-audit.md",
-        "workflow-ui-design--type-system.md",
-        "workflow-ux-strategy--strategize.md",
-        "workflow-interaction-design--design-interaction.md",
-        "workflow-interaction-design--error-flow.md",
-        "workflow-interaction-design--map-states.md"
-      ],
       "skills": [
         "ui-component-spec",
         "user-flow-mapping",
@@ -152,7 +137,16 @@
         "responsive-design-audit",
         "interaction-pattern-library",
         "micro-interaction-design",
-        "state-driven-ui-animation"
+        "state-driven-ui-animation",
+        "workflow-design-orchestrate",
+        "workflow-ui-design-color-palette",
+        "workflow-ui-design-design-screen",
+        "workflow-ui-design-responsive-audit",
+        "workflow-ui-design-type-system",
+        "workflow-ux-strategy-strategize",
+        "workflow-interaction-design-design-interaction",
+        "workflow-interaction-design-error-flow",
+        "workflow-interaction-design-map-states"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -185,14 +179,6 @@
         "subagent-marketing-conversion-specialist.md",
         "subagent-marketing-campaign-specialist.md"
       ],
-      "workflows": [
-        "workflow-marketing-panel.md",
-        "workflow-marketing-audit.md",
-        "workflow-marketing-campaign-builder.md",
-        "workflow-marketing-content-pipeline.md",
-        "workflow-marketing-growth-experiment.md",
-        "workflow-marketing-launch.md"
-      ],
       "skills": [
         "ab-test-setup",
         "ad-creative-design",
@@ -205,7 +191,13 @@
         "product-launch-playbook",
         "seo-audit",
         "signup-flow-cro",
-        "social-media-campaign"
+        "social-media-campaign",
+        "workflow-marketing-panel",
+        "workflow-marketing-audit",
+        "workflow-marketing-campaign-builder",
+        "workflow-marketing-content-pipeline",
+        "workflow-marketing-growth-experiment",
+        "workflow-marketing-launch"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -230,19 +222,17 @@
         "subagent-seo-specialist.md",
         "subagent-marketing-content-strategist.md"
       ],
-      "workflows": [
-        "workflow-seo-content-pipeline.md",
-        "workflow-seo-audit-pipeline.md",
-        "workflow-marketing-content-pipeline.md",
-        "workflow-marketing-audit.md"
-      ],
       "skills": [
         "programmatic-seo",
         "technical-seo-audit",
         "schema-markup-strategy",
         "seo-audit",
         "content-calendar-strategy",
-        "copywriting-frameworks"
+        "copywriting-frameworks",
+        "workflow-seo-content-pipeline",
+        "workflow-seo-audit-pipeline",
+        "workflow-marketing-content-pipeline",
+        "workflow-marketing-audit"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -273,12 +263,6 @@
         "subagent-marketing-campaign-specialist.md",
         "subagent-marketing-conversion-specialist.md"
       ],
-      "workflows": [
-        "workflow-paid-acquisition-campaign.md",
-        "workflow-paid-campaign-launch.md",
-        "workflow-marketing-campaign-builder.md",
-        "workflow-marketing-growth-experiment.md"
-      ],
       "skills": [
         "paid-acquisition-ppc",
         "ad-attribution-modeling",
@@ -287,7 +271,11 @@
         "ad-creative-design",
         "ab-test-setup",
         "conversion-funnel-optimization",
-        "social-media-campaign"
+        "social-media-campaign",
+        "workflow-paid-acquisition-campaign",
+        "workflow-paid-campaign-launch",
+        "workflow-marketing-campaign-builder",
+        "workflow-marketing-growth-experiment"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -316,16 +304,14 @@
         "subagent-marketing-growth-strategist.md",
         "subagent-marketing-conversion-specialist.md"
       ],
-      "workflows": [
-        "workflow-onboarding-funnel-cro.md",
-        "workflow-marketing-growth-experiment.md"
-      ],
       "skills": [
         "onboarding-cro",
         "viral-referral-loops",
         "signup-flow-cro",
         "conversion-funnel-optimization",
-        "growth-experiment-design"
+        "growth-experiment-design",
+        "workflow-onboarding-funnel-cro",
+        "workflow-marketing-growth-experiment"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -353,16 +339,14 @@
         "subagent-lifecycle-email-specialist.md",
         "subagent-marketing-campaign-specialist.md"
       ],
-      "workflows": [
-        "workflow-email-drip-sequence.md",
-        "workflow-marketing-launch.md",
-        "workflow-marketing-campaign-builder.md"
-      ],
       "skills": [
         "email-drip-sequences",
         "churn-prevention-playbook",
         "email-marketing-automation",
-        "copywriting-frameworks"
+        "copywriting-frameworks",
+        "workflow-email-drip-sequence",
+        "workflow-marketing-launch",
+        "workflow-marketing-campaign-builder"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -385,13 +369,11 @@
       "agents": [
         "subagent-security-engineer.md"
       ],
-      "workflows": [
-        "workflow-troubleshoot.md",
-        "workflow-analyze.md"
-      ],
       "skills": [
         "security-audit",
-        "architecture-design"
+        "architecture-design",
+        "workflow-troubleshoot",
+        "workflow-analyze"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -420,18 +402,16 @@
         "subagent-socratic-mentor.md",
         "subagent-repo-index.md"
       ],
-      "workflows": [
-        "workflow-research.md",
-        "workflow-brainstorm.md",
-        "workflow-explain.md",
-        "workflow-grill.md"
-      ],
       "skills": [
         "technical-documentation",
         "systematic-debugging",
         "grill-me",
         "domain-modeling",
-        "handoff"
+        "handoff",
+        "workflow-research",
+        "workflow-brainstorm",
+        "workflow-explain",
+        "workflow-grill"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -457,15 +437,13 @@
       "agents": [
         "subagent-business-panel-experts.md"
       ],
-      "workflows": [
-        "workflow-business-panel.md",
-        "workflow-spec-panel.md",
-        "workflow-recommend.md",
-        "workflow-estimate.md"
-      ],
       "skills": [
         "architecture-design",
-        "technical-documentation"
+        "technical-documentation",
+        "workflow-business-panel",
+        "workflow-spec-panel",
+        "workflow-recommend",
+        "workflow-estimate"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -492,16 +470,14 @@
       "agents": [
         "subagent-devops-engineer.md"
       ],
-      "workflows": [
-        "workflow-deploy-staging.md",
-        "workflow-build.md",
-        "workflow-git.md"
-      ],
       "skills": [
         "azure-infrastructure-bicep",
         "ci-cd-pipeline-automation",
         "docker-deployment",
-        "git-guardrails"
+        "git-guardrails",
+        "workflow-deploy-staging",
+        "workflow-build",
+        "workflow-git"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -523,12 +499,10 @@
       "agents": [
         "subagent-sysops-sre-lead.md"
       ],
-      "workflows": [
-        "workflow-incident-triage.md"
-      ],
       "skills": [
         "telemetry-monitoring",
-        "architecture-design"
+        "architecture-design",
+        "workflow-incident-triage"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -555,16 +529,14 @@
         "subagent-android-architect.md",
         "subagent-cross-platform-specialist.md"
       ],
-      "workflows": [
-        "workflow-mobile-build.md",
-        "workflow-app-store-release.md"
-      ],
       "skills": [
         "mobile-ios-design",
         "mobile-android-design",
         "mobile-platform-offline-validate",
         "maestro-mobile-testing",
-        "mobile-first-design"
+        "mobile-first-design",
+        "workflow-mobile-build",
+        "workflow-app-store-release"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -589,9 +561,6 @@
         "subagent-frontend-architect.md",
         "subagent-accessibility-lead.md"
       ],
-      "workflows": [
-        "workflow-frontend-audit.md"
-      ],
       "skills": [
         "react-best-practices",
         "vercel-deploy-best-practices",
@@ -599,7 +568,8 @@
         "micro-interaction-design",
         "accessibility-audit",
         "state-driven-ui-animation",
-        "frontend-component-design"
+        "frontend-component-design",
+        "workflow-frontend-audit"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -624,16 +594,14 @@
         "subagent-distributed-systems-architect.md",
         "subagent-data-engineer.md"
       ],
-      "workflows": [
-        "workflow-api-contract-design.md"
-      ],
       "skills": [
         "supabase-backend-architecture",
         "turso-distributed-sqlite",
         "microservices-architecture",
         "graphql-schema-design",
         "database-design",
-        "backend-api-design"
+        "backend-api-design",
+        "workflow-api-contract-design"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -658,13 +626,11 @@
         "subagent-qa-automation-lead.md",
         "subagent-e2e-tester.md"
       ],
-      "workflows": [
-        "workflow-e2e-testing.md"
-      ],
       "skills": [
         "playwright-best-practices",
         "chaos-engineering",
-        "test-driven-development"
+        "test-driven-development",
+        "workflow-e2e-testing"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -692,11 +658,6 @@
         "subagent-ml-platform-engineer.md",
         "subagent-ai-model-architect.md"
       ],
-      "workflows": [
-        "workflow-ml-eval.md",
-        "workflow-rag-pipeline-deploy.md",
-        "workflow-serverless-gpu-deploy.md"
-      ],
       "skills": [
         "modal-serverless-python",
         "replicate-model-inference",
@@ -704,7 +665,10 @@
         "rag-vector-pipeline",
         "local-llm-inference",
         "vector-database-design",
-        "hf-model-evaluation"
+        "hf-model-evaluation",
+        "workflow-ml-eval",
+        "workflow-rag-pipeline-deploy",
+        "workflow-serverless-gpu-deploy"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -781,77 +745,6 @@
         "subagent-system-architect.md",
         "subagent-ui-designer.md",
         "subagent-ux-strategist.md"
-      ],
-      "workflows": [
-        "workflow-analyze.md",
-        "workflow-api-contract-design.md",
-        "workflow-app-store-release.md",
-        "workflow-brainstorm.md",
-        "workflow-build.md",
-        "workflow-business-panel.md",
-        "workflow-cleanup.md",
-        "workflow-deploy-staging.md",
-        "workflow-design-code.md",
-        "workflow-design-ops--handoff.md",
-        "workflow-design-ops--plan-sprint.md",
-        "workflow-design-ops--setup-workflow.md",
-        "workflow-design-orchestrate.md",
-        "workflow-design-systems--audit-system.md",
-        "workflow-design-systems--create-component.md",
-        "workflow-design-systems--tokenize.md",
-        "workflow-diagnose.md",
-        "workflow-e2e-testing.md",
-        "workflow-email-drip-sequence.md",
-        "workflow-estimate.md",
-        "workflow-explain.md",
-        "workflow-frontend-audit.md",
-        "workflow-git.md",
-        "workflow-grill.md",
-        "workflow-implement.md",
-        "workflow-incident-triage.md",
-        "workflow-interaction-design--design-interaction.md",
-        "workflow-interaction-design--error-flow.md",
-        "workflow-interaction-design--map-states.md",
-        "workflow-marketing-audit.md",
-        "workflow-marketing-campaign-builder.md",
-        "workflow-marketing-content-pipeline.md",
-        "workflow-marketing-growth-experiment.md",
-        "workflow-marketing-launch.md",
-        "workflow-marketing-panel.md",
-        "workflow-ml-eval.md",
-        "workflow-mobile-build.md",
-        "workflow-onboarding-funnel-cro.md",
-        "workflow-paid-acquisition-campaign.md",
-        "workflow-paid-campaign-launch.md",
-        "workflow-plan.md",
-        "workflow-prototyping-testing--evaluate.md",
-        "workflow-prototyping-testing--experiment.md",
-        "workflow-prototyping-testing--prototype-plan.md",
-        "workflow-prototyping-testing--test-plan.md",
-        "workflow-rag-pipeline-deploy.md",
-        "workflow-recommend.md",
-        "workflow-research.md",
-        "workflow-review.md",
-        "workflow-seo-audit-pipeline.md",
-        "workflow-seo-content-pipeline.md",
-        "workflow-serverless-gpu-deploy.md",
-        "workflow-spec-panel.md",
-        "workflow-spec.md",
-        "workflow-test.md",
-        "workflow-troubleshoot.md",
-        "workflow-ui-design--color-palette.md",
-        "workflow-ui-design--design-screen.md",
-        "workflow-ui-design--responsive-audit.md",
-        "workflow-ui-design--type-system.md",
-        "workflow-ux-strategy--benchmark.md",
-        "workflow-ux-strategy--frame-problem.md",
-        "workflow-ux-strategy--strategize.md",
-        "workflow-agency-full-campaign.md",
-        "workflow-agency-ad-creative-sprint.md",
-        "workflow-agency-seo-content-engine.md",
-        "workflow-agency-cro-funnel-teardown.md",
-        "workflow-agency-brand-design-system.md",
-        "workflow-agency-client-pitch-proposal.md"
       ],
       "skills": [
         "ab-test-setup",
@@ -944,7 +837,76 @@
         "user-journey-mapping",
         "vector-database-design",
         "vercel-deploy-best-practices",
-        "viral-referral-loops"
+        "viral-referral-loops",
+        "workflow-analyze",
+        "workflow-api-contract-design",
+        "workflow-app-store-release",
+        "workflow-brainstorm",
+        "workflow-build",
+        "workflow-business-panel",
+        "workflow-cleanup",
+        "workflow-deploy-staging",
+        "workflow-design-code",
+        "workflow-design-ops-handoff",
+        "workflow-design-ops-plan-sprint",
+        "workflow-design-ops-setup-workflow",
+        "workflow-design-orchestrate",
+        "workflow-design-systems-audit-system",
+        "workflow-design-systems-create-component",
+        "workflow-design-systems-tokenize",
+        "workflow-diagnose",
+        "workflow-e2e-testing",
+        "workflow-email-drip-sequence",
+        "workflow-estimate",
+        "workflow-explain",
+        "workflow-frontend-audit",
+        "workflow-git",
+        "workflow-grill",
+        "workflow-implement",
+        "workflow-incident-triage",
+        "workflow-interaction-design-design-interaction",
+        "workflow-interaction-design-error-flow",
+        "workflow-interaction-design-map-states",
+        "workflow-marketing-audit",
+        "workflow-marketing-campaign-builder",
+        "workflow-marketing-content-pipeline",
+        "workflow-marketing-growth-experiment",
+        "workflow-marketing-launch",
+        "workflow-marketing-panel",
+        "workflow-ml-eval",
+        "workflow-mobile-build",
+        "workflow-onboarding-funnel-cro",
+        "workflow-paid-acquisition-campaign",
+        "workflow-paid-campaign-launch",
+        "workflow-plan",
+        "workflow-prototyping-testing-evaluate",
+        "workflow-prototyping-testing-experiment",
+        "workflow-prototyping-testing-prototype-plan",
+        "workflow-prototyping-testing-test-plan",
+        "workflow-rag-pipeline-deploy",
+        "workflow-recommend",
+        "workflow-research",
+        "workflow-review",
+        "workflow-seo-audit-pipeline",
+        "workflow-seo-content-pipeline",
+        "workflow-serverless-gpu-deploy",
+        "workflow-spec-panel",
+        "workflow-spec",
+        "workflow-test",
+        "workflow-troubleshoot",
+        "workflow-ui-design-color-palette",
+        "workflow-ui-design-design-screen",
+        "workflow-ui-design-responsive-audit",
+        "workflow-ui-design-type-system",
+        "workflow-ux-strategy-benchmark",
+        "workflow-ux-strategy-frame-problem",
+        "workflow-ux-strategy-strategize",
+        "workflow-agency-full-campaign",
+        "workflow-agency-ad-creative-sprint",
+        "workflow-agency-seo-content-engine",
+        "workflow-agency-cro-funnel-teardown",
+        "workflow-agency-brand-design-system",
+        "workflow-agency-client-pitch-proposal"
       ],
       "version": "1.0.0"
     },
@@ -962,7 +924,6 @@
       "modes": {},
       "orchestrator": "orchestrator-universal.md",
       "agents": [],
-      "workflows": [],
       "skills": [],
       "version": "1.0.0"
     },
@@ -1062,14 +1023,6 @@
         "subagent-qa-automation-lead.md",
         "subagent-compliance-grc-specialist.md"
       ],
-      "workflows": [
-        "workflow-agency-full-campaign.md",
-        "workflow-agency-ad-creative-sprint.md",
-        "workflow-agency-seo-content-engine.md",
-        "workflow-agency-cro-funnel-teardown.md",
-        "workflow-agency-brand-design-system.md",
-        "workflow-agency-client-pitch-proposal.md"
-      ],
       "skills": [
         "mcp-setup",
         "handoff",
@@ -1078,7 +1031,13 @@
         "marketing-creative-design",
         "seo-audit",
         "conversion-funnel-optimization",
-        "copywriting-frameworks"
+        "copywriting-frameworks",
+        "workflow-agency-full-campaign",
+        "workflow-agency-ad-creative-sprint",
+        "workflow-agency-seo-content-engine",
+        "workflow-agency-cro-funnel-teardown",
+        "workflow-agency-brand-design-system",
+        "workflow-agency-client-pitch-proposal"
       ],
       "version": "1.0.0"
     },
@@ -1137,14 +1096,6 @@
         "subagent-design-systems-architect.md",
         "subagent-design-ops-lead.md"
       ],
-      "workflows": [
-        "workflow-design-systems--audit-system.md",
-        "workflow-design-systems--create-component.md",
-        "workflow-design-systems--tokenize.md",
-        "workflow-design-ops--handoff.md",
-        "workflow-design-ops--plan-sprint.md",
-        "workflow-design-ops--setup-workflow.md"
-      ],
       "skills": [
         "design-system-tokens",
         "design-tokens-management",
@@ -1152,7 +1103,13 @@
         "component-library-management",
         "design-ops-workflow",
         "design-version-control",
-        "design-handoff-spec"
+        "design-handoff-spec",
+        "workflow-design-systems-audit-system",
+        "workflow-design-systems-create-component",
+        "workflow-design-systems-tokenize",
+        "workflow-design-ops-handoff",
+        "workflow-design-ops-plan-sprint",
+        "workflow-design-ops-setup-workflow"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1178,14 +1135,6 @@
         "subagent-designer-toolkit-expert.md",
         "subagent-prototype-tester.md"
       ],
-      "workflows": [
-        "workflow-ux-strategy--benchmark.md",
-        "workflow-ux-strategy--frame-problem.md",
-        "workflow-prototyping-testing--evaluate.md",
-        "workflow-prototyping-testing--experiment.md",
-        "workflow-prototyping-testing--prototype-plan.md",
-        "workflow-prototyping-testing--test-plan.md"
-      ],
       "skills": [
         "usability-testing-protocol",
         "accessibility-audit",
@@ -1193,7 +1142,13 @@
         "interactive-prototype-builder",
         "clickable-prototype-spec",
         "component-playground-setup",
-        "ai-prototype-refactoring"
+        "ai-prototype-refactoring",
+        "workflow-ux-strategy-benchmark",
+        "workflow-ux-strategy-frame-problem",
+        "workflow-prototyping-testing-evaluate",
+        "workflow-prototyping-testing-experiment",
+        "workflow-prototyping-testing-prototype-plan",
+        "workflow-prototyping-testing-test-plan"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1217,14 +1172,12 @@
         "subagent-cloud-security-architect.md",
         "subagent-security-engineer.md"
       ],
-      "workflows": [
-        "workflow-analyze.md",
-        "workflow-troubleshoot.md"
-      ],
       "skills": [
         "security-audit",
         "azure-infrastructure-bicep",
-        "docker-deployment"
+        "docker-deployment",
+        "workflow-analyze",
+        "workflow-troubleshoot"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1248,16 +1201,14 @@
         "subagent-appsec-penetration-tester.md",
         "subagent-security-engineer.md"
       ],
-      "workflows": [
-        "workflow-troubleshoot.md",
-        "workflow-analyze.md",
-        "workflow-test.md"
-      ],
       "skills": [
         "security-audit",
         "test-driven-development",
         "systematic-debugging",
-        "diagnosing-bugs"
+        "diagnosing-bugs",
+        "workflow-troubleshoot",
+        "workflow-analyze",
+        "workflow-test"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1282,16 +1233,14 @@
         "subagent-compliance-grc-specialist.md",
         "subagent-security-engineer.md"
       ],
-      "workflows": [
-        "workflow-analyze.md",
-        "workflow-grill.md",
-        "workflow-spec.md"
-      ],
       "skills": [
         "security-audit",
         "technical-documentation",
         "domain-modeling",
-        "to-spec"
+        "to-spec",
+        "workflow-analyze",
+        "workflow-grill",
+        "workflow-spec"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1316,13 +1265,11 @@
         "subagent-financial-analyst.md",
         "subagent-business-panel-experts.md"
       ],
-      "workflows": [
-        "workflow-estimate.md",
-        "workflow-business-panel.md"
-      ],
       "skills": [
         "architecture-design",
-        "technical-documentation"
+        "technical-documentation",
+        "workflow-estimate",
+        "workflow-business-panel"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1347,15 +1294,13 @@
         "subagent-market-intelligence-analyst.md",
         "subagent-business-panel-experts.md"
       ],
-      "workflows": [
-        "workflow-recommend.md",
-        "workflow-business-panel.md",
-        "workflow-spec-panel.md"
-      ],
       "skills": [
         "architecture-design",
         "technical-documentation",
-        "domain-modeling"
+        "domain-modeling",
+        "workflow-recommend",
+        "workflow-business-panel",
+        "workflow-spec-panel"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1381,15 +1326,13 @@
         "subagent-operations-strategist.md",
         "subagent-business-panel-experts.md"
       ],
-      "workflows": [
-        "workflow-business-panel.md",
-        "workflow-spec-panel.md"
-      ],
       "skills": [
         "architecture-design",
         "technical-documentation",
         "domain-modeling",
-        "to-spec"
+        "to-spec",
+        "workflow-business-panel",
+        "workflow-spec-panel"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1415,15 +1358,13 @@
         "subagent-literature-patent-analyst.md",
         "subagent-deep-research.md"
       ],
-      "workflows": [
-        "workflow-research.md",
-        "workflow-brainstorm.md",
-        "workflow-explain.md"
-      ],
       "skills": [
         "technical-documentation",
         "systematic-debugging",
-        "domain-modeling"
+        "domain-modeling",
+        "workflow-research",
+        "workflow-brainstorm",
+        "workflow-explain"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1447,15 +1388,13 @@
         "subagent-cloud-infrastructure-architect.md",
         "subagent-system-architect.md"
       ],
-      "workflows": [
-        "workflow-plan.md",
-        "workflow-design-code.md"
-      ],
       "skills": [
         "architecture-design",
         "docker-deployment",
         "microservices-architecture",
-        "technical-documentation"
+        "technical-documentation",
+        "workflow-plan",
+        "workflow-design-code"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1479,15 +1418,13 @@
         "subagent-database-administrator.md",
         "subagent-backend-architect.md"
       ],
-      "workflows": [
-        "workflow-plan.md",
-        "workflow-design-code.md"
-      ],
       "skills": [
         "database-design",
         "backend-api-design",
         "architecture-design",
-        "code-refactoring"
+        "code-refactoring",
+        "workflow-plan",
+        "workflow-design-code"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1511,13 +1448,11 @@
         "subagent-finops-cost-engineer.md",
         "subagent-system-architect.md"
       ],
-      "workflows": [
-        "workflow-estimate.md",
-        "workflow-plan.md"
-      ],
       "skills": [
         "architecture-design",
-        "technical-documentation"
+        "technical-documentation",
+        "workflow-estimate",
+        "workflow-plan"
       ],
       "version": "1.0.0",
       "planningLoop": {

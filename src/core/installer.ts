@@ -5,8 +5,9 @@ import { RegistryResolver } from './registry.js';
 import { AgentHostAdapter } from './adapter.js';
 import { isKnownHost, HOST_REGISTRY, resolveHostProjectDir } from './hosts.js';
 import { HostProjector } from './projector.js';
-import { ClineProjector } from './cline-projector.js';
 import type { IndexableAsset } from './projector.js';
+import { ClineProjector } from './cline-projector.js';
+import YAML from 'yaml';
 import type { InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, ProjectionInfo } from './types.js';
 
 export class InstallEngine {
@@ -165,6 +166,81 @@ private toPosix(p: string): string {
     }
   }
 
+  /**
+   * Plan 015c / §5.7 — host-scoped projection namespaces.
+   *
+   * A re-projection run is authoritative only for the paths it produces inside
+   * its own host namespace. Bundle-scoped lanes (`.agents/plugins/<bundle>/`) are
+   * additionally narrowed to the bundle that owns them, so re-projecting bundle A
+   * never drops bundle B's plugin-lane entries.
+   */
+  private static projectionNamespacePrefixes(host: string, bundleName: string): string[] {
+    switch (host) {
+      case 'cline':
+        return ['.cline/', `.agents/plugins/${bundleName}/`];
+      case 'claude':
+        return ['.claude/'];
+      case 'cursor':
+        return ['.cursor/'];
+      case 'gemini':
+        return ['.gemini/'];
+      case 'opencode':
+        return ['.opencode/'];
+      case 'codex':
+        return ['AGENTS.md'];
+      default:
+        return [];
+    }
+  }
+
+  /**
+   * Plan 015c / §5.7 — reconcile `projectedTo` instead of only appending.
+   *
+   * `recordProjectedTo()` appends and is never told when a projection *path*
+   * changes (e.g. the ADR 0016 workflow slug rename from
+   * `.cline/workflows/implement-feature-or-fix.md` to
+   * `.cline/workflows/workflow-implement.md`). The obsolete-projection cleanup
+   * iterates `lockfile.projections`, which no longer contains the legacy path, so
+   * the stale pointer in `files[canonical].projectedTo` survived forever and
+   * `agents doctor` warned "Missing projection ... Re-run: agents add ... --fanout"
+   * — a remediation that provably cannot clear it.
+   *
+   * For every canonical this run actually produced projections for, drop the
+   * entries inside this run's namespace that the current plan did not produce.
+   * Entries for other hosts and for other bundles survive untouched.
+   */
+  private reconcileProjectedTo(
+    lockfile: LockfileManifest,
+    host: string,
+    bundleName: string,
+    producedByCanonical: Map<string, string[]>
+  ): void {
+    const prefixes = InstallEngine.projectionNamespacePrefixes(host, bundleName);
+    if (prefixes.length === 0 || producedByCanonical.size === 0) return;
+
+    for (const [canonical, producedPaths] of producedByCanonical) {
+      const posixKey = canonical.replace(/\\/g, '/');
+      const sysKey = canonical.replace(/\//g, path.sep);
+      const targetKey = lockfile.files[posixKey] ? posixKey : (lockfile.files[sysKey] ? sysKey : null);
+      if (!targetKey) continue;
+
+      const asset = lockfile.files[targetKey];
+      if (!asset.projectedTo || asset.projectedTo.length === 0) continue;
+
+      const produced = new Set(producedPaths.map(p => this.toPosix(p)));
+      const kept = asset.projectedTo.filter(
+        p => !(prefixes.some(prefix => p.startsWith(prefix)) && !produced.has(p))
+      );
+
+      if (kept.length === asset.projectedTo.length) continue;
+      if (kept.length === 0) {
+        delete asset.projectedTo;
+      } else {
+        asset.projectedTo = kept;
+      }
+    }
+  }
+
   private async removeEmptyProjectionDirs(workspaceRoot: string, projPath: string): Promise<void> {
     let dir = path.dirname(path.join(workspaceRoot, projPath));
     while (dir !== workspaceRoot && dir.startsWith(workspaceRoot)) {
@@ -177,6 +253,100 @@ private toPosix(p: string): string {
       }
       dir = path.dirname(dir);
     }
+  }
+
+  // ADR 0016: Silent auto-migration of legacy .agents/workflows/*.md into
+  // .agents/skills/workflow-<name>/SKILL.md, synchronizing lockfiles and pruning empty dirs.
+  public async migrateLegacyWorkspaceWorkflows(targetDir: string, lockfile?: LockfileManifest): Promise<number> {
+    const subPaths = AgentHostAdapter.getSubPaths(targetDir);
+    let migratedCount = 0;
+
+    let targetLockfile: LockfileManifest | undefined = lockfile;
+    let lockfileLoadedFromDisk = false;
+
+    if (!targetLockfile && (await fs.pathExists(subPaths.lockfile))) {
+      try {
+        targetLockfile = await fs.readJson(subPaths.lockfile);
+        lockfileLoadedFromDisk = true;
+      } catch {}
+    }
+
+    if (await fs.pathExists(subPaths.workflowsDir)) {
+      const entries = await fs.readdir(subPaths.workflowsDir).catch(() => []);
+      for (const entry of entries) {
+        if (entry.endsWith('.md')) {
+          const legacyPath = path.join(subPaths.workflowsDir, entry);
+          let skillName = entry.replace(/\.md$/, '').replace(/--/g, '-');
+          if (!skillName.startsWith('workflow-')) {
+            skillName = `workflow-${skillName}`;
+          }
+          const targetSkillDir = path.join(subPaths.skillsDir, skillName);
+          const targetSkillFile = path.join(targetSkillDir, 'SKILL.md');
+
+          if (!(await fs.pathExists(targetSkillFile))) {
+            await fs.ensureDir(targetSkillDir);
+            const legacyContent = await fs.readFile(legacyPath, 'utf8');
+            let skillContent = legacyContent;
+            const fmMatch = legacyContent.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+            if (fmMatch) {
+              try {
+                const meta = YAML.parse(fmMatch[1]) || {};
+                meta.name = skillName;
+                if (!meta.metadata) {
+                  meta.metadata = {
+                    author: 'Agents United',
+                    version: '1.0.0',
+                    icon: '🔄',
+                  };
+                }
+                const rest = legacyContent.replace(/^---\r?\n[\s\S]+?\r?\n---/, '');
+                skillContent = `---\n${YAML.stringify(meta).trim()}\n---${rest}`;
+              } catch {}
+            }
+            await fs.writeFile(targetSkillFile, skillContent, 'utf8');
+          }
+          await fs.remove(legacyPath).catch(() => {});
+          migratedCount++;
+
+          if (targetLockfile) {
+            const legacyRel = this.toPosix(path.relative(targetDir, legacyPath));
+            const newRel = this.toPosix(path.relative(targetDir, targetSkillFile));
+            if (targetLockfile.files && targetLockfile.files[legacyRel]) {
+              targetLockfile.files[newRel] = targetLockfile.files[legacyRel];
+              delete targetLockfile.files[legacyRel];
+            }
+            if (targetLockfile.installed && targetLockfile.installed.skills) {
+              if (!targetLockfile.installed.skills.includes(skillName)) {
+                targetLockfile.installed.skills.push(skillName);
+              }
+            }
+          }
+        }
+      }
+      const remaining = await fs.readdir(subPaths.workflowsDir).catch(() => []);
+      if (remaining.length === 0) {
+        await fs.remove(subPaths.workflowsDir).catch(() => {});
+      }
+    }
+
+    if (targetLockfile && targetLockfile.installed && targetLockfile.installed.workflows && targetLockfile.installed.workflows.length > 0) {
+      for (const w of targetLockfile.installed.workflows) {
+        let skillName = w.replace(/\.md$/, '').replace(/--/g, '-');
+        if (!skillName.startsWith('workflow-')) {
+          skillName = `workflow-${skillName}`;
+        }
+        if (targetLockfile.installed.skills && !targetLockfile.installed.skills.includes(skillName)) {
+          targetLockfile.installed.skills.push(skillName);
+        }
+      }
+      targetLockfile.installed.workflows = [];
+    }
+
+    if (targetLockfile && (lockfileLoadedFromDisk || (await fs.pathExists(subPaths.lockfile)))) {
+      await fs.writeJson(subPaths.lockfile, targetLockfile, { spaces: 2 });
+    }
+
+    return migratedCount;
   }
 
   /**
@@ -364,6 +534,24 @@ private toPosix(p: string): string {
             }
           }
 
+          // Plan 015c / §5.7 — authoritative reconcile pass. `recordProjectedTo`
+          // above only appends, so a canonical whose projection path changed (e.g.
+          // the ADR 0016 workflow slug rename) kept a dangling pointer forever and
+          // `agents doctor` warned about a file that can never come back. Derive the
+          // produced set from this run's plan and drop this namespace's stale
+          // pointers for the canonicals we just re-projected.
+          const producedByCanonical = new Map<string, string[]>();
+          for (const artifact of artifacts) {
+            if (!artifact.canonical) continue;
+            const producedPaths = producedByCanonical.get(artifact.canonical);
+            if (producedPaths) {
+              producedPaths.push(artifact.relPath);
+            } else {
+              producedByCanonical.set(artifact.canonical, [artifact.relPath]);
+            }
+          }
+          this.reconcileProjectedTo(lockfile, 'cline', bundleDef.name, producedByCanonical);
+
           // Installed-addon freshness (plan 003): when the installed bundle extends a
           // parent essentials with its own coordinator rule + team manifest already
           // projected, re-render those two coordination artifacts excluding every
@@ -419,6 +607,19 @@ private toPosix(p: string): string {
           ? `${agentFile.replace(/\.md$/i, '').replace(/^subagent-/, '')}.yml`
           : agentFile;
         const dest = path.join(base, subdir, projName);
+        const projPath = this.toPosix(path.relative(root, dest));
+
+        // ADR 0017: the Cline compound lane (ADR 0013) is the authoritative writer for
+        // bundle roles. This fallback must never overwrite a role the compound lane owns
+        // with a different renderer's output — doing so silently degraded
+        // `.cline/agents/*.yml` (wrong frontmatter/body) and left the compound projection
+        // hash stale, which `agents doctor` then reported as content drift after every
+        // `update --all` (reproduced via the `domain:*` pseudo-bundle, whose cline fanout
+        // cannot resolve a bundle definition and lands here).
+        if (host === 'cline' && lockfile.projections?.[projPath]?.kind === 'role') {
+          continue;
+        }
+
         if (await fs.pathExists(dest) && !options.force) {
           const existing = await fs.readFile(dest, 'utf8');
           if (!HostProjector.hasManagedMarker(existing)) {
@@ -429,9 +630,24 @@ private toPosix(p: string): string {
           // Ours (managed marker present): deterministic content — regenerate silently.
         }
         await this.deployProjection(dest, res.content);
-        const projPath = this.toPosix(path.relative(root, dest));
         projections.push({ host, path: projPath, kind: 'role', warnings: res.warnings });
         this.recordProjectedTo(lockfile, this.lockRel('agents', agentFile), projPath);
+
+        // ADR 0017: record a projection entry with a matching hash for anything this
+        // fallback writes, so the freshness check never reports phantom drift and the
+        // bookkeeping stays consistent with the compound lane.
+        if (host === 'cline') {
+          lockfile.projections = lockfile.projections || {};
+          lockfile.projections[projPath] = {
+            host,
+            kind: 'role',
+            canonical: canonicalRel,
+            owners: resolved.targetBundle ? [resolved.targetBundle] : [],
+            hash: await this.calculateHash(dest),
+            installedAt: lockfile.projections[projPath]?.installedAt ?? new Date().toISOString(),
+            managedMarker: true,
+          };
+        }
       }
     }
   }
@@ -481,10 +697,13 @@ private toPosix(p: string): string {
 
       await fs.ensureDir(subPaths.agentsDir);
       await fs.ensureDir(subPaths.skillsDir);
-      await fs.ensureDir(subPaths.workflowsDir);
+      if (resolved.workflows && resolved.workflows.length > 0) {
+        await fs.ensureDir(subPaths.workflowsDir);
+      }
       await fs.ensureDir(subPaths.rulesDir);
 
       const lockfile = await this.readLockfile(subPaths.lockfile);
+      await this.migrateLegacyWorkspaceWorkflows(targetDir, lockfile);
       lockfile.scope = scope;
       lockfile.method = method;
       lockfile.hosts = hosts;
@@ -604,6 +823,7 @@ private toPosix(p: string): string {
           ...(existing?.projectedTo ? { projectedTo: existing.projectedTo } : {}),
         };
 
+        lockfile.installed.workflows = lockfile.installed.workflows || [];
         if (!lockfile.installed.workflows.includes(workflowFile)) {
           lockfile.installed.workflows.push(workflowFile);
         }

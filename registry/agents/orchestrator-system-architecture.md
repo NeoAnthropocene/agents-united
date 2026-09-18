@@ -26,7 +26,7 @@ subagent: true
 hooks:
   PreInvocation:
     - type: command
-      command: git status --porcelain
+      command: git status --porcelain || echo "[Notice] Workspace is not a git repository yet."
   PostInvocation:
     - type: command
       command: echo "[Lifecycle] Architecture Orchestration Cycle Complete."
@@ -153,7 +153,7 @@ All architectural blueprints, system specifications, and ADR handoffs must adher
 
 ## 🔄 Explicit Lifecycle Hooks
 
-- **PreInvocation**: Inspects git repository state.
+- **PreInvocation**: Inspects git repository state via `git status --porcelain || echo "[Notice] Workspace is not a git repository yet."` (tolerates uninitialized/greenfield folders).
 - **PostInvocation**: Emits architecture lifecycle completion signal.
 - **PreToolUse**: Evaluates safety gates prior to executing verification commands.
 - **PostToolUse**: Triggers typecheck verification checks following architectural changes.

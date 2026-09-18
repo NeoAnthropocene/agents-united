@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import path from 'node:path';
+import fs from 'node:fs';
 import { RegistryResolver } from '../src/core/registry.js';
 
 describe('RegistryResolver', () => {
@@ -22,7 +23,7 @@ describe('RegistryResolver', () => {
     expect(resolved.agents).toContain('orchestrator-engineering.md');
     expect(resolved.agents).toContain('subagent-backend-architect.md');
     expect(resolved.skills).toContain('test-driven-development');
-    expect(resolved.workflows).toContain('workflow-implement.md');
+    expect(resolved.skills).toContain('workflow-implement');
   });
 
   it('should resolve single agent item', async () => {
@@ -93,7 +94,7 @@ describe('RegistryResolver', () => {
     expect(resolved.agents).toContain('subagent-qa-automation-lead.md');
     expect(resolved.skills).toContain('mobile-ios-design');
     expect(resolved.skills).toContain('playwright-best-practices');
-    expect(resolved.workflows).toContain('workflow-mobile-build.md');
+    expect(resolved.skills).toContain('workflow-mobile-build');
   });
 
   it('should resolve domain:marketing with all marketing addons and agents', async () => {
@@ -118,7 +119,7 @@ describe('RegistryResolver', () => {
     expect(resolved.agents).toContain('subagent-ai-model-architect.md');
     expect(resolved.skills).toContain('modal-serverless-python');
     expect(resolved.skills).toContain('rag-vector-pipeline');
-    expect(resolved.workflows).toContain('workflow-ml-eval.md');
+    expect(resolved.skills).toContain('workflow-ml-eval');
     // Inherited from parentBundle software-engineering
     expect(resolved.agents).toContain('orchestrator-engineering.md');
     expect(resolved.skills).toContain('test-driven-development');
@@ -264,5 +265,116 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
     const r = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
     (r as any).bundlesManifest = good;
     expect(() => (r as any).validateBundles(good)).not.toThrow();
+  });
+
+  // ── Plan 015 Step 1 / §0/C6 + §0/D2: dynamic rule resolution ──────────────
+  describe('dynamic rule resolution (Plan 015)', () => {
+    const EXPECTED_RULES = [
+      'GEMINI.md',
+      'clean-code-and-architecture.md',
+      'domain-modeling-and-adr.md',
+      'git-guardrails.md',
+      'multi-agent-coordination.md',
+      'quality-aesthetics-accessibility.md',
+      'test-driven-development.md',
+    ];
+
+    it('resolves baseline + agent-declared rules for a bundle', async () => {
+      const resolved = await resolver.resolve('software-engineering');
+      expect(resolved.rules).toContain('GEMINI.md');
+      expect(resolved.rules).toContain('git-guardrails.md');
+      expect(resolved.rules).toContain('test-driven-development.md');
+      expect(resolved.rules).toContain('clean-code-and-architecture.md');
+      expect(resolved.rules).toContain('multi-agent-coordination.md');
+    });
+
+    it('deduplicates rules and returns them in a deterministic sorted order', async () => {
+      const first = await resolver.resolve('software-engineering');
+      const second = await resolver.resolve('software-engineering');
+
+      expect(new Set(first.rules).size).toBe(first.rules.length);
+      expect(first.rules).toEqual([...first.rules].sort());
+      expect(second.rules).toEqual(first.rules);
+    });
+
+    it('collects rules from inherited parent-bundle agents (ADR child bundles)', async () => {
+      const child = await resolver.resolve('ai-ml-engineering');
+      // ai-ml-engineering inherits software-engineering's orchestrator + subagents
+      expect(child.agents).toContain('orchestrator-engineering.md');
+      expect(child.rules).toContain('git-guardrails.md');
+      expect(child.rules).toContain('test-driven-development.md');
+    });
+
+    it('unions member-bundle rules in the domain: resolution branch', async () => {
+      const domain = await resolver.resolve('domain:engineering');
+      expect(domain.rules).toContain('GEMINI.md');
+      expect(domain.rules).toContain('git-guardrails.md');
+      expect(domain.rules).toEqual([...domain.rules].sort());
+    });
+
+    it('returns every rule referenced by agent frontmatter and no unknown rule', async () => {
+      const resolved = await resolver.resolve('software-engineering');
+      for (const rule of resolved.rules) {
+        expect(EXPECTED_RULES).toContain(rule);
+      }
+      expect(resolved.rules).toEqual(expect.arrayContaining(EXPECTED_RULES));
+    });
+
+    it('does not attach rules to standalone single-item resolutions', async () => {
+      const agent = await resolver.resolve('orchestrator-engineering');
+      expect(agent.rules).toEqual([]);
+      const skill = await resolver.resolve('test-driven-development');
+      expect(skill.rules).toEqual([]);
+    });
+
+    it('reads the rules block sequence only (never an inline array)', () => {
+      // Guard against regressing to a `rules: [a, b]` regex assumption.
+      const content = fs.readFileSync(
+        path.resolve(process.cwd(), 'registry/agents/orchestrator-engineering.md'),
+        'utf8'
+      );
+      expect(content).toMatch(/^rules:\r?\n\s+- git-guardrails\.md/m);
+      expect(content).not.toMatch(/^rules:\s*\[/m);
+    });
+
+    it('fails fast when a bundle declares a rule file that does not exist (§0/D2)', () => {
+      const bad = {
+        version: 1,
+        bundles: {
+          'bad-rules-bundle': {
+            name: 'bad-rules-bundle',
+            description: 'bad',
+            rules: ['definitely-not-a-rule.md'],
+          },
+        },
+      };
+      const r = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
+      (r as any).bundlesManifest = bad;
+      expect(() => (r as any).validateBundles(bad)).toThrow('does not exist in registry/rules/');
+    });
+
+    it('accepts a bundle whose declared rules all exist', () => {
+      const good = {
+        version: 1,
+        bundles: {
+          'good-rules-bundle': {
+            name: 'good-rules-bundle',
+            description: 'good',
+            rules: ['git-guardrails.md', 'test-driven-development.md'],
+          },
+        },
+      };
+      const r = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
+      (r as any).bundlesManifest = good;
+      expect(() => (r as any).validateBundles(good)).not.toThrow();
+    });
+
+    it('confirms no bundle in the real manifest declares a `rules` key yet (inert branch)', async () => {
+      const manifest = await resolver.loadBundles();
+      const declaring = Object.values(manifest.bundles).filter(
+        (b) => Array.isArray(b.rules) && b.rules.length > 0
+      );
+      expect(declaring).toEqual([]);
+    });
   });
 });
