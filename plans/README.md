@@ -21,7 +21,8 @@ This directory contains self-contained implementation plans for building the **`
 | [013](./013-planner-orchestrator-mode-for-domain-bundles.md) | Planner-Orchestrator Mode for Tier-1 Domain Bundles (ADR 0015) | Runtime Integration / Catalog / Evals | **DONE** (Cline manual rounds complete; subagent auth errors are a Cline account issue, not a code defect) | 012 |
 | [014](./014-workflows-to-skills-migration.md) | Workflows to Skills Complete Cutover & Ecosystem Migration (ADR 0016) | Core / Catalog / Migration | **DONE** | 013 |
 | [015](./015-workflow-runtime-enforcement-and-rules-projection.md) | Workflow Runtime Enforcement, Dynamic Rules Resolution & Cross-Client Projection Hardening | Core / Runtime Integration / Catalog | **DONE — all open items closed** (peer-reviewed; C1–C9 applied; Steps 1–6a; 015c `projectedTo` reconcile; 015d doctor workflow-skill counting; 015e catalog portability + stale-vs-missing classification; 015b renderer-backed staleness detection — **ADR 0017**). Suite: `doctor` 17/17, catalog guards 31/31, regressions 120/120 + 51/51; `tsc` clean, tsup build success; both real workspaces 0 warnings. **Live-Cline multi-file rule loading empirically confirmed** via canary probe (Cline 3.0.62, `toolCallCount: 0` invariant) | 014, 008 |
-| [016](./016-claude-code-projection.md) | Claude Code Projection Architecture — Compound Lane, Launcher Parity & Opt-In Extras (ADR 0018) | Core / Runtime Integration | **READY — approved, not started** (planned at `b9f9a78`; user-approved decisions: lean/path-scoped rules lane, minimal experimental teams scaffold; TDD Red-first execution order in the plan) | 007, 008, 013, 015 |
+| [016](./016-claude-code-projection.md) | Claude Code Projection Architecture — Compound Lane, Launcher Parity & Opt-In Extras (ADR 0018) | Core / Runtime Integration | **READY — approved, not started** (planned at `b9f9a78`; amended 2026-09-21 at `dcbba4b`: dialect-codex-ready `CLAUDE_DIALECT` constant, deterministic body-tool rewrite + lint, Translation Ledger emission; **v1 rollout: Claude only** — see § Plan 016/017 execution order) | 007, 008, 013, 015 |
+| [017](./017-host-dialect-codex-and-translation-ledger.md) | Host Dialect Codex, Declarative Overlays, Translation Ledger & Projection-Conformance CI (ADR 0019) | Core / Architecture / CI | **READY — approved, not started** (Option C approved 2026-09-21; **v1 = Claude dialect only**: canonical single-source retained, deterministic renderers stay translators of record — LLM is CI advisor/judge only, never install-time; Cline next on its own branch only after the verification gate; kimi/cursor/opencode/codex deferred) | 016 (Step 4 requires 016 DONE; Steps 0–3 may run in parallel) |
 
 ### Plan 008 execution order
 
@@ -29,6 +30,19 @@ Plan 008 corrects and extends only the Cline branch of Plan 007. Execute its mil
 compatibility spike/ADR correction → typed compound projection → lifecycle migration → capability
 probe/launcher → CLI/TUI → addon consent → doctor/docs. Do not start launcher work before compound
 projection ownership and migration tests are green.
+
+### Plan 016/017 execution order
+
+Land **016 first** (the Claude compound lane). **017 second** — its Step 4 Claude-lane
+refactor consumes 016's `CLAUDE_DIALECT` and must stay **byte-identical** to pre-refactor
+output, pinned by golden snapshots captured before the refactor. 017 Steps 0–3
+(Claude-lane inventory, ADR 0019, Red tests, dialect/ledger core) may proceed in parallel
+with 016 execution; do not start 017 Step 4 until 016 is DONE.
+
+**Rollout is Claude-only for v1.** Nothing outside the Claude lane may be touched on this
+branch. The gate that unlocks Cline work is the § Rollout scope checklist in Plan 017:
+automated suite green **plus** owner manual verification in Claude Code. Every other
+provider (cursor, opencode, codex, kimi) gets its own branch and plan.
 
 ## Summary of Bundles Architecture
 
