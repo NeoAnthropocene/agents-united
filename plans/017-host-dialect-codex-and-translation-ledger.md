@@ -26,6 +26,7 @@
 - **Effort**: M (reduced from L by the Claude-only rollout scope below)
 - **Risk**: LOW–MEDIUM (bounded by golden-snapshot pinning in Step 4 and fail-fast validation in Step 3)
 - **Rollout scope**: **Claude only (v1)** — see § Rollout scope. Cline is the next target on its own branch, only after Claude passes the verification gate; all other hosts are deferred.
+- **Branch (decided 2026-09-21)**: this plan executes on `feat/claude-code-projection`, **after Plan 016 is DONE**, as the second half of the single Claude deliverable; one PR to `dev` carries both plans' work once the verification gate passes. Cline work starts on a fresh branch cut from `dev` afterwards.
 - **Depends on**: plans/016 (Claude compound-lane renderer shape; the `CLAUDE_DIALECT` lift point), ADR 0008/0013/0016/0017
 - **Category**: core / architecture / CI
 - **Planned at**: commit `dcbba4b`, 2026-09-21
@@ -83,11 +84,7 @@ but measurement shows translation loss today is real, large, and **silent**:
 - **Frontmatter loss**: `hooks`, `permissionMode`, and `rules` (declared by all
   59 agents) plus `effort` (all 59) are dropped by non-Antigravity renderers,
   with warnings that nothing enforces.
-- **Body-prose loss** (measured at `b9f9a78` across `registry/agents/*.md`
-  prompt bodies): `view_file` × 38, `write_to_file` × 33, `run_command` × 31,
-  `grep_search` × 29, `schedule` × 28, `manage_task` × 25,
-  `replace_file_content` × 26, `list_dir` × 21, `ask_question` × 9,
-  `invoke_subagent` × 8, `multi_replace_file_content` × 5, `send_message` × 3.
+- **Body-prose loss** (measured at `b9f9a78`; whole-word census, files/occurrences): `view_file` 38/73, `write_to_file` 33/48, `run_command` 31/64, `grep_search` 29/56, `schedule` 26/53, `replace_file_content` 26/35, `manage_task` 25/27, `list_dir` 21/33, `search_web` 11/21, `read_url_content` 10/19, `ask_question` 9/9, `invoke_subagent` 8/14, `multi_replace_file_content` 5/5, `send_message` 3/3, `generate_image` 2/3. `find_by_name`, `define_subagent`, and `manage_subagents` occur in frontmatter only. **18 distinct canonical tool tokens** exist across the catalog (full census in Plan 016 § Step 0 findings).
   The prompt prose itself is written in Antigravity dialect; today's only
   mitigation is a generic runtime note injected at the top of a projection.
 - **Unexpressible provider strengths**: Claude `Agent(...)` delegation
@@ -186,7 +183,7 @@ drop to carry an auditable **Translation Ledger** disposition; deterministically
 ## Implementation steps (TDD — Red before Green; execute in order)
 
 ### Step 0 — Claude-lane inventory + token scan (delegate: `subagent-repo-index`)
-(a) **Claude-lane mapping inventory**: enumerate every mapping in `claude-projector.ts` (`CLAUDE_DIALECT`) with its destination `HostDialectSpec` field, and confirm that `projector.ts` and `cline-projector.ts` require **no** changes in v1 (they are out of scope — see § Rollout scope). (b) Confirm the body-lint token list against a fresh scan of `registry/agents/*.md` bodies (the 12 measured tokens in § Why this matters) and record which of them have no clean Claude equivalent (expected: `ask_question`, `schedule`). (c) **Deferred to the follow-up plan**: the kimi doc-verification spike and the cross-host map-lift inventory.
+(a) **Claude-lane mapping inventory**: enumerate every mapping in `claude-projector.ts` (`CLAUDE_DIALECT`) with its destination `HostDialectSpec` field, and confirm that `projector.ts` and `cline-projector.ts` require **no** changes in v1 (they are out of scope — see § Rollout scope). (b) Body-lint token list: **already satisfied** by Plan 016 § Step 0 findings — the 18-token census, the files/occurrences counts, and the no-clean-equivalent set (`generate_image`, `schedule`, `ask_question`). Re-run only if `registry/` changed. Expected tokens with no clean Claude equivalent: `generate_image` (unsupported), `schedule` and `ask_question` (approximated). (c) **Deferred to the follow-up plan**: the kimi doc-verification spike and the cross-host map-lift inventory.
 
 ### Step 1 — Decision record & domain language (Coordinator)
 Author `docs/adr/0019-host-dialect-codex-and-translation-ledger.md`: Context (the measured loss), Decision (Option C — the 10 decisions above), Alternatives considered (provider-native multi-store; LLM-as-translator — with the rejection rationale), Consequences (non-goals, deferred items, kimi spike). Add `CONTEXT.md` terms: **Host Dialect Specification (Dialect Codex)**, **Projection Overlay**, **Translation Ledger**, **Disposition (mapped | approximated | degraded | unsupported)**, **Body-Tool Rewrite**, **Body-Tool Lint**, **Golden Projection Snapshot**, **Projection-Conformance CI**, **LLM Advisor**, **LLM Judge**.
