@@ -409,5 +409,36 @@ export interface AgentPluginManifest {
   description: string;
 }
 
+/** ADR 0018 — how one canonical feature is treated when projected into a host dialect. */
+export type LedgerDisposition = 'mapped' | 'approximated' | 'degraded' | 'unsupported';
+
+/** ADR 0018 decision 9 — a recorded disposition; a drop without one is a hard error. */
+export interface TranslationLedgerEntry {
+  feature: string;
+  host: string;
+  disposition: LedgerDisposition;
+  rationale: string;
+}
+
+/**
+ * ADR 0018 — the pure-data description of the Claude Code dialect that the Claude lane renders
+ * against. Plan 017 (ADR 0019) lifts this shape into the shared `HostDialectSpec` so additional
+ * hosts are added as data rather than as hand-wired translators.
+ */
+export interface ClaudeDialect {
+  id: 'claude';
+  nameRegex: RegExp;
+  /** Canonical frontmatter tool token -> Claude tool name. */
+  toolVocabulary: Record<string, string>;
+  /** Canonical tool token -> Claude phrase used when rewriting prompt prose. */
+  bodyToolVocabulary: Record<string, string>;
+  /** Canonical permissionMode -> Claude permissionMode. */
+  permissionModeMap: Record<string, string>;
+  /** Canonical model tier -> Claude model. */
+  modelMap: Record<string, string>;
+  budgets: { skillDescriptionChars: number; agentDescriptionTokens: number };
+  maxRuleLines: number;
+}
+
 
 

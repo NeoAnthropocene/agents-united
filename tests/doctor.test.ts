@@ -12,14 +12,19 @@ describe('DoctorEngine', () => {
   let installer: InstallEngine;
 
   beforeEach(async () => {
-    await fs.remove(tempDir);
-    // Projection fan-out writes siblings of tempDir (e.g. scratch/.claude). The Cline
-    // lane additionally writes `.agents/plugins/**` and `.cline/**`, and every lane has
-    // its own dir — leaving any behind makes the next install refuse to overwrite an
-    // unmanaged projection, so all of them are cleaned for test isolation.
+    // Bounded retries (rimraf's own option, not a sleep): every suite whose workspace
+    // lives under `scratch/` causes the projection lanes to write SIBLING dirs at the
+    // `scratch/` root (e.g. `scratch/.agents/plugins/<bundle>/**` from the Cline lane),
+    // so a concurrently running suite can be mid-write when this cleanup runs. Retrying
+    // keeps the cleanup deterministic instead of flaking with ENOTEMPTY.
+    const removeOpts = { maxRetries: 8, retryDelay: 100 };
+    await fs.remove(tempDir, removeOpts);
+    // The Cline lane additionally writes `.agents/plugins/**` and `.cline/**`, and every
+    // lane has its own dir — leaving any behind makes the next install refuse to overwrite
+    // an unmanaged projection, so all of them are cleaned for test isolation.
     const scratchRoot = path.dirname(tempDir);
     for (const sibling of ['.claude', '.cline', '.agents', '.opencode', '.cursor', '.gemini']) {
-      await fs.remove(path.join(scratchRoot, sibling));
+      await fs.remove(path.join(scratchRoot, sibling), removeOpts);
     }
     await fs.ensureDir(tempDir);
     resolver = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
