@@ -28,6 +28,15 @@
 - **Decision record**: `docs/adr/0018-claude-code-projection-architecture.md` (authored in Step 1)
 - **Followed by**: `plans/017-host-dialect-codex-and-translation-ledger.md` (ADR 0019; generalizes this lane's mappings into `HostDialectSpec`, adds declarative overlays, the cross-host Translation Ledger, and the projection-conformance CI job)
 - **Rollout scope (2026-09-21)**: **Claude only.** This branch delivers, tests, and verifies the Claude lane exclusively — automated suite plus **owner manual testing in Claude Code** (the gate is defined in `plans/017` § Rollout scope). Cline is the next target on its own branch; cursor/opencode/codex/kimi are deferred.
+- **Execution progress (2026-09-21)**: **Step 0 DONE** (recon census + findings recorded in § Step 0 findings) and **Step 1 DONE** — `docs/adr/0018-claude-code-projection-architecture.md` authored, `CONTEXT.md` domain terms registered, `npm run typecheck` exit 0, committed as `7ebaf65`. **PAUSED before Step 2** pending Cline account re-authentication so the `subagent_*` delegation map below can be used as designed.
+
+### Resumption notes (environment facts discovered during Steps 0–1)
+
+- **Subagent delegation unavailable at pause**: `subagent_*` tools returned `Unauthorized: … re-authenticate your Cline account` — verified on **two** roles (`subagent-repo-index`, `subagent-qa-automation-lead`), so the failure is account-wide rather than role-specific. Steps 0–1 were therefore executed in the main session under the ADR 0014/0015 fallback clause; after re-authentication the plan's delegation map governs Steps 2–8.
+- **`npm` cannot be invoked directly in this PowerShell** (execution policy blocks `npm.ps1`) — use the `cmd /c "npm run <script>"` bridge, the same Windows pattern the Cline capability probe relies on. Then check `$LASTEXITCODE`.
+- **Repo state at pause**: branch `feat/claude-code-projection`, HEAD `7ebaf65`, clean tree. The Step 0 drift check confirmed `registry/`, `src/`, `tests/`, and `docs/` were untouched since `b9f9a78`; only `plans/`, `CONTEXT.md`, and the new ADR changed.
+- **Sequencing invariants that must survive the pause**: Step 4 requires Step 3 green; do **not** begin Step 6 (probe/launcher) before the Step 4 migration tests pass; the Claude-only rollout scope forbids touching any non-Claude renderer (the byte-identical guard in Step 4 verifies this).
+- **Open question at pause**: whether to `git push -u origin feat/claude-code-projection` (recommended by `docs/workflow-guide.md` for backup + CI on the eventual PR).
 
 ## Why this matters
 
