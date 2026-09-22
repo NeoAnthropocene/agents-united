@@ -4,6 +4,7 @@
   "bundles": {
     "software-engineering": {
       "name": "software-engineering",
+      "tier": "domain",
       "domain": "engineering",
       "status": "stable",
       "category": "Core Software Development",
@@ -63,6 +64,7 @@
     },
     "system-architecture": {
       "name": "system-architecture",
+      "tier": "domain",
       "domain": "architecture",
       "category": "System & Infrastructure Architecture",
       "aliases": [
@@ -110,6 +112,7 @@
     },
     "product-design": {
       "name": "product-design",
+      "tier": "domain",
       "domain": "design",
       "status": "stable",
       "category": "UI/UX & Product Design",
@@ -156,6 +159,7 @@
     },
     "growth-marketing": {
       "name": "growth-marketing",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Growth & Content Marketing",
       "aliases": [
@@ -207,6 +211,7 @@
     },
     "seo-content-marketing": {
       "name": "seo-content-marketing",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Search Engine Optimization & Content Pipelines",
       "parentBundle": "growth-marketing",
@@ -242,6 +247,7 @@
     },
     "performance-paid-acquisition": {
       "name": "performance-paid-acquisition",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Performance Marketing & Paid Ad Acquisition",
       "parentBundle": "growth-marketing",
@@ -285,6 +291,7 @@
     },
     "product-led-growth": {
       "name": "product-led-growth",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Product-Led Growth & Conversion Optimization",
       "parentBundle": "growth-marketing",
@@ -321,6 +328,7 @@
     },
     "lifecycle-email-marketing": {
       "name": "lifecycle-email-marketing",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Lifecycle Marketing & Retention Engineering",
       "parentBundle": "growth-marketing",
@@ -356,6 +364,7 @@
     },
     "security-operations": {
       "name": "security-operations",
+      "tier": "domain",
       "domain": "security",
       "category": "Application Security & Threat Modeling",
       "aliases": [
@@ -388,6 +397,7 @@
     },
     "deep-research": {
       "name": "deep-research",
+      "tier": "domain",
       "domain": "research",
       "category": "Research & Technical Intelligence",
       "aliases": [
@@ -424,6 +434,7 @@
     },
     "business-strategy": {
       "name": "business-strategy",
+      "tier": "domain",
       "domain": "business",
       "category": "Business & Product Strategy",
       "aliases": [
@@ -458,6 +469,7 @@
     },
     "devops-engineering": {
       "name": "devops-engineering",
+      "tier": "domain",
       "domain": "engineering",
       "category": "CI/CD & Delivery Pipeline Engineering",
       "parentBundle": "software-engineering",
@@ -487,6 +499,7 @@
     },
     "sysops-sre": {
       "name": "sysops-sre",
+      "tier": "domain",
       "domain": "architecture",
       "category": "System Operations & Site Reliability Engineering",
       "parentBundle": "system-architecture",
@@ -512,6 +525,7 @@
     },
     "mobile-development": {
       "name": "mobile-development",
+      "tier": "domain",
       "domain": "engineering",
       "category": "Native & Cross-Platform Mobile Engineering",
       "parentBundle": "software-engineering",
@@ -546,6 +560,7 @@
     },
     "frontend-engineering": {
       "name": "frontend-engineering",
+      "tier": "domain",
       "domain": "engineering",
       "category": "Modern Frontend & UI Architecture",
       "parentBundle": "software-engineering",
@@ -579,6 +594,7 @@
     },
     "backend-distributed-systems": {
       "name": "backend-distributed-systems",
+      "tier": "domain",
       "domain": "engineering",
       "category": "Distributed Backend & Event Streaming Architecture",
       "parentBundle": "software-engineering",
@@ -611,6 +627,7 @@
     },
     "qa-automation": {
       "name": "qa-automation",
+      "tier": "domain",
       "domain": "engineering",
       "category": "Quality Assurance & End-to-End Test Automation",
       "parentBundle": "software-engineering",
@@ -640,6 +657,7 @@
     },
     "ai-ml-engineering": {
       "name": "ai-ml-engineering",
+      "tier": "domain",
       "domain": "engineering",
       "category": "AI / Machine Learning & Vector Data Engineering",
       "parentBundle": "software-engineering",
@@ -678,6 +696,7 @@
     },
     "full": {
       "name": "full",
+      "tier": "domain",
       "domain": "universal",
       "category": "Complete Autonomous Department",
       "aliases": [
@@ -1049,6 +1068,7 @@
     },
     "universal-orchestration": {
       "name": "universal-orchestration",
+      "tier": "domain",
       "domain": "universal",
       "status": "stable",
       "category": "Universal Orchestration & Guided Routing",
@@ -1067,6 +1087,7 @@
     },
     "universal-skills": {
       "name": "universal-skills",
+      "tier": "domain",
       "domain": "universal",
       "category": "Shared Meta-Skills & Cross-Domain Utilities",
       "aliases": [
@@ -1088,6 +1109,7 @@
     },
     "design-systems-ops": {
       "name": "design-systems-ops",
+      "tier": "domain",
       "domain": "design",
       "category": "Design Systems Governance & DesignOps Workflows",
       "parentBundle": "product-design",
@@ -1125,6 +1147,7 @@
     },
     "design-research-testing": {
       "name": "design-research-testing",
+      "tier": "domain",
       "domain": "design",
       "category": "User Research, Usability Testing & Interactive Prototyping",
       "parentBundle": "product-design",
@@ -1164,6 +1187,7 @@
     },
     "secops-cloud-security": {
       "name": "secops-cloud-security",
+      "tier": "domain",
       "domain": "security",
       "category": "Cloud Security Posture & IAM Hardening",
       "parentBundle": "security-operations",
@@ -1193,6 +1217,7 @@
     },
     "secops-application-security": {
       "name": "secops-application-security",
+      "tier": "domain",
       "domain": "security",
       "category": "Application Security & Penetration Testing",
       "parentBundle": "security-operations",
@@ -1224,6 +1249,7 @@
     },
     "secops-compliance-grc": {
       "name": "secops-compliance-grc",
+      "tier": "domain",
       "domain": "security",
       "category": "Governance, Risk & Compliance (SOC2 / ISO / HIPAA / GDPR)",
       "parentBundle": "security-operations",
@@ -1256,6 +1282,7 @@
     },
     "business-financial-modeling": {
       "name": "business-financial-modeling",
+      "tier": "domain",
       "domain": "business",
       "category": "SaaS Financial Modeling & Unit Economics",
       "parentBundle": "business-strategy",
@@ -1285,6 +1312,7 @@
     },
     "business-market-intelligence": {
       "name": "business-market-intelligence",
+      "tier": "domain",
       "domain": "business",
       "category": "Market Intelligence & Competitive Strategy",
       "parentBundle": "business-strategy",
@@ -1316,6 +1344,7 @@
     },
     "business-operations-legal": {
       "name": "business-operations-legal",
+      "tier": "domain",
       "domain": "business",
       "category": "Commercial Contracts & Operations Strategy",
       "parentBundle": "business-strategy",
@@ -1348,6 +1377,7 @@
     },
     "deep-research-analytics": {
       "name": "deep-research-analytics",
+      "tier": "domain",
       "domain": "research",
       "category": "Quantitative Statistics & Academic Prior Art",
       "parentBundle": "deep-research",
@@ -1380,6 +1410,7 @@
     },
     "system-architecture-cloud": {
       "name": "system-architecture-cloud",
+      "tier": "domain",
       "domain": "architecture",
       "category": "Multi-Cloud Infrastructure & Network Topology",
       "parentBundle": "system-architecture",
@@ -1410,6 +1441,7 @@
     },
     "system-architecture-data": {
       "name": "system-architecture-data",
+      "tier": "domain",
       "domain": "architecture",
       "category": "Database Administration & Zero-Downtime Persistence",
       "parentBundle": "system-architecture",
@@ -1440,6 +1472,7 @@
     },
     "system-architecture-finops": {
       "name": "system-architecture-finops",
+      "tier": "domain",
       "domain": "architecture",
       "category": "Cloud FinOps & Infrastructure Cost Optimization",
       "parentBundle": "system-architecture",
