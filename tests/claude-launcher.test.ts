@@ -171,6 +171,24 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
       expect(activation.bootstrapPrompt).toContain('~/.claude/agents/');
       expect(activation.bootstrapPrompt).toContain('~/.agents/plugins/');
     });
+
+    it('drops the manifest instruction and points at .claude/agents/ when the manifest is absent', () => {
+      const withManifest = plan({ manifestAvailable: true });
+      expect(withManifest.bootstrapPrompt).toContain('Read the Team Manifest at');
+      expect(withManifest.bootstrapPrompt).toContain(
+        '.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml'
+      );
+      // Omitted ⇒ unchanged established behaviour.
+      expect(plan().bootstrapPrompt).toContain('Read the Team Manifest at');
+
+      const withoutManifest = plan({ manifestAvailable: false });
+      expect(withoutManifest.bootstrapPrompt).not.toContain('Read the Team Manifest at');
+      expect(withoutManifest.bootstrapPrompt).toContain('discoverable by name and description');
+      expect(withoutManifest.bootstrapPrompt).toContain('.claude/agents/');
+      expect(withoutManifest.bootstrapPrompt).toContain('--fanout cline');
+      // The coordinator definition is still named — that is the instruction that must never dangle.
+      expect(withoutManifest.bootstrapPrompt).toContain('.claude/agents/orchestrator-engineering.md');
+    });
   });
 
   describe('resolveInstallation', () => {
@@ -205,13 +223,14 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
       expect(resolved.scope).toBe('project');
       expect(resolved.workspace).toBe(testWorkspace);
       expect(resolved.lockfile.fanout).toContain('claude');
-      // ADR 0018 decision 6: the team manifest is the single HOST-NEUTRAL artifact under the
-      // organization package — it is emitted by the compound lane's `team-manifest` artifact
-      // (Cline's lane today), never duplicated into `.claude/`. The launcher only *references*
-      // it, so the gate above (recorded fanout) is what makes a claude-only install resolvable.
+      // ADR 0018 decision 6: exactly ONE host-neutral team manifest, under the organization package
+      // and never duplicated into `.claude/`. It is written by the Cline half of the compound lane,
+      // so a claude-only fanout has none on disk — the recorded fanout is what resolves the lane,
+      // and `runClaudeStart` then passes `manifestAvailable: false` so the prompt cannot dangle.
       expect(resolved.manifestPath).toBe(
         path.join(testWorkspace, '.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml')
       );
+      expect(await fs.pathExists(resolved.manifestPath)).toBe(false);
       expect(await fs.pathExists(path.join(testWorkspace, '.claude/agents-united'))).toBe(false);
     });
 

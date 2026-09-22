@@ -307,7 +307,7 @@ cli
   .option('--copy', 'Create independent standalone copies of asset files')
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
   .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cursor, cline, opencode, codex')
-  .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source.')
+  .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
   .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
   .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
   .option('--allow-under-construction', 'Allow installation of bundles marked as under construction')
@@ -781,8 +781,9 @@ cli
         hosts,
         fanout,
         // Plan 016 decision 13 — opt-in Claude plugin lane (distribution-only; ignored unless the
-        // claude lane runs).
-        pluginLane: options.plugin === true,
+        // claude lane runs). `--plugin` opts in, `--no-plugin` opts out explicitly, and an omitted
+        // flag inherits the recorded choice so `agents update` cannot prune the package.
+        pluginLane: typeof options.plugin === 'boolean' ? options.plugin : undefined,
         mode: executionMode,
         allowMissingPrereqs: options.allowMissingPrereqs,
         yes: options.yes,
@@ -2342,6 +2343,10 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
   }
 
   const bundleDef = await registry.getBundle(bundle);
+  // ADR 0018 decision 6 keeps ONE host-neutral team manifest under the organization package, which
+  // the Cline half of the compound lane writes. A claude-only fanout has none, so the prompt must
+  // not order the coordinator to read a path that does not exist.
+  const manifestAvailable = await fs.pathExists(resolution.manifestPath);
   // `--plugin` points Claude at the bundle's plugin root. The path is workspace-relative because the session
   // is spawned with `cwd: workspace`; Step 7 emits the plugin manifest inside it.
   const pluginDir = options.plugin
@@ -2359,6 +2364,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     background: options.bg,
     teams: options.teams,
     pluginDir,
+    manifestAvailable,
   });
 
   const recordedFanout = resolution.lockfile.fanout || [];
@@ -2394,6 +2400,23 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     `Plugin dir: ${pluginDir || '(none)'}`,
     'Starting Claude Code Session'
   );
+
+  // ADR 0018 decision 3: a main-thread `--agent` session is bounded by the projected coordinator
+  // definition's `Agent(...)` allowlist, so that file must exist for the session to be meaningful.
+  // `resolveInstallation` accepts either a recorded claude fanout OR the host-neutral manifest, and
+  // the manifest is a Cline artifact — so a cline-only workspace can pass the gate. Fail loudly here
+  // rather than spawning a session whose `--agent` target does not exist.
+  const coordinatorRel = `.claude/agents/${ClaudeLauncher.resolveCoordinatorName(bundleDef?.orchestrator)}.md`;
+  if (!await fs.pathExists(path.join(resolution.workspace, coordinatorRel))) {
+    outro(
+      pc.red(
+        `Claude projection "${coordinatorRel}" was not found in ${resolution.workspace}.\n` +
+        `Run 'agents update ${bundle} --fanout claude' before starting an --agent session.`
+      )
+    );
+    process.exit(1);
+  }
+
 
   await launcher.launch(plan);
   outro(pc.green(`✔ Claude Code session finished.`));

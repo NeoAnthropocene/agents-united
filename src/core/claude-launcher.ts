@@ -42,6 +42,16 @@ export interface PlanClaudeActivationOptions {
   teams?: boolean;
   /** Plugin root for `--plugin-dir` (Step 7 emits the manifest inside it). */
   pluginDir?: string;
+  /**
+   * Whether the single host-neutral team manifest exists on disk for this workspace.
+   *
+   * ADR 0018 decision 6 keeps exactly one manifest under the organization package (never a
+   * `.claude/` duplicate), and it is written by the Cline half of the compound lane. A claude-only
+   * fanout therefore has none, so the caller passes `false` and the bootstrap prompt points at the
+   * projected `.claude/agents/` roster instead of a dangling path. Omitted ⇒ the established
+   * manifest instruction is used.
+   */
+  manifestAvailable?: boolean;
 }
 
 export interface ResolveClaudeInstallationOptions {
@@ -172,6 +182,7 @@ export class ClaudeLauncher {
       background,
       teams,
       pluginDir,
+      manifestAvailable,
     } = options;
 
     const command = report.command || {
@@ -209,9 +220,22 @@ export class ClaudeLauncher {
       ? `User task: ${prompt.trim()}`
       : 'Please introduce your coordinator role to the user and ask for their first task.';
 
+    // ADR 0018 decision 6 keeps ONE host-neutral team manifest, emitted under the organization
+    // package and never duplicated into `.claude/`. That package is written by the Cline half of
+    // the compound lane, so a claude-only fanout legitimately has no manifest on disk: pointing a
+    // coordinator at a path that does not exist would make its first instruction fail. When the
+    // caller reports the manifest is absent, the prompt falls back to the roster Claude actually
+    // discovers — the projected agent definitions in `.claude/agents/`.
+    const manifestInstruction = manifestAvailable === false
+      ? `Read your coordinator role definition at "${coordinatorRel}" before acting. Specialist roles are ` +
+        `discoverable by name and description from the projected definitions in "${homePrefix}.claude/agents/" ` +
+        `(the host-neutral team manifest is not present in this workspace yet - it is written by a ` +
+        `\`--fanout cline\` install).`
+      : `Read the Team Manifest at "${manifestRel}" and your coordinator role definition at "${coordinatorRel}" before acting.`;
+
     const bootstrapLines = [
       `You are coordinating the "${bundleName}" team in Agents United.`,
-      `Read the Team Manifest at "${manifestRel}" and your coordinator role definition at "${coordinatorRel}" before acting.`,
+      manifestInstruction,
       delegationNoteText,
       'Use specialist roles only when necessary.',
       addonPolicyText,

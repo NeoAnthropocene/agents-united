@@ -246,6 +246,15 @@ export interface LockfileManifest {
   files: Record<string, LockfileAsset>;
   /** File-level projection ownership map (keyed by workspace-root-relative POSIX path). */
   projections?: Record<string, LockfileProjection>;
+  /**
+   * Plan 016 / ADR 0018 decision 12 — the recorded opt-in for the Claude plugin lane.
+   *
+   * Persisted for the same reason `fanout` is: `agents update` re-runs the installer without the
+   * user re-passing `--plugin`, so without this field every update would prune the opted-in
+   * `.agents/plugins/<bundle>/.claude-plugin/**` package as a superseded projection. Absent ⇒ the
+   * lane was never opted into.
+   */
+  pluginLane?: boolean;
 }
 
 export type VersionDriftStatus = 'up-to-date' | 'outdated' | 'modified';

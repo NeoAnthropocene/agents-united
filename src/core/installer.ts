@@ -379,6 +379,21 @@ private toPosix(p: string): string {
   }
 
   /**
+   * Plan 016 / ADR 0018 decision 12 — resolve the effective plugin-lane opt-in.
+   *
+   * An explicit `InstallOptions.pluginLane` always wins (the CLI passes `true` for `--plugin` and
+   * `false` for `--no-plugin`); an unset flag inherits the recorded choice so that `agents update`
+   * — which re-runs the installer without the flag — cannot silently prune an opted-in package.
+   */
+  private static effectivePluginLane(
+    options: InstallOptions,
+    lockfile?: LockfileManifest | null
+  ): boolean {
+    if (typeof options.pluginLane === 'boolean') return options.pluginLane;
+    return lockfile?.pluginLane === true;
+  }
+
+  /**
    * ADR 0018 — the host-specific projection plan, the single input that differs per host once
    * `applyCompoundLane` shared the mechanics. `pluginLane` (Plan 016 decision 13) is honoured for
    * the **Claude lane only**: the Cline package must stay byte-identical with the flag on and off,
@@ -582,6 +597,19 @@ private toPosix(p: string): string {
     const { root } = InstallEngine.projectionRoot(scope, options.targetDir);
     const now = new Date().toISOString();
 
+    // Plan 016 / ADR 0018 decision 12 — the plugin-lane opt-in is sticky. `agents update` re-runs
+    // the installer without `--plugin`, so an unset flag must mean "keep the recorded choice"
+    // rather than "prune the opted-in package"; only an explicit `false` (CLI `--no-plugin`) turns
+    // it off. Persisted for the same reason `fanout` is.
+    const pluginLane = InstallEngine.effectivePluginLane(options, lockfile);
+    if (fanoutHosts.includes('claude')) {
+      if (pluginLane) {
+        lockfile.pluginLane = true;
+      } else if (options.pluginLane === false) {
+        delete lockfile.pluginLane;
+      }
+    }
+
     for (const host of fanoutHosts) {
       if (host === 'codex') {
         const assets: IndexableAsset[] = [];
@@ -628,7 +656,7 @@ private toPosix(p: string): string {
             scope,
             resolved,
             registryDir,
-            options.pluginLane === true
+            pluginLane
           );
 
           await this.applyCompoundLane(host, bundleDef.name, artifacts, {
@@ -764,19 +792,23 @@ private toPosix(p: string): string {
 
     if (options.dryRun) {
       let effectiveDryFanout = fanoutHosts;
-      if (options.fanout === undefined && hasCanonicalAgents) {
-        const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
-        const lockfilePath = path.join(agentsTarget, 'agents-united.json');
-        if (await fs.pathExists(lockfilePath)) {
-          const lockfile = await fs.readJson(lockfilePath).catch(() => null);
-          if (lockfile?.fanout) {
-            effectiveDryFanout = (lockfile.fanout as string[])
-              .filter(h => isKnownHost(h) && HOST_REGISTRY[h]?.projectionCapable);
-          }
+      let effectiveDryPluginLane = options.pluginLane === true;
+      const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
+      const lockfilePath = path.join(agentsTarget, 'agents-united.json');
+      if (await fs.pathExists(lockfilePath)) {
+        const lockfile = await fs.readJson(lockfilePath).catch(() => null);
+        if (options.fanout === undefined && hasCanonicalAgents && lockfile?.fanout) {
+          effectiveDryFanout = (lockfile.fanout as string[])
+            .filter(h => isKnownHost(h) && HOST_REGISTRY[h]?.projectionCapable);
+        }
+        // The plugin-lane opt-in is sticky (see `effectivePluginLane`), so the dry-run plan must
+        // reflect the recorded choice rather than reporting a package it would not prune.
+        if (options.pluginLane === undefined && lockfile?.pluginLane === true) {
+          effectiveDryPluginLane = true;
         }
       }
       const projections = hasCanonicalAgents
-        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, options.targetDir, options.pluginLane === true)
+        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, options.targetDir, effectiveDryPluginLane)
         : [];
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }

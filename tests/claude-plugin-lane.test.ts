@@ -277,3 +277,68 @@ describe('Plan 016 Step 7 — ephemeral `--teams` scaffold (no process spawned)'
   });
 });
 
+/**
+ * Plan 016 Step 7 — the opt-in is STICKY.
+ *
+ * `agents update` re-runs the installer without `--plugin`, so an unset flag must inherit the
+ * recorded choice; otherwise every update would prune the opted-in package as a superseded
+ * projection, silently and with no CLI way to preserve it. Only an explicit `pluginLane: false`
+ * (CLI `--no-plugin`) turns the lane back off.
+ */
+describe('Plan 016 Step 7 — the plugin-lane opt-in is recorded and survives an update', () => {
+  const testWorkspace = path.resolve(process.cwd(), 'scratch/test-claude-plugin-lane-sticky');
+  const agentsDir = path.join(testWorkspace, '.agents');
+  const manifest = path.join(agentsDir, 'plugins', BUNDLE, '.claude-plugin', 'plugin.json');
+  const manifestRel = '.agents/plugins/software-engineering/.claude-plugin/plugin.json';
+
+  const install = (options: InstallOptions = {}) =>
+    new InstallEngine().install(BUNDLE, {
+      targetDir: agentsDir,
+      method: 'copy',
+      fanout: ['claude'],
+      ...options,
+    });
+
+  beforeEach(async () => {
+    await fs.remove(testWorkspace);
+    await fs.ensureDir(testWorkspace);
+  });
+
+  afterEach(async () => {
+    await fs.remove(testWorkspace);
+  });
+
+  it('keeps the package when a later install omits the flag (the agents update path)', async () => {
+    await install({ pluginLane: true });
+    expect(await fs.pathExists(manifest)).toBe(true);
+    expect((await fs.readJson(path.join(agentsDir, 'agents-united.json'))).pluginLane).toBe(true);
+
+    // Exactly what UpdateEngine.update does: re-run the installer without --plugin.
+    await install();
+
+    expect(await fs.pathExists(manifest)).toBe(true);
+    expect(await fs.pathExists(path.join(agentsDir, 'plugins', BUNDLE, 'agents'))).toBe(true);
+    const lockfile = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
+    expect(lockfile.pluginLane).toBe(true);
+    expect(lockfile.projections[manifestRel]).toBeDefined();
+  });
+
+  it('removes the package only when the flag is explicitly turned off', async () => {
+    await install({ pluginLane: true });
+    await install({ pluginLane: false });
+
+    expect(await fs.pathExists(manifest)).toBe(false);
+    const lockfile = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
+    expect(lockfile.pluginLane).toBeUndefined();
+    expect(lockfile.projections[manifestRel]).toBeUndefined();
+  });
+
+  it('never enables the lane from the flag alone when the claude fanout is absent', async () => {
+    await install({ fanout: ['cline'], pluginLane: true });
+
+    const lockfile = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
+    expect(lockfile.pluginLane).toBeUndefined();
+    expect(await fs.pathExists(manifest)).toBe(false);
+  });
+});
+
