@@ -244,9 +244,15 @@ export class ClineProjector {
     const coordinatorName = coordinatorFile.replace(/\.md$/, '');
     const coordinatorCanonical = `agents/${coordinatorFile}`;
 
+    // Plan 016 post-gate fix — the roster must name the host projection as well as the canonical
+    // definition. The Cline runtime discovers configured agents at `.cline/agents/<role>.yml` with the
+    // `subagent-` prefix stripped (ADR 0013), so a canonical-only line sent the coordinator looking for a
+    // file name that does not exist under that namespace. Mirrors the dual-path shape of the
+    // "Installed Workflows & Workflow Skills" section directly below.
     const specialistLines = (bundle.agents || []).map((agentFile) => {
       const name = agentFile.replace(/\.md$/, '');
-      return `- **${name}**: \`.agents/agents/${agentFile}\``;
+      const projected = this.stripSubagentPrefix(name);
+      return `- **${name}**: \`.cline/agents/${projected}.yml\` | \`.agents/agents/${agentFile}\``;
     });
 
     const rawWorkflows = [

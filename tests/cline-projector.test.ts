@@ -593,6 +593,39 @@ You are a backend architect.
       const teamManifestArtifact = artifacts.find(a => a.kind === 'team-manifest');
       expect(teamManifestArtifact?.relPath).toBe('.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml');
     });
+
+    it('names the projected .cline/agents/*.yml path in the coordinator roster (Plan 016 post-gate)', async () => {
+      const resolved = {
+        agents: ['subagent-backend-architect.md'],
+        skills: ['backend-api-design'],
+        workflows: ['workflow-implement.md'],
+      };
+      const artifacts = await ClineProjector.planCompoundProjection(
+        sampleBundle,
+        'project',
+        resolved,
+        'registry'
+      );
+      const rule = artifacts.find(a => a.relPath === '.cline/rules/agents-united-software-engineering.md');
+      expect(rule?.content).toBeDefined();
+      const content = rule!.content!;
+
+      expect(content).toContain('### Installed Specialist Roles');
+      // Host projection first, canonical definition second — the same dual-path shape the
+      // "Installed Workflows & Workflow Skills" section below it uses.
+      const rosterLines = content.split('\n').filter(line => line.startsWith('- **subagent-'));
+      expect(rosterLines.length).toBeGreaterThan(0);
+      expect(rosterLines).toContain(
+        '- **subagent-backend-architect**: `.cline/agents/backend-architect.yml` | `.agents/agents/subagent-backend-architect.md`'
+      );
+      for (const line of rosterLines) {
+        expect(line).toMatch(
+          /^- \*\*subagent-[a-z-]+\*\*: `\.cline\/agents\/[a-z-]+\.yml` \| `\.agents\/agents\/subagent-[a-z-]+\.md`$/
+        );
+      }
+      // No line may point straight at the canonical path: under `.cline/agents/` that file name does not exist.
+      expect(rosterLines.some(line => /^[^:]+: `\.agents\/agents\//.test(line))).toBe(false);
+    });
   });
 
   describe('Backward compatibility of LockfileManifest without projections', () => {
