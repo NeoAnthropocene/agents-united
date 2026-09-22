@@ -193,4 +193,71 @@ describe('tier-aware Agent Teams posture at launch', () => {
     const optOut = describeClaudeTeamsPosture(resolveClaudeTeamsPosture(false, 'organization'));
     expect(optOut).toContain('--no-teams');
   });
+
+  it('every bundle declares an explicit tier, so Tier 1 is labelled rather than inferred', () => {
+    const bundles = JSON.parse(
+      fs.readFileSync(path.resolve(process.cwd(), 'registry/bundles.json'), 'utf8')
+    ).bundles as Record<string, { tier?: string }>;
+
+    const names = Object.keys(bundles);
+    expect(names.length).toBeGreaterThan(30);
+
+    const undeclared = names.filter(name => !bundles[name].tier);
+    expect(undeclared, `bundles missing an explicit tier: ${undeclared.join(', ')}`).toEqual([]);
+
+    const invalid = names.filter(name => !['domain', 'organization'].includes(bundles[name].tier!));
+    expect(invalid).toEqual([]);
+
+    // Tier 1 is the labelled default; Tier 2 stays the small experimental set.
+    expect(bundles['software-engineering'].tier).toBe('domain');
+    expect(bundles['digital-agency'].tier).toBe('organization');
+  });
+});
+
+/**
+ * Tier 2 (organization) runs with Agent Teams logic, so the specialists those bundles actually declare must
+ * carry the peer-messaging grant — otherwise the teammates a Tier-2 lead spawns have no way to reach each
+ * other and the tier default is hollow. Derived from bundles.json so the guard cannot drift as bundles change.
+ */
+describe('organization-tier specialists carry the peer-messaging grant', () => {
+  const bundles = JSON.parse(
+    fs.readFileSync(path.resolve(process.cwd(), 'registry/bundles.json'), 'utf8')
+  ).bundles as Record<string, { tier?: string; agents?: string[] }>;
+
+  const tier2Specialists = Array.from(
+    new Set(
+      Object.values(bundles)
+        .filter(bundle => bundle.tier === 'organization')
+        .flatMap(bundle => bundle.agents ?? [])
+    )
+  );
+
+  it('covers the specialist set an organization bundle actually declares', () => {
+    expect(tier2Specialists.length).toBeGreaterThanOrEqual(8);
+  });
+
+  for (const agentFile of tier2Specialists) {
+    it(`${agentFile} declares send_message and documents both reachability routes`, () => {
+      const file = path.join(REGISTRY_AGENTS, agentFile);
+      expect(frontmatterOf(file).tools).toContain('send_message');
+
+      const body = bodyOf(read(file));
+      expect(body).toContain(PEER_HEADING);
+      expect(body).toContain(REPORT_BACK_PHRASE);
+      expect(body).toContain(BUDGET_PHRASE);
+    });
+
+    it(`${agentFile} projects SendMessage into its Claude tools list`, () => {
+      const rendered = ClaudeProjector.renderRole(
+        read(path.join(REGISTRY_AGENTS, agentFile)),
+        `agents/${agentFile}`
+      );
+      const match = rendered.content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      expect(match).not.toBeNull();
+
+      const tools = (yaml.parse(match![1]) as Record<string, any>).tools as string[];
+      expect(tools).toContain('SendMessage');
+      expect(tools[0]).toBe('Agent');
+    });
+  }
 });

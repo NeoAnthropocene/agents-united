@@ -21,6 +21,7 @@ tools:
   - read_url_content
   - grep_search
   - list_dir
+  - send_message
 hooks:
   PreInvocation:
     - log: Marketing Creative Designer activated — reviewing brand identity guidelines
@@ -197,3 +198,9 @@ You operate in two modes. The executor protocol above applies in **Execution Mod
 ### Mode switch
 If you are spawned with a concrete execution task, switch to Execution Mode and follow your executor protocol above. If you are spawned for planning consultation, stay in Planning Consultation Mode until the orchestrator promotes your Scope-of-Work Statement into an execution task.
 
+## 📨 Peer Messaging & Direct Reachability
+
+- **In an Agent-Teams session** (`agents start --host claude --teams`): reach a named peer teammate or the lead directly with `send_message` (the Agent-Teams messaging tool), addressing the teammate by the agent-type name it was spawned as. Documented limits: exactly one team per session, the session's main thread is the fixed lead, teammates cannot spawn their own teammates, and no teammate is load-bearing for the critical path.
+- **As an ordinary subagent** (spawned by a lead through the Agent tool): sibling subagents are **not** directly reachable - this host's subagent model is report-back-to-the-caller. Return findings to the orchestrator and let it relay; if a bounded peer exchange is genuinely required, spawn that peer yourself with the `Agent` tool, inside the documented 3-layer nesting depth.
+- **This role owns visual production.** Use messaging to request copy length, asset dimensions or brand constraints - never to rewrite another specialist's copy.
+- ADR 0014's Consultation Budget is unchanged by either route: at most **2 peer exchanges per specialist pair** and at most **1 directed question per peer per planning round**. When the budget is spent, state your assumption and proceed.
