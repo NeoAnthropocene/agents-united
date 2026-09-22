@@ -176,7 +176,8 @@ agents add digital-agency --allow-under-construction --mode brainstorming --dry-
 | `agents chat` — conversational TUI routing to the right orchestrator by intent | CLI | Reduces time-to-delegation. The in-session counterpart is the `universal-orchestration` bundle (Prime Orchestrator / Domain Atlas). |
 | VS Code / Cursor extension — sidebar for browsing and installing bundles | IDE Integration | Wider discoverability surface |
 | Webhook-driven self-update — agents self-update when registry publishes new version | Automation | Reduces manual `agents update` friction |
+| Antigravity CLI activation launcher — `agents start --host antigravity` should spawn a session in the Antigravity CLI. Today `resolveStartHost()` treats every host other than `cline`/`claude` as `unsupported` and falls back to the Cline lane with a note, so Antigravity users get a Cline session; the `antigravity` host id already exists in the `AgentHost` union while its registry entry is keyed `agents` (`profile: 'antigravity'`), so the work is an alias plus a launcher that mirrors `ClineLauncher`/`ClaudeLauncher` (argv array, `shell: false`, capability probe) | CLI / Runtime Integration | Surfaced 2026-09-22 while verifying the Tier-1/Tier-2 parallel-work posture: Tier-2 (`tier: organization`) bundles are report-only on Antigravity because there is no launcher to spawn |
 
 ---
 
-*Last updated: 2026-08-17 | Maintained by: NeoAnthropocene*
+*Last updated: 2026-09-22 | Maintained by: NeoAnthropocene*
