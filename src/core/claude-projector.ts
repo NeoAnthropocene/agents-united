@@ -141,6 +141,10 @@ export class ClaudeProjector {
       invoke_subagent: 'the Agent tool',
       define_subagent: 'the Agent tool',
       manage_subagents: 'the Agent tool',
+      // ADR 0018 decision 8 requires canonical tool names in prose to be rewritten, not just the
+      // frontmatter vocabulary: a specialist reading "reach a peer with `send_message`" would otherwise
+      // look for a tool that does not exist on this host. Whole-word and code-fence-aware like the rest.
+      send_message: 'SendMessage',
       manage_task: 'TaskCreate',
       ask_question: 'AskUserQuestion',
       generate_image: 'image generation (unsupported on this host)',

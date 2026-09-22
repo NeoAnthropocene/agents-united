@@ -425,3 +425,35 @@ describe('ClaudeProjector — errors and determinism', () => {
 
 
 
+
+
+/**
+ * Plan 016 post-gate — dialect-codex completeness. ADR 0018 decision 8 requires canonical tool names to
+ * be rewritten in prompt *prose*, not only in frontmatter, so a subagent reading its own instructions
+ * never looks for a tool this host does not have. `send_message` was the one vocabulary entry missing
+ * from `bodyToolVocabulary` while the specialists' new peer-messaging sections reference it.
+ */
+describe('ClaudeProjector.rewriteBody — send_message prose rewrite', () => {
+  it('rewrites the canonical token in prose and records the disposition', () => {
+    const { body, ledger } = ClaudeProjector.rewriteBody(
+      'Reach a named peer with `send_message` when a teammate must be asked directly.'
+    );
+
+    expect(body).toContain('`SendMessage`');
+    expect(body).not.toContain('`send_message`');
+    expect(ledger.some(entry => entry.feature === 'send_message')).toBe(true);
+  });
+
+  it('preserves fenced code blocks byte-for-byte', () => {
+    const body = ['Use send_message in prose.', '', '```bash', 'echo send_message', '```', ''].join('\n');
+    const { body: out } = ClaudeProjector.rewriteBody(body);
+
+    expect(out).toContain('Use SendMessage in prose.');
+    expect(out).toContain('echo send_message');
+  });
+
+  it('does not rewrite a longer identifier that merely contains the token', () => {
+    const { body } = ClaudeProjector.rewriteBody('Call send_message_batch and send_message2 here.');
+    expect(body).toBe('Call send_message_batch and send_message2 here.');
+  });
+});
