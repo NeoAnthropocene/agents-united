@@ -129,6 +129,21 @@ export interface LockfileProjection {
   managedMarker: boolean;
 }
 
+/**
+ * ADR 0018 — the structural shape every compound-lane projector emits
+ * (`ClineProjector` / `ClaudeProjector`). The installer's compound lane is
+ * host-parameterised against this shape, so Cline and Claude share one
+ * implementation instead of a copy-paste fork.
+ */
+export interface PlannedProjectionArtifact {
+  kind: ProjectionKind;
+  canonical?: string;
+  relPath: string;
+  content?: string;
+  sourceFilePath?: string;
+  managedMarker: boolean;
+}
+
 export interface ClineTeamManifest {
   schemaVersion: 1;
   bundle: string;
@@ -165,6 +180,27 @@ export interface ClineCapabilityReport {
   command?: ResolvedClineCommand;
   namedTeams: boolean;
   rolePresetConsumer: 'detected' | 'not-detected' | 'unknown';
+  diagnostics: string[];
+}
+
+export type ResolvedClaudeCommand = {
+  executable: string;
+  prefixArgs: string[];
+  source: 'env-binary' | 'node-wrapper' | 'path-executable';
+};
+
+/**
+ * ADR 0018 decision 11 / Plan 016 decision 12 — the read-only Claude Code probe result.
+ * `pluginSupport` and `agentTeamsExperimental` are derived from `--help` text only; both
+ * default to `false` when help output is unavailable, so an unverifiable capability is
+ * never reported as supported.
+ */
+export interface ClaudeCapabilityReport {
+  installed: boolean;
+  version?: string;
+  command?: ResolvedClaudeCommand;
+  pluginSupport: boolean;
+  agentTeamsExperimental: boolean;
   diagnostics: string[];
 }
 
