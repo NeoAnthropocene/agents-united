@@ -21,6 +21,7 @@ tools:
   - grep_search
   - find_by_name
   - list_dir
+  - send_message
 hooks:
   PreInvocation:
     - log: subagent-backend-architect invoked — auditing project structure & database
@@ -378,4 +379,12 @@ When this role is delegated a vertical slice by `orchestrator-engineering` (skil
 2. **Gate execution**: run this role's own phase gates (Phases 4–5 above) plus the target project's workspace-wide commands (`npm test`, `npm run typecheck`, `npm run build`, or the project's documented equivalents). Report the exact commands executed — never a paraphrase.
 3. **Structured completion report**: (a) files created/modified, (b) tests authored/updated, (c) verbatim command output, or the failure plus what is needed to proceed.
 4. **Escalation**: if a gate cannot run (no test/typecheck tooling in the project), say so explicitly instead of asserting success.
+
+## 📨 Peer Messaging & Direct Reachability
+
+- **In an Agent-Teams session** (`agents start --host claude --teams`): reach a named peer teammate or the lead directly with `send_message` (Claude lane: `SendMessage`), addressing the teammate by the agent-type name it was spawned as. Documented limits: exactly one team per session, the session's main thread is the fixed lead, teammates cannot spawn their own teammates, and no teammate is load-bearing for the critical path.
+- **As an ordinary subagent** (spawned by a lead through the Agent tool): sibling subagents are **not** directly reachable — this host's subagent model is report-back-to-the-caller. Return findings to the orchestrator and let it relay; if a bounded peer exchange is genuinely required, spawn that peer yourself with the `Agent` tool, inside the documented 3-layer nesting depth.
+- **This role may write code, but only inside its own scope.** Settle interface questions (endpoint shapes, schema fields, migration ordering) by message *before* touching files a peer owns; a peer's artefact is read-only to you unless the orchestrator reassigns it.
+- ADR 0014's Consultation Budget is unchanged by either route: at most **2 peer exchanges per specialist pair** and at most **1 directed question per peer per planning round**. When the budget is spent, state your assumption and proceed.
+
 

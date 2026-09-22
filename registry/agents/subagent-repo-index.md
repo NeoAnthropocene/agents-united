@@ -16,6 +16,7 @@ tools:
   - grep_search
   - find_by_name
   - list_dir
+  - send_message
 hooks:
   PreInvocation:
     - log: subagent-repo-index invoked — beginning codebase indexing
@@ -184,3 +185,11 @@ No `run_command`, `write_to_file`, or `replace_file_content` — ever.
 - **PostInvocation**: Emits completion signal and confirms index report readiness.
 - **PreToolUse**: Evaluates tool calls against strict read-only safety guard.
 - **PostToolUse**: Confirms completion of indexing step.
+
+## 📨 Peer Messaging & Direct Reachability
+
+- **In an Agent-Teams session** (`agents start --host claude --teams`): reach a named peer teammate or the lead directly with `send_message` (Claude lane: `SendMessage`), addressing the teammate by the agent-type name it was spawned as. Documented limits: exactly one team per session, the session's main thread is the fixed lead, teammates cannot spawn their own teammates, and no teammate is load-bearing for the critical path.
+- **As an ordinary subagent** (spawned by a lead through the Agent tool): sibling subagents are **not** directly reachable — this host's subagent model is report-back-to-the-caller. Return findings to the orchestrator and let it relay; if a bounded peer exchange is genuinely required, spawn that peer yourself with the `Agent` tool, inside the documented 3-layer nesting depth.
+- **This role stays read-only either way.** Use messaging to request scope or hand back an index finding — never to write into another agent's files; the read-only guard on your tooling is unaffected by which session type you run in.
+- ADR 0014's Consultation Budget is unchanged by either route: at most **2 peer exchanges per specialist pair** and at most **1 directed question per peer per planning round**. When the budget is spent, state your assumption and proceed.
+
