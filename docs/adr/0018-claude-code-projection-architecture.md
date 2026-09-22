@@ -68,6 +68,8 @@ above, so the amendments live here rather than silently diverging from the recor
    side-effect-free probe), so `agents doctor --host claude` and the `start --dry-run` plan both state whether
    the version floor is met. Where the runtime does not provide the tool the entry simply does not resolve, and
    Claude Code refuses to launch an agent only when *nothing* in its tools list resolves.
+4. **Coordinator-ness comes from the canonical role (refines decision 3).** A projected coordinator must land on the coordinator posture even when no bundle definition exists (`domain:*` pseudo-entries, addons). `renderRole` previously decided "coordinator" from a caller-supplied allowlist alone, so a bundle-less `orchestrator-engineering` projected on **Sonnet** with a bare `Agent` while the bundled one projected on **Opus** with an allowlist. `type: orchestrator` / `mainAgent: true` is now the discriminator, and the unbundled fallback supplies the allowlist from the peer roster of the same projection run — so a coordinator always gets a real bound instead of "spawn anything".
+5. **Sections are re-rendered per host, not merely re-worded (refines decision 8).** Tool-name rewriting cannot rescue a section that describes *another* host's routing (Antigravity's `language_server.exe` limitation, Cline's `subagent_*` tools): the words change and the meaning stays foreign. `CLAUDE_DIALECT.bodySectionOverrides` replaces such a section wholesale — currently ADR 0009's "Subagent Delegation & Host Routing" becomes "Subagent Delegation & Agent Routing (Claude Code)". This is a rendering, not a feature drop, so it carries no ledger disposition, and it is the seed Plan 017's declarative overlays should grow from.
 
 ## Consequences
 
