@@ -250,6 +250,94 @@ Plugin lane: flag-gated `.claude-plugin/plugin.json` + `agents/` subdir inside `
 - Claude Code — Workflows (JS scripts): https://code.claude.com/docs/en/workflows.md
 - Internal: ADR 0008/0013/0016/0017, Plans 007/008/015, `tests/doctor.test.ts` stale-vs-missing pattern
 
+## Appendix — Team delegation prompt (handoff at `8e98133`)
+
+Copy the block below into a fresh Cline CLI session on branch `feat/claude-code-projection`. It is self-contained — the receiving team needs no other context.
+
+```text
+You are the engineering team taking over Plan 016 (Claude Code projection lane, ADR 0018) in the
+repository C:\github\agents-united, on branch `feat/claude-code-projection` at commit `8e98133`.
+
+LOAD THESE FIRST, IN ORDER
+1. plans/016-claude-code-projection.md — the authoritative plan. Steps 0–3 are DONE: read its
+   sections "Execution progress", "Step 0 findings" and "Resumption notes" before doing anything.
+2. docs/adr/0018-claude-code-projection-architecture.md — the 15 binding design decisions.
+3. plans/017-host-dialect-codex-and-translation-ledger.md — follow-on work. DO NOT start it.
+4. CONTEXT.md — the terms Claude Code Projection, Claude Skills Lane, Claude Lean Rules Lane,
+   Claude Plugin Lane, Claude Agent-Teams Scaffold, Claude Capability Probe, Translation Ledger.
+5. src/core/claude-projector.ts and tests/claude-projector.test.ts,
+   tests/claude-catalog-conformance.test.ts — the renderer and its 40 green tests you build on.
+
+HARD SCOPE BOUNDARIES (violating any of these fails the task)
+- Claude lane ONLY. Do not modify the cline/cursor/opencode/codex renderers or any .cline/** output.
+- Never write to CLAUDE.md, CLAUDE.local.md, .claude/settings.json, ~/.claude/** or .claude/workflows/**.
+- Do NOT rename registry/skills/generative_ui/ (normalization is projection-level by decision).
+- No force-pushes, no commits to main/dev, conventional commits only.
+
+TASKS — execute Plan 016 Steps 4 → 5 → 6 → 7 → 8 in order, honouring every listed STOP condition
+- Step 4 (installer lane, lockfile, migration): wire the Claude compound lane into src/core/installer.ts;
+  deploy artifacts; write lockfile.projections entries with host "claude", refcounted owners, hash and
+  managedMarker; extend the existing Plan-015c reconcile pass; PRUNE superseded
+  .claude/agents/subagent-*.md files; port the generative_ui silent migration into src/core/updater.ts;
+  add uninstaller refcount parity.
+- Step 5 (doctor): dispatch the renderer by projection.host in DoctorEngine.renderProjectionVariants;
+  add the `--host claude` branch; classify pre-rename paths as "Stale projection … (superseded by …)"
+  — never as "Missing projection" — with exactly one warning per path and zero speculative warnings.
+- Step 6 (probe + launcher): add src/core/claude-capabilities.ts and src/core/claude-launcher.ts using
+  `claude --version` and `--help` parsing ONLY (never `claude agents --json`, never headless -p), argv
+  arrays with shell:false, and the Windows .cmd/.bat cmd.exe bridge; wire
+  `agents start --host claude [--bg] [--teams] [--plugin]` and `agents doctor --host claude` in src/cli.ts.
+- Step 7 (opt-in extras): flag-gated .claude-plugin/plugin.json + agents/ subdir inside
+  .agents/plugins/<bundle>/ with a test proving Cline's plugin.json hard-stop is unaffected; the
+  `--teams` scaffold injects CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 ephemerally into the spawned
+  process and names projected agent types — nothing persisted, nothing written to ~/.claude.
+- Step 8: run subagent-code-reviewer as a read-only adversarial audit, then the full gates and docs.
+
+DELEGATION — use the configured subagent tools when authorized in this session; if they return
+"Unauthorized", execute in the main session and state that in every report.
+  subagent-backend-architect  -> Steps 4, 5, 6, 7 (implementation)
+  subagent-qa-automation-lead -> new Red tests for Steps 4–6 (installer, migration, doctor, launcher)
+  subagent-code-reviewer      -> Step 8 audit, read-only, severity-rated
+  subagent-repo-index         -> read-only recon when you need a blast radius
+
+WINDOWS ENVIRONMENT WORKAROUNDS (already learned — do not rediscover)
+- `npm` cannot run directly in PowerShell. Use `cmd /c "npm run typecheck"` and check $LASTEXITCODE.
+- Long commands exceed the 30s command budget: run detached, e.g.
+  Start-Process cmd.exe '/c "npm test > %TEMP%\au-logs\step4.log 2>&1"' -WindowStyle Hidden, then poll
+  the log with Start-Sleep + Get-Content.
+- NEVER redirect logs into scratch/ — tests/doctor.test.ts uses scratch/ as its workspace and deletes
+  sibling projection dirs.
+- NEVER pass maxRetries/retryDelay to fs-extra's remove(): it hangs this environment (reproduced).
+- PowerShell: $pid is read-only (use another name); do not run a "kill stale vitest" command and a
+  "start vitest" command in the same parallel batch.
+- Stale workers: Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.CommandLine
+  -match 'vitest|agents-united.dist.cli.js' } | Stop-Process -Force
+
+GATES — before declaring Plan 016 DONE
+1. `npm run typecheck` exit 0 and `npm test` fully green (36+ files, 0 failures).
+2. `agents add software-engineering -t agents --fanout claude --dry-run` enumerates role, skills and
+   rules artifacts; a real install into scratch/<case>/ writes .claude/agents/*.md (stripped names),
+   .claude/skills/*/SKILL.md, .claude/rules/*.md and lockfile.projections['.claude/…'] with
+   host "claude" and refcounted owners.
+3. A pre-rename install followed by `agents update` prunes every old .claude/agents/subagent-*.md with
+   zero orphans; doctor gives exactly one warning per genuinely drifted path.
+4. `agents doctor --host claude` prints a capability block; `agents start software-engineering
+   --host claude --dry-run` prints argv containing `--agent orchestrator-engineering`.
+5. No file outside .claude/**, .agents/** (lockfile + plugin lane), registry/translation-ledger.json,
+   src/**, tests/**, docs/** and plans/** is written.
+
+WHEN DONE
+- Update plans/016-…md "Execution progress" and the plans/README.md row to DONE with gate evidence.
+- Hand the owner the manual Claude Code checklist from plans/017 § Rollout scope (both the --agent
+  launch path and a plain session, plus add/doctor/drift/remove) — the OWNER performs it; do not claim it.
+- Stop and report: commits, changed files, gate evidence, open risks, recommended next step (Plan 017).
+- Do not open the PR until the owner reports the manual gate result.
+
+REPORT FORMAT per step: (1) what changed with file:line, (2) the exact verification command and its
+observed result, (3) any STOP condition hit, (4) the next step. Keep it factual; never report a gate as
+passing unless you ran it in this session.
+```
+
 
 
 
