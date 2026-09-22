@@ -2275,6 +2275,7 @@ cli
       }
       console.log(`  Plugin Support (--plugin-dir): ${report.claudeCapability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
       console.log(`  Agent Teams (experimental): ${report.claudeCapability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+      console.log(`  Subagent hand-off (SubagentHandback): ${report.claudeCapability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
       console.log(`  Configured Agents: ${report.agentsCount} projected into .claude/agents/ ("agents start --host claude" = optional launcher)\n`);
     }
 
