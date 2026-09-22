@@ -540,6 +540,7 @@ You are a backend architect.
         agents: ['subagent-backend-architect.md'],
         skills: ['backend-api-design'],
         workflows: ['workflow-implement.md'],
+        rules: [],
       };
       const registryDir = 'registry';
       const artifacts = await ClineProjector.planCompoundProjection(
@@ -599,6 +600,7 @@ You are a backend architect.
         agents: ['subagent-backend-architect.md'],
         skills: ['backend-api-design'],
         workflows: ['workflow-implement.md'],
+        rules: [],
       };
       const artifacts = await ClineProjector.planCompoundProjection(
         sampleBundle,

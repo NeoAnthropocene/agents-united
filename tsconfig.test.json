@@ -1,0 +1,12 @@
+{
+  "//": "Type-checks the test tree as well as src. `tsconfig.json` excludes tests/ because its outDir and rootDir target the published build, which meant `npm run typecheck` never saw a broken test fixture — a required report field added in src produced zero errors in tests. Run via `npm run typecheck`.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

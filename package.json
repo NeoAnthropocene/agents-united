@@ -19,8 +19,8 @@
     "test": "vitest run",
     "test:evals": "vitest run tests/e2e-evals/",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
   },
   "keywords": [
     "antigravity",
