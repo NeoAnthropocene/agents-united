@@ -9,7 +9,7 @@ import type { IndexableAsset } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { ClaudeProjector } from './claude-projector.js';
 import YAML from 'yaml';
-import type { InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo } from './types.js';
+import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo } from './types.js';
 
 export class InstallEngine {
   private registry: RegistryResolver;
@@ -345,7 +345,13 @@ private toPosix(p: string): string {
 
       projections.push({ host, path: artifact.relPath, kind: artifact.kind, warnings: [] });
 
-      if (artifact.canonical) {
+      // ADR 0018 decision 12 — a distribution-only artifact (the opt-in Claude plugin lane) is
+      // deployed and tracked in `lockfile.projections` so doctor can see presence and drift, but
+      // it is deliberately NOT a `projectedTo` target. `projectionNamespacePrefixes('claude')` is
+      // `['.claude/']` on purpose: `.agents/plugins/<bundle>/` belongs to the *cline* reconcile
+      // pass, and a claude pointer recorded inside it would be dropped by that pass on the next
+      // Cline install — healthy artifacts turned into orphaned lockfile state.
+      if (artifact.canonical && !artifact.distributionOnly) {
         this.recordProjectedTo(lockfile, artifact.canonical, artifact.relPath);
       }
     }
@@ -358,7 +364,10 @@ private toPosix(p: string): string {
     // we just re-projected.
     const producedByCanonical = new Map<string, string[]>();
     for (const artifact of artifacts) {
-      if (!artifact.canonical) continue;
+      // Distribution-only artifacts are excluded here as well: they exist to be *packaged*,
+      // not to serve a canonical asset, so they must not widen the produced set of this
+      // namespace (which would keep a stale `.claude/**` pointer alive).
+      if (!artifact.canonical || artifact.distributionOnly) continue;
       const producedPaths = producedByCanonical.get(artifact.canonical);
       if (producedPaths) {
         producedPaths.push(artifact.relPath);
@@ -367,6 +376,32 @@ private toPosix(p: string): string {
       }
     }
     this.reconcileProjectedTo(lockfile, host, bundleName, producedByCanonical);
+  }
+
+  /**
+   * ADR 0018 — the host-specific projection plan, the single input that differs per host once
+   * `applyCompoundLane` shared the mechanics. `pluginLane` (Plan 016 decision 13) is honoured for
+   * the **Claude lane only**: the Cline package must stay byte-identical with the flag on and off,
+   * so the flag is inert for `cline`.
+   */
+  private static async planCompoundArtifacts(
+    host: AgentHost,
+    bundleDef: BundleDefinition,
+    scope: InstallScope,
+    resolved: ResolvedAssets,
+    registryDir: string,
+    pluginLane: boolean
+  ): Promise<PlannedProjectionArtifact[]> {
+    if (host === 'cline') {
+      return ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+    }
+    const artifacts = await ClaudeProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+    if (pluginLane) {
+      // Distribution-only extras (ADR 0018 decision 12): deployed and tracked through the same
+      // lane, but never recorded as a `projectedTo` target (`distributionOnly` artifacts).
+      artifacts.push(...await ClaudeProjector.planPluginLane(bundleDef, resolved, registryDir));
+    }
+    return artifacts;
   }
 
   private async removeEmptyProjectionDirs(workspaceRoot: string, projPath: string): Promise<void> {
@@ -485,7 +520,8 @@ private toPosix(p: string): string {
     resolved: ResolvedAssets,
     registryDir: string,
     scope: InstallScope,
-    targetDir?: string
+    targetDir?: string,
+    pluginLane = false
   ): Promise<ProjectionInfo[]> {
     const infos: ProjectionInfo[] = [];
     if (fanoutHosts.length === 0) return infos;
@@ -500,9 +536,14 @@ private toPosix(p: string): string {
       if (host === 'cline' || host === 'claude') {
         const bundleDef = resolved.targetBundle ? await this.registry.getBundle(resolved.targetBundle) : undefined;
         if (bundleDef) {
-          const artifacts = host === 'cline'
-            ? await ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir)
-            : await ClaudeProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+          const artifacts = await InstallEngine.planCompoundArtifacts(
+            host as AgentHost,
+            bundleDef,
+            scope,
+            resolved,
+            registryDir,
+            pluginLane
+          );
           for (const artifact of artifacts) {
             infos.push({ host, path: artifact.relPath, kind: artifact.kind, warnings: [] });
           }
@@ -581,9 +622,14 @@ private toPosix(p: string): string {
 
           // ADR 0018 - the per-host plan is the only host-specific input; pruning,
           // refcounting, deployment and reconcile are shared via applyCompoundLane.
-          const artifacts = host === 'cline'
-            ? await ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir)
-            : await ClaudeProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+          const artifacts = await InstallEngine.planCompoundArtifacts(
+            host as AgentHost,
+            bundleDef,
+            scope,
+            resolved,
+            registryDir,
+            options.pluginLane === true
+          );
 
           await this.applyCompoundLane(host, bundleDef.name, artifacts, {
             root,
@@ -730,7 +776,7 @@ private toPosix(p: string): string {
         }
       }
       const projections = hasCanonicalAgents
-        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, options.targetDir)
+        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, options.targetDir, options.pluginLane === true)
         : [];
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }

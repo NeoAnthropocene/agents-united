@@ -142,6 +142,15 @@ export interface PlannedProjectionArtifact {
   content?: string;
   sourceFilePath?: string;
   managedMarker: boolean;
+  /**
+   * ADR 0018 decision 12 — a **distribution-only** artifact (the opt-in Claude plugin lane).
+   * It is deployed and tracked in `lockfile.projections`, but it is never a projection
+   * *target*: no `projectedTo` pointer is recorded for it, because its namespace
+   * (`.agents/plugins/<bundle>/`) belongs to the **cline** reconcile pass and a `claude`
+   * pointer recorded there would be dropped on the next Cline install.
+   */
+  distributionOnly?: boolean;
+
 }
 
 export interface ClineTeamManifest {
@@ -348,6 +357,13 @@ export interface InstallOptions {
   allowMissingPrereqs?: boolean;
   /** Allow installation of bundles marked as under-construction */
   allowUnderConstruction?: boolean;
+  /**
+   * ADR 0018 decision 12 / Plan 016 decision 13 — opt-in **Claude plugin lane**: also emit the
+   * distribution-only package (`.agents/plugins/<bundle>/.claude-plugin/plugin.json` + `agents/`)
+   * for `claude --plugin-dir`. Claude lane only; the plan is byte-identical to today when absent.
+   */
+  pluginLane?: boolean;
+
 }
 
 export interface ProjectionInfo {
@@ -455,6 +471,25 @@ export interface TranslationLedgerEntry {
   disposition: LedgerDisposition;
   rationale: string;
 }
+/**
+ * Plan 016 decision 13 / ADR 0018 decision 12 — the Anthropic Claude Code plugin manifest
+ * (`.claude-plugin/plugin.json`), consumed via `claude --plugin-dir`. The field set is the
+ * documented seven; `author`/`homepage`/`repository`/`license` are emitted as empty strings
+ * because `BundleDefinition` (and `registry/bundles.json`) declares no such metadata — the
+ * keys stay present for schema completeness rather than being invented, and the manifest
+ * stays deterministic across project and global installs.
+ */
+export interface ClaudePluginManifest {
+  author: string;
+  description: string;
+  homepage: string;
+  license: string;
+  name: string;
+  repository: string;
+  version: string;
+}
+
+
 
 /**
  * ADR 0018 — the pure-data description of the Claude Code dialect that the Claude lane renders

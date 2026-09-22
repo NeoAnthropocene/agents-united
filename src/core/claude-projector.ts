@@ -3,6 +3,8 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import type {
   BundleDefinition,
+  ClaudePluginManifest,
+
   InstallScope,
   LedgerDisposition,
   ProjectionKind,
@@ -24,6 +26,9 @@ export interface PlannedClaudeArtifact {
   relPath: string;
   content?: string;
   sourceFilePath?: string;
+  /** ADR 0018 decision 12 — distribution-only artifact: tracked, but never a `projectedTo` target. */
+  distributionOnly?: boolean;
+
   managedMarker: boolean;
 }
 
@@ -66,6 +71,13 @@ const FEATURE_LEDGER: Record<string, { disposition: LedgerDisposition; rationale
 };
 
 const MARKER_PROFILE = 'claude';
+/**
+ * The marker string `HostProjector.hasManagedMarker()` greps for. Kept as one constant because
+ * the JSON plugin manifest (which cannot carry the HTML-comment form) must contain exactly this
+ * substring to be recognised as ours by both `applyCompoundLane` and `agents doctor`.
+ */
+const MARKER_PREFIX = 'managed-by: agents-united';
+
 const HOST = 'claude';
 const ENTRYPOINT_RULES = new Set(['CLAUDE.md', 'CLAUDE.local.md', 'GEMINI.md', 'AGENTS.md', 'CURSOR.md']);
 
@@ -498,6 +510,118 @@ export class ClaudeProjector {
 
     return artifacts;
   }
+
+  /** Claude plugin package name rule; every bundle in `registry/bundles.json` satisfies it today. */
+  private static readonly PLUGIN_NAME_REGEX = /^[a-z0-9][a-z0-9-]*$/;
+
+  /**
+   * Render the Claude plugin manifest (`.claude-plugin/plugin.json`).
+   *
+   * Deterministic: fixed field order, two-space indent, trailing newline, and no data read
+   * from the environment (a `package.json` lookup would make the bytes differ between a
+   * project and a global install and would trip doctor's recorded-hash drift check).
+   */
+  private static renderPluginManifest(bundle: BundleDefinition, canonicalRelPath: string): string {
+    if (!ClaudeProjector.PLUGIN_NAME_REGEX.test(bundle.name)) {
+      throw new Error(
+        `Cannot project ${canonicalRelPath}: bundle name "${bundle.name}" is not a valid Claude plugin ` +
+        `name (must match ^[a-z0-9][a-z0-9-]*$).`
+      );
+    }
+
+    // JSON cannot carry the `<!-- managed-by: agents-united ... -->` comment the markdown
+    // renderers use, yet BOTH `InstallEngine.applyCompoundLane` (regeneration of our own
+    // artifact) and `agents doctor` (drift/marker integrity) classify an artifact by that
+    // marker *string* (`HostProjector.hasManagedMarker`). The manifest is declared
+    // `managedMarker: true` — a machine-generated file we own and must be able to
+    // regenerate and drift-check — so the marker travels inside `description`, the only
+    // free-text field of the seven. Without it the second flagged install would refuse
+    // with "not managed by agents-united" and doctor would report a false
+    // "user-modified projection" on every run.
+    const markerText = `${MARKER_PREFIX} | profile: ${MARKER_PROFILE} | do not edit`;
+    const description = bundle.description
+      ? `${bundle.description} [${markerText}]`
+      : markerText;
+
+    const manifest: ClaudePluginManifest = {
+      author: '',
+      description,
+      homepage: '',
+      license: '',
+      name: bundle.name,
+      repository: '',
+      version: bundle.version || '1.0.0',
+    };
+
+    return JSON.stringify(manifest, null, 2) + '\n';
+  }
+
+  /**
+   * ADR 0018 decision 12 / Plan 016 decision 13 — the opt-in Claude **plugin lane**.
+   *
+   * Plans the `claude --plugin-dir` consumable package *inside* the organization package:
+   * `.agents/plugins/<bundle>/.claude-plugin/plugin.json` plus an `agents/` subdirectory that
+   * mirrors the `.claude/agents/` projection name-for-name and byte-for-byte (same `renderRole`
+   * call, same coordinator allowlist, same `maxTurns`).
+   *
+   * **Distribution-only, never the behavioural source.** Claude has no project-local plugin
+   * auto-discovery, plugin agents are namespaced (`plugin:agent`) and a plugin
+   * `permissionMode` is ignored — so the `.claude/agents/` projection produced by
+   * `planCompoundProjection` stays the single behavioural source. This package exists purely
+   * so the same folder can be zipped and consumed elsewhere via `--plugin-dir`.
+   *
+   * Additive and caller-gated (`InstallOptions.pluginLane`): when the flag is off this method
+   * is never called and the install plan is byte-identical to before.
+   */
+  public static async planPluginLane(
+    bundle: BundleDefinition,
+    resolved: ResolvedAssets,
+    registryDir: string
+  ): Promise<PlannedClaudeArtifact[]> {
+    const artifacts: PlannedClaudeArtifact[] = [];
+    const baseDir = `.agents/plugins/${bundle.name}`;
+
+    // 1. Manifest — the discriminator `claude --plugin-dir` reads.
+    artifacts.push({
+      kind: 'plugin-manifest',
+      relPath: `${baseDir}/.claude-plugin/plugin.json`,
+      content: ClaudeProjector.renderPluginManifest(bundle, `${baseDir}/.claude-plugin/plugin.json`),
+      managedMarker: true,
+      distributionOnly: true,
+    });
+
+    // 2. Roles — mirror of the project projection. Same allowlist/maxTurns treatment as
+    //    `planCompoundProjection` so the package's `agents/` subdir cannot diverge from
+    //    `.claude/agents/` (the byte-identity is asserted in tests/claude-plugin-lane.test.ts).
+    const coordinatorFile = bundle.orchestrator || `${bundle.name}.md`;
+    const specialistNames = (bundle.agents || []).map(f =>
+      ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, ''))
+    );
+    const maxTurns = bundle.planningLoop?.budget?.maxIterations;
+
+    for (const agentFile of resolved.agents || []) {
+      const canonicalRel = `agents/${agentFile}`;
+      const src = path.join(registryDir, 'agents', agentFile);
+      if (!(await fs.pathExists(src))) continue;
+      const isCoordinator = coordinatorFile === agentFile;
+      const roleName = ClaudeProjector.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
+      const rendered = ClaudeProjector.renderRole(await fs.readFile(src, 'utf8'), canonicalRel, {
+        allowlist: isCoordinator ? specialistNames : undefined,
+        maxTurns: isCoordinator ? maxTurns : undefined,
+      });
+      artifacts.push({
+        kind: 'role',
+        canonical: canonicalRel,
+        relPath: `${baseDir}/agents/${roleName}.md`,
+        content: rendered.content,
+        managedMarker: true,
+        distributionOnly: true,
+      });
+    }
+
+    return artifacts;
+  }
+
 }
 
 
