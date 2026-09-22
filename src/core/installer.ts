@@ -716,7 +716,17 @@ private toPosix(p: string): string {
       for (const agentFile of resolved.agents) {
         const content = await fs.readFile(path.join(registryDir, 'agents', agentFile), 'utf8');
         const canonicalRel = this.canonicalRelAgent(agentFile);
-        const res = HostProjector.projectAgent(content, HOST_REGISTRY[host].profile, canonicalRel);
+        // ADR 0018: the Claude dialect renderer is the only correct writer for `.claude/agents/`.
+        // This fallback runs whenever a fanout cannot resolve a bundle definition — the `domain:*`
+        // pseudo-entries (registry.ts resolves them to `targetBundle: 'domain:<name>'`, which is not
+        // in bundles.json), addon identifiers, and bundles absent from the registry. The legacy
+        // generic projector only knows the small TOOL_NAME_MAP, so it dropped `invoke_subagent` and
+        // `send_message` outright; a coordinator projected that way had NO `Agent` tool at all and
+        // could not delegate. Rendering through the dialect keeps the tool vocabulary, the frontmatter
+        // translation and the ledger dispositions identical to the compound lane's.
+        const res = host === 'claude'
+          ? ClaudeProjector.renderRole(content, canonicalRel, {})
+          : HostProjector.projectAgent(content, HOST_REGISTRY[host].profile, canonicalRel);
         // ADR 0013 / ADR 0018: the compound-lane hosts (Cline, Claude) name their
         // projected roles by stripping the canonical `subagent-` prefix, so the
         // unbundled fallback must use the same names or the two writers would
@@ -729,16 +739,20 @@ private toPosix(p: string): string {
         const dest = path.join(base, subdir, projName);
         const projPath = this.toPosix(path.relative(root, dest));
 
-        // ADR 0017 / ADR 0018: the Cline (ADR 0013) and Claude (ADR 0018) compound lanes
-        // are the authoritative writers for bundle roles. This fallback must never
-        // overwrite a role the compound lane owns with a different renderer's output -
-        // doing so silently degraded `.cline/agents/*.yml` (wrong frontmatter/body) and
-        // left the compound projection hash stale, which `agents doctor` then reported
-        // as content drift after every `update --all` (reproduced via the `domain:*`
-        // pseudo-bundle, whose cline fanout cannot resolve a bundle definition and lands
-        // here).
-        if ((host === 'cline' || host === 'claude') && lockfile.projections?.[projPath]?.kind === 'role') {
-          continue;
+        // ADR 0017 / ADR 0018: a COMPOUND-lane role is authoritative and must never be replaced by
+        // this fallback. Ownership is read from the recorded canonical: the compound planner stores
+        // the store-relative `agents/<file>`, while this fallback stores the `.agents/`-prefixed form
+        // (`canonicalRelAgent`). The earlier broad guard — "any role entry exists" — also froze roles
+        // that THIS fallback had written with the legacy projector, which made the degradation
+        // permanent: re-projection skipped them forever, so a `domain:*` install could never be
+        // repaired. Cline deliberately keeps the broad guard, because its two writers render
+        // genuinely different artifacts (configured-agent YAML vs the generic translation).
+        const existingRoleProj = lockfile.projections?.[projPath];
+        if (existingRoleProj?.kind === 'role') {
+          const compoundOwned = !(existingRoleProj.canonical ?? '').startsWith('.agents/');
+          if (host === 'cline' || (host === 'claude' && compoundOwned)) {
+            continue;
+          }
         }
 
         if (await fs.pathExists(dest) && !options.force) {
@@ -751,7 +765,13 @@ private toPosix(p: string): string {
           // Ours (managed marker present): deterministic content — regenerate silently.
         }
         await this.deployProjection(dest, res.content);
-        projections.push({ host, path: projPath, kind: 'role', warnings: res.warnings });
+        // `ClaudeRenderResult` reports translation losses through its ledger, not a warnings array.
+        projections.push({
+          host,
+          path: projPath,
+          kind: 'role',
+          warnings: 'warnings' in res ? res.warnings : [],
+        });
         this.recordProjectedTo(lockfile, this.lockRel('agents', agentFile), projPath);
 
         // ADR 0017 / ADR 0018: record a projection entry with a matching hash for anything

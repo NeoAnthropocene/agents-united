@@ -285,6 +285,16 @@ export class ClaudeProjector {
       if (!tools.includes(mapped)) tools.push(mapped);
     }
 
+    // ADR 0018 decision 3: when the coordinator has an allowlist, `Agent(<specialists>)` IS the
+    // delegation grant. Adding a bare `Agent` next to it is contradictory — the docs treat `Agent`
+    // without parentheses as "allow spawning any subagent without restrictions" — so the allowlist
+    // would be silently widened. Keep the allowlist as the single source of the bound.
+    if (opts.allowlist && opts.allowlist.length > 0) {
+      const withoutBareAgent = tools.filter(t => t !== 'Agent');
+      tools.length = 0;
+      tools.push(...withoutBareAgent);
+    }
+
     // 3. Posture: permissionMode, model tier, effort, and the consultation budget.
     if (opts.allowlist && opts.allowlist.length > 0) {
       for (const base of COORDINATOR_BASELINE_TOOLS) {
