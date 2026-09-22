@@ -11,10 +11,13 @@ import { UpdateEngine } from './core/updater.js';
 import { DoctorEngine } from './core/doctor.js';
 import { ClineLauncher } from './core/cline-launcher.js';
 import { ClineCapabilityProbe } from './core/cline-capabilities.js';
+import { ClaudeLauncher } from './core/claude-launcher.js';
+import type { ClaudeActivationPlan } from './core/claude-launcher.js';
+import { ClaudeCapabilityProbe } from './core/claude-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets } from './core/hosts.js';
-import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, InstalledPackageRecord, ProjectionInfo, ExecutionMode } from './core/types.js';
+import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
 const cli = cac('agents-united');
 const registry = new RegistryResolver();
@@ -304,6 +307,7 @@ cli
   .option('--copy', 'Create independent standalone copies of asset files')
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
   .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cursor, cline, opencode, codex')
+  .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source.')
   .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
   .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
   .option('--allow-under-construction', 'Allow installation of bundles marked as under construction')
@@ -776,6 +780,9 @@ cli
         method,
         hosts,
         fanout,
+        // Plan 016 decision 13 — opt-in Claude plugin lane (distribution-only; ignored unless the
+        // claude lane runs).
+        pluginLane: options.plugin === true,
         mode: executionMode,
         allowMissingPrereqs: options.allowMissingPrereqs,
         yes: options.yes,
@@ -2094,12 +2101,15 @@ cli
   });
 
 cli
-  .command('start <bundle> [prompt]', 'Start an installed bundle team in its host runtime (e.g. Cline)')
+  .command('start <bundle> [prompt]', 'Start an installed bundle team in its host runtime (e.g. Cline, Claude Code)')
   .option('--host <host>', 'Host runtime (default: auto-detect from lockfile fanout)')
   .option('-g, --global', 'Select global installation')
   .option('--team <name>', 'Override generated team name')
   .option('--allow-addons', 'Pre-authorize recommended addon installations for this session')
   .option('--headless', 'Run non-interactively without interactive TUI')
+  .option('--bg', 'Run the Claude Code session in the background (claude host only)')
+  .option('--teams', 'Enable the experimental agent-teams scaffold (claude host only; ephemeral env, nothing persisted)')
+  .option('--plugin', 'Pass --plugin-dir with the bundle plugin root (claude host only)')
   .option('--dry-run', 'Print activation resolution and argv summary without launching')
   .action(async (bundle: string, prompt?: string, options: any = {}) => {
     intro(pc.cyan('Agents United — Runtime Activation'));
@@ -2108,6 +2118,17 @@ cli
     const probe = new ClineCapabilityProbe();
 
     try {
+      // ADR 0018 / Plan 016 (Step 6): an explicit --host wins; otherwise inherit the fanout recorded in
+      // the lockfile for the resolved scope/workspace. Falling back to Cline when no claude signal exists
+      // keeps the existing Cline UX byte-identical.
+      const effectiveHost = await resolveStartHost(bundle, options);
+      if (effectiveHost === 'claude') {
+        await runClaudeStart(bundle, prompt, options);
+        return;
+      }
+      if (effectiveHost === 'unsupported') {
+        note(pc.yellow(`Host '${options.host}' has no activation launcher yet; falling back to the Cline lane.`), 'Host Runtime');
+      }
       const resolution = await launcher.resolveInstallation(bundle, {
         global: options.global,
         cwd: process.cwd(),
@@ -2256,6 +2277,153 @@ cli
       process.exit(1);
     }
   });
+
+/**
+ * Plan 016 (Step 6) — resolve the activation host for `agents start`.
+ *
+ * - an explicit `--host` wins (`claude` selects the Claude lane, anything else falls back to Cline, which
+ *   is the pre-Step-6 behaviour where `--host` was ignored entirely);
+ * - otherwise the fanout recorded in the lockfile for the resolved scope/workspace is inherited, so an
+ *   install projected to Claude activates the Claude lane and an install with no claude signal keeps the
+ *   existing Cline UX unchanged.
+ *
+ * Detection is deliberately best-effort: any resolution error (bundle not installed, not projected) yields
+ * no claude signal, and the selected lane then reports its own actionable error exactly as before.
+ */
+async function resolveStartHost(
+  bundle: string,
+  options: { host?: string; global?: boolean }
+): Promise<'cline' | 'claude' | 'unsupported'> {
+  const explicitHost = typeof options.host === 'string' ? options.host.trim().toLowerCase() : '';
+  if (explicitHost === 'claude') {
+    return 'claude';
+  }
+  if (explicitHost === 'cline') {
+    return 'cline';
+  }
+  if (explicitHost.length > 0) {
+    return 'unsupported';
+  }
+
+  let recordedFanout: string[] = [];
+  try {
+    const detection = await new ClaudeLauncher().resolveInstallation(bundle, {
+      global: options.global,
+      cwd: process.cwd(),
+    });
+    recordedFanout = detection.lockfile.fanout || [];
+  } catch {
+    recordedFanout = [];
+  }
+  return recordedFanout.includes('claude') ? 'claude' : 'cline';
+}
+
+/**
+ * Plan 016 (Step 6) — the Claude Code lane for `agents start --host claude`.
+ *
+ * `--dry-run` prints the full plan (one argv element per line, plus the active flags and the env keys that
+ * would be injected) and returns without spawning anything or writing anything to disk. A real session
+ * spawns `claude` with `shell: false` and the ephemeral env merged over `process.env`; the teams opt-in is
+ * never persisted (no settings.json write, nothing under `~/.claude/`).
+ */
+async function runClaudeStart(bundle: string, prompt: string | undefined, options: any): Promise<void> {
+  const launcher = new ClaudeLauncher();
+  const probe = new ClaudeCapabilityProbe();
+
+  const resolution = await launcher.resolveInstallation(bundle, {
+    global: options.global,
+    cwd: process.cwd(),
+  });
+
+  const probeReport = await probe.probe();
+  if (!probeReport.installed && !options.dryRun) {
+    outro(pc.red(`Claude Code executable was not found on PATH or via CLAUDE_BIN_PATH. Please install Claude Code or ensure it is accessible.`));
+    process.exit(1);
+  }
+
+  const bundleDef = await registry.getBundle(bundle);
+  // `--plugin` points Claude at the bundle's plugin root. The path is workspace-relative because the session
+  // is spawned with `cwd: workspace`; Step 7 emits the plugin manifest inside it.
+  const pluginDir = options.plugin
+    ? path.join('.agents', 'plugins', bundle).split(path.sep).join('/')
+    : undefined;
+
+  const plan = launcher.planActivation({
+    bundleName: bundle,
+    workspace: resolution.workspace,
+    scope: resolution.scope,
+    report: probeReport,
+    prompt,
+    orchestrator: bundleDef?.orchestrator,
+    allowAddons: options.allowAddons,
+    background: options.bg,
+    teams: options.teams,
+    pluginDir,
+  });
+
+  const recordedFanout = resolution.lockfile.fanout || [];
+
+  if (options.dryRun) {
+    note(renderClaudeActivationPlan(plan, probeReport, recordedFanout), 'Claude Activation Plan (dry run)');
+    outro(pc.yellow('Dry run complete. No processes launched.'));
+    return;
+  }
+
+  if (!recordedFanout.includes('claude')) {
+    note(
+      pc.yellow(
+        `This workspace records fanout [${recordedFanout.join(', ') || 'none'}]. Run\n` +
+        `'agents update ${bundle} --fanout claude' to project .claude/agents/ before the session needs it.`
+      ),
+      'Claude Projection'
+    );
+  }
+  if (options.teams && !probeReport.agentTeamsExperimental) {
+    note(pc.yellow('The capability probe could not confirm agent-team support from --help; the scaffold stays experimental and unverified.'), 'Agent Teams');
+  }
+  if (pluginDir && !probeReport.pluginSupport) {
+    note(pc.yellow('The capability probe could not confirm --plugin-dir support from --help.'), 'Plugin Dir');
+  }
+
+  note(
+    `Host: ${pc.cyan('claude')}\n` +
+    `Executable: ${plan.executable}\n` +
+    `Workspace: ${plan.workspace}\n` +
+    `Background: ${options.bg ? 'yes (--bg)' : 'no'}\n` +
+    `Teams scaffold: ${options.teams ? 'yes (experimental, ephemeral env only)' : 'no'}\n` +
+    `Plugin dir: ${pluginDir || '(none)'}`,
+    'Starting Claude Code Session'
+  );
+
+  await launcher.launch(plan);
+  outro(pc.green(`✔ Claude Code session finished.`));
+}
+
+/** Render the `--dry-run` Claude plan: one argv element per line so each flag/value pair is unambiguous. */
+function renderClaudeActivationPlan(
+  plan: ClaudeActivationPlan,
+  report: ClaudeCapabilityReport,
+  recordedFanout: string[]
+): string {
+  const envEntries = Object.keys(plan.env);
+  const pluginFlagIndex = plan.argv.indexOf('--plugin-dir');
+  const teamsActive = envEntries.includes('CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS');
+  return [
+    `Bundle: ${plan.bundleName}`,
+    `Host: claude`,
+    `Scope: ${plan.scope}`,
+    `Workspace: ${plan.workspace}`,
+    `Executable: ${plan.executable}`,
+    `Background (--bg): ${plan.argv.includes('--bg') ? 'yes' : 'no'}`,
+    `Agent teams (--teams): ${teamsActive ? 'yes (experimental; ephemeral env only, nothing persisted)' : 'no'}`,
+    `Plugin (--plugin-dir): ${pluginFlagIndex >= 0 ? plan.argv[pluginFlagIndex + 1] : '(none)'}`,
+    `Env injected (merged over process.env): ${envEntries.length > 0 ? envEntries.map((k) => `${k}=${plan.env[k]}`).join(', ') : '(none)'}`,
+    `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}`,
+    `Recorded fanout: [${recordedFanout.join(', ')}]`,
+    `Argv (${plan.argv.length} elements, one element per line, spawned with shell: false):`,
+    ...plan.argv.map((arg, index) => `  [${index}] ${arg.replace(/\r?\n/g, '\\n')}`),
+  ].join('\n');
+}
 
 cli.help();
 cli.version('1.0.0');
