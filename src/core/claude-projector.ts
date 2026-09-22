@@ -188,7 +188,7 @@ export class ClaudeProjector {
           '',
           '- **Delegation tool**: spawn specialists with the `Agent` tool. Your `tools` allowlist names exactly the specialist types you may call (the projected definitions in `.claude/agents/`, with the `subagent-` prefix stripped); calling any other type fails, so send work only to those names. There are no `TypeName`/`Role`/`Prompt` fields — `Agent` takes the specialist type and one self-contained prompt, so put the role, the scope boundaries and the acceptance criteria inside that prompt.',
           '- **Parallel work**: spawn independent specialists in one turn — each runs in its own context window and returns its result to you (delivered by `SubagentHandback` on Claude Code v2.1.271+ in auto mode). You are the single synthesis and relay point: name who reported what, and never let one specialist wait on another.',
-          '- **When a type is missing**: if a required specialist is not in your allowlist, or a spawn fails, say so and complete that slice yourself — never silently delegate to an unlisted type.',
+          '- **Your allowlist is the whole domain team, not only what is installed.** A listed type whose definition is not in this workspace yet will fail to spawn: say so, recommend installing it (`agents add <addon>`), and handle that slice yourself if the user declines. Never delegate to a type outside your allowlist.',
           '- **Agent Teams (opt-in, `--teams`)**: the lead can spawn *teammates* instead of subagents and message them directly with `SendMessage`. The scaffold is experimental — one team per session, a fixed lead, no nested teams — so never make it load-bearing.',
         ].join('\n'),
       },
@@ -533,8 +533,44 @@ export class ClaudeProjector {
   }
 
   /**
+   * The specialist roster a coordinator may delegate to: the whole **domain** team, not only the slice
+   * this bundle declares or what happens to be installed.
+   *
+   * `software-engineering` declares 4 specialists, but the `engineering` domain has 15 — so an essentials
+   * install used to leave the domain lead able to call 4 of its 15 people, with the list growing only when
+   * the operator happened to install more *and* re-project. `bundles.json` already groups every bundle under
+   * a `domain`, so the roster is the union of that domain's declared agents minus the coordinator itself.
+   * The allowlist is then stable (independent of install state) and complete (it never silently hides a
+   * teammate). The cost is that a listed type may not be installed yet — the delegation section turns that
+   * into an install recommendation rather than a dead end.
+   *
+   * Sorted for determinism: repeated projections must be byte-identical, because `agents doctor` diffs them.
+   */
+  private static resolveDomainRoster(
+    bundle: BundleDefinition,
+    coordinatorFile: string,
+    registryDir: string
+  ): string[] {
+    const names = new Set<string>();
+    try {
+      const raw = fs.readFileSync(path.join(registryDir, 'bundles.json'), 'utf8');
+      const bundles = (JSON.parse(raw).bundles ?? {}) as Record<string, BundleDefinition>;
+      for (const candidate of Object.values(bundles)) {
+        if (!bundle.domain || candidate.domain !== bundle.domain) continue;
+        for (const agentFile of candidate.agents || []) {
+          if (agentFile === coordinatorFile) continue;
+          names.add(ClaudeProjector.stripSubagentPrefix(agentFile.replace(/\.md$/i, '')));
+        }
+      }
+    } catch {
+      // No registry to read: fall back to the bundle's own declared roster (the caller's).
+    }
+    return [...names].sort();
+  }
+
+  /**
    * Plan the full Claude compound projection for one bundle: roles (with a coordinator allowlist of
-   * its own specialists), skills (normalized names plus auxiliary files copied byte-for-byte), and
+   * its whole domain team), skills (normalized names plus auxiliary files copied byte-for-byte), and
    * the lean deduplicated rule set. It emits **no** team-manifest duplicate and **no** workflows lane,
    * because Claude workflows are JavaScript orchestration scripts rather than markdown (ADR 0018 d14).
    */
@@ -548,9 +584,11 @@ export class ClaudeProjector {
     void scope;
     const artifacts: PlannedClaudeArtifact[] = [];
     const coordinatorFile = bundle.orchestrator || `${bundle.name}.md`;
-    const specialistNames = (bundle.agents || []).map(f =>
-      ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, ''))
-    );
+    // A coordinator delegates to its domain team, not just this bundle's declared slice of it.
+    const domainRoster = ClaudeProjector.resolveDomainRoster(bundle, coordinatorFile, registryDir);
+    const specialistNames = domainRoster.length > 0
+      ? domainRoster
+      : (bundle.agents || []).map(f => ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, '')));
     const maxTurns = bundle.planningLoop?.budget?.maxIterations;
 
     // 1. Roles.
@@ -706,9 +744,10 @@ export class ClaudeProjector {
     //    `planCompoundProjection` so the package's `agents/` subdir cannot diverge from
     //    `.claude/agents/` (the byte-identity is asserted in tests/claude-plugin-lane.test.ts).
     const coordinatorFile = bundle.orchestrator || `${bundle.name}.md`;
-    const specialistNames = (bundle.agents || []).map(f =>
-      ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, ''))
-    );
+    const domainRoster = ClaudeProjector.resolveDomainRoster(bundle, coordinatorFile, registryDir);
+    const specialistNames = domainRoster.length > 0
+      ? domainRoster
+      : (bundle.agents || []).map(f => ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, '')));
     const maxTurns = bundle.planningLoop?.budget?.maxIterations;
 
     for (const agentFile of resolved.agents || []) {

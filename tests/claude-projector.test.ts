@@ -496,4 +496,53 @@ describe('ClaudeProjector.rewriteBody — send_message prose rewrite', () => {
     const { body } = ClaudeProjector.rewriteBody('Call send_message_batch and send_message2 here.');
     expect(body).toBe('Call send_message_batch and send_message2 here.');
   });
+
+  it('gives a coordinator the WHOLE domain roster as its allowlist, not just its bundle slice', async () => {
+    const registryDir = path.join(__dirname, '..', 'registry');
+    const bundles = JSON.parse(fs.readFileSync(path.join(registryDir, 'bundles.json'), 'utf8')).bundles as Record<string, any>;
+    const minimalResolved = (agents: string[]): any => ({
+      roleAssets: [], skillAssets: [], ruleAssets: [], commandAssets: [], agentAssets: [],
+      agents, workflows: [], skills: [], rules: [],
+    });
+
+    // `software-engineering` declares 4 specialists, but the `engineering` domain has 15 — an
+    // essentials install must still let the domain lead call every member of its domain team.
+    const se = bundles['software-engineering'];
+    expect((se.agents || []).length).toBe(4);
+    // The resolver's agent set is the bundle's agents PLUS its orchestrator (registry.ts).
+    const seRoster = [...(se.agents || []), se.orchestrator].filter(Boolean);
+    const plan = await ClaudeProjector.planCompoundProjection(se, 'project', minimalResolved(seRoster), registryDir);
+    const coordinator = plan.find(a => a.kind === 'role' && a.relPath.endsWith('/orchestrator-engineering.md'));
+    expect(coordinator, 'coordinator must project').toBeTruthy();
+    // The tools YAML wraps long flow scalars across lines, so fold continuation lines back together
+    // before splitting the allowlist — otherwise names at the wrap points merge and tests see phantoms.
+    const allowOf = (content: string): string[] => {
+      const m = content.match(/- Agent\(([\s\S]*?)\)/);
+      return m && m[1] ? m[1].replace(/\s*\n\s*/g, ' ').split(', ').map(s => s.trim()).filter(Boolean) : [];
+    };
+    const allow = allowOf(coordinator!.content ?? '');
+    expect(allow).toContain('devops-engineer');   // in the domain, NOT in the bundle
+    expect(allow).toContain('data-engineer');
+    expect(allow).toContain('backend-architect'); // and the bundle's own four
+    expect(allow.length).toBe(15);
+    expect(allow).toEqual([...allow].sort());      // deterministic order
+    expect(allow).not.toContain('orchestrator-engineering'); // never self-delegating
+
+    // A Tier-2 assembled team is unchanged: its domain roster IS its declared roster.
+    const da = bundles['digital-agency'];
+    const daRoster = [...(da.agents || []), da.orchestrator].filter(Boolean);
+    const plan2 = await ClaudeProjector.planCompoundProjection(da, 'project', minimalResolved(daRoster), registryDir);
+    const coord2 = plan2.find(a => a.kind === 'role' && a.relPath.endsWith('/orchestrator-digital-agency.md'));
+    const allow2 = allowOf(coord2!.content ?? '');
+    expect(allow2.length).toBe(9);
+
+    // The plugin mirror stays byte-identical to the project projection.
+    const pluginPlan = await ClaudeProjector.planPluginLane(se, minimalResolved(seRoster), registryDir);
+    const pluginCoord = pluginPlan.find(a => a.kind === 'role' && a.relPath.endsWith('/orchestrator-engineering.md'));
+    expect(pluginCoord!.content).toBe(coordinator!.content);
+
+    // The projected delegation section teaches the "listed but not installed yet" path.
+    expect(coordinator!.content).toContain('whole domain team, not only what is installed');
+    expect(coordinator!.content).toContain('recommend installing it');
+  });
 });
