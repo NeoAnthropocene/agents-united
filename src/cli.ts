@@ -2229,14 +2229,7 @@ cli
       }
 
       if (report.claudeCapability) {
-        console.log(pc.bold(pc.cyan('Claude Code Runtime & Native Discovery Audit:')));
-        console.log(`  Installed: ${report.claudeCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
-        if (report.claudeCapability.version) {
-          console.log(`  Version: ${report.claudeCapability.version}`);
-        }
-        console.log(`  Plugin Support (--plugin-dir): ${report.claudeCapability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
-        console.log(`  Agent Teams (experimental): ${report.claudeCapability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
-        console.log(`  Subagent hand-off (SubagentHandback): ${report.claudeCapability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
+        renderClaudeCapabilityBlock(report.claudeCapability);
         for (const diagnostic of report.claudeCapability.diagnostics) {
           console.log(`  ${pc.dim(diagnostic)}`);
         }
@@ -2268,14 +2261,7 @@ cli
     }
 
     if (report.claudeCapability) {
-      console.log(pc.bold(pc.cyan('Claude Code Runtime & Native Discovery Audit:')));
-      console.log(`  Installed: ${report.claudeCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
-      if (report.claudeCapability.version) {
-        console.log(`  Version: ${report.claudeCapability.version}`);
-      }
-      console.log(`  Plugin Support (--plugin-dir): ${report.claudeCapability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
-      console.log(`  Agent Teams (experimental): ${report.claudeCapability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
-      console.log(`  Subagent hand-off (SubagentHandback): ${report.claudeCapability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
+      renderClaudeCapabilityBlock(report.claudeCapability);
       console.log(`  Configured Agents: ${report.agentsCount} projected into .claude/agents/ ("agents start --host claude" = optional launcher)\n`);
     }
 
@@ -2510,6 +2496,24 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
 
   await launcher.launch(plan);
   outro(pc.green(`✔ Claude Code session finished.`));
+}
+
+/**
+ * Shared Claude capability block for `agents doctor`.
+ *
+ * `cli.ts` prints this twice — once on the empty-workspace early exit and once in the main report — and the
+ * duplication already drifted once (a capability line landed in one branch only). Both call sites share this
+ * renderer so a new capability is reported everywhere.
+ */
+function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
+  console.log(pc.bold(pc.cyan('Claude Code Runtime & Native Discovery Audit:')));
+  console.log(`  Installed: ${capability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
+  if (capability.version) {
+    console.log(`  Version: ${capability.version}`);
+  }
+  console.log(`  Plugin Support (--plugin-dir): ${capability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+  console.log(`  Agent Teams (experimental): ${capability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+  console.log(`  Subagent hand-off (SubagentHandback): ${capability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
 }
 
 /** Render the `--dry-run` Claude plan: one argv element per line so each flag/value pair is unambiguous. */
