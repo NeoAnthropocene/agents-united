@@ -17,7 +17,7 @@ import { ClaudeCapabilityProbe } from './core/claude-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets } from './core/hosts.js';
-import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
+import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
 const cli = cac('agents-united');
 const registry = new RegistryResolver();
@@ -2109,7 +2109,7 @@ cli
   .option('--allow-addons', 'Pre-authorize recommended addon installations for this session')
   .option('--headless', 'Run non-interactively without interactive TUI')
   .option('--bg', 'Run the Claude Code session in the background (claude host only)')
-  .option('--teams', 'Enable the experimental agent-teams scaffold (claude host only; ephemeral env, nothing persisted)')
+  .option('--teams', 'Force the experimental agent-teams scaffold on (claude host only). Default: ON for organization-tier (Tier 2) bundles, OFF for domain-tier (Tier 1) bundles — pass --no-teams to opt out. Ephemeral env only, nothing persisted')
   .option('--plugin', 'Pass --plugin-dir with the bundle plugin root (claude host only)')
   .option('--dry-run', 'Print activation resolution and argv summary without launching')
   .action(async (bundle: string, prompt?: string, options: any = {}) => {
@@ -2319,6 +2319,56 @@ async function resolveStartHost(
   return recordedFanout.includes('claude') ? 'claude' : 'cline';
 }
 
+/** Why the Agent-Teams scaffold is on or off for a Claude session. */
+export type ClaudeTeamsReason = 'explicit' | 'tier-default' | 'opt-out' | 'domain-tier' | 'unresolved-tier';
+
+export interface ClaudeTeamsPosture {
+  /** Whether the ephemeral agent-teams scaffold will be injected into the spawned session. */
+  active: boolean;
+  reason: ClaudeTeamsReason;
+  /** The resolved bundle tier that drove the decision, when the bundle could be resolved. */
+  tier?: BundleTier;
+}
+
+/**
+ * Tier-aware Agent-Teams posture for `agents start --host claude` (Plan 016 decision 14 + the Tier-1/Tier-2
+ * split recorded in CONTEXT.md).
+ *
+ * - Tier 1 (`tier: 'domain'`) is a single-discipline hub-and-spoke team, so it keeps the ordinary
+ *   parallel-subagent model: teams stay opt-in via `--teams`.
+ * - Tier 2 (`tier: 'organization'`) is cross-functional by construction, so it runs with Agent Teams logic
+ *   by default. `--no-teams` (cac parses it into `options.teams === false`) is the explicit opt-out and
+ *   always wins over the tier default.
+ *
+ * Pure and exported so the `--dry-run` plan and the tests can assert the decision without spawning `claude`.
+ */
+export function resolveClaudeTeamsPosture(
+  teamsOption: boolean | undefined,
+  tier: BundleTier | undefined
+): ClaudeTeamsPosture {
+  if (teamsOption === true) return { active: true, reason: 'explicit', tier };
+  if (teamsOption === false) return { active: false, reason: 'opt-out', tier };
+  if (tier === 'organization') return { active: true, reason: 'tier-default', tier };
+  if (tier === 'domain') return { active: false, reason: 'domain-tier', tier };
+  return { active: false, reason: 'unresolved-tier' };
+}
+
+/** One-line, honest explanation of why teams is on or off — shared by the live notice and `--dry-run`. */
+export function describeClaudeTeamsPosture(posture: ClaudeTeamsPosture): string {
+  switch (posture.reason) {
+    case 'explicit':
+      return 'explicit --teams';
+    case 'tier-default':
+      return "default for tier 'organization'";
+    case 'opt-out':
+      return '--no-teams opt-out';
+    case 'domain-tier':
+      return "tier 'domain' — pass --teams to enable";
+    case 'unresolved-tier':
+      return 'no declared tier (Tier-1 domain default) — pass --teams to enable';
+  }
+}
+
 /**
  * Plan 016 (Step 6) — the Claude Code lane for `agents start --host claude`.
  *
@@ -2326,6 +2376,10 @@ async function resolveStartHost(
  * would be injected) and returns without spawning anything or writing anything to disk. A real session
  * spawns `claude` with `shell: false` and the ephemeral env merged over `process.env`; the teams opt-in is
  * never persisted (no settings.json write, nothing under `~/.claude/`).
+ *
+ * Teams posture is tier-derived (`resolveClaudeTeamsPosture`): an organization-tier (Tier 2) bundle enables
+ * Agent Teams by default, a domain-tier (Tier 1) bundle only with an explicit `--teams`, and `--no-teams`
+ * always wins over the tier default.
  */
 async function runClaudeStart(bundle: string, prompt: string | undefined, options: any): Promise<void> {
   const launcher = new ClaudeLauncher();
@@ -2343,6 +2397,11 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
   }
 
   const bundleDef = await registry.getBundle(bundle);
+  // Tier-aware Agent-Teams posture: an organization-tier (Tier 2) bundle runs with Agent Teams logic by
+  // default, a domain-tier (Tier 1) bundle keeps the ordinary parallel-subagent model unless `--teams`,
+  // and an explicit `--no-teams` always wins (Plan 016 decision 14).
+  const teamsPosture = resolveClaudeTeamsPosture(options.teams, bundleDef?.tier);
+  const teamsActive = teamsPosture.active;
   // ADR 0018 decision 6 keeps ONE host-neutral team manifest under the organization package, which
   // the Cline half of the compound lane writes. A claude-only fanout has none, so the prompt must
   // not order the coordinator to read a path that does not exist.
@@ -2362,7 +2421,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     orchestrator: bundleDef?.orchestrator,
     allowAddons: options.allowAddons,
     background: options.bg,
-    teams: options.teams,
+    teams: teamsActive,
     pluginDir,
     manifestAvailable,
   });
@@ -2370,7 +2429,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
   const recordedFanout = resolution.lockfile.fanout || [];
 
   if (options.dryRun) {
-    note(renderClaudeActivationPlan(plan, probeReport, recordedFanout), 'Claude Activation Plan (dry run)');
+    note(renderClaudeActivationPlan(plan, probeReport, recordedFanout, teamsPosture), 'Claude Activation Plan (dry run)');
     outro(pc.yellow('Dry run complete. No processes launched.'));
     return;
   }
@@ -2384,7 +2443,18 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
       'Claude Projection'
     );
   }
-  if (options.teams && !probeReport.agentTeamsExperimental) {
+  if (teamsActive && teamsPosture.reason === 'tier-default') {
+    note(
+      pc.yellow(
+        `Agent Teams is ON by default for this organization-tier bundle (tier 'organization').\n` +
+        `--no-teams falls back to ordinary parallel subagents.`
+      ),
+      'Agent Teams'
+    );
+  } else if (teamsActive) {
+    note(pc.cyan('Agent Teams explicitly requested with --teams; the scaffold stays experimental.'), 'Agent Teams');
+  }
+  if (teamsActive && !probeReport.agentTeamsExperimental) {
     note(pc.yellow('The capability probe could not confirm agent-team support from --help; the scaffold stays experimental and unverified.'), 'Agent Teams');
   }
   if (pluginDir && !probeReport.pluginSupport) {
@@ -2396,7 +2466,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     `Executable: ${plan.executable}\n` +
     `Workspace: ${plan.workspace}\n` +
     `Background: ${options.bg ? 'yes (--bg)' : 'no'}\n` +
-    `Teams scaffold: ${options.teams ? 'yes (experimental, ephemeral env only)' : 'no'}\n` +
+    `Teams scaffold: ${teamsActive ? `yes (${describeClaudeTeamsPosture(teamsPosture)}; experimental, ephemeral env only)` : `no (${describeClaudeTeamsPosture(teamsPosture)})`}\n` +
     `Plugin dir: ${pluginDir || '(none)'}`,
     'Starting Claude Code Session'
   );
@@ -2426,7 +2496,8 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
 function renderClaudeActivationPlan(
   plan: ClaudeActivationPlan,
   report: ClaudeCapabilityReport,
-  recordedFanout: string[]
+  recordedFanout: string[],
+  posture: ClaudeTeamsPosture
 ): string {
   const envEntries = Object.keys(plan.env);
   const pluginFlagIndex = plan.argv.indexOf('--plugin-dir');
@@ -2434,11 +2505,14 @@ function renderClaudeActivationPlan(
   return [
     `Bundle: ${plan.bundleName}`,
     `Host: claude`,
+    `Bundle tier: ${posture.tier ?? "not declared (Tier-1 'domain' default)"}`,
     `Scope: ${plan.scope}`,
     `Workspace: ${plan.workspace}`,
     `Executable: ${plan.executable}`,
     `Background (--bg): ${plan.argv.includes('--bg') ? 'yes' : 'no'}`,
-    `Agent teams (--teams): ${teamsActive ? 'yes (experimental; ephemeral env only, nothing persisted)' : 'no'}`,
+    teamsActive
+      ? `Agent teams (--teams): yes (${describeClaudeTeamsPosture(posture)} — experimental; ephemeral env only, nothing persisted)`
+      : `Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`,
     `Plugin (--plugin-dir): ${pluginFlagIndex >= 0 ? plan.argv[pluginFlagIndex + 1] : '(none)'}`,
     `Env injected (merged over process.env): ${envEntries.length > 0 ? envEntries.map((k) => `${k}=${plan.env[k]}`).join(', ') : '(none)'}`,
     `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}`,
