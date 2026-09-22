@@ -400,6 +400,12 @@ export class ClaudeProjector {
   /**
    * Render `.claude/rules/<rule>.md`. Rules load unconditionally in every Claude session, so this
    * lane is deliberately lean: optional `paths:` scoping plus a hard adherence budget (ADR 0018).
+   *
+   * The `paths:` block is the ONLY frontmatter field this lane emits, so it is emitted only when a
+   * rule is actually scoped. The live doc is explicit — "Rules without a `paths` field are loaded
+   * unconditionally and apply to all files" — which makes frontmatter optional; an unscoped rule is
+   * therefore rendered marker-first with no frontmatter block at all, matching the Cline lane's shape
+   * instead of emitting a stray empty `--- {} ---`.
    */
   public static renderRule(
     canonicalContent: string,
@@ -414,9 +420,11 @@ export class ClaudeProjector {
     }
     const frontmatter: Record<string, unknown> = {};
     if (opts.paths && opts.paths.length > 0) frontmatter.paths = opts.paths;
-    const yamlStr = yaml.stringify(frontmatter).replace(/\r\n/g, '\n').trimEnd();
+    const head = Object.keys(frontmatter).length > 0
+      ? `---\n${yaml.stringify(frontmatter).replace(/\r\n/g, '\n').trimEnd()}\n---\n`
+      : '';
     const rewritten = ClaudeProjector.rewriteBody(canonicalContent.trim());
-    const content = `---\n${yamlStr}\n---\n${ClaudeProjector.marker(canonicalRelPath)}\n\n${rewritten.body}\n`;
+    const content = `${head}${ClaudeProjector.marker(canonicalRelPath)}\n\n${rewritten.body}\n`;
     return { content, ledger: rewritten.ledger };
   }
 

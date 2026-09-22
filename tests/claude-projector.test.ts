@@ -336,8 +336,17 @@ describe('ClaudeProjector.renderRule — lean rules lane', () => {
     expect(content).toContain('Never force-push.');
   });
 
-  it('renders an unconditional rule when no paths are supplied', () => {
-    expect('paths' in yamlOf(ClaudeProjector.renderRule(RULE, 'rules/git-guardrails.md').content)).toBe(false);
+  it('renders an unconditional rule with no frontmatter block when no paths are supplied', () => {
+    const { content } = ClaudeProjector.renderRule(RULE, 'rules/git-guardrails.md');
+
+    // Live doc (https://code.claude.com/docs/en/memory.md, re-verified 2026-09-22): "Rules without a
+    // `paths` field are loaded unconditionally and apply to all files." Frontmatter is therefore
+    // optional, so an unscoped rule must not emit a stray empty `--- {} ---` block — it is noise, and
+    // it diverges from the Cline lane, whose rules are also marker + body with no frontmatter.
+    expect(content.startsWith('---')).toBe(false);
+    expect(content.split('\n')[0]).toContain('managed-by: agents-united');
+    expect(content.split('\n')[0]).toContain('canonical: rules/git-guardrails.md');
+    expect(content).toContain('Never force-push.');
   });
 
   it('refuses a rule that exceeds the adherence budget', () => {
