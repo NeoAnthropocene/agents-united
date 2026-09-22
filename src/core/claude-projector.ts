@@ -60,7 +60,7 @@ const FEATURE_LEDGER: Record<string, { disposition: LedgerDisposition; rationale
   effort: { disposition: 'mapped', rationale: 'Reasoning effort passes through to the Claude effort field.' },
   invoke_subagent: { disposition: 'mapped', rationale: 'Delegation maps to the Claude Agent tool (allowlist on coordinators).' },
   send_message: { disposition: 'approximated', rationale: 'Maps to the Claude SendMessage tool; cross-session reach differs from Antigravity messaging.' },
-  manage_task: { disposition: 'mapped', rationale: 'Maps to the Claude task tools (TaskCreate/TaskUpdate).' },
+  manage_task: { disposition: 'approximated', rationale: 'Maps to the Claude task tools (TaskCreate/TaskUpdate), but the live tools reference says they are "provided by default only on the models listed under Task tool availability, and on other models when you opt in" — so the grant can resolve to nothing depending on the model.' },
   schedule: { disposition: 'approximated', rationale: 'Maps to Cron tools, but Antigravity reactive liveness timers are event-driven rather than cron-scheduled.' },
   define_subagent: { disposition: 'approximated', rationale: 'Claude agents are pre-defined: runtime subagent definition is unavailable, so the prompt delegates via the Agent tool.' },
   manage_subagents: { disposition: 'approximated', rationale: 'Claude manages subagent lifecycle itself; the roster is static and the prompt delegates via the Agent tool.' },
@@ -95,7 +95,9 @@ const RUNTIME_NOTE = `## Claude runtime note
 Delegation runs through the Agent tool: the coordinator spawns the specialists named in its own tools
 allowlist, and specialists may spawn peers. Canonical tool names in this prompt were rewritten to their
 Claude equivalents; a fenced code block may still show the original spelling because code is preserved
-byte-for-byte.`;
+byte-for-byte. A subagent does not hand results to a peer: its final report is returned to the
+conversation that spawned it, and on Claude Code v2.1.271+ in auto mode the runtime delivers it through the
+SubagentHandback tool.`;
 
 export class ClaudeProjector {
   /** Pure data (Plan 017 lifts this object into a shared HostDialectSpec). */
@@ -124,6 +126,11 @@ export class ClaudeProjector {
       manage_task: 'TaskCreate',
       schedule: 'CronCreate',
       ask_question: 'AskUserQuestion',
+      // The runtime's own hand-off channel for subagents (Claude Code v2.1.271+, auto mode): it delivers
+      // a subagent's final report to whichever conversation receives that subagent's result. It has no
+      // Antigravity-dialect equivalent, so the lane grants it to specialists directly (see renderRole);
+      // the token exists so a canonical agent could also name it explicitly.
+      subagent_handback: 'SubagentHandback',
     },
     bodyToolVocabulary: {
       view_file: 'Read',
@@ -158,6 +165,17 @@ export class ClaudeProjector {
       strict: 'default',
     },
     modelMap: { pro: 'sonnet', flash: 'haiku' },
+    // ADR 0018 decision 7, amended 2026-09-22 by the product owner. The canonical catalog declares
+    // `model: inherit` on all 59 agents, which made `inherit` the de-facto value and left every
+    // projection inheriting the *session* model instead of a chosen posture. The intended posture is
+    // explicit — coordinators reason on Opus at high effort, specialists run on Sonnet at medium
+    // effort — so `inherit` now resolves to a role default rather than being omitted. Both fields are
+    // documented subagent frontmatter: `model` accepts sonnet|opus|haiku|fable|<full id>|inherit, and
+    // `effort` (low|medium|high|xhigh|max) overrides the session effort level. Caveats recorded rather
+    // than coded around: Opus is unavailable on some plans, so a workspace may need a different anchor;
+    // and `xhigh`/`max` exist only on newer models. Both are one-constant changes here.
+    roleModelDefaults: { coordinator: 'opus', specialist: 'sonnet' },
+    roleEffortDefaults: { coordinator: 'high', specialist: 'medium' },
     budgets: { skillDescriptionChars: 1536, agentDescriptionTokens: 15000 },
     maxRuleLines: 200,
   };
@@ -296,10 +314,18 @@ export class ClaudeProjector {
     }
 
     // 3. Posture: permissionMode, model tier, effort, and the consultation budget.
-    if (opts.allowlist && opts.allowlist.length > 0) {
+    const isCoordinator = !!(opts.allowlist && opts.allowlist.length > 0);
+    if (isCoordinator) {
       for (const base of COORDINATOR_BASELINE_TOOLS) {
         if (!tools.includes(base)) tools.push(base);
       }
+    } else if (!tools.includes('SubagentHandback')) {
+      // `SubagentHandback` is the runtime's own hand-off channel for subagents — it "delivers a
+      // subagent's final report to whichever conversation receives that subagent's result" (Claude Code
+      // v2.1.271+, auto mode). Granting it makes the documented Tier-1 hand-off explicit instead of
+      // implicit; where the runtime does not provide it the entry simply does not resolve, and Claude
+      // Code only refuses to launch an agent when NOTHING in its tools list resolves.
+      tools.push('SubagentHandback');
     }
     const permission =
       typeof meta.permissionMode === 'string'
@@ -313,11 +339,21 @@ export class ClaudeProjector {
     out.tools = tools;
     if (permission) out.permissionMode = permission;
 
-    const model = typeof meta.model === 'string' ? meta.model : undefined;
-    if (model && model !== 'inherit') {
-      out.model = ClaudeProjector.CLAUDE_DIALECT.modelMap[model] ?? model;
-    }
-    if (typeof meta.effort === 'string') out.effort = meta.effort;
+    // `inherit` is the catalog's marker for "no opinion" — all 59 agents declare `model: inherit` — so it
+    // resolves to the role posture instead of being dropped: coordinators opus, specialists sonnet
+    // (ADR 0018 d7 as amended 2026-09-22). An explicitly declared tier or effort always wins, so per-agent
+    // authoring survives (eight specialists declare `effort: high` today and keep it).
+    const declaredModel = typeof meta.model === 'string' ? meta.model : undefined;
+    const mappedModel = declaredModel && declaredModel !== 'inherit'
+      ? ClaudeProjector.CLAUDE_DIALECT.modelMap[declaredModel] ?? declaredModel
+      : undefined;
+    out.model = mappedModel ?? (isCoordinator
+      ? ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults.coordinator
+      : ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults.specialist);
+    const declaredEffort = typeof meta.effort === 'string' ? meta.effort : undefined;
+    out.effort = declaredEffort ?? (isCoordinator
+      ? ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults.coordinator
+      : ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults.specialist);
     if (typeof opts.maxTurns === 'number') out.maxTurns = opts.maxTurns;
 
     // 4. Prose is part of the interface.

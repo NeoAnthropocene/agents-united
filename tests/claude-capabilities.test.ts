@@ -346,4 +346,33 @@ describe('Plan 016 Step 6 — ClaudeCapabilityProbe', () => {
     expect(report.agentTeamsExperimental).toBe(false);
     expect(report.diagnostics.join('\n')).toContain('help probe returned non-zero');
   });
+
+  it('10. derives subagentHandback from the probed version, at the documented v2.1.271 floor', async () => {
+    // https://code.claude.com/docs/en/tools-reference: SubagentHandback "Requires Claude Code v2.1.271
+    // or later". Only `--version` is readable, so the probe reports the version floor.
+    const command = { executable: 'claude', prefixArgs: [], source: 'path-executable' as const };
+    const runnerFor = (version: string): ProcessRunner => async (exec, args) =>
+      args.includes('--version')
+        ? { exitCode: 0, stdout: version, stderr: '' }
+        : { exitCode: 0, stdout: PLAIN_HELP, stderr: '' };
+
+    for (const version of ['2.1.278 (Claude Code)', '2.1.271', '2.2.0', '3.0.0']) {
+      const report = await new ClaudeCapabilityProbe(runnerFor(version), {
+        resolveExecutable: () => command,
+      }).probe();
+      expect(report.subagentHandback, version).toBe(true);
+    }
+
+    for (const version of ['2.1.270', '2.1.0', '1.9.9', 'not-a-version']) {
+      const report = await new ClaudeCapabilityProbe(runnerFor(version), {
+        resolveExecutable: () => command,
+      }).probe();
+      expect(report.subagentHandback, version).toBe(false);
+    }
+
+    const absent = await new ClaudeCapabilityProbe(async () => ({ exitCode: 0, stdout: '', stderr: '' }), {
+      resolveExecutable: () => null,
+    }).probe();
+    expect(absent.subagentHandback).toBe(false);
+  });
 });

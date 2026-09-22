@@ -29,6 +29,22 @@ export interface ClaudeProbeResolverOptions {
  * hard timeout, never throws) that the Cline probe uses, so the Windows `.cmd`/`.bat`
  * `cmd.exe` bridge added by ADR 0013 §5 applies identically here.
  */
+/**
+ * The live tools reference dates `SubagentHandback` at Claude Code v2.1.271 or later, and provides it
+ * only in auto mode. Only `--version` is readable here, so this reports the version floor.
+ */
+const SUBAGENT_HANDBACK_MIN = { major: 2, minor: 1, patch: 271 } as const;
+
+function supportsSubagentHandback(version: string | undefined): boolean {
+  if (!version) return false;
+  const match = version.match(/(\d+)\.(\d+)\.(\d+)/);
+  if (!match) return false;
+  const [major, minor, patch] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  if (major !== SUBAGENT_HANDBACK_MIN.major) return major > SUBAGENT_HANDBACK_MIN.major;
+  if (minor !== SUBAGENT_HANDBACK_MIN.minor) return minor > SUBAGENT_HANDBACK_MIN.minor;
+  return patch >= SUBAGENT_HANDBACK_MIN.patch;
+}
+
 export class ClaudeCapabilityProbe {
   private runner: ProcessRunner;
   private customResolver?: () => ResolvedClaudeCommand | null;
@@ -135,12 +151,14 @@ export class ClaudeCapabilityProbe {
         installed: false,
         pluginSupport: false,
         agentTeamsExperimental: false,
+        subagentHandback: false,
         diagnostics,
       };
     }
 
     // 1. Version check — `--version` only (ADR 0018 decision 11).
     let version: string | undefined;
+    let subagentHandback = false;
     try {
       const verRes = await this.runner(cmd.executable, [...cmd.prefixArgs, '--version'], {
         timeoutMs: 5000,
@@ -148,6 +166,7 @@ export class ClaudeCapabilityProbe {
 
       if (verRes.exitCode === 0) {
         version = verRes.stdout.trim().split('\n')[0]?.trim();
+        subagentHandback = supportsSubagentHandback(version);
       } else {
         diagnostics.push(`Claude Code version check failed (exit code ${verRes.exitCode}): ${verRes.stderr.trim()}`);
         return {
@@ -155,6 +174,7 @@ export class ClaudeCapabilityProbe {
           command: cmd,
           pluginSupport: false,
           agentTeamsExperimental: false,
+          subagentHandback: false,
           diagnostics,
         };
       }
@@ -166,6 +186,7 @@ export class ClaudeCapabilityProbe {
         command: cmd,
         pluginSupport: false,
         agentTeamsExperimental: false,
+        subagentHandback: false,
         diagnostics,
       };
     }
@@ -200,6 +221,7 @@ export class ClaudeCapabilityProbe {
       command: cmd,
       pluginSupport,
       agentTeamsExperimental,
+      subagentHandback,
       diagnostics,
     };
   }

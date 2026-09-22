@@ -164,14 +164,36 @@ describe('ClaudeProjector.renderRole — frontmatter translation', () => {
     expect(readOnly.tools).not.toContain('Edit');
   });
 
-  it('omits model: inherit and maps pro/flash tiers', () => {
-    expect('model' in yamlOf(ClaudeProjector.renderRole(SAMPLE, CANONICAL_AGENT_PATH).content)).toBe(false);
+  it('resolves model: inherit to the role posture and still maps pro/flash tiers', () => {
+    // The catalog declares `model: inherit` on all 59 agents, so `inherit` resolves to the role
+    // posture — specialists sonnet, coordinators opus (ADR 0018 decision 7 as amended 2026-09-22).
+    expect(yamlOf(ClaudeProjector.renderRole(SAMPLE, CANONICAL_AGENT_PATH).content).model).toBe('sonnet');
+
+    const coordinator = ClaudeProjector.renderRole(ORCHESTRATOR_SAMPLE, 'agents/orchestrator-engineering.md', {
+      allowlist: ['backend-architect'],
+    });
+    expect(yamlOf(coordinator.content).model).toBe('opus');
 
     const pro = ClaudeProjector.renderRole(SAMPLE.replace('model: inherit', 'model: pro'), CANONICAL_AGENT_PATH);
     expect(yamlOf(pro.content).model).toBe('sonnet');
 
     const flash = ClaudeProjector.renderRole(SAMPLE.replace('model: inherit', 'model: flash'), CANONICAL_AGENT_PATH);
     expect(yamlOf(flash.content).model).toBe('haiku');
+
+    // An explicitly pinned tier always wins over the role default.
+    const pinned = ClaudeProjector.renderRole(SAMPLE.replace('model: inherit', 'model: haiku'), CANONICAL_AGENT_PATH);
+    expect(yamlOf(pinned.content).model).toBe('haiku');
+  });
+
+  it('applies the role effort posture only when the canonical declares none', () => {
+    const specialistNoEffort = SAMPLE.replace(/^effort: medium\r?\n/m, '');
+    expect(yamlOf(ClaudeProjector.renderRole(specialistNoEffort, CANONICAL_AGENT_PATH).content).effort).toBe('medium');
+
+    const coordinatorNoEffort = ORCHESTRATOR_SAMPLE.replace(/^effort: high\r?\n/m, '');
+    const coordinator = ClaudeProjector.renderRole(coordinatorNoEffort, 'agents/orchestrator-engineering.md', {
+      allowlist: ['backend-architect'],
+    });
+    expect(yamlOf(coordinator.content).effort).toBe('high');
   });
 
   it('renders the Consultation Budget maxIterations as maxTurns', () => {
@@ -204,6 +226,24 @@ describe('ClaudeProjector.renderRole — delegation restoration', () => {
     const tools = yamlOf(ClaudeProjector.renderRole(SAMPLE, CANONICAL_AGENT_PATH).content).tools as string[];
     expect(tools).toContain('Agent');
     expect(tools.some(t => t.startsWith('Agent('))).toBe(false);
+  });
+
+  it('grants SubagentHandback to specialists only, never to the coordinator', () => {
+    // v2.1.271+, auto mode: the runtime's own channel for delivering a subagent's report to the
+    // conversation that spawned it — the documented Tier-1 hand-off.
+    const specialist = yamlOf(ClaudeProjector.renderRole(SAMPLE, CANONICAL_AGENT_PATH).content).tools as string[];
+    expect(specialist).toContain('SubagentHandback');
+
+    const coordinator = ClaudeProjector.renderRole(ORCHESTRATOR_SAMPLE, 'agents/orchestrator-engineering.md', {
+      allowlist: ['backend-architect'],
+    });
+    expect(yamlOf(coordinator.content).tools as string[]).not.toContain('SubagentHandback');
+  });
+
+  it('records manage_task as approximated because the task tools are model-dependent', () => {
+    const { ledger } = ClaudeProjector.renderRole(SAMPLE, CANONICAL_AGENT_PATH);
+    const entry = ledger.find(e => e.feature === 'manage_task');
+    expect(entry?.disposition).toBe('approximated');
   });
 
   it('never leaks an unmapped canonical tool name into the projection', () => {

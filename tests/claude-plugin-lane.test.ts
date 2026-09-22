@@ -223,6 +223,7 @@ describe('Plan 016 Step 7 — ephemeral `--teams` scaffold (no process spawned)'
     command: { executable: 'claude', prefixArgs: [], source: 'path-executable' },
     pluginSupport: true,
     agentTeamsExperimental: true,
+    subagentHandback: true,
     diagnostics: [],
   };
 

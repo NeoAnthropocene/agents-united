@@ -255,9 +255,14 @@ describe('organization-tier specialists carry the peer-messaging grant', () => {
       const match = rendered.content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
       expect(match).not.toBeNull();
 
-      const tools = (yaml.parse(match![1]) as Record<string, any>).tools as string[];
-      expect(tools).toContain('SendMessage');
-      expect(tools[0]).toBe('Agent');
+      const meta = yaml.parse(match![1]) as Record<string, any>;
+      expect(meta.tools).toContain('SendMessage');
+      expect(meta.tools[0]).toBe('Agent');
+      // The runtime's own hand-off tool is granted to specialists so the Tier-1 hand-off is explicit.
+      expect(meta.tools).toContain('SubagentHandback');
+      // Model/effort posture: specialists run sonnet, and their declared effort is preserved.
+      expect(meta.model).toBe('sonnet');
+      expect(['low', 'medium', 'high']).toContain(meta.effort);
     });
   }
 });

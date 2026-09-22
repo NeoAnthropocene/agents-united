@@ -210,6 +210,12 @@ export interface ClaudeCapabilityReport {
   command?: ResolvedClaudeCommand;
   pluginSupport: boolean;
   agentTeamsExperimental: boolean;
+  /**
+   * Whether the probed runtime provides `SubagentHandback` — the subagent hand-off tool the live tools
+   * reference dates at Claude Code v2.1.271+ (and only in auto mode). Derived from `--version`, so it
+   * reports the version floor rather than attempting to detect the permission mode.
+   */
+  subagentHandback: boolean;
   diagnostics: string[];
 }
 
@@ -516,6 +522,13 @@ export interface ClaudeDialect {
   permissionModeMap: Record<string, string>;
   /** Canonical model tier -> Claude model. */
   modelMap: Record<string, string>;
+  /**
+   * Model applied when the canonical declares `inherit` (ADR 0018 decision 7 as amended 2026-09-22):
+   * coordinators and specialists get an explicit posture instead of inheriting the session model.
+   */
+  roleModelDefaults: { coordinator: string; specialist: string };
+  /** Effort applied when the canonical does not declare one (coordinator vs specialist posture). */
+  roleEffortDefaults: { coordinator: string; specialist: string };
   budgets: { skillDescriptionChars: number; agentDescriptionTokens: number };
   maxRuleLines: number;
 }

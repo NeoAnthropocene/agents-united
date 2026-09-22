@@ -24,6 +24,7 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
     command: { executable: 'claude', prefixArgs: [], source: 'path-executable' },
     pluginSupport: true,
     agentTeamsExperimental: false,
+    subagentHandback: true,
     diagnostics: [],
   };
 

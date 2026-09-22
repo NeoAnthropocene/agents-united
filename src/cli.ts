@@ -2236,6 +2236,7 @@ cli
         }
         console.log(`  Plugin Support (--plugin-dir): ${report.claudeCapability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
         console.log(`  Agent Teams (experimental): ${report.claudeCapability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+        console.log(`  Subagent hand-off (SubagentHandback): ${report.claudeCapability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
         for (const diagnostic of report.claudeCapability.diagnostics) {
           console.log(`  ${pc.dim(diagnostic)}`);
         }
@@ -2533,7 +2534,7 @@ function renderClaudeActivationPlan(
       : `Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`,
     `Plugin (--plugin-dir): ${pluginFlagIndex >= 0 ? plan.argv[pluginFlagIndex + 1] : '(none)'}`,
     `Env injected (merged over process.env): ${envEntries.length > 0 ? envEntries.map((k) => `${k}=${plan.env[k]}`).join(', ') : '(none)'}`,
-    `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}`,
+    `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}, subagent handback=${report.subagentHandback ? 'yes' : 'no'}`,
     `Recorded fanout: [${recordedFanout.join(', ')}]`,
     `Argv (${plan.argv.length} elements, one element per line, spawned with shell: false):`,
     ...plan.argv.map((arg, index) => `  [${index}] ${arg.replace(/\r?\n/g, '\\n')}`),
