@@ -529,6 +529,15 @@ export interface ClaudeDialect {
   roleModelDefaults: { coordinator: string; specialist: string };
   /** Effort applied when the canonical does not declare one (coordinator vs specialist posture). */
   roleEffortDefaults: { coordinator: string; specialist: string };
+  /**
+   * Canonical body sections replaced wholesale with a host-native rendering (ADR 0018 decision 8).
+   *
+   * Tool-name rewriting alone cannot rescue a section that describes *another host's* routing (Antigravity's
+   * `language_server.exe` limitation, Cline's `subagent_*` tools): the words rewrite but the meaning does
+   * not. Each entry replaces the matched heading's whole section with prose the target host can act on.
+   * This is a rendering, not a feature drop, so it carries no ledger disposition.
+   */
+  bodySectionOverrides: Array<{ heading: RegExp; replacement: string }>;
   budgets: { skillDescriptionChars: number; agentDescriptionTokens: number };
   maxRuleLines: number;
 }

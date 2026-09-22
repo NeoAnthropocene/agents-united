@@ -145,7 +145,7 @@ export class ClaudeProjector {
       list_dir: 'Glob',
       search_web: 'WebSearch',
       read_url_content: 'WebFetch',
-      invoke_subagent: 'the Agent tool',
+      invoke_subagent: 'Agent',
       define_subagent: 'the Agent tool',
       manage_subagents: 'the Agent tool',
       // ADR 0018 decision 8 requires canonical tool names in prose to be rewritten, not just the
@@ -176,6 +176,23 @@ export class ClaudeProjector {
     // and `xhigh`/`max` exist only on newer models. Both are one-constant changes here.
     roleModelDefaults: { coordinator: 'opus', specialist: 'sonnet' },
     roleEffortDefaults: { coordinator: 'high', specialist: 'medium' },
+    bodySectionOverrides: [
+      {
+        // ADR 0009/0014's "Subagent Delegation & Host Routing" describes *other* runtimes:
+        // Antigravity's `language_server.exe` limitation and Cline's `subagent_*` tools. Tool-name
+        // rewriting cannot rescue that — the words change and the meaning stays foreign — so the
+        // section is re-rendered for the host actually running it.
+        heading: /^#{2,3}\s*.*Subagent Delegation & Host Routing/m,
+        replacement: [
+          '### ⚡ Subagent Delegation & Agent Routing (Claude Code)',
+          '',
+          '- **Delegation tool**: spawn specialists with the `Agent` tool. Your `tools` allowlist names exactly the specialist types you may call (the projected definitions in `.claude/agents/`, with the `subagent-` prefix stripped); calling any other type fails, so send work only to those names. There are no `TypeName`/`Role`/`Prompt` fields — `Agent` takes the specialist type and one self-contained prompt, so put the role, the scope boundaries and the acceptance criteria inside that prompt.',
+          '- **Parallel work**: spawn independent specialists in one turn — each runs in its own context window and returns its result to you (delivered by `SubagentHandback` on Claude Code v2.1.271+ in auto mode). You are the single synthesis and relay point: name who reported what, and never let one specialist wait on another.',
+          '- **When a type is missing**: if a required specialist is not in your allowlist, or a spawn fails, say so and complete that slice yourself — never silently delegate to an unlisted type.',
+          '- **Agent Teams (opt-in, `--teams`)**: the lead can spawn *teammates* instead of subagents and message them directly with `SendMessage`. The scaffold is experimental — one team per session, a fixed lead, no nested teams — so never make it load-bearing.',
+        ].join('\n'),
+      },
+    ],
     budgets: { skillDescriptionChars: 1536, agentDescriptionTokens: 15000 },
     maxRuleLines: 200,
   };
@@ -237,11 +254,40 @@ export class ClaudeProjector {
   }
 
   /**
+   * Replace one canonical body section, matched by its heading, with a host-native rendering.
+   *
+   * Deterministic: the section runs from the matched heading to the next heading of the same or a higher
+   * level (an `h3` stops at the next `h1`/`h2`), and trailing blank lines and the `---` separator are left
+   * with the following section so the document structure is unchanged. A heading that is absent is a no-op.
+   */
+  private static replaceSection(body: string, heading: RegExp, replacement: string): string {
+    const lines = body.split('\n');
+    const start = lines.findIndex(line => heading.test(line));
+    if (start < 0) return body;
+
+    let end = lines.length;
+    for (let i = start + 1; i < lines.length; i += 1) {
+      if (/^#{1,2}\s/.test(lines[i])) {
+        end = i;
+        break;
+      }
+    }
+    while (end > start + 1 && (lines[end - 1].trim() === '' || lines[end - 1].trim() === '---')) end -= 1;
+
+    return [...lines.slice(0, start), ...replacement.split('\n'), ...lines.slice(end)].join('\n');
+  }
+
+  /**
    * Deterministically rewrite canonical tool names in prompt prose (whole-word, case-sensitive,
    * fenced code blocks byte-preserved) and report a disposition for every rewrite that loses fidelity.
    */
   public static rewriteBody(body: string): { body: string; ledger: TranslationLedgerEntry[] } {
     const ledger = new Map<string, TranslationLedgerEntry>();
+    // ADR 0018 decision 8: sections that describe another host's routing are re-rendered first, so the
+    // vocabulary pass below only ever rewrites host-neutral prose.
+    for (const override of ClaudeProjector.CLAUDE_DIALECT.bodySectionOverrides) {
+      body = ClaudeProjector.replaceSection(body, override.heading, override.replacement);
+    }
     const vocab = ClaudeProjector.CLAUDE_DIALECT.bodyToolVocabulary;
     const tokens = Object.keys(vocab).sort((a, b) => b.length - a.length);
     const parts = body.split(/(```[\s\S]*?```)/g);
@@ -314,7 +360,15 @@ export class ClaudeProjector {
     }
 
     // 3. Posture: permissionMode, model tier, effort, and the consultation budget.
-    const isCoordinator = !!(opts.allowlist && opts.allowlist.length > 0);
+    // Coordinator-ness comes from the canonical role, not only from a caller-supplied allowlist: a
+    // bundle-less fanout (`domain:*`, addons) has no bundle definition to derive specialists from, and
+    // without this a projected orchestrator silently took the specialist posture (sonnet, bare `Agent`,
+    // hand-back tool) — the operator saw `orchestrator-engineering.md` on Sonnet while
+    // `orchestrator-digital-agency.md` was on Opus. `type: orchestrator` / `mainAgent: true` is the
+    // catalog's own discriminator (9 orchestrators, 50 subagents).
+    const isCoordinator = !!(opts.allowlist && opts.allowlist.length > 0)
+      || meta.type === 'orchestrator'
+      || meta.mainAgent === true;
     if (isCoordinator) {
       for (const base of COORDINATOR_BASELINE_TOOLS) {
         if (!tools.includes(base)) tools.push(base);

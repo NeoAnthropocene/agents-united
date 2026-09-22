@@ -724,8 +724,19 @@ private toPosix(p: string): string {
         // `send_message` outright; a coordinator projected that way had NO `Agent` tool at all and
         // could not delegate. Rendering through the dialect keeps the tool vocabulary, the frontmatter
         // translation and the ledger dispositions identical to the compound lane's.
+        // A coordinator projected without a bundle definition still needs a real allowlist: `Agent`
+        // with no parentheses grants *any* subagent, which is not the bound ADR 0018 decision 3
+        // describes. The peer roster of this projection run is the best available bound — exactly the
+        // specialists this run made available in this workspace.
+        const isCoordinatorRole = /^\s*type:\s*orchestrator\s*$/m.test(content)
+          || /^\s*mainAgent:\s*true\s*$/m.test(content);
+        const peerRoles = resolved.agents
+          .filter(f => f !== agentFile)
+          .map(f => ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, '')));
         const res = host === 'claude'
-          ? ClaudeProjector.renderRole(content, canonicalRel, {})
+          ? ClaudeProjector.renderRole(content, canonicalRel, {
+              allowlist: isCoordinatorRole ? peerRoles : undefined,
+            })
           : HostProjector.projectAgent(content, HOST_REGISTRY[host].profile, canonicalRel);
         // ADR 0013 / ADR 0018: the compound-lane hosts (Cline, Claude) name their
         // projected roles by stripping the canonical `subagent-` prefix, so the
