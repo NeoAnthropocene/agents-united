@@ -2164,7 +2164,7 @@ cli
 
 cli
   .command('doctor', 'Verify health of installed agents, frontmatter schemas, and hooks')
-  .option('--host <host>', 'Audit specific host runtime (e.g. cline)')
+  .option('--host <host>', 'Audit specific host runtime (e.g. cline, claude)')
   .action(async (options: any = {}) => {
     intro(pc.cyan('🩺 Agents United — Health Doctor'));
     const report = await DoctorEngine.runDoctor(undefined, options.host);
@@ -2186,6 +2186,20 @@ cli
           console.log(`  Version: ${report.clineCapability.version}`);
         }
         console.log(`  Named Teams: ${report.clineCapability.namedTeams ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported (Adaptive fallback)')}\n`);
+      }
+
+      if (report.claudeCapability) {
+        console.log(pc.bold(pc.cyan('Claude Code Runtime & Native Discovery Audit:')));
+        console.log(`  Installed: ${report.claudeCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
+        if (report.claudeCapability.version) {
+          console.log(`  Version: ${report.claudeCapability.version}`);
+        }
+        console.log(`  Plugin Support (--plugin-dir): ${report.claudeCapability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+        console.log(`  Agent Teams (experimental): ${report.claudeCapability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+        for (const diagnostic of report.claudeCapability.diagnostics) {
+          console.log(`  ${pc.dim(diagnostic)}`);
+        }
+        console.log();
       }
 
       if (report.warnings.length > 0) {
@@ -2210,6 +2224,17 @@ cli
       }
       console.log(`  Named Teams: ${report.clineCapability.namedTeams ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported (Adaptive fallback)')}`);
       console.log(`  Configured Agents: ${report.agentsCount} active natively in any Cline session ("agents start" = optional team-session launcher)\n`);
+    }
+
+    if (report.claudeCapability) {
+      console.log(pc.bold(pc.cyan('Claude Code Runtime & Native Discovery Audit:')));
+      console.log(`  Installed: ${report.claudeCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
+      if (report.claudeCapability.version) {
+        console.log(`  Version: ${report.claudeCapability.version}`);
+      }
+      console.log(`  Plugin Support (--plugin-dir): ${report.claudeCapability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+      console.log(`  Agent Teams (experimental): ${report.claudeCapability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+      console.log(`  Configured Agents: ${report.agentsCount} projected into .claude/agents/ ("agents start --host claude" = optional launcher)\n`);
     }
 
     if (report.issues.length > 0) {
