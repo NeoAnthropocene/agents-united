@@ -2142,6 +2142,11 @@ cli
       }
 
       const bundleDef = await registry.getBundle(bundle);
+      // Plan 016 post-gate: Tier 2 (organization) is a *Claude-runtime* posture. Agent Teams is a Claude
+      // Code feature behind CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS, so this lane reports the tier instead of
+      // half-applying it — nothing here changes argv, and the session keeps Cline's own strategy with the
+      // projected specialist tools under `.cline/agents/`. `--teams` on this host is a no-op by design.
+      const organizationTier = bundleDef?.tier === 'organization';
       const plan = launcher.planActivation({
         bundleName: bundle,
         workspace: resolution.workspace,
@@ -2157,6 +2162,8 @@ cli
       if (options.dryRun) {
         note(
           `Bundle: ${plan.bundleName}\n` +
+          `Tier: ${bundleDef?.tier ?? 'not declared (Tier-1 domain default)'}\n` +
+          `Agent teams: ${organizationTier ? 'not available on this host (claude-only runtime feature)' : 'no'}\n` +
           `Scope: ${plan.scope}\n` +
           `Workspace: ${plan.workspace}\n` +
           `Team Name: ${plan.teamName}\n` +
@@ -2167,6 +2174,17 @@ cli
         );
         outro(pc.yellow('Dry run complete. No processes launched.'));
         return;
+      }
+
+      if (organizationTier) {
+        note(
+          pc.yellow(
+            `"${bundle}" is an organization-tier (Tier 2) bundle. Agent Teams is a Claude Code runtime\n` +
+            `feature and is not available on this host, so '--teams' is claude-only. This session runs\n` +
+            `Cline's ${plan.strategy} strategy with the projected specialist tools under .cline/agents/.`
+          ),
+          'Tier 2 (organization)'
+        );
       }
 
       note(
