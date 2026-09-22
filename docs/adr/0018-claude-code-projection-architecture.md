@@ -40,6 +40,35 @@ Claude's documented surface (verified **2026-09-18**) differs structurally from 
 14. **Non-goals (documented, not faked).** No `.claude/workflows/*.js` generation (Claude workflows are JavaScript orchestration scripts, not markdown); no writes to `CLAUDE.md`, `CLAUDE.local.md`, `.claude/settings.json`, or any other user-owned file; no cross-session messaging or agent-view integration; no `.claude/commands/` legacy lane.
 15. **Rollout and verification gate.** v1 is **Claude only**. It ships only after the automated suite is green **and** the owner completes manual verification — both the `claude --agent` launch path and a plain session, plus the add / doctor / drift / remove lifecycle checks. Only then does Cline become the next target, on its own branch; every other provider follows separately. The generalizing decision is ADR 0019.
 
+## Amendment (2026-09-22) — model/effort posture, the hand-off tool, and one ledger correction
+
+Owner decisions taken while executing the plan, applied in the Claude lane. They change decisions 3, 7 and 9
+above, so the amendments live here rather than silently diverging from the record.
+
+1. **Model and effort are an explicit role posture, not session inheritance (amends decision 7).** The
+   catalog declares `model: inherit` on all 59 agents, which made `inherit` a de-facto value rather than an
+   intent and left every projection inheriting the *session* model. `inherit` now resolves against
+   `CLAUDE_DIALECT.roleModelDefaults` — coordinators `opus`, specialists `sonnet` — and `effort` falls back to
+   `roleEffortDefaults` (high / medium) only when the canonical declares none. An explicitly declared tier or
+   effort always wins, so per-agent authoring survives (eight specialists declare `effort: high` today and
+   keep it). Both are documented subagent frontmatter: `model` accepts
+   `sonnet | opus | haiku | fable | <full model id> | inherit`, and `effort` accepts
+   `low | medium | high | xhigh | max` and *overrides the session effort level*. Caveats recorded rather than
+   coded around: Opus is unavailable on some plans, and `xhigh`/`max` exist only on newer models — a different
+   anchor is a one-constant change in `CLAUDE_DIALECT`.
+2. **`manage_task` is `approximated`, not `mapped` (corrects decision 9).** The live tools reference says
+   `TaskCreate` / `TaskList` / `TaskUpdate` are *"provided by default only on the models listed under Task tool
+   availability, and on other models when you opt in"*, so the grant can resolve to nothing depending on the
+   model. The ledger entry now carries that reason instead of claiming a clean mapping.
+3. **`SubagentHandback` is granted to specialists (extends decision 3).** It is the runtime's own hand-off
+   channel — *"delivers a subagent's final report to whichever conversation receives that subagent's result"* —
+   which the reference dates at Claude Code **v2.1.271+** and provides **only in auto mode**. Specialists carry
+   it; coordinators do not, since it delivers *to* the receiving conversation. `ClaudeCapabilityProbe` now
+   reports `subagentHandback`, derived from `--version` (it cannot detect the permission mode from a
+   side-effect-free probe), so `agents doctor --host claude` and the `start --dry-run` plan both state whether
+   the version floor is met. Where the runtime does not provide the tool the entry simply does not resolve, and
+   Claude Code refuses to launch an agent only when *nothing* in its tools list resolves.
+
 ## Consequences
 
 **Positive**
