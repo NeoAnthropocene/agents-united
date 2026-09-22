@@ -25,9 +25,9 @@ const SPECIALISTS = [
   'subagent-frontend-architect',
 ];
 
-const PEER_HEADING = '## 📨 Peer Messaging & Direct Reachability';
-/** Documented Claude subagent semantics: siblings report back to the caller, they cannot reach each other. */
-const REPORT_BACK_PHRASE = 'report-back-to-the-caller';
+const PEER_HEADING = '## 🔀 Parallel Work, Handoff & Peer Reachability';
+/** Documented Claude subagent semantics: siblings are not reachable; the result goes back to the caller. */
+const REPORT_BACK_PHRASE = 'return one structured handoff to the orchestrator';
 /** Documented Agent-Teams limit, quoted from the live docs. */
 const NO_NESTED_TEAMS_PHRASE = 'teammates cannot spawn their own teammates';
 /** The ADR 0014 Consultation Budget wording reused verbatim (no new limits invented). */
