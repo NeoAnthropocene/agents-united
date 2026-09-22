@@ -10,6 +10,7 @@ import { ClineProjector } from './cline-projector.js';
 import { ClaudeProjector } from './claude-projector.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo } from './types.js';
+import { assetOwners, mergeAssetOwners } from './types.js';
 
 export class InstallEngine {
   private registry: RegistryResolver;
@@ -792,13 +793,17 @@ private toPosix(p: string): string {
         // changing Cline semantics.
         if (host === 'cline' || host === 'claude') {
           lockfile.projections = lockfile.projections || {};
+          // Projection ownership is refcounted: a projection shared with an earlier install must
+          // keep that owner too. Replacing the list silently drops the first bundle's claim, after
+          // which its removal strands or deletes a projection another bundle still needs.
+          const existingProj = lockfile.projections[projPath];
           lockfile.projections[projPath] = {
             host,
             kind: 'role',
             canonical: canonicalRel,
-            owners: resolved.targetBundle ? [resolved.targetBundle] : [],
+            owners: mergeAssetOwners(existingProj, resolved.targetBundle ?? undefined),
             hash: await this.calculateHash(dest),
-            installedAt: lockfile.projections[projPath]?.installedAt ?? new Date().toISOString(),
+            installedAt: existingProj?.installedAt ?? new Date().toISOString(),
             managedMarker: true,
           };
         }
@@ -879,15 +884,22 @@ private toPosix(p: string): string {
       // NOT the inherited/resolved superset). Inherited parent assets are deployed but
       // are NOT owned by this bundle, so a child install never over-claims provenance.
       const declared = new Set<string>();
+      // A real bundle definition draws the Declared Asset Set line; a Domain-Atlas pseudo-entry
+      // (`domain:*`) or unknown identifier has no definition to draw it from, so everything it
+      // resolves is its declared set. Without this, the ownership gate below stamps `owners: []`
+      // on every record of an unbundled install and the assets become unremovable residue.
+      let hasDeclaredRoster = false;
       if (resolved.targetBundle) {
         const bundleDef = await this.registry.getBundle(resolved.targetBundle);
         if (bundleDef) {
+          hasDeclaredRoster = true;
           if (bundleDef.orchestrator) declared.add(`agents/${bundleDef.orchestrator}`);
           (bundleDef.agents || []).forEach(a => declared.add(`agents/${a}`));
           (bundleDef.skills || []).forEach(s => declared.add(`skills/${s}/SKILL.md`));
           (bundleDef.workflows || []).forEach(w => declared.add(`workflows/${w}`));
         }
       }
+      const declaresAsset = (assetKey: string): boolean => !hasDeclaredRoster || declared.has(assetKey);
 
       // Copy/Symlink Agents
       for (const agentFile of resolved.agents) {
@@ -908,9 +920,8 @@ private toPosix(p: string): string {
         // Preserve projection tracking and co-ownership across re-installs;
         // applyFanout re-records the current fan-out below (deduplicated).
         const existing = lockfile.files[relPath];
-        const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
-        const declaresAsset = declared.has(`agents/${agentFile}`);
-        const owners = resolved.targetBundle && declaresAsset
+        const existingOwners = existing?.owners ?? [];
+        const owners = resolved.targetBundle && declaresAsset(`agents/${agentFile}`)
           ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
           : existingOwners;
         lockfile.files[relPath] = {
@@ -938,9 +949,8 @@ private toPosix(p: string): string {
           const hash = await this.calculateHash(skillFile);
           const relPath = this.toPosix(path.relative(targetDir, path.join(subPaths.skillsDir, skillName, 'SKILL.md')));
           const existing = lockfile.files[relPath];
-          const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
-          const declaresAsset = declared.has(`skills/${skillName}/SKILL.md`);
-          const owners = resolved.targetBundle && declaresAsset
+          const existingOwners = existing?.owners ?? [];
+          const owners = resolved.targetBundle && declaresAsset(`skills/${skillName}/SKILL.md`)
             ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
             : existingOwners;
           lockfile.files[relPath] = {
@@ -967,9 +977,8 @@ private toPosix(p: string): string {
         const hash = await this.calculateHash(src);
         const relPath = this.toPosix(path.relative(targetDir, dest));
         const existing = lockfile.files[relPath];
-        const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
-        const declaresAsset = declared.has(`workflows/${workflowFile}`);
-        const owners = resolved.targetBundle && declaresAsset
+        const existingOwners = existing?.owners ?? [];
+        const owners = resolved.targetBundle && declaresAsset(`workflows/${workflowFile}`)
           ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
           : existingOwners;
         lockfile.files[relPath] = {
@@ -997,11 +1006,10 @@ private toPosix(p: string): string {
           const hash = await this.calculateHash(src);
           const relPath = this.toPosix(path.relative(targetDir, dest));
           const existing = lockfile.files[relPath];
-          const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
+          const existingOwners = existing?.owners ?? [];
           // Rule files are bundle-derived coordination artifacts, not members of the
           // declared asset set: every installing bundle always owns the rule it deploys.
-          const declaresAsset = true;
-          const owners = resolved.targetBundle && declaresAsset
+          const owners = resolved.targetBundle
             ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
             : existingOwners;
           lockfile.files[relPath] = {

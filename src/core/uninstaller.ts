@@ -7,6 +7,7 @@ import { isKnownHost } from './hosts.js';
 import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
+import { assetOwners } from './types.js';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]+?)\r?\n---/;
 
@@ -203,19 +204,36 @@ export class UninstallEngine {
       const lockfile: LockfileManifest = await fs.readJson(subPaths.lockfile);
       const removedFiles: string[] = [];
 
-      // Bundle removal mode
+      // Bundle removal mode. Triggered by a roster entry OR by owned assets: a lockfile that lost
+      // its `installed.bundles` entry (older partial removals, pre-fix rosters) still has records
+      // naming this owner, and those must be reachable — otherwise `agents remove` reports
+      // "No installed assets found" for assets that are visibly right there in the lockfile.
       if (resolved && resolved.targetBundle) {
         const bundleName = resolved.targetBundle;
-        if (lockfile.installed.bundles.includes(bundleName)) {
+        const ownsSomething =
+          Object.values(lockfile.files).some(m => assetOwners(m).includes(bundleName)) ||
+          Object.values(lockfile.projections || {}).some(p => (p.owners ?? []).includes(bundleName));
+        if (lockfile.installed.bundles.includes(bundleName) || ownsSomething) {
           if (!options.dryRun) {
             const workspaceRoot = path.resolve(path.dirname(targetDir));
 
             // Transactional validation BEFORE any write: if this bundle owns zero file
             // records and zero projections, reject without mutating the lockfile.
+            // Ownership of a projection: its own refcount, or — for legacy records that predate
+            // projection owners — the ownership of the canonical file record it translates.
+            const projectionOwners = (proj: { owners?: string[]; canonical?: string }): string[] => {
+              const own = proj.owners ?? [];
+              if (own.length > 0) return own;
+              // The unbundled fallback records `canonical` as `.agents/agents/<file>` while the files
+              // map is keyed `agents/<file>` (the compound lane's form) — resolve both spellings.
+              const canonical = proj.canonical ?? '';
+              const rec = lockfile.files[canonical] ?? lockfile.files[canonical.replace(/^\.agents\//, '')];
+              return assetOwners(rec);
+            };
             const ownedFiles = Object.entries(lockfile.files)
-              .filter(([, m]) => (m.owners ?? (m.bundle ? [m.bundle] : [])).includes(bundleName));
+              .filter(([, m]) => assetOwners(m).includes(bundleName));
             const ownedProjections = lockfile.projections
-              ? Object.values(lockfile.projections).filter(p => p.owners.includes(bundleName)).length
+              ? Object.values(lockfile.projections).filter(p => projectionOwners(p).includes(bundleName)).length
               : 0;
             if (ownedFiles.length === 0 && ownedProjections === 0) {
               throw new Error(`No installed assets found matching "${bundleName}".`);
@@ -224,8 +242,9 @@ export class UninstallEngine {
             // Clean up compound projections using owner refcounting
             if (lockfile.projections) {
               for (const [projRelPath, proj] of Object.entries(lockfile.projections)) {
-                if (proj.owners.includes(bundleName)) {
-                  proj.owners = proj.owners.filter(o => o !== bundleName);
+                const owners = projectionOwners(proj);
+                if (owners.includes(bundleName)) {
+                  proj.owners = owners.filter(o => o !== bundleName);
                   if (proj.owners.length === 0) {
                     const absProjection = path.join(workspaceRoot, projRelPath);
                     if (await fs.pathExists(absProjection)) {
@@ -244,16 +263,17 @@ export class UninstallEngine {
                       await this.removeEmptyProjectionDirs(workspaceRoot, projRelPath);
                     }
                     delete lockfile.projections[projRelPath];
+                    removedFiles.push(projRelPath);
                   }
                 }
               }
             }
 
             for (const [relPath, assetMeta] of Object.entries(lockfile.files)) {
-              const assetOwners = assetMeta.owners ?? (assetMeta.bundle ? [assetMeta.bundle] : []);
-              if (!assetOwners.includes(bundleName)) continue;
+              const recordOwners = assetOwners(assetMeta);
+              if (!recordOwners.includes(bundleName)) continue;
 
-              const newOwners = assetOwners.filter(o => o !== bundleName);
+              const newOwners = recordOwners.filter(o => o !== bundleName);
               if (newOwners.length === 0) {
                 // Last owner removed: drop the recorded projections, then the canonical file.
                 if (assetMeta.projectedTo && assetMeta.projectedTo.length > 0) {
@@ -280,6 +300,18 @@ export class UninstallEngine {
               }
             }
 
+            // Prune the managed subdirectories once empty — a removal that leaves `.agents/agents/`
+            // behind as an empty shell reads as residue to the operator even though nothing in it is
+            // tracked anymore. Projections already do this via removeEmptyProjectionDirs.
+            for (const dir of [subPaths.agentsDir, subPaths.skillsDir, subPaths.workflowsDir, subPaths.rulesDir]) {
+              if (await fs.pathExists(dir)) {
+                const entries = await fs.readdir(dir).catch(() => [] as string[]);
+                if (entries.length === 0) {
+                  await fs.remove(dir);
+                }
+              }
+            }
+
             lockfile.installed.bundles = lockfile.installed.bundles.filter(b => b !== bundleName);
             if (lockfile.bundleVersions) {
               delete lockfile.bundleVersions[bundleName];
@@ -290,7 +322,14 @@ export class UninstallEngine {
             const survival = new Set<string>();
             for (const b of surviving) {
               const bdef = await this.registry.getBundle(b);
-              if (!bdef) continue;
+              if (!bdef) {
+                // Unbundled survivor (`domain:*` pseudo-entry or unknown identifier): it has no
+                // declaration to read, so what it still owns in the lockfile IS its roster.
+                for (const [relPath, meta] of Object.entries(lockfile.files)) {
+                  if (assetOwners(meta).includes(b)) survival.add(relPath);
+                }
+                continue;
+              }
               if (bdef.orchestrator) survival.add(`agents/${bdef.orchestrator}`);
               (bdef.agents || []).forEach(a => survival.add(`agents/${a}`));
               (bdef.skills || []).forEach(s => survival.add(`skills/${s}/SKILL.md`));

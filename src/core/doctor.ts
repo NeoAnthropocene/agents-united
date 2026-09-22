@@ -9,6 +9,7 @@ import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
 import { RegistryResolver } from './registry.js';
+import { assetOwners } from './types.js';
 import type {
   ClaudeCapabilityReport,
   ClineCapabilityReport,
@@ -383,7 +384,7 @@ export class DoctorEngine {
       // 3. Ownership cross-validation
       const installedBundles = manifest.installed?.bundles ?? [];
       const fileOwnersOf = (rec: { owners?: string[]; bundle?: string }): string[] =>
-        rec.owners ?? (rec.bundle ? [rec.bundle] : []);
+        assetOwners(rec);
 
       // 3a. Projection owned by a bundle absent from installed.bundles
       if (manifest.projections) {

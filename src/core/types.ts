@@ -1,4 +1,39 @@
 export type InstallScope = 'project' | 'global';
+
+/**
+ * Effective owners of a tracked asset (`AssetFileMeta` or a projection entry) at READ time.
+ *
+ * The type documents `owners` as "Absent ⇒ [bundle]", but legacy records store the installing bundle in
+ * `bundle` and write `owners: []`. `??` alone does not fall back for those — `[]` is not nullish — so an
+ * empty `owners` array read as "owned by nobody": the asset vanished from removal and became permanent
+ * residue no `agents remove` could reach. Treat an empty `owners` as absent and fall back to `bundle`.
+ *
+ * READ-side only. At WRITE time an installer must seed from `existing?.owners` verbatim: `bundle` is who
+ * *deployed* a record first, not who *declared* it, so an addon that merely deploys an inherited asset
+ * must not be resurrected as its owner (the ownership contract is the Declared Asset Set — see A6 of the
+ * lifecycle conformance suite).
+ */
+export function assetOwners(rec: { owners?: string[]; bundle?: string } | undefined | null): string[] {
+  if (!rec) return [];
+  const declared = rec.owners ?? [];
+  if (declared.length > 0) return declared;
+  return rec.bundle ? [rec.bundle] : [];
+}
+
+/**
+ * Union an owner into a record's effective owners. Never replaces: shared assets are refcounted, so a
+ * second bundle installing the same file must add itself alongside the existing owners, not overwrite
+ * them (an overwrite silently drops the first bundle's claim and its removal then deletes or strands a
+ * file another bundle still needs).
+ */
+export function mergeAssetOwners(
+  rec: { owners?: string[]; bundle?: string } | undefined | null,
+  owner: string | undefined
+): string[] {
+  const owners = assetOwners(rec);
+  if (!owner) return owners;
+  return owners.includes(owner) ? owners : [...owners, owner];
+}
 export type InstallMethod = 'symlink' | 'copy';
 export type AgentHost = 'agents' | 'gemini' | 'claude' | 'cursor' | 'cline' | 'opencode' | 'codex';
 
