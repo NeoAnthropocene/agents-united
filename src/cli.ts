@@ -1022,12 +1022,21 @@ cli
         return;
       }
 
-      // Honest accounting. `removed` counts only what was actually deleted; when the identifier's
-      // assets are co-owned, most or all of them survive for their other owners. The old
-      // "Successfully removed 84 files" in that case told the operator the workspace lost content
-      // it did not — and hid the one thing that *was* deleted (e.g. a bundle-scoped package).
+      // Honest accounting. `removed` counts only files that actually left the disk; when the
+      // identifier's assets are co-owned, most or all of them survive for their other owners. The
+      // old "Successfully removed 84 files" told the operator content vanished that did not — and
+      // never said WHAT was deleted, so a bundle package quietly disappearing under
+      // `.agents/plugins/` looked like nothing happened at all.
       if (result.kept.length > 0) {
         log.info(`${result.removed.length} deleted · ${result.kept.length} kept — still owned by: ${result.retainedOwners.join(', ')}`);
+      }
+      if (result.removed.length > 0) {
+        const sample = result.removed.slice(0, 3).join(', ');
+        const more = result.removed.length > 3 ? `, … +${result.removed.length - 3} more` : '';
+        log.info(`deleted: ${sample}${more}`);
+      }
+      if (result.staleRecords.length > 0) {
+        log.info(`${result.staleRecords.length} stale record(s) cleaned — bookkeeping only, those files were already gone`);
       }
       outro(pc.green(
         result.removed.length === 0 && result.kept.length > 0

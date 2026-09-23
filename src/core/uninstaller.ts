@@ -185,7 +185,7 @@ export class UninstallEngine {
     await fs.remove(fullPath);
   }
 
-  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; kept: string[]; retainedOwners: string[]; targetDirs: string[]; dryRun: boolean }> {
+  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; kept: string[]; staleRecords: string[]; retainedOwners: string[]; targetDirs: string[]; dryRun: boolean }> {
     const scope = this.parseScope(options);
     const hosts = this.parseHosts(options);
 
@@ -194,6 +194,7 @@ export class UninstallEngine {
 
     const totalRemoved: string[] = [];
     const totalKept: string[] = [];
+    const totalStale: string[] = [];
     const retainedOwners = new Set<string>();
 
     for (const targetDir of targetDirs) {
@@ -206,6 +207,7 @@ export class UninstallEngine {
       const lockfile: LockfileManifest = await fs.readJson(subPaths.lockfile);
       const removedFiles: string[] = [];
       const keptFiles: string[] = [];
+      const staleRecords: string[] = [];
       // Projection ownership is the UNION of its own refcount and its canonical record's owners
       // (legacy `bundle` fallback included). Deriving it only at stamping time made the sharing
       // guarantee order-dependent: a projection created BEFORE a second bundle co-owned its
@@ -254,7 +256,10 @@ export class UninstallEngine {
                   proj.owners = owners.filter(o => o !== bundleName);
                   if (proj.owners.length === 0) {
                     const absProjection = path.join(workspaceRoot, projRelPath);
-                    if (await fs.pathExists(absProjection)) {
+                    // Capture existence BEFORE deleting: the accounting below must distinguish a
+                    // file that really left the disk from a ghost record that never had one.
+                    const existedOnDisk = await fs.pathExists(absProjection);
+                    if (existedOnDisk) {
                       if (proj.managedMarker) {
                         const managed = await this.isManagedProjection(absProjection, projRelPath === 'AGENTS.md');
                         if (!managed && !options.force) {
@@ -270,7 +275,15 @@ export class UninstallEngine {
                       await this.removeEmptyProjectionDirs(workspaceRoot, projRelPath);
                     }
                     delete lockfile.projections[projRelPath];
-                    removedFiles.push(projRelPath);
+                    // Honest accounting: only a path whose FILE existed counts as "deleted". A
+                    // record without a file (ghost bookkeeping from older partial removals) is
+                    // stale-record cleanup — reporting it as a deleted file told operators that
+                    // content vanished when nothing on disk changed.
+                    if (existedOnDisk) {
+                      removedFiles.push(projRelPath);
+                    } else {
+                      staleRecords.push(projRelPath);
+                    }
                     // Drop the pointer from its canonical record too: a surviving canonical that
                     // still lists this path sends `agents doctor` hunting for a projection that is
                     // deliberately gone ("Missing projection …" storm). The fallback lane spells
@@ -419,15 +432,20 @@ export class UninstallEngine {
 
       totalRemoved.push(...removedFiles);
       totalKept.push(...keptFiles);
+      totalStale.push(...staleRecords);
     }
 
-    if (totalRemoved.length === 0 && !options.dryRun) {
+    // "Nothing deleted" is not "nothing found": a removal whose assets are all co-owned legitimately
+    // deletes nothing and keeps every record for the remaining owners. Only a removal that matched
+    // no records at all is an error.
+    if (totalRemoved.length === 0 && totalKept.length === 0 && totalStale.length === 0 && !options.dryRun) {
       throw new Error(`No installed assets found matching "${identifier}".`);
     }
 
     return {
       removed: totalRemoved,
       kept: totalKept,
+      staleRecords: totalStale,
       retainedOwners: [...retainedOwners].sort(),
       targetDirs,
       dryRun: options.dryRun || false,
