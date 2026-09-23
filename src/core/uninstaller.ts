@@ -224,6 +224,65 @@ export class UninstallEngine {
         return Array.from(new Set([...own, ...assetOwners(rec)]));
       };
 
+      /**
+       * Universal Coverage Rule (ADR 0019). An artifact is deletable only when no surviving
+       * installed identifier covers its source. A surviving identifier covers:
+       *   - a canonical asset, when what it DECLARES contains that asset (a domain declares its
+       *     whole expansion; a bundle declares its own bundles.json fields — never an inherited
+       *     parent's extras, per the A6 Declared-Asset-Set contract); and
+       *   - a bundle-derived artifact (`.agents/plugins/<b>/…` — team manifest, plugin.json,
+       *     skill mirrors), when what it declares contains every asset `<b>` declares.
+       * Owner refcounts alone answered "does anyone still name this?" — coverage answers "does
+       * anyone still need this?", which is what the operator means by "don't break my domain".
+       */
+      const survivingCoverage = async (
+        source: { asset?: string; declaringBundle?: string },
+        removedId: string
+      ): Promise<string[]> => {
+        const survivors = lockfile.installed.bundles.filter(b => b !== removedId);
+        const covering: string[] = [];
+        for (const id of survivors) {
+          try {
+            // DECLARATION semantics, not resolution: a survivor covers exactly what it declares.
+            // A real bundle declares its own bundles.json fields only (ADR 0006/A6 — an addon
+            // must NOT keep the parent's undeclared surface alive); a domain pseudo-bundle's
+            // declaration IS its expansion (the union of its members), which is what makes
+            // `domain:engineering` cover everything `software-engineering` declares.
+            const def = await this.registry.getBundle(id);
+            const have = new Set<string>([]);
+            if (def) {
+              if (def.orchestrator) have.add(`agents/${def.orchestrator}`);
+              (def.agents || []).forEach(a => have.add(`agents/${a}`));
+              (def.skills || []).forEach(s => have.add(`skills/${s}/SKILL.md`));
+              (def.workflows || []).forEach(w => have.add(`workflows/${w}`));
+              (def.rules || []).forEach(rl => have.add(`rules/${rl}`));
+            } else {
+              const r = await this.registry.resolve(id);
+              r.agents.forEach(f => have.add(`agents/${f}`));
+              r.skills.forEach(s => have.add(`skills/${s}/SKILL.md`));
+              (r.workflows || []).forEach(w => have.add(`workflows/${w}`));
+              (r.rules || []).forEach(rl => have.add(`rules/${rl}`));
+            }
+            if (source.asset) {
+              if (have.has(source.asset)) covering.push(id);
+            } else if (source.declaringBundle) {
+              const def = await this.registry.getBundle(source.declaringBundle);
+              if (!def) continue;
+              const want = new Set<string>([]);
+              if (def.orchestrator) want.add(`agents/${def.orchestrator}`);
+              (def.agents || []).forEach(a => want.add(`agents/${a}`));
+              (def.skills || []).forEach(s => want.add(`skills/${s}/SKILL.md`));
+              (def.workflows || []).forEach(w => want.add(`workflows/${w}`));
+              (def.rules || []).forEach(rl => want.add(`rules/${rl}`));
+              if (want.size > 0 && [...want].every(k => have.has(k))) covering.push(id);
+            }
+          } catch {
+            // A survivor that no longer resolves cannot cover anything.
+          }
+        }
+        return covering;
+      };
+
       // Bundle removal mode. Triggered by a roster entry OR by owned assets: a lockfile that lost
       // its `installed.bundles` entry (older partial removals, pre-fix rosters) still has records
       // naming this owner, and those must be reachable — otherwise `agents remove` reports
@@ -255,6 +314,26 @@ export class UninstallEngine {
                 if (owners.includes(bundleName)) {
                   proj.owners = owners.filter(o => o !== bundleName);
                   if (proj.owners.length === 0) {
+                    // Universal Coverage Rule (ADR 0019) — bundle-DERIVED coordination artifacts:
+                    // everything under `.agents/plugins/<b>/` (team manifest, plugin.json, skill
+                    // mirrors) and the bundle's own coordinator rule. Each bundle's package is its
+                    // OWN (A6: an addon shares skills but ships its own mirror, so it does not keep
+                    // the parent's package alive); what keeps these alive is a survivor that
+                    // DECLARES A SUPERSET of the bundle — a domain that contains it. That is
+                    // exactly the reported case: `remove software-engineering` under a standing
+                    // `domain:engineering` must delete nothing.
+                    const declaringMatch = /^\.agents\/plugins\/([^/]+)\//.exec(projRelPath);
+                    const derivedCoordination = Boolean(declaringMatch)
+                      || proj.kind === 'rule' || proj.kind === 'team-manifest' || proj.kind === 'plugin-manifest';
+                    const covering = derivedCoordination
+                      ? await survivingCoverage({ declaringBundle: declaringMatch ? declaringMatch[1] : bundleName }, bundleName)
+                      : [];
+                    if (covering.length > 0) {
+                      proj.owners = covering;
+                      keptFiles.push(projRelPath);
+                      covering.forEach(o => retainedOwners.add(o));
+                      continue;
+                    }
                     const absProjection = path.join(workspaceRoot, projRelPath);
                     // Capture existence BEFORE deleting: the accounting below must distinguish a
                     // file that really left the disk from a ghost record that never had one.

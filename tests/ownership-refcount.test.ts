@@ -154,10 +154,13 @@ describe('Ownership refcount — unbundled installs, legacy records and shared a
     expect(await fs.pathExists(path.join(ws, '.claude', 'rules', 'git-guardrails.md'))).toBe(true);
     expect(await fs.pathExists(path.join(ws, '.cline', 'rules', 'git-guardrails.md'))).toBe(true);
 
-    // The bundle-scoped plugin package is software-engineering's alone and must be gone.
-    expect(await fs.pathExists(path.join(ws, '.agents', 'plugins', 'software-engineering'))).toBe(false);
-
-    // And no canonical may keep a pointer to a projection that is gone — that pointer is exactly
+    // Universal Coverage Rule (ADR 0019): software-engineering is a SUBSET of the standing
+    // domain:engineering, so removing it must delete NOTHING — including its "bundle-scoped"
+    // plugin package (the team manifest + plugin.json + skill mirrors). Deleting that package
+    // stripped the domain's software-engineering team manifest, which coordinator rules cite as
+    // their deterministic phase gate (owner-reported, 2026-09-22).
+    expect(await fs.pathExists(path.join(ws, '.agents', 'plugins', 'software-engineering', 'agents-united', 'teams', 'software-engineering.yaml'))).toBe(true);
+    expect(await fs.pathExists(path.join(ws, '.agents', 'plugins', 'software-engineering'))).toBe(true);
     // what made `agents doctor` emit a "Missing projection" storm after the removal.
     const after = await fs.readJson(lockPath) as { files: Record<string, { projectedTo?: string[] }> };
     for (const [relPath, meta] of Object.entries(after.files)) {
@@ -183,11 +186,12 @@ describe('Ownership refcount — unbundled installs, legacy records and shared a
     expect(await fs.pathExists(path.join(ws, '.claude', 'rules', 'git-guardrails.md'))).toBe(true);
     expect(await fs.pathExists(path.join(ws, '.cline', 'rules', 'git-guardrails.md'))).toBe(true);
     expect(await fs.pathExists(path.join(ws, '.claude', 'agents', 'backend-architect.md'))).toBe(true);
-    // The bundle-scoped package is software-engineering's alone and goes with it.
-    expect(await fs.pathExists(path.join(ws, '.agents', 'plugins', 'software-engineering'))).toBe(false);
+    // Universal Coverage Rule (ADR 0019): the package belongs to software-engineering's surface,
+    // which the domain fully covers — so it survives this removal too.
+    expect(await fs.pathExists(path.join(ws, '.agents', 'plugins', 'software-engineering'))).toBe(true);
 
-    // The honest accounting: deleted + kept, with the surviving owner named.
-    expect(result.removed.length).toBeGreaterThan(0);   // the bundle-scoped package
+    // The honest accounting: nothing is deleted when the survivor covers the removed bundle.
+    expect(result.removed.length).toBe(0);
     expect(result.kept.length).toBeGreaterThan(0);
     expect(result.retainedOwners).toEqual(['domain:engineering']);
 
@@ -198,6 +202,30 @@ describe('Ownership refcount — unbundled installs, legacy records and shared a
         expect(await fs.pathExists(path.join(ws, projPath)), `${relPath} -> ${projPath}`).toBe(true);
       }
     }
+  });
+
+  it('T9: the subset-over-superset matrix — removing software-engineering under domain:engineering deletes NOTHING', async () => {
+    // The owner's exact words: "there shouldn't be any removed files, because the user already
+    // has a domain:engineering bundle which also covers the whole bundle". That is the Universal
+    // Coverage Rule in its purest form: deletion happens iff no surviving identifier covers the
+    // artifact. The domain covers ALL of software-engineering surface (canonicals, projections
+    // and derived coordination artifacts alike), so the correct answer is zero.
+    const installer = new InstallEngine();
+    await installer.install('domain:engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude', 'cline'] });
+    await installer.install('software-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude', 'cline'] });
+
+    const uninstaller = new UninstallEngine();
+    const result = await uninstaller.uninstall('software-engineering', { targetDir: agentsDir });
+
+    expect(result.removed).toEqual([]);
+    expect(result.kept.length).toBeGreaterThan(0);
+    expect(result.retainedOwners).toEqual(['domain:engineering']);
+
+    // The team manifest and plugin package survive, and the manifest is now owned by the domain.
+    const after = await fs.readJson(lockPath) as { projections: Record<string, { owners?: string[] }> };
+    const manifest = after.projections['.agents/plugins/software-engineering/agents-united/teams/software-engineering.yaml'];
+    expect(manifest).toBeDefined();
+    expect(manifest?.owners).toEqual(['domain:engineering']);
   });
 
   it('T6: unit semantics of the ownership helpers', () => {

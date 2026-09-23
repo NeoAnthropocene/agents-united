@@ -333,8 +333,10 @@ private toPosix(p: string): string {
       // or the creating bundle becomes sole owner and removing it deletes projections another owner
       // still needs (reported: `remove software-engineering` wiped the domain's `.claude/skills/*`
       // and `.claude/rules/*`, leaving "Missing projection" storms in doctor). Bundle-scoped lanes
-      // (`.agents/plugins/<bundle>/`) are per-bundle distribution artifacts and stay owned by the
-      // bundle that ships them alone.
+      // (`.agents/plugins/<bundle>/`) stay owned by the shipping bundle alone (A6: each bundle
+      // packages its own skills — an addon ships its OWN mirror, so the parent's package is not
+      // needed by it); their SURVIVAL is governed separately by the Universal Coverage Rule
+      // (ADR 0019) in the uninstaller, which is what keeps the package under a standing domain.
       const bundleScoped = artifact.relPath.startsWith('.agents/plugins/');
       const canonicalOwners = !bundleScoped && artifact.canonical
         ? (lockfile.files[artifact.canonical]?.owners ?? [])
