@@ -140,6 +140,33 @@ describe('Ownership refcount — unbundled installs, legacy records and shared a
     expect(await fs.pathExists(path.join(ws, '.claude'))).toBe(false);
   });
 
+  it('T7: removing one bundle keeps projections of a shared canonical — the reported sequence', async () => {
+    // add domain:engineering → add software-engineering → remove software-engineering
+    const installer = new InstallEngine();
+    await installer.install('domain:engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude', 'cline'] });
+    await installer.install('software-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude', 'cline'] });
+
+    const uninstaller = new UninstallEngine();
+    await uninstaller.uninstall('software-engineering', { targetDir: agentsDir });
+
+    // The domain's skill and rule projections must survive the removal of the co-owner.
+    expect(await fs.pathExists(path.join(ws, '.claude', 'skills', 'architecture-design', 'SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(ws, '.claude', 'rules', 'git-guardrails.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(ws, '.cline', 'rules', 'git-guardrails.md'))).toBe(true);
+
+    // The bundle-scoped plugin package is software-engineering's alone and must be gone.
+    expect(await fs.pathExists(path.join(ws, '.agents', 'plugins', 'software-engineering'))).toBe(false);
+
+    // And no canonical may keep a pointer to a projection that is gone — that pointer is exactly
+    // what made `agents doctor` emit a "Missing projection" storm after the removal.
+    const after = await fs.readJson(lockPath) as { files: Record<string, { projectedTo?: string[] }> };
+    for (const [relPath, meta] of Object.entries(after.files)) {
+      for (const projPath of meta.projectedTo ?? []) {
+        expect(await fs.pathExists(path.join(ws, projPath)), `${relPath} -> ${projPath}`).toBe(true);
+      }
+    }
+  });
+
   it('T6: unit semantics of the ownership helpers', () => {
     // Empty `owners` must fall back to the legacy `bundle` field — the `??` bug in one line.
     expect(assetOwners({ owners: [], bundle: 'x' })).toEqual(['x']);

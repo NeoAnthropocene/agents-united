@@ -264,6 +264,18 @@ export class UninstallEngine {
                     }
                     delete lockfile.projections[projRelPath];
                     removedFiles.push(projRelPath);
+                    // Drop the pointer from its canonical record too: a surviving canonical that
+                    // still lists this path sends `agents doctor` hunting for a projection that is
+                    // deliberately gone ("Missing projection …" storm). The fallback lane spells
+                    // canonicals `.agents/<sub>/<file>`, the files map `<sub>/<file>` — try both.
+                    const canonicalKey = (proj.canonical ?? '').replace(/^\.agents\//, '');
+                    for (const key of new Set([proj.canonical ?? '', canonicalKey])) {
+                      const rec = key ? lockfile.files[key] : undefined;
+                      if (rec?.projectedTo) {
+                        rec.projectedTo = rec.projectedTo.filter(p => p !== projRelPath);
+                        if (rec.projectedTo.length === 0) delete rec.projectedTo;
+                      }
+                    }
                   }
                 }
               }

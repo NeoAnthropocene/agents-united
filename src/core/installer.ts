@@ -329,10 +329,22 @@ private toPosix(p: string): string {
       const declares = artifact.kind === 'rule' || artifact.kind === 'team-manifest'
         || artifact.kind === 'plugin-manifest'
         || (artifact.canonical ? declared.has(artifact.canonical) : false);
+      // A projection of a shared canonical is shared. Seed its owners from the canonical's owners,
+      // or the creating bundle becomes sole owner and removing it deletes projections another owner
+      // still needs (reported: `remove software-engineering` wiped the domain's `.claude/skills/*`
+      // and `.claude/rules/*`, leaving "Missing projection" storms in doctor). Bundle-scoped lanes
+      // (`.agents/plugins/<bundle>/`) are per-bundle distribution artifacts and stay owned by the
+      // bundle that ships them alone.
+      const bundleScoped = artifact.relPath.startsWith('.agents/plugins/');
+      const canonicalOwners = !bundleScoped && artifact.canonical
+        ? (lockfile.files[artifact.canonical]?.owners ?? [])
+        : [];
       const priorOwners = existingProj?.owners ?? [];
-      const owners = declares
-        ? Array.from(new Set([...priorOwners, bundleName]))
-        : priorOwners;
+      const owners = Array.from(new Set([
+        ...priorOwners,
+        ...canonicalOwners,
+        ...(declares ? [bundleName] : []),
+      ]));
 
       lockfile.projections[artifact.relPath] = {
         host,
@@ -797,11 +809,17 @@ private toPosix(p: string): string {
           // keep that owner too. Replacing the list silently drops the first bundle's claim, after
           // which its removal strands or deletes a projection another bundle still needs.
           const existingProj = lockfile.projections[projPath];
+          // Same sharing rule as the compound lane: a projection of a shared canonical is shared.
+          // The fallback records canonicals as `.agents/<sub>/<file>` while the files map uses
+          // `<sub>/<file>` — resolve both spellings.
+          const canonicalRecord = lockfile.files[canonicalRel] ?? lockfile.files[canonicalRel.replace(/^\.agents\//, '')];
           lockfile.projections[projPath] = {
             host,
             kind: 'role',
             canonical: canonicalRel,
-            owners: mergeAssetOwners(existingProj, resolved.targetBundle ?? undefined),
+            owners: mergeAssetOwners(existingProj, resolved.targetBundle ?? undefined)
+              .concat(canonicalRecord?.owners ?? [])
+              .filter((o, i, arr) => arr.indexOf(o) === i),
             hash: await this.calculateHash(dest),
             installedAt: existingProj?.installedAt ?? new Date().toISOString(),
             managedMarker: true,
