@@ -68,7 +68,10 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
       cwd: e2eDir,
       encoding: 'utf8',
     });
-    expect(removeStdout).toContain('Successfully removed');
+    // Honest summary contract: `Removed "<id>" from this workspace — N deleted, M kept`. The old
+    // "Successfully removed N files" claimed deletion even when every asset was co-owned and kept.
+    expect(removeStdout).toContain('Removed "software-engineering" from this workspace');
+    expect(removeStdout).toContain('deleted');
   });
 
   it('should support copy mode flag --copy', async () => {

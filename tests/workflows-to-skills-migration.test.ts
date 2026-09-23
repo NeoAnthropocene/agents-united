@@ -50,7 +50,12 @@ describe('ADR 0016: Workflows to Skills Auto-Migration Suite (Tier 1-4)', () => 
 
       await fs.writeFile(path.join(workflowsDir, 'workflow-deploy.md'), legacyWorkflowContent, 'utf8');
 
-      const initialLockfile: LockfileManifest = {
+      // A *legacy* lockfile shape on purpose: the migration under test must cope with the extra fields
+      // older releases wrote (`schemaVersion`, `installedAt`, `updatedAt`), so the fixture is typed as the
+      // current manifest plus unknown legacy keys rather than pretending they are part of the schema.
+      const initialLockfile: LockfileManifest & Record<string, unknown> = {
+        $schema: 'https://agents-united.dev/schemas/lockfile.json',
+        files: {},
         version: 1,
         schemaVersion: '2.0.0',
         installedAt: new Date().toISOString(),

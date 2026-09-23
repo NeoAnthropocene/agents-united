@@ -50,7 +50,7 @@ describe('Projection lifecycle (plan 007 M5)', () => {
     expect(await fs.pathExists(path.join(testWorkspace, '.agents', 'plugins'))).toBe(false);
 
     const lockfile = await fs.readJson(path.join(agentsDir, 'agents-united.json'));
-    for (const asset of Object.values(lockfile.files)) {
+    for (const asset of Object.values(lockfile.files as Record<string, { projectedTo?: string[] }>)) {
       expect(asset.projectedTo).toBeUndefined();
     }
   });

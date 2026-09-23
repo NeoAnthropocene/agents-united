@@ -7,8 +7,10 @@ import { isKnownHost, HOST_REGISTRY, resolveHostProjectDir } from './hosts.js';
 import { HostProjector } from './projector.js';
 import type { IndexableAsset } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
+import { ClaudeProjector } from './claude-projector.js';
 import YAML from 'yaml';
-import type { InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, ProjectionInfo } from './types.js';
+import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo } from './types.js';
+import { assetOwners, mergeAssetOwners } from './types.js';
 
 export class InstallEngine {
   private registry: RegistryResolver;
@@ -241,6 +243,197 @@ private toPosix(p: string): string {
     }
   }
 
+  /**
+   * ADR 0018 — the shared compound-lane body used by every host that owns a
+   * dedicated projector (Cline per ADR 0013, Claude per ADR 0018).
+   *
+   * Parameterising by `host` instead of forking the body is deliberate: the two
+   * lanes must stay behaviourally identical in pruning, refcounting and
+   * reconcile semantics, and the Cline path is provably unchanged because it
+   * passes the exact same literal `'cline'` (and the same `declared` set, plan
+   * artifacts and force flag) it previously used inline.
+   *
+   * The host-specific plan (the projector call) stays at the call site; this body
+   * is purely mechanical: prune superseded projections, deploy artifacts, record
+   * refcounted projection entries, reconcile `projectedTo`, surface `projections`.
+   */
+  private async applyCompoundLane(
+    host: AgentHost,
+    bundleName: string,
+    artifacts: PlannedProjectionArtifact[],
+    context: {
+      root: string;
+      lockfile: LockfileManifest;
+      declared: Set<string>;
+      projections: ProjectionInfo[];
+      now: string;
+      force?: boolean;
+    }
+  ): Promise<void> {
+    const { root, lockfile, declared, projections, now, force } = context;
+    const newPaths = new Set(artifacts.map(a => a.relPath));
+
+    // Clean up legacy or obsolete projections previously owned by this bundle.
+    // This is the load-bearing migration for renames: the ADR 0016 workflow slug
+    // rename, and (ADR 0018 decision 2) the `subagent-` prefix strip that moves
+    // `.claude/agents/subagent-<role>.md` to `.claude/agents/<role>.md`.
+    if (lockfile.projections) {
+      for (const [projRelPath, proj] of Object.entries(lockfile.projections)) {
+        if (proj.host === host && !newPaths.has(projRelPath) && proj.owners.includes(bundleName)) {
+          proj.owners = proj.owners.filter(o => o !== bundleName);
+          if (proj.owners.length === 0) {
+            const absProjection = path.join(root, projRelPath);
+            if (await fs.pathExists(absProjection)) {
+              await fs.remove(absProjection);
+              await this.removeEmptyProjectionDirs(root, projRelPath);
+            }
+            delete lockfile.projections[projRelPath];
+          }
+          if (proj.canonical) {
+            this.removeProjectedTo(lockfile, proj.canonical, projRelPath);
+          }
+        }
+      }
+    }
+
+    for (const artifact of artifacts) {
+      const dest = path.join(root, artifact.relPath);
+      if (await fs.pathExists(dest) && !force) {
+        const existing = await fs.readFile(dest, 'utf8').catch(() => null);
+        if (existing !== null) {
+          if (artifact.managedMarker && !HostProjector.hasManagedMarker(existing)) {
+            throw new Error(
+              `Projection target ${artifact.relPath} already exists and is not managed by agents-united. Use --force to overwrite.`
+            );
+          } else if (!artifact.managedMarker) {
+            const registeredProj = lockfile.projections?.[artifact.relPath];
+            if (!registeredProj) {
+              throw new Error(
+                `Projection target ${artifact.relPath} already exists and is not managed by agents-united. Use --force to overwrite.`
+              );
+            }
+          }
+        }
+      }
+
+      if (artifact.content !== undefined) {
+        await this.deployProjection(dest, artifact.content);
+      } else if (artifact.sourceFilePath) {
+        await fs.ensureDir(path.dirname(dest));
+        await fs.copy(artifact.sourceFilePath, dest, { overwrite: true });
+      }
+
+      const deployedHash = await this.calculateHash(dest);
+      lockfile.projections = lockfile.projections || {};
+      const existingProj = lockfile.projections[artifact.relPath];
+      const declares = artifact.kind === 'rule' || artifact.kind === 'team-manifest'
+        || artifact.kind === 'plugin-manifest'
+        || (artifact.canonical ? declared.has(artifact.canonical) : false);
+      // A projection of a shared canonical is shared. Seed its owners from the canonical's owners,
+      // or the creating bundle becomes sole owner and removing it deletes projections another owner
+      // still needs (reported: `remove software-engineering` wiped the domain's `.claude/skills/*`
+      // and `.claude/rules/*`, leaving "Missing projection" storms in doctor). Bundle-scoped lanes
+      // (`.agents/plugins/<bundle>/`) stay owned by the shipping bundle alone (A6: each bundle
+      // packages its own skills — an addon ships its OWN mirror, so the parent's package is not
+      // needed by it); their SURVIVAL is governed separately by the Universal Coverage Rule
+      // (ADR 0019) in the uninstaller, which is what keeps the package under a standing domain.
+      const bundleScoped = artifact.relPath.startsWith('.agents/plugins/');
+      const canonicalOwners = !bundleScoped && artifact.canonical
+        ? (lockfile.files[artifact.canonical]?.owners ?? [])
+        : [];
+      const priorOwners = existingProj?.owners ?? [];
+      const owners = Array.from(new Set([
+        ...priorOwners,
+        ...canonicalOwners,
+        ...(declares ? [bundleName] : []),
+      ]));
+
+      lockfile.projections[artifact.relPath] = {
+        host,
+        kind: artifact.kind,
+        canonical: artifact.canonical,
+        owners,
+        hash: deployedHash,
+        installedAt: existingProj?.installedAt ?? now,
+        managedMarker: artifact.managedMarker,
+      };
+
+      projections.push({ host, path: artifact.relPath, kind: artifact.kind, warnings: [] });
+
+      // ADR 0018 decision 12 — a distribution-only artifact (the opt-in Claude plugin lane) is
+      // deployed and tracked in `lockfile.projections` so doctor can see presence and drift, but
+      // it is deliberately NOT a `projectedTo` target. `projectionNamespacePrefixes('claude')` is
+      // `['.claude/']` on purpose: `.agents/plugins/<bundle>/` belongs to the *cline* reconcile
+      // pass, and a claude pointer recorded inside it would be dropped by that pass on the next
+      // Cline install — healthy artifacts turned into orphaned lockfile state.
+      if (artifact.canonical && !artifact.distributionOnly) {
+        this.recordProjectedTo(lockfile, artifact.canonical, artifact.relPath);
+      }
+    }
+
+    // Plan 015c / §5.7 — authoritative reconcile pass. `recordProjectedTo` above
+    // only appends, so a canonical whose projection path changed (e.g. the ADR 0016
+    // workflow slug rename) kept a dangling pointer forever and `agents doctor`
+    // warned about a file that can never come back. Derive the produced set from
+    // this run's plan and drop this namespace's stale pointers for the canonicals
+    // we just re-projected.
+    const producedByCanonical = new Map<string, string[]>();
+    for (const artifact of artifacts) {
+      // Distribution-only artifacts are excluded here as well: they exist to be *packaged*,
+      // not to serve a canonical asset, so they must not widen the produced set of this
+      // namespace (which would keep a stale `.claude/**` pointer alive).
+      if (!artifact.canonical || artifact.distributionOnly) continue;
+      const producedPaths = producedByCanonical.get(artifact.canonical);
+      if (producedPaths) {
+        producedPaths.push(artifact.relPath);
+      } else {
+        producedByCanonical.set(artifact.canonical, [artifact.relPath]);
+      }
+    }
+    this.reconcileProjectedTo(lockfile, host, bundleName, producedByCanonical);
+  }
+
+  /**
+   * Plan 016 / ADR 0018 decision 12 — resolve the effective plugin-lane opt-in.
+   *
+   * An explicit `InstallOptions.pluginLane` always wins (the CLI passes `true` for `--plugin` and
+   * `false` for `--no-plugin`); an unset flag inherits the recorded choice so that `agents update`
+   * — which re-runs the installer without the flag — cannot silently prune an opted-in package.
+   */
+  private static effectivePluginLane(
+    options: InstallOptions,
+    lockfile?: LockfileManifest | null
+  ): boolean {
+    if (typeof options.pluginLane === 'boolean') return options.pluginLane;
+    return lockfile?.pluginLane === true;
+  }
+
+  /**
+   * ADR 0018 — the host-specific projection plan, the single input that differs per host once
+   * `applyCompoundLane` shared the mechanics. `pluginLane` (Plan 016 decision 13) is honoured for
+   * the **Claude lane only**: the Cline package must stay byte-identical with the flag on and off,
+   * so the flag is inert for `cline`.
+   */
+  private static async planCompoundArtifacts(
+    host: AgentHost,
+    bundleDef: BundleDefinition,
+    scope: InstallScope,
+    resolved: ResolvedAssets,
+    registryDir: string,
+    pluginLane: boolean
+  ): Promise<PlannedProjectionArtifact[]> {
+    if (host === 'cline') {
+      return ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+    }
+    const artifacts = await ClaudeProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+    if (pluginLane) {
+      // Distribution-only extras (ADR 0018 decision 12): deployed and tracked through the same
+      // lane, but never recorded as a `projectedTo` target (`distributionOnly` artifacts).
+      artifacts.push(...await ClaudeProjector.planPluginLane(bundleDef, resolved, registryDir));
+    }
+    return artifacts;
+  }
+
   private async removeEmptyProjectionDirs(workspaceRoot: string, projPath: string): Promise<void> {
     let dir = path.dirname(path.join(workspaceRoot, projPath));
     while (dir !== workspaceRoot && dir.startsWith(workspaceRoot)) {
@@ -357,7 +550,8 @@ private toPosix(p: string): string {
     resolved: ResolvedAssets,
     registryDir: string,
     scope: InstallScope,
-    targetDir?: string
+    targetDir?: string,
+    pluginLane = false
   ): Promise<ProjectionInfo[]> {
     const infos: ProjectionInfo[] = [];
     if (fanoutHosts.length === 0) return infos;
@@ -369,10 +563,17 @@ private toPosix(p: string): string {
         continue;
       }
 
-      if (host === 'cline') {
+      if (host === 'cline' || host === 'claude') {
         const bundleDef = resolved.targetBundle ? await this.registry.getBundle(resolved.targetBundle) : undefined;
         if (bundleDef) {
-          const artifacts = await ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+          const artifacts = await InstallEngine.planCompoundArtifacts(
+            host as AgentHost,
+            bundleDef,
+            scope,
+            resolved,
+            registryDir,
+            pluginLane
+          );
           for (const artifact of artifacts) {
             infos.push({ host, path: artifact.relPath, kind: artifact.kind, warnings: [] });
           }
@@ -411,6 +612,19 @@ private toPosix(p: string): string {
     const { root } = InstallEngine.projectionRoot(scope, options.targetDir);
     const now = new Date().toISOString();
 
+    // Plan 016 / ADR 0018 decision 12 — the plugin-lane opt-in is sticky. `agents update` re-runs
+    // the installer without `--plugin`, so an unset flag must mean "keep the recorded choice"
+    // rather than "prune the opted-in package"; only an explicit `false` (CLI `--no-plugin`) turns
+    // it off. Persisted for the same reason `fanout` is.
+    const pluginLane = InstallEngine.effectivePluginLane(options, lockfile);
+    if (fanoutHosts.includes('claude')) {
+      if (pluginLane) {
+        lockfile.pluginLane = true;
+      } else if (options.pluginLane === false) {
+        delete lockfile.pluginLane;
+      }
+    }
+
     for (const host of fanoutHosts) {
       if (host === 'codex') {
         const assets: IndexableAsset[] = [];
@@ -436,7 +650,7 @@ private toPosix(p: string): string {
         continue;
       }
 
-      if (host === 'cline') {
+      if (host === 'cline' || host === 'claude') {
         const bundleDef = resolved.targetBundle ? await this.registry.getBundle(resolved.targetBundle) : undefined;
         if (bundleDef) {
           // Declared Asset Set of this bundle (its own bundles.json fields, NOT the
@@ -448,109 +662,26 @@ private toPosix(p: string): string {
           (bundleDef.agents || []).forEach(a => declared.add(`agents/${a}`));
           (bundleDef.skills || []).forEach(s => declared.add(`skills/${s}/SKILL.md`));
           (bundleDef.workflows || []).forEach(w => declared.add(`workflows/${w}`));
-          const artifacts = await ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
-          const newPaths = new Set(artifacts.map(a => a.relPath));
 
-          // Clean up legacy or obsolete projections previously owned by this bundle
-          if (lockfile.projections) {
-            for (const [projRelPath, proj] of Object.entries(lockfile.projections)) {
-              if (proj.host === 'cline' && !newPaths.has(projRelPath) && proj.owners.includes(bundleDef.name)) {
-                proj.owners = proj.owners.filter(o => o !== bundleDef.name);
-                if (proj.owners.length === 0) {
-                  const absProjection = path.join(root, projRelPath);
-                  if (await fs.pathExists(absProjection)) {
-                    await fs.remove(absProjection);
-                    await this.removeEmptyProjectionDirs(root, projRelPath);
-                  }
-                  delete lockfile.projections[projRelPath];
-                }
-                if (proj.canonical) {
-                  this.removeProjectedTo(lockfile, proj.canonical, projRelPath);
-                }
-              }
-            }
-          }
+          // ADR 0018 - the per-host plan is the only host-specific input; pruning,
+          // refcounting, deployment and reconcile are shared via applyCompoundLane.
+          const artifacts = await InstallEngine.planCompoundArtifacts(
+            host as AgentHost,
+            bundleDef,
+            scope,
+            resolved,
+            registryDir,
+            pluginLane
+          );
 
-          // ADR 0013: the previous ADR 0012 migration pruned `.cline/` paths as
-          // "legacy" - that was wrong: `.cline/` is where Cline natively discovers
-          // agents/rules/workflows. Migration is now handled purely by the
-          // lockfile.projections obsolete-artifact cleanup above (the new artifact
-          // set no longer includes package.json / agents/*.md / rules/*.md inside
-          // the plugin package, so those are pruned automatically).
-
-          for (const artifact of artifacts) {
-            const dest = path.join(root, artifact.relPath);
-            if (await fs.pathExists(dest) && !options.force) {
-              const existing = await fs.readFile(dest, 'utf8').catch(() => null);
-              if (existing !== null) {
-                if (artifact.managedMarker && !HostProjector.hasManagedMarker(existing)) {
-                  throw new Error(
-                    `Projection target ${artifact.relPath} already exists and is not managed by agents-united. Use --force to overwrite.`
-                  );
-                } else if (!artifact.managedMarker) {
-                  const registeredProj = lockfile.projections?.[artifact.relPath];
-                  if (!registeredProj) {
-                    throw new Error(
-                      `Projection target ${artifact.relPath} already exists and is not managed by agents-united. Use --force to overwrite.`
-                    );
-                  }
-                }
-              }
-            }
-
-            if (artifact.content !== undefined) {
-              await this.deployProjection(dest, artifact.content);
-            } else if (artifact.sourceFilePath) {
-              await fs.ensureDir(path.dirname(dest));
-              await fs.copy(artifact.sourceFilePath, dest, { overwrite: true });
-            }
-
-            const deployedHash = await this.calculateHash(dest);
-            lockfile.projections = lockfile.projections || {};
-            const existingProj = lockfile.projections[artifact.relPath];
-            const bundleName = bundleDef.name;
-            const declares = artifact.kind === 'rule' || artifact.kind === 'team-manifest'
-              || artifact.kind === 'plugin-manifest'
-              || (artifact.canonical ? declared.has(artifact.canonical) : false);
-            const priorOwners = existingProj?.owners ?? [];
-            const owners = declares
-              ? Array.from(new Set([...priorOwners, bundleName]))
-              : priorOwners;
-
-            lockfile.projections[artifact.relPath] = {
-              host: 'cline',
-              kind: artifact.kind,
-              canonical: artifact.canonical,
-              owners,
-              hash: deployedHash,
-              installedAt: existingProj?.installedAt ?? now,
-              managedMarker: artifact.managedMarker,
-            };
-
-            projections.push({ host, path: artifact.relPath, kind: artifact.kind, warnings: [] });
-
-            if (artifact.canonical) {
-              this.recordProjectedTo(lockfile, artifact.canonical, artifact.relPath);
-            }
-          }
-
-          // Plan 015c / §5.7 — authoritative reconcile pass. `recordProjectedTo`
-          // above only appends, so a canonical whose projection path changed (e.g.
-          // the ADR 0016 workflow slug rename) kept a dangling pointer forever and
-          // `agents doctor` warned about a file that can never come back. Derive the
-          // produced set from this run's plan and drop this namespace's stale
-          // pointers for the canonicals we just re-projected.
-          const producedByCanonical = new Map<string, string[]>();
-          for (const artifact of artifacts) {
-            if (!artifact.canonical) continue;
-            const producedPaths = producedByCanonical.get(artifact.canonical);
-            if (producedPaths) {
-              producedPaths.push(artifact.relPath);
-            } else {
-              producedByCanonical.set(artifact.canonical, [artifact.relPath]);
-            }
-          }
-          this.reconcileProjectedTo(lockfile, 'cline', bundleDef.name, producedByCanonical);
+          await this.applyCompoundLane(host, bundleDef.name, artifacts, {
+            root,
+            lockfile,
+            declared,
+            projections,
+            now,
+            force: options.force,
+          });
 
           // Installed-addon freshness (plan 003): when the installed bundle extends a
           // parent essentials with its own coordinator rule + team manifest already
@@ -559,7 +690,7 @@ private toPosix(p: string): string {
           // for addons already present. Ownership is left untouched (the parent stays
           // the sole owner). If the parent rule/manifest don't exist yet (parent not
           // installed as its own bundle), skip silently.
-          if (bundleDef.parentBundle) {
+          if (host === 'cline' && bundleDef.parentBundle) {
             const parentDef = await this.registry.getBundle(bundleDef.parentBundle);
             if (parentDef) {
               const parentProjection = await ClineProjector.planCompoundProjection(
@@ -600,24 +731,54 @@ private toPosix(p: string): string {
       for (const agentFile of resolved.agents) {
         const content = await fs.readFile(path.join(registryDir, 'agents', agentFile), 'utf8');
         const canonicalRel = this.canonicalRelAgent(agentFile);
-        const res = HostProjector.projectAgent(content, HOST_REGISTRY[host].profile, canonicalRel);
-        // ADR 0013: the Cline fallback path (unbundled installs) emits configured
-        // agent YAML - same naming rules as the compound projection.
+        // ADR 0018: the Claude dialect renderer is the only correct writer for `.claude/agents/`.
+        // This fallback runs whenever a fanout cannot resolve a bundle definition — the `domain:*`
+        // pseudo-entries (registry.ts resolves them to `targetBundle: 'domain:<name>'`, which is not
+        // in bundles.json), addon identifiers, and bundles absent from the registry. The legacy
+        // generic projector only knows the small TOOL_NAME_MAP, so it dropped `invoke_subagent` and
+        // `send_message` outright; a coordinator projected that way had NO `Agent` tool at all and
+        // could not delegate. Rendering through the dialect keeps the tool vocabulary, the frontmatter
+        // translation and the ledger dispositions identical to the compound lane's.
+        // A coordinator projected without a bundle definition still needs a real allowlist: `Agent`
+        // with no parentheses grants *any* subagent, which is not the bound ADR 0018 decision 3
+        // describes. The peer roster of this projection run is the best available bound — exactly the
+        // specialists this run made available in this workspace.
+        const isCoordinatorRole = /^\s*type:\s*orchestrator\s*$/m.test(content)
+          || /^\s*mainAgent:\s*true\s*$/m.test(content);
+        const peerRoles = resolved.agents
+          .filter(f => f !== agentFile)
+          .map(f => ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, '')));
+        const res = host === 'claude'
+          ? ClaudeProjector.renderRole(content, canonicalRel, {
+              allowlist: isCoordinatorRole ? peerRoles : undefined,
+            })
+          : HostProjector.projectAgent(content, HOST_REGISTRY[host].profile, canonicalRel);
+        // ADR 0013 / ADR 0018: the compound-lane hosts (Cline, Claude) name their
+        // projected roles by stripping the canonical `subagent-` prefix, so the
+        // unbundled fallback must use the same names or the two writers would
+        // disagree about the same role (`.cline/agents/<role>.yml`,
+        // `.claude/agents/<role>.md`).
+        const strippedRoleName = agentFile.replace(/\.md$/i, '').replace(/^subagent-/, '');
         const projName = host === 'cline'
-          ? `${agentFile.replace(/\.md$/i, '').replace(/^subagent-/, '')}.yml`
-          : agentFile;
+          ? `${strippedRoleName}.yml`
+          : (host === 'claude' ? `${strippedRoleName}.md` : agentFile);
         const dest = path.join(base, subdir, projName);
         const projPath = this.toPosix(path.relative(root, dest));
 
-        // ADR 0017: the Cline compound lane (ADR 0013) is the authoritative writer for
-        // bundle roles. This fallback must never overwrite a role the compound lane owns
-        // with a different renderer's output — doing so silently degraded
-        // `.cline/agents/*.yml` (wrong frontmatter/body) and left the compound projection
-        // hash stale, which `agents doctor` then reported as content drift after every
-        // `update --all` (reproduced via the `domain:*` pseudo-bundle, whose cline fanout
-        // cannot resolve a bundle definition and lands here).
-        if (host === 'cline' && lockfile.projections?.[projPath]?.kind === 'role') {
-          continue;
+        // ADR 0017 / ADR 0018: a COMPOUND-lane role is authoritative and must never be replaced by
+        // this fallback. Ownership is read from the recorded canonical: the compound planner stores
+        // the store-relative `agents/<file>`, while this fallback stores the `.agents/`-prefixed form
+        // (`canonicalRelAgent`). The earlier broad guard — "any role entry exists" — also froze roles
+        // that THIS fallback had written with the legacy projector, which made the degradation
+        // permanent: re-projection skipped them forever, so a `domain:*` install could never be
+        // repaired. Cline deliberately keeps the broad guard, because its two writers render
+        // genuinely different artifacts (configured-agent YAML vs the generic translation).
+        const existingRoleProj = lockfile.projections?.[projPath];
+        if (existingRoleProj?.kind === 'role') {
+          const compoundOwned = !(existingRoleProj.canonical ?? '').startsWith('.agents/');
+          if (host === 'cline' || (host === 'claude' && compoundOwned)) {
+            continue;
+          }
         }
 
         if (await fs.pathExists(dest) && !options.force) {
@@ -630,21 +791,39 @@ private toPosix(p: string): string {
           // Ours (managed marker present): deterministic content — regenerate silently.
         }
         await this.deployProjection(dest, res.content);
-        projections.push({ host, path: projPath, kind: 'role', warnings: res.warnings });
+        // `ClaudeRenderResult` reports translation losses through its ledger, not a warnings array.
+        projections.push({
+          host,
+          path: projPath,
+          kind: 'role',
+          warnings: 'warnings' in res ? res.warnings : [],
+        });
         this.recordProjectedTo(lockfile, this.lockRel('agents', agentFile), projPath);
 
-        // ADR 0017: record a projection entry with a matching hash for anything this
-        // fallback writes, so the freshness check never reports phantom drift and the
-        // bookkeeping stays consistent with the compound lane.
-        if (host === 'cline') {
+        // ADR 0017 / ADR 0018: record a projection entry with a matching hash for anything
+        // this fallback writes, so the freshness check never reports phantom drift and the
+        // bookkeeping stays consistent with the compound lane. Host value comes from the
+        // loop variable, never a literal, so both compound-lane hosts are covered without
+        // changing Cline semantics.
+        if (host === 'cline' || host === 'claude') {
           lockfile.projections = lockfile.projections || {};
+          // Projection ownership is refcounted: a projection shared with an earlier install must
+          // keep that owner too. Replacing the list silently drops the first bundle's claim, after
+          // which its removal strands or deletes a projection another bundle still needs.
+          const existingProj = lockfile.projections[projPath];
+          // Same sharing rule as the compound lane: a projection of a shared canonical is shared.
+          // The fallback records canonicals as `.agents/<sub>/<file>` while the files map uses
+          // `<sub>/<file>` — resolve both spellings.
+          const canonicalRecord = lockfile.files[canonicalRel] ?? lockfile.files[canonicalRel.replace(/^\.agents\//, '')];
           lockfile.projections[projPath] = {
             host,
             kind: 'role',
             canonical: canonicalRel,
-            owners: resolved.targetBundle ? [resolved.targetBundle] : [],
+            owners: mergeAssetOwners(existingProj, resolved.targetBundle ?? undefined)
+              .concat(canonicalRecord?.owners ?? [])
+              .filter((o, i, arr) => arr.indexOf(o) === i),
             hash: await this.calculateHash(dest),
-            installedAt: lockfile.projections[projPath]?.installedAt ?? new Date().toISOString(),
+            installedAt: existingProj?.installedAt ?? new Date().toISOString(),
             managedMarker: true,
           };
         }
@@ -669,19 +848,23 @@ private toPosix(p: string): string {
 
     if (options.dryRun) {
       let effectiveDryFanout = fanoutHosts;
-      if (options.fanout === undefined && hasCanonicalAgents) {
-        const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
-        const lockfilePath = path.join(agentsTarget, 'agents-united.json');
-        if (await fs.pathExists(lockfilePath)) {
-          const lockfile = await fs.readJson(lockfilePath).catch(() => null);
-          if (lockfile?.fanout) {
-            effectiveDryFanout = (lockfile.fanout as string[])
-              .filter(h => isKnownHost(h) && HOST_REGISTRY[h]?.projectionCapable);
-          }
+      let effectiveDryPluginLane = options.pluginLane === true;
+      const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
+      const lockfilePath = path.join(agentsTarget, 'agents-united.json');
+      if (await fs.pathExists(lockfilePath)) {
+        const lockfile = await fs.readJson(lockfilePath).catch(() => null);
+        if (options.fanout === undefined && hasCanonicalAgents && lockfile?.fanout) {
+          effectiveDryFanout = (lockfile.fanout as string[])
+            .filter(h => isKnownHost(h) && HOST_REGISTRY[h]?.projectionCapable);
+        }
+        // The plugin-lane opt-in is sticky (see `effectivePluginLane`), so the dry-run plan must
+        // reflect the recorded choice rather than reporting a package it would not prune.
+        if (options.pluginLane === undefined && lockfile?.pluginLane === true) {
+          effectiveDryPluginLane = true;
         }
       }
       const projections = hasCanonicalAgents
-        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, options.targetDir)
+        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, options.targetDir, effectiveDryPluginLane)
         : [];
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }
@@ -721,15 +904,22 @@ private toPosix(p: string): string {
       // NOT the inherited/resolved superset). Inherited parent assets are deployed but
       // are NOT owned by this bundle, so a child install never over-claims provenance.
       const declared = new Set<string>();
+      // A real bundle definition draws the Declared Asset Set line; a Domain-Atlas pseudo-entry
+      // (`domain:*`) or unknown identifier has no definition to draw it from, so everything it
+      // resolves is its declared set. Without this, the ownership gate below stamps `owners: []`
+      // on every record of an unbundled install and the assets become unremovable residue.
+      let hasDeclaredRoster = false;
       if (resolved.targetBundle) {
         const bundleDef = await this.registry.getBundle(resolved.targetBundle);
         if (bundleDef) {
+          hasDeclaredRoster = true;
           if (bundleDef.orchestrator) declared.add(`agents/${bundleDef.orchestrator}`);
           (bundleDef.agents || []).forEach(a => declared.add(`agents/${a}`));
           (bundleDef.skills || []).forEach(s => declared.add(`skills/${s}/SKILL.md`));
           (bundleDef.workflows || []).forEach(w => declared.add(`workflows/${w}`));
         }
       }
+      const declaresAsset = (assetKey: string): boolean => !hasDeclaredRoster || declared.has(assetKey);
 
       // Copy/Symlink Agents
       for (const agentFile of resolved.agents) {
@@ -750,9 +940,8 @@ private toPosix(p: string): string {
         // Preserve projection tracking and co-ownership across re-installs;
         // applyFanout re-records the current fan-out below (deduplicated).
         const existing = lockfile.files[relPath];
-        const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
-        const declaresAsset = declared.has(`agents/${agentFile}`);
-        const owners = resolved.targetBundle && declaresAsset
+        const existingOwners = existing?.owners ?? [];
+        const owners = resolved.targetBundle && declaresAsset(`agents/${agentFile}`)
           ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
           : existingOwners;
         lockfile.files[relPath] = {
@@ -780,9 +969,8 @@ private toPosix(p: string): string {
           const hash = await this.calculateHash(skillFile);
           const relPath = this.toPosix(path.relative(targetDir, path.join(subPaths.skillsDir, skillName, 'SKILL.md')));
           const existing = lockfile.files[relPath];
-          const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
-          const declaresAsset = declared.has(`skills/${skillName}/SKILL.md`);
-          const owners = resolved.targetBundle && declaresAsset
+          const existingOwners = existing?.owners ?? [];
+          const owners = resolved.targetBundle && declaresAsset(`skills/${skillName}/SKILL.md`)
             ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
             : existingOwners;
           lockfile.files[relPath] = {
@@ -809,9 +997,8 @@ private toPosix(p: string): string {
         const hash = await this.calculateHash(src);
         const relPath = this.toPosix(path.relative(targetDir, dest));
         const existing = lockfile.files[relPath];
-        const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
-        const declaresAsset = declared.has(`workflows/${workflowFile}`);
-        const owners = resolved.targetBundle && declaresAsset
+        const existingOwners = existing?.owners ?? [];
+        const owners = resolved.targetBundle && declaresAsset(`workflows/${workflowFile}`)
           ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
           : existingOwners;
         lockfile.files[relPath] = {
@@ -839,11 +1026,10 @@ private toPosix(p: string): string {
           const hash = await this.calculateHash(src);
           const relPath = this.toPosix(path.relative(targetDir, dest));
           const existing = lockfile.files[relPath];
-          const existingOwners = existing?.owners ?? (existing?.bundle ? [existing.bundle] : []);
+          const existingOwners = existing?.owners ?? [];
           // Rule files are bundle-derived coordination artifacts, not members of the
           // declared asset set: every installing bundle always owns the rule it deploys.
-          const declaresAsset = true;
-          const owners = resolved.targetBundle && declaresAsset
+          const owners = resolved.targetBundle
             ? Array.from(new Set([...existingOwners, resolved.targetBundle]))
             : existingOwners;
           lockfile.files[relPath] = {

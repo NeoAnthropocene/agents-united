@@ -208,6 +208,34 @@ The deterministic translation architecture implemented by `ClineProjector` (ADR 
 - Leverages cross-host standards for multimodal inlining (`@path/to/file`) and KaTeX math formatting.
 _Avoid_: Leaking Antigravity-specific YAML keys into Cline, assuming identical tool call signatures across hosts
 
+**Claude Code Projection**:
+The compound, machine-managed projection of the canonical store into Anthropic Claude Code's discovery paths: `.claude/agents/<role>.md` (roles, `subagent-` prefix stripped), `.claude/skills/<name>/SKILL.md` (skills), and `.claude/rules/<rule>.md` (a lean, path-scoped subset). Every artifact is refcounted in `lockfile.projections` with `host: "claude"` and stamped with the managed marker. Rendered by `ClaudeProjector` (ADR 0018); never symlinked, never hand-edited.
+_Avoid_: The stateless generic fanout lane, Antigravity-dialect copies left in `.claude/`
+
+**Claude Skills Lane**:
+The `.claude/skills/<name>/SKILL.md` surface through which canonical skills (including `workflow-*` skills) become native Claude slash commands. Frontmatter is translated to Claude semantics — crucially `disable-slash-command: true` becomes **`user-invocable: false`** (hidden from the `/` palette, still model-invocable) and **never** `disable-model-invocation`, whose polarity is inverted. Non-standard fields are stripped, auxiliary files copy byte-for-byte, and only installed-bundle skills project (listings cap each skill at 1,536 description characters).
+_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting all 166 skills regardless of installed bundles
+
+**Claude Lean Rules Lane**:
+The `.claude/rules/<rule>.md` projection of the deduplicated, agent-referenced rule set only — each file capped at ~200 lines, with `paths:` frontmatter where a rule is file-type-scoped. Host entrypoint rules are skipped, and bundle coordination policy lives in the orchestrator agent body rather than in an always-on rule, because Claude loads unscoped rules unconditionally in every session.
+_Avoid_: Porting the whole `registry/rules/` tree, always-on coordinator rules that hijack unrelated sessions
+
+**Claude Plugin Lane (distribution-only)**:
+The opt-in `.claude-plugin/plugin.json` plus `agents/` package emitted inside `.agents/plugins/<bundle>/` so the same folder can be consumed via `claude --plugin-dir` for distribution and portability. It is never the behavioural source: Claude has no project-local plugin auto-discovery, plugin agents are namespaced (`plugin:agent`), and plugin `permissionMode` is ignored.
+_Avoid_: Treating the plugin lane as an activation path, assuming plugin agents shadow `.claude/agents/`
+
+**Claude Agent-Teams Scaffold (experimental)**:
+The minimal, opt-in support for Claude's experimental agent teams: `agents start --host claude --teams` injects `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` ephemerally into the spawned process and instructs the lead to spawn teammates from projected agent types by name. Nothing is persisted to `settings.json` or `~/.claude/**`, and the scaffold is never load-bearing (one team per session, fixed lead, no session resumption).
+_Avoid_: Persisted team configuration, teardown-dependent workflows, replacing subagents with teams
+
+**Claude Capability Probe**:
+The side-effect-free detection of Claude Code for a workspace: `CLAUDE_BIN_PATH` / PATH resolution (including the Windows `.cmd`/`.bat` `cmd.exe` bridge), `claude --version`, and `--help` flag parsing. `claude agents --json` and headless `-p` runs are deliberately excluded because they can start the supervisor daemon or spend tokens.
+_Avoid_: Daemon-starting probes, billed verification runs
+
+**Translation Ledger**:
+The declarative record (`registry/translation-ledger.json`) of how every canonical feature is treated per host, with exactly one disposition — `mapped`, `approximated`, `degraded`, or `unsupported` — plus a rationale and an optional remedy. Renderers must disposition every drop; an undispositioned drop is a render-time error rather than a silent warning, which is what makes translation loss auditable instead of invisible (ADR 0018 decision 9, generalized by ADR 0019).
+_Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanations instead of data
+
 ---
 
 ### Agent Registry & Department Hierarchy

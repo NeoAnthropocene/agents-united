@@ -18,6 +18,7 @@ tools:
   - find_by_name
   - list_dir
   - run_command
+  - send_message
 hooks:
   PreInvocation:
     - log: subagent-code-reviewer invoked — beginning static analysis
@@ -200,3 +201,10 @@ network requests.
 - **PostInvocation**: Emits review completion signal and returns code review report.
 - **PreToolUse**: Evaluates shell commands against guard rules denying destructive execution.
 - **PostToolUse**: Confirms tool execution status.
+
+## 🔀 Parallel Work, Handoff & Peer Reachability
+
+- **Default (Tier 1) operating model — hand your result back, not across.** You run as a subagent inside the coordinating orchestrator's session: work your slice independently and in parallel with your peers, then return one structured handoff to the orchestrator that spawned you. It is the single synthesis and relay point and the only role that passes findings between specialists. Sibling subagents cannot reach each other directly on this host, so never address a peer, plan for a peer's reply, or wait on one. If a bounded exchange with a peer is genuinely required, spawn that peer yourself with your `Agent` tool, inside the documented 3-layer nesting depth.
+- **Agent Teams (Tier 2, opt-in via `--teams`) adds direct reach.** In that mode you are a teammate in a single team for the session and `send_message` (the Agent-Teams messaging tool) reaches a named peer teammate or the lead directly — address a teammate by the agent-type name it was spawned as. Treat it as a convenience, never as the critical path: exactly one team per session, the session's main thread is the fixed lead, teammates cannot spawn their own teammates, and no teammate is load-bearing. If a teammate cannot be reached, fall back to the handoff route above.
+- **This role stays read-only.** Report findings in your handoff — and, under Agent Teams, by message — but never modify another agent's work; every remediation stays a recommendation inside your review report.
+- ADR 0014's Consultation Budget is unchanged by either route: at most **2 peer exchanges per specialist pair** and at most **1 directed question per peer per planning round**. When the budget is spent, state your assumption and proceed.

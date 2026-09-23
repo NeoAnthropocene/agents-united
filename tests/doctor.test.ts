@@ -12,14 +12,28 @@ describe('DoctorEngine', () => {
   let installer: InstallEngine;
 
   beforeEach(async () => {
-    await fs.remove(tempDir);
-    // Projection fan-out writes siblings of tempDir (e.g. scratch/.claude). The Cline
-    // lane additionally writes `.agents/plugins/**` and `.cline/**`, and every lane has
-    // its own dir — leaving any behind makes the next install refuse to overwrite an
-    // unmanaged projection, so all of them are cleaned for test isolation.
+    // Every suite whose workspace lives under `scratch/` causes the projection lanes to write
+    // SIBLING dirs at the `scratch/` root (e.g. `scratch/.agents/plugins/<bundle>/**` from the
+    // Cline lane), so a concurrently running suite can be mid-write when this cleanup runs.
+    // A bounded immediate re-attempt absorbs that race (note: passing retry options through to
+    // `fs-extra`'s `remove` hangs in this environment, so the retry lives here instead).
+    const removeWithRetry = async (target: string): Promise<void> => {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        try {
+          await fs.remove(target);
+          return;
+        } catch {
+          // Concurrent writer; try again immediately.
+        }
+      }
+    };
+    await removeWithRetry(tempDir);
+    // The Cline lane additionally writes `.agents/plugins/**` and `.cline/**`, and every
+    // lane has its own dir — leaving any behind makes the next install refuse to overwrite
+    // an unmanaged projection, so all of them are cleaned for test isolation.
     const scratchRoot = path.dirname(tempDir);
     for (const sibling of ['.claude', '.cline', '.agents', '.opencode', '.cursor', '.gemini']) {
-      await fs.remove(path.join(scratchRoot, sibling));
+      await removeWithRetry(path.join(scratchRoot, sibling));
     }
     await fs.ensureDir(tempDir);
     resolver = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
