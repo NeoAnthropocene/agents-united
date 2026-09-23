@@ -185,7 +185,7 @@ export class UninstallEngine {
     await fs.remove(fullPath);
   }
 
-  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; targetDirs: string[]; dryRun: boolean }> {
+  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; kept: string[]; retainedOwners: string[]; targetDirs: string[]; dryRun: boolean }> {
     const scope = this.parseScope(options);
     const hosts = this.parseHosts(options);
 
@@ -193,6 +193,8 @@ export class UninstallEngine {
     const resolved = await this.registry.resolve(identifier).catch(() => null);
 
     const totalRemoved: string[] = [];
+    const totalKept: string[] = [];
+    const retainedOwners = new Set<string>();
 
     for (const targetDir of targetDirs) {
       const subPaths = AgentHostAdapter.getSubPaths(targetDir);
@@ -203,6 +205,22 @@ export class UninstallEngine {
 
       const lockfile: LockfileManifest = await fs.readJson(subPaths.lockfile);
       const removedFiles: string[] = [];
+      const keptFiles: string[] = [];
+      // Projection ownership is the UNION of its own refcount and its canonical record's owners
+      // (legacy `bundle` fallback included). Deriving it only at stamping time made the sharing
+      // guarantee order-dependent: a projection created BEFORE a second bundle co-owned its
+      // canonical stayed single-owner, and removing that bundle deleted the projection out from
+      // under the other owner (reported both ways round). Unioning here makes "a shared canonical's
+      // projections are shared" true regardless of install order. Bundle-scoped lanes
+      // (`.agents/plugins/<bundle>/`) are per-bundle distribution copies: the canonical's other
+      // owners do not keep them alive.
+      const projectionOwners = (projRelPath: string, proj: { owners?: string[]; canonical?: string }): string[] => {
+        const own = proj.owners ?? [];
+        if (projRelPath.startsWith('.agents/plugins/')) return own;
+        const canonical = proj.canonical ?? '';
+        const rec = lockfile.files[canonical] ?? lockfile.files[canonical.replace(/^\.agents\//, '')];
+        return Array.from(new Set([...own, ...assetOwners(rec)]));
+      };
 
       // Bundle removal mode. Triggered by a roster entry OR by owned assets: a lockfile that lost
       // its `installed.bundles` entry (older partial removals, pre-fix rosters) still has records
@@ -219,21 +237,10 @@ export class UninstallEngine {
 
             // Transactional validation BEFORE any write: if this bundle owns zero file
             // records and zero projections, reject without mutating the lockfile.
-            // Ownership of a projection: its own refcount, or — for legacy records that predate
-            // projection owners — the ownership of the canonical file record it translates.
-            const projectionOwners = (proj: { owners?: string[]; canonical?: string }): string[] => {
-              const own = proj.owners ?? [];
-              if (own.length > 0) return own;
-              // The unbundled fallback records `canonical` as `.agents/agents/<file>` while the files
-              // map is keyed `agents/<file>` (the compound lane's form) — resolve both spellings.
-              const canonical = proj.canonical ?? '';
-              const rec = lockfile.files[canonical] ?? lockfile.files[canonical.replace(/^\.agents\//, '')];
-              return assetOwners(rec);
-            };
             const ownedFiles = Object.entries(lockfile.files)
               .filter(([, m]) => assetOwners(m).includes(bundleName));
             const ownedProjections = lockfile.projections
-              ? Object.values(lockfile.projections).filter(p => projectionOwners(p).includes(bundleName)).length
+              ? Object.entries(lockfile.projections).filter(([p, v]) => projectionOwners(p, v).includes(bundleName)).length
               : 0;
             if (ownedFiles.length === 0 && ownedProjections === 0) {
               throw new Error(`No installed assets found matching "${bundleName}".`);
@@ -242,7 +249,7 @@ export class UninstallEngine {
             // Clean up compound projections using owner refcounting
             if (lockfile.projections) {
               for (const [projRelPath, proj] of Object.entries(lockfile.projections)) {
-                const owners = projectionOwners(proj);
+                const owners = projectionOwners(projRelPath, proj);
                 if (owners.includes(bundleName)) {
                   proj.owners = owners.filter(o => o !== bundleName);
                   if (proj.owners.length === 0) {
@@ -276,6 +283,10 @@ export class UninstallEngine {
                         if (rec.projectedTo.length === 0) delete rec.projectedTo;
                       }
                     }
+                  } else {
+                    // Survives for its remaining owners: report it as kept, not removed.
+                    keptFiles.push(projRelPath);
+                    proj.owners.forEach(o => retainedOwners.add(o));
                   }
                 }
               }
@@ -309,6 +320,8 @@ export class UninstallEngine {
               } else {
                 // A surviving bundle still owns this file: keep it on disk, shrink owners.
                 lockfile.files[relPath] = { ...assetMeta, owners: newOwners };
+                keptFiles.push(relPath);
+                newOwners.forEach(o => retainedOwners.add(o));
               }
             }
 
@@ -359,7 +372,22 @@ export class UninstallEngine {
 
             await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
           } else {
-            removedFiles.push(...resolved.agents, ...resolved.skills, ...resolved.workflows);
+            // Dry run: report the same refcount outcome the real pass would produce, without
+            // mutating anything — "would remove 84" when every asset is co-owned is a lie.
+            for (const [relPath, m] of Object.entries(lockfile.files)) {
+              const owners = assetOwners(m);
+              if (!owners.includes(bundleName)) continue;
+              const remaining = owners.filter(o => o !== bundleName);
+              (remaining.length === 0 ? removedFiles : keptFiles).push(relPath);
+              remaining.forEach(o => retainedOwners.add(o));
+            }
+            for (const [projRelPath, proj] of Object.entries(lockfile.projections || {})) {
+              const owners = projectionOwners(projRelPath, proj);
+              if (!owners.includes(bundleName)) continue;
+              const remaining = owners.filter(o => o !== bundleName);
+              (remaining.length === 0 ? removedFiles : keptFiles).push(projRelPath);
+              remaining.forEach(o => retainedOwners.add(o));
+            }
           }
         }
       } else {
@@ -390,12 +418,19 @@ export class UninstallEngine {
       }
 
       totalRemoved.push(...removedFiles);
+      totalKept.push(...keptFiles);
     }
 
     if (totalRemoved.length === 0 && !options.dryRun) {
       throw new Error(`No installed assets found matching "${identifier}".`);
     }
 
-    return { removed: totalRemoved, targetDirs, dryRun: options.dryRun || false };
+    return {
+      removed: totalRemoved,
+      kept: totalKept,
+      retainedOwners: [...retainedOwners].sort(),
+      targetDirs,
+      dryRun: options.dryRun || false,
+    };
   }
 }

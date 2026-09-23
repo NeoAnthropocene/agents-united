@@ -167,6 +167,39 @@ describe('Ownership refcount — unbundled installs, legacy records and shared a
     }
   });
 
+  it('T8: the REVERSED order keeps shared projections too — the second reported sequence', async () => {
+    // add software-engineering → add domain:engineering → remove software-engineering.
+    // The stamping-time sharing fix alone was order-dependent: projections created before the
+    // domain co-owned their canonicals stayed single-owner and were deleted under it.
+    const installer = new InstallEngine();
+    await installer.install('software-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude', 'cline'] });
+    await installer.install('domain:engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude', 'cline'] });
+
+    const uninstaller = new UninstallEngine();
+    const result = await uninstaller.uninstall('software-engineering', { targetDir: agentsDir });
+
+    // The shared skill/rule/agent projections survive for their other owner.
+    expect(await fs.pathExists(path.join(ws, '.claude', 'skills', 'architecture-design', 'SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(ws, '.claude', 'rules', 'git-guardrails.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(ws, '.cline', 'rules', 'git-guardrails.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(ws, '.claude', 'agents', 'backend-architect.md'))).toBe(true);
+    // The bundle-scoped package is software-engineering's alone and goes with it.
+    expect(await fs.pathExists(path.join(ws, '.agents', 'plugins', 'software-engineering'))).toBe(false);
+
+    // The honest accounting: deleted + kept, with the surviving owner named.
+    expect(result.removed.length).toBeGreaterThan(0);   // the bundle-scoped package
+    expect(result.kept.length).toBeGreaterThan(0);
+    expect(result.retainedOwners).toEqual(['domain:engineering']);
+
+    // Zero ghost pointers — the source of the doctor "Missing projection" storms.
+    const after = await fs.readJson(lockPath) as { files: Record<string, { projectedTo?: string[] }> };
+    for (const [relPath, meta] of Object.entries(after.files)) {
+      for (const projPath of meta.projectedTo ?? []) {
+        expect(await fs.pathExists(path.join(ws, projPath)), `${relPath} -> ${projPath}`).toBe(true);
+      }
+    }
+  });
+
   it('T6: unit semantics of the ownership helpers', () => {
     // Empty `owners` must fall back to the legacy `bundle` field — the `??` bug in one line.
     expect(assetOwners({ owners: [], bundle: 'x' })).toEqual(['x']);

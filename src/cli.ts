@@ -1,6 +1,6 @@
 import { cac } from 'cac';
 import pc from 'picocolors';
-import { intro, outro, spinner, note, select, multiselect, confirm, text } from '@clack/prompts';
+import { intro, outro, spinner, note, log, select, multiselect, confirm, text } from '@clack/prompts';
 import fs from 'fs-extra';
 import path from 'node:path';
 import { RegistryResolver } from './core/registry.js';
@@ -1014,11 +1014,26 @@ cli
       s.stop(`Uninstall processed`);
 
       if (options.dryRun) {
-        outro(pc.yellow(`[DRY RUN] Would remove ${result.removed.length} assets from ${result.targetDirs.join(', ')}`));
+        outro(pc.yellow(
+          `[DRY RUN] Would delete ${result.removed.length} and keep ${result.kept.length}` +
+          (result.kept.length > 0 ? ` (still owned by: ${result.retainedOwners.join(', ')})` : '') +
+          ` — ${result.targetDirs.join(', ')}`
+        ));
         return;
       }
 
-      outro(pc.green(`✔ Successfully removed ${result.removed.length} files matching "${identifier}"`));
+      // Honest accounting. `removed` counts only what was actually deleted; when the identifier's
+      // assets are co-owned, most or all of them survive for their other owners. The old
+      // "Successfully removed 84 files" in that case told the operator the workspace lost content
+      // it did not — and hid the one thing that *was* deleted (e.g. a bundle-scoped package).
+      if (result.kept.length > 0) {
+        log.info(`${result.removed.length} deleted · ${result.kept.length} kept — still owned by: ${result.retainedOwners.join(', ')}`);
+      }
+      outro(pc.green(
+        result.removed.length === 0 && result.kept.length > 0
+          ? `✔ Removed "${identifier}" from this workspace — nothing was deleted, ${result.kept.length} co-owned assets kept`
+          : `✔ Removed "${identifier}" from this workspace — ${result.removed.length} deleted, ${result.kept.length} kept`
+      ));
     } catch (err: any) {
       s.stop(pc.red('Uninstall failed'));
       outro(pc.red(`Error: ${err.message}`));
