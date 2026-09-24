@@ -128,6 +128,45 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(output).toContain('valid');
   });
 
+  it('refuses under-development --fanout hosts on add with a non-zero exit', () => {
+    const res = spawnSync(process.execPath, [
+      cliPath,
+      'add',
+      'software-engineering',
+      '-t',
+      'agents',
+      '--fanout',
+      'cursor',
+      '-y',
+      '--copy',
+      '--dry-run',
+    ], { cwd: e2eDir, encoding: 'utf8' });
+    const output = (res.stdout || '') + (res.stderr || '');
+    expect(res.status).toBe(1);
+    expect(output).toMatch(/refusing/i);
+    expect(output).toMatch(/under development/i);
+    expect(output).toContain('cursor');
+  });
+
+  it('refuses under-development --fanout hosts on update with a non-zero exit', () => {
+    execSync(`node "${cliPath}" add software-engineering -t agents -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    const res = spawnSync(process.execPath, [
+      cliPath,
+      'update',
+      'software-engineering',
+      '--fanout',
+      'opencode',
+      '-y',
+    ], { cwd: e2eDir, encoding: 'utf8' });
+    const output = (res.stdout || '') + (res.stderr || '');
+    expect(res.status).toBe(1);
+    expect(output).toMatch(/refusing/i);
+    expect(output).toContain('opencode');
+  });
+
   it('update --fanout projects a bundle that was installed without fanout (fix scenario)', async () => {
     // Original install: Universal (.agents) only, no fanout — the reported bug scenario
     execSync(`node "${cliPath}" add software-engineering -t agents -y --copy`, {

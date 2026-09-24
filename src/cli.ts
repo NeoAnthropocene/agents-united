@@ -16,7 +16,7 @@ import type { ClaudeActivationPlan } from './core/claude-launcher.js';
 import { ClaudeCapabilityProbe } from './core/claude-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
-import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice } from './core/hosts.js';
+import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
 const cli = cac('agents-united');
@@ -306,7 +306,7 @@ cli
   .option('-s, --symlink', 'Create symbolic links to central registry cache (default / recommended)')
   .option('--copy', 'Create independent standalone copies of asset files')
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
-  .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline (supported), cursor, opencode, codex (under development)')
+  .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline. Under Development hosts (cursor, opencode, codex) are refused')
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
   .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
   .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
@@ -361,12 +361,13 @@ cli
         );
       }
       fanout = Array.from(new Set([...fanout, ...parsedFanout.filter(h => isKnownHost(h) && HOST_REGISTRY[h].projectionCapable)]));
-  const underDevFanout = fanout.filter((h) => isKnownHost(h) && HOST_REGISTRY[h].status === 'under-development');
+  const underDevFanout = Array.from(new Set(parsedFanout.filter((h) => isKnownHost(h) && HOST_REGISTRY[h].status === 'under-development')));
   if (underDevFanout.length > 0) {
     note(
-      `Under Development host(s) requested via --fanout: ${underDevFanout.join(', ')}. Their projections still render, but only Antigravity, Cline and Claude Code are on the supported focus list.`,
-      'Host availability'
+      `Refusing --fanout host(s): ${underDevFanout.join(', ')} — they are listed as Under Development and unavailable. Supported --fanout ids: ${SUPPORTED_HOST_IDS.filter((h) => HOST_REGISTRY[h].projectionCapable).join(', ')}. Drop ${underDevFanout.join(', ')} from --fanout and run again.`,
+      'Host unavailable'
     );
+    process.exit(1);
   }
     }
 
@@ -1073,6 +1074,16 @@ cli
           ),
           'Invalid fanout'
         );
+      }
+      const updateUnderDev = Array.from(new Set(parsedFanout.filter((h) => isKnownHost(h) && HOST_REGISTRY[h].status === 'under-development')));
+      if (updateUnderDev.length > 0) {
+        note(
+          pc.yellow(
+            `Refusing --fanout host(s): ${updateUnderDev.join(', ')} — they are listed as Under Development and unavailable. Supported --fanout ids: ${SUPPORTED_HOST_IDS.filter((h) => HOST_REGISTRY[h].projectionCapable).join(', ')}. Drop ${updateUnderDev.join(', ')} from --fanout and run again.`
+          ),
+          'Host unavailable'
+        );
+        process.exit(1);
       }
       updateFanout = parsedFanout.filter(h => isKnownHost(h) && HOST_REGISTRY[h].projectionCapable);
     }
