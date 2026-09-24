@@ -88,6 +88,37 @@ Plan 016's branch now also carries the Tier 1 / Tier 2 parallel-work posture, an
 6. **Two mechanisms seeded here worth lifting.** `CLAUDE_DIALECT.bodySectionOverrides` — a heading-matched, whole-section replacement of canonical prose that describes another host's routing — is the smallest working form of the declarative overlay this plan's Step 5 should generalise; today it holds one entry (ADR 0009's delegation section → a Claude-native rendering). And `npm run typecheck` now type-checks the **test tree too**, via `tsconfig.test.json` (`tsconfig.json` excludes `tests/` because its `rootDir`/`outDir` target the published build); the first run found 42 real fixture errors, so keep both trees in the gate and hold the codex's own tests to it.
 7. **The delegation allowlist is a domain roster, not a bundle roster.** A coordinator's `Agent(...)` allowlist must name the **whole domain team** (`bundles.json` → union of `agents` across bundles sharing the coordinator's `domain`, minus the coordinator) rather than its own bundle's declared slice — otherwise an essentials install silently strands the domain lead with 4 of its 15 people, and the list only grows by luck. Cost to carry into the codex: a listed type may not be installed yet, so the projection's delegation prose must teach the fallback (recommend `agents add <addon>`, else do the slice yourself) instead of pretending the roster equals the installed set. When generalizing, keep the roster **sorted** (byte-identical projections are diffed by doctor) and beware that the tools YAML **wraps** long flow scalars across lines — any test or tool that parses `Agent(...)` must fold continuation lines first (`tests/claude-projector.test.ts` `allowOf` shows the trap: a naive `split(', ')` silently merges the names at each wrap point).
 
+## Re-evaluation (2026-09-24) — scope amendments from the orchestration workstream
+
+The product owner re-evaluated this plan against the Tier-1/Tier-2 orchestration requirements
+(2026-09-24). The notes below SUPERSEDE conflicting text elsewhere in this plan; the rest of
+the plan remains authoritative.
+
+1. **ADR number**: do NOT create `docs/adr/0019-host-dialect-codex-and-translation-ledger.md` —
+   0019 is now the Universal Coverage Rule. Author the decision record at execution time under
+   the next free number checked in `docs/adr/` at that moment. Every "ADR 0019" reference in
+   this plan means "this plan's decision record".
+2. **Branch**: the "single branch with Plan 016" note (§ Status) is superseded — Plan 016 merged
+   to `dev` via PR #45 (2026-09-24). Execute this plan on a fresh branch cut from `dev`.
+3. **LLM CI jobs are deferred from v1** (owner decision): the conformance workflow ships the
+   deterministic Stage-1 gates only (golden render, ledger audit, body lint, conformance guards).
+   The Advisor/Judge jobs move to the Stage-2 follow-up. Acceptance gate 7's LLM-job clause is
+   void; its "skipped without credentials" behaviour becomes "not present".
+4. **Body lint gains a section-residue dimension** (extends gate 4): besides unmapped canonical
+   tool tokens, the lint must fail on foreign-host section patterns in projected bodies
+   (e.g. `Nested Subagent Delegation`, `Host Routing`, `language_server`). The measured residue
+   inventory and the canonical purge live in plans/019; the lint seam lives here.
+5. **Tier × host overlays are decision 3's first real consumer**: plans/018 supplies the
+   orchestration semantics; the overlay mechanism must support per-tier (`domain` /
+   `organization`) × per-host sections, not just per-agent overrides.
+6. **`ask_question` disposition** (decision 5's example): Step 0 must verify the "AskUserQuestion
+   is excluded from subagents by default" claim against the live tools reference before the
+   disposition is fixed (plans/018 Step 0a carries the same probe).
+7. **Slash-command tokens are ledger citizens** (plans/020): the vocabulary/ledger design must
+   accommodate command tokens (`team_command`, `deep_planning_command`, `interview_command`)
+   alongside tool tokens, with the same disposition requirements.
+
+
 ## Why this matters
 
 The canonical-store + deterministic-projection model (ADR 0008) is **retained** —
