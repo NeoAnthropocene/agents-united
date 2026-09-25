@@ -62,7 +62,7 @@ describe('Claude fallback for fanouts without a bundle definition', () => {
     expect(coordinator.length).toBeGreaterThan(6);
 
     const specialist = await toolsOf('backend-architect');
-    expect(specialist).toContain('Agent');
+    expect(specialist).not.toContain('Agent'); // Plan 022 H2: specialists never spawn
     expect(specialist).toContain('SubagentHandback');
     expect(specialist.some(tool => tool.startsWith('Agent('))).toBe(false);
   });
@@ -123,7 +123,8 @@ describe('Claude fallback for fanouts without a bundle definition', () => {
     await install('domain:engineering');
 
     const repaired = await toolsOf('backend-architect');
-    expect(repaired).toContain('Agent');
+    expect(repaired).not.toContain('Agent'); // Plan 022 H2
+    expect(repaired).toContain('SubagentHandback');
     expect(repaired).toContain('SendMessage');
   });
 });

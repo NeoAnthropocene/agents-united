@@ -10,5 +10,7 @@
     { "invariant": "Every data access is parameterized; string concatenation into queries is forbidden.", "binding": "Bash runs only test/lint/migration-diff commands; query code is authored via Write/Edit with bound parameters." },
     { "invariant": "Structured completion reports conclude every execution; unrun gates are escalated, never asserted.", "binding": "The report's Test & Validation Results section states verbatim which gates ran; missing tooling is escalated to the orchestrator." }
   ],
+  "tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "SendMessage", "SubagentHandback", "Skill"],
+  "permissionMode": "acceptEdits",
   "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
 }

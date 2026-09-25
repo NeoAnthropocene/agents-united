@@ -57,7 +57,7 @@ const FEATURE_LEDGER: Record<string, { disposition: LedgerDisposition; rationale
   subagent: { disposition: 'mapped', rationale: 'Canonical masthead flag; every file under .claude/agents/ is a subagent.' },
   inheritCustomizations: { disposition: 'mapped', rationale: 'Claude loads CLAUDE.md and project memory unless omitClaudeMd is set (flag-gated).' },
   commandExecutionPolicy: { disposition: 'unsupported', rationale: 'Antigravity shell policy has no Claude frontmatter equivalent; Bash permissions cover it.' },
-  hooks: { disposition: 'unsupported', rationale: 'Antigravity hook schema (PreInvocation/PostInvocation matchers) differs from Claude hook events; not translated in v1.' },
+  hooks: { disposition: 'unsupported', rationale: 'Antigravity hook schema (PreInvocation/PostInvocation matchers) differs from Claude hook events; canonical prose hooks are not translated and stay advisory. The one enforced hook is the managed PreToolUse guard every role carries (Plan 022 H5).' },
   rules: { disposition: 'mapped', rationale: 'Agent-referenced rules project into the lean .claude/rules/ lane.' },
   effort: { disposition: 'mapped', rationale: 'Reasoning effort passes through to the Claude effort field.' },
   invoke_subagent: { disposition: 'mapped', rationale: 'Delegation maps to the Claude Agent tool (allowlist on coordinators).' },
@@ -90,16 +90,40 @@ const ENTRYPOINT_RULES = new Set(['CLAUDE.md', 'CLAUDE.local.md', 'GEMINI.md', '
  */
 const COORDINATOR_BASELINE_TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob'];
 
+/** Plan 022 H3 — tools a `plan` (read-only) role never holds on this host. */
+const READ_ONLY_EXCLUDED_TOOLS: ReadonlySet<string> = new Set(['Write', 'Edit', 'NotebookEdit', 'Bash']);
+
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 
 const RUNTIME_NOTE = `## Claude runtime note
 
 Delegation runs through the Agent tool: the coordinator spawns the specialists named in its own tools
-allowlist, and specialists may spawn peers. Canonical tool names in this prompt were rewritten to their
+allowlist; specialists hold no Agent tool and never spawn peers (the coordinator relays and wakes them). Canonical tool names in this prompt were rewritten to their
 Claude equivalents; a fenced code block may still show the original spelling because code is preserved
 byte-for-byte. A subagent does not hand results to a peer: its final report is returned to the
 conversation that spawned it, and on Claude Code v2.1.271+ in auto mode the runtime delivers it through the
-SubagentHandback tool.`;
+SubagentHandback tool.
+
+Enforced guard: a PreToolUse hook in this file's frontmatter blocks \`git push --force\`, \`.env\` writes and
+\`vercel --prod\` (exit 2, with the reason); ask the user to run those steps themselves.
+All other lifecycle hooks described in this prompt are advisory: this host does not fire them.`;
+
+/**
+ * Plan 022 H5 (gate 7) — the managed PreToolUse guard, wired into EVERY projected role's
+ * frontmatter. Verified against the Claude Code references (2026-09-25): subagent frontmatter
+ * hooks fire when the role is spawned as a subagent and when it runs as the main session via
+ * `--agent`; a command hook exiting 2 blocks the call and its stderr is shown as the reason.
+ * Inline `node -e` so no extra file (and no ownership/uninstall surface) exists; the user's own
+ * `.claude/settings.json` is never touched. The JS avoids single quotes (it is shell-quoted).
+ */
+const GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+const GUARD_COMMAND = `node -e '${GUARD_SCRIPT}'`;
+const MANAGED_HOOKS = {
+  PreToolUse: [
+    { matcher: 'Bash', hooks: [{ type: 'command', command: GUARD_COMMAND }] },
+    { matcher: 'Write|Edit|NotebookEdit', hooks: [{ type: 'command', command: GUARD_COMMAND }] },
+  ],
+};
 
 export class ClaudeProjector {
   /** Pure data (Plan 017 lifts this object into a shared HostDialectSpec). */
@@ -398,8 +422,19 @@ export class ClaudeProjector {
     }
 
     // 2. Delegation first (ADR 0018 decision 3), then the translated vocabulary.
+    // Coordinator-ness comes from the canonical role, not only from a caller-supplied allowlist: a
+    // bundle-less fanout (`domain:*`, addons) has no bundle definition to derive specialists from, and
+    // without this a projected orchestrator silently took the specialist posture (sonnet, bare `Agent`,
+    // hand-back tool) — the operator saw `orchestrator-engineering.md` on Sonnet while
+    // `orchestrator-digital-agency.md` was on Opus. `type: orchestrator` / `mainAgent: true` is the
+    // catalog's own discriminator (9 orchestrators, 50 subagents).
+    const isCoordinator = !!(opts.allowlist && opts.allowlist.length > 0)
+      || meta.type === 'orchestrator'
+      || meta.mainAgent === true;
     const tools: string[] = [];
-    tools.push(opts.allowlist && opts.allowlist.length > 0 ? `Agent(${opts.allowlist.join(', ')})` : 'Agent');
+    if (isCoordinator) {
+      tools.push(opts.allowlist && opts.allowlist.length > 0 ? `Agent(${opts.allowlist.join(', ')})` : 'Agent');
+    }
     for (const raw of Array.isArray(meta.tools) ? meta.tools : []) {
       if (typeof raw !== 'string') continue;
       const entry = ClaudeProjector.ledgerEntry(raw);
@@ -422,16 +457,17 @@ export class ClaudeProjector {
       tools.push(...withoutBareAgent);
     }
 
+    // Plan 022 H2 (gate 5): specialists hold NO Agent tool. Inside a subagent definition the
+    // runtime ignores an `Agent(type, …)` list, so any Agent entry is an unbounded nested-spawn
+    // grant; omitting it is the only bound (Claude Code sub-agents reference, 2026-09-25). A
+    // canonical `invoke_subagent`-family token on a specialist is therefore dropped here.
+    if (!isCoordinator) {
+      const withoutAgent = tools.filter(t => t !== 'Agent' && !t.startsWith('Agent('));
+      tools.length = 0;
+      tools.push(...withoutAgent);
+    }
+
     // 3. Posture: permissionMode, model tier, effort, and the consultation budget.
-    // Coordinator-ness comes from the canonical role, not only from a caller-supplied allowlist: a
-    // bundle-less fanout (`domain:*`, addons) has no bundle definition to derive specialists from, and
-    // without this a projected orchestrator silently took the specialist posture (sonnet, bare `Agent`,
-    // hand-back tool) — the operator saw `orchestrator-engineering.md` on Sonnet while
-    // `orchestrator-digital-agency.md` was on Opus. `type: orchestrator` / `mainAgent: true` is the
-    // catalog's own discriminator (9 orchestrators, 50 subagents).
-    const isCoordinator = !!(opts.allowlist && opts.allowlist.length > 0)
-      || meta.type === 'orchestrator'
-      || meta.mainAgent === true;
     if (isCoordinator) {
       for (const base of COORDINATOR_BASELINE_TOOLS) {
         if (!tools.includes(base)) tools.push(base);
@@ -449,7 +485,9 @@ export class ClaudeProjector {
         ? ClaudeProjector.CLAUDE_DIALECT.permissionModeMap[meta.permissionMode] ?? 'default'
         : undefined;
     if (permission === 'plan') {
-      const restricted = tools.filter(t => t !== 'Write' && t !== 'Edit');
+      // Plan 022 H3 (gate 6): a read-only role holds no mutating capability at all — command
+      // execution included, since a shell can write files regardless of the permission mode.
+      const restricted = tools.filter(t => !READ_ONLY_EXCLUDED_TOOLS.has(t));
       tools.length = 0;
       tools.push(...restricted);
     }
@@ -472,6 +510,8 @@ export class ClaudeProjector {
       ? ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults.coordinator
       : ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults.specialist);
     if (typeof opts.maxTurns === 'number') out.maxTurns = opts.maxTurns;
+    // Plan 022 H5: the managed guard (never the canonical prose hooks — those stay advisory, H7).
+    out.hooks = MANAGED_HOOKS;
 
     // 4. Prose is part of the interface. A surviving canonical body token outside code
     //    fences without a ledger disposition is a render-time error (decision 4) — never a

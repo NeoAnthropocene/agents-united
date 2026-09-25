@@ -34,7 +34,10 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
     const claudeProj = path.join(testWorkspace, '.claude', 'agents', 'orchestrator-engineering.md');
     expect(await fs.pathExists(claudeProj)).toBe(true);
     const claude = await fs.readFile(claudeProj, 'utf8');
-    expect(claude).not.toContain('hooks:');
+    // Antigravity prose hooks are dropped; only the managed PreToolUse guard is wired (Plan 022 H5)
+    const claudeFrontmatter = claude.match(/^---\n([\s\S]*?)\n---/)![1];
+    expect(claudeFrontmatter).not.toContain('PreInvocation');
+    expect(claudeFrontmatter).toContain('Blocked by agents-united guard');
     expect(claude).toContain('managed-by: agents-united');
     expect(claude).toContain('Read');
 

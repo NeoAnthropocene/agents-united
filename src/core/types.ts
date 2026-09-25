@@ -650,6 +650,13 @@ export interface ClaudeCreationBindingTable {
   commandBindings?: Array<{ command: string; rendering?: string; native?: string; rationale?: string }>;
   commandVocabulary?: Record<string, string>;
   deltas?: DeclaredDelta[];
+  /**
+   * Plan 022 H2/H3 — the role's own least-privilege allowlist (Realization Layer). Absent ⇒ the
+   * profile's whole surface (fixtures only); every entry must exist in the profile.
+   */
+  tools?: string[];
+  /** Plan 022 H3 — native permission mode (e.g. `plan` for read-only roles). */
+  permissionMode?: string;
 }
 
 /** Plan 021 Step 4 — the versioned tool-surface snapshot the creation engine targets. */

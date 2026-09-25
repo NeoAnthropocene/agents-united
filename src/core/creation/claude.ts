@@ -47,6 +47,21 @@ function commandRows(table: ClaudeCreationBindingTable): Array<{ command: string
   return rows;
 }
 
+/**
+ * Plan 022 H2/H3 — least privilege: a role gets its Realization Layer allowlist, never the
+ * whole profile surface. An allowlist entry outside the profile is a fail-fast error (the
+ * profile is the host's tool truth; ADR 0021 decision 8).
+ */
+function roleTools(table: ClaudeCreationBindingTable, profile: ClaudeCreationProfile): string[] {
+  const surface = profile.tools ?? [];
+  if (!table.tools) return surface;
+  const unknown = table.tools.filter(tool => !surface.includes(tool.replace(/\(.*\)$/, '')));
+  if (unknown.length > 0) {
+    throw new Error(`Creation error: ${table.roleName ?? 'role'} allowlist names tools outside the capability profile — ${unknown.join(', ')}.`);
+  }
+  return table.tools;
+}
+
 function deltaLines(deltas: DeclaredDelta[] | undefined): string[] {
   if (!deltas || deltas.length === 0) return [];
   const lines = ['', '## Declared Deltas', ''];
@@ -71,7 +86,8 @@ export function createRole(
   out.push('---');
   out.push(`name: ${yamlScalar(roleName)}`);
   out.push(`description: ${yamlScalar(core.identity)}`);
-  out.push(`tools: [${(profile.tools ?? []).map(tool => yamlScalar(tool)).join(', ')}]`);
+  out.push(`tools: [${roleTools(bindingTable, profile).map(tool => yamlScalar(tool)).join(', ')}]`);
+  if (bindingTable.permissionMode) out.push(`permissionMode: ${yamlScalar(bindingTable.permissionMode)}`);
   out.push('---');
   out.push('');
   out.push(`# ${roleName} — Claude realization (created by agents-united)`);

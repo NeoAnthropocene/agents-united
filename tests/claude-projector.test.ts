@@ -149,9 +149,12 @@ describe('ClaudeProjector.renderRole — frontmatter translation', () => {
   it('drops every Antigravity-only key', () => {
     const { content } = ClaudeProjector.renderRole(SAMPLE, CANONICAL_AGENT_PATH);
     const meta = yamlOf(content);
-    for (const key of ['version', 'type', 'hooks', 'commandExecutionPolicy', 'mainAgent', 'subagent', 'rules', 'inheritCustomizations']) {
+    for (const key of ['version', 'type', 'commandExecutionPolicy', 'mainAgent', 'subagent', 'rules', 'inheritCustomizations']) {
       expect(`${key} in meta: ${key in meta}`).toBe(`${key} in meta: false`);
     }
+    // `hooks` is re-emitted as the managed PreToolUse guard only (Plan 022 H5), never the
+    // Antigravity PreInvocation/PostInvocation prose.
+    expect(Object.keys(meta.hooks as Record<string, unknown>)).toEqual(['PreToolUse']);
   });
 
   it('passes effort through and maps permissionMode', () => {
@@ -222,9 +225,9 @@ describe('ClaudeProjector.renderRole — delegation restoration', () => {
     }
   });
 
-  it('renders a bare Agent for a specialist', () => {
+  it('renders no Agent for a specialist (Plan 022 H2: nested spawning is unbounded inside a subagent)', () => {
     const tools = yamlOf(ClaudeProjector.renderRole(SAMPLE, CANONICAL_AGENT_PATH).content).tools as string[];
-    expect(tools).toContain('Agent');
+    expect(tools).not.toContain('Agent');
     expect(tools.some(t => t.startsWith('Agent('))).toBe(false);
   });
 
@@ -545,4 +548,4 @@ describe('ClaudeProjector.rewriteBody — send_message prose rewrite', () => {
     expect(coordinator!.content).toContain('whole domain team, not only what is installed');
     expect(coordinator!.content).toContain('recommend installing it');
   });
-});
+});

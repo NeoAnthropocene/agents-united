@@ -366,6 +366,24 @@ export class RegistryResolver {
         );
       }
 
+      // Plan 022 H1 (owner decision 2026-09-25): iteration caps are Tier-2-only. Only an
+      // organization-tier coordinator may carry a Consultation Budget (rendered as maxTurns);
+      // Tier-1 domain agents stay uncapped.
+      if (pl.budget) {
+        if (bundle.tier !== 'organization') {
+          throw new Error(
+            `Registry validation error: bundle "${name}" declares a Consultation Budget but is not an organization-tier bundle. ` +
+            'Iteration caps (planningLoop.budget.maxIterations) are Tier-2-only.'
+          );
+        }
+        const cap = pl.budget.maxIterations;
+        if (!Number.isInteger(cap) || cap < 1) {
+          throw new Error(
+            `Registry validation error: bundle "${name}" has planningLoop.budget.maxIterations ${String(cap)}; expected a positive integer.`
+          );
+        }
+      }
+
       if (mode === 'planner-orchestrator') {
         if (pl.budget) {
           throw new Error(

@@ -130,3 +130,30 @@ gaps, nondeterminism, legacy-lane regressions. Fix findings.
 - Binding: `docs/adr/0021-semantic-core-and-per-host-native-realization.md`,
   `docs/adr/0022-canonical-store-optional-installs.md`, ADR 0017 (sidecar amendment).
 - Sibling: plans/019 absorbs O1–O4/O6/O9/O10 wording; plans/021 supplies the Core/Bindings.
+## Verification note (V1) — 2026-09-25
+
+Executed on branch `feat/plan-022-comms-and-hardening` (cut from `dev` @ `d9afb15`); each group
+owner-reviewed before commit. Scope decisions recorded during execution: the C/H item
+definitions are **this plan's** (owner, 2026-09-25 — the field report is not in the repo);
+H1 stays **Tier-2-only** (owner, 2026-09-25); **ADR 0022 deferred** to its own plan/PR (owner,
+2026-09-25) — Objective 7 / Step 5 / gate 8's store-less clause are NOT delivered here.
+
+| Group | Commit | Evidence |
+|---|---|---|
+| F1 (Plan 019 Step 5 finding) | `0776d16` | Tier-1 consult step → unconditional MUST-consult gate ×8 + Tier-2 Phase 0.5 mirror; `claude-projection-residue` (e)/(f) |
+| C1–C7 comms law | `1bb4899` | 50 specialists + 9 orchestrators (host-neutral); 4 Core invariants bound in `HOST_DIALECTS.claude`; `tests/subagent-comms.test.ts` |
+| H1–H7 hardening | `97f6d29` | Tier-2-only cap validation (`tests/max-turns.test.ts`); no `Agent` on specialists, read-only reviewers/indexers, frontend task/timer tools dropped, prod-deploy caveat, created-lane per-role allowlists (`tests/claude-privileges.test.ts`); managed PreToolUse guard executed against real payloads (`tests/claude-hooks.test.ts`) |
+
+**[verify] items resolved** against the Claude Code docs (2026-09-25): `maxTurns`, `hooks`,
+`disallowedTools`, `permissionMode: plan` are documented subagent frontmatter; a subagent's
+`Agent(type)` list is ignored (omission is the only nesting bound); frontmatter hooks fire for
+spawned subagents **and** `--agent` main sessions; PreToolUse exit 2 blocks with stderr as reason.
+
+**Gates**: typecheck exit 0; `npm test` 56 files, 803 passed / 0 failed / 209 skipped (clone
+baseline on `dev` was 52 files 766/209, not the 767/208 quoted in the brief). Goldens regenerated
+only in reviewed passes; legacy `tests/golden/claude/**` CRLF/LF byte style preserved line-by-line.
+
+**Owner live checks still open (cannot run from a cloud session)**: gates 2–7 on Claude CLI —
+F1 consult observed; ping/pong quotes on the first report; missing peer under Open items;
+reviewer cannot spawn / cannot write; the three guard blocks. Known gap: a plain `claude` session
+without `--agent` is not guarded (would need a managed `.claude/settings.json` lane).

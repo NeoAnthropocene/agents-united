@@ -67,9 +67,11 @@ describe('canonical peer-messaging grant — the four engineering specialists', 
       expect(body).toContain('send_message');
       expect(body).toContain(NO_NESTED_TEAMS_PHRASE);
       expect(body).toContain('--teams');
-      // ordinary-subagent route: no direct sibling reach, Agent-tool nesting depth
+      // ordinary-subagent route: no direct sibling reach; Plan 022 C1 hub-and-spoke — the
+      // orchestrator wakes and relays a peer, specialists never spawn their own (was: nesting)
       expect(body).toContain(REPORT_BACK_PHRASE);
-      expect(body).toContain('3-layer nesting depth');
+      expect(body).toContain('specialists do not spawn their own peers');
+      expect(body).not.toContain('3-layer nesting depth');
       // existing ADR 0014 budget reused, never re-invented
       expect(body).toContain(BUDGET_PHRASE);
       expect(body).toContain('1 directed question per peer per planning round');
@@ -86,8 +88,8 @@ describe('projected Claude specialists carry SendMessage', () => {
 
       expect(meta.name).toBe(name.replace(/^subagent-/, ''));
       expect(meta.tools).toContain('SendMessage');
-      // the bare Agent pin (tests/claude-projector.test.ts) must be unaffected by the new grant
-      expect(meta.tools).toContain('Agent');
+      // Plan 022 H2: specialists hold no Agent tool in any form (hub-and-spoke; gate 5)
+      expect(meta.tools).not.toContain('Agent');
       expect(meta.tools.some((t: string) => t.startsWith('Agent('))).toBe(false);
       // unknown tool names block agent launch in Claude Code: no snake_case canonical token may survive
       expect(meta.tools.filter((t: string) => /^[a-z][a-z_]*$/.test(t))).toEqual([]);
@@ -257,7 +259,7 @@ describe('organization-tier specialists carry the peer-messaging grant', () => {
 
       const meta = yaml.parse(match![1]) as Record<string, any>;
       expect(meta.tools).toContain('SendMessage');
-      expect(meta.tools[0]).toBe('Agent');
+      expect(meta.tools).not.toContain('Agent'); // Plan 022 H2: no nested spawning
       // The runtime's own hand-off tool is granted to specialists so the Tier-1 hand-off is explicit.
       expect(meta.tools).toContain('SubagentHandback');
       // Model/effort posture: specialists run sonnet, and their declared effort is preserved.

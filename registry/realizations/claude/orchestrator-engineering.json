@@ -9,5 +9,6 @@
     { "invariant": "Never busy-poll; liveness is event-driven or cron-based.", "binding": "CronCreate/CronList handle daemon health checks and TaskCreate/TaskUpdate track long-running slices; completion wakes the session." },
     { "invariant": "Verify-then-deliver: no workflow completes until its deterministic verification criteria pass.", "binding": "Bash runs the full verification suite before any handoff report; a red suite dispatches diagnosis instead of delivery." }
   ],
+  "tools": ["Agent", "Read", "Write", "Edit", "Bash", "Grep", "Glob", "AskUserQuestion", "SendMessage", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "CronCreate", "CronList", "CronDelete", "TodoWrite", "Skill"],
   "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
 }

@@ -46,6 +46,9 @@ export interface RealizationLayer {
   roleName: string;
   invariantBindings?: Array<{ invariant?: string; feature?: string; binding: string }>;
   aboveFloorScope: string[];
+  /** Plan 022 H2/H3 — the role's least-privilege allowlist + native permission mode. */
+  tools?: string[];
+  permissionMode?: string;
 }
 
 export function loadRealization(stem: string): RealizationLayer {
@@ -88,6 +91,8 @@ export async function runPipeline(stem: PilotStem): Promise<CreatedPipeline> {
     invariantBindings: [...host.invariantBindings, ...(realization.invariantBindings ?? [])],
     commandVocabulary: host.commandVocabulary,
     deltas,
+    ...(realization.tools ? { tools: realization.tools } : {}),
+    ...(realization.permissionMode ? { permissionMode: realization.permissionMode } : {}),
   };
   const profile = loadProfile();
   const created = createRole(core, table, profile);

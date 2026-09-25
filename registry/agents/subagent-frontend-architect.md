@@ -22,8 +22,6 @@ tools:
   - find_by_name
   - list_dir
   - run_command
-  - manage_task
-  - schedule
   - send_message
 hooks:
   PreInvocation:
@@ -382,11 +380,10 @@ export async function GET() {
 
 ## ⚡ Task Delegation & Reactive Liveness Protocol
 
-When executing long-running background tasks (e.g. test suites, build pipelines, migrations, daemon watchers) or coordinating subagents:
-1. **Background Execution**: Launch long-running operations via `run_command` with appropriate timeouts. The command runs as an asynchronous background task returning a `task-id`.
-2. **Task Management**: Use `manage_task` (`action: 'status' | 'list' | 'kill' | 'send_input'`) to inspect logs or send input without blocking the main session.
-3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
-4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
+When executing long-running operations (e.g. test suites, builds, dev servers):
+1. **Bounded execution**: run long operations via `run_command` with explicit timeouts; never leave an unattended process running past your turn.
+2. **Never busy-poll**: wait on the command's own completion instead of looping on status checks.
+3. **Task tracking and health monitoring belong to the orchestrator** (Plan 022 H3): this role holds no task-management or timer tools. If work must outlive your turn (a watcher, a daemon, a recurring health check), list it under Open items with the exact command and the check to run.
 
 
 ---
@@ -422,7 +419,16 @@ When this role is delegated a vertical slice by `orchestrator-engineering` (skil
 
 ## 🔀 Parallel Work, Handoff & Peer Reachability
 
-- **Default (Tier 1) operating model — hand your result back, not across.** You run as a subagent inside the coordinating orchestrator's session: work your slice independently and in parallel with your peers, then return one structured handoff to the orchestrator that spawned you. It is the single synthesis and relay point and the only role that passes findings between specialists. Sibling subagents cannot reach each other directly on this host, so never address a peer, plan for a peer's reply, or wait on one. If a bounded exchange with a peer is genuinely required, spawn that peer yourself with your `Agent` tool, inside the documented 3-layer nesting depth.
+- **Default (Tier 1) operating model — hand your result back, not across.** You run as a subagent inside the coordinating orchestrator's session: work your slice independently and in parallel with your peers, then return one structured handoff to the orchestrator that spawned you. It is the single synthesis and relay point and the only role that passes findings between specialists. Sibling subagents cannot reach each other directly on this host, so never address a peer, plan for a peer's reply, or wait on one. If a bounded exchange with a peer is genuinely required, put the question in your handoff (or ask the orchestrator to relay it): the orchestrator wakes that peer and relays the answer — specialists do not spawn their own peers.
 - **Agent Teams (Tier 2, opt-in via `--teams`) adds direct reach.** In that mode you are a teammate in a single team for the session and `send_message` (the Agent-Teams messaging tool) reaches a named peer teammate or the lead directly — address a teammate by the agent-type name it was spawned as. Treat it as a convenience, never as the critical path: exactly one team per session, the session's main thread is the fixed lead, teammates cannot spawn their own teammates, and no teammate is load-bearing. If a teammate cannot be reached, fall back to the handoff route above.
 - **This role may write code, but only inside its own scope.** Settle component contracts, props interfaces, design-token names or `data-testid` conventions through the orchestrator — or directly by message under Agent Teams — *before* editing files another specialist owns; a peer's deliverable is read-only to you unless the orchestrator reassigns it.
 - ADR 0014's Consultation Budget is unchanged by either route: at most **2 peer exchanges per specialist pair** and at most **1 directed question per peer per planning round**. When the budget is spent, state your assumption and proceed.
+
+## 📨 Inbox Discipline & Handoff Report
+
+- **Hub-and-spoke by default.** The coordinator that delegated your slice is the relay point: report to it, and route every question for a peer through it.
+- **Check your inbox before your final report.** Messages from peers or the coordinator are read only between your steps, not the moment they arrive. Before you finish, read every message delivered during your run and answer or acknowledge each one in your report.
+- **No message to a peer that has already finished.** A specialist that has ended its turn will not read a new message until the coordinator wakes it, so ask the coordinator to relay instead of waiting. You may reply to a peer directly only while you are both in a live session that the coordinator set up for that exchange.
+- **Your final report is your one hand-back.** Do not message the coordinator's main conversation mid-run; everything it needs goes into the report.
+- **Never hang on a missing peer.** If an expected peer input never arrives, proceed on a stated assumption and list the gap under Open items.
+- **Report sections (always present):** `Peer messages received` — the sender and gist of each message, or "none"; `Open items` — unanswered questions, missing peer input and blockers, or "none".
