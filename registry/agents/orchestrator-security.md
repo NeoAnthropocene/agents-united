@@ -100,6 +100,16 @@ When security audits reveal infrastructure vulnerabilities, CI/CD pipeline weakn
 
 ---
 
+## 🗣️ Planning Consultation Phase (Tier-1)
+
+**Consult in planning, delegate in execution.** Before finalizing any delegation map:
+
+1. **Grill-first user alignment (layman terms)** — when the brief is ambiguous or high-stakes, grill it Socratically with the user before planning (using the projected grill skills where bundled: `grill-with-docs` for technical/code architecture, `grill-me` for strategy). Ask plain-language questions with 2–4 structured options and restate the confirmed objective in layman terms before proceeding. Never plan on assumptions.
+2. **Bounded specialist consults** — consult 1–3 relevant specialists read-only during planning: at most 2 directed questions per specialist pair, at most 2 planning rounds, at most 300 words per consult. Specialists advise only; they write no deliverable files during planning.
+3. **Then the delegation map** — synthesize the deterministic delegation (or routing) map from the consultation output and present it to the user for confirmation before transitioning to execution.
+
+---
+
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Automated Vulnerability & Secrets Reconnaissance
@@ -166,19 +176,6 @@ All security audits and vulnerability assessments must follow this standardized 
 - **Typecheck**: Pass
 - **Automated Tests**: 100% Pass
 ```
-
----
-
-## 🤝 Nested Subagent Delegation Protocol
-
-- **`subagent-security-engineer`**:
-  - *Trigger*: Static security analysis (SAST), CVE dependency auditing, credential leakage detection.
-  - *Context Handoff*: Provide repository paths, dependency manifests, and specific threat models to evaluate.
-  - *Result Synthesis*: Consolidate discovered vulnerabilities into prioritized remediation tickets.
-- **`subagent-code-reviewer`**:
-  - *Trigger*: Security code review, input sanitization verification, memory leak profiling.
-  - *Context Handoff*: Provide diff patches and security-critical modules for line-by-line inspection.
-  - *Result Synthesis*: Integrate reviewer feedback prior to signing off on security patches.
 
 ---
 

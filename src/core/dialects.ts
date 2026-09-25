@@ -26,12 +26,7 @@ export const REQUIRED_SPEC_FIELDS = [
 /** Slash-command tokens are ledger citizens alongside tool tokens (Plan 020 note 7). */
 export const COMMAND_TOKENS = ['team_command', 'deep_planning_command', 'interview_command'] as const;
 
-/** Overlay vocabularies: values an overlay may legally set for enum-ish fields. */
-const OVERLAY_FIELD_VOCAB: Record<string, readonly string[]> = {
-  permissionMode: ['default', 'acceptEdits', 'bypassPermissions', 'plan', 'delegate'],
-  model: ['opus', 'sonnet', 'haiku', 'inherit'],
-  effort: ['low', 'medium', 'high', 'inherit'],
-};
+/** Overlay vocabularies live in the shared leaf module `overlays.ts` (imported above). */
 
 const claude = ClaudeProjector.CLAUDE_DIALECT;
 
@@ -43,32 +38,10 @@ const claude = ClaudeProjector.CLAUDE_DIALECT;
 export const HOST_DIALECTS: Record<string, HostDialectSpec> = {
   claude: {
     id: 'claude',
-    fields: {
-      name: 'keep',
-      description: 'keep',
-      model: 'map',
-      tools: 'map',
-      permissionMode: 'map',
-      effort: 'map',
-      skills: 'map',
-      projections: 'map',
-      version: 'drop',
-      type: 'drop',
-      commandExecutionPolicy: 'drop',
-      mainAgent: 'drop',
-      subagent: 'drop',
-      hooks: 'drop',
-      mcpServers: 'drop',
-      rules: 'drop',
-      inheritCustomizations: 'drop',
-    },
+    fields: CLAUDE_FIELD_POLICY,
     toolVocabulary: claude.toolVocabulary,
     bodyToolVocabulary: claude.bodyToolVocabulary,
-    commandVocabulary: {
-      team_command: 'Agent Teams (opt-in: agents start --host claude --teams)',
-      deep_planning_command: '/workflow-grill',
-      interview_command: '/grill-me',
-    },
+    commandVocabulary: claude.commandVocabulary,
     features: {
       hooks: false,
       delegationAllowlists: true,
@@ -165,42 +138,13 @@ export function validateHostDialectSpec(spec: unknown): HostDialectSpec {
 }
 
 /**
- * Plan 017 decision 3 (preserved suite): overlay keys are host ids known to HOST_DIALECTS;
+ * Plan 017 decision 3 (preserved suite): overlay keys must be the spec's own host;
  * overlay fields must exist in the spec's field map, must not introduce dropped/unsupported
  * fields, and enum-ish values must sit in the host vocabulary. Any violation is a fail-fast
- * throw (catalog-load validation error doctrine).
+ * throw (catalog-load validation error doctrine). Implementation lives in `overlays.ts`
+ * (shared with renderRole's overlay application) and is re-exported here for the contract.
  */
-export function validateProjectionOverlays(projections: unknown, spec: HostDialectSpec): void {
-  if (projections === undefined || projections === null) return;
-  if (typeof projections !== 'object' || Array.isArray(projections)) {
-    throw new Error('Projection overlay validation failed: projections must be an object.');
-  }
-  for (const [host, overlay] of Object.entries(projections as Record<string, unknown>)) {
-    if (!(host in HOST_DIALECTS)) {
-      throw new Error(`Projection overlay validation failed: unknown overlay host "${host}".`);
-    }
-    if (overlay === null || typeof overlay !== 'object' || Array.isArray(overlay)) {
-      throw new Error(`Projection overlay validation failed: overlay for "${host}" must be an object.`);
-    }
-    for (const [field, value] of Object.entries(overlay as Record<string, unknown>)) {
-      const policy = spec.fields[field];
-      if (policy === undefined) {
-        throw new Error(`Projection overlay validation failed: unknown overlay field "${field}".`);
-      }
-      if (policy === 'drop') {
-        throw new Error(
-          `Projection overlay validation failed: "${field}" is unsupported on host "${host}" and must never be introduced by an overlay.`,
-        );
-      }
-      const vocab = OVERLAY_FIELD_VOCAB[field];
-      if (vocab && (typeof value !== 'string' || !vocab.includes(value))) {
-        throw new Error(
-          `Projection overlay validation failed: invalid value "${String(value)}" for "${field}" (allowed: ${vocab.join(', ')}).`,
-        );
-      }
-    }
-  }
-}
+export { validateOverlaysShared as validateProjectionOverlays };
 
 /** Scanned canonical tokens = every vocabulary key plus the command tokens (note 7). */
 function scannedTokens(): string[] {
@@ -215,7 +159,16 @@ function scannedTokens(): string[] {
 }
 
 /** Re-evaluation note 4 — foreign-host section residue that must never survive a projection. */
-const SECTION_RESIDUE: readonly RegExp[] = [/Nested Subagent Delegation/, /Host Routing/, /language_server/, /Cline & CLI/];
+import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
+import { CLAUDE_FIELD_POLICY, OVERLAY_FIELD_VOCAB, validateProjectionOverlays as validateOverlaysShared } from './overlays.js';
+
+/**
+ * Plan 019 Step 4 — host-keyed forbidden-pattern lists feeding the body lint (acceptance
+ * gate 4 extension). The list must grow with every new host section (maintenance note):
+ * each host carries the residue patterns that may never survive in ITS projections.
+ * (Re-exported from the shared leaf module so the renderer's scrub consumes the same list.)
+ */
+export { RESIDUE_PATTERNS_BY_HOST };
 
 const CODE_FENCE_SPLIT = /(```[\s\S]*?```)/g;
 
@@ -228,14 +181,13 @@ const CODE_FENCE_SPLIT = /(```[\s\S]*?```)/g;
 export function lintProjectedBody(body: string, ledger: TranslationLedgerEntry[] = []): string[] {
   const violations: string[] = [];
 
-  for (const pattern of SECTION_RESIDUE) {
+  const proseParts = body.split(CODE_FENCE_SPLIT).filter((_, index) => index % 2 === 0);
+  const prose = proseParts.join('\n');
+  for (const pattern of RESIDUE_PATTERNS_BY_HOST[HOST_DIALECTS.claude.id] ?? []) {
     if (pattern.test(body)) {
       violations.push(`Section residue: projected body matches /${pattern.source}/ — foreign-host prose must never survive.`);
     }
   }
-
-  const proseParts = body.split(CODE_FENCE_SPLIT).filter((_, index) => index % 2 === 0);
-  const prose = proseParts.join('\n');
   for (const token of scannedTokens()) {
     if (!prose.includes(token)) continue;
     const dispositioned = ledger.some(entry => entry.feature === token && entry.host === HOST_DIALECTS.claude.id);

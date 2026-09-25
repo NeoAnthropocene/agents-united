@@ -1155,7 +1155,7 @@
           "maxPlanningRounds": 2,
           "maxPeerExchangesPerPair": 2,
           "summaryWordCap": 300,
-          "maxIterations": 8
+          "maxIterations": 100
         },
         "sidekicks": {
           "max": 5

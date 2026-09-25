@@ -43,8 +43,13 @@ integrity fix as resolved pre-work, and implements ADR 0022.
 3. **H2/H3 — least privilege**: specialists get a nested-spawn-bounded or zero `Agent` tool;
    reviewers/indexers drop `Bash` and run read-only permission modes; frontend-architect loses
    `TaskCreate`/`CronCreate`; production-deploy exemplars require a human-approval caveat.
-4. **H1 — iteration limits**: verified `maxTurns` (or equivalent) per agent frontmatter
-   **[verify against current Claude Code docs first]**.
+4. **H1 — iteration limits**: **scope narrowed by owner decision (2026-09-25)** — iteration
+   caps stay **Tier-2-only** (organization-bundle coordinators via
+   `planningLoop.budget.maxIterations`; Tier-1 domain agents stay uncapped). The digital-agency
+   budget is raised `maxIterations: 8 → 100` as an experiment for bigger projects (not yet
+   validated by tests — revisit with real usage data). Only if evidence shows Tier-1 loops
+   runaway does the per-agent `maxTurns` question reopen **[verify against current Claude Code
+   docs first]**.
 5. **H5 — hooks that actually run**: ship a managed `.claude/settings.json` hook wiring
    (block `git push --force`, `.env` writes, `vercel --prod`) **[verify hook events]**; or mark
    hooks advisory in prompts (H7/O9) until then.

@@ -327,12 +327,12 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
       }
     });
 
-    it('should enforce subagent-first delegation policy and invoke_subagent tool commands in orchestrator-engineering', async () => {
+    it('should enforce the delegation policy and invoke_subagent tool commands in orchestrator-engineering', async () => {
       const content = await fs.readFile(path.join(agentsDir, 'orchestrator-engineering.md'), 'utf8');
       
-      // 1. Must include Subagent-First Delegation Policy (ADR 0014)
-      expect(content, 'orchestrator-engineering.md must declare Subagent-First Delegation Policy').toMatch(
-        /Subagent-First Delegation Policy|Subagent-First/i
+      // 1. Must declare exactly one delegation policy - Plan 019 G2: engineering carries ADR 0015
+      expect(content, 'orchestrator-engineering.md must declare its delegation policy').toMatch(
+        /Subagent-First Delegation Policy|Planner-Orchestrator Policy/i
       );
 
       // 2. Must explicitly command invoke_subagent in its execution protocol
@@ -345,9 +345,9 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
         /Phase 3: Subagent Delegation/i
       );
 
-      // 4. Must enforce Subagent Delegation & Host Routing (ADR 0009 / ADR 0014)
-      expect(content, 'orchestrator-engineering.md must declare Subagent Delegation and Host Routing').toMatch(
-        /Subagent Delegation & Host Routing|ADR 0009/i
+      // 4. Plan 019 G1: host-routing sections are purged; delegation mechanics live in the neutral overlay anchor
+      expect(content, 'orchestrator-engineering.md must declare the Delegation Mechanics anchor').toMatch(
+        /Delegation Mechanics|Planner-Orchestrator Policy/i
       );
       expect(content, 'orchestrator-engineering.md must mandate invoke_subagent for dispatching tasks').toMatch(
         /invoke_subagent/

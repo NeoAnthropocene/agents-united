@@ -39,6 +39,8 @@ export interface GoldenEntry {
 
 export interface GoldenArtifact extends GoldenEntry {
   content: string;
+  /** Un-normalized render bytes — the regen write path (preserves the file's byte style). */
+  rawContent: string;
 }
 
 /**
@@ -111,7 +113,7 @@ export async function captureClaudeGoldens(): Promise<GoldenArtifact[]> {
     if (content === undefined) {
       throw new Error(`Golden capture: the Claude plan no longer produces ${entry.relPath}`);
     }
-    return { ...entry, content: normalizeEol(content) };
+    return { ...entry, content: normalizeEol(content), rawContent: content };
   });
 }
 
@@ -126,8 +128,8 @@ export function readGolden(entry: GoldenEntry): string | undefined {
 
 export const isUpdateGolden: boolean = process.env.UPDATE_GOLDEN === '1';
 
-/** `UPDATE_GOLDEN=1` maintainer run: rewrite one snapshot; a no-op otherwise. */
+/** `UPDATE_GOLDEN=1` maintainer run: rewrite one snapshot (raw bytes, style-preserving); a no-op otherwise. */
 export function syncGolden(artifact: GoldenArtifact): void {
   if (!isUpdateGolden) return;
-  fs.outputFileSync(goldenDiskPath(artifact), artifact.content, 'utf8');
+  fs.outputFileSync(goldenDiskPath(artifact), artifact.rawContent, 'utf8');
 }

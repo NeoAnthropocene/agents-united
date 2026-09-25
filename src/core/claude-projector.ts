@@ -12,6 +12,8 @@ import type {
   TranslationLedgerEntry,
 } from './types.js';
 import type { ClaudeDialect } from './types.js';
+import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
+import { CLAUDE_FIELD_POLICY, validateProjectionOverlays } from './overlays.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
 export interface ClaudeRenderResult {
@@ -158,6 +160,11 @@ export class ClaudeProjector {
       // `schedule` is deliberately absent: it is an ordinary English word, so rewriting it in prose
       // would corrupt sentences. Its loss is recorded once at frontmatter level instead.
     },
+    commandVocabulary: {
+      team_command: 'Agent Teams (opt-in: agents start --host claude --teams)',
+      deep_planning_command: '/workflow-grill',
+      interview_command: '/grill-me',
+    },
     permissionModeMap: {
       acceptEdits: 'acceptEdits',
       readOnly: 'plan',
@@ -178,11 +185,12 @@ export class ClaudeProjector {
     roleEffortDefaults: { coordinator: 'high', specialist: 'medium' },
     bodySectionOverrides: [
       {
-        // ADR 0009/0014's "Subagent Delegation & Host Routing" describes *other* runtimes:
-        // Antigravity's `language_server.exe` limitation and Cline's `subagent_*` tools. Tool-name
-        // rewriting cannot rescue that — the words change and the meaning stays foreign — so the
-        // section is re-rendered for the host actually running it.
-        heading: /^#{2,3}\s*.*Subagent Delegation & Host Routing/m,
+        // Plan 019 escape hatch (2026-09-25): the old anchor — "Subagent Delegation & Host
+        // Routing" — was residue (it described OTHER runtimes: Antigravity's language_server.exe
+        // limitation and Cline's subagent_* tools) and the G1 purge deleted it. Its Claude-side
+        // rendering survives as this per-host overlay, keyed on the neutral "Delegation
+        // Mechanics" stub in canonical; hosts without an overlay render the stub itself.
+        heading: /^#{2,3}\s*.*Delegation Mechanics/m,
         replacement: [
           '### ⚡ Subagent Delegation & Agent Routing (Claude Code)',
           '',
@@ -281,14 +289,66 @@ export class ClaudeProjector {
    * Deterministically rewrite canonical tool names in prompt prose (whole-word, case-sensitive,
    * fenced code blocks byte-preserved) and report a disposition for every rewrite that loses fidelity.
    */
+  /** Command tokens are ledger citizens (Plan 020 note 7) — rewritten and dispositioned. */
+  private static readonly COMMAND_LEDGER: Record<string, { disposition: LedgerDisposition; rationale: string }> = {
+    team_command: { disposition: 'mapped', rationale: 'Rewritten to the host team entrypoint (Agent Teams opt-in).' },
+    deep_planning_command: { disposition: 'mapped', rationale: 'Rewritten to the host deep-planning command.' },
+    interview_command: { disposition: 'mapped', rationale: 'Rewritten to the host interview command.' },
+  };
+
+  /** Plan 019 safety net: residue-headed sections never survive into a projection body. */
+  private static dropResidueSections(body: string): string {
+    let out = body;
+    for (const pattern of RESIDUE_PATTERNS_BY_HOST.claude) {
+      out = out.replace(
+        new RegExp(`(^|\\n)#{1,6}[^\\n]*${pattern.source}[^\\n]*\\n[\\s\\S]*?(?=\\n#{1,6} |$)`, 'g'),
+        '$1'
+      );
+    }
+    return out;
+  }
+
+  /** Plan 019 safety net: residual residue phrases in prose are neutralized deterministically. */
+  private static scrubResiduePhrases(body: string): string {
+    return body
+      .replace(/Cline & CLI/g, 'other hosts')
+      .replace(/language_server(\.exe)?/g, 'the runtime')
+      .replace(/Nested Subagent Delegation/g, 'peer delegation')
+      .replace(/Host Routing/g, 'host delegation');
+  }
+
+  /** Whole-word canonical tokens surviving OUTSIDE code fences after the rewrite pass. */
+  private static survivingBodyTokens(body: string): string[] {
+    const vocab: Record<string, string> = {
+      ...ClaudeProjector.CLAUDE_DIALECT.toolVocabulary,
+      ...ClaudeProjector.CLAUDE_DIALECT.commandVocabulary,
+    };
+    const prose = body
+      .split(/(```[\s\S]*?```)/g)
+      .filter((_, index) => index % 2 === 0)
+      .join('\n');
+    return Object.keys(vocab).filter(token =>
+      new RegExp(`(^|[^A-Za-z0-9_])${token}(?=[^A-Za-z0-9_]|$)`).test(prose)
+    );
+  }
+
   public static rewriteBody(body: string): { body: string; ledger: TranslationLedgerEntry[] } {
     const ledger = new Map<string, TranslationLedgerEntry>();
+    // Plan 019 residue safety net (canonical is purge-clean since the G1 group): residue
+    // sections are dropped and residual phrases neutralized so no synthetic or legacy body
+    // can leak foreign-host residue into a projection.
+    body = ClaudeProjector.dropResidueSections(body);
+    body = ClaudeProjector.scrubResiduePhrases(body);
     // ADR 0018 decision 8: sections that describe another host's routing are re-rendered first, so the
     // vocabulary pass below only ever rewrites host-neutral prose.
     for (const override of ClaudeProjector.CLAUDE_DIALECT.bodySectionOverrides) {
       body = ClaudeProjector.replaceSection(body, override.heading, override.replacement);
     }
-    const vocab = ClaudeProjector.CLAUDE_DIALECT.bodyToolVocabulary;
+    // Note 7: command tokens join the tool tokens in the prose rewrite and carry dispositions.
+    const vocab: Record<string, string> = {
+      ...ClaudeProjector.CLAUDE_DIALECT.bodyToolVocabulary,
+      ...ClaudeProjector.CLAUDE_DIALECT.commandVocabulary,
+    };
     const tokens = Object.keys(vocab).sort((a, b) => b.length - a.length);
     const parts = body.split(/(```[\s\S]*?```)/g);
 
@@ -298,7 +358,10 @@ export class ClaudeProjector {
       for (const token of tokens) {
         const re = new RegExp(`(^|[^A-Za-z0-9_])${token}(?=[^A-Za-z0-9_]|$)`, 'g');
         if (!text.match(re)) continue;
-        const entry = ClaudeProjector.ledgerEntry(token);
+        const command = ClaudeProjector.COMMAND_LEDGER[token];
+        const entry: TranslationLedgerEntry | undefined = command
+          ? { feature: token, host: HOST, disposition: command.disposition, rationale: command.rationale }
+          : ClaudeProjector.ledgerEntry(token);
         if (entry) ledger.set(token, entry);
         text = text.replace(re, `$1${vocab[token]}`);
       }
@@ -410,9 +473,22 @@ export class ClaudeProjector {
       : ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults.specialist);
     if (typeof opts.maxTurns === 'number') out.maxTurns = opts.maxTurns;
 
-    // 4. Prose is part of the interface.
+    // 4. Prose is part of the interface. A surviving canonical body token outside code
+    //    fences without a ledger disposition is a render-time error (decision 4) — never a
+    //    silent survivor.
     const rewritten = ClaudeProjector.rewriteBody(body);
     for (const entry of rewritten.ledger) ledger.set(entry.feature, entry);
+    for (const token of ClaudeProjector.survivingBodyTokens(rewritten.body)) {
+      ClaudeProjector.requireDisposition(token, canonicalRelPath);
+    }
+
+    // Plan 017 decision 3 (render application): declarative overlays win over dialect
+    // defaults and canonical-derived values; invalid overlays fail fast (never silent).
+    if (meta.projections !== undefined && meta.projections !== null) {
+      validateProjectionOverlays(meta.projections, { id: HOST, fields: CLAUDE_FIELD_POLICY });
+      const overlay = (meta.projections as Record<string, Record<string, unknown>>)[HOST];
+      if (overlay) Object.assign(out, overlay);
+    }
 
     const yamlStr = yaml.stringify(out).replace(/\r\n/g, '\n').trimEnd();
     const content = `---\n${yamlStr}\n---\n${ClaudeProjector.marker(canonicalRelPath)}\n\n${RUNTIME_NOTE}\n\n${rewritten.body.trim()}\n`;

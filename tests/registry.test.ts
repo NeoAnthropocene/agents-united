@@ -143,7 +143,7 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
     expect(budget?.maxPlanningRounds).toBe(2);
     expect(budget?.maxPeerExchangesPerPair).toBe(2);
     expect(budget?.summaryWordCap).toBe(300);
-    expect(budget?.maxIterations).toBe(8);
+    expect(budget?.maxIterations).toBe(100); // owner decision 2026-09-25: Tier-2-only cap, 8 -> 100 experiment
 
     expect(bundle?.planningLoop?.sidekicks?.max).toBe(5);
   });
