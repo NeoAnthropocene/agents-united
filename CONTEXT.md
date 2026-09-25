@@ -204,7 +204,7 @@ The deterministic translation architecture implemented by `ClineProjector` (ADR 
 - Strips unsupported Antigravity frontmatter keys (`rules`, `inheritCustomizations`, `effort`, `hooks`) while preserving execution semantics.
 - Projects frontmatter `rules:` into `.cline/rules/` and active coordinator markdown rules (`.agents/plugins/<bundle>/rules/`).
 - Maps Antigravity tool primitives (`view_file`, `replace_file_content`, `run_command`, `grep_search`, `list_dir`) to Cline equivalents (`read_file`, `replace_in_file`, `execute_command`, `search_files`, `list_files`) via injected runtime translation notes.
-- Projects subagents into configured `.cline/agents/*.yml` with `maxIterations: 8` and exposes them as callable `subagent_*` tools.
+- Projects subagents into configured `.cline/agents/*.yml` with the Consultation Budget's `maxIterations` cap (Tier-2 organization bundles) and exposes them as callable `subagent_*` tools.
 - Leverages cross-host standards for multimodal inlining (`@path/to/file`) and KaTeX math formatting.
 _Avoid_: Leaking Antigravity-specific YAML keys into Cline, assuming identical tool call signatures across hosts
 

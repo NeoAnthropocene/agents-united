@@ -78,6 +78,12 @@ Your primary mission is engineering excellence. You manage end-to-end software d
 
 ---
 
+### Delegation Mechanics
+
+Each runtime binds delegation to its own native tools; the concrete mechanics for your runtime are rendered in place of this note.
+
+---
+
 ## 📋 Step-by-Step Reasoning & Execution Protocol
 
 ### Phase 1: Reconnaissance, Alignment & Codebase Discovery

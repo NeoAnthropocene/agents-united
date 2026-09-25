@@ -178,11 +178,12 @@ export class ClaudeProjector {
     roleEffortDefaults: { coordinator: 'high', specialist: 'medium' },
     bodySectionOverrides: [
       {
-        // ADR 0009/0014's "Subagent Delegation & Host Routing" describes *other* runtimes:
-        // Antigravity's `language_server.exe` limitation and Cline's `subagent_*` tools. Tool-name
-        // rewriting cannot rescue that — the words change and the meaning stays foreign — so the
-        // section is re-rendered for the host actually running it.
-        heading: /^#{2,3}\s*.*Subagent Delegation & Host Routing/m,
+        // Plan 019 escape hatch (2026-09-25): the old anchor — "Subagent Delegation & Host
+        // Routing" — was residue (it described OTHER runtimes: Antigravity's language_server.exe
+        // limitation and Cline's subagent_* tools) and the G1 purge deleted it. Its Claude-side
+        // rendering survives as this per-host overlay, keyed on the neutral "Delegation
+        // Mechanics" stub in canonical; hosts without an overlay render the stub itself.
+        heading: /^#{2,3}\s*.*Delegation Mechanics/m,
         replacement: [
           '### ⚡ Subagent Delegation & Agent Routing (Claude Code)',
           '',

@@ -125,3 +125,67 @@ edit.
   `tests/claude-catalog-conformance.test.ts`, ADR 0014/0015/0018, `CONTEXT.md`.
 - External (2026-09-24): agentscamp.com/agents/meta-orchestration/agent-architect (SECONDARY);
   code.claude.com/docs/en/sub-agents.md (handoff + `Agent(...)` bounds).
+
+---
+
+## Step 0 — Full heading inventory classification (appended 2026-09-25)
+
+> Method: every `##`/`###` body heading across all 59 agents (9 orchestrators + 50 subagents)
+> captured (801 occurrences / 465 unique), grouped, and classified. Every occurrence maps to
+> exactly one row below (raw dump: `scratch/p021/plan019-headings.txt`, groups:
+> `scratch/p021/plan019-heading-groups.txt`). Classes per plan: **KEEP** / **HOST-SPECIFIC**
+> (→ per-host overlay, Plan 017/018) / **DELETE** (contradiction or dead era) /
+> **REWRITE-TIER-AWARE**. **No fifth class found → no STOP.**
+
+### A. Residue class → DELETE (the measured inventory of § Why this exists)
+
+| Heading | × | Class | Action |
+|---|---|---|---|
+| `## 🤝 Nested Subagent Delegation Protocol` | 7 | DELETE | Antigravity-era nesting model; bounded peer exchange already lives in "Parallel Work…" sections |
+| `### ⚡ Subagent Delegation & Host Routing (ADR 0009 / ADR 0014)` | 1 | DELETE | host-routing jargon; the ONE `bodySectionOverride` covers the Claude lane today |
+| `## 🥇 Subagent-First Delegation Policy (ADR 0014)` (in orchestrator-engineering only) | 1 of 2 | DELETE | contradicts ADR 0015 (its own text replaces the 0014 loop); engineering ⇒ ADR 0015 exactly-one-policy rule |
+| `### 💡 What we can do right now` / `### ⚡ Superpowers you can unlock…` / `### 🛠️ How to connect any tool` (orchestrator-digital-agency) | 3 | DELETE | Antigravity-era onboarding blocks before the actual role section |
+| inline residue inside kept sections (e.g. Phase 3's "…and **Subagent Delegation & Host Routing** (ADR 0009)" prose; `language_server` note; `subagent_*` (Cline) routing phrases) | ~12 lines | DELETE (line-level) | purge host nouns/phrases from surviving sections — part of the same pass |
+
+### B. Host-runtime mechanics → HOST-SPECIFIC (overlay via Plan 017/018)
+
+| Heading | × | Class | Action |
+|---|---|---|---|
+| `## ⚡ Task Delegation & Reactive Liveness Protocol` | 25 | HOST-SPECIFIC | `manage_task(action:…)`, `TimerCondition`, `CronExpression` semantics are Antigravity mechanics (proposal O3) — per-host choreography belongs in overlays; canonical keeps the neutral law ("never busy-poll; one synthesis point") |
+
+### C. Tier semantics → REWRITE-TIER-AWARE
+
+| Heading | × | Class | Action |
+|---|---|---|---|
+| `## 🔀 Parallel Work, Handoff & Peer Reachability` | 12 | REWRITE-TIER-AWARE | tier mesh vs Agent-Teams reach + hand-back law (Plan 018 semantics; C2/C4 comms rules fold in via Plan 022) |
+| `## 🧭 Planning Consultation Mode & Peer Clarification Protocol (ADR 0014)` (+ `### Peer Clarification Protocol (bounded)`, `### Mode switch`) | 9+9+9 | REWRITE-TIER-AWARE | consultation-budget wording; merge into the tier-aware planning-consultation shape of Step 3 |
+
+### D. Delegation policies → KEEP (exactly one per orchestrator) + Step 3 extension
+
+| Heading | × | Class | Action |
+|---|---|---|---|
+| `## Planner-Orchestrator Policy (ADR 0015)` | 7 | KEEP | the surviving policy wherever `planningLoop.mode: planner-orchestrator`; gains the Planning Consultation Phase (Step 3) |
+| `## 🥇 Subagent-First Delegation Policy (ADR 0014)` (orchestrator-digital-agency) | 1 | KEEP | the correct single policy for that Tier-2 bundle (Plan 019 objective 1) |
+| `### Phase 0: User Alignment…` / `### Phase 0.5: Sidekick Clarification` / `### Phase 1: Specialist Council & Delegation Map` (digital-agency) | 1×3 | KEEP | Tier-2 shape stays; Step 3 adds the layman-question requirement |
+
+### E. Role semantics → KEEP (shared skeleton + role-specific content)
+
+| Heading (family) | × | Class | Action |
+|---|---|---|---|
+| `## Role Definition` / role-prefixed identity headings | 30+ | KEEP | floor identity |
+| `## Primary Directives` | 48 | KEEP | scope/safety/invariant source (Plan 021 cores) |
+| `## Output Format Requirements` (+ report-template `###` subheads) | 27+ | KEEP | output contract |
+| `## Step-by-Step … Protocol` (Execution / Backend / Architectural / Campaign / Architecture … families) + `### Phase N — …` subheads | ~180 | KEEP | methodology; canonical tool tokens stay for the vocabulary lane (not section residue) |
+| `## Tool Usage Rules` + tool tables | ~20 | KEEP | capability tables (frontmatter tools = binding material) |
+| `## Concrete Code & Command Exemplars` (+ `### 1…7` exemplars) | 3+ | KEEP | domain expertise payload |
+| `## 🔄 Explicit Lifecycle Hooks` | 31 | KEEP | prose of the frontmatter hooks; advisory-vs-enforced wording rides Plan 022 (H7/O9) |
+| `## ⚙️ Safety Guardrails` / `## 🛡️ Boundary Constraints & Operational Guardrails` / `## Severity Definitions` | ~15 | KEEP | safety floor |
+| `## 📊 Output Format & Structured Delivery` / `…& Deliverable Standards` / report headings (`## Code Review Report`, `## Repository Index Report`, …) | ~20 | KEEP | output contract |
+| `## 🎯 Operational Role & Core Mission` | 3 | KEEP | mission |
+| `## 📋 Step-by-Step Reasoning & Execution Protocol` | 1 | KEEP | orchestration methodology |
+| `## 🔄 SDLC Workflow Skills Execution Matrix` + `### Workflow Execution Protocol` + `## 🌐 Cross-Bundle Dynamic Recommendation Protocol` + `### 1/2.` subheads + `## 🛠️ Tool Selection Rules & Execution Hierarchy` | ~12 | KEEP | product behavior (own-CLI references are asset names, not host residue) |
+| `## 🔌 Tri-Tier MCP Tool Integration` | 2 | KEEP | MCP tiering is domain content (wiring is frontmatter) |
+| `## 🔄 Workflow Execution & Verification Protocol` | 2 | KEEP | verification law (gates wording = Plan 022 O-item) |
+| single-occurrence role report/phase headings (legal, literature, marketing, design, security, …) | ~330 | KEEP | role-specific report contracts & phases |
+
+**Class audit**: only KEEP / HOST-SPECIFIC / DELETE / REWRITE-TIER-AWARE are used — the plan's four classes suffice. **No STOP.**
