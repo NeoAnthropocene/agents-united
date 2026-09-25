@@ -54,7 +54,18 @@
         "workflow-git",
         "workflow-grill",
         "workflow-spec",
-        "workflow-diagnose"
+        "workflow-diagnose",
+        "design-handoff-spec",
+        "domain-modeling",
+        "frontend-component-design",
+        "frontend-design",
+        "grill-me",
+        "grill-with-docs",
+        "handoff",
+        "modern-web-guidance",
+        "react-best-practices",
+        "to-spec",
+        "to-tickets"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -102,7 +113,9 @@
         "workflow-estimate",
         "workflow-spec-panel",
         "workflow-grill",
-        "workflow-spec"
+        "workflow-spec",
+        "grill-me",
+        "performance-optimization"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -149,7 +162,12 @@
         "workflow-ux-strategy-strategize",
         "workflow-interaction-design-design-interaction",
         "workflow-interaction-design-error-flow",
-        "workflow-interaction-design-map-states"
+        "workflow-interaction-design-map-states",
+        "design-system-tokens",
+        "frontend-design",
+        "generative_ui",
+        "grill-me",
+        "stitch-design-taste"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -201,7 +219,16 @@
         "workflow-marketing-campaign-builder",
         "workflow-marketing-content-pipeline",
         "workflow-marketing-growth-experiment",
-        "workflow-marketing-launch"
+        "workflow-marketing-launch",
+        "design-system-tokens",
+        "domain-modeling",
+        "email-drip-sequences",
+        "frontend-design",
+        "generative_ui",
+        "grill-me",
+        "onboarding-cro",
+        "stitch-design-taste",
+        "viral-referral-loops"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -237,7 +264,12 @@
         "workflow-seo-content-pipeline",
         "workflow-seo-audit-pipeline",
         "workflow-marketing-content-pipeline",
-        "workflow-marketing-audit"
+        "workflow-marketing-audit",
+        "conversion-funnel-optimization",
+        "debug-optimize-lcp",
+        "domain-modeling",
+        "grill-me",
+        "growth-experiment-design"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -281,7 +313,21 @@
         "workflow-paid-acquisition-campaign",
         "workflow-paid-campaign-launch",
         "workflow-marketing-campaign-builder",
-        "workflow-marketing-growth-experiment"
+        "workflow-marketing-growth-experiment",
+        "copywriting-frameworks",
+        "design-system-tokens",
+        "email-drip-sequences",
+        "email-marketing-automation",
+        "frontend-design",
+        "generative_ui",
+        "grill-me",
+        "growth-experiment-design",
+        "marketing-creative-design",
+        "onboarding-cro",
+        "product-launch-playbook",
+        "seo-audit",
+        "signup-flow-cro",
+        "stitch-design-taste"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -318,7 +364,13 @@
         "conversion-funnel-optimization",
         "growth-experiment-design",
         "workflow-onboarding-funnel-cro",
-        "workflow-marketing-growth-experiment"
+        "workflow-marketing-growth-experiment",
+        "ab-test-setup",
+        "churn-prevention-playbook",
+        "copywriting-frameworks",
+        "grill-me",
+        "product-launch-playbook",
+        "seo-audit"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -354,7 +406,13 @@
         "copywriting-frameworks",
         "workflow-email-drip-sequence",
         "workflow-marketing-launch",
-        "workflow-marketing-campaign-builder"
+        "workflow-marketing-campaign-builder",
+        "conversion-funnel-optimization",
+        "grill-me",
+        "growth-experiment-design",
+        "product-launch-playbook",
+        "seo-audit",
+        "social-media-campaign"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -382,7 +440,11 @@
         "security-audit",
         "architecture-design",
         "workflow-troubleshoot",
-        "workflow-analyze"
+        "workflow-analyze",
+        "domain-modeling",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -454,7 +516,9 @@
         "workflow-business-panel",
         "workflow-spec-panel",
         "workflow-recommend",
-        "workflow-estimate"
+        "workflow-estimate",
+        "domain-modeling",
+        "grill-me"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -489,7 +553,14 @@
         "git-guardrails",
         "workflow-deploy-staging",
         "workflow-build",
-        "workflow-git"
+        "workflow-git",
+        "telemetry-monitoring",
+        "architecture-design",
+        "code-refactoring",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -515,7 +586,16 @@
       "skills": [
         "telemetry-monitoring",
         "architecture-design",
-        "workflow-incident-triage"
+        "workflow-incident-triage",
+        "backend-api-design",
+        "chaos-engineering",
+        "ci-cd-pipeline-automation",
+        "database-design",
+        "docker-deployment",
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "microservices-architecture"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -550,7 +630,15 @@
         "maestro-mobile-testing",
         "mobile-first-design",
         "workflow-mobile-build",
-        "workflow-app-store-release"
+        "workflow-app-store-release",
+        "react-best-practices",
+        "test-driven-development",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -584,7 +672,21 @@
         "accessibility-audit",
         "state-driven-ui-animation",
         "frontend-component-design",
-        "workflow-frontend-audit"
+        "workflow-frontend-audit",
+        "component-library-management",
+        "design-handoff-spec",
+        "frontend-design",
+        "modern-web-guidance",
+        "performance-optimization",
+        "responsive-design-audit",
+        "ui-component-spec",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -617,7 +719,17 @@
         "graphql-schema-design",
         "database-design",
         "backend-api-design",
-        "workflow-api-contract-design"
+        "workflow-api-contract-design",
+        "rag-vector-pipeline",
+        "telemetry-monitoring",
+        "vector-database-design",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -647,7 +759,18 @@
         "playwright-best-practices",
         "chaos-engineering",
         "test-driven-development",
-        "workflow-e2e-testing"
+        "workflow-e2e-testing",
+        "a11y-debugging",
+        "accessibility-audit",
+        "diagnosing-bugs",
+        "responsive-design-audit",
+        "systematic-debugging",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -686,7 +809,14 @@
         "hf-model-evaluation",
         "workflow-ml-eval",
         "workflow-rag-pipeline-deploy",
-        "workflow-serverless-gpu-deploy"
+        "workflow-serverless-gpu-deploy",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -949,7 +1079,11 @@
       "modes": {},
       "orchestrator": "orchestrator-universal.md",
       "agents": [],
-      "skills": [],
+      "skills": [
+        "grill-me",
+        "handoff",
+        "mcp-setup"
+      ],
       "version": "1.0.0"
     },
     "digital-agency": {
@@ -1062,7 +1196,41 @@
         "workflow-agency-seo-content-engine",
         "workflow-agency-cro-funnel-teardown",
         "workflow-agency-brand-design-system",
-        "workflow-agency-client-pitch-proposal"
+        "workflow-agency-client-pitch-proposal",
+        "a11y-debugging",
+        "accessibility-audit",
+        "ad-creative-design",
+        "content-calendar-strategy",
+        "debug-optimize-lcp",
+        "design-system-tokens",
+        "domain-modeling",
+        "email-drip-sequences",
+        "email-marketing-automation",
+        "frontend-component-design",
+        "frontend-design",
+        "generative_ui",
+        "grill-me",
+        "grill-with-docs",
+        "growth-experiment-design",
+        "modern-web-guidance",
+        "onboarding-cro",
+        "performance-optimization",
+        "playwright-best-practices",
+        "product-launch-playbook",
+        "programmatic-seo",
+        "react-best-practices",
+        "responsive-design-audit",
+        "schema-markup-strategy",
+        "security-audit",
+        "signup-flow-cro",
+        "social-media-campaign",
+        "stitch-design-taste",
+        "subagent-driven-development",
+        "technical-documentation",
+        "technical-seo-audit",
+        "test-driven-development",
+        "ui-component-spec",
+        "viral-referral-loops"
       ],
       "version": "1.0.0"
     },
@@ -1137,7 +1305,13 @@
         "workflow-design-systems-tokenize",
         "workflow-design-ops-handoff",
         "workflow-design-ops-plan-sprint",
-        "workflow-design-ops-setup-workflow"
+        "workflow-design-ops-setup-workflow",
+        "frontend-design",
+        "grill-me",
+        "mobile-first-design",
+        "stitch-design-taste",
+        "ui-component-spec",
+        "user-flow-mapping"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1177,7 +1351,14 @@
         "workflow-prototyping-testing-evaluate",
         "workflow-prototyping-testing-experiment",
         "workflow-prototyping-testing-prototype-plan",
-        "workflow-prototyping-testing-test-plan"
+        "workflow-prototyping-testing-test-plan",
+        "design-handoff-spec",
+        "frontend-design",
+        "grill-me",
+        "mobile-first-design",
+        "stitch-design-taste",
+        "ui-component-spec",
+        "user-flow-mapping"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1207,7 +1388,12 @@
         "azure-infrastructure-bicep",
         "docker-deployment",
         "workflow-analyze",
-        "workflow-troubleshoot"
+        "workflow-troubleshoot",
+        "domain-modeling",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "telemetry-monitoring"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1239,7 +1425,11 @@
         "diagnosing-bugs",
         "workflow-troubleshoot",
         "workflow-analyze",
-        "workflow-test"
+        "workflow-test",
+        "domain-modeling",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1272,7 +1462,10 @@
         "to-spec",
         "workflow-analyze",
         "workflow-grill",
-        "workflow-spec"
+        "workflow-spec",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1302,7 +1495,9 @@
         "architecture-design",
         "technical-documentation",
         "workflow-estimate",
-        "workflow-business-panel"
+        "workflow-business-panel",
+        "domain-modeling",
+        "grill-me"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1334,7 +1529,9 @@
         "domain-modeling",
         "workflow-recommend",
         "workflow-business-panel",
-        "workflow-spec-panel"
+        "workflow-spec-panel",
+        "grill-me",
+        "growth-experiment-design"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1367,7 +1564,10 @@
         "domain-modeling",
         "to-spec",
         "workflow-business-panel",
-        "workflow-spec-panel"
+        "workflow-spec-panel",
+        "git-guardrails",
+        "grill-me",
+        "to-tickets"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1400,7 +1600,10 @@
         "domain-modeling",
         "workflow-research",
         "workflow-brainstorm",
-        "workflow-explain"
+        "workflow-explain",
+        "grill-me",
+        "growth-experiment-design",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1431,7 +1634,14 @@
         "microservices-architecture",
         "technical-documentation",
         "workflow-plan",
-        "workflow-design-code"
+        "workflow-design-code",
+        "azure-infrastructure-bicep",
+        "backend-api-design",
+        "database-design",
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "telemetry-monitoring"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1462,7 +1672,14 @@
         "architecture-design",
         "code-refactoring",
         "workflow-plan",
-        "workflow-design-code"
+        "workflow-design-code",
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "microservices-architecture",
+        "performance-optimization",
+        "supabase-backend-architecture",
+        "turso-distributed-sqlite"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1491,7 +1708,15 @@
         "architecture-design",
         "technical-documentation",
         "workflow-estimate",
-        "workflow-plan"
+        "workflow-plan",
+        "backend-api-design",
+        "database-design",
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "microservices-architecture",
+        "runpod-gpu-orchestration",
+        "telemetry-monitoring"
       ],
       "version": "1.0.0",
       "planningLoop": {

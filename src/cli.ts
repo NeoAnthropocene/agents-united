@@ -921,6 +921,22 @@ cli
         );
       }
 
+      // Owner Gate-7 finding (2026-09-25): hosts discover skills at session start, so tell the
+      // operator how THIS session can pick up what was just installed (docs/host-skill-reload.md).
+      if (!options.dryRun) {
+        note(
+          pc.yellow(
+            'New skills are discovered at session start. To pick them up now:\n' +
+              '  Claude Code ..... user types /reload-skills (#58733)\n' +
+              '  Antigravity CLI . user types /skills reload\n' +
+              '  Antigravity App . restart the app, or use @<skill_name>\n' +
+              '  Cline ........... agents read .cline/skills/ directly\n' +
+              'Slash commands only fire when YOU type them; agents can read the file.'
+          ),
+          'Pick up new skills'
+        );
+      }
+
       outro(pc.green(`✔ Installed "${identifier}" successfully!`));
     } catch (err: any) {
       s.stop(pc.red('Failed resolution'));
@@ -1765,6 +1781,18 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
       });
 
       installSpinner.stop(pc.green(`✔ Successfully installed ${bundle.name}!`));
+      // Owner Gate-7 finding (2026-09-25): skills are discovered at session start.
+      note(
+        pc.yellow(
+          'New skills are discovered at session start. To pick them up now:\n' +
+            '  Claude Code ..... user types /reload-skills (#58733)\n' +
+            '  Antigravity CLI . user types /skills reload\n' +
+            '  Antigravity App . restart the app, or use @<skill_name>\n' +
+            '  Cline ........... agents read .cline/skills/ directly\n' +
+            'Slash commands only fire when YOU type them; agents can read the file.'
+        ),
+        'Pick up new skills'
+      );
       note(
         formatInstallationSummary({
           bundleName: result.installed.targetBundle || bundle.name,
