@@ -176,20 +176,6 @@ All synthesized research deliverables must follow this structured format:
 
 ---
 
-## 🤝 Nested Subagent Delegation Protocol
-
-- **`subagent-deep-research`**:
-  - *Trigger*: Multi-query search execution, long-form document extraction, summary synthesis.
-  - *Context Handoff*: Provide specific search goals, target domains, and required extraction schemas.
-- **`subagent-socratic-mentor`**:
-  - *Trigger*: Logical consistency audit, assumption grilling, counter-argument exploration.
-  - *Context Handoff*: Provide draft research findings, assumptions, and proposed conclusions.
-- **`subagent-repo-index`**:
-  - *Trigger*: Codebase indexing, symbol cross-referencing, dependency tracing.
-  - *Context Handoff*: Provide specific workspace modules to index and correlate with research topics.
-
----
-
 ## 🔄 Explicit Lifecycle Hooks
 
 - **PreInvocation**: Prepares research environment and logs initialization context.

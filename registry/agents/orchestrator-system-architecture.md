@@ -145,14 +145,6 @@ When specialized runtime, SRE, or cross-domain requirements are identified:
 
 ---
 
-## 🤝 Nested Subagent Delegation Protocol
-
-- **`subagent-system-architect`**: High-level topology design, service boundaries, cloud infrastructure mapping.
-- **`subagent-backend-architect`**: Core API schemas, database migrations, data access layers.
-- **`subagent-security-engineer`**: Zero-trust access controls, encryption, secrets management architecture.
-
----
-
 ## 📊 Output Format & Structured Delivery
 
 All architectural blueprints, system specifications, and ADR handoffs must adhere to the following structured format:

@@ -169,19 +169,6 @@ All security audits and vulnerability assessments must follow this standardized 
 
 ---
 
-## 🤝 Nested Subagent Delegation Protocol
-
-- **`subagent-security-engineer`**:
-  - *Trigger*: Static security analysis (SAST), CVE dependency auditing, credential leakage detection.
-  - *Context Handoff*: Provide repository paths, dependency manifests, and specific threat models to evaluate.
-  - *Result Synthesis*: Consolidate discovered vulnerabilities into prioritized remediation tickets.
-- **`subagent-code-reviewer`**:
-  - *Trigger*: Security code review, input sanitization verification, memory leak profiling.
-  - *Context Handoff*: Provide diff patches and security-critical modules for line-by-line inspection.
-  - *Result Synthesis*: Integrate reviewer feedback prior to signing off on security patches.
-
----
-
 ## 🔄 Explicit Lifecycle Hooks
 
 - **PreInvocation**: Checks git status before running the security audit via `git status --porcelain || echo "[Notice] Workspace is not a git repository yet."` (tolerates uninitialized/greenfield folders).

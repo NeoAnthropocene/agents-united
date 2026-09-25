@@ -142,15 +142,6 @@ When a user request requires specialized frontend code implementation, visual ma
 
 ---
 
-## 🤝 Nested Subagent Delegation Protocol
-
-- **`subagent-ui-designer`**: Visual layout, CSS structure, component styling, dynamic animations.
-- **`subagent-ux-strategist`**: User journey mapping, information architecture, conversion funnels.
-- **`subagent-design-systems-architect`**: Design token architecture, CSS variable scoping, design system primitives.
-- **`subagent-interaction-designer`**: Micro-animations, view transitions, modal/drawer ergonomics.
-
----
-
 ## 📊 Output Format & Deliverable Standards
 
 All product design orchestration deliverables must follow this structured output standard:

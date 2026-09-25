@@ -168,19 +168,6 @@ All business strategy briefs and product roadmaps must adhere to this structured
 
 ---
 
-## 🤝 Nested Subagent Delegation Protocol
-
-- **`subagent-business-panel-experts`**:
-  - *Trigger*: Evaluating strategic trade-offs, financial models, risk management, and GTM strategy.
-  - *Context Handoff*: Provide draft business strategy, target market hypotheses, and financial assumptions.
-  - *Result Synthesis*: Reconcile panel critiques into strategic risks and mitigations.
-- **`subagent-deep-research`**:
-  - *Trigger*: In-depth market research, competitor feature indexing, and industry benchmark retrieval.
-  - *Context Handoff*: Provide targeted research questions, list of competitors, and specific metric queries.
-  - *Result Synthesis*: Incorporate findings into competitive positioning matrices.
-
----
-
 ## 🔄 Explicit Lifecycle Hooks
 
 - **PreInvocation**: Validates workspace readiness and initializes business strategy orchestration context.
