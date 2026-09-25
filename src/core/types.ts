@@ -553,6 +553,8 @@ export interface ClaudeDialect {
   toolVocabulary: Record<string, string>;
   /** Canonical tool token -> Claude phrase used when rewriting prompt prose. */
   bodyToolVocabulary: Record<string, string>;
+  /** Canonical command tokens -> host renderings (Plan 020 note 7 command bindings). */
+  commandVocabulary: Record<string, string>;
   /** Canonical permissionMode -> Claude permissionMode. */
   permissionModeMap: Record<string, string>;
   /** Canonical model tier -> Claude model. */

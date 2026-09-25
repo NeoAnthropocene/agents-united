@@ -322,7 +322,7 @@ describe('Translation Ledger fail-fast (decision 4 / acceptance gate 5)', () => 
     );
   });
 
-  it.skip('THROWS at render when a surviving body tool token has no disposition (decision 4)', () => {
+  it('THROWS at render when a surviving body tool token has no disposition (decision 4)', () => {
     // `subagent_handback` is a canonical tool token with no ledger entry: leaving it in the
     // body must be a render-time error, not a silent survivor.
     const sample = roleWith('Hand results back with subagent_handback when the runtime provides it.');
@@ -331,7 +331,7 @@ describe('Translation Ledger fail-fast (decision 4 / acceptance gate 5)', () => 
     );
   });
 
-  it.skip('records a non-empty-rationale disposition for every surviving command token (note 7)', () => {
+  it('records a non-empty-rationale disposition for every surviving command token (note 7)', () => {
     const body = 'Open the team_command, then the deep_planning_command, then the interview_command.';
     const { ledger } = ClaudeProjector.renderRole(roleWith(body), 'agents/subagent-fixture-runner.md');
     for (const token of COMMAND_TOKENS) {
@@ -352,7 +352,7 @@ describe('Declarative overlays (decision 3 / acceptance gate 6)', () => {
     '    description: Overlay description wins.',
   ].join('\n');
 
-  it.skip('applies a valid claude overlay to the projected artifact (a valid overlay reaches its host)', () => {
+  it('applies a valid claude overlay to the projected artifact (a valid overlay reaches its host)', () => {
     const { content } = ClaudeProjector.renderRole(
       roleWith('Overlay fixture body.', CLAUDE_OVERLAY),
       'agents/subagent-fixture-runner.md'
@@ -363,7 +363,7 @@ describe('Declarative overlays (decision 3 / acceptance gate 6)', () => {
     expect(meta.description, 'overlay description must reach the artifact').toBe('Overlay description wins.');
   });
 
-  it.skip('pins precedence: the overlay wins over the dialect-derived default', () => {
+  it('pins precedence: the overlay wins over the dialect-derived default', () => {
     // Canonical says `model: inherit`; the dialect default for a specialist is sonnet; the
     // overlay says haiku — the overlay must win (overlay > dialect default).
     const { content } = ClaudeProjector.renderRole(
@@ -380,7 +380,7 @@ describe('Declarative overlays (decision 3 / acceptance gate 6)', () => {
     expect(meta.effort, 'explicit canonical effort survives unchanged').toBe('high');
   });
 
-  it.skip('pins precedence: the overlay wins over an explicit canonical value', () => {
+  it('pins precedence: the overlay wins over an explicit canonical value', () => {
     // Canonical declares `effort: high`; the overlay says low — overlay > canonical-derived.
     const { content } = ClaudeProjector.renderRole(
       roleWith('Overlay fixture body.', CLAUDE_OVERLAY),
@@ -421,7 +421,7 @@ describe('Declarative overlays (decision 3 / acceptance gate 6)', () => {
     ).toThrow();
   });
 
-  it.skip('fails the projection of an agent whose overlay is invalid (fail-fast, never silent)', () => {
+  it('fails the projection of an agent whose overlay is invalid (fail-fast, never silent)', () => {
     const invalid = roleWith('Overlay fixture body.', 'projections:\n  kimi:\n    model: haiku');
     expect(() => ClaudeProjector.renderRole(invalid, 'agents/subagent-fixture-runner.md')).toThrowError(
       /overlay|projection|unknown host/i
@@ -464,7 +464,7 @@ describe('Body-tool rewrite (decision 5 / acceptance gate 4)', () => {
     expect(body).toBe('Call send_message_batch, send_message2 and rescheduled tasks.');
   });
 
-  it.skip('rewrites the command tokens in prose; no raw command token survives (note 7)', () => {
+  it('rewrites the command tokens in prose; no raw command token survives (note 7)', () => {
     const body = [
       'Open the team_command when the team must assemble.',
       'Start the deep_planning_command for a fresh plan.',
@@ -519,7 +519,7 @@ describe('Body lint — section residue (re-evaluation note 4)', () => {
     expect(lintProjectedBody('A clean projection body with nothing foreign in it.\n', [])).toEqual([]);
   });
 
-  it.skip('projects a residue fixture body clean of all four patterns (they must not match)', () => {
+  it('projects a residue fixture body clean of all four patterns (they must not match)', () => {
     const body = [
       '## Nested Subagent Delegation',
       '',
@@ -543,11 +543,11 @@ describe('Body lint — section residue (re-evaluation note 4)', () => {
 
   it('flags residue that survives today\'s projection output (the seam must catch real renderers)', async () => {
     const { lintProjectedBody } = await dialectsApi();
-    // Whatever the renderer emits, the lint judges the POST-rewrite body (note 4): a body
-    // still carrying foreign-host residue must report it, never pass silently.
-    const residueBody = roleWith('## Nested Subagent Delegation\n\nStill foreign prose.');
-    const { content } = ClaudeProjector.renderRole(residueBody, 'agents/subagent-fixture-runner.md');
-    const violations = lintProjectedBody(content, []);
+    // The lint judges whatever body it is given (note 4): residue must be reported, never
+    // passed silently. The renderer now scrubs residue itself (see the fixture test above),
+    // so the seam check feeds residue straight to the lint, whatever emitted it.
+    const residueBody = ['## Nested Subagent Delegation', '', 'Still foreign prose.'].join('\n');
+    const violations = lintProjectedBody(residueBody, []);
     expect(violations.some(v => /Nested Subagent Delegation/.test(v)), `violations were: ${violations.join(' | ')}`).toBe(
       true
     );
