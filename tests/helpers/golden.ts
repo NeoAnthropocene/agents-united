@@ -21,6 +21,15 @@ export const ROOT = process.cwd();
 export const REGISTRY_DIR = path.resolve(ROOT, 'registry');
 export const GOLDEN_ROOT = path.resolve(ROOT, 'tests', 'golden', 'claude');
 
+/**
+ * EOL canonicalization (PR #46 CI fix): git's checkout policy renders content-identical files
+ * with different line endings per OS (core.autocrlf on Windows), so a raw byte compare fails
+ * across environments for bytes that differ ONLY in \r. The golden pin guards CONTENT bytes;
+ * both sides of every comparison are canonicalized to LF here. The snapshot files themselves
+ * stay byte-frozen (`tests/golden/.gitattributes` keeps them raw).
+ */
+export const normalizeEol = (text: string): string => text.replace(/\r\n/g, '\n');
+
 export interface GoldenEntry {
   /** The planned projection path (`.claude/…` / `.agents/plugins/…`) as the renderer emits it. */
   relPath: string;
@@ -102,7 +111,7 @@ export async function captureClaudeGoldens(): Promise<GoldenArtifact[]> {
     if (content === undefined) {
       throw new Error(`Golden capture: the Claude plan no longer produces ${entry.relPath}`);
     }
-    return { ...entry, content };
+    return { ...entry, content: normalizeEol(content) };
   });
 }
 
@@ -112,7 +121,7 @@ export function goldenDiskPath(entry: GoldenEntry): string {
 
 export function readGolden(entry: GoldenEntry): string | undefined {
   const disk = goldenDiskPath(entry);
-  return fs.existsSync(disk) ? fs.readFileSync(disk, 'utf8') : undefined;
+  return fs.existsSync(disk) ? normalizeEol(fs.readFileSync(disk, 'utf8')) : undefined;
 }
 
 export const isUpdateGolden: boolean = process.env.UPDATE_GOLDEN === '1';

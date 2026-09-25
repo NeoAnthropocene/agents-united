@@ -23,6 +23,14 @@ export const ROOT = process.cwd();
 export const REGISTRY_DIR = path.resolve(ROOT, 'registry');
 export const CREATED_GOLDEN_ROOT = path.resolve(ROOT, 'tests', 'golden', 'claude-created');
 
+/**
+ * EOL canonicalization (PR #46 CI fix): git's checkout policy renders content-identical files
+ * with different line endings per OS (core.autocrlf on Windows). The created-golden pin guards
+ * CONTENT bytes; both sides of every comparison are canonicalized to LF here while the snapshot
+ * files stay byte-frozen.
+ */
+export const normalizeEol = (text: string): string => text.replace(/\r\n/g, '\n');
+
 export const PILOT_STEMS = [
   'orchestrator-engineering',
   'subagent-backend-architect',
@@ -103,7 +111,7 @@ export async function captureCreatedGoldens(): Promise<CreatedGoldenArtifact[]> 
       relPath: `.claude/agents/${pipeline.realization.roleName}.md`,
       file: `${pipeline.realization.roleName}.md`,
       stem,
-      content: pipeline.created,
+      content: normalizeEol(pipeline.created),
     });
   }
   return artifacts;
@@ -111,7 +119,7 @@ export async function captureCreatedGoldens(): Promise<CreatedGoldenArtifact[]> 
 
 export function readCreatedGolden(entry: { file: string }): string | undefined {
   const disk = path.join(CREATED_GOLDEN_ROOT, entry.file);
-  return fs.existsSync(disk) ? fs.readFileSync(disk, 'utf8') : undefined;
+  return fs.existsSync(disk) ? normalizeEol(fs.readFileSync(disk, 'utf8')) : undefined;
 }
 
 export const isUpdateCreatedGolden: boolean = process.env.UPDATE_GOLDEN === '1';
