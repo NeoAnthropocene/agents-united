@@ -1,0 +1,48 @@
+{
+  "host": "claude",
+  "profileId": "claude@2.1.271",
+  "version": "2.1.271",
+  "semantics": "Capability Profile (ADR 0021 decision 8) — a versioned, static snapshot of the host tool surface that the Claude Binding Table targets. Host churn is absorbed as a one-host data PR plus that host's conformance suite. Runtime detection/adaptation at creation time is forbidden (decision 8; the never-LLMs rule): this file is data, never probed.",
+  "toolSurface": {
+    "files": ["Read", "Write", "Edit", "NotebookEdit", "Glob", "Grep"],
+    "execution": ["Bash"],
+    "delegation": ["Agent", "SendMessage", "SubagentHandback"],
+    "tasks": ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet"],
+    "scheduling": ["CronCreate", "CronList", "CronDelete"],
+    "userInteraction": ["AskUserQuestion"],
+    "web": ["WebFetch", "WebSearch"],
+    "planning": ["TodoWrite"],
+    "skills": ["Skill"]
+  },
+  "features": {
+    "subagentHandback": {
+      "status": "available",
+      "sinceVersion": "2.1.271",
+      "modes": ["auto"],
+      "binding": "specialist results are delivered back to the spawning conversation by the runtime"
+    },
+    "agentTeams": {
+      "status": "experimental",
+      "envVar": "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1",
+      "binding": "opt-in only; never load-bearing (one team per session, fixed lead, no nested teams)"
+    },
+    "pluginLane": {
+      "status": "available",
+      "flag": "--plugin-dir",
+      "binding": "compound plugin lane (.claude-plugin/plugin.json) per ADR 0018 decision 12"
+    },
+    "imageGeneration": {
+      "status": "unsupported",
+      "binding": "no image-generation tool exists on this host; asset creation happens outside the agent run"
+    }
+  },
+  "nameRules": {
+    "agentNamePattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+    "subagentPrefixPolicy": "strip the canonical `subagent-` prefix on this host (Plan 016 Step 4; zero collisions proven)"
+  },
+  "notes": [
+    "Version floor provenance: SUBAGENT_HANDBACK_MIN in src/core/claude-capabilities.ts pins 2.1.271 as the SubagentHandback floor.",
+    "Tool-surface provenance: the union of ClaudeProjector.CLAUDE_DIALECT.toolVocabulary values and the FEATURE_LEDGER bindings in src/core/claude-projector.ts (TaskCreate/TaskUpdate, Cron tools, SendMessage, AskUserQuestion, WebSearch, WebFetch, Agent).",
+    "Conformance: this profile is asserted by tests/golden/claude-created/** (Plan 021 Step 5 Conformance Suite)."
+  ]
+}

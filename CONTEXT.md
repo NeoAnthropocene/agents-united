@@ -234,9 +234,65 @@ _Avoid_: Daemon-starting probes, billed verification runs
 
 **Translation Ledger**:
 The declarative record (`registry/translation-ledger.json`) of how every canonical feature is treated per host, with exactly one disposition — `mapped`, `approximated`, `degraded`, or `unsupported` — plus a rationale and an optional remedy. Renderers must disposition every drop; an undispositioned drop is a render-time error rather than a silent warning, which is what makes translation loss auditable instead of invisible (ADR 0018 decision 9, generalized by ADR 0019).
+_Superseded semantics (ADR 0021)_: this record becomes the **Declared-Delta Registry** — dispositions classify host-native deltas above the Contract Floor rather than translation loss.
 _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanations instead of data
 
 ---
+
+### Host Dialect Codex Terms (ADR 0020)
+
+- **Host Dialect Spec (`HostDialectSpec`)**: typed, validated per-host translation description
+  (`src/core/dialects.ts` → `HOST_DIALECTS`): fields, tool/body vocabularies, command-token map,
+  role model/effort defaults, section overrides, runtime note, budgets, name rules. It is the
+  only writer for its host's projections, unbundled fallback included.
+  _Superseded semantics (ADR 0021)_: this spec becomes the host's **Binding Table** schema —
+  creator of record per host, not translator of record.
+- **Translation Ledger (`registry/translation-ledger.json`)**: host-keyed record of what happens
+  to every foreign feature/token at projection time. Dispositions: `mapped`, `approximated`,
+  `degraded`, `unsupported` — each with a rationale. A drop without a disposition throws.
+- **Command Token**: canonical slash-command placeholder (`team_command`,
+  `deep_planning_command`, `interview_command`) rewritten per host into that host's real command
+  (Cline `/team`, Antigravity `/teamwork-preview`) or prose guidance (Claude). Host command
+  names never appear in canonical prose.
+- **Projection Overlay**: declarative per-agent (optionally per-tier × per-host) field/section
+  replacement in the catalog. Precedence: overlay > dialect default > canonical.
+- **Section-Residue Lint**: CI-blocking check that projected bodies carry no foreign-host
+  section patterns (`Nested Subagent Delegation`, `Host Routing`, `language_server`, `Cline &
+  CLI`) and no raw canonical tool tokens outside code fences.
+- **Golden Snapshot**: committed byte-exact expected projection (`tests/golden/claude/**`),
+  regenerated only via a maintainer `UPDATE_GOLDEN=1` run with a PR-reviewed diff.
+
+---
+
+### Semantic Core Architecture Terms (ADR 0021)
+
+- **Semantic Core**: tool-free definition of what an agent *is* — identity, mission, scope
+  boundaries, structured output contract, safety rules, and tool-neutral behavioural invariants.
+  Authored in `registry/core/**`, shipped in the package, edited via PR only. Contains zero host
+  tool names, command names, or host mechanics.
+- **Contract Floor**: the subset of the Core (identity, scope boundaries, output contract, safety)
+  every host realization must honor verbatim. Host-native specialization may never cross it.
+- **Realization Layer**: one host's native rendering of a core agent — invariant → tool bindings,
+  host-native choreography, and declared deltas. Six realizations may read differently; they may
+  not *mean* differently below the floor.
+- **Binding Table**: per-host data mapping invariants and behaviours to concrete host tools,
+  commands, and mechanics (successor to the translator vocabulary maps). Targets a Capability
+  Profile; a host release change touches this table only.
+- **Capability Profile**: versioned snapshot of a host's tool surface (e.g. `claude@2.1.271`,
+  `antigravity@2026-08`). Absorbs host churn as one-host data PRs with a one-host blast radius.
+- **Declared Delta**: an audited, host-specific deviation *above* the Contract Floor (more or less
+  scope, host-native affordances), classified `mapped | approximated | degraded | unsupported` with
+  a rationale. Undeclared divergence is a conformance failure.
+- **Creation Engine**: deterministic codegen assembling Semantic Core + Binding Table + Capability
+  Profile into native host files (successor to the Projector). Renders are creators of record —
+  never translators, never LLMs (supersedes ADR 0020 decision 1's "translators of record").
+- **Conformance Suite**: per-host golden snapshots plus floor-identity assertions (successor to the
+  Plan 017 golden pin). A realization ships only when its suite is green.
+- **Semantic Core vs Realization**: the single most important distinction in this domain. The core
+  answers *what this agent is and must never stop being*; a realization answers *how that is
+  enacted on one host*. Translation loss is eliminated structurally: no cross-host prose hop exists.
+_Avoid_: letting host tool names leak into the core, undeclared scope drift between realizations,
+runtime host detection/rewiring (nondeterministic — churn belongs in capability-profile data)
 
 ### Agent Registry & Department Hierarchy
 

@@ -40,12 +40,20 @@ interface SupersedingProjection {
 }
 
 export class DoctorEngine {
-  private static async isManagedProjection(absPath: string, isAgentsMd: boolean): Promise<boolean> {
+  private static async isManagedProjection(absPath: string, isAgentsMd: boolean, recordedHash?: string): Promise<boolean> {
     const content = await fs.readFile(absPath, 'utf8');
     if (isAgentsMd) {
       return content.includes('managed-by: agents-united');
     }
-    return HostProjector.hasManagedMarker(content);
+    if (HostProjector.hasManagedMarker(content)) return true;
+    // ADR 0017 amendment (Gate 7, 2026-09-25): markerless sidecar artifacts (LICENSE.txt,
+    // references/**) cannot carry the marker — they are managed iff their bytes still hash
+    // to the value recorded at install time.
+    if (recordedHash) {
+      const bytes = await fs.readFile(absPath);
+      return `sha256:${crypto.createHash('sha256').update(bytes).digest('hex')}` === recordedHash;
+    }
+    return false;
   }
 
   private static isCompoundLaneHost(host: string | undefined): host is CompoundLaneHost {
@@ -271,7 +279,7 @@ export class DoctorEngine {
             }
             continue;
           }
-          const managed = await this.isManagedProjection(absProjection, projPath === 'AGENTS.md');
+          const managed = await this.isManagedProjection(absProjection, projPath === 'AGENTS.md', manifest.projections?.[projPath]?.hash);
           if (!managed) {
             pushProjectionWarning(projPath, `user-modified projection ${projPath}`);
           }
@@ -304,7 +312,7 @@ export class DoctorEngine {
             continue;
           }
           if (proj.managedMarker) {
-            const managed = await this.isManagedProjection(absPath, projRelPath === 'AGENTS.md');
+            const managed = await this.isManagedProjection(absPath, projRelPath === 'AGENTS.md', proj.hash);
             if (!managed) {
               pushProjectionWarning(projRelPath, `user-modified projection ${projRelPath}`);
             }

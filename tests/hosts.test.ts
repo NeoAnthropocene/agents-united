@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
-import { HOST_REGISTRY, KNOWN_HOST_IDS, isKnownHost, planInstallTargets } from '../src/core/hosts.js';
+import { HOST_REGISTRY, KNOWN_HOST_IDS, isKnownHost, planInstallTargets, SUPPORTED_HOST_IDS, UNDER_DEVELOPMENT_HOST_IDS, PLANNED_HOSTS, hostAvailabilityNotice } from '../src/core/hosts.js';
 import { AgentHostAdapter } from '../src/core/adapter.js';
 
 describe('Host Registry', () => {
@@ -123,5 +123,33 @@ describe('planInstallTargets (Option B — main library + translated copies)', (
       fanout: ['cline'],
       addedCanonicalStore: true,
     });
+  });
+});
+
+describe('Host availability (product focus: Antigravity, Cline, Claude Code)', () => {
+  it('marks exactly the supported focus hosts as supported', () => {
+    expect([...SUPPORTED_HOST_IDS].sort()).toEqual(['agents', 'claude', 'cline', 'gemini']);
+  });
+
+  it('tags cursor, opencode and codex as under development', () => {
+    expect([...UNDER_DEVELOPMENT_HOST_IDS].sort()).toEqual(['codex', 'cursor', 'opencode']);
+  });
+
+  it('lists Kimi / Moonshot as planned, display-only (never in HOST_REGISTRY)', () => {
+    expect(PLANNED_HOSTS.map((h) => h.id)).toEqual(['kimi']);
+    expect(isKnownHost('kimi')).toBe(false);
+  });
+
+  it('renders the TUI availability notice with tags and the planning-list note', () => {
+    const notice = hostAvailabilityNotice();
+    expect(notice).toContain('✅ Supported:');
+    expect(notice).toContain('🚧 Under Development (unavailable):');
+    expect(notice).toContain('🗓 Planned: Kimi / Moonshot (projector on the planning list)');
+  });
+
+  it('every host carries a status', () => {
+    for (const host of Object.values(HOST_REGISTRY)) {
+      expect(['supported', 'under-development']).toContain(host.status);
+    }
   });
 });

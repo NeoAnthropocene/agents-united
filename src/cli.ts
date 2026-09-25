@@ -16,7 +16,7 @@ import type { ClaudeActivationPlan } from './core/claude-launcher.js';
 import { ClaudeCapabilityProbe } from './core/claude-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
-import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets } from './core/hosts.js';
+import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
 const cli = cac('agents-united');
@@ -306,7 +306,7 @@ cli
   .option('-s, --symlink', 'Create symbolic links to central registry cache (default / recommended)')
   .option('--copy', 'Create independent standalone copies of asset files')
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
-  .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cursor, cline, opencode, codex')
+  .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline. Under Development hosts (cursor, opencode, codex) are refused')
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
   .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
   .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
@@ -361,6 +361,14 @@ cli
         );
       }
       fanout = Array.from(new Set([...fanout, ...parsedFanout.filter(h => isKnownHost(h) && HOST_REGISTRY[h].projectionCapable)]));
+  const underDevFanout = Array.from(new Set(parsedFanout.filter((h) => isKnownHost(h) && HOST_REGISTRY[h].status === 'under-development')));
+  if (underDevFanout.length > 0) {
+    note(
+      `Refusing --fanout host(s): ${underDevFanout.join(', ')} — they are listed as Under Development and unavailable. Supported --fanout ids: ${SUPPORTED_HOST_IDS.filter((h) => HOST_REGISTRY[h].projectionCapable).join(', ')}. Drop ${underDevFanout.join(', ')} from --fanout and run again.`,
+      'Host unavailable'
+    );
+    process.exit(1);
+  }
     }
 
     // Interactive Wizard when running interactively without flags
@@ -378,6 +386,9 @@ cli
       // Step 1: Which AI tools should we configure agent teams & personas for?
       // The master library (.agents/) is always included when another tool is
       // chosen — it is the single source every translated copy is generated from.
+      // Availability: only supported hosts are selectable here; the 🚧 Under
+      // Development and 🗓 Planned hosts are listed in the availability note.
+      note(hostAvailabilityNotice(), 'Host availability');
       const hostSelection = await multiselect({
         message: '1. Which AI tools should we configure agent teams & personas for?',
         options: [
@@ -392,24 +403,9 @@ cli
             hint: detectedHosts.includes('claude') ? 'found in this project' : 'orchestrator & subagent personas for Claude Code',
           },
           {
-            value: 'cursor',
-            label: HOST_REGISTRY.cursor.label,
-            hint: detectedHosts.includes('cursor') ? 'found in this project' : 'orchestrator & subagent personas for Cursor IDE',
-          },
-          {
             value: 'cline',
             label: HOST_REGISTRY.cline.label,
             hint: detectedHosts.includes('cline') ? 'found in this project' : 'configured agents, skills, rules, workflows & team manifests for Cline',
-          },
-          {
-            value: 'opencode',
-            label: HOST_REGISTRY.opencode.label,
-            hint: detectedHosts.includes('opencode') ? 'found in this project' : 'orchestrator & subagent personas for OpenCode',
-          },
-          {
-            value: 'codex',
-            label: HOST_REGISTRY.codex.label,
-            hint: detectedHosts.includes('codex') ? 'found in this project' : 'root index linking orchestrators, subagents & skills for Codex, Copilot, Aider & Zed',
           },
           {
             value: 'gemini',
@@ -417,7 +413,7 @@ cli
             hint: detectedHosts.includes('gemini') ? 'found in this project' : 'older Antigravity 1.0 / Gemini folder',
           },
         ],
-        initialValues: detectedHosts.length > 0 ? detectedHosts : ['agents'],
+        initialValues: detectedHosts.length > 0 ? detectedHosts.filter((h) => HOST_REGISTRY[h]?.status === 'supported') : ['agents'],
         required: true,
       });
 
@@ -925,6 +921,22 @@ cli
         );
       }
 
+      // Owner Gate-7 finding (2026-09-25): hosts discover skills at session start, so tell the
+      // operator how THIS session can pick up what was just installed (docs/host-skill-reload.md).
+      if (!options.dryRun) {
+        note(
+          pc.yellow(
+            'New skills are discovered at session start. To pick them up now:\n' +
+              '  Claude Code ..... user types /reload-skills (#58733)\n' +
+              '  Antigravity CLI . user types /skills reload\n' +
+              '  Antigravity App . restart the app, or use @<skill_name>\n' +
+              '  Cline ........... agents read .cline/skills/ directly\n' +
+              'Slash commands only fire when YOU type them; agents can read the file.'
+          ),
+          'Pick up new skills'
+        );
+      }
+
       outro(pc.green(`✔ Installed "${identifier}" successfully!`));
     } catch (err: any) {
       s.stop(pc.red('Failed resolution'));
@@ -1078,6 +1090,16 @@ cli
           ),
           'Invalid fanout'
         );
+      }
+      const updateUnderDev = Array.from(new Set(parsedFanout.filter((h) => isKnownHost(h) && HOST_REGISTRY[h].status === 'under-development')));
+      if (updateUnderDev.length > 0) {
+        note(
+          pc.yellow(
+            `Refusing --fanout host(s): ${updateUnderDev.join(', ')} — they are listed as Under Development and unavailable. Supported --fanout ids: ${SUPPORTED_HOST_IDS.filter((h) => HOST_REGISTRY[h].projectionCapable).join(', ')}. Drop ${updateUnderDev.join(', ')} from --fanout and run again.`
+          ),
+          'Host unavailable'
+        );
+        process.exit(1);
       }
       updateFanout = parsedFanout.filter(h => isKnownHost(h) && HOST_REGISTRY[h].projectionCapable);
     }
@@ -1759,6 +1781,18 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
       });
 
       installSpinner.stop(pc.green(`✔ Successfully installed ${bundle.name}!`));
+      // Owner Gate-7 finding (2026-09-25): skills are discovered at session start.
+      note(
+        pc.yellow(
+          'New skills are discovered at session start. To pick them up now:\n' +
+            '  Claude Code ..... user types /reload-skills (#58733)\n' +
+            '  Antigravity CLI . user types /skills reload\n' +
+            '  Antigravity App . restart the app, or use @<skill_name>\n' +
+            '  Cline ........... agents read .cline/skills/ directly\n' +
+            'Slash commands only fire when YOU type them; agents can read the file.'
+        ),
+        'Pick up new skills'
+      );
       note(
         formatInstallationSummary({
           bundleName: result.installed.targetBundle || bundle.name,

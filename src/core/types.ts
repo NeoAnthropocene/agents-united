@@ -577,5 +577,85 @@ export interface ClaudeDialect {
   maxRuleLines: number;
 }
 
+/**
+ * ADR 0021 decision 9 — Translation Ledger dispositions survive as delta classifications;
+ * a Declared Delta is an audited host-specific deviation ABOVE the Contract Floor.
+ */
+export type DeltaDisposition = LedgerDisposition;
+export type DeclaredDelta = TranslationLedgerEntry;
+
+/**
+ * Plan 021 (ADR 0021) — the tool-free definition of what an agent IS: identity, mission,
+ * scope boundaries, structured output contract, safety rules, and tool-neutral behavioural
+ * invariants. Authored in `registry/core/*.core.md`; contains zero host tool names,
+ * command names, or host mechanics (decision 1).
+ */
+export interface SemanticCore {
+  identity: string;
+  mission: string;
+  scope_boundaries: string;
+  output_contract: string;
+  safety: string;
+  invariants: string[];
+}
+
+/** Plan 021 gate 4 — conformance input: what the realization binds, adds, and declares. */
+export interface ValidateDeclaredDeltasInput {
+  realization: { boundInvariants: string[]; aboveFloorScope: string[] };
+  core: SemanticCore;
+  deltas: DeclaredDelta[];
+}
+
+/** ADR 0021 decision 2 — an invariant BOUND to host mechanics, never translated. */
+export interface InvariantBinding {
+  /** Tool-neutral behavioural law as authored in the Semantic Core invariants. */
+  invariant: string;
+  /** The concrete host-native mechanic this law is bound to on this host. */
+  binding: string;
+}
+
+/**
+ * ADR 0021 decision 9 — `HostDialectSpec` evolves into the per-host Binding Table schema:
+ * the Plan 017 codex fields survive (they are the vocabulary surface) and the realization
+ * gains `capabilityProfile`, `invariantBindings`, and a `deltaRegistry` reference. One spec
+ * per host; host churn is a one-host data PR.
+ */
+export interface HostDialectSpec {
+  id: string;
+  fields: Record<string, 'keep' | 'map' | 'drop'>;
+  toolVocabulary: Record<string, string>;
+  bodyToolVocabulary: Record<string, string>;
+  commandVocabulary: Record<string, string>;
+  features: Record<string, boolean | string>;
+  budgets: { skillDescriptionChars: number; agentDescriptionTokens: number };
+  nameRules: { pattern: string; subagentPrefixPolicy: string };
+  launcher: { flags: string[]; notes: string };
+  markerProfile: string;
+  /** ADR 0021 additions — the Binding Table proper. */
+  capabilityProfile: string;
+  invariantBindings: InvariantBinding[];
+  deltaRegistry: string;
+}
+
+/** Plan 021 Step 4 — the per-role binding view consumed by the Claude Creation Engine. */
+export interface ClaudeCreationBindingTable {
+  host: string;
+  /** The native role name (e.g. `backend-architect`); optional so fixtures stay minimal. */
+  roleName?: string;
+  /** `invariant` (HostDialectSpec shape) or `feature` (legacy codex shape) identify the law. */
+  invariantBindings?: Array<{ invariant?: string; feature?: string; binding: string }>;
+  /** `rendering` (Binding Table shape) or `native` (legacy shape) give the host command. */
+  commandBindings?: Array<{ command: string; rendering?: string; native?: string; rationale?: string }>;
+  commandVocabulary?: Record<string, string>;
+  deltas?: DeclaredDelta[];
+}
+
+/** Plan 021 Step 4 — the versioned tool-surface snapshot the creation engine targets. */
+export interface ClaudeCreationProfile {
+  host: string;
+  version: string;
+  tools?: string[];
+}
+
 
 
