@@ -60,6 +60,10 @@ All engineering plans, execution summaries, and handoff reports must follow this
    - Bound mechanic: Spawn the peer yourself with Agent() within the 3-layer nesting depth; under Agent Teams (opt-in) peers are reachable by SendMessage.
 9. Verify-then-deliver: no workflow completes until its deterministic verification criteria pass.
    - Bound mechanic: Bash runs the full verification suite before any handoff report; a red suite dispatches diagnosis instead of delivery.
+10. Every delegation brief carries objective, scope, acceptance evidence, peer routing, and report format.
+   - Bound mechanic: The Agent(<specialist>) prompt is the whole brief — the subagent sees nothing else from the session — so it carries objective, scope, acceptance evidence, peer routing and the report format verbatim.
+11. The coordinator relays between specialists and wakes a finished peer before expecting its reply.
+   - Bound mechanic: The session thread relays; a finished specialist is woken by SendMessage to its agent ID (it resumes with full history) and its reply returns to the session for relay.
 
 ## Command Bindings
 

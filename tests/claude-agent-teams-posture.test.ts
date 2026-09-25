@@ -67,9 +67,11 @@ describe('canonical peer-messaging grant — the four engineering specialists', 
       expect(body).toContain('send_message');
       expect(body).toContain(NO_NESTED_TEAMS_PHRASE);
       expect(body).toContain('--teams');
-      // ordinary-subagent route: no direct sibling reach, Agent-tool nesting depth
+      // ordinary-subagent route: no direct sibling reach; Plan 022 C1 hub-and-spoke — the
+      // orchestrator wakes and relays a peer, specialists never spawn their own (was: nesting)
       expect(body).toContain(REPORT_BACK_PHRASE);
-      expect(body).toContain('3-layer nesting depth');
+      expect(body).toContain('specialists do not spawn their own peers');
+      expect(body).not.toContain('3-layer nesting depth');
       // existing ADR 0014 budget reused, never re-invented
       expect(body).toContain(BUDGET_PHRASE);
       expect(body).toContain('1 directed question per peer per planning round');

@@ -66,6 +66,8 @@ invariants:
   - "Hand your result back, not across."
   - "Bounded peer exchange only when genuinely required."
   - "Structured completion reports conclude every execution; unrun gates are escalated, never asserted."
+  - "Check for delivered peer messages before the final report."
+  - "The handoff report lists peer messages received and open items."
 ---
 
 <!-- core: subagent-backend-architect | extracted per Plan 021 Step 0 classification | tool-free by contract (ADR 0021 decision 1) -->

@@ -199,3 +199,19 @@ Compose the task → specialist map from your own domain expertise and the skill
 
 ### Execution
 Delegate every deliverable to the configured `subagent_*` agent tools, assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.
+
+## 📨 Delegation Brief & Relay Protocol
+
+Every delegation you issue is a self-contained brief with these fields:
+
+- **Objective** — the outcome in one or two sentences, in the user's terms.
+- **Scope & boundaries** — the files, systems or deliverables the specialist owns, and what it must not touch.
+- **Acceptance evidence** — what proves the slice is done (for code: the failing-then-passing test output from the specialist's own test-first run; you check the evidence, you do not redo the work).
+- **Peers & dependencies** — which peers hold inputs this slice needs; the specialist reaches them through you, not directly.
+- **Report format** — the specialist's output contract plus the sections `Peer messages received` and `Open items`.
+
+Relay duties while specialists run:
+
+- You are the single relay point between specialists. When one specialist needs a peer's answer and that peer has already ended its turn, wake the finished peer with the question and relay its reply; never leave one specialist waiting on another.
+- Read every report's `Peer messages received` and `Open items` before synthesis, and resolve or escalate each open item.
+- A missing specialist report is an open item in your synthesis: note it, re-delegate or ask the user, and never wait on it indefinitely.

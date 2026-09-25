@@ -96,6 +96,25 @@ export const HOST_DIALECTS: Record<string, HostDialectSpec> = {
         invariant: 'Never busy-poll; liveness is event- or schedule-driven.',
         binding: 'CronCreate/CronList for daemon health checks and TaskCreate/TaskUpdate for task state; completion wakes the session (approximated: cron replaces event-driven timers).',
       },
+      // Plan 022 C1–C7 — the comms law bound to Claude mechanics (verified against the
+      // sub-agents reference, 2026-09-25: messages are read between turns; SendMessage to an
+      // agent ID resumes a finished subagent with its full history).
+      {
+        invariant: 'Check for delivered peer messages before the final report.',
+        binding: 'SendMessage deliveries are read between turns, not on arrival: read every delivered message before the final report returns through SubagentHandback; never end the turn right after sending and expect a reply.',
+      },
+      {
+        invariant: 'The handoff report lists peer messages received and open items.',
+        binding: 'The SubagentHandback report carries "Peer messages received" and "Open items" sections; a report cut short by a turn limit is marked partial by the runtime, so open items are listed, never implied.',
+      },
+      {
+        invariant: 'Every delegation brief carries objective, scope, acceptance evidence, peer routing, and report format.',
+        binding: 'The Agent(<specialist>) prompt is the whole brief — the subagent sees nothing else from the session — so it carries objective, scope, acceptance evidence, peer routing and the report format verbatim.',
+      },
+      {
+        invariant: 'The coordinator relays between specialists and wakes a finished peer before expecting its reply.',
+        binding: 'The session thread relays; a finished specialist is woken by SendMessage to its agent ID (it resumes with full history) and its reply returns to the session for relay.',
+      },
     ],
     deltaRegistry: 'registry/translation-ledger.json',
   },

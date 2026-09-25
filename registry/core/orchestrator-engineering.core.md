@@ -26,6 +26,8 @@ invariants:
   - "Never busy-poll; liveness is event-driven or cron-based."
   - "Bounded peer exchange only when genuinely required."
   - "Verify-then-deliver: no workflow completes until its deterministic verification criteria pass."
+  - "Every delegation brief carries objective, scope, acceptance evidence, peer routing, and report format."
+  - "The coordinator relays between specialists and wakes a finished peer before expecting its reply."
 ---
 
 <!-- core: orchestrator-engineering | extracted per Plan 021 Step 0 classification (dual-policy contradiction resolved toward ADR 0015) | tool-free by contract (ADR 0021 decision 1) -->
