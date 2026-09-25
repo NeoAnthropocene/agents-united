@@ -383,3 +383,44 @@ export class RegistryResolver {
     }
   }
 }
+
+/**
+ * Plan 021 (ADR 0021 decision 9) — loads the Declared-Delta Registry
+ * (`registry/translation-ledger.json`, the Translation Ledger repurposed: dispositions now
+ * classify host-native deltas above the Contract Floor). Fail-fast: an entry without a valid
+ * classification (`mapped|approximated|degraded|unsupported`) or without a rationale throws.
+ */
+export function loadTranslationLedger(
+  registryDir = 'registry',
+): import('./types.js').TranslationLedgerEntry[] {
+  const ledgerPath = path.join(registryDir, 'translation-ledger.json');
+  const parsed: unknown = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  // Accept both the seed shape ({ semantics, entries }) and a bare entries array (fixtures).
+  const entries = Array.isArray(parsed) ? parsed : (parsed as { entries?: unknown }).entries;
+  if (!Array.isArray(entries)) {
+    throw new Error(`Declared-Delta Registry error: ${ledgerPath} must be a JSON array of entries or carry an "entries" array.`);
+  }
+  const validDispositions = new Set(['mapped', 'approximated', 'degraded', 'unsupported']);
+  return entries.map((raw, index) => {
+    const entry = raw as Record<string, unknown>;
+    const feature = entry.feature;
+    const host = entry.host;
+    const disposition = entry.disposition;
+    const rationale = entry.rationale;
+    if (typeof feature !== 'string' || feature.trim() === '') {
+      throw new Error(`Declared-Delta Registry error: entries[${index}] needs a non-empty feature.`);
+    }
+    if (typeof host !== 'string' || host.trim() === '') {
+      throw new Error(`Declared-Delta Registry error: entries[${index}] ("${feature}") needs a non-empty host.`);
+    }
+    if (typeof disposition !== 'string' || !validDispositions.has(disposition)) {
+      throw new Error(
+        `Declared-Delta Registry error: entries[${index}] ("${feature}") needs disposition mapped|approximated|degraded|unsupported.`,
+      );
+    }
+    if (typeof rationale !== 'string' || rationale.trim() === '') {
+      throw new Error(`Declared-Delta Registry error: entries[${index}] ("${feature}") needs a rationale.`);
+    }
+    return { feature, host, disposition, rationale } as import('./types.js').TranslationLedgerEntry;
+  });
+}

@@ -1,0 +1,13 @@
+{
+  "host": "claude",
+  "role": "subagent-code-reviewer",
+  "roleName": "code-reviewer",
+  "semantics": "Realization Layer (ADR 0021 decision 1) — the tool-neutral Core invariants BOUND to Claude-native mechanics (decision 2). Host laws shared by every role live in HOST_DIALECTS.claude (src/core/dialects.ts); this file adds only role-specific bindings.",
+  "invariantBindings": [
+    { "invariant": "Exhaustive scanning precedes selective judgment.", "binding": "Phases 1–8 run as exhaustive Grep/Read sweeps before any finding is judged; static analysers run in Bash (eslint, bandit)." },
+    { "invariant": "Evidence-based findings only: every claim cites file, line, and snippet.", "binding": "The report template requires File/Snippet/Risk/Remediation lines per finding; Read supplies the cited code." },
+    { "invariant": "Findings are recommendations only; the reviewer never executes or modifies.", "binding": "The tool allowlist carries no write tools — Read/Grep/Glob only; Bash is restricted to read-only analysers by policy." },
+    { "invariant": "At most two peer exchanges per specialist pair and one directed question per peer per planning round.", "binding": "Under Agent Teams (opt-in) peer exchange uses SendMessage; otherwise the budget is spent through the orchestrator's session." }
+  ],
+  "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
+}
