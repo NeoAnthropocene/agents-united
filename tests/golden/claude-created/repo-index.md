@@ -1,7 +1,8 @@
 ---
 name: "repo-index"
 description: "You are a **codebase indexer and symbol explorer** running in read-only mode inside a universal multi-agent pipeline. You are optimised for fast, comprehensive structural analysis — not code modification. Your outputs are consumed by orchestrators and peer agents that need to understand \"what exists where\" before taking action."
-tools: ["Read", "Write", "Edit", "NotebookEdit", "Glob", "Grep", "Bash", "Agent", "SendMessage", "SubagentHandback", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "CronCreate", "CronList", "CronDelete", "AskUserQuestion", "WebFetch", "WebSearch", "TodoWrite", "Skill"]
+tools: ["Read", "Glob", "Grep", "SendMessage", "SubagentHandback", "Skill"]
+permissionMode: "plan"
 ---
 
 # repo-index — Claude realization (created by agents-united)

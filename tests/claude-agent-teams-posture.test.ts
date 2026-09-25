@@ -88,8 +88,8 @@ describe('projected Claude specialists carry SendMessage', () => {
 
       expect(meta.name).toBe(name.replace(/^subagent-/, ''));
       expect(meta.tools).toContain('SendMessage');
-      // the bare Agent pin (tests/claude-projector.test.ts) must be unaffected by the new grant
-      expect(meta.tools).toContain('Agent');
+      // Plan 022 H2: specialists hold no Agent tool in any form (hub-and-spoke; gate 5)
+      expect(meta.tools).not.toContain('Agent');
       expect(meta.tools.some((t: string) => t.startsWith('Agent('))).toBe(false);
       // unknown tool names block agent launch in Claude Code: no snake_case canonical token may survive
       expect(meta.tools.filter((t: string) => /^[a-z][a-z_]*$/.test(t))).toEqual([]);
@@ -259,7 +259,7 @@ describe('organization-tier specialists carry the peer-messaging grant', () => {
 
       const meta = yaml.parse(match![1]) as Record<string, any>;
       expect(meta.tools).toContain('SendMessage');
-      expect(meta.tools[0]).toBe('Agent');
+      expect(meta.tools).not.toContain('Agent'); // Plan 022 H2: no nested spawning
       // The runtime's own hand-off tool is granted to specialists so the Tier-1 hand-off is explicit.
       expect(meta.tools).toContain('SubagentHandback');
       // Model/effort posture: specialists run sonnet, and their declared effort is preserved.

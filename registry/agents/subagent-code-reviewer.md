@@ -8,7 +8,7 @@ description: >
   error handling, and style violations. Produces a structured, severity-rated
   review report without modifying any files.
 model: inherit
-permissionMode: acceptEdits
+permissionMode: readOnly
 commandExecutionPolicy: auto
 mainAgent: false
 subagent: true
@@ -17,7 +17,6 @@ tools:
   - grep_search
   - find_by_name
   - list_dir
-  - run_command
   - send_message
 hooks:
   PreInvocation:
@@ -25,9 +24,7 @@ hooks:
   PostInvocation:
     - log: subagent-code-reviewer finished — review report ready
   PreToolUse:
-    - tool: run_command
-      guard: Deny run_command if CommandLine matches
-        /(rm|del|DROP|shutdown|curl|wget|sudo)/i
+    - guard: Deny any tool that would mutate the filesystem or execute commands
   PostToolUse:
     - tool: "*"
       log: Tool execution completed
@@ -128,9 +125,9 @@ Your review domains:
 24. Flag nesting depth > 4 as a complexity warning.
 
 ### Phase 8 — Static Analyser Run
-25. If configured, run `run_command`: `npx eslint src --format json` and parse results.
-26. If Python project, run `run_command`: `bandit -r . -f json`.
-27. Integrate static analyser output into the final report.
+25. This role executes no commands (read-only, Plan 022 H3). If static-analyser output already exists in the workspace or the brief (e.g. an `eslint --format json` or `bandit -f json` report), read and parse it.
+26. If no analyser output is available, list the analyser run (`npx eslint src --format json`, `bandit -r . -f json`) under Open items for the orchestrator to run.
+27. Integrate any static analyser output into the final report.
 
 ---
 
@@ -141,10 +138,9 @@ Your review domains:
 | `list_dir` | Project structure exploration |
 | `view_file` | Reading source files, configs, lock files |
 | `grep_search` | Pattern-based vulnerability and anti-pattern scanning |
-| `run_command` | Running read-only static analysis tools (eslint, bandit, semgrep) |
 
-**Never** use `run_command` to execute the application, modify files, or make
-network requests.
+This role has **no command-execution tool**: never execute the application, modify files, or make
+network requests — request analyser runs from the orchestrator under Open items.
 
 ---
 

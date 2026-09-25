@@ -9,5 +9,7 @@
     { "invariant": "Accessibility and Core Web Vitals budgets are release gates, not niceties.", "binding": "Verification Results in the report carry LCP/INP/CLS figures and an accessibility conformance line." },
     { "invariant": "At most two peer exchanges per specialist pair and one directed question per peer per planning round.", "binding": "Under Agent Teams (opt-in) peer exchange uses SendMessage; otherwise the budget is spent through the orchestrator's session." }
   ],
+  "tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "SendMessage", "SubagentHandback", "Skill"],
+  "permissionMode": "acceptEdits",
   "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
 }

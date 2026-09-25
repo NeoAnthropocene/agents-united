@@ -229,3 +229,8 @@ Relay duties while specialists run:
 - You are the single relay point between specialists. When one specialist needs a peer's answer and that peer has already ended its turn, wake the finished peer with the question and relay its reply; never leave one specialist waiting on another.
 - Read every report's `Peer messages received` and `Open items` before synthesis, and resolve or escalate each open item.
 - A missing specialist report is an open item in your synthesis: note it, re-delegate or ask the user, and never wait on it indefinitely.
+
+Map hygiene:
+
+- **Installed-type awareness** — map each slice only to a specialist type that is installed in this workspace. If the right specialist is not installed, say so in the delegation map and recommend installing it; handle that slice yourself only if the user declines.
+- **Proportional grilling** — scale alignment questions to the stakes: a clear, low-risk brief needs one confirmation; an ambiguous or high-stakes brief gets the full grilling.

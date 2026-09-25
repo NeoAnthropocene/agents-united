@@ -147,3 +147,16 @@ describe('Plan 022 comms law — Semantic Core invariants + Claude bindings (cre
     expect(violations, violations.join('\n')).toEqual([]);
   });
 });
+
+describe('Plan 022 H6 — orchestrator correctness in the delegation brief', () => {
+  it('every orchestrator carries installed-type awareness and proportional grilling', () => {
+    const violations: string[] = [];
+    for (const file of coordinators) {
+      const body = section(read(file), COORDINATOR_HEADING) ?? '';
+      if (!/\*\*Installed-type awareness\*\*/.test(body)) violations.push(`${file}: missing installed-type awareness`);
+      if (!/\*\*Proportional grilling\*\*/.test(body)) violations.push(`${file}: missing proportional grilling`);
+      if (!/you do not redo the work/.test(body)) violations.push(`${file}: missing specialist-runs-TDD evidence check`);
+    }
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
+});

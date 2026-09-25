@@ -368,7 +368,9 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
         const parsed = YAML.parse(match![1]);
 
         expect(parsed.commandExecutionPolicy, `${file} must have commandExecutionPolicy: auto`).toBe('auto');
-        expect(parsed.permissionMode, `${file} must have permissionMode: acceptEdits`).toBe('acceptEdits');
+        // Plan 022 H3: reviewers/indexers run read-only; implementers keep acceptEdits.
+        const expected = file === 'subagent-code-reviewer.md' || file === 'subagent-repo-index.md' ? 'readOnly' : 'acceptEdits';
+        expect(parsed.permissionMode, `${file} must have permissionMode: ${expected}`).toBe(expected);
       }
     });
 

@@ -43,7 +43,7 @@ export const HOST_DIALECTS: Record<string, HostDialectSpec> = {
     bodyToolVocabulary: claude.bodyToolVocabulary,
     commandVocabulary: claude.commandVocabulary,
     features: {
-      hooks: false,
+      hooks: 'managed PreToolUse guard in role frontmatter (Plan 022 H5: git push --force, .env writes, vercel --prod); prose lifecycle hooks advisory',
       delegationAllowlists: true,
       pathScopedRules: false,
       skillsFolders: true,

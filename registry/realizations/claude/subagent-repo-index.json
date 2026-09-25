@@ -9,5 +9,7 @@
     { "invariant": "Ambiguity is documented, never guessed.", "binding": "Re-exports and dynamic imports that obscure a dependency are listed under Open Questions in the report." },
     { "invariant": "At most two peer exchanges per specialist pair and one directed question per peer per planning round.", "binding": "Under Agent Teams (opt-in) peer exchange uses SendMessage; otherwise the budget is spent through the orchestrator's session." }
   ],
+  "tools": ["Read", "Glob", "Grep", "SendMessage", "SubagentHandback", "Skill"],
+  "permissionMode": "plan",
   "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
 }

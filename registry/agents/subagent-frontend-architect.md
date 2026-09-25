@@ -22,8 +22,6 @@ tools:
   - find_by_name
   - list_dir
   - run_command
-  - manage_task
-  - schedule
   - send_message
 hooks:
   PreInvocation:
@@ -382,11 +380,10 @@ export async function GET() {
 
 ## ⚡ Task Delegation & Reactive Liveness Protocol
 
-When executing long-running background tasks (e.g. test suites, build pipelines, migrations, daemon watchers) or coordinating subagents:
-1. **Background Execution**: Launch long-running operations via `run_command` with appropriate timeouts. The command runs as an asynchronous background task returning a `task-id`.
-2. **Task Management**: Use `manage_task` (`action: 'status' | 'list' | 'kill' | 'send_input'`) to inspect logs or send input without blocking the main session.
-3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
-4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
+When executing long-running operations (e.g. test suites, builds, dev servers):
+1. **Bounded execution**: run long operations via `run_command` with explicit timeouts; never leave an unattended process running past your turn.
+2. **Never busy-poll**: wait on the command's own completion instead of looping on status checks.
+3. **Task tracking and health monitoring belong to the orchestrator** (Plan 022 H3): this role holds no task-management or timer tools. If work must outlive your turn (a watcher, a daemon, a recurring health check), list it under Open items with the exact command and the check to run.
 
 
 ---

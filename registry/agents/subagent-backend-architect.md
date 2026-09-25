@@ -228,6 +228,8 @@ npx vercel dev                        # Local dev with Edge runtime emulation
 npx vercel deploy --prebuilt --prod   # Deploy prebuilt to production
 ```
 
+> ⚠️ **Production deploy = human approval required.** Never run the `--prod` step yourself: stop at a preview deploy and hand the production command to the orchestrator, which obtains explicit user approval first.
+
 ```typescript
 // src/app/api/stream-chat/route.ts — Vercel Edge streaming response
 export const runtime = 'edge';
