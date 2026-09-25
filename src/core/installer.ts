@@ -983,6 +983,36 @@ private toPosix(p: string): string {
           };
         }
 
+        // Gate 7 sidecar fix (2026-09-25, ADR 0017 amendment): skill folders ship sidecar
+        // files (LICENSE.txt, references/**) alongside SKILL.md. Every deployed file gets a
+        // lockfile record with owners — an unrecorded sidecar is an uninstall orphan.
+        const sidecarStack: string[] = [dest];
+        while (sidecarStack.length > 0) {
+          const dir = sidecarStack.pop() as string;
+          for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+            const abs = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+              sidecarStack.push(abs);
+              continue;
+            }
+            const sideRel = this.toPosix(path.relative(targetDir, abs));
+            if (abs === path.join(dest, 'SKILL.md')) continue;
+            const existingSide = lockfile.files[sideRel];
+            const existingSideOwners = existingSide?.owners ?? [];
+            const sideOwners = resolved.targetBundle && declaresAsset(`skills/${skillName}/SKILL.md`)
+              ? Array.from(new Set([...existingSideOwners, resolved.targetBundle]))
+              : existingSideOwners;
+            lockfile.files[sideRel] = {
+              hash: await this.calculateHash(abs),
+              bundle: existingSide?.bundle ?? resolved.targetBundle,
+              owners: sideOwners,
+              method: actualMethod,
+              installedAt: existingSide?.installedAt ?? now,
+              ...(existingSide?.projectedTo ? { projectedTo: existingSide.projectedTo } : {}),
+            };
+          }
+        }
+
         if (!lockfile.installed.skills.includes(skillName)) {
           lockfile.installed.skills.push(skillName);
         }

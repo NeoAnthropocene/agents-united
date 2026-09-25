@@ -29,12 +29,20 @@ export class UninstallEngine {
    * AGENTS.md bridge (agentsmd profile) is a plain markdown index with no
    * frontmatter, so the marker is checked against the whole content.
    */
-  private async isManagedProjection(absPath: string, isAgentsMd: boolean): Promise<boolean> {
+  private async isManagedProjection(absPath: string, isAgentsMd: boolean, recordedHash?: string): Promise<boolean> {
     const content = await fs.readFile(absPath, 'utf8');
     if (isAgentsMd) {
       return content.includes('managed-by: agents-united');
     }
-    return HostProjector.hasManagedMarker(content);
+    if (HostProjector.hasManagedMarker(content)) return true;
+    // ADR 0017 amendment (Gate 7, 2026-09-25): markerless sidecar artifacts (LICENSE.txt,
+    // references/**) cannot carry the marker — they are managed iff their bytes still hash
+    // to the value recorded at install time.
+    if (recordedHash) {
+      const bytes = await fs.readFile(absPath);
+      return `sha256:${crypto.createHash('sha256').update(bytes).digest('hex')}` === recordedHash;
+    }
+    return false;
   }
 
   /**
@@ -59,7 +67,12 @@ export class UninstallEngine {
    * Removes every recorded projection for a canonical asset, guarding against
    * clobbering user-modified files. Mirrors the hash-conflict error pattern.
    */
-  private async removeProjections(workspaceRoot: string, projectedTo: string[], force?: boolean): Promise<void> {
+  private async removeProjections(
+    workspaceRoot: string,
+    projectedTo: string[],
+    force?: boolean,
+    projectionHashes?: Record<string, { hash?: string }>,
+  ): Promise<void> {
     for (const projPath of projectedTo) {
       const absProjection = path.join(workspaceRoot, projPath);
       if (!await fs.pathExists(absProjection)) {
@@ -67,7 +80,7 @@ export class UninstallEngine {
       }
 
       const isAgentsMd = projPath === 'AGENTS.md';
-      const managed = await this.isManagedProjection(absProjection, isAgentsMd);
+      const managed = await this.isManagedProjection(absProjection, isAgentsMd, projectionHashes?.[projPath]?.hash);
       if (!managed && !force) {
         throw new Error(
           `Projection ${projPath} has user modifications. Use --force to remove.`
@@ -392,7 +405,7 @@ export class UninstallEngine {
               if (newOwners.length === 0) {
                 // Last owner removed: drop the recorded projections, then the canonical file.
                 if (assetMeta.projectedTo && assetMeta.projectedTo.length > 0) {
-                  await this.removeProjections(workspaceRoot, assetMeta.projectedTo, options.force);
+                  await this.removeProjections(workspaceRoot, assetMeta.projectedTo, options.force, lockfile.projections);
                 }
 
                 const fullPath = path.join(targetDir, relPath);

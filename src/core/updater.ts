@@ -53,12 +53,20 @@ export class UpdateEngine {
    * M5). Agent projections place the marker as the first body line after frontmatter;
    * the AGENTS.md bridge has no frontmatter so it is checked over the whole content.
    */
-  private async isManagedProjection(absPath: string, isAgentsMd: boolean): Promise<boolean> {
+  private async isManagedProjection(absPath: string, isAgentsMd: boolean, recordedHash?: string): Promise<boolean> {
     const content = await fs.readFile(absPath, 'utf8');
     if (isAgentsMd) {
       return content.includes('managed-by: agents-united');
     }
-    return HostProjector.hasManagedMarker(content);
+    if (HostProjector.hasManagedMarker(content)) return true;
+    // ADR 0017 amendment (Gate 7, 2026-09-25): markerless sidecar artifacts (LICENSE.txt,
+    // references/**) cannot carry the marker — they are managed iff their bytes still hash
+    // to the value recorded at install time.
+    if (recordedHash) {
+      const bytes = await fs.readFile(absPath);
+      return `sha256:${crypto.createHash('sha256').update(bytes).digest('hex')}` === recordedHash;
+    }
+    return false;
   }
 
   /**
@@ -73,7 +81,7 @@ export class UpdateEngine {
       for (const projPath of assetMeta.projectedTo) {
         const absProjection = path.join(workspaceRoot, projPath);
         if (await fs.pathExists(absProjection)) {
-          const managed = await this.isManagedProjection(absProjection, projPath === 'AGENTS.md');
+          const managed = await this.isManagedProjection(absProjection, projPath === 'AGENTS.md', lockfile.projections?.[projPath]?.hash);
           if (!managed) {
             return projPath;
           }
