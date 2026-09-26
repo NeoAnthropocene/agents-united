@@ -440,6 +440,10 @@ The core engine (`src/core/updater.ts`) responsible for checking version drift, 
 `.agents/` — the **main library**. It is the single source of truth the lockfile tracks, and the *one* folder you edit. Every other assistant's translated copies are derived from — never diverging from — this store. (Antigravity reads it directly in interactive sessions — CLI TUI panel and desktop; see ADR 0009. Other runtimes only via `--fanout` copies.)
 _Avoid_: Source of record ambiguity, duplicated truth
 
+**State Dir / Sidecar** (ADR 0022):
+The directory holding an install's machine state — the lockfile `agents-united.json` plus the canonical copies it projects. It is either the **Canonical Store** (`.agents/`) or, for a Claude-only install, the hidden **sidecar** `.claude/.agents-united/`: a machine-owned, immutable snapshot (never edited, never loaded by Claude Code) that keeps doctor/update/remove working without a `.agents/` folder. Adding any store-requiring host later (or `--canonical-store` / `--plugin`) moves the sidecar into `.agents/`. Resolved by `src/core/state-dir.ts`.
+_Avoid_: Hidden store, second library, cache
+
 **Host Registry**:
 The single table (`src/core/hosts.ts`) describing every known host runtime (dirs, subdirs, detection markers, projection profile), replacing the duplicated hard-coded host lists.
 _Avoid_: Hard-coded host list, scattered host literals

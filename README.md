@@ -231,6 +231,9 @@ agents add qa-automation --copy
 
 # Install directly to specific agent hosts
 agents add full -t gemini,claude,cursor -y
+
+# Claude only: no .agents/ folder — the install state lives in the hidden .claude/.agents-united/
+agents add software-engineering -t claude
 ```
 
 **Options:**
@@ -239,6 +242,8 @@ agents add full -t gemini,claude,cursor -y
 - `--copy`: Create independent standalone copies of asset files.
 - `-t, --target <hosts>`: Target agent host runtimes (`agents`, `gemini`, `claude`, `cursor`, `cline`, `opencode`, `codex`). Default: `agents`.
 - `--fanout <hosts>`: Also project translated copies into other assistant folders.
+- `--canonical-store`: Keep the `.agents/` main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden `.claude/.agents-united/` folder — ADR 0022).
+- `--session-guard[=project|local|user]` / `--no-session-guard`: Claude lane only — also guard plain Claude sessions (no `--agent`) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod` (`project` = `.claude/settings.json`, the default; `local` = `.claude/settings.local.json`; `user` = `~/.claude/settings.json`, explicit only). Everything else in the file is kept, and invalid JSON is never rewritten. The choice is remembered.
 - `--mode <operational|limited-operational|brainstorming>`: Execution mode for organization bundles. Default: `operational`.
 - `--allow-missing-prereqs`: Proceed with installation even if some prerequisites are missing.
 - `--allow-under-construction`: Bypass the Under-Construction Gate for in-development bundles.
