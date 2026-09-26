@@ -296,7 +296,18 @@ export interface LockfileManifest {
    * lane was never opted into.
    */
   pluginLane?: boolean;
+  /**
+   * Plan 023 A (owner D1–D2) — the recorded plain-session guard decision. `{ off: true }` is a
+   * remembered "no"; otherwise the settings file (workspace-relative, or absolute for `user`)
+   * holding our managed PreToolUse groups, the handler hash that proves ownership, and whether
+   * agents-united created the file (only then may uninstall delete it). Absent ⇒ never decided.
+   */
+  sessionGuard?: SessionGuardRecord;
 }
+
+export type SessionGuardRecord =
+  | { off: true }
+  | { file: string; handlerHash: string; createdFile: boolean };
 
 export type VersionDriftStatus = 'up-to-date' | 'outdated' | 'modified';
 
@@ -413,7 +424,12 @@ export interface InstallOptions {
    * for `claude --plugin-dir`. Claude lane only; the plan is byte-identical to today when absent.
    */
   pluginLane?: boolean;
-
+  /**
+   * Plan 023 A — guard plain Claude sessions too: `project` (.claude/settings.json), `local`
+   * (.claude/settings.local.json), `user` (~/.claude/settings.json, explicit only), or `false`
+   * (remembered "no"). Omitted ⇒ inherit the lockfile decision. Claude lane only.
+   */
+  sessionGuard?: 'project' | 'local' | 'user' | false;
 }
 
 export interface ProjectionInfo {

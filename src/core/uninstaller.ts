@@ -6,6 +6,7 @@ import { AgentHostAdapter } from './adapter.js';
 import { isKnownHost } from './hosts.js';
 import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
+import { removeSessionGuard } from './session-guard.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
 import { assetOwners } from './types.js';
 
@@ -474,6 +475,17 @@ export class UninstallEngine {
             // Installed-addon freshness (plan 003): a removed child bundle restores
             // its addon into the parent's recommendedAddons via a re-render here.
             await this.refreshParentCoordination(bundleName, workspaceRoot, lockfile, scope);
+
+            // Plan 023 A — the plain-session guard serves the whole workspace, so it goes with the
+            // LAST bundle: only our PreToolUse groups are removed, and the settings file is deleted
+            // only when agents-united created it and nothing of the user's remains.
+            const guard = lockfile.sessionGuard;
+            if (lockfile.installed.bundles.length === 0 && guard && !('off' in guard)) {
+              const guardFile = path.isAbsolute(guard.file) ? guard.file : path.join(workspaceRoot, guard.file);
+              const outcome = await removeSessionGuard(guardFile, { createdFile: guard.createdFile });
+              if (outcome === 'removed' || outcome === 'deleted-file') removedFiles.push(guard.file);
+              delete lockfile.sessionGuard;
+            }
 
             await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
           } else {

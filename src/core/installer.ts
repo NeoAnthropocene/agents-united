@@ -8,6 +8,7 @@ import { HostProjector } from './projector.js';
 import type { IndexableAsset } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { ClaudeProjector } from './claude-projector.js';
+import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo } from './types.js';
 import { assetOwners, mergeAssetOwners } from './types.js';
@@ -406,6 +407,51 @@ private toPosix(p: string): string {
   ): boolean {
     if (typeof options.pluginLane === 'boolean') return options.pluginLane;
     return lockfile?.pluginLane === true;
+  }
+
+  /**
+   * Plan 023 A (owner D1–D2) — the plain-session guard. Runs only when the Claude lane runs.
+   * An explicit `options.sessionGuard` wins and is recorded; otherwise the recorded decision is
+   * re-applied (sticky yes re-merges idempotently, sticky no writes nothing); never decided ⇒
+   * nothing is written (the CLI asks). `project`/`local` are workspace files and are ignored for
+   * global installs; `user` (home settings) is honoured only when requested explicitly.
+   */
+  private async applySessionGuard(
+    scope: InstallScope,
+    workspaceRoot: string,
+    lockfile: LockfileManifest,
+    options: InstallOptions,
+    projections: ProjectionInfo[],
+  ): Promise<void> {
+    const recorded = lockfile.sessionGuard;
+    let variant: 'project' | 'local' | 'user' | false | undefined = options.sessionGuard;
+    if (variant === undefined && recorded) {
+      variant = 'off' in recorded ? false : variantOfRecordedFile(recorded.file);
+    }
+    if (variant === undefined) return;
+    if (variant === false) {
+      lockfile.sessionGuard = { off: true };
+      return;
+    }
+    if (scope === 'global' && variant !== 'user') return;
+
+    const file = resolveSessionGuardFile(variant, workspaceRoot);
+    const recordedFile = variant === 'user' ? file : this.toPosix(path.relative(workspaceRoot, file));
+    const sameFileRecord = recorded && !('off' in recorded) && recorded.file === recordedFile ? recorded : undefined;
+    const existedBefore = await fs.pathExists(file);
+    const result = await mergeSessionGuard(file, { replaceHash: sameFileRecord?.handlerHash });
+    lockfile.sessionGuard = {
+      file: recordedFile,
+      handlerHash: result.handlerHash,
+      createdFile: sameFileRecord ? sameFileRecord.createdFile : !existedBefore,
+    };
+    const warnings: string[] = [];
+    if (result.status === 'skipped-invalid') {
+      warnings.push(`Session guard not written: ${recordedFile} is not valid JSON (comments or trailing commas?). It was left untouched — paste this into it by hand:\n${sessionGuardSnippet()}`);
+    } else if (result.status === 'modified') {
+      warnings.push(`Session guard in ${recordedFile} was edited by hand; left as-is (run with --force after removing it to restore).`);
+    }
+    projections.push({ host: 'claude', path: recordedFile, warnings });
   }
 
   /**
@@ -1093,6 +1139,11 @@ private toPosix(p: string): string {
       // passed explicitly or inherited from the lockfile).
       if (hasCanonicalAgents && effectiveFanout.length > 0 && path.resolve(targetDir) === path.resolve(agentsTarget)) {
         await this.applyFanout(effectiveFanout, resolved, registryDir, scope, targetDir, lockfile, options, projections);
+      }
+
+      // Plan 023 A — plain-session guard, Claude lane only (same canonical-store iteration).
+      if (hasCanonicalAgents && effectiveFanout.includes('claude') && path.resolve(targetDir) === path.resolve(agentsTarget)) {
+        await this.applySessionGuard(scope, path.resolve(path.dirname(agentsTarget)), lockfile, options, projections);
       }
 
       await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
