@@ -5,6 +5,7 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import { RegistryResolver } from './core/registry.js';
 import { InstallEngine } from './core/installer.js';
+import { AgentHostAdapter } from './core/adapter.js';
 import { UninstallEngine } from './core/uninstaller.js';
 import { InventoryScanner } from './core/inventory.js';
 import { UpdateEngine } from './core/updater.js';
@@ -308,6 +309,7 @@ cli
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
   .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline. Under Development hosts (cursor, opencode, codex) are refused')
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
+  .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off.')
   .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
   .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
   .option('--allow-under-construction', 'Allow installation of bundles marked as under construction')
@@ -471,6 +473,35 @@ cli
 
       if (typeof methodSelection === 'string') {
         method = methodSelection as InstallMethod;
+      }
+    }
+
+    // Plan 023 A (owner D2) — plain-session guard consent: an explicit flag wins; otherwise an
+    // interactive Claude-lane install asks once (default yes) unless a decision is already recorded.
+    // Non-interactive runs never write the user's settings file without the explicit flag.
+    let sessionGuard: 'project' | 'local' | 'user' | false | undefined;
+    if (options.sessionGuard === false) {
+      sessionGuard = false;
+    } else if (options.sessionGuard === true || options.sessionGuard === '') {
+      sessionGuard = 'project';
+    } else if (typeof options.sessionGuard === 'string') {
+      const where = options.sessionGuard.trim().toLowerCase();
+      if (where !== 'project' && where !== 'local' && where !== 'user') {
+        note(`--session-guard accepts project, local or user (got "${options.sessionGuard}").`, 'Invalid option');
+        process.exit(1);
+      }
+      sessionGuard = where;
+    } else if (isInteractive && fanout.includes('claude')) {
+      const recordedLockfile = path.join(AgentHostAdapter.resolveHostDir(scope, 'agents'), 'agents-united.json');
+      const recorded = await fs.readJson(recordedLockfile).catch(() => null);
+      if (!recorded?.sessionGuard) {
+        const answer = await confirm({
+          message: scope === 'global'
+            ? 'Also guard plain Claude sessions on this machine? (blocks git push --force, .env writes and vercel --prod in ~/.claude/settings.json)'
+            : 'Also guard plain Claude sessions in this repo? (blocks git push --force, .env writes and vercel --prod via .claude/settings.json)',
+          initialValue: true,
+        });
+        if (typeof answer === 'boolean') sessionGuard = answer ? (scope === 'global' ? 'user' : 'project') : false;
       }
     }
 
@@ -780,6 +811,7 @@ cli
         // claude lane runs). `--plugin` opts in, `--no-plugin` opts out explicitly, and an omitted
         // flag inherits the recorded choice so `agents update` cannot prune the package.
         pluginLane: typeof options.plugin === 'boolean' ? options.plugin : undefined,
+        sessionGuard,
         mode: executionMode,
         allowMissingPrereqs: options.allowMissingPrereqs,
         yes: options.yes,
@@ -2307,6 +2339,17 @@ cli
     console.log(`  🤖 Installed Agents:    ${pc.bold(report.agentsCount.toString())}`);
     console.log(`  ⚡ Installed Skills:    ${pc.bold(report.skillsCount.toString())}`);
     console.log(`  🔄 Installed Workflow Skills: ${pc.bold(report.workflowsCount.toString())}\n`);
+    // Plan 023 A — plain-session guard state (only when a decision was ever recorded).
+    if (report.sessionGuard) {
+      const label: Record<string, string> = {
+        wired: pc.green('✔ Wired (plain Claude sessions guarded)'),
+        off: pc.dim('Off (declined)'),
+        missing: pc.yellow('✖ Missing — run agents update'),
+        modified: pc.yellow('⚠ Edited by hand — left as-is'),
+        'skipped-invalid': pc.yellow('⚠ Not wired — settings file is not valid JSON (see warning)'),
+      };
+      console.log(`  🛡  Session Guard:      ${label[report.sessionGuard]}\n`);
+    }
 
     if (report.clineCapability) {
       console.log(pc.bold(pc.cyan('Cline Runtime & Native Discovery Audit:')));

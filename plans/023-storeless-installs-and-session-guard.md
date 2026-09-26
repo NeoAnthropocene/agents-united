@@ -227,3 +227,29 @@ removes the shell from the path on every OS.
 - `docs/adr/0022-canonical-store-optional-installs.md` (sub-decision 3 proposal appended)
 - `plans/022-subagent-comms-and-hardening.md` (V1 note: known gaps)
 - Claude Code hooks reference (hook locations, merge, exec form, Windows shell) — 2026-09-26
+
+## Execution log
+
+- **A0 — DONE 2026-09-26** (`13f8988`, merged to `dev`/`main`, released 0.13.0): the guard renders in
+  exec form (`command: node`, `args: ["-e", <script>]`); `src/core/guard.ts` is the single source.
+  **Owner check open**: on Windows *without* Git Bash, a role session blocks `git push --force`.
+- **A1–A3 — DONE 2026-09-26** (landed as one commit per owner decision: every commit stays green):
+  `tests/session-guard.test.ts` (16: 7 merge-engine unit + 9 install/doctor/uninstall integration)
+  written RED first (14 failing on `MISSING API`, 2 regression guards); `src/core/session-guard.ts`
+  (strict-JSON parse, preserve-all merge reusing the file's indent/EOL/trailing newline, marker +
+  exact-handler ownership, remove-only-ours, created-file cleanup, inspect); installer
+  `applySessionGuard` (Claude lane only, sticky decision, `project`/`local` ignored for global
+  installs, `user` explicit only); uninstaller removes the guard with the last bundle; doctor
+  `sessionGuard` state + warnings (paste-in snippet for invalid JSON) + CLI status line; CLI
+  `--session-guard[=project|local|user]` / `--no-session-guard` and an interactive consent prompt
+  (default yes) shown only when no decision is recorded — non-interactive runs never write the
+  settings file without the explicit flag.
+  **A3 scratch-workspace evidence** (built CLI, fresh git repos): (1) pre-existing CRLF 4-space
+  `settings.json` with a user permission + user hook → add merged our 2 exec-form groups after the
+  user's hook, CRLF kept on 46/46 lines; the Bash guard fired from the file blocks `git push
+  --force` (exit 2) and allows `git push`; `update` kept exactly 2 guard groups; `remove` left the
+  file **byte-identical** to the original. (2) no prior file → created (`createdFile: true`),
+  doctor "Wired", remove deleted it. (3) JSONC file → untouched byte-for-byte, install + doctor warn
+  with the paste-in snippet. (4) `-y` without the flag writes nothing; `--no-session-guard` records
+  `{ off: true }`. Gates: typecheck 0; `npm test` 57 files, 820 passed / 0 failed / 209 skipped.
+  **Owner check open**: a plain `claude` session in a guarded repo blocks the three commands.

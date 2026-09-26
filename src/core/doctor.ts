@@ -10,6 +10,7 @@ import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
 import { RegistryResolver } from './registry.js';
 import { assetOwners } from './types.js';
+import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import type {
   ClaudeCapabilityReport,
   ClineCapabilityReport,
@@ -27,6 +28,8 @@ export interface HealthReport {
   workflowsCount: number;
   clineCapability?: ClineCapabilityReport;
   claudeCapability?: ClaudeCapabilityReport;
+  /** Plan 023 A — plain-session guard state; absent when no decision was ever recorded. */
+  sessionGuard?: 'wired' | 'missing' | 'modified' | 'skipped-invalid' | 'off';
 }
 
 /** The only hosts that own a content-derived compound lane: Cline (ADR 0013), Claude (ADR 0018). */
@@ -422,6 +425,29 @@ export class DoctorEngine {
       }
     }
 
+    // Plan 023 A — plain-session guard. Reported whenever a decision is recorded; repairs are
+    // never automatic (a hand-edited guard or an unparseable settings file is the user's call).
+    let sessionGuard: HealthReport['sessionGuard'];
+    const guardRecord = manifest?.sessionGuard;
+    if (guardRecord) {
+      if ('off' in guardRecord) {
+        sessionGuard = 'off';
+      } else {
+        const guardFile = path.isAbsolute(guardRecord.file)
+          ? guardRecord.file
+          : path.join(path.resolve(path.dirname(root)), guardRecord.file);
+        const state = await inspectSessionGuard(guardFile);
+        sessionGuard = state === 'absent' ? 'missing' : state;
+        if (state === 'missing' || state === 'absent') {
+          warnings.push(`Session guard missing from ${guardRecord.file}: plain Claude sessions are unguarded. Run 'agents update' to restore it.`);
+        } else if (state === 'modified') {
+          warnings.push(`Session guard in ${guardRecord.file} was edited by hand; agents-united leaves it as-is.`);
+        } else if (state === 'skipped-invalid') {
+          warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand:\n${sessionGuardSnippet()}`);
+        }
+      }
+    }
+
     // Host-specific checks (e.g. --host cline, --host claude)
     if (host === 'cline') {
       const probe = new ClineCapabilityProbe();
@@ -450,6 +476,7 @@ export class DoctorEngine {
       workflowsCount,
       clineCapability,
       claudeCapability,
+      sessionGuard,
     };
   }
 }
