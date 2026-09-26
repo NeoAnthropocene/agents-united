@@ -38,3 +38,15 @@
   workstream (or its own plan if it outgrows it); acceptance = a Claude-only install leaves no
   `.agents/`, doctor/update/uninstall stay warning-free on that shape, and a later `--target
   agents` add materializes the store and reconciles the lockfile.
+## Proposed resolution of sub-decision 3 (2026-09-26 — pending owner acceptance)
+
+Recommended in `plans/023-storeless-installs-and-session-guard.md` (Workstream B, decisions D3/D4):
+a store-less install keeps its machine state in a hidden, machine-owned **sidecar**
+`.claude/.agents-united/` — the lockfile `agents-united.json` plus an immutable snapshot of the
+canonical assets it projected. Because lockfile `files` keys are relative to the state dir and
+`projections` keys to the workspace root, relocating the state dir reuses the existing
+install/doctor/update/uninstall paths; only state-dir discovery and workspace-root derivation
+change. Store-less applies only when Claude is the sole selected host (no Cline, no `--plugin`,
+no `--canonical-store`); a later store-requiring add moves the sidecar into `.agents/`.
+Rejected: a lockfile-only home (forks the state machine — risk R4) and a root-level lockfile
+(visible workspace noise). Status stays **Proposed** until the owner accepts D3/D4.
