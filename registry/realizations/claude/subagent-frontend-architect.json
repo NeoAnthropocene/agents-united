@@ -1,0 +1,15 @@
+{
+  "host": "claude",
+  "role": "subagent-frontend-architect",
+  "roleName": "frontend-architect",
+  "semantics": "Realization Layer (ADR 0021 decision 1) — the tool-neutral Core invariants BOUND to Claude-native mechanics (decision 2). Host laws shared by every role live in HOST_DIALECTS.claude (src/core/dialects.ts); this file adds only role-specific bindings.",
+  "invariantBindings": [
+    { "invariant": "Component contracts settle through the orchestrator before touching peer-owned files.", "binding": "Prop interfaces and token names are agreed in the handoff first; Edit stays inside the role's own file scope." },
+    { "invariant": "Single-responsibility components with typed props at every boundary.", "binding": "Write creates atomized components; Edit refactors monoliths into typed prop interfaces verified by tsc in Bash." },
+    { "invariant": "Accessibility and Core Web Vitals budgets are release gates, not niceties.", "binding": "Verification Results in the report carry LCP/INP/CLS figures and an accessibility conformance line." },
+    { "invariant": "At most two peer exchanges per specialist pair and one directed question per peer per planning round.", "binding": "Under Agent Teams (opt-in) peer exchange uses SendMessage; otherwise the budget is spent through the orchestrator's session." }
+  ],
+  "tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "SendMessage", "SubagentHandback", "Skill"],
+  "permissionMode": "acceptEdits",
+  "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
+}

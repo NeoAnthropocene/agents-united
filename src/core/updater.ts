@@ -5,6 +5,7 @@ import { RegistryResolver } from './registry.js';
 import { InventoryScanner } from './inventory.js';
 import { InstallEngine } from './installer.js';
 import { HostProjector } from './projector.js';
+import { ClaudeProjector } from './claude-projector.js';
 import type {
   UpdateOptions,
   UpdateCheckReport,
@@ -52,12 +53,20 @@ export class UpdateEngine {
    * M5). Agent projections place the marker as the first body line after frontmatter;
    * the AGENTS.md bridge has no frontmatter so it is checked over the whole content.
    */
-  private async isManagedProjection(absPath: string, isAgentsMd: boolean): Promise<boolean> {
+  private async isManagedProjection(absPath: string, isAgentsMd: boolean, recordedHash?: string): Promise<boolean> {
     const content = await fs.readFile(absPath, 'utf8');
     if (isAgentsMd) {
       return content.includes('managed-by: agents-united');
     }
-    return HostProjector.hasManagedMarker(content);
+    if (HostProjector.hasManagedMarker(content)) return true;
+    // ADR 0017 amendment (Gate 7, 2026-09-25): markerless sidecar artifacts (LICENSE.txt,
+    // references/**) cannot carry the marker — they are managed iff their bytes still hash
+    // to the value recorded at install time.
+    if (recordedHash) {
+      const bytes = await fs.readFile(absPath);
+      return `sha256:${crypto.createHash('sha256').update(bytes).digest('hex')}` === recordedHash;
+    }
+    return false;
   }
 
   /**
@@ -72,7 +81,7 @@ export class UpdateEngine {
       for (const projPath of assetMeta.projectedTo) {
         const absProjection = path.join(workspaceRoot, projPath);
         if (await fs.pathExists(absProjection)) {
-          const managed = await this.isManagedProjection(absProjection, projPath === 'AGENTS.md');
+          const managed = await this.isManagedProjection(absProjection, projPath === 'AGENTS.md', lockfile.projections?.[projPath]?.hash);
           if (!managed) {
             return projPath;
           }
@@ -80,6 +89,93 @@ export class UpdateEngine {
       }
     }
     return '';
+  }
+
+  /** Plan 016 Step 4 — the canonical asset whose dialect name changed (ADR 0016 pattern). */
+  private static readonly LEGACY_GENERATIVE_UI_CANONICAL = 'skills/generative_ui/SKILL.md';
+  private static readonly LEGACY_GENERATIVE_UI_PATH = /(^|\/)generative_ui\/SKILL\.md$/;
+
+  /** Removes empty projection dirs left behind by the migration (never a non-empty one). */
+  private async removeEmptyProjectionDirs(workspaceRoot: string, projPath: string): Promise<void> {
+    let dir = path.dirname(path.join(workspaceRoot, projPath));
+    while (dir !== workspaceRoot && dir.startsWith(workspaceRoot)) {
+      try {
+        const entries = await fs.readdir(dir);
+        if (entries.length > 0) break;
+        await fs.rmdir(dir);
+      } catch {
+        break;
+      }
+      dir = path.dirname(dir);
+    }
+  }
+
+  /** Drops one projected path from every canonical file record (host-agnostic). */
+  private dropProjectedTo(lockfile: LockfileManifest, projectedRelPath: string): void {
+    const normProj = projectedRelPath.replace(/\\/g, '/');
+    for (const asset of Object.values(lockfile.files)) {
+      if (!asset.projectedTo || asset.projectedTo.length === 0) continue;
+      const kept = asset.projectedTo.filter(p => p !== normProj);
+      if (kept.length === asset.projectedTo.length) continue;
+      if (kept.length === 0) {
+        delete asset.projectedTo;
+      } else {
+        asset.projectedTo = kept;
+      }
+    }
+  }
+
+  /**
+   * Plan 016 Step 4 — silent, bounded, idempotent migration of the `generative_ui`
+   * projection rename (ADR 0016 pattern).
+   *
+   * `registry/skills/generative_ui/` is deliberately NOT renamed: the underscore is
+   * invalid in every host dialect, so the projectors normalize the name at projection
+   * time (`generative_ui` -> `generative-ui`; ADR 0018 decision 2 — normalization is
+   * projection-level). Projections recorded before that change therefore still point at
+   * `.claude/skills/generative_ui/SKILL.md` and/or the Cline plugin copy
+   * `.agents/plugins/<bundle>/skills/generative_ui/SKILL.md`, which the current renderers
+   * no longer produce.
+   *
+   * Runs before each record's re-install so the freshly rendered normalized path is
+   * registered by the normal install path. Guarantees: (a) a file that lacks the managed
+   * marker is never deleted (its lockfile entries are left untouched too, so the
+   * migration never lies about a file it did not remove); (b) a second run is a no-op
+   * because the entries are gone; (c) it is host-agnostic, so it covers `.claude/**` and
+   * the Cline plugin lane alike, and it never touches the canonical registry store.
+   */
+  private async migrateLegacyGenerativeUiProjections(
+    workspaceRoot: string,
+    lockfile: LockfileManifest
+  ): Promise<string[]> {
+    const projections = lockfile.projections;
+    if (!projections) return [];
+
+    const normalized = ClaudeProjector.normalizeSkillName('generative_ui');
+    const removed: string[] = [];
+
+    for (const [projRelPath, proj] of Object.entries(projections)) {
+      const posixPath = projRelPath.replace(/\\/g, '/');
+      const isLegacy = proj.canonical === UpdateEngine.LEGACY_GENERATIVE_UI_CANONICAL
+        || UpdateEngine.LEGACY_GENERATIVE_UI_PATH.test(posixPath);
+      if (!isLegacy) continue;
+      // Already the normalized path (a re-projection landed first): nothing to migrate.
+      if (posixPath.includes(`/${normalized}/`)) continue;
+
+      const absProjection = path.join(workspaceRoot, projRelPath);
+      if (await fs.pathExists(absProjection)) {
+        const managed = await this.isManagedProjection(absProjection, posixPath === 'AGENTS.md');
+        if (!managed) continue; // (a) never clobber a foreign or user-modified file
+        await fs.remove(absProjection);
+        await this.removeEmptyProjectionDirs(workspaceRoot, projRelPath);
+      }
+
+      delete projections[projRelPath];
+      this.dropProjectedTo(lockfile, projRelPath);
+      removed.push(projRelPath);
+    }
+
+    return removed;
   }
 
   public async checkUpdates(options: InventoryOptions = {}): Promise<UpdateCheckReport> {
@@ -223,6 +319,20 @@ export class UpdateEngine {
           });
           continue;
         }
+      }
+
+      // Plan 016 Step 4 (ADR 0016 pattern) — silent migration of the legacy
+      // `generative_ui` projection path before re-installation registers the
+      // normalized one. Deliberately implemented on UpdateEngine rather than
+      // InstallEngine: it is an update-path reconciliation (`agents update` is the
+      // documented remediation for it) and it leaves fresh installs untouched, since
+      // a fresh install can never have recorded the legacy path.
+      const migratedGenerativeUi = await this.migrateLegacyGenerativeUiProjections(
+        path.dirname(record.targetDir),
+        lockfile
+      );
+      if (migratedGenerativeUi.length > 0) {
+        await fs.writeJson(lockfilePath, lockfile, { spaces: 2 });
       }
 
       // Re-install with upstream version. Fan-out flows from --fanout if given,

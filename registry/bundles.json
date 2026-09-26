@@ -4,6 +4,7 @@
   "bundles": {
     "software-engineering": {
       "name": "software-engineering",
+      "tier": "domain",
       "domain": "engineering",
       "status": "stable",
       "category": "Core Software Development",
@@ -53,7 +54,18 @@
         "workflow-git",
         "workflow-grill",
         "workflow-spec",
-        "workflow-diagnose"
+        "workflow-diagnose",
+        "design-handoff-spec",
+        "domain-modeling",
+        "frontend-component-design",
+        "frontend-design",
+        "grill-me",
+        "grill-with-docs",
+        "handoff",
+        "modern-web-guidance",
+        "react-best-practices",
+        "to-spec",
+        "to-tickets"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -63,6 +75,7 @@
     },
     "system-architecture": {
       "name": "system-architecture",
+      "tier": "domain",
       "domain": "architecture",
       "category": "System & Infrastructure Architecture",
       "aliases": [
@@ -100,7 +113,9 @@
         "workflow-estimate",
         "workflow-spec-panel",
         "workflow-grill",
-        "workflow-spec"
+        "workflow-spec",
+        "grill-me",
+        "performance-optimization"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -110,6 +125,7 @@
     },
     "product-design": {
       "name": "product-design",
+      "tier": "domain",
       "domain": "design",
       "status": "stable",
       "category": "UI/UX & Product Design",
@@ -146,7 +162,12 @@
         "workflow-ux-strategy-strategize",
         "workflow-interaction-design-design-interaction",
         "workflow-interaction-design-error-flow",
-        "workflow-interaction-design-map-states"
+        "workflow-interaction-design-map-states",
+        "design-system-tokens",
+        "frontend-design",
+        "generative_ui",
+        "grill-me",
+        "stitch-design-taste"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -156,6 +177,7 @@
     },
     "growth-marketing": {
       "name": "growth-marketing",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Growth & Content Marketing",
       "aliases": [
@@ -197,7 +219,16 @@
         "workflow-marketing-campaign-builder",
         "workflow-marketing-content-pipeline",
         "workflow-marketing-growth-experiment",
-        "workflow-marketing-launch"
+        "workflow-marketing-launch",
+        "design-system-tokens",
+        "domain-modeling",
+        "email-drip-sequences",
+        "frontend-design",
+        "generative_ui",
+        "grill-me",
+        "onboarding-cro",
+        "stitch-design-taste",
+        "viral-referral-loops"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -207,6 +238,7 @@
     },
     "seo-content-marketing": {
       "name": "seo-content-marketing",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Search Engine Optimization & Content Pipelines",
       "parentBundle": "growth-marketing",
@@ -232,7 +264,12 @@
         "workflow-seo-content-pipeline",
         "workflow-seo-audit-pipeline",
         "workflow-marketing-content-pipeline",
-        "workflow-marketing-audit"
+        "workflow-marketing-audit",
+        "conversion-funnel-optimization",
+        "debug-optimize-lcp",
+        "domain-modeling",
+        "grill-me",
+        "growth-experiment-design"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -242,6 +279,7 @@
     },
     "performance-paid-acquisition": {
       "name": "performance-paid-acquisition",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Performance Marketing & Paid Ad Acquisition",
       "parentBundle": "growth-marketing",
@@ -275,7 +313,21 @@
         "workflow-paid-acquisition-campaign",
         "workflow-paid-campaign-launch",
         "workflow-marketing-campaign-builder",
-        "workflow-marketing-growth-experiment"
+        "workflow-marketing-growth-experiment",
+        "copywriting-frameworks",
+        "design-system-tokens",
+        "email-drip-sequences",
+        "email-marketing-automation",
+        "frontend-design",
+        "generative_ui",
+        "grill-me",
+        "growth-experiment-design",
+        "marketing-creative-design",
+        "onboarding-cro",
+        "product-launch-playbook",
+        "seo-audit",
+        "signup-flow-cro",
+        "stitch-design-taste"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -285,6 +337,7 @@
     },
     "product-led-growth": {
       "name": "product-led-growth",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Product-Led Growth & Conversion Optimization",
       "parentBundle": "growth-marketing",
@@ -311,7 +364,13 @@
         "conversion-funnel-optimization",
         "growth-experiment-design",
         "workflow-onboarding-funnel-cro",
-        "workflow-marketing-growth-experiment"
+        "workflow-marketing-growth-experiment",
+        "ab-test-setup",
+        "churn-prevention-playbook",
+        "copywriting-frameworks",
+        "grill-me",
+        "product-launch-playbook",
+        "seo-audit"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -321,6 +380,7 @@
     },
     "lifecycle-email-marketing": {
       "name": "lifecycle-email-marketing",
+      "tier": "domain",
       "domain": "marketing",
       "category": "Lifecycle Marketing & Retention Engineering",
       "parentBundle": "growth-marketing",
@@ -346,7 +406,13 @@
         "copywriting-frameworks",
         "workflow-email-drip-sequence",
         "workflow-marketing-launch",
-        "workflow-marketing-campaign-builder"
+        "workflow-marketing-campaign-builder",
+        "conversion-funnel-optimization",
+        "grill-me",
+        "growth-experiment-design",
+        "product-launch-playbook",
+        "seo-audit",
+        "social-media-campaign"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -356,6 +422,7 @@
     },
     "security-operations": {
       "name": "security-operations",
+      "tier": "domain",
       "domain": "security",
       "category": "Application Security & Threat Modeling",
       "aliases": [
@@ -373,7 +440,11 @@
         "security-audit",
         "architecture-design",
         "workflow-troubleshoot",
-        "workflow-analyze"
+        "workflow-analyze",
+        "domain-modeling",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -388,6 +459,7 @@
     },
     "deep-research": {
       "name": "deep-research",
+      "tier": "domain",
       "domain": "research",
       "category": "Research & Technical Intelligence",
       "aliases": [
@@ -424,6 +496,7 @@
     },
     "business-strategy": {
       "name": "business-strategy",
+      "tier": "domain",
       "domain": "business",
       "category": "Business & Product Strategy",
       "aliases": [
@@ -443,7 +516,9 @@
         "workflow-business-panel",
         "workflow-spec-panel",
         "workflow-recommend",
-        "workflow-estimate"
+        "workflow-estimate",
+        "domain-modeling",
+        "grill-me"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -458,6 +533,7 @@
     },
     "devops-engineering": {
       "name": "devops-engineering",
+      "tier": "domain",
       "domain": "engineering",
       "category": "CI/CD & Delivery Pipeline Engineering",
       "parentBundle": "software-engineering",
@@ -477,7 +553,14 @@
         "git-guardrails",
         "workflow-deploy-staging",
         "workflow-build",
-        "workflow-git"
+        "workflow-git",
+        "telemetry-monitoring",
+        "architecture-design",
+        "code-refactoring",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -487,6 +570,7 @@
     },
     "sysops-sre": {
       "name": "sysops-sre",
+      "tier": "domain",
       "domain": "architecture",
       "category": "System Operations & Site Reliability Engineering",
       "parentBundle": "system-architecture",
@@ -502,7 +586,16 @@
       "skills": [
         "telemetry-monitoring",
         "architecture-design",
-        "workflow-incident-triage"
+        "workflow-incident-triage",
+        "backend-api-design",
+        "chaos-engineering",
+        "ci-cd-pipeline-automation",
+        "database-design",
+        "docker-deployment",
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "microservices-architecture"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -512,6 +605,7 @@
     },
     "mobile-development": {
       "name": "mobile-development",
+      "tier": "domain",
       "domain": "engineering",
       "category": "Native & Cross-Platform Mobile Engineering",
       "parentBundle": "software-engineering",
@@ -536,7 +630,15 @@
         "maestro-mobile-testing",
         "mobile-first-design",
         "workflow-mobile-build",
-        "workflow-app-store-release"
+        "workflow-app-store-release",
+        "react-best-practices",
+        "test-driven-development",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -546,6 +648,7 @@
     },
     "frontend-engineering": {
       "name": "frontend-engineering",
+      "tier": "domain",
       "domain": "engineering",
       "category": "Modern Frontend & UI Architecture",
       "parentBundle": "software-engineering",
@@ -569,7 +672,21 @@
         "accessibility-audit",
         "state-driven-ui-animation",
         "frontend-component-design",
-        "workflow-frontend-audit"
+        "workflow-frontend-audit",
+        "component-library-management",
+        "design-handoff-spec",
+        "frontend-design",
+        "modern-web-guidance",
+        "performance-optimization",
+        "responsive-design-audit",
+        "ui-component-spec",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -579,6 +696,7 @@
     },
     "backend-distributed-systems": {
       "name": "backend-distributed-systems",
+      "tier": "domain",
       "domain": "engineering",
       "category": "Distributed Backend & Event Streaming Architecture",
       "parentBundle": "software-engineering",
@@ -601,7 +719,17 @@
         "graphql-schema-design",
         "database-design",
         "backend-api-design",
-        "workflow-api-contract-design"
+        "workflow-api-contract-design",
+        "rag-vector-pipeline",
+        "telemetry-monitoring",
+        "vector-database-design",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -611,6 +739,7 @@
     },
     "qa-automation": {
       "name": "qa-automation",
+      "tier": "domain",
       "domain": "engineering",
       "category": "Quality Assurance & End-to-End Test Automation",
       "parentBundle": "software-engineering",
@@ -630,7 +759,18 @@
         "playwright-best-practices",
         "chaos-engineering",
         "test-driven-development",
-        "workflow-e2e-testing"
+        "workflow-e2e-testing",
+        "a11y-debugging",
+        "accessibility-audit",
+        "diagnosing-bugs",
+        "responsive-design-audit",
+        "systematic-debugging",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -640,6 +780,7 @@
     },
     "ai-ml-engineering": {
       "name": "ai-ml-engineering",
+      "tier": "domain",
       "domain": "engineering",
       "category": "AI / Machine Learning & Vector Data Engineering",
       "parentBundle": "software-engineering",
@@ -668,7 +809,14 @@
         "hf-model-evaluation",
         "workflow-ml-eval",
         "workflow-rag-pipeline-deploy",
-        "workflow-serverless-gpu-deploy"
+        "workflow-serverless-gpu-deploy",
+        "architecture-design",
+        "code-refactoring",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -678,6 +826,7 @@
     },
     "full": {
       "name": "full",
+      "tier": "domain",
       "domain": "universal",
       "category": "Complete Autonomous Department",
       "aliases": [
@@ -930,7 +1079,11 @@
       "modes": {},
       "orchestrator": "orchestrator-universal.md",
       "agents": [],
-      "skills": [],
+      "skills": [
+        "grill-me",
+        "handoff",
+        "mcp-setup"
+      ],
       "version": "1.0.0"
     },
     "digital-agency": {
@@ -1002,7 +1155,7 @@
           "maxPlanningRounds": 2,
           "maxPeerExchangesPerPair": 2,
           "summaryWordCap": 300,
-          "maxIterations": 8
+          "maxIterations": 100
         },
         "sidekicks": {
           "max": 5
@@ -1043,12 +1196,47 @@
         "workflow-agency-seo-content-engine",
         "workflow-agency-cro-funnel-teardown",
         "workflow-agency-brand-design-system",
-        "workflow-agency-client-pitch-proposal"
+        "workflow-agency-client-pitch-proposal",
+        "a11y-debugging",
+        "accessibility-audit",
+        "ad-creative-design",
+        "content-calendar-strategy",
+        "debug-optimize-lcp",
+        "design-system-tokens",
+        "domain-modeling",
+        "email-drip-sequences",
+        "email-marketing-automation",
+        "frontend-component-design",
+        "frontend-design",
+        "generative_ui",
+        "grill-me",
+        "grill-with-docs",
+        "growth-experiment-design",
+        "modern-web-guidance",
+        "onboarding-cro",
+        "performance-optimization",
+        "playwright-best-practices",
+        "product-launch-playbook",
+        "programmatic-seo",
+        "react-best-practices",
+        "responsive-design-audit",
+        "schema-markup-strategy",
+        "security-audit",
+        "signup-flow-cro",
+        "social-media-campaign",
+        "stitch-design-taste",
+        "subagent-driven-development",
+        "technical-documentation",
+        "technical-seo-audit",
+        "test-driven-development",
+        "ui-component-spec",
+        "viral-referral-loops"
       ],
       "version": "1.0.0"
     },
     "universal-orchestration": {
       "name": "universal-orchestration",
+      "tier": "domain",
       "domain": "universal",
       "status": "stable",
       "category": "Universal Orchestration & Guided Routing",
@@ -1067,6 +1255,7 @@
     },
     "universal-skills": {
       "name": "universal-skills",
+      "tier": "domain",
       "domain": "universal",
       "category": "Shared Meta-Skills & Cross-Domain Utilities",
       "aliases": [
@@ -1088,6 +1277,7 @@
     },
     "design-systems-ops": {
       "name": "design-systems-ops",
+      "tier": "domain",
       "domain": "design",
       "category": "Design Systems Governance & DesignOps Workflows",
       "parentBundle": "product-design",
@@ -1115,7 +1305,13 @@
         "workflow-design-systems-tokenize",
         "workflow-design-ops-handoff",
         "workflow-design-ops-plan-sprint",
-        "workflow-design-ops-setup-workflow"
+        "workflow-design-ops-setup-workflow",
+        "frontend-design",
+        "grill-me",
+        "mobile-first-design",
+        "stitch-design-taste",
+        "ui-component-spec",
+        "user-flow-mapping"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1125,6 +1321,7 @@
     },
     "design-research-testing": {
       "name": "design-research-testing",
+      "tier": "domain",
       "domain": "design",
       "category": "User Research, Usability Testing & Interactive Prototyping",
       "parentBundle": "product-design",
@@ -1154,7 +1351,14 @@
         "workflow-prototyping-testing-evaluate",
         "workflow-prototyping-testing-experiment",
         "workflow-prototyping-testing-prototype-plan",
-        "workflow-prototyping-testing-test-plan"
+        "workflow-prototyping-testing-test-plan",
+        "design-handoff-spec",
+        "frontend-design",
+        "grill-me",
+        "mobile-first-design",
+        "stitch-design-taste",
+        "ui-component-spec",
+        "user-flow-mapping"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1164,6 +1368,7 @@
     },
     "secops-cloud-security": {
       "name": "secops-cloud-security",
+      "tier": "domain",
       "domain": "security",
       "category": "Cloud Security Posture & IAM Hardening",
       "parentBundle": "security-operations",
@@ -1183,7 +1388,12 @@
         "azure-infrastructure-bicep",
         "docker-deployment",
         "workflow-analyze",
-        "workflow-troubleshoot"
+        "workflow-troubleshoot",
+        "domain-modeling",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs",
+        "telemetry-monitoring"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1193,6 +1403,7 @@
     },
     "secops-application-security": {
       "name": "secops-application-security",
+      "tier": "domain",
       "domain": "security",
       "category": "Application Security & Penetration Testing",
       "parentBundle": "security-operations",
@@ -1214,7 +1425,11 @@
         "diagnosing-bugs",
         "workflow-troubleshoot",
         "workflow-analyze",
-        "workflow-test"
+        "workflow-test",
+        "domain-modeling",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1224,6 +1439,7 @@
     },
     "secops-compliance-grc": {
       "name": "secops-compliance-grc",
+      "tier": "domain",
       "domain": "security",
       "category": "Governance, Risk & Compliance (SOC2 / ISO / HIPAA / GDPR)",
       "parentBundle": "security-operations",
@@ -1246,7 +1462,10 @@
         "to-spec",
         "workflow-analyze",
         "workflow-grill",
-        "workflow-spec"
+        "workflow-spec",
+        "git-guardrails",
+        "grill-me",
+        "grill-with-docs"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1256,6 +1475,7 @@
     },
     "business-financial-modeling": {
       "name": "business-financial-modeling",
+      "tier": "domain",
       "domain": "business",
       "category": "SaaS Financial Modeling & Unit Economics",
       "parentBundle": "business-strategy",
@@ -1275,7 +1495,9 @@
         "architecture-design",
         "technical-documentation",
         "workflow-estimate",
-        "workflow-business-panel"
+        "workflow-business-panel",
+        "domain-modeling",
+        "grill-me"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1285,6 +1507,7 @@
     },
     "business-market-intelligence": {
       "name": "business-market-intelligence",
+      "tier": "domain",
       "domain": "business",
       "category": "Market Intelligence & Competitive Strategy",
       "parentBundle": "business-strategy",
@@ -1306,7 +1529,9 @@
         "domain-modeling",
         "workflow-recommend",
         "workflow-business-panel",
-        "workflow-spec-panel"
+        "workflow-spec-panel",
+        "grill-me",
+        "growth-experiment-design"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1316,6 +1541,7 @@
     },
     "business-operations-legal": {
       "name": "business-operations-legal",
+      "tier": "domain",
       "domain": "business",
       "category": "Commercial Contracts & Operations Strategy",
       "parentBundle": "business-strategy",
@@ -1338,7 +1564,10 @@
         "domain-modeling",
         "to-spec",
         "workflow-business-panel",
-        "workflow-spec-panel"
+        "workflow-spec-panel",
+        "git-guardrails",
+        "grill-me",
+        "to-tickets"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1348,6 +1577,7 @@
     },
     "deep-research-analytics": {
       "name": "deep-research-analytics",
+      "tier": "domain",
       "domain": "research",
       "category": "Quantitative Statistics & Academic Prior Art",
       "parentBundle": "deep-research",
@@ -1370,7 +1600,10 @@
         "domain-modeling",
         "workflow-research",
         "workflow-brainstorm",
-        "workflow-explain"
+        "workflow-explain",
+        "grill-me",
+        "growth-experiment-design",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1380,6 +1613,7 @@
     },
     "system-architecture-cloud": {
       "name": "system-architecture-cloud",
+      "tier": "domain",
       "domain": "architecture",
       "category": "Multi-Cloud Infrastructure & Network Topology",
       "parentBundle": "system-architecture",
@@ -1400,7 +1634,14 @@
         "microservices-architecture",
         "technical-documentation",
         "workflow-plan",
-        "workflow-design-code"
+        "workflow-design-code",
+        "azure-infrastructure-bicep",
+        "backend-api-design",
+        "database-design",
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "telemetry-monitoring"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1410,6 +1651,7 @@
     },
     "system-architecture-data": {
       "name": "system-architecture-data",
+      "tier": "domain",
       "domain": "architecture",
       "category": "Database Administration & Zero-Downtime Persistence",
       "parentBundle": "system-architecture",
@@ -1430,7 +1672,14 @@
         "architecture-design",
         "code-refactoring",
         "workflow-plan",
-        "workflow-design-code"
+        "workflow-design-code",
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "microservices-architecture",
+        "performance-optimization",
+        "supabase-backend-architecture",
+        "turso-distributed-sqlite"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1440,6 +1689,7 @@
     },
     "system-architecture-finops": {
       "name": "system-architecture-finops",
+      "tier": "domain",
       "domain": "architecture",
       "category": "Cloud FinOps & Infrastructure Cost Optimization",
       "parentBundle": "system-architecture",
@@ -1458,7 +1708,15 @@
         "architecture-design",
         "technical-documentation",
         "workflow-estimate",
-        "workflow-plan"
+        "workflow-plan",
+        "backend-api-design",
+        "database-design",
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "microservices-architecture",
+        "runpod-gpu-orchestration",
+        "telemetry-monitoring"
       ],
       "version": "1.0.0",
       "planningLoop": {

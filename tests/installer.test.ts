@@ -78,7 +78,7 @@ describe('InstallEngine', () => {
     });
 
     const lockfile = await fs.readJson(path.join(targetAgentsDir, 'agents-united.json'));
-    for (const asset of Object.values(lockfile.files)) {
+    for (const asset of Object.values(lockfile.files as Record<string, { projectedTo?: string[] }>)) {
       expect(asset.projectedTo).toBeUndefined();
     }
   });

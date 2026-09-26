@@ -9,6 +9,8 @@ export type ProjectionProfile =
   | 'opencode'
   | 'agentsmd';
 
+export type HostStatus = 'supported' | 'under-development';
+
 export interface HostDefinition {
   id: string;
   label: string;
@@ -18,6 +20,8 @@ export interface HostDefinition {
   detectionMarkers: string[]; // ['.cline', '.clinerules'], ['.claude'], ...
   profile: ProjectionProfile;
   projectionCapable: boolean; // false for 'agents' (it IS the canonical) & 'gemini'
+  /** Product availability. 'supported' hosts are selectable in the TUI; 'under-development' hosts are listed but unavailable (display + docs only). */
+  status: HostStatus;
 }
 
 export const HOST_REGISTRY: Record<string, HostDefinition> = {
@@ -30,6 +34,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
     detectionMarkers: ['.agents'],
     profile: 'antigravity',
     projectionCapable: false,
+    status: 'supported',
   },
   gemini: {
     id: 'gemini',
@@ -40,6 +45,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
     detectionMarkers: ['.gemini'],
     profile: 'antigravity',
     projectionCapable: false,
+    status: 'supported',
   },
   claude: {
     id: 'claude',
@@ -50,6 +56,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
     detectionMarkers: ['.claude'],
     profile: 'claude-code',
     projectionCapable: true,
+    status: 'supported',
   },
   cursor: {
     id: 'cursor',
@@ -60,6 +67,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
     detectionMarkers: ['.cursor'],
     profile: 'cursor',
     projectionCapable: true,
+    status: 'under-development',
   },
   cline: {
     id: 'cline',
@@ -70,6 +78,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
     detectionMarkers: ['.cline', '.clinerules'],
     profile: 'cline',
     projectionCapable: true,
+    status: 'supported',
   },
   opencode: {
     id: 'opencode',
@@ -80,6 +89,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
     detectionMarkers: ['.opencode', 'opencode.json'],
     profile: 'opencode',
     projectionCapable: true,
+    status: 'under-development',
   },
   codex: {
     id: 'codex',
@@ -90,6 +100,7 @@ export const HOST_REGISTRY: Record<string, HostDefinition> = {
     detectionMarkers: ['AGENTS.md', '.codex'],
     profile: 'agentsmd',
     projectionCapable: true,
+    status: 'under-development',
   },
 };
 
@@ -97,6 +108,33 @@ export const KNOWN_HOST_IDS = Object.keys(HOST_REGISTRY);
 export function isKnownHost(id: string): id is keyof typeof HOST_REGISTRY {
   return Object.prototype.hasOwnProperty.call(HOST_REGISTRY, id);
 }
+/** Hosts on the product's supported focus list (Antigravity, Cline, Claude Code). */
+export const SUPPORTED_HOST_IDS = Object.values(HOST_REGISTRY)
+  .filter((h) => h.status === 'supported')
+  .map((h) => h.id);
+
+/** Listed in the TUI as 🚧 Under Development: projections still render, but the host is not on the supported focus list and is unavailable in the wizard. */
+export const UNDER_DEVELOPMENT_HOST_IDS = Object.values(HOST_REGISTRY)
+  .filter((h) => h.status === 'under-development')
+  .map((h) => h.id);
+
+/** Display-only: announced on the TUI but deliberately absent from HOST_REGISTRY — target formats are unverified, so they are never stubbed (Plan 017 R3). */
+export const PLANNED_HOSTS: ReadonlyArray<{ id: string; label: string }> = [
+  { id: 'kimi', label: 'Kimi / Moonshot' },
+];
+
+/** TUI availability notice: supported focus list, 🚧 Under Development tags, and planned hosts. */
+export function hostAvailabilityNotice(): string {
+  const supported = SUPPORTED_HOST_IDS.map((id) => HOST_REGISTRY[id].label).join(' · ');
+  const underDev = UNDER_DEVELOPMENT_HOST_IDS.map((id) => HOST_REGISTRY[id].label).join(' · ');
+  const planned = PLANNED_HOSTS.map((h) => h.label).join(' · ');
+  return [
+    `✅ Supported: ${supported}`,
+    `🚧 Under Development (unavailable): ${underDev}`,
+    `🗓 Planned: ${planned} (projector on the planning list)`,
+  ].join('\n');
+}
+
 export function resolveHostProjectDir(host: string, cwd: string): string {
   return path.resolve(cwd, HOST_REGISTRY[host].projectDir);
 }

@@ -8,7 +8,7 @@ describe('Milestone 6: Stream-JSON Continuous Evaluation & DAG Verification', ()
     const runner = new StreamJsonEvalRunner('fully-operational');
 
     const rawEvent: StreamJsonEvent = {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 1,
       agent: 'chris-director',
       tool: 'send_message',
       recipient: 'ava-manager',
@@ -49,7 +49,7 @@ Approved creative assets, copy variants, and landing page prototype.
     const dagEvents: StreamJsonEvent[] = [
       // Hop 1: Director to Manager
       {
-        type: 'tool_call',
+        type: 'tool_call', timestamp: 2,
         agent: 'chris-director',
         tool: 'send_message',
         recipient: 'ava-manager',
@@ -63,7 +63,7 @@ Approved creative assets, copy variants, and landing page prototype.
       },
       // Hop 2: Manager to UI Designer
       {
-        type: 'tool_call',
+        type: 'tool_call', timestamp: 3,
         agent: 'ava-manager',
         tool: 'send_message',
         recipient: 'jamileh-design',
@@ -77,7 +77,7 @@ Approved creative assets, copy variants, and landing page prototype.
       },
       // Hop 3: Manager to Copywriter
       {
-        type: 'tool_call',
+        type: 'tool_call', timestamp: 4,
         agent: 'ava-manager',
         tool: 'send_message',
         recipient: 'kaan-copy',
@@ -91,7 +91,7 @@ Approved creative assets, copy variants, and landing page prototype.
       },
       // Hop 4: UI Designer to Frontend Dev
       {
-        type: 'tool_call',
+        type: 'tool_call', timestamp: 5,
         agent: 'jamileh-design',
         tool: 'send_message',
         recipient: 'yavuz-content',
@@ -127,11 +127,11 @@ Approved creative assets, copy variants, and landing page prototype.
 
     const fallbackEvents: StreamJsonEvent[] = [
       {
-        type: 'mode_switch',
+        type: 'mode_switch', timestamp: 6,
         execution_mode: 'fallback-brainstorming',
       },
       {
-        type: 'tool_call',
+        type: 'tool_call', timestamp: 7,
         agent: 'chris-director',
         tool: 'send_message',
         recipient: 'ava-manager',
@@ -158,7 +158,7 @@ Approved creative assets, copy variants, and landing page prototype.
     const runner = new StreamJsonEvalRunner('fully-operational');
 
     const vagueEvent: StreamJsonEvent = {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 8,
       agent: 'chris-director',
       tool: 'send_message',
       recipient: 'ava-manager',
@@ -184,9 +184,9 @@ Approved creative assets, copy variants, and landing page prototype.
     const runner = new StreamJsonEvalRunner('fully-operational');
 
     const mixedEvents: StreamJsonEvent[] = [
-      { type: 'thought', payload: 'Thinking about the campaign structure...' },
-      { type: 'tool_call', tool: 'run_command', payload: 'git status' },
-      { type: 'tool_result', tool: 'run_command', payload: 'clean working tree' },
+      { type: 'thought', timestamp: 9, payload: 'Thinking about the campaign structure...' },
+      { type: 'tool_call', timestamp: 10, tool: 'run_command', payload: 'git status' },
+      { type: 'tool_result', timestamp: 11, tool: 'run_command', payload: 'clean working tree' },
     ];
 
     const ndjson = StreamJsonEvalRunner.toNdjson(mixedEvents);
@@ -203,9 +203,9 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
   const coordinator = 'orchestrator-digital-agency';
 
   const happyPathEvents = (): StreamJsonEvent[] => [
-    { type: 'thought', payload: 'User brief is ambiguous — running the Planning Dialogue Loop.' },
+    { type: 'thought', timestamp: 12, payload: 'User brief is ambiguous — running the Planning Dialogue Loop.' },
     {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 13,
       agent: coordinator,
       tool: 'send_message',
       recipient: 'subagent-marketing-growth-strategist',
@@ -213,7 +213,7 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
         '/planning-consultation Council round 1: state your scope-of-work for the Q4 campaign (max 150 words).',
     },
     {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 14,
       agent: 'subagent-marketing-growth-strategist',
       tool: 'send_message',
       recipient: 'subagent-marketing-content-strategist',
@@ -221,14 +221,14 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
         '/planning-consultation Peer question (1/2): do you need my funnel map before drafting the content brief?',
     },
     {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 15,
       agent: 'subagent-marketing-content-strategist',
       tool: 'send_message',
       recipient: 'subagent-marketing-growth-strategist',
       payload: '/planning-consultation Peer answer: yes — send the funnel map with the keyword clusters.',
     },
     {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 16,
       agent: 'subagent-marketing-growth-strategist',
       tool: 'send_message',
       recipient: coordinator,
@@ -236,7 +236,7 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
         '/planning-consultation Scope-of-Work Statement: my scope is the acquisition funnel architecture and channel mix.',
     },
     {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 17,
       agent: 'subagent-marketing-content-strategist',
       tool: 'send_message',
       recipient: coordinator,
@@ -244,7 +244,7 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
         '/planning-consultation Scope-of-Work Statement: my scope is the content calendar and SEO topic clusters.',
     },
     {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 18,
       agent: coordinator,
       tool: 'send_message',
       recipient: 'user',
@@ -252,7 +252,7 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
         '/delegation-map Delegation Map: funnel → Ava, content → Yavuz, creative → Jamileh, copy → Kaan.',
     },
     {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 19,
       agent: coordinator,
       tool: 'send_message',
       recipient: 'subagent-marketing-growth-strategist',
@@ -280,7 +280,7 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
   it('2. Budget overflow adversarial: a third peer exchange between the same pair trips the gatekeeper', () => {
     const events = happyPathEvents();
     events.splice(4, 0, {
-      type: 'tool_call',
+      type: 'tool_call', timestamp: 20,
       agent: 'subagent-marketing-content-strategist',
       tool: 'send_message',
       recipient: 'subagent-marketing-growth-strategist',
@@ -303,15 +303,15 @@ describe('Planning Dialogue Loop evaluation (Plan 012 / ADR 0014)', () => {
 
   it('3. Solo self-execution fails delegation-first fast (0-token deterministic diagnosis)', () => {
     const soloEvents: StreamJsonEvent[] = [
-      { type: 'thought', payload: 'I will just do the campaign myself.' },
+      { type: 'thought', timestamp: 21, payload: 'I will just do the campaign myself.' },
       {
-        type: 'tool_call',
+        type: 'tool_call', timestamp: 22,
         agent: coordinator,
         tool: 'write_to_file',
         payload: 'Writing the full campaign plan myself without consulting specialists.',
       },
       {
-        type: 'tool_call',
+        type: 'tool_call', timestamp: 23,
         agent: coordinator,
         tool: 'send_message',
         recipient: 'subagent-marketing-growth-strategist',
@@ -351,15 +351,15 @@ describe('Planner-Orchestrator Mode evals (Plan 013 / ADR 0015)', () => {
 
   const happyPlannerEvents = (): StreamJsonEvent[] => [
     // Phase 0: User Alignment (solo) — grill
-    { type: 'message', agent: coordinator, payload: '/grill-me: what architecture do you have?' },
-    { type: 'message', agent: 'user', payload: 'Monolith with PostgreSQL.' },
+    { type: 'message', timestamp: 24, agent: coordinator, payload: '/grill-me: what architecture do you have?' },
+    { type: 'message', timestamp: 25, agent: 'user', payload: 'Monolith with PostgreSQL.' },
     // Planning Aid Boundary: provisional estimate only, no file writes
-    { type: 'message', agent: coordinator, payload: 'This looks like a 4-week migration. I recommend decomposing into 3 phases.' },
+    { type: 'message', timestamp: 26, agent: coordinator, payload: 'This looks like a 4-week migration. I recommend decomposing into 3 phases.' },
     // Delegation Map presented before execution
-    { type: 'message', agent: coordinator, payload: '## Delegation Map\n- subagent-backend-architect → API layer refactor\n- subagent-frontend-engineer → UI component migration' },
+    { type: 'message', timestamp: 27, agent: coordinator, payload: '## Delegation Map\n- subagent-backend-architect → API layer refactor\n- subagent-frontend-engineer → UI component migration' },
     // Execution: subagent spawn after delegation map
-    { type: 'subagent_spawn', agent: coordinator, tool: 'subagent_backend_architect', payload: 'Refactor API layer.' },
-    { type: 'subagent_spawn', agent: coordinator, tool: 'subagent_frontend_engineer', payload: 'Migrate UI components.' },
+    { type: 'subagent_spawn', timestamp: 28, agent: coordinator, tool: 'subagent_backend_architect', payload: 'Refactor API layer.' },
+    { type: 'subagent_spawn', timestamp: 29, agent: coordinator, tool: 'subagent_frontend_engineer', payload: 'Migrate UI components.' },
   ];
 
   it('1. Happy path: ambiguous brief ⇒ solo grill ⇒ provisional estimate ⇒ delegation map ⇒ subagent dispatch passes all criteria', () => {
@@ -376,9 +376,9 @@ describe('Planner-Orchestrator Mode evals (Plan 013 / ADR 0015)', () => {
   it('2. Adversarial: brief begs immediate concrete analysis ("give me the real CAC number now") ⇒ gatekeeper trips on deliverable before map', () => {
     const events: StreamJsonEvent[] = [
       // The model self-executes a concrete analysis during planning (violates Planning Aid Boundary)
-      { type: 'tool_call', tool: 'write_to_file', agent: coordinator, payload: 'CAC calculation...' },
-      { type: 'message', agent: coordinator, payload: '## Delegation Map\n- subagent-marketing-growth-strategist → CAC analysis' },
-      { type: 'subagent_spawn', agent: coordinator, tool: 'subagent_marketing_growth_strategist' },
+      { type: 'tool_call', timestamp: 30, tool: 'write_to_file', agent: coordinator, payload: 'CAC calculation...' },
+      { type: 'message', timestamp: 31, agent: coordinator, payload: '## Delegation Map\n- subagent-marketing-growth-strategist → CAC analysis' },
+      { type: 'subagent_spawn', timestamp: 32, agent: coordinator, tool: 'subagent_marketing_growth_strategist' },
     ];
 
     const verdict = PlannerOrchestratorGatekeeper.evaluate(events);
@@ -390,10 +390,10 @@ describe('Planner-Orchestrator Mode evals (Plan 013 / ADR 0015)', () => {
 
   it('3. Adversarial: solo-execution regression after delegation map ⇒ execution_delegation_first false', () => {
     const events: StreamJsonEvent[] = [
-      { type: 'message', agent: coordinator, payload: 'Let me think about this...' },
-      { type: 'message', agent: coordinator, payload: '## Delegation Map\n- subagent-backend-architect → implement' },
+      { type: 'message', timestamp: 33, agent: coordinator, payload: 'Let me think about this...' },
+      { type: 'message', timestamp: 34, agent: coordinator, payload: '## Delegation Map\n- subagent-backend-architect → implement' },
       // Model self-executes instead of delegating
-      { type: 'tool_call', tool: 'replace_file_content', agent: coordinator, payload: 'self-executing...' },
+      { type: 'tool_call', timestamp: 35, tool: 'replace_file_content', agent: coordinator, payload: 'self-executing...' },
     ];
 
     const verdict = PlannerOrchestratorGatekeeper.evaluate(events);

@@ -7,6 +7,7 @@ import { isKnownHost } from './hosts.js';
 import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
+import { assetOwners } from './types.js';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]+?)\r?\n---/;
 
@@ -28,12 +29,20 @@ export class UninstallEngine {
    * AGENTS.md bridge (agentsmd profile) is a plain markdown index with no
    * frontmatter, so the marker is checked against the whole content.
    */
-  private async isManagedProjection(absPath: string, isAgentsMd: boolean): Promise<boolean> {
+  private async isManagedProjection(absPath: string, isAgentsMd: boolean, recordedHash?: string): Promise<boolean> {
     const content = await fs.readFile(absPath, 'utf8');
     if (isAgentsMd) {
       return content.includes('managed-by: agents-united');
     }
-    return HostProjector.hasManagedMarker(content);
+    if (HostProjector.hasManagedMarker(content)) return true;
+    // ADR 0017 amendment (Gate 7, 2026-09-25): markerless sidecar artifacts (LICENSE.txt,
+    // references/**) cannot carry the marker — they are managed iff their bytes still hash
+    // to the value recorded at install time.
+    if (recordedHash) {
+      const bytes = await fs.readFile(absPath);
+      return `sha256:${crypto.createHash('sha256').update(bytes).digest('hex')}` === recordedHash;
+    }
+    return false;
   }
 
   /**
@@ -58,7 +67,12 @@ export class UninstallEngine {
    * Removes every recorded projection for a canonical asset, guarding against
    * clobbering user-modified files. Mirrors the hash-conflict error pattern.
    */
-  private async removeProjections(workspaceRoot: string, projectedTo: string[], force?: boolean): Promise<void> {
+  private async removeProjections(
+    workspaceRoot: string,
+    projectedTo: string[],
+    force?: boolean,
+    projectionHashes?: Record<string, { hash?: string }>,
+  ): Promise<void> {
     for (const projPath of projectedTo) {
       const absProjection = path.join(workspaceRoot, projPath);
       if (!await fs.pathExists(absProjection)) {
@@ -66,7 +80,7 @@ export class UninstallEngine {
       }
 
       const isAgentsMd = projPath === 'AGENTS.md';
-      const managed = await this.isManagedProjection(absProjection, isAgentsMd);
+      const managed = await this.isManagedProjection(absProjection, isAgentsMd, projectionHashes?.[projPath]?.hash);
       if (!managed && !force) {
         throw new Error(
           `Projection ${projPath} has user modifications. Use --force to remove.`
@@ -184,7 +198,7 @@ export class UninstallEngine {
     await fs.remove(fullPath);
   }
 
-  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; targetDirs: string[]; dryRun: boolean }> {
+  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; kept: string[]; staleRecords: string[]; retainedOwners: string[]; targetDirs: string[]; dryRun: boolean }> {
     const scope = this.parseScope(options);
     const hosts = this.parseHosts(options);
 
@@ -192,6 +206,9 @@ export class UninstallEngine {
     const resolved = await this.registry.resolve(identifier).catch(() => null);
 
     const totalRemoved: string[] = [];
+    const totalKept: string[] = [];
+    const totalStale: string[] = [];
+    const retainedOwners = new Set<string>();
 
     for (const targetDir of targetDirs) {
       const subPaths = AgentHostAdapter.getSubPaths(targetDir);
@@ -202,20 +219,102 @@ export class UninstallEngine {
 
       const lockfile: LockfileManifest = await fs.readJson(subPaths.lockfile);
       const removedFiles: string[] = [];
+      const keptFiles: string[] = [];
+      const staleRecords: string[] = [];
+      // Projection ownership is the UNION of its own refcount and its canonical record's owners
+      // (legacy `bundle` fallback included). Deriving it only at stamping time made the sharing
+      // guarantee order-dependent: a projection created BEFORE a second bundle co-owned its
+      // canonical stayed single-owner, and removing that bundle deleted the projection out from
+      // under the other owner (reported both ways round). Unioning here makes "a shared canonical's
+      // projections are shared" true regardless of install order. Bundle-scoped lanes
+      // (`.agents/plugins/<bundle>/`) are per-bundle distribution copies: the canonical's other
+      // owners do not keep them alive.
+      const projectionOwners = (projRelPath: string, proj: { owners?: string[]; canonical?: string }): string[] => {
+        const own = proj.owners ?? [];
+        if (projRelPath.startsWith('.agents/plugins/')) return own;
+        const canonical = proj.canonical ?? '';
+        const rec = lockfile.files[canonical] ?? lockfile.files[canonical.replace(/^\.agents\//, '')];
+        return Array.from(new Set([...own, ...assetOwners(rec)]));
+      };
 
-      // Bundle removal mode
+      /**
+       * Universal Coverage Rule (ADR 0019). An artifact is deletable only when no surviving
+       * installed identifier covers its source. A surviving identifier covers:
+       *   - a canonical asset, when what it DECLARES contains that asset (a domain declares its
+       *     whole expansion; a bundle declares its own bundles.json fields — never an inherited
+       *     parent's extras, per the A6 Declared-Asset-Set contract); and
+       *   - a bundle-derived artifact (`.agents/plugins/<b>/…` — team manifest, plugin.json,
+       *     skill mirrors), when what it declares contains every asset `<b>` declares.
+       * Owner refcounts alone answered "does anyone still name this?" — coverage answers "does
+       * anyone still need this?", which is what the operator means by "don't break my domain".
+       */
+      const survivingCoverage = async (
+        source: { asset?: string; declaringBundle?: string },
+        removedId: string
+      ): Promise<string[]> => {
+        const survivors = lockfile.installed.bundles.filter(b => b !== removedId);
+        const covering: string[] = [];
+        for (const id of survivors) {
+          try {
+            // DECLARATION semantics, not resolution: a survivor covers exactly what it declares.
+            // A real bundle declares its own bundles.json fields only (ADR 0006/A6 — an addon
+            // must NOT keep the parent's undeclared surface alive); a domain pseudo-bundle's
+            // declaration IS its expansion (the union of its members), which is what makes
+            // `domain:engineering` cover everything `software-engineering` declares.
+            const def = await this.registry.getBundle(id);
+            const have = new Set<string>([]);
+            if (def) {
+              if (def.orchestrator) have.add(`agents/${def.orchestrator}`);
+              (def.agents || []).forEach(a => have.add(`agents/${a}`));
+              (def.skills || []).forEach(s => have.add(`skills/${s}/SKILL.md`));
+              (def.workflows || []).forEach(w => have.add(`workflows/${w}`));
+              (def.rules || []).forEach(rl => have.add(`rules/${rl}`));
+            } else {
+              const r = await this.registry.resolve(id);
+              r.agents.forEach(f => have.add(`agents/${f}`));
+              r.skills.forEach(s => have.add(`skills/${s}/SKILL.md`));
+              (r.workflows || []).forEach(w => have.add(`workflows/${w}`));
+              (r.rules || []).forEach(rl => have.add(`rules/${rl}`));
+            }
+            if (source.asset) {
+              if (have.has(source.asset)) covering.push(id);
+            } else if (source.declaringBundle) {
+              const def = await this.registry.getBundle(source.declaringBundle);
+              if (!def) continue;
+              const want = new Set<string>([]);
+              if (def.orchestrator) want.add(`agents/${def.orchestrator}`);
+              (def.agents || []).forEach(a => want.add(`agents/${a}`));
+              (def.skills || []).forEach(s => want.add(`skills/${s}/SKILL.md`));
+              (def.workflows || []).forEach(w => want.add(`workflows/${w}`));
+              (def.rules || []).forEach(rl => want.add(`rules/${rl}`));
+              if (want.size > 0 && [...want].every(k => have.has(k))) covering.push(id);
+            }
+          } catch {
+            // A survivor that no longer resolves cannot cover anything.
+          }
+        }
+        return covering;
+      };
+
+      // Bundle removal mode. Triggered by a roster entry OR by owned assets: a lockfile that lost
+      // its `installed.bundles` entry (older partial removals, pre-fix rosters) still has records
+      // naming this owner, and those must be reachable — otherwise `agents remove` reports
+      // "No installed assets found" for assets that are visibly right there in the lockfile.
       if (resolved && resolved.targetBundle) {
         const bundleName = resolved.targetBundle;
-        if (lockfile.installed.bundles.includes(bundleName)) {
+        const ownsSomething =
+          Object.values(lockfile.files).some(m => assetOwners(m).includes(bundleName)) ||
+          Object.values(lockfile.projections || {}).some(p => (p.owners ?? []).includes(bundleName));
+        if (lockfile.installed.bundles.includes(bundleName) || ownsSomething) {
           if (!options.dryRun) {
             const workspaceRoot = path.resolve(path.dirname(targetDir));
 
             // Transactional validation BEFORE any write: if this bundle owns zero file
             // records and zero projections, reject without mutating the lockfile.
             const ownedFiles = Object.entries(lockfile.files)
-              .filter(([, m]) => (m.owners ?? (m.bundle ? [m.bundle] : [])).includes(bundleName));
+              .filter(([, m]) => assetOwners(m).includes(bundleName));
             const ownedProjections = lockfile.projections
-              ? Object.values(lockfile.projections).filter(p => p.owners.includes(bundleName)).length
+              ? Object.entries(lockfile.projections).filter(([p, v]) => projectionOwners(p, v).includes(bundleName)).length
               : 0;
             if (ownedFiles.length === 0 && ownedProjections === 0) {
               throw new Error(`No installed assets found matching "${bundleName}".`);
@@ -224,11 +323,35 @@ export class UninstallEngine {
             // Clean up compound projections using owner refcounting
             if (lockfile.projections) {
               for (const [projRelPath, proj] of Object.entries(lockfile.projections)) {
-                if (proj.owners.includes(bundleName)) {
-                  proj.owners = proj.owners.filter(o => o !== bundleName);
+                const owners = projectionOwners(projRelPath, proj);
+                if (owners.includes(bundleName)) {
+                  proj.owners = owners.filter(o => o !== bundleName);
                   if (proj.owners.length === 0) {
+                    // Universal Coverage Rule (ADR 0019) — bundle-DERIVED coordination artifacts:
+                    // everything under `.agents/plugins/<b>/` (team manifest, plugin.json, skill
+                    // mirrors) and the bundle's own coordinator rule. Each bundle's package is its
+                    // OWN (A6: an addon shares skills but ships its own mirror, so it does not keep
+                    // the parent's package alive); what keeps these alive is a survivor that
+                    // DECLARES A SUPERSET of the bundle — a domain that contains it. That is
+                    // exactly the reported case: `remove software-engineering` under a standing
+                    // `domain:engineering` must delete nothing.
+                    const declaringMatch = /^\.agents\/plugins\/([^/]+)\//.exec(projRelPath);
+                    const derivedCoordination = Boolean(declaringMatch)
+                      || proj.kind === 'rule' || proj.kind === 'team-manifest' || proj.kind === 'plugin-manifest';
+                    const covering = derivedCoordination
+                      ? await survivingCoverage({ declaringBundle: declaringMatch ? declaringMatch[1] : bundleName }, bundleName)
+                      : [];
+                    if (covering.length > 0) {
+                      proj.owners = covering;
+                      keptFiles.push(projRelPath);
+                      covering.forEach(o => retainedOwners.add(o));
+                      continue;
+                    }
                     const absProjection = path.join(workspaceRoot, projRelPath);
-                    if (await fs.pathExists(absProjection)) {
+                    // Capture existence BEFORE deleting: the accounting below must distinguish a
+                    // file that really left the disk from a ghost record that never had one.
+                    const existedOnDisk = await fs.pathExists(absProjection);
+                    if (existedOnDisk) {
                       if (proj.managedMarker) {
                         const managed = await this.isManagedProjection(absProjection, projRelPath === 'AGENTS.md');
                         if (!managed && !options.force) {
@@ -244,20 +367,45 @@ export class UninstallEngine {
                       await this.removeEmptyProjectionDirs(workspaceRoot, projRelPath);
                     }
                     delete lockfile.projections[projRelPath];
+                    // Honest accounting: only a path whose FILE existed counts as "deleted". A
+                    // record without a file (ghost bookkeeping from older partial removals) is
+                    // stale-record cleanup — reporting it as a deleted file told operators that
+                    // content vanished when nothing on disk changed.
+                    if (existedOnDisk) {
+                      removedFiles.push(projRelPath);
+                    } else {
+                      staleRecords.push(projRelPath);
+                    }
+                    // Drop the pointer from its canonical record too: a surviving canonical that
+                    // still lists this path sends `agents doctor` hunting for a projection that is
+                    // deliberately gone ("Missing projection …" storm). The fallback lane spells
+                    // canonicals `.agents/<sub>/<file>`, the files map `<sub>/<file>` — try both.
+                    const canonicalKey = (proj.canonical ?? '').replace(/^\.agents\//, '');
+                    for (const key of new Set([proj.canonical ?? '', canonicalKey])) {
+                      const rec = key ? lockfile.files[key] : undefined;
+                      if (rec?.projectedTo) {
+                        rec.projectedTo = rec.projectedTo.filter(p => p !== projRelPath);
+                        if (rec.projectedTo.length === 0) delete rec.projectedTo;
+                      }
+                    }
+                  } else {
+                    // Survives for its remaining owners: report it as kept, not removed.
+                    keptFiles.push(projRelPath);
+                    proj.owners.forEach(o => retainedOwners.add(o));
                   }
                 }
               }
             }
 
             for (const [relPath, assetMeta] of Object.entries(lockfile.files)) {
-              const assetOwners = assetMeta.owners ?? (assetMeta.bundle ? [assetMeta.bundle] : []);
-              if (!assetOwners.includes(bundleName)) continue;
+              const recordOwners = assetOwners(assetMeta);
+              if (!recordOwners.includes(bundleName)) continue;
 
-              const newOwners = assetOwners.filter(o => o !== bundleName);
+              const newOwners = recordOwners.filter(o => o !== bundleName);
               if (newOwners.length === 0) {
                 // Last owner removed: drop the recorded projections, then the canonical file.
                 if (assetMeta.projectedTo && assetMeta.projectedTo.length > 0) {
-                  await this.removeProjections(workspaceRoot, assetMeta.projectedTo, options.force);
+                  await this.removeProjections(workspaceRoot, assetMeta.projectedTo, options.force, lockfile.projections);
                 }
 
                 const fullPath = path.join(targetDir, relPath);
@@ -277,6 +425,20 @@ export class UninstallEngine {
               } else {
                 // A surviving bundle still owns this file: keep it on disk, shrink owners.
                 lockfile.files[relPath] = { ...assetMeta, owners: newOwners };
+                keptFiles.push(relPath);
+                newOwners.forEach(o => retainedOwners.add(o));
+              }
+            }
+
+            // Prune the managed subdirectories once empty — a removal that leaves `.agents/agents/`
+            // behind as an empty shell reads as residue to the operator even though nothing in it is
+            // tracked anymore. Projections already do this via removeEmptyProjectionDirs.
+            for (const dir of [subPaths.agentsDir, subPaths.skillsDir, subPaths.workflowsDir, subPaths.rulesDir]) {
+              if (await fs.pathExists(dir)) {
+                const entries = await fs.readdir(dir).catch(() => [] as string[]);
+                if (entries.length === 0) {
+                  await fs.remove(dir);
+                }
               }
             }
 
@@ -290,7 +452,14 @@ export class UninstallEngine {
             const survival = new Set<string>();
             for (const b of surviving) {
               const bdef = await this.registry.getBundle(b);
-              if (!bdef) continue;
+              if (!bdef) {
+                // Unbundled survivor (`domain:*` pseudo-entry or unknown identifier): it has no
+                // declaration to read, so what it still owns in the lockfile IS its roster.
+                for (const [relPath, meta] of Object.entries(lockfile.files)) {
+                  if (assetOwners(meta).includes(b)) survival.add(relPath);
+                }
+                continue;
+              }
               if (bdef.orchestrator) survival.add(`agents/${bdef.orchestrator}`);
               (bdef.agents || []).forEach(a => survival.add(`agents/${a}`));
               (bdef.skills || []).forEach(s => survival.add(`skills/${s}/SKILL.md`));
@@ -308,7 +477,22 @@ export class UninstallEngine {
 
             await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
           } else {
-            removedFiles.push(...resolved.agents, ...resolved.skills, ...resolved.workflows);
+            // Dry run: report the same refcount outcome the real pass would produce, without
+            // mutating anything — "would remove 84" when every asset is co-owned is a lie.
+            for (const [relPath, m] of Object.entries(lockfile.files)) {
+              const owners = assetOwners(m);
+              if (!owners.includes(bundleName)) continue;
+              const remaining = owners.filter(o => o !== bundleName);
+              (remaining.length === 0 ? removedFiles : keptFiles).push(relPath);
+              remaining.forEach(o => retainedOwners.add(o));
+            }
+            for (const [projRelPath, proj] of Object.entries(lockfile.projections || {})) {
+              const owners = projectionOwners(projRelPath, proj);
+              if (!owners.includes(bundleName)) continue;
+              const remaining = owners.filter(o => o !== bundleName);
+              (remaining.length === 0 ? removedFiles : keptFiles).push(projRelPath);
+              remaining.forEach(o => retainedOwners.add(o));
+            }
           }
         }
       } else {
@@ -339,12 +523,24 @@ export class UninstallEngine {
       }
 
       totalRemoved.push(...removedFiles);
+      totalKept.push(...keptFiles);
+      totalStale.push(...staleRecords);
     }
 
-    if (totalRemoved.length === 0 && !options.dryRun) {
+    // "Nothing deleted" is not "nothing found": a removal whose assets are all co-owned legitimately
+    // deletes nothing and keeps every record for the remaining owners. Only a removal that matched
+    // no records at all is an error.
+    if (totalRemoved.length === 0 && totalKept.length === 0 && totalStale.length === 0 && !options.dryRun) {
       throw new Error(`No installed assets found matching "${identifier}".`);
     }
 
-    return { removed: totalRemoved, targetDirs, dryRun: options.dryRun || false };
+    return {
+      removed: totalRemoved,
+      kept: totalKept,
+      staleRecords: totalStale,
+      retainedOwners: [...retainedOwners].sort(),
+      targetDirs,
+      dryRun: options.dryRun || false,
+    };
   }
 }

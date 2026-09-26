@@ -6,6 +6,7 @@ import { execSync, spawnSync } from 'node:child_process';
 import { PrerequisiteChecker } from '../src/core/prerequisites.js';
 import { McpLocationRegistry } from '../src/core/mcp-locations.js';
 import { RegistryResolver } from '../src/core/registry.js';
+import type { BundleDefinition } from '../src/core/types.js';
 
 describe('PrerequisiteChecker & Organization Bundles', () => {
   let testWorkspace: string;
@@ -206,6 +207,7 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     const checker = new PrerequisiteChecker();
     const mockBundle: BundleDefinition = {
       name: 'test-partial-bundle',
+      description: 'Fixture bundle whose MCP prerequisite is present in one target host only.',
       tier: 'organization',
       prerequisites: {
         requiredMcps: [{ name: 'custom-partial-mcp' }],

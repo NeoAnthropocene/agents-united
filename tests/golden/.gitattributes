@@ -1,0 +1,3 @@
+# Golden snapshots are a BYTE pin (Plan 017 gates 3 & 8): the comparison is exact and the
+# renderers emit mixed \n / \r\n sequences by design. Never let git normalize line endings here.
+* -text

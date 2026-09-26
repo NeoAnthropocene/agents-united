@@ -68,7 +68,10 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
       cwd: e2eDir,
       encoding: 'utf8',
     });
-    expect(removeStdout).toContain('Successfully removed');
+    // Honest summary contract: `Removed "<id>" from this workspace — N deleted, M kept`. The old
+    // "Successfully removed N files" claimed deletion even when every asset was co-owned and kept.
+    expect(removeStdout).toContain('Removed "software-engineering" from this workspace');
+    expect(removeStdout).toContain('deleted');
   });
 
   it('should support copy mode flag --copy', async () => {
@@ -123,6 +126,45 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(res.status).toBe(0);
     expect(output).toMatch(/invalid|unknown|ignoring/i);
     expect(output).toContain('valid');
+  });
+
+  it('refuses under-development --fanout hosts on add with a non-zero exit', () => {
+    const res = spawnSync(process.execPath, [
+      cliPath,
+      'add',
+      'software-engineering',
+      '-t',
+      'agents',
+      '--fanout',
+      'cursor',
+      '-y',
+      '--copy',
+      '--dry-run',
+    ], { cwd: e2eDir, encoding: 'utf8' });
+    const output = (res.stdout || '') + (res.stderr || '');
+    expect(res.status).toBe(1);
+    expect(output).toMatch(/refusing/i);
+    expect(output).toMatch(/under development/i);
+    expect(output).toContain('cursor');
+  });
+
+  it('refuses under-development --fanout hosts on update with a non-zero exit', () => {
+    execSync(`node "${cliPath}" add software-engineering -t agents -y --copy`, {
+      cwd: e2eDir,
+      encoding: 'utf8',
+    });
+    const res = spawnSync(process.execPath, [
+      cliPath,
+      'update',
+      'software-engineering',
+      '--fanout',
+      'opencode',
+      '-y',
+    ], { cwd: e2eDir, encoding: 'utf8' });
+    const output = (res.stdout || '') + (res.stderr || '');
+    expect(res.status).toBe(1);
+    expect(output).toMatch(/refusing/i);
+    expect(output).toContain('opencode');
   });
 
   it('update --fanout projects a bundle that was installed without fanout (fix scenario)', async () => {

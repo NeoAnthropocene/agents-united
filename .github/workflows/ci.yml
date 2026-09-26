@@ -27,5 +27,8 @@ jobs:
       - name: Build Binary
         run: npm run build
 
+      - name: Conformance Suite (ADR 0021 — deterministic Stage-1 gates)
+        run: npx vitest run tests/semantic-core.test.ts tests/creation-engine-claude.test.ts tests/semantic-conformance.test.ts
+
       - name: Run Vitest Suite
         run: npm test

@@ -1,0 +1,16 @@
+{
+  "host": "claude",
+  "role": "subagent-backend-architect",
+  "roleName": "backend-architect",
+  "semantics": "Realization Layer (ADR 0021 decision 1) — the tool-neutral Core invariants BOUND to Claude-native mechanics (decision 2). Host laws shared by every role live in HOST_DIALECTS.claude (src/core/dialects.ts); this file adds only role-specific bindings.",
+  "invariantBindings": [
+    { "invariant": "Audit before acting: inspect existing structure before generating new code.", "binding": "Glob/Grep recon sweeps and Read of schemas, migrations, and configs precede any Write/Edit." },
+    { "invariant": "Zero-trust data access: tenant data is policy-controlled at the row level.", "binding": "Migration drafts in the report always include explicit row-level policies; verification runs the migration diff in Bash." },
+    { "invariant": "Contracts evolve additively; breaking changes require a deprecation cycle.", "binding": "Report sections must list additive changes separately from any flagged breaking change." },
+    { "invariant": "Every data access is parameterized; string concatenation into queries is forbidden.", "binding": "Bash runs only test/lint/migration-diff commands; query code is authored via Write/Edit with bound parameters." },
+    { "invariant": "Structured completion reports conclude every execution; unrun gates are escalated, never asserted.", "binding": "The report's Test & Validation Results section states verbatim which gates ran; missing tooling is escalated to the orchestrator." }
+  ],
+  "tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "SendMessage", "SubagentHandback", "Skill"],
+  "permissionMode": "acceptEdits",
+  "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
+}

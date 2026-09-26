@@ -1,0 +1,15 @@
+{
+  "host": "claude",
+  "role": "subagent-repo-index",
+  "roleName": "repo-index",
+  "semantics": "Realization Layer (ADR 0021 decision 1) — the tool-neutral Core invariants BOUND to Claude-native mechanics (decision 2). Host laws shared by every role live in HOST_DIALECTS.claude (src/core/dialects.ts); this file adds only role-specific bindings.",
+  "invariantBindings": [
+    { "invariant": "Exhaustive scanning precedes selective judgment.", "binding": "Discovery runs as a full-tree Glob/Grep sweep before any conclusion; manifests are opened with Read." },
+    { "invariant": "Every location claim cites its exact file path and line number.", "binding": "Grep results carry file:line references that are copied verbatim into the Symbol Index table." },
+    { "invariant": "Ambiguity is documented, never guessed.", "binding": "Re-exports and dynamic imports that obscure a dependency are listed under Open Questions in the report." },
+    { "invariant": "At most two peer exchanges per specialist pair and one directed question per peer per planning round.", "binding": "Under Agent Teams (opt-in) peer exchange uses SendMessage; otherwise the budget is spent through the orchestrator's session." }
+  ],
+  "tools": ["Read", "Glob", "Grep", "SendMessage", "SubagentHandback", "Skill"],
+  "permissionMode": "plan",
+  "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
+}

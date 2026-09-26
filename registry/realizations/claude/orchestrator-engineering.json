@@ -1,0 +1,14 @@
+{
+  "host": "claude",
+  "role": "orchestrator-engineering",
+  "roleName": "orchestrator-engineering",
+  "semantics": "Realization Layer (ADR 0021 decision 1) — the tool-neutral Core invariants BOUND to Claude-native mechanics (decision 2). Host laws shared by every role live in HOST_DIALECTS.claude (src/core/dialects.ts); this file adds only role-specific bindings. The dual delegation-policy contradiction in the canonical body is resolved toward ADR 0015 Planner-Orchestrator (Plan 019 directive).",
+  "invariantBindings": [
+    { "invariant": "Resolve ambiguity with the user before any unverified work.", "binding": "AskUserQuestion presents 2–4 structured options in the main conversation; unverified assumptions block execution." },
+    { "invariant": "Plan solo; delegate every execution deliverable to a specialist.", "binding": "The delegation map is composed in-session, then each slice is spawned via Agent(<specialist-type>) with a self-contained prompt." },
+    { "invariant": "Never busy-poll; liveness is event-driven or cron-based.", "binding": "CronCreate/CronList handle daemon health checks and TaskCreate/TaskUpdate track long-running slices; completion wakes the session." },
+    { "invariant": "Verify-then-deliver: no workflow completes until its deterministic verification criteria pass.", "binding": "Bash runs the full verification suite before any handoff report; a red suite dispatches diagnosis instead of delivery." }
+  ],
+  "tools": ["Agent", "Read", "Write", "Edit", "Bash", "Grep", "Glob", "AskUserQuestion", "SendMessage", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "CronCreate", "CronList", "CronDelete", "TodoWrite", "Skill"],
+  "aboveFloorScope": ["runtimeDeliveredHandback", "agentTeamsPeerReachability"]
+}
