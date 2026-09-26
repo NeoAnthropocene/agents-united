@@ -1,6 +1,7 @@
 # ADR 0022: Canonical-Store-Optional Installs
 
-- **Status**: Proposed — 2026-09-25 (Gate 7 field finding, product owner + orchestrator-engineering).
+- **Status**: Accepted — 2026-09-26 (owner approved Plan 023 decisions D3/D4; implemented in Plan 023
+  Workstream B). Proposed 2026-09-25 (Gate 7 field finding, product owner + orchestrator-engineering).
   Amends ADR 0008 decision 1 ("canonical store remains `.agents/`") for the post-ADR-0021 era;
   does not supersede ADR 0021 decision 7 (the canonical store remains the managed artifact when
   it exists).
@@ -38,7 +39,7 @@
   workstream (or its own plan if it outgrows it); acceptance = a Claude-only install leaves no
   `.agents/`, doctor/update/uninstall stay warning-free on that shape, and a later `--target
   agents` add materializes the store and reconciles the lockfile.
-## Proposed resolution of sub-decision 3 (2026-09-26 — pending owner acceptance)
+## Resolution of sub-decision 3 (proposed 2026-09-26, ACCEPTED 2026-09-26)
 
 Recommended in `plans/023-storeless-installs-and-session-guard.md` (Workstream B, decisions D3/D4):
 a store-less install keeps its machine state in a hidden, machine-owned **sidecar**
@@ -49,4 +50,5 @@ install/doctor/update/uninstall paths; only state-dir discovery and workspace-ro
 change. Store-less applies only when Claude is the sole selected host (no Cline, no `--plugin`,
 no `--canonical-store`); a later store-requiring add moves the sidecar into `.agents/`.
 Rejected: a lockfile-only home (forks the state machine — risk R4) and a root-level lockfile
-(visible workspace noise). Status stays **Proposed** until the owner accepts D3/D4.
+(visible workspace noise). The owner accepted D3/D4 on 2026-09-26; the implementation (`src/core/state-dir.ts`,
+`tests/store-less-install.test.ts`) and its scratch-workspace evidence are recorded in Plan 023's execution log.

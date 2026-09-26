@@ -449,8 +449,12 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     // Split into lines and check that no line in stdout exceeds 95 characters
     const lines = stdout.split(/\r?\n/);
     for (const line of lines) {
-      // Strip ANSI escape codes to measure true printable character length
-      const cleanLine = line.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').trimEnd();
+      // Measure what a terminal actually SHOWS: the spinner redraws in place (cursor back to column 0
+      // via `ESC[<n>D` / `ESC[<n>G` / `\r`, then clear), so only the text after the last reset is
+      // visible. Without this, a slow run piles several spinner frames onto one non-TTY line and the
+      // check fails on machine speed rather than layout. Then strip the remaining ANSI codes.
+      const visible = line.split(/\x1B\[\d*[DG]|\r/).pop() ?? '';
+      const cleanLine = visible.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').trimEnd();
       expect(cleanLine.length, `Line exceeded 95 chars: "${cleanLine}"`).toBeLessThanOrEqual(95);
     }
   });

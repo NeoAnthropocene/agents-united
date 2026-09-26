@@ -77,6 +77,7 @@ describe('planInstallTargets (Option B — main library + translated copies)', (
       hosts: ['agents'],
       fanout: ['cline'],
       addedCanonicalStore: true,
+      storeShape: 'store',
     });
   });
 
@@ -85,6 +86,7 @@ describe('planInstallTargets (Option B — main library + translated copies)', (
       hosts: ['agents'],
       fanout: ['claude', 'cline'],
       addedCanonicalStore: false,
+      storeShape: 'store',
     });
   });
 
@@ -93,6 +95,7 @@ describe('planInstallTargets (Option B — main library + translated copies)', (
       hosts: ['agents'],
       fanout: [],
       addedCanonicalStore: false,
+      storeShape: 'store',
     });
   });
 
@@ -101,6 +104,7 @@ describe('planInstallTargets (Option B — main library + translated copies)', (
       hosts: ['gemini'],
       fanout: [],
       addedCanonicalStore: false,
+      storeShape: 'store',
     });
   });
 
@@ -109,12 +113,13 @@ describe('planInstallTargets (Option B — main library + translated copies)', (
       hosts: ['agents', 'gemini'],
       fanout: ['claude'],
       addedCanonicalStore: false,
+      storeShape: 'store',
     });
   });
 
   it('defaults to agents for empty or all-unknown input', () => {
-    expect(planInstallTargets([])).toEqual({ hosts: ['agents'], fanout: [], addedCanonicalStore: false });
-    expect(planInstallTargets(['nope'])).toEqual({ hosts: ['agents'], fanout: [], addedCanonicalStore: false });
+    expect(planInstallTargets([])).toEqual({ hosts: ['agents'], fanout: [], addedCanonicalStore: false, storeShape: 'store' });
+    expect(planInstallTargets(['nope'])).toEqual({ hosts: ['agents'], fanout: [], addedCanonicalStore: false, storeShape: 'store' });
   });
 
   it('dedupes case-insensitively', () => {
@@ -122,6 +127,7 @@ describe('planInstallTargets (Option B — main library + translated copies)', (
       hosts: ['agents'],
       fanout: ['cline'],
       addedCanonicalStore: true,
+      storeShape: 'store',
     });
   });
 });

@@ -253,3 +253,89 @@ removes the shell from the path on every OS.
   with the paste-in snippet. (4) `-y` without the flag writes nothing; `--no-session-guard` records
   `{ off: true }`. Gates: typecheck 0; `npm test` 57 files, 820 passed / 0 failed / 209 skipped.
   **Owner check open**: a plain `claude` session in a guarded repo blocks the three commands.
+
+## B0 — State-dir inventory (read-only, 2026-09-26, on `e4555a5`)
+
+**Verdict: no STOP.** Every workspace-root derivation is exactly `path.dirname(<state dir>)`, which
+`workspaceRootOf(stateDir)` expresses (`<root>/.agents` → `<root>`; `<root>/.claude/.agents-united`
+→ `<root>`). The Claude compound lane records canonicals **state-dir-relative** (`agents/<f>`,
+`skills/<s>/SKILL.md`, `rules/<r>`) and projections **root-relative** (`.claude/...`), so a
+sidecar move needs no lockfile key rewrite — confirming D3's premise. All `.agents/`-prefixed
+literals belong to lanes D4 keeps store-backed (Cline, the plugin lane, the non-compound fallback
+hosts, the AGENTS.md bridge).
+
+### A. State-dir lookups (must learn the sidecar) — 13 sites
+
+| # | Site | Today | B2 change |
+|---|---|---|---|
+| A1 | `installer.ts:121` `projectionRoot` | `resolveHostDir(scope,'agents',targetDir)` + `dirname` | `resolveStateDir` + `workspaceRootOf` |
+| A2 | `installer.ts:888` `targetDirs` | `hosts.map(resolveHostDir(...))` | the `agents` host maps to the resolved state dir |
+| A3 | `installer.ts:898–899` dry-run lockfile | `resolveHostDir(...,'agents')/agents-united.json` | `resolveStateDir` |
+| A4 | `installer.ts:922` `agentsTarget` | `resolveHostDir(...,'agents')` | `resolveStateDir` |
+| A5 | `uninstaller.ts:206` `targetDirs` | `hosts.map(resolveHostDir(...))`, default hosts `['agents']` | `agents` → discovered state dir |
+| A6 | `doctor.ts:168` `root` | `resolveHostDir('project','agents',targetDir)` | `resolveStateDir('project', targetDir)` |
+| A7 | `inventory.ts:77` candidate dirs | `resolveHostDir(scope,host)` per KNOWN host; lockfile at `<dir>/agents-united.json` | add the sidecar candidate (`.claude/.agents-united`, reported as host `agents` so `update` re-installs into it); dedupe |
+| A8 | `inventory.ts:91` `canonicalDir` (location summary) | `resolveHostDir(scope,'agents',...)` | `resolveStateDir` (display "./.claude/.agents-united") |
+| A9 | `claude-launcher.ts:114–128` `resolveInstallation` | `cwd/.agents` + global `~/.agents` fallback | `resolveStateDir` for both scopes (the Claude gate already accepts `fanout: ['claude']` alone — no Team Manifest needed) |
+| A10 | `cline-launcher.ts:88–102` | `cwd/.agents` + global fallback | **no change** (Cline is store-backed, D4); a sidecar-only workspace gets the existing "not projected to Cline" remedy |
+| A11 | `cli.ts:495` session-guard consent lookup | `resolveHostDir(scope,'agents')/agents-united.json` | `resolveStateDir` |
+| A12 | `cli.ts:1288` post-update tip | `rec.targetDir/agents-united.json` | none (record carries the state dir) |
+| A13 | `updater.ts:245, 275` lockfile path | `record.targetDir/agents-united.json` | none (record carries the state dir) |
+
+### B. Workspace-root derivations (`dirname(stateDir)`) — 6 sites, all → `workspaceRootOf`
+
+`installer.ts:122`, `installer.ts:1146` (session guard), `uninstaller.ts:311`, `updater.ts:77`
+(`staleProjection`), `updater.ts:331` (generative-UI migration), `doctor.ts:243` + `doctor.ts:438`.
+The three `removeEmptyProjectionDirs` walks (`installer.ts:493`, `uninstaller.ts:63`,
+`updater.ts:109`) take `workspaceRoot` as a parameter and stop at it — correct once callers pass
+`workspaceRootOf(...)`.
+
+### C. `.agents/` literals — no change (store-backed lanes only)
+
+Cline lane + Team Manifest (`cline-projector.ts:241,255,265–266,337–340,363`,
+`cline-launcher.ts:120,173,177`, `installer.ts:183`, `uninstaller.ts:235,332`); plugin lane
+(`claude-projector.ts:835`, `cli.ts:2519` `agents start --plugin`, `installer.ts:341`); non-compound
+fallback hosts + AGENTS.md bridge (`installer.ts:129,677–679,816–861`, `projector.ts:236`,
+`uninstaller.ts:383`); host registry (`hosts.ts:31–34`); Claude launcher manifest probe
+(`claude-launcher.ts:152`, optional signal). Test helper `tests/helpers/bundle-lifecycle.ts`
+assumes `.agents/` (store-backed) — B1 adds a sidecar variant rather than changing it.
+
+### D. Behavior gaps B3 must add (not just re-pointing)
+
+1. **Shape decision** — `planInstallTargets` (`hosts.ts`) + `InstallOptions.canonicalStore`:
+   store-less iff the selection is exactly Claude (no `agents`/`gemini`, fan-out `['claude']`,
+   no `--plugin`, no `--canonical-store`); the host id stays `agents`, only its directory moves.
+2. **Last-bundle teardown** — today uninstall keeps `.agents/agents-united.json` after the last
+   bundle; for the sidecar, remove `.claude/.agents-united/` entirely, then prune `.claude/` if
+   empty (the existing walk would otherwise stop at the non-empty `.claude/`).
+3. **Upgrade move** — sidecar → `.agents/` when a store-requiring add arrives (crash-safe: move,
+   then flip `storeShape`; a leftover half-move is detected and finished on the next run).
+4. **CLI/TUI copy** — `cli.ts:346` and `:429` ("Added .agents/ — the main library…") and the
+   `:929–936` tip must not print on a store-less install; `-t` help text gains `--canonical-store`.
+5. **Doctor** — never warn "No lockfile found at .agents/…" on a sidecar workspace; add a sidecar
+   drift warning (machine-owned snapshot modified).
+
+## Execution log — Workstream B (2026-09-26)
+
+- **B0 — DONE** (`4f58f36`): inventory above; no STOP.
+- **B1–B3 — DONE** (one commit, every commit green): `tests/store-less-install.test.ts` (16) written
+  RED first (12 failing on `MISSING API` / missing behavior, 2 regression guards). `src/core/state-dir.ts`
+  (`SIDECAR_DIR`, `resolveStateDir`, `workspaceRootOf`, `isSidecarDir`, `stateDirFor`); all 13
+  lookups and 6 root derivations re-pointed; `planInstallTargets` returns `storeShape`; installer
+  resolves the state dir (a non-Claude fan-out or the plugin lane forces the store), downgrades
+  the sidecar to copy mode, records `storeShape: 'sidecar'` only on sidecars, and moves an
+  existing sidecar into `.agents/` on a store-requiring add (crash-safe); uninstaller tears the
+  sidecar (and an emptied `.claude/`) down with the last bundle; inventory lists the sidecar under
+  host `agents`; the Claude launcher resolves it; doctor flags a hand-edited sidecar snapshot;
+  CLI `--canonical-store`, shape decided once the final fan-out is known, a "Claude-only install"
+  note instead of "Added .agents/". `tests/hosts.test.ts` `toEqual` pins gained `storeShape: 'store'`.
+- **B4 — scratch-workspace evidence** (built CLI, no `targetDir`, fresh git repos): `add -t claude`
+  → only `.claude/` (agents/rules/skills + hidden `.agents-united/`), no `.agents/`, lockfile
+  `storeShape: sidecar`; `doctor` healthy; `update` stays store-less (no nested `.claude/.claude`);
+  `start --host claude --dry-run` resolves the workspace; `add -t claude,cline` moved the sidecar
+  into `.agents/`, dropped `storeShape`, doctor healthy; a sidecar `remove` leaves only `.git/`;
+  `--canonical-store` keeps `.agents/` and writes no sidecar.
+- **Gates**: typecheck 0; `npm test` 58 files, 835 passed / **1 failed** / 209 skipped — the one
+  failure is the pre-existing, timing-sensitive `cli-e2e` "Installation Success … line overflow"
+  check (clack spinner frames accumulate on one non-TTY line under load); it fails identically on
+  `dev` (`e4555a5`) in this environment and is not touched by this change.

@@ -303,6 +303,11 @@ export interface LockfileManifest {
    * agents-united created the file (only then may uninstall delete it). Absent ⇒ never decided.
    */
   sessionGuard?: SessionGuardRecord;
+  /**
+   * Plan 023 B (ADR 0022, D3) — `'sidecar'` when this lockfile lives in the store-less sidecar
+   * `.claude/.agents-united/`. Absent on a store-backed install (the lockfile shape is unchanged).
+   */
+  storeShape?: 'sidecar';
 }
 
 export type SessionGuardRecord =
@@ -430,6 +435,13 @@ export interface InstallOptions {
    * (remembered "no"). Omitted ⇒ inherit the lockfile decision. Claude lane only.
    */
   sessionGuard?: 'project' | 'local' | 'user' | false;
+  /**
+   * Plan 023 B (ADR 0022, D4) — where the machine state lives when no `targetDir` is given:
+   * `'sidecar'` (store-less Claude-only install) or `'store'` (`.agents/`). Decided by
+   * `planInstallTargets`; an existing store always wins, and a store-requiring install moves an
+   * existing sidecar into `.agents/`. Omitted ⇒ discover (existing store > existing sidecar > store).
+   */
+  storeShape?: 'store' | 'sidecar';
 }
 
 export interface ProjectionInfo {

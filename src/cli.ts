@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import { RegistryResolver } from './core/registry.js';
 import { InstallEngine } from './core/installer.js';
-import { AgentHostAdapter } from './core/adapter.js';
+import { resolveStateDir } from './core/state-dir.js';
 import { UninstallEngine } from './core/uninstaller.js';
 import { InventoryScanner } from './core/inventory.js';
 import { UpdateEngine } from './core/updater.js';
@@ -309,6 +309,7 @@ cli
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
   .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline. Under Development hosts (cursor, opencode, codex) are refused')
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
+  .option('--canonical-store', 'Keep the .agents/ main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden .claude/.agents-united/ folder, ADR 0022)')
   .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off.')
   .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
   .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
@@ -339,6 +340,9 @@ cli
     // Turn the target list into a plan: the main library (.agents/) plus translated
     // copies for each assistant that can't read it directly. Never installs
     // untranslated Antigravity frontmatter into another assistant's folder.
+    // Plan 023 B (ADR 0022) — remember what the operator actually selected: the store-less
+    // decision is made once the final fan-out is known (right before install).
+    let selectedHosts: string[] = [...hosts];
     const flagPlan = planInstallTargets(hosts);
     hosts = flagPlan.hosts;
     if (flagPlan.addedCanonicalStore) {
@@ -421,6 +425,7 @@ cli
 
       if (Array.isArray(hostSelection) && hostSelection.length > 0) {
         const wizardPlan = planInstallTargets(hostSelection as string[]);
+        selectedHosts = [...(hostSelection as string[])];
         hosts = wizardPlan.hosts;
         // Merge with any explicitly-passed --fanout rather than discarding it.
         fanout = Array.from(new Set([...fanout, ...wizardPlan.fanout]));
@@ -492,7 +497,7 @@ cli
       }
       sessionGuard = where;
     } else if (isInteractive && fanout.includes('claude')) {
-      const recordedLockfile = path.join(AgentHostAdapter.resolveHostDir(scope, 'agents'), 'agents-united.json');
+      const recordedLockfile = path.join(resolveStateDir(scope), 'agents-united.json');
       const recorded = await fs.readJson(recordedLockfile).catch(() => null);
       if (!recorded?.sessionGuard) {
         const answer = await confirm({
@@ -798,6 +803,21 @@ cli
       }
     }
 
+    // Plan 023 B (ADR 0022, D4) — Claude alone is store-less: no `.agents/`, the machine state
+    // lives in the hidden `.claude/.agents-united/` sidecar. `--canonical-store`, the plugin lane or
+    // any other assistant keeps the main library.
+    const storeShape = planInstallTargets([...selectedHosts, ...fanout], {
+      canonicalStore: options.canonicalStore === true,
+      pluginLane: options.plugin === true,
+    }).storeShape;
+    if (storeShape === 'sidecar' && !options.dryRun) {
+      note(
+        'Claude only: no .agents/ main library is created. The install state is kept in the hidden\n' +
+          '.claude/.agents-united/ folder (machine-owned — do not edit). Add --canonical-store to keep .agents/.',
+        'Claude-only install'
+      );
+    }
+
     const s = spinner();
     s.start(`Resolving "${identifier}"...`);
 
@@ -812,6 +832,7 @@ cli
         // flag inherits the recorded choice so `agents update` cannot prune the package.
         pluginLane: typeof options.plugin === 'boolean' ? options.plugin : undefined,
         sessionGuard,
+        storeShape,
         mode: executionMode,
         allowMissingPrereqs: options.allowMissingPrereqs,
         yes: options.yes,
