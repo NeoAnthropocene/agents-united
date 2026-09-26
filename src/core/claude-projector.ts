@@ -1,4 +1,5 @@
 import yaml from 'yaml';
+import { managedGuardHooks } from './guard.js';
 import path from 'node:path';
 import fs from 'fs-extra';
 import type {
@@ -108,22 +109,8 @@ Enforced guard: a PreToolUse hook in this file's frontmatter blocks \`git push -
 \`vercel --prod\` (exit 2, with the reason); ask the user to run those steps themselves.
 All other lifecycle hooks described in this prompt are advisory: this host does not fire them.`;
 
-/**
- * Plan 022 H5 (gate 7) — the managed PreToolUse guard, wired into EVERY projected role's
- * frontmatter. Verified against the Claude Code references (2026-09-25): subagent frontmatter
- * hooks fire when the role is spawned as a subagent and when it runs as the main session via
- * `--agent`; a command hook exiting 2 blocks the call and its stderr is shown as the reason.
- * Inline `node -e` so no extra file (and no ownership/uninstall surface) exists; the user's own
- * `.claude/settings.json` is never touched. The JS avoids single quotes (it is shell-quoted).
- */
-const GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
-const GUARD_COMMAND = `node -e '${GUARD_SCRIPT}'`;
-const MANAGED_HOOKS = {
-  PreToolUse: [
-    { matcher: 'Bash', hooks: [{ type: 'command', command: GUARD_COMMAND }] },
-    { matcher: 'Write|Edit|NotebookEdit', hooks: [{ type: 'command', command: GUARD_COMMAND }] },
-  ],
-};
+/** Plan 022 H5 / Plan 023 A0 — the managed PreToolUse guard (single source: guard.ts). */
+const MANAGED_HOOKS = managedGuardHooks();
 
 export class ClaudeProjector {
   /** Pure data (Plan 017 lifts this object into a shared HostDialectSpec). */

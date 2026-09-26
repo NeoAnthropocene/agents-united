@@ -17,35 +17,35 @@ hooks:
     - matcher: Bash
       hooks:
         - type: command
-          command: "node -e 'let
-            s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>{let
-            i={};try{i=JSON.parse(s)}catch(e){}const
-            t=i.tool_input||{},c=String(t.command||\"\"),f=String(t.file_path||\
-            \"\").replace(/\\\\/g,\"/\");let
-            r=\"\";if(/\\bgit\\b[^;&|]*\\bpush\\b[^;&|]*(--force(?!-with-lease)\
-            \\b|(^|\\s)-f\\b)/.test(c))r=\"git push --force\";else
-            if(/\\bvercel\\b[^;&|]*--prod\\b/.test(c))r=\"vercel --prod\";else
-            if(/(^|\\/)\\.env(\\.(?!example$)[^\\/]+)?$/.test(f)||/>\\s*(\\S*\\\
-            /)?\\.env(\\.(?!example\\b)\\S+)?(\\s|$)/.test(c))r=\"a .env
-            write\";if(r){process.stderr.write(\"Blocked by agents-united guard:
-            \"+r+\" requires explicit human approval outside the agent
-            session.\\n\");process.exit(2)}})'"
+          command: node
+          args:
+            - -e
+            - 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let
+              i={};try{i=JSON.parse(s)}catch(e){}const
+              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let
+              r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
+              push --force";else
+              if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else
+              if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a
+              .env write";if(r){process.stderr.write("Blocked by agents-united
+              guard: "+r+" requires explicit human approval outside the agent
+              session.\n");process.exit(2)}})'
     - matcher: Write|Edit|NotebookEdit
       hooks:
         - type: command
-          command: "node -e 'let
-            s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>{let
-            i={};try{i=JSON.parse(s)}catch(e){}const
-            t=i.tool_input||{},c=String(t.command||\"\"),f=String(t.file_path||\
-            \"\").replace(/\\\\/g,\"/\");let
-            r=\"\";if(/\\bgit\\b[^;&|]*\\bpush\\b[^;&|]*(--force(?!-with-lease)\
-            \\b|(^|\\s)-f\\b)/.test(c))r=\"git push --force\";else
-            if(/\\bvercel\\b[^;&|]*--prod\\b/.test(c))r=\"vercel --prod\";else
-            if(/(^|\\/)\\.env(\\.(?!example$)[^\\/]+)?$/.test(f)||/>\\s*(\\S*\\\
-            /)?\\.env(\\.(?!example\\b)\\S+)?(\\s|$)/.test(c))r=\"a .env
-            write\";if(r){process.stderr.write(\"Blocked by agents-united guard:
-            \"+r+\" requires explicit human approval outside the agent
-            session.\\n\");process.exit(2)}})'"
+          command: node
+          args:
+            - -e
+            - 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let
+              i={};try{i=JSON.parse(s)}catch(e){}const
+              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let
+              r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
+              push --force";else
+              if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else
+              if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a
+              .env write";if(r){process.stderr.write("Blocked by agents-united
+              guard: "+r+" requires explicit human approval outside the agent
+              session.\n");process.exit(2)}})'
 ---
 <!-- managed-by: agents-united | profile: claude | canonical: agents/subagent-repo-index.md | do not edit -->
 

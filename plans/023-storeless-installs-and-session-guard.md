@@ -8,7 +8,7 @@
 
 ## Status
 
-- **State**: DRAFT — awaiting owner decisions D1–D4 below (authored 2026-09-26 at the owner's
+- **State**: AUTHORIZED — product owner 2026-09-26 ("D1–D4 approved as recommended, start with A0")
   request after PR #48; the two topics Plan 022 left open)
 - **Priority**: P1 (Workstream A) · P2 (Workstream B) · **Effort**: A = S/M, B = L
 - **Risk**: A = MEDIUM (first write into a user-owned settings file) · B = HIGH (installer state
@@ -198,7 +198,7 @@ removes the shell from the path on every OS.
 
 ## Open owner decisions
 
-| # | Decision | Recommendation |
+| # | Decision | Recommendation (all APPROVED by the owner 2026-09-26) |
 |---|---|---|
 | D1 | Session-guard location | Managed entry in project `.claude/settings.json` (`local` variant opt-in; user-global never by default) |
 | D2 | Consent model | Ask, default yes, sticky in the lockfile; `--session-guard` / `--no-session-guard` |

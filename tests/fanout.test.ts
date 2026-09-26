@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import path from 'node:path';
 import fs from 'fs-extra';
+import YAML from 'yaml';
 import { InstallEngine } from '../src/core/installer.js';
 
 describe('InstallEngine fan-out (plan 007 M3)', () => {
@@ -37,7 +38,11 @@ describe('InstallEngine fan-out (plan 007 M3)', () => {
     // Antigravity prose hooks are dropped; only the managed PreToolUse guard is wired (Plan 022 H5)
     const claudeFrontmatter = claude.match(/^---\n([\s\S]*?)\n---/)![1];
     expect(claudeFrontmatter).not.toContain('PreInvocation');
-    expect(claudeFrontmatter).toContain('Blocked by agents-united guard');
+    // Plan 023 A0: exec-form handler (node + args); assert on the PARSED value, since YAML may fold it.
+    const guardHandler = (YAML.parse(claudeFrontmatter) as { hooks: { PreToolUse: Array<{ hooks: Array<{ command: string; args: string[] }> }> } })
+      .hooks.PreToolUse[0].hooks[0];
+    expect(guardHandler.command).toBe('node');
+    expect(guardHandler.args.join(' ')).toContain('Blocked by agents-united guard');
     expect(claude).toContain('managed-by: agents-united');
     expect(claude).toContain('Read');
 

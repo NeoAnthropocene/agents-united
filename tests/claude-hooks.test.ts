@@ -18,7 +18,8 @@ import { HOST_DIALECTS } from '../src/core/dialects.js';
 const AGENTS_DIR = path.resolve(process.cwd(), 'registry', 'agents');
 const files = fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.md')).sort();
 
-interface HookGroup { matcher: string; hooks: Array<{ type: string; command: string }> }
+interface Handler { type: string; command: string; args?: string[]; shell?: string }
+interface HookGroup { matcher: string; hooks: Handler[] }
 
 function hooksOf(file: string): { groups: HookGroup[]; content: string } {
   const raw = fs.readFileSync(path.join(AGENTS_DIR, file), 'utf8');
@@ -27,16 +28,22 @@ function hooksOf(file: string): { groups: HookGroup[]; content: string } {
   return { groups: meta.hooks?.PreToolUse ?? [], content };
 }
 
-function fire(command: string, payload: Record<string, unknown>): { status: number | null; stderr: string } {
-  const run = spawnSync('sh', ['-c', command], { input: JSON.stringify(payload), encoding: 'utf8' });
+/**
+ * Plan 023 A0 — exec form: the host spawns `command` directly with `args` as argv, no shell
+ * (Claude Code hooks reference). Shell-form hooks run under PowerShell on Windows without Git
+ * Bash, whose native-argument quoting can mangle the script and fail OPEN. So the executor here
+ * mirrors the host's exec form exactly: spawnSync(command, args) with no shell.
+ */
+function fire(handler: Handler, payload: Record<string, unknown>): { status: number | null; stderr: string } {
+  const run = spawnSync(handler.command, handler.args ?? [], { input: JSON.stringify(payload), encoding: 'utf8', shell: false });
   return { status: run.status, stderr: run.stderr };
 }
 
 const guard = hooksOf('subagent-backend-architect.md').groups;
-const commandFor = (tool: string): string => {
+const commandFor = (tool: string): Handler => {
   const group = guard.find(g => g.matcher.split('|').includes(tool));
   if (!group) throw new Error(`no PreToolUse group matches ${tool}`);
-  return group.hooks[0].command;
+  return group.hooks[0];
 };
 
 describe('Plan 022 H5 — managed PreToolUse guard is wired on every projected role', () => {
@@ -47,6 +54,18 @@ describe('Plan 022 H5 — managed PreToolUse guard is wired on every projected r
     });
     expect(missing).toEqual([]);
     expect(guard.map(g => g.matcher)).toEqual(['Bash', 'Write|Edit|NotebookEdit']);
+  });
+
+  it('Plan 023 A0: every guard handler is exec form (node + args, no shell, no shell field)', () => {
+    for (const group of guard) {
+      for (const handler of group.hooks) {
+        expect(handler.command).toBe('node');
+        expect(handler.args?.[0]).toBe('-e');
+        expect(typeof handler.args?.[1]).toBe('string');
+        expect(handler.args).toHaveLength(2);
+        expect(handler.shell).toBeUndefined();
+      }
+    }
   });
 
   const blocked: Array<[string, string, Record<string, unknown>]> = [
