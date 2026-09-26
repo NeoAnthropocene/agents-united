@@ -11,6 +11,7 @@ import { ClineProjector } from './cline-projector.js';
 import { RegistryResolver } from './registry.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
+import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import type {
   ClaudeCapabilityReport,
   ClineCapabilityReport,
@@ -165,7 +166,8 @@ export class DoctorEngine {
   }
 
   public static async runDoctor(targetDir?: string, host?: string): Promise<HealthReport> {
-    const root = AgentHostAdapter.resolveHostDir('project', 'agents', targetDir);
+    // Plan 023 B — the state dir: the `.agents/` store or the store-less `.claude/.agents-united/` sidecar.
+    const root = resolveStateDir('project', targetDir);
     const subPaths = AgentHostAdapter.getSubPaths(root);
 
     const issues: string[] = [];
@@ -240,7 +242,7 @@ export class DoctorEngine {
 
     // Projection checks: verify each recorded `projectedTo` and `projections` path
     if (manifest) {
-      const workspaceRoot = path.resolve(path.dirname(root));
+      const workspaceRoot = workspaceRootOf(root);
 
       // ADR 0017 decision 2 — exactly one warning per projection path. The presence, marker
       // and content passes below all inspect the same recorded paths (one path is routinely
@@ -425,6 +427,19 @@ export class DoctorEngine {
       }
     }
 
+    // Plan 023 B (ADR 0022) — the store-less sidecar is a machine-owned snapshot, so any byte
+    // change to a recorded file is drift (the `.agents/` store stays user-editable, unchecked).
+    if (manifest && isSidecarDir(root)) {
+      for (const [relPath, meta] of Object.entries(manifest.files)) {
+        const abs = path.join(root, relPath);
+        if (!meta.hash || !await fs.pathExists(abs)) continue;
+        const diskHash = `sha256:${crypto.createHash('sha256').update(await fs.readFile(abs)).digest('hex')}`;
+        if (diskHash !== meta.hash) {
+          warnings.push(`Sidecar snapshot modified: ${relPath} — .claude/.agents-united/ is machine-owned. Run 'agents update --force' to restore it.`);
+        }
+      }
+    }
+
     // Plan 023 A — plain-session guard. Reported whenever a decision is recorded; repairs are
     // never automatic (a hand-edited guard or an unparseable settings file is the user's call).
     let sessionGuard: HealthReport['sessionGuard'];
@@ -435,7 +450,7 @@ export class DoctorEngine {
       } else {
         const guardFile = path.isAbsolute(guardRecord.file)
           ? guardRecord.file
-          : path.join(path.resolve(path.dirname(root)), guardRecord.file);
+          : path.join(workspaceRootOf(root), guardRecord.file);
         const state = await inspectSessionGuard(guardFile);
         sessionGuard = state === 'absent' ? 'missing' : state;
         if (state === 'missing' || state === 'absent') {

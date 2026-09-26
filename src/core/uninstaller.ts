@@ -7,6 +7,7 @@ import { isKnownHost } from './hosts.js';
 import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { removeSessionGuard } from './session-guard.js';
+import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
 import { assetOwners } from './types.js';
 
@@ -203,7 +204,11 @@ export class UninstallEngine {
     const scope = this.parseScope(options);
     const hosts = this.parseHosts(options);
 
-    const targetDirs: string[] = hosts.map(h => AgentHostAdapter.resolveHostDir(scope, h, options.targetDir));
+    // Plan 023 B (ADR 0022) — the `agents` host's directory is the discovered state dir: the
+    // `.agents/` store or the store-less `.claude/.agents-united/` sidecar.
+    const targetDirs: string[] = hosts.map(h => h === 'agents'
+      ? resolveStateDir(scope, options.targetDir)
+      : AgentHostAdapter.resolveHostDir(scope, h, options.targetDir));
     const resolved = await this.registry.resolve(identifier).catch(() => null);
 
     const totalRemoved: string[] = [];
@@ -308,7 +313,7 @@ export class UninstallEngine {
           Object.values(lockfile.projections || {}).some(p => (p.owners ?? []).includes(bundleName));
         if (lockfile.installed.bundles.includes(bundleName) || ownsSomething) {
           if (!options.dryRun) {
-            const workspaceRoot = path.resolve(path.dirname(targetDir));
+            const workspaceRoot = workspaceRootOf(targetDir);
 
             // Transactional validation BEFORE any write: if this bundle owns zero file
             // records and zero projections, reject without mutating the lockfile.
@@ -488,6 +493,15 @@ export class UninstallEngine {
             }
 
             await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });
+
+            // Plan 023 B (ADR 0022) — the store-less sidecar is pure machine state: once the last
+            // bundle is gone it is deleted outright, and an emptied `.claude/` goes with it (the
+            // store-backed `.agents/` keeps its historical behavior: the lockfile stays).
+            if (isSidecarDir(targetDir) && lockfile.installed.bundles.length === 0) {
+              await fs.remove(targetDir);
+              const claudeDir = path.dirname(targetDir);
+              if ((await fs.readdir(claudeDir).catch(() => ['keep'])).length === 0) await fs.remove(claudeDir);
+            }
           } else {
             // Dry run: report the same refcount outcome the real pass would produce, without
             // mutating anything — "would remove 84" when every asset is co-owned is a lie.

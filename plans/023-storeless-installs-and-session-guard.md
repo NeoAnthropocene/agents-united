@@ -314,3 +314,28 @@ assumes `.agents/` (store-backed) — B1 adds a sidecar variant rather than chan
    `:929–936` tip must not print on a store-less install; `-t` help text gains `--canonical-store`.
 5. **Doctor** — never warn "No lockfile found at .agents/…" on a sidecar workspace; add a sidecar
    drift warning (machine-owned snapshot modified).
+
+## Execution log — Workstream B (2026-09-26)
+
+- **B0 — DONE** (`4f58f36`): inventory above; no STOP.
+- **B1–B3 — DONE** (one commit, every commit green): `tests/store-less-install.test.ts` (16) written
+  RED first (12 failing on `MISSING API` / missing behavior, 2 regression guards). `src/core/state-dir.ts`
+  (`SIDECAR_DIR`, `resolveStateDir`, `workspaceRootOf`, `isSidecarDir`, `stateDirFor`); all 13
+  lookups and 6 root derivations re-pointed; `planInstallTargets` returns `storeShape`; installer
+  resolves the state dir (a non-Claude fan-out or the plugin lane forces the store), downgrades
+  the sidecar to copy mode, records `storeShape: 'sidecar'` only on sidecars, and moves an
+  existing sidecar into `.agents/` on a store-requiring add (crash-safe); uninstaller tears the
+  sidecar (and an emptied `.claude/`) down with the last bundle; inventory lists the sidecar under
+  host `agents`; the Claude launcher resolves it; doctor flags a hand-edited sidecar snapshot;
+  CLI `--canonical-store`, shape decided once the final fan-out is known, a "Claude-only install"
+  note instead of "Added .agents/". `tests/hosts.test.ts` `toEqual` pins gained `storeShape: 'store'`.
+- **B4 — scratch-workspace evidence** (built CLI, no `targetDir`, fresh git repos): `add -t claude`
+  → only `.claude/` (agents/rules/skills + hidden `.agents-united/`), no `.agents/`, lockfile
+  `storeShape: sidecar`; `doctor` healthy; `update` stays store-less (no nested `.claude/.claude`);
+  `start --host claude --dry-run` resolves the workspace; `add -t claude,cline` moved the sidecar
+  into `.agents/`, dropped `storeShape`, doctor healthy; a sidecar `remove` leaves only `.git/`;
+  `--canonical-store` keeps `.agents/` and writes no sidecar.
+- **Gates**: typecheck 0; `npm test` 58 files, 835 passed / **1 failed** / 209 skipped — the one
+  failure is the pre-existing, timing-sensitive `cli-e2e` "Installation Success … line overflow"
+  check (clack spinner frames accumulate on one non-TTY line under load); it fails identically on
+  `dev` (`e4555a5`) in this environment and is not touched by this change.

@@ -1,10 +1,10 @@
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'fs-extra';
-import { AgentHostAdapter } from './adapter.js';
 import { ClaudeCapabilityProbe } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { defaultProcessRunner } from './cline-capabilities.js';
+import { resolveStateDir } from './state-dir.js';
 import type {
   ClaudeCapabilityReport,
   InstallScope,
@@ -110,13 +110,14 @@ export class ClaudeLauncher {
     let scope: InstallScope;
     let workspace: string;
 
+    // Plan 023 B (ADR 0022) — the state dir is the `.agents/` store or the store-less sidecar.
     if (isGlobal) {
-      targetDir = AgentHostAdapter.resolveHostDir('global', 'agents');
+      targetDir = resolveStateDir('global');
       scope = 'global';
       workspace = os.homedir();
     } else {
       workspace = cwd;
-      targetDir = path.join(cwd, '.agents');
+      targetDir = resolveStateDir('project', undefined, { cwd });
       scope = 'project';
     }
 
@@ -124,7 +125,7 @@ export class ClaudeLauncher {
     if (!await fs.pathExists(lockfilePath)) {
       if (!isGlobal) {
         // Check if global installation exists as fallback
-        const globalTarget = AgentHostAdapter.resolveHostDir('global', 'agents');
+        const globalTarget = resolveStateDir('global');
         const globalLockfile = path.join(globalTarget, 'agents-united.json');
         if (await fs.pathExists(globalLockfile)) {
           const gLock: LockfileManifest = await fs.readJson(globalLockfile);

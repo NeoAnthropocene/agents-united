@@ -1,6 +1,7 @@
 import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'fs-extra';
+import { workspaceRootOf } from './state-dir.js';
 import { RegistryResolver } from './registry.js';
 import { InventoryScanner } from './inventory.js';
 import { InstallEngine } from './installer.js';
@@ -74,7 +75,7 @@ export class UpdateEngine {
    * every recorded projection still carries the managed marker.
    */
   private async staleProjection(record: InstalledPackageRecord, lockfile: LockfileManifest): Promise<string> {
-    let workspaceRoot = path.dirname(record.targetDir);
+    const workspaceRoot = workspaceRootOf(record.targetDir);
     for (const assetMeta of Object.values(lockfile.files)) {
       if (assetMeta.bundle !== record.name) continue;
       if (!assetMeta.projectedTo || assetMeta.projectedTo.length === 0) continue;
@@ -328,7 +329,7 @@ export class UpdateEngine {
       // documented remediation for it) and it leaves fresh installs untouched, since
       // a fresh install can never have recorded the legacy path.
       const migratedGenerativeUi = await this.migrateLegacyGenerativeUiProjections(
-        path.dirname(record.targetDir),
+        workspaceRootOf(record.targetDir),
         lockfile
       );
       if (migratedGenerativeUi.length > 0) {
