@@ -41,6 +41,8 @@ skills:
   - turso-distributed-sqlite
   - supabase-backend-architecture
   - performance-optimization
+  - postgres-best-practices
+  - clickhouse-architecture-advisor
 mcpServers:
   - name: context7
 ---

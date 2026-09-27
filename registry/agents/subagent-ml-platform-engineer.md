@@ -43,6 +43,7 @@ skills:
   - runpod-gpu-orchestration
   - replicate-model-inference
   - local-llm-inference
+  - hf-managed-jobs
 mcpServers:
   - name: context7
 ---

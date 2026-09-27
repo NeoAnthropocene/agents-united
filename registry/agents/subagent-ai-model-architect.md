@@ -43,6 +43,7 @@ skills:
   - rag-vector-pipeline
   - vector-database-design
   - local-llm-inference
+  - hf-model-training
 mcpServers:
   - name: context7
 ---

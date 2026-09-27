@@ -69,8 +69,14 @@ describe('Gate command portability (Plan 015 §5.9 item 1)', () => {
   const gateRows = collectGateRows(files);
 
   it('scans the full canonical skill catalog', () => {
-    // Catalog contract (ADR 0016 cutover, post PR #42 merge): 169 canonical SKILL.md files (Plan 028 added banner-design, brand-identity, ux-writing).
-    expect(files.length).toBe(169);
+    // Catalog contract: every registry/skills/<name>/ directory has a SKILL.md.
+    // The count is derived (Plan 027) rather than a literal, so batches of
+    // vendored skills stop fighting over a hardcoded number.
+    const dirCount = fs
+      .readdirSync(skillsDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory()).length;
+    expect(files.length).toBe(dirCount);
+    expect(files.length).toBeGreaterThanOrEqual(166);
   });
 
   it('still finds the phase-gate tables (guard is not vacuous)', () => {

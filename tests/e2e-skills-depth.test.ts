@@ -133,7 +133,8 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
       const entries = await fs.readdir(skillsDir, { withFileTypes: true });
       const skillDirs = entries.filter(e => e.isDirectory()).map(e => e.name);
 
-      expect(skillDirs.length).toBe(169);
+      // Catalog contract: derived floor, not a literal (Plan 027).
+      expect(skillDirs.length).toBeGreaterThanOrEqual(166);
 
       let foundSkillCount = 0;
       for (const skillName of skillDirs) {
@@ -207,11 +208,16 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
 
   // Tier 3: Cross-Feature Pairwise Audit
   describe('Tier 3: Cross-Feature Pairwise Audit', () => {
-    it('should cross-validate all 169 skills listed in bundles.json against registry/skills/ directory', async () => {
+    it('should cross-validate all skills listed in bundles.json against registry/skills/ directory', async () => {
       const bundlesJson = await fs.readJson(bundlesPath);
       const fullBundleSkills: string[] = bundlesJson.bundles.full.skills;
+      const entries = await fs.readdir(skillsDir, { withFileTypes: true });
+      const skillDirCount = entries.filter(e => e.isDirectory()).length;
 
-      expect(fullBundleSkills.length).toBe(169);
+      // Catalog contract: derived, not a literal (Plan 027) — `full` must list
+      // every skill directory, no more and no fewer.
+      expect(fullBundleSkills.length).toBeGreaterThanOrEqual(166);
+      expect(fullBundleSkills.length).toBe(skillDirCount);
 
       for (const skillName of fullBundleSkills) {
         const skillFolderPath = path.join(skillsDir, skillName);
@@ -237,11 +243,12 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
 
   // Tier 4: Real-World Inventory Health Report
   describe('Tier 4: Real-World Inventory Health Report', () => {
-    it('should perform a complete audit of all 169 skill directories and compile a depth metric report', async () => {
+    it('should perform a complete audit of all skill directories and compile a depth metric report', async () => {
       const entries = await fs.readdir(skillsDir, { withFileTypes: true });
       const skillDirs = entries.filter(e => e.isDirectory()).map(e => e.name);
 
-      expect(skillDirs.length).toBe(169);
+      // Catalog contract: derived floor, not a literal (Plan 027).
+      expect(skillDirs.length).toBeGreaterThanOrEqual(166);
 
       const healthReport = {
         totalSkillDirectories: skillDirs.length,
@@ -262,7 +269,7 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
         }
       }
 
-      expect(healthReport.totalSkillDirectories).toBe(169);
+      expect(healthReport.totalSkillDirectories).toBeGreaterThanOrEqual(166);
       expect(healthReport.withSkillMdFile).toBeGreaterThan(0);
     });
   });

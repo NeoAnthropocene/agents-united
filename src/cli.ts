@@ -10,6 +10,7 @@ import { UninstallEngine } from './core/uninstaller.js';
 import { InventoryScanner } from './core/inventory.js';
 import { UpdateEngine } from './core/updater.js';
 import { DoctorEngine } from './core/doctor.js';
+import type { HealthReport } from './core/doctor.js';
 import { ClineLauncher } from './core/cline-launcher.js';
 import { ClineCapabilityProbe } from './core/cline-capabilities.js';
 import { ClaudeLauncher } from './core/claude-launcher.js';
@@ -2371,6 +2372,8 @@ cli
         console.log();
       }
 
+      printDeclaredDeltas(report, options.host);
+
       outro(pc.blue('✨ Workspace is ready for initialization.'));
       return;
     }
@@ -2426,6 +2429,8 @@ cli
       report.warnings.forEach(w => console.log(`  ⚠ ${w}`));
       console.log();
     }
+
+    printDeclaredDeltas(report, options.host);
 
     if (report.valid && report.issues.length === 0) {
       outro(pc.green('✔ All installed agents and frontmatter schemas are healthy!'));
@@ -2664,6 +2669,22 @@ function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
   console.log(`  Plugin Support (--plugin-dir): ${capability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
   console.log(`  Agent Teams (experimental): ${capability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
   console.log(`  Subagent hand-off (SubagentHandback): ${capability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
+}
+
+/**
+ * Plan 026 Objective 3 — print the Declared-Delta Registry section for `agents doctor --host
+ * <h>`: what this host does not carry over from the canonical roster, in plain words, sourced
+ * from `registry/translation-ledger.json` (docs/host-primitive-matrix.md is its prose form).
+ * A silent `undefined` (no `--host`, or a host the registry has no entries for) prints nothing.
+ */
+function printDeclaredDeltas(report: HealthReport, host: string | undefined): void {
+  if (!report.declaredDeltas || report.declaredDeltas.length === 0) return;
+  console.log(pc.bold(pc.cyan(`Declared Deltas for --host ${host} (docs/host-primitive-matrix.md):`)));
+  for (const delta of report.declaredDeltas) {
+    const tag = delta.disposition === 'unsupported' ? pc.red('unsupported') : pc.yellow('degraded');
+    console.log(`  • ${pc.bold(delta.feature)} (${tag}): ${delta.rationale}`);
+  }
+  console.log();
 }
 
 /** Render the `--dry-run` Claude plan: one argv element per line so each flag/value pair is unambiguous. */
