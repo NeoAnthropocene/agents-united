@@ -34,6 +34,11 @@ disable-slash-command: true
 ### Phase 3 — Verification
 - Audit Next.js production build bundle sizes with `@next/bundle-analyzer`.
 
+## Code & Config Exemplars
+- `references/nextjs-server-actions-and-isr.md` — Server Action with Zod validation and cache
+  revalidation; Incremental Static Regeneration route (Plan 025 extraction from
+  `subagent-frontend-architect`).
+
 ## Verification Checklist
 - [ ] Minimal client-side JavaScript bundle footprint.
 - [ ] No layout shift (CLS = 0) during page load.
