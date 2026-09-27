@@ -167,3 +167,27 @@ describe('Plan 022 H6 — orchestrator correctness in the delegation brief', () 
     expect(violations, violations.join('\n')).toEqual([]);
   });
 });
+
+describe('Plan 024 S3 — consult budget raised (owner decision E1, 2026-09-27)', () => {
+  it('every Tier-1 orchestrator allows up to 1000 words per consult, never 300', () => {
+    const violations: string[] = [];
+    for (const file of files.filter(f => f.startsWith('orchestrator-'))) {
+      const body = read(file);
+      if (/\bat most 300 words per consult\b/.test(body)) violations.push(`${file}: still caps consults at 300 words`);
+      const hasGate = /Mandatory specialist consult gate/.test(body);
+      if (hasGate && !/\bat most 1000 words per consult\b/.test(body)) violations.push(`${file}: missing the raised 1000-word cap`);
+    }
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
+
+  it('the Tier-2 Consultation Budget summaryWordCap is 1000, not 300', () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(AGENTS_DIR, '..', 'bundles.json'), 'utf8')) as { bundles: Record<string, any> };
+    const da = manifest.bundles['digital-agency'];
+    expect(da.planningLoop.budget.summaryWordCap).toBe(1000);
+  });
+
+  it('Scope-of-Work Statement lines citing summaryWordCap say ≤300 words, not ≤150', () => {
+    const offenders = files.filter(f => f.startsWith('subagent-') && /≤150 words, per the Consultation Budget `summaryWordCap`/.test(read(f)));
+    expect(offenders).toEqual([]);
+  });
+});
