@@ -26,8 +26,8 @@ describe('Skill runbook doctor command (Plan 015 Step 3)', () => {
   const files = listSkillFiles();
 
   it('scans the full canonical skill catalog', () => {
-    // Catalog contract (ADR 0016 cutover, post PR #42 merge): 166 canonical SKILL.md files.
-    expect(files.length).toBe(166);
+    // Catalog contract (ADR 0016 cutover, post PR #42 merge): 169 canonical SKILL.md files (Plan 028 added banner-design, brand-identity, ux-writing).
+    expect(files.length).toBe(169);
   });
 
   it('never references the workspace-relative node dist/cli.js doctor', () => {
