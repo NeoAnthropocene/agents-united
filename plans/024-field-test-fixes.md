@@ -7,7 +7,7 @@
 
 ## Status
 
-- **State**: AUTHORIZED — owner 2026-09-27 (E1–E4 approved, with E2 and E3 extended — see below)
+- **State**: DONE — 2026-09-27 (E1–E4 approved with E2/E3 extended; S1–S5 executed, see Execution log)
 - **Priority**: P1 (S1–S3) · P2 (S4) · **Effort**: S/M · **Risk**: LOW–MEDIUM (prompt wording + one
   opt-in installer lane that reuses the Plan 023 settings merge engine)
 - **Depends on**: plans/022 (comms law), plans/023 (session guard + merge engine)
@@ -155,3 +155,11 @@ workspace (store-less sidecar install), `claude --agent orchestrator-engineering
   file with its own `permissions.allow` entry keeps that entry and comes back byte-identical after
   remove; a file we created is deleted on remove. Gates: typecheck 0; 59 files, 857 passed /
   0 failed / 209 skipped.
+- **S5 — DONE** (docs only): `docs/guard-testing.md` — the model-proof guard test (`echo git push
+  --force`, `echo x > .env.test`, `echo vercel deploy --prod`; each verified against the real
+  `GUARD_SCRIPT` logic to return exit 2 with the guard's message, and a harmless `echo hello world`
+  verified to pass through), why hypothetical questions don't test the hook, `/hooks` to tell the
+  frontmatter-hook layer from the settings-hook layer apart, and the Windows-without-Git-Bash
+  cross-check. Linked from `src/core/guard.ts`. No code change.
+
+All of Plan 024 (S1–S5) is now DONE.
