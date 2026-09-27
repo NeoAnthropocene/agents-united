@@ -70,19 +70,37 @@ describe('Declared-Delta Registry — antigravity/cline completeness (Plan 026 g
 });
 
 describe('agents doctor --host <h> — declared-delta section (Plan 026 gate 3)', () => {
-  const tempDir = path.resolve(process.cwd(), 'scratch/test-workspace-host-matrix-doctor');
+  // Own scratch subdirectory (not the shared scratch/ root other suites use) so this file's
+  // sibling projection dirs (.claude/, .cline/, ...) never collide with a concurrently
+  // running suite's own .claude/, .cline/, ... at the shared scratch/ root.
+  const tempDir = path.resolve(process.cwd(), 'scratch/host-matrix-doctor/test-workspace');
+
+  // Other suites' workspaces live under scratch/ too, so the compound lane's sibling dirs
+  // (.claude/, .cline/, ...) at the scratch/ root can be mid-write from a concurrently
+  // running file (see tests/doctor.test.ts's own note on this hazard). A bounded immediate
+  // re-attempt absorbs the race.
+  const removeWithRetry = async (target: string): Promise<void> => {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      try {
+        await fs.remove(target);
+        return;
+      } catch {
+        // Concurrent writer; try again immediately.
+      }
+    }
+  };
 
   beforeEach(async () => {
-    await fs.remove(tempDir);
+    await removeWithRetry(tempDir);
     const scratchRoot = path.dirname(tempDir);
     for (const sibling of ['.claude', '.cline', '.agents', '.opencode', '.cursor', '.gemini']) {
-      await fs.remove(path.join(scratchRoot, sibling));
+      await removeWithRetry(path.join(scratchRoot, sibling));
     }
     await fs.ensureDir(tempDir);
   });
 
   afterEach(async () => {
-    await fs.remove(tempDir);
+    await removeWithRetry(tempDir);
   });
 
   it('--host cline lists degraded/unsupported features for an installed bundle', async () => {
