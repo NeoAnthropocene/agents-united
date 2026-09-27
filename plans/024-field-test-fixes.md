@@ -7,7 +7,7 @@
 
 ## Status
 
-- **State**: DRAFT — 2026-09-27, awaiting owner decisions E1–E4
+- **State**: AUTHORIZED — owner 2026-09-27 (E1–E4 approved, with E2 and E3 extended — see below)
 - **Priority**: P1 (S1–S3) · P2 (S4) · **Effort**: S/M · **Risk**: LOW–MEDIUM (prompt wording + one
   opt-in installer lane that reuses the Plan 023 settings merge engine)
 - **Depends on**: plans/022 (comms law), plans/023 (session guard + merge engine)
@@ -90,9 +90,45 @@ workspace (store-less sidecar install), `claude --agent orchestrator-engineering
 
 ## Open owner decisions
 
-| # | Decision | Recommendation |
+| # | Decision | Recommendation (APPROVED 2026-09-27) |
 |---|---|---|
 | E1 | Consult cap | 1000 words per consult (owner's suggestion); Tier-2 `summaryWordCap` 300 → 1000; Scope-of-Work "≤150" → "≤300" |
 | E2 | Permission preset | Opt-in `--permissions-preset`, `.claude/settings.local.json` only, never commit/push |
 | E3 | Scope of S2 | Wording + contract-first rule now; keep `SendMessage` on specialists (needed for Agent Teams and for messaging the coordinator) |
 | E4 | Ship order | S1+S2 first (P1 correctness), then S3–S5 |
+
+## Owner extensions (2026-09-27)
+
+- **E2 → every host, now and future.** The permission preset is defined once, host-neutrally (a
+  named tier + a list of command patterns), and rendered per host through the Binding Table — the
+  same way the guard is. Claude renders `permissions.allow` into `.claude/settings.local.json`;
+  every other host gets its own rendering once its permission surface is verified against that
+  host's documentation, and until then a declared delta (`unsupported`, with the reason) instead of
+  a guessed file. A new host joins by adding its rendering + conformance test, never by editing the
+  preset itself.
+- **E2 security posture (owner asked: "is that a security problem?")** — yes, a pre-approved command
+  is attack surface, so the preset is designed around it: (1) opt-in only, never implied by `-y`;
+  (2) written only to the per-user local file, never the shared/committed one; (3) no `git commit`,
+  `git push`, `rm`, `curl`/`wget`, deploy or publish commands in any tier; (4) `npm install` /
+  `npm run <script>` / `npx` execute code the agent can edit (package scripts, postinstall), so they
+  sit in a separate, explicitly named **build** tier the user must pick — the default **verify**
+  tier holds only fixed read/test commands (`git status|diff|log`, `npx tsc --noEmit`, `npx vitest run`,
+  `npx eslint`); (5) the managed guard still runs before every allowed command; (6) remove-only-ours
+  uninstall and doctor reporting, exactly like the session guard.
+- **E3 → two working modes with different behavior.** *Relay mode* (the default, ordinary
+  subagents): peers are unreachable by name; questions go under Open items; the coordinator relays
+  and applies **contract first**. *Team mode* (only when the coordinator actually runs a live team
+  session — Claude Agent Teams `--teams` today; the Cline / Antigravity / future equivalents bind the
+  same law once verified): the brief names the mode and lists the peers a specialist may message
+  directly; the final report still returns to the coordinator. `SendMessage` stays on specialists.
+
+## Execution log
+
+- **S1 + S2 — DONE** (one commit): the planning-spawn ban and "solo-composed" removed from the 7
+  orchestrators and from the generated Cline coordinator rule; two-mode comms law in all 50
+  specialists + 9 orchestrators (mode in the brief's *Peers & dependencies*, **Contract first** in
+  Map hygiene); 2 new Core invariants bound in `HOST_DIALECTS.claude`; Claude runtime note states
+  that peers are unreachable by name outside Agent Teams. Tests: residue (g), cline-projector,
+  subagent-comms (relay/team/contract-first clauses + invariants). Goldens: legacy x5 (CRLF kept),
+  created x5 (+2 lines each: the new invariant + binding only). Gates: typecheck 0; 58 files,
+  837 passed / 0 failed / 209 skipped.

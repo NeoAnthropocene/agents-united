@@ -306,11 +306,11 @@ export class ClineProjector {
         : '\n\n## Planner-Orchestrator Policy (ADR 0015)' +
           'Plan solo, delegate execution. This mode replaces the Subagent-First Planning Dialogue Loop for single-discipline domain bundles.\n\n' +
           '### Phase 0 — User Alignment (solo)\n' +
-          'If the user\'s brief is ambiguous, grill it Socratically yourself: `/grill-me` (strategy / non-code) or `/grill-with-docs` (code & docs). Consult the bundle\'s skills directly whenever they help you plan — you have the same skill access as your specialists. Do NOT spawn specialists during planning.\n\n' +
+          'If the user\'s brief is ambiguous, grill it Socratically yourself: `/grill-me` (strategy / non-code) or `/grill-with-docs` (code & docs). Consult the bundle\'s skills directly whenever they help you plan — you have the same skill access as your specialists. During planning, specialists are consulted read-only only (the Planning Consultation Phase gate); do not spawn them to produce deliverables.\n\n' +
           '### Planning Aid Boundary\n' +
           'While planning you may consult skills and reason to give the user PROVISIONAL answers and estimates. A concrete deliverable — data analysis, code, assets, documents — is specialist work: defer it to the delegation map, never produce it yourself during planning.\n\n' +
-          '### Phase 2 — Delegation Map (solo-composed)\n' +
-          'Compose the task → specialist map from your own domain expertise and the skill runbooks, and present it to the user BEFORE execution.\n\n' +
+          '### Phase 2 — Delegation Map\n' +
+          'Compose the task → specialist map from your domain expertise, the skill runbooks and the read-only consultation output, and present it to the user BEFORE execution.\n\n' +
           '### Execution\n' +
           'Delegate every deliverable to the configured `subagent_*` agent tools (projected under `.cline/agents/`), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.')
       : '';
