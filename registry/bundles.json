@@ -167,7 +167,8 @@
         "frontend-design",
         "generative_ui",
         "grill-me",
-        "stitch-design-taste"
+        "stitch-design-taste",
+        "ux-writing"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -228,7 +229,9 @@
         "grill-me",
         "onboarding-cro",
         "stitch-design-taste",
-        "viral-referral-loops"
+        "viral-referral-loops",
+        "banner-design",
+        "brand-identity"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1068,6 +1071,9 @@
         "workflow-agency-cro-funnel-teardown",
         "workflow-agency-brand-design-system",
         "workflow-agency-client-pitch-proposal",
+        "banner-design",
+        "brand-identity",
+        "ux-writing",
         "postgres-best-practices",
         "edge-security-audit",
         "sentry-incident-triage",
@@ -1245,7 +1251,10 @@
         "technical-seo-audit",
         "test-driven-development",
         "ui-component-spec",
-        "viral-referral-loops"
+        "viral-referral-loops",
+        "banner-design",
+        "brand-identity",
+        "ux-writing"
       ],
       "version": "1.0.0"
     },
