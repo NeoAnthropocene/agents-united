@@ -83,6 +83,18 @@ export class ClineProjector {
     } else if (typeof defaultMaxIterations === 'number') {
       cleanFrontmatter.maxIterations = defaultMaxIterations;
     }
+    // Plan 026 Step 4 (ADR 0023 decision 4) — the canonical per-agent skills list projects
+    // 1:1 into the Configured Agent's `skills:` field. Verified against cline/cline PR #9502
+    // (merged 2026-02-24, shipped by 3.0.65): `SubagentRunner.run()` uses this list only to
+    // FILTER `getAvailableSkills()` down to the named subset before it enters
+    // `SystemPromptContext` — it scopes discovery, it does not preload full SKILL.md bodies —
+    // so this is a `mapped` disposition (registry/translation-ledger.json), not a preload risk.
+    if (Array.isArray(parsed.skills)) {
+      const skills = parsed.skills.filter((s): s is string => typeof s === 'string' && s.trim().length > 0);
+      if (skills.length > 0) {
+        cleanFrontmatter.skills = skills;
+      }
+    }
 
     const frontmatterStr = yaml.stringify(cleanFrontmatter).trim();
     const bodyStr = match[2].trim();
