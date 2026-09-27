@@ -519,6 +519,8 @@ All projections are recorded in `agents-united.json` under `projectedTo`, so `re
 > [!IMPORTANT]
 > **Host Testing & Community Feedback**: Agents United has been tested manually on **Cline**, the **Google Antigravity Desktop App**, and the **Antigravity CLI**. Projections for other environments (Anthropic Claude Code, Cursor, OpenCode, Codex / AGENTS.md) are generated according to their platform specifications. We are actively looking for user feedback across other CLIs and runtimes!
 
+**Want the full reference?** [`docs/host-primitive-matrix.md`](./docs/host-primitive-matrix.md) covers skills, subagents, rules, hooks, and workflows across Claude Code, Antigravity, and Cline — location, required fields, discovery, limits, precedence, and every declared delta. Bringing a new (including third-party) skill into the catalog? [`docs/skill-intake.md`](./docs/skill-intake.md) is the checklist.
+
 ---
 
 ## 🛡️ Built-in Safety & Git Guardrails
