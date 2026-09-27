@@ -31,6 +31,8 @@ export interface HealthReport {
   claudeCapability?: ClaudeCapabilityReport;
   /** Plan 023 A — plain-session guard state; absent when no decision was ever recorded. */
   sessionGuard?: 'wired' | 'missing' | 'modified' | 'skipped-invalid' | 'off';
+  /** Plan 024 S4 — command-permission preset state; absent when no decision was ever recorded. */
+  permissionPreset?: 'wired' | 'missing' | 'skipped-invalid' | 'off';
 }
 
 /** The only hosts that own a content-derived compound lane: Cline (ADR 0013), Claude (ADR 0018). */
@@ -463,6 +465,43 @@ export class DoctorEngine {
       }
     }
 
+    // Plan 024 S4 — command-permission preset. Reported whenever a decision is recorded; a user
+    // who removed an entry by hand is left alone (never auto-repaired).
+    let permissionPreset: HealthReport['permissionPreset'];
+    const presetRecord = manifest?.permissionPreset;
+    if (presetRecord) {
+      if ('off' in presetRecord) {
+        permissionPreset = 'off';
+      } else {
+        const presetFile = path.isAbsolute(presetRecord.file)
+          ? presetRecord.file
+          : path.join(workspaceRootOf(root), presetRecord.file);
+        if (!await fs.pathExists(presetFile)) {
+          permissionPreset = 'missing';
+          warnings.push(`Permission preset missing: ${presetRecord.file} not found. Run 'agents update' to restore it.`);
+        } else {
+          const text = await fs.readFile(presetFile, 'utf8').catch(() => null);
+          let parsed: { permissions?: { allow?: unknown[] } } | null = null;
+          try {
+            parsed = text === null ? null : JSON.parse(text);
+          } catch {
+            parsed = null;
+          }
+          if (parsed === null) {
+            permissionPreset = 'skipped-invalid';
+            warnings.push(`Permission preset not wired: ${presetRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched.`);
+          } else {
+            const allow = parsed.permissions?.allow ?? [];
+            const stillPresent = presetRecord.entries.every(e => allow.includes(e));
+            permissionPreset = stillPresent ? 'wired' : 'missing';
+            if (!stillPresent) {
+              warnings.push(`Permission preset partially removed from ${presetRecord.file}. Run 'agents update' to restore it, or --no-permission-preset to drop it for good.`);
+            }
+          }
+        }
+      }
+    }
+
     // Host-specific checks (e.g. --host cline, --host claude)
     if (host === 'cline') {
       const probe = new ClineCapabilityProbe();
@@ -489,6 +528,7 @@ export class DoctorEngine {
       agentsCount,
       skillsCount,
       workflowsCount,
+      permissionPreset,
       clineCapability,
       claudeCapability,
       sessionGuard,

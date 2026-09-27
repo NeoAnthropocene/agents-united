@@ -132,3 +132,26 @@ workspace (store-less sidecar install), `claude --agent orchestrator-engineering
   subagent-comms (relay/team/contract-first clauses + invariants). Goldens: legacy x5 (CRLF kept),
   created x5 (+2 lines each: the new invariant + binding only). Gates: typecheck 0; 58 files,
   837 passed / 0 failed / 209 skipped.
+- **S3 — DONE** (one commit): 8 Tier-1 orchestrators' consult gate raised "at most 300 words per
+  consult" → "at most 1000 words per consult"; `registry/bundles.json` digital-agency
+  `planningLoop.budget.summaryWordCap` 300 → 1000; 9 specialists' Scope-of-Work line "≤150 words"
+  → "≤300 words" (kept proportional). Tests: new Plan 024 S3 suite in `subagent-comms.test.ts`;
+  `registry.test.ts` pin updated. Goldens: legacy x2 (`orchestrator-engineering.md`,
+  `frontend-architect.md`). Gates: typecheck 0; 58 files, 840 passed / 0 failed / 209 skipped.
+- **S4 — DONE** (one commit): opt-in command-permission preset (owner E2/E4). New
+  `src/core/permission-preset.ts`: two tiers (`verify` default — `git status/diff/log`, `npx
+  tsc/vitest/eslint`; `build` — adds `npm install`/`npm run`/`npm test`, explicit only),
+  `NEVER_PRESET` unit-tested to reject `git push`/`commit`, `rm`, `curl`/`wget`, `vercel --prod`,
+  `npm publish` in either tier; the same preserve-all / invalid-JSON-no-touch / remove-only-ours
+  merge engine as the session guard (Plan 023), but writing ONLY to
+  `.claude/settings.local.json`, never the shared `.claude/settings.json`, and never for a global
+  install. Installer/uninstaller wiring mirrors `applySessionGuard`; a fan-out host with no
+  verified renderer (anything but Claude today) gets an honest "not supported yet" warning
+  instead of a guessed file. Doctor + CLI report the preset's state (`wired`/`missing`/
+  `skipped-invalid`/`off`). CLI: `--permission-preset[=verify|build]` / `--no-permission-preset`,
+  flag-only (no interactive prompt, never implied by `-y`). Tests: `tests/permission-preset.test.ts`
+  (17, written RED first — MISSING API). Scratch-workspace evidence (built CLI): verify tier
+  writes only `settings.local.json`; upgrading to build adds only the 3 new entries; a CRLF user
+  file with its own `permissions.allow` entry keeps that entry and comes back byte-identical after
+  remove; a file we created is deleted on remove. Gates: typecheck 0; 59 files, 857 passed /
+  0 failed / 209 skipped.

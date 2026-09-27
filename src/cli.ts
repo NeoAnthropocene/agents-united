@@ -311,6 +311,7 @@ cli
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
   .option('--canonical-store', 'Keep the .agents/ main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden .claude/.agents-united/ folder, ADR 0022)')
   .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off.')
+  .option('--permission-preset [tier]', 'Opt-in only, never implied by -y: pre-approve a small, fixed set of commands in .claude/settings.local.json (never the shared/committed settings.json) so background specialists are not refused command approval outside auto mode. tier = verify (default: git status/diff/log, npx tsc/vitest/eslint) | build (adds npm install/run/test — executes project code, request explicitly). Never includes git commit/push, rm, curl/wget, or any deploy/publish command. Workspace-scoped only (ignored for --global). Sticky; --no-permission-preset turns it off. Claude only today; other hosts report "not supported yet".')
   .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
   .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
   .option('--allow-under-construction', 'Allow installation of bundles marked as under construction')
@@ -508,6 +509,22 @@ cli
         });
         if (typeof answer === 'boolean') sessionGuard = answer ? (scope === 'global' ? 'user' : 'project') : false;
       }
+    }
+
+    // Plan 024 S4 (owner E2/E4) — opt-in command-permission preset: flag only, never a prompt and
+    // never implied by -y (a pre-approved command is attack surface, so consent must be explicit).
+    let permissionPreset: 'verify' | 'build' | false | undefined;
+    if (options.permissionPreset === false) {
+      permissionPreset = false;
+    } else if (options.permissionPreset === true || options.permissionPreset === '') {
+      permissionPreset = 'verify';
+    } else if (typeof options.permissionPreset === 'string') {
+      const tier = options.permissionPreset.trim().toLowerCase();
+      if (tier !== 'verify' && tier !== 'build') {
+        note(`--permission-preset accepts verify or build (got "${options.permissionPreset}").`, 'Invalid option');
+        process.exit(1);
+      }
+      permissionPreset = tier;
     }
 
     // Step 4: Two-Stage Hierarchical Department & Bundle Selection
@@ -832,6 +849,7 @@ cli
         // flag inherits the recorded choice so `agents update` cannot prune the package.
         pluginLane: typeof options.plugin === 'boolean' ? options.plugin : undefined,
         sessionGuard,
+        permissionPreset,
         storeShape,
         mode: executionMode,
         allowMissingPrereqs: options.allowMissingPrereqs,
@@ -2370,6 +2388,16 @@ cli
         'skipped-invalid': pc.yellow('⚠ Not wired — settings file is not valid JSON (see warning)'),
       };
       console.log(`  🛡  Session Guard:      ${label[report.sessionGuard]}\n`);
+    }
+    // Plan 024 S4 — command-permission preset state (only when a decision was ever recorded).
+    if (report.permissionPreset) {
+      const label: Record<string, string> = {
+        wired: pc.green('✔ Wired (npm test/tsc/vitest/eslint pre-approved)'),
+        off: pc.dim('Off (declined)'),
+        missing: pc.yellow('✖ Missing or partially removed — run agents update'),
+        'skipped-invalid': pc.yellow('⚠ Not wired — settings.local.json is not valid JSON (see warning)'),
+      };
+      console.log(`  🔑 Permission Preset:   ${label[report.permissionPreset]}\n`);
     }
 
     if (report.clineCapability) {
