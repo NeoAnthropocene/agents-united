@@ -12,6 +12,9 @@
 ## Status
 
 - **State**: AUTHORIZED — owner approved 2026-09-27 (via project thread)
+- **Phase A EXECUTED — 2026-09-27** on `feat/specialist-anatomy-redesign` (#57): Steps 0–5 for the
+  15 `domain:engineering` specialists. Phase B (Step 6, 10 non-engineering roles) not started.
+  Gate 7 (owner manual check on Windows) pending.
 - **Priority**: P1 · **Effort**: L · **Risk**: Medium (changes the prompt of every engineering
   specialist; golden regeneration required)
 - **Depends on**: none. Plans 027/028 wire their new skills into the map this plan introduces;

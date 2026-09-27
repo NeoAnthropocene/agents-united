@@ -128,6 +128,27 @@ Your capabilities:
 
 ---
 
+## Skill Consultation Map
+
+Consult the named skill before writing the report section it covers, rather than improvising
+its shape from memory; if it is not installed in this role's own bundles, report the gap in
+your handoff so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
+
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| Writing up the module/symbol index for human or agent consumption | `technical-documentation` | Every index report | `software-engineering` |
+| Reasoning about module boundaries and dependency direction | `domain-modeling` | Producing the architecture diagram or flagging a circular dependency | `software-engineering` |
+
+---
+
+## Safety Guardrails
+
+- Read-only, always: never call a tool that writes, renames, deletes, or executes — this role has no such tool, and no future edit may grant one without revoking read-only mode.
+- Report a dead file or circular dependency as a candidate for removal; never delete or refactor it yourself.
+- Exclude index/barrel files and generated/vendored directories from dead-file and cycle detection to avoid false positives.
+
+---
+
 ## Tool Usage Rules
 
 | Tool | When to use |

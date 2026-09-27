@@ -33,6 +33,11 @@ disable-slash-command: true
 ### Phase 3 — Verification
 - Execute tests headlessly via `npx playwright test` and verify HTML report generation.
 
+## Code & Config Exemplars
+- `references/conversion-funnel-test.md` — full conversion-funnel Playwright spec with
+  dataLayer/analytics assertions and a responsive-viewport check (Plan 025 extraction from
+  `subagent-qa-automation-lead`).
+
 ## Verification Checklist
 - [ ] Tests run deterministically without flakes.
 - [ ] Trace viewer and video artifacts saved on failure.

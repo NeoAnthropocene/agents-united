@@ -357,6 +357,73 @@ hooks:
 ---
 ```
 
+### 7.1.1 Specialist Body Anatomy (Plan 025)
+
+Every `subagent-*.md` body follows one section template, thin roles and heavy roles alike:
+
+1. `## Role Definition` — who the specialist is and its boundaries.
+2. `## Skill Consultation Map` — a table, `Situation → Skill → Load when → Provided by`,
+   naming every skill the role should consult and the bundle that installs it. **No code in
+   the map.** When a row's skill is not shipped by any bundle this role file itself ships in,
+   `Provided by` says so explicitly ("**not installed here; report to orchestrator**"), which
+   routes the gap through the existing Cross-Bundle Recommendation Protocol instead of the
+   specialist improvising the platform's specifics from memory. Every skill named in the
+   frontmatter `skills:` array must have a row here.
+3. A `## Step-by-Step … Protocol` section (Phase 1 → N).
+4. `## Safety Guardrails` (or an equivalently named boundary/guardrail section).
+5. `## Output Format Requirements` — the report shape returned to the orchestrator.
+6. The comms sections from Plans 022/024 (Explicit Lifecycle Hooks, Parallel Work & Handoff,
+   Inbox Discipline & Handoff Report, etc.) — unchanged by this plan.
+
+**No exemplars in role bodies.** A code or command exemplar belongs in the skill it
+demonstrates, under `registry/skills/<skill>/references/<topic>.md`, with a one-line pointer
+from that skill's `## Code & Config Exemplars` section (§7.2) — never inline in the agent
+body. The body-lint seam (`src/core/residue-patterns.ts`,
+`AGENT_BODY_FENCE_LINE_THRESHOLD` = 15 content lines) fails a `registry/agents/*.md` body on:
+a fenced code block over the threshold (the Output Format Requirements report-shape template
+is exempt — it is a skeleton, not runnable code), a Skill Consultation Map row naming a skill
+that does not exist under `registry/skills/`, or a frontmatter `skills:` entry with no
+matching map row. `tests/specialist-anatomy.test.ts` runs this lint plus the anatomy and
+vendor-neutrality checks below.
+
+**Vendor-neutral Essentials roles.** A role shipped in an Essentials bundle (e.g.
+`software-engineering`) never names a specific vendor/platform (Supabase, Turso, Vercel,
+Azure, Lovable, v0, Bolt, …) in its frontmatter `description`. Vendor expertise is expressed
+only through Skill Consultation Map rows pointing at the addon skill that actually carries it,
+so a user running Essentials-only sees an honest description and the specialist reports the
+addon gap instead of quietly improvising vendor-specific code from pretraining.
+
+**Before/after (`subagent-backend-architect`, abridged):**
+
+```
+# BEFORE — vendor-named description, 6 inline code exemplars (~200 lines) in the body
+description: >
+  ... Supabase PostgreSQL (RLS & Edge Functions), Turso distributed LibSQL/SQLite,
+  Vercel Edge Functions, and Azure Container Apps (Azure OpenAI) services ...
+## Concrete Code & Command Exemplars
+### 1. Supabase CLI & Row Level Security (RLS) Policies
+​```bash
+npx supabase init
+...
+​```
+(five more full code blocks)
+
+# AFTER — vendor-neutral description, exemplars moved to skill references/, a map in their place
+description: >
+  ... REST, GraphQL, and gRPC services, relational/edge database schemas, and managed
+  cloud-native backend infrastructure ... Vendor-specific platforms ... are reached
+  through the Skill Consultation Map below, not baked into this description.
+## Skill Consultation Map
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| Postgres schema, RLS, Auth, Realtime, Edge Functions on a managed BaaS platform |
+  `supabase-backend-architecture` | Task names that platform explicitly |
+  `backend-distributed-systems` addon — **not installed here; report to orchestrator** |
+(the same six exemplars now live in `registry/skills/supabase-backend-architecture/references/`,
+`turso-distributed-sqlite/references/`, `vercel-deploy-best-practices/references/`,
+`azure-infrastructure-bicep/references/` and `ai-prototype-refactoring/references/`)
+```
+
 ### 7.2 Skill Runbook Interface (`registry/skills/<name>/SKILL.md`)
 Every skill requires frontmatter and 7 mandatory sections:
 1. `Overview & Purpose`
