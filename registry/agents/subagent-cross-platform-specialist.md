@@ -35,6 +35,7 @@ skills:
   - react-best-practices
   - mobile-platform-offline-validate
   - maestro-mobile-testing
+  - expo-cicd-workflows
 mcpServers:
   - name: github
   - name: context7

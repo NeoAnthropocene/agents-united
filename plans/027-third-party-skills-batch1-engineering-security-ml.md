@@ -12,6 +12,19 @@
 - **State**: AUTHORIZED — owner approved the 10-skill shortlist as-is, 2026-09-27 (via project
   thread). Step 0's upstream/licence/SHA verification and overlap checks still run before any
   skill is authored — approval covers the shortlist, not a waiver of that verification.
+- **EXECUTED — 2026-09-27** on `feat/third-party-skills-batch-1`. Step 0 verification against
+  the real upstream repos (not the aggregator's own descriptions) changed the shortlist:
+  **shipped 7/10** in full (#1, #4, #6, #7, #8, #9, #10 — real upstream + licence recorded in
+  each `SKILL.md`'s `metadata` block), **skipped 1 on overlap** (#2 `web-perf-audit`: the real
+  upstream `cloudflare/skills` `web-perf` skill is a Chrome-DevTools Core-Web-Vitals auditor,
+  materially redundant with the catalog's existing `debug-optimize-lcp`/`performance-
+  optimization`/`modern-web-guidance`), and **shipped 2 as link-only stubs on licence** (#3
+  `terraform-test-patterns`: `hashicorp/agent-skills` is MPL-2.0; #5 `threat-modeling`:
+  `trailofbits/skills` is CC-BY-SA-4.0 — neither is on the MIT/Apache-2.0/BSD/CC-BY
+  redistribution allow-list, so both attribute and link upstream instead of vendoring). The
+  other three overlap checks (#4 vs `security-audit`, #6 vs `telemetry-monitoring`/
+  `workflow-incident-triage`, #8 vs `hf-model-evaluation`) found real, non-redundant scope and
+  those three shipped in full. See `plans/README.md`'s row for the full disposition and sources.
 - **Priority**: P2 · **Effort**: L · **Risk**: Low–Medium (additive; licence and fidelity
   are the real risks)
 - **Depends on**: none. Follows the intake checklist below, which Plan 026 later publishes as

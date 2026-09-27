@@ -37,6 +37,7 @@ skills:
   - chaos-engineering
   - ci-cd-pipeline-automation
   - docker-deployment
+  - sentry-incident-triage
 mcpServers:
   - name: github
 ---
