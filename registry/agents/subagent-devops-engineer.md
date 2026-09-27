@@ -48,6 +48,7 @@ skills:
   - azure-infrastructure-bicep
   - telemetry-monitoring
   - git-guardrails
+  - terraform-test-patterns
 mcpServers:
   - name: github
 ---

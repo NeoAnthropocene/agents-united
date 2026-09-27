@@ -42,6 +42,7 @@ skills:
   - azure-infrastructure-bicep
   - docker-deployment
   - telemetry-monitoring
+  - edge-security-audit
 mcpServers:
   - name: github
 ---

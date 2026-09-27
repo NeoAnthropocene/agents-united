@@ -20,7 +20,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
 - **🚀 Cline Native Activation**: Bundles activate **automatically** in any Cline CLI session — skills discovered natively from `.agents/skills/`, configured-agent roles (`.cline/agents/*.yml`) exposed as spawnable `subagent_*` tools, coordinator rules (`.cline/rules/`), slash-command workflows (`.cline/workflows/`), and spec-conformant Agent Plugin packages (`plugin.json`, agent-plugins.org) in `.agents/plugins/<bundle>/`. No install step required; `agents start` remains available as an optional pre-seeded team-session launcher.
 - **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 59 Specialized Agents & 166 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 166 production-grade runbooks (97 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
+- **🤖 59 Specialized Agents & 175 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 175 production-grade runbooks (106 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
 - **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
@@ -108,7 +108,7 @@ This model gives you:
 ---
 
 
-Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **166 modular skills & runbooks** (97 domain skills + 69 workflow playbooks) across 8 department domains:
+Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **175 modular skills & runbooks** (106 domain skills + 69 workflow playbooks) across 8 department domains:
 
 | Department Domain | Essentials Base | Specialized Addon Bundles | Lead Orchestrator |
 | :--- | :--- | :--- | :--- |
@@ -666,6 +666,38 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 <summary><strong>Hugging Face (<a href="https://github.com/huggingface">@huggingface</a> / <a href="https://huggingface.co">huggingface.co</a>)</strong></summary>
 
 - **`hf-model-evaluation`**: Model benchmarking, Evaluate metrics, and model scorecard methodologies.
+- **`hf-model-training`**: TRL fine-tuning workflow (SFT/DPO/GRPO) and PEFT/LoRA, adapted from [huggingface/trl](https://github.com/huggingface/trl) (Apache-2.0).
+- **`hf-managed-jobs`**: The `hf jobs` CLI for running training/inference/data workloads on managed cloud compute, adapted from [huggingface/skills](https://github.com/huggingface/skills) (Apache-2.0).
+</details>
+
+<details>
+<summary><strong>Cloudflare (<a href="https://github.com/cloudflare">@cloudflare</a> / <a href="https://cloudflare.com">cloudflare.com</a>)</strong></summary>
+
+- **`edge-security-audit`**: Coverage-led, hunt-then-verify security audit methodology for edge/Workers apps, adapted from [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT).
+</details>
+
+<details>
+<summary><strong>Sentry (<a href="https://github.com/getsentry">@getsentry</a> / <a href="https://sentry.io">sentry.io</a>)</strong></summary>
+
+- **`sentry-incident-triage`**: Alert setup, release/source-map hygiene, and issue triage using Sentry's CLI and Seer root-cause analysis, adapted from [getsentry/sentry-for-ai](https://github.com/getsentry/sentry-for-ai) (MIT).
+</details>
+
+<details>
+<summary><strong>ClickHouse (<a href="https://github.com/ClickHouse">@ClickHouse</a> / <a href="https://clickhouse.com">clickhouse.com</a>)</strong></summary>
+
+- **`clickhouse-architecture-advisor`**: MergeTree engine selection, `ORDER BY`/partition-key design, and compression codecs, adapted from [ClickHouse/agent-skills](https://github.com/ClickHouse/agent-skills) (Apache-2.0).
+</details>
+
+<details>
+<summary><strong>Expo (<a href="https://github.com/expo">@expo</a> / <a href="https://expo.dev">expo.dev</a>)</strong></summary>
+
+- **`expo-cicd-workflows`**: EAS Build/Submit CI pipelines, `eas.json` build profiles, and EAS Workflows YAML automation, adapted from [expo/skills](https://github.com/expo/skills) (MIT).
+</details>
+
+<details>
+<summary><strong>HashiCorp & Trail of Bits — linked, not vendored</strong></summary>
+
+- **`terraform-test-patterns`** and **`threat-modeling`** are link-only stubs: [hashicorp/agent-skills](https://github.com/hashicorp/agent-skills) (MPL-2.0) and [trailofbits/skills](https://github.com/trailofbits/skills) (CC-BY-SA-4.0) publish real, high-quality skills in this space, but neither licence is on this catalog's redistribution allow-list (MIT/Apache-2.0/BSD/CC-BY). Rather than copy-adapting ShareAlike/copyleft content into an MIT-style catalog, these two entries point straight to the upstream repositories.
 </details>
 
 <details>
@@ -691,6 +723,7 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 <summary><strong>Supabase (<a href="https://github.com/supabase">@supabase</a> / <a href="https://supabase.com">supabase.com</a>)</strong></summary>
 
 - **`supabase-backend-architecture`**: PostgreSQL database design, Row Level Security (RLS), Edge Functions, and Realtime sync.
+- **`postgres-best-practices`**: Postgres indexing, query-plan diagnosis, RLS policy design, and connection pooling, adapted from [supabase/agent-skills](https://github.com/supabase/agent-skills) (MIT).
 </details>
 
 <details>
