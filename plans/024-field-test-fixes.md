@@ -163,3 +163,14 @@ workspace (store-less sidecar install), `claude --agent orchestrator-engineering
   cross-check. Linked from `src/core/guard.ts`. No code change.
 
 All of Plan 024 (S1–S5) is now DONE.
+
+## Owner verification — S5 guard test, Windows 11 (2026-09-27)
+
+Owner ran the `docs/guard-testing.md` protocol on the local `feat/plan-024-field-test-fixes`
+checkout in PowerShell: a Claude-only `--session-guard` install, all three model-proof commands
+(`echo git push --force`, `echo x > .env.test`, `echo vercel deploy --prod`) blocked by the hook
+in a plain session (no `--agent`), `/hooks` showed the agents-united entries, and — repeating the
+same three commands after renaming `bash.exe` so Claude Code had no Git Bash fallback — all three
+were still blocked. **Result: PASS.** This closes the last open item from Plans 022/023/024 (the
+Windows-without-Git-Bash exec-form check from Plan 023 Step A0, and the plain-session guard check
+from Plan 023 Workstream A that was only partially verified on 2026-09-27).
