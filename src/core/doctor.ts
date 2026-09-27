@@ -519,7 +519,10 @@ export class DoctorEngine {
     // also runs below. An unrecognized/omitted host yields no section (never guessed).
     let declaredDeltas: TranslationLedgerEntry[] | undefined;
     if (host && DECLARED_DELTA_HOSTS.has(host)) {
-      const ledger = loadTranslationLedger();
+      // The ledger lives beside the package's own `registry/`, not the CWD (this runs from
+      // an arbitrary workspace directory via the installed CLI) — resolve it the same way
+      // RegistryResolver does, module-relative with a CWD fallback.
+      const ledger = loadTranslationLedger(new RegistryResolver().getRegistryDir());
       declaredDeltas = ledger.filter(
         e => e.host === host && (e.disposition === 'degraded' || e.disposition === 'unsupported')
       );
