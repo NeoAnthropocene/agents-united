@@ -68,6 +68,7 @@ gap in your handoff so the orchestrator can trigger the Cross-Bundle Recommendat
 | Designing a retrieval-augmented-generation ingestion pipeline | `rag-vector-pipeline` | The task feeds an LLM retrieval system | `backend-distributed-systems` |
 | Vector database schema and index tuning | `vector-database-design` | The task stores embeddings | `backend-distributed-systems` |
 | Query/pipeline observability wiring | `telemetry-monitoring` | Adding or reviewing monitoring on a data path | `backend-distributed-systems` |
+| Postgres indexing, query plans and schema patterns | `postgres-best-practices` | The target store is Postgres | `backend-distributed-systems` |
 
 ---
 

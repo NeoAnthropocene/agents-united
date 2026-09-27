@@ -137,6 +137,7 @@ trigger the Cross-Bundle Recommendation Protocol instead of you improvising from
 | `replace_file_content` | Apply targeted updates to existing CI/CD or IaC configs |
 | `write_to_file` | Author new workflows, Dockerfiles, and Bicep modules |
 | `run_command` | Execute Bicep linters, Docker build checks, and syntax verifications |
+| Terraform test and acceptance patterns (link-only pointer to the upstream HashiCorp skill) | `terraform-test-patterns` | Writing or reviewing `terraform test` suites | `devops-engineering` |
 
 ---
 

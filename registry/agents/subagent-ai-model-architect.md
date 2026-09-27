@@ -98,6 +98,7 @@ so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
 | Designing a RAG ingestion/retrieval pipeline | `rag-vector-pipeline` | Any new or modified retrieval pipeline | `ai-ml-engineering` |
 | Vector database schema and index tuning (Qdrant/Pinecone/Chroma) | `vector-database-design` | Any vector collection design or re-index | `ai-ml-engineering` |
 | Local LLM serving for evaluation or fallback | `local-llm-inference` | The evaluation harness runs against a local model | `ai-ml-engineering` |
+| Fine-tuning a model with SFT, DPO or GRPO | `hf-model-training` | The task trains or adapts model weights with TRL | `ai-ml-engineering` |
 
 ---
 

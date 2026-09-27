@@ -98,6 +98,7 @@ so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
 | Serverless GPU endpoints on RunPod | `runpod-gpu-orchestration` | Task targets RunPod | `ai-ml-engineering` |
 | Hosted model inference via Replicate | `replicate-model-inference` | Task targets Replicate | `ai-ml-engineering` |
 | Local LLM serving (Ollama/vLLM) | `local-llm-inference` | Task targets local/on-prem inference | `ai-ml-engineering` |
+| Running training or batch jobs on Hugging Face managed compute | `hf-managed-jobs` | The task launches or monitors a job via the `hf` CLI / Jobs | `ai-ml-engineering` |
 
 ---
 

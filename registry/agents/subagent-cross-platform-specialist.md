@@ -72,6 +72,7 @@ so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
 | React Native / Expo patterns (New Architecture, Reanimated) | `react-best-practices` | Any React Native component work | `mobile-development` |
 | Offline persistence and sync validation | `mobile-platform-offline-validate` | The task touches WatermelonDB/SQLite/Hive | `mobile-development` |
 | Authoring or reviewing Maestro mobile UI tests | `maestro-mobile-testing` | The task needs an automated device flow test | `mobile-development` |
+| EAS build and submit pipelines for Expo apps | `expo-cicd-workflows` | Setting up or changing mobile CI/CD for an Expo project | `mobile-development` |
 
 ---
 

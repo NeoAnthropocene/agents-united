@@ -72,6 +72,7 @@ gap in your handoff so the orchestrator can trigger the Cross-Bundle Recommendat
 | GraphQL schema/federation design | `graphql-schema-design` | The system exposes or federates a GraphQL layer | `backend-distributed-systems` |
 | Sub-10ms edge reads or database-per-tenant isolation via distributed SQLite | `turso-distributed-sqlite` | Task names that platform explicitly | `backend-distributed-systems` |
 | Relational schema design for a service's own store | `database-design` | Any per-service schema change | `backend-distributed-systems` |
+| Postgres indexing, query plans and schema patterns | `postgres-best-practices` | A service in the design persists to Postgres | `backend-distributed-systems` |
 
 ---
 
