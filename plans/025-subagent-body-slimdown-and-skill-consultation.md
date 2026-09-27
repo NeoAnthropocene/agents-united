@@ -1,173 +1,187 @@
-# Plan 025: Subagent Body Slim-Down & Declared Skill-Consultation Convention
+# Plan 025: Specialist Anatomy Redesign — Skill Consultation Map, Vendor-Neutral Roles & Exemplar Extraction (`domain:engineering` first)
 
 > **Executor instructions**: self-contained; TDD; STOP on listed conditions; update this plan's
 > row in `plans/README.md` when done. Source evidence: owner request 2026-09-27 ("subagent
 > definitions are not right... code informations and best practise examples should be inside
 > the skill itself"), confirmed by a read-only repo audit the same day (see § Evidence).
-> Runs independently of Plans 026–028; touches `registry/agents/**` and a handful of
-> `registry/skills/**` SKILL.md files only.
+> Runs in parallel with Plans 026–028. Files touched: `registry/agents/**` (engineering
+> specialists), `registry/core/*.json` + `registry/realizations/claude/**` (the 5 Plan 021
+> pilot roles), the skills that receive extracted exemplars, `src/core/residue-patterns.ts`
+> (body lint seam), goldens under `tests/golden/**`, and PROJECT.md §7.
 
 ## Status
 
 - **State**: PROPOSED — awaiting owner approval
-- **Priority**: P1 · **Effort**: L · **Risk**: Medium (touches every domain specialist's prompt)
-- **Depends on**: none (independent of 026–028; can run in parallel with all three)
+- **Priority**: P1 · **Effort**: L · **Risk**: Medium (changes the prompt of every engineering
+  specialist; golden regeneration required)
+- **Depends on**: none. Plans 027/028 wire their new skills into the map this plan introduces;
+  if they land first, that wiring is a small follow-up here.
 - **Category**: catalog / core architecture
-- **Branch**: `feat/subagent-body-slimdown` (cut fresh from `dev` when authorized)
+- **Branch**: `feat/specialist-anatomy-redesign` (cut fresh from `dev` when authorized)
 
 ## Why this exists
 
-`registry/agents/subagent-backend-architect.md` carries a `## Concrete Code & Command
-Exemplars` section (~190 lines) with full inline code: a Supabase RLS migration + typed
-client, a Turso LibSQL replica-sync client, a Vercel Edge streaming route handler, an Azure
-OpenAI managed-identity fetch snippet, and a Lovable/v0-to-repo migration example — each one
-duplicating a skill the same agent's own `skills:` frontmatter already lists
-(`supabase-backend-architecture`, `turso-distributed-sqlite`, and prose references to a
-Vercel-deploy skill, `azure-infrastructure-bicep`, `ai-prototype-refactoring`). A repo-wide
-sample confirms this is systemic, not a one-off: `subagent-frontend-architect.md` (9 fenced
-code blocks), `subagent-devops-engineer.md` (7), `subagent-appsec-penetration-tester.md` (12),
-and `subagent-cloud-security-architect.md` (8) all carry the same "Exemplars" section pattern.
-`subagent-ml-platform-engineer.md` is the clean counter-example — zero embedded snippets, pure
-prose directives that name the skill to consult.
+The owner asked for the `domain:engineering` subagents to be redesigned so that a specialist
+knows *which skill it needs*, while code and best-practice examples live in the skill. The
+audit found three separate design faults, not one:
 
-This inflates every specialist's always-loaded prompt with knowledge that belongs in
-skills (loaded on demand per Claude/Antigravity/Cline's shared progressive-disclosure model —
-see Plan 026), makes the code stale wherever the skill's own guidance changes independently,
-and buries the agent's actual job (role, scope, delegation boundaries) under implementation
-detail a reader has to scroll past. PROJECT.md §7.2 already designates "Code & Config
-Exemplars" as skill section 5 of 7 — the agents are duplicating a section that has a proper
-home one file away. Root cause, partially: the two lean-style skills this agent references
-(`supabase-backend-architecture`, `turso-distributed-sqlite`) predate PROJECT.md's 7-section
-mandate and have no "Code & Config Exemplars" section of their own, which likely encouraged the
-agent author to inline the code instead of putting it where it belonged.
+1. **Code exemplars in role bodies.** `subagent-backend-architect.md` L123–328 is a
+   `## Concrete Code & Command Exemplars` section with six full code/CLI blocks (Supabase RLS
+   migration + typed client, Turso LibSQL replica client, Vercel Edge streaming route, Azure
+   OpenAI managed-identity call, Lovable/v0 mock→repository migration). Eleven agents carry the
+   same section; by fenced-block count the worst are `designer-toolkit-expert` (11),
+   `frontend-architect` (10), `backend-architect` (10), `interaction-designer` (9),
+   `devops-engineer` (7), `appsec-penetration-tester` (6).
+2. **Vendor knowledge baked into Essentials roles.** `backend-architect` ships in the
+   `software-engineering` Essentials bundle, but the skills its exemplars duplicate
+   (`supabase-backend-architecture`, `turso-distributed-sqlite`, `vercel-deploy-best-practices`,
+   `azure-infrastructure-bicep`, `ai-prototype-refactoring`) are installed only by addons
+   (`backend-distributed-systems`, `frontend-engineering`, `devops-engineering`, …). The role's
+   description and mission name those vendors outright. Essentials users get a role that claims
+   Supabase/Turso/Azure expertise without the skills behind it, and the Cross-Bundle
+   Recommendation Protocol never fires because the role thinks it already knows.
+3. **Two incompatible role anatomies.** Engineering specialists come in two sizes: ~400-line
+   roles (`backend` 404, `frontend` 439, `devops` 445 lines) and ~70-line roles (`ios`,
+   `android`, `cross-platform`, `accessibility-lead`, `distributed-systems`, `data-engineer`,
+   `e2e-tester`). The thin ones have no protocol, no report format beyond one sentence, no
+   safety section and no skill guidance at all; `ios-architect` is told to deliver buildable
+   Swift but has no `run_command` tool to build or test it.
+
+**Why a body-level map, not frontmatter alone.** Every agent already has a flat `skills:`
+frontmatter array, but it does not survive projection on two of the three active hosts: the
+Claude lane deliberately drops it (`src/core/claude-projector.ts:72`, disposition `degraded` —
+preloading would pay every listed skill's token cost on each spawn), and Cline's configured-agent
+`.yml` carries only bundle-level skills via the Team Manifest. Only Antigravity reads the
+canonical `.md` directly. A short "Skill Consultation Map" in the body is therefore the one
+carrier of "which skill, when" that reaches every host, and it costs a few lines instead of the
+skill bodies. This matches the "skill index + load on demand" pattern in Microsoft's
+Agent-Framework post on distributed skills (cited as validation, not as a dependency).
 
 ## Evidence
 
-- `registry/agents/subagent-backend-architect.md` L126–313: full Supabase/Turso/Vercel/Azure/
-  Lovable-v0 code blocks under `## Concrete Code & Command Exemplars`.
-- `registry/agents/subagent-frontend-architect.md`, `subagent-devops-engineer.md`,
-  `subagent-appsec-penetration-tester.md`, `subagent-cloud-security-architect.md`: same section
-  pattern, 7–12 fenced blocks each.
-- `registry/agents/subagent-ml-platform-engineer.md`: no fenced blocks — the target shape.
-- `registry/skills/supabase-backend-architecture/SKILL.md`,
-  `registry/skills/turso-distributed-sqlite/SKILL.md`: lean 3-section format (Overview,
-  Core Directives & Standards, Verification Checklist) — missing PROJECT.md's mandated
-  "Code & Config Exemplars" section.
-- `registry/agents/orchestrator-engineering.md` L136–150: an "SDLC Workflow Skills Execution
-  Matrix" table mapping SDLC phase → skill name → `.agents/skills/<name>/SKILL.md` path →
-  slash command — this is the existing, working convention for "which skill do I need, when."
-  Every agent already carries a flat `skills:` frontmatter array; there is no per-scenario
-  mapping at the agent level and no "may need vs. must have" distinction anywhere in the repo.
+- `registry/agents/subagent-backend-architect.md` L1–46 (frontmatter: vendor list in
+  `description`; `skills:` lacks every vendor skill), L123–328 (exemplars).
+- `registry/bundles.json`: vendor skills above appear only in addon bundles, never in
+  `software-engineering`.
+- `src/core/claude-projector.ts:72`: `skills` → `degraded` on Claude.
+- `tests/golden/claude-created/backend-architect.md`: the Plan 021 created lane already renders
+  a separate Mission/Scope from `registry/core/subagent-backend-architect.json`, which repeats
+  the vendor list.
+- `subagent-ml-platform-engineer.md`: zero exemplar blocks, prose directives naming its skills —
+  the closest existing example of the target shape.
 
 ## Objective
 
-1. **Extract, don't delete.** For every agent identified with an embedded exemplars section,
-   move the code/config content verbatim (updated only where it references something already
-   stale) into the "Code & Config Exemplars" section of the skill(s) it belongs to, creating
-   that section where the target skill doesn't have one yet.
-2. **Backfill the 7-section format** on the two skills confirmed non-conformant
-   (`supabase-backend-architecture`, `turso-distributed-sqlite`) and any other skill a Step 1
-   sweep finds still on the lean 3-section shape, per PROJECT.md §7.2.
-3. **Replace the agent-body exemplars section** with a short "Skill Consultation Map" table:
-   `Scenario → Skill → When to load it`, in the same spirit as `orchestrator-engineering.md`'s
-   existing SDLC matrix but scoped to the specialist's own responsibilities (e.g. "Provisioning
-   Postgres RLS → `supabase-backend-architecture` → before writing any migration"). No code in
-   this table — only scenario, skill name, and a one-line trigger condition. This is also the
-   shape the Microsoft Agent-Framework "distributed skills" pattern recommends (skill index +
-   on-demand full load, never re-embed the skill's content in the caller) — cited as design
-   validation, not as a dependency to build.
-4. **Codify the convention** in `PROJECT.md` §7.1 (agent frontmatter interface) and §7.2 (skill
-   interface) as an explicit rule: an agent body may reference a skill by name and describe
-   *when* to consult it; it may not embed the skill's own code exemplars, migration scripts, or
-   command sequences beyond a single illustrative one-liner.
-5. **Add a regression guard** (test or lint) that fails if a `registry/agents/*.md` body
-   contains a fenced code block longer than a small threshold (e.g. >8 lines) outside of its
-   frontmatter, so the pattern can't silently return.
+1. **One specialist anatomy.** Define a standard section template for every specialist (Role &
+   boundaries · Skill Consultation Map · Protocol · Safety · Report format · the existing comms
+   sections from Plans 022/024 unchanged). Apply it to all 15 `domain:engineering` roles, thin
+   and heavy alike.
+2. **Skill Consultation Map.** A table per specialist: `Situation → Skill → Load when →
+   Provided by`. `Provided by` is the bundle that installs the skill; when that is not a bundle
+   the role ships in, the row tells the specialist to report the gap to its orchestrator, which
+   triggers the existing Cross-Bundle Recommendation Protocol instead of improvising from memory.
+   No code in the map.
+3. **Vendor-neutral Essentials roles.** Strip vendor names from the `description`/mission of
+   roles that ship in an Essentials bundle; vendor expertise is expressed only through map rows
+   pointing at addon skills.
+4. **Extract, don't delete.** Move every exemplar verbatim into the skill it belongs to. Long
+   exemplars go into `registry/skills/<skill>/references/<topic>.md` with a one-line pointer from
+   the SKILL.md "Code & Config Exemplars" section, so SKILL.md bodies stay short (Claude's skill
+   guidance is <500 lines; Cline recommends <5k tokens) and the content loads only when read.
+   Markerless `references/**` sidecars are already supported by the installer, doctor and
+   uninstaller (Plan 022 pre-work). Exemplars with no matching skill are listed for an owner
+   decision (Step 0 STOP), never silently dropped.
+5. **Backfill** the PROJECT.md §7.2 sections on the receiving skills still on the lean
+   3-section shape (`supabase-backend-architecture`, `turso-distributed-sqlite`, and any others
+   Step 0 finds).
+6. **Lint guard** in the existing body-lint seam (`src/core/residue-patterns.ts`): fail on a
+   fenced block over a small threshold in any `registry/agents/*.md` body, on a map row naming a
+   skill that does not exist, and on a frontmatter `skills:` entry missing from the map.
+7. **Phase B (other domains).** After the engineering pass is verified, apply the same anatomy
+   to the remaining exemplar-carrying roles (`designer-toolkit-expert`, `interaction-designer`,
+   `cloud-security-architect`, `appsec-penetration-tester`, `seo-specialist`,
+   `compliance-grc-specialist`, `database-administrator`, `cloud-infrastructure-architect`,
+   `statistical-analyst`, `marketing-creative-designer`) as a separate commit group.
 
 ## Implementation steps (TDD)
 
-**Step 0 — full inventory (delegate: `subagent-repo-index`, read-only).** Grep every
-`registry/agents/*.md` for fenced code blocks outside frontmatter; for each hit, classify as
-(a) illustrative one-liner (keep), (b) full exemplar duplicating a referenced skill (extract),
-or (c) exemplar with no matching skill in the agent's `skills:` list (flag for a Step 2
-judgment call — either add the skill reference or create a narrow new skill). Produce a
-file-by-file worksheet. STOP and ask the owner if any (c) case implies a new skill outside the
-Plan 026/027/028 scope.
+**Step 0 — inventory (delegate: `subagent-repo-index`, read-only).** For every fenced block in
+the 15 engineering roles (then the Phase B roles), classify: (a) illustrative one-liner — keep;
+(b) duplicates a skill — extract to that skill, record the target path; (c) no matching skill —
+list for the owner. Record, per role, which bundles ship it and which of its vendor claims have
+no skill in those bundles. STOP for owner decision on every (c) row.
 
-**Step 1 — RED tests (delegate: `subagent-qa-automation-lead`).** A `tests/agent-body-lint.test.ts`
-asserting: no `registry/agents/*.md` body contains a fenced code block over the length
-threshold; every skill named in an agent's "Skill Consultation Map" exists in
-`registry/skills/`; every skill in an agent's frontmatter `skills:` array appears at least once
-in its Skill Consultation Map (no orphaned declarations). All should currently fail against the
-flagged files from Step 0.
+**Step 1 — RED tests (delegate: `subagent-qa-automation-lead`).** Extend the body lint and add
+`tests/specialist-anatomy.test.ts`: every engineering specialist has the template's sections;
+no over-threshold fenced block; every map skill exists; every frontmatter skill appears in the
+map; every map row whose skill is outside the role's bundles says "report to orchestrator";
+no vendor name in the `description` of a role shipped in an Essentials bundle.
 
-**Step 2 — skill backfill (delegate: `subagent-backend-architect`).** For each skill on the
-lean 3-section format, add the missing PROJECT.md-mandated sections (Execution Triggers,
-Input/Output Requirements, Step-by-Step Runbook, Code & Config Exemplars, Edge Cases & Error
-Recovery) and move in the extracted code from Step 0's worksheet, organized by scenario.
+**Step 2 — skill backfill and extraction (delegate: `subagent-backend-architect`).** Add the
+missing §7.2 sections; move each (b) block into `references/` with a pointer.
 
-**Step 3 — agent slim-down (delegate: `subagent-backend-architect`, then repeat per-domain
-via `subagent-frontend-architect`/`subagent-devops-engineer`/`subagent-appsec-penetration-tester`/
-`subagent-cloud-security-architect` context where a peer specialist's own file is being edited).**
-Replace each flagged `## Concrete Code & Command Exemplars` section with the Skill Consultation
-Map table. Re-verify the agent's `skills:` frontmatter array is complete and matches the table.
+**Step 3 — role rewrite (delegate: `subagent-backend-architect`).** Rewrite the 15 engineering
+roles to the anatomy: heavy roles lose exemplars and vendor identity, thin roles gain protocol,
+map, safety and report sections. Fix tool/mandate mismatches found in Step 0 (e.g.
+`ios-architect` asked to build without a command tool) with the least privilege the task needs,
+keeping Plan 022's read-only roles read-only.
 
-**Step 4 — PROJECT.md convention update (delegate: `subagent-technical-writer` or
-`subagent-backend-architect` if no writer role exists).** Update §7.1/§7.2 with the rule from
-Objective 4, plus one before/after example (backend-architect) so future contributors have a
-template to copy.
+**Step 4 — Semantic Core + created lane (delegate: `subagent-backend-architect`).** Update
+`registry/core/*.json` and `registry/realizations/claude/**` for the 5 pilot roles so the
+created lane carries the same map and vendor-neutral mission; regenerate
+`tests/golden/claude-created/**` and the legacy `tests/golden/claude/**` in one reviewed pass.
 
-**Step 5 — adversarial audit (delegate: `subagent-code-reviewer`).** Confirm no code/behavioral
-content was lost in the extraction (diff each moved block against its new skill location),
-confirm the lint guard actually catches a reintroduced violation (add a temporary violating
-fixture, see it fail, remove it), confirm bundle projections (`.claude/agents/`, Cline
-compound lane, `AGENTS.md` bridge) still render without drift for the touched agents.
+**Step 5 — convention (delegate: `subagent-backend-architect`).** PROJECT.md §7.1/§7.2: the
+anatomy, the map format, the "no exemplars in role bodies" rule, one before/after example.
+
+**Step 6 — Phase B (delegate: `subagent-backend-architect`).** Repeat Steps 2–4 for the
+Phase B roles.
+
+**Step 7 — adversarial audit (delegate: `subagent-code-reviewer`).** Diff every extracted block
+against its new home (nothing lost); prove the lint catches a reintroduced exemplar; confirm
+projections for Claude, Cline and Antigravity carry the map.
 
 ## Acceptance gates
 
-1. `npm run typecheck` exit 0 · `npm test` fully green including the new
-   `tests/agent-body-lint.test.ts`.
-2. Zero fenced code blocks over the length threshold remain in any `registry/agents/*.md` body.
-3. Every skill referenced in an agent's Skill Consultation Map resolves to a real
-   `registry/skills/<name>/SKILL.md`; every skill in `skills:` frontmatter is referenced in the
-   map (no orphans in either direction).
-4. `supabase-backend-architecture`, `turso-distributed-sqlite`, and any other skill flagged in
-   Step 0 now carry all 7 PROJECT.md §7.2 sections including a populated "Code & Config
-   Exemplars."
-5. `agents doctor` and a fresh `--fanout claude,cline` dry-run on `software-engineering` and
-   `secops-application-security` show zero unexpected drift beyond the intended content change.
-6. PROJECT.md §7.1/§7.2 carry the new convention with a worked example.
+1. `npm run typecheck` exit 0 · `npm test` green, including the new anatomy and lint tests.
+2. No over-threshold fenced block in any engineering role body (all roles after Phase B).
+3. Map ↔ frontmatter ↔ `registry/skills/` consistent for every specialist.
+4. No vendor name in the description of any role shipped in an Essentials bundle.
+5. Goldens regenerated only in a reviewed pass; the diff is content-only.
+6. `agents add software-engineering --fanout claude,cline` dry-run: projected specialists carry
+   the map; `agents doctor` 0 warnings.
+7. **Owner manual check (Windows)**, `software-engineering` only installed, on Claude Code,
+   Antigravity and Cline: ask the orchestrator for a Supabase RLS migration. Pass = the
+   delegated backend specialist reports that `supabase-backend-architecture` is not installed
+   and the orchestrator recommends `backend-distributed-systems`; with the addon installed, the
+   specialist loads that skill (visible skill read) before writing the migration.
 
 ## Risk register
 
 | # | Risk | Sev | Mitigation |
 |---|---|---|---|
-| R1 | Extraction silently drops a code detail a specialist relied on | High | Step 5 diff-based audit against the original agent body before it's replaced |
-| R2 | Lint threshold too strict, breaks legitimate short illustrative snippets | Low | threshold tunable constant, reviewed against a sample of already-clean agents (`subagent-ml-platform-engineer`) before merge |
-| R3 | Golden/projection snapshots churn across all touched agents at once, hiding an unrelated regression | Med | touch one domain (backend-architect) fully first, verify render diff is content-only, then repeat pattern for the rest |
-| R4 | New "Skill Consultation Map" table format drifts per-agent (inconsistent columns) | Low | Step 4 publishes one canonical table template in PROJECT.md before Step 3 fans out |
+| R1 | Extraction drops a detail a specialist relied on | High | Step 7 block-by-block diff before replacement |
+| R2 | Vendor-neutral Essentials roles feel weaker to users without addons | Med | map rows route to the addon via the existing recommendation protocol; gate 7 checks it |
+| R3 | Golden churn hides an unrelated regression | Med | backend-architect first, verify content-only diff, then fan out |
+| R4 | Specialists stop loading skills because the map is only prose | Med | gate 7 observes a real skill read on each host; if a host ignores the map, record it for Plan 026's ledger work |
+| R5 | Lint threshold rejects legitimate short snippets | Low | tunable constant, calibrated on `ml-platform-engineer` and the comms sections |
 
 ## Delegation map (ADR 0015 planner-orchestrator posture)
 
 | Phase | Specialist | Scope |
 |---|---|---|
-| Step 0 | `subagent-repo-index` | fenced-code inventory & classification |
-| Step 1 | `subagent-qa-automation-lead` | RED lint/consistency tests |
-| Step 2 | `subagent-backend-architect` | skill 7-section backfill |
-| Step 3 | `subagent-backend-architect` (+ per-domain specialist for its own file) | agent slim-down |
-| Step 4 | `subagent-backend-architect` | PROJECT.md convention update |
-| Step 5 | `subagent-code-reviewer` | adversarial audit |
+| Step 0 | `subagent-repo-index` | exemplar and vendor-claim inventory |
+| Step 1 | `subagent-qa-automation-lead` | RED anatomy + lint tests |
+| Steps 2–6 | `subagent-backend-architect` | skill backfill, role rewrite, core/created lane, convention, Phase B |
+| Step 7 | `subagent-code-reviewer` | adversarial audit |
 
 ## References
 
-- Evidence: read-only repo audit, 2026-09-27 (this session).
-- Sibling: Plan 026 (host primitive translation matrix) governs *how* a skill is discovered
-  and loaded per host — this plan governs *what* stays in the agent vs. the skill regardless
-  of host. Plans 027/028 add new skills using the Skill Consultation Map convention this plan
-  establishes, so land this plan first if sequencing matters, though all four can execute in
-  parallel with only `registry/bundles.json` as a shared file requiring careful, non-competing
-  edits.
-- Design validation (external, non-binding): Microsoft Agent Framework devblog, "From
-  Specialist Agents to Distributed Skills over MCP" — argues for moving domain knowledge out of
-  a specialist's own prompt into a referenced, on-demand-loaded skill document rather than
-  duplicating it inline; matches the direction of this plan.
+- Evidence: read-only repo audit, 2026-09-27.
+- Binding: ADR 0015 (planner-orchestrator), ADR 0021 (Semantic Core / created lane),
+  Plan 022 (comms sections, least privilege — unchanged by this plan), Plan 009 (Essentials
+  stay lean).
+- Siblings: Plan 026 records how `skills:` projects per host in the Declared-Delta Registry;
+  Plans 027/028 add skills that get map rows here.
+- External validation: Microsoft Agent Framework devblog, "From Specialist Agents to Distributed
+  Skills over MCP".

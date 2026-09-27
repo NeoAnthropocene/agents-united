@@ -2,153 +2,136 @@
 
 > **Executor instructions**: self-contained; TDD; STOP on listed conditions; update this plan's
 > row in `plans/README.md` when done. Source evidence: owner-supplied source
-> `github.com/VoltAgent/awesome-agent-skills#official-skills-by`, triaged by a research pass
-> 2026-09-27 into the shortlist below (see § Evidence). Runs independently of Plans 025/026/028;
-> touches only new `registry/skills/<name>/SKILL.md` directories, the `skills` arrays of the
-> bundles named below in `registry/bundles.json`, and README.md's Credits section.
+> `github.com/VoltAgent/awesome-agent-skills#official-skills-by`, triaged 2026-09-27 into the
+> shortlist below. Runs in parallel with Plans 025/026/028. Files touched: new
+> `registry/skills/<name>/**`, the `skills` arrays of the bundles named below plus `full` in
+> `registry/bundles.json`, the specialists named below, the pinned skill counts, README Credits.
 
 ## Status
 
-- **State**: PROPOSED — awaiting owner approval on the shortlist (§ Shortlist) before any skill
-  is authored
-- **Priority**: P2 · **Effort**: L · **Risk**: Low (additive; no existing agent/skill is
-  modified except one naming collision noted below)
-- **Depends on**: none (independent of 025/026/028; if Plan 025 lands first, author new skills
-  directly in the "Skill Consultation Map" convention it establishes — otherwise use the
-  existing flat `skills:` frontmatter convention and no rework is needed)
+- **State**: PROPOSED — awaiting owner approval of the shortlist
+- **Priority**: P2 · **Effort**: L · **Risk**: Low–Medium (additive; licence and fidelity
+  are the real risks)
+- **Depends on**: none. Follows the intake checklist below, which Plan 026 later publishes as
+  `docs/skill-intake.md`. If Plan 025 has landed, add Skill Consultation Map rows; if not, add
+  frontmatter `skills:` entries and Plan 025 picks them up.
 - **Category**: catalog / skills
 - **Branch**: `feat/third-party-skills-batch-1` (cut fresh from `dev` when authorized)
 
 ## Why this exists
 
-The owner asked to mine `VoltAgent/awesome-agent-skills` — a large, vendor-heavy aggregator —
-for skills worth adding to the engineering-adjacent domains, explicitly asking for a curated
-pick rather than a bulk import, and explicitly excluding ground already covered here (TDD,
-debugging, git guardrails, code review, RAG/vector DBs, cloud IaC all already have skills in
-this catalog). A same-day triage against that list, filtered against `registry/bundles.json`'s
-current skill inventory per domain, produced twelve candidates with no existing overlap.
+The owner asked for the most important skills from a large vendor aggregator, placed in the
+right bundles, excluding what the catalog already covers (TDD, debugging, git, code review,
+RAG/vector DBs, IaC). The aggregator is a README of links: skill names, licences and quality
+were not verified at the upstream repos during triage, so this plan starts by verifying them.
 
-## Evidence / Shortlist
+## Shortlist (10)
 
-| # | Skill (working name) | Vendor / source | One-line | Target bundle |
-|---|---|---|---|---|
-| 1 | `postgres-best-practices` | Supabase | PostgreSQL optimization, indexing, query patterns | `backend-distributed-systems` |
-| 2 | `web-perf-audit` | Cloudflare | Core Web Vitals auditing and performance tuning | `frontend-engineering` |
-| 3 | `terraform-test-patterns` | HashiCorp | Acceptance/config testing framework for IaC | `devops-engineering` |
-| 4 | `edge-security-audit` | Cloudflare | Multi-phase security audit workflow for edge/Workers apps | `security-operations` (see § Naming collision) |
-| 5 | `adversarial-threat-modeling` (subset of Trail of Bits' 22-skill set: threat modeling, fuzzing, contract security, vuln detection) | Trail of Bits | Deep, adversarial security review methodology | `secops-application-security` |
-| 6 | `observability-incident-triage` (subset of Sentry's 40+ skills: issue diagnosis, alert config) | Sentry | Observability setup and incident triage across platforms | `sysops-sre` |
-| 7 | `clickhouse-architecture-advisor` | ClickHouse | System/schema design patterns for analytical workloads | `system-architecture` |
-| 8 | `neon-postgres-egress-optimizer` | Neon | Data-transfer/cost optimization for serverless Postgres | `backend-distributed-systems` |
-| 9 | `hf-model-training` (TRL-based fine-tuning) | Hugging Face | Fine-tuning workflow orchestration | `ai-ml-engineering` |
-| 10 | `hf-managed-jobs` (hf-cli / Hugging Face Jobs) | Hugging Face | Managed compute job execution for ML pipelines | `ai-ml-engineering` |
-| 11 | `expo-cicd-workflows` | Expo | Mobile CI/CD pipeline generation | `mobile-development` |
-| 12 | `wp-performance-audit` | WordPress community | Static analysis (phpstan) and performance profiling for PHP/WP | `qa-automation` |
+| # | Skill (working name) | Upstream | Scope | Bundle (all addons) | Specialist wired |
+|---|---|---|---|---|---|
+| 1 | `postgres-best-practices` | Supabase | Postgres indexing, query plans, schema patterns | `backend-distributed-systems`, `system-architecture-data` | `data-engineer`, `distributed-systems-architect`, `database-administrator` |
+| 2 | `web-perf-audit` | Cloudflare | Core Web Vitals audit and tuning | `frontend-engineering` | `frontend-architect` |
+| 3 | `terraform-test-patterns` | HashiCorp | Terraform test/acceptance patterns | `devops-engineering` | `devops-engineer` |
+| 4 | `edge-security-audit` | Cloudflare | Security audit for edge/Workers apps | `secops-cloud-security` | `cloud-security-architect` |
+| 5 | `threat-modeling` | Trail of Bits (one skill synthesized from their set) | Threat modeling and adversarial review | `secops-application-security` | `appsec-penetration-tester` |
+| 6 | `sentry-incident-triage` | Sentry (one skill from their set) | Error/alert setup and issue triage | `sysops-sre` | `sysops-sre-lead` |
+| 7 | `clickhouse-architecture-advisor` | ClickHouse | Analytical schema/system design | `system-architecture-data` | `database-administrator` |
+| 8 | `hf-model-training` | Hugging Face (TRL) | Fine-tuning workflow | `ai-ml-engineering` | `ai-model-architect` |
+| 9 | `hf-managed-jobs` | Hugging Face (hf CLI / Jobs) | Running ML jobs on managed compute | `ai-ml-engineering` | `ml-platform-engineer` |
+| 10 | `expo-cicd-workflows` | Expo | EAS build/submit CI pipelines | `mobile-development` | `cross-platform-specialist` |
 
-Explicitly **not** shortlisted (lower priority / too vendor-narrow / redundant, per the triage):
-a 50+ multi-framework E2E test skill (overlaps existing `test-driven-development` /
-`playwright-best-practices` coverage), Netlify/Vercel deploy skills (redundant with the existing
-`vercel-deploy-best-practices` skill and the Cloudflare picks above), Sanity's CMS-specific SEO/
-content-experimentation skills (too CMS-niche for a bundle-wide fit), Composio (integration
-glue, not domain knowledge — out of scope for a skill).
+Changes from the first draft: every target is now an **addon** — vendor skills do not go into
+Essentials (`security-operations` → `secops-cloud-security`, `system-architecture` →
+`system-architecture-data`), per the Essentials-first rule (Plan 009). Dropped:
+`wp-performance-audit` (no PHP/WordPress stack anywhere in the catalog) and
+`neon-postgres-egress-optimizer` (single-vendor cost niche). Also not taken: a 50+ framework E2E
+set (overlaps Playwright/TDD skills), Netlify/Vercel deploy skills (covered by
+`vercel-deploy-best-practices`), Sanity CMS skills, Composio (integration glue).
 
-### Naming collision — resolve at Step 0
+**Overlap checks Step 0 must settle** (STOP if a candidate adds nothing):
+#2 vs `debug-optimize-lcp`, `modern-web-guidance`, `performance-optimization`;
+#4 vs `security-audit`; #6 vs `telemetry-monitoring` and `workflow-incident-triage`;
+#8 vs `hf-model-evaluation`.
 
-`security-operations` already has a skill named `security-audit`
-(`registry/bundles.json` → `security-operations.skills`). Candidate #4's working name
-`edge-security-audit` avoids a direct collision, but Step 0 must confirm the two skills'
-scopes don't overlap in practice (existing `security-audit` is the general orchestrator-level
-audit skill; #4 is Cloudflare/edge-specific) and STOP to ask the owner if they'd rather merge
-Cloudflare's edge-specific guidance into the existing skill instead of adding a new one.
+## Intake checklist (applies to every skill)
+
+1. Upstream exists at a real repo; record `metadata.source` as repo URL + commit SHA.
+2. Licence permits redistribution (MIT, Apache-2.0, BSD, CC-BY). Otherwise STOP: link to the
+   upstream instead of vendoring, or drop.
+3. Name passes Claude and Cline rules (lowercase, digits, hyphens, ≤64 chars, equals directory
+   name, no "claude"/"anthropic").
+4. SKILL.md has the PROJECT.md §7.2 sections; long material goes in `references/`.
+5. Bundled scripts run on Windows and POSIX (Node or Python, no bash-only syntax) and never
+   write, deploy or call paid APIs without an explicit confirmation step in the runbook.
+6. Commands and APIs are the vendor's real ones, cited from upstream docs; nothing invented.
+7. Placed in addon bundles and `full`; wired to the named specialist.
+8. README Credits entry; catalog counts updated (tests, README, PROJECT.md).
 
 ## Objective
 
-1. Get owner sign-off on the shortlist (or a trimmed version of it) before authoring anything —
-   this is a curation exercise, not a bulk import, and the owner may want to cut further.
-2. For each approved skill, author `registry/skills/<name>/SKILL.md` conforming to PROJECT.md
-   §7.2's 7 mandatory sections (or Plan 025's "Skill Consultation Map"-compatible shape if that
-   plan has landed first), with the README.md §5 "Skill & Agent Contribution Standard"
-   frontmatter (`metadata.author`, `metadata.version`, `metadata.source`, `metadata.license`)
-   pointing at the real upstream project, not a placeholder.
-3. Add each new skill to its target bundle's `skills` array in `registry/bundles.json` — only
-   that bundle's array; do not touch other bundles' entries to keep this plan's diff isolated
-   from Plans 025/026/028 sharing the same file.
-4. Add a `## Credits & Acknowledgments` entry per skill in README.md, matching the existing
-   entries for Modal Labs, Replicate, Supabase, etc.
-5. Where a shortlisted item is itself a multi-skill set (Trail of Bits' 22 skills, Sentry's 40+),
-   ship exactly one synthesized skill per row above (not all upstream skills individually) —
-   the row's one-line description is the scope boundary; do not silently expand it into a
-   separate skill per upstream file.
+1. Owner approves or trims the shortlist (Step 0), after upstream, licence and overlap checks.
+2. Author each approved skill under `registry/skills/<name>/` per the checklist.
+3. Wire bundles, `full`, and specialists; add Credits.
+4. Replace the literal skill count (`166` in `tests/e2e-skills-depth.test.ts`,
+   `tests/gate-command-portability.test.ts`, `tests/skills-cli-command.test.ts`) with a count
+   derived from `registry/skills/` if it is still literal, so Plans 027 and 028 do not fight
+   over the same constant; update the counts in README/PROJECT.md prose.
 
 ## Implementation steps (TDD)
 
-**Step 0 — owner sign-off + naming collision resolution (delegate: none — surface directly).**
-Present the shortlist table for approval/trim. Resolve the `security-audit` /
-`edge-security-audit` naming and scope question per § Naming collision. STOP until answered.
+**Step 0 — verification and sign-off (delegate: `subagent-repo-index` for upstream/licence
+fetch; owner for the decision).** For each row: confirm the upstream skill exists, record
+licence and SHA, run the overlap check. Present the table with results. STOP until the owner
+approves the final list.
 
-**Step 1 — RED tests (delegate: `subagent-qa-automation-lead`).**
-`tests/skill-schema.test.ts` extension (if not already generic) asserting: every skill listed
-in a bundle's `skills` array in `registry/bundles.json` has a corresponding
-`registry/skills/<name>/SKILL.md`; every new skill's frontmatter has non-placeholder
-`metadata.author`/`metadata.source`; every new skill has all 7 PROJECT.md sections. These
-should fail (missing files) until Step 2 lands each skill.
+**Step 1 — RED tests (delegate: `subagent-qa-automation-lead`).** Every bundle-listed skill
+exists; new skills have non-placeholder `metadata.author`/`metadata.source` with a SHA and a
+`metadata.license`; names pass the portability rules; derived skill count.
 
-**Step 2 — author skills (delegate: `subagent-backend-architect` for #1/3/7/8, `subagent-
-security-engineer` or `subagent-appsec-penetration-tester` for #4/5, `subagent-sysops-sre-lead`
-for #6, `subagent-ai-model-architect`/`subagent-ml-platform-engineer` for #9/10, `subagent-
-cross-platform-specialist` for #11, `subagent-qa-automation-lead` for #12).** One skill per
-specialist invocation, each grounded in the real upstream source's documented practices (do not
-fabricate commands/APIs — cite the real CLI/API surface of Supabase, Cloudflare, Trail of Bits,
-Sentry, ClickHouse, Neon, Hugging Face, Expo, or WordPress tooling as applicable).
+**Step 2 — author skills (delegate: the specialist in the table for each row).** One skill per
+invocation, grounded in the pinned upstream.
 
-**Step 3 — bundle wiring + credits (delegate: `subagent-backend-architect`).** Add each skill
-to its target bundle's `skills` array in `registry/bundles.json`; add the README.md credit
-block per skill.
+**Step 3 — wiring (delegate: `subagent-backend-architect`).** Bundles, `full`, specialist map
+rows or `skills:` entries, Credits, count prose.
 
-**Step 4 — adversarial audit (delegate: `subagent-code-reviewer`).** Verify no fabricated API
-surface (spot-check against real upstream docs for at least 3 of the 12 skills), verify no
-`registry/bundles.json` edit touched a bundle outside this plan's target list, verify a fresh
-`agents doctor` and `agents list` show the new skills correctly attributed to their bundles.
+**Step 4 — adversarial audit (delegate: `subagent-code-reviewer`).** Spot-check at least three
+skills against upstream docs for invented commands; confirm only the listed bundles changed;
+run a bundled script on Windows-style paths if any skill ships one.
 
 ## Acceptance gates
 
-1. `npm run typecheck` exit 0 · `npm test` fully green including the skill-schema assertions.
-2. All 12 (or owner-trimmed subset) skills exist under `registry/skills/`, each with real
-   attribution metadata and all 7 PROJECT.md sections.
-3. Each skill appears in exactly the bundle(s) named in § Shortlist's target column, and no
-   other bundle's `skills` array changed.
-4. README.md Credits section has one new entry per shipped skill, matching the existing format.
-5. The `security-audit` / `edge-security-audit` naming question is resolved and recorded in
-   this plan's verification note before Step 2 starts.
-6. `agents list` and `agents find <new-skill-name>` surface every new skill correctly.
+1. `npm run typecheck` exit 0 · `npm test` green.
+2. Every approved skill passes the intake checklist; licences and SHAs recorded.
+3. Only the listed addon bundles and `full` changed in `registry/bundles.json`.
+4. `agents find <skill>` and `agents list` show each skill under its bundle.
+5. **Owner manual check (Windows)**: install `secops-application-security` with
+   `--fanout claude,cline`; on Claude Code, Antigravity and Cline ask for a threat model of a
+   small service. Pass = `threat-modeling` is loaded (visible skill read) and the output follows
+   its runbook.
 
 ## Risk register
 
 | # | Risk | Sev | Mitigation |
 |---|---|---|---|
-| R1 | Skill content fabricates or misstates a vendor's actual API/CLI | High | Step 4 spot-check against real upstream docs; each specialist must cite the real command surface, not invent one |
-| R2 | `registry/bundles.json` edit collides with a parallel plan's edit to the same file | Med | Step 3 touches only the 6 target bundles' `skills` arrays; rebase against `dev` before merging if 025/026/028 land first |
-| R3 | Trail of Bits/Sentry "one synthesized skill from a 22/40+ skill set" loses fidelity vendors intended as separate tools | Med | scope explicitly bounded per row; if a reviewer finds the synthesis too shallow, split into 2 skills max, not the full upstream count |
-| R4 | New `security-operations`-adjacent skill collides in name or scope with the existing `security-audit` skill | Med | Step 0 resolution gate before any authoring begins |
+| R1 | Licence does not allow vendoring | High | checklist item 2; link instead of copy |
+| R2 | Skill content invents vendor commands | High | pinned upstream + Step 4 spot-check |
+| R3 | Vendored copy drifts from upstream | Med | SHA pin makes drift visible; updates are a deliberate re-intake |
+| R4 | Merge conflict with Plan 028 on `full` and counts | Low | derived count; `full` edits are append-only, rebase resolves |
+| R5 | Synthesizing one skill from a large vendor set loses depth | Med | at most two skills per vendor set, scope fixed by the table |
 
 ## Delegation map (ADR 0015 planner-orchestrator posture)
 
 | Phase | Specialist | Scope |
 |---|---|---|
-| Step 0 | (owner-facing, no delegate) | shortlist approval + naming resolution |
-| Step 1 | `subagent-qa-automation-lead` | RED schema/attribution tests |
-| Step 2 | domain specialist per skill (see step description) | skill authoring |
-| Step 3 | `subagent-backend-architect` | bundle wiring + README credits |
+| Step 0 | `subagent-repo-index` + owner | upstream/licence/overlap verification, sign-off |
+| Step 1 | `subagent-qa-automation-lead` | RED tests |
+| Step 2 | specialists in the shortlist table | authoring |
+| Step 3 | `subagent-backend-architect` | wiring, credits, counts |
 | Step 4 | `subagent-code-reviewer` | adversarial audit |
 
 ## References
 
-- Evidence: research pass against `github.com/VoltAgent/awesome-agent-skills#official-skills-by`,
-  2026-09-27 (this session).
-- Convention: README.md §"Skill & Agent Contribution Standard" (frontmatter attribution,
-  README credits, deterministic verifications).
-- Sibling: Plan 025 establishes the Skill Consultation Map convention for how agents reference
-  skills — if it lands first, wire each new skill into the relevant specialist's map instead of
-  (or in addition to) the flat `skills:` array. Plan 026's host primitive matrix should be
-  consulted for any skill that bundles scripts, to confirm the script executes cleanly across
-  all three hosts' progressive-disclosure model.
+- Evidence: triage of `github.com/VoltAgent/awesome-agent-skills#official-skills-by`,
+  2026-09-27.
+- Convention: README "Skill & Agent Contribution Standard"; Plan 009 (Essentials stay lean);
+  Plan 026 (`docs/skill-intake.md`, host matrix); Plan 025 (Skill Consultation Map).
