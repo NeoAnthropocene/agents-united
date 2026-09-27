@@ -42,6 +42,7 @@ skills:
   - security-audit
   - systematic-debugging
   - git-guardrails
+  - threat-modeling
 mcpServers:
   - name: github
 ---

@@ -37,6 +37,7 @@ skills:
   - rag-vector-pipeline
   - vector-database-design
   - telemetry-monitoring
+  - postgres-best-practices
 mcpServers:
   - name: context7
 ---

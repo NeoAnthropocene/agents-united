@@ -39,6 +39,7 @@ skills:
   - graphql-schema-design
   - turso-distributed-sqlite
   - database-design
+  - postgres-best-practices
 mcpServers:
   - name: github
   - name: context7

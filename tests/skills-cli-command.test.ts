@@ -26,8 +26,14 @@ describe('Skill runbook doctor command (Plan 015 Step 3)', () => {
   const files = listSkillFiles();
 
   it('scans the full canonical skill catalog', () => {
-    // Catalog contract (ADR 0016 cutover, post PR #42 merge): 166 canonical SKILL.md files.
-    expect(files.length).toBe(166);
+    // Catalog contract: every registry/skills/<name>/ directory has a SKILL.md.
+    // The count is derived (Plan 027) rather than a literal, so batches of
+    // vendored skills stop fighting over a hardcoded number.
+    const dirCount = fs
+      .readdirSync(skillsDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory()).length;
+    expect(files.length).toBe(dirCount);
+    expect(files.length).toBeGreaterThanOrEqual(166);
   });
 
   it('never references the workspace-relative node dist/cli.js doctor', () => {

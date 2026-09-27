@@ -167,7 +167,8 @@
         "frontend-design",
         "generative_ui",
         "grill-me",
-        "stitch-design-taste"
+        "stitch-design-taste",
+        "ux-writing"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -228,7 +229,9 @@
         "grill-me",
         "onboarding-cro",
         "stitch-design-taste",
-        "viral-referral-loops"
+        "viral-referral-loops",
+        "banner-design",
+        "brand-identity"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -560,7 +563,8 @@
         "grill-me",
         "grill-with-docs",
         "subagent-driven-development",
-        "test-driven-development"
+        "test-driven-development",
+        "terraform-test-patterns"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -595,7 +599,8 @@
         "domain-modeling",
         "grill-me",
         "grill-with-docs",
-        "microservices-architecture"
+        "microservices-architecture",
+        "sentry-incident-triage"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -638,7 +643,8 @@
         "git-guardrails",
         "grill-me",
         "grill-with-docs",
-        "subagent-driven-development"
+        "subagent-driven-development",
+        "expo-cicd-workflows"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -729,7 +735,8 @@
         "grill-me",
         "grill-with-docs",
         "subagent-driven-development",
-        "test-driven-development"
+        "test-driven-development",
+        "postgres-best-practices"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -816,7 +823,9 @@
         "grill-me",
         "grill-with-docs",
         "subagent-driven-development",
-        "test-driven-development"
+        "test-driven-development",
+        "hf-model-training",
+        "hf-managed-jobs"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1061,7 +1070,19 @@
         "workflow-agency-seo-content-engine",
         "workflow-agency-cro-funnel-teardown",
         "workflow-agency-brand-design-system",
-        "workflow-agency-client-pitch-proposal"
+        "workflow-agency-client-pitch-proposal",
+        "banner-design",
+        "brand-identity",
+        "ux-writing",
+        "postgres-best-practices",
+        "edge-security-audit",
+        "sentry-incident-triage",
+        "clickhouse-architecture-advisor",
+        "hf-model-training",
+        "hf-managed-jobs",
+        "expo-cicd-workflows",
+        "terraform-test-patterns",
+        "threat-modeling"
       ],
       "version": "1.0.0"
     },
@@ -1230,7 +1251,10 @@
         "technical-seo-audit",
         "test-driven-development",
         "ui-component-spec",
-        "viral-referral-loops"
+        "viral-referral-loops",
+        "banner-design",
+        "brand-identity",
+        "ux-writing"
       ],
       "version": "1.0.0"
     },
@@ -1393,7 +1417,8 @@
         "git-guardrails",
         "grill-me",
         "grill-with-docs",
-        "telemetry-monitoring"
+        "telemetry-monitoring",
+        "edge-security-audit"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1429,7 +1454,8 @@
         "domain-modeling",
         "git-guardrails",
         "grill-me",
-        "grill-with-docs"
+        "grill-with-docs",
+        "threat-modeling"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1679,7 +1705,9 @@
         "microservices-architecture",
         "performance-optimization",
         "supabase-backend-architecture",
-        "turso-distributed-sqlite"
+        "turso-distributed-sqlite",
+        "postgres-best-practices",
+        "clickhouse-architecture-advisor"
       ],
       "version": "1.0.0",
       "planningLoop": {

@@ -220,6 +220,42 @@ Always design clean APIs.
       expect(body).toContain('Always design clean APIs.');
     });
 
+    it('projects the canonical per-agent skills list into the frontmatter skills field (Plan 026 Step 4)', () => {
+      const canonicalAgent = `---
+name: backend-architect
+description: Expert backend architect
+skills:
+  - backend-api-design
+  - database-design
+version: 1.0.0
+---
+You are a specialized backend architect.
+`;
+      const rendered = ClineProjector.renderConfiguredAgent(
+        canonicalAgent,
+        'agents/subagent-backend-architect.md'
+      );
+      const parts = rendered.split(/---\r?\n/);
+      const frontmatter = yaml.parse(parts[1]);
+      expect(frontmatter.skills).toEqual(['backend-api-design', 'database-design']);
+    });
+
+    it('omits the skills field entirely when the canonical agent declares no skills', () => {
+      const canonicalAgent = `---
+name: backend-architect
+description: Expert backend architect
+---
+No skills here.
+`;
+      const rendered = ClineProjector.renderConfiguredAgent(
+        canonicalAgent,
+        'agents/subagent-backend-architect.md'
+      );
+      const parts = rendered.split(/---\r?\n/);
+      const frontmatter = yaml.parse(parts[1]);
+      expect(frontmatter.skills).toBeUndefined();
+    });
+
     it('strips the subagent- prefix from the frontmatter name (ADR 0013 decision 2)', () => {
       const canonicalAgent = `---
 name: subagent-marketing-growth-strategist
