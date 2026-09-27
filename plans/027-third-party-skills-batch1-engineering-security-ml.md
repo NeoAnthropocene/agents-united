@@ -9,7 +9,9 @@
 
 ## Status
 
-- **State**: PROPOSED — awaiting owner approval of the shortlist
+- **State**: AUTHORIZED — owner approved the 10-skill shortlist as-is, 2026-09-27 (via project
+  thread). Step 0's upstream/licence/SHA verification and overlap checks still run before any
+  skill is authored — approval covers the shortlist, not a waiver of that verification.
 - **Priority**: P2 · **Effort**: L · **Risk**: Low–Medium (additive; licence and fidelity
   are the real risks)
 - **Depends on**: none. Follows the intake checklist below, which Plan 026 later publishes as

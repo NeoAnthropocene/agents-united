@@ -11,7 +11,7 @@
 
 ## Status
 
-- **State**: PROPOSED — awaiting owner approval
+- **State**: AUTHORIZED — owner approved 2026-09-27 (via project thread)
 - **Priority**: P1 · **Effort**: L · **Risk**: Medium (changes the prompt of every engineering
   specialist; golden regeneration required)
 - **Depends on**: none. Plans 027/028 wire their new skills into the map this plan introduces;

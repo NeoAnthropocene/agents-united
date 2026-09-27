@@ -11,7 +11,7 @@
 
 ## Status
 
-- **State**: PROPOSED — awaiting owner approval
+- **State**: AUTHORIZED — owner approved 2026-09-27 (via project thread)
 - **Priority**: P1 · **Effort**: M · **Risk**: Low–Medium (docs + ledger entries + doctor
   checks; the one projection change in Step 4 is opt-in behind its own gate)
 - **Depends on**: none. Uses the Declared-Delta Registry and body-lint seam that already exist

@@ -9,7 +9,10 @@
 
 ## Status
 
-- **State**: PROPOSED — awaiting owner approval
+- **State**: AUTHORIZED — owner approved 2026-09-27 (via project thread): rename `brand` →
+  `brand-identity` and `balise-ux-writing` → `ux-writing`; add `ux-writing` to `digital-agency`
+  in addition to `product-design`. Step 0's upstream/licence verification and the `brand` script
+  audit still run before authoring.
 - **Priority**: P2 · **Effort**: M · **Risk**: Low–Medium (additive; `brand` ships scripts)
 - **Depends on**: none. Uses the same intake checklist as Plan 027 (published later by Plan 026
   as `docs/skill-intake.md`). Plan 025's Skill Consultation Map gets the rows if it has landed.
@@ -27,11 +30,11 @@ organization bundles, and overlap checks against skills the catalog already has.
 |---|---|---|---|---|---|---|
 | 1 | `banner-design` | nextlevelbuilder | Banners for social, ads, web hero, print; ~13 art-direction styles; platform size specs; 5-step workflow + size/style reference | `banner-design` | `growth-marketing`, `digital-agency` | `marketing-creative-designer` (Jamileh in the agency) |
 | 2 | `brand` | nextlevelbuilder | Brand voice, identity, messaging, asset consistency, brand→token sync; 4 scripts, 10 reference docs, starter template | `brand-identity` (the bare name `brand` is too generic to trigger reliably) | `growth-marketing`, `digital-agency` | `marketing-creative-designer`, `marketing-content-strategist` |
-| 3 | `balise-ux-writing` | mrstev3n | Interface copy: review/rewrite/generate/harmonize/implement modes, severity triage, 5 reference docs | `ux-writing` | `product-design` (and `digital-agency` if the owner wants it for landing-page copy) | `ux-strategist`, `ui-designer` (agency: `marketing-conversion-specialist`) |
+| 3 | `balise-ux-writing` | mrstev3n | Interface copy: review/rewrite/generate/harmonize/implement modes, severity triage, 5 reference docs | `ux-writing` | `product-design`, `digital-agency` (owner-approved 2026-09-27) | `ux-strategist`, `ui-designer` (agency: `marketing-conversion-specialist`) |
 
-`digital-agency` is included because the owner asked for placement across domain **and**
-organization packages, and its creative designer and content roles are the direct users of #1
-and #2.
+`digital-agency` is included for all three skills: the owner asked for placement across domain
+**and** organization packages, and its creative designer, content and conversion roles are the
+direct users of #1, #2 and #3.
 
 **Overlap checks Step 0 must settle** (state the boundary in each skill's Overview):
 #1 vs `ad-creative-design`, `marketing-creative-design`; #2 vs `design-system-tokens` and the
