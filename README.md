@@ -20,7 +20,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
 - **🚀 Cline Native Activation**: Bundles activate **automatically** in any Cline CLI session — skills discovered natively from `.agents/skills/`, configured-agent roles (`.cline/agents/*.yml`) exposed as spawnable `subagent_*` tools, coordinator rules (`.cline/rules/`), slash-command workflows (`.cline/workflows/`), and spec-conformant Agent Plugin packages (`plugin.json`, agent-plugins.org) in `.agents/plugins/<bundle>/`. No install step required; `agents start` remains available as an optional pre-seeded team-session launcher.
 - **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 59 Specialized Agents & 166 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 166 production-grade runbooks (97 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
+- **🤖 59 Specialized Agents & 169 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 169 production-grade runbooks (100 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
 - **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
@@ -108,7 +108,7 @@ This model gives you:
 ---
 
 
-Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **166 modular skills & runbooks** (97 domain skills + 69 workflow playbooks) across 8 department domains:
+Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **169 modular skills & runbooks** (100 domain skills + 69 workflow playbooks) across 8 department domains:
 
 | Department Domain | Essentials Base | Specialized Addon Bundles | Lead Orchestrator |
 | :--- | :--- | :--- | :--- |
@@ -753,6 +753,19 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 - **`modern-web-guidance`**: Modern web platform APIs, CSS `:has()`, View Transitions, and Core Web Vitals best practices.
 - **`a11y-debugging`**: Chrome DevTools accessibility auditing, ARIA verification, and WCAG AA guidelines.
 - **`debug-optimize-lcp`**: Largest Contentful Paint (LCP) performance trace inspection and subpart latency optimization.
+</details>
+
+<details>
+<summary><strong>nextlevelbuilder (<a href="https://github.com/nextlevelbuilder">@nextlevelbuilder</a> / <a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill">ui-ux-pro-max-skill</a>)</strong></summary>
+
+- **`banner-design`**: Multi-format creative banner system — platform size specs, 22 art-direction styles, and safe-zone/export rules for social, ad, hero, and print banners.
+- **`brand-identity`** (renamed from upstream `brand`): Brand voice, visual identity, messaging framework, asset consistency, and a confirmation-gated brand-guidelines-to-design-tokens sync.
+</details>
+
+<details>
+<summary><strong>mrstev3n (<a href="https://github.com/mrstev3n">@mrstev3n</a> / <a href="https://github.com/mrstev3n/balise-skills">balise-skills</a>)</strong></summary>
+
+- **`ux-writing`** (renamed from upstream `balise-ux-writing`): Review, rewrite, generate, harmonize, and implement modes for user-centered interface copy, with severity-triaged findings and high-stakes-content safeguards.
 </details>
 
 ---

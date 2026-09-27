@@ -186,7 +186,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **166 modular skills & runbooks** (97 domain skills + 69 workflow playbooks) structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
+The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **169 modular skills & runbooks** (100 domain skills + 69 workflow playbooks) structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
 
 ```
 🌐 Agents United Registry Catalog Tree
