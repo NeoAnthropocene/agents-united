@@ -132,4 +132,14 @@ describe('Projection residue purge (Plan 019 done-criteria 2)', () => {
     const phase05 = body.split(/^### /m).find(section => section.startsWith('Phase 0.5')) ?? '';
     expect(phase05).toMatch(/MUST consult at least one relevant specialist before emitting the Delegation Map, unless the user explicitly waives it/);
   });
+
+  it('(g) Plan 024 S1: no orchestrator contradicts the consult gate (no planning-spawn ban, no solo-composed map)', () => {
+    const violations: string[] = [];
+    for (const file of orchestratorFiles()) {
+      const body = fs.readFileSync(path.join(AGENTS_DIR, file), 'utf8');
+      if (/not spawn specialists during planning/i.test(body)) violations.push(`${file}: bans specialist consults during planning`);
+      if (/solo-composed/i.test(body)) violations.push(`${file}: delegation map is still "solo-composed"`);
+    }
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
 });

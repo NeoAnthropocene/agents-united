@@ -7,6 +7,7 @@ import { isKnownHost } from './hosts.js';
 import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { removeSessionGuard } from './session-guard.js';
+import { removePermissionPreset } from './permission-preset.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
 import { assetOwners } from './types.js';
@@ -490,6 +491,16 @@ export class UninstallEngine {
               const outcome = await removeSessionGuard(guardFile, { createdFile: guard.createdFile });
               if (outcome === 'removed' || outcome === 'deleted-file') removedFiles.push(guard.file);
               delete lockfile.sessionGuard;
+            }
+
+            // Plan 024 S4 — the command-permission preset is workspace-wide too: remove only the
+            // entries this install recorded, and delete the file only if agents-united created it.
+            const preset = lockfile.permissionPreset;
+            if (lockfile.installed.bundles.length === 0 && preset && !('off' in preset)) {
+              const presetFile = path.isAbsolute(preset.file) ? preset.file : path.join(workspaceRoot, preset.file);
+              const outcome = await removePermissionPreset(presetFile, preset.entries, { createdFile: preset.createdFile });
+              if (outcome === 'removed' || outcome === 'deleted-file') removedFiles.push(preset.file);
+              delete lockfile.permissionPreset;
             }
 
             await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });

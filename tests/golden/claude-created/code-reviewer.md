@@ -113,6 +113,8 @@ Your review domains:
    - Bound mechanic: SendMessage deliveries are read between turns, not on arrival: read every delivered message before the final report returns through SubagentHandback; never end the turn right after sending and expect a reply.
 9. The handoff report lists peer messages received and open items.
    - Bound mechanic: The SubagentHandback report carries "Peer messages received" and "Open items" sections; a report cut short by a turn limit is marked partial by the runtime, so open items are listed, never implied.
+10. Message a peer directly only in team mode, when the brief lists that peer.
+   - Bound mechanic: Team mode = Agent Teams (agents start --host claude --teams): teammates are addressed by name with SendMessage. Relay mode = ordinary subagents: peers are unreachable by name (only the session holds their agent IDs), so questions go under Open items.
 
 ## Command Bindings
 

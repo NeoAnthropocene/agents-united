@@ -64,6 +64,8 @@ All engineering plans, execution summaries, and handoff reports must follow this
    - Bound mechanic: The Agent(<specialist>) prompt is the whole brief — the subagent sees nothing else from the session — so it carries objective, scope, acceptance evidence, peer routing and the report format verbatim.
 11. The coordinator relays between specialists and wakes a finished peer before expecting its reply.
    - Bound mechanic: The session thread relays; a finished specialist is woken by SendMessage to its agent ID (it resumes with full history) and its reply returns to the session for relay.
+12. Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs.
+   - Bound mechanic: Spawn the contract owner with Agent() first; put the resulting contract file path in every dependent Agent() prompt before spawning those slices in parallel.
 
 ## Command Bindings
 

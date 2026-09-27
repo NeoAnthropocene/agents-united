@@ -10,6 +10,7 @@ import { ClineProjector } from './cline-projector.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
 import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
+import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo } from './types.js';
 import { assetOwners, mergeAssetOwners } from './types.js';
@@ -479,6 +480,54 @@ private toPosix(p: string): string {
       warnings.push(`Session guard not written: ${recordedFile} is not valid JSON (comments or trailing commas?). It was left untouched — paste this into it by hand:\n${sessionGuardSnippet()}`);
     } else if (result.status === 'modified') {
       warnings.push(`Session guard in ${recordedFile} was edited by hand; left as-is (run with --force after removing it to restore).`);
+    }
+    projections.push({ host: 'claude', path: recordedFile, warnings });
+  }
+
+  /**
+   * Plan 024 S4 (owner decisions E2/E4) — the opt-in command-permission preset. Written ONLY to
+   * `.claude/settings.local.json`, never the shared `.claude/settings.json`, regardless of what
+   * `sessionGuard` variant is also requested. Off by default, never implied by `-y`. Applies to
+   * every fan-out host that has a verified renderer (Claude only today); any other requested host
+   * gets an honest "not supported yet" warning instead of a guessed file.
+   */
+  private async applyPermissionPreset(
+    scope: InstallScope,
+    workspaceRoot: string,
+    lockfile: LockfileManifest,
+    options: InstallOptions,
+    fanoutHosts: string[],
+    projections: ProjectionInfo[],
+  ): Promise<void> {
+    const recorded = lockfile.permissionPreset;
+    const tier = options.permissionPreset ?? (recorded && !('off' in recorded) ? recorded.tier : undefined);
+    if (tier === undefined) return;
+    if (tier === false) {
+      lockfile.permissionPreset = { off: true };
+      return;
+    }
+    if (scope === 'global') return; // Plan 024 S4: workspace-local only, never a global default.
+
+    const unsupported = fanoutHosts.filter(h => h !== 'claude' && !SUPPORTED_PERMISSION_PRESET_HOSTS.includes(h));
+    for (const host of unsupported) {
+      projections.push({ host, path: '', warnings: [`Permission preset not supported for ${host} yet — no file written for it. Claude still received it if selected.`] });
+    }
+    if (!fanoutHosts.includes('claude')) return;
+
+    const file = path.join(workspaceRoot, '.claude', 'settings.local.json');
+    const recordedFile = this.toPosix(path.relative(workspaceRoot, file));
+    const existedBefore = await fs.pathExists(file);
+    const result = await mergePermissionPreset(file, tier);
+    const warnings: string[] = [];
+    if (result.status === 'skipped-invalid') {
+      warnings.push(`Permission preset not written: ${recordedFile} is not valid JSON (comments or trailing commas?). Left untouched.`);
+    } else {
+      lockfile.permissionPreset = {
+        tier,
+        file: recordedFile,
+        entries: result.entries,
+        createdFile: recorded && !('off' in recorded) ? recorded.createdFile : !existedBefore,
+      };
     }
     projections.push({ host: 'claude', path: recordedFile, warnings });
   }
@@ -1187,6 +1236,11 @@ private toPosix(p: string): string {
       // Plan 023 A — plain-session guard, Claude lane only (same canonical-store iteration).
       if (hasCanonicalAgents && effectiveFanout.includes('claude') && path.resolve(targetDir) === path.resolve(agentsTarget)) {
         await this.applySessionGuard(scope, workspaceRootOf(agentsTarget), lockfile, options, projections);
+      }
+
+      // Plan 024 S4 — opt-in command-permission preset (same canonical-store iteration).
+      if (hasCanonicalAgents && effectiveFanout.length > 0 && path.resolve(targetDir) === path.resolve(agentsTarget)) {
+        await this.applyPermissionPreset(scope, workspaceRootOf(agentsTarget), lockfile, options, effectiveFanout, projections);
       }
 
       await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });

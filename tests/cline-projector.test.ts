@@ -464,7 +464,11 @@ describe('Planner-Orchestrator rendering (Plan 013 / ADR 0015)', () => {
       expect(rule).toContain('Phase 0 — User Alignment (solo)');
       expect(rule).toContain('/grill-me');
       expect(rule).toContain('/grill-with-docs');
-      expect(rule).toContain('Phase 2 — Delegation Map (solo-composed)');
+      // Plan 024 S1: the map is composed from the read-only consult, never solo; no planning-spawn ban
+      expect(rule).toContain('Phase 2 — Delegation Map');
+      expect(rule).not.toContain('solo-composed');
+      expect(rule).not.toMatch(/not spawn specialists during planning/i);
+      expect(rule).toContain('consulted read-only');
       expect(rule).toContain('PROVISIONAL answers');
       expect(rule).toContain('defer it to the delegation map');
     });

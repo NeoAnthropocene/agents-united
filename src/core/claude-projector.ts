@@ -99,7 +99,10 @@ const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 const RUNTIME_NOTE = `## Claude runtime note
 
 Delegation runs through the Agent tool: the coordinator spawns the specialists named in its own tools
-allowlist; specialists hold no Agent tool and never spawn peers (the coordinator relays and wakes them). Canonical tool names in this prompt were rewritten to their
+allowlist; specialists hold no Agent tool and never spawn peers (the coordinator relays and wakes them).
+Outside Agent Teams (\`--teams\`), specialists cannot message each other by name: only the coordinator holds
+their agent IDs, so relay mode is the default and team mode exists only when the brief says so.
+Canonical tool names in this prompt were rewritten to their
 Claude equivalents; a fenced code block may still show the original spelling because code is preserved
 byte-for-byte. A subagent does not hand results to a peer: its final report is returned to the
 conversation that spawned it, and on Claude Code v2.1.271+ in auto mode the runtime delivers it through the

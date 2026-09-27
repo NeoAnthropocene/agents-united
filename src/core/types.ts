@@ -308,7 +308,19 @@ export interface LockfileManifest {
    * `.claude/.agents-united/`. Absent on a store-backed install (the lockfile shape is unchanged).
    */
   storeShape?: 'sidecar';
+  /**
+   * Plan 024 S4 (owner E2/E4) — the recorded opt-in command-permission preset. `{ off: true }` is
+   * a remembered "no"; otherwise the tier, the settings file it was written to (always
+   * `.claude/settings.local.json`, workspace-relative), the exact entries this install added
+   * (removal is limited to these), and whether agents-united created the file. Absent ⇒ never
+   * decided.
+   */
+  permissionPreset?: PermissionPresetRecord;
 }
+
+export type PermissionPresetRecord =
+  | { off: true }
+  | { tier: 'verify' | 'build'; file: string; entries: string[]; createdFile: boolean };
 
 export type SessionGuardRecord =
   | { off: true }
@@ -435,6 +447,15 @@ export interface InstallOptions {
    * (remembered "no"). Omitted ⇒ inherit the lockfile decision. Claude lane only.
    */
   sessionGuard?: 'project' | 'local' | 'user' | false;
+  /**
+   * Plan 024 S4 (owner E2/E4) — opt-in command-permission preset: `verify` (fixed read/test
+   * commands only) or `build` (adds npm install/run/test — must be requested explicitly). Written
+   * ONLY to `.claude/settings.local.json`, never the shared `.claude/settings.json`, and never for
+   * a global install. `false` records a remembered "no". Omitted ⇒ inherit the lockfile decision
+   * (absent decision ⇒ off). A host with no verified renderer yet (anything but Claude today)
+   * reports "not supported" instead of writing a guessed file.
+   */
+  permissionPreset?: 'verify' | 'build' | false;
   /**
    * Plan 023 B (ADR 0022, D4) — where the machine state lives when no `targetDir` is given:
    * `'sidecar'` (store-less Claude-only install) or `'store'` (`.agents/`). Decided by

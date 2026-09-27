@@ -68,6 +68,7 @@ invariants:
   - "At most two peer exchanges per specialist pair and one directed question per peer per planning round."
   - "Check for delivered peer messages before the final report."
   - "The handoff report lists peer messages received and open items."
+  - "Message a peer directly only in team mode, when the brief lists that peer."
 ---
 
 <!-- core: subagent-repo-index | extracted per Plan 021 Step 0 classification | tool-free by contract (ADR 0021 decision 1) -->

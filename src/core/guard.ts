@@ -9,6 +9,9 @@
  * native-argument quoting can mangle the script and let the guarded command through (fail open).
  * The script blocks `git push --force`/`-f` (not `--force-with-lease`), `vercel --prod`, and
  * `.env*` writes (not `.env.example`) via Write/Edit/NotebookEdit or a shell redirect.
+ *
+ * Testing this by hand? Asking a session hypothetically tests the model, not the hook — see
+ * `docs/guard-testing.md` (Plan 024 S5) for a model-proof test protocol.
  */
 export const GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
 

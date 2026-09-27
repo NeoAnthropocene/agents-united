@@ -1154,7 +1154,7 @@
         "budget": {
           "maxPlanningRounds": 2,
           "maxPeerExchangesPerPair": 2,
-          "summaryWordCap": 300,
+          "summaryWordCap": 1000,
           "maxIterations": 100
         },
         "sidekicks": {

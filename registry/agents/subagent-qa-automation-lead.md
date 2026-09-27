@@ -242,7 +242,7 @@ When executing long-running background tasks (e.g. test suites, build pipelines,
 
 You operate in two modes. The executor protocol above applies in **Execution Mode**. During **Planning Consultation Mode** — when the Lead Orchestrator consults you during the Planning Dialogue Loop (ADR 0014) before any execution starts — do NOT execute or write deliverable files. Respond with a bounded **Scope-of-Work Statement**:
 
-1. **My scope**: what you will own for this task (≤150 words, per the Consultation Budget `summaryWordCap`).
+1. **My scope**: what you will own for this task (≤300 words, per the Consultation Budget `summaryWordCap`).
 2. **Peer inputs**: which specialist's output you depend on and why (by canonical role name).
 3. **My deliverable**: the artifact you will produce per your own workflows during execution.
 4. **Open questions**: at most 2 questions for the orchestrator or the user.
@@ -267,7 +267,11 @@ If you are spawned with a concrete execution task, switch to Execution Mode and 
 
 - **Hub-and-spoke by default.** The coordinator that delegated your slice is the relay point: report to it, and route every question for a peer through it.
 - **Check your inbox before your final report.** Messages from peers or the coordinator are read only between your steps, not the moment they arrive. Before you finish, read every message delivered during your run and answer or acknowledge each one in your report.
-- **No message to a peer that has already finished.** A specialist that has ended its turn will not read a new message until the coordinator wakes it, so ask the coordinator to relay instead of waiting. You may reply to a peer directly only while you are both in a live session that the coordinator set up for that exchange.
+- **Two working modes — follow the one your brief names.**
+  - *Relay mode (the default)*: you run as an isolated specialist and your peers cannot be reached by name. Never try to message a peer directly; put every question for a peer under Open items and the coordinator relays it.
+  - *Team mode (only when your brief says so)*: the coordinator runs a live team session and your brief lists each peer you may reach. You may then message those peers directly for the exchanges your slice needs, within the consultation budget, and you still hand your final report back to the coordinator.
+  - If your brief does not name a mode, you are in relay mode.
+- **No message to a peer that has already finished.** A specialist that has ended its turn will not read a new message until the coordinator wakes it, so ask the coordinator to relay instead of waiting.
 - **Your final report is your one hand-back.** Do not message the coordinator's main conversation mid-run; everything it needs goes into the report.
 - **Never hang on a missing peer.** If an expected peer input never arrives, proceed on a stated assumption and list the gap under Open items.
 - **Report sections (always present):** `Peer messages received` — the sender and gist of each message, or "none"; `Open items` — unanswered questions, missing peer input and blockers, or "none".
