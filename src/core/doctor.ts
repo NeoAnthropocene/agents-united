@@ -8,7 +8,7 @@ import { ClaudeCapabilityProbe } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
-import { RegistryResolver } from './registry.js';
+import { RegistryResolver, loadTranslationLedger } from './registry.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -16,6 +16,7 @@ import type {
   ClaudeCapabilityReport,
   ClineCapabilityReport,
   LockfileManifest,
+  TranslationLedgerEntry,
 } from './types.js';
 
 export interface HealthReport {
@@ -33,7 +34,18 @@ export interface HealthReport {
   sessionGuard?: 'wired' | 'missing' | 'modified' | 'skipped-invalid' | 'off';
   /** Plan 024 S4 — command-permission preset state; absent when no decision was ever recorded. */
   permissionPreset?: 'wired' | 'missing' | 'skipped-invalid' | 'off';
+  /**
+   * Plan 026 Objective 3 — the Declared-Delta Registry entries (`registry/
+   * translation-ledger.json`) for `host` that are `degraded` or `unsupported`: what does
+   * not carry over to this host, in the user's own vocabulary. Present only when `host`
+   * was recognized (a known Declared-Delta Registry host); absent for an unknown/omitted
+   * host so the CLI never guesses.
+   */
+  declaredDeltas?: TranslationLedgerEntry[];
 }
+
+/** Hosts the Declared-Delta Registry (Plan 026) carries entries for. */
+const DECLARED_DELTA_HOSTS = new Set(['claude', 'antigravity', 'cline']);
 
 /** The only hosts that own a content-derived compound lane: Cline (ADR 0013), Claude (ADR 0018). */
 type CompoundLaneHost = 'cline' | 'claude';
@@ -502,6 +514,17 @@ export class DoctorEngine {
       }
     }
 
+    // Plan 026 Objective 3 — surface the Declared-Delta Registry's degraded/unsupported
+    // features for a recognized host, independent of which host-specific probe (if any)
+    // also runs below. An unrecognized/omitted host yields no section (never guessed).
+    let declaredDeltas: TranslationLedgerEntry[] | undefined;
+    if (host && DECLARED_DELTA_HOSTS.has(host)) {
+      const ledger = loadTranslationLedger();
+      declaredDeltas = ledger.filter(
+        e => e.host === host && (e.disposition === 'degraded' || e.disposition === 'unsupported')
+      );
+    }
+
     // Host-specific checks (e.g. --host cline, --host claude)
     if (host === 'cline') {
       const probe = new ClineCapabilityProbe();
@@ -532,6 +555,7 @@ export class DoctorEngine {
       clineCapability,
       claudeCapability,
       sessionGuard,
+      declaredDeltas,
     };
   }
 }
