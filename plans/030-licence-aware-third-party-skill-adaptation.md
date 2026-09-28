@@ -13,11 +13,13 @@
 
 ## Status
 
-- **State**: PROPOSED — 2026-09-28 (owner asked for this plan; awaiting approval and the
-  Step 0 owner decisions)
+- **State**: APPROVED — 2026-09-28. Owner confirmed the licence reading and the tier table
+  (Step 0 a) and kept the full 12-skill shortlist (Step 0 b). Only Step 0 c (re-read each
+  licence at the pinned SHA) remains before Step 1.
 - **Priority**: P2 · **Effort**: M · **Risk**: Medium (licence compliance; the catalog
   starts carrying non-MIT files)
-- **Depends on**: the Claude projector fix for nested skill folders (see § Prerequisite).
+- **Depends on**: the Claude projector fix for nested skill folders (see § Prerequisite) —
+  merged to `dev` in #60.
   Independent of Plan 029.
 - **Category**: catalog / skills / licensing
 - **Branch**: `feat/licence-aware-skill-adaptation` (cut fresh from `dev` when authorized)
@@ -74,7 +76,7 @@ Claude Code (verified 2026-09-28: a scratch install of `backend-distributed-syst
 `.claude/skills/supabase-backend-architecture/` with only `SKILL.md`). This already affects a
 dozen shipped skills (the Plan 025 exemplars, `brand-identity`'s scripts, and others). Plan 030
 depends on it because an adapted skill's runbook will live in `references/`. This is a bug and
-ships as its own fix PR ahead of this plan; Plan 030 only re-checks it in Gate 5.
+shipped as its own fix (#60, merged 2026-09-28); Plan 030 only re-checks it in Gate 5.
 
 ## Objective
 
