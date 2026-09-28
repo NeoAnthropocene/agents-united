@@ -18,7 +18,7 @@ import type { ClaudeActivationPlan } from './core/claude-launcher.js';
 import { ClaudeCapabilityProbe } from './core/claude-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
-import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS } from './core/hosts.js';
+import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
 const cli = cac('agents-united');
@@ -327,7 +327,7 @@ cli
     let scope: InstallScope = options.global ? 'global' : 'project';
     let method: InstallMethod = options.copy ? 'copy' : 'symlink';
     let hosts: AgentHost[] = options.target
-      ? (Array.isArray(options.target) ? options.target : options.target.split(',')).map(
+      ? (Array.isArray(options.target) ? options.target : splitHostList(String(options.target))).map(
           (h: string) => h.trim().toLowerCase()
         )
       : ['agents'];
@@ -359,7 +359,7 @@ cli
     // projection-capable host ids are honored. Warn + drop invalid ids, never a silent cast.
     let fanout: string[] = flagPlan.fanout;
     if (options.fanout) {
-      const rawFanout: string[] = Array.isArray(options.fanout) ? options.fanout : String(options.fanout).split(',');
+      const rawFanout: string[] = Array.isArray(options.fanout) ? options.fanout : splitHostList(String(options.fanout));
       const parsedFanout: string[] = rawFanout.map((h: string) => h.trim().toLowerCase());
       const invalidFanout: string[] = parsedFanout.filter(h => !isKnownHost(h) || !HOST_REGISTRY[h].projectionCapable);
       if (invalidFanout.length > 0) {
@@ -1152,7 +1152,7 @@ cli
     // unknown/non-projection-capable ids are dropped with a warning.
     let updateFanout: string[] | undefined;
     if (options.fanout !== undefined) {
-      const rawFanout: string[] = Array.isArray(options.fanout) ? options.fanout : String(options.fanout).split(',');
+      const rawFanout: string[] = Array.isArray(options.fanout) ? options.fanout : splitHostList(String(options.fanout));
       const parsedFanout: string[] = rawFanout.map((h: string) => h.trim().toLowerCase()).filter(Boolean);
       const invalidFanout: string[] = parsedFanout.filter(h => !isKnownHost(h) || !HOST_REGISTRY[h].projectionCapable);
       if (invalidFanout.length > 0) {
@@ -2212,7 +2212,7 @@ cli
     s.start(`Initializing workspace with bundle "${options.bundle}"...`);
 
     try {
-      const initTargets = (Array.isArray(options.target) ? options.target : String(options.target || 'agents').split(','))
+      const initTargets = (Array.isArray(options.target) ? options.target : splitHostList(String(options.target || 'agents')))
         .map((h: string) => h.trim().toLowerCase());
       const initPlan = planInstallTargets(initTargets);
       const result = await installer.install(options.bundle, {

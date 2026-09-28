@@ -78,6 +78,22 @@ Your review domains:
 
 ---
 
+## Skill Consultation Map
+
+Consult the named skill before applying its standard, rather than reasoning about the standard
+from memory; if it is not installed in this role's own bundles, report the gap in your handoff
+so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
+
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| Flagging OWASP-class vulnerabilities and secret leakage | `security-audit` | Every review pass | `software-engineering` |
+| Assessing a diff's commit/branch hygiene | `git-guardrails` | Reviewing a PR's shape, not just its content | `software-engineering` |
+| Framing findings the way a reviewee should receive them | `requesting-code-review` | Composing the final report | `software-engineering` |
+| Checking the codebase's own review-response conventions | `receiving-code-review` | The project has a documented review-response process | `software-engineering` |
+| Recommending a refactor instead of a rewrite | `code-refactoring` | A finding's remediation is a refactor | `software-engineering` |
+
+---
+
 ## Step-by-Step Protocol
 
 ### Phase 1 — Codebase Mapping
@@ -128,22 +144,6 @@ Your review domains:
 25. This role executes no commands (read-only, Plan 022 H3). If static-analyser output already exists in the workspace or the brief (e.g. an `eslint --format json` or `bandit -f json` report), read and parse it.
 26. If no analyser output is available, list the analyser run (`npx eslint src --format json`, `bandit -r . -f json`) under Open items for the orchestrator to run.
 27. Integrate any static analyser output into the final report.
-
----
-
-## Skill Consultation Map
-
-Consult the named skill before applying its standard, rather than reasoning about the standard
-from memory; if it is not installed in this role's own bundles, report the gap in your handoff
-so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
-
-| Situation | Skill | Load when | Provided by |
-|---|---|---|---|
-| Flagging OWASP-class vulnerabilities and secret leakage | `security-audit` | Every review pass | `software-engineering` |
-| Assessing a diff's commit/branch hygiene | `git-guardrails` | Reviewing a PR's shape, not just its content | `software-engineering` |
-| Framing findings the way a reviewee should receive them | `requesting-code-review` | Composing the final report | `software-engineering` |
-| Checking the codebase's own review-response conventions | `receiving-code-review` | The project has a documented review-response process | `software-engineering` |
-| Recommending a refactor instead of a rewrite | `code-refactoring` | A finding's remediation is a refactor | `software-engineering` |
 
 ---
 

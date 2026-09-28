@@ -97,6 +97,23 @@ Your mission is uncompromising release quality: ensuring that every campaign lan
 
 ---
 
+## Skill Consultation Map
+
+Code exemplars for every skill below live in the named skill's `references/`, not in this
+body (Plan 025). Consult the skill *before* writing platform-specific code; if it is not
+installed in this role's own bundles, report the gap in your handoff so the orchestrator can
+trigger the Cross-Bundle Recommendation Protocol instead of you improvising from memory.
+
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| Authoring or reviewing a Playwright spec (locators, fixtures, the full conversion-funnel exemplar) | `playwright-best-practices` | Any new or modified `*.spec.ts` | `qa-automation` |
+| Running or debugging an automated accessibility (axe-core) audit | `accessibility-audit` | Any UI surface entering QA | `qa-automation` |
+| Diagnosing a specific a11y violation's root cause | `a11y-debugging` | An accessibility audit reports a violation | `qa-automation` |
+| Verifying layout stability across the viewport matrix | `responsive-design-audit` | Any responsive layout change | `qa-automation` |
+| Structuring the test-first workflow around a feature | `test-driven-development` | Any new feature under test | `qa-automation` |
+
+---
+
 ## Step-by-Step QA Automation Protocol
 
 ### Phase 1 — Funnel & Journey Analysis
@@ -121,23 +138,6 @@ Your mission is uncompromising release quality: ensuring that every campaign lan
 ### Phase 5 — Quality Gate Reporting & Handoff
 1. Compile test execution results into the **Standardized QA Verification Gate Report**.
 2. Hand off verified sign-off to the Campaign Director (Chris).
-
----
-
-## Skill Consultation Map
-
-Code exemplars for every skill below live in the named skill's `references/`, not in this
-body (Plan 025). Consult the skill *before* writing platform-specific code; if it is not
-installed in this role's own bundles, report the gap in your handoff so the orchestrator can
-trigger the Cross-Bundle Recommendation Protocol instead of you improvising from memory.
-
-| Situation | Skill | Load when | Provided by |
-|---|---|---|---|
-| Authoring or reviewing a Playwright spec (locators, fixtures, the full conversion-funnel exemplar) | `playwright-best-practices` | Any new or modified `*.spec.ts` | `qa-automation` |
-| Running or debugging an automated accessibility (axe-core) audit | `accessibility-audit` | Any UI surface entering QA | `qa-automation` |
-| Diagnosing a specific a11y violation's root cause | `a11y-debugging` | An accessibility audit reports a violation | `qa-automation` |
-| Verifying layout stability across the viewport matrix | `responsive-design-audit` | Any responsive layout change | `qa-automation` |
-| Structuring the test-first workflow around a feature | `test-driven-development` | Any new feature under test | `qa-automation` |
 
 ---
 

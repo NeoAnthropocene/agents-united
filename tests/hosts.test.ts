@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
-import { HOST_REGISTRY, KNOWN_HOST_IDS, isKnownHost, planInstallTargets, SUPPORTED_HOST_IDS, UNDER_DEVELOPMENT_HOST_IDS, PLANNED_HOSTS, hostAvailabilityNotice } from '../src/core/hosts.js';
+import { HOST_REGISTRY, KNOWN_HOST_IDS, isKnownHost, planInstallTargets, SUPPORTED_HOST_IDS, UNDER_DEVELOPMENT_HOST_IDS, PLANNED_HOSTS, hostAvailabilityNotice, splitHostList } from '../src/core/hosts.js';
 import { AgentHostAdapter } from '../src/core/adapter.js';
 
 describe('Host Registry', () => {
@@ -157,5 +157,26 @@ describe('Host availability (product focus: Antigravity, Cline, Claude Code)', (
     for (const host of Object.values(HOST_REGISTRY)) {
       expect(['supported', 'under-development']).toContain(host.status);
     }
+  });
+});
+
+describe('splitHostList (owner field test, 2026-09-28)', () => {
+  it('splits a comma-separated value', () => {
+    expect(splitHostList('claude,cline')).toEqual(['claude', 'cline']);
+  });
+
+  it('splits a Windows-PowerShell-mangled value (comma flattened to a space by the shell)', () => {
+    // PowerShell parses an unquoted `claude,cline` as an array literal, then flattens it to
+    // a single space-joined argument when invoking a native command — the comma never reaches
+    // Node. Observed live: `--fanout claude,cline` arrived here as `--fanout "claude cline"`.
+    expect(splitHostList('claude cline')).toEqual(['claude', 'cline']);
+  });
+
+  it('tolerates mixed separators and stray whitespace', () => {
+    expect(splitHostList(' claude ,, cline  opencode ')).toEqual(['claude', 'cline', 'opencode']);
+  });
+
+  it('returns an empty array for an empty value', () => {
+    expect(splitHostList('')).toEqual([]);
   });
 });

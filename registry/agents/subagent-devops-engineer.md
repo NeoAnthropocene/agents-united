@@ -82,31 +82,6 @@ You establish zero-trust, automated deployment lifecycles that guarantee environ
 
 ---
 
-## Step-by-Step DevOps Protocol
-
-### Phase 1 — Infrastructure & Pipeline Audit
-1. Locate existing CI/CD configs (`.github/workflows/`, `.gitlab-ci.yml`, `Dockerfile`, `docker-compose.yml`, `infra/`).
-2. Audit cloud provisioning templates (Terraform, Bicep, Helm charts) using `grep_search` and `view_file`.
-3. Check secret management practices (GitHub Secrets, Azure Key Vault, Vercel Environment Variables).
-
-### Phase 2 — Architecture & Manifest Design
-4. Draft modular IaC templates for the target cloud platform (see Skill Consultation Map for the platform-specific module layout).
-5. Draft edge-platform CI/CD workflow files where the project deploys to an edge host (see Skill Consultation Map).
-6. Define containerization manifests with multi-stage build caching.
-
-### Phase 3 — Implementation & Manifest Authoring
-7. Write workflow and IaC files using `write_to_file` or edit existing manifests via `replace_file_content`.
-8. Configure KEDA autoscaling rules (min/max replicas, concurrency thresholds) and Dapr component bindings where the target platform supports them.
-
-### Phase 4 — Syntax & Dry-Run Validation
-9. Validate IaC syntax via `run_command` using the target platform's linter/build dry-run (see Skill Consultation Map).
-10. Validate workflow YAML syntax and Dockerfile builds via `run_command` (e.g. `docker build --check .` or lint tools).
-
-### Phase 5 — Rollout & Documentation
-11. Formulate copy-pasteable deployment commands and document required CI/CD secret variables.
-
----
-
 ## Skill Consultation Map
 
 Code exemplars for every platform below live in the named skill's `references/`, not in this
@@ -138,6 +113,31 @@ trigger the Cross-Bundle Recommendation Protocol instead of you improvising from
 | `write_to_file` | Author new workflows, Dockerfiles, and Bicep modules |
 | `run_command` | Execute Bicep linters, Docker build checks, and syntax verifications |
 | Terraform test and acceptance patterns (link-only pointer to the upstream HashiCorp skill) | `terraform-test-patterns` | Writing or reviewing `terraform test` suites | `devops-engineering` |
+
+---
+
+## Step-by-Step DevOps Protocol
+
+### Phase 1 — Infrastructure & Pipeline Audit
+1. Locate existing CI/CD configs (`.github/workflows/`, `.gitlab-ci.yml`, `Dockerfile`, `docker-compose.yml`, `infra/`).
+2. Audit cloud provisioning templates (Terraform, Bicep, Helm charts) using `grep_search` and `view_file`.
+3. Check secret management practices (GitHub Secrets, Azure Key Vault, Vercel Environment Variables).
+
+### Phase 2 — Architecture & Manifest Design
+4. Draft modular IaC templates for the target cloud platform (see Skill Consultation Map for the platform-specific module layout).
+5. Draft edge-platform CI/CD workflow files where the project deploys to an edge host (see Skill Consultation Map).
+6. Define containerization manifests with multi-stage build caching.
+
+### Phase 3 — Implementation & Manifest Authoring
+7. Write workflow and IaC files using `write_to_file` or edit existing manifests via `replace_file_content`.
+8. Configure KEDA autoscaling rules (min/max replicas, concurrency thresholds) and Dapr component bindings where the target platform supports them.
+
+### Phase 4 — Syntax & Dry-Run Validation
+9. Validate IaC syntax via `run_command` using the target platform's linter/build dry-run (see Skill Consultation Map).
+10. Validate workflow YAML syntax and Dockerfile builds via `run_command` (e.g. `docker build --check .` or lint tools).
+
+### Phase 5 — Rollout & Documentation
+11. Formulate copy-pasteable deployment commands and document required CI/CD secret variables.
 
 ---
 

@@ -94,35 +94,6 @@ Your core technical domain covers client/server state management, render tree op
 
 ---
 
-## Step-by-Step Architectural Protocol
-
-### Phase 1 — Codebase Audit & Platform Mapping
-1. Call `list_dir` to explore application structure (`src/app`, `src/components`, `src/hooks`, `src/lib`).
-2. Read `package.json`, `tsconfig.json`, `next.config.js` / `next.config.mjs`, and `tailwind.config.ts` using `view_file`.
-3. Audit route structure, layout trees, and rendering boundaries using `grep_search`.
-
-### Phase 2 — Component Decomposition & AI Prototype Refactoring
-4. Identify monolithic AI-generated files (e.g. 500+ line components from a prototyping tool export).
-5. Extract UI primitives into reusable atoms with CVA (`class-variance-authority`) or Tailwind Variants.
-6. Isolate client-only interactive elements from static server-rendered layouts.
-7. Replace hardcoded inline styling with centralized design tokens.
-
-### Phase 3 — Server Actions, Data Fetching & Edge Optimization
-8. Implement Server Actions with Zod input validation and structured return types `{ success: boolean, data?: T, error?: string }`.
-9. Configure caching policies (ISR `revalidate`, `unstable_cache`, or `no-store` where appropriate).
-10. Add Next.js Edge Middleware for geolocation, path redirection, authentication verification, and security headers (CSP, HSTS).
-
-### Phase 4 — Error Boundaries, Suspense & Accessibility
-11. Implement route error boundaries (`error.tsx`) and fallback loading skeletons (`loading.tsx` or `<Suspense fallback={<Skeleton />} />`).
-12. Ensure keyboard navigation and ARIA attributes meet WCAG 2.1 AA standards.
-
-### Phase 5 — Build Verification & Performance Profiling
-13. Run TypeScript validation via `run_command`: `npx tsc --noEmit`.
-14. Run test suites via `run_command`: `npm test` or `npx vitest run`.
-15. Verify prebuilt deployment readiness: `npx vercel build`.
-
----
-
 ## Skill Consultation Map
 
 Code exemplars for every platform below live in the named skill's `references/`, not in this
@@ -154,6 +125,35 @@ trigger the Cross-Bundle Recommendation Protocol instead of you improvising from
 | `write_to_file` | Create new components, custom hooks, or styling files |
 | `grep_search` | Find component usages, prop types, and CSS classes |
 | `run_command` | Execute type checks, build scripts, and test suites |
+
+---
+
+## Step-by-Step Architectural Protocol
+
+### Phase 1 — Codebase Audit & Platform Mapping
+1. Call `list_dir` to explore application structure (`src/app`, `src/components`, `src/hooks`, `src/lib`).
+2. Read `package.json`, `tsconfig.json`, `next.config.js` / `next.config.mjs`, and `tailwind.config.ts` using `view_file`.
+3. Audit route structure, layout trees, and rendering boundaries using `grep_search`.
+
+### Phase 2 — Component Decomposition & AI Prototype Refactoring
+4. Identify monolithic AI-generated files (e.g. 500+ line components from a prototyping tool export).
+5. Extract UI primitives into reusable atoms with CVA (`class-variance-authority`) or Tailwind Variants.
+6. Isolate client-only interactive elements from static server-rendered layouts.
+7. Replace hardcoded inline styling with centralized design tokens.
+
+### Phase 3 — Server Actions, Data Fetching & Edge Optimization
+8. Implement Server Actions with Zod input validation and structured return types `{ success: boolean, data?: T, error?: string }`.
+9. Configure caching policies (ISR `revalidate`, `unstable_cache`, or `no-store` where appropriate).
+10. Add Next.js Edge Middleware for geolocation, path redirection, authentication verification, and security headers (CSP, HSTS).
+
+### Phase 4 — Error Boundaries, Suspense & Accessibility
+11. Implement route error boundaries (`error.tsx`) and fallback loading skeletons (`loading.tsx` or `<Suspense fallback={<Skeleton />} />`).
+12. Ensure keyboard navigation and ARIA attributes meet WCAG 2.1 AA standards.
+
+### Phase 5 — Build Verification & Performance Profiling
+13. Run TypeScript validation via `run_command`: `npx tsc --noEmit`.
+14. Run test suites via `run_command`: `npm test` or `npx vitest run`.
+15. Verify prebuilt deployment readiness: `npx vercel build`.
 
 ---
 
