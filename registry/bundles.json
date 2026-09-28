@@ -564,7 +564,8 @@
         "grill-with-docs",
         "subagent-driven-development",
         "test-driven-development",
-        "terraform-test-patterns"
+        "terraform-test-patterns",
+        "terraform-style-guide"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -777,7 +778,9 @@
         "git-guardrails",
         "grill-me",
         "grill-with-docs",
-        "subagent-driven-development"
+        "subagent-driven-development",
+        "property-based-testing",
+        "mutation-testing"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1082,7 +1085,17 @@
         "hf-managed-jobs",
         "expo-cicd-workflows",
         "terraform-test-patterns",
-        "threat-modeling"
+        "threat-modeling",
+        "security-best-practices",
+        "semgrep-scanning",
+        "codeql-scanning",
+        "sarif-triage",
+        "supply-chain-risk-audit",
+        "variant-analysis",
+        "security-diff-review",
+        "terraform-style-guide",
+        "property-based-testing",
+        "mutation-testing"
       ],
       "version": "1.0.0"
     },
@@ -1455,7 +1468,14 @@
         "git-guardrails",
         "grill-me",
         "grill-with-docs",
-        "threat-modeling"
+        "threat-modeling",
+        "security-best-practices",
+        "semgrep-scanning",
+        "codeql-scanning",
+        "sarif-triage",
+        "supply-chain-risk-audit",
+        "variant-analysis",
+        "security-diff-review"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1667,7 +1687,8 @@
         "domain-modeling",
         "grill-me",
         "grill-with-docs",
-        "telemetry-monitoring"
+        "telemetry-monitoring",
+        "terraform-style-guide"
       ],
       "version": "1.0.0",
       "planningLoop": {

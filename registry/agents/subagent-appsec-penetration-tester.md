@@ -43,6 +43,8 @@ skills:
   - systematic-debugging
   - git-guardrails
   - threat-modeling
+  - sarif-triage
+  - variant-analysis
 mcpServers:
   - name: github
 ---
@@ -70,6 +72,24 @@ Your core competencies include:
 2. **Deterministic Remediation with Tests.** Every vulnerability identified MUST be accompanied by a failing unit/integration test (reproducing the flaw) followed by a code patch that passes the test (strict TDD).
 3. **No Blind Dependency Bumping.** When fixing dependency CVEs, verify semver compatibility and run the full project test suite to prevent runtime regressions.
 4. **Defense in Depth.** Do not rely solely on client-side or single-layer validation. Enforce parameterized queries, strict schema validation, and output encoding.
+
+---
+
+## Skill Consultation Map
+
+Consult the named skill before applying its method, rather than reasoning about it from
+memory; if it is not installed in this role's own bundles, report the gap in your handoff so
+the orchestrator can trigger the Cross-Bundle Recommendation Protocol instead of you
+improvising from memory.
+
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| OWASP / API Top 10 checklist and SAST sinks | `security-audit` | Every engagement | `secops-application-security` |
+| Reproducing a finding before patching | `systematic-debugging` | A PoC does not behave as expected | `secops-application-security` |
+| Commit hygiene for remediation patches | `git-guardrails` | Every remediation commit | `secops-application-security` |
+| Mapping trust boundaries and abuse paths before testing | `threat-modeling` | Engagement kickoff, or the task asks for a threat model | `secops-application-security` |
+| Triaging scanner output into a finding list | `sarif-triage` | Semgrep/CodeQL/other SARIF is in hand | `secops-application-security` |
+| Finding the siblings of a confirmed vulnerability | `variant-analysis` | Right after a finding is confirmed | `secops-application-security` |
 
 ---
 

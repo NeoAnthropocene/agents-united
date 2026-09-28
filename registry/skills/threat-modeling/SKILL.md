@@ -1,132 +1,136 @@
 ---
 name: threat-modeling
-description: Points to Trail of Bits' official threat-modeling and security
-  research skills rather than vendoring them, because their skill sets are
-  CC-BY-SA-4.0-licensed (ShareAlike). Use when the user needs repository-
-  grounded threat modeling — trust boundaries, abuse paths, adversarial
-  review — and can install the upstream skill directly, or wants a summary of
-  what it covers and where to get it.
+description: Repository-grounded threat modeling that maps components, trust
+  boundaries, assets and attacker capabilities, then ranks concrete abuse
+  paths with mitigations and writes a Markdown threat model. Use only when
+  someone explicitly asks to threat model a codebase or path, enumerate
+  threats or abuse paths, or run an AppSec threat-modeling pass; not for
+  general architecture summaries or ordinary code review.
 metadata:
-  author: agents-united
-  version: 1.0.0
-  source: https://github.com/trailofbits/skills
-  commit: 0cc1c73a5e96749ab32d7ea5e14892fafa6972ae
-  license: CC-BY-SA-4.0 (upstream licence; this stub's own text is original
-    agents-united commentary, not vendored upstream content — see Overview)
-  icon: 🔗
+  author: OpenAI (via Trail of Bits skills-curated) / agents-united
+  version: 2.0.0
+  source: https://github.com/trailofbits/skills-curated/tree/6d05be4889017b06fb15069f371afd220daffb62/plugins/openai-security-threat-model
+  commit: 6d05be4889017b06fb15069f371afd220daffb62
+  license: Apache-2.0
+  icon: 🧭
 disable-slash-command: true
 ---
 
-# Threat Modeling — Link-Only Stub (Licence Blocked)
+# Threat Modeling
 
 ## Overview & Purpose
-This skill intentionally does **not** vendor Trail of Bits' threat-modeling
-content. Their skills repositories — `github.com/trailofbits/skills` (their
-own authored security-research skills) and `github.com/trailofbits/skills-
-curated` (a marketplace of skills curated *from* other sources, including a
-Claude-Code-plugin conversion of an OpenAI-originated threat-model skill) —
-are licensed under **Creative Commons Attribution-ShareAlike 4.0
-(CC-BY-SA-4.0)**. ShareAlike requires any adaptation to be re-licensed under
-a compatible CC-BY-SA licence, which this MIT-style catalog does not do for
-its skill content (per the "Skill & Agent Contribution Standard" in
-`README.md`, which vendors under MIT/Apache-2.0/BSD/CC-BY only — CC-BY-SA's
-copyleft clause is explicitly excluded). Rather than copy-adapting
-ShareAlike-encumbered material into an incompatible licence, this stub
-describes what the upstream skills cover and how to reach them directly.
+Produces an AppSec-grade threat model that is specific to one repository (or one
+path inside it), not a generic checklist. Every architectural claim is tied to an
+evidence anchor in the repo, assumptions are explicit, and the output ranks a small
+number of realistic abuse paths by likelihood and impact.
+
+Adapted from the Apache-2.0 `openai-security-threat-model` skill that Trail of Bits
+curates; see `NOTICE.md` for what changed. Boundaries against neighbouring skills:
+- `security-audit` is an OWASP/SAST checklist over code. Use it to *find bugs*; use
+  this skill to decide *where bugs would matter* before or alongside that pass.
+- `security-best-practices` reviews code against language/framework guidance.
+- `security-diff-review` reviews one change; this skill models the whole system.
 
 ## Execution Triggers & Prerequisites
 ### Execution Triggers
-- The user asks for a threat model of a service: trust boundaries, abuse
-  paths, adversarial review of a design or codebase.
-- A security review needs Trail-of-Bits-calibre depth (their skill set also
-  covers constant-time analysis, smart-contract auditing, and variant
-  analysis) beyond this catalog's generic `security-audit` skill.
+- "Threat model this repo / service / directory", "what are the abuse paths", "map
+  the trust boundaries", or an orchestrator task that names threat modeling.
+- A design review of a new internet-facing component where the reviewer asks for
+  attacker goals, not a code audit.
 
 ### Prerequisites
-- None to read this stub. Installing the upstream skill set requires the
-  user's own tooling and accepting CC-BY-SA-4.0 for that content directly.
+- Read access to the repository. No tools beyond file reading and search are needed.
+- Context about deployment, exposure and data sensitivity if available; otherwise it
+  is inferred and marked as an assumption.
 
 ## Input & Output Requirements
 ### Inputs
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| none | — | — | This is a pointer skill; it takes no inputs of its own |
+| Repo root / in-scope paths | path(s) | Yes | What to model; everything else is explicitly out of scope |
+| Intended usage and deployment | text | No | Server, CLI, library, worker; internet exposure; tenancy |
+| Existing summaries or specs | files | No | Architecture docs to reuse instead of re-deriving |
 
 ### Outputs
 | Artifact | Path / Format | Description |
 |---|---|---|
-| Pointer | This document | Where the real content lives and why it isn't vendored here |
+| Threat model | `<repo-or-dir-name>-threat-model.md` | Output contract in [references/prompt-template.md](references/prompt-template.md) |
+| Assumption questions | Handoff report | 1–3 questions that change the ranking, asked before the final write |
 
 ## Step-by-Step Execution Runbook
 
-### Phase 1 — Recognize the Need
-1. When a task calls for structured threat modeling (trust boundaries, abuse
-   paths, adversarial review), recognize this catalog does not vendor Trail
-   of Bits' specific methodology, and say so rather than improvising a
-   threat model that claims their pedigree.
+### Phase 1 — Scope and system model
+1. Summarise the repo with the repository-summary prompt in
+   [references/prompt-template.md](references/prompt-template.md).
+2. List components, data stores, external integrations and entrypoints. Separate
+   runtime behaviour from CI/build/dev tooling and from tests/examples.
+3. Never claim a component, flow or control without an evidence anchor (path plus
+   symbol, config key or short quote).
 
-### Phase 2 — Point to the Real Source
-1. Direct the user to `github.com/trailofbits/skills` for Trail of Bits'
-   own-authored security-research skills (static analysis, variant analysis,
-   differential review, insecure-defaults detection), and to
-   `github.com/trailofbits/skills-curated/plugins/openai-security-threat-
-   model` for their curated conversion of a repository-grounded threat-model
-   skill — both under CC-BY-SA-4.0.
-2. If the user's own tooling supports it, they can install either directly
-   under CC-BY-SA-4.0's own terms (attribution + ShareAlike on their own
-   derivative work) — this repository does not need to, and does not,
-   re-host that content.
+### Phase 2 — Boundaries, assets, entry points
+1. Enumerate trust boundaries as concrete edges: source, destination, data crossing,
+   protocol, and the auth/validation/rate limiting on that edge.
+2. List the assets that drive risk (credentials, PII, integrity-critical state, build
+   artifacts). [references/security-controls-and-assets.md](references/security-controls-and-assets.md)
+   is an optional prompt list.
+3. Describe realistic attacker capabilities and, just as explicitly, non-capabilities.
 
-### Phase 3 — Offer What This Catalog *Does* Cover
-1. For a general, non-Trail-of-Bits-branded security pass, point to this
-   catalog's own `security-audit` skill (OWASP Top 10 / SAST checklist,
-   agents-united-authored) and, for edge/Workers apps specifically, the
-   `edge-security-audit` skill (adapted from Cloudflare's MIT-licensed
-   `security-audit-skill`).
-2. State clearly that neither of those is a substitute for Trail of Bits'
-   specific adversarial-review methodology if that depth is what was asked
-   for — send the user to the real source instead of approximating it.
+### Phase 3 — Abuse paths and ranking
+1. Write threats as multi-step abuse paths tied to an entry point, a boundary and an
+   asset. Keep the list short and high quality.
+2. Rate likelihood and impact (low/medium/high) with one or two sentences each; set
+   priority (critical/high/medium/low) from likelihood × impact, adjusted for
+   existing controls. Name the assumptions that move the ranking most.
 
-## Code & Configuration Exemplars
+### Phase 4 — Validate context before finalising
+1. Report the key assumptions and 1–3 targeted questions (owner, exposure, tenancy,
+   data sensitivity) to the orchestrator, and wait for the answers.
+2. If they cannot be answered, proceed and mark conditional conclusions as such.
 
-### Exemplar 1: Where the Real Content Lives (illustrative, not vendored)
-```text
-Trail of Bits' own skills:      https://github.com/trailofbits/skills
-Curated threat-model skill:     https://github.com/trailofbits/skills-curated
-                                 (plugins/openai-security-threat-model)
-Licence for both: CC-BY-SA-4.0 — install and use under their own terms.
+### Phase 5 — Mitigations and write-up
+1. Separate existing mitigations (with evidence) from recommended ones; tie each to
+   a concrete location and control type.
+2. Run the quality check below, then write the file named in Outputs.
+
+## Code & Config Exemplars
+
+### Exemplar 1: One ranked abuse path
+```markdown
+### T3 — Cross-tenant read via unscoped export job (priority: high)
+- Entry point: `POST /api/exports` (src/routes/exports.ts `createExport`)
+- Boundary: API → worker queue (no tenant id re-check in `jobs/export.ts:41`)
+- Asset: other tenants' invoices (PII, contractual)
+- Likelihood: medium — any authenticated user can enqueue; ids are sequential.
+- Impact: high — full invoice history of another tenant.
+- Existing control: session auth on the route (src/middleware/auth.ts).
+- Recommended: re-derive tenant from the job's owner in the worker; random export ids.
 ```
 
-## Edge Cases & Error Recovery Procedures
+### Exemplar 2: Priority guide
+High: pre-auth RCE, auth bypass, cross-tenant access, key or token theft. Medium:
+targeted DoS of a critical component, partial data exposure, rate-limit bypass with
+real impact. Low: low-sensitivity leaks, noisy DoS with easy mitigation.
 
-### Scenario A: User Expects Full Threat-Modeling Content Here
-1. **Diagnosis**: The user assumed this skill name meant vendored content, as
-   with the other addon skills in this bundle.
-2. **Recovery Protocol**:
-   - Step 1: Explain plainly that this entry is a link-only stub due to
-     licence terms (CC-BY-SA-4.0's ShareAlike clause), not an oversight.
-   - Step 2: Point to the upstream repositories and this catalog's own
-     `security-audit`/`edge-security-audit` skills for what generic guidance
-     is available here.
+## Edge Cases & Error Recovery
 
-### Scenario B: A Future Contributor Wants to Vendor It Anyway
-1. **Diagnosis**: Someone proposes copying Trail of Bits' CC-BY-SA-4.0
-   content verbatim into this MIT-style catalog.
-2. **Recovery Protocol**:
-   - Step 1: This requires either relicensing this catalog entry (and,
-     under ShareAlike, arguably adjacent derivative material) under a
-     CC-BY-SA-compatible licence, or obtaining explicit permission from
-     Trail of Bits — neither is a change to make unilaterally in a routine
-     skill-authoring pass.
-   - Step 2: Re-run this plan's Step 0 licence check before changing this
-     skill's disposition.
+### Scenario A: The repo is a library, not a service
+1. **Diagnosis**: No listeners or deployment; "attacker" is whoever controls inputs.
+2. **Recovery Protocol**: Model the caller as the boundary; attacker-controlled
+   inputs are the library's parsers and public API; downgrade network-only threats.
 
-## Verification & Validation Checklist
-- [ ] This stub makes no claim to have vendored Trail of Bits' threat-
-      modeling content.
-- [ ] `metadata.source` points to the real upstream repository/repositories.
-- [ ] The stub explains, in plain terms, why the content is not here
-      (CC-BY-SA-4.0 ShareAlike, not on the catalog's redistribution
-      allow-list).
-- [ ] No commands, tools, or methodology are invented and attributed to
-      Trail of Bits in place of the real upstream content.
+### Scenario B: No answers to the assumption questions
+1. **Diagnosis**: The orchestrator or user cannot confirm exposure or tenancy.
+2. **Recovery Protocol**: State the assumption in the report, show how the ranking
+   changes if it is wrong, and mark those recommendations conditional.
+
+### Scenario C: Secrets found during discovery
+1. **Recovery Protocol**: Never print them. Record presence and location only.
+
+## Verification Checklist
+- [ ] Every discovered entrypoint and every trust boundary appears in at least one threat.
+- [ ] Runtime, CI/build and test code are separated.
+- [ ] Every architectural claim has an evidence anchor.
+- [ ] Assumptions and open questions are explicit; answers are reflected.
+- [ ] The report follows the output contract in `references/prompt-template.md`,
+      including one Mermaid diagram that renders.
+- [ ] No secrets appear in the output.

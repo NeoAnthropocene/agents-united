@@ -13,9 +13,14 @@
 
 ## Status
 
-- **State**: APPROVED — 2026-09-28. Owner confirmed the licence reading and the tier table
-  (Step 0 a) and kept the full 12-skill shortlist (Step 0 b). Only Step 0 c (re-read each
-  licence at the pinned SHA) remains before Step 1.
+- **State**: DONE — 2026-09-28. Step 0 c re-read every licence at the pinned SHAs; all
+  twelve matched this plan (the two `openai-*` plugins Apache-2.0 via their own `LICENSE`,
+  HashiCorp MPL-2.0, Trail of Bits CC-BY-SA-4.0 at the root with no per-plugin override).
+  Upstream has since moved (`trailofbits/skills` → `82fe822…`, `hashicorp/agent-skills` →
+  `f706481…`); adaptations stay pinned to the SHAs below. Wiring note: `security-engineer`
+  and `qa-automation-lead` also ship in bundles that do not carry the new skills, so they
+  reach them through Skill Consultation Map rows rather than `skills:` frontmatter
+  (`tests/bundle-skill-refs.test.ts`).
 - **Priority**: P2 · **Effort**: M · **Risk**: Medium (licence compliance; the catalog
   starts carrying non-MIT files)
 - **Depends on**: the Claude projector fix for nested skill folders (see § Prerequisite) —
