@@ -732,16 +732,16 @@ export class ClaudeProjector {
         content: ClaudeProjector.renderSkill(await fs.readFile(skillFile, 'utf8'), canonicalRel).content,
         managedMarker: true,
       });
-      const entries = (await fs.readdir(skillDir, { withFileTypes: true }))
-        .filter(entry => entry.name !== 'SKILL.md')
-        .sort((a, b) => a.name.localeCompare(b.name));
-      for (const entry of entries) {
-        if (!entry.isFile()) continue; // nested resource dirs are out of v1 scope (none exist today)
+      // Recursive: `references/`, `scripts/` (and deeper, e.g. `scripts/lib/`) must reach Claude
+      // Code too, matching the Cline lane and the canonical `.agents/` store.
+      const resourceRels = (await ClaudeProjector.listSkillResources(skillDir))
+        .filter(rel => rel !== 'SKILL.md');
+      for (const rel of resourceRels) {
         artifacts.push({
           kind: 'skill',
-          canonical: `skills/${skillName}/${entry.name}`,
-          relPath: `.claude/skills/${normalized}/${entry.name}`,
-          sourceFilePath: path.join(skillDir, entry.name),
+          canonical: `skills/${skillName}/${rel}`,
+          relPath: `.claude/skills/${normalized}/${rel}`,
+          sourceFilePath: path.join(skillDir, ...rel.split('/')),
           managedMarker: false,
         });
       }
@@ -765,6 +765,20 @@ export class ClaudeProjector {
     }
 
     return artifacts;
+  }
+
+  /**
+   * Every file under a skill folder, as sorted POSIX-style paths relative to it
+   * (deterministic across platforms, so projection plans and lockfile keys never differ).
+   */
+  private static async listSkillResources(skillDir: string, prefix = ''): Promise<string[]> {
+    const out: string[] = [];
+    for (const entry of await fs.readdir(path.join(skillDir, ...prefix.split('/').filter(Boolean)), { withFileTypes: true })) {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) out.push(...await ClaudeProjector.listSkillResources(skillDir, rel));
+      else if (entry.isFile()) out.push(rel);
+    }
+    return out.sort((a, b) => a.localeCompare(b));
   }
 
   /** Claude plugin package name rule; every bundle in `registry/bundles.json` satisfies it today. */
