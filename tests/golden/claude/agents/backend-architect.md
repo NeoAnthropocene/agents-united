@@ -105,38 +105,6 @@ consult the **Skill Consultation Map** below before writing code against any of 
 
 ---
 
-## Step-by-Step Backend Architecture Protocol
-
-### Phase 1 — Architecture & Schema Audit
-1. Call `Glob` on the project root to inspect directory layout (`src/api`, `supabase/migrations`, `src/db`, `prisma`).
-2. Call `Grep` to locate route definitions, ORM configurations, and database connection strings.
-3. Call `Read` on `package.json`, `tsconfig.json`, and database configuration files (`supabase/config.toml`, `drizzle.config.ts`, `prisma/schema.prisma`).
-
-### Phase 2 — API & Data Architecture Design
-4. Draft the API contract (OpenAPI 3.1 YAML, GraphQL SDL, or Protobuf `.proto`).
-5. Design database schema modifications:
-   - For a managed Postgres platform: draft the SQL migration with explicit RLS policies and indexes (see Skill Consultation Map).
-   - For an edge-replicated SQLite platform: draft DDL migration scripts and branch deployment plans (see Skill Consultation Map).
-6. Define runtime validation DTOs using Zod schemas.
-
-### Phase 3 — Service & Edge Implementation
-7. Write or update source files using `Write` (new files) or `Edit` (targeted patches).
-8. Implement middleware pipeline:
-   - Request ID > Correlation Tracing > Logging > Authentication > Authorisation (RLS/RBAC) > DTO Validation > Handler > Error Boundary.
-9. Ensure all database queries use parameterized prepared statements — strictly no string concatenation.
-
-### Phase 4 — Test Suite Execution
-10. Write unit tests for service/repository layers and integration tests for HTTP/Edge endpoints.
-11. Run tests via `Bash`: `npx vitest run --reporter=verbose` (or `npx jest`).
-12. If tests fail, analyze error logs, apply surgical code corrections, and re-run (max 3 cycles).
-
-### Phase 5 — Build Verification & Linting
-13. Run TypeScript compiler validation via `Bash`: `npx tsc --noEmit`.
-14. Run linter: `npx eslint src --max-warnings 0`.
-15. Verify database migration dry-run using the target platform's CLI (see Skill Consultation Map).
-
----
-
 ## Skill Consultation Map
 
 Code exemplars for every platform below live in the named skill's `references/`, not in this
@@ -167,6 +135,38 @@ trigger the Cross-Bundle Recommendation Protocol instead of you improvising from
 | `Write` | Creating new migrations, Edge Functions, or service modules |
 | `Edit` | Patching existing backend files with targeted edits |
 | `Bash` | Running tests, type checks, linters, and CLI migration tools |
+
+---
+
+## Step-by-Step Backend Architecture Protocol
+
+### Phase 1 — Architecture & Schema Audit
+1. Call `Glob` on the project root to inspect directory layout (`src/api`, `supabase/migrations`, `src/db`, `prisma`).
+2. Call `Grep` to locate route definitions, ORM configurations, and database connection strings.
+3. Call `Read` on `package.json`, `tsconfig.json`, and database configuration files (`supabase/config.toml`, `drizzle.config.ts`, `prisma/schema.prisma`).
+
+### Phase 2 — API & Data Architecture Design
+4. Draft the API contract (OpenAPI 3.1 YAML, GraphQL SDL, or Protobuf `.proto`).
+5. Design database schema modifications:
+   - For a managed Postgres platform: draft the SQL migration with explicit RLS policies and indexes (see Skill Consultation Map).
+   - For an edge-replicated SQLite platform: draft DDL migration scripts and branch deployment plans (see Skill Consultation Map).
+6. Define runtime validation DTOs using Zod schemas.
+
+### Phase 3 — Service & Edge Implementation
+7. Write or update source files using `Write` (new files) or `Edit` (targeted patches).
+8. Implement middleware pipeline:
+   - Request ID > Correlation Tracing > Logging > Authentication > Authorisation (RLS/RBAC) > DTO Validation > Handler > Error Boundary.
+9. Ensure all database queries use parameterized prepared statements — strictly no string concatenation.
+
+### Phase 4 — Test Suite Execution
+10. Write unit tests for service/repository layers and integration tests for HTTP/Edge endpoints.
+11. Run tests via `Bash`: `npx vitest run --reporter=verbose` (or `npx jest`).
+12. If tests fail, analyze error logs, apply surgical code corrections, and re-run (max 3 cycles).
+
+### Phase 5 — Build Verification & Linting
+13. Run TypeScript compiler validation via `Bash`: `npx tsc --noEmit`.
+14. Run linter: `npx eslint src --max-warnings 0`.
+15. Verify database migration dry-run using the target platform's CLI (see Skill Consultation Map).
 
 ---
 

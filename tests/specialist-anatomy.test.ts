@@ -118,6 +118,26 @@ describe('Specialist anatomy (Plan 025 Step 1, domain:engineering)', () => {
     );
   });
 
+  it.each(FILES)(
+    '%s puts the Skill Consultation Map before the Protocol section (owner field test, 2026-09-28)',
+    file => {
+      // A model spawned with a narrow, direct task prompt reads top-to-bottom and may act on
+      // the Protocol section before reaching a later Map — observed live: Sonnet 5 in Claude
+      // wrote code directly from the Protocol without consulting the map or reporting a skill
+      // gap, while the (correctly-ordered) thin roles did not show this failure mode. The plan's
+      // own anatomy (Objective 1) specifies Map before Protocol; this pins that order.
+      const body = readBody(file);
+      const mapIndex = body.search(/^## .*Skill Consultation Map/m);
+      const protocolIndex = body.search(/^## .*(Protocol|Execution)/m);
+      expect(mapIndex, `${file}: missing Skill Consultation Map`).toBeGreaterThanOrEqual(0);
+      expect(protocolIndex, `${file}: missing a Protocol/Execution section`).toBeGreaterThanOrEqual(0);
+      expect(
+        mapIndex,
+        `${file}: Skill Consultation Map (offset ${mapIndex}) must come before the Protocol section (offset ${protocolIndex})`
+      ).toBeLessThan(protocolIndex);
+    }
+  );
+
   it('no fenced code block in any engineering specialist body exceeds the lint threshold', () => {
     const violations: string[] = [];
     for (const file of FILES) {

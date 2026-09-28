@@ -64,6 +64,22 @@ You are the **AI Model Architect Subagent** operating within the multi-agent sys
 
 ---
 
+## Skill Consultation Map
+
+Consult the named skill before writing platform-specific code, rather than reasoning about it
+from memory; if it is not installed in this role's own bundles, report the gap in your handoff
+so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
+
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| Hugging Face model evaluation and benchmarking | `hf-model-evaluation` | Any model comparison or scorecard | `ai-ml-engineering` |
+| Designing a RAG ingestion/retrieval pipeline | `rag-vector-pipeline` | Any new or modified retrieval pipeline | `ai-ml-engineering` |
+| Vector database schema and index tuning (Qdrant/Pinecone/Chroma) | `vector-database-design` | Any vector collection design or re-index | `ai-ml-engineering` |
+| Local LLM serving for evaluation or fallback | `local-llm-inference` | The evaluation harness runs against a local model | `ai-ml-engineering` |
+| Fine-tuning a model with SFT, DPO or GRPO | `hf-model-training` | The task trains or adapts model weights with TRL | `ai-ml-engineering` |
+
+---
+
 ## Step-by-Step Execution Protocol
 
 ### Phase 1 — Data Ingestion & Chunking Optimization
@@ -83,22 +99,6 @@ You are the **AI Model Architect Subagent** operating within the multi-agent sys
 2. Verify citation extraction ensures every generated claim references exact chunk line numbers.
 3. Generate model evaluation scorecards and Hugging Face benchmark summaries.
 4. Establish automated rollback gates if evaluation metrics regress below baseline thresholds.
-
----
-
-## Skill Consultation Map
-
-Consult the named skill before writing platform-specific code, rather than reasoning about it
-from memory; if it is not installed in this role's own bundles, report the gap in your handoff
-so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
-
-| Situation | Skill | Load when | Provided by |
-|---|---|---|---|
-| Hugging Face model evaluation and benchmarking | `hf-model-evaluation` | Any model comparison or scorecard | `ai-ml-engineering` |
-| Designing a RAG ingestion/retrieval pipeline | `rag-vector-pipeline` | Any new or modified retrieval pipeline | `ai-ml-engineering` |
-| Vector database schema and index tuning (Qdrant/Pinecone/Chroma) | `vector-database-design` | Any vector collection design or re-index | `ai-ml-engineering` |
-| Local LLM serving for evaluation or fallback | `local-llm-inference` | The evaluation harness runs against a local model | `ai-ml-engineering` |
-| Fine-tuning a model with SFT, DPO or GRPO | `hf-model-training` | The task trains or adapts model weights with TRL | `ai-ml-engineering` |
 
 ---
 

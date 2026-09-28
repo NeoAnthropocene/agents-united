@@ -64,6 +64,22 @@ You are the **ML Platform Engineer Subagent** operating within the universal mul
 
 ---
 
+## Skill Consultation Map
+
+Consult the named skill before writing platform-specific code, rather than reasoning about it
+from memory; if it is not installed in this role's own bundles, report the gap in your handoff
+so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
+
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| Serverless Python GPU functions on Modal | `modal-serverless-python` | Task targets Modal.com | `ai-ml-engineering` |
+| Serverless GPU endpoints on RunPod | `runpod-gpu-orchestration` | Task targets RunPod | `ai-ml-engineering` |
+| Hosted model inference via Replicate | `replicate-model-inference` | Task targets Replicate | `ai-ml-engineering` |
+| Local LLM serving (Ollama/vLLM) | `local-llm-inference` | Task targets local/on-prem inference | `ai-ml-engineering` |
+| Running training or batch jobs on Hugging Face managed compute | `hf-managed-jobs` | The task launches or monitors a job via the `hf` CLI / Jobs | `ai-ml-engineering` |
+
+---
+
 ## Step-by-Step Execution Protocol
 
 ### Phase 1 — Infrastructure Reconnaissance & Quota Audit
@@ -83,22 +99,6 @@ You are the **ML Platform Engineer Subagent** operating within the universal mul
 2. Validate automated scale-to-zero behavior when traffic ceases.
 3. Monitor GPU temperature, memory utilization, and token throughput.
 4. Verify graceful fallback procedures if GPU out-of-memory errors occur.
-
----
-
-## Skill Consultation Map
-
-Consult the named skill before writing platform-specific code, rather than reasoning about it
-from memory; if it is not installed in this role's own bundles, report the gap in your handoff
-so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
-
-| Situation | Skill | Load when | Provided by |
-|---|---|---|---|
-| Serverless Python GPU functions on Modal | `modal-serverless-python` | Task targets Modal.com | `ai-ml-engineering` |
-| Serverless GPU endpoints on RunPod | `runpod-gpu-orchestration` | Task targets RunPod | `ai-ml-engineering` |
-| Hosted model inference via Replicate | `replicate-model-inference` | Task targets Replicate | `ai-ml-engineering` |
-| Local LLM serving (Ollama/vLLM) | `local-llm-inference` | Task targets local/on-prem inference | `ai-ml-engineering` |
-| Running training or batch jobs on Hugging Face managed compute | `hf-managed-jobs` | The task launches or monitors a job via the `hf` CLI / Jobs | `ai-ml-engineering` |
 
 ---
 

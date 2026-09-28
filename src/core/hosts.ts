@@ -108,6 +108,19 @@ export const KNOWN_HOST_IDS = Object.keys(HOST_REGISTRY);
 export function isKnownHost(id: string): id is keyof typeof HOST_REGISTRY {
   return Object.prototype.hasOwnProperty.call(HOST_REGISTRY, id);
 }
+
+/**
+ * Splits a `--target`/`--fanout`-style option value into host ids.
+ *
+ * On Windows PowerShell, an unquoted `a,b` is parsed as an array literal, and PowerShell
+ * flattens that array into a single space-joined argument when invoking a native command —
+ * so `--fanout claude,cline` arrives here as the one string `"claude cline"` (comma gone,
+ * space in its place; verified against the owner's field test, 2026-09-28). Host ids never
+ * contain whitespace, so splitting on comma or whitespace is unambiguous and safe.
+ */
+export function splitHostList(value: string): string[] {
+  return value.split(/[,\s]+/).filter(Boolean);
+}
 /** Hosts on the product's supported focus list (Antigravity, Cline, Claude Code). */
 export const SUPPORTED_HOST_IDS = Object.values(HOST_REGISTRY)
   .filter((h) => h.status === 'supported')

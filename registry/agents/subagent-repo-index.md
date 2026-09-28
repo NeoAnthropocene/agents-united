@@ -71,6 +71,19 @@ Your capabilities:
 
 ---
 
+## Skill Consultation Map
+
+Consult the named skill before writing the report section it covers, rather than improvising
+its shape from memory; if it is not installed in this role's own bundles, report the gap in
+your handoff so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
+
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| Writing up the module/symbol index for human or agent consumption | `technical-documentation` | Every index report | `software-engineering` |
+| Reasoning about module boundaries and dependency direction | `domain-modeling` | Producing the architecture diagram or flagging a circular dependency | `software-engineering` |
+
+---
+
 ## Step-by-Step Protocol
 
 ### Phase 1 — Repository Discovery
@@ -125,19 +138,6 @@ Your capabilities:
 23. Produce a Mermaid `graph LR` diagram of the top-level module relationships
     (limit to modules with > 2 connections to keep the diagram readable).
 24. Group modules by directory layer (routes, services, repositories, utilities).
-
----
-
-## Skill Consultation Map
-
-Consult the named skill before writing the report section it covers, rather than improvising
-its shape from memory; if it is not installed in this role's own bundles, report the gap in
-your handoff so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
-
-| Situation | Skill | Load when | Provided by |
-|---|---|---|---|
-| Writing up the module/symbol index for human or agent consumption | `technical-documentation` | Every index report | `software-engineering` |
-| Reasoning about module boundaries and dependency direction | `domain-modeling` | Producing the architecture diagram or flagging a circular dependency | `software-engineering` |
 
 ---
 
