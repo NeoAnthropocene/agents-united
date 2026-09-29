@@ -1,3 +1,40 @@
+# [0.14.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.13.0...v0.14.0) (2026-09-29)
+
+
+### Bug Fixes
+
+* **agents:** remove the planning-spawn contradiction; add relay/team comms modes (Plan 024 S1+S2) ([8815481](https://github.com/NeoAnthropocene/agents-united/commit/881548149aaa7a9ae1ac2c199512f5ad1cb14541))
+* **doctor:** resolve the Declared-Delta Registry path module-relative, not CWD-relative ([3f0036c](https://github.com/NeoAnthropocene/agents-united/commit/3f0036c676023bf3893cd558dc5134aa5b6a7263))
+* **plan-029:** gate-6 corrections from owner field evidence ([040c2af](https://github.com/NeoAnthropocene/agents-united/commit/040c2af5a3bca8ecf870b46c6738cf2b950bf3b0))
+* **plan-029:** point Cline MCP guidance at the cline mcp wizard ([094bbf9](https://github.com/NeoAnthropocene/agents-united/commit/094bbf9291300f07e06aa8461394b69ae0ac8210))
+* strip quotes when splitting SEMGREP_BIN/CODEQL_BIN on Windows ([b6bbb33](https://github.com/NeoAnthropocene/agents-united/commit/b6bbb33e36141777d18dab37fb3bfe3714315064))
+
+
+### Features
+
+* adapt 12 licence-blocked third-party skills (Plan 030) ([6176ebd](https://github.com/NeoAnthropocene/agents-united/commit/6176ebdc7431d95fd4e482be10852e30f633c012))
+* adapt 12 licence-blocked third-party skills (Plan 030) ([#62](https://github.com/NeoAnthropocene/agents-united/issues/62)) ([3c3fafd](https://github.com/NeoAnthropocene/agents-united/commit/3c3fafdba9e3af04cc847a371ba30ef13771cc86))
+* **agents:** raise the consult word budget 300 -> 1000 (Plan 024 S3, owner E1) ([91c6992](https://github.com/NeoAnthropocene/agents-united/commit/91c6992148526d6acc9aecb96edc0ffdbefa7482))
+* **agents:** rewrite all 15 engineering specialists to the anatomy (Plan 025 S3) ([e9f9e14](https://github.com/NeoAnthropocene/agents-united/commit/e9f9e1444879494b252826502c636ff96cbb56df))
+* **antigravity:** add agy capability probe and start launcher ([79ae656](https://github.com/NeoAnthropocene/agents-united/commit/79ae6566c2263d185b0e4939e4b65085ae457dde))
+* **catalog:** wire banner-design, brand-identity, ux-writing into bundles ([b0a796a](https://github.com/NeoAnthropocene/agents-united/commit/b0a796a106aa9f11ee2e21d1449e7eaeaf34708e))
+* **catalog:** wire Plan 027 batch-1 skills into bundles, specialists, docs ([1277a53](https://github.com/NeoAnthropocene/agents-united/commit/1277a53f64ef530387ab89ba9f951d11c9a9bf47))
+* **claude:** guard plain Claude sessions via a managed settings entry (Plan 023 A1-A3) ([118849f](https://github.com/NeoAnthropocene/agents-united/commit/118849fc2b7e119c6fb8eadf4c3bc7b8636a1da3))
+* **claude:** project orchestrator/subagent MCP server access ([0453452](https://github.com/NeoAnthropocene/agents-united/commit/0453452eab38157a390ec4ca53e0f158db66dfaa))
+* **cline:** project per-agent skills into .cline/agents/*.yml (Plan 026 Step 4) ([b395e9d](https://github.com/NeoAnthropocene/agents-united/commit/b395e9dcac05bc2bd7f2af9f596db2464d8457fa))
+* **core:** vendor-neutral mission + floor-field parity for pilot cores (Plan 025 S4) ([abaa8aa](https://github.com/NeoAnthropocene/agents-united/commit/abaa8aa4a0e10354ef466918996d7f0a0a8f080c))
+* **doctor:** surface Declared-Delta Registry entries per --host (Plan 026 Objective 3) ([52c7d1f](https://github.com/NeoAnthropocene/agents-united/commit/52c7d1f59205509dce8b678713be717847ed68f0))
+* give security-engineer run_command with the pen-tester guard ([925e64a](https://github.com/NeoAnthropocene/agents-united/commit/925e64a814f9cd9b2c9b6ada1b6ee81a845e6341))
+* **install:** opt-in command-permission preset (Plan 024 S4, owner E2/E4) ([4715f5f](https://github.com/NeoAnthropocene/agents-united/commit/4715f5fa787755ea18ec506968fb6032ec5f1456))
+* **install:** store-less Claude-only installs via a hidden sidecar (Plan 023 B1-B4, ADR 0022) ([5c644df](https://github.com/NeoAnthropocene/agents-united/commit/5c644dfcc7558b1356c69a990ffda84d741b9c15))
+* port semgrep/codeql helper scripts to Python for Windows ([0e8c4aa](https://github.com/NeoAnthropocene/agents-united/commit/0e8c4aa86693a257f9753c048389521644a79080))
+* preload Plan 030 skills for security-engineer and qa-automation-lead ([ea1bf32](https://github.com/NeoAnthropocene/agents-united/commit/ea1bf32febe91af31c7047bf6eb16dc69c8b84b7))
+* **skills:** add banner-design (nextlevelbuilder, MIT) ([27bdb6e](https://github.com/NeoAnthropocene/agents-united/commit/27bdb6e7050daea8d62c022c1c36aa6230f0835c))
+* **skills:** add brand-identity (nextlevelbuilder, MIT), renamed from upstream "brand" ([ae8e6e7](https://github.com/NeoAnthropocene/agents-united/commit/ae8e6e7805050f7cc05aee042b303b992c1aea7b))
+* **skills:** add Plan 027 batch-1 third-party skills (7 shipped, 2 stubs) ([1668511](https://github.com/NeoAnthropocene/agents-united/commit/16685119aef48fb57ecc640a65b4b4b4e3188fbc))
+* **skills:** add ux-writing (mrstev3n, Apache-2.0), renamed from upstream "balise-ux-writing" ([e21f302](https://github.com/NeoAnthropocene/agents-united/commit/e21f3023339e41f53974c6160b8fba27d82cc6ea)), closes [hi#stakes-content](https://github.com/hi/issues/stakes-content)
+* **skills:** backfill vendor skills to 7-section shape + extract exemplars (Plan 025 S2) ([f820f89](https://github.com/NeoAnthropocene/agents-united/commit/f820f89589c35218c9f31b2d26d1279c86278648))
+
 # [0.13.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.12.0...v0.13.0) (2026-09-26)
 
 
