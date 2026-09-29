@@ -2581,8 +2581,13 @@ async function runAntigravityStart(bundle: string, prompt: string | undefined, o
     return;
   }
 
+  // Plan 029 follow-up (owner gate-6: agy ≥1.2.13): workspace agents may live in the directory
+  // layout (`.agents/agents/<name>/agent.md`), not only as flat `.agents/agents/<name>.md`
+  // files. Accept either before spawning, so the check reflects what agy can discover.
+  const coordinatorDirEntry = path.join(resolution.workspace, '.agents', 'agents', coordinatorName, 'agent.md');
   const coordinatorPath = path.join(resolution.workspace, '.agents', 'agents', `${coordinatorName}.md`);
-  if (!await fs.pathExists(coordinatorPath)) {
+  const coordinatorFound = (await fs.pathExists(coordinatorPath)) || (await fs.pathExists(coordinatorDirEntry));
+  if (!coordinatorFound) {
     outro(
       pc.red(
         `Canonical coordinator "${coordinatorRel}" was not found in ${resolution.workspace}.\n` +
