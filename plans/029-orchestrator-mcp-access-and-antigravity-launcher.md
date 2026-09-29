@@ -169,10 +169,14 @@ flag was needed — target argv `agy --agent <orchestrator> --prompt-interactive
 (`--mode` also confirmed; `--print` is explicitly not a conformance target). `agy mcp`
 exists (ADR 0011 holds). `claude` on the same box: 2.1.283.
 
-**Step 0(d) — by-name reachability: PENDING owner live check.**
-Whether an Antigravity orchestrator can `invoke_subagent` a workspace agent by name was never
-isolated; Objective 9 is implemented regardless and the matrix records the claim as
-explicitly unverified rather than asserting it.
+**Step 0(d) — by-name reachability: RESOLVED NO (Plan 031, agy 1.2.13, owner probes
+2026-09-29).** `agy agents` lists neither the flat nor the directory-layout fixture, and both
+`-i` identity sessions ran the stock agent (`NOT_FOUND` on both markers) — the same failure
+signature as the 1.1.14/1.1.15 headless verdicts. `--agent` accepts the name but resolves no
+workspace roster in either layout. The matrix's explicitly-unverified note plus the fail-closed
+verbatim rule stand as the final answer; gate 6(c) is blocked-by-vendor with the desktop route
+as the supported path. Re-run the Plan 031 probes before touching the installer if a future
+agy release restores workspace discovery.
 
 ## Acceptance gates
 

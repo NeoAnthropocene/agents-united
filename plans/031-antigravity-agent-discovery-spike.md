@@ -6,7 +6,8 @@
 
 ## Status
 
-- **State**: PROPOSED — 2026-09-29 (spike; awaiting owner approval to run the probes).
+- **State**: EXECUTED — probes run 2026-09-29 by the owner on agy 1.2.13 (Windows 11,
+  real terminal). Verdict **Outcome B** (neither layout loads); see § Findings.
 - **Priority**: P1 (blocks the Plan 029 gate-6(c) verdict) · **Effort**: S · **Risk**: Low.
 - **Category**: host conformance / discovery.
 
@@ -39,40 +40,47 @@ reworked project custom agents "not being found or selectable ... under executio
 **Interim hardening already shipped on the feature branch** (not the answer, only tolerance):
 `runAntigravityStart` accepts either the flat file or the directory entry before spawning.
 
-## Objective
+## Findings (owner probes, agy 1.2.13, quoted verbatim)
 
-Replace the hypothesis with a verdict. For **each layout** (flat `.md`, directory
-`<name>/agent.md`) on **agy 1.2.13**, in a scratch workspace installed with the Plan 029
-branch build:
+- `agy agents` → **empty output** (neither fixture listed).
+- `agy --agent flat-probe -i "<identity probe>"` → `(1) Name: Antigravity / (2) NOT_FOUND`
+  (directory-layout fixture also answered `NOT_FOUND` + "no frontmatter present" — i.e. the
+  stock agent ran, neither fixture prompt was injected).
 
-1. `agy agents` — is the fixture listed? Quote the output.
-2. `agy --agent <fixture> --prompt-interactive "<identity probe asking for name +
-   marker>"` from a real terminal — does the session inject the fixture prompt?
-3. If loaded: `invoke_subagent` the sibling fixture by name — does by-name reach work?
+**Interpretation.** The empty listing alone would be weak (a listing bug, not a load proof),
+but the two identity sessions ran the *stock* Antigravity agent in place of the named
+fixture — the same failure signature as the 1.1.14/1.1.15 headless verdicts, now reproduced
+in interactive-equal (`-i`) sessions. `--agent` accepts the name but resolves no workspace
+roster in either layout. The `NOT_FOUND` from the directory fixture additionally shows the
+stock agent sees no fixture frontmatter at all.
 
-## Decisions (mutually exclusive)
+## Objective — RESOLVED as Outcome B
 
-- **Outcome A (directory form loads):** Plan 029 follow-up implements an agy-specific agent
-  projection (both layouts or directory-only). Scope: new installer/projection work; the
-  flat-only `agents` lane stays untouched. Requires a new plan + owner approval.
 - **Outcome B (neither loads):** Step 0(d) resolves **NO**; the host-matrix unverified note
   and the fail-closed verbatim rule stay the final answer; Plan 029 gate 6(c) is
   blocked-by-vendor with the desktop route as the supported path.
-- **Outcome C (both load):** file the remaining difference (if any) and keep the flat layout,
-  removing the interim tolerance only if the vendor documents directory-only.
+- Outcomes A/C are closed: neither layout injects, so there is no layout to prefer.
+
+## Decisions (record)
+
+- No agy-specific projection work is authorized by this spike. If a future agy release
+  restores workspace discovery, re-run the three probes (listing + per-layout identity)
+  before touching the installer.
+- The interim flat-or-directory tolerance in `runAntigravityStart` stays (harmless,
+  two-path `pathExists` check, covered by unit tests).
 
 ## Acceptance gates
 
-1. Verdict A/B/C recorded with quoted command evidence.
-2. If A: follow-up plan proposed with scope. If B: matrix wording already correct, no code.
-3. No implementation lands inside this spike.
+1. Verdict B recorded with quoted command evidence — DONE (above).
+2. Matrix wording already correct (explicitly unverified), no code — DONE.
+3. No implementation lands inside this spike — DONE (tolerance predates the spike).
 
 ## Delegation map (ADR 0015 planner-orchestrator posture)
 
 | Phase | Specialist | Scope |
 |---|---|---|
-| Probes | owner (real terminal required; `-i` blocks headless) | three probes × two layouts |
-| Record | `orchestrator-engineering` | verdict into Plan 029 Step 0(d) |
+| Probes | owner (real terminal required; `-i` blocks headless) | three probes × two layouts — DONE |
+| Record | `orchestrator-engineering` | verdict into Plan 029 Step 0(d) — DONE |
 
 ## References
 
