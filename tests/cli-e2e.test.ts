@@ -128,6 +128,30 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(output).toContain('valid');
   });
 
+  it('accepts --fanout when PowerShell has flattened the comma list to a space (owner field test, 2026-09-28)', () => {
+    // Windows PowerShell parses an unquoted `claude,cline` as an array literal and flattens it
+    // to one space-joined argument when invoking a native command, so Node never sees the comma.
+    // Passing the two words as ONE argv element (not two separate '--fanout' args) reproduces
+    // exactly what the owner observed on Windows: a single string "claude cline".
+    const res = spawnSync(process.execPath, [
+      cliPath,
+      'add',
+      'software-engineering',
+      '-t',
+      'agents',
+      '--fanout',
+      'claude cline',
+      '-y',
+      '--copy',
+      '--dry-run',
+    ], { cwd: e2eDir, encoding: 'utf8' });
+    const output = (res.stdout || '') + (res.stderr || '');
+    expect(res.status).toBe(0);
+    expect(output).not.toMatch(/Ignoring invalid fanout/i);
+    expect(output).toMatch(/claude/i);
+    expect(output).toMatch(/cline/i);
+  });
+
   it('refuses under-development --fanout hosts on add with a non-zero exit', () => {
     const res = spawnSync(process.execPath, [
       cliPath,
@@ -449,8 +473,12 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     // Split into lines and check that no line in stdout exceeds 95 characters
     const lines = stdout.split(/\r?\n/);
     for (const line of lines) {
-      // Strip ANSI escape codes to measure true printable character length
-      const cleanLine = line.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').trimEnd();
+      // Measure what a terminal actually SHOWS: the spinner redraws in place (cursor back to column 0
+      // via `ESC[<n>D` / `ESC[<n>G` / `\r`, then clear), so only the text after the last reset is
+      // visible. Without this, a slow run piles several spinner frames onto one non-TTY line and the
+      // check fails on machine speed rather than layout. Then strip the remaining ANSI codes.
+      const visible = line.split(/\x1B\[\d*[DG]|\r/).pop() ?? '';
+      const cleanLine = visible.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').trimEnd();
       expect(cleanLine.length, `Line exceeded 95 chars: "${cleanLine}"`).toBeLessThanOrEqual(95);
     }
   });

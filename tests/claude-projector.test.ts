@@ -437,6 +437,29 @@ describe('ClaudeProjector.planCompoundProjection — compound lane', () => {
     expect(String(coordinator?.content)).toContain('Agent(');
   });
 
+  it('carries nested skill resource folders (references/, scripts/) into .claude/skills/ (owner field test, 2026-09-28)', async () => {
+    // Before this fix only a skill's top-level files were projected, so every `references/`
+    // runbook and `scripts/` helper was missing on Claude Code while Cline and Antigravity had them.
+    const nested: ResolvedAssets = { ...resolved, skills: ['brand-identity', 'supabase-backend-architecture'] };
+    const artifacts = await ClaudeProjector.planCompoundProjection(bundle, 'project', nested, registryDir);
+    const paths = artifacts.map(a => a.relPath);
+    const expectedFrom = (skill: string) => {
+      const root = path.join(registryDir, 'skills', skill);
+      return (fs.readdirSync(root, { recursive: true, withFileTypes: true }) as fs.Dirent[])
+        .filter(e => e.isFile())
+        .map(e => path.relative(root, path.join(e.parentPath, e.name)).replace(/\\/g, '/'))
+        .map(rel => `.claude/skills/${skill}/${rel}`);
+    };
+    for (const skill of ['brand-identity', 'supabase-backend-architecture']) {
+      const expected = expectedFrom(skill);
+      expect(expected.some(p => /\/(references|scripts)\//.test(p)), `${skill} fixture has nested files`).toBe(true);
+      for (const p of expected) expect(paths, `missing ${p}`).toContain(p);
+    }
+    const nestedScript = artifacts.find(a => a.relPath.startsWith('.claude/skills/brand-identity/scripts/lib/'));
+    expect(nestedScript?.sourceFilePath).toBeDefined();
+    expect(nestedScript?.canonical).toMatch(/^skills\/brand-identity\/scripts\/lib\//);
+  });
+
   it('is deterministic across repeated planning runs', async () => {
     const first = await ClaudeProjector.planCompoundProjection(bundle, 'project', resolved, registryDir);
     const second = await ClaudeProjector.planCompoundProjection(bundle, 'project', resolved, registryDir);

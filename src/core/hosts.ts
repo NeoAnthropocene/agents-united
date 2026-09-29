@@ -108,6 +108,19 @@ export const KNOWN_HOST_IDS = Object.keys(HOST_REGISTRY);
 export function isKnownHost(id: string): id is keyof typeof HOST_REGISTRY {
   return Object.prototype.hasOwnProperty.call(HOST_REGISTRY, id);
 }
+
+/**
+ * Splits a `--target`/`--fanout`-style option value into host ids.
+ *
+ * On Windows PowerShell, an unquoted `a,b` is parsed as an array literal, and PowerShell
+ * flattens that array into a single space-joined argument when invoking a native command —
+ * so `--fanout claude,cline` arrives here as the one string `"claude cline"` (comma gone,
+ * space in its place; verified against the owner's field test, 2026-09-28). Host ids never
+ * contain whitespace, so splitting on comma or whitespace is unambiguous and safe.
+ */
+export function splitHostList(value: string): string[] {
+  return value.split(/[,\s]+/).filter(Boolean);
+}
 /** Hosts on the product's supported focus list (Antigravity, Cline, Claude Code). */
 export const SUPPORTED_HOST_IDS = Object.values(HOST_REGISTRY)
   .filter((h) => h.status === 'supported')
@@ -154,6 +167,12 @@ export interface InstallTargetPlan {
   fanout: string[];
   /** True when .agents/ was not selected but had to be added as the shared source. */
   addedCanonicalStore: boolean;
+  /**
+   * Plan 023 B (ADR 0022, D4) — where the machine state lives: `'sidecar'` (the hidden
+   * `.claude/.agents-united/` snapshot + lockfile, no `.agents/`) only when Claude is the sole
+   * selected host and neither `--canonical-store` nor the plugin lane asks for the store.
+   */
+  storeShape: 'store' | 'sidecar';
 }
 
 /**
@@ -164,7 +183,10 @@ export interface InstallTargetPlan {
  *   install, so no runtime ever gets Antigravity-only frontmatter it cannot parse.
  * - When any translated copy is needed, the main library is added automatically.
  */
-export function planInstallTargets(selected: string[]): InstallTargetPlan {
+export function planInstallTargets(
+  selected: string[],
+  opts: { canonicalStore?: boolean; pluginLane?: boolean } = {},
+): InstallTargetPlan {
   const normalized = Array.from(
     new Set(selected.map(s => (typeof s === 'string' ? s.trim().toLowerCase() : '')).filter(Boolean))
   );
@@ -173,14 +195,22 @@ export function planInstallTargets(selected: string[]): InstallTargetPlan {
   const fanout = known.filter(h => HOST_REGISTRY[h].projectionCapable);
   const hosts = known.filter(h => !HOST_REGISTRY[h].projectionCapable) as AgentHost[];
 
+  // ADR 0022 (D4): Claude alone needs no canonical store — its created artifacts are
+  // self-contained, and the sidecar keeps the machine state. Every other selection keeps `.agents/`.
+  const storeShape: 'store' | 'sidecar' =
+    hosts.length === 0 && fanout.length === 1 && fanout[0] === 'claude' && !opts.canonicalStore && !opts.pluginLane
+      ? 'sidecar'
+      : 'store';
+
   let addedCanonicalStore = false;
   if (fanout.length > 0 && !hosts.includes('agents')) {
+    // The `agents` host is the state-dir host in both shapes; only a store shape adds `.agents/`.
     hosts.unshift('agents');
-    addedCanonicalStore = true;
+    addedCanonicalStore = storeShape === 'store';
   }
   if (hosts.length === 0 && fanout.length === 0) {
     hosts.push('agents');
   }
 
-  return { hosts, fanout, addedCanonicalStore };
+  return { hosts, fanout, addedCanonicalStore, storeShape };
 }

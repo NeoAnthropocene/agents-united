@@ -42,7 +42,10 @@ const SPECIALIST_CLAUSES: ReadonlyArray<[string, RegExp]> = [
   ['C1 hub-and-spoke', /Hub-and-spoke by default/],
   ['C2 inbox check', /Check your inbox before your final report/],
   ['C3 no message to a finished peer', /No message to a peer that has already finished/],
-  ['C4 live-session allowance', /live session/],
+  ['C4 relay mode is the default (Plan 024 S2)', /\*Relay mode \(the default\)\*/],
+  ['C4 relay mode never messages a peer directly', /Never try to message a peer directly/],
+  ['C4 team mode only when the brief says so', /\*Team mode \(only when your brief says so\)\*/],
+  ['C4 no mode named means relay', /If your brief does not name a mode, you are in relay mode/],
   ['C5 one hand-back', /Your final report is your one hand-back/],
   ['C6 missing peer never hangs', /Never hang on a missing peer/],
   ['C6 Peer messages received', /`Peer messages received`/],
@@ -57,6 +60,8 @@ const COORDINATOR_CLAUSES: ReadonlyArray<[string, RegExp]> = [
   ['C7 brief: report format', /\*\*Report format\*\*[^\n]*`Peer messages received`[^\n]*`Open items`/],
   ['C3/C7 relay & wake-up', /wake the finished peer/],
   ['C6 missing report', /missing specialist report/i],
+  ['C7 brief names the working mode (Plan 024 S2)', /\*relay\* \(the default[^\n]*\*team\* \(only when/],
+  ['C7 contract first (Plan 024 S2)', /\*\*Contract first\*\*/],
 ];
 /** Plan 018 host neutrality: no tool or host nouns in the canonical comms law. */
 const HOST_NOUNS = /SendMessage|SubagentHandback|\bAgent\(|`Agent`|send_message|invoke_subagent|TaskCreate|\bClaude\b|\bCline\b|Antigravity/;
@@ -114,10 +119,12 @@ describe('Plan 022 comms law — Semantic Core invariants + Claude bindings (cre
   const SPECIALIST_INVARIANTS = [
     'Check for delivered peer messages before the final report.',
     'The handoff report lists peer messages received and open items.',
+    'Message a peer directly only in team mode, when the brief lists that peer.',
   ];
   const COORDINATOR_INVARIANTS = [
     'Every delegation brief carries objective, scope, acceptance evidence, peer routing, and report format.',
     'The coordinator relays between specialists and wakes a finished peer before expecting its reply.',
+    'Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs.',
   ];
 
   it('the comms invariants are tool-free (gate 2 corpus)', () => {
@@ -158,5 +165,29 @@ describe('Plan 022 H6 — orchestrator correctness in the delegation brief', () 
       if (!/you do not redo the work/.test(body)) violations.push(`${file}: missing specialist-runs-TDD evidence check`);
     }
     expect(violations, violations.join('\n')).toEqual([]);
+  });
+});
+
+describe('Plan 024 S3 — consult budget raised (owner decision E1, 2026-09-27)', () => {
+  it('every Tier-1 orchestrator allows up to 1000 words per consult, never 300', () => {
+    const violations: string[] = [];
+    for (const file of files.filter(f => f.startsWith('orchestrator-'))) {
+      const body = read(file);
+      if (/\bat most 300 words per consult\b/.test(body)) violations.push(`${file}: still caps consults at 300 words`);
+      const hasGate = /Mandatory specialist consult gate/.test(body);
+      if (hasGate && !/\bat most 1000 words per consult\b/.test(body)) violations.push(`${file}: missing the raised 1000-word cap`);
+    }
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
+
+  it('the Tier-2 Consultation Budget summaryWordCap is 1000, not 300', () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(AGENTS_DIR, '..', 'bundles.json'), 'utf8')) as { bundles: Record<string, any> };
+    const da = manifest.bundles['digital-agency'];
+    expect(da.planningLoop.budget.summaryWordCap).toBe(1000);
+  });
+
+  it('Scope-of-Work Statement lines citing summaryWordCap say ≤300 words, not ≤150', () => {
+    const offenders = files.filter(f => f.startsWith('subagent-') && /≤150 words, per the Consultation Budget `summaryWordCap`/.test(read(f)));
+    expect(offenders).toEqual([]);
   });
 });

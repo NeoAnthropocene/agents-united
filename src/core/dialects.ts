@@ -115,6 +115,16 @@ export const HOST_DIALECTS: Record<string, HostDialectSpec> = {
         invariant: 'The coordinator relays between specialists and wakes a finished peer before expecting its reply.',
         binding: 'The session thread relays; a finished specialist is woken by SendMessage to its agent ID (it resumes with full history) and its reply returns to the session for relay.',
       },
+      // Plan 024 S2 (field check 2, 2026-09-27): outside Agent Teams a subagent is addressable only by
+      // the agent ID its spawner receives, so a specialist that messages a peer by name always fails.
+      {
+        invariant: 'Message a peer directly only in team mode, when the brief lists that peer.',
+        binding: 'Team mode = Agent Teams (agents start --host claude --teams): teammates are addressed by name with SendMessage. Relay mode = ordinary subagents: peers are unreachable by name (only the session holds their agent IDs), so questions go under Open items.',
+      },
+      {
+        invariant: 'Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs.',
+        binding: 'Spawn the contract owner with Agent() first; put the resulting contract file path in every dependent Agent() prompt before spawning those slices in parallel.',
+      },
     ],
     deltaRegistry: 'registry/translation-ledger.json',
   },

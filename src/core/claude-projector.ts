@@ -70,7 +70,7 @@ const FEATURE_LEDGER: Record<string, { disposition: LedgerDisposition; rationale
   ask_question: { disposition: 'approximated', rationale: 'Claude exposes AskUserQuestion only in the main conversation (excluded from subagents by default).' },
   generate_image: { disposition: 'unsupported', rationale: 'Claude Code exposes no image-generation tool; asset creation must happen outside the agent run.' },
   skills: { disposition: 'degraded', rationale: 'Claude subagents discover project skills and can invoke them; the canonical preload list is not injected to avoid paying its token cost on every spawn.' },
-  mcpServers: { disposition: 'degraded', rationale: 'Claude supports per-subagent mcpServers, but the canonical descriptor dialect differs; MCP wiring stays host-configured via the MCP location registry (translation deferred).' },
+  mcpServers: { disposition: 'mapped', rationale: 'Plan 029 A2 — a canonical `mcpServers:` entry projects into the Claude subagent `mcpServers:` field as a server NAME reference (`- name: <server>`), and the matching grant lands in `tools:` (`mcp__<server>`, or pinned read-only tool names for a read-only role). Credentials, `env` blocks and inline server definitions are never projected (Risk R4).' },
 };
 
 const MARKER_PROFILE = 'claude';
@@ -94,12 +94,45 @@ const COORDINATOR_BASELINE_TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Gl
 /** Plan 022 H3 — tools a `plan` (read-only) role never holds on this host. */
 const READ_ONLY_EXCLUDED_TOOLS: ReadonlySet<string> = new Set(['Write', 'Edit', 'NotebookEdit', 'Bash']);
 
+/**
+ * Plan 029 A2 — the canonical key naming the MCP servers a role may reach. A YAML sequence of
+ * `- name: <server>` mapping objects; the renderer emits those names into the Claude frontmatter
+ * and the matching grant into `tools:`.
+ */
+const MCP_SERVERS_KEY = 'mcpServers';
+
+/**
+ * Plan 029 A2 / Risk R1 (owner decision: Option B) — what a READ-ONLY (`plan`) role receives for
+ * each server it declares. A bare `mcp__<server>` grant resolves to EVERY tool that server
+ * exposes — write tools included — and `READ_ONLY_EXCLUDED_TOOLS` only strips the built-ins, so a
+ * read-only role never takes a server-level grant. It takes these exact read-only tool names
+ * instead. A server absent from this table gets NO grant at all (fail closed): the role keeps the
+ * `mcpServers:` name reference and the grant is withheld deliberately — a posture, not a
+ * translation loss — so nothing is dropped silently.
+ */
+const READ_ONLY_MCP_TOOL_GRANTS: Record<string, readonly string[]> = {
+  // Only GitHub tools whose names are read-only verbs (`search_*`, `get_*`, `list_*`, `*_read`).
+  github: [
+    'mcp__github__search_code',
+    'mcp__github__get_file_contents',
+    'mcp__github__list_pull_requests',
+    'mcp__github__pull_request_read',
+  ],
+  // Context7 is documentation lookup only, so its published tools are read-only by construction.
+  // Plan 029 Step 3 pin correction: `get-library-docs` is Context7's DEPRECATED tool name; the
+  // current surface is `resolve-library-id` + `query-docs` (verified against the live MCP server).
+  context7: ['mcp__context7__resolve-library-id', 'mcp__context7__query-docs'],
+};
+
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 
 const RUNTIME_NOTE = `## Claude runtime note
 
 Delegation runs through the Agent tool: the coordinator spawns the specialists named in its own tools
-allowlist; specialists hold no Agent tool and never spawn peers (the coordinator relays and wakes them). Canonical tool names in this prompt were rewritten to their
+allowlist; specialists hold no Agent tool and never spawn peers (the coordinator relays and wakes them).
+Outside Agent Teams (\`--teams\`), specialists cannot message each other by name: only the coordinator holds
+their agent IDs, so relay mode is the default and team mode exists only when the brief says so.
+Canonical tool names in this prompt were rewritten to their
 Claude equivalents; a fenced code block may still show the original spelling because code is preserved
 byte-for-byte. A subagent does not hand results to a peer: its final report is returned to the
 conversation that spawned it, and on Claude Code v2.1.271+ in auto mode the runtime delivers it through the
@@ -252,6 +285,55 @@ export class ClaudeProjector {
         ? (parsed as Record<string, unknown>)
         : {};
     return { meta, body: match[2].replace(/^\r?\n/, '') };
+  }
+
+  /**
+   * Plan 029 A2 / Risk R4 — the servers a canonical role declares, by NAME only.
+   *
+   * The canonical dialect is a sequence of `- name: <server>` mapping objects (a projected-style
+   * plain string is accepted too). Anything else is a fail-fast error: an inline server definition
+   * (`command`, `args`, `env`, `headers`, `url`, …) would put a credential-shaped block into a
+   * projected artifact — exactly what Risk R4 forbids — so it never reaches the output and is
+   * never silently dropped either (ADR 0018 decision 9).
+   */
+  private static declaredMcpServers(
+    meta: Record<string, unknown>,
+    canonicalRelPath: string
+  ): string[] {
+    const raw = meta[MCP_SERVERS_KEY];
+    if (raw === undefined || raw === null) return [];
+    if (!Array.isArray(raw)) {
+      throw new Error(
+        `Cannot project ${canonicalRelPath}: ${MCP_SERVERS_KEY} must be a sequence of ` +
+          '"- name: <server>" entries (server names only; an inline server definition is never projected).'
+      );
+    }
+    const names: string[] = [];
+    raw.forEach((entry, index) => {
+      if (typeof entry === 'string' && entry.trim().length > 0) {
+        if (!names.includes(entry.trim())) names.push(entry.trim());
+        return;
+      }
+      if (entry !== null && typeof entry === 'object' && !Array.isArray(entry)) {
+        const record = entry as Record<string, unknown>;
+        const keys = Object.keys(record);
+        const name = record.name;
+        if (typeof name === 'string' && name.trim().length > 0 && keys.every(key => key === 'name')) {
+          if (!names.includes(name.trim())) names.push(name.trim());
+          return;
+        }
+        throw new Error(
+          `Cannot project ${canonicalRelPath}: ${MCP_SERVERS_KEY} entry #${index + 1} carries ` +
+            `[${keys.join(', ')}] — servers are referenced by NAME only, never by an inline server ` +
+            'definition (Risk R4: no credential may reach a projected artifact).'
+        );
+      }
+      throw new Error(
+        `Cannot project ${canonicalRelPath}: ${MCP_SERVERS_KEY} entry #${index + 1} is not a server ` +
+          'name reference (expected "- name: <server>").'
+      );
+    });
+    return names;
   }
 
   private static ledgerEntry(feature: string): TranslationLedgerEntry | undefined {
@@ -478,7 +560,23 @@ export class ClaudeProjector {
       tools.length = 0;
       tools.push(...restricted);
     }
+    // Plan 029 A2 — the servers a canonical role declares reach the projection in both halves: the
+    // `mcpServers:` name references (the documented "a name that references a server you already
+    // configured" form) and the matching grant in `tools:`. A name reference alone does not survive
+    // an explicit `tools:` allowlist, which is why every declared server also gets its grant — the
+    // server-level `mcp__<server>` for a writable role, pinned read-only tool names for a `plan`
+    // role (Risk R1, owner Option B). Servers are referenced BY NAME ONLY (Risk R4).
+    const declaredServers = ClaudeProjector.declaredMcpServers(meta, canonicalRelPath);
+    for (const server of declaredServers) {
+      const grants = permission === 'plan' ? READ_ONLY_MCP_TOOL_GRANTS[server] ?? [] : [`mcp__${server}`];
+      for (const grant of grants) {
+        if (!tools.includes(grant)) tools.push(grant);
+      }
+    }
     out.tools = tools;
+    if (declaredServers.length > 0) {
+      out.mcpServers = declaredServers.map(server => ({ name: server }));
+    }
     if (permission) out.permissionMode = permission;
 
     // `inherit` is the catalog's marker for "no opinion" — all 59 agents declare `model: inherit` — so it
@@ -729,16 +827,16 @@ export class ClaudeProjector {
         content: ClaudeProjector.renderSkill(await fs.readFile(skillFile, 'utf8'), canonicalRel).content,
         managedMarker: true,
       });
-      const entries = (await fs.readdir(skillDir, { withFileTypes: true }))
-        .filter(entry => entry.name !== 'SKILL.md')
-        .sort((a, b) => a.name.localeCompare(b.name));
-      for (const entry of entries) {
-        if (!entry.isFile()) continue; // nested resource dirs are out of v1 scope (none exist today)
+      // Recursive: `references/`, `scripts/` (and deeper, e.g. `scripts/lib/`) must reach Claude
+      // Code too, matching the Cline lane and the canonical `.agents/` store.
+      const resourceRels = (await ClaudeProjector.listSkillResources(skillDir))
+        .filter(rel => rel !== 'SKILL.md');
+      for (const rel of resourceRels) {
         artifacts.push({
           kind: 'skill',
-          canonical: `skills/${skillName}/${entry.name}`,
-          relPath: `.claude/skills/${normalized}/${entry.name}`,
-          sourceFilePath: path.join(skillDir, entry.name),
+          canonical: `skills/${skillName}/${rel}`,
+          relPath: `.claude/skills/${normalized}/${rel}`,
+          sourceFilePath: path.join(skillDir, ...rel.split('/')),
           managedMarker: false,
         });
       }
@@ -762,6 +860,20 @@ export class ClaudeProjector {
     }
 
     return artifacts;
+  }
+
+  /**
+   * Every file under a skill folder, as sorted POSIX-style paths relative to it
+   * (deterministic across platforms, so projection plans and lockfile keys never differ).
+   */
+  private static async listSkillResources(skillDir: string, prefix = ''): Promise<string[]> {
+    const out: string[] = [];
+    for (const entry of await fs.readdir(path.join(skillDir, ...prefix.split('/').filter(Boolean)), { withFileTypes: true })) {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) out.push(...await ClaudeProjector.listSkillResources(skillDir, rel));
+      else if (entry.isFile()) out.push(rel);
+    }
+    return out.sort((a, b) => a.localeCompare(b));
   }
 
   /** Claude plugin package name rule; every bundle in `registry/bundles.json` satisfies it today. */

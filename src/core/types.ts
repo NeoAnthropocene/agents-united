@@ -254,6 +254,41 @@ export interface ClaudeCapabilityReport {
   diagnostics: string[];
 }
 
+/**
+ * Plan 029 B6 — the resolved `agy` (Antigravity CLI) invocation. Mirrors `ResolvedClaudeCommand`,
+ * minus the npm node-wrapper branch: `agy` ships as a native binary plus `.cmd`/`.bat` shims, so a
+ * PATH hit is always either the binary itself or the shell shim routed through `cmd.exe`.
+ */
+export type ResolvedAgyCommand = {
+  executable: string;
+  prefixArgs: string[];
+  source: 'env-binary' | 'path-executable';
+};
+
+/**
+ * Plan 029 B6 — the read-only Antigravity CLI capability report.
+ *
+ * `installed` is a pure "the binary answered `--version` with exit 0" signal (mirroring
+ * `ClaudeCapabilityReport`), so an unverifiable runtime is never reported as capable. The three
+ * feature flags are derived from `agy --help` text only. `meetsVersionFloor` is reported as data:
+ * it names the version on which the `--agent` / `--prompt-interactive` surface was verified live
+ * and is deliberately never a launch gate.
+ */
+export interface AntigravityCapabilityReport {
+  installed: boolean;
+  version?: string;
+  command?: ResolvedAgyCommand;
+  /** `--agent <name>` (agent for the current CLI session) is advertised by `agy --help`. */
+  agentFlag: boolean;
+  /** `-i, --prompt-interactive` is advertised — i.e. an opening prompt CAN be passed. */
+  promptInteractive: boolean;
+  /** Values advertised for `--mode` (verified live: `accept-edits`, `plan`). */
+  modes: string[];
+  /** Whether the reported version is at or above the live-verified floor. Informational only. */
+  meetsVersionFloor: boolean;
+  diagnostics: string[];
+}
+
 export interface ProcessRunnerResult {
   exitCode: number;
   stdout: string;
@@ -296,7 +331,35 @@ export interface LockfileManifest {
    * lane was never opted into.
    */
   pluginLane?: boolean;
+  /**
+   * Plan 023 A (owner D1–D2) — the recorded plain-session guard decision. `{ off: true }` is a
+   * remembered "no"; otherwise the settings file (workspace-relative, or absolute for `user`)
+   * holding our managed PreToolUse groups, the handler hash that proves ownership, and whether
+   * agents-united created the file (only then may uninstall delete it). Absent ⇒ never decided.
+   */
+  sessionGuard?: SessionGuardRecord;
+  /**
+   * Plan 023 B (ADR 0022, D3) — `'sidecar'` when this lockfile lives in the store-less sidecar
+   * `.claude/.agents-united/`. Absent on a store-backed install (the lockfile shape is unchanged).
+   */
+  storeShape?: 'sidecar';
+  /**
+   * Plan 024 S4 (owner E2/E4) — the recorded opt-in command-permission preset. `{ off: true }` is
+   * a remembered "no"; otherwise the tier, the settings file it was written to (always
+   * `.claude/settings.local.json`, workspace-relative), the exact entries this install added
+   * (removal is limited to these), and whether agents-united created the file. Absent ⇒ never
+   * decided.
+   */
+  permissionPreset?: PermissionPresetRecord;
 }
+
+export type PermissionPresetRecord =
+  | { off: true }
+  | { tier: 'verify' | 'build'; file: string; entries: string[]; createdFile: boolean };
+
+export type SessionGuardRecord =
+  | { off: true }
+  | { file: string; handlerHash: string; createdFile: boolean };
 
 export type VersionDriftStatus = 'up-to-date' | 'outdated' | 'modified';
 
@@ -413,7 +476,28 @@ export interface InstallOptions {
    * for `claude --plugin-dir`. Claude lane only; the plan is byte-identical to today when absent.
    */
   pluginLane?: boolean;
-
+  /**
+   * Plan 023 A — guard plain Claude sessions too: `project` (.claude/settings.json), `local`
+   * (.claude/settings.local.json), `user` (~/.claude/settings.json, explicit only), or `false`
+   * (remembered "no"). Omitted ⇒ inherit the lockfile decision. Claude lane only.
+   */
+  sessionGuard?: 'project' | 'local' | 'user' | false;
+  /**
+   * Plan 024 S4 (owner E2/E4) — opt-in command-permission preset: `verify` (fixed read/test
+   * commands only) or `build` (adds npm install/run/test — must be requested explicitly). Written
+   * ONLY to `.claude/settings.local.json`, never the shared `.claude/settings.json`, and never for
+   * a global install. `false` records a remembered "no". Omitted ⇒ inherit the lockfile decision
+   * (absent decision ⇒ off). A host with no verified renderer yet (anything but Claude today)
+   * reports "not supported" instead of writing a guessed file.
+   */
+  permissionPreset?: 'verify' | 'build' | false;
+  /**
+   * Plan 023 B (ADR 0022, D4) — where the machine state lives when no `targetDir` is given:
+   * `'sidecar'` (store-less Claude-only install) or `'store'` (`.agents/`). Decided by
+   * `planInstallTargets`; an existing store always wins, and a store-requiring install moves an
+   * existing sidecar into `.agents/`. Omitted ⇒ discover (existing store > existing sidecar > store).
+   */
+  storeShape?: 'store' | 'sidecar';
 }
 
 export interface ProjectionInfo {

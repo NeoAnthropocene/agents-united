@@ -92,7 +92,10 @@ describe('projected Claude specialists carry SendMessage', () => {
       expect(meta.tools).not.toContain('Agent');
       expect(meta.tools.some((t: string) => t.startsWith('Agent('))).toBe(false);
       // unknown tool names block agent launch in Claude Code: no snake_case canonical token may survive
-      expect(meta.tools.filter((t: string) => /^[a-z][a-z_]*$/.test(t))).toEqual([]);
+      // Plan 029: deliberate `mcp__*` grants are MCP tool names, not untranslated canonical
+      // tokens, so the MCP namespace is excluded here — the Plan 022 H2 intent (no surviving
+      // snake_case canonical token such as `view_file`) is preserved.
+      expect(meta.tools.filter((t: string) => /^(?!mcp__)[a-z][a-z_]*$/.test(t))).toEqual([]);
     });
   }
 });

@@ -1,10 +1,10 @@
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'fs-extra';
-import { AgentHostAdapter } from './adapter.js';
 import { ClaudeCapabilityProbe } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { defaultProcessRunner } from './cline-capabilities.js';
+import { resolveStateDir } from './state-dir.js';
 import type {
   ClaudeCapabilityReport,
   InstallScope,
@@ -69,8 +69,10 @@ export interface ResolveClaudeInstallationOptions {
  *      `CLAUDE.md` / `CLAUDE.local.md` / `.claude/settings.json` / `.claude/workflows/**`, and the teams
  *      scaffold persists nothing anywhere (no `~/.claude/teams/`, no settings key).
  *   2. Every value is one argv element. `--agent` and its value are pushed separately, the workspace is a
- *      single `--add-dir` argument, and the bootstrap prompt is a single final argument, so no prompt text
- *      is ever word-split, shell-expanded or joined into a command string.
+ *      single `--add-dir` argument, and the bootstrap prompt is a single final *positional* argument (the
+ *      only opening-prompt mechanism Claude Code offers — there is intentionally no
+ *      `--prompt-interactive` flag on this host), so no prompt text is ever word-split, shell-expanded
+ *      or joined into a command string.
  */
 export class ClaudeLauncher {
   private probe: ClaudeCapabilityProbe;
@@ -110,13 +112,14 @@ export class ClaudeLauncher {
     let scope: InstallScope;
     let workspace: string;
 
+    // Plan 023 B (ADR 0022) — the state dir is the `.agents/` store or the store-less sidecar.
     if (isGlobal) {
-      targetDir = AgentHostAdapter.resolveHostDir('global', 'agents');
+      targetDir = resolveStateDir('global');
       scope = 'global';
       workspace = os.homedir();
     } else {
       workspace = cwd;
-      targetDir = path.join(cwd, '.agents');
+      targetDir = resolveStateDir('project', undefined, { cwd });
       scope = 'project';
     }
 
@@ -124,7 +127,7 @@ export class ClaudeLauncher {
     if (!await fs.pathExists(lockfilePath)) {
       if (!isGlobal) {
         // Check if global installation exists as fallback
-        const globalTarget = AgentHostAdapter.resolveHostDir('global', 'agents');
+        const globalTarget = resolveStateDir('global');
         const globalLockfile = path.join(globalTarget, 'agents-united.json');
         if (await fs.pathExists(globalLockfile)) {
           const gLock: LockfileManifest = await fs.readJson(globalLockfile);

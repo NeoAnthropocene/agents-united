@@ -8,6 +8,9 @@ import { HostProjector } from './projector.js';
 import type { IndexableAsset } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { ClaudeProjector } from './claude-projector.js';
+import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
+import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
+import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo } from './types.js';
 import { assetOwners, mergeAssetOwners } from './types.js';
@@ -118,7 +121,7 @@ export class InstallEngine {
    */
   private static projectionRoot(scope: InstallScope, targetDir?: string): { agentsTarget: string; root: string } {
     const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', targetDir);
-    return { agentsTarget, root: path.resolve(path.dirname(agentsTarget)) };
+    return { agentsTarget, root: workspaceRootOf(agentsTarget) };
   }
 private toPosix(p: string): string {
     return p.split(path.sep).join('/');
@@ -406,6 +409,127 @@ private toPosix(p: string): string {
   ): boolean {
     if (typeof options.pluginLane === 'boolean') return options.pluginLane;
     return lockfile?.pluginLane === true;
+  }
+
+  /**
+   * Plan 023 B (ADR 0022, D4) — resolve the state dir for this install. An explicit `targetDir`
+   * is a location hint; a requested (or implied) store shape always lands in `.agents/`, and a
+   * sidecar is used only when nothing needs the store: any non-Claude fan-out or the plugin lane
+   * (both write under `.agents/plugins/`) forces the store (strangler-safe, ADR 0022 decision 4).
+   */
+  private static resolveInstallStateDir(scope: InstallScope, options: InstallOptions, fanoutHosts: string[]): string {
+    const discovered = resolveStateDir(scope, options.targetDir, { preferShape: options.storeShape ?? 'store' });
+    const needsStore = options.storeShape === 'store'
+      || fanoutHosts.some(h => h !== 'claude')
+      || options.pluginLane === true;
+    if (needsStore && isSidecarDir(discovered)) return stateDirFor(workspaceRootOf(discovered), 'store');
+    return discovered;
+  }
+
+  /** Move an existing sidecar into the store dir (ADR 0022 upgrade path); a no-op otherwise. */
+  private static async upgradeSidecarToStore(stateDir: string): Promise<void> {
+    if (isSidecarDir(stateDir)) return;
+    const sidecar = stateDirFor(workspaceRootOf(stateDir), 'sidecar');
+    if (!(await fs.pathExists(path.join(sidecar, 'agents-united.json')))) return;
+    if (await fs.pathExists(path.join(stateDir, 'agents-united.json'))) return; // store already authoritative
+    await fs.ensureDir(stateDir);
+    for (const entry of await fs.readdir(sidecar)) {
+      await fs.move(path.join(sidecar, entry), path.join(stateDir, entry), { overwrite: true });
+    }
+    await fs.remove(sidecar);
+  }
+
+  /**
+   * Plan 023 A (owner D1–D2) — the plain-session guard. Runs only when the Claude lane runs.
+   * An explicit `options.sessionGuard` wins and is recorded; otherwise the recorded decision is
+   * re-applied (sticky yes re-merges idempotently, sticky no writes nothing); never decided ⇒
+   * nothing is written (the CLI asks). `project`/`local` are workspace files and are ignored for
+   * global installs; `user` (home settings) is honoured only when requested explicitly.
+   */
+  private async applySessionGuard(
+    scope: InstallScope,
+    workspaceRoot: string,
+    lockfile: LockfileManifest,
+    options: InstallOptions,
+    projections: ProjectionInfo[],
+  ): Promise<void> {
+    const recorded = lockfile.sessionGuard;
+    let variant: 'project' | 'local' | 'user' | false | undefined = options.sessionGuard;
+    if (variant === undefined && recorded) {
+      variant = 'off' in recorded ? false : variantOfRecordedFile(recorded.file);
+    }
+    if (variant === undefined) return;
+    if (variant === false) {
+      lockfile.sessionGuard = { off: true };
+      return;
+    }
+    if (scope === 'global' && variant !== 'user') return;
+
+    const file = resolveSessionGuardFile(variant, workspaceRoot);
+    const recordedFile = variant === 'user' ? file : this.toPosix(path.relative(workspaceRoot, file));
+    const sameFileRecord = recorded && !('off' in recorded) && recorded.file === recordedFile ? recorded : undefined;
+    const existedBefore = await fs.pathExists(file);
+    const result = await mergeSessionGuard(file, { replaceHash: sameFileRecord?.handlerHash });
+    lockfile.sessionGuard = {
+      file: recordedFile,
+      handlerHash: result.handlerHash,
+      createdFile: sameFileRecord ? sameFileRecord.createdFile : !existedBefore,
+    };
+    const warnings: string[] = [];
+    if (result.status === 'skipped-invalid') {
+      warnings.push(`Session guard not written: ${recordedFile} is not valid JSON (comments or trailing commas?). It was left untouched — paste this into it by hand:\n${sessionGuardSnippet()}`);
+    } else if (result.status === 'modified') {
+      warnings.push(`Session guard in ${recordedFile} was edited by hand; left as-is (run with --force after removing it to restore).`);
+    }
+    projections.push({ host: 'claude', path: recordedFile, warnings });
+  }
+
+  /**
+   * Plan 024 S4 (owner decisions E2/E4) — the opt-in command-permission preset. Written ONLY to
+   * `.claude/settings.local.json`, never the shared `.claude/settings.json`, regardless of what
+   * `sessionGuard` variant is also requested. Off by default, never implied by `-y`. Applies to
+   * every fan-out host that has a verified renderer (Claude only today); any other requested host
+   * gets an honest "not supported yet" warning instead of a guessed file.
+   */
+  private async applyPermissionPreset(
+    scope: InstallScope,
+    workspaceRoot: string,
+    lockfile: LockfileManifest,
+    options: InstallOptions,
+    fanoutHosts: string[],
+    projections: ProjectionInfo[],
+  ): Promise<void> {
+    const recorded = lockfile.permissionPreset;
+    const tier = options.permissionPreset ?? (recorded && !('off' in recorded) ? recorded.tier : undefined);
+    if (tier === undefined) return;
+    if (tier === false) {
+      lockfile.permissionPreset = { off: true };
+      return;
+    }
+    if (scope === 'global') return; // Plan 024 S4: workspace-local only, never a global default.
+
+    const unsupported = fanoutHosts.filter(h => h !== 'claude' && !SUPPORTED_PERMISSION_PRESET_HOSTS.includes(h));
+    for (const host of unsupported) {
+      projections.push({ host, path: '', warnings: [`Permission preset not supported for ${host} yet — no file written for it. Claude still received it if selected.`] });
+    }
+    if (!fanoutHosts.includes('claude')) return;
+
+    const file = path.join(workspaceRoot, '.claude', 'settings.local.json');
+    const recordedFile = this.toPosix(path.relative(workspaceRoot, file));
+    const existedBefore = await fs.pathExists(file);
+    const result = await mergePermissionPreset(file, tier);
+    const warnings: string[] = [];
+    if (result.status === 'skipped-invalid') {
+      warnings.push(`Permission preset not written: ${recordedFile} is not valid JSON (comments or trailing commas?). Left untouched.`);
+    } else {
+      lockfile.permissionPreset = {
+        tier,
+        file: recordedFile,
+        entries: result.entries,
+        createdFile: recorded && !('off' in recorded) ? recorded.createdFile : !existedBefore,
+      };
+    }
+    projections.push({ host: 'claude', path: recordedFile, warnings });
   }
 
   /**
@@ -839,18 +963,23 @@ private toPosix(p: string): string {
     const resolved = await this.registry.resolve(identifier);
     const registryDir = this.registry.getRegistryDir();
 
-    const targetDirs: string[] = hosts.map(h => AgentHostAdapter.resolveHostDir(scope, h, options.targetDir));
-    // Fan-out only from the canonical `.agents/` store, and only to projection-capable hosts.
+    // Fan-out only from the canonical state dir, and only to projection-capable hosts.
     const hasCanonicalAgents = hosts.includes('agents');
     const fanoutHosts = (options.fanout || [])
       .map(h => (typeof h === 'string' ? h.trim().toLowerCase() : h))
       .filter(h => isKnownHost(h) && HOST_REGISTRY[h]?.projectionCapable);
+    // Plan 023 B (ADR 0022) — the `agents` host's directory is the STATE DIR: the `.agents/` store
+    // or the store-less `.claude/.agents-united/` sidecar. Every other host keeps its own dir.
+    const stateDir = InstallEngine.resolveInstallStateDir(scope, options, fanoutHosts);
+    const targetDirs: string[] = hosts.map(h =>
+      options.targetDir && !(h === 'agents') ? path.resolve(options.targetDir)
+        : h === 'agents' ? stateDir
+        : AgentHostAdapter.resolveHostDir(scope, h, options.targetDir));
 
     if (options.dryRun) {
       let effectiveDryFanout = fanoutHosts;
       let effectiveDryPluginLane = options.pluginLane === true;
-      const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
-      const lockfilePath = path.join(agentsTarget, 'agents-united.json');
+      const lockfilePath = path.join(stateDir, 'agents-united.json');
       if (await fs.pathExists(lockfilePath)) {
         const lockfile = await fs.readJson(lockfilePath).catch(() => null);
         if (options.fanout === undefined && hasCanonicalAgents && lockfile?.fanout) {
@@ -864,7 +993,7 @@ private toPosix(p: string): string {
         }
       }
       const projections = hasCanonicalAgents
-        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, options.targetDir, effectiveDryPluginLane)
+        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, stateDir, effectiveDryPluginLane)
         : [];
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }
@@ -873,10 +1002,16 @@ private toPosix(p: string): string {
     const now = new Date().toISOString();
     // Collect projections across target-dir iterations (dedup by host+path).
     const projections: ProjectionInfo[] = [];
-    const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
+    const agentsTarget = stateDir;
+    // ADR 0022 upgrade path: a store-backed install into a workspace that so far had only the
+    // sidecar moves the sidecar into `.agents/` first (keys need no rewrite: `files` are
+    // state-dir-relative, `projections` root-relative). Crash-safe: the next run finishes it.
+    if (hasCanonicalAgents) await InstallEngine.upgradeSidecarToStore(stateDir);
 
     for (const targetDir of targetDirs) {
       const subPaths = AgentHostAdapter.getSubPaths(targetDir);
+      // The sidecar is an immutable snapshot: always copies, never symlinks into the registry.
+      const iterMethod: InstallMethod = isSidecarDir(targetDir) ? 'copy' : method;
 
       await fs.ensureDir(subPaths.agentsDir);
       await fs.ensureDir(subPaths.skillsDir);
@@ -888,7 +1023,10 @@ private toPosix(p: string): string {
       const lockfile = await this.readLockfile(subPaths.lockfile);
       await this.migrateLegacyWorkspaceWorkflows(targetDir, lockfile);
       lockfile.scope = scope;
-      lockfile.method = method;
+      lockfile.method = iterMethod;
+      // Plan 023 B — record the shape only on a sidecar; a store-backed lockfile keeps its exact shape.
+      if (isSidecarDir(targetDir)) lockfile.storeShape = 'sidecar';
+      else delete lockfile.storeShape;
       lockfile.hosts = hosts;
 
       // Fan-out resolution: an explicit --fanout wins and is persisted to the lockfile;
@@ -934,7 +1072,7 @@ private toPosix(p: string): string {
           }
         }
 
-        const actualMethod = await this.deployFile(src, dest, method, options.force);
+        const actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
         const hash = await this.calculateHash(src);
         const relPath = this.toPosix(path.relative(targetDir, dest));
         // Preserve projection tracking and co-ownership across re-installs;
@@ -963,7 +1101,7 @@ private toPosix(p: string): string {
         const src = path.join(registryDir, 'skills', skillName);
         const dest = path.join(subPaths.skillsDir, skillName);
 
-        const actualMethod = await this.deployFile(src, dest, method, options.force);
+        const actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
         const skillFile = path.join(src, 'SKILL.md');
         if (await fs.pathExists(skillFile)) {
           const hash = await this.calculateHash(skillFile);
@@ -1023,7 +1161,7 @@ private toPosix(p: string): string {
         const src = path.join(registryDir, 'workflows', workflowFile);
         const dest = path.join(subPaths.workflowsDir, workflowFile);
 
-        const actualMethod = await this.deployFile(src, dest, method, options.force);
+        const actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
         const hash = await this.calculateHash(src);
         const relPath = this.toPosix(path.relative(targetDir, dest));
         const existing = lockfile.files[relPath];
@@ -1052,7 +1190,7 @@ private toPosix(p: string): string {
         const dest = path.join(subPaths.rulesDir, ruleFile);
 
         if (await fs.pathExists(src)) {
-          const actualMethod = await this.deployFile(src, dest, method, options.force);
+          const actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
           const hash = await this.calculateHash(src);
           const relPath = this.toPosix(path.relative(targetDir, dest));
           const existing = lockfile.files[relPath];
@@ -1093,6 +1231,16 @@ private toPosix(p: string): string {
       // passed explicitly or inherited from the lockfile).
       if (hasCanonicalAgents && effectiveFanout.length > 0 && path.resolve(targetDir) === path.resolve(agentsTarget)) {
         await this.applyFanout(effectiveFanout, resolved, registryDir, scope, targetDir, lockfile, options, projections);
+      }
+
+      // Plan 023 A — plain-session guard, Claude lane only (same canonical-store iteration).
+      if (hasCanonicalAgents && effectiveFanout.includes('claude') && path.resolve(targetDir) === path.resolve(agentsTarget)) {
+        await this.applySessionGuard(scope, workspaceRootOf(agentsTarget), lockfile, options, projections);
+      }
+
+      // Plan 024 S4 — opt-in command-permission preset (same canonical-store iteration).
+      if (hasCanonicalAgents && effectiveFanout.length > 0 && path.resolve(targetDir) === path.resolve(agentsTarget)) {
+        await this.applyPermissionPreset(scope, workspaceRootOf(agentsTarget), lockfile, options, effectiveFanout, projections);
       }
 
       await fs.writeJson(subPaths.lockfile, lockfile, { spaces: 2 });

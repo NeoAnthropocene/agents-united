@@ -83,6 +83,18 @@ export class ClineProjector {
     } else if (typeof defaultMaxIterations === 'number') {
       cleanFrontmatter.maxIterations = defaultMaxIterations;
     }
+    // Plan 026 Step 4 (ADR 0023 decision 4) — the canonical per-agent skills list projects
+    // 1:1 into the Configured Agent's `skills:` field. Verified against cline/cline PR #9502
+    // (merged 2026-02-24, shipped by 3.0.65): `SubagentRunner.run()` uses this list only to
+    // FILTER `getAvailableSkills()` down to the named subset before it enters
+    // `SystemPromptContext` — it scopes discovery, it does not preload full SKILL.md bodies —
+    // so this is a `mapped` disposition (registry/translation-ledger.json), not a preload risk.
+    if (Array.isArray(parsed.skills)) {
+      const skills = parsed.skills.filter((s): s is string => typeof s === 'string' && s.trim().length > 0);
+      if (skills.length > 0) {
+        cleanFrontmatter.skills = skills;
+      }
+    }
 
     const frontmatterStr = yaml.stringify(cleanFrontmatter).trim();
     const bodyStr = match[2].trim();
@@ -306,11 +318,11 @@ export class ClineProjector {
         : '\n\n## Planner-Orchestrator Policy (ADR 0015)' +
           'Plan solo, delegate execution. This mode replaces the Subagent-First Planning Dialogue Loop for single-discipline domain bundles.\n\n' +
           '### Phase 0 — User Alignment (solo)\n' +
-          'If the user\'s brief is ambiguous, grill it Socratically yourself: `/grill-me` (strategy / non-code) or `/grill-with-docs` (code & docs). Consult the bundle\'s skills directly whenever they help you plan — you have the same skill access as your specialists. Do NOT spawn specialists during planning.\n\n' +
+          'If the user\'s brief is ambiguous, grill it Socratically yourself: `/grill-me` (strategy / non-code) or `/grill-with-docs` (code & docs). Consult the bundle\'s skills directly whenever they help you plan — you have the same skill access as your specialists. During planning, specialists are consulted read-only only (the Planning Consultation Phase gate); do not spawn them to produce deliverables.\n\n' +
           '### Planning Aid Boundary\n' +
           'While planning you may consult skills and reason to give the user PROVISIONAL answers and estimates. A concrete deliverable — data analysis, code, assets, documents — is specialist work: defer it to the delegation map, never produce it yourself during planning.\n\n' +
-          '### Phase 2 — Delegation Map (solo-composed)\n' +
-          'Compose the task → specialist map from your own domain expertise and the skill runbooks, and present it to the user BEFORE execution.\n\n' +
+          '### Phase 2 — Delegation Map\n' +
+          'Compose the task → specialist map from your domain expertise, the skill runbooks and the read-only consultation output, and present it to the user BEFORE execution.\n\n' +
           '### Execution\n' +
           'Delegate every deliverable to the configured `subagent_*` agent tools (projected under `.cline/agents/`), assigning non-overlapping scopes. Complete specialist work in the main session ONLY if the subagent tools are genuinely absent from this runtime or the task is trivial (single-file read, one-line answer, formatting) — never as a convenience or speed choice.')
       : '';

@@ -8,12 +8,16 @@ import { ClaudeCapabilityProbe } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
-import { RegistryResolver } from './registry.js';
+import { RegistryResolver, loadTranslationLedger } from './registry.js';
+import { McpLocationRegistry } from './mcp-locations.js';
 import { assetOwners } from './types.js';
+import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
+import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import type {
   ClaudeCapabilityReport,
   ClineCapabilityReport,
   LockfileManifest,
+  TranslationLedgerEntry,
 } from './types.js';
 
 export interface HealthReport {
@@ -27,10 +31,57 @@ export interface HealthReport {
   workflowsCount: number;
   clineCapability?: ClineCapabilityReport;
   claudeCapability?: ClaudeCapabilityReport;
+  /** Plan 023 A — plain-session guard state; absent when no decision was ever recorded. */
+  sessionGuard?: 'wired' | 'missing' | 'modified' | 'skipped-invalid' | 'off';
+  /** Plan 024 S4 — command-permission preset state; absent when no decision was ever recorded. */
+  permissionPreset?: 'wired' | 'missing' | 'skipped-invalid' | 'off';
+  /**
+   * Plan 026 Objective 3 — the Declared-Delta Registry entries (`registry/
+   * translation-ledger.json`) for `host` that are `degraded` or `unsupported`: what does
+   * not carry over to this host, in the user's own vocabulary. Present only when `host`
+   * was recognized (a known Declared-Delta Registry host); absent for an unknown/omitted
+   * host so the CLI never guesses.
+   */
+  declaredDeltas?: TranslationLedgerEntry[];
 }
+
+/** Hosts the Declared-Delta Registry (Plan 026) carries entries for. */
+const DECLARED_DELTA_HOSTS = new Set(['claude', 'antigravity', 'cline']);
 
 /** The only hosts that own a content-derived compound lane: Cline (ADR 0013), Claude (ADR 0018). */
 type CompoundLaneHost = 'cline' | 'claude';
+
+/**
+ * Plan 029 A3 — the hosts whose MCP configuration surface `agents doctor --host <h>` audits.
+ * `agents` is deliberately absent: the canonical store configures no MCP servers itself.
+ */
+const MCP_AUDIT_HOSTS: ReadonlySet<string> = new Set(['claude', 'antigravity', 'cline']);
+
+/**
+ * Plan 029 A3 — the McpLocationRegistry host key each audited host's config is discovered under.
+ * Antigravity reads the Gemini config surface (`~/.gemini/config/mcp_config.json`, ADR 0009), which
+ * the registry files under the `gemini` host key.
+ */
+const MCP_LOCATION_HOST: Record<string, string> = {
+  claude: 'claude',
+  antigravity: 'gemini',
+  cline: 'cline',
+};
+
+/**
+ * Plan 029 A3 — the host's own command for registering a server, PRINTED for the user to run.
+ * `agents doctor` never executes it, never installs a server and never writes an MCP config file.
+ */
+function mcpAddCommand(host: string, server: string, workspaceRoot: string): string {
+  if (host === 'antigravity') {
+    return `Add it with: agy mcp add ${server} -- <command> [args...]`;
+  }
+  if (host === 'cline') {
+    const settingsPath = McpLocationRegistry.getPrimaryWritePath('cline', workspaceRoot);
+    return `Add it with the interactive wizard: cline mcp install|add <name> (or cline config mcp for the current list); settings live in ${settingsPath}.`;
+  }
+  return `Add it with: claude mcp add ${server} -- <command> [args...]`;
+}
 
 /** A projection that now serves the same canonical at a different path. */
 interface SupersedingProjection {
@@ -161,8 +212,72 @@ export class DoctorEngine {
     return variants;
   }
 
+  /**
+   * Plan 029 A3 — the servers the INSTALLED roles declare, read from each state-dir agent's
+   * `mcpServers:` frontmatter. Names only: a credential, an `env` block or an inline server
+   * definition never reaches this set (Risk R4).
+   */
+  private static async declaredMcpServers(agentsDir: string): Promise<string[]> {
+    const names = new Set<string>();
+    if (!(await fs.pathExists(agentsDir))) return [];
+    for (const file of (await fs.readdir(agentsDir)).filter(f => f.endsWith('.md'))) {
+      const content = await fs.readFile(path.join(agentsDir, file), 'utf8').catch(() => null);
+      if (content === null) continue;
+      const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      if (!match) continue;
+      let meta: { mcpServers?: unknown } | undefined;
+      try {
+        meta = YAML.parse(match[1]) ?? undefined;
+      } catch {
+        continue; // a malformed frontmatter is reported by the frontmatter check, never guessed at
+      }
+      const entries = Array.isArray(meta?.mcpServers) ? (meta?.mcpServers as unknown[]) : [];
+      for (const entry of entries) {
+        const name =
+          typeof entry === 'string' ? entry : (entry as { name?: unknown } | null)?.name;
+        if (typeof name === 'string' && name.trim().length > 0) names.add(name.trim());
+      }
+    }
+    return [...names].sort();
+  }
+
+  /**
+   * Plan 029 A3 — warn for every server an installed role declares that this host has NOT
+   * configured, printing that host's own add command. STRICTLY READ-ONLY: doctor reads the MCP
+   * location registry, never installs a server and never writes a config file (the printed command
+   * belongs to the user, and is never executed here).
+   */
+  private static async auditMcpServers(
+    host: string,
+    workspaceRoot: string,
+    agentsDir: string,
+    warnings: string[]
+  ): Promise<string[]> {
+    const declared = await DoctorEngine.declaredMcpServers(agentsDir);
+    if (declared.length === 0) return [];
+
+    const discovered = await McpLocationRegistry.discoverForHosts(
+      [MCP_LOCATION_HOST[host]],
+      workspaceRoot
+    );
+    const configured = new Set<string>();
+    for (const location of discovered) {
+      for (const server of Object.keys(location.servers ?? {})) configured.add(server.toLowerCase());
+    }
+
+    const unconfigured = declared.filter(server => !configured.has(server.toLowerCase()));
+    for (const server of unconfigured) {
+      warnings.push(
+        `MCP server "${server}" is declared by the installed roles but not configured for ` +
+          `--host ${host}. ${mcpAddCommand(host, server, workspaceRoot)}`
+      );
+    }
+    return unconfigured;
+  }
+
   public static async runDoctor(targetDir?: string, host?: string): Promise<HealthReport> {
-    const root = AgentHostAdapter.resolveHostDir('project', 'agents', targetDir);
+    // Plan 023 B — the state dir: the `.agents/` store or the store-less `.claude/.agents-united/` sidecar.
+    const root = resolveStateDir('project', targetDir);
     const subPaths = AgentHostAdapter.getSubPaths(root);
 
     const issues: string[] = [];
@@ -237,7 +352,7 @@ export class DoctorEngine {
 
     // Projection checks: verify each recorded `projectedTo` and `projections` path
     if (manifest) {
-      const workspaceRoot = path.resolve(path.dirname(root));
+      const workspaceRoot = workspaceRootOf(root);
 
       // ADR 0017 decision 2 — exactly one warning per projection path. The presence, marker
       // and content passes below all inspect the same recorded paths (one path is routinely
@@ -422,6 +537,100 @@ export class DoctorEngine {
       }
     }
 
+    // Plan 023 B (ADR 0022) — the store-less sidecar is a machine-owned snapshot, so any byte
+    // change to a recorded file is drift (the `.agents/` store stays user-editable, unchecked).
+    if (manifest && isSidecarDir(root)) {
+      for (const [relPath, meta] of Object.entries(manifest.files)) {
+        const abs = path.join(root, relPath);
+        if (!meta.hash || !await fs.pathExists(abs)) continue;
+        const diskHash = `sha256:${crypto.createHash('sha256').update(await fs.readFile(abs)).digest('hex')}`;
+        if (diskHash !== meta.hash) {
+          warnings.push(`Sidecar snapshot modified: ${relPath} — .claude/.agents-united/ is machine-owned. Run 'agents update --force' to restore it.`);
+        }
+      }
+    }
+
+    // Plan 023 A — plain-session guard. Reported whenever a decision is recorded; repairs are
+    // never automatic (a hand-edited guard or an unparseable settings file is the user's call).
+    let sessionGuard: HealthReport['sessionGuard'];
+    const guardRecord = manifest?.sessionGuard;
+    if (guardRecord) {
+      if ('off' in guardRecord) {
+        sessionGuard = 'off';
+      } else {
+        const guardFile = path.isAbsolute(guardRecord.file)
+          ? guardRecord.file
+          : path.join(workspaceRootOf(root), guardRecord.file);
+        const state = await inspectSessionGuard(guardFile);
+        sessionGuard = state === 'absent' ? 'missing' : state;
+        if (state === 'missing' || state === 'absent') {
+          warnings.push(`Session guard missing from ${guardRecord.file}: plain Claude sessions are unguarded. Run 'agents update' to restore it.`);
+        } else if (state === 'modified') {
+          warnings.push(`Session guard in ${guardRecord.file} was edited by hand; agents-united leaves it as-is.`);
+        } else if (state === 'skipped-invalid') {
+          warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand:\n${sessionGuardSnippet()}`);
+        }
+      }
+    }
+
+    // Plan 024 S4 — command-permission preset. Reported whenever a decision is recorded; a user
+    // who removed an entry by hand is left alone (never auto-repaired).
+    let permissionPreset: HealthReport['permissionPreset'];
+    const presetRecord = manifest?.permissionPreset;
+    if (presetRecord) {
+      if ('off' in presetRecord) {
+        permissionPreset = 'off';
+      } else {
+        const presetFile = path.isAbsolute(presetRecord.file)
+          ? presetRecord.file
+          : path.join(workspaceRootOf(root), presetRecord.file);
+        if (!await fs.pathExists(presetFile)) {
+          permissionPreset = 'missing';
+          warnings.push(`Permission preset missing: ${presetRecord.file} not found. Run 'agents update' to restore it.`);
+        } else {
+          const text = await fs.readFile(presetFile, 'utf8').catch(() => null);
+          let parsed: { permissions?: { allow?: unknown[] } } | null = null;
+          try {
+            parsed = text === null ? null : JSON.parse(text);
+          } catch {
+            parsed = null;
+          }
+          if (parsed === null) {
+            permissionPreset = 'skipped-invalid';
+            warnings.push(`Permission preset not wired: ${presetRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched.`);
+          } else {
+            const allow = parsed.permissions?.allow ?? [];
+            const stillPresent = presetRecord.entries.every(e => allow.includes(e));
+            permissionPreset = stillPresent ? 'wired' : 'missing';
+            if (!stillPresent) {
+              warnings.push(`Permission preset partially removed from ${presetRecord.file}. Run 'agents update' to restore it, or --no-permission-preset to drop it for good.`);
+            }
+          }
+        }
+      }
+    }
+
+    // Plan 026 Objective 3 — surface the Declared-Delta Registry's degraded/unsupported
+    // features for a recognized host, independent of which host-specific probe (if any)
+    // also runs below. An unrecognized/omitted host yields no section (never guessed).
+    let declaredDeltas: TranslationLedgerEntry[] | undefined;
+    if (host && DECLARED_DELTA_HOSTS.has(host)) {
+      // The ledger lives beside the package's own `registry/`, not the CWD (this runs from
+      // an arbitrary workspace directory via the installed CLI) — resolve it the same way
+      // RegistryResolver does, module-relative with a CWD fallback.
+      const ledger = loadTranslationLedger(new RegistryResolver().getRegistryDir());
+      declaredDeltas = ledger.filter(
+        e => e.host === host && (e.disposition === 'degraded' || e.disposition === 'unsupported')
+      );
+    }
+
+    // Plan 029 A3 — MCP access audit (read-only). Every server an installed role declares that
+    // this host has not configured is reported with the host's own add command; doctor never
+    // installs a server and never writes an MCP config file.
+    if (host && MCP_AUDIT_HOSTS.has(host)) {
+      await DoctorEngine.auditMcpServers(host, workspaceRootOf(root), subPaths.agentsDir, warnings);
+    }
+
     // Host-specific checks (e.g. --host cline, --host claude)
     if (host === 'cline') {
       const probe = new ClineCapabilityProbe();
@@ -448,8 +657,11 @@ export class DoctorEngine {
       agentsCount,
       skillsCount,
       workflowsCount,
+      permissionPreset,
       clineCapability,
       claudeCapability,
+      sessionGuard,
+      declaredDeltas,
     };
   }
 }

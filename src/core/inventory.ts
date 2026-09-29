@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import { RegistryResolver } from './registry.js';
 import { AgentHostAdapter } from './adapter.js';
 import { KNOWN_HOST_IDS } from './hosts.js';
+import { resolveStateDir } from './state-dir.js';
 import type {
   InventoryOptions,
   PackageInventory,
@@ -74,7 +75,12 @@ export class InventoryScanner {
     } else {
       for (const scope of scopes) {
         for (const host of hosts) {
-          const dir = AgentHostAdapter.resolveHostDir(scope, host);
+          // Plan 023 B (ADR 0022) — the `agents` host's directory is the discovered state dir (the
+          // `.agents/` store or the store-less `.claude/.agents-united/` sidecar), so a sidecar
+          // install is listed under host `agents` and `update` re-installs into it.
+          const dir = host === 'agents'
+            ? resolveStateDir(scope, undefined, { cwd })
+            : AgentHostAdapter.resolveHostDir(scope, host);
           candidateDirs.push({ dir, scope, host });
         }
       }
@@ -88,7 +94,7 @@ export class InventoryScanner {
 
     const home = os.homedir();
     for (const scope of scopes) {
-      const canonicalDir = AgentHostAdapter.resolveHostDir(scope, 'agents', options.targetDir);
+      const canonicalDir = resolveStateDir(scope, options.targetDir, { cwd });
       let displayLoc = canonicalDir;
       if (canonicalDir.startsWith(cwd)) {
         const rel = path.relative(cwd, canonicalDir);

@@ -186,7 +186,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **166 modular skills & runbooks** (97 domain skills + 69 workflow playbooks) structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
+The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **188 modular skills & runbooks** (119 domain skills + 69 workflow playbooks) structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
 
 ```
 🌐 Agents United Registry Catalog Tree
@@ -304,19 +304,24 @@ Bundles are **natively active** in any Cline session after installation (ADR 001
 3. **Safe Execution (`ClineLauncher`)**:
    - Pass argument array directly (`shell: false`), guaranteeing immunity from shell injection even when prompt strings contain `$()`, quotes, newlines, or pipes.
 
-### 6.3 Antigravity ↔ Cline Feature Projection Mapping
-When Antigravity-specific capabilities (introduced in Google Antigravity 2.10–2.12+) are authored in canonical `.agents/` definitions, `ClineProjector` (ADR 0013) deterministically translates them for Cline CLI (3.0.x / 4.x):
+### 6.3 Antigravity ↔ Cline ↔ Claude Code Feature Projection Mapping
+When Antigravity-specific capabilities (introduced in Google Antigravity 2.10–2.12+) are authored in canonical `.agents/` definitions, `ClineProjector` (ADR 0013) and `ClaudeProjector` (ADR 0018) deterministically translate them for Cline CLI (3.0.x / 4.x) and Claude Code respectively:
 
-| Feature / Primitive | Google Antigravity Native | Cline Projected Equivalent | Translation Mechanism |
-| :--- | :--- | :--- | :--- |
-| **Frontmatter Rules** | `rules: [multi-agent-coordination.md, ...]` | `.cline/rules/` + `.agents/plugins/<bundle>/rules/` | Stripped from agent YAML to prevent parser crash; injected into active session coordinator rule |
-| **Tool Calling Primitives** | `view_file`, `replace_file_content`, `run_command`, `grep_search`, `list_dir` | `read_file`, `replace_in_file`, `execute_command`, `search_files`, `list_files` | Injected `## Cline runtime note` maps tool intents transparently without modifying canonical prompts |
-| **Subagent Delegation** | Native `invoke_subagent(name, prompt)` | Spawnable `subagent_<role>` tool | Generated `.cline/agents/<role>.yml` with `maxIterations: 8` hard cap and role definitions |
-| **Planning Dialogue Loop** | In-prompt consultation protocol | Active Coordinator Rule | Consultation Budget (`maxPlanningRounds`, `maxPeerExchangesPerPair`, `summaryWordCap`) rendered into session rule |
-| **Multimodal Asset Intake** | `@path/to/file` (`StartPage`/`EndPage` for PDFs) | `@path/to/file` context inlining | Fully standard across both platforms; referenced via direct relative file paths in prompt |
-| **Econometric & Math Formulas** | Inline `\(...\)` / `$...$`, block `\[...\]` / `$$...$$` | KaTeX markdown rendering | Standard GitHub Flavored Markdown math rendering across both runtimes |
-| **Ad Carousels & Visuals** | 4-backtick ````carousel ... ```` block | Markdown carousels with fallback slides | Valid markdown with `<!-- slide -->` comments parsed gracefully across both clients |
-| **Execution Policy / Plan Mode** | `permissionMode: acceptEdits` | `cline -p` (Plan Mode) vs Act Mode | Phase 0 & 1 Socratic grilling marked `[Plan Mode Safe]`; execution deferred to Phase 2+ Act mode |
+| Feature / Primitive | Google Antigravity Native | Cline Projected Equivalent | Claude Code Realization | Translation Mechanism |
+| :--- | :--- | :--- | :--- | :--- |
+| **Frontmatter Rules** | `rules: [multi-agent-coordination.md, ...]` | `.cline/rules/` + `.agents/plugins/<bundle>/rules/` | `.claude/rules/<name>.md`, referenced from frontmatter | Stripped from agent YAML to prevent parser crash; injected into active session coordinator rule (Cline) or the lean `.claude/rules/` lane (Claude) |
+| **Skills (per-agent list)** | Native `skills:` list, read directly | `skills:` on `.cline/agents/<role>.yml` **filters** (does not preload) that agent's visible skill set (Plan 026 Step 4) | Not injected — Claude subagents discover project skills from `.claude/skills/` without a per-agent preload list (`degraded`, avoids paying the preload token cost on every spawn) | See `docs/host-primitive-matrix.md` §Skills |
+| **Hooks** | Native `.agents/hooks.json` (`PreToolUse`/`PostToolUse`/`PreInvocation`/`PostInvocation`/`Stop`) | Not projected — Cline has no end-user hook file (`unsupported`) | The one enforced hook is the managed `PreToolUse` guard every role carries (Plan 022 H5); all other canonical prose hooks stay advisory (`unsupported`) | Dropped with a declared delta in both cases (`registry/translation-ledger.json`) |
+| **Tool Calling Primitives** | `view_file`, `replace_file_content`, `run_command`, `grep_search`, `list_dir` | `read_file`, `replace_in_file`, `execute_command`, `search_files`, `list_files` | `Read`, `Edit`, `Bash`, `Grep`, `Glob` | Injected runtime note maps tool intents transparently without modifying canonical prompts |
+| **Subagent Delegation** | Native `invoke_subagent(name, prompt)` | Spawnable `subagent_<role>` tool | `Agent` tool (allowlisted on coordinators) | Generated `.cline/agents/<role>.yml` (Cline, `maxIterations: 8` hard cap) or `.claude/agents/<role>.md` (Claude) |
+| **Workflows** | Native markdown slash-command macros under `ide/workflows` — **deprecated in favour of skills from 2026-11-01** (`degraded`) | `.cline/workflows/<slug>.md`, a slugified frontmatter `name` surfacing as `/<slug>` (`mapped`) | Not a projection target — Claude Code workflows are unrelated JavaScript orchestration scripts (`unsupported`) | Canonical `workflow-*` skills are the durable cross-host form (ADR 0016) |
+| **Planning Dialogue Loop** | In-prompt consultation protocol | Active Coordinator Rule | Planning Consultation Phase in the coordinator's own prompt | Consultation Budget (`maxPlanningRounds`, `maxPeerExchangesPerPair`, `summaryWordCap`) rendered into session rule (Cline) or prompt body (Claude) |
+| **Multimodal Asset Intake** | `@path/to/file` (`StartPage`/`EndPage` for PDFs) | `@path/to/file` context inlining | `@path/to/file` context inlining | Fully standard across all three runtimes; referenced via direct relative file paths in prompt |
+| **Econometric & Math Formulas** | Inline `\(...\)` / `$...$`, block `\[...\]` / `$$...$$` | KaTeX markdown rendering | KaTeX markdown rendering | Standard GitHub Flavored Markdown math rendering across all three runtimes |
+| **Ad Carousels & Visuals** | 4-backtick ````carousel ... ```` block | Markdown carousels with fallback slides | Markdown carousels with fallback slides | Valid markdown with `<!-- slide -->` comments parsed gracefully across all three clients |
+| **Execution Policy / Plan Mode** | `permissionMode: acceptEdits` | `cline -p` (Plan Mode) vs Act Mode | Claude's own `permissionMode` field (`default`/`acceptEdits`/`bypassPermissions`/`plan`) | Phase 0 & 1 Socratic grilling marked `[Plan Mode Safe]`; execution deferred to Phase 2+ Act mode (Cline) or the mapped Claude permission mode |
+
+This table is the summary; **`docs/host-primitive-matrix.md`** is the full reference (five primitives × three hosts: location, required fields, discovery, limits, precedence, and every declared delta with its disposition), and **`docs/skill-intake.md`** is the procedure for bringing a new (including third-party) skill into the catalog compliant with every active host's limits (Plan 026).
 
 ---
 
@@ -350,6 +355,73 @@ hooks:
     - matcher: ".*"
       action: signal_completion
 ---
+```
+
+### 7.1.1 Specialist Body Anatomy (Plan 025)
+
+Every `subagent-*.md` body follows one section template, thin roles and heavy roles alike:
+
+1. `## Role Definition` — who the specialist is and its boundaries.
+2. `## Skill Consultation Map` — a table, `Situation → Skill → Load when → Provided by`,
+   naming every skill the role should consult and the bundle that installs it. **No code in
+   the map.** When a row's skill is not shipped by any bundle this role file itself ships in,
+   `Provided by` says so explicitly ("**not installed here; report to orchestrator**"), which
+   routes the gap through the existing Cross-Bundle Recommendation Protocol instead of the
+   specialist improvising the platform's specifics from memory. Every skill named in the
+   frontmatter `skills:` array must have a row here.
+3. A `## Step-by-Step … Protocol` section (Phase 1 → N).
+4. `## Safety Guardrails` (or an equivalently named boundary/guardrail section).
+5. `## Output Format Requirements` — the report shape returned to the orchestrator.
+6. The comms sections from Plans 022/024 (Explicit Lifecycle Hooks, Parallel Work & Handoff,
+   Inbox Discipline & Handoff Report, etc.) — unchanged by this plan.
+
+**No exemplars in role bodies.** A code or command exemplar belongs in the skill it
+demonstrates, under `registry/skills/<skill>/references/<topic>.md`, with a one-line pointer
+from that skill's `## Code & Config Exemplars` section (§7.2) — never inline in the agent
+body. The body-lint seam (`src/core/residue-patterns.ts`,
+`AGENT_BODY_FENCE_LINE_THRESHOLD` = 15 content lines) fails a `registry/agents/*.md` body on:
+a fenced code block over the threshold (the Output Format Requirements report-shape template
+is exempt — it is a skeleton, not runnable code), a Skill Consultation Map row naming a skill
+that does not exist under `registry/skills/`, or a frontmatter `skills:` entry with no
+matching map row. `tests/specialist-anatomy.test.ts` runs this lint plus the anatomy and
+vendor-neutrality checks below.
+
+**Vendor-neutral Essentials roles.** A role shipped in an Essentials bundle (e.g.
+`software-engineering`) never names a specific vendor/platform (Supabase, Turso, Vercel,
+Azure, Lovable, v0, Bolt, …) in its frontmatter `description`. Vendor expertise is expressed
+only through Skill Consultation Map rows pointing at the addon skill that actually carries it,
+so a user running Essentials-only sees an honest description and the specialist reports the
+addon gap instead of quietly improvising vendor-specific code from pretraining.
+
+**Before/after (`subagent-backend-architect`, abridged):**
+
+```
+# BEFORE — vendor-named description, 6 inline code exemplars (~200 lines) in the body
+description: >
+  ... Supabase PostgreSQL (RLS & Edge Functions), Turso distributed LibSQL/SQLite,
+  Vercel Edge Functions, and Azure Container Apps (Azure OpenAI) services ...
+## Concrete Code & Command Exemplars
+### 1. Supabase CLI & Row Level Security (RLS) Policies
+​```bash
+npx supabase init
+...
+​```
+(five more full code blocks)
+
+# AFTER — vendor-neutral description, exemplars moved to skill references/, a map in their place
+description: >
+  ... REST, GraphQL, and gRPC services, relational/edge database schemas, and managed
+  cloud-native backend infrastructure ... Vendor-specific platforms ... are reached
+  through the Skill Consultation Map below, not baked into this description.
+## Skill Consultation Map
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| Postgres schema, RLS, Auth, Realtime, Edge Functions on a managed BaaS platform |
+  `supabase-backend-architecture` | Task names that platform explicitly |
+  `backend-distributed-systems` addon — **not installed here; report to orchestrator** |
+(the same six exemplars now live in `registry/skills/supabase-backend-architecture/references/`,
+`turso-distributed-sqlite/references/`, `vercel-deploy-best-practices/references/`,
+`azure-infrastructure-bicep/references/` and `ai-prototype-refactoring/references/`)
 ```
 
 ### 7.2 Skill Runbook Interface (`registry/skills/<name>/SKILL.md`)
