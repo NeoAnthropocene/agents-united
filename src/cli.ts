@@ -16,6 +16,9 @@ import { ClineCapabilityProbe } from './core/cline-capabilities.js';
 import { ClaudeLauncher } from './core/claude-launcher.js';
 import type { ClaudeActivationPlan } from './core/claude-launcher.js';
 import { ClaudeCapabilityProbe } from './core/claude-capabilities.js';
+import { AntigravityLauncher } from './core/antigravity-launcher.js';
+import type { AntigravityActivationPlan } from './core/antigravity-launcher.js';
+import { AntigravityCapabilityProbe } from './core/antigravity-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
@@ -2249,16 +2252,29 @@ cli
     const probe = new ClineCapabilityProbe();
 
     try {
-      // ADR 0018 / Plan 016 (Step 6): an explicit --host wins; otherwise inherit the fanout recorded in
-      // the lockfile for the resolved scope/workspace. Falling back to Cline when no claude signal exists
-      // keeps the existing Cline UX byte-identical.
+      // ADR 0018 / Plan 016 (Step 6) + Plan 029 (Step 3): an explicit --host wins; otherwise inherit
+      // the host recorded in the lockfile for the resolved scope/workspace. Plan 029 removed the
+      // silent Cline fallback: a host with no launcher is reported honestly, and the Cline lane is
+      // reachable only when Cline is the resolved host (explicit `--host cline` or a cline fanout).
       const effectiveHost = await resolveStartHost(bundle, options);
       if (effectiveHost === 'claude') {
         await runClaudeStart(bundle, prompt, options);
         return;
       }
+      if (effectiveHost === 'antigravity') {
+        await runAntigravityStart(bundle, prompt, options);
+        return;
+      }
       if (effectiveHost === 'unsupported') {
-        note(pc.yellow(`Host '${options.host}' has no activation launcher yet; falling back to the Cline lane.`), 'Host Runtime');
+        note(
+          pc.yellow(
+            `Host '${options.host}' has no activation launcher. Launcher-capable lanes: claude, antigravity, cline.\n` +
+            `Re-run with --host claude|antigravity|cline to choose one explicitly.`
+          ),
+          'Host Runtime'
+        );
+        outro(pc.yellow('No session launched.'));
+        return;
       }
       const resolution = await launcher.resolveInstallation(bundle, {
         global: options.global,
@@ -2441,21 +2457,24 @@ cli
   });
 
 /**
- * Plan 016 (Step 6) — resolve the activation host for `agents start`.
+ * Plan 016 (Step 6) + Plan 029 (Step 3) — resolve the activation host for `agents start`.
  *
- * - an explicit `--host` wins (`claude` selects the Claude lane, anything else falls back to Cline, which
- *   is the pre-Step-6 behaviour where `--host` was ignored entirely);
- * - otherwise the fanout recorded in the lockfile for the resolved scope/workspace is inherited, so an
- *   install projected to Claude activates the Claude lane and an install with no claude signal keeps the
- *   existing Cline UX unchanged.
+ * - an explicit `--host` wins: `claude`, `cline`, `antigravity` (also the `agents` / `gemini` ids,
+ *   whose `HOST_REGISTRY` entry carries the `antigravity` projection PROFILE — there is no
+ *   `antigravity` host key), anything else has no launcher and is reported as `unsupported`;
+ * - otherwise the host recorded in the lockfile for the resolved scope/workspace is inherited,
+ *   so a claude fanout activates the Claude lane, a cline install keeps the Cline lane, and an
+ *   install whose only host is the canonical `.agents/` store (the Antigravity profile) activates
+ *   the Antigravity lane.
  *
- * Detection is deliberately best-effort: any resolution error (bundle not installed, not projected) yields
- * no claude signal, and the selected lane then reports its own actionable error exactly as before.
+ * Detection is deliberately best-effort: any resolution error (bundle not installed, not projected)
+ * yields no signal, and the selected lane then reports its own actionable error exactly as before.
+ * Plan 029 removed the silent Cline fallback: `unsupported` never launches another host's lane.
  */
 async function resolveStartHost(
   bundle: string,
   options: { host?: string; global?: boolean }
-): Promise<'cline' | 'claude' | 'unsupported'> {
+): Promise<'cline' | 'claude' | 'antigravity' | 'unsupported'> {
   const explicitHost = typeof options.host === 'string' ? options.host.trim().toLowerCase() : '';
   if (explicitHost === 'claude') {
     return 'claude';
@@ -2464,20 +2483,134 @@ async function resolveStartHost(
     return 'cline';
   }
   if (explicitHost.length > 0) {
+    if (explicitHost === 'antigravity') {
+      return 'antigravity';
+    }
+    // `agents` (canonical store) and `gemini` (legacy Antigravity) carry the antigravity profile.
+    if (isKnownHost(explicitHost) && HOST_REGISTRY[explicitHost].profile === 'antigravity') {
+      return 'antigravity';
+    }
     return 'unsupported';
   }
 
+  let recordedHosts: string[] = [];
   let recordedFanout: string[] = [];
   try {
-    const detection = await new ClaudeLauncher().resolveInstallation(bundle, {
+    const detection = await new AntigravityLauncher().resolveInstallation(bundle, {
       global: options.global,
       cwd: process.cwd(),
     });
+    recordedHosts = detection.lockfile.hosts || [];
     recordedFanout = detection.lockfile.fanout || [];
   } catch {
+    recordedHosts = [];
     recordedFanout = [];
   }
-  return recordedFanout.includes('claude') ? 'claude' : 'cline';
+
+  if (recordedFanout.includes('claude')) return 'claude';
+  if (recordedHosts.includes('cline') || recordedFanout.includes('cline')) return 'cline';
+  const isAntigravityProfile = (host: string): boolean =>
+    isKnownHost(host) && HOST_REGISTRY[host].profile === 'antigravity';
+  if (recordedHosts.length > 0 && recordedHosts.every(isAntigravityProfile)) return 'antigravity';
+
+  // No unambiguous signal: keep the historical Cline lane, which reports its own actionable error.
+  return 'cline';
+}
+
+/**
+ * Plan 029 (Step 3) / Objectives 6–7 — the Antigravity lane for `agents start --host antigravity`.
+ *
+ * Three behaviours are load-bearing:
+ *   1. `--dry-run` prints bundle / tier / scope / workspace / executable / argv and launches nothing;
+ *   2. when `agy` cannot be resolved, the desktop route is printed (open the workspace in Antigravity
+ *      and @-mention the canonical coordinator file) and the command exits 0 having launched NOTHING —
+ *      it never falls through to another host's lane;
+ *   3. the session is spawned from an argv array with `shell: false` by `AntigravityLauncher`.
+ */
+async function runAntigravityStart(bundle: string, prompt: string | undefined, options: any): Promise<void> {
+  const launcher = new AntigravityLauncher();
+  const probe = new AntigravityCapabilityProbe();
+
+  const resolution = await launcher.resolveInstallation(bundle, {
+    global: options.global,
+    cwd: process.cwd(),
+  });
+
+  const bundleDef = await registry.getBundle(bundle);
+  // The canonical coordinator file the `--agent` value names and the desktop route @-mentions.
+  const coordinatorName = AntigravityLauncher.resolveCoordinatorName(bundleDef?.orchestrator);
+  const coordinatorRel = path.posix.join('.agents', 'agents', `${coordinatorName}.md`);
+
+  const probeReport = await probe.probe();
+
+  if (!probeReport.installed) {
+    note(
+      pc.yellow(
+        `Host: ${pc.cyan('antigravity')} — the agy CLI was not found on PATH or via AGY_BIN_PATH.\n\n` +
+        `Desktop route (nothing was launched):\n` +
+        `  1. Open this workspace in the Antigravity app.\n` +
+        `  2. @-mention the coordinator definition: ${pc.bold(coordinatorRel)}\n\n` +
+        `To use the CLI lane instead, install agy / put it on PATH, or set AGY_BIN_PATH.`
+      ),
+      'Antigravity (desktop route)'
+    );
+    outro(pc.yellow('No session launched.'));
+    return;
+  }
+
+  const plan = launcher.planActivation({
+    bundleName: bundle,
+    workspace: resolution.workspace,
+    scope: resolution.scope,
+    report: probeReport,
+    prompt,
+    orchestrator: bundleDef?.orchestrator,
+  });
+
+  if (options.dryRun) {
+    note(
+      `Bundle: ${plan.bundleName}\n` +
+      `Tier: ${bundleDef?.tier ?? 'not declared (Tier-1 domain default)'}\n` +
+      `Scope: ${plan.scope}\n` +
+      `Workspace: ${plan.workspace}\n` +
+      `Executable: ${plan.executable}\n` +
+      `Argv: ${plan.argv.map(a => (a.includes(' ') || a.includes('\n') ? `"${a.replace(/\n/g, '\\n')}"` : a)).join(' ')}`,
+      'Antigravity Activation Plan (dry run)'
+    );
+    outro(pc.yellow('Dry run complete. No processes launched.'));
+    return;
+  }
+
+  const coordinatorPath = path.join(resolution.workspace, '.agents', 'agents', `${coordinatorName}.md`);
+  if (!await fs.pathExists(coordinatorPath)) {
+    outro(
+      pc.red(
+        `Canonical coordinator "${coordinatorRel}" was not found in ${resolution.workspace}.\n` +
+        `Run 'agents add ${bundle}' before starting an Antigravity session.`
+      )
+    );
+    process.exit(1);
+  }
+
+  if (!probeReport.promptInteractive) {
+    // Honest capability reporting: the flag is passed regardless (dropping the user's task silently
+    // would be worse), but an unverified surface is never presented as verified.
+    note(
+      pc.yellow('The capability probe could not confirm --prompt-interactive from `agy --help`; the opening prompt is still passed as a single argv element.'),
+      'Antigravity CLI'
+    );
+  }
+
+  note(
+    `Host: ${pc.cyan('antigravity')}\n` +
+    `Executable: ${plan.executable}\n` +
+    `Workspace: ${plan.workspace}\n` +
+    `Agent: ${coordinatorName}`,
+    'Starting Antigravity Session'
+  );
+
+  await launcher.launch(plan);
+  outro(pc.green(`✔ Antigravity session finished.`));
 }
 
 /** Why the Agent-Teams scaffold is on or off for a Claude session. */

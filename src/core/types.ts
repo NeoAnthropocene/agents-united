@@ -254,6 +254,41 @@ export interface ClaudeCapabilityReport {
   diagnostics: string[];
 }
 
+/**
+ * Plan 029 B6 — the resolved `agy` (Antigravity CLI) invocation. Mirrors `ResolvedClaudeCommand`,
+ * minus the npm node-wrapper branch: `agy` ships as a native binary plus `.cmd`/`.bat` shims, so a
+ * PATH hit is always either the binary itself or the shell shim routed through `cmd.exe`.
+ */
+export type ResolvedAgyCommand = {
+  executable: string;
+  prefixArgs: string[];
+  source: 'env-binary' | 'path-executable';
+};
+
+/**
+ * Plan 029 B6 — the read-only Antigravity CLI capability report.
+ *
+ * `installed` is a pure "the binary answered `--version` with exit 0" signal (mirroring
+ * `ClaudeCapabilityReport`), so an unverifiable runtime is never reported as capable. The three
+ * feature flags are derived from `agy --help` text only. `meetsVersionFloor` is reported as data:
+ * it names the version on which the `--agent` / `--prompt-interactive` surface was verified live
+ * and is deliberately never a launch gate.
+ */
+export interface AntigravityCapabilityReport {
+  installed: boolean;
+  version?: string;
+  command?: ResolvedAgyCommand;
+  /** `--agent <name>` (agent for the current CLI session) is advertised by `agy --help`. */
+  agentFlag: boolean;
+  /** `-i, --prompt-interactive` is advertised — i.e. an opening prompt CAN be passed. */
+  promptInteractive: boolean;
+  /** Values advertised for `--mode` (verified live: `accept-edits`, `plan`). */
+  modes: string[];
+  /** Whether the reported version is at or above the live-verified floor. Informational only. */
+  meetsVersionFloor: boolean;
+  diagnostics: string[];
+}
+
 export interface ProcessRunnerResult {
   exitCode: number;
   stdout: string;
