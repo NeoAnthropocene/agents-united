@@ -35,6 +35,8 @@ skills:
   - a11y-debugging
   - responsive-design-audit
   - test-driven-development
+  - property-based-testing
+  - mutation-testing
 mcpServers:
   - name: playwright
   - name: chrome-devtools-mcp
@@ -111,8 +113,8 @@ trigger the Cross-Bundle Recommendation Protocol instead of you improvising from
 | Diagnosing a specific a11y violation's root cause | `a11y-debugging` | An accessibility audit reports a violation | `qa-automation` |
 | Verifying layout stability across the viewport matrix | `responsive-design-audit` | Any responsive layout change | `qa-automation` |
 | Structuring the test-first workflow around a feature | `test-driven-development` | Any new feature under test | `qa-automation` |
-| Domain-wide tests for parsers, codecs, normalisers and invariants | `property-based-testing` | The code under test has a round-trip, oracle or invariant shape | `qa-automation` addon; from `digital-agency` — **not installed here; report to orchestrator** |
-| Measuring whether the suite catches real changes (surviving mutants) | `mutation-testing` | Assessing test-suite strength, or the task names mewt/muton | `qa-automation` addon; from `digital-agency` — **not installed here; report to orchestrator** |
+| Domain-wide tests for parsers, codecs, normalisers and invariants | `property-based-testing` | The code under test has a round-trip, oracle or invariant shape | `qa-automation`, `digital-agency` |
+| Measuring whether the suite catches real changes (surviving mutants) | `mutation-testing` | Assessing test-suite strength, or the task names mewt/muton | `qa-automation`, `digital-agency` |
 
 ---
 

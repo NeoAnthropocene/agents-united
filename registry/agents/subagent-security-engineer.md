@@ -37,6 +37,13 @@ effort: medium
 skills:
   - security-audit
   - git-guardrails
+  - threat-modeling
+  - security-best-practices
+  - semgrep-scanning
+  - codeql-scanning
+  - sarif-triage
+  - supply-chain-risk-audit
+  - security-diff-review
 mcpServers:
   - name: github
 rules:
@@ -78,13 +85,13 @@ improvising from memory.
 |---|---|---|---|
 | OWASP / SAST checklist over the codebase | `security-audit` | Every audit pass | every bundle that ships this role |
 | Commit and branch hygiene for security fixes | `git-guardrails` | Every commit of a remediation | every bundle that ships this role |
-| Deciding where risk concentrates before auditing | `threat-modeling` | The task asks for a threat model, or the scope is a new internet-facing system | `secops-application-security` addon; from other security bundles — **not installed here; report to orchestrator** |
-| Framework-specific secure-coding rules (Django, Next.js, Express, Go, …) | `security-best-practices` | Writing or reviewing code in a supported stack | `secops-application-security` addon; from other security bundles — **not installed here; report to orchestrator** |
-| Automated pattern scan of the codebase | `semgrep-scanning` | First-pass SAST, or the task names Semgrep | `secops-application-security` addon; from other security bundles — **not installed here; report to orchestrator** |
-| Inter-procedural taint / data-flow scan | `codeql-scanning` | The task names CodeQL, or Semgrep lacks cross-file depth | `secops-application-security` addon; from other security bundles — **not installed here; report to orchestrator** |
-| Triaging, deduplicating or diffing scanner output | `sarif-triage` | Any SARIF file is in hand | `secops-application-security` addon; from other security bundles — **not installed here; report to orchestrator** |
-| Dependency and third-party package risk | `supply-chain-risk-audit` | The audit scope includes the dependency tree | `secops-application-security` addon; from other security bundles — **not installed here; report to orchestrator** |
-| Security review of one PR, commit or diff | `security-diff-review` | The task is a change, not a whole codebase | `secops-application-security` addon; from other security bundles — **not installed here; report to orchestrator** |
+| Deciding where risk concentrates before auditing | `threat-modeling` | The task asks for a threat model, or the scope is a new internet-facing system | every security bundle that ships this role |
+| Framework-specific secure-coding rules (Django, Next.js, Express, Go, …) | `security-best-practices` | Writing or reviewing code in a supported stack | every security bundle that ships this role |
+| Automated pattern scan of the codebase | `semgrep-scanning` | First-pass SAST, or the task names Semgrep | every security bundle that ships this role |
+| Inter-procedural taint / data-flow scan | `codeql-scanning` | The task names CodeQL, or Semgrep lacks cross-file depth | every security bundle that ships this role |
+| Triaging, deduplicating or diffing scanner output | `sarif-triage` | Any SARIF file is in hand | every security bundle that ships this role |
+| Dependency and third-party package risk | `supply-chain-risk-audit` | The audit scope includes the dependency tree | every security bundle that ships this role |
+| Security review of one PR, commit or diff | `security-diff-review` | The task is a change, not a whole codebase | every security bundle that ships this role |
 
 ---
 

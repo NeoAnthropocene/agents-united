@@ -447,7 +447,14 @@
         "domain-modeling",
         "git-guardrails",
         "grill-me",
-        "grill-with-docs"
+        "grill-with-docs",
+        "threat-modeling",
+        "security-best-practices",
+        "semgrep-scanning",
+        "codeql-scanning",
+        "sarif-triage",
+        "supply-chain-risk-audit",
+        "security-diff-review"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -1267,7 +1274,9 @@
         "viral-referral-loops",
         "banner-design",
         "brand-identity",
-        "ux-writing"
+        "ux-writing",
+        "property-based-testing",
+        "mutation-testing"
       ],
       "version": "1.0.0"
     },
@@ -1431,7 +1440,14 @@
         "grill-me",
         "grill-with-docs",
         "telemetry-monitoring",
-        "edge-security-audit"
+        "edge-security-audit",
+        "threat-modeling",
+        "security-best-practices",
+        "semgrep-scanning",
+        "codeql-scanning",
+        "sarif-triage",
+        "supply-chain-risk-audit",
+        "security-diff-review"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1511,7 +1527,14 @@
         "workflow-spec",
         "git-guardrails",
         "grill-me",
-        "grill-with-docs"
+        "grill-with-docs",
+        "threat-modeling",
+        "security-best-practices",
+        "semgrep-scanning",
+        "codeql-scanning",
+        "sarif-triage",
+        "supply-chain-risk-audit",
+        "security-diff-review"
       ],
       "version": "1.0.0",
       "planningLoop": {
