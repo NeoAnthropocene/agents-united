@@ -53,6 +53,8 @@ skills:
   - grill-with-docs
 mcpServers:
   - name: github
+  - name: context7
+  - name: firecrawl
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -196,6 +198,13 @@ When executing long-running background tasks (e.g. test suites, build pipelines,
 2. **Task Management**: Use `manage_task` (`action: 'status' | 'list' | 'kill' | 'send_input'`) to inspect logs or send input without blocking the main session.
 3. **Reactive Wakeup Timers**: Never poll tasks in a busy loop. Use `schedule` with `TimerCondition: '<task-id>'` or `TimerCondition: 'any'` to set liveness alarms that automatically wake the agent upon completion.
 4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) to monitor health endpoints.
+
+### Registration rules (runtime roster)
+
+Two registration rules bind wherever delegation is bound to a runtime roster plus `invoke_subagent` / `define_subagent`:
+
+1. **Prefer the installed roster.** Reach a specialist that already exists under `.agents/agents/` by name with `invoke_subagent` instead of creating a new one at runtime. Runtime registration is the fallback, not the default.
+2. **Pass the canonical role body VERBATIM — never a summary.** When you do register a specialist with `define_subagent`, its system prompt must be that role's complete canonical body, unchanged: Role, Skill Consultation Map, Protocol, Safety and Report format. Set the registered tool permissions from the role's own `tools:` list. Summarizing the body silently drops the **Safety** and **Skill Consultation Map** sections — the guardrails the specialist was installed to carry — so a shortened prompt is a defect, not an optimization.
 
 ---
 

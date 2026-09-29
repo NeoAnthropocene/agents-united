@@ -10,6 +10,15 @@ tools:
   - Glob
   - SendMessage
   - SubagentHandback
+  - mcp__github__search_code
+  - mcp__github__get_file_contents
+  - mcp__github__list_pull_requests
+  - mcp__github__pull_request_read
+  - mcp__context7__resolve-library-id
+  - mcp__context7__query-docs
+mcpServers:
+  - name: github
+  - name: context7
 permissionMode: plan
 model: sonnet
 effort: medium

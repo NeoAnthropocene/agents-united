@@ -9,6 +9,7 @@ import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
+import { McpLocationRegistry } from './mcp-locations.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -49,6 +50,38 @@ const DECLARED_DELTA_HOSTS = new Set(['claude', 'antigravity', 'cline']);
 
 /** The only hosts that own a content-derived compound lane: Cline (ADR 0013), Claude (ADR 0018). */
 type CompoundLaneHost = 'cline' | 'claude';
+
+/**
+ * Plan 029 A3 — the hosts whose MCP configuration surface `agents doctor --host <h>` audits.
+ * `agents` is deliberately absent: the canonical store configures no MCP servers itself.
+ */
+const MCP_AUDIT_HOSTS: ReadonlySet<string> = new Set(['claude', 'antigravity', 'cline']);
+
+/**
+ * Plan 029 A3 — the McpLocationRegistry host key each audited host's config is discovered under.
+ * Antigravity reads the Gemini config surface (`~/.gemini/config/mcp_config.json`, ADR 0009), which
+ * the registry files under the `gemini` host key.
+ */
+const MCP_LOCATION_HOST: Record<string, string> = {
+  claude: 'claude',
+  antigravity: 'gemini',
+  cline: 'cline',
+};
+
+/**
+ * Plan 029 A3 — the host's own command for registering a server, PRINTED for the user to run.
+ * `agents doctor` never executes it, never installs a server and never writes an MCP config file.
+ */
+function mcpAddCommand(host: string, server: string, workspaceRoot: string): string {
+  if (host === 'antigravity') {
+    return `Add it with: agy mcp add ${server} -- <command> [args...]`;
+  }
+  if (host === 'cline') {
+    const settingsPath = McpLocationRegistry.getPrimaryWritePath('cline', workspaceRoot);
+    return `Add it by hand to ${settingsPath} (Cline has no MCP-install command).`;
+  }
+  return `Add it with: claude mcp add ${server} -- <command> [args...]`;
+}
 
 /** A projection that now serves the same canonical at a different path. */
 interface SupersedingProjection {
@@ -177,6 +210,69 @@ export class DoctorEngine {
     }
 
     return variants;
+  }
+
+  /**
+   * Plan 029 A3 — the servers the INSTALLED roles declare, read from each state-dir agent's
+   * `mcpServers:` frontmatter. Names only: a credential, an `env` block or an inline server
+   * definition never reaches this set (Risk R4).
+   */
+  private static async declaredMcpServers(agentsDir: string): Promise<string[]> {
+    const names = new Set<string>();
+    if (!(await fs.pathExists(agentsDir))) return [];
+    for (const file of (await fs.readdir(agentsDir)).filter(f => f.endsWith('.md'))) {
+      const content = await fs.readFile(path.join(agentsDir, file), 'utf8').catch(() => null);
+      if (content === null) continue;
+      const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      if (!match) continue;
+      let meta: { mcpServers?: unknown } | undefined;
+      try {
+        meta = YAML.parse(match[1]) ?? undefined;
+      } catch {
+        continue; // a malformed frontmatter is reported by the frontmatter check, never guessed at
+      }
+      const entries = Array.isArray(meta?.mcpServers) ? (meta?.mcpServers as unknown[]) : [];
+      for (const entry of entries) {
+        const name =
+          typeof entry === 'string' ? entry : (entry as { name?: unknown } | null)?.name;
+        if (typeof name === 'string' && name.trim().length > 0) names.add(name.trim());
+      }
+    }
+    return [...names].sort();
+  }
+
+  /**
+   * Plan 029 A3 — warn for every server an installed role declares that this host has NOT
+   * configured, printing that host's own add command. STRICTLY READ-ONLY: doctor reads the MCP
+   * location registry, never installs a server and never writes a config file (the printed command
+   * belongs to the user, and is never executed here).
+   */
+  private static async auditMcpServers(
+    host: string,
+    workspaceRoot: string,
+    agentsDir: string,
+    warnings: string[]
+  ): Promise<string[]> {
+    const declared = await DoctorEngine.declaredMcpServers(agentsDir);
+    if (declared.length === 0) return [];
+
+    const discovered = await McpLocationRegistry.discoverForHosts(
+      [MCP_LOCATION_HOST[host]],
+      workspaceRoot
+    );
+    const configured = new Set<string>();
+    for (const location of discovered) {
+      for (const server of Object.keys(location.servers ?? {})) configured.add(server.toLowerCase());
+    }
+
+    const unconfigured = declared.filter(server => !configured.has(server.toLowerCase()));
+    for (const server of unconfigured) {
+      warnings.push(
+        `MCP server "${server}" is declared by the installed roles but not configured for ` +
+          `--host ${host}. ${mcpAddCommand(host, server, workspaceRoot)}`
+      );
+    }
+    return unconfigured;
   }
 
   public static async runDoctor(targetDir?: string, host?: string): Promise<HealthReport> {
@@ -526,6 +622,13 @@ export class DoctorEngine {
       declaredDeltas = ledger.filter(
         e => e.host === host && (e.disposition === 'degraded' || e.disposition === 'unsupported')
       );
+    }
+
+    // Plan 029 A3 — MCP access audit (read-only). Every server an installed role declares that
+    // this host has not configured is reported with the host's own add command; doctor never
+    // installs a server and never writes an MCP config file.
+    if (host && MCP_AUDIT_HOSTS.has(host)) {
+      await DoctorEngine.auditMcpServers(host, workspaceRootOf(root), subPaths.agentsDir, warnings);
     }
 
     // Host-specific checks (e.g. --host cline, --host claude)

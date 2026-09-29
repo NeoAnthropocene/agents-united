@@ -45,6 +45,7 @@ skills:
   - edge-security-audit
 mcpServers:
   - name: github
+  - name: context7
 ---
 
 # subagent-cloud-security-architect — System Prompt

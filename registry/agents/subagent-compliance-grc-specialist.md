@@ -21,6 +21,7 @@ skills:
 mcpServers:
   - name: markitdown
   - name: github
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

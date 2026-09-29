@@ -36,6 +36,7 @@ skills:
   - component-library-management
 mcpServers:
   - name: chrome-devtools-mcp
+  - name: context7
 ---
 
 # subagent-accessibility-lead — System Prompt

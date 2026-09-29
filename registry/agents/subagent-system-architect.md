@@ -41,6 +41,7 @@ skills:
   - technical-documentation
 mcpServers:
   - name: github
+  - name: context7
 rules:
   - clean-code-and-architecture.md
 ---
