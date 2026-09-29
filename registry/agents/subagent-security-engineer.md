@@ -18,6 +18,7 @@ tools:
   - list_dir
   - replace_file_content
   - write_to_file
+  - run_command
 hooks:
   PreInvocation:
     - log: Security Engineer activated — loading vulnerability rulesets and OWASP
@@ -29,6 +30,8 @@ hooks:
     - tool: replace_file_content
       log: Applying security patch — verify patch does not introduce secondary
         vulnerabilities.
+    - tool: run_command
+      guard: Deny run_command if CommandLine matches /(rm -rf|DROP|shutdown|sudo)/i
   PostToolUse:
     - tool: grep_search
       log: Secret scan query finished — analyze matches for false positives.
