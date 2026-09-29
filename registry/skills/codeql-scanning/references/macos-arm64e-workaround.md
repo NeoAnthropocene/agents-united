@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql/references/macos-arm64e-workaround.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # macOS arm64e Workaround
 
@@ -12,18 +13,16 @@ Methods for building CodeQL databases on macOS Apple Silicon when the `arm64e`/`
 
 The strategy is to use Homebrew-installed tools (plain `arm64`, not `arm64e`) so `libtrace.dylib` can be injected successfully. Try sub-methods in order:
 
-> Each sub-method sources `build_log.sh` itself. That defines the helpers, which are gone by
-> the next Bash call, and sets `pipefail`. These sub-methods branch on exit code 137, so
-> without `pipefail` they read tee's status instead of the build's.
+> These sub-methods branch on exit code 137. Use `build_log.py run -- <command>`, which keeps the
+> build's own exit status instead of the status of the `tee` it writes the log with.
 
 ## Sub-method 2m-a: Homebrew clang/gcc with multi-step tracing
 
 Trace only the compiler invocations individually, avoiding system tools (`/usr/bin/ar`, `/bin/mkdir`) that would be killed. This requires a multi-step build: init → trace each compiler call → finalize.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "METHOD 2m-a: macOS arm64 — Homebrew compiler with multi-step tracing"
+python {baseDir}/scripts/build_log.py step "METHOD 2m-a: macOS arm64 — Homebrew compiler with multi-step tracing"
 
 # 1. Find Homebrew C/C++ compiler (arm64, not arm64e)
 BREW_CC=""
@@ -38,15 +37,15 @@ elif command -v gcc-13 >/dev/null 2>&1; then
 fi
 
 if [ -z "$BREW_CC" ]; then
-  log_result "No Homebrew C/C++ compiler found — skipping 2m-a"
+  python {baseDir}/scripts/build_log.py result "No Homebrew C/C++ compiler found — skipping 2m-a"
   # Fall through to 2m-b
 else
   # Verify it's arm64 (not arm64e)
   BREW_CC_ARCH=$(lipo -archs "$BREW_CC" 2>/dev/null)
   if [[ "$BREW_CC_ARCH" == *"arm64e"* ]]; then
-    log_result "Homebrew compiler is arm64e — skipping 2m-a"
+    python {baseDir}/scripts/build_log.py result "Homebrew compiler is arm64e — skipping 2m-a"
   else
-    log_step "Using Homebrew compiler: $BREW_CC (arch: $BREW_CC_ARCH)"
+    python {baseDir}/scripts/build_log.py step "Using Homebrew compiler: $BREW_CC (arch: $BREW_CC_ARCH)"
 
     # 2. Run the build normally (without tracing) to create build dirs and artifacts
     #    Use Homebrew make (gmake) if available, otherwise system make outside tracer
@@ -56,7 +55,7 @@ else
       MAKE_CMD="make"
     fi
     $MAKE_CMD clean 2>/dev/null || true
-    run_logged "$MAKE_CMD" CC="$BREW_CC"
+    python {baseDir}/scripts/build_log.py run -- "$MAKE_CMD" CC="$BREW_CC"
 
     # 3. Extract compiler commands from the Makefile / build system
     #    Use make's dry-run mode to get the exact compiler invocations
@@ -66,10 +65,10 @@ else
       | sed 's/^[[:space:]]*//')
 
     if [ -z "$COMPILE_CMDS" ]; then
-      log_result "Could not extract compile commands from dry-run — skipping 2m-a"
+      python {baseDir}/scripts/build_log.py result "Could not extract compile commands from dry-run — skipping 2m-a"
     else
       # 4. Init database
-      run_logged codeql database init "$DB_NAME" \
+      python {baseDir}/scripts/build_log.py run -- codeql database init "$DB_NAME" \
         --language=cpp --source-root=. --overwrite
 
       # 5. Ensure build directories exist (outside tracer — avoids arm64e mkdir)
@@ -83,8 +82,8 @@ else
       while IFS= read -r cmd; do
         [ -z "$cmd" ] && continue
         # shellcheck disable=SC2086 # $cmd is a compiler invocation that must word-split
-        if ! run_logged codeql database trace-command "$DB_NAME" -- $cmd; then
-          log_result "FAILED on: $cmd"
+        if ! python {baseDir}/scripts/build_log.py run -- codeql database trace-command "$DB_NAME" -- $cmd; then
+          python {baseDir}/scripts/build_log.py result "FAILED on: $cmd"
           TRACE_OK=false
           break
         fi
@@ -92,12 +91,12 @@ else
 
       if $TRACE_OK; then
         # 7. Finalize
-        run_logged codeql database finalize "$DB_NAME"
+        python {baseDir}/scripts/build_log.py run -- codeql database finalize "$DB_NAME"
         if codeql resolve database -- "$DB_NAME" >/dev/null 2>&1; then
-          log_result "SUCCESS (macOS arm64 multi-step)"
+          python {baseDir}/scripts/build_log.py result "SUCCESS (macOS arm64 multi-step)"
           # Done — skip to Step 4
         else
-          log_result "FAILED (finalize failed)"
+          python {baseDir}/scripts/build_log.py result "FAILED (finalize failed)"
         fi
       fi
     fi
@@ -110,24 +109,23 @@ fi
 Force the entire CodeQL pipeline to run under Rosetta, which uses the `x86_64` slice of both `libtrace.dylib` and system tools — no `arm64e` mismatch.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "METHOD 2m-b: macOS arm64 — Rosetta x86_64 emulation"
+python {baseDir}/scripts/build_log.py step "METHOD 2m-b: macOS arm64 — Rosetta x86_64 emulation"
 
 # Check if Rosetta is available
 if ! arch -x86_64 /usr/bin/true 2>/dev/null; then
-  log_result "Rosetta not available — skipping 2m-b"
+  python {baseDir}/scripts/build_log.py result "Rosetta not available — skipping 2m-b"
 else
   BUILD_CMD="<BUILD_CMD>"  # e.g. "make clean && make -j4"
 
-  run_logged arch -x86_64 codeql database create "$DB_NAME" \
+  python {baseDir}/scripts/build_log.py run -- arch -x86_64 codeql database create "$DB_NAME" \
     --language="$CODEQL_LANG" --source-root=. \
     --command="$BUILD_CMD" --overwrite
 
   if codeql resolve database -- "$DB_NAME" >/dev/null 2>&1; then
-    log_result "SUCCESS (Rosetta x86_64)"
+    python {baseDir}/scripts/build_log.py result "SUCCESS (Rosetta x86_64)"
   else
-    log_result "FAILED (Rosetta)"
+    python {baseDir}/scripts/build_log.py result "FAILED (Rosetta)"
   fi
 fi
 ```
@@ -142,20 +140,19 @@ As a verification step, try the standard autobuild with the system compiler. Thi
 > here: without `pipefail` the value is always 0 and 137 is never seen.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "METHOD 2m-c: System compiler (expected to fail on arm64e)"
+python {baseDir}/scripts/build_log.py step "METHOD 2m-c: System compiler (expected to fail on arm64e)"
 
-run_logged codeql database create "$DB_NAME" \
+python {baseDir}/scripts/build_log.py run -- codeql database create "$DB_NAME" \
   --language="$CODEQL_LANG" --source-root=. --overwrite
 
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 137 ] || [ $EXIT_CODE -eq 134 ]; then
-  log_result "FAILED: exit code $EXIT_CODE confirms arm64e/libtrace incompatibility"
+  python {baseDir}/scripts/build_log.py result "FAILED: exit code $EXIT_CODE confirms arm64e/libtrace incompatibility"
 elif codeql resolve database -- "$DB_NAME" >/dev/null 2>&1; then
-  log_result "SUCCESS (unexpected — system compiler worked)"
+  python {baseDir}/scripts/build_log.py result "SUCCESS (unexpected — system compiler worked)"
 else
-  log_result "FAILED (exit code: $EXIT_CODE)"
+  python {baseDir}/scripts/build_log.py result "FAILED (exit code: $EXIT_CODE)"
 fi
 ```
 
@@ -183,11 +180,10 @@ AskUserQuestion:
 
 **If "Install arm64 tools and retry":**
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "Installing Homebrew arm64 toolchain"
-run_logged brew install llvm make || {
-  log_result "FAILED: brew install did not complete — do not retry 2m-a, it will fail identically"
+python {baseDir}/scripts/build_log.py step "Installing Homebrew arm64 toolchain"
+python {baseDir}/scripts/build_log.py run -- brew install llvm make || {
+  python {baseDir}/scripts/build_log.py result "FAILED: brew install did not complete — do not retry 2m-a, it will fail identically"
   exit 1
 }
 # Retry Sub-method 2m-a
@@ -195,11 +191,10 @@ run_logged brew install llvm make || {
 
 **If "Install Rosetta and retry":**
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "Installing Rosetta"
-run_logged softwareupdate --install-rosetta --agree-to-license || {
-  log_result "FAILED: Rosetta did not install — do not retry 2m-b, it will fail identically"
+python {baseDir}/scripts/build_log.py step "Installing Rosetta"
+python {baseDir}/scripts/build_log.py run -- softwareupdate --install-rosetta --agree-to-license || {
+  python {baseDir}/scripts/build_log.py result "FAILED: Rosetta did not install — do not retry 2m-b, it will fail identically"
   exit 1
 }
 # Retry Sub-method 2m-b

@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/semgrep/workflows/scan-workflow.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # Semgrep Scan Workflow
 
@@ -52,7 +53,7 @@ else
 fi
 mkdir -p "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results"
 
-# Absolute from here on. run-scans.sh rejects a relative path, and that rejection lands
+# Absolute from here on. run_scans.py rejects a relative path, and that rejection lands
 # *after* the user has passed the hard gate, so a path this skill generated itself would send
 # them back through approval.
 OUTPUT_DIR=$(cd "$OUTPUT_DIR" && pwd)
@@ -86,7 +87,7 @@ semgrep --pro --validate --metrics=off --config p/default 2>/dev/null && echo "P
 
 `**/*.py`, `**/*.pyi`, `**/*.js`, `**/*.jsx`, `**/*.mjs`, `**/*.cjs`, `**/*.ts`, `**/*.tsx`, `**/*.go`, `**/*.rb`, `**/*.java`, `**/*.jsp`, `**/*.kt`, `**/*.kts`, `**/*.php`, `**/*.phtml`, `**/*.c`, `**/*.cc`, `**/*.cpp`, `**/*.cxx`, `**/*.h`, `**/*.hh`, `**/*.hpp`, `**/*.hxx`, `**/*.cs`, `**/*.rs`, `**/*.scala`, `**/*.swift`, `**/*.ex`, `**/*.exs`, `**/*.cls`, `**/*.trigger`, `**/*.sol`, `**/Dockerfile`, `**/*.dockerfile`, `**/*.tf`, `**/*.tfvars`, `**/*.hcl`, `**/*.yaml`, `**/*.yml`, `**/*.json`
 
-Step 2 can only select a ruleset for a category this step detected, so an extension missing here removes its ruleset from the scan with no signal — the report then reads clean rather than incomplete. The list is the union of the `includes_for` globs in [run-scans.sh](../scripts/run-scans.sh); keep the two in sync when either changes. `.mts`, `.cts`, `.C`, `Containerfile`, and `Dockerfile.prod` are absent from both, because semgrep does not parse them.
+Step 2 can only select a ruleset for a category this step detected, so an extension missing here removes its ruleset from the scan with no signal — the report then reads clean rather than incomplete. The list is the union of the `includes_for` globs in [run_scans.py](../scripts/run_scans.py); keep the two in sync when either changes. `.mts`, `.cts`, `.C`, `Containerfile`, and `Dockerfile.prod` are absent from both, because semgrep does not parse them.
 
 **Two extensions are matched by glob but assigned by content, not by extension.** `.yaml`/`.yml` and `.json` each feed several categories, and both are common in repositories that have no infrastructure to scan at all — nearly every project carries `package.json`, `tsconfig.json` and a lockfile. Assigning a category from the extension alone would attach an AWS IAM ruleset to every scan and report a JSON "language" for a project that has none. Assigning nothing would leave `r/json.aws` and JSON-format CloudFormation unreachable, which is worse: an unselected category never enters `rulesets.json`, so it cannot appear in `coveredNothing`, `failed` or `skipped` either, and the report reads clean. Glob for both, then read a sample and assign on the markers below.
 
@@ -295,7 +296,7 @@ Run the script against the plan Step 3 already wrote. One Bash call; there is no
 this step, and no second copy of the ruleset list to compose here.
 
 ```bash
-{baseDir}/scripts/run-scans.sh \
+python {baseDir}/scripts/run_scans.py \
   --target "$TARGET" \
   --output-dir "$OUTPUT_DIR" \
   --mode run-all \
@@ -359,11 +360,11 @@ do not need re-verifying.
 
 ```bash
 # run-all
-uv run --no-project {baseDir}/scripts/merge_sarif.py "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results/results.sarif" \
+python {baseDir}/scripts/merge_sarif.py "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results/results.sarif" \
   --scans "$OUTPUT_DIR/scans.json"
 
 # important-only, once the post-filter above has run over every file in raw/
-uv run --no-project {baseDir}/scripts/merge_sarif.py "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results/results.sarif" \
+python {baseDir}/scripts/merge_sarif.py "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results/results.sarif" \
   --important --scans "$OUTPUT_DIR/scans.json"
 ```
 

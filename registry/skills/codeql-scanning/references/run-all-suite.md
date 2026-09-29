@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql/references/run-all-suite.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # Run-All Query Suite
 
@@ -59,7 +60,7 @@ set -euo pipefail
 SUITE_FILE="$OUTPUT_DIR/raw/run-all.qls"
 CODEQL_LANG="${CODEQL_LANG:-}" OUTPUT_DIR="${OUTPUT_DIR:-}" \
   INSTALLED_THIRD_PARTY_PACKS="${INSTALLED_THIRD_PARTY_PACKS:-}" \
-  {baseDir}/scripts/generate_suite.sh run-all
+  python {baseDir}/scripts/generate_suite.py run-all
 ```
 
 Run-all imports whole upstream suites. A typo in `$CODEQL_LANG` gives a suite that resolves

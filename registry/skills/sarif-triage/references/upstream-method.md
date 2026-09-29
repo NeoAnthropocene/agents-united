@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/sarif-parsing/SKILL.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # SARIF Parsing Best Practices
 
@@ -72,9 +73,9 @@ Resolve severity in this order (SARIF 2.1.0 section 3.27.10):
 4. `"warning"`, the SARIF default
 
 Every severity query in this skill starts from that resolution. In jq it is the
-`LEVEL_FN` definition in [{baseDir}/jq-queries.md]({baseDir}/jq-queries.md);
+`LEVEL_FN` definition in [jq-queries.md](jq-queries.md);
 in Python it is `resolve_level(result, run)` in
-[{baseDir}/../scripts/sarif_helpers.py]({baseDir}/../scripts/sarif_helpers.py).
+[scripts/sarif_helpers.py](../scripts/sarif_helpers.py).
 
 ### Why Fingerprinting Matters
 
@@ -463,20 +464,20 @@ def check_for_regressions(baseline: str, current: str) -> int:
 
 ## Skill Resources
 
-For ready-to-use query templates, see [{baseDir}/jq-queries.md]({baseDir}/jq-queries.md):
+For ready-to-use query templates, see [jq-queries.md](jq-queries.md):
 - 40+ jq queries for common SARIF operations
 - `LEVEL_FN` - the severity resolution every filtering query starts from
 - Severity filtering, rule extraction, aggregation patterns
 
-For Python utilities, see [{baseDir}/../scripts/sarif_helpers.py]({baseDir}/../scripts/sarif_helpers.py):
+For Python utilities, see [scripts/sarif_helpers.py](../scripts/sarif_helpers.py):
 - `resolve_level()` - Severity from the result or the rule it inherits from
 - `normalize_path()` - Handle tool-specific path formats
 - `compute_fingerprint()` - Rule, normalized path, line, and message
 - `deduplicate()` - Remove duplicates across runs
 
-Two SARIF fixtures live in [{baseDir}/resources/fixtures]({baseDir}/resources/fixtures),
-one with severity on the rules only and one with severity on the results. Each contains
-exactly one error, so a gate can be checked against a known answer before it is trusted.
+Upstream ships two SARIF fixtures (not vendored here): one with severity on the rules only and
+one with severity on the results, each containing exactly one error. Build a tiny equivalent
+before trusting a gate, so it can be checked against a known answer.
 
 ## Reference Links
 

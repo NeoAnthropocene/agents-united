@@ -179,6 +179,24 @@ describe('Plan 030 — adapted skills', () => {
     }
   });
 
+  it.each(ADAPTED)('$dir has no dangling relative links or stale bash-helper names', (spec) => {
+    const root = path.join(SKILLS_DIR, spec.dir);
+    const problems: string[] = [];
+    for (const rel of listFiles(root).filter((f) => f.endsWith('.md'))) {
+      const text = fs.readFileSync(path.join(root, rel), 'utf8');
+      for (const [, target] of text.matchAll(/\]\(([^)\s]+)\)/g)) {
+        if (/^(https?:|mailto:|#)/.test(target) || target.includes('{baseDir}')) continue;
+        const file = target.split('#')[0];
+        if (!file) continue;
+        if (!fs.existsSync(path.resolve(root, path.dirname(rel), file))) problems.push(`${rel} -> ${target}`);
+      }
+      for (const stale of ['build_log.sh', 'find_databases.sh', 'generate_suite.sh', 'run-scans.sh', 'run_logged']) {
+        if (rel !== 'NOTICE.md' && text.includes(stale)) problems.push(`${rel} mentions ${stale}`);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
   it('code-reviewer reaches security-diff-review through a cross-bundle map row', () => {
     const raw = fs.readFileSync(path.join(AGENTS_DIR, 'subagent-code-reviewer.md'), 'utf8');
     const row = raw.split('\n').find((l) => l.includes('`security-diff-review`'));

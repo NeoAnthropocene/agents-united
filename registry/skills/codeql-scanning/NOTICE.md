@@ -26,6 +26,6 @@ Adapted for agents-united on 2026-09-28 (Plan 030):
   (or the file named below) so the full method stays available on demand.
 - Every file under `references/` starts with a comment naming its upstream file and
   pointing here; relative links were rewritten to the new layout.
-- Not shipped: the bash helpers (build_log.sh, find_databases.sh, generate_suite.sh), the scripts' test files, agents/openai.yaml, assets/. Shipped unchanged: scripts/check_db_quality.py, scripts/verify_query_suite.py. workflows/*.md moved to references/workflow-*.md.
+- Ported: the bash helpers are now Python 3 standard-library scripts so they run on Windows: build_log.sh -> scripts/build_log.py (subcommands step/cmd/result/run instead of sourced functions), find_databases.sh -> scripts/find_databases.py, generate_suite.sh -> scripts/generate_suite.py. Tests for the ports are in tests/skill-scripts/. Not shipped: upstream's own test files, agents/openai.yaml, assets/. Shipped unchanged: scripts/check_db_quality.py, scripts/verify_query_suite.py. workflows/*.md moved to references/workflow-*.md.
 
 This is an adaptation, not an endorsement: the upstream authors have not reviewed it.

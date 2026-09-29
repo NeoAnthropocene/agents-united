@@ -1,14 +1,15 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql/SKILL.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # CodeQL Analysis
 
 Supported languages: Python, JavaScript/TypeScript, Go, Java/Kotlin, C/C++, C#, Ruby, Swift.
 
-**Skill resources:** Reference files and templates are located at `{baseDir}/references/` and `{baseDir}/workflows/`.
+**Skill resources:** Reference files and templates are located at `{baseDir}/references/` (the upstream `workflows/` folder now lives there as `workflow-*.md`).
 
 ## Essential Principles
 
@@ -26,13 +27,14 @@ Supported languages: Python, JavaScript/TypeScript, Go, Java/Kotlin, C/C++, C#, 
 
 ## Each Bash call is a fresh shell
 
-Nothing carries across a Bash call: not variables, not arrays, not functions sourced from
-`build_log.sh`. Every block below that uses a value must re-establish it in the same block.
+Nothing carries across a shell call: not variables, not arrays, not helpers. The log helpers
+are the `build_log.py` subcommands, so nothing needs sourcing. Every block below that uses a value must re-establish it in the same block.
 The workflows point back here rather than repeating it; what they do state is the specific
 damage at that site, because each one fails differently and silently:
 
-- a lost **function** makes `run_logged` exit 127, which the build ladder reads as a failed
-  method and walks down to `--build-mode=none`, never having invoked CodeQL
+- a lost **path** (`$OUTPUT_DIR`, `$LOG_FILE`) makes `build_log.py` fail on an unwritable log, or
+  write the log somewhere unexpected; the ladder then reads a failed method and walks down to
+  `--build-mode=none`, never having invoked CodeQL
 - a lost **array** expands to nothing, so every `--threat-model` and `--model-packs` the user
   chose is dropped while the final report still lists them as used
 - a lost **scalar** under `set -u` aborts the block with `unbound variable`
@@ -86,7 +88,7 @@ $OUTPUT_DIR/
 
 A CodeQL database is identified by the presence of a `codeql-database.yml` marker file inside its directory. When searching for existing databases, **always collect all matches** — there may be multiple databases from previous runs or for different languages.
 
-**Discovery command.** `find_databases.sh` prints one database path per line, filtering
+**Discovery command.** `python scripts/find_databases.py` prints one database path per line, filtering
 out the marker files a failed build leaves behind. Build the array **in the same block
 that selects from it** — each Bash call is a fresh shell, so an array built here is empty
 by the next call, and the run concludes there is no database:
@@ -95,7 +97,7 @@ by the next call, and the run concludes there is no database:
 # Command substitution, not `done < <(...)`: a process substitution discards the script's
 # exit status, so "codeql is not on this shell's PATH" (exit 2) would arrive as an empty
 # list and route to "build a new database" with three good ones sitting on disk.
-if ! DB_LIST=$("{baseDir}/scripts/find_databases.sh" "${OUTPUT_DIR:-.}" .); then
+if ! DB_LIST=$(python {baseDir}/scripts/find_databases.py "${OUTPUT_DIR:-.}" .); then
   echo "ERROR: database discovery failed — see the message above" >&2
   exit 1
 fi
@@ -250,9 +252,9 @@ extensions, run analysis — naming any databases found and the resolved `$OUTPU
 | **Scripts** | |
 | [scripts/verify_query_suite.py](../scripts/verify_query_suite.py) | Fails a suite that resolves to zero queries. The generation scripts run it; invoke by hand only for a reused or hand-edited suite |
 | [scripts/check_db_quality.py](../scripts/check_db_quality.py) | Fails a database with no analysable source. Run after every build |
-| [scripts/build_log.sh](../scripts/build_log.sh) | `log_step`/`run_logged` helpers; source before any build step |
-| [scripts/find_databases.sh](../scripts/find_databases.sh) | Prints every database that `codeql resolve database` accepts, one per line. Build your array from it in the block that reads it |
-| [scripts/generate_suite.sh](../scripts/generate_suite.sh) | Writes the run-all or important-only `.qls` and verifies it resolves to a non-zero query count |
+| [scripts/build_log.py](../scripts/build_log.py) | `step` / `cmd` / `result` / `run` subcommands; call for each build step |
+| [scripts/find_databases.py](../scripts/find_databases.py) | Prints every database that `codeql resolve database` accepts, one per line. Build your array from it in the block that reads it |
+| [scripts/generate_suite.py](../scripts/generate_suite.py) | Writes the run-all or important-only `.qls` and verifies it resolves to a non-zero query count |
 | **References** — the three workflows are listed under [Workflow Selection](#workflow-selection) | |
 | [references/macos-arm64e-workaround.md](macos-arm64e-workaround.md) | Apple Silicon build tracing workarounds |
 | [references/build-fixes.md](build-fixes.md) | Build failure fix catalog |

@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql/workflows/run-analysis.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # Run Analysis Workflow
 
@@ -40,7 +41,7 @@ their prompt, show it as chosen rather than asking again.
 
 **If `$DB_NAME` is already set** (parent skill handled database selection): validate it and proceed.
 
-**If `$DB_NAME` is not set:** discover databases with `find_databases.sh`, which filters
+**If `$DB_NAME` is not set:** discover databases with `python {baseDir}/scripts/find_databases.py`, which filters
 candidates through `codeql resolve database` so a marker file left behind by a failed
 build cannot be selected as though it were a database.
 
@@ -54,7 +55,7 @@ if [ -z "${DB_NAME:-}" ]; then
   # exit status, so exit 2 ("codeql not on this shell's PATH" — a fresh shell each block,
   # so the preflight's PATH does not carry) would arrive here as an empty list and be
   # reported as "No CodeQL database found" for a project that has several.
-  if ! DB_LIST=$("{baseDir}/scripts/find_databases.sh" "${OUTPUT_DIR:-.}" .); then
+  if ! DB_LIST=$(python {baseDir}/scripts/find_databases.py "${OUTPUT_DIR:-.}" .); then
     echo "ERROR: database discovery failed — see the message above" >&2
     exit 1
   fi
@@ -217,7 +218,7 @@ here is already checked. **Run it explicitly only if the suite came from somewhe
 reused from a previous run, or hand-edited:
 
 ```bash
-uv run {baseDir}/scripts/verify_query_suite.py "$SUITE_FILE"
+python {baseDir}/scripts/verify_query_suite.py "$SUITE_FILE"
 ```
 
 #### Run analysis

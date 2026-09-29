@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor/SKILL.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # Supply Chain Risk Auditor
 
@@ -42,8 +43,8 @@ The scripts enforce two rules worth knowing before you read their output:
    asked otherwise:
 
    ```sh
-   uv run {baseDir}/scripts/collect.py <project-dir> --json <out-dir>/findings.json
-   uv run {baseDir}/scripts/render.py <out-dir>/findings.json --out <out-dir>/report.md
+   python {baseDir}/scripts/collect.py <project-dir> --json <out-dir>/findings.json
+   python {baseDir}/scripts/render.py <out-dir>/findings.json --out <out-dir>/report.md
    ```
 
    Expect a few minutes for ~50 dependencies — several HTTP requests per dependency,

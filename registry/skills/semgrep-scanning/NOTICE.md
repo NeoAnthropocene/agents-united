@@ -26,6 +26,6 @@ Adapted for agents-united on 2026-09-28 (Plan 030):
   (or the file named below) so the full method stays available on demand.
 - Every file under `references/` starts with a comment naming its upstream file and
   pointing here; relative links were rewritten to the new layout.
-- Not shipped: scripts/run-scans.sh (bash-only), the scripts' test files, agents/openai.yaml, assets/. The SKILL.md runbook gives the equivalent direct semgrep commands. Shipped unchanged: scripts/merge_sarif.py. workflows/scan-workflow.md moved to references/workflow-scan-workflow.md.
+- Ported: scripts/run-scans.sh is now scripts/run_scans.py (Python 3 standard library, same plan file, same scans.json, same command construction), so it runs on Windows. Tests for the port are in tests/skill-scripts/. Not shipped: upstream's own test files, agents/openai.yaml, assets/. Shipped unchanged: scripts/merge_sarif.py. workflows/scan-workflow.md moved to references/workflow-scan-workflow.md.
 
 This is an adaptation, not an endorsement: the upstream authors have not reviewed it.

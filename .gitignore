@@ -164,3 +164,6 @@ scratch/
 
 # Plans
 advisor-plans/
+
+# Python bytecode
+__pycache__/

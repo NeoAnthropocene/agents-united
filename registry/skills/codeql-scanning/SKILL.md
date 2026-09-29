@@ -59,7 +59,11 @@ targeted query for one known bug.
 ## Step-by-Step Execution Runbook
 
 ### Phase 1 — Build the database
-1. Resolve `<out>` (default `static_analysis_codeql_<n>`, first unused n).
+1. Resolve `<out>` (default `static_analysis_codeql_<n>`, first unused n) and create it.
+   Existing databases: `python scripts/find_databases.py [root]` lists them, one per line.
+   Log each build step with `python scripts/build_log.py step|cmd|result "..."`, and run a
+   build command through `python scripts/build_log.py run -- <command>` to log it and keep
+   its exit status (log: `$LOG_FILE`, else `<out>/build.log`).
 2. Interpreted languages: `codeql database create <out>/codeql.db --language=<lang>
    --source-root=<target>`. Compiled languages: try autobuild, then an explicit
    `--command`, applying fixes from [references/build-fixes.md](references/build-fixes.md);
@@ -79,10 +83,11 @@ targeted query for one known bug.
 ### Phase 3 — Run the analysis
 1. Pick packs from [references/ruleset-catalog.md](references/ruleset-catalog.md)
    (official plus Trail of Bits and Community packs where installed); log them.
-2. Write the suite from the template in
-   [references/run-all-suite.md](references/run-all-suite.md) or
-   [references/important-only-suite.md](references/important-only-suite.md).
-3. Gate: `python scripts/verify_query_suite.py <out>/raw/<mode>.qls` must exit 0.
+2. Write the suite: `python scripts/generate_suite.py run-all|important-only --lang <lang>
+   --output-dir <out> [--packs "<pack> <pack>"]` (templates and rationale in
+   [references/run-all-suite.md](references/run-all-suite.md) and
+   [references/important-only-suite.md](references/important-only-suite.md)).
+3. Gate (`generate_suite.py` already runs it and deletes an unverified suite): `python scripts/verify_query_suite.py <out>/raw/<mode>.qls` must exit 0.
 4. `codeql database analyze <out>/codeql.db <out>/raw/<mode>.qls --format=sarif-latest
    --output=<out>/raw/results.sarif` with any `--model-packs` / `--threat-model` chosen
    ([references/threat-models.md](references/threat-models.md)). Tuning:

@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql/workflows/build-database.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # Build Database Workflow
 
@@ -44,23 +45,21 @@ incomplete — it omits C/C++ and Rust, both of which do support `none` (2.25.6)
 ## Build Log
 
 `$OUTPUT_DIR` arrives from the parent skill, resolved once at invocation. Every file this
-workflow writes goes inside it. Source the log helpers before any build step, and in any
-reference doc that uses `run_logged`:
+workflow writes goes inside it. Log every build step with the `build_log.py` helper:
 
 ```bash
 DB_NAME="$OUTPUT_DIR/codeql.db"
-. "{baseDir}/scripts/build_log.sh" || exit 1
-log_step "CodeQL database build — $DB_NAME"
+python {baseDir}/scripts/build_log.py step "CodeQL database build — $DB_NAME"
 ```
 
-That provides `log_step`, `log_cmd`, `log_result`, and `run_logged`; defaults `LOG_FILE` to
-`$OUTPUT_DIR/build.log` and stops if it is not writable; and sets `pipefail` so a command's
-exit status survives being piped to `tee`. It deliberately does not set `-e`: the method
-ladder below has to survive each failed method to reach the next one.
+Its subcommands are `step`, `cmd`, `result` and `run -- <command>`. It defaults `LOG_FILE` to
+`$OUTPUT_DIR/build.log`, stops if that is not writable, and `run` tees the command's output
+to the log while keeping the command's own exit status. It never aborts the ladder on a
+failed command: the method ladder below has to survive each failed method to reach the next.
 
-> **Every block below that uses a helper repeats the source line.** A function defined in an
-> earlier Bash call is gone by the next one, and `run_logged` then exits 127, which the ladder
-> reads as a failed build method. Set `DB_NAME` and `CODEQL_LANG` in the block as well.
+> **Set `OUTPUT_DIR`, `DB_NAME` and `CODEQL_LANG` in every block that uses them.** Shell
+> variables do not survive to the next call, and a lost `OUTPUT_DIR` sends the log to the wrong
+> place.
 > See [Each Bash call is a fresh shell](../SKILL.md#each-bash-call-is-a-fresh-shell).
 
 **What to log:** Detected language/build system, each build attempt with exact command, fix attempts and outcomes, quality assessment results, final successful command.
@@ -120,10 +119,9 @@ Scan for irrelevant directories and create `$OUTPUT_DIR/codeql-config.yml` with 
 ### For Interpreted Languages
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "Building database for interpreted language: <LANG>"
-run_logged codeql database create "$DB_NAME" \
+python {baseDir}/scripts/build_log.py step "Building database for interpreted language: <LANG>"
+python {baseDir}/scripts/build_log.py run -- codeql database create "$DB_NAME" \
   --language="$CODEQL_LANG" \
   --source-root=. \
   --codescanning-config="$OUTPUT_DIR/codeql-config.yml" \
@@ -163,14 +161,13 @@ Try build methods in sequence until one succeeds:
 > **Skip if `IS_MACOS_ARM64E=true`.**
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "METHOD 1: Autobuild"
-run_logged codeql database create "$DB_NAME" \
+python {baseDir}/scripts/build_log.py step "METHOD 1: Autobuild"
+python {baseDir}/scripts/build_log.py run -- codeql database create "$DB_NAME" \
   --language="$CODEQL_LANG" --source-root=. --overwrite
 ```
 
-`run_logged` returns the build's exit status. Check it before moving on. A non-zero
+`build_log.py run` returns the build's exit status. Check it before moving on. A non-zero
 status means this method failed and the next one should be tried.
 
 #### Method 2: Custom Command
@@ -191,10 +188,9 @@ Detect build system and use explicit command:
 Also check for project-specific build scripts (`build.sh`, `compile.sh`) and README instructions.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "METHOD 2: Custom command"
-run_logged codeql database create "$DB_NAME" \
+python {baseDir}/scripts/build_log.py step "METHOD 2: Custom command"
+python {baseDir}/scripts/build_log.py run -- codeql database create "$DB_NAME" \
   --language="$CODEQL_LANG" \
   --source-root=. \
   --command="$BUILD_CMD" \
@@ -218,23 +214,22 @@ For complex builds needing fine-grained control:
 > **On macOS with `IS_MACOS_ARM64E=true`:** Only trace arm64 Homebrew binaries. Do NOT trace system tools.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "METHOD 3: Multi-step build"
+python {baseDir}/scripts/build_log.py step "METHOD 3: Multi-step build"
 
 # Each step gates the next. `finalize` after a failed `trace-command` produces a database
 # that resolves correctly and contains nothing, so the rung reports success.
-if ! run_logged codeql database init "$DB_NAME" \
+if ! python {baseDir}/scripts/build_log.py run -- codeql database init "$DB_NAME" \
   --language="$CODEQL_LANG" --source-root=. --overwrite; then
-  log_result "FAILED (init)"
-elif ! run_logged codeql database trace-command "$DB_NAME" -- <build step 1>; then
-  log_result "FAILED (build step 1)"
-elif ! run_logged codeql database trace-command "$DB_NAME" -- <build step 2>; then
-  log_result "FAILED (build step 2)"
-elif ! run_logged codeql database finalize "$DB_NAME"; then
-  log_result "FAILED (finalize)"
+  python {baseDir}/scripts/build_log.py result "FAILED (init)"
+elif ! python {baseDir}/scripts/build_log.py run -- codeql database trace-command "$DB_NAME" -- <build step 1>; then
+  python {baseDir}/scripts/build_log.py result "FAILED (build step 1)"
+elif ! python {baseDir}/scripts/build_log.py run -- codeql database trace-command "$DB_NAME" -- <build step 2>; then
+  python {baseDir}/scripts/build_log.py result "FAILED (build step 2)"
+elif ! python {baseDir}/scripts/build_log.py run -- codeql database finalize "$DB_NAME"; then
+  python {baseDir}/scripts/build_log.py result "FAILED (finalize)"
 else
-  log_result "SUCCESS (multi-step)"
+  python {baseDir}/scripts/build_log.py result "SUCCESS (multi-step)"
 fi
 ```
 
@@ -249,10 +244,9 @@ Add one `elif` per build step. A method that stops early has failed: move to Met
 > a cycle attempting this for those languages.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "METHOD 4: No-build fallback (partial analysis)"
-run_logged codeql database create "$DB_NAME" \
+python {baseDir}/scripts/build_log.py step "METHOD 4: No-build fallback (partial analysis)"
+python {baseDir}/scripts/build_log.py run -- codeql database create "$DB_NAME" \
   --language="$CODEQL_LANG" --source-root=. --build-mode=none --overwrite
 ```
 
@@ -280,7 +274,7 @@ Try fixes in order, then retry current build method. See [build-fixes.md](build-
 Run the gate first:
 
 ```bash
-uv run {baseDir}/scripts/check_db_quality.py "$DB_NAME"
+python {baseDir}/scripts/check_db_quality.py "$DB_NAME"
 ```
 
 **A non-zero exit means do not proceed to analysis.** A database in that state analyses
@@ -314,7 +308,6 @@ AskUserQuestion: "All build methods failed. Options:"
 ## Final Report
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
 echo "=== Build Complete ===" >> "$LOG_FILE"
 echo "Finished: $(date -Iseconds)" >> "$LOG_FILE"

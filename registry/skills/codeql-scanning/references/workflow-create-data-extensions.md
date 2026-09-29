@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql/workflows/create-data-extensions.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # Create Data Extensions Workflow
 
@@ -56,7 +57,7 @@ Run custom QL queries against the database to enumerate all sources and sinks Co
 
 #### 2a: Select Database and Language
 
-`$DB_NAME` may already be set by the parent skill. If not, discover with `find_databases.sh`,
+`$DB_NAME` may already be set by the parent skill. If not, discover with `python {baseDir}/scripts/find_databases.py`,
 which filters candidates through `codeql resolve database`. Do not use a bare `find` for the
 marker file: `codeql database create` writes `codeql-database.yml` before the build finishes, so
 a run killed mid-build leaves one behind. Selecting it here makes `list-sources.ql` and
@@ -71,7 +72,7 @@ if [ -z "$DB_NAME" ]; then
   # Command substitution, not `done < <(...)`: a process substitution discards the script's
   # exit status, so exit 2 ("codeql not on this shell's PATH") would arrive as an empty list
   # and be reported below as "No CodeQL database found".
-  if ! DB_LIST=$("{baseDir}/scripts/find_databases.sh" "${OUTPUT_DIR:-.}" .); then
+  if ! DB_LIST=$(python {baseDir}/scripts/find_databases.py "${OUTPUT_DIR:-.}" .); then
     echo "ERROR: database discovery failed — see the message above" >&2
     exit 1
   fi

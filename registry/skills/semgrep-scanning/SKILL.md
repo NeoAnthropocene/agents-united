@@ -78,13 +78,17 @@ processes the output; `variant-analysis` hunts siblings of one known bug.
 2. Write the approved list to `rulesets.json`. Do not add rulesets afterwards.
 
 ### Phase 4 — Run
-1. Clone third-party rule repos once into `<out>/repos/`.
-2. For each language-scoped ruleset run one command with `--include` for that
-   language; run cross-language rulesets once, unscoped. Every command includes
-   `--metrics=off` and excludes the output directory. Add `--pro` when available;
-   in important-only mode add `--severity WARNING --severity ERROR`.
-3. Record every scan's exit code. A scan that failed or covered nothing goes in the
-   report, never silently dropped.
+1. Run the helper against the approved plan (works the same on Windows and POSIX; it
+   needs only Python 3, `git` and `semgrep`):
+   `python scripts/run_scans.py --target <abs-target> --output-dir <abs-out>
+   --mode run-all|important-only --rulesets <out>/rulesets.json [--pro]`.
+   Preview the commands first with `--dry-run`.
+2. It clones third-party rule repos once into `<out>/repos/`, runs one command per
+   language-scoped ruleset (with `--include` for that language) and one unscoped command per
+   cross-language ruleset, and puts `--metrics=off` and the output-directory exclusion on
+   every command. Do not type semgrep commands by hand for the approved plan.
+3. Read `<out>/scans.json`: every scan's exit code and finding count is there. A scan that
+   failed, was skipped or covered nothing goes in the report, never silently dropped.
 
 ### Phase 5 — Filter, merge, report, clean up
 1. Important-only: apply the metadata post-filter from `scan-modes.md` to each JSON file.
@@ -94,7 +98,7 @@ processes the output; `variant-analysis` hunts siblings of one known bug.
 
 ## Code & Config Exemplars
 
-### Exemplar 1: One language-scoped scan
+### Exemplar 1: What the helper runs for one language-scoped scan
 ```bash
 semgrep scan --metrics=off --config p/python --include "*.py" \
   --exclude "static_analysis_semgrep_1" \

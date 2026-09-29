@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/semgrep/SKILL.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # Semgrep Security Scan
 
@@ -13,7 +14,7 @@ Run a Semgrep scan with automatic language detection, parallel execution, and me
 1. **Always use `--metrics=off`** — Semgrep sends telemetry by default; `--config auto` also phones home. Every `semgrep` command must include `--metrics=off` to prevent data leakage during security audits.
 2. **User must approve the scan plan (Step 3 is a hard gate)** — The original "scan this codebase" request is NOT approval. Present exact rulesets, target, engine, and mode; wait for explicit "yes"/"proceed" before spawning scanners.
 3. **Third-party rulesets are required, not optional** — Trail of Bits, 0xdea, and Decurity rules catch vulnerabilities absent from the official registry. Include them whenever the detected language matches.
-4. **`scripts/run-scans.sh` generates the commands; do not write them yourself** — it builds every `semgrep` line from the approved list. That is what makes `--metrics=off`, the `--include` scoping rule, and the parallel dispatch properties of the code rather than instructions. Give it the approved rulesets and let it run.
+4. **`scripts/run_scans.py` generates the commands; do not write them yourself** — it builds every `semgrep` line from the approved list. That is what makes `--metrics=off`, the `--include` scoping rule, and the parallel dispatch properties of the code rather than instructions. Give it the approved rulesets and let it run.
 5. **Always check for Semgrep Pro before scanning** — Pro enables cross-file taint tracking and catches ~250% more true positives. Skipping the check means silently missing critical inter-file vulnerabilities.
 6. **Report what did not run** — `scans.json` carries `failed` and `skipped` alongside `scans`. A ruleset whose repo would not clone, or whose scan exited non-zero, must appear in the report. A partial scan presented as a complete one is worse than no scan.
 
@@ -60,7 +61,7 @@ The output directory is resolved **once** at the start of Step 1 and used throug
 
 ```
 $OUTPUT_DIR/
-├── rulesets.json                # The approved plan (Step 3), read by run-scans.sh (Step 4)
+├── rulesets.json                # The approved plan (Step 3), read by run_scans.py (Step 4)
 ├── scans.json                   # What ran, failed, skipped, and covered nothing (Step 4)
 ├── raw/                         # Per-scan raw output (unfiltered)
 │   ├── python-python.json        # <language>-<ruleset> for language-scoped rules
@@ -117,13 +118,13 @@ See [scan-modes.md](scan-modes.md) for metadata criteria and jq filter commands.
 │ Step 1: Detect languages + check Pro availability                │
 │ Step 2: Select scan mode + rulesets (ref: rulesets.md)           │
 │ Step 3: Present plan + rulesets, get approval [⛔ HARD GATE]     │
-│ Step 4: Run scripts/run-scans.sh with the approved rulesets      │
+│ Step 4: Run scripts/run_scans.py with the approved rulesets      │
 │ Step 5: Post-filter, merge, report, delete repos/                │
 └──────────────────────────────────────────────────────────────────┘
          │ Step 4: Bash
          ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│ scripts/run-scans.sh                                             │
+│ scripts/run_scans.py                                             │
 │   clone       each third-party repo once, into repos/            │
 │   generate    one semgrep command per ruleset                    │
 │                ├── python     p/python, p/django   --include=*.py│
@@ -148,7 +149,7 @@ merge to dedup the copies.
 
 This plugin ships `/static-analysis:semgrep-scan`, which runs the whole scan end to end:
 detect languages and Pro, select rulesets from [rulesets.md](rulesets.md), run
-`scripts/run-scans.sh`, merge and report. Pass it a JSON object, not prose:
+`scripts/run_scans.py`, merge and report. Pass it a JSON object, not prose:
 
 ```
 /static-analysis:semgrep-scan {"target": "/abs/path", "mode": "run-all"}
@@ -172,7 +173,7 @@ selection itself matters and you want to see and edit the list first.
 | 1 | Resolve output dir, detect languages + Pro availability | — | Use Glob, not Bash |
 | 2 | Select scan mode + rulesets | — | [rulesets.md](rulesets.md) |
 | 3 | Present plan, get explicit approval | ⛔ HARD | AskUserQuestion |
-| 4 | Run the scans | — | `scripts/run-scans.sh` |
+| 4 | Run the scans | — | `scripts/run_scans.py` |
 | 5 | Post-filter, merge, report, clean up | — | Merge script (below) |
 
 **Task enforcement:** On invocation, create 5 tasks with blockedBy dependencies (each step blocks the previous). Step 3 is a HARD GATE — mark complete ONLY after user explicitly approves.
@@ -181,11 +182,11 @@ selection itself matters and you want to see and edit the list first.
 
 ```bash
 # run-all
-uv run --no-project {baseDir}/scripts/merge_sarif.py "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results/results.sarif" \
+python {baseDir}/scripts/merge_sarif.py "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results/results.sarif" \
   --scans "$OUTPUT_DIR/scans.json"
 
 # important-only, once the JSON post-filter has run over every file in raw/
-uv run --no-project {baseDir}/scripts/merge_sarif.py "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results/results.sarif" \
+python {baseDir}/scripts/merge_sarif.py "$OUTPUT_DIR/raw" "$OUTPUT_DIR/results/results.sarif" \
   --important --scans "$OUTPUT_DIR/scans.json"
 ```
 
@@ -202,7 +203,7 @@ file; `--important` instead keeps the findings the JSON filter kept, matched on
 
 | Component | Purpose |
 |-----------|---------|
-| `scripts/run-scans.sh` | Builds every scan command from the approved rulesets, runs them in batches, and writes `scans.json` |
+| `scripts/run_scans.py` | Builds every scan command from the approved rulesets, runs them in batches, and writes `scans.json` |
 
 Step 4 is a Bash call. No subagent runs any part of the scan: exit codes and finding counts are
 read from the processes and the JSON they wrote.
@@ -218,7 +219,7 @@ read from the processes and the JSON they wrote.
 | "Add extra rulesets without asking" | Modifying approved list without consent breaks trust |
 | "Third-party rulesets are optional" | Trail of Bits, 0xdea, Decurity catch vulnerabilities not in official registry — REQUIRED |
 | "Use --config auto" | Sends metrics; less control over rulesets |
-| "I'll just run the semgrep commands myself" | `run-scans.sh` is what enforces `--metrics=off`, the `--include` rule and the output-directory `--exclude`. Hand-written commands drop them silently |
+| "I'll just run the semgrep commands myself" | `run_scans.py` is what enforces `--metrics=off`, the `--include` rule and the output-directory `--exclude`. Hand-written commands drop them silently |
 | "The script failed, I'll run semgrep directly to get something" | A non-zero exit means no scan succeeded. Report that and stop; a hand-run subset reads as a full scan |
 | "Some scans failed, the run still finished" | `failed` and `skipped` are part of `scans.json`. Report them or the user reads a partial scan as a clean one |
 | "Pro is too slow, skip --pro" | Cross-file analysis catches 250% more true positives; worth the time |
@@ -237,7 +238,7 @@ read from the processes and the JSON they wrote.
 | Workflow | Purpose |
 |----------|---------|
 | [scan-workflow.md](workflow-scan-workflow.md) | Complete 5-step scan execution process |
-| `scripts/run-scans.sh` | The scan runner Step 4 calls |
+| `scripts/run_scans.py` | The scan runner Step 4 calls |
 
 ## Success Criteria
 
@@ -247,7 +248,7 @@ read from the processes and the JSON they wrote.
 - [ ] Scan mode selected by user (run all / important only)
 - [ ] Rulesets include third-party rules for all detected languages
 - [ ] User explicitly approved the scan plan (Step 3 gate passed)
-- [ ] `run-scans.sh` exited 0 and wrote `$OUTPUT_DIR/scans.json`
+- [ ] `run_scans.py` exited 0 and wrote `$OUTPUT_DIR/scans.json`
 - [ ] `failed` and `skipped` from `scans.json` are empty, or listed in the report
 - [ ] Scans marked `partial` in `scans.json` are none, or listed in the report — they ran with some of their rules failing to compile
 - [ ] Every `semgrep` command used `--metrics=off`

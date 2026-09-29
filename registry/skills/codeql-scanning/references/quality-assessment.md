@@ -1,8 +1,9 @@
 <!-- Adapted for agents-united from https://github.com/trailofbits/skills/blob/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql/references/quality-assessment.md
      Licence: see ../LICENSE; changes: see ../NOTICE.md.
-     Upstream bash helpers (build_log.sh, find_databases.sh, generate_suite.sh, run-scans.sh) are
-     not shipped here because they need bash; ../SKILL.md gives the direct CLI steps instead.
-     `{baseDir}` below means this skill's folder. -->
+     Upstream's bash helpers were ported to Python (scripts/run_scans.py, build_log.py,
+     find_databases.py, generate_suite.py) so they run on Windows and POSIX; commands below use
+     the ports. Other shell snippets (arrays, $(...)) are POSIX-shell examples: run them in Git
+     Bash or WSL on Windows, or translate them. `{baseDir}` means this skill's folder. -->
 
 # Quality Assessment
 
@@ -15,16 +16,15 @@ them: a second hand-written pipeline drifts from the script and logs a contradic
 which is how this file came to report 202 project files where the script said 2.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "Assessing database quality"
+python {baseDir}/scripts/build_log.py step "Assessing database quality"
 
 # Capture the status into a variable. Inside `if ! cmd; then`, `$?` is the *negated*
 # status and always reads 0, so the log would record every failure as a success.
-QUALITY_JSON=$(uv run {baseDir}/scripts/check_db_quality.py "$DB_NAME" --format=json)
+QUALITY_JSON=$(python {baseDir}/scripts/check_db_quality.py "$DB_NAME" --format=json)
 QUALITY_STATUS=$?
 if [ "$QUALITY_STATUS" -ne 0 ]; then
-  log_result "Quality gate failed (exit $QUALITY_STATUS) — see Enforce the Thresholds below"
+  python {baseDir}/scripts/build_log.py result "Quality gate failed (exit $QUALITY_STATUS) — see Enforce the Thresholds below"
   exit "$QUALITY_STATUS"
 fi
 
@@ -93,12 +93,11 @@ The log line goes inside the `if`. After it, a re-run that still fails writes "R
 threshold to 15%" as though the override took, and the block exits 0 — `log_result`'s status.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-if uv run {baseDir}/scripts/check_db_quality.py "$DB_NAME" --max-error-ratio 15; then
-  log_result "Raised error-ratio threshold to 15%: failures are all in third_party/, not project source"
+if python {baseDir}/scripts/check_db_quality.py "$DB_NAME" --max-error-ratio 15; then
+  python {baseDir}/scripts/build_log.py result "Raised error-ratio threshold to 15%: failures are all in third_party/, not project source"
 else
-  log_result "Still failing at a 15% error ratio — the failures are not confined to third_party/"
+  python {baseDir}/scripts/build_log.py result "Still failing at a 15% error ratio — the failures are not confined to third_party/"
   exit 1
 fi
 ```
@@ -130,30 +129,28 @@ Try these improvements, re-assess after each. **Log all improvements:**
 ### 1. Adjust source root
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "Quality improvement: adjust source root"
+python {baseDir}/scripts/build_log.py step "Quality improvement: adjust source root"
 NEW_ROOT="./src"  # or detected subdirectory
 # For interpreted: add --codescanning-config=codeql-config.yml
 # For compiled: omit config flag
-run_logged codeql database create "$DB_NAME" \
+python {baseDir}/scripts/build_log.py run -- codeql database create "$DB_NAME" \
   --language="$CODEQL_LANG" --source-root="$NEW_ROOT" --overwrite
-log_result "Changed source-root to: $NEW_ROOT"
+python {baseDir}/scripts/build_log.py result "Changed source-root to: $NEW_ROOT"
 ```
 
 ### 2. Fix "no source code seen" (cached build - compiled languages only)
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "Quality improvement: force rebuild (cached build detected)"
+python {baseDir}/scripts/build_log.py step "Quality improvement: force rebuild (cached build detected)"
 # The rebuild is only worth running if the clean succeeded. Against a still-cached tree it
 # re-extracts the same empty database, and the log would record that as a fix.
 if make clean; then
-  run_logged codeql database create "$DB_NAME" --language="$CODEQL_LANG" --overwrite
-  log_result "Forced clean rebuild"
+  python {baseDir}/scripts/build_log.py run -- codeql database create "$DB_NAME" --language="$CODEQL_LANG" --overwrite
+  python {baseDir}/scripts/build_log.py result "Forced clean rebuild"
 else
-  log_result "SKIPPED: make clean failed, so the build is still cached"
+  python {baseDir}/scripts/build_log.py result "SKIPPED: make clean failed, so the build is still cached"
 fi
 ```
 
@@ -162,9 +159,8 @@ fi
 > **Note:** These install into the *target project's* environment to improve CodeQL extraction quality.
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "Quality improvement: install type stubs/additional deps"
+python {baseDir}/scripts/build_log.py step "Quality improvement: install type stubs/additional deps"
 
 # Python type stubs — install into target project's environment
 # allow-legacy-python: installs into the analysed project's environment, which may not be uv-managed.
@@ -174,27 +170,26 @@ for stub in types-requests types-PyYAML types-redis; do
     STUBS_INSTALLED="$STUBS_INSTALLED $stub"
   fi
 done
-log_result "Installed type stubs:$STUBS_INSTALLED"
+python {baseDir}/scripts/build_log.py result "Installed type stubs:$STUBS_INSTALLED"
 
 # Additional project dependencies
 # allow-legacy-python: the analysed project's own editable install.
-run_logged pip install -e . || log_result "WARNING: pip install -e . failed — extraction may stay incomplete"
+python {baseDir}/scripts/build_log.py run -- pip install -e . || python {baseDir}/scripts/build_log.py result "WARNING: pip install -e . failed — extraction may stay incomplete"
 ```
 
 ### 4. Adjust extractor options
 
 ```bash
-. "{baseDir}/scripts/build_log.sh" || exit 1
 
-log_step "Quality improvement: adjust extractor options"
+python {baseDir}/scripts/build_log.py step "Quality improvement: adjust extractor options"
 
 # C/C++: Include headers
 export CODEQL_EXTRACTOR_CPP_OPTION_TRAP_HEADERS=true
-log_result "Set CODEQL_EXTRACTOR_CPP_OPTION_TRAP_HEADERS=true"
+python {baseDir}/scripts/build_log.py result "Set CODEQL_EXTRACTOR_CPP_OPTION_TRAP_HEADERS=true"
 
 # Java: Specific JDK version
 export CODEQL_EXTRACTOR_JAVA_OPTION_JDK_VERSION=17
-log_result "Set CODEQL_EXTRACTOR_JAVA_OPTION_JDK_VERSION=17"
+python {baseDir}/scripts/build_log.py result "Set CODEQL_EXTRACTOR_JAVA_OPTION_JDK_VERSION=17"
 
 # Then rebuild with current method
 ```
