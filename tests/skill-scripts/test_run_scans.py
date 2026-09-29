@@ -11,6 +11,15 @@ SCRIPT = HERE.parent.parent / "registry" / "skills" / "semgrep-scanning" / "scri
 FAKE = f'"{sys.executable}" "{HERE / "fake_semgrep.py"}"'
 
 
+class SplitCommand(unittest.TestCase):
+    def test_windows_style_quoted_paths_keep_backslashes_and_lose_quotes(self):
+        sys.path.insert(0, str(SCRIPT.parent))
+        import run_scans  # noqa: E402
+
+        parts = run_scans.split_command(r'"C:\Program Files\Python\python.exe" "C:\a b\fake.py"', posix=False)
+        self.assertEqual(parts, [r"C:\Program Files\Python\python.exe", r"C:\a b\fake.py"])
+
+
 class RunScans(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

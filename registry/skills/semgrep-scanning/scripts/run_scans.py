@@ -132,8 +132,15 @@ def repo_dir_name(url: str) -> str:
     return UNSAFE_NAME_RE.sub("-", f"{owner or 'unknown'}-{repo or 'rules'}")
 
 
+def split_command(value: str, posix: bool | None = None) -> list[str]:
+    # Windows needs non-POSIX splitting so backslashes in paths survive; that mode keeps the
+    # quotes around a token, so strip them.
+    parts = shlex.split(value, posix=(os.name != "nt") if posix is None else posix)
+    return [p[1:-1] if len(p) >= 2 and p[0] == p[-1] and p[0] in "\"'" else p for p in parts]
+
+
 def semgrep_bin() -> list[str]:
-    return shlex.split(os.environ.get("SEMGREP_BIN", "semgrep"), posix=(os.name != "nt"))
+    return split_command(os.environ.get("SEMGREP_BIN", "semgrep"))
 
 
 def render_argv(argv: list[str]) -> str:

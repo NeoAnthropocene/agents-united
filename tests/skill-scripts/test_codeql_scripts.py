@@ -55,6 +55,20 @@ class FindDatabases(unittest.TestCase):
         self.assertIn("codeql not found", r.stderr)
 
 
+class SplitCommand(unittest.TestCase):
+    """The BIN override must survive Windows paths (backslashes, quotes, spaces)."""
+
+    def test_windows_style_quoted_paths_keep_backslashes_and_lose_quotes(self):
+        sys.path.insert(0, str(SCRIPTS))
+        import find_databases  # noqa: E402
+
+        parts = find_databases.split_command(r'"C:\Program Files\Python\python.exe" "C:\a b\fake.py"', posix=False)
+        self.assertEqual(parts, [r"C:\Program Files\Python\python.exe", r"C:\a b\fake.py"])
+        self.assertEqual(find_databases.split_command("python fake.py --x", posix=False), ["python", "fake.py", "--x"])
+        self.assertEqual(find_databases.split_command('"/usr/bin/python3" "/a b/fake.py"', posix=True),
+                         ["/usr/bin/python3", "/a b/fake.py"])
+
+
 class BuildLog(unittest.TestCase):
     def test_step_cmd_result_and_run_write_the_log(self):
         with tempfile.TemporaryDirectory() as d:

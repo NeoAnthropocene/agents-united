@@ -23,7 +23,7 @@ const PYTHON = findPython();
 describe('skill helper scripts (Python)', () => {
   it.skipIf(!PYTHON)('unittest suites in tests/skill-scripts pass', () => {
     const dir = path.resolve(process.cwd(), 'tests', 'skill-scripts');
-    const r = spawnSync(PYTHON!, ['-B', '-m', 'unittest', 'discover', '-s', dir, '-p', 'test_*.py'], {
+    const r = spawnSync(PYTHON!, ['-B', '-m', 'unittest', 'discover', '-v', '-s', dir, '-p', 'test_*.py'], {
       encoding: 'utf8',
       env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' },
     });
