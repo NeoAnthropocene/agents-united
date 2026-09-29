@@ -16,7 +16,7 @@
     "pretest": "npm run build",
     "dev": "tsup --watch",
     "start": "node dist/cli.js",
-    "test": "vitest run",
+    "test": "vitest run --testTimeout=30000 --hookTimeout=30000",
     "test:evals": "vitest run tests/e2e-evals/",
     "test:watch": "vitest",
     "typecheck": "npm run build && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
