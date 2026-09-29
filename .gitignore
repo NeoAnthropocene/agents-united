@@ -156,7 +156,9 @@ scratch/
 /.agents/
 /.cline/
 /.gemini/
-/.claude/
+/.claude/*
+# Shared Claude Code on the web hook (runs scripts/cloud-session-start.sh); the rest of .claude/ is per-workspace state
+!/.claude/settings.json
 /.cursor/
 /.opencode/
 /AGENTS.md
