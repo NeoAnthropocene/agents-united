@@ -78,7 +78,7 @@ function mcpAddCommand(host: string, server: string, workspaceRoot: string): str
   }
   if (host === 'cline') {
     const settingsPath = McpLocationRegistry.getPrimaryWritePath('cline', workspaceRoot);
-    return `Add it by hand to ${settingsPath} (Cline has no MCP-install command).`;
+    return `Add it with the interactive wizard: cline mcp install|add <name> (or cline config mcp for the current list); settings live in ${settingsPath}.`;
   }
   return `Add it with: claude mcp add ${server} -- <command> [args...]`;
 }
