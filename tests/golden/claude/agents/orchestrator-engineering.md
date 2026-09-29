@@ -20,6 +20,15 @@ tools:
   - AskUserQuestion
   - SendMessage
   - CronCreate
+  - mcp__github
+  - mcp__context7
+  - mcp__chrome-devtools-mcp
+  - mcp__firecrawl
+mcpServers:
+  - name: github
+  - name: context7
+  - name: chrome-devtools-mcp
+  - name: firecrawl
 permissionMode: acceptEdits
 model: opus
 effort: high

@@ -52,6 +52,7 @@ skills:
   - terraform-test-patterns
 mcpServers:
   - name: github
+  - name: context7
 ---
 
 # subagent-devops-engineer — System Prompt

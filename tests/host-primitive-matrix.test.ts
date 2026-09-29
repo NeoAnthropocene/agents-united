@@ -103,7 +103,10 @@ describe('agents doctor --host <h> — declared-delta section (Plan 026 gate 3)'
     await removeWithRetry(tempDir);
   });
 
-  it('--host cline lists degraded/unsupported features for an installed bundle', async () => {
+  // Plan 029 (2026-09-28): real `InstallEngine.install()` I/O (copy method) is ~2.2 s
+  // standalone and exceeds the 5 s default under full-suite parallel load; the 30 s
+  // budget here is headroom for install work, not a behavioural assertion.
+  it('--host cline lists degraded/unsupported features for an installed bundle', { timeout: 30_000 }, async () => {
     const resolver = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
     const installer = new InstallEngine(resolver);
     await installer.install('software-engineering', { targetDir: tempDir, method: 'copy', fanout: ['cline'] });
@@ -117,7 +120,8 @@ describe('agents doctor --host <h> — declared-delta section (Plan 026 gate 3)'
     expect((report.declaredDeltas ?? []).every(d => d.disposition === 'degraded' || d.disposition === 'unsupported')).toBe(true);
   });
 
-  it('--host antigravity lists degraded/unsupported features for an installed bundle', async () => {
+  // Plan 029 (2026-09-28): install-heavy I/O; see the headroom note above.
+  it('--host antigravity lists degraded/unsupported features for an installed bundle', { timeout: 30_000 }, async () => {
     const resolver = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
     const installer = new InstallEngine(resolver);
     await installer.install('software-engineering', { targetDir: tempDir });
@@ -129,7 +133,8 @@ describe('agents doctor --host <h> — declared-delta section (Plan 026 gate 3)'
     expect((report.declaredDeltas ?? []).every(d => d.host === 'antigravity')).toBe(true);
   });
 
-  it('--host claude keeps its existing output and adds only the declared-delta section', async () => {
+  // Plan 029 (2026-09-28): install-heavy I/O; see the headroom note above.
+  it('--host claude keeps its existing output and adds only the declared-delta section', { timeout: 30_000 }, async () => {
     const resolver = new RegistryResolver(path.resolve(process.cwd(), 'registry'));
     const installer = new InstallEngine(resolver);
     await installer.install('software-engineering', { targetDir: tempDir, method: 'copy', fanout: ['claude'] });

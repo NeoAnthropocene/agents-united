@@ -45,6 +45,7 @@ skills:
   - threat-modeling
 mcpServers:
   - name: github
+  - name: context7
 ---
 
 # subagent-appsec-penetration-tester — System Prompt

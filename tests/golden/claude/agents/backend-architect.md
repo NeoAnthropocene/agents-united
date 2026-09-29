@@ -15,6 +15,11 @@ tools:
   - Glob
   - SendMessage
   - SubagentHandback
+  - mcp__github
+  - mcp__context7
+mcpServers:
+  - name: github
+  - name: context7
 permissionMode: acceptEdits
 model: sonnet
 effort: medium

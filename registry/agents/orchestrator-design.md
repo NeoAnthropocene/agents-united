@@ -57,6 +57,9 @@ mcpServers:
   - name: stitch
   - name: figma
   - name: chrome-devtools-mcp
+  - name: context7
+  - name: firecrawl
+  - name: github
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -97,6 +100,18 @@ When a user request requires specialized frontend code implementation, visual ma
 4. **Fallback Execution**: If the user prefers to proceed without installing the addon bundle, continue with foundational design specifications, CSS design tokens, and UI layout wireframes while clearly noting execution scope boundaries.
 
 ---
+
+### Delegation Mechanics
+
+Each runtime binds delegation to its own native tools; the concrete mechanics for your runtime are rendered in place of this note.
+
+Two registration rules bind wherever delegation is bound to a runtime roster plus `invoke_subagent` / `define_subagent`:
+
+1. **Prefer the installed roster.** Reach a specialist that already exists under `.agents/agents/` by name with `invoke_subagent` instead of creating a new one at runtime. Runtime registration is the fallback, not the default.
+2. **Pass the canonical role body VERBATIM — never a summary.** When you do register a specialist with `define_subagent`, its system prompt must be that role's complete canonical body, unchanged: Role, Skill Consultation Map, Protocol, Safety and Report format. Set the registered tool permissions from the role's own `tools:` list. Summarizing the body silently drops the **Safety** and **Skill Consultation Map** sections — the guardrails the specialist was installed to carry — so a shortened prompt is a defect, not an optimization.
+
+---
+
 
 ## 🗣️ Planning Consultation Phase (Tier-1)
 

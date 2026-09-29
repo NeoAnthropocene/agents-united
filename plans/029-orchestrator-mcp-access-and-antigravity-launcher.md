@@ -12,7 +12,11 @@
 
 ## Status
 
-- **State**: PROPOSED — 2026-09-28 (owner asked for this plan; awaiting approval)
+- **State**: EXECUTED — 2026-09-28 (owner approved; execution completed on
+  `feat/orchestrator-mcp-and-antigravity-launcher`). Acceptance gates 2–5 pass; gate 1
+  (`npm test` green) passes after the Plan 029 timeout-headroom fix to the three install-heavy
+  `host-primitive-matrix.test.ts` cases; gate 6 (owner manual Windows checks) is pending.
+- **State history**: PROPOSED — 2026-09-28 (owner asked for this plan; awaiting approval)
 - **Priority**: P1 · **Effort**: M–L · **Risk**: Medium (changes every projected Claude
   orchestrator's tool list; adds a new launcher)
 - **Depends on**: none. Plan 030 is independent.
@@ -140,6 +144,40 @@ per the Step 0 finding; update the host matrix.
 anywhere; Cline and Antigravity projections unchanged except the declared `mcpServers` lists;
 the launcher never falls back to another host silently.
 
+## Step 0 record (execution findings — kept here per the handoff, not in the handoff file)
+
+Reconnaissance 2026-09-28, execution 2026-09-28, `orchestrator-engineering`.
+
+**Step 0(a) — CONFIRMED, no STOP.** Two composable mechanisms pulled 2026-09-28 from
+`code.claude.com/docs/en/sub-agents` and `code.claude.com/docs/en/mcp`: (1) a per-subagent
+`mcpServers` frontmatter field given by name (inline server definitions are never emitted),
+(2) MCP patterns in `tools:` — `mcp__<server>` for writable roles, exact
+`mcp__<server>__<tool>` pins for read-only roles.
+
+**Step 0(b) — Cline MCP inheritance: `unsupported`, medium confidence.**
+Whether Cline Configured Agents inherit session MCP tools is undocumented, not explicitly
+denied — the only explicit statement found is exclusion, so `cline/mcpServers` stays
+`unsupported` with the rationale recorded in the ledger (and echoed by
+`agents doctor --host cline`). A binary/source check (`SubagentRunner`/`SubagentBuilder`)
+would be needed to reach high confidence.
+
+**Step 0(c) — `agy` verified live on the target Windows machine (2026-09-28).**
+`agy --version` → **1.2.12** (drift from the 1.1.15 pin; 1.2.12 is now the verified floor,
+pinned in the probe as `AGY_MIN_VERSION = {1, 2, 12}`, reported as data). `--agent` still
+injects; an opening prompt CAN be passed via `-i` / `--prompt-interactive`, so no capability
+flag was needed — target argv `agy --agent <orchestrator> --prompt-interactive "<prompt>"`
+(`--mode` also confirmed; `--print` is explicitly not a conformance target). `agy mcp`
+exists (ADR 0011 holds). `claude` on the same box: 2.1.283.
+
+**Step 0(d) — by-name reachability: RESOLVED NO (Plan 031, agy 1.2.13, owner probes
+2026-09-29).** `agy agents` lists neither the flat nor the directory-layout fixture, and both
+`-i` identity sessions ran the stock agent (`NOT_FOUND` on both markers) — the same failure
+signature as the 1.1.14/1.1.15 headless verdicts. `--agent` accepts the name but resolves no
+workspace roster in either layout. The matrix's explicitly-unverified note plus the fail-closed
+verbatim rule stand as the final answer; gate 6(c) is blocked-by-vendor with the desktop route
+as the supported path. Re-run the Plan 031 probes before touching the installer if a future
+agy release restores workspace discovery.
+
 ## Acceptance gates
 
 1. `npm run typecheck` exit 0 · `npm test` green.
@@ -173,9 +211,58 @@ the launcher never falls back to another host silently.
 | Phase | Specialist | Scope |
 |---|---|---|
 | Step 0 | `subagent-repo-index` + owner | repo inventory; live-host verification |
-| Step 1 | `subagent-qa-automation-lead` | RED tests |
+| Step 1 | `subagent-backend-architect` (reassigned from `subagent-qa-automation-lead` per owner decision 2026-09-28; the QA role lives in the uninstalled `qa-automation` addon and will not be installed) | RED tests |
 | Steps 2–4 | `subagent-backend-architect` | MCP projection, launcher, Antigravity reachability |
 | Step 5 | `subagent-code-reviewer` | adversarial audit |
+
+## Final Objective-1 specialist list (owner decision: Option B, broad — 2026-09-28)
+
+All 14 engineering/architecture/security roles that were missing `context7` receive it
+(`context7` is read-only, so no R1 risk). The four security specialists already declare
+`github`; no change there.
+Added `context7`: `subagent-accessibility-lead`, `subagent-android-architect`,
+`subagent-appsec-penetration-tester`, `subagent-cloud-security-architect`,
+`subagent-code-reviewer`, `subagent-compliance-grc-specialist`,
+`subagent-devops-engineer`, `subagent-e2e-tester`, `subagent-ios-architect`,
+`subagent-qa-automation-lead`, `subagent-repo-index`, `subagent-security-engineer`,
+`subagent-sysops-sre-lead`, `subagent-system-architect`.
+Already complete: `subagent-ai-model-architect`, `subagent-backend-architect`,
+`subagent-cloud-infrastructure-architect`, `subagent-cross-platform-specialist`,
+`subagent-data-engineer`, `subagent-database-administrator`,
+`subagent-distributed-systems-architect`, `subagent-finops-cost-engineer`,
+`subagent-frontend-architect`, `subagent-ml-platform-engineer`.
+
+## Risk R1 decision — Option B, pinned exact read-only tool names (2026-09-28)
+
+`permissionMode: readOnly` roles (`subagent-code-reviewer`, `subagent-repo-index`, both
+already declaring `github`) must NEVER receive the bare `mcp__github` grant: the plan-mode
+filter strips only Write/Edit/NotebookEdit/Bash and never touches MCP entries, so bare
+`mcp__github` would hand a `plan`-mode role GitHub write tools. The projector emits pinned
+exact read-only names (`mcp__github__search_code`, `mcp__github__get_file_contents`,
+`mcp__github__list_pull_requests`, `mcp__github__pull_request_read`,
+`mcp__context7__resolve-library-id`, `mcp__context7__query-docs`); non-read-only roles get
+server-level `mcp__<server>`. NOTE: an initial `mcp__context7__get-library-docs` pin shipped
+in Step 2 but `get-library-docs` is Context7's deprecated tool name — corrected to
+`mcp__context7__query-docs` (verified against the live MCP surface) in Step 3, with the two
+affected goldens re-synced.
+
+## Execution deviations and cross-plan touch (recorded for review)
+
+- `subagent_*` tools returned `Unauthorized` transiently mid-session (Cline account auth; also
+  documented in `plans/016-claude-code-projection.md`). All four were re-probed working before
+  delegating Steps 0–5; one Step-1 delegation attempt failed once, then succeeded on retry.
+  A later full plane outage was confirmed and explicitly attributed before any main-session
+  completion, per the handoff contract.
+- `tests/claude-agent-teams-posture.test.ts` (Plan 022 H2 gate) conflicted with the mandated
+  `mcp__*` grants; per owner decision the regex excludes the MCP namespace
+  (`/^(?!mcp__)[a-z][a-z_]*$/`), preserving the original intent.
+- Planning reconnaissance had 13 stale seam line numbers (files had grown); all were re-verified
+  against HEAD before execution.
+- Step 0(d) (by-name reachability) and the R1/R3 drifts were recorded, not re-litigated.
+- Known residual (independent Step 5 audit): `resolveStartHost` can route
+  cursor/opencode/codex fanout installs to the Antigravity lane (MEDIUM-001), and a terminal
+  `return 'cline'` exists for no-signal lockfiles (MEDIUM-002, errs rather than launches).
+  Owner deferred both fixes.
 
 ## References
 
