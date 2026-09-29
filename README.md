@@ -20,7 +20,7 @@ Curated teams of orchestrators, sub-agents, skills, and workflows — installed 
 - **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
 - **🚀 Cline Native Activation**: Bundles activate **automatically** in any Cline CLI session — skills discovered natively from `.agents/skills/`, configured-agent roles (`.cline/agents/*.yml`) exposed as spawnable `subagent_*` tools, coordinator rules (`.cline/rules/`), slash-command workflows (`.cline/workflows/`), and spec-conformant Agent Plugin packages (`plugin.json`, agent-plugins.org) in `.agents/plugins/<bundle>/`. No install step required; `agents start` remains available as an optional pre-seeded team-session launcher.
 - **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 59 Specialized Agents & 178 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 178 production-grade runbooks (109 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
+- **🤖 59 Specialized Agents & 188 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 188 production-grade runbooks (119 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
 - **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
 - **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
 - **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
@@ -108,7 +108,7 @@ This model gives you:
 ---
 
 
-Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **178 modular skills & runbooks** (109 domain skills + 69 workflow playbooks) across 8 department domains:
+Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **188 modular skills & runbooks** (119 domain skills + 69 workflow playbooks) across 8 department domains:
 
 | Department Domain | Essentials Base | Specialized Addon Bundles | Lead Orchestrator |
 | :--- | :--- | :--- | :--- |
@@ -594,6 +594,7 @@ When contributing new skills or adapting external skills:
    ---
    ```
 2. **Attribution in README**: Add credit under `## Credits & Acknowledgments`.
+   **Licence tiers** ([ADR 0024](docs/adr/0024-licence-tiered-skill-intake.md), [`docs/skill-intake.md`](docs/skill-intake.md) §1): permissive licences (MIT, Apache-2.0, BSD, ISC, CC-BY) may be vendored with credit; MPL-2.0 and CC-BY-SA-4.0 skills may be vendored only if the skill folder keeps the upstream `LICENSE`, a `NOTICE.md` of what changed, a SHA-pinned `metadata.source`, and stays under that licence; NonCommercial, NoDerivatives and GPL-family content is never vendored.
 3. **Deterministic Verifications**: Include clear validation commands, error recovery procedures, and code exemplars.
 
 ### 6. Pull Request (PR) Workflow
@@ -697,9 +698,34 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 </details>
 
 <details>
-<summary><strong>HashiCorp & Trail of Bits — linked, not vendored</strong></summary>
+<summary><strong>HashiCorp (<a href="https://github.com/hashicorp">@hashicorp</a> / <a href="https://github.com/hashicorp/agent-skills">hashicorp/agent-skills</a>) — MPL-2.0</strong></summary>
 
-- **`terraform-test-patterns`** and **`threat-modeling`** are link-only stubs: [hashicorp/agent-skills](https://github.com/hashicorp/agent-skills) (MPL-2.0) and [trailofbits/skills](https://github.com/trailofbits/skills) (CC-BY-SA-4.0) publish real, high-quality skills in this space, but neither licence is on this catalog's redistribution allow-list (MIT/Apache-2.0/BSD/CC-BY). Rather than copy-adapting ShareAlike/copyleft content into an MIT-style catalog, these two entries point straight to the upstream repositories.
+These skill folders stay under MPL-2.0 and carry its text in `LICENSE`, with a `NOTICE.md` of what changed.
+
+- **`terraform-test-patterns`**: Native `terraform test` suites, plan-mode unit tests, mock providers and CI wiring, adapted from HashiCorp's `terraform-test` skill.
+- **`terraform-style-guide`**: HashiCorp's Terraform style conventions (layout, naming, variables, versions, secure defaults), adapted from HashiCorp's `terraform-style-guide` skill.
+</details>
+
+<details>
+<summary><strong>Trail of Bits (<a href="https://github.com/trailofbits">@trailofbits</a> / <a href="https://github.com/trailofbits/skills">trailofbits/skills</a>) — CC-BY-SA-4.0</strong></summary>
+
+These skill folders are adaptations released under CC-BY-SA-4.0 (ShareAlike), each with the licence in `LICENSE` and a `NOTICE.md` of what changed. They are separate works from the MIT-licensed rest of this repository.
+
+- **`semgrep-scanning`**: Approval-gated Semgrep scans with third-party rulesets and merged SARIF, adapted from [`static-analysis/semgrep`](https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/semgrep).
+- **`codeql-scanning`**: Quality-gated CodeQL databases, data extensions and explicit query suites, adapted from [`static-analysis/codeql`](https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql).
+- **`sarif-triage`**: SARIF severity resolution, deduplication and baseline diffs, adapted from [`static-analysis/sarif-parsing`](https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/sarif-parsing).
+- **`supply-chain-risk-audit`**: Measured dependency risk reports for npm, PyPI and Go, adapted from [`supply-chain-risk-auditor`](https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/supply-chain-risk-auditor).
+- **`variant-analysis`**: Finding every sibling of a confirmed bug, adapted from [`variant-analysis`](https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/variant-analysis).
+- **`security-diff-review`**: Risk-first security review of a PR or diff, adapted from [`differential-review`](https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/differential-review).
+- **`property-based-testing`**: Property-based tests across Hypothesis, fast-check, proptest and Echidna, adapted from [`property-based-testing`](https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/property-based-testing).
+- **`mutation-testing`**: mewt/muton campaigns and surviving-mutant analysis, adapted from [`mutation-testing`](https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/mutation-testing).
+</details>
+
+<details>
+<summary><strong>OpenAI, curated by Trail of Bits (<a href="https://github.com/trailofbits/skills-curated">trailofbits/skills-curated</a>) — Apache-2.0</strong></summary>
+
+- **`threat-modeling`**: Repository-grounded threat models with ranked abuse paths, adapted from the `openai-security-threat-model` plugin (its own Apache-2.0 licence, not the repository's CC-BY-SA-4.0 root).
+- **`security-best-practices`**: Framework-specific secure-coding guidance for Python, JS/TS and Go, adapted from the `openai-security-best-practices` plugin (Apache-2.0).
 </details>
 
 <details>
@@ -808,3 +834,5 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 ## 📄 License
 
 MIT © [NeoAnthropocene & Agents United Contributors](LICENSE)
+
+Some third-party skill folders under `registry/skills/` carry their own licence (MPL-2.0 or CC-BY-SA-4.0) in a `LICENSE` file next to a `NOTICE.md` describing the changes; those folders stay under that licence, and everything else in this repository is MIT. See [Credits & Acknowledgments](#-credits--acknowledgments) and [`docs/skill-intake.md`](docs/skill-intake.md).

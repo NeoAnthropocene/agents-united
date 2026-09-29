@@ -124,6 +124,7 @@ so the orchestrator can trigger the Cross-Bundle Recommendation Protocol.
 | Framing findings the way a reviewee should receive them | `requesting-code-review` | Composing the final report | `software-engineering` |
 | Checking the codebase's own review-response conventions | `receiving-code-review` | The project has a documented review-response process | `software-engineering` |
 | Recommending a refactor instead of a rewrite | `code-refactoring` | A finding's remediation is a refactor | `software-engineering` |
+| Security-focused review of a diff touching auth, crypto, external calls or validation | `security-diff-review` | A HIGH-risk change is in the diff | `secops-application-security` addon — **not installed here; report to orchestrator** |
 
 ---
 

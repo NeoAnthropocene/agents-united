@@ -1,123 +1,133 @@
 ---
 name: terraform-test-patterns
-description: Points to HashiCorp's official Terraform testing guidance
-  (terraform test, acceptance tests, provider/module scaffolding) rather than
-  vendoring it, because the upstream skill set is MPL-2.0-licensed. Use when
-  the user needs Terraform test patterns and can install the upstream skill
-  directly, or wants a summary of what it covers and where to get it.
+description: Writing and running Terraform's native tests (`terraform test`,
+  `.tftest.hcl` run blocks, assertions, `expect_failures`, mock providers)
+  for modules and root configurations. Use when creating or reviewing test
+  files, choosing plan-mode unit tests versus apply-mode integration tests,
+  mocking providers, or wiring Terraform tests into CI.
 metadata:
-  author: agents-united
-  version: 1.0.0
-  source: https://github.com/hashicorp/agent-skills
+  author: HashiCorp / agents-united
+  version: 2.0.0
+  source: https://github.com/hashicorp/agent-skills/tree/516354c484b43fa5469567485113dd0c769c3d24/plugins/terraform/skills/terraform-test
   commit: 516354c484b43fa5469567485113dd0c769c3d24
-  license: MPL-2.0 (upstream licence; this stub's own text is original
-    agents-united commentary, not vendored upstream content — see Overview)
-  icon: 🔗
+  license: MPL-2.0
+  icon: 🧪
 disable-slash-command: true
 ---
 
-# Terraform Test Patterns — Link-Only Stub (Licence Blocked)
+# Terraform Test Patterns
 
 ## Overview & Purpose
-This skill intentionally does **not** vendor HashiCorp's Terraform testing
-content. HashiCorp's `agent-skills` repository
-(`github.com/hashicorp/agent-skills`, `plugins/terraform/skills/`) is
-licensed under the **Mozilla Public License 2.0 (MPL-2.0)** — a real,
-legitimate open-source licence, but not one of the redistribution-friendly
-licences this catalog vendors under (MIT / Apache-2.0 / BSD / CC-BY, per the
-"Skill & Agent Contribution Standard" in `README.md`). Rather than
-copy-adapting MPL-2.0 material into an MIT-style catalog entry, this stub
-tells the agent what the upstream skill set covers and how to reach it
-directly.
+Terraform's built-in test framework runs `run` blocks against a module and checks
+`assert` conditions, either at plan time (fast, no resources) or at apply time (real
+resources, destroyed afterwards in reverse order). This skill is the runbook for
+laying out, writing and running those tests; the full syntax reference lives in
+[references/test-syntax.md](references/test-syntax.md).
+
+Adapted from HashiCorp's MPL-2.0 `terraform-test` skill; this folder stays under
+MPL-2.0 (see `LICENSE` and `NOTICE.md`). Boundaries: `test-driven-development` is the
+general red-green discipline this applies; `terraform-style-guide` covers how the code
+under test is written; `azure-infrastructure-bicep` is the Bicep path.
 
 ## Execution Triggers & Prerequisites
 ### Execution Triggers
-- The user asks for Terraform test/acceptance-test patterns, module
-  scaffolding conventions, or state-management testing guidance.
-- A DevOps or infrastructure task needs Terraform-specific testing depth
-  beyond what this catalog's own `test-driven-development` and
-  `azure-infrastructure-bicep` skills cover generically.
+- Creating or reviewing `*.tftest.hcl` / `*.tftest.json` files.
+- A module change that needs unit (plan) or integration (apply) coverage.
+- Adding Terraform tests to a CI pipeline, or debugging a failing `terraform test`.
 
 ### Prerequisites
-- None to read this stub. Installing the upstream skill set requires the
-  user's own tooling (`npx skills add ...` or the plugin marketplace flow
-  HashiCorp documents) and accepting MPL-2.0 for that content directly.
+- Terraform 1.6+ for `terraform test`; 1.7+ for mock providers; 1.9+ for
+  `parallel` and `state_key`. Check `terraform version` first.
+- Credentials only for apply-mode tests; plan-mode tests with mocks need none.
 
 ## Input & Output Requirements
 ### Inputs
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| none | — | — | This is a pointer skill; it takes no inputs of its own |
+| Module path | path | Yes | Module or root config under test |
+| Behaviour to pin | text | Yes | Defaults, validation rules, outputs, conditional resources |
+| Terraform version | semver | Yes | Gates mocks, `parallel`, `state_key` |
 
 ### Outputs
 | Artifact | Path / Format | Description |
 |---|---|---|
-| Pointer | This document | Where the real content lives and why it isn't vendored here |
+| Unit tests | `tests/*_unit_test.tftest.hcl` | `command = plan`, mocks where providers need credentials |
+| Integration tests | `tests/*_integration_test.tftest.hcl` | `command = apply`, real resources |
+| CI job | Workflow file | Unit on every PR, integration on merge ([references/ci-cd.md](references/ci-cd.md)) |
 
 ## Step-by-Step Execution Runbook
 
-### Phase 1 — Recognize the Need
-1. When a task calls for Terraform test/acceptance-test patterns, recognize
-   this catalog does not vendor that depth, and say so plainly rather than
-   improvising untested Terraform testing advice from general knowledge.
+### Phase 1 — Lay out the suite
+1. Put tests in `tests/` beside the module. Name plan-mode files
+   `*_unit_test.tftest.hcl` and apply-mode files `*_integration_test.tftest.hcl` so CI
+   can filter them.
+2. Default to `command = plan`. Use apply only when the behaviour depends on values
+   known after apply.
 
-### Phase 2 — Point to the Real Source
-1. Direct the user to `github.com/hashicorp/agent-skills`
-   (`plugins/terraform/skills/`), HashiCorp's own maintained skill set,
-   covering provider scaffolding, module conventions, `terraform test`
-   (native `.tftest.hcl` acceptance tests), and Terraform Cloud/HCP state
-   management.
-2. If the user's own tooling supports it, they can install it directly
-   (e.g. via the HashiCorp Claude Code plugin marketplace or a skills-CLI
-   fetch of that repository) under its own MPL-2.0 terms — this repository
-   does not need to (and does not) re-host that content to make it usable.
+### Phase 2 — Write the red test first
+1. One `run` block per scenario, named for the behaviour ("rejects_unknown_env").
+2. Assert on outputs, counts, tags and conditional resources; use `expect_failures`
+   to prove validation rules reject bad input.
+3. Run it and see it fail for the expected reason before changing the module.
 
-### Phase 3 — Offer What This Catalog *Does* Cover
-1. For general infrastructure-as-code discipline not specific to Terraform's
-   own test runner, point to this catalog's `azure-infrastructure-bicep` and
-   `test-driven-development` skills, which are agents-united-authored and
-   fully vendored here.
-2. If the user specifically wants `terraform test` / `.tftest.hcl` syntax
-   help, state clearly that the authoritative source is HashiCorp's own
-   documentation and the linked skill set, not this stub.
+### Phase 3 — Mock what needs credentials
+1. For unit tests on Terraform 1.7+, use `mock_provider` and `override_*` blocks
+   ([references/mock-providers.md](references/mock-providers.md)).
+2. Below 1.7, keep those scenarios in integration tests instead.
 
-## Code & Configuration Exemplars
+### Phase 4 — Run and wire into CI
+1. `terraform init` then `terraform test` (use `-filter`, `-verbose`, `-no-cleanup`
+   while debugging).
+2. Add the CI job: unit tests on each PR, integration tests on merge to the main
+   branch, with cloud credentials scoped to a sandbox account.
 
-### Exemplar 1: Installing the Upstream Skill Set (illustrative, not vendored)
-```bash
-# Real upstream location — not run or bundled by this repository:
-# https://github.com/hashicorp/agent-skills (plugins/terraform/skills/)
-# Install per that repo's own documented method, under its MPL-2.0 licence.
+## Code & Config Exemplars
+
+### Exemplar 1: Plan-mode unit test with a negative case
+```hcl
+run "defaults_to_small_instance" {
+  command = plan
+  assert {
+    condition     = aws_instance.app.instance_type == "t3.micro"
+    error_message = "Default instance type should be t3.micro"
+  }
+}
+
+run "rejects_unknown_environment" {
+  command = plan
+  variables { environment = "qa-west" }
+  expect_failures = [var.environment]
+}
 ```
 
-## Edge Cases & Error Recovery Procedures
+### Exemplar 2: Commands
+```bash
+terraform test                                  # everything
+terraform test -filter=tests/network_unit_test.tftest.hcl
+terraform test -verbose -no-cleanup             # debugging an apply-mode failure
+```
 
-### Scenario A: User Expects Full Terraform Test Content Here
-1. **Diagnosis**: The user assumed this skill name meant vendored content,
-   as with the other addon skills in this bundle.
-2. **Recovery Protocol**:
-   - Step 1: Explain plainly that this entry is a link-only stub due to
-     licence terms (MPL-2.0), not an oversight.
-   - Step 2: Point to the upstream repository and, if relevant, this
-     catalog's own IaC-adjacent skills for what generic guidance is
-     available here.
+A complete unit/integration/mock suite for a VPC module is in
+[references/examples.md](references/examples.md).
 
-### Scenario B: A Future Contributor Wants to Vendor It Anyway
-1. **Diagnosis**: Someone proposes copying HashiCorp's MPL-2.0 content
-   verbatim into this MIT-style catalog.
-2. **Recovery Protocol**:
-   - Step 1: This requires either relicensing this catalog entry under
-     MPL-2.0 (with proper file-level notices) or obtaining explicit
-     permission from HashiCorp — neither is a change to make unilaterally in
-     a routine skill-authoring pass.
-   - Step 2: Re-run this plan's Step 0 licence check before changing this
-     skill's disposition.
+## Edge Cases & Error Recovery
 
-## Verification & Validation Checklist
-- [ ] This stub makes no claim to have vendored HashiCorp's Terraform
-      testing content.
-- [ ] `metadata.source` points to the real upstream repository.
-- [ ] The stub explains, in plain terms, why the content is not here
-      (MPL-2.0, not on the catalog's redistribution allow-list).
-- [ ] No commands or APIs are invented in place of the real upstream
-      content.
+### Scenario A: Module source is git or HTTP
+1. **Diagnosis**: `module { source = ... }` in a test only accepts local or registry sources.
+2. **Recovery Protocol**: Test a local copy or the registry version instead.
+
+### Scenario B: Integration test left resources behind
+1. **Diagnosis**: A run failed mid-apply or `-no-cleanup` was used.
+2. **Recovery Protocol**: Re-run with cleanup, or destroy from the test's state; order
+   run blocks so dependants are created last (they are destroyed first).
+
+### Scenario C: Tests interfere with each other
+1. **Recovery Protocol**: Give independent runs separate `state_key`s before enabling
+   `parallel = true`.
+
+## Verification Checklist
+- [ ] Every new variable validation has an `expect_failures` test.
+- [ ] Unit tests use `command = plan` and run without cloud credentials.
+- [ ] Error messages say what was expected, so a failure is diagnosable from CI logs.
+- [ ] Integration tests clean up (no `-no-cleanup` in CI).
+- [ ] CI runs unit tests on PRs and integration tests on merge.

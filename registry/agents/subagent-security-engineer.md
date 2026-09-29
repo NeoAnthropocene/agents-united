@@ -18,6 +18,7 @@ tools:
   - list_dir
   - replace_file_content
   - write_to_file
+  - run_command
 hooks:
   PreInvocation:
     - log: Security Engineer activated — loading vulnerability rulesets and OWASP
@@ -29,6 +30,8 @@ hooks:
     - tool: replace_file_content
       log: Applying security patch — verify patch does not introduce secondary
         vulnerabilities.
+    - tool: run_command
+      guard: Deny run_command if CommandLine matches /(rm -rf|DROP|shutdown|sudo)/i
   PostToolUse:
     - tool: grep_search
       log: Secret scan query finished — analyze matches for false positives.
@@ -37,6 +40,13 @@ effort: medium
 skills:
   - security-audit
   - git-guardrails
+  - threat-modeling
+  - security-best-practices
+  - semgrep-scanning
+  - codeql-scanning
+  - sarif-triage
+  - supply-chain-risk-audit
+  - security-diff-review
 mcpServers:
   - name: github
   - name: context7
@@ -67,6 +77,27 @@ and prioritize defensive depth, principle of least privilege, and secure default
    that remediate security flaws without introducing breaking changes or performance degradation.
 5. **Input Sanitization & Output Encoding** — Enforce parameterized queries, strict
    type validation, context-aware HTML/JS escaping, and Content Security Policy (CSP) headers.
+
+## Skill Consultation Map
+
+Consult the named skill before applying its method, rather than reasoning about it from
+memory; if it is not installed in this role's own bundles, report the gap in your handoff so
+the orchestrator can trigger the Cross-Bundle Recommendation Protocol instead of you
+improvising from memory.
+
+| Situation | Skill | Load when | Provided by |
+|---|---|---|---|
+| OWASP / SAST checklist over the codebase | `security-audit` | Every audit pass | every bundle that ships this role |
+| Commit and branch hygiene for security fixes | `git-guardrails` | Every commit of a remediation | every bundle that ships this role |
+| Deciding where risk concentrates before auditing | `threat-modeling` | The task asks for a threat model, or the scope is a new internet-facing system | every security bundle that ships this role |
+| Framework-specific secure-coding rules (Django, Next.js, Express, Go, …) | `security-best-practices` | Writing or reviewing code in a supported stack | every security bundle that ships this role |
+| Automated pattern scan of the codebase | `semgrep-scanning` | First-pass SAST, or the task names Semgrep | every security bundle that ships this role |
+| Inter-procedural taint / data-flow scan | `codeql-scanning` | The task names CodeQL, or Semgrep lacks cross-file depth | every security bundle that ships this role |
+| Triaging, deduplicating or diffing scanner output | `sarif-triage` | Any SARIF file is in hand | every security bundle that ships this role |
+| Dependency and third-party package risk | `supply-chain-risk-audit` | The audit scope includes the dependency tree | every security bundle that ships this role |
+| Security review of one PR, commit or diff | `security-diff-review` | The task is a change, not a whole codebase | every security bundle that ships this role |
+
+---
 
 ## Step-by-Step Security Audit Protocol
 

@@ -11,13 +11,25 @@ be adapted or wired before the failure is resolved.
 
 ## 1. Licence check
 
-- The skill's upstream licence must be **redistributable** (MIT, Apache-2.0, BSD, CC-BY, public
-  domain, or equivalent) before any of its content is vendored into this repository.
-- If the licence is unclear, restrictive, or forbids redistribution: **link to it, don't vendor
-  it**. Add a short pointer skill (or a reference in an existing skill's `references/`) that
-  tells the user where to get it themselves; do not copy its instructions or scripts into
-  `registry/skills/`.
-- Record the licence identifier in the new skill's `metadata` (see Step 2).
+Read the licence **nearest to the skill** first (the skill or plugin folder), then the
+repository root; record which file decided it. Then place it in a tier (ADR 0024):
+
+| Tier | Licences | May vendor? | Requirements |
+|---|---|---|---|
+| Permissive | MIT, Apache-2.0, BSD, ISC, CC-BY, CC0 / public domain | Yes | README credit; upstream `LICENSE`/`NOTICE` copied into the skill folder when the licence asks for it (Apache `NOTICE`, MIT/BSD notice) |
+| Weak copyleft | MPL-2.0 | Yes | `LICENSE` in the skill folder; `metadata.license: MPL-2.0`; modified files stay MPL-2.0; `NOTICE.md`; README credit |
+| Share-alike | CC-BY-SA-4.0 | Yes | `LICENSE` in the skill folder; `metadata.license: CC-BY-SA-4.0`; the adapted skill is released under CC-BY-SA-4.0; `NOTICE.md`; README credit |
+| Blocked | Any NonCommercial or NoDerivatives term, GPL/AGPL/LGPL, no licence | No | Link-only pointer at most; do not copy its instructions or scripts |
+
+- Each skill folder is a separate work: share-alike and copyleft terms reach that folder, not
+  the MIT-licensed rest of the repository.
+- `NOTICE.md` (the changes note) states the upstream URL and pinned SHA, the licence, and a
+  short summary of what was changed (new runbook, files moved to `references/`, scripts not
+  shipped, and so on). Write one for every adapted skill that is not purely MIT.
+- Record the SPDX identifier in `metadata.license`. `src/core/skill-licence-lint.ts`
+  (`lintSkillLicence`) fails a blocked or unclassified identifier, and a weak-copyleft or
+  share-alike skill that lacks `LICENSE`, `NOTICE.md` or a SHA-pinned `metadata.source`.
+- Licence readings here are not legal advice; a new tier or licence needs the owner's approval.
 
 ## 2. Upstream pin
 
@@ -102,5 +114,6 @@ Before the skill is wired to any specialist, verify it against **every** active 
   host realizes yet.
 - `docs/adr/0023-host-primitive-matrix-and-skill-intake.md` — records this procedure as the
   only door third-party skills enter through.
+- `docs/adr/0024-licence-tiered-skill-intake.md` — the licence tiers in Step 1 (Plan 030).
 - Plan 025 (Skill Consultation Map), Plans 027/028 (third-party skill batches that use this
   checklist inline).

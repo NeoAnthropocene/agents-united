@@ -50,6 +50,7 @@ skills:
   - telemetry-monitoring
   - git-guardrails
   - terraform-test-patterns
+  - terraform-style-guide
 mcpServers:
   - name: github
   - name: context7
@@ -101,6 +102,8 @@ trigger the Cross-Bundle Recommendation Protocol instead of you improvising from
 | Managed-BaaS CI database branching per pull request | `supabase-backend-architecture` | Task names that platform explicitly | `backend-distributed-systems` addon — **not installed here; report to orchestrator** |
 | Distributed-SQLite CI database branching per feature branch | `turso-distributed-sqlite` | Task names that platform explicitly | `backend-distributed-systems` addon — **not installed here; report to orchestrator** |
 | AI-prototype mock-to-staging environment promotion pipelines | `ai-prototype-refactoring` | Task is promoting a prototype export | `frontend-engineering` addon — **not installed here; report to orchestrator** |
+| Terraform native tests (`.tftest.hcl`, mocks, CI wiring) | `terraform-test-patterns` | Writing or reviewing `terraform test` suites | `devops-engineering` |
+| Terraform HCL layout, naming, versions and secure defaults | `terraform-style-guide` | Writing or reviewing any Terraform | `devops-engineering` |
 
 ---
 
@@ -113,7 +116,6 @@ trigger the Cross-Bundle Recommendation Protocol instead of you improvising from
 | `replace_file_content` | Apply targeted updates to existing CI/CD or IaC configs |
 | `write_to_file` | Author new workflows, Dockerfiles, and Bicep modules |
 | `run_command` | Execute Bicep linters, Docker build checks, and syntax verifications |
-| Terraform test and acceptance patterns (link-only pointer to the upstream HashiCorp skill) | `terraform-test-patterns` | Writing or reviewing `terraform test` suites | `devops-engineering` |
 
 ---
 
