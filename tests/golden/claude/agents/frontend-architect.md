@@ -15,6 +15,13 @@ tools:
   - Bash
   - SendMessage
   - SubagentHandback
+  - mcp__stitch
+  - mcp__context7
+  - mcp__chrome-devtools-mcp
+mcpServers:
+  - name: stitch
+  - name: context7
+  - name: chrome-devtools-mcp
 permissionMode: acceptEdits
 model: sonnet
 effort: medium

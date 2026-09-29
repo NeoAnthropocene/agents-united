@@ -5,6 +5,30 @@ import type { AgentHost } from './types.js';
 
 export type McpClientCategory = 'cli' | 'extension' | 'desktop' | 'workspace';
 
+/**
+ * Plan 029 A4 — the home directory `~` resolves against. `USERPROFILE`/`HOME` deliberately win
+ * over `os.homedir()`: a caller (the doctor suites) can then sandbox discovery so the fixture
+ * config — never the developer's real `~/.claude.json` — decides what counts as configured.
+ */
+function resolveHomeDir(): string {
+  return process.env.USERPROFILE || process.env.HOME || os.homedir();
+}
+
+/** Plan 029 A3/A4 — the AppData root `%APPDATA%` resolves against, honouring an env override. */
+function resolveAppDataDir(homeDir: string): string {
+  return (
+    process.env.APPDATA ||
+    (process.platform === 'darwin'
+      ? path.join(homeDir, 'Library', 'Application Support')
+      : path.join(homeDir, '.config'))
+  );
+}
+
+/** True for a plain name → definition map (never an array or a scalar). */
+function isServerMap(value: unknown): value is Record<string, any> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
 export interface McpLocationDescriptor {
   id: string;
   host: AgentHost | 'gemini' | 'cline' | 'claude' | 'cursor' | 'opencode' | 'windsurf' | 'zed' | 'custom';
@@ -12,6 +36,13 @@ export interface McpLocationDescriptor {
   label: string;
   resolvePath: (cwd: string, homeDir: string, appData: string) => string;
   isPrimary?: boolean;
+  /**
+   * Plan 029 A4 — an optional scope-aware reader for a file that carries more than one scope.
+   * Claude Code keeps the user-scope `mcpServers` map AND the local-scope
+   * `projects.<abs-path>.mcpServers` map in the same `~/.claude.json`, so the default
+   * "`mcpServers` at the top level" reader would miss the local scope entirely.
+   */
+  selectServers?: (config: any, cwd: string) => Record<string, any> | undefined;
 }
 
 export interface DiscoveredMcpConfig {
@@ -141,34 +172,45 @@ export class McpLocationRegistry {
     },
 
     // --- Claude Code CLI & Claude Desktop ---
+    // Plan 029 A4 — Claude Code's documented MCP config paths. The project scope is `.mcp.json` at
+    // the repo root; the user scope (`mcpServers`) and the local scope
+    // (`projects.<abs-path>.mcpServers`) both live in `~/.claude.json`. Claude *Desktop* keeps its
+    // own separate file, which is why that entry is untouched.
+    // (Replaced here: `.claude/mcp.json`, `<cwd>/claude.json` and `~/claude.json` — none of them is
+    // a Claude Code MCP config, and `~/claude.json` was a mis-spelling of `~/.claude.json`.)
     {
-      id: 'claude-workspace-dot',
+      id: 'claude-project',
       host: 'claude',
       category: 'workspace',
-      label: 'Claude Code Workspace Config',
-      resolvePath: (cwd) => path.join(cwd, '.claude', 'mcp.json'),
+      label: 'Claude Code Project Config (.mcp.json)',
+      resolvePath: (cwd) => path.join(cwd, '.mcp.json'),
       isPrimary: true,
     },
     {
-      id: 'claude-workspace-flat',
-      host: 'claude',
-      category: 'workspace',
-      label: 'Claude Workspace claude.json',
-      resolvePath: (cwd) => path.join(cwd, 'claude.json'),
-    },
-    {
-      id: 'claude-global-dot',
+      id: 'claude-user-local',
       host: 'claude',
       category: 'cli',
-      label: 'Claude Code Global Config',
-      resolvePath: (_, home) => path.join(home, '.claude', 'mcp.json'),
-    },
-    {
-      id: 'claude-global-flat',
-      host: 'claude',
-      category: 'cli',
-      label: 'Claude Code Global claude.json',
-      resolvePath: (_, home) => path.join(home, 'claude.json'),
+      label: 'Claude Code User & Local Config (~/.claude.json)',
+      resolvePath: (_, home) => path.join(home, '.claude.json'),
+      // One file, two scopes: `mcpServers` is the user scope, `projects.<abs-path>.mcpServers` is
+      // the local scope. A workspace can reach both, so discovery reports the union (a local entry
+      // wins on a name collision). The project key is tried in its raw, resolved and forward-slash
+      // spellings because Claude Code writes the absolute project path as the key.
+      selectServers: (config, cwd) => {
+        const user = isServerMap(config?.mcpServers) ? config.mcpServers : {};
+        const projects = isServerMap(config?.projects) ? config.projects : {};
+        const resolved = path.resolve(cwd);
+        let local: Record<string, any> = {};
+        for (const key of [cwd, resolved, resolved.split(path.sep).join('/')]) {
+          const entry = projects[key];
+          if (isServerMap(entry?.mcpServers)) {
+            local = entry.mcpServers;
+            break;
+          }
+        }
+        const merged = { ...user, ...local };
+        return Object.keys(merged).length > 0 ? merged : undefined;
+      },
     },
     {
       id: 'claude-desktop-global',
@@ -217,8 +259,8 @@ export class McpLocationRegistry {
    * Discovers all MCP configuration files across the filesystem, inspecting existence and parsing server definitions.
    */
   public static async discoverAll(cwd: string = process.cwd()): Promise<DiscoveredMcpConfig[]> {
-    const homeDir = os.homedir();
-    const appData = process.env.APPDATA || (process.platform === 'darwin' ? path.join(homeDir, 'Library', 'Application Support') : path.join(homeDir, '.config'));
+    const homeDir = resolveHomeDir();
+    const appData = resolveAppDataDir(homeDir);
 
     const results: DiscoveredMcpConfig[] = [];
     const seenPaths = new Set<string>();
@@ -236,7 +278,11 @@ export class McpLocationRegistry {
       if (exists) {
         try {
           const config = await fs.readJson(resolved);
-          const rawServers = config?.mcpServers || config?.servers || config;
+          // Plan 029 A4 — a descriptor may own a scope-aware reader (Claude's `~/.claude.json`
+          // holds the user scope and the local `projects.<abs-path>` scope in one file).
+          const rawServers = desc.selectServers
+            ? desc.selectServers(config, cwd)
+            : config?.mcpServers || config?.servers || config;
           if (rawServers && typeof rawServers === 'object') {
             servers = rawServers;
             serverCount = Object.keys(rawServers).length;
@@ -273,8 +319,8 @@ export class McpLocationRegistry {
    * Resolves the primary target write path for a given host runtime.
    */
   public static getPrimaryWritePath(host: AgentHost | string, cwd: string = process.cwd()): string {
-    const homeDir = os.homedir();
-    const appData = process.env.APPDATA || (process.platform === 'darwin' ? path.join(homeDir, 'Library', 'Application Support') : path.join(homeDir, '.config'));
+    const homeDir = resolveHomeDir();
+    const appData = resolveAppDataDir(homeDir);
 
     const targetHost = host === 'agents' ? 'gemini' : host;
     const desc = McpLocationRegistry.LOCATIONS.find(l => l.host === targetHost && l.isPrimary);

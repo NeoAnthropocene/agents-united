@@ -33,6 +33,7 @@ skills:
   - domain-modeling
 mcpServers:
   - name: github
+  - name: context7
 rules:
   - clean-code-and-architecture.md
 ---

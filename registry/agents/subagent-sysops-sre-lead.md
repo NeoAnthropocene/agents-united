@@ -40,6 +40,7 @@ skills:
   - sentry-incident-triage
 mcpServers:
   - name: github
+  - name: context7
 ---
 
 # Role Definition

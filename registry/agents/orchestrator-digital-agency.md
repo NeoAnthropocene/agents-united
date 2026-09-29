@@ -292,6 +292,13 @@ When executing long-running background tasks (e.g. Playwright test suites, Firec
 4. **Daemon & Health Monitoring**: For persistent services, use recurring cron schedules (`schedule(CronExpression: '*/5 * * * *', IsDaemon: true)`) or CLI service manager daemons (`remote-control start/status`) to monitor health endpoints.
 5. **Resilience & Budgeting**: Gracefully handle tool output truncation on large crawl trees, and respect queued user prompts during active execution turns.
 
+### Registration rules (runtime roster)
+
+Two registration rules bind wherever delegation is bound to a runtime roster plus `invoke_subagent` / `define_subagent`:
+
+1. **Prefer the installed roster.** Reach a specialist that already exists under `.agents/agents/` by name with `invoke_subagent` instead of creating a new one at runtime. Runtime registration is the fallback, not the default.
+2. **Pass the canonical role body VERBATIM — never a summary.** When you do register a specialist with `define_subagent`, its system prompt must be that role's complete canonical body, unchanged: Role, Skill Consultation Map, Protocol, Safety and Report format. Set the registered tool permissions from the role's own `tools:` list. Summarizing the body silently drops the **Safety** and **Skill Consultation Map** sections — the guardrails the specialist was installed to carry — so a shortened prompt is a defect, not an optimization.
+
 ---
 
 ## 🔌 MCP Tooling Setup & In-Session Adaptive Onboarding

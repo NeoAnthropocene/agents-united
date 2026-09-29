@@ -40,6 +40,7 @@ skills:
 mcpServers:
   - name: playwright
   - name: chrome-devtools-mcp
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

@@ -42,6 +42,7 @@ skills:
 mcpServers:
   - name: playwright
   - name: chrome-devtools-mcp
+  - name: context7
 ---
 
 # subagent-e2e-tester — System Prompt

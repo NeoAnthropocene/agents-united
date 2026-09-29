@@ -40,6 +40,7 @@ skills:
   - test-driven-development
 mcpServers:
   - name: github
+  - name: context7
 ---
 
 # subagent-ios-architect — System Prompt

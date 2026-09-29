@@ -69,8 +69,10 @@ export interface ResolveClaudeInstallationOptions {
  *      `CLAUDE.md` / `CLAUDE.local.md` / `.claude/settings.json` / `.claude/workflows/**`, and the teams
  *      scaffold persists nothing anywhere (no `~/.claude/teams/`, no settings key).
  *   2. Every value is one argv element. `--agent` and its value are pushed separately, the workspace is a
- *      single `--add-dir` argument, and the bootstrap prompt is a single final argument, so no prompt text
- *      is ever word-split, shell-expanded or joined into a command string.
+ *      single `--add-dir` argument, and the bootstrap prompt is a single final *positional* argument (the
+ *      only opening-prompt mechanism Claude Code offers — there is intentionally no
+ *      `--prompt-interactive` flag on this host), so no prompt text is ever word-split, shell-expanded
+ *      or joined into a command string.
  */
 export class ClaudeLauncher {
   private probe: ClaudeCapabilityProbe;

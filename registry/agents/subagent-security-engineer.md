@@ -49,6 +49,7 @@ skills:
   - security-diff-review
 mcpServers:
   - name: github
+  - name: context7
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
