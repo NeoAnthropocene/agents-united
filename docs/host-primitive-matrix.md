@@ -71,6 +71,25 @@ their *output* entering context.
 | **Hand-off** | `SubagentHandback` (v2.1.271+, auto mode) delivers the report to the spawning conversation | Native reporting | Spawn-and-return; named peer messaging only under the SDK's opt-in Agent Teams (`enableAgentTeams`/`--team-name`) | Returns a synthesized result to the main agent |
 | **Canonical → realization** | `mapped` (`invoke_subagent`); `approximated` (`define_subagent`, `manage_subagents` — pre-defined roster) | `mapped` (native origin of the vocabulary) | `mapped` (`invoke_subagent` → `subagent_<name>`); `approximated` (`define_subagent`, `manage_subagents`, `send_message` — pre-defined roster, Agent Teams is opt-in) | Not a projection target (no user schema to project into) |
 
+**Antigravity delegation — reachability finding and registration rule (Plan 029 C8/C9):**
+
+- **`invoke_subagent(name, prompt)` is the documented delegation mechanism**, and the canonical
+  vocabulary maps to it natively (`mapped` in the row above).
+- **Whether an Antigravity orchestrator can `invoke_subagent` a *workspace* agent living in
+  `.agents/agents/` by name is PENDING LIVE VERIFICATION.** Step 0(d) is unanswered, so this matrix
+  records the claim as unverified instead of asserting it: a field test observed the orchestrator
+  registering new subagents at runtime rather than reaching the installed roster, but the cause
+  (name resolution, discovery path, or orchestrator wording) was never isolated and no live re-test
+  has been run. Nothing here should be read as confirming by-name reachability.
+- **When runtime registration IS required (`define_subagent`), the canonical role body must be
+  passed VERBATIM — never a summary.** The registration's system prompt gets the role's full
+  canonical body (Role, Skill Consultation Map, Protocol, Safety, Report format) byte-for-byte, and
+  tool permissions are set from the role's own `tools:` list. Rationale (owner field test): the
+  runtime-created copy dropped the role's managed hook equivalent and compressed the body, which
+  lost the **Safety** and **Skill Consultation Map** sections — exactly the guardrails the role was
+  installed to carry, silently removed by summarization. Every orchestrator's delegation prose
+  states this rule, so it holds whether or not the by-name path turns out to work.
+
 ## 3. Rules
 
 Always-active instructions, scoped by glob or by being always-on, distinct from skills'
@@ -123,10 +142,15 @@ resolved the ambiguity for its own catalog.
   Cline frontmatter equivalent (Cline governs command execution workspace-wide via
   `CLINE_COMMAND_PERMISSIONS`, not a per-role field) and is declared `unsupported` for Cline in
   the ledger for that reason.
-- **`mcpServers`**: `degraded` on Claude (the descriptor dialect differs; MCP wiring stays
-  host-configured via the MCP location registry) and `unsupported` on Cline (`.cline/mcp.json`
-  is documented but was absent from the verified 3.0.61 binary — ADR 0013 decision 7, a scope
-  exclusion pending Cline shipping it); `mapped` on Antigravity (native origin schema).
+- **`mcpServers`**: `mapped` on Claude since Plan 029 A2 — a canonical `- name: <server>` entry now
+  projects into the subagent's `mcpServers:` field as a name reference (never an inline descriptor),
+  and the matching grant lands in `tools:` (`mcp__<server>` for a writable role, pinned exact
+  read-only tool names like `mcp__github__search_code` for a `plan` role; a server with no pinned
+  read-only tool gets no grant at all — fail closed). The wiring itself stays host-configured via
+  the MCP location registry, and `agents doctor --host claude` prints the host's own add command for
+  each declared-but-unconfigured server. `unsupported` on Cline (`.cline/mcp.json` is documented but
+  was absent from the verified 3.0.61 binary — ADR 0013 decision 7, a scope exclusion pending Cline
+  shipping it); `mapped` on Antigravity (native origin schema).
 
 ## Related documents
 
