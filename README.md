@@ -7,6 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests: Vitest](https://img.shields.io/badge/tests-1000%2B%20passing-brightgreen.svg)](https://vitest.dev/)
 [![TypeScript: Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
+[![Socket Badge](https://badge.socket.dev/npm/package/agents-united/latest)](https://badge.socket.dev/npm/package/agents-united/latest)
 
 ### The universal package manager for AI agents.
 
