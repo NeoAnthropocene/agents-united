@@ -5,583 +5,539 @@
 
 [![npm version](https://img.shields.io/npm/v/agents-united.svg?color=blue)](https://www.npmjs.com/package/agents-united)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: Vitest](https://img.shields.io/badge/tests-405%2B%20passing-brightgreen.svg)](https://vitest.dev/)
+[![Tests: Vitest](https://img.shields.io/badge/tests-1000%2B%20passing-brightgreen.svg)](https://vitest.dev/)
 [![TypeScript: Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
 
 ### The universal package manager for AI agents.
 
-Curated teams of orchestrators, sub-agents, skills, and workflows — installed once, projected across **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
+Install a curated team of AI agents once, then use it from your assistant of choice. Agents United ships **orchestrators** (team leads), **sub-agents** (specialists), **skills** (runbooks and playbooks), and **guardrails**, and translates them into the folders each assistant expects.
+
+| Assistant | Status | Where the team lands |
+| :--- | :--- | :--- |
+| **Google Antigravity** (desktop app and `agy` CLI) | ✅ Supported | `.agents/` (read natively) |
+| **Anthropic Claude Code** | ✅ Supported | `.claude/agents/`, `.claude/skills/`, `.claude/rules/` |
+| **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
+| Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
+
+**In numbers:** 34 bundles · 59 agents (9 orchestrators + 50 sub-agents) · 188 skills (119 domain skills + 69 workflow playbooks) · 8 department domains.
 
 ---
 
-## 🌟 Key Features
+## 📑 Contents
 
-- **🪶 Essentials-First & On-Demand Growth**: Every department installs as a lean **Essentials bundle** by default. When a task requires specialized capabilities, the Lead Orchestrator automatically detects the gap, recommends the exact addon, and can auto-install it directly into your project scope.
-- **🌐 One Library, Every Assistant**: Author in `.agents/` as your single source of truth. Agents United automatically projects and translates compatible configurations to **Google Antigravity 2.0 / Gemini**, **Anthropic Claude Code**, **Cursor**, **Cline**, **OpenCode**, and **Codex / AGENTS.md**.
-- **🚀 Cline Native Activation**: Bundles activate **automatically** in any Cline CLI session — skills discovered natively from `.agents/skills/`, configured-agent roles (`.cline/agents/*.yml`) exposed as spawnable `subagent_*` tools, coordinator rules (`.cline/rules/`), slash-command workflows (`.cline/workflows/`), and spec-conformant Agent Plugin packages (`plugin.json`, agent-plugins.org) in `.agents/plugins/<bundle>/`. No install step required; `agents start` remains available as an optional pre-seeded team-session launcher.
-- **🏛️ 8 Department Domains & 26 Bundles**: Complete coverage across Software Engineering, System Architecture, Product Design, Growth & Marketing, Security, Deep Research, Business Strategy, and Universal Meta-Skills.
-- **🤖 59 Specialized Agents & 188 Modular Skills**: 9 Lead Orchestrators coordinating 50 domain sub-agents, backed by 188 production-grade runbooks (119 domain skills + 69 guided workflow playbooks) fully conforming to the open Agent Skills standard.
-- **⚡ Modern Cloud & AI Tooling**: First-class runbooks for Modal.com, Replicate, RunPod, local LLMs/vLLM, LangChain, LlamaIndex, Qdrant, Vercel, Supabase, Turso, and Azure Bicep.
-- **🏢 Organization Bundles (Tier 2 / Experimental)**: Cross-functional multi-disciplinary teams with Tri-Tier MCP execution modes and smart auto-remediation (`digital-agency`).
-- **🛡️ Built-in Zero-Trust Safety & Git Guardrails**: Hard-coded branch protection (`main`/`master`), zero force-push policy, secret redaction, serverless GPU cost ceilings, and PII scrubbing.
-- **🧙 Interactive 2-Stage TUI Wizard**: Guided terminal interface powered by `@clack/prompts`, visual Unicode catalog tree (`agents list`), and fast search (`agents find`).
-- **📦 Flexible Scopes & Installation Modes**: Install to **Project Scope** (Git-tracked team lockfiles) or **Global Scope** (`~/.agents/`), using instant **Symlink Mode** or standalone **Copy Mode**.
-- **🩺 Deterministic Health Doctor**: Comprehensive diagnostic suite (`agents doctor`) validating frontmatter schemas, declarative lifecycle hooks, host capabilities, and lockfile synchronization.
+- [Quick Start](#-quick-start)
+- [How It Works](#-how-it-works)
+- [Supported Assistants](#-supported-assistants)
+- [What You Can Install](#-what-you-can-install)
+- [Platform & Cloud Tooling](#-platform--cloud-tooling)
+- [CLI Reference](#-cli-reference)
+- [Organization Bundles](#-organization-bundles-experimental)
+- [MCP Servers](#-mcp-servers)
+- [Safety & Guardrails](#-safety--guardrails)
+- [Contributing](#-contributing)
+- [Documentation Map](#-documentation-map)
+- [Credits & Acknowledgments](#-credits--acknowledgments)
+- [License](#-license)
 
 ---
 
-## 🚀 Quickstart
+## 🚀 Quick Start
 
-### 1. Run with `npx` (Zero Installation)
-Try immediately without installing anything:
+**You need:** Node.js 24 or newer, and a project folder that is a Git repository.
+
+### 1. Install a team
+
 ```bash
+# Try it without installing anything (opens the interactive wizard)
 npx agents-united add
-```
 
-### 2. Project-Level Installation (Recommended for Teams)
-Install into your project repository to track agents and share lockfiles with your team:
-```bash
-# Install as a dev dependency
-npm install -D agents-united
-# or: pnpm add -D agents-united | yarn add -D agents-united
-
-# Launch interactive setup for your repository (installs into ./.agents/)
-npx agents add
-```
-
-### 3. Global Installation
-Install globally to use the `agents` CLI anywhere on your machine:
-```bash
+# Or install the CLI, then run it
 npm install -g agents-united
+agents add
 ```
 
-Once installed, use the `agents` CLI command anywhere:
+For a team project, add it as a dev dependency instead (`npm install -D agents-united`) so everyone shares the same lockfile.
+
+The wizard asks for your assistant, scope, and department. To skip the questions, name the bundle and the assistant:
+
 ```bash
-# Launch interactive onboarding wizard
-agents add
+# Software engineering team for Claude Code
+agents add software-engineering -t claude -y
 
-# List all bundles in a visual folder tree
-agents list
+# Same team for Antigravity (main library in .agents/) plus copies for Claude and Cline
+agents add software-engineering -t agents --fanout claude,cline -y
+```
 
-# Search for specific skills or workflows
-agents find playwright -i
+> [!TIP]
+> **Windows PowerShell:** `--fanout claude,cline` and `--fanout claude cline` both work. PowerShell turns an unquoted comma list into a space-separated argument, and the CLI accepts either form.
 
-# Validate agent environment health
+### 2. Start working with it
+
+```bash
+# Launch the team's lead orchestrator in the assistant you installed for
+agents start software-engineering "Add user authentication with tests"
+
+# Check that everything is wired up
 agents doctor
 ```
 
----
+`agents start` works with Claude Code, Antigravity (`agy`), and Cline. See [Supported Assistants](#-supported-assistants) for how each one is launched.
 
-## 🪶 Essentials-First Philosophy — Small Footprint, On-Demand Growth
-
-Agents United is designed so that every project starts **lean**. When you install a department, you get the **Essentials bundle** only — the minimum viable team needed to handle the majority of everyday tasks within that domain:
+### 3. Explore the catalog
 
 ```bash
-# Install only the core Growth & Marketing essentials team
-agents add growth-marketing
-# Installs: orchestrator-marketing + 5 core agents + 6 workflows + foundational skills
-# Does NOT install: SEO specialists, PPC analysts, PLG strategists, email sequencers
+agents list                 # every bundle, grouped by department
+agents find playwright      # search bundles, agents, skills, and workflows
+agents update               # pull newer catalog versions into your project
+agents remove               # uninstall a bundle safely
 ```
-
-When a task exceeds the installed capability, the **Lead Orchestrator takes over**. It recognizes the gap, names the exact addon bundle that covers it, and provides the install command — or in CLI-enabled environments, installs it automatically **into the scope of the active main domain**:
-
-```
-User: "Run a programmatic SEO audit and set up a content pipeline."
-
-orchestrator-marketing: "This task requires the SEO & Content Marketing team.
-  Your current installation (growth-marketing) covers strategy and campaigns.
-  Installing the required addon now:
-
-  $ agents add seo-content-marketing
-
-  This adds: subagent-seo-specialist, programmatic-seo skill, technical-seo-audit skill,
-  schema-markup-strategy skill, and the content pipeline workflow.
-  Proceeding with installation into project scope..."
-```
-
-This model gives you:
-- ✅ **Minimal context footprint** — only agents and skills relevant to your project live in the workspace
-- ✅ **Intelligent gap detection** — orchestrators know exactly which addon covers which capability
-- ✅ **Zero manual discovery** — the orchestrator installs the right addon for you
-- ✅ **Scoped installs** — addons install into the same project scope as the parent essentials bundle
 
 ---
 
+## 🧭 How It Works
 
-Agents United provides **26 curated bundles**, **59 specialized agents** (9 Orchestrators — 7 Lead + 1 Prime + 1 Organization + 50 Sub-Agents), and **188 modular skills & runbooks** (119 domain skills + 69 workflow playbooks) across 8 department domains:
+Three ideas explain most of Agents United.
 
-| Department Domain | Essentials Base | Specialized Addon Bundles | Lead Orchestrator |
-| :--- | :--- | :--- | :--- |
-| **🌐 Universal Department** | `universal-skills` ⭐ | `universal-orchestration` (guided routing), `full` (Universal Suite) | `orchestrator-universal` (Prime) |
-| **🛠️ Software Engineering & Delivery** | `software-engineering` | `ai-ml-engineering`, `mobile-development`, `frontend-engineering`, `backend-distributed-systems`, `qa-automation`, `devops-engineering` | `orchestrator-engineering` |
-| **🏛️ System Architecture & SRE** | `system-architecture` | `sysops-sre` | `orchestrator-system-architecture` |
-| **🎨 Product Design & UI/UX** | `product-design` | `design-systems-ops`, `design-research-testing` | `orchestrator-design` |
-| **📈 Growth & Marketing Operations** | `growth-marketing` | `seo-content-marketing`, `performance-paid-acquisition`, `product-led-growth`, `lifecycle-email-marketing` | `orchestrator-marketing` |
-| **🔒 Security Operations** | `security-operations` | — | `orchestrator-security` |
-| **🔬 Deep Technical Research** | `deep-research` | — | `orchestrator-research` |
-| **💼 Business Strategy & Economics** | `business-strategy` | — | `orchestrator-business` |
-| **🏢 Organization Bundles (Experimental)** | `digital-agency` ⚡ | *(Cross-functional composite)* | `orchestrator-digital-agency` (Campaign Director / Chris) |
+### Start small, grow on demand
 
-> [!NOTE]
-> **Bundle Development Status**: Currently, `software-engineering` and `digital-agency` are actively implemented and production-verified. Except for these two bundles, all other domain bundles are currently under active development.
+Installing a department gives you its **Essentials bundle** only: a lead orchestrator plus the few specialists most tasks need. When a task needs more, the orchestrator names the exact **addon bundle** that covers it and offers to install it.
+
+```
+You:  "Run a programmatic SEO audit and set up a content pipeline."
+
+orchestrator-marketing: "This needs the SEO & Content Marketing team.
+  Your growth-marketing install covers strategy and campaigns.
+  Installing the addon now:  agents add seo-content-marketing"
+```
+
+You keep a small context footprint, the orchestrator picks the right addon, and addons install into the same scope as the Essentials bundle they extend.
+
+### One library, every assistant
+
+`.agents/` is the **main library**, the one folder you edit, tracked by the `agents-united.json` lockfile. Antigravity reads it directly. Other assistants cannot, so Agents United writes **translated copies** in their own folders and keeps them in sync.
+
+- **Edit only `.agents/`.** Translated copies are machine-managed and are rewritten on every `agents update`.
+- **`--fanout <hosts>`** chooses which assistants get copies (`claude`, `cline`). The choice is remembered in the lockfile.
+- **Claude-only installs are store-less by default.** They write only `.claude/` and keep their state in the hidden `.claude/.agents-united/` folder. Add `--canonical-store` if you also want `.agents/` ([ADR 0022](./docs/adr/0022-canonical-store-optional-installs.md)).
+- Every projected file is a real **copy** (never a symlink) that starts with a managed marker, so `update`, `remove`, and `doctor` only touch files Agents United owns:
+
+  ```html
+  <!-- managed-by: agents-united | profile: claude-code | canonical: .agents/agents/<file> | do not edit -->
+  ```
+
+Features that cannot cross over one-to-one are **declared, not faked**. Every gap is recorded as `mapped`, `approximated`, `degraded`, or `unsupported` in `registry/translation-ledger.json`, and `agents doctor --host <host>` prints the entries for your install. The full comparison is in the [Host Primitive Matrix](./docs/host-primitive-matrix.md).
+
+### Orchestrators plan, specialists do
+
+Every department has a **lead orchestrator** that talks to you, plans, and delegates to **sub-agents**. Each specialist follows the same layout: role, a **Skill Consultation Map** (which skill to open for which kind of work), protocol, safety rules, and report format. Code samples and best-practice detail live in the skills, so roles stay short.
+
+| Tier | Bundles | How the orchestrator behaves |
+| :--- | :--- | :--- |
+| **Tier 1: Domain** | Everything except organization bundles | **Planner-Orchestrator Mode** ([ADR 0015](./docs/adr/0015-planner-orchestrator-mode-for-domain-bundles.md)): plans alone with you (Socratic `/grill-me`, direct skill consultation), then delegates through a written Delegation Map |
+| **Tier 2: Organization** | `digital-agency` | **Subagent-First Mode** ([ADR 0014](./docs/adr/0014-subagent-first-planning-loop.md)): plans with you and the team, and runs a bounded specialist council before any execution |
+
+---
+
+## 🤖 Supported Assistants
+
+| Assistant | What Agents United writes | How to launch a team |
+| :--- | :--- | :--- |
+| **Claude Code** | Agents in `.claude/agents/`, skills in `.claude/skills/` (including each skill's `references/` and `scripts/` folders), rules in `.claude/rules/`, and a guard hook | `agents start <bundle> --host claude` (also `--bg`, `--teams`, `--plugin`) |
+| **Antigravity** | The `.agents/` library, read natively by the desktop app and `agy` CLI | `agents start <bundle> --host antigravity`, or open the workspace in the desktop app and @-mention the orchestrator file in `.agents/agents/` |
+| **Cline** | Agents in `.cline/agents/*.yml` (spawnable `subagent_*` tools), rules in `.cline/rules/`, workflows in `.cline/workflows/`, and a spec-conformant plugin package in `.agents/plugins/<bundle>/`. Skills are discovered from `.agents/skills/` | Automatic in any `cline` session, no install step. `agents start <bundle>` is an optional pre-seeded team session |
+
+`agents start` picks the assistant from your lockfile when it can. Pass `--host claude|antigravity|cline` to choose. If the chosen assistant has no launcher, the command says so and starts nothing.
 
 > [!IMPORTANT]
-> **Tested Environments & Community Feedback**: Agents United has been manually tested and verified on **Cline** (CLI & VS Code Extension), **Google Antigravity Desktop App**, and **Google Antigravity CLI**. We are actively looking for user feedback, issue reports, and telemetry for other environments (Claude Code, Cursor, OpenCode, Codex).
+> **Tested environments.** Agents United has been manually verified on **Cline**, the **Google Antigravity desktop app** and CLI, and **Claude Code** (guards, delegation, and the Windows PowerShell paths). Cursor, OpenCode, and Codex projections exist in the code but are unverified, so those hosts are marked under development. Feedback and issue reports for any assistant are welcome.
+
+> [!NOTE]
+> **Antigravity CLI caveat.** In owner probes on `agy` 1.2.13, `--agent <name>` did not load agents from the workspace in either folder layout ([Plan 031](./plans/031-antigravity-agent-discovery-spike.md)). Until that changes, the supported route is the desktop app: open the workspace and @-mention the orchestrator file. `agents start --host antigravity` prints that route when `agy` is missing.
+
+Antigravity-only frontmatter (`hooks:`, `permissionMode:`, `commandExecutionPolicy:`, and similar) does not run on other assistants, and cross-agent `invoke_subagent` works only in Antigravity. Projected agents degrade to "system prompt plus tool list" and the ledger records each difference.
+
+---
+
+## 📦 What You Can Install
+
+### Bundles by department
+
+An **Essentials** bundle is the starting team for a department. **Addons** extend it, and each one inherits its Essentials bundle.
+
+| Department | Essentials | Addon bundles | Lead orchestrator |
+| :--- | :--- | :--- | :--- |
+| **🌐 Universal** | `universal-skills` ⭐ (recommended baseline) | `universal-orchestration` (guided routing), `full` (everything) | `orchestrator-universal` |
+| **🛠️ Software Engineering** | `software-engineering` | `frontend-engineering`, `backend-distributed-systems`, `mobile-development`, `qa-automation`, `devops-engineering`, `ai-ml-engineering` | `orchestrator-engineering` |
+| **🏛️ System Architecture & SRE** | `system-architecture` | `sysops-sre`, `system-architecture-cloud`, `system-architecture-data`, `system-architecture-finops` | `orchestrator-system-architecture` |
+| **🎨 Product Design** | `product-design` | `design-systems-ops`, `design-research-testing` | `orchestrator-design` |
+| **📈 Growth & Marketing** | `growth-marketing` | `seo-content-marketing`, `performance-paid-acquisition`, `product-led-growth`, `lifecycle-email-marketing` | `orchestrator-marketing` |
+| **🔒 Security Operations** | `security-operations` | `secops-cloud-security`, `secops-application-security`, `secops-compliance-grc` | `orchestrator-security` |
+| **🔬 Deep Research** | `deep-research` | `deep-research-analytics` | `orchestrator-research` |
+| **💼 Business Strategy** | `business-strategy` | `business-financial-modeling`, `business-market-intelligence`, `business-operations-legal` | `orchestrator-business` |
+| **🏢 Organization** *(experimental)* | `digital-agency` ⚡ | n/a (cross-functional team) | `orchestrator-digital-agency` |
+
+```bash
+agents add software-engineering        # one bundle
+agents add domain:marketing            # a whole department, picked interactively
+agents add qa-automation               # an addon
+agents add full                        # everything
+```
+
+> [!NOTE]
+> **Maturity.** `software-engineering`, `product-design`, and `universal-orchestration` are marked **stable**. `digital-agency` is **experimental**. The other bundles are usable but still being hardened. The CLI gates bundles marked under construction behind `--allow-under-construction`.
 
 <details>
-<summary><strong>🔍 Click to expand full Department & Agent Roster Breakdown</strong></summary>
+<summary><strong>🔍 Full roster: which agents each bundle contains</strong></summary>
 
 <br>
 
-#### 🌐 Universal Autonomous Department
-- **Baseline**: `universal-skills` ⭐ *(Recommended Baseline — Socratic grilling, PRD generation, ADRs, session handoff)*
-- **Guided Routing (optional)**: `universal-orchestration` *(Prime Orchestrator front door — grills ambiguous requests, routes to the correct department Essentials bundle via its Domain Atlas, installs with consent, and hands off. An optional way to use Agents United without the full suite.)*
-- **Universal Suite**: `full` *(Complete enterprise suite containing all bundles, agents, skills, workflows)*
+#### 🌐 Universal
+- **`universal-skills`** ⭐: Socratic grilling, PRD generation, ADRs, session handoff, MCP setup. No agents, skills only.
+- **`universal-orchestration`**: `orchestrator-universal`, the Prime Orchestrator front door. It grills ambiguous requests, routes to the right department using its Domain Atlas, installs with consent, and hands off.
+- **`full`**: every bundle, agent, and skill.
 
-#### 🛠️ Software Engineering & Delivery
-- **Lead Orchestrator**: `orchestrator-engineering`
-- **Essentials Base (`software-engineering`)**: `subagent-backend-architect`, `subagent-frontend-architect`, `subagent-code-reviewer`, `subagent-repo-index`
-- **AI/ML Engineering (`ai-ml-engineering`)**: `subagent-ml-platform-engineer`, `subagent-ai-model-architect`
-- **Mobile Development (`mobile-development`)**: `subagent-ios-architect`, `subagent-android-architect`, `subagent-cross-platform-specialist`
-- **Frontend Engineering (`frontend-engineering`)**: `subagent-frontend-architect`, `subagent-accessibility-lead`
-- **Backend & Distributed Systems (`backend-distributed-systems`)**: `subagent-distributed-systems-architect`, `subagent-data-engineer`
-- **QA Automation (`qa-automation`)**: `subagent-qa-automation-lead`, `subagent-e2e-tester`
-- **DevOps Engineering (`devops-engineering`)**: `subagent-devops-engineer`
+#### 🛠️ Software Engineering
+- **Lead**: `orchestrator-engineering`
+- **`software-engineering`**: `subagent-backend-architect`, `subagent-frontend-architect`, `subagent-code-reviewer`, `subagent-repo-index`
+- **`ai-ml-engineering`**: `subagent-ml-platform-engineer`, `subagent-ai-model-architect`
+- **`mobile-development`**: `subagent-ios-architect`, `subagent-android-architect`, `subagent-cross-platform-specialist`
+- **`frontend-engineering`**: `subagent-frontend-architect`, `subagent-accessibility-lead`
+- **`backend-distributed-systems`**: `subagent-distributed-systems-architect`, `subagent-data-engineer`
+- **`qa-automation`**: `subagent-qa-automation-lead`, `subagent-e2e-tester`
+- **`devops-engineering`**: `subagent-devops-engineer`
 
 #### 🏛️ System Architecture & SRE
-- **Lead Orchestrator**: `orchestrator-system-architecture`
-- **Essentials Base (`system-architecture`)**: `subagent-system-architect`, `subagent-backend-architect`
-- **SysOps & SRE (`sysops-sre`)**: `subagent-sysops-sre-lead`
+- **Lead**: `orchestrator-system-architecture`
+- **`system-architecture`**: `subagent-system-architect`, `subagent-backend-architect`
+- **`sysops-sre`**: `subagent-sysops-sre-lead`
+- **`system-architecture-cloud`**: `subagent-cloud-infrastructure-architect`, `subagent-system-architect`
+- **`system-architecture-data`**: `subagent-database-administrator`, `subagent-backend-architect`
+- **`system-architecture-finops`**: `subagent-finops-cost-engineer`, `subagent-system-architect`
 
-#### 🎨 Product Design & UI/UX
-- **Lead Orchestrator**: `orchestrator-design`
-- **Essentials Base (`product-design`)**: `subagent-ui-designer`, `subagent-ux-strategist`, `subagent-interaction-designer`, `subagent-design-systems-architect`, `subagent-design-researcher`, `subagent-design-ops-lead`, `subagent-designer-toolkit-expert`, `subagent-prototype-tester`
-- **Design Systems Ops (`design-systems-ops`)**: `subagent-design-systems-architect`, `subagent-design-ops-lead`
-- **Design Research & Testing (`design-research-testing`)**: `subagent-design-researcher`, `subagent-prototype-tester`
+#### 🎨 Product Design
+- **Lead**: `orchestrator-design`
+- **`product-design`**: `subagent-ui-designer`, `subagent-ux-strategist`, `subagent-interaction-designer`
+- **`design-systems-ops`**: `subagent-design-systems-architect`, `subagent-design-ops-lead`
+- **`design-research-testing`**: `subagent-design-researcher`, `subagent-designer-toolkit-expert`, `subagent-prototype-tester`
 
-#### 📈 Growth & Marketing Operations
-- **Lead Orchestrator**: `orchestrator-marketing`
-- **Essentials Base (`growth-marketing`)**: `subagent-marketing-growth-strategist`, `subagent-marketing-content-strategist`, `subagent-marketing-conversion-specialist`, `subagent-marketing-campaign-specialist`, `subagent-marketing-creative-designer`
-- **SEO & Content Marketing (`seo-content-marketing`)**: `subagent-seo-specialist`
-- **Performance & Paid Acquisition (`performance-paid-acquisition`)**: `subagent-paid-acquisition-specialist`
-- **Product-Led Growth (`product-led-growth`)**: `subagent-plg-strategist`
-- **Lifecycle & Email Marketing (`lifecycle-email-marketing`)**: `subagent-lifecycle-email-specialist`
+#### 📈 Growth & Marketing
+- **Lead**: `orchestrator-marketing`
+- **`growth-marketing`**: `subagent-marketing-growth-strategist`, `subagent-marketing-content-strategist`, `subagent-marketing-conversion-specialist`, `subagent-marketing-campaign-specialist`, `subagent-marketing-creative-designer`
+- **`seo-content-marketing`**: `subagent-seo-specialist`, `subagent-marketing-content-strategist`
+- **`performance-paid-acquisition`**: `subagent-paid-acquisition-specialist` plus creative, campaign, and conversion specialists
+- **`product-led-growth`**: `subagent-plg-strategist` plus growth and conversion specialists
+- **`lifecycle-email-marketing`**: `subagent-lifecycle-email-specialist`, `subagent-marketing-campaign-specialist`
 
 #### 🔒 Security Operations
-- **Lead Orchestrator**: `orchestrator-security`
-- **Essentials Base (`security-operations`)**: `subagent-security-engineer`
+- **Lead**: `orchestrator-security`
+- **`security-operations`**: `subagent-security-engineer`
+- **`secops-cloud-security`**: `subagent-cloud-security-architect`, `subagent-security-engineer`
+- **`secops-application-security`**: `subagent-appsec-penetration-tester`, `subagent-security-engineer`
+- **`secops-compliance-grc`**: `subagent-compliance-grc-specialist`, `subagent-security-engineer`
 
-#### 🔬 Deep Technical Research
-- **Lead Orchestrator**: `orchestrator-research`
-- **Essentials Base (`deep-research`)**: `subagent-deep-research`, `subagent-socratic-mentor`, `subagent-repo-index`
+#### 🔬 Deep Research
+- **Lead**: `orchestrator-research`
+- **`deep-research`**: `subagent-deep-research`, `subagent-socratic-mentor`, `subagent-repo-index`
+- **`deep-research-analytics`**: `subagent-statistical-analyst`, `subagent-literature-patent-analyst`, `subagent-deep-research`
 
-#### 💼 Business Strategy & Economics
-- **Lead Orchestrator**: `orchestrator-business`
-- **Essentials Base (`business-strategy`)**: `subagent-business-panel-experts`
+#### 💼 Business Strategy
+- **Lead**: `orchestrator-business`
+- **`business-strategy`**: `subagent-business-panel-experts`
+- **`business-financial-modeling`**: `subagent-financial-analyst`, `subagent-business-panel-experts`
+- **`business-market-intelligence`**: `subagent-market-intelligence-analyst`, `subagent-business-panel-experts`
+- **`business-operations-legal`**: `subagent-legal-contract-analyst`, `subagent-operations-strategist`, `subagent-business-panel-experts`
 
-#### 🏢 Organization Bundles (Tier 2 / Experimental)
-- **Digital Product Agency (`digital-agency` ⚡)**: 10-agent cross-functional AstrolabsAI team (Chris / Ava / Kaan / Jamileh / Yavuz / Jale + frontend architect, SEO specialist, QA automation lead, and compliance GRC specialist) with Tri-Tier MCP execution modes and the Subagent-First Planning Dialogue Loop (ADR 0014).
+#### 🏢 Organization
+- **`digital-agency`** ⚡: a 9-specialist cross-functional AstrolabsAI team led by `orchestrator-digital-agency` (Chris): growth strategist, campaign, content, creative, and conversion specialists, SEO specialist, frontend architect, QA automation lead, and compliance/GRC specialist. See [Organization Bundles](#-organization-bundles-experimental).
 
 </details>
 
----
+### Skills
 
-## ⚡ Platform & Cloud Tooling Ecosystem
-
-Agents United comes pre-configured with operational playbooks for modern cloud, AI, and edge infrastructure:
-
-- **Modal.com** (`modal-serverless-python`): Serverless Python apps, GPU functions (A10G/H100), cold-start layer caching, persistent volumes.
-- **Replicate** (`replicate-model-inference`): Hosted model inference, prediction polling/webhooks, hardware provisioning.
-- **RunPod** (`runpod-gpu-orchestration`): Cloud & serverless GPU orchestration, vLLM worker containers, network storage.
-- **Local LLMs & vLLM** (`local-llm-inference`): Self-hosted LLM serving with Ollama & vLLM, PagedAttention, quantization (AWQ/GPTQ/GGUF).
-- **RAG & Vector Pipelines** (`rag-vector-pipeline`, `vector-database-design`): Production RAG with LangChain & LlamaIndex, hybrid search (BM25 + dense), rerankers, Qdrant / Pinecone / Chroma indexing.
-- **Hugging Face** (`hf-model-evaluation`): Standardized model evaluation benchmarks (MMLU, GSM8k, RAGAS faithfulness).
-- **Vercel** (`vercel-deploy-best-practices`): Edge Middleware (<25ms), Server Actions, ISR revalidation, preview deployments.
-- **Lovable / v0 / Bolt** (`ai-prototype-refactoring`): Refactoring single-file AI prototype exports into modular React component hierarchies, design tokens, and a11y standards.
-- **Supabase** (`supabase-backend-architecture`): PostgreSQL schemas, Row Level Security (RLS) policies, Deno Edge Functions, Auth triggers, Realtime channels.
-- **Turso** (`turso-distributed-sqlite`): LibSQL distributed SQLite, local embedded replicas with auto-sync, CI/CD database branching (`turso db branch`).
-- **Microsoft Azure** (`azure-infrastructure-bicep`): Enterprise Bicep IaC, Azure Container Apps (ACA) with Dapr & KEDA scaling, AKS, Azure OpenAI private endpoints.
+The 188 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 119 are **domain skills** (best practices, runbooks, platform guides) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
-## 💻 CLI Command Reference
+## ⚡ Platform & Cloud Tooling
 
-### `agents add [bundle|item]`
-Installs a bundle, agent, skill, workflow, or whole department. If run without arguments in a terminal, launches the interactive 2-stage wizard.
+Operational playbooks for modern cloud, AI, and edge infrastructure ship as skills:
+
+| Platform | Skill | Covers |
+| :--- | :--- | :--- |
+| **Modal.com** | `modal-serverless-python` | Serverless Python, GPU functions (A10G/H100), cold-start layer caching, persistent volumes |
+| **Replicate** | `replicate-model-inference` | Hosted model inference, prediction polling and webhooks, hardware provisioning |
+| **RunPod** | `runpod-gpu-orchestration` | Cloud and serverless GPU orchestration, vLLM worker containers, network storage |
+| **Local LLMs & vLLM** | `local-llm-inference` | Ollama and vLLM serving, PagedAttention, quantization (AWQ/GPTQ/GGUF) |
+| **RAG & vector search** | `rag-vector-pipeline`, `vector-database-design` | LangChain and LlamaIndex RAG, hybrid search, rerankers, Qdrant / Pinecone / Chroma |
+| **Hugging Face** | `hf-model-evaluation`, `hf-model-training`, `hf-managed-jobs` | Benchmarks (MMLU, GSM8k, RAGAS), TRL/PEFT fine-tuning, managed `hf jobs` |
+| **Vercel** | `vercel-deploy-best-practices` | Edge Middleware, Server Actions, ISR revalidation, preview deployments |
+| **Lovable / v0 / Bolt** | `ai-prototype-refactoring` | Turning single-file AI prototypes into modular React with design tokens and a11y |
+| **Supabase** | `supabase-backend-architecture`, `postgres-best-practices` | Postgres schemas, Row Level Security, Deno Edge Functions, Auth, Realtime |
+| **Turso** | `turso-distributed-sqlite` | LibSQL, embedded replicas with auto-sync, database branching |
+| **Microsoft Azure** | `azure-infrastructure-bicep` | Bicep IaC, Container Apps with Dapr and KEDA, AKS, Azure OpenAI private endpoints |
+| **Cloudflare / Sentry / ClickHouse / Expo** | `edge-security-audit`, `sentry-incident-triage`, `clickhouse-architecture-advisor`, `expo-cicd-workflows` | Edge audits, incident triage, MergeTree design, EAS CI pipelines |
+| **Terraform** | `terraform-test-patterns`, `terraform-style-guide` | Native `terraform test`, HashiCorp style conventions |
+| **Security tooling** | `semgrep-scanning`, `codeql-scanning`, `sarif-triage`, `supply-chain-risk-audit`, `threat-modeling`, `security-best-practices` | Approval-gated scans, SARIF triage, dependency risk, threat models |
+
+> [!NOTE]
+> The Semgrep and CodeQL helper scripts are pure Python (standard library only). They need `python`, `git`, and the `semgrep` / `codeql` binaries on your `PATH`, including on Windows.
+
+---
+
+## 💻 CLI Reference
+
+Every command also runs as `npx agents-united <command>`. Add `--dry-run` to `add`, `remove`, `update`, and `start` to preview without changing anything.
+
+| Command | What it does |
+| :--- | :--- |
+| [`agents add [bundle]`](#agents-add-bundle) | Install a bundle, agent, skill, or department (wizard when run bare) |
+| [`agents list`](#agents-list-and-agents-find) | Show every bundle as a tree (`--json` for machines) |
+| [`agents find [query]`](#agents-list-and-agents-find) | Search bundles, agents, skills, and workflows |
+| [`agents update [bundle]`](#agents-update-bundle) | Update installed packages and re-sync translated copies |
+| [`agents remove [bundle]`](#agents-remove-bundle) | Uninstall safely, touching only managed files |
+| [`agents start <bundle> [prompt]`](#agents-start-bundle-prompt) | Launch a team's orchestrator in Claude Code, Antigravity, or Cline |
+| [`agents doctor`](#agents-doctor) | Audit installs, frontmatter, hooks, MCP servers, and host capabilities |
+| `agents init` | Set up a workspace and install a default bundle (`-b`, default `software-engineering`) |
+
+### `agents add [bundle]`
 
 ```bash
-# Interactive mode (Guides through Host -> Scope -> Method -> Department -> Bundle)
-agents add
-
-# Install by bundle name or alias
-agents add software-engineering
-agents add mobile-development
-agents add ai-ml-engineering
-
-# Install whole department domain
-agents add domain:engineering
-agents add domain:marketing
-agents add domain:architecture
-
-# Install globally to user home directory (~/.agents/)
-agents add frontend-engineering -g
-
-# Install as standalone independent copy (offline modifications)
-agents add qa-automation --copy
-
-# Install directly to specific agent hosts
-agents add full -t gemini,claude,cursor -y
-
-# Claude only: no .agents/ folder — the install state lives in the hidden .claude/.agents-united/
-agents add software-engineering -t claude
+agents add                                      # interactive wizard
+agents add software-engineering                 # one bundle, by name or alias
+agents add domain:engineering                   # a whole department
+agents add frontend-engineering -g              # global scope (~/.agents/)
+agents add qa-automation --copy                 # standalone copies instead of symlinks
+agents add full -t claude,cline -y              # several assistants, no prompts
+agents add software-engineering -t claude       # Claude only: no .agents/ folder
+agents add software-engineering -t agents --fanout claude,cline -y --copy --dry-run
 ```
 
-**Options:**
-- `-g, --global`: Install globally into home directory (`~/.agents/`).
-- `-s, --symlink`: Create symbolic links to central registry cache (default / recommended).
-- `--copy`: Create independent standalone copies of asset files.
-- `-t, --target <hosts>`: Target agent host runtimes (`agents`, `gemini`, `claude`, `cursor`, `cline`, `opencode`, `codex`). Default: `agents`.
-- `--fanout <hosts>`: Also project translated copies into other assistant folders.
-- `--canonical-store`: Keep the `.agents/` main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden `.claude/.agents-united/` folder — ADR 0022).
-- `--session-guard[=project|local|user]` / `--no-session-guard`: Claude lane only — also guard plain Claude sessions (no `--agent`) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod` (`project` = `.claude/settings.json`, the default; `local` = `.claude/settings.local.json`; `user` = `~/.claude/settings.json`, explicit only). Everything else in the file is kept, and invalid JSON is never rewritten. The choice is remembered.
-- `--mode <operational|limited-operational|brainstorming>`: Execution mode for organization bundles. Default: `operational`.
-- `--allow-missing-prereqs`: Proceed with installation even if some prerequisites are missing.
-- `--allow-under-construction`: Bypass the Under-Construction Gate for in-development bundles.
-- `-y, --yes`: Skip confirmation prompts.
-- `-f, --force`: Force overwrite user-modified files.
-- `--dry-run`: Simulate installation without writing files.
+**Where and how to install**
 
----
+| Option | Meaning |
+| :--- | :--- |
+| `-g, --global` | Install into your home directory (`~/.agents/`) instead of the project |
+| `-s, --symlink` | Link to the central registry cache (default) |
+| `--copy` | Independent standalone copies you can edit offline |
+| `-t, --target <hosts>` | Assistants to set up: `agents` (main library), `gemini`, `claude`, `cline`. Default: `agents` |
+| `--fanout <hosts>` | Also write translated copies for these assistants (`claude`, `cline`). Under-development hosts are refused |
+| `--canonical-store` | Keep `.agents/` even on a Claude-only install |
+| `--start` | Launch the team in Cline right after setup |
 
-### `agents list` (alias: `agents ls`)
-Displays all registry bundles grouped by department domain in an ASCII/Unicode folder tree view showing orchestrators, sub-agents, skills, and workflows.
+**Claude Code extras**
+
+| Option | Meaning |
+| :--- | :--- |
+| `--session-guard[=project\|local\|user]` / `--no-session-guard` | Also guard plain Claude sessions with one managed hook entry. Default location: `.claude/settings.json`. Existing settings are preserved, and invalid JSON is never rewritten |
+| `--permission-preset[=verify\|build]` / `--no-permission-preset` | Opt-in pre-approval of a small fixed command set in `.claude/settings.local.json`. Never implied by `-y`. `build` also allows `npm install/run/test`, which executes project code |
+| `--plugin` / `--no-plugin` | Also emit the distribution-only Claude plugin package for `claude --plugin-dir` |
+
+**Safety and control**
+
+| Option | Meaning |
+| :--- | :--- |
+| `--mode <operational\|limited-operational\|brainstorming>` | Execution mode for [organization bundles](#-organization-bundles-experimental) |
+| `--allow-missing-prereqs` | Install even if MCP servers or packages a bundle expects are missing |
+| `--allow-under-construction` | Bypass the gate on bundles still under construction |
+| `-y, --yes` | Skip confirmation prompts |
+| `-f, --force` | Overwrite files you have modified |
+| `--dry-run` | Preview without writing |
+
+### `agents list` and `agents find`
 
 ```bash
-# Formatted folder tree view
-agents list
+agents list                        # tree grouped by department
+agents list --json                 # raw manifest
 
-# Output raw JSON manifest
-agents list --json
-```
-
----
-
-### `agents find [query]` (alias: `agents search`)
-Searches the registry across bundles, agents, skills, and workflows.
-
-```bash
-# Search by keyword
-agents find modal
-agents find seo
-agents find playwright
-agents find bicep
-
-# Filter by domain category
-agents find -c engineering
-agents find -c marketing
-
-# Filter by item type (bundle, agent, skill, workflow)
-agents find gpu -t skill
-
-# Interactive selection to install match
-agents find qdrant -i
-
-# Output search results as JSON
+agents find seo                    # keyword search
+agents find -c engineering         # filter by department
+agents find gpu -t skill           # filter by type: bundle, agent, skill, workflow
+agents find qdrant -i              # pick a match and install it
 agents find security --json
 ```
 
----
+### `agents update [bundle]`
 
-### `agents remove [identifier]` (alias: `agents rm`, `agents uninstall`)
-Discovers installed packages across project and global scopes with **Scope Location Badges** (`[project: ./.agents]`, `[global: ~/.agents]`), presenting only active installed bundles and standalone assets for safe uninstallation.
-
-```bash
-# Interactive installed package selection with scope badges
-agents remove
-
-# Remove specific bundle from project workspace
-agents remove mobile-development
-
-# Remove global bundle
-agents remove mobile-development -g -y
-```
-
----
-
-### `agents start <bundle> [prompt]`
-Launches an **optional pre-seeded team session** in the Cline CLI. Activation itself is automatic (ADR 0013 native discovery): after `agents add`, *any* `cline` session in the workspace already sees the bundle's skills, `subagent_*` agent tools, rules, and workflow commands. What `agents start` adds on top:
-
-1. **Coordinator persona bootstrap** — the session starts *as* the bundle's Lead Orchestrator (reads the Team Manifest and coordinator role prompt).
-2. **Persistent team state** — `--team-name au-<bundle>-<hash>` gives a resumable team board (`~/.cline/data/teams/`).
-3. **Addon pre-authorization** — `--allow-addons` skips per-addon consent prompts for the session.
-
-**By design, this command currently targets the Cline CLI** because Cline provides an open, programmatic CLI (`cline "prompt"`) that allows us to inject a team context directly from the terminal (unlike other editors which do not yet expose this). It automatically resolves project vs. global installations, probes for the `cline` executable on your system (Windows node-wrapper, `cmd.exe` shim bridge, or POSIX binary), constructs safe non-shell evaluated arguments, and launches the session.
+Detects upstream version drift, offers a batch or per-bundle update, and never overwrites your edits unless you pass `--force`.
 
 ```bash
-# Start an installed team in Cline
-agents start software-engineering
-
-# Start a team with an initial task prompt
-agents start software-engineering "Implement user authentication with Vitest TDD test coverage"
-
-# Start with pre-authorized addon auto-installation for this session
-agents start software-engineering --allow-addons
-
-# Override generated team name
-agents start software-engineering --team my-custom-squad
-
-# Run headlessly (non-interactive mode)
-agents start software-engineering "Run security audit" --headless
-
-# Preview activation plan, strategy, and argv without launching
-agents start software-engineering --dry-run
-```
-
-**Options:**
-- `--host <host>`: Host runtime to activate (auto-detected from lockfile fanout, e.g. `cline`).
-- `-g, --global`: Activate globally installed bundle (`~/.agents/`).
-- `--team <name>`: Override generated team name (must match `[A-Za-z0-9_-]` max 64 chars).
-- `--allow-addons`: Pre-authorize recommended addon installations for this session without prompting.
-- `--headless`: Run non-interactively without launching interactive TUI.
-- `--dry-run`: Print activation resolution and argv summary without launching.
-
----
-
-### `agents update [identifier]` (alias: `agents upgrade`)
-Inspects installed packages across project and global scopes, detects **Upstream Version Drift** against registry releases, and provides an interactive TUI to batch update all packages or selectively pick specific bundles with user-modification conflict guardrails.
-
-```bash
-# Interactive update TUI (shows outdated packages, version diffs, and selective/batch updates)
-agents update
-
-# Batch update all installed packages in workspace
-agents update --all -y
-
-# Update specific package and re-sync projections across runtimes
-agents update software-engineering --fanout cline,claude
-
-# Update and immediately start in Cline
+agents update                                            # interactive
+agents update --all -y                                   # everything
+agents update software-engineering --fanout cline,claude # also (re)sync these assistants
 agents update software-engineering --fanout cline --start
-
-# Update specific package with force overwrite of local modifications
-agents update software-engineering --force
-
-# Simulate update without modifying files
 agents update --dry-run
 ```
 
----
+### `agents remove [bundle]`
 
-### `agents doctor`
-Audits workspace agent directories, verifies frontmatter schema validity, validates declarative lifecycle hooks, and reports synchronization status. Can also audit specific host runtimes and capability probing.
+Lists installed packages with scope badges (`[project: ./.agents]`, `[global: ~/.agents]`) and removes only what Agents United installed. A bundle shared with another installed bundle keeps the files the other one still needs.
 
 ```bash
-# General workspace health audit
-agents doctor
+agents remove                              # interactive
+agents remove mobile-development           # project scope
+agents remove mobile-development -g -y     # global scope
+```
 
-# Audit Cline runtime installation, capability probe, and native discovery projection integrity
-agents doctor --host cline
+### `agents start <bundle> [prompt]`
+
+Launches the bundle's lead orchestrator in the assistant you installed for. Activation is automatic on Cline (native discovery), so `start` mainly adds a ready-made session.
+
+```bash
+agents start software-engineering
+agents start software-engineering "Implement user authentication with Vitest coverage"
+agents start software-engineering --host claude --dry-run     # print the resolved command, launch nothing
+agents start secops-application-security --host antigravity
+agents start software-engineering "Run a security audit" --headless
+```
+
+| Option | Applies to | Meaning |
+| :--- | :--- | :--- |
+| `--host <claude\|antigravity\|cline>` | all | Choose the assistant. Default: read from the lockfile |
+| `-g, --global` | all | Use the global install |
+| `--dry-run` | all | Print the plan and argv without launching |
+| `--headless` | Cline | Run non-interactively |
+| `--team <name>` | Cline | Name the resumable team board (`[A-Za-z0-9_-]`, up to 64 chars) |
+| `--allow-addons` | Cline | Pre-authorize addon installs for the session |
+| `--bg` | Claude Code | Run the session in the background |
+| `--teams` / `--no-teams` | Claude Code | Force the experimental Agent Teams scaffold on or off. Default: on for organization bundles, off for domain bundles. Set for the spawned process only, never saved |
+| `--plugin` | Claude Code | Pass `--plugin-dir` with the bundle's plugin root |
+
+On Antigravity, the `agy` binary is found on `PATH` or through `AGY_BIN_PATH`. On Cline, the `cline` executable is found on `PATH` or through `CLINE_BIN_PATH`. Sessions are launched from an argument array with no shell, so prompt text is never word-split or expanded.
+
+### `agents doctor`
+
+Audits your workspace: frontmatter schemas, lifecycle hooks, lockfile sync, projection drift, and whether the guard hook is wired. It also warns when an installed role expects an MCP server your assistant has not configured, and prints that assistant's own command to add it.
+
+```bash
+agents doctor                    # general audit
+agents doctor --host claude      # Claude capabilities and translation-ledger entries
+agents doctor --host cline       # Cline runtime, capability probe, and projection integrity
 ```
 
 ---
 
-## 🏢 Organization Bundles & Tri-Tier Execution Framework
+## 🏢 Organization Bundles (Experimental)
 
-Organization Bundles (Tier 2 / Experimental, such as `digital-agency`) orchestrate cross-functional teams spanning Strategy, Copywriting, Design, Engineering, and Compliance. They integrate **Model Context Protocol (MCP)** tool calling, external packages, and APIs.
-
-When installing an organization bundle (`agents add <bundle>`), the CLI displays an informative evaluation of prerequisites (MCP servers, npm packages, environment variables), and immediately completes installation into your workspace in under a second with zero blocking prompts:
+Organization bundles such as `digital-agency` run a whole cross-functional team (strategy, copy, design, engineering, compliance) through the **Model Context Protocol (MCP)** tools you have configured. Installing one prints a prerequisite report and finishes in under a second with no blocking prompts:
 
 ```text
 o Prerequisite Evaluation: digital-agency (Organization Bundle) -------------------+
-|                                                                                   |
-|   ✓ [MCP] github: Detected (Configured in Antigravity)                           |
-|   ✓ [MCP] firecrawl: Detected (Configured in Antigravity)                        |
-|   ✓ [MCP] context7: Detected (Configured in Antigravity)                         |
-|   ~ [MCP] stitch: Partial (Configured in Antigravity; Missing in Cline CLI)      |
-|   ✗ [MCP] playwright: Missing (Not found in host MCP configuration)              |
-|   ✗ [MCP] markitdown: Missing (Not found in host MCP configuration)              |
-|   ✓ [MCP] chrome-devtools-mcp: Detected (Configured in Antigravity)              |
-|   ✗ [MCP] figma: Missing (Not found in host MCP configuration)                   |
-|   ✗ [Pkg] @playwright/test: Missing (Not found in node_modules or package.json)  |
-|                                                                                   |
-+-----------------------------------------------------------------------------------+
-|
-o  Adaptive Tooling -----------------------------------------------------------------------------------------+
-|                                                                                                            |
-|  ⚡ Operational Envelope: Limited Operational / Brainstorming Mode ready.                                  |
-|  Your Lead Orchestrator will automatically detect active tools and guide in-session setup seamlessly.     |
-|                                                                                                            |
-+------------------------------------------------------------------------------------------------------------+
+|   ✓ [MCP] github: Detected (Configured in Antigravity)                            |
+|   ✓ [MCP] firecrawl: Detected (Configured in Antigravity)                         |
+|   ~ [MCP] stitch: Partial (Configured in Antigravity; Missing in Cline CLI)       |
+|   ✗ [MCP] playwright: Missing (Not found in host MCP configuration)               |
+|   ✗ [Pkg] @playwright/test: Missing (Not found in node_modules or package.json)   |
++------------------------------------------------------------------------------------+
 ```
 
-### In-Session Adaptive Tooling & Tri-Tier Execution Modes
+### Three execution modes
 
-Organization bundles operate across three dynamic execution envelopes:
-
-| Mode | Capability Envelope | In-Session Behavior |
+| Mode | Needs | Behavior |
 | :--- | :--- | :--- |
-| **🚀 Fully Operational** | Authenticated live MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `markitdown`, `chrome-devtools-mcp`, `stitch`, `figma`) | Subagents execute live browser automation, deep web crawling, design token extraction, and automated GitHub PRs. |
-| **🌿 Limited Operational** | Unauthenticated MCP tools + Native CLI Fallbacks (`git`, `curl`, code generators) | Executes immediate real-world work using local browsers and terminal tools without requiring API keys or cloud tokens. |
-| **💡 Brainstorming Mode** | Pure architectural ideation, strategy, copywriting & specification drafting | Zero tool-calling overhead; ideal for offline or air-gapped environments. |
+| **🚀 Fully Operational** | Authenticated MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `markitdown`, `chrome-devtools-mcp`, `stitch`, `figma`) | Live browser automation, deep crawling, design token extraction, automated GitHub PRs |
+| **🌿 Limited Operational** | Local tools only (`git`, `curl`, code generators) | Real work with local browsers and the terminal, no API keys needed |
+| **💡 Brainstorming** | Nothing | Strategy, copywriting, and specifications with zero tool calls; suits offline or air-gapped use |
 
 > [!TIP]
-> **Zero Friction Onboarding**: You can start working with your Lead Orchestrator immediately using native tools. If your task needs live integrations (e.g. *"Set up Playwright browser testing"*), your Orchestrator will inspect your OS, configure the exact MCP server, test the connection, and activate it interactively!
+> You can start with native tools right away. If a task needs a live integration (for example, "set up Playwright browser testing"), the orchestrator inspects your OS, guides you through configuring the MCP server, tests the connection, and switches modes.
 
-### Subagent-First Planning Dialogue Loop (ADR 0014)
+### Planning loop and delivery pipeline
 
-Organization bundles can opt into a **delegation-first planning protocol**: the Lead Orchestrator plans *with the user* (Socratic grilling via `/grill-me` / `/grill-with-docs`) and *with the team* — spawning up to 2 **Planning Sidekicks** into the planning conversation, running a bounded **Specialist Council** (every relevant specialist returns a ≤150-word Scope-of-Work Statement), and presenting a **Delegation Map** before any execution starts. Inter-specialist discussion is bounded by a declarative **Consultation Budget**, and each specialist's per-invocation run is hard-capped via Cline `maxIterations`:
+`digital-agency` uses the **Subagent-First Planning Dialogue Loop** ([ADR 0014](./docs/adr/0014-subagent-first-planning-loop.md)): the orchestrator grills you, spawns up to two Planning Sidekicks, runs a Specialist Council (each returns a Scope-of-Work statement of at most 150 words), and shows a **Delegation Map** before any execution. Discussion is bounded by a declarative budget:
 
 | Budget cap | Default | Meaning |
 | :--- | :--- | :--- |
-| `maxPlanningRounds` | 2 | Orchestrator ↔ council cycles per task |
+| `maxPlanningRounds` | 2 | Orchestrator and council cycles per task |
 | `maxPeerExchangesPerPair` | 2 | Directed questions per specialist pair |
-| `summaryWordCap` | 150 | Words per Scope-of-Work Statement |
+| `summaryWordCap` | 150 | Words per Scope-of-Work statement |
 | `maxIterations` | 8 | Per-invocation iteration cap (`.cline/agents/*.yml`) |
 
-Enabled for `digital-agency`. See [ADR 0014](./docs/adr/0014-subagent-first-planning-loop.md) and [Plan 012](./plans/012-subagent-first-planning-loop.md).
-
-### 4-Tier Agency Assembly Line (Deterministic Execution DAG)
-
-The `digital-agency` bundle executes through a structured 4-tier delivery pipeline ensuring that technical and creative assets are rigorously cross-pollinated:
+Execution then flows through a four-tier assembly line, so technical and creative work cross-check each other:
 
 ```text
 Ava (Growth / LTV:CAC) + Chris (Director)
-  │ (Audience brief, target economics, core offer)
+  │ audience brief, target economics, core offer
   ▼
 Kaan (Direct Response CRO) + Jamileh (Design System) + Yavuz (SEO Content)
-  │ (Design tokens, persuasive hooks, article pillars, copy schemas)
+  │ design tokens, persuasive hooks, article pillars, copy schemas
   ▼
 Frontend Architect (React / Tailwind) + SEO Specialist + Jale (Social / Ads)
-  │ (Production components, data-testid, GTM dataLayer, ad carousels, UTM taxonomy)
+  │ production components, data-testid, GTM dataLayer, ad carousels, UTM taxonomy
   ▼
 QA Automation Lead (Playwright E2E) + Compliance GRC Specialist (FTC / GDPR / CASL)
-  │ (100% green test assertions, CMP gating verification, disclosure compliance)
+  │ green test assertions, consent-gating checks, disclosure compliance
   ▼
-🚀 Production-Ready Campaign Artifacts & Verified PR
+🚀 Production-ready campaign artifacts and a verified PR
 ```
-
-- **Cross-Host Capability Projection**: Google Antigravity features are seamlessly mapped to Cline CLI (ADR 0013) — mapping tool primitives (`view_file` → `read_file`, `replace_file_content` → `replace_in_file`, `run_command` → `execute_command`), converting frontmatter rules to native `.cline/rules/`, capping subagent iterations (`maxIterations: 8`), and preserving `@path/to/file` multimodal asset ingestion and KaTeX econometric calculations across both platforms.
-
-### Planner-Orchestrator Mode (ADR 0015)
-
-**Tier-1 Domain Bundles** operate in **Planner-Orchestrator Mode**: the orchestrator plans **solo** with the user — Socratic alignment via `/grill-me` / `/grill-with-docs`, direct skill consultation, no specialist spawns during planning. A **Planning Aid Boundary** allows provisional estimates during planning but defers concrete deliverables to the delegation map. Execution is then delegated to `subagent_*` tools via a solo-composed **Delegation Map**. This mode is the default for all 30 domain bundles (engineering, design, security, business, research, architecture, marketing); `digital-agency` and future Organization Bundles remain in Subagent-First Mode. See [ADR 0015](./docs/adr/0015-planner-orchestrator-mode-for-domain-bundles.md) and [Plan 013](./plans/013-planner-orchestrator-mode-for-domain-bundles.md).
-
----
-## 🌐 One Library, Every Assistant
-
-The `.agents/` folder is the **main library** — the *one* folder you edit. **Antigravity reads it directly** for interactive sessions (CLI TUI and desktop); see [ADR 0009](./docs/adr/0009-host-conformance-targets.md). Every other assistant (Claude Code, Cursor, Cline, OpenCode, Codex) can't read it natively, so Agents United writes **translated copies** it keeps in sync for you.
-
-- **Edit only `.agents/`.** That's your source of truth — the `agents-united.json` lockfile tracks it.
-- **Other assistants get their own translated copies**, in their own folders (`.claude/agents/`, `.agents/plugins/<bundle>/`, …). Don't edit those — they're machine-managed and rewritten on every `agents update`.
-- **`--fanout` tells Agents United which assistants to make copies for.** It's remembered in the lockfile, so a plain `agents update` keeps them in sync afterwards.
-
-```bash
-# Main library + translated copies for Claude, Cursor, Cline, OpenCode, and Codex
-agents add software-engineering -t agents --fanout claude,cursor,cline,opencode,codex -y --copy
-
-# Prefer picking an assistant directly? The main library is added and translated copies are made for you.
-agents add software-engineering -t cline -y --copy
-
-# Dry-run first to preview exactly what will be written
-agents add software-engineering -t agents --fanout claude,cursor -y --copy --dry-run
-
-# You already installed to .agents/ only? Add Cline's translated copies now:
-agents update software-engineering --fanout cline
-```
-
-```bash
-# Canonical .agents/ tree + translated copies for Claude, Cursor, Cline, OpenCode, and Codex
-agents add software-engineering -t agents --fanout claude,cursor,cline,opencode,codex -y --copy
-
-# Dry-run first to preview exactly which projections will be written
-agents add software-engineering -t agents --fanout claude,cursor -y --copy --dry-run
-```
-
-| Flag | Meaning |
-| :--- | :--- |
-| `--fanout <hosts>` | Comma-separated runtime ids to project into (`claude`, `cursor`, `cline`, `opencode`, `codex`). Invalid ids are dropped with a warning. |
-
-What each runtime receives:
-- **Claude Code** → `.claude/agents/`
-- **Cursor** → `.cursor/agents/`
-- **Cline** → native plugin package in `.agents/plugins/<bundle>/` (`package.json`, `agents/`, `skills/`, `rules/`, and `agents-united/teams/`)
-- **OpenCode** → `.opencode/agent/`
-- **Codex & AGENTS.md readers** → a generated root **`AGENTS.md`** bridge indexing the canonical `.agents/` tree (no subagent loader exists for these).
-
-Every projected file is a **copy** (never a symlink) stamped with a managed marker:
-```html
-<!-- managed-by: agents-united | profile: claude-code | canonical: .agents/agents/<file> | do not edit -->
-```
-All projections are recorded in `agents-united.json` under `projectedTo`, so `remove`, `update`, and `doctor` stay deterministic — they rewrite or delete exactly the managed files and never touch unmanaged/user-modified ones (unless `--force`).
-
-> ⚠️ **Per-runtime caveats.** Antigravity-only frontmatter keys — `hooks:`, `permissionMode:`, `commandExecutionPolicy:`, `mainAgent:`, `subagent:`, and `type:` — **do not execute** in other runtimes. Projected orchestrator agents degrade gracefully to "system prompt + tool list" subagents; behavior is documented, not faked. Cross-agent `invoke_subagent` orchestration works only in Antigravity and is dropped elsewhere with a warning. To add more runtimes later, re-run `agents add <bundle> -t agents --fanout <hosts>`.
-
-> [!IMPORTANT]
-> **Host Testing & Community Feedback**: Agents United has been tested manually on **Cline**, the **Google Antigravity Desktop App**, and the **Antigravity CLI**. Projections for other environments (Anthropic Claude Code, Cursor, OpenCode, Codex / AGENTS.md) are generated according to their platform specifications. We are actively looking for user feedback across other CLIs and runtimes!
-
-**Want the full reference?** [`docs/host-primitive-matrix.md`](./docs/host-primitive-matrix.md) covers skills, subagents, rules, hooks, and workflows across Claude Code, Antigravity, and Cline — location, required fields, discovery, limits, precedence, and every declared delta. Bringing a new (including third-party) skill into the catalog? [`docs/skill-intake.md`](./docs/skill-intake.md) is the checklist.
 
 ---
 
-## 🛡️ Built-in Safety & Git Guardrails
+## 🔌 MCP Servers
 
-Agents United keeps your codebases safe by enforcing hard-coded version control and operational safety policies across all installed orchestrators and sub-agents:
+Agents United never installs or configures MCP servers for you, and never writes credentials into projected files. Roles list the servers they use by name, and the assistant's own MCP configuration supplies the connection.
 
-- **Protected Branch Guard**: Prevents autonomous agents from directly committing to `main`, `master`, `production`, or `release/*` branches.
-- **Zero Force-Pushes**: Hard-coded safety policies disallow destructive force pushes (`git push --force` or `git push -f`) under all circumstances.
-- **Pre-Staging Secret Scanning & Redaction**: Intercepts accidental staging of `.env` files, API keys (`OPENAI_API_KEY`, `MODAL_TOKEN_ID`, `REPLICATE_API_TOKEN`, `RUNPOD_API_KEY`), private tokens, or credentials before any commit is generated.
-- **GPU Cost Ceilings**: Enforces automatic scale-to-zero timeouts (60–300s) and concurrency limits on serverless compute workloads.
-- **Training Data PII Scrubbing**: Pre-processing guardrails to mask sensitive personal data before vector embedding or fine-tuning.
-- **Deterministic Health Doctor**: Run `agents doctor` anytime to audit local agent directories, verify schema validity, and ensure clean working tree states.
+- **Every orchestrator** declares `context7`, `firecrawl`, and `github`. Engineering, architecture, and security specialists that need current vendor docs also get `context7`, and the security specialists get `github`.
+- **On Claude Code**, projected roles carry these servers in their `mcpServers:` frontmatter, so they can call the tools despite each role's explicit `tools:` list.
+- **`agents doctor --host <host>`** warns about each declared server your assistant has not configured and prints the matching command: `claude mcp add ...`, `agy mcp add ...`, or the `cline mcp` wizard.
+- **The `mcp-setup` skill** (in `universal-skills`) walks an orchestrator through configuring a server with you.
 
 ---
 
-## 🛠️ Developer Setup & Contributing Guide
+## 🔐 Safety & Guardrails
 
-We welcome open-source contributions from developers across the agentic engineering community!
+Safety is layered: policies that every role follows, plus a hook that enforces the most dangerous ones on Claude Code.
 
-### 1. Prerequisites
-- **Node.js**: `v20.0.0` or higher (`node -v`)
-- **Package Manager**: `npm` (v10+) or `pnpm`
-- **Git**: Configured with a clean working tree
+**Policies in every orchestrator and sub-agent** (rules such as `git-guardrails`):
 
-### 2. Local Environment Setup
+- **Protected branches:** no direct commits to `main`, `master`, `production`, or `release/*`.
+- **No force-pushes:** `git push --force` and `git push -f` are never allowed.
+- **Secret hygiene:** `.env` files, API keys, and tokens are kept out of commits and redacted from output.
+- **GPU cost ceilings:** serverless GPU workloads scale to zero (60–300 s) and have concurrency limits.
+- **PII scrubbing:** sensitive personal data is masked before embedding or fine-tuning.
+
+**Enforced by the managed guard hook (Claude Code):** a `PreToolUse` hook blocks `git push --force` (but not `--force-with-lease`), `vercel --prod`, and writes to `.env` files (but not `.env.example`). The hook runs in exec form with no shell, so it behaves the same on Windows PowerShell as on macOS and Linux.
+
+- It always runs while an Agents United role is active.
+- Add `--session-guard` at install time to cover plain `claude` sessions too.
+- To confirm it fires, follow the model-proof steps in [`docs/guard-testing.md`](./docs/guard-testing.md). Asking the model "would you run this?" tests the model, not the hook.
+
+**Least privilege:** each role gets only the tools it needs. For example, `security-engineer` and `appsec-penetration-tester` may run shell commands, but a guard denies `rm -rf`, `DROP`, `shutdown`, and `sudo`.
+
+Run `agents doctor` at any time to audit schemas, hooks, and lockfile state.
+
+---
+
+## 🧰 Contributing
+
+Contributions are welcome. The short version:
+
 ```bash
-# 1. Clone the repository
 git clone https://github.com/NeoAnthropocene/agents-united.git
 cd agents-united
-
-# 2. Install development dependencies
 npm install
-
-# 3. Build the project with tsup
 npm run build
-
-# 4. Link binary globally for local development testing
-npm link
+npm link            # optional: use your local build as the `agents` command
+npm test            # full Vitest suite
+npm run typecheck   # build plus type-check of source and tests
 ```
 
-### 3. Running Tests
-Agents United enforces a strict **4-Tier Test-Driven Development (TDD)** standard with **100% deterministic testing** (no arbitrary sleeps).
+**Requirements:** Node.js 24+, npm 10+ or pnpm, and Git.
 
-```bash
-# Run full Vitest test suite
-npm test
+### Code standards
 
-# Run tests in watch mode
-npm run test:watch
-```
+- **Strict TypeScript:** no implicit or explicit `any`. Shared interfaces live in `src/core/types.ts`.
+- **Decoupled core:** business logic in `src/core/`, terminal I/O in `src/cli.ts`.
+- **Idempotent and reversible:** installers and uninstallers record everything in `agents-united.json`.
+- **Test-driven:** write failing tests in `tests/` first. Tests are deterministic (no arbitrary sleeps) and run in four tiers, from unit tests to full catalog audits.
+- **Open work:** the Essentials-only guard for `agents add domain:<dept>` and the public GitHub Pages site are tracked in [`ROADMAP.md`](./ROADMAP.md).
 
-### 4. Code Quality & Architecture Guidelines
-- **Strict TypeScript**: Never use implicit or explicit `any`. All shared interfaces belong in `src/core/types.ts`.
-- **Seams & Decoupling**: Keep business logic (`src/core/`) decoupled from terminal I/O (`src/cli.ts`).
-- **Idempotency**: All installer and uninstaller operations must be reversible and tracked in `agents-united.json`.
-- **[ ] Essentials Bundle Audit & CLI Guard** *(Development Task)*: Audit all 7 Essentials bundle compositions to verify they contain only core agents/skills. Migrate any non-essential assets into their matching Addon bundle. Add a CLI enforcement layer so that `agents add domain:<dept>` installs only the Essentials bundle by default — Addon bundles must be explicitly requested (`agents add <addon>`) or triggered by the orchestrator's On-Demand Auto-Install protocol. Track progress in [`ROADMAP.md`](ROADMAP.md).
-- **[ ] GitHub Pages Site Design** *(Design Task)*: Design and build the public marketing & documentation site at `https://neoanthropocene.github.io/agents-united`. Covers: hero section, interactive CLI demo, ecosystem matrix visualization, quickstart steps, and platform ecosystem showcase. Full brief and wireframe outline tracked in [`ROADMAP.md`](ROADMAP.md).
+### Adding or adapting a skill
 
-### 5. Skill & Agent Contribution Standard
-When contributing new skills or adapting external skills:
-1. **Frontmatter Metadata**: Declare author attribution in `SKILL.md` YAML frontmatter:
+Follow the checklist in [`docs/skill-intake.md`](./docs/skill-intake.md). In short:
+
+1. **Check the licence first.** Permissive licences (MIT, Apache-2.0, BSD, ISC, CC-BY) may be vendored with credit. MPL-2.0 and CC-BY-SA-4.0 skills may be vendored only if the skill folder keeps the upstream `LICENSE`, a `NOTICE.md` of what changed, and a SHA-pinned `metadata.source`, and stays under that licence. NonCommercial, NoDerivatives, and GPL-family content is never vendored ([ADR 0024](./docs/adr/0024-licence-tiered-skill-intake.md)). A test enforces this catalog-wide.
+2. **Declare metadata** in the `SKILL.md` frontmatter:
+
    ```yaml
    ---
    name: your-skill-name
@@ -593,30 +549,48 @@ When contributing new skills or adapting external skills:
      license: "MIT"
    ---
    ```
-2. **Attribution in README**: Add credit under `## Credits & Acknowledgments`.
-   **Licence tiers** ([ADR 0024](docs/adr/0024-licence-tiered-skill-intake.md), [`docs/skill-intake.md`](docs/skill-intake.md) §1): permissive licences (MIT, Apache-2.0, BSD, ISC, CC-BY) may be vendored with credit; MPL-2.0 and CC-BY-SA-4.0 skills may be vendored only if the skill folder keeps the upstream `LICENSE`, a `NOTICE.md` of what changed, a SHA-pinned `metadata.source`, and stays under that licence; NonCommercial, NoDerivatives and GPL-family content is never vendored.
-3. **Deterministic Verifications**: Include clear validation commands, error recovery procedures, and code exemplars.
 
-### 6. Pull Request (PR) Workflow
+3. **Credit the source** under [Credits & Acknowledgments](#-credits--acknowledgments).
+4. **Show how to verify it:** validation commands, error recovery, and code examples.
 
-We use a two-line branch model — `main` is the release line, `dev` is the **protected** integration line. Full walkthrough: [`docs/workflow-guide.md`](docs/workflow-guide.md).
+### Pull request workflow
 
-1. **Branch from a fresh `dev`** (direct pushes to `dev` are rejected — changes arrive via PR only):
+`main` is the release line and `dev` is the **protected** integration line, so changes reach `dev` by pull request only. The full walkthrough is in [`docs/workflow-guide.md`](./docs/workflow-guide.md).
+
+1. **Branch from a fresh `dev`:**
+
    ```bash
    git switch dev && git pull origin dev
    git switch -c feat/your-feature-name   # or fix/, docs/, ci/
    ```
-2. **Follow TDD (Red-Green-Refactor)**: Author failing unit/E2E tests in `tests/` before implementing code.
-3. **Run Pre-PR Verification**:
+
+2. **Verify before pushing:**
+
    ```bash
    npm run typecheck && npm test
    npm run build
-   git diff --cached   # Audit staged files for accidental secrets or temp files
+   git diff --cached   # look for stray secrets or temp files
    ```
-4. **Push early & open PR #1 → base `dev`**: CI runs automatically (typecheck, build, full Vitest suite on `ubuntu-latest`). The PR can only merge once the required **`test`** status check passes.
-5. **Release via PR #2 → base `main`** (compare `dev`): merging triggers **semantic-release** — `feat:` bumps the minor version, `fix:` the patch — then the sync workflow auto-merges `main` back into `dev`.
 
-> Commit messages follow **Conventional Commits**: `feat:` / `fix:` drive releases; `docs:`, `ci:`, `chore:`, `refactor:`, `test:`, `perf:` accumulate without releasing. Emergency production hotfixes branch from `main` and PR directly into it.
+3. **Open a PR against `dev`.** CI runs typecheck, build, and the full test suite on `ubuntu-latest`, and the required **`test`** check must pass.
+4. **Release via a PR from `dev` into `main`.** Merging runs semantic-release (`feat:` bumps the minor version, `fix:` the patch) and a sync workflow merges `main` back into `dev`.
+
+Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releases, while `docs:`, `ci:`, `chore:`, `refactor:`, `test:`, and `perf:` do not. Emergency hotfixes branch from `main` and PR straight into it.
+
+---
+
+## 📚 Documentation Map
+
+| Read this | To learn |
+| :--- | :--- |
+| [`docs/workflow-guide.md`](./docs/workflow-guide.md) | Branching, releases, and everyday contributor workflow |
+| [`docs/host-primitive-matrix.md`](./docs/host-primitive-matrix.md) | How skills, subagents, rules, hooks, and workflows behave on Claude Code, Antigravity, and Cline |
+| [`docs/skill-intake.md`](./docs/skill-intake.md) | The checklist for adding any new skill, including licence tiers |
+| [`docs/guard-testing.md`](./docs/guard-testing.md) | How to prove the guard hook actually fires |
+| [`docs/creation-engine.md`](./docs/creation-engine.md) | The Semantic Core and per-host creation engine behind Claude projection |
+| [`docs/adr/`](./docs/adr) | Architecture decision records (0001 to 0024) |
+| [`plans/`](./plans) | Numbered implementation plans and their status ([index](./plans/README.md)) |
+| [`PROJECT.md`](./PROJECT.md), [`CONTEXT.md`](./CONTEXT.md), [`ROADMAP.md`](./ROADMAP.md), [`CHANGELOG.md`](./CHANGELOG.md) | Project overview, domain glossary, roadmap, and release notes |
 
 ---
 
