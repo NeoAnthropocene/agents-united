@@ -1,0 +1,219 @@
+{
+  "host": "claude",
+  "profileId": "claude@2.1.285",
+  "version": "2.1.285",
+  "minVersion": "2.1.271",
+  "reviewedAgainst": "2.1.285",
+  "library": "host-library/claude",
+  "toolPolicy": "tool-policy.json",
+  "legacyProfile": "registry/profiles/claude@2.1.271.json",
+  "semantics": "Native Claude Code host profile (Plan 032 Phase 3, ADR 0025): the artifact vocabularies a native package may use, generated from and drift-tested against host-library/claude snapshots. It supersedes nothing yet: the legacy 2.1.271 capability profile stays the version floor and feeds the projection lane until Claude reaches parity (strangler). Data, never probed at run time.",
+  "artifacts": {
+    "agent": {
+      "path": ".claude/agents/<name>.md",
+      "requiredKeys": [
+        "name",
+        "description"
+      ],
+      "allowedKeys": [
+        "name",
+        "description",
+        "tools",
+        "disallowedTools",
+        "model",
+        "permissionMode",
+        "maxTurns",
+        "skills",
+        "mcpServers",
+        "hooks",
+        "memory",
+        "background",
+        "omitClaudeMd",
+        "effort",
+        "isolation",
+        "color",
+        "initialPrompt",
+        "experimental"
+      ]
+    },
+    "skill": {
+      "path": ".claude/skills/<name>/SKILL.md",
+      "allowedKeys": [
+        "name",
+        "description",
+        "when_to_use",
+        "argument-hint",
+        "arguments",
+        "disable-model-invocation",
+        "user-invocable",
+        "allowed-tools",
+        "disallowed-tools",
+        "model",
+        "effort",
+        "context",
+        "agent",
+        "background",
+        "hooks",
+        "paths",
+        "shell",
+        "metadata",
+        "license",
+        "compatibility"
+      ],
+      "portableKeys": [
+        "name",
+        "description",
+        "license",
+        "compatibility",
+        "metadata",
+        "allowed-tools"
+      ]
+    },
+    "hook": {
+      "events": [
+        "SessionStart",
+        "Setup",
+        "UserPromptSubmit",
+        "UserPromptExpansion",
+        "PreToolUse",
+        "PermissionRequest",
+        "PermissionDenied",
+        "PostToolUse",
+        "PostToolUseFailure",
+        "PostToolBatch",
+        "Notification",
+        "MessageDisplay",
+        "SubagentStart",
+        "SubagentStop",
+        "TaskCreated",
+        "TaskCompleted",
+        "Stop",
+        "StopFailure",
+        "TeammateIdle",
+        "InstructionsLoaded",
+        "ConfigChange",
+        "CwdChanged",
+        "DirectoryAdded",
+        "FileChanged",
+        "WorktreeCreate",
+        "WorktreeRemove",
+        "PreCompact",
+        "PostCompact",
+        "PreModelSwitch",
+        "PostModelSwitch",
+        "Elicitation",
+        "ElicitationResult",
+        "SessionEnd"
+      ],
+      "handlerTypes": [
+        "command",
+        "http",
+        "mcp_tool",
+        "prompt",
+        "agent"
+      ],
+      "registerAt": [
+        "settings.json",
+        ".claude/settings.local.json",
+        "plugin hooks/hooks.json",
+        "skill frontmatter",
+        "agent frontmatter"
+      ]
+    },
+    "plugin": {
+      "manifestKeys": [
+        "$schema",
+        "name",
+        "displayName",
+        "version",
+        "description",
+        "author",
+        "homepage",
+        "repository",
+        "license",
+        "keywords",
+        "metadata",
+        "defaultEnabled",
+        "dependencies",
+        "settings",
+        "userConfig",
+        "channels",
+        "skills",
+        "commands",
+        "agents",
+        "hooks",
+        "mcpServers",
+        "lspServers",
+        "outputStyles",
+        "workflows",
+        "experimental"
+      ],
+      "ignoredAgentKeys": [
+        "hooks",
+        "mcpServers",
+        "permissionMode",
+        "initialPrompt"
+      ],
+      "layout": {
+        "manifest": ".claude-plugin/plugin.json",
+        "skills": "skills/<name>/SKILL.md",
+        "commands": "commands/",
+        "agents": "agents/",
+        "hooks": "hooks/hooks.json",
+        "mcp": ".mcp.json",
+        "lsp": ".lsp.json",
+        "outputStyles": "output-styles/",
+        "workflows": "workflows/",
+        "themes": "themes/",
+        "monitors": "monitors/monitors.json",
+        "executables": "bin/",
+        "settings": "settings.json"
+      }
+    },
+    "mcp": {
+      "scopes": [
+        "local",
+        "project",
+        "user"
+      ],
+      "transports": [
+        "stdio",
+        "http",
+        "sse",
+        "ws"
+      ]
+    },
+    "permissions": {
+      "modes": [
+        "default",
+        "acceptEdits",
+        "plan",
+        "auto",
+        "dontAsk",
+        "bypassPermissions"
+      ]
+    }
+  },
+  "features": {
+    "agentTeams": {
+      "status": "experimental",
+      "note": "Opt-in via CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1; never load-bearing (one team per session, fixed lead, no nested teams)"
+    },
+    "dynamicWorkflows": {
+      "status": "available",
+      "note": "Workflow tool and saved .claude/workflows/*.js scripts; never available to subagents, so the launching orchestrator runs as the main thread"
+    },
+    "pluginLane": {
+      "status": "available",
+      "note": "Compound plugin lane (.claude-plugin/plugin.json) loaded with --plugin-dir; a plugin agent ignores hooks, mcpServers and permissionMode"
+    },
+    "subagentHandback": {
+      "status": "available",
+      "note": "Auto mode only, v2.1.271+; specialist results return to the spawning conversation"
+    },
+    "imageGeneration": {
+      "status": "unsupported",
+      "note": "No image-generation tool exists on this host; asset creation happens outside the agent run"
+    }
+  }
+}

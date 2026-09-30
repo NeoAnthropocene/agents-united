@@ -1,0 +1,621 @@
+{
+  "host": "claude",
+  "profile": "claude@2.1.285",
+  "semantics": "Class-based tool policy (Plan 032 Phase 5, ADR 0025 decision 8): the complete native Claude Code tool catalog, the capability class each tool serves, and the conditions under which it exists. Roles in registry/core declare classes; resolveGrant() maps them to tools. Source: host-library/claude/guide/tools.md and pages/tools/tools-reference.md. Data, never probed at run time.",
+  "catalog": [
+    {
+      "name": "Agent",
+      "class": "delegate",
+      "subagents": "conditional",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "With agent teams enabled, a call that carries a name launches a teammate instead of a subagent",
+          "source": "pages/tools/tools-reference.md#agent-tool-behavior"
+        },
+        {
+          "kind": "surface",
+          "detail": "Withheld from a subagent at the nesting depth limit (default three layers)",
+          "source": "pages/agent/sub-agents.md#let-subagents-spawn-their-own-subagents"
+        }
+      ]
+    },
+    {
+      "name": "Artifact",
+      "class": "artifacts",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "plan",
+          "detail": "Needs a Pro, Max, Team or Enterprise plan and /login authentication",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "AskUserQuestion",
+      "class": "ask-user",
+      "subagents": "never",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "Bash",
+      "class": "shell",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "platform",
+          "detail": "Not registered on Windows without Git Bash, where PowerShell is the shell; hooks must match Bash|PowerShell",
+          "source": "pages/tools/tools-reference.md#powershell-tool"
+        }
+      ]
+    },
+    {
+      "name": "CronCreate",
+      "class": "scheduling",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "CronDelete",
+      "class": "scheduling",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "CronList",
+      "class": "scheduling",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "Edit",
+      "class": "edit",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "model",
+          "detail": "Read-before-edit is always required on Opus 4.6, Haiku 4.5 and older models; newer models may edit an unread file when reading would not prompt",
+          "source": "pages/tools/tools-reference.md#edit-tool-behavior"
+        }
+      ]
+    },
+    {
+      "name": "EndConversation",
+      "class": "meta",
+      "subagents": "never",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "version",
+          "detail": "Requires v2.1.213 or later",
+          "source": "pages/tools/tools-reference.md#endconversation-tool-behavior"
+        },
+        {
+          "kind": "model",
+          "detail": "Only on Opus 4.8, Sonnet 5, Fable 5 or a later version of those families",
+          "source": "pages/tools/tools-reference.md#endconversation-tool-behavior"
+        },
+        {
+          "kind": "surface",
+          "detail": "Interactive terminal sessions only; never non-interactive, SDK, VS Code panel, GitHub Actions or cloud sessions",
+          "source": "pages/tools/tools-reference.md#endconversation-tool-behavior"
+        },
+        {
+          "kind": "provider",
+          "detail": "Not on Bedrock, Claude Platform on AWS, Vertex or Foundry",
+          "source": "pages/tools/tools-reference.md#endconversation-tool-behavior"
+        }
+      ]
+    },
+    {
+      "name": "EnterPlanMode",
+      "class": "plan",
+      "subagents": "never",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "EnterWorktree",
+      "class": "worktree",
+      "subagents": "conditional",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "From a worktree session or a subagent with a pinned working directory only the path form is available, and the target must be under .claude/worktrees/",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "ExitPlanMode",
+      "class": "plan",
+      "subagents": "conditional",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Withheld from a subagent unless its permissionMode is plan",
+          "source": "pages/agent/sub-agents.md#available-tools"
+        }
+      ]
+    },
+    {
+      "name": "ExitWorktree",
+      "class": "worktree",
+      "subagents": "conditional",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Not available to subagents that already run in their own working directory (isolation: worktree)",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "Glob",
+      "class": "search",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "platform",
+          "detail": "Absent by default on macOS, Linux, and WSL (present on Windows); restored by naming it in --tools or --allowedTools, by removing Bash, or by a subagent listing it in tools without Bash. Searching then goes through find and grep in Bash",
+          "source": "pages/tools/tools-reference.md#glob-tool-behavior"
+        }
+      ]
+    },
+    {
+      "name": "Grep",
+      "class": "search",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "platform",
+          "detail": "Absent by default on macOS, Linux, and WSL under the same conditions as Glob",
+          "source": "pages/tools/tools-reference.md#grep-tool-behavior"
+        }
+      ]
+    },
+    {
+      "name": "ListAgents",
+      "class": "messaging",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "version",
+          "detail": "Requires v2.1.224 or later",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        },
+        {
+          "kind": "setting",
+          "detail": "Appears only in sessions where cross-session messaging is enabled",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "ListMcpResourcesTool",
+      "class": "read",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "LSP",
+      "class": "code-intel",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "dependency",
+          "detail": "Inactive until a code intelligence plugin for the language is installed; never active in cloud sessions",
+          "source": "pages/tools/tools-reference.md#lsp-tool-behavior"
+        },
+        {
+          "kind": "version",
+          "detail": "Background subagents could not use LSP before v2.1.280",
+          "source": "pages/agent/sub-agents.md#available-tools"
+        }
+      ]
+    },
+    {
+      "name": "Monitor",
+      "class": "background-monitor",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "Unavailable when DISABLE_TELEMETRY or CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC is set",
+          "source": "pages/tools/tools-reference.md#monitor-tool"
+        },
+        {
+          "kind": "provider",
+          "detail": "Not available on Bedrock, Vertex or Foundry",
+          "source": "pages/tools/tools-reference.md#monitor-tool"
+        }
+      ]
+    },
+    {
+      "name": "NotebookEdit",
+      "class": "edit",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "PowerShell",
+      "class": "shell",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "platform",
+          "detail": "Automatic on Windows without Git Bash, default-on with Git Bash for claude.ai and Console accounts, opt-in on Linux, macOS and WSL (PowerShell 7+, CLAUDE_CODE_USE_POWERSHELL_TOOL=1)",
+          "source": "pages/tools/tools-reference.md#powershell-tool"
+        }
+      ]
+    },
+    {
+      "name": "PushNotification",
+      "class": "notify",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "provider",
+          "detail": "Push delivery is not available on Bedrock, Claude Platform on AWS, Vertex or Foundry",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "Read",
+      "class": "read",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "ReadMcpResourceTool",
+      "class": "read",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "RemoteTrigger",
+      "class": "scheduling",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "plan",
+          "detail": "Routines need a Pro, Max, Team or Enterprise plan",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        },
+        {
+          "kind": "provider",
+          "detail": "Not accessible from Bedrock, Claude Platform on AWS, Vertex or Foundry",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "ReportFindings",
+      "class": "report",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "version",
+          "detail": "Requires v2.1.196 or later; the optional category slug needs v2.1.199",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "ScheduleWakeup",
+      "class": "scheduling",
+      "subagents": "never",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "SendFeedback",
+      "class": "meta",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "version",
+          "detail": "Requires v2.1.238 or later",
+          "source": "pages/tools/tools-reference.md#sendfeedback-tool-behavior"
+        },
+        {
+          "kind": "surface",
+          "detail": "Interactive terminal sessions on the Claude API only; not -p, SDK, cloud, Bedrock, Vertex or Foundry sessions",
+          "source": "pages/tools/tools-reference.md#sessions-without-claude-drafted-feedback"
+        }
+      ]
+    },
+    {
+      "name": "SendMessage",
+      "class": "messaging",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "SendUserFile",
+      "class": "notify",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Needs a connected Remote Control client or a cloud session",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        },
+        {
+          "kind": "provider",
+          "detail": "Not available on Bedrock, Vertex or Foundry",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "ShareOnboardingGuide",
+      "class": "meta",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "plan",
+          "detail": "Available to claude.ai subscribers on Pro, Max, Team and Enterprise plans",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "Skill",
+      "class": "skill",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "SubagentHandback",
+      "class": "handback",
+      "subagents": "conditional",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "Provided only in auto mode, to subagents the Agent tool runs locally other than forks",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        },
+        {
+          "kind": "version",
+          "detail": "Requires v2.1.271 or later",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
+    },
+    {
+      "name": "TaskCreate",
+      "class": "task-tracking",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "model",
+          "detail": "On by default only for Claude 3.x, Opus 4 to 4.7, Sonnet 4 to 4.6 and Haiku 4.5; other models need CLAUDE_CODE_ENABLE_TODO_TOOLS=1, --allowedTools or --tools",
+          "source": "pages/tools/tools-reference.md#task-tool-availability"
+        }
+      ]
+    },
+    {
+      "name": "TaskGet",
+      "class": "task-tracking",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "model",
+          "detail": "Same model gate as TaskCreate",
+          "source": "pages/tools/tools-reference.md#task-tool-availability"
+        }
+      ]
+    },
+    {
+      "name": "TaskList",
+      "class": "task-tracking",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "model",
+          "detail": "Same model gate as TaskCreate",
+          "source": "pages/tools/tools-reference.md#task-tool-availability"
+        }
+      ]
+    },
+    {
+      "name": "TaskOutput",
+      "class": "task-tracking",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "TaskStop",
+      "class": "background-monitor",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "TaskUpdate",
+      "class": "task-tracking",
+      "subagents": "available",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "model",
+          "detail": "Same model gate as TaskCreate",
+          "source": "pages/tools/tools-reference.md#task-tool-availability"
+        }
+      ]
+    },
+    {
+      "name": "TodoWrite",
+      "class": "task-tracking",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "Disabled by default in favour of the Task tools; CLAUDE_CODE_ENABLE_TASKS=0 re-enables it",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        },
+        {
+          "kind": "model",
+          "detail": "Same model gate as TaskCreate",
+          "source": "pages/tools/tools-reference.md#task-tool-availability"
+        }
+      ]
+    },
+    {
+      "name": "ToolSearch",
+      "class": "mcp-discovery",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "Present when MCP tool search is enabled (the default)",
+          "source": "pages/mcp/mcp.md#scale-with-mcp-tool-search"
+        }
+      ]
+    },
+    {
+      "name": "WaitForMcpServers",
+      "class": "mcp-discovery",
+      "subagents": "never",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "Appears only when tool search is disabled",
+          "source": "pages/mcp/mcp.md#tool-availability"
+        }
+      ]
+    },
+    {
+      "name": "WebFetch",
+      "class": "web",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "WebSearch",
+      "class": "web",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "provider",
+          "detail": "Not exposed on Amazon Bedrock; needs an Anthropic-hosted deployment on Foundry",
+          "source": "pages/tools/tools-reference.md#websearch-tool-behavior"
+        }
+      ]
+    },
+    {
+      "name": "Workflow",
+      "class": "workflow",
+      "subagents": "never",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "Dynamic workflows must be enabled (Dynamic workflows in /config on Pro; off with disableWorkflows or CLAUDE_CODE_DISABLE_WORKFLOWS=1)",
+          "source": "pages/orchestration/workflows.md#turn-workflows-off"
+        }
+      ]
+    },
+    {
+      "name": "Write",
+      "class": "edit",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "model",
+          "detail": "Read-before-overwrite has the same model rule as Edit",
+          "source": "pages/tools/tools-reference.md#write-tool-behavior"
+        }
+      ]
+    }
+  ]
+}
