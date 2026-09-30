@@ -48,8 +48,11 @@ Ingest runs the same audit gate and records the channel in the lock.
    whether `registry/translation-ledger.json` deltas change. Check whether
    `host-library/<h>/guide/*.md` and `registry/hosts/<h>/{profile,tool-policy}.json` (when present) still
    agree. Grep `registry/hosts/<h>/` for artifacts using changed features.
-4. **Upstream skill watch** (when `host-library/_upstream/skills.json` exists). For each third-party
-   entry compare the newest commit touching its path with the pinned SHA. On drift:
+4. **Upstream skill watch** (when `host-library/_upstream/skills.json` exists; it is produced by
+   `npm run hostlib:provenance`). For each `third-party-pinned` entry compare the newest commit touching its
+   `path` (`git ls-remote` / shallow fetch of `repo`) with the pinned `sha`. `pinKind: recovered-head` means
+   the pin is the recovery-day HEAD, not necessarily the ported revision. Skills held by the audit gate
+   (`security-hold` notes) stay held until a human clears them. On drift:
    a. fetch the candidate into a **quarantine** dir under the scratchpad — never into `host-library/`;
    b. `npm run hostlib:audit -- <quarantine> --baseline host-library/_upstream/<skill>`;
    c. exit `0` → run the LLM review below; `1`/`3` → `security-hold`;

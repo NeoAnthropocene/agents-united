@@ -6,6 +6,7 @@
  *   npm run hostlib:ingest  -- --host <h> --file <local.md> --as <snapshot path> --via <channel> [--advance-changelog]
  *   npm run hostlib:verify
  *   npm run hostlib:audit   -- <dir> [--mode skill|docs] [--baseline <dir>] [--json]
+ *   npm run hostlib:provenance -- [--only a,b] [--cache <dir>]   (recover upstream originals; needs `git` + github.com)
  *
  * Exit codes: 0 ok · 1 failure (audit fail, lock drift, bad input) · 3 audit needs-review.
  */
@@ -14,7 +15,9 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { auditDirectory, formatReport } from './audit.ts';
 import type { AuditMode } from './audit.ts';
-import { checkHost, httpFetcher, ingestSnapshot, listHosts, refreshHost, verifyLock } from './library.ts';
+import os from 'node:os';
+import { checkHost, httpFetcher, ingestSnapshot, listHosts, refreshHost, stableJson, verifyLock } from './library.ts';
+import { recover } from './provenance.ts';
 import type { HostCheckReport } from './library.ts';
 import { ARTIFACT_TYPES } from './types.ts';
 import type { ArtifactType } from './types.ts';
@@ -78,6 +81,8 @@ async function main(): Promise<number> {
       via: { type: 'string' },
       mode: { type: 'string', default: 'skill' },
       baseline: { type: 'string' },
+      only: { type: 'string' },
+      cache: { type: 'string' },
     },
   });
 
@@ -139,8 +144,31 @@ async function main(): Promise<number> {
       console.log(values.json ? JSON.stringify(report, null, 2) : formatReport(report));
       return report.verdict === 'pass' ? 0 : report.verdict === 'fail' ? 1 : 3;
     }
+    case 'provenance': {
+      const cacheRoot = path.resolve(values.cache ?? path.join(os.tmpdir(), 'hostlib-provenance'));
+      const upstreamDir = path.join(ROOT, '_upstream');
+      fs.mkdirSync(upstreamDir, { recursive: true });
+      const only = values.only?.split(',').map(name => name.trim()).filter(Boolean);
+      const records = recover({
+        skillsDir: path.resolve('registry/skills'),
+        upstreamDir,
+        cacheRoot,
+        quarantineRoot: path.join(cacheRoot, 'quarantine'),
+        today: new Date().toISOString().slice(0, 10),
+        only,
+        log: line => console.error(line),
+      });
+      const file = path.join(upstreamDir, 'skills.json');
+      const previous = fs.existsSync(file) ? (JSON.parse(fs.readFileSync(file, 'utf8')) as { skills: Record<string, unknown> }).skills : {};
+      const skills = { ...previous, ...Object.fromEntries(records.map(record => [record.skill, record])) };
+      fs.writeFileSync(file, stableJson({ schema: 1, note: 'Skill provenance (Plan 032). pinKind "recovered-head" = repo HEAD on recoveredAt, not necessarily the revision that was ported.', skills }));
+      const count = (predicate: (record: (typeof records)[number]) => boolean): number => records.filter(predicate).length;
+      console.log(`skills: ${records.length} · in-house ${count(r => r.provenance === 'in-house')} · pinned ${count(r => r.provenance === 'third-party-pinned')} (snapshotted ${count(r => r.snapshot === true)}, audit non-pass ${count(r => r.audit !== undefined && r.audit.verdict !== 'pass')}) · not-found ${count(r => r.provenance === 'not-found')}`);
+      console.log(`dropped extras found on ${count(r => (r.droppedExtras?.length ?? 0) > 0)} skills`);
+      return 0;
+    }
     default:
-      console.error('usage: hostlib <check|refresh|ingest|verify|audit> [options]');
+      console.error('usage: hostlib <check|refresh|ingest|verify|audit|provenance> [options]');
       return 1;
   }
 }

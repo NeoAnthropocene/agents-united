@@ -235,3 +235,10 @@ describe('the committed host-library/', () => {
     expect(pkg.files).not.toContain('scripts');
   });
 });
+
+describe('test discovery', () => {
+  it('never executes upstream snapshot code: vitest excludes host-library/**', () => {
+    const config = fs.readFileSync('vitest.config.ts', 'utf8');
+    expect(config).toContain("'host-library/**'");
+  });
+});

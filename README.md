@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 34 bundles · 59 agents (9 orchestrators + 50 sub-agents) · 188 skills (119 domain skills + 69 workflow playbooks) · 8 department domains.
+**In numbers:** 34 bundles (including the `full` suite) · 59 agents (9 orchestrators + 50 sub-agents) · 188 skills (119 domain skills + 69 workflow playbooks) · 8 department domains.
 
 ---
 
@@ -490,6 +490,19 @@ QA Automation Lead (Playwright E2E) + Compliance GRC Specialist (FTC / GDPR / CA
 
 ---
 
+### Build your own organization bundle
+
+Organization (Tier-2) bundles are the most open area for contributors. The registry keeps one deliberate template for them: **`mock-organization-under-construction`** in [`registry/bundles.json`](./registry/bundles.json). It is not a real team and is not counted in the bundle total above; it exists to show the shape of an organization bundle and to exercise the CLI's under-construction gate in tests.
+
+- Copy its entry and set `tier: "organization"`, a `status` (`under-construction` while you build, then `experimental`), `orchestrator`, `agents` and `skills`.
+- Add `prerequisites` (`requiredMcps`, packages, environment variables) and `modes` (`operational`, `limited-operational`, `brainstorming`), as `digital-agency` does.
+- Opt into the planning loop with `planningLoop` (`mode: "subagent-first"` plus a consultation budget) and add `personaAliases` if your team has named personas.
+- Try it: `agents add mock-organization-under-construction --allow-under-construction --mode brainstorming --dry-run` resolves the bundle without writing anything. Drop `--allow-under-construction` to watch the gate block it.
+
+Keep the fixture in place while you work; the CLI tests rely on it (`tests/prerequisites.test.ts`). Follow [`docs/skill-intake.md`](./docs/skill-intake.md) for any skills your team adds.
+
+---
+
 ## 🔌 MCP Servers
 
 Agents United never installs or configures MCP servers for you, and never writes credentials into projected files. Roles list the servers they use by name, and the assistant's own MCP configuration supplies the connection.
@@ -558,6 +571,7 @@ npm run hostlib:check      # changelog first: what did each harness ship since t
 npm run hostlib:refresh -- --host claude --types hook,tools --advance-changelog
 npm run hostlib:verify     # snapshots still match their lockfile hashes
 npm run hostlib:audit -- <dir>   # security audit for a quarantined upstream skill folder
+npm run hostlib:provenance      # pin each third-party skill to its upstream repo, path and commit
 ```
 
 The `host-update-sync` maintainer skill (`.claude/skills/`) turns a new upstream release into an adaptation-plan PR against `dev`. Refreshed docs snapshots and upstream skills only enter the repo after a security audit (prompt-injection, obfuscation and risky-script scan, plus a read-only review), which runs before the licence check below. Details: [ADR 0025](./docs/adr/0025-native-host-packages-and-host-docs-library.md).

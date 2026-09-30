@@ -23,8 +23,20 @@
     `npm run hostlib:refresh -- --host cline,antigravity --all` from an environment that can reach them
     (the daily routine's network policy must allow the domains in each `sources.json`), then review the
     snapshot PR.
+  - 2026-09-30 (later) — **provenance recovery landed** (`npm run hostlib:provenance`, deterministic, ~35 s,
+    no model tokens): of 188 skills, 146 in-house, **32 third-party pinned** (repo, path, full commit; 15
+    `declared` from the catalog, 17 `recovered-head` = repo HEAD on 2026-09-30, not necessarily the revision
+    that was ported), 10 `not-found` (4 vendor sites that are not repositories, 6 renamed/adapted skills in
+    large repos). 29 pinned skills were audit-clean and snapshotted into `host-library/_upstream/`; 3 are
+    **held** (`security-hold`: `maestro-mobile-testing`, `semgrep-scanning`, `supply-chain-risk-audit` —
+    script network egress / pipe-to-shell in prose / missing licence file) and keep their current version.
+    8 skills were matched by a unique name relation or parent path and are flagged `fuzzy` for human
+    confirmation. **295 upstream files across 26 skills were dropped in the port** (`rules/` 77,
+    `references/` 48, `scripts/` 25, `agents/` 16, `resources/` 16, …); they are listed per skill in
+    `_upstream/skills.json` (`droppedExtras`) but **not restored**: restoring needs adaptation, the
+    licence tier check (ADR 0024) and `lintSkillPortability`, one bundle at a time.
   - **Pending**: the distilled `guide/*.md` files (each rule must cite a snapshot, so they follow the
-    snapshots), Phase 3 (host profiles), Phase 4 provenance recovery + triage, Phase 5 (tool and
+    snapshots), Phase 3 (host profiles), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8
     (Cline, then Antigravity as a peer).
 - **Priority**: P1 · **Effort**: XL · **Risk**: HIGH (new authoring model; strangler beside live lanes)
@@ -435,3 +447,19 @@ Rewrite `README.md` for marketing, keeping every claim true to the shipped state
     the code-reviewer write is denied by the hook, the reviewer can search, use `LSP` and `ReportFindings`,
     and the orchestrator runs a saved review workflow (`/workflows` shows it and it resumes after a stop);
   - README: links resolve and counts match the registry.
+
+## Local handoff (next sessions)
+
+Work one PR per session on a **new branch cut from an up-to-date `dev`**; never push to `dev`/`main`
+directly. Suggested order (each is independently reviewable):
+
+| # | Branch | Scope | Needs |
+|---|---|---|---|
+| A | `chore/host-library-seed-cline-antigravity` | `npm run hostlib:refresh -- --host cline,antigravity --all`, `hostlib:verify`, review snapshot diff | network to `docs.cline.bot`, `antigravity.google` |
+| B | `feat/host-library-guides-claude` | `host-library/claude/guide/*.md` (agent, skill, hook, tools, orchestration, plugin, mcp, permissions) — every rule cites a `pages/` snapshot; test that citations resolve | snapshots from the Claude seed |
+| C | `feat/host-profiles-and-tool-policy` | Phases 3 + 5: `registry/hosts/claude/{profile,tool-policy}.json`, capability classes in `registry/core/*.core.md`, efficiency lint | B |
+| D | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
+| E | `feat/claude-native-pilot-software-engineering` | Phase 6 pilot (5 agents, 16 skills, real hooks, dynamic workflows) | B, C |
+
+Commit trailers: `Co-Authored-By: NeoAnthropocene <NeoAnthropocene@users.noreply.github.com>` (plus any
+tool attribution your setup requires).
