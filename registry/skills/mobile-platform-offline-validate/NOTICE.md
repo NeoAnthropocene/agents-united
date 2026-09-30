@@ -15,3 +15,7 @@ Apache-2.0 permits use, reproduction and distribution of the work and of derivat
 
 - `SKILL.md` was written for agents-united in this catalog's runbook format (PROJECT.md §7.2); it is not a copy of the upstream `SKILL.md`.
 - `LICENSE`, this `NOTICE.md` and `metadata.license` were added on 2026-09-30 (Plan 032, licence resolution). No upstream documents were restored by that step.
+
+## Restored documents (Plan 032 PR D)
+
+4 upstream documents were restored verbatim on 2026-09-30 from the pinned snapshot in `host-library/_upstream/mobile-platform-offline-validate/`: `references/` (4). Each starts with (or, for markdown with frontmatter, has right after the frontmatter) a one-line comment pointing here; nothing in them was edited. Upstream packaging, scripts and attribution marks were not restored.

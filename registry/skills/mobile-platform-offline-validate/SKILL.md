@@ -17,6 +17,11 @@ disable-slash-command: true
 ## Overview & Purpose
 `mobile-platform-offline-validate` guides the architecture of offline-first mobile applications, ensuring seamless local caching, optimistic UI updates, background synchronization, and conflict resolution.
 
+
+### Reference files
+
+Restored upstream guides: [`references/`](references/) (`grounding`, `inline-graphql`, `komaci-eslint`, `lwc-if`). Read the one for your task.
+
 ## Rules & Constraints
 1. **Optimistic UI Updates** — Mutate local state immediately and display pending sync indicators to the user.
 2. **Deterministic Conflict Resolution** — Implement Last-Write-Wins (LWW) or custom CRDT / vector clock merge strategies for simultaneous updates.

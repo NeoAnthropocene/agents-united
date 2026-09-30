@@ -15,6 +15,11 @@ metadata:
 ## Overview & Purpose
 `domain-modeling` builds a shared vocabulary between human developers and AI orchestrators. By recording domain entities, terminology, and key domain rules in `CONTEXT.md`, agents can communicate with precision, reducing context bloat and misunderstandings.
 
+
+### Reference files
+
+Restored upstream formats at the skill root: [`ADR-FORMAT.md`](ADR-FORMAT.md) for decision records and [`GLOSSARY-FORMAT.md`](GLOSSARY-FORMAT.md) for glossary entries. Read the one you are writing.
+
 ## Execution Triggers & Prerequisites
 ### Execution Triggers
 - Introduction of new domain concepts, data models, or business logic.

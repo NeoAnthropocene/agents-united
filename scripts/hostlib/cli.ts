@@ -7,7 +7,7 @@
  *   npm run hostlib:verify   (lock hashes + guide/*.md citations)
  *   npm run hostlib:audit   -- <dir> [--mode skill|docs] [--baseline <dir>] [--json]
  *   npm run hostlib:restore -- --skill a,b | --reconcile | --repartition   (docs-only restore of dropped upstream extras; Plan 032 PR D)
- *   npm run hostlib:licences -- [--skill a,b] [--apply] [--cache dir]   (resolve upstream licences from evidence at the pinned commit; needs `git` + github.com)
+ *   npm run hostlib:licences -- [--skill a,b] [--apply [--accept "reason" --accepted-by name]] [--cache dir]   (resolve upstream licences from evidence at the pinned commit; needs `git` + github.com)
  *   npm run hostlib:provenance -- [--only a,b] [--cache <dir>]   (recover upstream originals; needs `git` + github.com)
  *
  * Exit codes: 0 ok · 1 failure (audit fail, lock drift, bad input) · 3 audit needs-review.
@@ -93,6 +93,8 @@ async function main(): Promise<number> {
       repartition: { type: 'boolean', default: false },
       reconcile: { type: 'boolean', default: false },
       apply: { type: 'boolean', default: false },
+      accept: { type: 'string' },
+      'accepted-by': { type: 'string' },
     },
   });
 
@@ -192,10 +194,13 @@ async function main(): Promise<number> {
         const reader = openPinnedReader(cacheRoot, owner, repo, record.sha!);
         const resolution = resolveLicence(reader, record.path!);
         record.resolvedLicence = toRecord(resolution, today);
+        // `--accept "<reason>"` records the owner's decision to accept an MIT declaration that has no licence file.
+        const ownerAcceptance = values.accept && !resolution.restorable ? { by: values['accepted-by'] ?? 'owner', date: today, reason: values.accept } : undefined;
+        if (ownerAcceptance) record.resolvedLicence.ownerAcceptance = ownerAcceptance;
         let applied = '';
-        if (values.apply && resolution.restorable) {
-          applyResolvedLicence({ skillsDir, record, resolution, today });
-          applied = ' · LICENSE, NOTICE.md and metadata.license written';
+        if (values.apply && (resolution.restorable || ownerAcceptance)) {
+          applyResolvedLicence({ skillsDir, record, resolution, today, ownerAcceptance });
+          applied = ownerAcceptance ? ' · owner acceptance recorded; LICENSE, NOTICE.md and metadata.license written' : ' · LICENSE, NOTICE.md and metadata.license written';
         }
         console.log(`${record.skill}: ${resolution.spdx ?? 'unrecognised'} (${resolution.tier}) from ${resolution.evidence}${resolution.file ? ` ${resolution.file}` : ''}${resolution.restorable ? '' : ' — not restorable'}${applied}`);
       }

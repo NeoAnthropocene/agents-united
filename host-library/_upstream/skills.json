@@ -181,11 +181,7 @@
         "scripts/test_suite_templates.py",
         "scripts/test_verify_query_suite.py"
       ],
-      "droppedExtras": [
-        "workflows/build-database.md",
-        "workflows/create-data-extensions.md",
-        "workflows/run-analysis.md"
-      ],
+      "droppedExtras": [],
       "path": "plugins/static-analysis/skills/codeql",
       "pinKind": "declared",
       "provenance": "third-party-pinned",
@@ -343,10 +339,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "ADR-FORMAT.md",
-        "GLOSSARY-FORMAT.md"
-      ],
+      "droppedExtras": [],
       "path": "skills/engineering/domain-modeling",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -361,6 +354,7 @@
         "spdx": "MIT",
         "tier": "permissive"
       },
+      "restoredAt": "2026-09-30",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "domain-modeling",
       "skippedExtras": [
@@ -388,23 +382,7 @@
         "validate-findings.cjs",
         "validate-findings.test.cjs"
       ],
-      "droppedExtras": [
-        "AI-AND-LLM.md",
-        "ATTACK-CLASSES.md",
-        "CLIENT-SIDE.md",
-        "CLOUD-AND-DEPLOYMENT.md",
-        "DATA-ISOLATION-AND-LIFECYCLE.md",
-        "DESKTOP-MOBILE-AND-LOCAL-IPC.md",
-        "HUNTING.md",
-        "MEMORY-SAFETY-AND-BINARY.md",
-        "PROTOCOLS-RPC-AND-MESSAGING.md",
-        "RECONNAISSANCE.md",
-        "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md",
-        "SUPPLY-CHAIN-AND-RELEASE.md",
-        "VALIDATION-AND-REPORTING.md",
-        "WEB-PROTOCOL-AND-AUTH.md",
-        "report-schema.json"
-      ],
+      "droppedExtras": [],
       "notes": [
         "matched by name relation or parent path (skills/security-audit); confirm it is the same skill before restoring extras"
       ],
@@ -413,6 +391,16 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "cloudflare/security-audit-skill",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2025-2026 Cloudflare, Inc.",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
+      "restoredAt": "2026-09-30",
       "sha": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
       "skill": "edge-security-audit",
       "snapshot": true,
@@ -782,12 +770,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "references/android-navigation.md",
-        "references/compose-components.md",
-        "references/details.md",
-        "references/material3-theming.md"
-      ],
+      "droppedExtras": [],
       "path": "plugins/ui-design/skills/mobile-android-design",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -802,6 +785,7 @@
         "spdx": "MIT",
         "tier": "permissive"
       },
+      "restoredAt": "2026-09-30",
       "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
       "skill": "mobile-android-design",
       "snapshot": true,
@@ -824,11 +808,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "references/hig-patterns.md",
-        "references/ios-navigation.md",
-        "references/swiftui-components.md"
-      ],
+      "droppedExtras": [],
       "path": "plugins/ui-design/skills/mobile-ios-design",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -843,6 +823,7 @@
         "spdx": "MIT",
         "tier": "permissive"
       },
+      "restoredAt": "2026-09-30",
       "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
       "skill": "mobile-ios-design",
       "snapshot": true,
@@ -868,12 +849,7 @@
         "scripts/package.json",
         "scripts/run-komaci.sh"
       ],
-      "droppedExtras": [
-        "references/grounding.md",
-        "references/inline-graphql.md",
-        "references/komaci-eslint.md",
-        "references/lwc-if.md"
-      ],
+      "droppedExtras": [],
       "path": "skills/mobile-platform-offline-validate",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -888,6 +864,7 @@
         "spdx": "Apache-2.0",
         "tier": "permissive"
       },
+      "restoredAt": "2026-09-30",
       "sha": "d4a9aa448c7b743c1f1da41f41aa9723a6621232",
       "skill": "mobile-platform-offline-validate",
       "snapshot": true,
@@ -1085,80 +1062,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "rules/_sections.md",
-        "rules/_template.md",
-        "rules/advanced-effect-event-deps.md",
-        "rules/advanced-event-handler-refs.md",
-        "rules/advanced-init-once.md",
-        "rules/advanced-use-latest.md",
-        "rules/async-api-routes.md",
-        "rules/async-cheap-condition-before-await.md",
-        "rules/async-defer-await.md",
-        "rules/async-dependencies.md",
-        "rules/async-parallel.md",
-        "rules/async-suspense-boundaries.md",
-        "rules/bundle-analyzable-paths.md",
-        "rules/bundle-barrel-imports.md",
-        "rules/bundle-conditional.md",
-        "rules/bundle-defer-third-party.md",
-        "rules/bundle-dynamic-imports.md",
-        "rules/bundle-preload.md",
-        "rules/client-event-listeners.md",
-        "rules/client-localstorage-schema.md",
-        "rules/client-passive-event-listeners.md",
-        "rules/client-swr-dedup.md",
-        "rules/js-batch-dom-css.md",
-        "rules/js-cache-function-results.md",
-        "rules/js-cache-property-access.md",
-        "rules/js-cache-storage.md",
-        "rules/js-combine-iterations.md",
-        "rules/js-early-exit.md",
-        "rules/js-flatmap-filter.md",
-        "rules/js-hoist-regexp.md",
-        "rules/js-index-maps.md",
-        "rules/js-length-check-first.md",
-        "rules/js-min-max-loop.md",
-        "rules/js-request-idle-callback.md",
-        "rules/js-set-map-lookups.md",
-        "rules/js-tosorted-immutable.md",
-        "rules/rendering-activity.md",
-        "rules/rendering-animate-svg-wrapper.md",
-        "rules/rendering-conditional-render.md",
-        "rules/rendering-content-visibility.md",
-        "rules/rendering-hoist-jsx.md",
-        "rules/rendering-hydration-no-flicker.md",
-        "rules/rendering-hydration-suppress-warning.md",
-        "rules/rendering-resource-hints.md",
-        "rules/rendering-script-defer-async.md",
-        "rules/rendering-svg-precision.md",
-        "rules/rendering-usetransition-loading.md",
-        "rules/rerender-defer-reads.md",
-        "rules/rerender-dependencies.md",
-        "rules/rerender-derived-state-no-effect.md",
-        "rules/rerender-derived-state.md",
-        "rules/rerender-functional-setstate.md",
-        "rules/rerender-lazy-state-init.md",
-        "rules/rerender-memo-with-default-value.md",
-        "rules/rerender-memo.md",
-        "rules/rerender-move-effect-to-event.md",
-        "rules/rerender-no-inline-components.md",
-        "rules/rerender-simple-expression-in-memo.md",
-        "rules/rerender-split-combined-hooks.md",
-        "rules/rerender-transitions.md",
-        "rules/rerender-use-deferred-value.md",
-        "rules/rerender-use-ref-transient-values.md",
-        "rules/server-after-nonblocking.md",
-        "rules/server-auth-actions.md",
-        "rules/server-cache-lru.md",
-        "rules/server-cache-react.md",
-        "rules/server-dedup-props.md",
-        "rules/server-hoist-static-io.md",
-        "rules/server-no-shared-module-state.md",
-        "rules/server-parallel-fetching.md",
-        "rules/server-parallel-nested-fetching.md",
-        "rules/server-serialization.md"
-      ],
+      "droppedExtras": [],
       "path": "skills/react-best-practices",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -1167,17 +1071,25 @@
       "resolvedLicence": {
         "evidence": "frontmatter",
         "file": "skills/react-best-practices/SKILL.md",
+        "ownerAcceptance": {
+          "by": "owner (NeoAnthropocene)",
+          "date": "2026-09-30",
+          "reason": "Upstream (vercel-labs/agent-skills) declares MIT in the skill's SKILL.md frontmatter and in README.md but publishes no licence file or copyright notice; the owner accepted that declaration on 2026-09-30 so the skill's upstream documents can be restored."
+        },
         "resolvedAt": "2026-09-30",
         "restorable": false,
         "spdx": "MIT",
         "tier": "permissive"
       },
+      "restoredAt": "2026-09-30",
       "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
       "skill": "react-best-practices",
       "skippedExtras": [
         "AGENTS.md",
         "README.md",
-        "metadata.json"
+        "metadata.json",
+        "rules/_sections.md",
+        "rules/_template.md"
       ],
       "snapshot": true,
       "source": "https://skills.sh/vercel-labs/agent-skills/react-best-practices"
@@ -1236,12 +1148,11 @@
       "declaredLicence": "CC-BY-SA-4.0",
       "deferredExtras": [
         "assets/trail-of-bits-mark.svg",
+        "resources/fixtures/codeql-no-level.sarif",
+        "resources/fixtures/levels-on-results.sarif",
         "resources/test_sarif_helpers.py"
       ],
-      "droppedExtras": [
-        "resources/fixtures/codeql-no-level.sarif",
-        "resources/fixtures/levels-on-results.sarif"
-      ],
+      "droppedExtras": [],
       "path": "plugins/static-analysis/skills/sarif-parsing",
       "pinKind": "declared",
       "provenance": "third-party-pinned",

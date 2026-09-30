@@ -7,6 +7,7 @@ metadata:
   version: 1.0.0
   source: https://skills.sh/vercel-labs/agent-skills/react-best-practices
   icon: ⚛️
+  license: MIT
 disable-slash-command: true
 ---
 
@@ -14,6 +15,11 @@ disable-slash-command: true
 
 ## Overview & Purpose
 `react-best-practices` enforces state-of-the-art frontend development standards for React and Next.js applications, prioritizing Core Web Vitals, minimal client bundle sizes, and clean architectural separation.
+
+
+### Reference files
+
+Restored upstream rules in [`rules/`](rules/), one per file, named `<category>-<topic>.md` with the categories `async-`, `bundle-`, `server-`, `client-`, `rerender-`, `rendering-`, `js-` and `advanced-`. List the folder and read only the rule you are applying.
 
 ## Rules & Constraints
 1. **Server Components by Default** — Keep components as Server Components unless interactive hooks (`useState`, `useEffect`, event handlers) are strictly required (`"use client"`).
