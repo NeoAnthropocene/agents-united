@@ -15,3 +15,7 @@ MIT permits use, copying and modification provided the copyright and permission 
 
 - `SKILL.md` was written for agents-united in this catalog's runbook format (PROJECT.md §7.2); it is not a copy of the upstream `SKILL.md`.
 - `LICENSE`, this `NOTICE.md` and `metadata.license` were added on 2026-09-30 (Plan 032, licence resolution). No upstream documents were restored by that step.
+
+## Restored documents (Plan 032 PR D)
+
+58 upstream documents were restored verbatim on 2026-09-30 from the pinned snapshot in `host-library/_upstream/playwright-best-practices/`: `advanced/` (8), `architecture/` (3), `browser-apis/` (4), `core/` (11), `debugging/` (4), `frameworks/` (4), `infrastructure-ci-cd/` (9), `testing-patterns/` (15). Each starts with (or, for markdown with frontmatter, has right after the frontmatter) a one-line comment pointing here; nothing in them was edited. Upstream packaging, scripts and attribution marks were not restored.

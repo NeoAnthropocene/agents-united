@@ -141,7 +141,6 @@
       "skill": "clickhouse-architecture-advisor",
       "skippedExtras": [
         "AGENTS.md",
-        "README.md",
         "metadata.json"
       ],
       "snapshot": true,
@@ -931,11 +930,7 @@
       "deferredExtras": [
         "assets/trail-of-bits-mark.svg"
       ],
-      "droppedExtras": [
-        "workflows/analyzing-results.md",
-        "workflows/bug-hunter.md",
-        "workflows/configuration.md"
-      ],
+      "droppedExtras": [],
       "path": "plugins/mutation-testing/skills/mutation-testing",
       "pinKind": "declared",
       "provenance": "third-party-pinned",
@@ -976,66 +971,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "advanced/authentication-flows.md",
-        "advanced/authentication.md",
-        "advanced/clock-mocking.md",
-        "advanced/mobile-testing.md",
-        "advanced/multi-context.md",
-        "advanced/multi-user.md",
-        "advanced/network-advanced.md",
-        "advanced/third-party.md",
-        "architecture/pom-vs-fixtures.md",
-        "architecture/test-architecture.md",
-        "architecture/when-to-mock.md",
-        "browser-apis/browser-apis.md",
-        "browser-apis/iframes.md",
-        "browser-apis/service-workers.md",
-        "browser-apis/websockets.md",
-        "core/annotations.md",
-        "core/assertions-waiting.md",
-        "core/configuration.md",
-        "core/fixtures-hooks.md",
-        "core/global-setup.md",
-        "core/locators.md",
-        "core/page-object-model.md",
-        "core/projects-dependencies.md",
-        "core/test-data.md",
-        "core/test-suite-structure.md",
-        "core/test-tags.md",
-        "debugging/console-errors.md",
-        "debugging/debugging.md",
-        "debugging/error-testing.md",
-        "debugging/flaky-tests.md",
-        "frameworks/angular.md",
-        "frameworks/nextjs.md",
-        "frameworks/react.md",
-        "frameworks/vue.md",
-        "infrastructure-ci-cd/ci-cd.md",
-        "infrastructure-ci-cd/docker.md",
-        "infrastructure-ci-cd/github-actions.md",
-        "infrastructure-ci-cd/gitlab.md",
-        "infrastructure-ci-cd/other-providers.md",
-        "infrastructure-ci-cd/parallel-sharding.md",
-        "infrastructure-ci-cd/performance.md",
-        "infrastructure-ci-cd/reporting.md",
-        "infrastructure-ci-cd/test-coverage.md",
-        "testing-patterns/accessibility.md",
-        "testing-patterns/api-testing.md",
-        "testing-patterns/browser-extensions.md",
-        "testing-patterns/canvas-webgl.md",
-        "testing-patterns/component-testing.md",
-        "testing-patterns/drag-drop.md",
-        "testing-patterns/electron.md",
-        "testing-patterns/file-operations.md",
-        "testing-patterns/file-upload-download.md",
-        "testing-patterns/forms-validation.md",
-        "testing-patterns/graphql-testing.md",
-        "testing-patterns/i18n.md",
-        "testing-patterns/performance-testing.md",
-        "testing-patterns/security-testing.md",
-        "testing-patterns/visual-regression.md"
-      ],
+      "droppedExtras": [],
       "path": "playwright-best-practices",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -1050,6 +986,7 @@
         "spdx": "MIT",
         "tier": "permissive"
       },
+      "restoredAt": "2026-09-30",
       "sha": "283d5cbc5d11aac1abda058b16ad22c317d54dc0",
       "skill": "playwright-best-practices",
       "snapshot": true,
@@ -1299,13 +1236,11 @@
       "declaredLicence": "CC-BY-SA-4.0",
       "deferredExtras": [
         "assets/trail-of-bits-mark.svg",
-        "resources/sarif_helpers.py",
         "resources/test_sarif_helpers.py"
       ],
       "droppedExtras": [
         "resources/fixtures/codeql-no-level.sarif",
-        "resources/fixtures/levels-on-results.sarif",
-        "resources/jq-queries.md"
+        "resources/fixtures/levels-on-results.sarif"
       ],
       "path": "plugins/static-analysis/skills/sarif-parsing",
       "pinKind": "declared",
@@ -1373,12 +1308,7 @@
       "deferredExtras": [
         "assets/trail-of-bits-mark.svg"
       ],
-      "droppedExtras": [
-        "adversarial.md",
-        "methodology.md",
-        "patterns.md",
-        "reporting.md"
-      ],
+      "droppedExtras": [],
       "notes": [
         "matched by name relation or parent path (plugins/differential-review/skills/differential-review); confirm it is the same skill before restoring extras"
       ],
@@ -1624,9 +1554,6 @@
       "repo": "hashicorp/agent-skills",
       "sha": "516354c484b43fa5469567485113dd0c769c3d24",
       "skill": "terraform-style-guide",
-      "skippedExtras": [
-        "SECURITY.md"
-      ],
       "snapshot": true,
       "source": "https://github.com/hashicorp/agent-skills/tree/516354c484b43fa5469567485113dd0c769c3d24/plugins/terraform/skills/terraform-style-guide"
     },
@@ -1643,11 +1570,7 @@
         "verdict": "pass"
       },
       "declaredLicence": "MPL-2.0",
-      "droppedExtras": [
-        "references/CI_CD.md",
-        "references/EXAMPLES.md",
-        "references/MOCK_PROVIDERS.md"
-      ],
+      "droppedExtras": [],
       "path": "plugins/terraform/skills/terraform-test",
       "pinKind": "declared",
       "provenance": "third-party-pinned",
@@ -1845,19 +1768,7 @@
       "deferredExtras": [
         "assets/trail-of-bits-mark.svg"
       ],
-      "droppedExtras": [
-        "resources/codeql/cpp.ql",
-        "resources/codeql/go.ql",
-        "resources/codeql/java.ql",
-        "resources/codeql/javascript.ql",
-        "resources/codeql/python.ql",
-        "resources/semgrep/cpp.yaml",
-        "resources/semgrep/go.yaml",
-        "resources/semgrep/java.yaml",
-        "resources/semgrep/javascript.yaml",
-        "resources/semgrep/python.yaml",
-        "resources/variant-report-template.md"
-      ],
+      "droppedExtras": [],
       "path": "plugins/variant-analysis/skills/variant-analysis",
       "pinKind": "declared",
       "provenance": "third-party-pinned",

@@ -4,7 +4,7 @@ impact: HIGH
 impactDescription: 5-10x faster RLS queries with proper patterns
 tags: rls, performance, security, optimization
 ---
-<!-- Restored verbatim from upstream references/security-rls-performance.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Optimize RLS Policies for Performance

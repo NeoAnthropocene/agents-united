@@ -4,7 +4,7 @@ impact: LOW-MEDIUM
 impactDescription: Identify top resource-consuming queries
 tags: pg-stat-statements, monitoring, statistics, performance
 ---
-<!-- Restored verbatim from upstream references/monitor-pg-stat-statements.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Enable pg_stat_statements for Query Analysis

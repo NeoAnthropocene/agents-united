@@ -4,7 +4,7 @@ impact: MEDIUM
 impactDescription: 2-10x better query plans with accurate statistics
 tags: vacuum, analyze, statistics, maintenance, autovacuum
 ---
-<!-- Restored verbatim from upstream references/monitor-vacuum-analyze.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Maintain Table Statistics with VACUUM and ANALYZE

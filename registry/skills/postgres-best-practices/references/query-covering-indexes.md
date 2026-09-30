@@ -4,7 +4,7 @@ impact: MEDIUM-HIGH
 impactDescription: 2-5x faster queries by eliminating heap fetches
 tags: indexes, covering-index, include, index-only-scan
 ---
-<!-- Restored verbatim from upstream references/query-covering-indexes.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Use Covering Indexes to Avoid Table Lookups

@@ -4,7 +4,7 @@ impact: HIGH
 impactDescription: Avoid prepared statement conflicts in pooled environments
 tags: prepared-statements, connection-pooling, transaction-mode
 ---
-<!-- Restored verbatim from upstream references/conn-prepared-statements.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Use Prepared Statements Correctly with Pooling

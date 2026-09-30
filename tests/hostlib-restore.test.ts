@@ -73,7 +73,7 @@ describe('attributionHeader / stripAttributionHeader', () => {
   it('puts an HTML comment after markdown frontmatter so the frontmatter stays first', () => {
     const out = attributionHeader('references/a.md', '---\ntitle: T\n---\n\n# Body\n');
     expect(out.startsWith('---\ntitle: T\n---\n')).toBe(true);
-    expect(out).toContain('Restored verbatim from upstream references/a.md');
+    expect(out).toContain('Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md)');
     expect(out).toContain('Licence: see ../LICENSE');
     expect(out).toContain('pinned in ../NOTICE.md');
     expect(stripAttributionHeader('references/a.md', out)).toBe('---\ntitle: T\n---\n\n# Body\n');
@@ -206,7 +206,7 @@ describe('the restored pilot bundle: system-architecture-data', () => {
     for (const file of contentFiles) {
       const restored = fs.readFileSync(path.join(skillDir, file), 'utf8');
       expect(lf(stripAttributionHeader(file, lf(restored))), file).toBe(lf(fs.readFileSync(path.join(upstream, file), 'utf8')));
-      expect(restored, file).toContain(`Restored verbatim from upstream ${file}`);
+      expect(restored, file).toContain('Restored verbatim from upstream (repository and commit pinned in');
     }
   });
 
@@ -272,7 +272,7 @@ describe('the restored pilot bundle: system-architecture-data', () => {
     const header = lf(fs.readFileSync(file, 'utf8'))
       .split('\n')
       .find(line => line.startsWith('<!-- Restored verbatim'));
-    expect(header).toBe('<!-- Restored verbatim from upstream references/query-missing-indexes.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->');
+    expect(header).toBe('<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->');
   });
 
   it('restores no script, asset or packaging file', () => {

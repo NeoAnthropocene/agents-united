@@ -16,7 +16,7 @@ Apache-2.0 permits use, reproduction and distribution of the work and of derivat
 - `SKILL.md` was written for agents-united in this catalog's runbook format (PROJECT.md §7.2) and condenses the
   upstream method; it is not a copy of the upstream `SKILL.md`.
 - Restored on 2026-09-30 (Plan 032 PR D, docs only): 11 upstream files (decision rules under `rules/`, worked examples under `examples/`, `mappings/doc_links.yaml` and `schemas/recommendation_schema.yaml`), copied verbatim from the
-  pinned snapshot in `host-library/_upstream/clickhouse-architecture-advisor/`. Each has a comment naming its upstream file and pointing here
+  pinned snapshot in `host-library/_upstream/clickhouse-architecture-advisor/`. Each has a one-line comment pointing here
   (markdown with frontmatter carries it right after the frontmatter). Nothing in them was edited.
 - Not restored, on purpose: upstream repository packaging (README, AGENTS.md, metadata.json, CHANGELOG, contribution
   scaffolding). Scripts and attribution marks, if any, are handled in later PRs.

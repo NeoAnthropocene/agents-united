@@ -4,7 +4,7 @@ impact: HIGH
 impactDescription: 10-100x improvement with correct index type
 tags: indexes, btree, gin, gist, brin, hash, index-types
 ---
-<!-- Restored verbatim from upstream references/query-index-types.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Choose the Right Index Type for Your Data

@@ -4,7 +4,7 @@ impact: MEDIUM
 impactDescription: 100x faster than LIKE, with ranking support
 tags: full-text-search, tsvector, gin, search
 ---
-<!-- Restored verbatim from upstream references/advanced-full-text-search.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Use tsvector for Full-Text Search

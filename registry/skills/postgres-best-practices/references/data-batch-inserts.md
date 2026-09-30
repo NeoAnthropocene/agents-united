@@ -4,7 +4,7 @@ impact: MEDIUM
 impactDescription: 10-50x faster bulk inserts
 tags: batch, insert, bulk, performance, copy
 ---
-<!-- Restored verbatim from upstream references/data-batch-inserts.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Batch INSERT Statements for Bulk Data

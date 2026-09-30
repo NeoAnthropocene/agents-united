@@ -6,7 +6,7 @@
  *   npm run hostlib:ingest  -- --host <h> --file <local.md> --as <snapshot path> --via <channel> [--advance-changelog]
  *   npm run hostlib:verify   (lock hashes + guide/*.md citations)
  *   npm run hostlib:audit   -- <dir> [--mode skill|docs] [--baseline <dir>] [--json]
- *   npm run hostlib:restore -- --skill a,b | --repartition   (docs-only restore of dropped upstream extras; Plan 032 PR D)
+ *   npm run hostlib:restore -- --skill a,b | --reconcile | --repartition   (docs-only restore of dropped upstream extras; Plan 032 PR D)
  *   npm run hostlib:licences -- [--skill a,b] [--apply] [--cache dir]   (resolve upstream licences from evidence at the pinned commit; needs `git` + github.com)
  *   npm run hostlib:provenance -- [--only a,b] [--cache <dir>]   (recover upstream originals; needs `git` + github.com)
  *
@@ -21,8 +21,8 @@ import os from 'node:os';
 import { checkGuides } from './guides.ts';
 import { checkHost, httpFetcher, ingestSnapshot, listHosts, refreshHost, stableJson, verifyLock } from './library.ts';
 import { applyResolvedLicence, openPinnedReader, resolveLicence, toRecord } from './licences.ts';
-import { droppedExtras, extrasFields, listFiles, recover } from './provenance.ts';
-import { restoreExtras } from './restore.ts';
+import { extrasFields, recover } from './provenance.ts';
+import { missingUpstreamFiles, restoreExtras } from './restore.ts';
 import type { HostCheckReport } from './library.ts';
 import type { SkillRecord } from './provenance.ts';
 import { ARTIFACT_TYPES } from './types.ts';
@@ -91,6 +91,7 @@ async function main(): Promise<number> {
       cache: { type: 'string' },
       skill: { type: 'string' },
       repartition: { type: 'boolean', default: false },
+      reconcile: { type: 'boolean', default: false },
       apply: { type: 'boolean', default: false },
     },
   });
@@ -215,18 +216,34 @@ async function main(): Promise<number> {
           delete record.deferredExtras;
           Object.assign(record, extrasFields(all.sort()));
         }
+      } else if (values.reconcile) {
+        // Recompute every pinned skill's lists, counting a file the port only renamed or moved as present.
+        const skillsDir = path.resolve('registry/skills');
+        for (const record of Object.values(doc.skills)) {
+          const snapshot = path.join(ROOT, '_upstream', record.skill);
+          const local = path.join(skillsDir, record.skill);
+          if (record.provenance !== 'third-party-pinned' || record.snapshot !== true || !fs.existsSync(snapshot) || !fs.existsSync(local)) continue;
+          const before = record.droppedExtras?.length ?? 0;
+          delete record.droppedExtras;
+          delete record.skippedExtras;
+          delete record.deferredExtras;
+          const fields = extrasFields(missingUpstreamFiles(snapshot, local));
+          Object.assign(record, fields);
+          const after = fields.droppedExtras?.length ?? 0;
+          if (after !== before) console.log(`${record.skill}: content still to restore ${before} -> ${after}`);
+        }
       } else {
         const names = values.skill?.split(',').map(name => name.trim()).filter(Boolean) ?? [];
         if (names.length === 0) {
-          console.error('restore: pass --skill <a,b> or --repartition');
+          console.error('restore: pass --skill <a,b>, --reconcile or --repartition');
           return 1;
         }
         const skillsDir = path.resolve('registry/skills');
         for (const name of names) {
           const record = doc.skills[name];
           if (!record) throw new Error(`restore: ${name} is not in skills.json`);
-          const result = restoreExtras({ skillsDir, upstreamDir: path.join(ROOT, '_upstream'), record });
-          const missing = droppedExtras(listFiles(path.join(ROOT, '_upstream', name)), listFiles(path.join(skillsDir, name)));
+          const result = restoreExtras({ skillsDir, upstreamDir: path.join(ROOT, '_upstream'), record, today });
+          const missing = missingUpstreamFiles(path.join(ROOT, '_upstream', name), path.join(skillsDir, name));
           delete record.droppedExtras;
           delete record.skippedExtras;
           delete record.deferredExtras;

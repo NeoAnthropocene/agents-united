@@ -4,7 +4,7 @@ impact: MEDIUM-HIGH
 impactDescription: 10x throughput for worker queues
 tags: skip-locked, queue, workers, concurrency
 ---
-<!-- Restored verbatim from upstream references/lock-skip-locked.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Use SKIP LOCKED for Non-Blocking Queue Processing

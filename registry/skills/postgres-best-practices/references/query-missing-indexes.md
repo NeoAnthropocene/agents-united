@@ -4,7 +4,7 @@ impact: CRITICAL
 impactDescription: 100-1000x faster queries on large tables
 tags: indexes, performance, sequential-scan, query-optimization
 ---
-<!-- Restored verbatim from upstream references/query-missing-indexes.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Add Indexes on WHERE and JOIN Columns

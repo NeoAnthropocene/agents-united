@@ -4,7 +4,7 @@ impact: CRITICAL
 impactDescription: Prevent database crashes and memory exhaustion
 tags: connections, max-connections, limits, stability
 ---
-<!-- Restored verbatim from upstream references/conn-limits.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Set Appropriate Connection Limits

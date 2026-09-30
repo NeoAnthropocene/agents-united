@@ -1,4 +1,4 @@
-<!-- Restored verbatim from upstream examples/observability-high-throughput.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 # Example: Observability — High-throughput event ingestion
 

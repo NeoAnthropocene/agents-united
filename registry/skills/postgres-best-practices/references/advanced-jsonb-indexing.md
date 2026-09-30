@@ -4,7 +4,7 @@ impact: MEDIUM
 impactDescription: 10-100x faster JSONB queries with proper indexing
 tags: jsonb, gin, indexes, json
 ---
-<!-- Restored verbatim from upstream references/advanced-jsonb-indexing.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Index JSONB Columns for Efficient Querying

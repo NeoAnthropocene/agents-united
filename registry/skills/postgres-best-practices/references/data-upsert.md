@@ -4,7 +4,7 @@ impact: MEDIUM
 impactDescription: Atomic operation, eliminates race conditions
 tags: upsert, on-conflict, insert, update
 ---
-<!-- Restored verbatim from upstream references/data-upsert.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Use UPSERT for Insert-or-Update Operations

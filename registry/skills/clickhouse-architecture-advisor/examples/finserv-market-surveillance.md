@@ -1,4 +1,4 @@
-<!-- Restored verbatim from upstream examples/finserv-market-surveillance.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 # Example: Financial Services — Real-time market surveillance
 

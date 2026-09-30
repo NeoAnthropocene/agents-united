@@ -7,7 +7,7 @@ tags:
   - async_insert
   - real-time
 ---
-<!-- Restored verbatim from upstream rules/decision-ingestion-strategy.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 # Choose an ingestion strategy based on throughput, latency, and producer shape

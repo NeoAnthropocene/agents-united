@@ -4,7 +4,7 @@ impact: MEDIUM-HIGH
 impactDescription: 3-5x throughput improvement, fewer deadlocks
 tags: transactions, locking, contention, performance
 ---
-<!-- Restored verbatim from upstream references/lock-short-transactions.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Keep Transactions Short to Reduce Lock Contention

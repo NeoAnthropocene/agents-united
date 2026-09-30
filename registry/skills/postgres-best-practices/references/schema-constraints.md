@@ -4,7 +4,7 @@ impact: HIGH
 impactDescription: Prevents migration failures and enables idempotent schema changes
 tags: constraints, migrations, schema, alter-table
 ---
-<!-- Restored verbatim from upstream references/schema-constraints.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Add Constraints Safely in Migrations

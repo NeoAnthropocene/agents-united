@@ -4,7 +4,7 @@ impact: HIGH
 impactDescription: Reclaim 30-50% of connection slots from idle clients
 tags: connections, timeout, idle, resource-management
 ---
-<!-- Restored verbatim from upstream references/conn-idle-timeout.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Configure Idle Connection Timeouts

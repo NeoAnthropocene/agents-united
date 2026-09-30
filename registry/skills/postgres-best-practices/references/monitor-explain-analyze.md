@@ -4,7 +4,7 @@ impact: LOW-MEDIUM
 impactDescription: Identify exact bottlenecks in query execution
 tags: explain, analyze, diagnostics, query-plan
 ---
-<!-- Restored verbatim from upstream references/monitor-explain-analyze.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Use EXPLAIN ANALYZE to Diagnose Slow Queries
