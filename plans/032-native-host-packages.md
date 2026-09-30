@@ -35,6 +35,16 @@
     `references/` 48, `scripts/` 25, `agents/` 16, `resources/` 16, …); they are listed per skill in
     `_upstream/skills.json` (`droppedExtras`) but **not restored**: restoring needs adaptation, the
     licence tier check (ADR 0024) and `lintSkillPortability`, one bundle at a time.
+  - 2026-09-30 (later) — **PR A landed** (`chore/host-library-seed-cline-antigravity`): ran
+    `npm run hostlib:refresh -- --host cline,antigravity --all --advance-changelog` over plain HTTP from a
+    local machine. Seeded `llms.txt` for both hosts (Cline 113 entries, Antigravity 102) and every curated
+    page in each `sources.json`: **Cline 20 pages, Antigravity 22 pages**. The docs audit gate blocked
+    nothing and reported no findings, so there are **no security holds**. The changelogs were unchanged
+    (Cline 4.1.22; Antigravity 2.0 2.18.1, CLI 1.2.11, SDK 0.1.18, IDE 2.5.5) and `lastSeen` was confirmed
+    at those versions. Note: Cline's `customization/hooks` page upstream is only a stub that points to SDK
+    Plugins, which is already snapshotted as `pages/plugin/sdk-plugins.md`. `hostlib:verify` ✔,
+    `hostlib:check` "No changes", `npm run typecheck` exit 0, full suite 69 files, 1157 passed, 208 skipped,
+    exit 0.
   - **Pending**: the distilled `guide/*.md` files (each rule must cite a snapshot, so they follow the
     snapshots), Phase 3 (host profiles), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8
@@ -455,7 +465,7 @@ directly. Suggested order (each is independently reviewable):
 
 | # | Branch | Scope | Needs |
 |---|---|---|---|
-| A | `chore/host-library-seed-cline-antigravity` | `npm run hostlib:refresh -- --host cline,antigravity --all`, `hostlib:verify`, review snapshot diff | network to `docs.cline.bot`, `antigravity.google` |
+| A ✔ | `chore/host-library-seed-cline-antigravity` | `npm run hostlib:refresh -- --host cline,antigravity --all`, `hostlib:verify`, review snapshot diff (done 2026-09-30) | network to `docs.cline.bot`, `antigravity.google` |
 | B | `feat/host-library-guides-claude` | `host-library/claude/guide/*.md` (agent, skill, hook, tools, orchestration, plugin, mcp, permissions) — every rule cites a `pages/` snapshot; test that citations resolve | snapshots from the Claude seed |
 | C | `feat/host-profiles-and-tool-policy` | Phases 3 + 5: `registry/hosts/claude/{profile,tool-policy}.json`, capability classes in `registry/core/*.core.md`, efficiency lint | B |
 | D | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
