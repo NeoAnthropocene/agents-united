@@ -75,6 +75,23 @@
     `Monitor`, `LSP`, `PushNotification`. Nothing consumes the grants yet (the projection lane is unchanged and
     goldens stay byte-pinned); Phase 6 does. The legacy `registry/profiles/claude@2.1.271.json` stays as the
     version floor.
+  - 2026-09-30 (later) — **PR D pilot landed** (`feat/restore-dropped-skill-extras-pilot`, bundle `system-architecture-data`):
+    restored 42 upstream documents verbatim from `host-library/_upstream/` (postgres-best-practices 31 rule files,
+    clickhouse-architecture-advisor 11 files: rules, examples, mapping, schema), each behind a one-line attribution
+    header, with the upstream `LICENSE` (MIT, Apache-2.0), a `NOTICE.md` (Apache-2.0 upstream NOTICE reproduced) and a
+    compact "Reference files" pointer in each `SKILL.md` (folders and naming patterns, not one link per file: `SKILL.md` is loaded on every invocation, so a 31-link list would cost about 1k tokens each time; the pointer is about 100). Owner policy: **docs only**; packaging files are skipped on purpose;
+    **scripts and attribution marks are deferred to later PRs** (each needs the audit gate and `lintSkillPortability`).
+    New tooling: `npm run hostlib:restore -- --skill a,b` (`scripts/hostlib/restore.ts`), guarded by the intake rules
+    (third-party pinned, classified non-blocked licence, audit pass, snapshot present, `LICENSE` + `NOTICE.md` already in
+    the skill folder, all-or-nothing writes). Findings: the provenance `droppedExtras` list over-counted, so records are
+    now split into `droppedExtras` (content still to restore), `skippedExtras` (packaging) and `deferredExtras`
+    (scripts/assets). Of the original 295: the Terraform extras were only renamed (already present); across the catalog
+    186 content files remain, 28 packaging files are skipped, 39 scripts/assets are deferred. The audit gate flagged the
+    first attribution header (any HTML comment containing "agent", which upstream repo names do), so the header carries
+    no repository URL and `NOTICE.md` pins repository and commit; a regression test runs the audit over the restored
+    folders. The 8 "fuzzy" matches no longer appear in `skills.json` (none flagged); the 3 security holds are untouched
+    and still block their skills. Next bundles need, per skill: a declared or resolved upstream licence (most
+    `recovered-head` skills have none declared, so they are blocked from restore until it is resolved).
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8
@@ -498,7 +515,7 @@ directly. Suggested order (each is independently reviewable):
 | A ✔ | `chore/host-library-seed-cline-antigravity` | `npm run hostlib:refresh -- --host cline,antigravity --all`, `hostlib:verify`, review snapshot diff (done 2026-09-30) | network to `docs.cline.bot`, `antigravity.google` |
 | B ✔ | `feat/host-library-guides-claude` | `host-library/claude/guide/*.md` (agent, skill, hook, tools, orchestration, plugin, mcp, permissions) — every rule cites a `pages/` snapshot; test that citations resolve (done 2026-09-30) | snapshots from the Claude seed |
 | C ✔ | `feat/host-profiles-and-tool-policy` | Phases 3 + 5: `registry/hosts/claude/{profile,tool-policy}.json`, capability classes in `registry/core/*.core.md`, efficiency lint | B |
-| D | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
+| D (pilot ✔) | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
 | E | `feat/claude-native-pilot-software-engineering` | Phase 6 pilot (5 agents, 16 skills, real hooks, dynamic workflows) | B, C |
 
 Commit trailers: `Co-Authored-By: NeoAnthropocene <112825147+NeoAnthropocene@users.noreply.github.com>` (plus any

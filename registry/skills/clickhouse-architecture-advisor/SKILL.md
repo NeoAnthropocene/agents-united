@@ -27,6 +27,10 @@ Apache-2.0): prescriptive schema and system design guidance for analytical
 the decisions that are expensive to change after data has landed: the
 `ORDER BY` key, the partition key, and per-column compression.
 
+### Reference files
+
+Read only what the workload needs. [`rules/`](rules/) holds one `decision-<topic>.md` per topic (`ingestion-strategy`, `real-time-preaggregation`, `partitioning-timeseries`, `join-enrichment`, `late-arriving-upserts`); [`examples/`](examples/) has three worked recommendations; [`mappings/doc_links.yaml`](mappings/doc_links.yaml) maps topics to official documentation links; [`schemas/recommendation_schema.yaml`](schemas/recommendation_schema.yaml) gives the recommendation shape.
+
 ## Execution Triggers & Prerequisites
 ### Execution Triggers
 - Designing a new ClickHouse table for an analytical/event-log workload.

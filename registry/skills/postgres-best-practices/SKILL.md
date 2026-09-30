@@ -25,6 +25,10 @@ upstream `supabase-postgres-best-practices` skill (MIT-licensed,
 Supabase, RDS, or self-hosted Postgres — the rules are standard Postgres
 behavior, not Supabase-proprietary.
 
+### Reference files
+
+Rule documents are in [`references/`](references/), one per rule, named `<category>-<topic>.md` with the category prefixes `query-`, `schema-`, `security-`, `conn-`, `lock-`, `data-`, `monitor-` and `advanced-`. List the folder and read only the file that matches the rule you are applying.
+
 ## Execution Triggers & Prerequisites
 ### Execution Triggers
 - Writing or reviewing a new table, migration, or `SELECT`/`JOIN` query.
