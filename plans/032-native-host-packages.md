@@ -461,5 +461,5 @@ directly. Suggested order (each is independently reviewable):
 | D | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
 | E | `feat/claude-native-pilot-software-engineering` | Phase 6 pilot (5 agents, 16 skills, real hooks, dynamic workflows) | B, C |
 
-Commit trailers: `Co-Authored-By: NeoAnthropocene <NeoAnthropocene@users.noreply.github.com>` (plus any
+Commit trailers: `Co-Authored-By: NeoAnthropocene <112825147+NeoAnthropocene@users.noreply.github.com>` (plus any
 tool attribution your setup requires).
