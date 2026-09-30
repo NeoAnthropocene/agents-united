@@ -92,6 +92,24 @@
     folders. The 8 "fuzzy" matches no longer appear in `skills.json` (none flagged); the 3 security holds are untouched
     and still block their skills. Next bundles need, per skill: a declared or resolved upstream licence (most
     `recovered-head` skills have none declared, so they are blocked from restore until it is resolved).
+  - 2026-09-30 (later) — **licence resolution pass landed** (`feat/resolve-skill-licences`): 14 pinned skills had no
+    declared licence. `npm run hostlib:licences [--apply]` (`scripts/hostlib/licences.ts`) reads evidence at the pinned
+    commit without a checkout (a blobless depth-1 fetch; a full checkout fails on Windows for Salesforce's long paths):
+    a licence file nearest the skill up to the repo root, else a frontmatter `license:`, else a README section. Results
+    are recorded as `resolvedLicence` (spdx, tier, evidence, file, copyright, restorable; never the text). **12 resolved
+    from a licence file**: mattpocock/skills MIT (8 skills), wshobson/agents MIT (2), currents-dev MIT (1),
+    forcedotcom/sf-skills Apache-2.0 (1); each folder now carries the upstream `LICENSE`, a `NOTICE.md` and
+    `metadata.license` (the intake rule was not being met for these vendored skills). **2 stay blocked**: Vercel's
+    `react-best-practices` and tovimx's `maestro-mobile-testing` declare MIT only in the upstream SKILL.md frontmatter,
+    with no licence file anywhere in the repository (intake step 1: no licence file means no vendoring of further
+    content; the existing ports are unchanged); maestro is also a security hold. The restore guard now accepts a
+    resolved licence only from a licence file and names README/frontmatter-only evidence in its refusal. The pinned
+    commit for these skills is the repository HEAD on 2026-09-30 (recovered), so the licence reading is of that state,
+    not provably of the revision ported; each `NOTICE.md` says so. The `git-guardrails` Claude golden gained the one
+    `license: MIT` line (regenerated deliberately; the agent goldens were not touched). Unblocked for restore: 5 of
+    the 12 have documents left to restore (playwright-best-practices 58, mobile-android-design 4,
+    mobile-platform-offline-validate 4, mobile-ios-design 3, domain-modeling 2); the other 7 have only packaging or
+    deferred scripts/assets.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

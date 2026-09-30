@@ -27,7 +27,8 @@
     "hostlib:verify": "node scripts/hostlib/cli.ts verify",
     "hostlib:audit": "node scripts/hostlib/cli.ts audit",
     "hostlib:provenance": "node scripts/hostlib/cli.ts provenance",
-    "hostlib:restore": "node scripts/hostlib/cli.ts restore"
+    "hostlib:restore": "node scripts/hostlib/cli.ts restore",
+    "hostlib:licences": "node scripts/hostlib/cli.ts licences"
   },
   "keywords": [
     "antigravity",

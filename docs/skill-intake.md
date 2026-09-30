@@ -29,6 +29,11 @@ repository root; record which file decided it. Then place it in a tier (ADR 0024
 - Record the SPDX identifier in `metadata.license`. `src/core/skill-licence-lint.ts`
   (`lintSkillLicence`) fails a blocked or unclassified identifier, and a weak-copyleft or
   share-alike skill that lacks `LICENSE`, `NOTICE.md` or a SHA-pinned `metadata.source`.
+- **A skill with no declared licence** is resolved, not assumed: `npm run hostlib:licences` reads the licence at the
+  pinned commit (licence file nearest the skill first, then frontmatter, then README) and records it as
+  `resolvedLicence`; `--apply` writes `LICENSE`, `NOTICE.md` and `metadata.license` for licence-file evidence. A
+  frontmatter- or README-only statement is recorded but does not unlock restoring or vendoring more content: there is
+  no licence text to carry. Ask the upstream to add a licence file, or get the owner's decision.
 - Licence readings here are not legal advice; a new tier or licence needs the owner's approval.
 
 ## 2. Upstream pin

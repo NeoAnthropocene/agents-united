@@ -310,6 +310,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "mattpocock/skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Matt Pocock",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "diagnosing-bugs",
       "skippedExtras": [
@@ -344,6 +353,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "mattpocock/skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Matt Pocock",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "domain-modeling",
       "skippedExtras": [
@@ -491,6 +509,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "mattpocock/skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Matt Pocock",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "git-guardrails",
       "skippedExtras": [
@@ -528,6 +555,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "mattpocock/skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Matt Pocock",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "grill-me",
       "skippedExtras": [
@@ -554,6 +590,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "mattpocock/skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Matt Pocock",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "grill-with-docs",
       "skippedExtras": [
@@ -585,6 +630,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "mattpocock/skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Matt Pocock",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "handoff",
       "skippedExtras": [
@@ -679,6 +733,14 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "tovimx/maestro-mobile-testing-skill",
+      "resolvedLicence": {
+        "evidence": "frontmatter",
+        "file": "SKILL.md",
+        "resolvedAt": "2026-09-30",
+        "restorable": false,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d4c0be2c1e75735712fa01398fa43d74bcf8ccc7",
       "skill": "maestro-mobile-testing",
       "source": "https://skills.sh/tovimx/maestro-mobile-testing-skill/maestro-mobile-testing"
@@ -732,6 +794,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "wshobson/agents",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2024 Seth Hobson",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
       "skill": "mobile-android-design",
       "snapshot": true,
@@ -764,6 +835,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "wshobson/agents",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2024 Seth Hobson",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
       "skill": "mobile-ios-design",
       "snapshot": true,
@@ -800,6 +880,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "forcedotcom/sf-skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Salesforce, Inc.",
+        "evidence": "licence-file",
+        "file": "LICENSE.txt",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "Apache-2.0",
+        "tier": "permissive"
+      },
       "sha": "d4a9aa448c7b743c1f1da41f41aa9723a6621232",
       "skill": "mobile-platform-offline-validate",
       "snapshot": true,
@@ -952,6 +1041,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "currents-dev/playwright-best-practices-skill",
+      "resolvedLicence": {
+        "copyright": "Copyright © 2026 Currents Software Inc.",
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "283d5cbc5d11aac1abda058b16ad22c317d54dc0",
       "skill": "playwright-best-practices",
       "snapshot": true,
@@ -1129,6 +1227,14 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "vercel-labs/agent-skills",
+      "resolvedLicence": {
+        "evidence": "frontmatter",
+        "file": "skills/react-best-practices/SKILL.md",
+        "resolvedAt": "2026-09-30",
+        "restorable": false,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
       "skill": "react-best-practices",
       "skippedExtras": [
@@ -1602,6 +1708,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "mattpocock/skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Matt Pocock",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "to-spec",
       "skippedExtras": [
@@ -1628,6 +1743,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "mattpocock/skills",
+      "resolvedLicence": {
+        "copyright": "Copyright (c) 2026 Matt Pocock",
+        "evidence": "licence-file",
+        "file": "LICENSE",
+        "resolvedAt": "2026-09-30",
+        "restorable": true,
+        "spdx": "MIT",
+        "tier": "permissive"
+      },
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "to-tickets",
       "skippedExtras": [

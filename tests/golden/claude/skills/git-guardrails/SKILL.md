@@ -8,6 +8,7 @@ metadata:
   version: 1.0.0
   icon: 🛡️
   source: https://github.com/mattpocock/skills
+  license: MIT
 ---
 <!-- managed-by: agents-united | profile: claude | canonical: skills/git-guardrails/SKILL.md | do not edit -->
 

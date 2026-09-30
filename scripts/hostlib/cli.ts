@@ -7,6 +7,7 @@
  *   npm run hostlib:verify   (lock hashes + guide/*.md citations)
  *   npm run hostlib:audit   -- <dir> [--mode skill|docs] [--baseline <dir>] [--json]
  *   npm run hostlib:restore -- --skill a,b | --repartition   (docs-only restore of dropped upstream extras; Plan 032 PR D)
+ *   npm run hostlib:licences -- [--skill a,b] [--apply] [--cache dir]   (resolve upstream licences from evidence at the pinned commit; needs `git` + github.com)
  *   npm run hostlib:provenance -- [--only a,b] [--cache <dir>]   (recover upstream originals; needs `git` + github.com)
  *
  * Exit codes: 0 ok · 1 failure (audit fail, lock drift, bad input) · 3 audit needs-review.
@@ -19,6 +20,7 @@ import type { AuditMode } from './audit.ts';
 import os from 'node:os';
 import { checkGuides } from './guides.ts';
 import { checkHost, httpFetcher, ingestSnapshot, listHosts, refreshHost, stableJson, verifyLock } from './library.ts';
+import { applyResolvedLicence, openPinnedReader, resolveLicence, toRecord } from './licences.ts';
 import { droppedExtras, extrasFields, listFiles, recover } from './provenance.ts';
 import { restoreExtras } from './restore.ts';
 import type { HostCheckReport } from './library.ts';
@@ -89,6 +91,7 @@ async function main(): Promise<number> {
       cache: { type: 'string' },
       skill: { type: 'string' },
       repartition: { type: 'boolean', default: false },
+      apply: { type: 'boolean', default: false },
     },
   });
 
@@ -173,6 +176,31 @@ async function main(): Promise<number> {
       console.log(`dropped extras found on ${count(r => (r.droppedExtras?.length ?? 0) > 0)} skills`);
       return 0;
     }
+    case 'licences': {
+      const file = path.join(ROOT, '_upstream', 'skills.json');
+      const doc = JSON.parse(fs.readFileSync(file, 'utf8')) as { skills: Record<string, SkillRecord> } & Record<string, unknown>;
+      const today = new Date().toISOString().slice(0, 10);
+      const cacheRoot = path.resolve(values.cache ?? path.join(os.tmpdir(), 'hostlib-licences'));
+      const wanted = values.skill?.split(',').map(name => name.trim()).filter(Boolean);
+      const targets = Object.values(doc.skills).filter(record =>
+        record.provenance === 'third-party-pinned' && record.repo && record.sha && record.path && (wanted ? wanted.includes(record.skill) : !record.declaredLicence),
+      );
+      const skillsDir = path.resolve('registry/skills');
+      for (const record of targets) {
+        const [owner, repo] = record.repo!.split('/');
+        const reader = openPinnedReader(cacheRoot, owner, repo, record.sha!);
+        const resolution = resolveLicence(reader, record.path!);
+        record.resolvedLicence = toRecord(resolution, today);
+        let applied = '';
+        if (values.apply && resolution.restorable) {
+          applyResolvedLicence({ skillsDir, record, resolution, today });
+          applied = ' · LICENSE, NOTICE.md and metadata.license written';
+        }
+        console.log(`${record.skill}: ${resolution.spdx ?? 'unrecognised'} (${resolution.tier}) from ${resolution.evidence}${resolution.file ? ` ${resolution.file}` : ''}${resolution.restorable ? '' : ' — not restorable'}${applied}`);
+      }
+      fs.writeFileSync(file, stableJson(doc));
+      return 0;
+    }
     case 'restore': {
       const file = path.join(ROOT, '_upstream', 'skills.json');
       const doc = JSON.parse(fs.readFileSync(file, 'utf8')) as { skills: Record<string, SkillRecord> } & Record<string, unknown>;
@@ -210,7 +238,7 @@ async function main(): Promise<number> {
       return 0;
     }
     default:
-      console.error('usage: hostlib <check|refresh|ingest|verify|audit|provenance|restore> [options]');
+      console.error('usage: hostlib <check|refresh|ingest|verify|audit|provenance|restore|licences> [options]');
       return 1;
   }
 }

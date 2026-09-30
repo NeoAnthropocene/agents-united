@@ -8,6 +8,7 @@ metadata:
   version: 1.0.0
   source: https://github.com/mattpocock/skills
   icon: 🛡️
+  license: MIT
 ---
 
 # Git Safety & Guardrails Playbook
