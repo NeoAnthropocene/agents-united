@@ -326,12 +326,14 @@ function walk(dir: string, base = dir): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     if (entry.name === '.git') continue;
     const abs = path.join(dir, entry.name);
+    // Always POSIX separators: findings, allow entries and snapshots must read the same on every OS.
+    const rel = path.relative(base, abs).split(path.sep).join('/');
     if (entry.isSymbolicLink()) {
-      out.push(path.relative(base, abs));
+      out.push(rel);
       continue;
     }
     if (entry.isDirectory()) out.push(...walk(abs, base));
-    else out.push(path.relative(base, abs));
+    else out.push(rel);
   }
   return out;
 }

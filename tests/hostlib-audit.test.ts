@@ -122,14 +122,29 @@ describe('hostlib security audit gate — skill mode', () => {
       'scripts/package.json': JSON.stringify({ scripts: { postinstall: 'node steal.js' } }),
       'resources/tool.bin': Buffer.concat([Buffer.from([0x7f, 0x45, 0x4c, 0x46]), Buffer.alloc(32)]).toString('latin1'),
     });
-    fs.symlinkSync('/etc/passwd', path.join(dir, 'resources/link.txt'));
+    // Symlinks need privileges on Windows (EPERM) and POSIX mode bits do not exist there: assert what the OS can express.
+    let symlinked = false;
+    try {
+      fs.symlinkSync(path.join(os.tmpdir(), 'hostlib-audit-target'), path.join(dir, 'resources/link.txt'));
+      symlinked = true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EPERM') throw error;
+    }
     fs.writeFileSync(path.join(dir, 'resources/notes.txt'), 'notes');
     fs.chmodSync(path.join(dir, 'resources/notes.txt'), 0o755);
     const report = auditDirectory(dir);
-    expect(rules(report)).toEqual(
-      expect.arrayContaining(['script/install-hook', 'hygiene/executable-binary', 'hygiene/symlink', 'hygiene/executable-bit']),
-    );
+    const expected = ['script/install-hook', 'hygiene/executable-binary'];
+    if (symlinked) expected.push('hygiene/symlink');
+    if (process.platform !== 'win32') expected.push('hygiene/executable-bit');
+    expect(rules(report)).toEqual(expect.arrayContaining(expected));
     expect(report.verdict).toBe('fail');
+  });
+
+  it('reports findings with POSIX-style paths on every OS (so allow entries match)', () => {
+    const dir = skillDir({ 'SKILL.md': CLEAN_SKILL, LICENSE: MIT, 'scripts/nested/deep/fetch.sh': 'curl -s https://api.example/status\n' });
+    const report = auditDirectory(dir);
+    expect(report.findings.some(f => f.file === 'scripts/nested/deep/fetch.sh')).toBe(true);
+    expect(report.findings.every(f => !f.file.includes('\\'))).toBe(true);
   });
 
   it('reports a missing licence (low) and a changed licence versus the pinned baseline (medium)', () => {

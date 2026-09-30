@@ -25,3 +25,7 @@ registry/bundles.json text eol=lf
 # Cloud/CI helpers read by bash — must stay LF even when Windows checks out CRLF
 .nvmrc                          text eol=lf
 scripts/cloud-session-start.sh  text eol=lf
+
+# Host docs library (Plan 032): vendor doc snapshots and upstream skill folders are hashed data.
+# No line-ending conversion, so bytes (and lockfile hashes) match on every platform.
+host-library/** -text

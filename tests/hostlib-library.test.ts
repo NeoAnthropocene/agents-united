@@ -196,6 +196,36 @@ describe('verifyLock', () => {
   });
 });
 
+describe('line-ending tolerance (Windows core.autocrlf checkouts)', () => {
+  it('verifies snapshots that were checked out with CRLF, and still catches real edits', async () => {
+    const { hostDir } = makeRoot();
+    await refreshHost(hostDir, fakeFetcher(base()), { all: true });
+    for (const rel of ['llms.txt', 'changelog.md', 'pages/hook/hooks.md', 'pages/skill/skills.md']) {
+      const abs = path.join(hostDir, rel);
+      fs.writeFileSync(abs, fs.readFileSync(abs, 'utf8').replace(/\n/g, '\r\n'));
+    }
+    expect(verifyLock(hostDir)).toEqual([]);
+    fs.appendFileSync(path.join(hostDir, 'pages/hook/hooks.md'), 'tampered\r\n');
+    expect(verifyLock(hostDir).some(problem => problem.includes('hash drift'))).toBe(true);
+  });
+
+  it('does not rewrite an unchanged snapshot just because its line endings differ', async () => {
+    const { hostDir } = makeRoot();
+    const fetcher = fakeFetcher(base());
+    await refreshHost(hostDir, fetcher, { all: true });
+    const abs = path.join(hostDir, 'pages/hook/hooks.md');
+    fs.writeFileSync(abs, fs.readFileSync(abs, 'utf8').replace(/\n/g, '\r\n'));
+    const again = await refreshHost(hostDir, fetcher, { all: true });
+    expect(again.outcomes.find(o => o.file === 'pages/hook/hooks.md')?.status).toBe('unchanged');
+  });
+});
+
+describe('.gitattributes', () => {
+  it('keeps host-library snapshots byte-exact (no eol conversion)', () => {
+    expect(fs.readFileSync('.gitattributes', 'utf8')).toMatch(/^host-library\/\*\* -text$/m);
+  });
+});
+
 describe('stableJson', () => {
   it('sorts keys deterministically and ends with a newline', () => {
     expect(stableJson({ b: 1, a: { d: 1, c: [{ z: 1, y: 2 }] } })).toBe('{\n  "a": {\n    "c": [\n      {\n        "y": 2,\n        "z": 1\n      }\n    ],\n    "d": 1\n  },\n  "b": 1\n}\n');

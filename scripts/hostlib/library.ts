@@ -284,7 +284,7 @@ function writeSnapshot(
   const hash = sha256(text);
   const abs = path.join(hostDir, rel);
   const existed = fs.existsSync(abs);
-  if (existed && lock.files[rel]?.sha256 === hash && fs.readFileSync(abs, 'utf8') === text) {
+  if (existed && lock.files[rel]?.sha256 === hash && normalise(fs.readFileSync(abs, 'utf8')) === text) {
     return { file: rel, url: sourceUrl, status: 'unchanged', findings: audit.findings };
   }
   fs.mkdirSync(path.dirname(abs), { recursive: true });
@@ -372,7 +372,8 @@ export function verifyLock(hostDir: string): string[] {
       problems.push(`${sources.host}/${rel}: recorded in lock but missing on disk`);
       continue;
     }
-    if (sha256(fs.readFileSync(abs, 'utf8')) !== entry.sha256) problems.push(`${sources.host}/${rel}: hash drift (edited by hand?)`);
+    // Hash modulo line endings: a Windows checkout with core.autocrlf must not read as tampering.
+    if (sha256(normalise(fs.readFileSync(abs, 'utf8'))) !== entry.sha256) problems.push(`${sources.host}/${rel}: hash drift (edited by hand?)`);
   }
   return problems;
 }
