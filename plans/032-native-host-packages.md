@@ -45,8 +45,21 @@
     Plugins, which is already snapshotted as `pages/plugin/sdk-plugins.md`. `hostlib:verify` ✔,
     `hostlib:check` "No changes", `npm run typecheck` exit 0, full suite 69 files, 1157 passed, 208 skipped,
     exit 0.
-  - **Pending**: the distilled `guide/*.md` files (each rule must cite a snapshot, so they follow the
-    snapshots), Phase 3 (host profiles), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
+  - 2026-09-30 (later) — **PR B landed** (`feat/host-library-guides-claude`): the eight Claude guides
+    `host-library/claude/guide/{agent,skill,hook,tools,orchestration,plugin,mcp,permissions}.md` (201 rules,
+    each bullet under `## Rules` cites a `pages/` snapshot heading; `reviewedAgainst: 2.1.285`).
+    `scripts/hostlib/guides.ts` resolves every citation (file, heading anchor or `id=`, lock entry) and
+    `npm run hostlib:verify` now runs it, so a refresh that renames an upstream heading fails until the
+    guide is re-read. Findings that later phases depend on, all cited in the guides: Glob/Grep are absent
+    by default on macOS, Linux and WSL (a subagent gets them back only by listing them without `Bash`);
+    `Workflow` is never available to subagents, so an orchestrator that launches workflows must run as the
+    main thread (`--agent` or plugin `settings.json` `agent`); a plugin agent ignores `hooks`,
+    `mcpServers` and `permissionMode`, so the reviewer's read-only hook must be registered at plugin
+    level; `memory` silently adds `Read`/`Write`/`Edit`; the task-tracking tools are absent on newer
+    models. Not covered, because no snapshot exists yet: the settings reference, environment variables,
+    managed settings/MCP, sandboxing, plugin install and marketplace pages, and the `rule` and `command`
+    guides (add the pages to `sources.json`, refresh, then write them).
+  - **Pending**: the Cline and Antigravity guides, Phase 3 (host profiles), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8
     (Cline, then Antigravity as a peer).
 - **Priority**: P1 · **Effort**: XL · **Risk**: HIGH (new authoring model; strangler beside live lanes)
@@ -466,7 +479,7 @@ directly. Suggested order (each is independently reviewable):
 | # | Branch | Scope | Needs |
 |---|---|---|---|
 | A ✔ | `chore/host-library-seed-cline-antigravity` | `npm run hostlib:refresh -- --host cline,antigravity --all`, `hostlib:verify`, review snapshot diff (done 2026-09-30) | network to `docs.cline.bot`, `antigravity.google` |
-| B | `feat/host-library-guides-claude` | `host-library/claude/guide/*.md` (agent, skill, hook, tools, orchestration, plugin, mcp, permissions) — every rule cites a `pages/` snapshot; test that citations resolve | snapshots from the Claude seed |
+| B ✔ | `feat/host-library-guides-claude` | `host-library/claude/guide/*.md` (agent, skill, hook, tools, orchestration, plugin, mcp, permissions) — every rule cites a `pages/` snapshot; test that citations resolve (done 2026-09-30) | snapshots from the Claude seed |
 | C | `feat/host-profiles-and-tool-policy` | Phases 3 + 5: `registry/hosts/claude/{profile,tool-policy}.json`, capability classes in `registry/core/*.core.md`, efficiency lint | B |
 | D | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
 | E | `feat/claude-native-pilot-software-engineering` | Phase 6 pilot (5 agents, 16 skills, real hooks, dynamic workflows) | B, C |

@@ -47,7 +47,10 @@ Ingest runs the same audit gate and records the channel in the lock.
    whether `docs/host-primitive-matrix.md` (ADR 0023) needs its dated host column re-verified or edited, and
    whether `registry/translation-ledger.json` deltas change. Check whether
    `host-library/<h>/guide/*.md` and `registry/hosts/<h>/{profile,tool-policy}.json` (when present) still
-   agree. Grep `registry/hosts/<h>/` for artifacts using changed features.
+   agree. `npm run hostlib:verify` also checks every `guide/*.md` citation (file, heading anchor, lock
+   entry): a refresh that renames an upstream heading fails there, and the fix is to re-read the section
+   and update the guide rule (and its `reviewedAgainst` version) in the same PR. Grep `registry/hosts/<h>/`
+   for artifacts using changed features.
 4. **Upstream skill watch** (when `host-library/_upstream/skills.json` exists; it is produced by
    `npm run hostlib:provenance`). For each `third-party-pinned` entry compare the newest commit touching its
    `path` (`git ls-remote` / shallow fetch of `repo`) with the pinned `sha`. `pinKind: recovered-head` means

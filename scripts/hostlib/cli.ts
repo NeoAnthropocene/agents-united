@@ -4,7 +4,7 @@
  *   npm run hostlib:check   -- [--host claude,cline] [--json] [--out report.json]
  *   npm run hostlib:refresh -- --host <h> (--types hook,skill | --all) [--advance-changelog]
  *   npm run hostlib:ingest  -- --host <h> --file <local.md> --as <snapshot path> --via <channel> [--advance-changelog]
- *   npm run hostlib:verify
+ *   npm run hostlib:verify   (lock hashes + guide/*.md citations)
  *   npm run hostlib:audit   -- <dir> [--mode skill|docs] [--baseline <dir>] [--json]
  *   npm run hostlib:provenance -- [--only a,b] [--cache <dir>]   (recover upstream originals; needs `git` + github.com)
  *
@@ -16,6 +16,7 @@ import { parseArgs } from 'node:util';
 import { auditDirectory, formatReport } from './audit.ts';
 import type { AuditMode } from './audit.ts';
 import os from 'node:os';
+import { checkGuides } from './guides.ts';
 import { checkHost, httpFetcher, ingestSnapshot, listHosts, refreshHost, stableJson, verifyLock } from './library.ts';
 import { recover } from './provenance.ts';
 import type { HostCheckReport } from './library.ts';
@@ -129,9 +130,9 @@ async function main(): Promise<number> {
       return outcome.status === 'blocked' ? 1 : 0;
     }
     case 'verify': {
-      const problems = hostsFrom(values.host).flatMap(host => verifyLock(path.join(ROOT, host)));
+      const problems = hostsFrom(values.host).flatMap(host => [...verifyLock(path.join(ROOT, host)), ...checkGuides(path.join(ROOT, host))]);
       problems.forEach(problem => console.error(`✖ ${problem}`));
-      if (problems.length === 0) console.log('✔ host library snapshots match their lockfiles');
+      if (problems.length === 0) console.log('✔ host library snapshots match their lockfiles and every guide citation resolves');
       return problems.length === 0 ? 0 : 1;
     }
     case 'audit': {
