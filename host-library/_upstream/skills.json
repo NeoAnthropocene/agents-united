@@ -130,29 +130,20 @@
         "verdict": "pass"
       },
       "declaredLicence": "Apache-2.0",
-      "droppedExtras": [
-        "AGENTS.md",
-        "README.md",
-        "examples/README.md",
-        "examples/finserv-market-surveillance.md",
-        "examples/observability-high-throughput.md",
-        "examples/siem-security-analytics.md",
-        "mappings/doc_links.yaml",
-        "metadata.json",
-        "rules/decision-ingestion-strategy.md",
-        "rules/decision-join-enrichment.md",
-        "rules/decision-late-arriving-upserts.md",
-        "rules/decision-partitioning-timeseries.md",
-        "rules/decision-real-time-preaggregation.md",
-        "schemas/recommendation_schema.yaml"
-      ],
+      "droppedExtras": [],
       "path": "skills/clickhouse-architecture-advisor",
       "pinKind": "declared",
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "ClickHouse/agent-skills",
+      "restoredAt": "2026-09-30",
       "sha": "2f6ec4b17a81a435dd116f9ac19d7b45d44dbd61",
       "skill": "clickhouse-architecture-advisor",
+      "skippedExtras": [
+        "AGENTS.md",
+        "README.md",
+        "metadata.json"
+      ],
       "snapshot": true,
       "source": "https://github.com/ClickHouse/agent-skills"
     },
@@ -174,8 +165,7 @@
         "verdict": "pass"
       },
       "declaredLicence": "CC-BY-SA-4.0",
-      "droppedExtras": [
-        "agents/openai.yaml",
+      "deferredExtras": [
         "assets/trail-of-bits-mark.svg",
         "scripts/build_log.sh",
         "scripts/find_databases.sh",
@@ -190,7 +180,9 @@
         "scripts/test_section_pointers.py",
         "scripts/test_shell_blocks.py",
         "scripts/test_suite_templates.py",
-        "scripts/test_verify_query_suite.py",
+        "scripts/test_verify_query_suite.py"
+      ],
+      "droppedExtras": [
         "workflows/build-database.md",
         "workflows/create-data-extensions.md",
         "workflows/run-analysis.md"
@@ -202,6 +194,9 @@
       "repo": "trailofbits/skills",
       "sha": "0cc1c73a5e96749ab32d7ea5e14892fafa6972ae",
       "skill": "codeql-scanning",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql"
     },
@@ -306,10 +301,10 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "agents/openai.yaml",
+      "deferredExtras": [
         "scripts/hitl-loop.template.sh"
       ],
+      "droppedExtras": [],
       "path": "skills/engineering/diagnosing-bugs",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -317,6 +312,9 @@
       "repo": "mattpocock/skills",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "diagnosing-bugs",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/mattpocock/skills"
     },
@@ -339,8 +337,7 @@
       },
       "droppedExtras": [
         "ADR-FORMAT.md",
-        "GLOSSARY-FORMAT.md",
-        "agents/openai.yaml"
+        "GLOSSARY-FORMAT.md"
       ],
       "path": "skills/engineering/domain-modeling",
       "pinKind": "recovered-head",
@@ -349,6 +346,9 @@
       "repo": "mattpocock/skills",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "domain-modeling",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/mattpocock/skills"
     },
@@ -365,6 +365,12 @@
         "verdict": "pass"
       },
       "declaredLicence": "MIT",
+      "deferredExtras": [
+        "validate-coverage-ledger.cjs",
+        "validate-coverage-ledger.test.cjs",
+        "validate-findings.cjs",
+        "validate-findings.test.cjs"
+      ],
       "droppedExtras": [
         "AI-AND-LLM.md",
         "ATTACK-CLASSES.md",
@@ -380,11 +386,7 @@
         "SUPPLY-CHAIN-AND-RELEASE.md",
         "VALIDATION-AND-REPORTING.md",
         "WEB-PROTOCOL-AND-AUTH.md",
-        "report-schema.json",
-        "validate-coverage-ledger.cjs",
-        "validate-coverage-ledger.test.cjs",
-        "validate-findings.cjs",
-        "validate-findings.test.cjs"
+        "report-schema.json"
       ],
       "notes": [
         "matched by name relation or parent path (skills/security-audit); confirm it is the same skill before restoring extras"
@@ -477,10 +479,10 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "agents/openai.yaml",
+      "deferredExtras": [
         "scripts/block-dangerous-git.sh"
       ],
+      "droppedExtras": [],
       "notes": [
         "matched by name relation or parent path (skills/misc/git-guardrails-claude-code); confirm it is the same skill before restoring extras"
       ],
@@ -491,6 +493,9 @@
       "repo": "mattpocock/skills",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "git-guardrails",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/mattpocock/skills"
     },
@@ -517,9 +522,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "agents/openai.yaml"
-      ],
+      "droppedExtras": [],
       "path": "skills/productivity/grill-me",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -527,6 +530,9 @@
       "repo": "mattpocock/skills",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "grill-me",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/mattpocock/skills"
     },
@@ -542,9 +548,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "agents/openai.yaml"
-      ],
+      "droppedExtras": [],
       "path": "skills/engineering/grill-with-docs",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -552,6 +556,9 @@
       "repo": "mattpocock/skills",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "grill-with-docs",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/mattpocock/skills"
     },
@@ -572,9 +579,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "agents/openai.yaml"
-      ],
+      "droppedExtras": [],
       "path": "skills/productivity/handoff",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -582,6 +587,9 @@
       "repo": "mattpocock/skills",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "handoff",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/mattpocock/skills"
     },
@@ -776,14 +784,16 @@
         ],
         "verdict": "pass"
       },
+      "deferredExtras": [
+        "scripts/komaci.config.mjs",
+        "scripts/package.json",
+        "scripts/run-komaci.sh"
+      ],
       "droppedExtras": [
         "references/grounding.md",
         "references/inline-graphql.md",
         "references/komaci-eslint.md",
-        "references/lwc-if.md",
-        "scripts/komaci.config.mjs",
-        "scripts/package.json",
-        "scripts/run-komaci.sh"
+        "references/lwc-if.md"
       ],
       "path": "skills/mobile-platform-offline-validate",
       "pinKind": "recovered-head",
@@ -829,9 +839,10 @@
         "verdict": "pass"
       },
       "declaredLicence": "CC-BY-SA-4.0",
+      "deferredExtras": [
+        "assets/trail-of-bits-mark.svg"
+      ],
       "droppedExtras": [
-        "agents/openai.yaml",
-        "assets/trail-of-bits-mark.svg",
         "workflows/analyzing-results.md",
         "workflows/bug-hunter.md",
         "workflows/configuration.md"
@@ -843,6 +854,9 @@
       "repo": "trailofbits/skills",
       "sha": "0cc1c73a5e96749ab32d7ea5e14892fafa6972ae",
       "skill": "mutation-testing",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/mutation-testing"
     },
@@ -956,43 +970,7 @@
         "verdict": "pass"
       },
       "declaredLicence": "MIT",
-      "droppedExtras": [
-        "CHANGELOG.md",
-        "references/_contributing.md",
-        "references/_sections.md",
-        "references/_template.md",
-        "references/advanced-full-text-search.md",
-        "references/advanced-jsonb-indexing.md",
-        "references/conn-idle-timeout.md",
-        "references/conn-limits.md",
-        "references/conn-pooling.md",
-        "references/conn-prepared-statements.md",
-        "references/data-batch-inserts.md",
-        "references/data-n-plus-one.md",
-        "references/data-pagination.md",
-        "references/data-upsert.md",
-        "references/lock-advisory.md",
-        "references/lock-deadlock-prevention.md",
-        "references/lock-short-transactions.md",
-        "references/lock-skip-locked.md",
-        "references/monitor-explain-analyze.md",
-        "references/monitor-pg-stat-statements.md",
-        "references/monitor-vacuum-analyze.md",
-        "references/query-composite-indexes.md",
-        "references/query-covering-indexes.md",
-        "references/query-index-types.md",
-        "references/query-missing-indexes.md",
-        "references/query-partial-indexes.md",
-        "references/schema-constraints.md",
-        "references/schema-data-types.md",
-        "references/schema-foreign-key-indexes.md",
-        "references/schema-lowercase-identifiers.md",
-        "references/schema-partitioning.md",
-        "references/schema-primary-keys.md",
-        "references/security-privileges.md",
-        "references/security-rls-basics.md",
-        "references/security-rls-performance.md"
-      ],
+      "droppedExtras": [],
       "notes": [
         "matched by name relation or parent path (skills/supabase-postgres-best-practices); confirm it is the same skill before restoring extras"
       ],
@@ -1001,8 +979,15 @@
       "provenance": "third-party-pinned",
       "recoveredAt": "2026-09-30",
       "repo": "supabase/agent-skills",
+      "restoredAt": "2026-09-30",
       "sha": "551274ed2fe97c8fea1325f7ceb05803a542f8df",
       "skill": "postgres-best-practices",
+      "skippedExtras": [
+        "CHANGELOG.md",
+        "references/_contributing.md",
+        "references/_sections.md",
+        "references/_template.md"
+      ],
       "snapshot": true,
       "source": "https://github.com/supabase/agent-skills"
     },
@@ -1029,11 +1014,10 @@
         "verdict": "pass"
       },
       "declaredLicence": "CC-BY-SA-4.0",
-      "droppedExtras": [
-        "README.md",
-        "agents/openai.yaml",
+      "deferredExtras": [
         "assets/trail-of-bits-mark.svg"
       ],
+      "droppedExtras": [],
       "path": "plugins/property-based-testing/skills/property-based-testing",
       "pinKind": "declared",
       "provenance": "third-party-pinned",
@@ -1041,6 +1025,10 @@
       "repo": "trailofbits/skills",
       "sha": "0cc1c73a5e96749ab32d7ea5e14892fafa6972ae",
       "skill": "property-based-testing",
+      "skippedExtras": [
+        "README.md",
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/property-based-testing"
     },
@@ -1063,9 +1051,6 @@
         "verdict": "pass"
       },
       "droppedExtras": [
-        "AGENTS.md",
-        "README.md",
-        "metadata.json",
         "rules/_sections.md",
         "rules/_template.md",
         "rules/advanced-effect-event-deps.md",
@@ -1146,6 +1131,11 @@
       "repo": "vercel-labs/agent-skills",
       "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
       "skill": "react-best-practices",
+      "skippedExtras": [
+        "AGENTS.md",
+        "README.md",
+        "metadata.json"
+      ],
       "snapshot": true,
       "source": "https://skills.sh/vercel-labs/agent-skills/react-best-practices"
     },
@@ -1201,14 +1191,15 @@
         "verdict": "pass"
       },
       "declaredLicence": "CC-BY-SA-4.0",
-      "droppedExtras": [
-        "agents/openai.yaml",
+      "deferredExtras": [
         "assets/trail-of-bits-mark.svg",
-        "resources/fixtures/codeql-no-level.sarif",
-        "resources/fixtures/levels-on-results.sarif",
-        "resources/jq-queries.md",
         "resources/sarif_helpers.py",
         "resources/test_sarif_helpers.py"
+      ],
+      "droppedExtras": [
+        "resources/fixtures/codeql-no-level.sarif",
+        "resources/fixtures/levels-on-results.sarif",
+        "resources/jq-queries.md"
       ],
       "path": "plugins/static-analysis/skills/sarif-parsing",
       "pinKind": "declared",
@@ -1217,6 +1208,9 @@
       "repo": "trailofbits/skills",
       "sha": "0cc1c73a5e96749ab32d7ea5e14892fafa6972ae",
       "skill": "sarif-triage",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/sarif-parsing"
     },
@@ -1270,10 +1264,11 @@
         "verdict": "pass"
       },
       "declaredLicence": "CC-BY-SA-4.0",
+      "deferredExtras": [
+        "assets/trail-of-bits-mark.svg"
+      ],
       "droppedExtras": [
         "adversarial.md",
-        "agents/openai.yaml",
-        "assets/trail-of-bits-mark.svg",
         "methodology.md",
         "patterns.md",
         "reporting.md"
@@ -1288,6 +1283,9 @@
       "repo": "trailofbits/skills",
       "sha": "0cc1c73a5e96749ab32d7ea5e14892fafa6972ae",
       "skill": "security-diff-review",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/differential-review"
     },
@@ -1316,11 +1314,12 @@
         "verdict": "needs-review"
       },
       "declaredLicence": "CC-BY-SA-4.0",
-      "droppedExtras": [
-        "agents/openai.yaml",
+      "deferredExtras": [
         "assets/trail-of-bits-mark.svg",
         "scripts/run-scans.sh",
-        "scripts/test_merge_sarif.py",
+        "scripts/test_merge_sarif.py"
+      ],
+      "droppedExtras": [
         "workflows/scan-workflow.md"
       ],
       "notes": [
@@ -1333,6 +1332,9 @@
       "repo": "trailofbits/skills",
       "sha": "0cc1c73a5e96749ab32d7ea5e14892fafa6972ae",
       "skill": "semgrep-scanning",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/semgrep"
     },
     "sentry-incident-triage": {
@@ -1449,14 +1451,14 @@
         "verdict": "needs-review"
       },
       "declaredLicence": "CC-BY-SA-4.0",
-      "droppedExtras": [
-        "agents/openai.yaml",
+      "deferredExtras": [
         "assets/trail-of-bits-mark.svg",
         "scripts/test_collect.py",
         "scripts/test_model.py",
         "scripts/test_render.py",
         "scripts/test_sources.py"
       ],
+      "droppedExtras": [],
       "notes": [
         "matched by name relation or parent path (plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor); confirm it is the same skill before restoring extras",
         "security audit needs-review: not snapshotted; keep the current version until reviewed"
@@ -1468,6 +1470,9 @@
       "repo": "trailofbits/skills",
       "sha": "0cc1c73a5e96749ab32d7ea5e14892fafa6972ae",
       "skill": "supply-chain-risk-audit",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/supply-chain-risk-auditor"
     },
     "systematic-debugging": {
@@ -1505,9 +1510,7 @@
         "verdict": "pass"
       },
       "declaredLicence": "MPL-2.0",
-      "droppedExtras": [
-        "SECURITY.md"
-      ],
+      "droppedExtras": [],
       "path": "plugins/terraform/skills/terraform-style-guide",
       "pinKind": "declared",
       "provenance": "third-party-pinned",
@@ -1515,6 +1518,9 @@
       "repo": "hashicorp/agent-skills",
       "sha": "516354c484b43fa5469567485113dd0c769c3d24",
       "skill": "terraform-style-guide",
+      "skippedExtras": [
+        "SECURITY.md"
+      ],
       "snapshot": true,
       "source": "https://github.com/hashicorp/agent-skills/tree/516354c484b43fa5469567485113dd0c769c3d24/plugins/terraform/skills/terraform-style-guide"
     },
@@ -1590,9 +1596,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "agents/openai.yaml"
-      ],
+      "droppedExtras": [],
       "path": "skills/engineering/to-spec",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -1600,6 +1604,9 @@
       "repo": "mattpocock/skills",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "to-spec",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/mattpocock/skills"
     },
@@ -1615,9 +1622,7 @@
         ],
         "verdict": "pass"
       },
-      "droppedExtras": [
-        "agents/openai.yaml"
-      ],
+      "droppedExtras": [],
       "path": "skills/engineering/to-tickets",
       "pinKind": "recovered-head",
       "provenance": "third-party-pinned",
@@ -1625,6 +1630,9 @@
       "repo": "mattpocock/skills",
       "sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
       "skill": "to-tickets",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/mattpocock/skills"
     },
@@ -1710,9 +1718,10 @@
         "verdict": "pass"
       },
       "declaredLicence": "CC-BY-SA-4.0",
+      "deferredExtras": [
+        "assets/trail-of-bits-mark.svg"
+      ],
       "droppedExtras": [
-        "agents/openai.yaml",
-        "assets/trail-of-bits-mark.svg",
         "resources/codeql/cpp.ql",
         "resources/codeql/go.ql",
         "resources/codeql/java.ql",
@@ -1732,6 +1741,9 @@
       "repo": "trailofbits/skills",
       "sha": "0cc1c73a5e96749ab32d7ea5e14892fafa6972ae",
       "skill": "variant-analysis",
+      "skippedExtras": [
+        "agents/openai.yaml"
+      ],
       "snapshot": true,
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/variant-analysis"
     },

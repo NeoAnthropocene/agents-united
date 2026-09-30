@@ -55,6 +55,14 @@ repository root; record which file decided it. Then place it in a tier (ADR 0024
   `references/` (or `docs/`, matching the skill's own existing convention), never left inline
   in `SKILL.md` — see the Host Primitive Matrix §1 size limits below.
 
+- **Restoring files a port dropped** (Plan 032 PR D): `host-library/_upstream/skills.json` lists, per third-party
+  skill, upstream files missing from the catalog copy — `droppedExtras` (documents and data to restore),
+  `skippedExtras` (upstream packaging, skipped on purpose) and `deferredExtras` (scripts and assets, restored in
+  their own PRs). `npm run hostlib:restore -- --skill <name>` copies the documents verbatim behind a one-line
+  attribution header. It refuses unless the skill is third-party pinned with a classified, non-blocked licence, the
+  audit passed, a snapshot exists, and the skill folder already carries `LICENSE` and `NOTICE.md`. After restoring,
+  link every restored file from `SKILL.md` and run the audit gate over the folder.
+
 ## 5. Host check (docs/host-primitive-matrix.md)
 
 Before the skill is wired to any specialist, verify it against **every** active host's limits

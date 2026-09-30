@@ -80,7 +80,7 @@ export interface CatalogSkill {
   files: string[];
 }
 
-function listFiles(dir: string, base = dir): string[] {
+export function listFiles(dir: string, base = dir): string[] {
   const out: string[] = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     const abs = path.join(dir, entry.name);
@@ -201,8 +201,14 @@ export interface SkillRecord {
   declaredLicence?: string;
   audit?: { verdict: Verdict; findings: Array<Pick<AuditFinding, 'rule' | 'severity' | 'file' | 'line'>> };
   snapshot?: boolean;
-  /** Upstream files the catalog copy does not have (script/examples/resources/references/other). */
+  /** Upstream documents/data the catalog copy does not have yet (see `classifyExtra`: `content`). */
   droppedExtras?: string[];
+  /** Upstream packaging files skipped on purpose (README, AGENTS.md, metadata.json, host agent configs, ...). */
+  skippedExtras?: string[];
+  /** Scripts and attribution assets: deferred to later PRs (audit gate + lintSkillPortability each). */
+  deferredExtras?: string[];
+  /** Date the last `hostlib:restore` copied content files for this skill. */
+  restoredAt?: string;
   ambiguousMatches?: string[];
   triedUrls?: string[];
   notes?: string[];
@@ -235,6 +241,47 @@ const KEEP_LOCAL = new Set(['SKILL.md', 'LICENSE', 'LICENSE.md', 'LICENSE.txt', 
 export function droppedExtras(upstreamFiles: string[], localFiles: string[]): string[] {
   const local = new Set(localFiles);
   return upstreamFiles.filter(file => !local.has(file) && !KEEP_LOCAL.has(file) && !file.startsWith('.git')).sort();
+}
+
+export type ExtraKind = 'content' | 'packaging' | 'script' | 'asset';
+
+const PACKAGING_ROOT_FILES = /^(readme|agents|claude|changelog|security|contributing|code_of_conduct)\.md$|^metadata\.json$/i;
+const SCRIPT_EXT = /\.(sh|bash|ps1|py|js|mjs|cjs|ts)$/i;
+const ASSET_EXT = /\.(svg|png|jpe?g|gif|webp|ico)$/i;
+
+/**
+ * Plan 032 PR D — what an upstream file is, for restore decisions. `content` (documents and data the
+ * skill's instructions use) is restored; `packaging` (upstream repo scaffolding and host-specific agent
+ * configs) is skipped on purpose; `script` and `asset` are deferred to their own PRs.
+ */
+export function classifyExtra(file: string): ExtraKind {
+  if (!file.includes('/') && PACKAGING_ROOT_FILES.test(file)) return 'packaging';
+  if (file.startsWith('agents/')) return 'packaging';
+  if (/^references\/_[^/]+$/.test(file)) return 'packaging';
+  if (file.startsWith('scripts/') || SCRIPT_EXT.test(file)) return 'script';
+  if (file.startsWith('assets/') || ASSET_EXT.test(file)) return 'asset';
+  return 'content';
+}
+
+export function partitionExtras(files: string[]): { content: string[]; skipped: string[]; deferred: string[] } {
+  const out = { content: [] as string[], skipped: [] as string[], deferred: [] as string[] };
+  for (const file of files) {
+    const kind = classifyExtra(file);
+    if (kind === 'content') out.content.push(file);
+    else if (kind === 'packaging') out.skipped.push(file);
+    else out.deferred.push(file);
+  }
+  return out;
+}
+
+/** SkillRecord fields for a list of missing upstream files, empty groups omitted. */
+export function extrasFields(missing: string[]): Pick<SkillRecord, 'droppedExtras' | 'skippedExtras' | 'deferredExtras'> {
+  const { content, skipped, deferred } = partitionExtras(missing);
+  return {
+    droppedExtras: content,
+    ...(skipped.length > 0 ? { skippedExtras: skipped } : {}),
+    ...(deferred.length > 0 ? { deferredExtras: deferred } : {}),
+  };
 }
 
 export interface RecoverOptions {
@@ -305,7 +352,7 @@ export function recover(options: RecoverOptions): SkillRecord[] {
       pinKind: parsed.sha ? 'declared' : 'recovered-head',
       upstreamLicence: detectLicence(quarantine),
       audit: { verdict: audit.verdict, findings: audit.findings.map(f => ({ rule: f.rule, severity: f.severity, file: f.file, line: f.line })) },
-      droppedExtras: droppedExtras(upstreamFiles, skill.files),
+      ...extrasFields(droppedExtras(upstreamFiles, skill.files)),
       ambiguousMatches: found.ambiguous.length > 0 ? found.ambiguous : undefined,
       recoveredAt: options.today,
     };

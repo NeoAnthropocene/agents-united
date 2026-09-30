@@ -6,6 +6,7 @@
  *   npm run hostlib:ingest  -- --host <h> --file <local.md> --as <snapshot path> --via <channel> [--advance-changelog]
  *   npm run hostlib:verify   (lock hashes + guide/*.md citations)
  *   npm run hostlib:audit   -- <dir> [--mode skill|docs] [--baseline <dir>] [--json]
+ *   npm run hostlib:restore -- --skill a,b | --repartition   (docs-only restore of dropped upstream extras; Plan 032 PR D)
  *   npm run hostlib:provenance -- [--only a,b] [--cache <dir>]   (recover upstream originals; needs `git` + github.com)
  *
  * Exit codes: 0 ok · 1 failure (audit fail, lock drift, bad input) · 3 audit needs-review.
@@ -18,8 +19,10 @@ import type { AuditMode } from './audit.ts';
 import os from 'node:os';
 import { checkGuides } from './guides.ts';
 import { checkHost, httpFetcher, ingestSnapshot, listHosts, refreshHost, stableJson, verifyLock } from './library.ts';
-import { recover } from './provenance.ts';
+import { droppedExtras, extrasFields, listFiles, recover } from './provenance.ts';
+import { restoreExtras } from './restore.ts';
 import type { HostCheckReport } from './library.ts';
+import type { SkillRecord } from './provenance.ts';
 import { ARTIFACT_TYPES } from './types.ts';
 import type { ArtifactType } from './types.ts';
 
@@ -84,6 +87,8 @@ async function main(): Promise<number> {
       baseline: { type: 'string' },
       only: { type: 'string' },
       cache: { type: 'string' },
+      skill: { type: 'string' },
+      repartition: { type: 'boolean', default: false },
     },
   });
 
@@ -168,8 +173,44 @@ async function main(): Promise<number> {
       console.log(`dropped extras found on ${count(r => (r.droppedExtras?.length ?? 0) > 0)} skills`);
       return 0;
     }
+    case 'restore': {
+      const file = path.join(ROOT, '_upstream', 'skills.json');
+      const doc = JSON.parse(fs.readFileSync(file, 'utf8')) as { skills: Record<string, SkillRecord> } & Record<string, unknown>;
+      const today = new Date().toISOString().slice(0, 10);
+      if (values.repartition) {
+        // One-off migration: split every record's `droppedExtras` into content / skipped / deferred.
+        for (const record of Object.values(doc.skills)) {
+          const all = [...(record.droppedExtras ?? []), ...(record.skippedExtras ?? []), ...(record.deferredExtras ?? [])];
+          if (all.length === 0) continue;
+          delete record.droppedExtras;
+          delete record.skippedExtras;
+          delete record.deferredExtras;
+          Object.assign(record, extrasFields(all.sort()));
+        }
+      } else {
+        const names = values.skill?.split(',').map(name => name.trim()).filter(Boolean) ?? [];
+        if (names.length === 0) {
+          console.error('restore: pass --skill <a,b> or --repartition');
+          return 1;
+        }
+        const skillsDir = path.resolve('registry/skills');
+        for (const name of names) {
+          const record = doc.skills[name];
+          if (!record) throw new Error(`restore: ${name} is not in skills.json`);
+          const result = restoreExtras({ skillsDir, upstreamDir: path.join(ROOT, '_upstream'), record });
+          const missing = droppedExtras(listFiles(path.join(ROOT, '_upstream', name)), listFiles(path.join(skillsDir, name)));
+          delete record.droppedExtras;
+          delete record.skippedExtras;
+          delete record.deferredExtras;
+          Object.assign(record, extrasFields(missing), { restoredAt: today });
+          console.log(`${name}: restored ${result.restored.length} · skipped ${result.skipped.length} (packaging) · deferred ${result.deferred.length} (scripts/assets)`);
+        }
+      }
+      fs.writeFileSync(file, stableJson(doc));
+      return 0;
+    }
     default:
-      console.error('usage: hostlib <check|refresh|ingest|verify|audit|provenance> [options]');
+      console.error('usage: hostlib <check|refresh|ingest|verify|audit|provenance|restore> [options]');
       return 1;
   }
 }
