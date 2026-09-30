@@ -29,6 +29,24 @@ invariants:
   - "Every delegation brief carries objective, scope, acceptance evidence, peer routing, and report format."
   - "The coordinator relays between specialists and wakes a finished peer before expecting its reply."
   - "Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs."
+capabilities:
+  - read
+  - search
+  - code-intel
+  - edit
+  - shell
+  - web
+  - delegate
+  - workflow
+  - ask-user
+  - scheduling
+  - background-monitor
+  - notify
+  - worktree
+  - report
+  - messaging
+  - skill
+  - task-tracking
 ---
 
 <!-- core: orchestrator-engineering | extracted per Plan 021 Step 0 classification (dual-policy contradiction resolved toward ADR 0015) | tool-free by contract (ADR 0021 decision 1) -->

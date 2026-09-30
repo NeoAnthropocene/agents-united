@@ -59,7 +59,24 @@
     models. Not covered, because no snapshot exists yet: the settings reference, environment variables,
     managed settings/MCP, sandboxing, plugin install and marketplace pages, and the `rule` and `command`
     guides (add the pages to `sources.json`, refresh, then write them).
-  - **Pending**: the Cline and Antigravity guides, Phase 3 (host profiles), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
+  - 2026-09-30 (later) — **PR C landed** (`feat/host-profiles-and-tool-policy`, Phases 3 + 5 for Claude):
+    `registry/hosts/claude/{profile,tool-policy}.json`, `src/core/host-profile.ts` (fail-fast validators,
+    `resolveGrant`, `compareRealization`, `toolPolicyReport`), `src/core/capability-classes.ts`, and
+    `capabilities:` on all five `registry/core/*.core.md`. The catalog lists all 46 tools of the
+    tools-reference snapshot with class, subagent availability (`never`/`conditional`), background-subagent
+    retention, a mutating flag and cited conditions; `tests/host-profile.test.ts` pins the catalog, agent
+    and skill frontmatter keys, hook events and plugin manifest keys to the snapshots, so an upstream
+    addition fails in the host-update PR. Vocabulary decisions: `schedule` is spelled `scheduling` (core
+    files may not contain the forbidden token `schedule`); six classes were added for tools the ADR list
+    leaves out (`handback`, `skill`, `messaging`, `task-tracking`, `plan`, `mcp-discovery`) plus the
+    never-granted `meta`. Read-only classes may contain no mutating tool (enforced). First report on the
+    hand-written realizations: the reviewer and repo-index would gain `LSP`, MCP resource reads and (reviewer)
+    `ReportFindings`; the architects would gain `WebFetch`/`WebSearch`; the orchestrator would gain `Workflow`,
+    `Monitor`, `LSP`, `PushNotification`. Nothing consumes the grants yet (the projection lane is unchanged and
+    goldens stay byte-pinned); Phase 6 does. The legacy `registry/profiles/claude@2.1.271.json` stays as the
+    version floor.
+  - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
+    `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8
     (Cline, then Antigravity as a peer).
 - **Priority**: P1 · **Effort**: XL · **Risk**: HIGH (new authoring model; strangler beside live lanes)
@@ -480,7 +497,7 @@ directly. Suggested order (each is independently reviewable):
 |---|---|---|---|
 | A ✔ | `chore/host-library-seed-cline-antigravity` | `npm run hostlib:refresh -- --host cline,antigravity --all`, `hostlib:verify`, review snapshot diff (done 2026-09-30) | network to `docs.cline.bot`, `antigravity.google` |
 | B ✔ | `feat/host-library-guides-claude` | `host-library/claude/guide/*.md` (agent, skill, hook, tools, orchestration, plugin, mcp, permissions) — every rule cites a `pages/` snapshot; test that citations resolve (done 2026-09-30) | snapshots from the Claude seed |
-| C | `feat/host-profiles-and-tool-policy` | Phases 3 + 5: `registry/hosts/claude/{profile,tool-policy}.json`, capability classes in `registry/core/*.core.md`, efficiency lint | B |
+| C ✔ | `feat/host-profiles-and-tool-policy` | Phases 3 + 5: `registry/hosts/claude/{profile,tool-policy}.json`, capability classes in `registry/core/*.core.md`, efficiency lint | B |
 | D | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
 | E | `feat/claude-native-pilot-software-engineering` | Phase 6 pilot (5 agents, 16 skills, real hooks, dynamic workflows) | B, C |
 

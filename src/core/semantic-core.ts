@@ -7,7 +7,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'yaml';
-import type { DeclaredDelta, SemanticCore, ValidateDeclaredDeltasInput } from './types.js';
+import { CLASS_DEFINITIONS, isCapabilityClass } from './capability-classes.js';
+import type { CapabilityClass, DeclaredDelta, SemanticCore, ValidateDeclaredDeltasInput } from './types.js';
 
 /**
  * Gate 2's corpus: the 18 canonical tool tokens + the 3 command tokens (Plan 020 note 7) +
@@ -76,6 +77,8 @@ export function validateCoreSchema(core: unknown): SemanticCore {
   }
   const invariants = rawInvariants.map((entry, index) => requireNonEmptyString(entry, `invariants[${index}]`));
 
+  const capabilities = validateCapabilities(record.capabilities);
+
   const pieces = [...CORE_STRING_FIELDS.map(field => validated[field] as string), ...invariants];
   const hits = pieces.flatMap(piece => scanCoreForHostTokens(piece));
   if (hits.length > 0) {
@@ -88,7 +91,27 @@ export function validateCoreSchema(core: unknown): SemanticCore {
     output_contract: validated.output_contract as string,
     safety: validated.safety as string,
     invariants,
+    ...(capabilities ? { capabilities } : {}),
   };
+}
+
+/** Plan 032 Phase 5 — optional host-neutral capability classes; unknown, duplicate or non-grantable ones reject. */
+function validateCapabilities(raw: unknown): CapabilityClass[] | undefined {
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new Error('Semantic Core schema violation: capabilities must be a non-empty array of capability class names.');
+  }
+  const seen = new Set<string>();
+  const classes: CapabilityClass[] = [];
+  raw.forEach((entry, index) => {
+    const name = requireNonEmptyString(entry, `capabilities[${index}]`);
+    if (!isCapabilityClass(name)) throw new Error(`Semantic Core schema violation: unknown capability class "${name}".`);
+    if (!CLASS_DEFINITIONS[name].grantable) throw new Error(`Semantic Core schema violation: capability class "${name}" is not grantable.`);
+    if (seen.has(name)) throw new Error(`Semantic Core schema violation: duplicate capability class "${name}".`);
+    seen.add(name);
+    classes.push(name);
+  });
+  return classes;
 }
 
 /**

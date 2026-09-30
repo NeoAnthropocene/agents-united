@@ -315,9 +315,21 @@ runtime host detection/rewiring (nondeterministic — churn belongs in capabilit
   review before anything enters `_upstream/` or a pinned commit moves; runs before the licence tier
   check (ADR 0024). `fail`/`needs-review` → `security-hold`, never auto-merged. Also guards docs
   snapshots.
-- **Capability Class**: a tool-neutral grant unit a role declares (read, search, code-intel, edit,
-  shell, background-monitor, web, delegate, workflow, schedule, ask-user, notify, worktree, report,
-  artifacts); `tool-policy.json` maps classes to the host's full native tool catalog.
+- **Capability Class**: a tool-neutral grant unit a role declares in its Semantic Core
+  `capabilities:` list (read, search, code-intel, edit, shell, background-monitor, web, delegate,
+  workflow, scheduling, ask-user, notify, worktree, report, handback, artifacts, skill, messaging,
+  task-tracking, plan, mcp-discovery; `meta` is never grantable). `scheduling` is the ADR's
+  `schedule`, respelled because core files may not contain that forbidden token. The host's
+  `tool-policy.json` maps classes to its full native tool catalog, with per-tool availability
+  conditions and subagent rules; `resolveGrant()` turns classes into a concrete tool list.
+- **Host Profile**: `registry/hosts/<host>/profile.json` — the artifact vocabularies a native
+  package may use (agent and skill frontmatter keys, hook events, plugin manifest keys, MCP scopes,
+  permission modes), pinned to the docs library baseline and drift-tested against its snapshots.
+  Distinct from the legacy **Capability Profile** (`registry/profiles/claude@2.1.271.json`), which
+  stays the version floor for the projection lane until parity.
+- **Tool Policy Report**: `toolPolicyReport()` — per role, tools its classes would add or that were
+  granted by hand outside them; overall, catalog tools no role reaches. A host's new tool surfaces
+  here and in the catalog-drift test in the host-update PR.
 - **Workflow skill vs dynamic workflow**: a *workflow skill* is ours (`skills/workflow-<task>/`,
   ADR 0016); a *dynamic workflow* is Claude Code's scripted multi-agent orchestration (`Workflow`
   tool, `.claude/workflows/*.js`). Multi-agent workflow skills become dynamic workflows (plus a thin

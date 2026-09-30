@@ -683,6 +683,8 @@ export interface SemanticCore {
   output_contract: string;
   safety: string;
   invariants: string[];
+  /** Plan 032 Phase 5 — host-neutral capability classes this role needs (optional for legacy cores). */
+  capabilities?: CapabilityClass[];
 }
 
 /** Plan 021 gate 4 — conformance input: what the realization binds, adds, and declares. */
@@ -752,3 +754,99 @@ export interface ClaudeCreationProfile {
 
 
 
+
+/**
+ * Plan 032 Phase 5 / ADR 0025 decision 8 — host-neutral capability classes. A role in
+ * `registry/core/` declares classes, never tool names; each host's `tool-policy.json` maps a
+ * class to that host's native tools. The first fifteen are the ADR's list (`schedule` is spelled
+ * `scheduling` because core files may not contain the forbidden token `schedule`); the last seven
+ * cover native tools the ADR list leaves unclassified.
+ */
+export type CapabilityClass =
+  | 'read'
+  | 'search'
+  | 'code-intel'
+  | 'edit'
+  | 'shell'
+  | 'background-monitor'
+  | 'web'
+  | 'delegate'
+  | 'workflow'
+  | 'scheduling'
+  | 'ask-user'
+  | 'notify'
+  | 'worktree'
+  | 'report'
+  | 'handback'
+  | 'artifacts'
+  | 'skill'
+  | 'messaging'
+  | 'task-tracking'
+  | 'plan'
+  | 'mcp-discovery'
+  | 'meta';
+
+/** Plan 032 Phase 5 — where a tool exists depends on more than the version. */
+export type ToolConditionKind = 'platform' | 'model' | 'provider' | 'version' | 'setting' | 'plan' | 'surface' | 'dependency';
+
+export interface ToolCondition {
+  kind: ToolConditionKind;
+  detail: string;
+  /** Host docs library snapshot the condition comes from, e.g. `pages/tools/tools-reference.md#glob-tool-behavior`. */
+  source: string;
+}
+
+export type SubagentAvailability = 'available' | 'never' | 'conditional';
+
+export interface ToolCatalogEntry {
+  name: string;
+  class: CapabilityClass;
+  /** Whether a subagent can hold the tool at all (`never`: withheld from every subagent). */
+  subagents: SubagentAvailability;
+  /** Whether a background subagent keeps the tool (background is the default subagent mode). */
+  backgroundSubagent: boolean;
+  /** Can change files, processes or external state (a read-only class may contain none). */
+  mutating: boolean;
+  conditions: ToolCondition[];
+}
+
+export interface ToolClassSummary {
+  description: string;
+  grantable: boolean;
+  /** Tools of this class, catalog order. */
+  tools: string[];
+}
+
+export interface ToolPolicy {
+  host: string;
+  profile: string;
+  semantics?: string;
+  catalog: ToolCatalogEntry[];
+  classes: Record<CapabilityClass, ToolClassSummary>;
+}
+
+export interface ToolGrant {
+  tools: string[];
+  dropped: Array<{ tool: string; reason: string }>;
+}
+
+export interface HostProfile {
+  host: string;
+  profileId: string;
+  version: string;
+  minVersion: string;
+  reviewedAgainst: string;
+  library: string;
+  toolPolicy: string;
+  legacyProfile: string;
+  semantics?: string;
+  artifacts: {
+    agent: { path: string; requiredKeys: string[]; allowedKeys: string[] };
+    skill: { path: string; allowedKeys: string[]; portableKeys: string[] };
+    hook: { events: string[]; handlerTypes: string[]; registerAt: string[] };
+    plugin: { manifestKeys: string[]; ignoredAgentKeys: string[]; layout: Record<string, string> };
+    mcp: { scopes: string[]; transports: string[] };
+    permissions: { modes: string[] };
+  };
+  features: Record<string, { status: string; note: string }>;
+}
