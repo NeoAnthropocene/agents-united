@@ -8,6 +8,7 @@ metadata:
   version: 1.0.0
   source: https://skills.sh/forcedotcom/sf-skills/mobile-platform-offline-validate
   icon: 📶
+  license: Apache-2.0
 disable-slash-command: true
 ---
 

@@ -7,6 +7,7 @@ metadata:
   version: 1.0.0
   source: https://skills.sh/wshobson/agents/mobile-ios-design
   icon: 🍏
+  license: MIT
 disable-slash-command: true
 ---
 

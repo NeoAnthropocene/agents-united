@@ -8,6 +8,7 @@ metadata:
   version: 2.0.0
   source: https://github.com/mattpocock/skills
   icon: 📚
+  license: MIT
 ---
 
 # Grill With Docs: Socratic Alignment & Domain Documentation

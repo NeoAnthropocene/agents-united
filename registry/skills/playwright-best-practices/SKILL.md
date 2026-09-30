@@ -7,6 +7,7 @@ metadata:
   version: 1.0.0
   source: https://skills.sh/currents-dev/playwright-best-practices-skill/playwright-best-practices
   icon: 🎭
+  license: MIT
 disable-slash-command: true
 ---
 

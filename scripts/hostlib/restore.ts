@@ -80,9 +80,16 @@ export function restoreExtras(options: RestoreOptions): RestoreResult {
   const skill = record.skill;
   if (record.provenance !== 'third-party-pinned') refuse(skill, 'not a third-party pinned skill');
   if (!record.sha || !record.repo || !record.path) refuse(skill, 'no pinned commit (repo, path and sha are required)');
-  if (!record.declaredLicence) refuse(skill, 'no declared licence, so its intake tier is unknown');
-  const tier = classifyLicence(record.declaredLicence);
-  if (tier === 'blocked' || tier === 'unknown') refuse(skill, `licence tier "${tier}" (${record.declaredLicence})`);
+  // The licence is the one the catalog declares, or else the one resolved from a licence file at the pinned commit
+  // (`hostlib:licences`). A README or frontmatter statement is not enough: there is no licence text to carry.
+  const resolved = record.resolvedLicence;
+  if (!record.declaredLicence && !resolved) refuse(skill, 'no declared licence, so its intake tier is unknown');
+  if (!record.declaredLicence && resolved && resolved.evidence !== 'licence-file') {
+    const label = resolved.evidence === 'readme' ? 'README' : resolved.evidence;
+    refuse(skill, `licence evidence is only a ${label} statement, not a licence file`);
+  }
+  const tier = record.declaredLicence ? classifyLicence(record.declaredLicence) : resolved!.tier;
+  if (tier === 'blocked' || tier === 'unknown') refuse(skill, `licence tier "${tier}" (${record.declaredLicence ?? resolved!.spdx ?? 'unrecognised'})`);
   if (record.audit?.verdict !== 'pass') refuse(skill, `audit verdict "${record.audit?.verdict ?? 'none'}"`);
   if (record.snapshot !== true) refuse(skill, 'no upstream snapshot');
 

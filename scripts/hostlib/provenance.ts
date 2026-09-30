@@ -119,7 +119,7 @@ export function loadCatalog(skillsDir: string): CatalogSkill[] {
 
 // ── git helpers (argument arrays only, never a shell) ────────────────────────────────────────
 
-function git(args: string[], cwd?: string, timeoutMs = 180_000): string {
+export function git(args: string[], cwd?: string, timeoutMs = 180_000): string {
   return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, timeout: timeoutMs, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
 }
 
@@ -188,6 +188,17 @@ export function materialise(cache: RepoCache, repoRelDir: string, target: string
 
 export type Provenance = 'third-party-pinned' | 'in-house' | 'not-found';
 
+export interface ResolvedLicenceRecord {
+  spdx?: string;
+  tier: 'permissive' | 'weak-copyleft' | 'share-alike' | 'blocked' | 'unknown';
+  /** `licence-file` is the only evidence that makes a skill restorable. */
+  evidence: 'licence-file' | 'frontmatter' | 'readme' | 'none';
+  file?: string;
+  copyright?: string;
+  restorable: boolean;
+  resolvedAt: string;
+}
+
 export interface SkillRecord {
   skill: string;
   provenance: Provenance;
@@ -209,6 +220,8 @@ export interface SkillRecord {
   deferredExtras?: string[];
   /** Date the last `hostlib:restore` copied content files for this skill. */
   restoredAt?: string;
+  /** Upstream licence read from evidence at the pinned commit (`hostlib:licences`); never holds licence text. */
+  resolvedLicence?: ResolvedLicenceRecord;
   ambiguousMatches?: string[];
   triedUrls?: string[];
   notes?: string[];
@@ -228,6 +241,12 @@ const LICENCE_SIGNATURES: Array<[RegExp, string]> = [
   [/ISC License/i, 'ISC'],
   [/The Unlicense|public domain/i, 'Unlicense/CC0'],
 ];
+
+/** The licence a licence-file's text looks like (first 6,000 characters), or undefined when it matches none. */
+export function detectLicenceText(text: string): string | undefined {
+  const head = text.slice(0, 6000);
+  return LICENCE_SIGNATURES.find(([re]) => re.test(head))?.[1];
+}
 
 export function detectLicence(dir: string): string | undefined {
   const name = fs.existsSync(dir) ? fs.readdirSync(dir).find(file => /^(licen[cs]e|copying|notice)(\.[a-z]+)?$/i.test(file) && !/^notice/i.test(file)) : undefined;
