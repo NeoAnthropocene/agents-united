@@ -1,0 +1,17 @@
+{
+  "changelog": {
+    "checkedAt": "2026-09-30T08:09:56.828Z",
+    "lastSeen": {
+      "": "4.1.22"
+    }
+  },
+  "files": {
+    "changelog.md": {
+      "fetchedAt": "2026-09-30T08:09:40.373Z",
+      "sha256": "sha256:fca6e16fb20ccea5f8a14f660337a479b7d80cdfa0063180e888bf7724d2c8db",
+      "url": "https://raw.githubusercontent.com/cline/cline/main/CHANGELOG.md",
+      "via": "http"
+    }
+  },
+  "host": "cline"
+}

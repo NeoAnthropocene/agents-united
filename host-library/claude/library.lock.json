@@ -1,0 +1,137 @@
+{
+  "changelog": {
+    "checkedAt": "2026-09-30T08:09:33.947Z",
+    "lastSeen": {
+      "": "2.1.285"
+    }
+  },
+  "files": {
+    "changelog.md": {
+      "fetchedAt": "2026-09-30T08:09:33.947Z",
+      "sha256": "sha256:0937ba0c7c5e7c5272c65aa0b24e0a5e6cc57e8e0e263f5a0559b5800cf2f217",
+      "url": "https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md",
+      "via": "http"
+    },
+    "llms-platform.txt": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:fcbcbc2ca4fe2291adc792919b063ec5b4b2b6cdbf6fa47ac483d9e0edb19f2b",
+      "url": "https://platform.claude.com/llms.txt",
+      "via": "http"
+    },
+    "llms.txt": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:1abbe03e4a4fdb98c6a659ca59fab2f51bad5f633cb77ac0e38e698226fa0f72",
+      "url": "https://code.claude.com/docs/llms.txt",
+      "via": "http"
+    },
+    "pages/agent/sub-agents.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:f7a49266d42328f2a24ab778e2c28689d527b57da737e52b8928f6e275ca01e3",
+      "url": "https://code.claude.com/docs/en/sub-agents.md",
+      "via": "http"
+    },
+    "pages/command/commands.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:b12a7c7c81fa37880d18278da61cca703d3f1adca6d7faab8aadb05116126f4a",
+      "url": "https://code.claude.com/docs/en/commands.md",
+      "via": "http"
+    },
+    "pages/hook/hooks-guide.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:02621714b53ad11b95643b35dccbee54e940fa5aeafb8eaffa3efcc70232727b",
+      "url": "https://code.claude.com/docs/en/hooks-guide.md",
+      "via": "http"
+    },
+    "pages/hook/hooks.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:5129d58370ed4d7910c6e86537e0592b2902ea5bf0a8682721c5484f5d46f566",
+      "url": "https://code.claude.com/docs/en/hooks.md",
+      "via": "http"
+    },
+    "pages/mcp/mcp.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:743ddae4ed693e5386f9651e9bde7689d9f35cb00d9a51e74e4cca298cc4d79f",
+      "url": "https://code.claude.com/docs/en/mcp.md",
+      "via": "http"
+    },
+    "pages/orchestration/agent-teams.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:2821550281f4334c6e19448330590bae8b61d050abdabb1375648bbb9d570c80",
+      "url": "https://code.claude.com/docs/en/agent-teams.md",
+      "via": "http"
+    },
+    "pages/orchestration/features-overview.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:aca45ca9e27b3fc0bf56e53779ad213fd490493e912984dea0f6dc5ae8cbc5f6",
+      "url": "https://code.claude.com/docs/en/features-overview.md",
+      "via": "http"
+    },
+    "pages/orchestration/workflows.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:333a6dbcd09887d28bd232cb4d08ea0b307bcc01054217c33152daaa5bf81a7b",
+      "url": "https://code.claude.com/docs/en/workflows.md",
+      "via": "http"
+    },
+    "pages/permissions/permission-modes.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:3e76f919b2a332a1dc5fcdb63e1039289b20ad5edb2fe210129f52e9aaaab796",
+      "url": "https://code.claude.com/docs/en/permission-modes.md",
+      "via": "http"
+    },
+    "pages/permissions/permissions.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:11bcec9236970df2bbcc2d1950cd283dcd459f6733928eb1fbacf577405a7533",
+      "url": "https://code.claude.com/docs/en/permissions.md",
+      "via": "http"
+    },
+    "pages/plugin/plugins-components.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:97fa2babb277ddb65be0d85aad1a3099d1ca34ffdf193ed98be1ce7270408fed",
+      "url": "https://code.claude.com/docs/en/plugins/components.md",
+      "via": "http"
+    },
+    "pages/plugin/plugins-manifest-reference.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:2ec613e87106d52bcba2883e4b58c222ce622676f4b14fee0db9c89eb2f8c270",
+      "url": "https://code.claude.com/docs/en/plugins/manifest-reference.md",
+      "via": "http"
+    },
+    "pages/plugin/plugins-overview.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:a818fd13251cf8d2d854f60083efd061e8d4799a755621bbaef465931593d80a",
+      "url": "https://code.claude.com/docs/en/plugins/overview.md",
+      "via": "http"
+    },
+    "pages/rule/claude-directory.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:68cc92fa7d6f0ad0feb59470efb20eb694b3f6b664823898ab1fa1acba288d67",
+      "url": "https://code.claude.com/docs/en/claude-directory.md",
+      "via": "http"
+    },
+    "pages/rule/memory.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:11efbfc1af44b658151f1cfe8f2180df57391185065aea5cd1d29b3864dc606a",
+      "url": "https://code.claude.com/docs/en/memory.md",
+      "via": "http"
+    },
+    "pages/settings/settings.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:41ea72eb329492a8530f2d4730b093e930151422003f161656297e44cecbf074",
+      "url": "https://code.claude.com/docs/en/settings.md",
+      "via": "http"
+    },
+    "pages/skill/skills.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:8d22bd7ed1d0fcf62c879a406b84f052cbc9658fb62bed8cac2dd0067e1c811d",
+      "url": "https://code.claude.com/docs/en/skills.md",
+      "via": "http"
+    },
+    "pages/tools/tools-reference.md": {
+      "fetchedAt": "2026-09-30T08:09:20.121Z",
+      "sha256": "sha256:16c0233f99b9ec01dec1c46e7e9a0757c04828e449810acac281390f8ee2f1e1",
+      "url": "https://code.claude.com/docs/en/tools-reference.md",
+      "via": "http"
+    }
+  },
+  "host": "claude"
+}
