@@ -27,55 +27,7 @@ behavior, not Supabase-proprietary.
 
 ### Reference files
 
-Upstream rule documents, restored verbatim (see `NOTICE.md`). Most show an incorrect and a corrected pattern, with an
-impact rating; read only the file that matches the rule you are applying.
-
-**Query performance**
-- [`references/query-composite-indexes.md`](references/query-composite-indexes.md) — Create Composite Indexes for Multi-Column Queries
-- [`references/query-covering-indexes.md`](references/query-covering-indexes.md) — Use Covering Indexes to Avoid Table Lookups
-- [`references/query-index-types.md`](references/query-index-types.md) — Choose the Right Index Type for Your Data
-- [`references/query-missing-indexes.md`](references/query-missing-indexes.md) — Add Indexes on WHERE and JOIN Columns
-- [`references/query-partial-indexes.md`](references/query-partial-indexes.md) — Use Partial Indexes for Filtered Queries
-
-**Schema design**
-- [`references/schema-constraints.md`](references/schema-constraints.md) — Add Constraints Safely in Migrations
-- [`references/schema-data-types.md`](references/schema-data-types.md) — Choose Appropriate Data Types
-- [`references/schema-foreign-key-indexes.md`](references/schema-foreign-key-indexes.md) — Index Foreign Key Columns
-- [`references/schema-lowercase-identifiers.md`](references/schema-lowercase-identifiers.md) — Use Lowercase Identifiers for Compatibility
-- [`references/schema-partitioning.md`](references/schema-partitioning.md) — Partition Large Tables for Better Performance
-- [`references/schema-primary-keys.md`](references/schema-primary-keys.md) — Select Optimal Primary Key Strategy
-
-**Security and RLS**
-- [`references/security-privileges.md`](references/security-privileges.md) — Apply Principle of Least Privilege
-- [`references/security-rls-basics.md`](references/security-rls-basics.md) — Enable Row Level Security for Multi-Tenant Data
-- [`references/security-rls-performance.md`](references/security-rls-performance.md) — Optimize RLS Policies for Performance
-
-**Connections**
-- [`references/conn-idle-timeout.md`](references/conn-idle-timeout.md) — Configure Idle Connection Timeouts
-- [`references/conn-limits.md`](references/conn-limits.md) — Set Appropriate Connection Limits
-- [`references/conn-pooling.md`](references/conn-pooling.md) — Use Connection Pooling for All Applications
-- [`references/conn-prepared-statements.md`](references/conn-prepared-statements.md) — Use Prepared Statements Correctly with Pooling
-
-**Locking and concurrency**
-- [`references/lock-advisory.md`](references/lock-advisory.md) — Use Advisory Locks for Application-Level Locking
-- [`references/lock-deadlock-prevention.md`](references/lock-deadlock-prevention.md) — Prevent Deadlocks with Consistent Lock Ordering
-- [`references/lock-short-transactions.md`](references/lock-short-transactions.md) — Keep Transactions Short to Reduce Lock Contention
-- [`references/lock-skip-locked.md`](references/lock-skip-locked.md) — Use SKIP LOCKED for Non-Blocking Queue Processing
-
-**Data access patterns**
-- [`references/data-batch-inserts.md`](references/data-batch-inserts.md) — Batch INSERT Statements for Bulk Data
-- [`references/data-n-plus-one.md`](references/data-n-plus-one.md) — Eliminate N+1 Queries with Batch Loading
-- [`references/data-pagination.md`](references/data-pagination.md) — Use Cursor-Based Pagination Instead of OFFSET
-- [`references/data-upsert.md`](references/data-upsert.md) — Use UPSERT for Insert-or-Update Operations
-
-**Monitoring**
-- [`references/monitor-explain-analyze.md`](references/monitor-explain-analyze.md) — Use EXPLAIN ANALYZE to Diagnose Slow Queries
-- [`references/monitor-pg-stat-statements.md`](references/monitor-pg-stat-statements.md) — Enable pg_stat_statements for Query Analysis
-- [`references/monitor-vacuum-analyze.md`](references/monitor-vacuum-analyze.md) — Maintain Table Statistics with VACUUM and ANALYZE
-
-**Advanced features**
-- [`references/advanced-full-text-search.md`](references/advanced-full-text-search.md) — Use tsvector for Full-Text Search
-- [`references/advanced-jsonb-indexing.md`](references/advanced-jsonb-indexing.md) — Index JSONB Columns for Efficient Querying
+Rule documents are in [`references/`](references/), one per rule, named `<category>-<topic>.md` with the category prefixes `query-`, `schema-`, `security-`, `conn-`, `lock-`, `data-`, `monitor-` and `advanced-`. List the folder and read only the file that matches the rule you are applying.
 
 ## Execution Triggers & Prerequisites
 ### Execution Triggers

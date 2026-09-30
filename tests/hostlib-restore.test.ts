@@ -237,12 +237,26 @@ describe('the restored pilot bundle: system-architecture-data', () => {
     expect(notice).toContain('This repository includes software developed at Vercel, Inc.');
   });
 
-  it.each(PILOT)('$skill: SKILL.md lists every restored file and stays inside the host limits', spec => {
+  it.each(PILOT)('$skill: SKILL.md points at the restored folders with a compact section and stays inside the host limits', spec => {
     const skillDir = path.resolve('registry/skills', spec.skill);
-    const body = fs.readFileSync(path.join(skillDir, 'SKILL.md'), 'utf8');
+    const body = lf(fs.readFileSync(path.join(skillDir, 'SKILL.md'), 'utf8'));
     const restored = list(skillDir).filter(file => !['SKILL.md', 'LICENSE', 'NOTICE.md'].includes(file));
     expect(restored).toHaveLength(spec.restored);
-    for (const file of restored) expect(body, `SKILL.md must link ${file}`).toContain(file);
+    // SKILL.md is loaded on every invocation, so it names folders and naming patterns, never one link per file.
+    const section = /### Reference files\n([\s\S]*?)(?=\n## )/.exec(body)![1];
+    expect(section.length, 'the pointer must stay small: it is paid for on every invocation').toBeLessThan(700);
+    for (const dir of new Set(restored.filter(file => file.includes('/')).map(file => file.split('/')[0]))) {
+      expect(section, `the pointer must name ${dir}/`).toContain(`${dir}/`);
+    }
+    if (spec.skill === 'postgres-best-practices') {
+      for (const prefix of new Set(restored.map(file => file.replace(/^references\//, '').split('-')[0]))) {
+        expect(section, `the pointer must name the ${prefix}- category`).toContain(`\`${prefix}-\``);
+      }
+    } else {
+      for (const file of restored.filter(f => f.startsWith('rules/'))) {
+        expect(section, file).toContain(file.replace(/^rules\/decision-/, '').replace(/\.md$/, ''));
+      }
+    }
     const frontName = /^name: (.+)$/m.exec(body)![1].trim();
     expect(lintSkillPortability({ dirName: spec.skill, name: frontName, body: body.replace(/^---[\s\S]*?---\r?\n/, '') })).toEqual([]);
   });

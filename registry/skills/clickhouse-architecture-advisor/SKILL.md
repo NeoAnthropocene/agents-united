@@ -29,25 +29,7 @@ the decisions that are expensive to change after data has landed: the
 
 ### Reference files
 
-Upstream files, restored verbatim (see `NOTICE.md`). Read the decision rule that matches the workload, attach official
-documentation links from the mapping, and shape the answer like the schema and worked examples.
-
-**Decision rules**
-- [`rules/decision-ingestion-strategy.md`](rules/decision-ingestion-strategy.md) — Choose an ingestion strategy based on throughput, latency, and producer shape
-- [`rules/decision-join-enrichment.md`](rules/decision-join-enrichment.md) — Choose the right enrichment path: JOIN, dictionary, denormalization, or precomputed enrichment
-- [`rules/decision-late-arriving-upserts.md`](rules/decision-late-arriving-upserts.md) — Handle late-arriving data and mutable state without defaulting to heavy mutations
-- [`rules/decision-partitioning-timeseries.md`](rules/decision-partitioning-timeseries.md) — Choose time-series partitioning for retention, pruning, and operational hygiene
-- [`rules/decision-real-time-preaggregation.md`](rules/decision-real-time-preaggregation.md) — Choose raw-only vs incremental materialized views vs refreshable materialized views
-
-**Worked examples**
-- [`examples/README.md`](examples/README.md) — Example workload pack
-- [`examples/finserv-market-surveillance.md`](examples/finserv-market-surveillance.md) — Example: Financial Services — Real-time market surveillance
-- [`examples/observability-high-throughput.md`](examples/observability-high-throughput.md) — Example: Observability — High-throughput event ingestion
-- [`examples/siem-security-analytics.md`](examples/siem-security-analytics.md) — Example: SIEM / security analytics
-
-**Data**
-- [`mappings/doc_links.yaml`](mappings/doc_links.yaml) — topic to official ClickHouse documentation links
-- [`schemas/recommendation_schema.yaml`](schemas/recommendation_schema.yaml) — shape of a recommendation
+Read only what the workload needs. [`rules/`](rules/) holds one `decision-<topic>.md` per topic (`ingestion-strategy`, `real-time-preaggregation`, `partitioning-timeseries`, `join-enrichment`, `late-arriving-upserts`); [`examples/`](examples/) has three worked recommendations; [`mappings/doc_links.yaml`](mappings/doc_links.yaml) maps topics to official documentation links; [`schemas/recommendation_schema.yaml`](schemas/recommendation_schema.yaml) gives the recommendation shape.
 
 ## Execution Triggers & Prerequisites
 ### Execution Triggers

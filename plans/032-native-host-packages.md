@@ -79,7 +79,7 @@
     restored 42 upstream documents verbatim from `host-library/_upstream/` (postgres-best-practices 31 rule files,
     clickhouse-architecture-advisor 11 files: rules, examples, mapping, schema), each behind a one-line attribution
     header, with the upstream `LICENSE` (MIT, Apache-2.0), a `NOTICE.md` (Apache-2.0 upstream NOTICE reproduced) and a
-    "Reference files" section in each `SKILL.md`. Owner policy: **docs only**; packaging files are skipped on purpose;
+    compact "Reference files" pointer in each `SKILL.md` (folders and naming patterns, not one link per file: `SKILL.md` is loaded on every invocation, so a 31-link list would cost about 1k tokens each time; the pointer is about 100). Owner policy: **docs only**; packaging files are skipped on purpose;
     **scripts and attribution marks are deferred to later PRs** (each needs the audit gate and `lintSkillPortability`).
     New tooling: `npm run hostlib:restore -- --skill a,b` (`scripts/hostlib/restore.ts`), guarded by the intake rules
     (third-party pinned, classified non-blocked licence, audit pass, snapshot present, `LICENSE` + `NOTICE.md` already in
