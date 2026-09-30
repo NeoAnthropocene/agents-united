@@ -4,7 +4,7 @@ impact: MEDIUM
 impactDescription: Reduced attack surface, better audit trail
 tags: privileges, security, roles, permissions
 ---
-<!-- Restored verbatim from upstream references/security-privileges.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Apply Principle of Least Privilege

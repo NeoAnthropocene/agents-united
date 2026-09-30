@@ -1,4 +1,4 @@
-# Restored verbatim from upstream schemas/recommendation_schema.yaml (repository and commit pinned in ../NOTICE.md).
+# Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md).
 # Licence: see ../LICENSE.
 recommendation:
   title: string

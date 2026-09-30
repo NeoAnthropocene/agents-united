@@ -4,7 +4,7 @@ impact: CRITICAL
 impactDescription: Handle 10-100x more concurrent users
 tags: connection-pooling, pgbouncer, performance, scalability
 ---
-<!-- Restored verbatim from upstream references/conn-pooling.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Use Connection Pooling for All Applications

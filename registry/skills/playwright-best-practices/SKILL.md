@@ -16,6 +16,10 @@ disable-slash-command: true
 ## Overview & Purpose
 `playwright-best-practices` provides authoritative guidelines for building fast, stable, and deterministic end-to-end browser tests using Microsoft Playwright.
 
+### Reference files
+
+Restored upstream guides, one topic per file, in topic folders at the skill root. Read only the file for your task: [`core/`](core/) (locators, assertions, fixtures, page objects, configuration), [`testing-patterns/`](testing-patterns/) (API, component, visual, forms, accessibility, security), [`advanced/`](advanced/) (authentication, clock mocking, multi-user), [`architecture/`](architecture/), [`browser-apis/`](browser-apis/), [`debugging/`](debugging/) (flaky tests), [`frameworks/`](frameworks/) (React, Angular, Next.js, Vue), [`infrastructure-ci-cd/`](infrastructure-ci-cd/) (CI, Docker, sharding, reporting).
+
 ## Rules & Constraints
 1. **Use User-Facing Locators** — Always prefer `page.getByRole()`, `page.getByLabel()`, or `page.getByPlaceholder()` over fragile CSS classes or XPath.
 2. **Never Use Hardcoded Sleeps** — Never invoke `page.waitForTimeout()`; use web assertions that auto-wait (`await expect(locator).toBeVisible()`).

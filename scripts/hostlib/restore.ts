@@ -11,7 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { classifyLicence } from '../../src/core/skill-licence-lint.ts';
-import { partitionExtras } from './provenance.ts';
+import { droppedExtras, listFiles, partitionExtras } from './provenance.ts';
 import type { SkillRecord } from './provenance.ts';
 
 const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
@@ -25,7 +25,9 @@ const MARKER = 'Restored verbatim from';
 function headerLines(file: string): string[] {
   const depth = file.split('/').length - 1;
   const up = '../'.repeat(depth);
-  return [`${MARKER} upstream ${file} (repository and commit pinned in ${up}NOTICE.md).`, `Licence: see ${up}LICENSE.`];
+  // No file name: it is the file's own path, and names such as page-object-model or file-upload-download contain words
+  // the audit gate reads as addressing the agent.
+  return [`${MARKER} upstream (repository and commit pinned in ${up}NOTICE.md).`, `Licence: see ${up}LICENSE.`];
 }
 
 /** `content` with an attribution header: an HTML comment after markdown frontmatter, `#` lines for YAML. */
@@ -63,6 +65,8 @@ export interface RestoreOptions {
   skillsDir: string;
   upstreamDir: string;
   record: SkillRecord;
+  /** ISO date recorded in NOTICE.md; defaults to today. */
+  today?: string;
 }
 
 export interface RestoreResult {
@@ -111,5 +115,73 @@ export function restoreExtras(options: RestoreOptions): RestoreResult {
     fs.mkdirSync(path.dirname(to), { recursive: true });
     fs.writeFileSync(to, text);
   }
+  if (content.length > 0) recordRestoreInNotice(skillDir, content, options.today ?? new Date().toISOString().slice(0, 10));
   return { restored: content, skipped, deferred };
+}
+
+
+const NOTICE_HEADING = '## Restored documents (Plan 032 PR D)';
+const NOTICE_SECTION = /\n## Restored documents \(Plan 032 PR D\)[\s\S]*?(?=\n## |$)/;
+
+/**
+ * Adds (or replaces) the "Restored documents" section of a skill's NOTICE.md: how many upstream documents were
+ * copied, into which folders, and when. Everything else in NOTICE.md is left as it is.
+ */
+export function recordRestoreInNotice(skillDir: string, restored: readonly string[], today: string): void {
+  const file = path.join(skillDir, 'NOTICE.md');
+  if (!fs.existsSync(file)) throw new Error(`Cannot record the restore: ${file} (NOTICE.md) does not exist.`);
+  const folders = new Map<string, number>();
+  for (const rel of restored) {
+    const folder = rel.includes('/') ? `${rel.split('/')[0]}/` : '(skill root)';
+    folders.set(folder, (folders.get(folder) ?? 0) + 1);
+  }
+  const summary = [...folders.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([folder, count]) => `\`${folder}\` (${count})`)
+    .join(', ');
+  const noun = restored.length === 1 ? 'document' : 'documents';
+  const verb = restored.length === 1 ? 'was' : 'were';
+  const block =
+    `${NOTICE_HEADING}\n\n` +
+    `${restored.length} upstream ${noun} ${verb} restored verbatim on ${today} from the pinned snapshot in ` +
+    `\`host-library/_upstream/${path.basename(skillDir)}/\`: ${summary}. Each starts with (or, for markdown with ` +
+    'frontmatter, has right after the frontmatter) a one-line comment pointing here; nothing in them was edited. ' +
+    'Upstream packaging, scripts and attribution marks were not restored.\n';
+  const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  const next = NOTICE_SECTION.test(text) ? text.replace(NOTICE_SECTION, `\n${block}`) : `${text.endsWith('\n') ? text : `${text}\n`}\n${block}`;
+  fs.writeFileSync(file, next);
+}
+
+const PLAIN_TEXT = /\.(md|markdown|txt|ya?ml|json|sarif)$/i;
+const normaliseName = (file: string): string => file.toLowerCase().replace(/[_\s]+/g, '-');
+const LEADING_COMMENT = /^((?:---\n[\s\S]*?\n---\n)?)<!--[\s\S]*?-->\n*/;
+
+/** Leading attribution comment and blank lines removed, line endings unified: what a file says, not how it was headed. */
+function normaliseForMatch(text: string): string {
+  return text.replace(/\r\n/g, '\n').replace(LEADING_COMMENT, '$1').trim();
+}
+
+/**
+ * Upstream files the skill folder lacks, after allowing for a port that only renamed or moved a file: a match by
+ * case/separator-normalised path or file name counts as present, and so does a local file whose content is identical
+ * once its attribution comment is ignored. Keeps the provenance lists to work that is really left.
+ */
+export function missingUpstreamFiles(upstreamDir: string, skillDir: string): string[] {
+  const localFiles = listFiles(skillDir);
+  const missing = droppedExtras(listFiles(upstreamDir), localFiles);
+  if (missing.length === 0) return [];
+  const names = new Set(localFiles.map(normaliseName));
+  const bases = new Set(localFiles.map(file => normaliseName(path.posix.basename(file))));
+  let localTexts: Set<string> | undefined;
+  const texts = (): Set<string> => {
+    localTexts ??= new Set(
+      localFiles.filter(file => PLAIN_TEXT.test(file)).map(file => normaliseForMatch(fs.readFileSync(path.join(skillDir, ...file.split('/')), 'utf8'))),
+    );
+    return localTexts;
+  };
+  return missing.filter(file => {
+    if (names.has(normaliseName(file)) || bases.has(normaliseName(path.posix.basename(file)))) return false;
+    if (!PLAIN_TEXT.test(file)) return true;
+    return !texts().has(normaliseForMatch(fs.readFileSync(path.join(upstreamDir, ...file.split('/')), 'utf8')));
+  });
 }

@@ -4,7 +4,7 @@ impact: HIGH
 impactDescription: Better index locality, reduced fragmentation
 tags: primary-key, identity, uuid, serial, schema
 ---
-<!-- Restored verbatim from upstream references/schema-primary-keys.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Select Optimal Primary Key Strategy

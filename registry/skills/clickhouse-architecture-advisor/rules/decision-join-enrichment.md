@@ -7,7 +7,7 @@ tags:
   - denormalization
   - enrichment
 ---
-<!-- Restored verbatim from upstream rules/decision-join-enrichment.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 # Choose the right enrichment path: JOIN, dictionary, denormalization, or precomputed enrichment

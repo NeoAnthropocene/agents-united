@@ -7,7 +7,7 @@ tags:
   - rollups
   - real-time
 ---
-<!-- Restored verbatim from upstream rules/decision-real-time-preaggregation.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 # Choose raw-only vs incremental materialized views vs refreshable materialized views

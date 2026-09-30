@@ -66,7 +66,7 @@ repository root; record which file decided it. Then place it in a tier (ADR 0024
   their own PRs). `npm run hostlib:restore -- --skill <name>` copies the documents verbatim behind a one-line
   attribution header. It refuses unless the skill is third-party pinned with a classified, non-blocked licence, the
   audit passed, a snapshot exists, and the skill folder already carries `LICENSE` and `NOTICE.md`. After restoring,
-  add a short "Reference files" pointer to `SKILL.md` and run the audit gate over the folder. Name the folders and
+  `npm run hostlib:restore -- --reconcile` first drops from the lists anything the port only renamed or moved. Then add a short "Reference files" pointer to `SKILL.md` and run the audit gate over the folder. Name the folders and
   the file-naming pattern, never one link per file: `SKILL.md` is loaded on every invocation, while the restored
   files are read one at a time, on demand.
 

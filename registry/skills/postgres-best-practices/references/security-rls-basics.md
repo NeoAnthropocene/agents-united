@@ -4,7 +4,7 @@ impact: CRITICAL
 impactDescription: Database-enforced tenant isolation, prevent data leaks
 tags: rls, row-level-security, multi-tenant, security
 ---
-<!-- Restored verbatim from upstream references/security-rls-basics.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Enable Row Level Security for Multi-Tenant Data

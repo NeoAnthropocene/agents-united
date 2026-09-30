@@ -8,7 +8,7 @@ tags:
   - collapsingmergetree
   - mutable-state
 ---
-<!-- Restored verbatim from upstream rules/decision-late-arriving-upserts.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 # Handle late-arriving data and mutable state without defaulting to heavy mutations

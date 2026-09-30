@@ -4,7 +4,7 @@ impact: MEDIUM-HIGH
 impactDescription: 10-100x fewer database round trips
 tags: n-plus-one, batch, performance, queries
 ---
-<!-- Restored verbatim from upstream references/data-n-plus-one.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Eliminate N+1 Queries with Batch Loading

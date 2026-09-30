@@ -4,7 +4,7 @@ impact: MEDIUM
 impactDescription: Avoid case-sensitivity bugs with tools, ORMs, and AI assistants
 tags: naming, identifiers, case-sensitivity, schema, conventions
 ---
-<!-- Restored verbatim from upstream references/schema-lowercase-identifiers.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Use Lowercase Identifiers for Compatibility

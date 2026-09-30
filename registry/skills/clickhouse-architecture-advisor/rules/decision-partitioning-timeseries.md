@@ -7,7 +7,7 @@ tags:
   - retention
   - ttl
 ---
-<!-- Restored verbatim from upstream rules/decision-partitioning-timeseries.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 # Choose time-series partitioning for retention, pruning, and operational hygiene

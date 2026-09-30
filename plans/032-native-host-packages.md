@@ -110,6 +110,20 @@
     the 12 have documents left to restore (playwright-best-practices 58, mobile-android-design 4,
     mobile-platform-offline-validate 4, mobile-ios-design 3, domain-modeling 2); the other 7 have only packaging or
     deferred scripts/assets.
+  - 2026-09-30 (later) — **PR D bundle `qa-automation` restored** (`feat/restore-extras-qa-automation`, stacked on the licence
+    resolution): `playwright-best-practices` (MIT) got its 58 upstream guides in eight topic folders at the skill root
+    (upstream layout, so their cross-links keep working) plus a 646-character "Reference files" pointer; nothing else in the
+    bundle had documents left. Tooling: `restore` now records itself in the skill's `NOTICE.md` ("Restored documents"
+    section, replaced on re-run) and `npm run hostlib:restore -- --reconcile` recomputes every record with rename detection
+    (case/separator-normalised path or name, or identical content ignoring the attribution comment). Reconcile removed
+    phantom work for 5 skills whose files the port only moved (mutation-testing 3, terraform-test-patterns 3,
+    security-diff-review 4, variant-analysis 11, sarif-triage 1); spot-checked to be real moves. The audit gate then
+    flagged two Playwright files: the per-file header contained the file's own name, and `page-object-model` /
+    `file-upload-download` contain words it reads as addressed to the agent. The header no longer carries the file name
+    (the pilot's 42 headers were rewritten to match); a test runs the audit over every restored folder and another checks
+    every restored skill keeps a compact pointer naming each restored folder. Content still to restore catalog-wide after
+    this bundle: 106 files: react-best-practices 72 (blocked on a licence file), edge-security-audit 15, mobile-android-design 4,
+    mobile-platform-offline-validate 4, mobile-ios-design 3, codeql-scanning 3, domain-modeling 2, sarif-triage 2, semgrep-scanning 1.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

@@ -16,7 +16,7 @@ MIT permits use, copying and modification provided the copyright and permission 
 - `SKILL.md` was written for agents-united in this catalog's runbook format (PROJECT.md §7.2) and condenses the
   upstream method; it is not a copy of the upstream `SKILL.md`.
 - Restored on 2026-09-30 (Plan 032 PR D, docs only): 31 upstream files (the rule documents under `references/`), copied verbatim from the
-  pinned snapshot in `host-library/_upstream/postgres-best-practices/`. Each has a comment naming its upstream file and pointing here
+  pinned snapshot in `host-library/_upstream/postgres-best-practices/`. Each has a one-line comment pointing here
   (markdown with frontmatter carries it right after the frontmatter). Nothing in them was edited.
 - Not restored, on purpose: upstream repository packaging (README, AGENTS.md, metadata.json, CHANGELOG, contribution
   scaffolding). Scripts and attribution marks, if any, are handled in later PRs.

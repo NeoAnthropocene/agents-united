@@ -4,7 +4,7 @@ impact: HIGH
 impactDescription: 5-10x faster multi-column queries
 tags: indexes, composite-index, multi-column, query-optimization
 ---
-<!-- Restored verbatim from upstream references/query-composite-indexes.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Create Composite Indexes for Multi-Column Queries

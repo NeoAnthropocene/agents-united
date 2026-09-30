@@ -4,7 +4,7 @@ impact: HIGH
 impactDescription: 50% storage reduction, faster comparisons
 tags: data-types, schema, storage, performance
 ---
-<!-- Restored verbatim from upstream references/schema-data-types.md (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
+<!-- Restored verbatim from upstream (repository and commit pinned in ../NOTICE.md). Licence: see ../LICENSE. -->
 
 
 ## Choose Appropriate Data Types
