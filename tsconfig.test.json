@@ -5,7 +5,8 @@
     "noEmit": true,
     "declaration": false,
     "rootDir": ".",
-    "types": ["node"]
+    "types": ["node"],
+    "allowImportingTsExtensions": true
   },
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

@@ -1,0 +1,208 @@
+{
+  "host": "antigravity",
+  "label": "Google Antigravity (2.0, CLI/AGY, IDE, SDK)",
+  "indexes": [
+    {
+      "url": "https://antigravity.google/llms.txt",
+      "role": "primary",
+      "snapshot": "llms.txt"
+    }
+  ],
+  "changelog": {
+    "url": "https://antigravity.google/docs/changelog.md",
+    "snapshot": "changelog.md"
+  },
+  "pages": {
+    "agent": [
+      {
+        "url": "https://antigravity.google/docs/subagents.md",
+        "slug": "subagents"
+      },
+      {
+        "url": "https://antigravity.google/docs/agent-settings.md",
+        "slug": "agent-settings"
+      },
+      {
+        "url": "https://antigravity.google/docs/sdk/subagents.md",
+        "slug": "sdk-subagents"
+      }
+    ],
+    "skill": [
+      {
+        "url": "https://antigravity.google/docs/skills.md",
+        "slug": "skills"
+      }
+    ],
+    "hook": [
+      {
+        "url": "https://antigravity.google/docs/hooks.md",
+        "slug": "hooks"
+      },
+      {
+        "url": "https://antigravity.google/docs/sdk/lifecycle.md",
+        "slug": "sdk-lifecycle"
+      }
+    ],
+    "mcp": [
+      {
+        "url": "https://antigravity.google/docs/mcp.md",
+        "slug": "mcp"
+      }
+    ],
+    "plugin": [
+      {
+        "url": "https://antigravity.google/docs/plugins.md",
+        "slug": "plugins"
+      },
+      {
+        "url": "https://antigravity.google/docs/marketplace.md",
+        "slug": "marketplace"
+      }
+    ],
+    "rule": [
+      {
+        "url": "https://antigravity.google/docs/rules.md",
+        "slug": "rules"
+      }
+    ],
+    "command": [
+      {
+        "url": "https://antigravity.google/docs/slash-commands.md",
+        "slug": "slash-commands"
+      },
+      {
+        "url": "https://antigravity.google/docs/cli/commands/agents.md",
+        "slug": "cli-agents-command"
+      }
+    ],
+    "permissions": [
+      {
+        "url": "https://antigravity.google/docs/permissions.md",
+        "slug": "permissions"
+      },
+      {
+        "url": "https://antigravity.google/docs/sandbox.md",
+        "slug": "sandbox"
+      }
+    ],
+    "settings": [
+      {
+        "url": "https://antigravity.google/docs/settings.md",
+        "slug": "settings"
+      },
+      {
+        "url": "https://antigravity.google/docs/cli/reference.md",
+        "slug": "cli-reference"
+      }
+    ],
+    "tools": [
+      {
+        "url": "https://antigravity.google/docs/sdk/tools.md",
+        "slug": "sdk-tools"
+      },
+      {
+        "url": "https://antigravity.google/docs/sdk/policies.md",
+        "slug": "sdk-policies"
+      }
+    ],
+    "orchestration": [
+      {
+        "url": "https://antigravity.google/docs/teamwork.md",
+        "slug": "teamwork"
+      },
+      {
+        "url": "https://antigravity.google/docs/ide/workflows.md",
+        "slug": "ide-workflows"
+      },
+      {
+        "url": "https://antigravity.google/docs/plan.md",
+        "slug": "plan"
+      },
+      {
+        "url": "https://antigravity.google/docs/sidecars.md",
+        "slug": "sidecars"
+      }
+    ]
+  },
+  "keywords": {
+    "agent": [
+      "subagents?",
+      "sub-agents?",
+      "custom agents?",
+      "agent definitions?",
+      "agents?/[\\w-]+\\.(md|ya?ml)"
+    ],
+    "skill": [
+      "\\bskills?\\b",
+      "SKILL\\.md"
+    ],
+    "hook": [
+      "\\bhooks?\\b",
+      "PreToolUse",
+      "PostToolUse",
+      "SessionStart",
+      "UserPromptSubmit",
+      "SubagentStop",
+      "PreInvocation",
+      "PostInvocation"
+    ],
+    "mcp": [
+      "\\bMCP\\b",
+      "mcp servers?",
+      "\\.mcp\\.json",
+      "mcpServers",
+      "\\.mcpb\\b"
+    ],
+    "plugin": [
+      "\\bplugins?\\b",
+      "marketplaces?",
+      "plugin\\.json"
+    ],
+    "permissions": [
+      "permissions?",
+      "allowedTools",
+      "disallowedTools",
+      "auto mode",
+      "sandbox",
+      "auto-approve",
+      "YOLO",
+      "approval"
+    ],
+    "settings": [
+      "settings\\.json",
+      "managed settings?",
+      "environment variables?",
+      "\\bconfig(uration)?\\b"
+    ],
+    "tools": [
+      "\\b(built-in )?tools?\\b"
+    ],
+    "orchestration": [
+      "workflows?\\b",
+      "agent teams?",
+      "teamwork",
+      "parallel (agents|sessions|subagents)",
+      "orchestrat",
+      "background agents?",
+      "SendMessage",
+      "scheduled tasks?|\\bcron\\b",
+      "/teamwork-preview",
+      "sidecars?",
+      "subagent cards?"
+    ],
+    "rule": [
+      "\\brules?\\b",
+      "GEMINI\\.md",
+      "AGENTS\\.md",
+      "\\.agents/rules"
+    ],
+    "command": [
+      "slash commands?",
+      "`/[a-z][a-z-]*`",
+      "/(boost|plan|teamwork-preview|agents)\\b"
+    ]
+  },
+  "domains": [
+    "antigravity.google"
+  ]
+}

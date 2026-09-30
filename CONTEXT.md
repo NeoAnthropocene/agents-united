@@ -294,6 +294,37 @@ _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanat
 _Avoid_: letting host tool names leak into the core, undeclared scope drift between realizations,
 runtime host detection/rewiring (nondeterministic — churn belongs in capability-profile data)
 
+### Native Host Package Terms (ADR 0025)
+
+- **Native Host Package**: the committed, fully native artifact set for one host under
+  `registry/hosts/<host>/` (agents, skills, hooks, rules, commands, `workflows/`, `profile.json`,
+  `tool-policy.json`). Installed by copying — never rendered, never LLM-generated at install time.
+- **Host Docs Library**: `host-library/<host>/` (not shipped) — the host's `llms.txt` index,
+  changelog, curated page map (`sources.json`), page snapshots, `library.lock.json` and distilled
+  `guide/<artifactType>.md`. The only reference an authoring LLM may rely on; the machine-diffable
+  feed for `docs/host-primitive-matrix.md` (ADR 0023).
+- **Host-Update Workflow**: the `host-update-sync` maintainer skill — changelog first, refresh only
+  affected snapshots, write an adaptation plan, open a `host-update` PR to `dev`. Never implements
+  artifact changes itself.
+- **Doc-Guided Authoring**: the `realize-for-host` maintainer skill drafting native artifacts from
+  the Contract Floor + the library guides; output lands through a reviewed PR.
+- **Skill Provenance**: `host-library/_upstream/skills.json` — each skill is *third-party pinned*
+  (repo, path, commit, full folder snapshot), *in-house* (origin `registry/skills/<skill>/`) or
+  *not-found* (date + URLs tried; used as is, never blocked). Extends intake step 2 (upstream pin).
+- **Security Audit Gate**: quarantine + deterministic scan (`npm run hostlib:audit`) + read-only LLM
+  review before anything enters `_upstream/` or a pinned commit moves; runs before the licence tier
+  check (ADR 0024). `fail`/`needs-review` → `security-hold`, never auto-merged. Also guards docs
+  snapshots.
+- **Capability Class**: a tool-neutral grant unit a role declares (read, search, code-intel, edit,
+  shell, background-monitor, web, delegate, workflow, schedule, ask-user, notify, worktree, report,
+  artifacts); `tool-policy.json` maps classes to the host's full native tool catalog.
+- **Workflow skill vs dynamic workflow**: a *workflow skill* is ours (`skills/workflow-<task>/`,
+  ADR 0016); a *dynamic workflow* is Claude Code's scripted multi-agent orchestration (`Workflow`
+  tool, `.claude/workflows/*.js`). Multi-agent workflow skills become dynamic workflows (plus a thin
+  trigger) in the Claude package; single-agent runbooks stay skills.
+_Avoid_: install-time LLM generation, scoring hosts against Antigravity keys, adopting a third-party
+skill without reading its upstream original, snapshotting unaudited upstream content
+
 ### Agent Registry & Department Hierarchy
 
 The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators and 38 Sub-Agents) structured into **18 curated bundles** across **8 department domains**:

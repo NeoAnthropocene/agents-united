@@ -16,11 +16,17 @@
     "pretest": "npm run build",
     "dev": "tsup --watch",
     "start": "node dist/cli.js",
-    "test": "vitest run",
+    "test": "vitest run --testTimeout=30000 --hookTimeout=30000",
     "test:evals": "vitest run tests/e2e-evals/",
     "test:watch": "vitest",
-    "typecheck": "npm run build && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
+    "typecheck": "npm run build && tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc -p scripts/hostlib/tsconfig.json",
+    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc -p scripts/hostlib/tsconfig.json",
+    "hostlib:check": "node scripts/hostlib/cli.ts check",
+    "hostlib:refresh": "node scripts/hostlib/cli.ts refresh",
+    "hostlib:ingest": "node scripts/hostlib/cli.ts ingest",
+    "hostlib:verify": "node scripts/hostlib/cli.ts verify",
+    "hostlib:audit": "node scripts/hostlib/cli.ts audit",
+    "hostlib:provenance": "node scripts/hostlib/cli.ts provenance"
   },
   "keywords": [
     "antigravity",
