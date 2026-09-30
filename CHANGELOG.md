@@ -1,3 +1,19 @@
+# [0.15.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.14.0...v0.15.0) (2026-09-30)
+
+
+### Bug Fixes
+
+* **docs:** update README to include Socket Badge for package status. Banner image udated. ([72cee91](https://github.com/NeoAnthropocene/agents-united/commit/72cee91edceb708e007ffbe41c634276c9604526))
+* **host-library:** make hostlib tooling and tests Windows-safe ([1852053](https://github.com/NeoAnthropocene/agents-united/commit/185205303e6ec3b0dde5a9b7e1bbffb4e6fb9372))
+
+
+### Features
+
+* add host library skills and upstream documentation ([#69](https://github.com/NeoAnthropocene/agents-united/issues/69)) ([8d64c2b](https://github.com/NeoAnthropocene/agents-united/commit/8d64c2bcdbcea8663f773a644b616c64688e3fb3))
+* **host-library:** distilled Claude authoring guides with resolvable citations ([685386e](https://github.com/NeoAnthropocene/agents-united/commit/685386e856f3e3cf7a19f671661ed21a574347e8))
+* **host-library:** host docs library, changelog-first sync tooling and security audit gate ([d65110a](https://github.com/NeoAnthropocene/agents-united/commit/d65110a88d4132032968f38ea5a2200a452a7975))
+* **host-library:** recover skill provenance, exclude snapshots from tests, document Tier-2 template ([69c29fb](https://github.com/NeoAnthropocene/agents-united/commit/69c29fbf578e13002527fcc2007715565cbe1525))
+
 # [0.14.0](https://github.com/NeoAnthropocene/agents-united/compare/v0.13.0...v0.14.0) (2026-09-29)
 
 
