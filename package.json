@@ -1,6 +1,6 @@
 {
   "name": "agents-united",
-  "version": "0.15.0",
+  "version": "0.14.0",
   "description": "The universal package manager for AI agents.",
   "main": "./dist/cli.js",
   "bin": {
@@ -16,17 +16,11 @@
     "pretest": "npm run build",
     "dev": "tsup --watch",
     "start": "node dist/cli.js",
-    "test": "vitest run --testTimeout=30000 --hookTimeout=30000",
+    "test": "vitest run",
     "test:evals": "vitest run tests/e2e-evals/",
     "test:watch": "vitest",
-    "typecheck": "npm run build && tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc -p scripts/hostlib/tsconfig.json",
-    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc -p scripts/hostlib/tsconfig.json",
-    "hostlib:check": "node scripts/hostlib/cli.ts check",
-    "hostlib:refresh": "node scripts/hostlib/cli.ts refresh",
-    "hostlib:ingest": "node scripts/hostlib/cli.ts ingest",
-    "hostlib:verify": "node scripts/hostlib/cli.ts verify",
-    "hostlib:audit": "node scripts/hostlib/cli.ts audit",
-    "hostlib:provenance": "node scripts/hostlib/cli.ts provenance"
+    "typecheck": "npm run build && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
   },
   "keywords": [
     "antigravity",

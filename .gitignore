@@ -156,14 +156,7 @@ scratch/
 /.agents/
 /.cline/
 /.gemini/
-/.claude/*
-# Shared Claude Code on the web hook (runs scripts/cloud-session-start.sh); the rest of .claude/ is per-workspace state
-!/.claude/settings.json
-# Maintainer skills (Plan 032) are tracked; everything else under .claude/ is install output
-!/.claude/skills/
-/.claude/skills/*
-!/.claude/skills/host-update-sync/
-!/.claude/skills/realize-for-host/
+/.claude/
 /.cursor/
 /.opencode/
 /AGENTS.md
