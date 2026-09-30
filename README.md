@@ -9,9 +9,9 @@
 [![TypeScript: Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
 [![Socket Badge](https://badge.socket.dev/npm/package/agents-united/latest)](https://badge.socket.dev/npm/package/agents-united/latest)
 
-### The universal package manager for AI agents.
+### Expert AI agent teams on your preferred platform.
 
-Install a curated team of AI agents once, then use it from your assistant of choice. Agents United ships **orchestrators** (team leads), **sub-agents** (specialists), **skills** (runbooks and playbooks), and **guardrails**, and translates them into the folders each assistant expects.
+Agents United is the package manager for **expert AI agent teams**. Install a curated team once — **orchestrators** (team leads), **sub-agents** (specialists), **skills** (runbooks and playbooks) and **guardrails** — and run it in the **AI agent harness** you already use. Each team is wired as a **delegation graph**: the lead plans with you, specialists work in parallel, and nothing ships until it has been verified.
 
 | Assistant | Status | Where the team lands |
 | :--- | :--- | :--- |
@@ -24,8 +24,20 @@ Install a curated team of AI agents once, then use it from your assistant of cho
 
 ---
 
+## ✨ Why Agents United
+
+| | |
+| :--- | :--- |
+| **🧩 Built for your harness** | Every AI agent harness (Claude Code, Cline, Antigravity) has its own tools, hooks, plugin format and orchestration primitives. Agents United is moving each one to a **native package authored from that vendor's own documentation** ([ADR 0025](./docs/adr/0025-native-host-packages-and-host-docs-library.md)), so agents use the harness's full toolset instead of a translated subset. |
+| **🕸️ Graph-engineered teams** | Orchestrator → specialist **delegation graphs**: a planning dialogue, a written delegation map, parallel fan-out, one structured hand-back per specialist, a single synthesis point and verification gates. Multi-agent orchestration you can read, audit and rerun. |
+| **🪶 Context engineering by default** | Every department installs as a lean **Essentials** bundle. When the work needs more, the orchestrator names the exact addon and offers to install it, so your context window carries only what the project needs. |
+| **🛡️ Guardrails that don't move** | A locked **Contract Floor** (identity, scope, output contract, safety) stays identical on every harness, on top of built-in git guardrails, secret scanning and test-first discipline. |
+
+---
+
 ## 📑 Contents
 
+- [Why Agents United](#-why-agents-united)
 - [Quick Start](#-quick-start)
 - [How It Works](#-how-it-works)
 - [Supported Assistants](#-supported-assistants)
@@ -115,6 +127,9 @@ You keep a small context footprint, the orchestrator picks the right addon, and 
 
 ### One library, every assistant
 
+> [!NOTE]
+> **Where this is heading.** Translation is being replaced by *creation*: a shared Contract Floor plus a **native package per harness**, authored from each vendor's documentation and installed by plain copying — no LLM runs on your machine. The rollout is incremental (Claude Code first); this section describes how installs work today. Design: [ADR 0025](./docs/adr/0025-native-host-packages-and-host-docs-library.md), [Plan 032](./plans/032-native-host-packages.md).
+
 `.agents/` is the **main library**, the one folder you edit, tracked by the `agents-united.json` lockfile. Antigravity reads it directly. Other assistants cannot, so Agents United writes **translated copies** in their own folders and keeps them in sync.
 
 - **Edit only `.agents/`.** Translated copies are machine-managed and are rewritten on every `agents update`.
@@ -130,7 +145,7 @@ Features that cannot cross over one-to-one are **declared, not faked**. Every ga
 
 ### Orchestrators plan, specialists do
 
-Every department has a **lead orchestrator** that talks to you, plans, and delegates to **sub-agents**. Each specialist follows the same layout: role, a **Skill Consultation Map** (which skill to open for which kind of work), protocol, safety rules, and report format. Code samples and best-practice detail live in the skills, so roles stay short.
+Every department has a **lead orchestrator** that talks to you, plans, and delegates to **sub-agents**. This is what we call **graph engineering**: align with you, plan a delegation map, fan out to specialists in parallel, collect one structured hand-back from each, then synthesize once and verify before delivery. Each specialist follows the same layout: role, a **Skill Consultation Map** (which skill to open for which kind of work), protocol, safety rules, and report format. Code samples and best-practice detail live in the skills, so roles stay short.
 
 | Tier | Bundles | How the orchestrator behaves |
 | :--- | :--- | :--- |
@@ -140,6 +155,8 @@ Every department has a **lead orchestrator** that talks to you, plans, and deleg
 ---
 
 ## 🤖 Supported Assistants
+
+Agents United calls the tool that runs the agent loop an **AI agent harness**. Teams are packaged for each harness's own conventions:
 
 | Assistant | What Agents United writes | How to launch a team |
 | :--- | :--- | :--- |
@@ -532,6 +549,19 @@ npm run typecheck   # build plus type-check of source and tests
 - **Test-driven:** write failing tests in `tests/` first. Tests are deterministic (no arbitrary sleeps) and run in four tiers, from unit tests to full catalog audits.
 - **Open work:** the Essentials-only guard for `agents add domain:<dept>` and the public GitHub Pages site are tracked in [`ROADMAP.md`](./ROADMAP.md).
 
+### Host docs library and host updates
+
+Each harness has a documentation library under [`host-library/`](./host-library) (not shipped in the npm package): the vendor's machine-readable `llms.txt` index, changelog, curated page snapshots and a lockfile of content hashes. Authoring a native agent, skill, hook or plugin for a harness starts there, never from memory. The library feeds the [Host Primitive Matrix](./docs/host-primitive-matrix.md).
+
+```bash
+npm run hostlib:check      # changelog first: what did each harness ship since the last sync?
+npm run hostlib:refresh -- --host claude --types hook,tools --advance-changelog
+npm run hostlib:verify     # snapshots still match their lockfile hashes
+npm run hostlib:audit -- <dir>   # security audit for a quarantined upstream skill folder
+```
+
+The `host-update-sync` maintainer skill (`.claude/skills/`) turns a new upstream release into an adaptation-plan PR against `dev`. Refreshed docs snapshots and upstream skills only enter the repo after a security audit (prompt-injection, obfuscation and risky-script scan, plus a read-only review), which runs before the licence check below. Details: [ADR 0025](./docs/adr/0025-native-host-packages-and-host-docs-library.md).
+
 ### Adding or adapting a skill
 
 Follow the checklist in [`docs/skill-intake.md`](./docs/skill-intake.md). In short:
@@ -589,7 +619,9 @@ Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releas
 | [`docs/skill-intake.md`](./docs/skill-intake.md) | The checklist for adding any new skill, including licence tiers |
 | [`docs/guard-testing.md`](./docs/guard-testing.md) | How to prove the guard hook actually fires |
 | [`docs/creation-engine.md`](./docs/creation-engine.md) | The Semantic Core and per-host creation engine behind Claude projection |
-| [`docs/adr/`](./docs/adr) | Architecture decision records (0001 to 0024) |
+| [`docs/adr/0025-native-host-packages-and-host-docs-library.md`](./docs/adr/0025-native-host-packages-and-host-docs-library.md) | Native host packages, the host docs library, and the changelog-driven update workflow |
+| [`host-library/`](./host-library) | Per-harness documentation snapshots, changelog baselines, and lockfiles |
+| [`docs/adr/`](./docs/adr) | Architecture decision records (0001 to 0025) |
 | [`plans/`](./plans) | Numbered implementation plans and their status ([index](./plans/README.md)) |
 | [`PROJECT.md`](./PROJECT.md), [`CONTEXT.md`](./CONTEXT.md), [`ROADMAP.md`](./ROADMAP.md), [`CHANGELOG.md`](./CHANGELOG.md) | Project overview, domain glossary, roadmap, and release notes |
 
