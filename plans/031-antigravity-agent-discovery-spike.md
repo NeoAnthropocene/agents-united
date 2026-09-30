@@ -11,7 +11,8 @@
   **Addendum 2026-09-30** (agy 1.2.14, doc re-check, listing probes and owner re-probe):
   **Outcome B is WITHDRAWN.** Both layouts list and inject on 1.2.14 (interactive `/agents`,
   `--agent -i`, headless `--agent -p`); what hid this repo's agents was frontmatter `hooks:`
-  (and `mainAgent: false` for the listing). See § Addendum. Plan 029 gate 6(c) reopens.
+  (and `mainAgent: false` for the listing). Step 0(d) resolves YES (`invoke_subagent` by name
+  works). See § Addendum. Plan 029 gate 6(c) reopens.
 - **Priority**: P1 (blocks the Plan 029 gate-6(c) verdict) · **Effort**: S · **Risk**: Low.
 - **Category**: host conformance / discovery.
 
@@ -153,10 +154,35 @@ interactive and headless runs, from the workspace directory, on 1.2.14. Plain `a
 empty even where `--agent` resolves, so the listing subcommand is not a reliable discovery check
 (use `--add-dir` or the `/agents` panel).
 
-Not tested here: `invoke_subagent` of a workspace agent by name from an orchestrator (Plan 029
-Step 0(d) proper), agents that carry `mainAgent: false`, and the repo's real orchestrator with its
-`hooks:` block removed (inferred to work: with the hooks removed and `mainAgent: true` an agent
-lists).
+### Real-agent and Step 0(d) probes (assistant-run on the same machine, agy 1.2.14, `C:\Users\ozy\agy-probe-031b`)
+
+Headless, `--agent <name> -p`, default permissions, scratch git workspace. "Real" agents are
+byte copies of `.agents/agents/*` from this repository; "stripped" removes only the `hooks:` block.
+
+| Probe | Result |
+|---|---|
+| `agy --add-dir <ws> agents` | lists the stripped real orchestrator, `probe-orch`, `probe-nosub`; **not** the hooked orchestrator copy and **not** `probe-worker` (`mainAgent: false`) |
+| real orchestrator, hooks kept (renamed `orchestrator-hooked`), "reply with your agent name, no tools" | `Antigravity` (stock agent) |
+| real orchestrator, **hooks stripped**, same question | `Autonomous Software Engineering Lead Orchestrator` (its own instructions); with tools allowed it immediately attempts a `read_file` call |
+| **Step 0(d)**: `probe-orch` (main, `invoke_subagent`) delegates to `probe-worker` (`mainAgent: false`, `subagent: true`) by name | **works**: `RELAY=NAME=probe-worker MARKER=WORKER_MARKER_3X` |
+| `probe-orch` delegates to `probe-nosub` (`subagent: false`) | refused: `subagent "probe-nosub" not found or not allowed to be invoked` |
+| `probe-orch` delegates to the real `subagent-code-reviewer` (hooks kept, `mainAgent: false`) | refused: `subagent "subagent-code-reviewer" not found or not allowed to be invoked` |
+| `probe-orch` delegates to the real reviewer with hooks stripped (renamed `subagent-reviewer-nohooks`) | works: the relayed answer is `subagent-code-reviewer` (the name in its instructions) |
+
+Verdicts:
+
+- **Step 0(d) resolves YES** on 1.2.14: an Antigravity main agent with `invoke_subagent` can spawn a
+  workspace agent by name, including `mainAgent: false` agents; `subagent: false` gates it.
+- **The `hooks:` frontmatter block is the sole cause** of the real orchestrator and the real
+  code-reviewer failing (A/B pair identical except the block): a hooked agent is neither listed,
+  selectable via `--agent`, nor invocable via `invoke_subagent` ("not found").
+- The real orchestrator with its hooks removed is applied under `--agent`. Its other frontmatter
+  (skills, `mcpServers`, `permissionMode`, `effort`, `commandExecutionPolicy`) did not prevent
+  discovery. Whether its skills and MCP servers resolve was not tested.
+
+Not tested: teamwork/`define_subagent`, nested delegation depth, `manage_subagents`, and whether the
+agent's `skills:`/`mcpServers:` entries load; the interactive `/agents` panel with the stripped
+real orchestrator (the listing above suggests it appears).
 
 ### Consequences recorded now (no code)
 
@@ -167,9 +193,10 @@ lists).
 - Do not emit frontmatter `hooks:` into Antigravity agent files. Hooks belong in
   `.agents/hooks.json` (Plan 032 native Antigravity package; ADR 0025). Until that lands,
   `agy --agent orchestrator-engineering` cannot work against installed files.
-- Plan 029 gate 6(c) reopens: the launch path (`--agent <name>`, flat or directory layout) is
-  viable once the hooks block is gone. It needs its own verification with the real orchestrator
-  and Step 0(d) (`invoke_subagent` by name) before any claim.
+- Plan 029 gate 6(c) reopens and its premises now hold: `--agent <name>` (flat or directory layout)
+  and Step 0(d) (`invoke_subagent` by name) both work on 1.2.14 once the hooks block is gone. The
+  remaining work is generating hook-free Antigravity agent files (and `.agents/hooks.json`) and
+  an end-to-end run with the real bundle; no claim beyond the probes above.
 - The flat-or-directory tolerance in `runAntigravityStart` remains correct: both layouts work.
 - Any `agy` discovery probe must use `--add-dir`, the `/agents` panel or `--agent`, not plain
   `agy agents`, or an empty result carries no information.
