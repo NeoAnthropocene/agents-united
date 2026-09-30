@@ -8,10 +8,10 @@
 
 - **State**: EXECUTED — probes run 2026-09-29 by the owner on agy 1.2.13 (Windows 11,
   real terminal). Verdict **Outcome B** (neither layout loads); see § Findings.
-  **Addendum 2026-09-30** (agy 1.2.14, doc re-check + listing probes): the *listing* half of
-  Outcome B is overturned — both layouts list when the workspace is registered and the
-  frontmatter is spec-conformant; the *injection* half is still unverified and needs the owner
-  re-probe in § Addendum. No projection work is authorized yet.
+  **Addendum 2026-09-30** (agy 1.2.14, doc re-check, listing probes and owner re-probe):
+  **Outcome B is WITHDRAWN.** Both layouts list and inject on 1.2.14 (interactive `/agents`,
+  `--agent -i`, headless `--agent -p`); what hid this repo's agents was frontmatter `hooks:`
+  (and `mainAgent: false` for the listing). See § Addendum. Plan 029 gate 6(c) reopens.
 - **Priority**: P1 (blocks the Plan 029 gate-6(c) verdict) · **Effort**: S · **Risk**: Low.
 - **Category**: host conformance / discovery.
 
@@ -132,36 +132,48 @@ installs carries one; (c) `mainAgent: false` agents are not listed (consistent w
 listing is the set selectable as primary agent), so a subagent-only agent's visibility to
 `invoke_subagent` is untested.
 
-### Still unverified (owner re-probe, real terminal; `-i` blocks headless)
+### Owner re-probe results (2026-09-30, Windows 11, agy 1.2.14, `C:\Users\ozy\agy-probe-031`)
 
-Listing is not injection. Outcome B's evidence for "not injected" was the stock agent answering.
-Re-run with a registered workspace and a conformant fixture before changing the verdict:
+Fixtures: `probe-flat.md` (marker `FLAT_MARKER_7Q`), `probe-dir/agent.md` (`DIR_MARKER_4K`),
+`probe-hooks.md` (`HOOKS_MARKER_9Z`, frontmatter `hooks: {}`, control). All `mainAgent: true`,
+`subagent: true`, `tools: [view_file]`; the body tells the agent to answer `NAME=... MARKER=...`.
 
-```
-# fixture: {ws}/.agents/agents/probe-flat.md and {ws}/.agents/agents/probe-dir/agent.md
-# frontmatter: name, description, tools: [view_file], mainAgent: true, subagent: true
-# body: "You are <name>. When asked for your identity reply exactly IDENTITY=<NAME>_MARKER."
-cd {ws}                       # open it once interactively so trust is recorded
-agy agents                    # 1. listing from the workspace itself
-agy --add-dir {ws} agents     # 2. listing with the directory registered
-agy --agent probe-flat -i "State your identity marker."     # 3. flat, interactive
-agy --agent probe-dir  -i "State your identity marker."     # 4. directory, interactive
-agy --agent probe-flat -p "State your identity marker."     # 5. flat, headless
-# in the TUI: /agents -> both listed under Available Agents? select one -> marker?
-```
+| Probe | flat | directory | hooks control |
+|---|---|---|---|
+| `agy --add-dir <ws> agents` | listed | listed | not listed |
+| plain `agy agents` in the workspace | empty | empty | empty |
+| interactive `agy`, `/agents` panel lists | yes | yes | not listed |
+| `/agents` select, then ask for name and marker | `NAME=probe-flat MARKER=FLAT_MARKER_7Q` | `NAME=probe-dir MARKER=DIR_MARKER_4K` | n/a |
+| `agy --agent <name> -i "..."` | marker | marker | not run |
+| headless `--add-dir <ws> --agent <name> -p "..."` | marker | marker (9 s) | **not injected**: CLI reports a `command` permission auto-denied (the stock agent tried a tool) |
+| headless from the workspace directory, **no** `--add-dir`, `--agent <name> -p` | marker | marker | not run |
 
-Record: which of 1-5 print the marker, and whether `/agents` lists both. If 3-5 inject, Outcome B
-is withdrawn and Step 0(d) / Plan 029 gate 6(c) reopen; if none inject despite listing, the
-verdict stays B but the reason changes from "not discovered" to "discovered, not applied".
+Verdict: **Outcome B withdrawn.** Both layouts are discovered and applied by `--agent`, in
+interactive and headless runs, from the workspace directory, on 1.2.14. Plain `agy agents` is
+empty even where `--agent` resolves, so the listing subcommand is not a reliable discovery check
+(use `--add-dir` or the `/agents` panel).
+
+Not tested here: `invoke_subagent` of a workspace agent by name from an orchestrator (Plan 029
+Step 0(d) proper), agents that carry `mainAgent: false`, and the repo's real orchestrator with its
+`hooks:` block removed (inferred to work: with the hooks removed and `mainAgent: true` an agent
+lists).
 
 ### Consequences recorded now (no code)
 
-- Do not emit frontmatter `hooks:` into Antigravity agent files; on 1.2.14 it hides the agent.
-  Hooks belong in `.agents/hooks.json` (Plan 032 native Antigravity package; ADR 0025).
-- The flat-or-directory tolerance in `runAntigravityStart` remains correct: both layouts list.
-- Any `agy` probe must register the workspace (`--add-dir`, or trusted interactive open) or an
-  empty listing carries no information.
-- Probe scripts and fixtures were scratch-only and are not committed.
+- **Root cause of the 2026-09-29 failure is probably this repo's own frontmatter**: every agent the
+  installer writes carries `hooks:` (`log:` / `guard:` pseudo-handlers), which hides the agent from
+  discovery on 1.2.14 and makes `--agent` fall back to the stock agent (the `hooks: {}` control
+  reproduces it). `agy agents` also omits `mainAgent: false` agents by design.
+- Do not emit frontmatter `hooks:` into Antigravity agent files. Hooks belong in
+  `.agents/hooks.json` (Plan 032 native Antigravity package; ADR 0025). Until that lands,
+  `agy --agent orchestrator-engineering` cannot work against installed files.
+- Plan 029 gate 6(c) reopens: the launch path (`--agent <name>`, flat or directory layout) is
+  viable once the hooks block is gone. It needs its own verification with the real orchestrator
+  and Step 0(d) (`invoke_subagent` by name) before any claim.
+- The flat-or-directory tolerance in `runAntigravityStart` remains correct: both layouts work.
+- Any `agy` discovery probe must use `--add-dir`, the `/agents` panel or `--agent`, not plain
+  `agy agents`, or an empty result carries no information.
+- Probe fixtures live outside the repository (scratch only, not committed).
 
 ## Delegation map (ADR 0015 planner-orchestrator posture)
 
