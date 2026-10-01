@@ -15,7 +15,7 @@ import type {
 import type { ClaudeDialect } from './types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { CLAUDE_FIELD_POLICY, validateProjectionOverlays } from './overlays.js';
-import { nativeRoleSource, renderNativeRole } from './native-package.js';
+import { nativeRoleSource, nativeWorkflowSource, renderNativeRole, renderNativeWorkflow } from './native-package.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
 export interface ClaudeRenderResult {
@@ -257,6 +257,12 @@ export class ClaudeProjector {
   public static nativeRoleContent(registryDir: string, roleName: string, canonicalRel: string): string | undefined {
     const source = nativeRoleSource(registryDir, 'claude', roleName);
     return source === undefined ? undefined : renderNativeRole(fs.readFileSync(source, 'utf8'), canonicalRel);
+  }
+
+  /** The installed bytes of a committed native workflow (`registry/hosts/claude/workflows/<name>.js`), or `undefined` when there is none. */
+  public static nativeWorkflowContent(registryDir: string, name: string, canonicalRel: string): string | undefined {
+    const source = nativeWorkflowSource(registryDir, 'claude', name);
+    return source === undefined ? undefined : renderNativeWorkflow(fs.readFileSync(source, 'utf8'), canonicalRel);
   }
 
   /** `subagent-backend-architect` -> `backend-architect` (Step 0 proved zero collisions). */
@@ -832,6 +838,19 @@ export class ClaudeProjector {
       if (!(await fs.pathExists(skillFile))) continue;
       const canonicalRel = `skills/${skillName}/SKILL.md`;
       const normalized = ClaudeProjector.normalizeSkillName(skillName);
+      // Plan 032 Phase 7 — with the native lane on, a committed host workflow stands in for the skill of the same name
+      // (both own the slash command `/<name>`), so neither the skill nor its resources are projected.
+      const nativeWorkflow = nativeLane ? ClaudeProjector.nativeWorkflowContent(registryDir, skillName, canonicalRel) : undefined;
+      if (nativeWorkflow !== undefined) {
+        artifacts.push({
+          kind: 'workflow',
+          canonical: canonicalRel,
+          relPath: `.claude/workflows/${skillName}.js`,
+          content: nativeWorkflow,
+          managedMarker: true,
+        });
+        continue;
+      }
       artifacts.push({
         kind: 'skill',
         canonical: canonicalRel,

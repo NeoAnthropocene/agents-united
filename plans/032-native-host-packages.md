@@ -249,6 +249,20 @@
     do not support `xhigh`). Rule for later bundles: a Tier-1 domain coordinator is `opus`/`high`; a Tier-2 coordinator may use `sonnet`/`xhigh`; specialists
     are `sonnet`/`medium`. Prompt-cache sharing in a workflow fan-out is between matching workflow agents (same model, effort, agent type, tools, schema),
     so it does not depend on the coordinator's model.
+  - 2026-10-01 (later) — **Phase 6/7 slice: native workflows and `workflow-review`** (`feat/claude-native-workflows`). The native lane now installs a
+    committed host workflow, `registry/hosts/claude/workflows/<name>.js` to `.claude/workflows/<name>.js`, instead of the skill of the same name
+    (both own `/<name>`; the Claude package drops the skill for a name it has a workflow for, so there is one meaning for the command). Owner decision:
+    names stay as they were, host by host. It rides the same machinery as agents (projection kind `workflow`, canonical = the skill it replaces, hash,
+    refcounted ownership, doctor drift and stale render, uninstall, `--no-native` brings the skill back). The managed marker is the LAST line, a
+    comment, because a workflow must start with `export const meta`; this keeps the file valid under any parser, and the real-session smoke test still
+    has to confirm the rest. `workflow-review.js` is the native form of the review runbook: reviewers per dimension in parallel (a deliberate barrier so
+    findings are merged and deduplicated before verification is paid for), adversarial verification (batched at the default size, a skeptic per finding
+    at `medium`, two votes at `large`, a tie keeps the finding marked contested), and a deterministic verdict in code (Request Changes, Comment, Approve).
+    Default size is the Pro baseline, 3 agents (fewer than 5); `medium` is at most 9 and `large` at most 23, below the 25-agent warning; what a cap
+    leaves out is reported unverified, never dropped. Input comes from the orchestrator, which scouts the change set (`args.files`) because the script
+    has no shell. Held to the host rules by `tests/helpers/workflow-lint.ts` (meta first and a pure literal, phase titles match, no import, no clock or
+    randomness, parses as plain JavaScript, only native agent types) and run against a mock of the workflow runtime (`tests/native-workflow-review.test.ts`,
+    10 behaviours). Next: `workflow-implement` (superpowers loop as blueprint), then the real-session smoke test.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

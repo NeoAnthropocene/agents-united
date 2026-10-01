@@ -5,10 +5,11 @@ import yaml from 'yaml';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { InstallEngine } from '../src/core/installer.js';
-import { listNativeRoles, nativeRoleSource, renderNativeRole } from '../src/core/native-package.js';
+import { listNativeRoles, nativeRoleSource, nativeWorkflowSource, renderNativeRole, renderNativeWorkflow } from '../src/core/native-package.js';
 import { HostProjector } from '../src/core/projector.js';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
+import { lintWorkflow } from './helpers/workflow-lint.js';
 
 /**
  * Plan 032 Phase 7 — the native-package install lane for Claude agents. Opt-in beside the legacy projection lane
@@ -191,5 +192,94 @@ describe('native install lane (agents add --native)', () => {
     await install(true);
     await new UninstallEngine().uninstall(BUNDLE, { targetDir: agentsDir });
     for (const role of NATIVE_ROLES) expect(await fs.pathExists(claudeAgent(role)), role).toBe(false);
+  });
+});
+
+describe('native workflows (agents add --native installs the host workflow in place of the skill of the same name)', () => {
+  const workspace = path.resolve(process.cwd(), 'scratch/test-native-workflows');
+  const agentsDir = path.join(workspace, '.agents');
+  const lockPath = path.join(agentsDir, 'agents-united.json');
+  const workflowFile = path.join(workspace, '.claude', 'workflows', 'workflow-review.js');
+  const skillDir = path.join(workspace, '.claude', 'skills', 'workflow-review');
+  const install = (nativeLane?: boolean, extra: Record<string, unknown> = {}) =>
+    new InstallEngine().install(BUNDLE, { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane, ...extra });
+  const expected = (): string =>
+    renderNativeWorkflow(fs.readFileSync(nativeWorkflowSource(REGISTRY, 'claude', 'workflow-review')!, 'utf8'), 'skills/workflow-review/SKILL.md');
+
+  beforeEach(async () => {
+    await fs.remove(workspace);
+    await fs.ensureDir(workspace);
+  });
+  afterEach(async () => {
+    await fs.remove(workspace);
+  });
+
+  it('renders the authored script unchanged with the marker as the last line, so the file still starts with `export const meta`', () => {
+    const source = "export const meta = { name: 'x', description: 'y' }\nreturn 1\n";
+    const rendered = renderNativeWorkflow(source.replace(/\n/g, '\r\n'), 'skills/x/SKILL.md');
+    expect(rendered.startsWith(source)).toBe(true);
+    const last = rendered.trimEnd().split('\n').pop()!;
+    expect(last).toMatch(/^\/\/ managed-by: agents-united \| profile: claude-native \| canonical: skills\/x\/SKILL\.md \| source: sha256:[0-9a-f]{64} \| do not edit$/);
+    expect(HostProjector.hasManagedMarker(rendered)).toBe(true);
+    expect(renderNativeWorkflow(source, 'skills/x/SKILL.md')).toBe(rendered);
+    expect(lintWorkflow(rendered)).toEqual([]);
+  });
+
+  it('is off by default: the skill is projected and no workflow is written', async () => {
+    await install();
+    expect(await fs.pathExists(path.join(skillDir, 'SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(workflowFile)).toBe(false);
+  });
+
+  it('installs the workflow instead of the skill of the same name, and keeps every other skill', async () => {
+    await install(true);
+    expect(await fs.readFile(workflowFile, 'utf8')).toBe(expected());
+    expect(await fs.pathExists(skillDir)).toBe(false);
+    expect(await fs.pathExists(path.join(workspace, '.claude', 'skills', 'workflow-test', 'SKILL.md'))).toBe(true);
+  });
+
+  it('records it as a workflow projection of the skill it replaces, with a matching hash and ownership', async () => {
+    await install(true);
+    const record = (await fs.readJson(lockPath)).projections['.claude/workflows/workflow-review.js'];
+    expect(record).toMatchObject({ host: 'claude', kind: 'workflow', canonical: 'skills/workflow-review/SKILL.md', managedMarker: true });
+    expect(record.owners).toContain(BUNDLE);
+    expect(record.hash).toBe(sha256(await fs.readFile(workflowFile, 'utf8')));
+  });
+
+  it('is byte-stable on a second install, and sticky across an install without the flag', async () => {
+    await install(true);
+    const first = await fs.readFile(workflowFile);
+    await install(true);
+    await install(undefined, { force: true });
+    expect((await fs.readFile(workflowFile)).equals(first)).toBe(true);
+    expect(await fs.pathExists(skillDir)).toBe(false);
+  });
+
+  it('turning the lane off removes the workflow and brings the skill back', async () => {
+    await install(true);
+    await install(false, { force: true });
+    expect(await fs.pathExists(workflowFile)).toBe(false);
+    expect(await fs.pathExists(path.join(skillDir, 'SKILL.md'))).toBe(true);
+  });
+
+  it('a dry run lists the workflow path and writes nothing', async () => {
+    const dry = await install(true, { dryRun: true });
+    expect(dry.projections.map(p => p.path)).toContain('.claude/workflows/workflow-review.js');
+    expect(await fs.pathExists(path.join(workspace, '.claude'))).toBe(false);
+  });
+
+  it('doctor finds it healthy, and reports an edit as content drift', async () => {
+    await install(true);
+    const healthy = await DoctorEngine.runDoctor(agentsDir);
+    expect(healthy.warnings.filter(w => /workflow-review|drift|Outdated/i.test(w))).toEqual([]);
+    await fs.appendFile(workflowFile, '// a local edit\n');
+    const drifted = await DoctorEngine.runDoctor(agentsDir);
+    expect(drifted.warnings.join('\n')).toMatch(/Content drift \.claude\/workflows\/workflow-review\.js/);
+  });
+
+  it('removing the bundle removes the workflow it installed', async () => {
+    await install(true);
+    await new UninstallEngine().uninstall(BUNDLE, { targetDir: agentsDir });
+    expect(await fs.pathExists(workflowFile)).toBe(false);
   });
 });

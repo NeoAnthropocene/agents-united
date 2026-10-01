@@ -349,7 +349,7 @@ agents add software-engineering -t agents --fanout claude,cline -y --copy --dry-
 | `--session-guard[=project\|local\|user]` / `--no-session-guard` | Also guard plain Claude sessions with one managed hook entry. Default location: `.claude/settings.json`. Existing settings are preserved, and invalid JSON is never rewritten |
 | `--permission-preset[=verify\|build]` / `--no-permission-preset` | Opt-in pre-approval of a small fixed command set in `.claude/settings.local.json`. Never implied by `-y`. `build` also allows `npm install/run/test`, which executes project code |
 | `--plugin` / `--no-plugin` | Also emit the distribution-only Claude plugin package for `claude --plugin-dir` |
-| `--native` / `--no-native` | Claude lane: install the committed native agent for each role that has one (orchestrator-engineering, code-reviewer, repo-index, backend-architect, frontend-architect) instead of a projection. Sticky across `agents update` |
+| `--native` / `--no-native` | Claude lane: install the committed native agent for each role that has one (orchestrator-engineering, code-reviewer, repo-index, backend-architect, frontend-architect) instead of a projection, and the native dynamic workflows (`workflow-review`) in `.claude/workflows/` in place of the skills of the same name. Sticky across `agents update` |
 
 **Safety and control**
 

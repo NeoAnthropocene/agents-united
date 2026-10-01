@@ -48,3 +48,38 @@ export function renderNativeRole(sourceText: string, canonicalRelPath: string): 
   const body = match[2].replace(/^\n+/, '').replace(/\n*$/, '\n');
   return `---\n${match[1]}\n---\n${marker}\n\n${body}`;
 }
+
+// ── Native workflows (Plan 032 Phase 7): `registry/hosts/<host>/workflows/<name>.js` ─────────────────────────────────
+// A host workflow replaces the skill of the same name for that host: both want the slash command `/<name>`, and a workflow
+// is the host's own form of a fan-out runbook. Install writes the script to the host's workflows folder.
+
+const workflowsDirOf = (registryDir: string, host: string): string => path.join(registryDir, 'hosts', host, 'workflows');
+
+/** Names (file stems) with a committed native workflow for `host`, sorted. Empty when the host has none. */
+export function listNativeWorkflows(registryDir: string, host: string): string[] {
+  const dir = workflowsDirOf(registryDir, host);
+  if (!ROLE_NAME.test(host) || !fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter(name => name.endsWith('.js') && ROLE_NAME.test(name.slice(0, -3)))
+    .map(name => name.slice(0, -3))
+    .sort();
+}
+
+/** Absolute path of the native workflow named `name`, or `undefined` when the host has none by that name. */
+export function nativeWorkflowSource(registryDir: string, host: string, name: string): string | undefined {
+  if (!ROLE_NAME.test(name) || !ROLE_NAME.test(host)) return undefined;
+  const file = path.join(workflowsDirOf(registryDir, host), `${name}.js`);
+  return fs.existsSync(file) ? file : undefined;
+}
+
+/**
+ * The installed bytes of a workflow: the authored script, LF-normalised, with the managed marker as the LAST line. A
+ * workflow must begin with `export const meta`, so the marker (a line comment, ignored by the parser) goes after the code.
+ */
+export function renderNativeWorkflow(sourceText: string, canonicalRelPath: string): string {
+  const source = sourceText.replace(/\r\n/g, '\n').replace(/\n*$/, '\n');
+  const hash = crypto.createHash('sha256').update(source).digest('hex');
+  const canonical = canonicalRelPath.replace(/\\/g, '/');
+  return `${source}// managed-by: agents-united | profile: ${NATIVE_MARKER_PROFILE} | canonical: ${canonical} | source: sha256:${hash} | do not edit\n`;
+}
