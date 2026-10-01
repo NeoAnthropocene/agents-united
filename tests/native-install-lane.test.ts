@@ -19,7 +19,10 @@ import { UninstallEngine } from '../src/core/uninstaller.js';
 
 const REGISTRY = path.resolve('registry');
 const BUNDLE = 'software-engineering';
-const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'repo-index'];
+const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'orchestrator-engineering', 'repo-index'];
+const COORDINATORS = ['orchestrator-engineering'];
+/** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
+const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
 const sha256 = (text: string): string => `sha256:${crypto.createHash('sha256').update(text).digest('hex')}`;
 const lf = (text: string): string => text.replace(/\r\n/g, '\n');
 
@@ -31,7 +34,7 @@ describe('native package helpers', () => {
 
   it('finds a role source by its stripped name, and nothing for a legacy-only role', () => {
     expect(nativeRoleSource(REGISTRY, 'claude', 'code-reviewer')).toBe(path.join(REGISTRY, 'hosts', 'claude', 'agents', 'code-reviewer.md'));
-    expect(nativeRoleSource(REGISTRY, 'claude', 'orchestrator-engineering')).toBeUndefined();
+    expect(nativeRoleSource(REGISTRY, 'claude', 'devops-engineer')).toBeUndefined();
     expect(nativeRoleSource(REGISTRY, 'claude', '../profile')).toBeUndefined();
   });
 
@@ -59,12 +62,13 @@ describe('native package helpers', () => {
   });
 });
 
-describe('native agents follow the specialist model posture of ADR 0018 decision 7', () => {
-  it.each(NATIVE_ROLES)('%s pins the specialist model and effort', role => {
+describe('native agents follow the model posture of ADR 0018 decision 7 (coordinators opus/high, specialists sonnet/medium)', () => {
+  it.each(NATIVE_ROLES)('%s pins its role posture', role => {
+    const posture = COORDINATORS.includes(role) ? 'coordinator' : 'specialist';
     const text = lf(fs.readFileSync(nativeRoleSource(REGISTRY, 'claude', role)!, 'utf8'));
     const meta = yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(text)![1]);
-    expect(meta.model).toBe(ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults?.specialist);
-    expect(meta.effort).toBe(ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults?.specialist);
+    expect(meta.model).toBe(ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults?.[posture]);
+    expect(meta.effort).toBe(ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults?.[posture]);
   });
 });
 
@@ -77,7 +81,7 @@ describe('native install lane (agents add --native)', () => {
   const install = (nativeLane?: boolean, extra: Record<string, unknown> = {}) =>
     new InstallEngine().install(BUNDLE, { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane, ...extra });
   const expected = (role: string): string =>
-    renderNativeRole(fs.readFileSync(nativeRoleSource(REGISTRY, 'claude', role)!, 'utf8'), `agents/subagent-${role}.md`);
+    renderNativeRole(fs.readFileSync(nativeRoleSource(REGISTRY, 'claude', role)!, 'utf8'), canonicalOf(role));
 
   beforeEach(async () => {
     await fs.remove(workspace);
@@ -97,12 +101,19 @@ describe('native install lane (agents add --native)', () => {
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
-  it('writes the committed native file for each native role, and the legacy projection for the rest', async () => {
+  it('writes the committed native file for each native role', async () => {
     await install(true);
     for (const role of NATIVE_ROLES) expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
-    const orchestrator = await fs.readFile(claudeAgent('orchestrator-engineering'), 'utf8');
-    expect(orchestrator).toContain('profile: claude |');
-    expect(orchestrator).not.toContain('claude-native');
+  });
+
+  it('keeps the legacy projection for a type that has no native agent, in the same workspace', async () => {
+    await install(true);
+    await new InstallEngine().install('devops-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const legacy = await fs.readFile(claudeAgent('devops-engineer'), 'utf8');
+    expect(legacy).toContain('profile: claude |');
+    expect(legacy).not.toContain('claude-native');
+    // The native agents installed earlier are untouched by the second install.
+    expect(await fs.readFile(claudeAgent('code-reviewer'), 'utf8')).toBe(expected('code-reviewer'));
   });
 
   it('records the lane, and every projection hash matches the file on disk', async () => {
@@ -112,7 +123,7 @@ describe('native install lane (agents add --native)', () => {
     for (const role of NATIVE_ROLES) {
       const record = lock.projections[`.claude/agents/${role}.md`];
       expect(record.kind).toBe('role');
-      expect(record.canonical).toBe(`agents/subagent-${role}.md`);
+      expect(record.canonical).toBe(canonicalOf(role));
       expect(record.managedMarker).toBe(true);
       expect(record.hash).toBe(sha256(await fs.readFile(claudeAgent(role), 'utf8')));
     }

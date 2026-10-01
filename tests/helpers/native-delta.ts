@@ -41,16 +41,19 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
   if (roles.length === 0) return [];
   const cores = await loadSemanticCore(registryDir);
   const policy = loadToolPolicy(registryDir, host);
-  const posture = {
-    model: ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults?.specialist,
-    effort: ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults?.specialist,
-  };
+  const postureOf = (coordinator: boolean): { model?: string; effort?: string } => ({
+    model: ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults?.[coordinator ? 'coordinator' : 'specialist'],
+    effort: ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults?.[coordinator ? 'coordinator' : 'specialist'],
+  });
 
   return roles.map(role => {
     const text = (options.installed?.get(role) ?? fs.readFileSync(nativeRoleSource(registryDir, host, role)!, 'utf8')).replace(/\r\n/g, '\n');
     const facts = inspectNativeAgent(text);
     const issues: string[] = [];
-    const core = cores.get(`subagent-${role}`);
+    const core = cores.get(`subagent-${role}`) ?? cores.get(role);
+    // A coordinator (it can delegate) runs as the main thread, whose ceiling includes what a subagent never gets.
+    const coordinator = core?.capabilities?.includes('delegate') ?? false;
+    const posture = postureOf(coordinator);
 
     let floor: NativeDeltaRow['floor'] = 'ok';
     let toolGains: string[] = [];
@@ -63,8 +66,8 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
         floor = 'drift';
         issues.push(...violations);
       }
-      const ceiling = resolveGrant(policy, core.capabilities ?? [], { subagent: true, background: false });
-      ({ gains: toolGains, extras: toolExtras } = compareRealization(ceiling, facts.tools.filter(tool => !tool.startsWith('mcp__'))));
+      const ceiling = resolveGrant(policy, core.capabilities ?? [], { subagent: !coordinator, background: false });
+      ({ gains: toolGains, extras: toolExtras } = compareRealization(ceiling, facts.tools.map(tool => tool.split('(')[0]).filter(tool => !tool.startsWith('mcp__'))));
       for (const extra of toolExtras) issues.push(`Holds ${extra} beyond its capability classes.`);
     }
 

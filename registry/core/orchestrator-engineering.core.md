@@ -47,6 +47,7 @@ capabilities:
   - messaging
   - skill
   - task-tracking
+  - mcp-discovery
 ---
 
 <!-- core: orchestrator-engineering | extracted per Plan 021 Step 0 classification (dual-policy contradiction resolved toward ADR 0015) | tool-free by contract (ADR 0021 decision 1) -->
