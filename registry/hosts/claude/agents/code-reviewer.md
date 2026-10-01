@@ -1,7 +1,8 @@
 ---
 name: code-reviewer
 description: Read-only code review and static analysis. Use proactively after code changes, and before merging, to get a severity-rated report of security, performance, error-handling and hygiene findings with file, line and snippet evidence. Never edits files.
-model: inherit
+model: sonnet
+effort: medium
 permissionMode: plan
 tools: Glob, Grep, LSP, Read, SendMessage, Skill, SubagentHandback, WebFetch, WebSearch, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
 skills:

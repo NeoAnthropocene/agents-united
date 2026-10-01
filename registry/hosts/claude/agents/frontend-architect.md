@@ -1,7 +1,8 @@
 ---
 name: frontend-architect
 description: Frontend architect. Use to design component hierarchies and state management, tune Core Web Vitals (LCP, INP, CLS), and turn AI-generated UI prototypes into production-grade component systems.
-model: inherit
+model: sonnet
+effort: medium
 permissionMode: acceptEdits
 tools: Bash, Edit, Glob, Grep, LSP, NotebookEdit, PowerShell, Read, SendMessage, Skill, SubagentHandback, WebFetch, WebSearch, Write, mcp__stitch, mcp__context7, mcp__chrome-devtools-mcp
 hooks:

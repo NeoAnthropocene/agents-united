@@ -15,6 +15,7 @@ import type {
 import type { ClaudeDialect } from './types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { CLAUDE_FIELD_POLICY, validateProjectionOverlays } from './overlays.js';
+import { nativeRoleSource, renderNativeRole } from './native-package.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
 export interface ClaudeRenderResult {
@@ -248,6 +249,15 @@ export class ClaudeProjector {
     budgets: { skillDescriptionChars: 1536, agentDescriptionTokens: 15000 },
     maxRuleLines: 200,
   };
+
+  /**
+   * Plan 032 Phase 7 — the installed bytes of a role's committed native agent (`registry/hosts/claude/agents/<role>.md`
+   * behind the managed marker), or `undefined` when the role has none and keeps the legacy projection.
+   */
+  public static nativeRoleContent(registryDir: string, roleName: string, canonicalRel: string): string | undefined {
+    const source = nativeRoleSource(registryDir, 'claude', roleName);
+    return source === undefined ? undefined : renderNativeRole(fs.readFileSync(source, 'utf8'), canonicalRel);
+  }
 
   /** `subagent-backend-architect` -> `backend-architect` (Step 0 proved zero collisions). */
   public static stripSubagentPrefix(name: string): string {
@@ -780,7 +790,8 @@ export class ClaudeProjector {
     scope: InstallScope,
     resolved: ResolvedAssets,
     registryDir: string,
-    _excludeAddons?: string[]
+    _excludeAddons?: string[],
+    nativeLane = false
   ): Promise<PlannedClaudeArtifact[]> {
     void scope;
     const artifacts: PlannedClaudeArtifact[] = [];
@@ -800,15 +811,16 @@ export class ClaudeProjector {
       const content = await fs.readFile(src, 'utf8');
       const isCoordinator = coordinatorFile === agentFile;
       const roleName = ClaudeProjector.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
-      const rendered = ClaudeProjector.renderRole(content, canonicalRel, {
+      const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, roleName, canonicalRel) : undefined;
+      const rendered = native ?? ClaudeProjector.renderRole(content, canonicalRel, {
         allowlist: isCoordinator ? specialistNames : undefined,
         maxTurns: isCoordinator ? maxTurns : undefined,
-      });
+      }).content;
       artifacts.push({
         kind: 'role',
         canonical: canonicalRel,
         relPath: `.claude/agents/${roleName}.md`,
-        content: rendered.content,
+        content: rendered,
         managedMarker: true,
       });
     }
@@ -941,7 +953,8 @@ export class ClaudeProjector {
   public static async planPluginLane(
     bundle: BundleDefinition,
     resolved: ResolvedAssets,
-    registryDir: string
+    registryDir: string,
+    nativeLane = false
   ): Promise<PlannedClaudeArtifact[]> {
     const artifacts: PlannedClaudeArtifact[] = [];
     const baseDir = `.agents/plugins/${bundle.name}`;
@@ -971,15 +984,16 @@ export class ClaudeProjector {
       if (!(await fs.pathExists(src))) continue;
       const isCoordinator = coordinatorFile === agentFile;
       const roleName = ClaudeProjector.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
-      const rendered = ClaudeProjector.renderRole(await fs.readFile(src, 'utf8'), canonicalRel, {
+      const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, roleName, canonicalRel) : undefined;
+      const rendered = native ?? ClaudeProjector.renderRole(await fs.readFile(src, 'utf8'), canonicalRel, {
         allowlist: isCoordinator ? specialistNames : undefined,
         maxTurns: isCoordinator ? maxTurns : undefined,
-      });
+      }).content;
       artifacts.push({
         kind: 'role',
         canonical: canonicalRel,
         relPath: `${baseDir}/agents/${roleName}.md`,
-        content: rendered.content,
+        content: rendered,
         managedMarker: true,
         distributionOnly: true,
       });

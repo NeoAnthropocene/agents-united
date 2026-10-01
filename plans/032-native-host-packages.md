@@ -172,6 +172,19 @@
     carries all six, a test pins this for every role with "Primary Directives", and its created golden was regenerated
     deliberately. Left for later: the orchestrator (needs `Agent` with an allowlist, dynamic workflows and the main-thread
     design), the model/effort choice (all native agents inherit), and the native install lane.
+  - 2026-10-01 (later) — **Phase 7 milestone 1, native install lane for Claude agents** (`feat/claude-native-install-lane`):
+    `agents add <bundle> --fanout claude --native` (and `--no-native`) installs `registry/hosts/claude/agents/<role>.md` verbatim
+    for each role that has one, behind a managed marker as the first body line (`profile: claude-native`, canonical asset, hash
+    of the LF-normalised source); roles without a native file (the orchestrator) keep the legacy projection. Opt-in beside
+    the live lane (strangler), sticky in the lockfile as `nativeLane` exactly like the plugin lane, so `agents update` does not
+    swap the agents back. It rides the existing projection machinery: the lockfile projection hash is the drift check, doctor
+    re-renders the native bytes for the stale-render check (a changed authored file or marker hash shows as "Outdated
+    projection"), uninstall and refcounted ownership work unchanged, and both the compound lane and the `domain:*` fallback
+    honour it. `src/core/native-package.ts` is the pure helper (list, locate, render). A decision applied on the way: the
+    legacy lane pins specialists to `sonnet`/`medium` (ADR 0018 decision 7, owner decision), so the four native agents now
+    pin the same instead of `inherit` (a test ties them to the dialect constants). Not yet: native skills and rules, hooks as
+    separate scripts, `workflows/` -> `.claude/workflows/` (needs the orchestrator work), `doctor --host` core-delta table,
+    the capability probe reading `profile.json`, and flipping the lane to the default.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

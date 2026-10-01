@@ -313,6 +313,8 @@ cli
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
   .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline. Under Development hosts (cursor, opencode, codex) are refused')
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
+  .option('--native', 'Claude lane only: install the committed native agent (registry/hosts/claude/agents/<role>.md) for each role that has one, instead of projecting it from the canonical asset. Roles without a native agent keep the legacy projection. Sticky: recorded in the lockfile, so `agents update` keeps it. Use --no-native to turn it back off.')
+  .option('--no-native', 'Turn a recorded --native choice back off (legacy projections return).')
   .option('--canonical-store', 'Keep the .agents/ main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden .claude/.agents-united/ folder, ADR 0022)')
   .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off.')
   .option('--permission-preset [tier]', 'Opt-in only, never implied by -y: pre-approve a small, fixed set of commands in .claude/settings.local.json (never the shared/committed settings.json) so background specialists are not refused command approval outside auto mode. tier = verify (default: git status/diff/log, npx tsc/vitest/eslint) | build (adds npm install/run/test — executes project code, request explicitly). Never includes git commit/push, rm, curl/wget, or any deploy/publish command. Workspace-scoped only (ignored for --global). Sticky; --no-permission-preset turns it off. Claude only today; other hosts report "not supported yet".')
@@ -852,6 +854,8 @@ cli
         // claude lane runs). `--plugin` opts in, `--no-plugin` opts out explicitly, and an omitted
         // flag inherits the recorded choice so `agents update` cannot prune the package.
         pluginLane: typeof options.plugin === 'boolean' ? options.plugin : undefined,
+        // Plan 032 Phase 7 — opt-in native-package lane; same sticky semantics as the plugin lane.
+        nativeLane: typeof options.native === 'boolean' ? options.native : undefined,
         sessionGuard,
         permissionPreset,
         storeShape,

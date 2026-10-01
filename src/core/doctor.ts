@@ -159,7 +159,8 @@ export class DoctorEngine {
   private static async renderProjectionVariants(
     owners: Set<string>,
     installedBundles: string[],
-    host: CompoundLaneHost
+    host: CompoundLaneHost,
+    nativeLane = false
   ): Promise<Map<string, string[]> | null> {
     if (owners.size === 0) return null;
 
@@ -194,7 +195,8 @@ export class DoctorEngine {
                 'project',
                 resolved,
                 registryDir,
-                excludeAddons
+                excludeAddons,
+                nativeLane
               );
 
           for (const artifact of artifacts) {
@@ -457,7 +459,7 @@ export class DoctorEngine {
 
         const variantsByHost = new Map<CompoundLaneHost, Map<string, string[]>>();
         for (const [projHost, owners] of ownersByHost) {
-          const variants = await this.renderProjectionVariants(owners, manifest.installed.bundles ?? [], projHost);
+          const variants = await this.renderProjectionVariants(owners, manifest.installed.bundles ?? [], projHost, manifest.nativeLane === true);
           if (variants) variantsByHost.set(projHost, variants);
         }
 
