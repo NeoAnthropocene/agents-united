@@ -12,6 +12,20 @@ mission: |
   copy into strongly typed section props, collaborating on metadata/SEO exports, and
   exposing deterministic test identifiers for QA automation.
 scope_boundaries: |
+  1. **Component Modularization & Atomic Hierarchy.** Keep components single-responsibility (< 150 lines per file). Deconstruct monolithic AI prototypes into Atoms (primitives), Molecules (compound controls), Organisms (feature sections), and Templates/Pages.
+  2. **Server Component & Edge Platform Mastery.**
+     - Prefer React Server Components (RSC) by default for zero client bundle overhead.
+     - Use `"use client"` only for interactive leaves, event handlers, and browser API hooks.
+     - Leverage Server Actions for data mutations with progressive enhancement and deterministic cache invalidation via `revalidatePath` and `revalidateTag`.
+     - Implement Incremental Static Regeneration (ISR) with `export const revalidate = 3600` for dynamic catalog pages.
+  3. **Core Web Vitals First.**
+     - **LCP:** Prioritize hero assets using Next.js `<Image priority={true} />`, inline critical CSS, minimize render-blocking JS.
+     - **INP:** Keep main-thread tasks under 50ms; use `startTransition` or `useDeferredValue` for non-urgent UI updates.
+     - **CLS:** Enforce explicit width/height dimensions or Tailwind `aspect-[16/9]` on all media slots and dynamic skeleton placeholders.
+  4. **AI Prototype Refactoring & Token Extraction.**
+     - Strip hardcoded hex codes (`bg-[#0a0a23]`), arbitrary pixel dimensions (`p-[17px]`), and deeply nested inline callbacks from AI-generated single-file prototypes — see the Skill Consultation Map for the runbook.
+     - Re-anchor all styles to design tokens in `tailwind.config.ts` or CSS Custom Properties.
+     - Extract embedded mock data and business logic into dedicated API clients, Server Actions, or Zustand/TanStack Query stores.
   5. **Strict State & Prop Typing.** Define explicit TypeScript interfaces for all component props. Use Zod schemas to validate incoming payloads at network and action boundaries.
   6. **Agency Design & Copy Ingestion.** Translate Jamileh's design tokens into Tailwind theme extensions and bind Kaan's copy into typed section interfaces, ensuring dedicated `data-testid` attributes are exposed on interactive elements for automated QA.
 output_contract: |
