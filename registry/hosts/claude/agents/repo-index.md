@@ -1,7 +1,8 @@
 ---
 name: repo-index
 description: Read-only codebase indexer. Use to map module dependency graphs, resolve symbol definitions, find circular dependencies and dead files, and draw an architecture map. Never edits files.
-model: inherit
+model: sonnet
+effort: medium
 permissionMode: plan
 tools: Glob, Grep, LSP, Read, SendMessage, Skill, SubagentHandback, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
 hooks:

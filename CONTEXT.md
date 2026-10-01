@@ -224,6 +224,10 @@ _Avoid_: Porting the whole `registry/rules/` tree, always-on coordinator rules t
 The opt-in `.claude-plugin/plugin.json` plus `agents/` package emitted inside `.agents/plugins/<bundle>/` so the same folder can be consumed via `claude --plugin-dir` for distribution and portability. It is never the behavioural source: Claude has no project-local plugin auto-discovery, plugin agents are namespaced (`plugin:agent`), and plugin `permissionMode` is ignored.
 _Avoid_: Treating the plugin lane as an activation path, assuming plugin agents shadow `.claude/agents/`
 
+**Native Lane**:
+The opt-in install lane (`agents add --native`, Plan 032 Phase 7) that installs a committed native agent from `registry/hosts/claude/agents/<role>.md` verbatim behind a managed marker (`profile: claude-native`, with the source hash), instead of projecting the canonical asset. Roles without a native agent keep the legacy projection. Recorded as `nativeLane` in the lockfile and sticky across `agents update`; doctor's freshness check compares against the same native render.
+_Avoid_: Calling it a renderer (nothing is generated at install time, and no LLM runs on the user's machine), assuming it is the default
+
 **Claude Agent-Teams Scaffold (experimental)**:
 The minimal, opt-in support for Claude's experimental agent teams: `agents start --host claude --teams` injects `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` ephemerally into the spawned process and instructs the lead to spawn teammates from projected agent types by name. Nothing is persisted to `settings.json` or `~/.claude/**`, and the scaffold is never load-bearing (one team per session, fixed lead, no session resumption).
 _Avoid_: Persisted team configuration, teardown-dependent workflows, replacing subagents with teams

@@ -412,6 +412,16 @@ private toPosix(p: string): string {
   }
 
   /**
+   * Plan 032 Phase 7 — resolve the effective native-lane opt-in. Same stickiness as the plugin lane: an explicit
+   * `InstallOptions.nativeLane` wins (`--native` / `--no-native`), an unset flag inherits the recorded choice, so
+   * `agents update` cannot silently swap the native agents back for legacy projections.
+   */
+  private static effectiveNativeLane(options: InstallOptions, lockfile?: LockfileManifest | null): boolean {
+    if (typeof options.nativeLane === 'boolean') return options.nativeLane;
+    return lockfile?.nativeLane === true;
+  }
+
+  /**
    * Plan 023 B (ADR 0022, D4) — resolve the state dir for this install. An explicit `targetDir`
    * is a location hint; a requested (or implied) store shape always lands in `.agents/`, and a
    * sidecar is used only when nothing needs the store: any non-Claude fan-out or the plugin lane
@@ -544,16 +554,17 @@ private toPosix(p: string): string {
     scope: InstallScope,
     resolved: ResolvedAssets,
     registryDir: string,
-    pluginLane: boolean
+    pluginLane: boolean,
+    nativeLane = false
   ): Promise<PlannedProjectionArtifact[]> {
     if (host === 'cline') {
       return ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
     }
-    const artifacts = await ClaudeProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+    const artifacts = await ClaudeProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir, undefined, nativeLane);
     if (pluginLane) {
       // Distribution-only extras (ADR 0018 decision 12): deployed and tracked through the same
       // lane, but never recorded as a `projectedTo` target (`distributionOnly` artifacts).
-      artifacts.push(...await ClaudeProjector.planPluginLane(bundleDef, resolved, registryDir));
+      artifacts.push(...await ClaudeProjector.planPluginLane(bundleDef, resolved, registryDir, nativeLane));
     }
     return artifacts;
   }
@@ -675,7 +686,8 @@ private toPosix(p: string): string {
     registryDir: string,
     scope: InstallScope,
     targetDir?: string,
-    pluginLane = false
+    pluginLane = false,
+    nativeLane = false
   ): Promise<ProjectionInfo[]> {
     const infos: ProjectionInfo[] = [];
     if (fanoutHosts.length === 0) return infos;
@@ -696,7 +708,8 @@ private toPosix(p: string): string {
             scope,
             resolved,
             registryDir,
-            pluginLane
+            pluginLane,
+            nativeLane
           );
           for (const artifact of artifacts) {
             infos.push({ host, path: artifact.relPath, kind: artifact.kind, warnings: [] });
@@ -741,11 +754,18 @@ private toPosix(p: string): string {
     // rather than "prune the opted-in package"; only an explicit `false` (CLI `--no-plugin`) turns
     // it off. Persisted for the same reason `fanout` is.
     const pluginLane = InstallEngine.effectivePluginLane(options, lockfile);
+    // Plan 032 Phase 7 — the native-lane opt-in is sticky for the same reason.
+    const nativeLane = InstallEngine.effectiveNativeLane(options, lockfile);
     if (fanoutHosts.includes('claude')) {
       if (pluginLane) {
         lockfile.pluginLane = true;
       } else if (options.pluginLane === false) {
         delete lockfile.pluginLane;
+      }
+      if (nativeLane) {
+        lockfile.nativeLane = true;
+      } else if (options.nativeLane === false) {
+        delete lockfile.nativeLane;
       }
     }
 
@@ -795,7 +815,8 @@ private toPosix(p: string): string {
             scope,
             resolved,
             registryDir,
-            pluginLane
+            pluginLane,
+            nativeLane
           );
 
           await this.applyCompoundLane(host, bundleDef.name, artifacts, {
@@ -872,10 +893,15 @@ private toPosix(p: string): string {
         const peerRoles = resolved.agents
           .filter(f => f !== agentFile)
           .map(f => ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, '')));
+        const nativeContent = host === 'claude' && nativeLane
+          ? ClaudeProjector.nativeRoleContent(registryDir, ClaudeProjector.stripSubagentPrefix(agentFile.replace(/.md$/i, '')), canonicalRel)
+          : undefined;
         const res = host === 'claude'
-          ? ClaudeProjector.renderRole(content, canonicalRel, {
-              allowlist: isCoordinatorRole ? peerRoles : undefined,
-            })
+          ? (nativeContent !== undefined
+              ? { content: nativeContent, warnings: [] as string[] }
+              : ClaudeProjector.renderRole(content, canonicalRel, {
+                  allowlist: isCoordinatorRole ? peerRoles : undefined,
+                }))
           : HostProjector.projectAgent(content, HOST_REGISTRY[host].profile, canonicalRel);
         // ADR 0013 / ADR 0018: the compound-lane hosts (Cline, Claude) name their
         // projected roles by stripping the canonical `subagent-` prefix, so the
@@ -979,6 +1005,7 @@ private toPosix(p: string): string {
     if (options.dryRun) {
       let effectiveDryFanout = fanoutHosts;
       let effectiveDryPluginLane = options.pluginLane === true;
+      let effectiveDryNativeLane = options.nativeLane === true;
       const lockfilePath = path.join(stateDir, 'agents-united.json');
       if (await fs.pathExists(lockfilePath)) {
         const lockfile = await fs.readJson(lockfilePath).catch(() => null);
@@ -991,9 +1018,12 @@ private toPosix(p: string): string {
         if (options.pluginLane === undefined && lockfile?.pluginLane === true) {
           effectiveDryPluginLane = true;
         }
+        if (options.nativeLane === undefined && lockfile?.nativeLane === true) {
+          effectiveDryNativeLane = true;
+        }
       }
       const projections = hasCanonicalAgents
-        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, stateDir, effectiveDryPluginLane)
+        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, stateDir, effectiveDryPluginLane, effectiveDryNativeLane)
         : [];
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }

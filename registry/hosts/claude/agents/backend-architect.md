@@ -1,7 +1,8 @@
 ---
 name: backend-architect
 description: TypeScript/Node.js backend architect. Use to design and implement REST, GraphQL or gRPC services, database schemas and migrations, and cloud-native backend infrastructure, with tests and a build check.
-model: inherit
+model: sonnet
+effort: medium
 permissionMode: acceptEdits
 tools: Bash, Edit, Glob, Grep, LSP, NotebookEdit, PowerShell, Read, SendMessage, Skill, SubagentHandback, WebFetch, WebSearch, Write, mcp__github, mcp__context7
 hooks:

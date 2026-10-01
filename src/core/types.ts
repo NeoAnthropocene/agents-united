@@ -332,6 +332,12 @@ export interface LockfileManifest {
    */
   pluginLane?: boolean;
   /**
+   * Plan 032 Phase 7 — the recorded opt-in for the Claude native-package lane: roles with a committed native agent in
+   * `registry/hosts/claude/agents/` are installed from it instead of being projected from the canonical asset. Sticky
+   * for the same reason as `pluginLane`: `agents update` re-runs the installer without the flag. Absent ⇒ off.
+   */
+  nativeLane?: boolean;
+  /**
    * Plan 023 A (owner D1–D2) — the recorded plain-session guard decision. `{ off: true }` is a
    * remembered "no"; otherwise the settings file (workspace-relative, or absolute for `user`)
    * holding our managed PreToolUse groups, the handler hash that proves ownership, and whether
@@ -476,6 +482,11 @@ export interface InstallOptions {
    * for `claude --plugin-dir`. Claude lane only; the plan is byte-identical to today when absent.
    */
   pluginLane?: boolean;
+  /**
+   * Plan 032 Phase 7 — opt-in native-package lane (`agents add --native`): install the committed native agent for each
+   * role that has one. Claude lane only; `false` turns a recorded choice off, an omitted flag inherits it.
+   */
+  nativeLane?: boolean;
   /**
    * Plan 023 A — guard plain Claude sessions too: `project` (.claude/settings.json), `local`
    * (.claude/settings.local.json), `user` (~/.claude/settings.json, explicit only), or `false`
