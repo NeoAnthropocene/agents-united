@@ -19,6 +19,21 @@ export const ARTIFACT_TYPES = [
 
 export type ArtifactType = (typeof ARTIFACT_TYPES)[number];
 
+/**
+ * A reference text that ships inside the host (for example a bundled skill) and has no URL. It is captured through the
+ * host itself and ingested with `hostlib:ingest`; `refresh` never fetches it.
+ */
+export interface BundledSource {
+  /** File name under `pages/<artifactType>/` (without `.md`). */
+  slug: string;
+  /** What the text is and where it ships, recorded in the lockfile. */
+  origin: string;
+  /** How a maintainer reproduces the capture. */
+  capture: string;
+  /** First host version that ships the text. */
+  since: string;
+}
+
 export interface SourcePage {
   url: string;
   /** File name under `pages/<artifactType>/` (without `.md`). */
@@ -45,6 +60,8 @@ export interface HostSources {
   indexes: SourceIndex[];
   changelog: { url: string; snapshot: string };
   pages: Partial<Record<ArtifactType, SourcePage[]>>;
+  /** Reference text bundled inside the host, per artifact type (optional). */
+  bundled?: Partial<Record<ArtifactType, BundledSource[]>>;
   /** Changelog keyword (case-insensitive regex source) lists per artifact type. */
   keywords: Partial<Record<ArtifactType, string[]>>;
   /** Hostnames the refresh must reach (documents the routine network policy). */
