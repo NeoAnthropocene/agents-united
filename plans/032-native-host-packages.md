@@ -124,6 +124,26 @@
     every restored skill keeps a compact pointer naming each restored folder. Content still to restore catalog-wide after
     this bundle: 106 files: react-best-practices 72 (blocked on a licence file), edge-security-audit 15, mobile-android-design 4,
     mobile-platform-offline-validate 4, mobile-ios-design 3, codeql-scanning 3, domain-modeling 2, sarif-triage 2, semgrep-scanning 1.
+  - 2026-09-30 (final run) — **PR D complete: checkpoint** (`feat/restore-extras-remaining-skills`): restored the last 98 documents
+    (domain-modeling 2, edge-security-audit 15, mobile-android-design 4, mobile-ios-design 3,
+    mobile-platform-offline-validate 4, react-best-practices 70). PR D total: 198 upstream documents across 10 skills,
+    all docs only, every folder audit-clean. **Only `semgrep-scanning` (1 document) is left, deliberately**: it is a
+    security hold and stays until a human clears it. Decisions and findings: (1) **owner decision**: `react-best-practices`
+    is restored although upstream declares MIT only in SKILL.md frontmatter and README with no licence file; the
+    acceptance is recorded in the record (`resolvedLicence.ownerAcceptance`), its `LICENSE` says plainly that no
+    copyright notice is published upstream (no holder is invented), and `NOTICE.md` has an "Owner acceptance" section;
+    the tooling accepts this only for MIT and only with a reason. If upstream adds a licence file, replace it.
+    (2) `codeql-scanning` was restored by mistake and reverted: its `workflows/*.md` already live in `references/` as
+    adapted copies (90-99% similar), so reconcile now also recognises near-identical adapted moves (85% of a longer
+    document's lines in one local file) and a file that only gained a name prefix (`build-database` ->
+    `workflow-build-database`). A near-duplicate scan over every restored skill found no other case.
+    (3) Test fixtures (`fixtures/`) are deferred with the scripts they exercise (sarif-triage's `.sarif` files);
+    underscore-prefixed files in `rules/` are upstream scaffolding like `references/_*` (react's `_sections.md` and
+    `_template.md` are skipped). (4) JSON cannot carry a header comment: it is restored verbatim and listed in
+    `NOTICE.md` ("without a header"; edge-security-audit's `report-schema.json`). Deferred to later PRs: 39 scripts and
+    assets, as agreed. One test (`skill helper scripts (Python)`, semgrep `test_every_command_has_metrics_off_and_language_scope`)
+    failed once under full-suite load and passed in 5 further runs; its scans run sequentially and nothing here touches
+    it, so the cause is unknown and should be looked at separately rather than assumed to be a flake.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8
@@ -547,7 +567,7 @@ directly. Suggested order (each is independently reviewable):
 | A ✔ | `chore/host-library-seed-cline-antigravity` | `npm run hostlib:refresh -- --host cline,antigravity --all`, `hostlib:verify`, review snapshot diff (done 2026-09-30) | network to `docs.cline.bot`, `antigravity.google` |
 | B ✔ | `feat/host-library-guides-claude` | `host-library/claude/guide/*.md` (agent, skill, hook, tools, orchestration, plugin, mcp, permissions) — every rule cites a `pages/` snapshot; test that citations resolve (done 2026-09-30) | snapshots from the Claude seed |
 | C ✔ | `feat/host-profiles-and-tool-policy` | Phases 3 + 5: `registry/hosts/claude/{profile,tool-policy}.json`, capability classes in `registry/core/*.core.md`, efficiency lint | B |
-| D (pilot ✔) | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
+| D ✔ (checkpoint) | `feat/restore-dropped-skill-extras-<bundle>` | restore `droppedExtras` from `_upstream/<skill>/` for one bundle at a time; licence tier + `lintSkillPortability`; resolve the 3 security holds and the 8 `fuzzy` matches first | none |
 | E | `feat/claude-native-pilot-software-engineering` | Phase 6 pilot (5 agents, 16 skills, real hooks, dynamic workflows) | B, C |
 
 Commit trailers: `Co-Authored-By: NeoAnthropocene <112825147+NeoAnthropocene@users.noreply.github.com>` (plus any

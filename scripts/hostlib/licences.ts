@@ -119,7 +119,37 @@ export interface ApplyOptions {
   record: SkillRecord;
   resolution: ResolvedLicence;
   today: string;
+  /**
+   * Owner decision to accept an MIT declaration that has no licence file behind it (frontmatter or README only).
+   * Nothing else can be accepted this way, and the LICENSE then states that no copyright notice is published upstream.
+   */
+  ownerAcceptance?: { by: string; date: string; reason: string };
 }
+
+/** MIT permission text for an upstream that declares MIT but publishes no copyright notice: no holder is invented. */
+const MIT_WITHOUT_COPYRIGHT = `MIT License
+
+No copyright notice is published upstream: the upstream repository declares "MIT" but has no licence file.
+The permission notice below is the standard MIT text, reproduced for the declared licence; see NOTICE.md.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+`;
 
 const EVIDENCE_LABEL = { readme: 'a README statement', frontmatter: 'a frontmatter statement' } as const;
 
@@ -142,12 +172,22 @@ export function applyResolvedLicence(options: ApplyOptions): void {
   const { record, resolution } = options;
   const skill = record.skill;
   if (resolution.evidence === 'none') throw new Error(`Refusing to apply a licence to ${skill}: no licence evidence.`);
-  if (resolution.evidence !== 'licence-file') {
-    throw new Error(`Refusing to apply a licence to ${skill}: the only evidence is ${EVIDENCE_LABEL[resolution.evidence]}, not a licence file.`);
+  const accepted = options.ownerAcceptance;
+  let licenceText: string;
+  if (resolution.evidence === 'licence-file') {
+    if (!resolution.restorable || !resolution.spdx || resolution.text === undefined) {
+      throw new Error(`Refusing to apply a licence to ${skill}: licence tier "${resolution.tier}"${resolution.spdx ? ` (${resolution.spdx})` : ''}.`);
+    }
+    licenceText = resolution.text;
+  } else {
+    if (!accepted) {
+      throw new Error(`Refusing to apply a licence to ${skill}: the only evidence is ${EVIDENCE_LABEL[resolution.evidence]}, not a licence file.`);
+    }
+    if (resolution.spdx !== 'MIT') throw new Error(`Refusing to apply a licence to ${skill}: only an MIT declaration can be accepted without a licence file.`);
+    if (accepted.reason.trim() === '') throw new Error(`Refusing to apply a licence to ${skill}: an owner acceptance needs a reason.`);
+    licenceText = MIT_WITHOUT_COPYRIGHT;
   }
-  if (!resolution.restorable || !resolution.spdx || resolution.text === undefined) {
-    throw new Error(`Refusing to apply a licence to ${skill}: licence tier "${resolution.tier}"${resolution.spdx ? ` (${resolution.spdx})` : ''}.`);
-  }
+  const spdx = resolution.spdx!;
   const dir = path.join(options.skillsDir, skill);
   const skillMdPath = path.join(dir, 'SKILL.md');
   const skillMd = fs.readFileSync(skillMdPath, 'utf8');
@@ -156,6 +196,12 @@ export function applyResolvedLicence(options: ApplyOptions): void {
     record.pinKind === 'recovered-head'
       ? `Pinned commit: \`${record.sha}\` — the repository HEAD on ${options.today} (recovered, see \`host-library/_upstream/skills.json\`). It is the state at which the licence was read, not necessarily the revision this skill was ported from.`
       : `Pinned commit: \`${record.sha}\`.`;
+  const licenceLine = accepted
+    ? `**${spdx}**, declared in \`${resolution.file}\` at the pinned commit. The upstream repository has no licence file and publishes no copyright notice. \`LICENSE\` holds the standard MIT permission text without a copyright line.`
+    : `**${spdx}**${resolution.copyright ? ` (${resolution.copyright})` : ''}, read from \`${resolution.file}\` at the pinned commit. The full text is in \`LICENSE\` in this folder.`;
+  const acceptanceSection = accepted
+    ? `\n## Owner acceptance\n\nThis declaration was accepted by the owner on ${accepted.date} (${accepted.by}): ${accepted.reason} It is a licence-risk decision, not a licence file: if the upstream later publishes one, replace \`LICENSE\` and this section (\`npm run hostlib:licences\`).\n`
+    : '';
   const notice = `# NOTICE — \`${skill}\`
 
 ## Source
@@ -163,20 +209,20 @@ export function applyResolvedLicence(options: ApplyOptions): void {
 - Upstream: [${record.repo}](${url})
 - Upstream path: [\`${record.path}\`](${url}/tree/${record.sha}/${record.path})
 - ${pin}
-- Licence: **${resolution.spdx}**${resolution.copyright ? ` (${resolution.copyright})` : ''}, read from \`${resolution.file}\` at the pinned commit. The full text is in \`LICENSE\` in this folder.
+- Licence: ${licenceLine}
 
 ## Licence terms for this folder
 
-${terms(resolution.spdx)}
-
+${terms(spdx)}
+${acceptanceSection}
 ## What changed
 
 - \`SKILL.md\` was written for agents-united in this catalog's runbook format (PROJECT.md §7.2); it is not a copy of the upstream \`SKILL.md\`.
 - \`LICENSE\`, this \`NOTICE.md\` and \`metadata.license\` were added on ${options.today} (Plan 032, licence resolution). No upstream documents were restored by that step.
 `;
-  fs.writeFileSync(path.join(dir, 'LICENSE'), resolution.text.endsWith('\n') ? resolution.text : `${resolution.text}\n`);
+  fs.writeFileSync(path.join(dir, 'LICENSE'), licenceText.endsWith('\n') ? licenceText : `${licenceText}\n`);
   fs.writeFileSync(path.join(dir, 'NOTICE.md'), notice);
-  fs.writeFileSync(skillMdPath, withLicenceMetadata(skillMd, resolution.spdx));
+  fs.writeFileSync(skillMdPath, withLicenceMetadata(skillMd, spdx));
 }
 
 /**

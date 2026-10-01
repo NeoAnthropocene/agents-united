@@ -46,6 +46,35 @@ describe('missingUpstreamFiles', () => {
     expect(missingUpstreamFiles(up, local)).toEqual([]);
   });
 
+  it('counts a file present when the port only added a prefix to its name, whatever its content (workflow- style)', () => {
+    const up = tmp();
+    const local = tmp();
+    write(up, 'workflows/build-database.md', '# Upstream text\n');
+    write(local, 'references/workflow-build-database.md', '# Completely reworded for this catalog\n');
+    expect(missingUpstreamFiles(up, local)).toEqual([]);
+  });
+
+  it('counts an adapted move as present when most of its lines survive in one local file (codeql style)', () => {
+    const up = tmp();
+    const local = tmp();
+    const upstream = Array.from({ length: 20 }, (_, i) => `Step ${i + 1}: do the thing ${i + 1}.`).join('\n');
+    write(up, 'workflows/run-analysis.md', `# Run analysis\n\n${upstream}\n`);
+    const adapted = upstream.replace('Step 3: do the thing 3.', 'Step 3: do the thing 3 (Windows: use the Python port).');
+    write(local, 'references/workflow-run-analysis.md', `<!-- Adapted. -->\n\n# Run Analysis Workflow\n\nPorted note.\n\n${adapted}\n`);
+    expect(missingUpstreamFiles(up, local)).toEqual([]);
+  });
+
+  it('does not treat a partial overlap, an unrelated file or a very short document as an adapted move', () => {
+    const up = tmp();
+    const local = tmp();
+    const lines = Array.from({ length: 20 }, (_, i) => `Line number ${i + 1} of the upstream document.`);
+    write(up, 'rules/long.md', `${lines.join('\n')}\n`);
+    write(local, 'references/partial.md', `${lines.slice(0, 12).join('\n')}\nSomething else entirely.\n`);
+    write(up, 'rules/short.md', 'One\nTwo\nThree\n');
+    write(local, 'references/short-copy.md', 'One\nTwo\nThree\nFour\n');
+    expect(missingUpstreamFiles(up, local)).toEqual(['rules/long.md', 'rules/short.md']);
+  });
+
   it('keeps a file missing when nothing local matches by name or content', () => {
     const up = tmp();
     const local = tmp();

@@ -16,6 +16,11 @@ disable-slash-command: true
 ## Overview & Purpose
 `mobile-ios-design` provides systemic guidance for designing native iOS applications adhering to Apple's Human Interface Guidelines (HIG) and SwiftUI architectural standards.
 
+
+### Reference files
+
+Restored upstream guides: [`references/`](references/) (`hig-patterns`, `ios-navigation`, `swiftui-components`). Read the one for your task.
+
 ## Rules & Constraints
 1. **Follow Apple HIG Standards** — Respect safe area insets, navigation bar titles, dynamic type, and native gestures.
 2. **Declarative State Flow** — Maintain single source of truth using `@State`, `@Binding`, and the `@Observable` macro.

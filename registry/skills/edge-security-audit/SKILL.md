@@ -28,6 +28,11 @@ distinct from the catalog's generic `security-audit` skill (OWASP Top 10 /
 SAST checklist): this skill is a *process* for avoiding both false positives
 and missed findings, applied to the edge-specific attack surface.
 
+
+### Reference files
+
+Restored upstream files sit at the skill root, one topic each. Workflow: `RECONNAISSANCE.md`, `HUNTING.md`, `VALIDATION-AND-REPORTING.md`. `ATTACK-CLASSES.md` helps choose which class files apply (`WEB-PROTOCOL-AND-AUTH.md`, `CLOUD-AND-DEPLOYMENT.md`, `CLIENT-SIDE.md`, `DATA-ISOLATION-AND-LIFECYCLE.md`, `AI-AND-LLM.md`, and others); `report-schema.json` is the findings schema. List the folder and read only what the target needs.
+
 ## Execution Triggers & Prerequisites
 ### Execution Triggers
 - A Cloudflare Worker, Pages Function, or Durable Object is going to

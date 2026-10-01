@@ -196,6 +196,8 @@ export interface ResolvedLicenceRecord {
   file?: string;
   copyright?: string;
   restorable: boolean;
+  /** The owner accepted a frontmatter or README declaration that has no licence file behind it (MIT only). */
+  ownerAcceptance?: { by: string; date: string; reason: string };
   resolvedAt: string;
 }
 
@@ -276,8 +278,10 @@ const ASSET_EXT = /\.(svg|png|jpe?g|gif|webp|ico)$/i;
 export function classifyExtra(file: string): ExtraKind {
   if (!file.includes('/') && PACKAGING_ROOT_FILES.test(file)) return 'packaging';
   if (file.startsWith('agents/')) return 'packaging';
-  if (/^references\/_[^/]+$/.test(file)) return 'packaging';
-  if (file.startsWith('scripts/') || SCRIPT_EXT.test(file)) return 'script';
+  // Underscore-prefixed files in a rule folder are upstream's own section and template scaffolding.
+  if (/^(references|rules)\/_[^/]+$/.test(file)) return 'packaging';
+  // Test fixtures belong to the scripts they exercise, so they are deferred with them.
+  if (file.startsWith('scripts/') || SCRIPT_EXT.test(file) || /(^|\/)fixtures\//.test(file)) return 'script';
   if (file.startsWith('assets/') || ASSET_EXT.test(file)) return 'asset';
   return 'content';
 }

@@ -61,14 +61,20 @@ repository root; record which file decided it. Then place it in a tier (ADR 0024
   in `SKILL.md` — see the Host Primitive Matrix §1 size limits below.
 
 - **Restoring files a port dropped** (Plan 032 PR D): `host-library/_upstream/skills.json` lists, per third-party
-  skill, upstream files missing from the catalog copy — `droppedExtras` (documents and data to restore),
-  `skippedExtras` (upstream packaging, skipped on purpose) and `deferredExtras` (scripts and assets, restored in
-  their own PRs). `npm run hostlib:restore -- --skill <name>` copies the documents verbatim behind a one-line
-  attribution header. It refuses unless the skill is third-party pinned with a classified, non-blocked licence, the
-  audit passed, a snapshot exists, and the skill folder already carries `LICENSE` and `NOTICE.md`. After restoring,
-  `npm run hostlib:restore -- --reconcile` first drops from the lists anything the port only renamed or moved. Then add a short "Reference files" pointer to `SKILL.md` and run the audit gate over the folder. Name the folders and
-  the file-naming pattern, never one link per file: `SKILL.md` is loaded on every invocation, while the restored
-  files are read one at a time, on demand.
+  skill, upstream files missing from the catalog copy: `droppedExtras` (documents and data to restore),
+  `skippedExtras` (upstream packaging, skipped on purpose) and `deferredExtras` (scripts, assets and test fixtures,
+  restored in their own PRs). Run `npm run hostlib:restore -- --reconcile` first: it drops from the lists anything the
+  port only renamed, moved or lightly adapted (same path or file name, a name that only gained a prefix, identical
+  content, or 85% of a longer document's lines in one local file), so a restore never adds a conflicting
+  near-duplicate. Underscore-prefixed files in `rules/` or `references/` are upstream scaffolding and are skipped.
+  `npm run hostlib:restore -- --skill <name>` then copies the documents verbatim behind a one-line attribution header
+  (JSON cannot carry a header: it is copied verbatim and listed in `NOTICE.md`). It refuses unless the skill is
+  third-party pinned with a classified, non-blocked licence, the audit passed, a snapshot exists, and the skill
+  folder already carries `LICENSE` and `NOTICE.md`. A frontmatter- or README-only MIT declaration can be accepted by
+  the owner (`hostlib:licences --apply --accept "<reason>"`): the record keeps the decision and `LICENSE` states that
+  no copyright notice is published upstream. After restoring, add a short "Reference files" pointer to `SKILL.md` and
+  run the audit gate over the folder. Name the folders and the file-naming pattern, never one link per file:
+  `SKILL.md` is loaded on every invocation, while the restored files are read one at a time, on demand.
 
 ## 5. Host check (docs/host-primitive-matrix.md)
 

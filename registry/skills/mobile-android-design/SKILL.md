@@ -16,6 +16,11 @@ disable-slash-command: true
 ## Overview & Purpose
 `mobile-android-design` defines design patterns and implementation rules for native Android applications utilizing Google's Material Design 3 system and Jetpack Compose.
 
+
+### Reference files
+
+Restored upstream guides: [`references/`](references/) (`android-navigation`, `compose-components`, `material3-theming`, `details`). Read the one for your task.
+
 ## Rules & Constraints
 1. **Material 3 Theming** — Utilize `MaterialTheme.colorScheme` and dynamic tonal palettes.
 2. **Edge-to-Edge Design** — Enable edge-to-edge rendering with `enableEdgeToEdge()` and handle window insets with `Modifier.safeDrawingPadding()`.

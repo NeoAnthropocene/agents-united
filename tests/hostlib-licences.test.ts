@@ -240,8 +240,9 @@ describe('the committed resolutions', () => {
     }
   });
 
-  it('the README-only and frontmatter-only skills are not materialised and stay blocked from restore', () => {
-    for (const name of ['react-best-practices', 'maestro-mobile-testing']) {
+  it('the frontmatter-only skill without an owner acceptance is not materialised and stays blocked from restore', () => {
+    // react-best-practices was later accepted by the owner (see hostlib-restore-final.test.ts); maestro remains blocked.
+    for (const name of ['maestro-mobile-testing']) {
       const dir = path.resolve('registry/skills', name);
       expect(fs.existsSync(path.join(dir, 'LICENSE')), name).toBe(false);
       expect(fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8'), name).not.toMatch(/^\s+license:/m);
