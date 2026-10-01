@@ -21,6 +21,25 @@ export interface NativeAgentFacts {
 
 const FRONTMATTER = /^---\n([\s\S]*?)\n---/;
 
+/** Splits a `tools` value on top-level commas, so `Agent(a, b), Read` is two entries and an allowlist stays whole. */
+export function splitTools(value: unknown): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let current = '';
+  for (const char of String(value ?? '')) {
+    if (char === '(') depth++;
+    if (char === ')') depth = Math.max(0, depth - 1);
+    if (char === ',' && depth === 0) {
+      out.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  out.push(current.trim());
+  return out.filter(Boolean);
+}
+
 function guardOf(hooks: unknown): NativeGuard {
   const scripts: string[] = [];
   const groups = (hooks as { PreToolUse?: Array<{ hooks?: Array<{ args?: unknown[] }> }> } | undefined)?.PreToolUse;
@@ -42,7 +61,7 @@ export function inspectNativeAgent(text: string): NativeAgentFacts {
   } catch {
     meta = {};
   }
-  const tools = String(meta.tools ?? '').split(',').map(tool => tool.trim()).filter(Boolean);
+  const tools = splitTools(meta.tools);
   return { meta, tools, guard: guardOf(meta.hooks), holdsWriter: tools.some(tool => WRITER_TOOLS.includes(tool)) };
 }
 

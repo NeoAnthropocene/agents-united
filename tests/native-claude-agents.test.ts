@@ -6,13 +6,16 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { nativeGuardHooks } from '../src/core/guard.js';
 import { checkFloor, checkHooks, syncFloor, syncHooks } from '../src/core/native-floor.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
+import { splitTools } from '../src/core/native-guard.js';
+import { syncRoster } from '../src/core/native-roster.js';
 import { readOnlyGuardHooks } from '../src/core/readonly-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
+import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
 
 /**
  * Plan 032 PR E — the native Claude agents (milestone 1: code-reviewer; milestone 2: backend-architect,
- * frontend-architect, repo-index). Each file is authored; its Contract Floor block and guard hooks are generated
+ * frontend-architect, repo-index; milestone 3: the orchestrator, a main-thread agent). Each file is authored; its Contract Floor block and guard hooks are generated
  * (regenerate with `UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts`). Tools must equal the
  * class-derived grant plus the role's declared server tools, and the embedded guard must really block.
  */
@@ -28,6 +31,10 @@ interface RoleSpec {
   mutating: boolean;
   /** Tools the role must hold on top of what its classes happen to give: the point of each is in the comment. */
   mustHold: string[];
+  /** A coordinator: runs as the main thread (`claude --agent`), so its ceiling includes what a subagent never gets, and it carries the domain map. */
+  mainThread?: boolean;
+  model: string;
+  effort: string;
 }
 
 const MCP_READ_TOOLS = [
@@ -43,25 +50,44 @@ const MCP_READ_TOOLS = [
 const WRITER_MUST_HOLD = ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'TodoWrite', 'ToolSearch'];
 
 const ROLES: RoleSpec[] = [
-  { name: 'code-reviewer', stem: 'subagent-code-reviewer', guard: 'read-only', permissionMode: 'plan', skills: ['security-audit'], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ReportFindings', 'ToolSearch'] },
-  { name: 'repo-index', stem: 'subagent-repo-index', guard: 'read-only', permissionMode: 'plan', skills: [], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ToolSearch'] },
-  { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: WRITER_MUST_HOLD },
-  { name: 'frontend-architect', stem: 'subagent-frontend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], mutating: true, mustHold: WRITER_MUST_HOLD },
+  { name: 'code-reviewer', stem: 'subagent-code-reviewer', guard: 'read-only', permissionMode: 'plan', skills: ['security-audit'], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ReportFindings', 'ToolSearch'], model: 'sonnet', effort: 'medium' },
+  { name: 'repo-index', stem: 'subagent-repo-index', guard: 'read-only', permissionMode: 'plan', skills: [], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ToolSearch'], model: 'sonnet', effort: 'medium' },
+  { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
+  { name: 'frontend-architect', stem: 'subagent-frontend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
+  {
+    name: 'orchestrator-engineering',
+    stem: 'orchestrator-engineering',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__chrome-devtools-mcp', 'mcp__firecrawl'],
+    mutating: true,
+    // Delegation and orchestration: the roster allowlist, dynamic workflows, the user, schedules, watchers and worktrees.
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'Workflow', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    model: 'opus',
+    effort: 'high',
+  },
 ];
 
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const fileOf = (role: RoleSpec): string => path.resolve('registry/hosts/claude/agents', `${role.name}.md`);
 const guardGroups = (role: RoleSpec): Record<string, unknown> => ({ ...(role.guard === 'read-only' ? readOnlyGuardHooks() : nativeGuardHooks()) });
 
+const ceilingOf = (role: RoleSpec): string[] =>
+  resolveGrant(loadToolPolicy('registry', 'claude'), cores.get(role.stem)!.capabilities ?? [], { subagent: !role.mainThread, background: false }).tools;
+
 let cores: Map<string, SemanticCore>;
 beforeAll(async () => {
   cores = await loadSemanticCore('registry');
   if (process.env.UPDATE_NATIVE === '1') {
-    for (const role of ROLES) {
+    // Specialists first: the coordinator's map is built from their committed files.
+    for (const role of [...ROLES].sort((a, b) => Number(a.mainThread ?? false) - Number(b.mainThread ?? false))) {
       if (!fs.existsSync(fileOf(role))) continue;
-      const ceiling = resolveGrant(loadToolPolicy('registry', 'claude'), cores.get(role.stem)!.capabilities ?? [], { subagent: true, background: false }).tools;
-      const toolsLine = `tools: ${[...[...ceiling].sort(), ...role.serverTools].join(', ')}`;
-      const synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
+      const tools = ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist() : tool));
+      const toolsLine = `tools: ${[...[...tools].sort(), ...role.serverTools].join(', ')}`;
+      let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
+      if (role.mainThread) synced = syncRoster(synced, rosterTypes());
       fs.writeFileSync(fileOf(role), synced);
     }
   }
@@ -70,7 +96,9 @@ beforeAll(async () => {
 describe.each(ROLES)('native Claude $name', role => {
   const read = (): string => fs.readFileSync(fileOf(role), 'utf8').replace(/\r\n/g, '\n');
   const frontmatter = (): Record<string, any> => yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(read())![1]);
-  const declared = (): string[] => String(frontmatter().tools).split(',').map(tool => tool.trim());
+  const declared = (): string[] => splitTools(frontmatter().tools);
+  /** Tool names with an `Agent(...)` allowlist reduced to `Agent`. */
+  const declaredNames = (): string[] => declared().map(tool => tool.split('(')[0]);
 
   it('honors the Contract Floor from the Semantic Core, exactly as generated', () => {
     expect(checkFloor(read(), cores.get(role.stem)!)).toEqual([]);
@@ -106,18 +134,17 @@ describe.each(ROLES)('native Claude $name', role => {
   it('holds its whole capability-class ceiling plus its server tools, and the tools its work needs', () => {
     // The widest resolution (foreground): a tool a background subagent does not keep is simply absent there, so the same
     // definition is right for both. Narrowing a role is done by narrowing its classes in the Semantic Core, not per tool.
-    const core = cores.get(role.stem)!;
-    const grant = resolveGrant(loadToolPolicy('registry', 'claude'), core.capabilities ?? [], { subagent: true, background: false });
-    expect(declared()).toEqual(expect.arrayContaining(role.mustHold));
-    expect(declared().filter(tool => !tool.startsWith('mcp__')).sort()).toEqual([...grant.tools].sort());
+    // A coordinator is resolved as the main thread (it launches workflows and asks the user); a specialist as a subagent.
+    expect(declaredNames()).toEqual(expect.arrayContaining(role.mustHold));
+    expect(declaredNames().filter(tool => !tool.startsWith('mcp__')).sort()).toEqual([...ceilingOf(role)].sort());
     expect(declared().filter(tool => tool.startsWith('mcp__')).sort()).toEqual([...role.serverTools].sort());
   });
 
   it('has Glob and Grep, and no delegation, workflow or scheduling tool', () => {
-    expect(declared()).toEqual(expect.arrayContaining(['Glob', 'Grep', 'LSP', 'Read']));
-    for (const forbidden of ['Agent', 'Workflow', 'CronCreate']) expect(declared(), forbidden).not.toContain(forbidden);
-    if (!role.mutating) for (const writer of WRITERS) expect(declared(), writer).not.toContain(writer);
-    else expect(declared()).toEqual(expect.arrayContaining(['Bash', 'Edit', 'Write']));
+    expect(declaredNames()).toEqual(expect.arrayContaining(['Glob', 'Grep', 'LSP', 'Read']));
+    for (const forbidden of role.mainThread ? [] : ['Agent', 'Workflow', 'CronCreate']) expect(declaredNames(), forbidden).not.toContain(forbidden);
+    if (!role.mutating) for (const writer of WRITERS) expect(declaredNames(), writer).not.toContain(writer);
+    else expect(declaredNames()).toEqual(expect.arrayContaining(['Bash', 'Edit', 'Write']));
   });
 
   it('keeps the frontmatter small and the description short enough for delegation routing', () => {
@@ -125,6 +152,7 @@ describe.each(ROLES)('native Claude $name', role => {
     expect(meta.name).toBe(role.name);
     expect(String(meta.description).length).toBeLessThanOrEqual(300);
     expect(meta.permissionMode).toBe(role.permissionMode);
+    expect([meta.model, meta.effort]).toEqual([role.model, role.effort]);
     expect(meta.skills ?? []).toEqual(role.skills);
     for (const skill of role.skills) expect(fs.existsSync(path.resolve('registry/skills', skill, 'SKILL.md')), skill).toBe(true);
   });
@@ -132,7 +160,7 @@ describe.each(ROLES)('native Claude $name', role => {
   it('names no tool outside its grant, and only skills that exist, in the authored guidance', () => {
     const body = read().split('<!-- agents-united:floor:end -->')[1];
     const catalog = new Set(loadToolPolicy('registry', 'claude').catalog.map(entry => entry.name));
-    const held = new Set(declared());
+    const held = new Set(declaredNames());
     for (const match of body.matchAll(/`([A-Za-z_][\w-]*)`/g)) {
       const token = match[1];
       if (catalog.has(token) || token.startsWith('mcp__')) {
@@ -140,8 +168,13 @@ describe.each(ROLES)('native Claude $name', role => {
         expect(covered, `${token} is named but not granted`).toBe(true);
       }
     }
-    for (const match of body.matchAll(/^\|[^|\n]*\|\s*`([a-z0-9-]+)`\s*\|/gm)) {
-      expect(fs.existsSync(path.resolve('registry/skills', match[1], 'SKILL.md')), `skill ${match[1]}`).toBe(true);
+    // Only a table whose second column is headed "Skill" names skills; other tables (bundles, say) are not checked here.
+    let inSkillTable = false;
+    for (const line of body.split('\n')) {
+      if (/^\|[^|]*\|\s*Skill\s*\|/.test(line)) inSkillTable = true;
+      else if (!line.startsWith('|')) inSkillTable = false;
+      const row = inSkillTable ? /^\|[^|\n]*\|\s*`([a-z0-9-]+)`\s*\|/.exec(line) : null;
+      if (row) expect(fs.existsSync(path.resolve('registry/skills', row[1], 'SKILL.md')), `skill ${row[1]}`).toBe(true);
     }
   });
 });

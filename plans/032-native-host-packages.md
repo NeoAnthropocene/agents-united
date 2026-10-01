@@ -233,6 +233,22 @@
     `test-driven-development` (adds `testing-anti-patterns.md`) as a replacement decision for ours; the `subagent-driven-development` loop
     (implementer, task reviewer, capped fix loop, final whole-branch review) is the blueprint for the `workflow-implement` workflow, not a
     skill to install. `brainstorming` waits on how it relates to the grill skills.
+  - 2026-10-01 (later) — **Phase 6 slice: the native orchestrator agent** (`feat/claude-native-orchestrator`). `registry/hosts/claude/agents/orchestrator-engineering.md`:
+    a main-thread coordinator (`claude --agent orchestrator-engineering`; it says what it does if it finds it was spawned as a subagent, where `Workflow`
+    and `AskUserQuestion` do not exist). Tools are the full main-thread ceiling of its classes (it gained `mcp-discovery`, so `ToolSearch`) with
+    `Agent(...)` limited to the fifteen specialist types of the engineering domain, generated from `registry/bundles.json`. Model posture kept from
+    ADR 0018 decision 7: `opus` / `high`, `permissionMode: acceptEdits`, the destructive-command guard. Owner decisions recorded: the domain map
+    is inline and generated (`src/core/native-roster.ts`; type, providing bundles, and for native specialists what each can do on this host: dedicated
+    search or search through Bash, shell, read-only, Monitor, worktrees, MCP servers), the installed state is checked at run time (Step 0), and a missing
+    type is answered with the bundle and `agents add <bundle>`, then `/reload-skills` and a check that it loaded (agents are picked up within seconds,
+    saved workflows and skills are not). It routes by the simplest-first rule: a small change to one subagent, a saved workflow only for large work
+    (about eight or more changed files for review, three or more independent slices for implementation), and falls back to parallel `Agent` calls
+    when the workflow is not installed; the workflows themselves are the next slice. Model facts settled from the live docs: on the Anthropic API,
+    which covers Pro and Max, `opus` resolves to Opus 5.5 and `sonnet` to Sonnet 5.5 and both aliases move with new releases, `default` on Pro is Opus
+    5.5, Sonnet 5.5 supports `xhigh` and `max` and defaults to `medium`; Bedrock, Vertex and Foundry map the aliases to older models (Sonnet 4.5 or 4.6
+    do not support `xhigh`). Rule for later bundles: a Tier-1 domain coordinator is `opus`/`high`; a Tier-2 coordinator may use `sonnet`/`xhigh`; specialists
+    are `sonnet`/`medium`. Prompt-cache sharing in a workflow fan-out is between matching workflow agents (same model, effort, agent type, tools, schema),
+    so it does not depend on the coordinator's model.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8
