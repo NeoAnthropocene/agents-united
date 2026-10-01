@@ -2811,6 +2811,10 @@ function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
   console.log(`  Plugin Support (--plugin-dir): ${capability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
   console.log(`  Agent Teams (experimental): ${capability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
   console.log(`  Subagent hand-off (SubagentHandback): ${capability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
+  if (capability.profile) {
+    console.log(`  Host profile: ${capability.profile.profileId} (minimum ${capability.profile.minVersion})`);
+  }
+  for (const diagnostic of capability.diagnostics) console.log(`  ${pc.yellow('•')} ${diagnostic}`);
 }
 
 /**

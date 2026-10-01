@@ -10,6 +10,7 @@ import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
 import { McpLocationRegistry } from './mcp-locations.js';
+import { inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -647,6 +648,26 @@ export class DoctorEngine {
       claudeCapability = await probe.probe();
       if (!claudeCapability.installed) {
         warnings.push('Claude Code executable was not detected on PATH or via CLAUDE_BIN_PATH.');
+      }
+    }
+
+    // Plan 032 Phase 7 — a native package is the product, so users get no translation report. What does concern them is
+    // safety: an installed native role that can run a shell or write files must still carry its guard. Integrity
+    // (edits, stale installs) is already covered by the projection hash and freshness checks above.
+    if (host === 'claude' && manifest?.nativeLane === true) {
+      const workspaceRoot = workspaceRootOf(root);
+      for (const [relPath, proj] of Object.entries(manifest.projections ?? {})) {
+        const match = proj.host === 'claude' && proj.kind === 'role' ? /^\.claude\/agents\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
+        if (!match) continue;
+        const abs = path.join(workspaceRoot, relPath);
+        if (!await fs.pathExists(abs)) continue; // missing is reported above
+        const text = await fs.readFile(abs, 'utf8');
+        if (!text.includes('profile: claude-native')) continue;
+        const problem = nativeGuardProblem(inspectNativeAgent(text));
+        if (problem) {
+          const owner = proj.owners[0];
+          warnings.push(`Native agent ${match[1]} ${problem}.` + (owner ? ` Run: agents update ${owner} --fanout claude to restore it.` : ''));
+        }
       }
     }
 

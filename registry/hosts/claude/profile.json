@@ -209,6 +209,7 @@
     },
     "subagentHandback": {
       "status": "available",
+      "since": "2.1.271",
       "note": "Auto mode only, v2.1.271+; specialist results return to the spawning conversation"
     },
     "imageGeneration": {
