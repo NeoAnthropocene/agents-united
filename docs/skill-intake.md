@@ -44,6 +44,16 @@ repository root; record which file decided it. Then place it in a tier (ADR 0024
 - An originally-authored skill (no upstream) omits `metadata.source` entirely — never fabricate
   a source for original work.
 
+### Looking for an upstream you do not know about
+
+A catalog skill that declares no `metadata.source` is recorded "in-house" by `hostlib:provenance`, which only follows declared sources and never searches. When a repository looks like the origin of skills you already have (same names, same lineage), scan it first:
+
+```bash
+npm run hostlib:candidates -- --repo owner/name [--sha <commit>]
+```
+
+The scan is read-only. It opens the repository (blobless, depth 1), audits every skill folder in quarantine with the same gate as ingest, and writes `host-library/_upstream/candidates/<owner>__<name>.json`: the pinned commit, the repository licence head, and for each skill its files by kind (documents, skipped packaging, deferred scripts and assets), its size, the audit verdict and findings, and, where a catalog skill has the same name, how much of the upstream `SKILL.md` text that skill also contains. A low overlap means the catalog skill is an independent writing, not a copy to attribute; the name collision is then an adoption decision (replace, rename or keep both), not a provenance fix. The scan changes no skill and no provenance record; adoption stays a separate, reviewed step that follows this procedure.
+
 ## 3. Attribution
 
 - Add the skill's author/project to **README.md §5 (Credits & Acknowledgments)**, with a link

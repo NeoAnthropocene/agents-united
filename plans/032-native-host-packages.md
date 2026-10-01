@@ -219,6 +219,20 @@
     records its origin and channel) and the text was captured through one minimal, tool-less Claude session (about 17 cents) and ingested
     through the docs audit gate. The orchestration guide gained ten cited rules from it and from the live workflows page (Pro-baseline size
     guideline, `/reload-skills`), plus the design consequences for our workflows and two items still to settle in a real session.
+  - 2026-10-01 (later) — **Candidate scan and the obra/superpowers findings** (`chore/hostlib-superpowers-provenance`). Correction to an
+    earlier remark: `hostlib:provenance` does not search, it follows each skill's declared `metadata.source`; "in-house" means "declares
+    none". New read-only `npm run hostlib:candidates -- --repo owner/name` (docs/skill-intake.md) audits every skill of a candidate repository
+    in quarantine and reports name collisions with the catalog and text overlap; no skill or provenance record changes. First run,
+    `obra/superpowers` @ `8ca22dba` (MIT, Copyright (c) 2025 Jesse Vincent, root licence file only): 15 skills, 13 pass the audit gate; `brainstorming`
+    (its optional visual-companion server script) and `writing-skills` (a graph renderer script) need review, and neither is wanted. Six
+    catalog skills share a name (`subagent-driven-development`, `test-driven-development`, `systematic-debugging`, `requesting-code-review`,
+    `receiving-code-review`, `finishing-a-development-branch`) but carry 0 to 3 percent of the upstream text: independent writings, not copies.
+    Missing from the catalog: `dispatching-parallel-agents`, `verification-before-completion`, `using-git-worktrees`, `writing-plans`,
+    `executing-plans`, `brainstorming`. Adoption queue, one reviewed PR each (pin, snapshot, `LICENSE`/`NOTICE.md`, README credit, scripts
+    deferred): `dispatching-parallel-agents` and `verification-before-completion` (single clean files) first, then the upstream
+    `test-driven-development` (adds `testing-anti-patterns.md`) as a replacement decision for ours; the `subagent-driven-development` loop
+    (implementer, task reviewer, capped fix loop, final whole-branch review) is the blueprint for the `workflow-implement` workflow, not a
+    skill to install. `brainstorming` waits on how it relates to the grill skills.
   - 2026-10-01 (later) — **Phase 6 slice: the native orchestrator agent** (`feat/claude-native-orchestrator`). `registry/hosts/claude/agents/orchestrator-engineering.md`:
     a main-thread coordinator (`claude --agent orchestrator-engineering`; it says what it does if it finds it was spawned as a subagent, where `Workflow`
     and `AskUserQuestion` do not exist). Tools are the full main-thread ceiling of its classes (it gained `mcp-discovery`, so `ToolSearch`) with
