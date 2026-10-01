@@ -76,6 +76,10 @@ capabilities:
   - messaging
   - handback
   - skill
+  - background-monitor
+  - worktree
+  - task-tracking
+  - mcp-discovery
 ---
 
 <!-- core: subagent-backend-architect | extracted per Plan 021 Step 0 classification | tool-free by contract (ADR 0021 decision 1) -->

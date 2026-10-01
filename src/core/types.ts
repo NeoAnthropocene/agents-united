@@ -829,6 +829,8 @@ export interface ToolCatalogEntry {
   backgroundSubagent: boolean;
   /** Can change files, processes or external state (a read-only class may contain none). */
   mutating: boolean;
+  /** The host documents a replacement (for example `TaskOutput`, replaced by `Read` on the task's output file): never granted. */
+  deprecated?: boolean;
   conditions: ToolCondition[];
 }
 

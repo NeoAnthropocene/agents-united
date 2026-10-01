@@ -108,6 +108,7 @@ const CatalogEntrySchema = z
     subagents: z.enum(['available', 'never', 'conditional']),
     backgroundSubagent: z.boolean(),
     mutating: z.boolean(),
+    deprecated: z.boolean().optional(),
     conditions: z.array(ConditionSchema),
   })
   .strict();
@@ -181,6 +182,10 @@ export function resolveGrant(policy: ToolPolicy, capabilities: readonly Capabili
   const dropped: ToolGrant['dropped'] = [];
   for (const entry of policy.catalog) {
     if (!wanted.has(entry.class)) continue;
+    if (entry.deprecated) {
+      dropped.push({ tool: entry.name, reason: 'deprecated by the host' });
+      continue;
+    }
     if (context.subagent && entry.subagents === 'never') {
       dropped.push({ tool: entry.name, reason: 'never available to subagents' });
       continue;

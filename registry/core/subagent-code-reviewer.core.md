@@ -90,6 +90,7 @@ capabilities:
   - messaging
   - handback
   - skill
+  - mcp-discovery
 ---
 
 <!-- core: subagent-code-reviewer | extracted per Plan 021 Step 0 classification | tool-free by contract (ADR 0021 decision 1) -->

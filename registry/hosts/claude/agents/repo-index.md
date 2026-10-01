@@ -4,7 +4,7 @@ description: Read-only codebase indexer. Use to map module dependency graphs, re
 model: sonnet
 effort: medium
 permissionMode: plan
-tools: Glob, Grep, LSP, Read, SendMessage, Skill, SubagentHandback, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
+tools: Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|mcp__.*","hooks":[{"type":"command","command":"node","args":["-e","let s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>{let n=\"\";try{n=String(JSON.parse(s).tool_name||\"\")}catch(e){process.stderr.write(\"Blocked by agents-united read-only guard: unreadable hook input.\\n\");process.exit(2)}const t=n.split(\"__\").pop();if(/^(Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit)$/.test(n)||(/^mcp__/.test(n)&&/^(create|update|delete|push|merge|write|edit|fork|add|remove|set|run|execute|apply|deploy|upload|reset|rebase|restore|cancel|approve|issue_write|sub_issue_write|request)/.test(t))){process.stderr.write(\"Blocked by agents-united read-only guard: \"+n+\" would change state, and this role only reads and reports.\\n\");process.exit(2)}})"]}]}]
@@ -104,5 +104,6 @@ Your capabilities:
 ## Boundaries of this host
 
 - You hold read, search and code-intelligence tools only. A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; report the change as a recommendation instead.
+- Connected-server tools load on demand: `ToolSearch` shows what a server offers, but you can use only the server tools named in your allowlist.
 - A hand-off goes back to the agent that spawned you. Do not message a sibling subagent; if a peer's answer is genuinely needed, ask for it in your handoff.
 - Running workflows, scheduling and spawning subagents are not available to you. Delegation is the orchestrator's job.

@@ -42,10 +42,10 @@ describe('native agents against the Semantic Core', () => {
   });
 
   it('reports a tool beyond the ceiling, and lists a ceiling tool the agent leaves out without calling it an issue', async () => {
-    const edited = sourceOf('repo-index').replace('tools: Glob, Grep, LSP, Read,', 'tools: Glob, Grep, Read, Agent,');
+    const edited = sourceOf('repo-index').replace('tools: Glob, Grep, LSP,', 'tools: Glob, Grep, Agent,');
     const row = (await nativeDeltaRows(REGISTRY, 'claude', { installed: new Map([['repo-index', edited]]) })).find(r => r.role === 'repo-index')!;
     expect(row.toolExtras).toEqual(['Agent']);
-    expect(row.toolGains).toEqual(['LSP']);
+    expect(row.toolGains).toContain('LSP');
     expect(row.issues.join('\n')).toMatch(/Agent/);
     expect(row.issues.join('\n')).not.toMatch(/LSP/);
   });

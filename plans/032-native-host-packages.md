@@ -198,6 +198,19 @@
     `registry/hosts/claude/profile.json`: the SubagentHandback floor is `features.subagentHandback.since` (was a hardcoded
     constant), and the report gains `profile` with a diagnostic for a version below the profile minimum and for a `--help` that
     contradicts the profile. "Newer than the reviewed version" is recorded as data for `host-update-sync` and is not shown to users.
+  - 2026-10-01 (later) — **Phase 7 milestone 3, full-capacity tool ceilings** (`feat/claude-native-tool-ceilings`, stacked on
+    milestone 2). Owner decisions: a native agent should hold the fullest tool set its work can need, because an orchestrator may
+    delegate any of it; exclusions are rare and for safety, never for minimalism. So the capability classes in the Semantic Core
+    are the ceiling and a native agent holds the whole ceiling plus its server tools (test: tools equal the widest, foreground,
+    resolution; a tool a background subagent does not keep is simply absent there, so one definition serves both). To narrow a
+    role, narrow its classes in the core. Classes added: `mcp-discovery` (`ToolSearch`, so tools of a connected MCP server can be
+    loaded on demand and a later-added server is visible) on all four; `background-monitor` (`Monitor`), `worktree` and
+    `task-tracking` on the two writers. The reviewer now also holds `ReportFindings` (foreground and main-agent runs; the handoff
+    report stays) and its server tools stay an explicit read-only list, so a new server never widens a read-only role. Both shells
+    are listed (`Bash` and `PowerShell`; the host docs say an entry that does not exist is not an error unless the whole list
+    resolves to nothing) and every guard matches both. New policy field `deprecated`: `TaskOutput` (the host replaced it with `Read`
+    on the task output file) is never granted. Caveat now stated in the writers' bodies: on macOS, Linux and WSL `Glob` and `Grep`
+    return only for a subagent that holds no `Bash`, so the two writers search through `Bash` there (the guard sees it).
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

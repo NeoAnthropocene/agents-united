@@ -26,6 +26,8 @@ interface RoleSpec {
   /** Explicit server tools (read-only roles) or whole servers (roles that may write, as the legacy lane grants). */
   serverTools: string[];
   mutating: boolean;
+  /** Tools the role must hold on top of what its classes happen to give: the point of each is in the comment. */
+  mustHold: string[];
 }
 
 const MCP_READ_TOOLS = [
@@ -37,11 +39,14 @@ const MCP_READ_TOOLS = [
   'mcp__context7__query-docs',
 ];
 
+/** A role that does the work it is delegated needs the shells, editors, monitors, worktrees and task tools, and MCP discovery. */
+const WRITER_MUST_HOLD = ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'TodoWrite', 'ToolSearch'];
+
 const ROLES: RoleSpec[] = [
-  { name: 'code-reviewer', stem: 'subagent-code-reviewer', guard: 'read-only', permissionMode: 'plan', skills: ['security-audit'], serverTools: MCP_READ_TOOLS, mutating: false },
-  { name: 'repo-index', stem: 'subagent-repo-index', guard: 'read-only', permissionMode: 'plan', skills: [], serverTools: MCP_READ_TOOLS, mutating: false },
-  { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true },
-  { name: 'frontend-architect', stem: 'subagent-frontend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], mutating: true },
+  { name: 'code-reviewer', stem: 'subagent-code-reviewer', guard: 'read-only', permissionMode: 'plan', skills: ['security-audit'], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ReportFindings', 'ToolSearch'] },
+  { name: 'repo-index', stem: 'subagent-repo-index', guard: 'read-only', permissionMode: 'plan', skills: [], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ToolSearch'] },
+  { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: WRITER_MUST_HOLD },
+  { name: 'frontend-architect', stem: 'subagent-frontend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], mutating: true, mustHold: WRITER_MUST_HOLD },
 ];
 
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
@@ -54,7 +59,10 @@ beforeAll(async () => {
   if (process.env.UPDATE_NATIVE === '1') {
     for (const role of ROLES) {
       if (!fs.existsSync(fileOf(role))) continue;
-      fs.writeFileSync(fileOf(role), syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)));
+      const ceiling = resolveGrant(loadToolPolicy('registry', 'claude'), cores.get(role.stem)!.capabilities ?? [], { subagent: true, background: false }).tools;
+      const toolsLine = `tools: ${[...[...ceiling].sort(), ...role.serverTools].join(', ')}`;
+      const synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
+      fs.writeFileSync(fileOf(role), synced);
     }
   }
 });
@@ -95,9 +103,12 @@ describe.each(ROLES)('native Claude $name', role => {
     for (const tool of WRITERS.filter(tool => declared().includes(tool))) expect(covered(tool), `${tool} must be guarded`).toBe(true);
   });
 
-  it('grants exactly the class-derived tools plus its server tools', () => {
+  it('holds its whole capability-class ceiling plus its server tools, and the tools its work needs', () => {
+    // The widest resolution (foreground): a tool a background subagent does not keep is simply absent there, so the same
+    // definition is right for both. Narrowing a role is done by narrowing its classes in the Semantic Core, not per tool.
     const core = cores.get(role.stem)!;
-    const grant = resolveGrant(loadToolPolicy('registry', 'claude'), core.capabilities ?? [], { subagent: true, background: true });
+    const grant = resolveGrant(loadToolPolicy('registry', 'claude'), core.capabilities ?? [], { subagent: true, background: false });
+    expect(declared()).toEqual(expect.arrayContaining(role.mustHold));
     expect(declared().filter(tool => !tool.startsWith('mcp__')).sort()).toEqual([...grant.tools].sort());
     expect(declared().filter(tool => tool.startsWith('mcp__')).sort()).toEqual([...role.serverTools].sort());
   });
