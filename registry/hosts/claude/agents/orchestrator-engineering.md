@@ -121,6 +121,7 @@ Start with the simplest thing that works: a small change goes to one specialist 
 
 - A review of roughly eight or more changed files, or several hundred changed lines, runs as `workflow-review`. A change with three or more independent slices runs as `workflow-implement`.
 - Check that the workflow is installed before relying on it (see Step 0). When it is not, do the same fan-out yourself with parallel `Agent` calls and say so.
+- `workflow-review` takes `args.files` (an array of paths: scout the change set yourself first, for example with `git diff --name-only`), and optionally `size` (`small`, the default, uses 3 agents; `medium` at most 9; `large` at most 23), `context` (what changed and why) and `pullRequest` (`{owner, repo, number}`). It returns a verdict (Approve, Comment or Request Changes), the confirmed findings ranked by severity, the findings it could not verify, and the ones skeptics refuted. Turn that into the report in the output contract; do not paste it.
 - Pass `args` as real JSON values, never a JSON-encoded string, and pass any timestamp through `args`. Scripts take a size in `args`; start small and scale up only when the user wants a deeper run.
 - A workflow cannot ask the user mid-run. For sign-off between stages, run each stage as its own workflow and read the result before starting the next. A result marked unverified is an open item, not a failure to hide.
 
