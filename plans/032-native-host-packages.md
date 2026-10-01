@@ -156,8 +156,22 @@
     skill (`security-audit`; the other four load on demand through `Skill`), and a read-only PreToolUse guard (exec form,
     fails closed, blocks shells, file writers and mutating server tools; subsumes the destructive-command guard for this
     role). The Contract Floor block and the hooks block are generated between markers (`src/core/native-floor.ts`,
-    regenerate with `UPDATE_NATIVE=1 npx vitest run tests/native-claude-reviewer.test.ts`) and checked byte-for-byte.
+    regenerate with `UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts`) and checked byte-for-byte.
     Milestone 2: the other four roles; later: orchestrator, `Workflow`, install lane.
+  - 2026-10-01 (later) — **PR E milestone 2, the other subagents** (`feat/claude-native-roles-m2`): native Claude agents for
+    `repo-index` (read-only guard), `backend-architect` and `frontend-architect` (destructive-command guard), authored the
+    same way as the reviewer and checked by one data-driven suite (`tests/native-claude-agents.test.ts`, 4 roles x 6
+    checks, renamed from the reviewer-only test). Tools equal the class-derived grant (Glob/Grep/LSP present) plus the
+    role's servers: read-only roles list explicit read tools, the two writers keep the legacy whole-server grants
+    (`mcp__github`, `mcp__context7`, `mcp__stitch`, `mcp__chrome-devtools-mcp`). No skill is preloaded for them (the
+    `Skill` tool loads them on demand; the body carries the consultation table). The suite also fails if the body names
+    a tool the role does not hold. New `nativeGuardHooks()` covers `PowerShell` as well as `Bash`: a class-derived grant
+    holds `PowerShell`, and the legacy `Bash`-only matcher would let a forced push through it (the legacy lane and its
+    goldens are unchanged). A fourth floor defect found on the way: `frontend-architect`'s `scope_boundaries` started at
+    item 5, dropping directives 1-4 (components, Server Components, Core Web Vitals, prototype refactoring); it now
+    carries all six, a test pins this for every role with "Primary Directives", and its created golden was regenerated
+    deliberately. Left for later: the orchestrator (needs `Agent` with an allowlist, dynamic workflows and the main-thread
+    design), the model/effort choice (all native agents inherit), and the native install lane.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

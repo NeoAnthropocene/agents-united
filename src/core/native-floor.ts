@@ -6,7 +6,7 @@
 import { validateContractFloor } from './semantic-core.js';
 import type { SemanticCore } from './types.js';
 
-export const FLOOR_START = '<!-- agents-united:floor:start (generated from registry/core, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-reviewer.test.ts, do not edit) -->';
+export const FLOOR_START = '<!-- agents-united:floor:start (generated from registry/core, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->';
 export const FLOOR_END = '<!-- agents-united:floor:end -->';
 
 const SECTIONS: ReadonlyArray<{ field: 'identity' | 'mission' | 'scope_boundaries' | 'output_contract' | 'safety'; heading: string }> = [
