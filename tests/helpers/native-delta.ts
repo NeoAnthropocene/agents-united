@@ -63,7 +63,7 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
         floor = 'drift';
         issues.push(...violations);
       }
-      const ceiling = resolveGrant(policy, core.capabilities ?? [], { subagent: true, background: true });
+      const ceiling = resolveGrant(policy, core.capabilities ?? [], { subagent: true, background: false });
       ({ gains: toolGains, extras: toolExtras } = compareRealization(ceiling, facts.tools.filter(tool => !tool.startsWith('mcp__'))));
       for (const extra of toolExtras) issues.push(`Holds ${extra} beyond its capability classes.`);
     }

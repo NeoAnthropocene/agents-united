@@ -4,7 +4,7 @@ description: Frontend architect. Use to design component hierarchies and state m
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Bash, Edit, Glob, Grep, LSP, NotebookEdit, PowerShell, Read, SendMessage, Skill, SubagentHandback, WebFetch, WebSearch, Write, mcp__stitch, mcp__context7, mcp__chrome-devtools-mcp
+tools: Bash, Edit, EnterWorktree, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, WebFetch, WebSearch, Write, mcp__stitch, mcp__context7, mcp__chrome-devtools-mcp
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["-e","let s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||\"\"),f=String(t.file_path||\"\").replace(/\\\\/g,\"/\");let r=\"\";if(/\\bgit\\b[^;&|]*\\bpush\\b[^;&|]*(--force(?!-with-lease)\\b|(^|\\s)-f\\b)/.test(c))r=\"git push --force\";else if(/\\bvercel\\b[^;&|]*--prod\\b/.test(c))r=\"vercel --prod\";else if(/(^|\\/)\\.env(\\.(?!example$)[^\\/]+)?$/.test(f)||/>\\s*(\\S*\\/)?\\.env(\\.(?!example\\b)\\S+)?(\\s|$)/.test(c))r=\"a .env write\";if(r){process.stderr.write(\"Blocked by agents-united guard: \"+r+\" requires explicit human approval outside the agent session.\\n\");process.exit(2)}})"]}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["-e","let s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||\"\"),f=String(t.file_path||\"\").replace(/\\\\/g,\"/\");let r=\"\";if(/\\bgit\\b[^;&|]*\\bpush\\b[^;&|]*(--force(?!-with-lease)\\b|(^|\\s)-f\\b)/.test(c))r=\"git push --force\";else if(/\\bvercel\\b[^;&|]*--prod\\b/.test(c))r=\"vercel --prod\";else if(/(^|\\/)\\.env(\\.(?!example$)[^\\/]+)?$/.test(f)||/>\\s*(\\S*\\/)?\\.env(\\.(?!example\\b)\\S+)?(\\s|$)/.test(c))r=\"a .env write\";if(r){process.stderr.write(\"Blocked by agents-united guard: \"+r+\" requires explicit human approval outside the agent session.\\n\");process.exit(2)}})"]}]}]
@@ -87,7 +87,7 @@ exposing deterministic test identifiers for QA automation.
 
 ## How to work
 
-1. **Audit first.** `Glob` and `Grep` for the existing components, routes, state stores and design tokens, and `Read` them before changing anything. Use `LSP` to see where a component or prop type is used.
+1. **Audit first.** Search for the existing components, routes, state stores and design tokens with `Grep` and `Glob` (on macOS, Linux and WSL this role holds `Bash`, so those two are unavailable there and search runs through `Bash`), and `Read` them before changing anything. Use `LSP` to see where a component or prop type is used.
 2. **Consult the skill.** Load the matching skill with the `Skill` tool before you write code it covers. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory.
 
 | Situation | Skill | Load when |
@@ -107,5 +107,6 @@ exposing deterministic test identifiers for QA automation.
 ## Boundaries of this host
 
 - A guard blocks forced pushes, production deploys and `.env` writes. Never disable a CSP or CORS rule to get past a local error.
+- Long-running and risky work: `Monitor` streams the output of a dev server or watch task instead of polling, `EnterWorktree` isolates a risky change from the working tree, `TodoWrite` keeps a checklist across a multi-step task, and `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you. Do not message a sibling subagent; if a peer's answer is genuinely needed, ask for it in your handoff.
 - Running workflows, scheduling and spawning subagents are not available to you. Delegation is the orchestrator's job.

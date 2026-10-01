@@ -113,6 +113,16 @@ describe('resolveGrant', () => {
     expect(bg.dropped[0].reason).toMatch(/background/);
   });
 
+  it('never grants a tool the host has deprecated, and says why', () => {
+    const withDeprecated = validateToolPolicy({
+      ...TINY,
+      catalog: [...TINY.catalog, { name: 'OldRead', class: 'read', subagents: 'available', backgroundSubagent: true, mutating: false, deprecated: true, conditions: [] }],
+    });
+    const grant = resolveGrant(withDeprecated, ['read'], { subagent: true, background: false });
+    expect(grant.tools).toEqual(['Read']);
+    expect(grant.dropped).toEqual([{ tool: 'OldRead', reason: 'deprecated by the host' }]);
+  });
+
   it('refuses a non-grantable class and an unknown one', () => {
     expect(() => resolveGrant(policy, ['meta'], {})).toThrow(/not grantable/);
     expect(() => resolveGrant(policy, ['telepathy' as never], {})).toThrow(/unknown capability class/);
@@ -222,6 +232,8 @@ describe('the committed Claude host profile and tool policy', () => {
     expect(byName.ReportFindings.conditions.some(c => c.kind === 'version' && /2\.1\.196/.test(c.detail))).toBe(true);
     expect(byName.TaskCreate.conditions.some(c => c.kind === 'model')).toBe(true);
     expect(byName.LSP.conditions.some(c => c.kind === 'dependency')).toBe(true);
+    expect(byName.TaskOutput.deprecated).toBe(true);
+    expect(policy.catalog.filter(tool => tool.deprecated).map(tool => tool.name)).toEqual(['TaskOutput']);
     expect(policy.classes.meta.grantable).toBe(false);
   });
 

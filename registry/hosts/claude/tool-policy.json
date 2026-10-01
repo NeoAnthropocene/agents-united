@@ -496,6 +496,7 @@
       "subagents": "available",
       "backgroundSubagent": false,
       "mutating": false,
+      "deprecated": true,
       "conditions": []
     },
     {
