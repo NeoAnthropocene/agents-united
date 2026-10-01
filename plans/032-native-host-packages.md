@@ -211,6 +211,20 @@
     resolves to nothing) and every guard matches both. New policy field `deprecated`: `TaskOutput` (the host replaced it with `Read`
     on the task output file) is never granted. Caveat now stated in the writers' bodies: on macOS, Linux and WSL `Glob` and `Grep`
     return only for a subagent that holds no `Bash`, so the two writers search through `Bash` there (the guard sees it).
+  - 2026-10-01 (later) — **Candidate scan and the obra/superpowers findings** (`chore/hostlib-superpowers-provenance`). Correction to an
+    earlier remark: `hostlib:provenance` does not search, it follows each skill's declared `metadata.source`; "in-house" means "declares
+    none". New read-only `npm run hostlib:candidates -- --repo owner/name` (docs/skill-intake.md) audits every skill of a candidate repository
+    in quarantine and reports name collisions with the catalog and text overlap; no skill or provenance record changes. First run,
+    `obra/superpowers` @ `8ca22dba` (MIT, Copyright (c) 2025 Jesse Vincent, root licence file only): 15 skills, 13 pass the audit gate; `brainstorming`
+    (its optional visual-companion server script) and `writing-skills` (a graph renderer script) need review, and neither is wanted. Six
+    catalog skills share a name (`subagent-driven-development`, `test-driven-development`, `systematic-debugging`, `requesting-code-review`,
+    `receiving-code-review`, `finishing-a-development-branch`) but carry 0 to 3 percent of the upstream text: independent writings, not copies.
+    Missing from the catalog: `dispatching-parallel-agents`, `verification-before-completion`, `using-git-worktrees`, `writing-plans`,
+    `executing-plans`, `brainstorming`. Adoption queue, one reviewed PR each (pin, snapshot, `LICENSE`/`NOTICE.md`, README credit, scripts
+    deferred): `dispatching-parallel-agents` and `verification-before-completion` (single clean files) first, then the upstream
+    `test-driven-development` (adds `testing-anti-patterns.md`) as a replacement decision for ours; the `subagent-driven-development` loop
+    (implementer, task reviewer, capped fix loop, final whole-branch review) is the blueprint for the `workflow-implement` workflow, not a
+    skill to install. `brainstorming` waits on how it relates to the grill skills.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

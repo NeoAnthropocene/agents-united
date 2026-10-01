@@ -27,6 +27,7 @@
     "hostlib:verify": "node scripts/hostlib/cli.ts verify",
     "hostlib:audit": "node scripts/hostlib/cli.ts audit",
     "hostlib:provenance": "node scripts/hostlib/cli.ts provenance",
+    "hostlib:candidates": "node scripts/hostlib/cli.ts candidates",
     "hostlib:restore": "node scripts/hostlib/cli.ts restore",
     "hostlib:licences": "node scripts/hostlib/cli.ts licences"
   },
