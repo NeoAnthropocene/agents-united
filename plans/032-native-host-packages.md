@@ -144,6 +144,20 @@
     assets, as agreed. One test (`skill helper scripts (Python)`, semgrep `test_every_command_has_metrics_off_and_language_scope`)
     failed once under full-suite load and passed in 5 further runs; its scans run sequentially and nothing here touches
     it, so the cause is unknown and should be looked at separately rather than assumed to be a flake.
+  - 2026-10-01 — **PR E milestone 1, reviewer vertical slice** (`feat/claude-native-reviewer-slice`). Floor fix (wider than
+    planned): three Semantic Cores had a wrong `safety` floor, not only the reviewer's. `code-reviewer` was cut at a dash
+    (taken from a hand-off paragraph), `frontend-architect` held a WCAG step, `repo-index` lacked its guardrails; each now
+    carries every bullet of its registry agent's "Safety Guardrails" (a test pins this for all roles that have them; the
+    created goldens were regenerated deliberately, the projection goldens untouched; `repo-index` lost its "stays read-only"
+    line from the floor because the legacy lane keeps it in another section and the floor is checked as one contiguous block,
+    its first guardrail already says read-only). The orchestrator has no guardrails section yet. New:
+    `registry/hosts/claude/agents/code-reviewer.md`, an authored agent with its own frontmatter: class-derived tools (Glob,
+    Grep, LSP present; no Bash) plus six read-only server tools, short description, `permissionMode: plan`, one preloaded
+    skill (`security-audit`; the other four load on demand through `Skill`), and a read-only PreToolUse guard (exec form,
+    fails closed, blocks shells, file writers and mutating server tools; subsumes the destructive-command guard for this
+    role). The Contract Floor block and the hooks block are generated between markers (`src/core/native-floor.ts`,
+    regenerate with `UPDATE_NATIVE=1 npx vitest run tests/native-claude-reviewer.test.ts`) and checked byte-for-byte.
+    Milestone 2: the other four roles; later: orchestrator, `Workflow`, install lane.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

@@ -1,0 +1,83 @@
+/**
+ * Plan 032 PR E — the Contract Floor block of a native host agent. The agent file is authored (ADR 0025), but its
+ * floor sections are never typed: they are regenerated from the Semantic Core between two markers, so the floor is
+ * emitted verbatim and cannot drift or be cut short. Pure string work: no I/O, no clock.
+ */
+import { validateContractFloor } from './semantic-core.js';
+import type { SemanticCore } from './types.js';
+
+export const FLOOR_START = '<!-- agents-united:floor:start (generated from registry/core, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-reviewer.test.ts, do not edit) -->';
+export const FLOOR_END = '<!-- agents-united:floor:end -->';
+
+const SECTIONS: ReadonlyArray<{ field: 'identity' | 'mission' | 'scope_boundaries' | 'output_contract' | 'safety'; heading: string }> = [
+  { field: 'identity', heading: '## Identity' },
+  { field: 'mission', heading: '## Mission' },
+  { field: 'scope_boundaries', heading: '## Scope Boundaries' },
+  { field: 'output_contract', heading: '## Output Contract' },
+  { field: 'safety', heading: '## Safety' },
+];
+
+/** The five floor sections, verbatim from the core, in contract order. */
+export function renderFloor(core: SemanticCore): string {
+  return SECTIONS.map(section => `${section.heading}\n\n${core[section.field].replace(/\n+$/, '')}`).join('\n\n');
+}
+
+const normalizeEol = (text: string): string => text.replace(/\r\n/g, '\n');
+
+function locate(text: string): { start: number; bodyStart: number; end: number } {
+  const start = text.indexOf(FLOOR_START);
+  const end = text.indexOf(FLOOR_END);
+  if (start < 0 || end < 0 || end < start || text.indexOf(FLOOR_START, start + 1) >= 0 || text.indexOf(FLOOR_END, end + 1) >= 0) {
+    throw new Error('Native floor error: the file needs exactly one pair of floor markers, start before end.');
+  }
+  return { start, bodyStart: start + FLOOR_START.length, end };
+}
+
+/** Rewrites the block between the floor markers from the core; everything else in the file is kept. */
+export function syncFloor(text: string, core: SemanticCore): string {
+  const source = normalizeEol(text);
+  const { bodyStart, end } = locate(source);
+  return `${source.slice(0, bodyStart)}\n${renderFloor(core)}\n${source.slice(end)}`;
+}
+
+/** Violations: floor fields missing from the file, plus a marker block that is not exactly the regenerated one. */
+export function checkFloor(text: string, core: SemanticCore): string[] {
+  const source = normalizeEol(text);
+  const violations = validateContractFloor(source, core);
+  const { bodyStart, end } = locate(source);
+  if (source.slice(bodyStart, end) !== `\n${renderFloor(core)}\n`) {
+    violations.push('Native floor stale: the block between the floor markers differs from the Semantic Core (regenerate with UPDATE_NATIVE=1).');
+  }
+  return violations;
+}
+
+export const HOOKS_START = '  # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)';
+export const HOOKS_END = '  # agents-united:hooks:end';
+
+/** Hook groups as one YAML flow line per event (JSON strings are valid YAML scalars), so exec-form args never need quoting rules. */
+export function renderHooks(hooks: Record<string, unknown>): string {
+  return Object.entries(hooks)
+    .map(([event, groups]) => `  ${event}: ${JSON.stringify(groups)}`)
+    .join('\n');
+}
+
+function locateHooks(text: string): { bodyStart: number; end: number } {
+  const start = text.indexOf(HOOKS_START);
+  const end = text.indexOf(HOOKS_END);
+  if (start < 0 || end < start || text.indexOf(HOOKS_START, start + 1) >= 0 || text.indexOf(HOOKS_END, end + 1) >= 0) {
+    throw new Error('Native hooks error: the frontmatter needs exactly one pair of hooks markers, start before end.');
+  }
+  return { bodyStart: start + HOOKS_START.length, end };
+}
+
+export function syncHooks(text: string, hooks: Record<string, unknown>): string {
+  const source = normalizeEol(text);
+  const { bodyStart, end } = locateHooks(source);
+  return `${source.slice(0, bodyStart)}\n${renderHooks(hooks)}\n${source.slice(end)}`;
+}
+
+export function checkHooks(text: string, hooks: Record<string, unknown>): string[] {
+  const source = normalizeEol(text);
+  const { bodyStart, end } = locateHooks(source);
+  return source.slice(bodyStart, end) === `\n${renderHooks(hooks)}\n` ? [] : ['Native hooks stale: the block between the hooks markers differs from the managed guards (regenerate with UPDATE_NATIVE=1).'];
+}

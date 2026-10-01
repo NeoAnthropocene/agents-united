@@ -40,7 +40,10 @@ output_contract: |
   - Vercel Prebuilt Build (`vercel build`): SUCCESSFUL
   ```
 safety: |
-  Ensure keyboard navigation and ARIA attributes meet WCAG 2.1 AA standards.
+  - Never embed a secret, API key, or admin credential in client-shipped code — only `NEXT_PUBLIC_*` (or the framework's equivalent public-prefixed) variables may reach the browser bundle.
+  - Sanitize any user-controlled string rendered as HTML; never bypass the framework's default escaping (`dangerouslySetInnerHTML` or equivalent) without an explicit sanitizer.
+  - Treat every Server Action and API route input as untrusted: validate with Zod (or the project's schema library) at the boundary, not after use.
+  - Never disable a Content-Security-Policy or CORS restriction to unblock a local error — fix the underlying request instead.
 invariants:
   - "Component contracts settle through the orchestrator before touching peer-owned files."
   - "Single-responsibility components with typed props at every boundary."
