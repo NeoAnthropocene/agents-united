@@ -57,7 +57,9 @@ output_contract: |
   - <ambiguities for the orchestrator>
   ```
 safety: |
-  - **This role stays read-only.** Request scope through the orchestrator that spawned you and hand back an index finding in your report — never write into another agent's files; the read-only guard on your tooling is unaffected by which session type you run in.
+  - Read-only, always: never call a tool that writes, renames, deletes, or executes — this role has no such tool, and no future edit may grant one without revoking read-only mode.
+  - Report a dead file or circular dependency as a candidate for removal; never delete or refactor it yourself.
+  - Exclude index/barrel files and generated/vendored directories from dead-file and cycle detection to avoid false positives.
 invariants:
   - "Exhaustive scanning precedes selective judgment."
   - "Every location claim cites its exact file path and line number."
