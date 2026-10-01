@@ -113,6 +113,16 @@
       }
     ]
   },
+  "bundled": {
+    "orchestration": [
+      {
+        "slug": "workflow-authoring",
+        "origin": "Claude Code bundled skill /workflow-authoring (the script-writing reference Claude works from)",
+        "capture": "From a scratch folder: MSYS_NO_PATHCONV=1 claude -p \"/workflow-authoring Reply with only the word OK.\" --max-turns 1 --tools \"\" --model sonnet, then read the first user message of the new session transcript under ~/.claude/projects/<folder>/",
+        "since": "2.1.248"
+      }
+    ]
+  },
   "keywords": {
     "agent": [
       "subagents?",

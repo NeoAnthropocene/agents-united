@@ -34,6 +34,21 @@ const SourcesSchema = z
       .min(1),
     changelog: z.object({ url, snapshot: z.string().regex(/^[\w.-]+$/) }),
     pages: z.record(artifactType, z.array(z.object({ url, slug: z.string().regex(/^[a-z0-9][a-z0-9-]*$/) })).min(1)),
+    bundled: z
+      .record(
+        artifactType,
+        z
+          .array(
+            z.object({
+              slug: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
+              origin: z.string().min(1),
+              capture: z.string().min(1),
+              since: z.string().regex(/^\d+\.\d+\.\d+$/, 'since must be a x.y.z version'),
+            }),
+          )
+          .min(1),
+      )
+      .optional(),
     keywords: z.record(artifactType, z.array(z.string().min(1)).min(1)),
     domains: z.array(z.string().min(1)).min(1),
     auditAllow: z.array(z.object({ file: z.string(), rule: z.string(), reason: z.string().min(1) })).optional(),
@@ -64,6 +79,13 @@ export function validateSources(raw: unknown, where = 'sources.json'): HostSourc
       if (!sources.domains.includes(host)) {
         throw new Error(`Host library sources invalid (${where}): page ${page.url} is outside declared domains.`);
       }
+    }
+  }
+  for (const [type, entries] of Object.entries(sources.bundled ?? {})) {
+    for (const entry of entries ?? []) {
+      const key = `${type}/${entry.slug}`;
+      if (slugs.has(key)) throw new Error(`Host library sources invalid (${where}): duplicate page slug ${key}.`);
+      slugs.add(key);
     }
   }
   for (const entry of [...sources.indexes, sources.changelog]) {
@@ -347,6 +369,9 @@ export function ingestSnapshot(
     [sources.changelog.snapshot, sources.changelog.url],
     ...(Object.entries(sources.pages) as Array<[ArtifactType, Array<{ url: string; slug: string }>]>).flatMap(([type, pages]) =>
       pages.map(page => [pagePath(type, page.slug), page.url] as [string, string]),
+    ),
+    ...(Object.entries(sources.bundled ?? {}) as Array<[ArtifactType, Array<{ slug: string; origin: string }>]>).flatMap(([type, entries]) =>
+      entries.map(entry => [pagePath(type, entry.slug), `bundled:${entry.origin}`] as [string, string]),
     ),
   ]);
   const sourceUrl = declared.get(rel);
