@@ -2393,7 +2393,6 @@ cli
       }
 
       printDeclaredDeltas(report, options.host);
-      printNativeDeltas(report);
 
       outro(pc.blue('✨ Workspace is ready for initialization.'));
       return;
@@ -2452,7 +2451,6 @@ cli
     }
 
     printDeclaredDeltas(report, options.host);
-    printNativeDeltas(report);
 
     if (report.valid && report.issues.length === 0) {
       outro(pc.green('✔ All installed agents and frontmatter schemas are healthy!'));
@@ -2814,7 +2812,7 @@ function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
   console.log(`  Agent Teams (experimental): ${capability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
   console.log(`  Subagent hand-off (SubagentHandback): ${capability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
   if (capability.profile) {
-    console.log(`  Host profile: ${capability.profile.profileId} (minimum ${capability.profile.minVersion}, reviewed against ${capability.profile.reviewedAgainst})`);
+    console.log(`  Host profile: ${capability.profile.profileId} (minimum ${capability.profile.minVersion})`);
   }
   for (const diagnostic of capability.diagnostics) console.log(`  ${pc.yellow('•')} ${diagnostic}`);
 }
@@ -2832,28 +2830,6 @@ function printDeclaredDeltas(report: HealthReport, host: string | undefined): vo
     const tag = delta.disposition === 'unsupported' ? pc.red('unsupported') : pc.yellow('degraded');
     console.log(`  • ${pc.bold(delta.feature)} (${tag}): ${delta.rationale}`);
   }
-  console.log();
-}
-
-/**
- * Plan 032 Phase 7 — the core-based delta table for `agents doctor --host claude`: each installed native agent
- * measured against the Semantic Core. Printed only when the native lane is recorded (`agents add --native`).
- */
-function printNativeDeltas(report: HealthReport): void {
-  const rows = report.nativeDeltas;
-  if (!rows || rows.length === 0) return;
-  console.log(pc.bold(pc.cyan('Native agents vs the Semantic Core (--native lane):')));
-  rows.forEach((row, index) => {
-    const last = index === rows.length - 1;
-    const branch = last ? '└──' : '├──';
-    const stem = last ? '    ' : '│   ';
-    const healthy = row.issues.length === 0;
-    console.log(`  ${branch} ${pc.bold('[Agent]')} ${row.role} ${healthy ? pc.green('✔ matches the core') : pc.yellow(`⚠ ${row.issues.length} difference${row.issues.length === 1 ? '' : 's'}`)}`);
-    console.log(`  ${stem}  floor: ${row.floor === 'ok' ? pc.green('ok') : pc.red('drift')} · guard: ${row.guard} · model: ${row.model ?? '-'}/${row.effort ?? '-'}`);
-    const unused = row.toolGains.length > 0 ? `; classes also allow ${row.toolGains.join(', ')}` : '';
-    console.log(`  ${stem}  tools: class grant${row.toolExtras.length > 0 ? ` + ${row.toolExtras.join(', ')} (beyond classes)` : ''}${unused}; ${row.serverTools.length} server tool${row.serverTools.length === 1 ? '' : 's'}`);
-    for (const issue of row.issues) console.log(`  ${stem}  ${pc.yellow('•')} ${issue}`);
-  });
   console.log();
 }
 

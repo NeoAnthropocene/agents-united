@@ -185,18 +185,19 @@
     pin the same instead of `inherit` (a test ties them to the dialect constants). Not yet: native skills and rules, hooks as
     separate scripts, `workflows/` -> `.claude/workflows/` (needs the orchestrator work), `doctor --host` core-delta table,
     the capability probe reading `profile.json`, and flipping the lane to the default.
-  - 2026-10-01 (later) — **Phase 7 milestone 2, `doctor --host claude` delta table and profile-backed probe**
-    (`feat/claude-doctor-delta-probe`). Delta table: with the native lane recorded, `agents doctor --host claude` measures each
-    INSTALLED native agent against the Semantic Core (`src/core/native-delta.ts`): Contract Floor (a stale floor is named by
-    field), tool grant against the capability classes (extras are an issue, unused class tools are informational), the guard it
-    carries against what its tools need (read-only guard for a role with no shell or writer, any guard for one that has them),
-    and the specialist model posture; each difference is also a doctor warning. Probe: deliberately NOT changed to stop reading
-    `--help`, although the Phase 7 bullet says "instead of grepping `--help`". ADR 0018 decision 11 makes `--help` the runtime
-    source of truth for flags and a suite pins it, so the probe still runs exactly `--version` then `--help`. What moved into
-    `registry/hosts/claude/profile.json` is the knowledge: the SubagentHandback floor is now `features.subagentHandback.since`
-    (was a hardcoded constant), and the report gains `profile` plus diagnostics for a version below the profile minimum, a
-    version newer than the one the profile was reviewed against (a prompt for `host-update-sync`, not an error) and a `--help`
-    that contradicts the profile. Reopen the wording of that bullet if you want the probe to stop spawning `--help`.
+  - 2026-10-01 (later) — **Phase 7 milestone 2, profile-backed probe and doctor guard check** (`feat/claude-doctor-delta-probe`).
+    Owner decision, overriding the Phase 7 bullet "doctor --host prints the core-based delta table": a native package is the
+    product and the canonical registry is a reference only, so users are never shown a "degraded / not mapped" report for it.
+    The core-contract measurement (floor, tools against the capability-class ceiling, guard, model posture) is a maintainers'
+    conformance check in the tests (`tests/helpers/native-delta.ts`, `tests/native-ceiling.test.ts`). Doctor keeps only what
+    concerns a user: install integrity (the projection hash and freshness checks that already exist) and one safety check, a
+    warning when an installed native role that can run a shell or write files has lost its guard, or a read-only role lost the
+    read-only guard (`src/core/native-guard.ts`). The older "Declared Deltas" section describes the legacy projection and is to be
+    retired with the legacy lane (Phase 8). Probe: still runs exactly `--version` then `--help` (ADR 0018 decision 11 makes
+    `--help` the runtime source of truth for flags; a suite pins it), but its knowledge moved into
+    `registry/hosts/claude/profile.json`: the SubagentHandback floor is `features.subagentHandback.since` (was a hardcoded
+    constant), and the report gains `profile` with a diagnostic for a version below the profile minimum and for a `--help` that
+    contradicts the profile. "Newer than the reviewed version" is recorded as data for `host-update-sync` and is not shown to users.
   - **Pending**: the Cline and Antigravity guides, profiles for Cline and Antigravity (Antigravity: frontmatter
     `hooks:` hides an agent, see Plan 031 addendum), Phase 4 skill triage and restoring the dropped extras, Phase 5 (tool and
     orchestration policies), Phase 6 (Claude pilot), Phase 7 (native install lane), Phase 8

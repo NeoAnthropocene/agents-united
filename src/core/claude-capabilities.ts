@@ -261,11 +261,8 @@ export class ClaudeCapabilityProbe {
           `Claude Code ${version} is older than the minimum ${hostProfile.minVersion} that profile ${hostProfile.profileId} supports; native agents may rely on features it lacks.`
         );
       }
-      if (newerThanReviewed) {
-        diagnostics.push(
-          `Claude Code ${version} is newer than the reviewed ${hostProfile.reviewedAgainst} (profile ${hostProfile.profileId}); behaviour is expected to match, and the host-update-sync workflow refreshes the profile if something differs.`
-        );
-      }
+      // `newerThanReviewed` stays data for the maintainers' host-update workflow. It is deliberately not a diagnostic:
+      // users would see it on every Claude release, and it asks nothing of them.
       if (helpRead && !belowMinimum && hostProfile.features.pluginLane?.status === 'available' && !pluginSupport) {
         diagnostics.push('The profile declares the plugin lane available, but --help does not list --plugin-dir.');
       }

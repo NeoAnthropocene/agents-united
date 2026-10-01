@@ -45,11 +45,11 @@ describe('profile-backed Claude capability probe', () => {
     expect(report.diagnostics.join('\n')).toMatch(/older than the minimum 2\.1\.271/);
   });
 
-  it('flags a version newer than the one the profile was reviewed against, without treating it as an error', async () => {
+  it('records a version newer than the reviewed one as data for maintainers, and tells the user nothing', async () => {
     const report = await probeFor('2.9.0');
     expect(report.profile?.newerThanReviewed).toBe(true);
     expect(report.installed).toBe(true);
-    expect(report.diagnostics.join('\n')).toMatch(/newer than the reviewed 2\.1\.285/);
+    expect(report.diagnostics).toEqual([]);
   });
 
   it('flags a --help that contradicts the profile (the plugin lane is declared available but the flag is missing)', async () => {
