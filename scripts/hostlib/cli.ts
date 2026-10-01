@@ -9,6 +9,7 @@
  *   npm run hostlib:restore -- --skill a,b | --reconcile | --repartition   (docs-only restore of dropped upstream extras; Plan 032 PR D)
  *   npm run hostlib:licences -- [--skill a,b] [--apply [--accept "reason" --accepted-by name]] [--cache dir]   (resolve upstream licences from evidence at the pinned commit; needs `git` + github.com)
  *   npm run hostlib:provenance -- [--only a,b] [--cache <dir>]   (recover upstream originals; needs `git` + github.com)
+ *   npm run hostlib:candidates -- --repo owner/name [--sha <commit>] [--cache <dir>]   (read-only scan of a candidate upstream: audit each skill in quarantine, report name collisions with the catalog and text overlap; writes host-library/_upstream/candidates/<owner>__<name>.json)
  *
  * Exit codes: 0 ok · 1 failure (audit fail, lock drift, bad input) · 3 audit needs-review.
  */
@@ -21,6 +22,7 @@ import os from 'node:os';
 import { checkGuides } from './guides.ts';
 import { checkHost, httpFetcher, ingestSnapshot, listHosts, refreshHost, stableJson, verifyLock } from './library.ts';
 import { applyResolvedLicence, openPinnedReader, resolveLicence, toRecord } from './licences.ts';
+import { scanCandidateRepo } from './candidates.ts';
 import { extrasFields, recover } from './provenance.ts';
 import { missingUpstreamFiles, restoreExtras } from './restore.ts';
 import type { HostCheckReport } from './library.ts';
@@ -88,6 +90,8 @@ async function main(): Promise<number> {
       mode: { type: 'string', default: 'skill' },
       baseline: { type: 'string' },
       only: { type: 'string' },
+      repo: { type: 'string' },
+      sha: { type: 'string' },
       cache: { type: 'string' },
       skill: { type: 'string' },
       repartition: { type: 'boolean', default: false },
@@ -177,6 +181,33 @@ async function main(): Promise<number> {
       const count = (predicate: (record: (typeof records)[number]) => boolean): number => records.filter(predicate).length;
       console.log(`skills: ${records.length} · in-house ${count(r => r.provenance === 'in-house')} · pinned ${count(r => r.provenance === 'third-party-pinned')} (snapshotted ${count(r => r.snapshot === true)}, audit non-pass ${count(r => r.audit !== undefined && r.audit.verdict !== 'pass')}) · not-found ${count(r => r.provenance === 'not-found')}`);
       console.log(`dropped extras found on ${count(r => (r.droppedExtras?.length ?? 0) > 0)} skills`);
+      return 0;
+    }
+    case 'candidates': {
+      const match = /^([\w.-]+)\/([\w.-]+)$/.exec(values.repo ?? '');
+      if (!match) {
+        console.error('candidates: --repo owner/name is required');
+        return 1;
+      }
+      const cacheRoot = path.resolve(values.cache ?? path.join(os.tmpdir(), 'hostlib-provenance'));
+      const report = scanCandidateRepo({
+        owner: match[1],
+        repo: match[2],
+        sha: values.sha,
+        skillsDir: path.resolve('registry/skills'),
+        cacheRoot,
+        quarantineRoot: path.join(cacheRoot, 'quarantine'),
+        today: new Date().toISOString().slice(0, 10),
+        log: line => console.error(line),
+      });
+      const outDir = path.join(ROOT, '_upstream', 'candidates');
+      fs.mkdirSync(outDir, { recursive: true });
+      const file = path.join(outDir, `${match[1]}__${match[2]}.json`);
+      fs.writeFileSync(file, stableJson(report));
+      const collisions = report.skills.filter(skill => skill.collidesWith);
+      console.log(`${report.repo}@${report.sha.slice(0, 12)}: ${report.skills.length} skills · ${collisions.length} share a name with the catalog · audit non-pass ${report.skills.filter(skill => skill.audit.verdict !== 'pass').length}`);
+      for (const skill of collisions) console.log(`  ${skill.name}: upstream text found in ours ${Math.round((skill.overlap?.upstreamInLocal ?? 0) * 100)}%`);
+      console.log(`report: ${path.relative(process.cwd(), file)}`);
       return 0;
     }
     case 'licences': {
