@@ -211,6 +211,14 @@
     resolves to nothing) and every guard matches both. New policy field `deprecated`: `TaskOutput` (the host replaced it with `Read`
     on the task output file) is never granted. Caveat now stated in the writers' bodies: on macOS, Linux and WSL `Glob` and `Grep`
     return only for a subagent that holds no `Bash`, so the two writers search through `Bash` there (the guard sees it).
+  - 2026-10-01 (later) — **Host library: the bundled `/workflow-authoring` reference** (`chore/host-library-claude-workflow-authoring`).
+    The public workflows page documents `agent()` with only `label` and `schema`, but Claude Code 2.1.248+ bundles a fuller
+    script-writing reference (`agentType`, `model`, `effort`, `isolation: 'worktree'`, `pipeline()` as the default and `parallel()` as a
+    barrier, nested `workflow()`, `budget`, resume through `journal.jsonl`). Per ADR 0025 decision 4 a page relied on must be in the
+    library first, so `sources.json` gained a `bundled` kind (text that ships inside the host, no URL; `refresh` never fetches it, `ingest`
+    records its origin and channel) and the text was captured through one minimal, tool-less Claude session (about 17 cents) and ingested
+    through the docs audit gate. The orchestration guide gained ten cited rules from it and from the live workflows page (Pro-baseline size
+    guideline, `/reload-skills`), plus the design consequences for our workflows and two items still to settle in a real session.
   - 2026-10-01 (later) — **Candidate scan and the obra/superpowers findings** (`chore/hostlib-superpowers-provenance`). Correction to an
     earlier remark: `hostlib:provenance` does not search, it follows each skill's declared `metadata.source`; "in-house" means "declares
     none". New read-only `npm run hostlib:candidates -- --repo owner/name` (docs/skill-intake.md) audits every skill of a candidate repository
