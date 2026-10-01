@@ -74,7 +74,7 @@ const ProfileSchema = z
         permissions: z.object({ modes: uniqueList('artifacts.permissions.modes') }).strict(),
       })
       .strict(),
-    features: z.record(z.object({ status: z.string().min(1), note: z.string().min(1) }).strict()),
+    features: z.record(z.object({ status: z.string().min(1), note: z.string().min(1), since: z.string().regex(/^\d+\.\d+\.\d+$/, 'since must be a x.y.z version').optional() }).strict()),
   })
   .strict();
 

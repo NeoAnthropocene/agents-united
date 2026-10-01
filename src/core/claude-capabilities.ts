@@ -1,6 +1,8 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import { defaultProcessRunner } from './cline-capabilities.js';
+import { loadHostProfile } from './host-profile.js';
+import { RegistryResolver } from './registry.js';
 import type {
   ClaudeCapabilityReport,
   ProcessRunner,
@@ -30,19 +32,39 @@ export interface ClaudeProbeResolverOptions {
  * `cmd.exe` bridge added by ADR 0013 §5 applies identically here.
  */
 /**
- * The live tools reference dates `SubagentHandback` at Claude Code v2.1.271 or later, and provides it
- * only in auto mode. Only `--version` is readable here, so this reports the version floor.
+ * Plan 032 Phase 7 — what the probe knows about the host lives in the Claude host profile
+ * (`registry/hosts/claude/profile.json`), not in code: the `SubagentHandback` version floor
+ * (`features.subagentHandback.since`, dated by the live tools reference; the tool is provided only in auto mode, and
+ * only `--version` is readable here, so this reports the version floor), the minimum version and the version the
+ * profile was last reviewed against. The fallback floor applies only if the profile cannot be read.
  */
-const SUBAGENT_HANDBACK_MIN = { major: 2, minor: 1, patch: 271 } as const;
+const FALLBACK_SUBAGENT_HANDBACK_MIN = '2.1.271';
 
-function supportsSubagentHandback(version: string | undefined): boolean {
-  if (!version) return false;
-  const match = version.match(/(\d+)\.(\d+)\.(\d+)/);
-  if (!match) return false;
-  const [major, minor, patch] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  if (major !== SUBAGENT_HANDBACK_MIN.major) return major > SUBAGENT_HANDBACK_MIN.major;
-  if (minor !== SUBAGENT_HANDBACK_MIN.minor) return minor > SUBAGENT_HANDBACK_MIN.minor;
-  return patch >= SUBAGENT_HANDBACK_MIN.patch;
+function parseVersion(version: string | undefined): [number, number, number] | undefined {
+  const match = version?.match(/(\d+)\.(\d+)\.(\d+)/);
+  return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : undefined;
+}
+
+/** Negative, zero or positive like a comparator; `undefined` when either side is not an x.y.z version. */
+function compareVersions(a: string | undefined, b: string | undefined): number | undefined {
+  const left = parseVersion(a);
+  const right = parseVersion(b);
+  if (!left || !right) return undefined;
+  for (let i = 0; i < 3; i++) if (left[i] !== right[i]) return left[i] - right[i];
+  return 0;
+}
+
+function supportsVersion(version: string | undefined, floor: string): boolean {
+  const order = compareVersions(version, floor);
+  return order !== undefined && order >= 0;
+}
+
+function readClaudeProfile(): ReturnType<typeof loadHostProfile> | undefined {
+  try {
+    return loadHostProfile(new RegistryResolver().getRegistryDir(), 'claude');
+  } catch {
+    return undefined;
+  }
 }
 
 export class ClaudeCapabilityProbe {
@@ -157,6 +179,8 @@ export class ClaudeCapabilityProbe {
     }
 
     // 1. Version check — `--version` only (ADR 0018 decision 11).
+    const hostProfile = readClaudeProfile();
+    const handbackFloor = hostProfile?.features.subagentHandback?.since ?? FALLBACK_SUBAGENT_HANDBACK_MIN;
     let version: string | undefined;
     let subagentHandback = false;
     try {
@@ -166,7 +190,7 @@ export class ClaudeCapabilityProbe {
 
       if (verRes.exitCode === 0) {
         version = verRes.stdout.trim().split('\n')[0]?.trim();
-        subagentHandback = supportsSubagentHandback(version);
+        subagentHandback = supportsVersion(version, handbackFloor);
       } else {
         diagnostics.push(`Claude Code version check failed (exit code ${verRes.exitCode}): ${verRes.stderr.trim()}`);
         return {
@@ -195,12 +219,14 @@ export class ClaudeCapabilityProbe {
     //    supervisor daemon) and no headless `-p` run (it costs tokens) — see the class JSDoc.
     let pluginSupport = false;
     let agentTeamsExperimental = false;
+    let helpRead = false;
     try {
       const helpRes = await this.runner(cmd.executable, [...cmd.prefixArgs, '--help'], {
         timeoutMs: 5000,
       });
 
       if (helpRes.exitCode === 0) {
+        helpRead = true;
         const help = helpRes.stdout;
         pluginSupport = help.includes('--plugin-dir');
         agentTeamsExperimental =
@@ -215,6 +241,36 @@ export class ClaudeCapabilityProbe {
       diagnostics.push(`Claude Code help probe failed: ${msg}`);
     }
 
+    // 3. Check what the binary said against what the host profile expects. Diagnostics only: the report keeps the
+    //    runtime facts.
+    let profile: ClaudeCapabilityReport['profile'];
+    if (hostProfile) {
+      const againstMinimum = compareVersions(version, hostProfile.minVersion);
+      const againstReviewed = compareVersions(version, hostProfile.reviewedAgainst);
+      const belowMinimum = againstMinimum !== undefined && againstMinimum < 0;
+      const newerThanReviewed = againstReviewed !== undefined && againstReviewed > 0;
+      profile = {
+        profileId: hostProfile.profileId,
+        minVersion: hostProfile.minVersion,
+        reviewedAgainst: hostProfile.reviewedAgainst,
+        belowMinimum,
+        newerThanReviewed,
+      };
+      if (belowMinimum) {
+        diagnostics.push(
+          `Claude Code ${version} is older than the minimum ${hostProfile.minVersion} that profile ${hostProfile.profileId} supports; native agents may rely on features it lacks.`
+        );
+      }
+      if (newerThanReviewed) {
+        diagnostics.push(
+          `Claude Code ${version} is newer than the reviewed ${hostProfile.reviewedAgainst} (profile ${hostProfile.profileId}); behaviour is expected to match, and the host-update-sync workflow refreshes the profile if something differs.`
+        );
+      }
+      if (helpRead && !belowMinimum && hostProfile.features.pluginLane?.status === 'available' && !pluginSupport) {
+        diagnostics.push('The profile declares the plugin lane available, but --help does not list --plugin-dir.');
+      }
+    }
+
     return {
       installed: true,
       version,
@@ -222,6 +278,7 @@ export class ClaudeCapabilityProbe {
       pluginSupport,
       agentTeamsExperimental,
       subagentHandback,
+      profile,
       diagnostics,
     };
   }

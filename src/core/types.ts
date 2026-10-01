@@ -251,6 +251,17 @@ export interface ClaudeCapabilityReport {
    * reports the version floor rather than attempting to detect the permission mode.
    */
   subagentHandback: boolean;
+  /**
+   * Plan 032 Phase 7 — what the host profile (`registry/hosts/claude/profile.json`) says about the probed version.
+   * Absent when Claude Code is not installed or the profile cannot be read.
+   */
+  profile?: {
+    profileId: string;
+    minVersion: string;
+    reviewedAgainst: string;
+    belowMinimum: boolean;
+    newerThanReviewed: boolean;
+  };
   diagnostics: string[];
 }
 
@@ -859,5 +870,6 @@ export interface HostProfile {
     mcp: { scopes: string[]; transports: string[] };
     permissions: { modes: string[] };
   };
-  features: Record<string, { status: string; note: string }>;
+  /** `since` is the first host version that has the feature, where the live docs date it. */
+  features: Record<string, { status: string; note: string; since?: string }>;
 }

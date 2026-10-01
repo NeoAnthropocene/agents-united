@@ -10,6 +10,8 @@ import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
 import { McpLocationRegistry } from './mcp-locations.js';
+import { nativeDeltaRows } from './native-delta.js';
+import type { NativeDeltaRow } from './native-delta.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -43,6 +45,12 @@ export interface HealthReport {
    * host so the CLI never guesses.
    */
   declaredDeltas?: TranslationLedgerEntry[];
+  /**
+   * Plan 032 Phase 7 — the core-based delta table for `--host claude`: each installed native agent measured against the
+   * Semantic Core (floor, tool grant vs capability classes, guard, model posture). Present only when the native lane is
+   * recorded in the lockfile.
+   */
+  nativeDeltas?: NativeDeltaRow[];
 }
 
 /** Hosts the Declared-Delta Registry (Plan 026) carries entries for. */
@@ -650,6 +658,30 @@ export class DoctorEngine {
       }
     }
 
+    // Plan 032 Phase 7 — core-based delta table: measure the INSTALLED native agents (not the registry copies) against
+    // the Semantic Core, so a package upgrade that left an old agent in the workspace shows up here.
+    let nativeDeltas: NativeDeltaRow[] | undefined;
+    if (host === 'claude' && manifest?.nativeLane === true) {
+      try {
+        const registryDir = new RegistryResolver().getRegistryDir();
+        const workspaceRoot = workspaceRootOf(root);
+        const installed = new Map<string, string>();
+        for (const [relPath, proj] of Object.entries(manifest.projections ?? {})) {
+          const match = proj.host === 'claude' && proj.kind === 'role' ? /^\.claude\/agents\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
+          const abs = match ? path.join(workspaceRoot, relPath) : undefined;
+          if (!match || !abs || !await fs.pathExists(abs)) continue;
+          const text = await fs.readFile(abs, 'utf8');
+          if (text.includes('profile: claude-native')) installed.set(match[1], text);
+        }
+        nativeDeltas = (await nativeDeltaRows(registryDir, 'claude', { installed })).filter(row => installed.has(row.role));
+        for (const row of nativeDeltas) {
+          for (const issue of row.issues) warnings.push(`Native agent ${row.role}: ${issue}`);
+        }
+      } catch {
+        nativeDeltas = undefined; // registry unavailable: degrade without a speculative warning
+      }
+    }
+
     return {
       valid: issues.length === 0,
       targetDir: root,
@@ -664,6 +696,7 @@ export class DoctorEngine {
       claudeCapability,
       sessionGuard,
       declaredDeltas,
+      nativeDeltas,
     };
   }
 }
