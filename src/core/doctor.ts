@@ -8,6 +8,7 @@ import { ClaudeCapabilityProbe } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
+import { AntigravityProjector } from './antigravity-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
 import { McpLocationRegistry } from './mcp-locations.js';
 import { inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
@@ -50,7 +51,7 @@ export interface HealthReport {
 const DECLARED_DELTA_HOSTS = new Set(['claude', 'antigravity', 'cline']);
 
 /** The only hosts that own a content-derived compound lane: Cline (ADR 0013), Claude (ADR 0018). */
-type CompoundLaneHost = 'cline' | 'claude';
+type CompoundLaneHost = 'cline' | 'claude' | 'antigravity';
 
 /**
  * Plan 029 A3 — the hosts whose MCP configuration surface `agents doctor --host <h>` audits.
@@ -109,7 +110,7 @@ export class DoctorEngine {
   }
 
   private static isCompoundLaneHost(host: string | undefined): host is CompoundLaneHost {
-    return host === 'cline' || host === 'claude';
+    return host === 'cline' || host === 'claude' || host === 'antigravity';
   }
 
   /**
@@ -183,7 +184,9 @@ export class DoctorEngine {
 
         const resolved = await resolver.resolve(bundleDef.name);
         for (const excludeAddons of [undefined, installedBundles]) {
-          const artifacts = host === 'cline'
+          const artifacts = host === 'antigravity'
+            ? (await AntigravityProjector.plan(resolved, registryDir)).artifacts
+            : host === 'cline'
             ? await ClineProjector.planCompoundProjection(
                 bundleDef,
                 'project',
@@ -337,7 +340,8 @@ export class DoctorEngine {
               const meta = YAML.parse(frontmatterMatch[1]);
               if (!meta.name) issues.push(`Agent ${file} missing 'name' in frontmatter.`);
               if (!meta.description) warnings.push(`Agent ${file} missing 'description'.`);
-              if (!meta.model) warnings.push(`Agent ${file} missing 'model' definition.`);
+              // A native Antigravity agent leaves `model` to the host default (`inherit`, ADR 0030 decision 8); the repository tests validate it.
+              if (!meta.model && !content.includes('profile: antigravity-native')) warnings.push(`Agent ${file} missing 'model' definition.`);
             } catch (err: any) {
               issues.push(`Invalid YAML in agent ${file}: ${err.message}`);
             }
@@ -461,7 +465,7 @@ export class DoctorEngine {
 
         const variantsByHost = new Map<CompoundLaneHost, Map<string, string[]>>();
         for (const [projHost, owners] of ownersByHost) {
-          const variants = await this.renderProjectionVariants(owners, manifest.installed.bundles ?? [], projHost, projHost === 'cline' ? manifest.nativeLanes?.cline === true : manifest.nativeLane === true);
+          const variants = await this.renderProjectionVariants(owners, manifest.installed.bundles ?? [], projHost, projHost === 'claude' ? manifest.nativeLane === true : manifest.nativeLanes?.[projHost] === true);
           if (variants) variantsByHost.set(projHost, variants);
         }
 
@@ -485,7 +489,7 @@ export class DoctorEngine {
                 pushProjectionWarning(
                   projRelPath,
                   `Content drift ${projRelPath} — edited after installation (recorded ${proj.hash.slice(0, 16)}…, on disk ${diskHash.slice(0, 16)}…).` +
-                  (owner ? ` Run: agents update ${owner} --fanout ${proj.host} to restore it.` : '')
+                  (owner ? ` Run: agents update ${owner}${proj.host === 'antigravity' ? ' --native' : ` --fanout ${proj.host}`} to restore it.` : '')
                 );
                 continue;
               }
@@ -501,7 +505,7 @@ export class DoctorEngine {
               pushProjectionWarning(
                 projRelPath,
                 `Outdated projection ${projRelPath} (content differs from the current render).` +
-                (owner ? ` Run: agents update ${owner} --fanout ${proj.host} to refresh it.` : '')
+                (owner ? ` Run: agents update ${owner}${proj.host === 'antigravity' ? ' --native' : ` --fanout ${proj.host}`} to refresh it.` : '')
               );
             }
           }

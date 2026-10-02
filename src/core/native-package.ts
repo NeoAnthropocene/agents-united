@@ -9,13 +9,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /** The hosts that have a native-package lane. The flag is recorded per host (ADR 0026 decision 6). */
-export type NativeHost = 'claude' | 'cline';
+export type NativeHost = 'claude' | 'cline' | 'antigravity';
 
 /** Marker profile of the Claude lane; the legacy projection lane writes `profile: claude`. */
 export const NATIVE_MARKER_PROFILE = 'claude-native';
 
 /** Marker profile per host, as `-native` beside the legacy `profile: <host>`. */
-export const NATIVE_MARKER_PROFILES: Record<NativeHost, string> = { claude: NATIVE_MARKER_PROFILE, cline: 'cline-native' };
+export const NATIVE_MARKER_PROFILES: Record<NativeHost, string> = { claude: NATIVE_MARKER_PROFILE, cline: 'cline-native', antigravity: 'antigravity-native' };
 
 const ROLE_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const FRONTMATTER = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
@@ -115,9 +115,13 @@ export function nativeRuleSource(registryDir: string, host: string, name: string
   return sourceOf(registryDir, host, 'rules', name, '.md');
 }
 
-/** A rule has no frontmatter (so it is always active), so the marker goes above its title. */
+/**
+ * A Cline rule has no frontmatter (so it is always active), so the marker goes above its title. An Antigravity rule must START with
+ * frontmatter (the host discards a rule that does not), so a source that has frontmatter keeps it first and the marker follows it.
+ */
 export function renderNativeRule(sourceText: string, canonicalRelPath: string, host: NativeHost | string = 'cline'): string {
   const source = normalise(sourceText);
+  if (FRONTMATTER.test(source)) return renderFramed(sourceText, canonicalRelPath, host, 'rule');
   const body = source.replace(/^\n+/, '').replace(/\n*$/, '\n');
   return `<!-- ${markerText(host, canonicalRelPath, source)} -->\n\n${body}`;
 }
