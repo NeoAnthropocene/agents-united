@@ -5,7 +5,7 @@ import yaml from 'yaml';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { InstallEngine } from '../src/core/installer.js';
-import { listNativeRoles, nativeRoleSource, nativeWorkflowSource, renderNativeRole, renderNativeWorkflow } from '../src/core/native-package.js';
+import { listNativeRoles, nativeRoleSource, nativeWorkflowSource, renderNativeRole, renderNativeWorkflow, listNativeWorkflows } from '../src/core/native-package.js';
 import { HostProjector } from '../src/core/projector.js';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
@@ -235,7 +235,12 @@ describe('native workflows (agents add --native installs the host workflow in pl
     await install(true);
     expect(await fs.readFile(workflowFile, 'utf8')).toBe(expected());
     expect(await fs.pathExists(skillDir)).toBe(false);
-    expect(await fs.pathExists(path.join(workspace, '.claude', 'skills', 'workflow-test', 'SKILL.md'))).toBe(true);
+    // A workflow-* skill with no native workflow stays a skill (this follows the registry, so it does not go stale as workflows are added).
+    const native = listNativeWorkflows(REGISTRY, 'claude');
+    const bundle = Object.values(JSON.parse(fs.readFileSync(path.join(REGISTRY, 'bundles.json'), 'utf8')).bundles as Record<string, { name: string; skills?: string[] }>).find(entry => entry.name === BUNDLE)!;
+    const stillSkill = (bundle.skills ?? []).filter(name => name.startsWith('workflow-') && !native.includes(name));
+    expect(stillSkill.length).toBeGreaterThan(0);
+    for (const name of stillSkill) expect(await fs.pathExists(path.join(workspace, '.claude', 'skills', name, 'SKILL.md')), name).toBe(true);
   });
 
   it('records it as a workflow projection of the skill it replaces, with a matching hash and ownership', async () => {
