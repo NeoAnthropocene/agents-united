@@ -84,6 +84,8 @@ const requesterContext = typeof request.context === 'string' && request.context 
 const rank = severity => SEVERITIES.indexOf(severity)
 const isBlocking = found => rank(found.severity) <= 1
 const unique = list => [...new Set(list)]
+// A blocker is free text: drop its trailing punctuation so a note can add its own.
+const reason = text => String(text).trim().replace(/[.;:,\s]+$/, '')
 const tasks = given.map((task, index) => ({
   id: `T${index + 1}`,
   title: typeof task.title === 'string' && task.title.trim() ? task.title.trim() : `Task ${index + 1}`,
@@ -166,7 +168,7 @@ for (let index = 0; index < runnable.length; index++) {
   if (!built || built.status === 'blocked') {
     record.status = 'blocked'
     record.blocker = built ? built.blocker : 'The implementer did not complete.'
-    notes.push(`${task.id} is blocked: ${record.blocker} The remaining tasks were not started.`)
+    notes.push(`${task.id} is blocked: ${reason(record.blocker)}. The remaining tasks were not started.`)
     halted = true
     continue
   }
@@ -216,7 +218,7 @@ for (let index = 0; index < runnable.length; index++) {
     const fixed = await spawn(fixerPrompt(task, open), { agentType: task.agentType, schema: IMPLEMENTATION, phase: 'Build', label: `fix ${task.id} (round ${fixes + 1})` })
     fixes += 1
     if (!fixed || fixed.status === 'blocked') {
-      notes.push(`The ${task.id} fix did not complete${fixed ? `: ${fixed.blocker}` : ''}; the blocking issues stay open.`)
+      notes.push(`The ${task.id} fix did not complete${fixed && reason(fixed.blocker) ? `: ${reason(fixed.blocker)}` : ''}; the blocking issues stay open.`)
       break
     }
     record.filesChanged = unique([...record.filesChanged, ...fixed.filesChanged])
@@ -230,8 +232,8 @@ for (let index = 0; index < runnable.length; index++) {
 }
 
 for (const task of overflow) records.push({ id: task.id, title: task.title, status: 'not-run', summary: '', filesChanged: [], fixRounds: 0, open: [], minor: [], concerns: [], blocker: '' })
-if (unreviewed.length > 0) notes.push(`${unreviewed.join(', ')} not reviewed on its own (agent budget); the final review covers the whole change.`)
-if (unfixed.length > 0) notes.push(`${unfixed.join(', ')} still has blocking issues that were not fixed or re-reviewed (agent budget).`)
+if (unreviewed.length > 0) notes.push(`Not reviewed individually (agent budget): ${unreviewed.join(', ')}. The final review covers the whole change.`)
+if (unfixed.length > 0) notes.push(`Blocking issues left unfixed or not re-reviewed (agent budget): ${unfixed.join(', ')}.`)
 
 // ── Gate ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 phase('Gate')
