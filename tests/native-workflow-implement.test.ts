@@ -94,6 +94,7 @@ describe('workflow-implement (mock runtime)', () => {
       ['T1', 'unreviewed'],
       ['T2', 'unreviewed'],
     ]);
+    expect(result.notes).toContain('Not reviewed individually (agent budget): T1, T2. The final review covers the whole change.');
   });
 
   it('small runs at most two tasks, reports the rest as not run, and is Incomplete rather than Ready', async () => {
@@ -160,6 +161,20 @@ describe('workflow-implement (mock runtime)', () => {
     expect(calls.filter(is('fix'))).toHaveLength(1);
     expect(result.tasks[0].status).toBe('open');
     expect(result.tasks[0].open.map((i: any) => i.title)).toEqual(['Second problem']);
+    expect(result.verdict).toBe('Needs Work');
+  });
+
+  it('a fixer that is blocked leaves the issues open, and its blocker reads cleanly in the note (no doubled punctuation)', async () => {
+    const { result, calls } = await run(
+      { tasks: tasks(1), size: 'medium' },
+      happy({ review: () => dirty('Needs a decision'), fix: () => done({ status: 'blocked', blocker: 'The change needs a decision from the requester.' }) }),
+    );
+    expect(calls.filter(is('fix'))).toHaveLength(1);
+    expect(calls.filter(is('review'))).toHaveLength(1);
+    expect(result.tasks[0].status).toBe('open');
+    const note = result.notes.find((n: string) => /fix did not complete/.test(n))!;
+    expect(note).toContain('needs a decision from the requester');
+    expect(note).not.toMatch(/\.;|;;|\.\./);
     expect(result.verdict).toBe('Needs Work');
   });
 
