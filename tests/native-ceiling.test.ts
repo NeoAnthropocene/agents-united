@@ -57,8 +57,8 @@ describe('native agents against the Semantic Core', () => {
     expect(rowA.issues.join('\n')).toMatch(/guard/i);
   });
 
-  it('is empty for a host with no native agents (Cline has some since Phase 8, and is measured by native-cline-agents.test.ts)', async () => {
-    expect(await nativeDeltaRows(REGISTRY, 'antigravity')).toEqual([]);
+  it('is empty for a host with no native agents (Cline and Antigravity have some since Phase 8, measured by their own native-*-agents tests)', async () => {
+    expect(await nativeDeltaRows(REGISTRY, 'codex')).toEqual([]);
   });
 });
 
