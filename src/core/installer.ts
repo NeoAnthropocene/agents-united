@@ -7,6 +7,8 @@ import { isKnownHost, HOST_REGISTRY, resolveHostProjectDir } from './hosts.js';
 import { HostProjector } from './projector.js';
 import type { IndexableAsset } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
+import { AntigravityProjector } from './antigravity-projector.js';
+import type { AntigravityNativePlan } from './antigravity-projector.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
 import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
@@ -261,7 +263,7 @@ private toPosix(p: string): string {
    * refcounted projection entries, reconcile `projectedTo`, surface `projections`.
    */
   private async applyCompoundLane(
-    host: AgentHost,
+    host: AgentHost | 'antigravity',
     bundleName: string,
     artifacts: PlannedProjectionArtifact[],
     context: {
@@ -417,10 +419,64 @@ private toPosix(p: string): string {
    * `InstallOptions.nativeLane` wins (`--native` / `--no-native`), an unset flag inherits the recorded choice, so
    * `agents update` cannot silently swap the native agents back for legacy projections.
    */
-  private static effectiveNativeLane(options: InstallOptions, lockfile?: LockfileManifest | null, host: 'claude' | 'cline' = 'claude'): boolean {
+  private static effectiveNativeLane(options: InstallOptions, lockfile?: LockfileManifest | null, host: 'claude' | 'cline' | 'antigravity' = 'claude'): boolean {
     if (typeof options.nativeLane === 'boolean') return options.nativeLane;
-    // ADR 0026 decision 6 — the choice is recorded per host: Claude in the long-standing `nativeLane`, Cline in `nativeLanes`.
-    return host === 'cline' ? lockfile?.nativeLanes?.cline === true : lockfile?.nativeLane === true;
+    // ADR 0026 decision 6 — the choice is recorded per host: Claude in the long-standing `nativeLane`, the others in `nativeLanes`.
+    if (host === 'claude') return lockfile?.nativeLane === true;
+    return lockfile?.nativeLanes?.[host] === true;
+  }
+
+  /**
+   * Plan 032 Phase 8 / ADR 0031 — the Antigravity native lane, applied to the canonical store BEFORE the store copy loops. With the lane on,
+   * the native agents and rules are installed as tracked projections and the store copies they replace are cleared (refusing to drop one
+   * the user edited, unless `--force`); with it off, the stale projections are pruned so the store loops can write the legacy copies back.
+   * Returns the plan so the loops can skip what a native file replaces.
+   */
+  private async applyAntigravityNative(args: {
+    enabled: boolean;
+    storeDir: string;
+    root: string;
+    lockfile: LockfileManifest;
+    resolved: ResolvedAssets;
+    registryDir: string;
+    bundleName: string;
+    declared: Set<string>;
+    options: InstallOptions;
+    projections: ProjectionInfo[];
+    now: string;
+  }): Promise<AntigravityNativePlan | undefined> {
+    const { enabled, storeDir, root, lockfile, resolved, registryDir, bundleName, declared, options, projections, now } = args;
+    const plan: AntigravityNativePlan = enabled
+      ? await AntigravityProjector.plan(resolved, registryDir)
+      : { artifacts: [], coveredAgents: new Set(), coveredRules: new Set(), replacedBy: new Map() };
+
+    // Clear the store copy each native file replaces, remembering who owned it so the projection inherits the owners.
+    const inheritedOwners = new Map<string, string[]>();
+    for (const [storeKey, nativeRel] of plan.replacedBy) {
+      const record = lockfile.files[storeKey];
+      if (!record) continue;
+      const dest = path.join(storeDir, storeKey);
+      if (await fs.pathExists(dest)) {
+        if (!options.force && record.method !== 'symlink') {
+          const current = await this.calculateHash(dest).catch(() => null);
+          if (current && record.hash && current !== record.hash) {
+            throw new Error(`File ${storeKey} has user modifications. Use --force to overwrite.`);
+          }
+        }
+        await fs.remove(dest);
+      }
+      inheritedOwners.set(nativeRel, record.owners ?? []);
+      delete lockfile.files[storeKey];
+    }
+    if (plan.coveredAgents.size > 0) lockfile.installed.agents = lockfile.installed.agents.filter(file => !plan.coveredAgents.has(file));
+
+    await this.applyCompoundLane('antigravity', bundleName, plan.artifacts, { root, lockfile, declared, projections, now, force: options.force });
+
+    for (const [nativeRel, owners] of inheritedOwners) {
+      const projection = lockfile.projections?.[nativeRel];
+      if (projection) projection.owners = Array.from(new Set([...projection.owners, ...owners]));
+    }
+    return enabled ? plan : undefined;
   }
 
   /**
@@ -1018,6 +1074,7 @@ private toPosix(p: string): string {
       let effectiveDryPluginLane = options.pluginLane === true;
       let effectiveDryNativeLane = options.nativeLane === true;
       let effectiveDryNativeClineLane = options.nativeLane === true;
+      let effectiveDryNativeAntigravityLane = options.nativeLane === true;
       const lockfilePath = path.join(stateDir, 'agents-united.json');
       if (await fs.pathExists(lockfilePath)) {
         const lockfile = await fs.readJson(lockfilePath).catch(() => null);
@@ -1036,10 +1093,18 @@ private toPosix(p: string): string {
         if (options.nativeLane === undefined && lockfile?.nativeLanes?.cline === true) {
           effectiveDryNativeClineLane = true;
         }
+        if (options.nativeLane === undefined && lockfile?.nativeLanes?.antigravity === true) {
+          effectiveDryNativeAntigravityLane = true;
+        }
       }
       const projections = hasCanonicalAgents
         ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, stateDir, effectiveDryPluginLane, { claude: effectiveDryNativeLane, cline: effectiveDryNativeClineLane })
         : [];
+      if (hasCanonicalAgents && effectiveDryNativeAntigravityLane) {
+        for (const artifact of (await AntigravityProjector.plan(resolved, registryDir)).artifacts) {
+          projections.push({ host: 'antigravity', path: artifact.relPath, kind: artifact.kind, warnings: [] });
+        }
+      }
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }
 
@@ -1104,8 +1169,34 @@ private toPosix(p: string): string {
       }
       const declaresAsset = (assetKey: string): boolean => !hasDeclaredRoster || declared.has(assetKey);
 
+      // Plan 032 Phase 8 / ADR 0031 — the Antigravity native lane works on the canonical store, so it runs before the store copies below.
+      let nativePlan: AntigravityNativePlan | undefined;
+      if (hasCanonicalAgents && path.resolve(targetDir) === path.resolve(agentsTarget)) {
+        const nativeAntigravity = InstallEngine.effectiveNativeLane(options, lockfile, 'antigravity');
+        if (nativeAntigravity) {
+          lockfile.nativeLanes = { ...lockfile.nativeLanes, antigravity: true };
+        } else if (options.nativeLane === false && lockfile.nativeLanes) {
+          delete lockfile.nativeLanes.antigravity;
+          if (Object.keys(lockfile.nativeLanes).length === 0) delete lockfile.nativeLanes;
+        }
+        nativePlan = await this.applyAntigravityNative({
+          enabled: nativeAntigravity,
+          storeDir: targetDir,
+          root: InstallEngine.projectionRoot(scope, options.targetDir).root,
+          lockfile,
+          resolved,
+          registryDir,
+          bundleName: resolved.targetBundle ?? 'unbundled',
+          declared,
+          options,
+          projections,
+          now,
+        });
+      }
+
       // Copy/Symlink Agents
       for (const agentFile of resolved.agents) {
+        if (nativePlan?.coveredAgents.has(agentFile)) continue; // a native agent replaces this store copy
         const src = path.join(registryDir, 'agents', agentFile);
         const dest = path.join(subPaths.agentsDir, agentFile);
 
@@ -1231,6 +1322,7 @@ private toPosix(p: string): string {
 
       // Copy/Symlink Rules
       for (const ruleFile of resolved.rules) {
+        if (nativePlan?.coveredRules.has(ruleFile)) continue; // a native rule replaces this store copy
         const src = path.join(registryDir, 'rules', ruleFile);
         const dest = path.join(subPaths.rulesDir, ruleFile);
 

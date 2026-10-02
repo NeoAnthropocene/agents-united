@@ -162,7 +162,8 @@ describe('native install lane for Cline (agents add --fanout cline --native)', (
   it('records the lane per host and every projection hash matches the file on disk; native-only files have no canonical', async () => {
     await install(true);
     const lock = await fs.readJson(lockPath);
-    expect(lock.nativeLanes).toEqual({ cline: true });
+    // One flag covers every host being installed, and the main library is installed too (ADR 0031), so Antigravity is recorded as well.
+    expect(lock.nativeLanes).toEqual({ antigravity: true, cline: true });
     expect(lock.nativeLane).toBeUndefined();
     for (const role of ROLES) {
       const record = lock.projections[`.cline/agents/${role}.yml`];
@@ -195,7 +196,7 @@ describe('native install lane for Cline (agents add --fanout cline --native)', (
     await install(undefined, { force: true });
     expect(read(at('.cline/agents/code-reviewer.yml'))).toBe(expectedRole('code-reviewer'));
     expect(await fs.pathExists(at(`.cline/plugins/${GUARD}.js`))).toBe(true);
-    expect((await fs.readJson(lockPath)).nativeLanes).toEqual({ cline: true });
+    expect((await fs.readJson(lockPath)).nativeLanes).toEqual({ antigravity: true, cline: true });
   });
 
   it('can be turned off explicitly: legacy projections return, the native-only files go, and the record is dropped', async () => {
@@ -212,7 +213,7 @@ describe('native install lane for Cline (agents add --fanout cline --native)', (
     await install(true, {}, ['claude', 'cline']);
     const both = await fs.readJson(lockPath);
     expect(both.nativeLane).toBe(true);
-    expect(both.nativeLanes).toEqual({ cline: true });
+    expect(both.nativeLanes).toEqual({ antigravity: true, cline: true });
     expect(read(at('.claude/agents/code-reviewer.md'))).toContain('claude-native');
 
     await fs.remove(workspace);
@@ -220,7 +221,7 @@ describe('native install lane for Cline (agents add --fanout cline --native)', (
     await install(true, {}, ['claude']);
     const claudeOnly = await fs.readJson(lockPath);
     expect(claudeOnly.nativeLane).toBe(true);
-    expect(claudeOnly.nativeLanes).toBeUndefined();
+    expect(claudeOnly.nativeLanes).toEqual({ antigravity: true }); // the main library is installed, Cline is not fanned out
     expect(await fs.pathExists(at('.cline'))).toBe(false);
   });
 

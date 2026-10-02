@@ -356,7 +356,7 @@ export interface LockfileManifest {
    * Plan 032 Phase 8 / ADR 0026 decision 6 — the native-lane opt-in of the other hosts, recorded per host. Today only
    * `cline`; Claude keeps writing `nativeLane` above, so lockfiles written by earlier releases stay valid. Absent ⇒ off.
    */
-  nativeLanes?: { cline?: true };
+  nativeLanes?: { cline?: true; antigravity?: true };
   /**
    * Plan 023 A (owner D1–D2) — the recorded plain-session guard decision. `{ off: true }` is a
    * remembered "no"; otherwise the settings file (workspace-relative, or absolute for `user`)
