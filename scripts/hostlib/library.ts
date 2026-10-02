@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { auditDocument } from './audit.ts';
 import type { AuditFinding } from './audit.ts';
 import { classifyEntry, latestPerSection, newEntriesSince, parseChangelog } from './changelog.ts';
+import { GITHUB_API_HOST, releasesApiUrl, renderReleases, requestHeaders } from './github-releases.ts';
 import { diffIndex, parseIndex } from './llms-index.ts';
 import { ARTIFACT_TYPES } from './types.ts';
 import type {
@@ -20,6 +21,7 @@ import type {
   HostLock,
   HostSources,
   IndexLink,
+  ReleaseSource,
 } from './types.ts';
 
 const artifactType = z.enum(ARTIFACT_TYPES);
@@ -33,6 +35,20 @@ const SourcesSchema = z
       .array(z.object({ url, role: z.enum(['primary', 'secondary']), snapshot: z.string().regex(/^[\w.-]+$/) }))
       .min(1),
     changelog: z.object({ url, snapshot: z.string().regex(/^[\w.-]+$/) }),
+    releases: z
+      .array(
+        z
+          .object({
+            repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/, 'repo must be owner/name'),
+            tagPrefix: z.string().min(1),
+            section: z.string().min(1),
+            snapshot: z.string().regex(/^[\w.-]+$/),
+            pages: z.number().int().min(1).max(5).optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .optional(),
     pages: z.record(artifactType, z.array(z.object({ url, slug: z.string().regex(/^[a-z0-9][a-z0-9-]*$/) })).min(1)),
     bundled: z
       .record(
@@ -88,10 +104,22 @@ export function validateSources(raw: unknown, where = 'sources.json'): HostSourc
       slugs.add(key);
     }
   }
+  const snapshots = new Set<string>();
   for (const entry of [...sources.indexes, sources.changelog]) {
     if (!sources.domains.includes(new URL(entry.url).hostname)) {
       throw new Error(`Host library sources invalid (${where}): ${entry.url} is outside declared domains.`);
     }
+    snapshots.add(entry.snapshot);
+  }
+  const sections = new Set<string>();
+  for (const release of sources.releases ?? []) {
+    if (!sources.domains.includes(GITHUB_API_HOST)) {
+      throw new Error(`Host library sources invalid (${where}): releases of ${release.repo} need ${GITHUB_API_HOST} in domains.`);
+    }
+    if (sections.has(release.section)) throw new Error(`Host library sources invalid (${where}): duplicate releases section "${release.section}".`);
+    if (snapshots.has(release.snapshot)) throw new Error(`Host library sources invalid (${where}): releases snapshot ${release.snapshot} clashes with another snapshot.`);
+    sections.add(release.section);
+    snapshots.add(release.snapshot);
   }
   return sources;
 }
@@ -160,11 +188,12 @@ export const httpFetcher: Fetcher = async (target: string): Promise<FetchResult>
       const response = await fetch(target, {
         redirect: 'follow',
         signal: AbortSignal.timeout(30_000),
-        headers: { accept: 'text/markdown, text/plain;q=0.9, */*;q=0.5', 'user-agent': 'agents-united-hostlib' },
+        headers: requestHeaders(target, process.env),
       });
       const text = await response.text();
       if (response.ok) return { ok: true, status: response.status, text };
-      lastError = `HTTP ${response.status}`;
+      const limited = new URL(target).hostname === GITHUB_API_HOST && (response.status === 403 || response.status === 429);
+      lastError = `HTTP ${response.status}${limited ? ' (GitHub API rate limit? set GITHUB_TOKEN to raise it)' : ''}`;
       if (response.status < 500 && response.status !== 429) return { ok: false, status: response.status, text: '', error: lastError };
     } catch (error) {
       lastError = error instanceof Error ? `${error.message}${error.cause ? ` (${String((error.cause as { code?: string }).code ?? error.cause)})` : ''}` : String(error);
@@ -173,6 +202,47 @@ export const httpFetcher: Fetcher = async (target: string): Promise<FetchResult>
   }
   return { ok: false, status: 0, text: '', error: lastError };
 };
+
+// ── releases (GitHub release streams as changelog sources) ───────────────────────────────────
+
+type ReleasesFetch = { ok: true; text: string } | { ok: false; error: string };
+
+/** One fetch per URL per run: two products released from one repository share the API response (the limit is 60 an hour unauthenticated). */
+function memoised(fetcher: Fetcher): Fetcher {
+  const cache = new Map<string, Promise<FetchResult>>();
+  return url => {
+    let hit = cache.get(url);
+    if (!hit) {
+      hit = fetcher(url);
+      cache.set(url, hit);
+    }
+    return hit;
+  };
+}
+
+/** Fetch a release stream's pages and render them as one sectioned changelog, or say exactly what went wrong. */
+async function fetchReleases(source: ReleaseSource, fetcher: Fetcher): Promise<ReleasesFetch> {
+  const pages = source.pages ?? 1;
+  const joined: unknown[] = [];
+  for (let page = 1; page <= pages; page += 1) {
+    const url = releasesApiUrl(source.repo, page);
+    const fetched = await fetcher(url);
+    if (!fetched.ok) return { ok: false, error: `${url}: ${fetched.error ?? `HTTP ${fetched.status}`}` };
+    let data: unknown;
+    try {
+      data = JSON.parse(fetched.text);
+    } catch {
+      return { ok: false, error: `${url}: response is not a list of releases` };
+    }
+    if (!Array.isArray(data)) return { ok: false, error: `${url}: response is not a list of releases` };
+    joined.push(...data);
+  }
+  const text = renderReleases(joined, { tagPrefix: source.tagPrefix, section: source.section });
+  if (parseChangelog(text).length === 0) {
+    return { ok: false, error: `${releasesApiUrl(source.repo)}: no release matches the tag prefix "${source.tagPrefix}" in the first ${pages} page(s)` };
+  }
+  return { ok: true, text };
+}
 
 // ── check ────────────────────────────────────────────────────────────────────────────────────
 
@@ -187,6 +257,8 @@ export interface HostCheckReport {
   errors: string[];
   changelog: {
     url: string;
+    /** GitHub release streams followed in addition (one per section). */
+    releases: Array<{ section: string; url: string }>;
     newEntries: ClassifiedEntry[];
     lostBaselines: string[];
     latest: Record<string, string>;
@@ -208,29 +280,46 @@ export async function checkHost(hostDir: string, fetcher: Fetcher): Promise<Host
     label: sources.label,
     reachable: true,
     errors,
-    changelog: { url: sources.changelog.url, newEntries: [], lostBaselines: [], latest: {} },
+    changelog: {
+      url: sources.changelog.url,
+      releases: (sources.releases ?? []).map(source => ({ section: source.section, url: releasesApiUrl(source.repo) })),
+      newEntries: [],
+      lostBaselines: [],
+      latest: {},
+    },
     indexes: [],
     affectedTypes: [],
     affectedPages: [],
     hasChanges: false,
   };
 
+  const entries: ChangelogEntry[] = [];
   const changelog = await fetcher(sources.changelog.url);
   if (!changelog.ok) {
     errors.push(`changelog ${sources.changelog.url}: ${changelog.error ?? `HTTP ${changelog.status}`}`);
     report.reachable = false;
   } else {
-    const entries = parseChangelog(changelog.text);
-    report.changelog.latest = latestPerSection(entries);
-    const fresh = newEntriesSince(entries, lock.changelog.lastSeen);
-    report.changelog.lostBaselines = fresh.lostBaselines;
-    report.changelog.newEntries = fresh.entries.map(entry => ({
-      section: entry.section,
-      version: entry.version,
-      title: entry.title,
-      types: classifyEntry(entry, sources.keywords),
-    }));
+    entries.push(...parseChangelog(changelog.text));
   }
+  const releasesFetcher = memoised(fetcher);
+  for (const source of sources.releases ?? []) {
+    const fetched = await fetchReleases(source, releasesFetcher);
+    if (!fetched.ok) {
+      errors.push(`releases ${fetched.error}`);
+      report.reachable = false;
+      continue;
+    }
+    entries.push(...parseChangelog(fetched.text));
+  }
+  report.changelog.latest = latestPerSection(entries);
+  const fresh = newEntriesSince(entries, lock.changelog.lastSeen);
+  report.changelog.lostBaselines = fresh.lostBaselines;
+  report.changelog.newEntries = fresh.entries.map(entry => ({
+    section: entry.section,
+    version: entry.version,
+    title: entry.title,
+    types: classifyEntry(entry, sources.keywords),
+  }));
 
   for (const index of sources.indexes) {
     const fetched = await fetcher(index.url);
@@ -342,8 +431,24 @@ export async function refreshHost(hostDir: string, fetcher: Fetcher, options: Re
     if (target.rel === sources.changelog.snapshot && outcome.status !== 'blocked') changelogText = fetched.text;
   }
 
-  if (options.advanceChangelog && changelogText !== undefined) {
-    lock.changelog.lastSeen = latestPerSection(parseChangelog(changelogText));
+  const releaseTexts: string[] = [];
+  const releasesFetcher = memoised(fetcher);
+  for (const source of sources.releases ?? []) {
+    const url = releasesApiUrl(source.repo);
+    const fetched = await fetchReleases(source, releasesFetcher);
+    if (!fetched.ok) {
+      outcomes.push({ file: source.snapshot, url, status: 'failed', detail: fetched.error });
+      continue;
+    }
+    const outcome = writeSnapshot(hostDir, sources, lock, source.snapshot, url, fetched.text, 'http', now);
+    outcomes.push(outcome);
+    if (outcome.status !== 'blocked') releaseTexts.push(fetched.text);
+  }
+
+  if (options.advanceChangelog && (changelogText !== undefined || releaseTexts.length > 0)) {
+    const entries = [...(changelogText !== undefined ? parseChangelog(changelogText) : []), ...releaseTexts.flatMap(text => parseChangelog(text))];
+    // Overlay, never replace: a section whose source failed or was blocked this time keeps its previous baseline.
+    lock.changelog.lastSeen = { ...lock.changelog.lastSeen, ...latestPerSection(entries) };
   }
   lock.changelog.checkedAt = now.toISOString();
   saveLock(hostDir, lock);
@@ -367,6 +472,7 @@ export function ingestSnapshot(
   const declared = new Map<string, string>([
     ...sources.indexes.map(index => [index.snapshot, index.url] as [string, string]),
     [sources.changelog.snapshot, sources.changelog.url],
+    ...(sources.releases ?? []).map(source => [source.snapshot, releasesApiUrl(source.repo)] as [string, string]),
     ...(Object.entries(sources.pages) as Array<[ArtifactType, Array<{ url: string; slug: string }>]>).flatMap(([type, pages]) =>
       pages.map(page => [pagePath(type, page.slug), page.url] as [string, string]),
     ),
@@ -378,8 +484,9 @@ export function ingestSnapshot(
   if (!sourceUrl) throw new Error(`ingest: ${rel} is not a snapshot declared in ${sources.host}/sources.json`);
   const now = (options.now ?? (() => new Date()))();
   const outcome = writeSnapshot(hostDir, sources, lock, rel, sourceUrl, text, via, now);
-  if (outcome.status !== 'blocked' && rel === sources.changelog.snapshot && options.advanceChangelog) {
-    lock.changelog.lastSeen = latestPerSection(parseChangelog(text));
+  const isChangelog = rel === sources.changelog.snapshot || (sources.releases ?? []).some(source => source.snapshot === rel);
+  if (outcome.status !== 'blocked' && isChangelog && options.advanceChangelog) {
+    lock.changelog.lastSeen = { ...lock.changelog.lastSeen, ...latestPerSection(parseChangelog(text)) };
     lock.changelog.checkedAt = now.toISOString();
   }
   if (outcome.status !== 'blocked') saveLock(hostDir, lock);

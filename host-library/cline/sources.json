@@ -12,6 +12,22 @@
     "url": "https://raw.githubusercontent.com/cline/cline/main/CHANGELOG.md",
     "snapshot": "changelog.md"
   },
+  "releases": [
+    {
+      "repo": "cline/cline",
+      "tagPrefix": "cli-v",
+      "section": "CLI",
+      "snapshot": "changelog-cli.md",
+      "pages": 2
+    },
+    {
+      "repo": "cline/cline",
+      "tagPrefix": "sdk/sdk/v",
+      "section": "SDK",
+      "snapshot": "changelog-sdk.md",
+      "pages": 2
+    }
+  ],
   "pages": {
     "agent": [
       {
@@ -190,6 +206,7 @@
   },
   "domains": [
     "docs.cline.bot",
-    "raw.githubusercontent.com"
+    "raw.githubusercontent.com",
+    "api.github.com"
   ]
 }
