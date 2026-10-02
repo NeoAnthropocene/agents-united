@@ -338,6 +338,14 @@ runtime host detection/rewiring (nondeterministic — churn belongs in capabilit
   ADR 0016); a *dynamic workflow* is Claude Code's scripted multi-agent orchestration (`Workflow`
   tool, `.claude/workflows/*.js`). Multi-agent workflow skills become dynamic workflows (plus a thin
   trigger) in the Claude package; single-agent runbooks stay skills.
+- **Honest Gap** (ADR 0026): a piece of a native package that the host has no primitive for. It is listed as a gap
+  (or partial) in the `doctor --host` delta table and is never reshaped into an artifact that pretends to the
+  host's missing behaviour (for example a Claude-style agent file on Cline).
+- **CLI Extra Layer** (ADR 0026): an add-on to a host's base native package that only one surface of that host
+  can run, shipped as its own reviewed PR (for Cline, the team-prompt roster for `cline --team-name`, which the
+  VS Code and JetBrains extensions cannot use). The base package never depends on it.
+- **Guard Plugin** (ADR 0026): on Cline, the reviewed SDK plugin that blocks dangerous tool calls, the native
+  counterpart of Claude's `PreToolUse` guard hooks. It is executable code, so it passes the security audit gate.
 _Avoid_: install-time LLM generation, scoring hosts against Antigravity keys, adopting a third-party
 skill without reading its upstream original, snapshotting unaudited upstream content
 
