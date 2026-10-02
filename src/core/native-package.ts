@@ -148,6 +148,17 @@ export function renderNativeSkill(sourceText: string, canonicalRelPath: string, 
   return renderFramed(sourceText, canonicalRelPath, host, 'skill');
 }
 
+// ── Hook scripts (Antigravity): `registry/hosts/<host>/hooks/<name>.js`, run by the host as a command hook ─────────────
+
+export function nativeHookSource(registryDir: string, host: string, name: string): string | undefined {
+  return sourceOf(registryDir, host, 'hooks', name, '.js');
+}
+
+/** A hook script is code the host executes, so it is copied unchanged and the marker is a trailing comment. */
+export function renderNativeHook(sourceText: string, canonicalRelPath: string, host: NativeHost | string = 'antigravity'): string {
+  return renderTrailingMarker(sourceText, canonicalRelPath, host);
+}
+
 /** Names of the committed native plugins for `host` (`registry/hosts/<host>/plugins/<name>.js`), sorted. */
 export function listNativePlugins(registryDir: string, host: string): string[] {
   return listStems(registryDir, host, 'plugins', '.js');

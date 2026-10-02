@@ -39,6 +39,24 @@ export function inspectClineNativeAgent(text: string): { tools: string[]; holdsW
   return { tools, holdsWriter: tools.some(tool => CLINE_WRITER_TOOLS.includes(tool)) };
 }
 
+/** Antigravity tools that run a command or change a file (the shell and editing classes of its catalog). A native agent holding one needs the guard hook. */
+export const ANTIGRAVITY_WRITER_TOOLS: readonly string[] = ['run_command', 'write_to_file', 'replace_file_content', 'multi_replace_file_content'];
+
+/**
+ * Plan 032 Phase 8 — what an installed native Antigravity agent says about itself: the `tools:` list of its frontmatter (the host
+ * enforces it, observed on agy 1.2.15), and whether it holds a tool that runs a command or writes a file. Pure: text in, facts out.
+ */
+export function inspectAntigravityNativeAgent(text: string): { tools: string[]; holdsWriter: boolean } {
+  let tools: string[] = [];
+  try {
+    const parsed = yaml.parse(FRONTMATTER.exec(text.replace(/\r\n/g, '\n'))?.[1] ?? '') as { tools?: unknown } | null;
+    if (Array.isArray(parsed?.tools)) tools = parsed.tools.filter((tool): tool is string => typeof tool === 'string');
+  } catch {
+    // unreadable frontmatter yields no tools
+  }
+  return { tools, holdsWriter: tools.some(tool => ANTIGRAVITY_WRITER_TOOLS.includes(tool)) };
+}
+
 /** Splits a `tools` value on top-level commas, so `Agent(a, b), Read` is two entries and an allowlist stays whole. */
 export function splitTools(value: unknown): string[] {
   const out: string[] = [];

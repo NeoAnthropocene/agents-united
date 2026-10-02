@@ -11,7 +11,8 @@ import { ClineProjector } from './cline-projector.js';
 import { AntigravityProjector } from './antigravity-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
 import { McpLocationRegistry } from './mcp-locations.js';
-import { inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
+import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, inspectAntigravityHook, loadGuardHookEntry } from './antigravity-hooks.js';
+import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -703,6 +704,47 @@ export class DoctorEngine {
         if (skill && await fs.pathExists(path.join(workspaceRoot, '.agents', 'skills', skill[1], 'SKILL.md'))) {
           warnings.push(
             `Skill .agents/skills/${skill[1]} shadows .cline/skills/${skill[1]}: Cline loads the .agents copy first (observed on CLI 3.0.68), so the native skill is not in effect. Rename or remove the .agents copy.`
+          );
+        }
+      }
+    }
+
+    // Plan 032 Phase 8 — the same safety property for the Antigravity native lane: a native role that can run commands or edit files
+    // needs the guard hook to be in effect, which means the script is there and `.agents/hooks.json` holds our key, as shipped and
+    // switched on. Only our key is looked at, so a hook the user added is never reported (and never read as drift).
+    if (manifest?.nativeLanes?.antigravity === true) {
+      const workspaceRoot = workspaceRootOf(root);
+      const writers: string[] = [];
+      let owner: string | undefined;
+      for (const [relPath, proj] of Object.entries(manifest.projections ?? {})) {
+        const role = proj.host === 'antigravity' && proj.kind === 'role' ? /^\.agents\/agents\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
+        if (!role) continue;
+        const abs = path.join(workspaceRoot, relPath);
+        if (!await fs.pathExists(abs)) continue; // missing is reported above
+        const text = await fs.readFile(abs, 'utf8');
+        if (!text.includes('profile: antigravity-native') || !inspectAntigravityNativeAgent(text).holdsWriter) continue;
+        writers.push(role[1]);
+        owner ??= proj.owners[0];
+      }
+      if (writers.length > 0) {
+        const scriptPresent = manifest.projections?.[ANTIGRAVITY_GUARD_SCRIPT] !== undefined && await fs.pathExists(path.join(workspaceRoot, ANTIGRAVITY_GUARD_SCRIPT));
+        const state = scriptPresent
+          ? await inspectAntigravityHook(path.join(workspaceRoot, ANTIGRAVITY_HOOKS_FILE), loadGuardHookEntry(new RegistryResolver().getRegistryDir()))
+          : 'script-missing';
+        const reasons: Record<string, string | undefined> = {
+          'script-missing': `its script ${ANTIGRAVITY_GUARD_SCRIPT} is missing`,
+          absent: `${ANTIGRAVITY_HOOKS_FILE} does not exist`,
+          'skipped-invalid': `${ANTIGRAVITY_HOOKS_FILE} is not valid JSON, so the hook cannot be verified`,
+          missing: `${ANTIGRAVITY_HOOKS_FILE} has no '${ANTIGRAVITY_HOOK_NAME}' entry`,
+          disabled: `the '${ANTIGRAVITY_HOOK_NAME}' entry in ${ANTIGRAVITY_HOOKS_FILE} is disabled (enabled: false)`,
+          modified: `the '${ANTIGRAVITY_HOOK_NAME}' entry in ${ANTIGRAVITY_HOOKS_FILE} was edited by hand`,
+        };
+        const reason = reasons[state];
+        if (reason) {
+          const handEdited = state === 'disabled' || state === 'modified' || state === 'skipped-invalid';
+          warnings.push(
+            `Native agent${writers.length > 1 ? 's' : ''} ${writers.join(', ')} can run commands or edit files, but the guard hook is not in effect: ${reason}.` +
+            (owner ? ` ${handEdited ? 'Fix or remove it by hand, then run' : 'Run'}: agents update ${owner} --native to restore it.` : '')
           );
         }
       }
