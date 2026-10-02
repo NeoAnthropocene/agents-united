@@ -629,6 +629,7 @@ Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releas
 
 | Read this | To learn |
 | :--- | :--- |
+| [`docs/session-start.md`](./docs/session-start.md) | What to read and which rules apply before any AI session on this repo starts |
 | [`docs/workflow-guide.md`](./docs/workflow-guide.md) | Branching, releases, and everyday contributor workflow |
 | [`docs/host-primitive-matrix.md`](./docs/host-primitive-matrix.md) | How skills, subagents, rules, hooks, and workflows behave on Claude Code, Antigravity, and Cline |
 | [`docs/skill-intake.md`](./docs/skill-intake.md) | The checklist for adding any new skill, including licence tiers |
