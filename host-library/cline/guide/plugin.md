@@ -41,3 +41,4 @@ Plugins apply to the Cline SDK, CLI and Kanban; the docs say they are not applic
 
 - The Cline guard plugin is a single `.js` file that imports only Node builtins and `@cline/*`, so it needs no `package.json`, no `npm install` and no dependency to audit. Install it by copying to `.cline/plugins/` (project) as the install lane does for every other artifact, and record its hash in the lockfile.
 - Because plugins do not apply to the IDE extensions, the doctor delta table must show "guard: CLI only" for them. Never describe the guard as enforced in the extensions.
+- **Observed ([observations](../observations/2026-10-02-cli-3.0.68.md)):** a project plugin dropped into `.cline/plugins/<name>.js` (one file, default export of an `AgentPlugin`, no imports) was discovered without `cline plugin install`, which keeps the guard plugin a plain copy by the install lane.
