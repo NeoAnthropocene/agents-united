@@ -9,15 +9,25 @@
   hold seeded snapshots but no `guide/` folders or profiles. Reading Cline's snapshots shows that Cline's
   primitives are not Claude's, so copying Claude's package shape would fake things the host does not have:
   - **Subagents are built in and read-only.** The model decides when to spawn them with `use_subagents`;
-    they can read, search, list and run read-only commands, cannot edit, use the browser or MCP servers, or
-    nest, and there is no custom agent definition (no per-agent tools, model or prompt file).
-    ([subagents](../../host-library/cline/pages/agent/subagents.md))
+    they can read, search, list and run read-only commands, and cannot edit, use the browser or MCP servers,
+    or nest. No page in the library describes a way to define one's own subagent (tools, model, prompt).
+    ([subagents](../../host-library/cline/pages/agent/subagents.md)) **Unverified, not absent:** the config
+    layout lists `agents/` ("agent definitions") and the CLI reference lists `.cline/agents.yaml`, but no
+    page in the library gives their format, so whether Cline has file-defined agents is open, not settled.
+    ([config](../../host-library/cline/pages/settings/config.md),
+    [cli-reference](../../host-library/cline/pages/settings/cli-reference.md))
   - **Agent teams** (a coordinator that spawns teammates with a role and a task through tools) work in the
     CLI, the SDK and Kanban, **not in the VS Code or JetBrains extensions**.
     ([agent-teams](../../host-library/cline/pages/orchestration/agent-teams.md),
     [multi-agent-teams](../../host-library/cline/pages/orchestration/multi-agent-teams.md))
-  - **Hooks exist as SDK plugins**, which are code; a hook handler can block dangerous tool calls.
-    ([hooks](../../host-library/cline/pages/hook/hooks.md), [plugins](../../host-library/cline/pages/plugin/sdk-plugins.md))
+  - **Hooks are documented as SDK plugins**, which are code; a hook handler can block dangerous tool calls
+    (stage `tool_call_before`, `fail_closed` for policy hooks). The Hooks page itself only points to the
+    SDK plugins page, and **plugins apply to the Cline SDK, CLI and Kanban, not to the VS Code and JetBrains
+    extensions.** ([hooks](../../host-library/cline/pages/hook/hooks.md),
+    [plugins](../../host-library/cline/pages/plugin/plugins.md),
+    [sdk-plugins](../../host-library/cline/pages/plugin/sdk-plugins.md)) Separately, the config layout lists a
+    `hooks/` directory and the CLI has `--hooks-dir` and `cline hook` (a payload from stdin), whose format
+    no page in the library describes.
   - **Skills, rules and slash commands are files.**
     ([skills](../../host-library/cline/pages/skill/skills.md), [commands](../../host-library/cline/pages/command/using-commands.md))
 - **Decision**:
@@ -33,9 +43,11 @@
   3. **Native where it exists, honest gap.** Role knowledge ships as **skills and rules**; read-only research
      runs on Cline's **built-in subagents** (read-only by construction, so the guarantee needs no hook); the
      orchestrator is a **rule and skill** that tell Cline how to plan (Plan/Act) and delegate; scripted
-     workflows stay **skills** because Cline has no saved script. What Cline lacks (a named role with its own
-     model and effort, structured findings, a scripted fan-out with a verdict computed in code, a dedicated
-     main-thread coordinator) is listed as a gap, never faked.
+     workflows stay **skills** because no page in the library describes a saved script. What the library does
+     not show Cline having (a named role with its own model and effort, structured findings, a scripted fan-out
+     with a verdict computed in code, a dedicated main-thread coordinator) is listed as a gap, never faked.
+     A gap is a statement about the library, so it is revisited if the file-defined agents or file hooks named
+     above turn out to be documented (see Open).
   4. **Surface.** The base package works in both the IDE extensions and the CLI. Anything only the CLI can
      run is a separate **CLI extra layer**. The first such layer, **emulating the roster as team prompts**
      (`team_spawn_teammate` with our role text), is accepted as a direction but **deferred to its own PR**,
@@ -44,9 +56,10 @@
   5. **Guards are a small SDK plugin.** The destructive-command guard (and, where Cline lets a plugin scope
      it, the read-only guard) ships as a reviewed JavaScript SDK plugin that blocks dangerous tool calls. It is
      executable code, so it passes the security audit gate (ADR 0025 decision 7) and is installed by copying
-     like every other artifact. **Open, to be settled from the docs in the guides PR:** whether SDK plugins
-     load in the IDE extensions. If they do not, enforcement is CLI-only and the delta table says so for the
-     extensions; it is never described as enforced where it is not.
+     like every other artifact. **Settled from the docs:** plugins apply to the SDK, CLI and Kanban and not
+     to the VS Code and JetBrains extensions, so guard enforcement is **CLI-only**. In the extensions the
+     delta table shows no enforcement; the only protection there is the user's own Auto Approve settings and
+     the guard text in rules, which is advisory. Enforcement is never described where it does not exist.
   6. **One `--native`, per host.** The flag applies to every host that has a committed native package; the
      choice is recorded **per host** in the lockfile, a host without a native package keeps its legacy
      projection, and `--no-native` turns the recorded choice off. Today's CLI text ("Claude lane only") changes
@@ -63,5 +76,10 @@
   - Negative: Cline users get a thinner team model than Claude users until the CLI extra layer lands; the
     guard plugin adds a trust surface and a dependency on the SDK; the delta table will show many gaps on
     day one, by design.
-  - Open: where SDK plugins load (decision 5); how a plugin can scope rules to one teammate role (decision 4);
-    how Antigravity's frontmatter `hooks:` quirk (plan 031 addendum) shapes its own version of this ADR.
+  - Open: the format of Cline's `agents/` and `agents.yaml` and of its `hooks/` directory (undocumented in the
+    library; a page is needed from Cline's own documentation before any conclusion, and decisions 3 and 5 are
+    revisited if it exists); how a plugin can scope rules to one teammate role (decision 4); how Antigravity's
+    frontmatter `hooks:` quirk (plan 031 addendum) shapes its own version of this ADR.
+  - Correction (2026-10-02, same day): the first version of this ADR said Cline has no custom agent definition
+    and that hooks exist only as SDK plugins. The snapshots do not support either as stated, so both were
+    reworded above as undocumented-in-the-library.
