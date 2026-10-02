@@ -50,3 +50,17 @@
   - Open: what `.cline/agents/*.yaml` does at run time; how to invoke a workflow headless; whether the IDE extensions
     honour the same skill locations, rules and tool names as the CLI; how the doctor detects the `.agents` shadowing
     cheaply (the no-model `cline config skills --json` listing is a candidate probe).
+
+## Addendum (2026-10-02, later the same day)
+
+Checking the CLI's own release notes from the terminal (`gh release list -R cline/cline`; there is no `cline changelog`
+command) showed that **the docs library does not track the CLI's release stream**: `sources.json` follows the repository's
+root `CHANGELOG.md` (4.1.22), while the CLI (`cli-v3.0.x`, latest 3.0.68, the build tested), the SDK and the Desktop app each
+release separately. Consequences recorded here, no decision above changes:
+- The changelog-first host update would miss every CLI release until the library follows `cli-v*` releases too. That needs
+  a changelog source that reads GitHub releases (the parser handles only markdown headings today); it is a separate,
+  test-first tooling slice.
+- The release notes name things the observations had not covered (configured subagents, Agent Plugins under
+  `~/.agents/plugins/*`, `.cline/cron/*.md` and `*.task.md` specs). A probe found the agent YAML files are not registered as
+  teammates in a plain session and could not reproduce Agent Plugin discovery, so decision 3 (listed, effect unverified)
+  stands and nothing new is shipped for either.
