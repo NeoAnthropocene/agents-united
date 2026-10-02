@@ -1,0 +1,250 @@
+{
+  "host": "antigravity",
+  "profile": "antigravity@1.2.11",
+  "semantics": "Class-based tool policy for Antigravity (Plan 032 Phase 8, ADR 0030): the tools an agent and a hook matcher see, as listed on the hooks page (the vocabulary an agent's tools: frontmatter and a PreToolUse matcher use), the capability class each serves, and the conditions under which it exists. The SDK page names its built-in identifiers differently (list_directory, search_directory, find_file, create_file, edit_file, start_subagent, finish); no mapping between the two sets is documented, so those names are not catalogued. There is no skill tool: skills are read through view_file. MCP tools are permissioned as mcp(server/tool) and are not catalogued. Whether a tools: list is enforced by the host, as on Cline, is unverified; a misspelled name can hang the subagent.",
+  "catalog": [
+    {
+      "name": "view_file",
+      "class": "read",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "list_dir",
+      "class": "read",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "find_by_name",
+      "class": "search",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "grep_search",
+      "class": "search",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "write_to_file",
+      "class": "edit",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "In the CLI, artifactReviewPolicy decides whether the agent waits for the user to review code before it is written; write_file permission is allowed inside the workspace and asks outside it",
+          "source": "pages/settings/cli-reference.md#configuration-keys-settingsjson"
+        }
+      ]
+    },
+    {
+      "name": "replace_file_content",
+      "class": "edit",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "In the CLI, artifactReviewPolicy decides whether the agent waits for the user to review code before it is written; write_file permission is allowed inside the workspace and asks outside it",
+          "source": "pages/settings/cli-reference.md#configuration-keys-settingsjson"
+        }
+      ]
+    },
+    {
+      "name": "multi_replace_file_content",
+      "class": "edit",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "In the CLI, artifactReviewPolicy decides whether the agent waits for the user to review code before it is written; write_file permission is allowed inside the workspace and asks outside it",
+          "source": "pages/settings/cli-reference.md#configuration-keys-settingsjson"
+        }
+      ]
+    },
+    {
+      "name": "run_command",
+      "class": "shell",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "platform",
+          "detail": "macOS and Linux use the unified permission engine and presets (the terminal sandbox is on under the Default preset); Windows still uses the earlier terminal-execution and sandbox-preview settings",
+          "source": "pages/permissions/permissions.md#macos--linux"
+        },
+        {
+          "kind": "setting",
+          "detail": "An agent's commandExecutionPolicy (off, auto, eager or sandbox) and the user's permission rules decide whether a command runs without asking",
+          "source": "pages/agent/subagents.md#frontmatter-configuration-yaml"
+        }
+      ]
+    },
+    {
+      "name": "manage_task",
+      "class": "background-monitor",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "schedule",
+      "class": "scheduling",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Also the /schedule command and the sidecar schedule builtin; sidecars are off until the user enables them in config.json",
+          "source": "pages/orchestration/sidecars.md#user-configuration-configjson"
+        }
+      ]
+    },
+    {
+      "name": "search_web",
+      "class": "web",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "The read_url permission defaults to Ask: the agent asks before it fetches a page unless an allow rule covers the domain",
+          "source": "pages/permissions/permissions.md#default-system-behaviors--guardrails"
+        }
+      ]
+    },
+    {
+      "name": "read_url_content",
+      "class": "web",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "The read_url permission defaults to Ask: the agent asks before it fetches a page unless an allow rule covers the domain",
+          "source": "pages/permissions/permissions.md#default-system-behaviors--guardrails"
+        }
+      ]
+    },
+    {
+      "name": "invoke_subagent",
+      "class": "delegate",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "The target agent must have subagent: true in its frontmatter (a subagent: false agent is refused); nesting is capped at 10 levels",
+          "source": "pages/agent/subagents.md#custom-agents-markdown-format"
+        }
+      ]
+    },
+    {
+      "name": "define_subagent",
+      "class": "delegate",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Registers a transient subagent from a name, description and system prompt; the role body must then be passed verbatim, never summarised (docs/host-primitive-matrix.md, Plan 029 C9), and this path was not exercised in plan 031",
+          "source": "pages/hook/hooks.md#agent-collaboration"
+        }
+      ]
+    },
+    {
+      "name": "manage_subagents",
+      "class": "delegate",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "send_message",
+      "class": "messaging",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "ask_question",
+      "class": "ask-user",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "A subagent that needs a decision surfaces it to its parent; the docs describe permission requests bubbling up, not questions, so whether a subagent can ask the user is unverified",
+          "source": "pages/agent/subagents.md#permissions-and-configuration-inheritance"
+        }
+      ]
+    },
+    {
+      "name": "list_permissions",
+      "class": "meta",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Introspection of the current grants; the host drives it, so no role is granted it through a class",
+          "source": "pages/hook/hooks.md#system-and-execution"
+        }
+      ]
+    },
+    {
+      "name": "ask_permission",
+      "class": "meta",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Requests a scoped permission from the user; the host drives it, so no role is granted it through a class",
+          "source": "pages/hook/hooks.md#system-and-execution"
+        }
+      ]
+    },
+    {
+      "name": "generate_image",
+      "class": "meta",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "A media tool no engineering role needs, so no class grants it",
+          "source": "pages/hook/hooks.md#interaction-and-media"
+        }
+      ]
+    }
+  ]
+}

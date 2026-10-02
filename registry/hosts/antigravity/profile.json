@@ -1,0 +1,149 @@
+{
+  "host": "antigravity",
+  "profileId": "antigravity@1.2.11",
+  "version": "1.2.11",
+  "minVersion": "1.2.11",
+  "reviewedAgainst": "1.2.11",
+  "reviewedSection": "Antigravity CLI",
+  "library": "host-library/antigravity",
+  "toolPolicy": "tool-policy.json",
+  "semantics": "Native Antigravity host profile (Plan 032 Phase 8, ADR 0030): the artifact vocabularies a native Antigravity package may use, pinned to the CLI release line of the docs changelog baseline (the docs lag the CLI: agy 1.2.14 is installed and agy changelog shows 1.2.15) and built on the guides plus the observations of plan 031. Antigravity is this repository's origin dialect, but the package is authored from the Semantic Core and these vocabularies, never from the legacy files. Surfaces (Antigravity 2.0, the CLI, the IDE) share the .agents/ workspace layout; the global directories differ.",
+  "artifacts": {
+    "agent": {
+      "path": ".agents/agents/<role>.md",
+      "requiredKeys": [
+        "name",
+        "description"
+      ],
+      "allowedKeys": [
+        "name",
+        "description",
+        "tools",
+        "mainAgent",
+        "subagent",
+        "model",
+        "commandExecutionPolicy",
+        "mcpServers",
+        "skills",
+        "plugins"
+      ]
+    },
+    "skill": {
+      "path": ".agents/skills/<name>/SKILL.md",
+      "allowedKeys": [
+        "name",
+        "description"
+      ],
+      "portableKeys": [
+        "name",
+        "description"
+      ]
+    },
+    "hook": {
+      "events": [
+        "PreToolUse",
+        "PostToolUse",
+        "PreInvocation",
+        "PostInvocation",
+        "Stop"
+      ],
+      "handlerTypes": [
+        "command"
+      ],
+      "registerAt": [
+        ".agents/hooks.json",
+        "~/.gemini/config/hooks.json",
+        "~/.gemini/antigravity-cli/settings.json",
+        "plugins/<plugin>/hooks.json"
+      ]
+    },
+    "plugin": {
+      "manifestKeys": [
+        "name",
+        "description"
+      ],
+      "ignoredAgentKeys": [],
+      "layout": {
+        "project": ".agents/plugins/<name>/",
+        "global": "~/.gemini/config/plugins/<name>/",
+        "cliInstalled": "~/.gemini/antigravity-cli/plugins/<name>/",
+        "manifest": "plugin.json",
+        "components": "skills/<name>/SKILL.md, agents/<name>.md, rules/<name>.md, mcp_config.json, hooks.json, sidecars/<name>/sidecar.json"
+      }
+    },
+    "mcp": {
+      "scopes": [
+        "workspace",
+        "global"
+      ],
+      "transports": [
+        "stdio",
+        "streamableHttp",
+        "sse",
+        "websocket"
+      ]
+    },
+    "permissions": {
+      "modes": [
+        "default",
+        "request-review",
+        "turbo"
+      ]
+    }
+  },
+  "features": {
+    "projectAgentsDiscovery": {
+      "status": "available",
+      "since": "1.2.11",
+      "note": "Workspace agents in .agents/agents/<name>.md and .agents/agents/<name>/agent.md are discovered, both layouts (plan 031, agy 1.2.14); the 1.2.11 release notes fix finding them in already-trusted workspaces, under --agent, in headless runs and in the /agents panel. Plain agy agents is empty even where --agent resolves; use --add-dir or the /agents panel to check discovery."
+    },
+    "hooksInAgentFrontmatter": {
+      "status": "breaks-discovery",
+      "note": "Any hooks: key in an agent file removes the agent from discovery, --agent and invoke_subagent (observed on agy 1.2.14, plan 031), and the legacy lane writes one into every agent. A native agent carries none; guards go in .agents/hooks.json."
+    },
+    "hookFile": {
+      "status": "available",
+      "note": ".agents/hooks.json, ~/.gemini/config/hooks.json and a plugin hooks.json hold command hooks on five events; a hook is workspace-wide with no documented per-agent scoping, and its failure mode and whether it sees a subagent call are not documented or verified."
+    },
+    "subagentInvocation": {
+      "status": "available",
+      "note": "A main agent holding invoke_subagent reaches a workspace agent by name, including a mainAgent: false one; subagent: false refuses it (\"not found or not allowed to be invoked\"); a hooks: key makes it \"not found\" (plan 031, agy 1.2.14)."
+    },
+    "parallelSubagents": {
+      "status": "unverified",
+      "note": "The docs say a parent can invoke several subagents concurrently; plan 031 ran one delegation at a time, so parallel invocation is documented, not observed."
+    },
+    "hostEnforcedToolRestriction": {
+      "status": "unverified",
+      "note": "The docs call the tools: list the tools a subagent is permitted; whether the host refuses a tool outside it was not tried (plan 031 listed agents with tools: [view_file] but never asked one to write), so a read-only role is a promise until a probe shows otherwise, with a PreToolUse guard as the backstop."
+    },
+    "unifiedPermissionEngine": {
+      "status": "macos-linux-only",
+      "note": "The permission presets (Default, Request Review, Turbo), command(...) rules and the default-on terminal sandbox exist on macOS and Linux; Windows keeps the earlier terminal-execution policy and a preview sandbox toggle, so any claim about sandboxed commands needs a non-Windows run."
+    },
+    "workflows": {
+      "status": "deprecated",
+      "note": "Markdown workflows (/workflow-name, 12,000 characters each) are deprecated in favour of skills from November 1, 2026 (2026-11-01); the package authors none, and every skill is already a slash command."
+    },
+    "builtinOrchestrators": {
+      "status": "plan-limited",
+      "note": "/boost and /teamwork-preview are host features on paid plans with their own agents; a package neither installs nor configures them and its own orchestrator must not depend on them."
+    },
+    "skillFrontmatterExtras": {
+      "status": "unverified",
+      "note": "Only name and description are documented for a skill; the registry skills also carry metadata and, for some, the Claude-only disable-slash-command, whose effect here was not tried."
+    },
+    "registryFiles": {
+      "status": "unverified",
+      "note": "The agy changelog (1.2.10) describes agents.json, skills.json, rules.json and plugins.json registries whose directory entries load only the items directly inside the directory unless include_only names a nested one; the docs describe only .agents/rules.json, so treat the others as observed in release notes."
+    },
+    "mcpWiring": {
+      "status": "deferred",
+      "note": "The file and schema are documented (.agents/mcp_config.json and ~/.gemini/config/mcp_config.json, an mcpServers object, serverUrl for remote servers) but the package writes no MCP configuration yet; whether an agent mcpServers: entry resolves is untested."
+    },
+    "surfaces": {
+      "status": "unverified",
+      "note": "Antigravity 2.0, the CLI and the IDE share the .agents/ workspace layout and the hooks, rules and skills formats, but their global directories differ (~/.gemini/config, ~/.gemini/antigravity-cli) and everything here was observed on the CLI."
+    }
+  }
+}
