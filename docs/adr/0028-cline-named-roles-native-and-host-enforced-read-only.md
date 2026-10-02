@@ -70,3 +70,7 @@ orchestrator: it must name the `subagent_<name>` tool when it delegates, because
 `team_run_task`. Still open: parallel delegation, the `modelId`, `providerId` and `skills:` keys, the IDE, a file-defined lead, the MCP file,
 `apply_patch` input shape.
 
+
+## Addendum (2026-10-02, orchestrator rule and skill slice)
+
+Decision 6 is realised as a rule and a skill (`registry/hosts/cline/rules/`, `registry/hosts/cline/skills/orchestrator-engineering/`), and a real session confirmed that naming the `subagent_<name>` tools makes the lead delegate to them instead of reaching for `team_run_task`. **Parallel delegation is settled for 3.0.68:** two `subagent_*` calls in one turn ran concurrently. Still open: how reliably a lead discloses a missing specialist (it did not in the last run), the results on other models than the free default used here, the `modelId`, `providerId` and `skills:` keys, the IDE, a file-defined lead, the MCP file, `apply_patch` input shape.
