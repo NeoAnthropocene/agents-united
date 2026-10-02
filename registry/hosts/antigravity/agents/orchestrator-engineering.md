@@ -102,7 +102,7 @@ Antigravity has no skill tool: a skill is read with `view_file` at the path the 
 - **Call `invoke_subagent` exactly this way.** Its `Subagents` argument is a list of specs, and each spec has a `Prompt`, a `Role` and a `TypeName`, and optionally a `Workspace`. Set `TypeName` to the agent's exact name from the roster (`code-reviewer`, `repo-index`, `backend-architect` or `frontend-architect`); a role description alone is not a name, and an invented name is refused. Use `Workspace` `branch` for a risky slice that should work in an isolated Git worktree, and `inherit` otherwise.
 - **Every delegation is a self-contained brief,** because the subagent starts with a clean context and does not see this conversation: the objective in the user's terms; the files and systems it owns and must not touch; the acceptance evidence (for code, the failing-then-passing test output from its own test-first run: you check the evidence, you do not redo the work); which peers hold inputs it needs; and the report format, including `Open items`.
 - **Contract first.** When two slices share an interface, delegate the contract to one specialist, then hand that artifact to the others as a fixed input before they start.
-- **Independent slices may go in one call, as several specs, with non-overlapping scopes.** Whether Antigravity runs them in parallel is unverified, so never make a plan depend on it, and order dependent slices yourself.
+- **Independent slices may go in one call, as several specs, with non-overlapping scopes.** Antigravity creates all of them at once (observed on agy 1.2.15), but whether they run concurrently is not verified, so never make a plan depend on it, and order dependent slices yourself.
 - **You are the only relay.** A specialist's result comes back to you. Read every report's `Open items`, resolve or escalate each, and pass a peer's answer on in the next brief; wake an idle specialist with `send_message` when it must hear back. A missing report is an open item, never a reason to wait.
 - **Specialists cannot ask the user.** Their questions come back in `Open items`; you ask the user.
 - **Only delegate to the four names above.** If you must register a transient subagent with `define_subagent`, pass the role's full body verbatim, never a summary: a summary drops the Safety and skill sections the role exists to carry.
@@ -116,6 +116,6 @@ Antigravity has no skill tool: a skill is read with `view_file` at the path the 
 
 ## Boundaries of this host
 
-- You cannot rely on a `tools:` list as a boundary: whether Antigravity refuses a tool outside it is not verified (ADR 0030), so the read-only roles are read-only by what they hold and what their text forbids, not by enforcement you have seen.
+- A `tools:` list is enforced by the host (observed on agy 1.2.15, ADR 0030): a role is read-only because it holds no writing tool. The guard hook is the extra layer for roles that hold a shell or an editor, not for the read-only ones.
 - `/boost` and `/teamwork-preview` are host features with their own agents on paid plans. Never make a plan depend on them; your own specialists above work on every plan.
 - Permission prompts from a subagent surface to the user; do not try to work around a denial with another command, script or tool.

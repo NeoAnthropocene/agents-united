@@ -94,10 +94,11 @@ describe('the budget', () => {
 });
 
 describe('the Antigravity profile records the frontmatter rule', () => {
-  it('as a feature, with the unverified status', () => {
+  it('as a feature, observed: the legacy files were dropped and the native ones loaded', () => {
     const feature = loadHostProfile(registry, 'antigravity').features.rulesFrontmatter;
-    expect(feature.status).toBe('documented');
+    expect(feature.status).toBe('observed');
     expect(feature.note).toMatch(/silently discard/i);
-    expect(feature.note).toMatch(/unverified|not verified/i);
+    expect(feature.note).toMatch(/NONE/);
+    expect(feature.note).toMatch(/always_on/);
   });
 });

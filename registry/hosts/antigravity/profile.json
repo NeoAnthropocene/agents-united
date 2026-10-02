@@ -107,15 +107,15 @@
     },
     "subagentInvocation": {
       "status": "available",
-      "note": "A main agent holding invoke_subagent reaches a workspace agent by name, including a mainAgent: false one; subagent: false refuses it (\"not found or not allowed to be invoked\"); a hooks: key makes it \"not found\" (plan 031, agy 1.2.14)."
+      "note": "A main agent holding invoke_subagent reaches a workspace agent by name, including a mainAgent: false one; subagent: false refuses it (\"not found or not allowed to be invoked\"); a hooks: key makes it \"not found\" (plan 031, agy 1.2.14). On agy 1.2.15 a call with Prompt, Role, TypeName and Workspace reached the native code-reviewer, and the workspace copy won over a same-named agent in the global ~/.gemini/config/agents on the maintainer machine (observed once)."
     },
     "parallelSubagents": {
-      "status": "unverified",
-      "note": "The docs say a parent can invoke several subagents concurrently; plan 031 ran one delegation at a time, so parallel invocation is documented, not observed."
+      "status": "partial",
+      "note": "One invoke_subagent call with two specs created both subagents in the same second and both answered (observed, agy 1.2.15); the tasks were too short to show whether the runs overlap in time, so concurrent execution is documented but not proven."
     },
     "hostEnforcedToolRestriction": {
-      "status": "unverified",
-      "note": "The docs call the tools: list the tools a subagent is permitted; whether the host refuses a tool outside it was not tried (plan 031 listed agents with tools: [view_file] but never asked one to write), so a read-only role is a promise until a probe shows otherwise, with a PreToolUse guard as the backstop."
+      "status": "available",
+      "note": "Observed on agy 1.2.15 (2026-10-02, host-library/antigravity/observations): an agent whose tools: list held only view_file, list_dir and grep_search could not create a file and no file was created, while a control agent whose list added write_to_file created it, so the host withholds a tool outside the list and a read-only role is read-only by what it holds. A misspelled tool name can still hang the subagent (docs)."
     },
     "unifiedPermissionEngine": {
       "status": "macos-linux-only",
@@ -146,8 +146,8 @@
       "note": "Antigravity 2.0, the CLI and the IDE share the .agents/ workspace layout and the hooks, rules and skills formats, but their global directories differ (~/.gemini/config, ~/.gemini/antigravity-cli) and everything here was observed on the CLI."
     },
     "rulesFrontmatter": {
-      "status": "documented",
-      "note": "Every .md file inside .agents/rules/ must start with frontmatter declaring a valid trigger (always_on, model_decision, glob or manual), and the docs say a file without one is silently discarded; the legacy lane installs the registry rules there with no frontmatter, so whether the installed build really drops them is unverified. The native rules are the same text behind a valid trigger, and the 24 KB per-file and 20,000-token aggregate limits apply."
+      "status": "observed",
+      "note": "Every .md file inside .agents/rules/ must start with frontmatter declaring a valid trigger (always_on, model_decision, glob or manual), and the docs say a file without one is silently discarded. Observed on agy 1.2.15: with the legacy frontmatter-less rules the agent listed NONE of the persistent rules, and with the native rules it saw the two always_on ones (model_decision rules reach it as pointers). The 24 KB per-file and 20,000-token aggregate limits apply."
     }
   }
 }
