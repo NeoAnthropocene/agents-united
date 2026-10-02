@@ -144,6 +144,10 @@
     "surfaces": {
       "status": "unverified",
       "note": "Antigravity 2.0, the CLI and the IDE share the .agents/ workspace layout and the hooks, rules and skills formats, but their global directories differ (~/.gemini/config, ~/.gemini/antigravity-cli) and everything here was observed on the CLI."
+    },
+    "rulesFrontmatter": {
+      "status": "documented",
+      "note": "Every .md file inside .agents/rules/ must start with frontmatter declaring a valid trigger (always_on, model_decision, glob or manual), and the docs say a file without one is silently discarded; the legacy lane installs the registry rules there with no frontmatter, so whether the installed build really drops them is unverified. The native rules are the same text behind a valid trigger, and the 24 KB per-file and 20,000-token aggregate limits apply."
     }
   }
 }
