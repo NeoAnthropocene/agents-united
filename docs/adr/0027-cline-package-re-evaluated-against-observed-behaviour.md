@@ -2,6 +2,8 @@
 
 - **Status**: Accepted — 2026-10-02 (product owner: "go with the suggested one", after the observations below).
   Amends ADR 0026 decisions 3 and 5; ADR 0026 decisions 1, 2, 4, 6 and 7 stand.
+  **Amended (2026-10-02) by ADR 0028:** decision 3 (named roles "listed, effect unverified", ship nothing) and the premise of
+  decision 4 (read-only needs the guard) are superseded; decisions 1, 2, 5 and 6 stand.
 - **Context**: ADR 0026 was written from the vendor docs snapshots alone, and the first version of it overstated what
   Cline lacks (corrected in #91). Real headless sessions of the installed CLI (3.0.68, provider `cline`, about 0.09 USD
   of credits) and the build's own tables then showed the docs and the build disagree in places that shape the package.
@@ -63,5 +65,5 @@ release separately. Consequences recorded here, no decision above changes:
 - The release notes name things the observations had not covered (configured subagents, Agent Plugins under
   `~/.agents/plugins/*`, `.cline/cron/*.md` and `*.task.md` specs). A probe found the agent YAML files are not registered as
   teammates in a plain session and could not reproduce Agent Plugin discovery, so decision 3 (listed, effect unverified)
-  stands and nothing new is shipped for either.
+  stands and nothing new is shipped for either. **Corrected by ADR 0028:** that probe used a malformed file (no body); configured agents work, so decision 3 does not stand.
 - **Resolved in `feat/hostlib-github-releases-changelog`:** the library now follows a host's GitHub release stream through a `releases` source (see the plan 032 log). Cline's `CLI` and `SDK` releases are tracked, so the changelog-first host update sees a CLI release.

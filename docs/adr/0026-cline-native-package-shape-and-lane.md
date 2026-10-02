@@ -3,6 +3,8 @@
 - **Status**: Accepted — 2026-10-02 (product owner, in a `grill-with-docs` session). Builds on ADR 0025
   (native host packages, decision 1 names Claude Code, Cline and Antigravity first) and does not amend it.
   Implemented in slices by `plans/032-native-host-packages.md`, Phase 8.
+  **Amended (2026-10-02) by ADR 0028:** decision 3's gaps (a named role with its own tools, model and effort) and the claim that
+  Cline has no file-defined agent are wrong. ADR 0013 already records Cline configured agents; decision 3 is superseded.
 - **Context**: Phase 8 of plan 032 brings Cline, then Antigravity, to the native-package model that
   Claude Code now has (agents, skills, hooks, three dynamic workflows, the `--native` lane, real-session
   verification). `registry/hosts/` holds only `claude`; `host-library/cline` and `host-library/antigravity`

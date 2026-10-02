@@ -347,12 +347,17 @@ runtime host detection/rewiring (nondeterministic — churn belongs in capabilit
   products from one repository (Cline's CLI and SDK).
 - **Honest Gap** (ADR 0026): a piece of a native package that the host has no primitive for. It is listed as a gap
   (or partial) in the `doctor --host` delta table and is never reshaped into an artifact that pretends to the
-  host's missing behaviour (for example a Claude-style agent file on Cline).
+  host's missing behaviour (for example a guard hook claimed as enforcement on a surface where plugins do not run, such as
+  Cline's IDE extensions). A gap is a statement about everything searched (docs, the repository's own prior work, a probe of the
+  installed host), not about one docs page (ADR 0028).
 - **CLI Extra Layer** (ADR 0026): an add-on to a host's base native package that only one surface of that host
   can run, shipped as its own reviewed PR (for Cline, the team-prompt roster for `cline --team-name`, which the
   VS Code and JetBrains extensions cannot use). The base package never depends on it.
-- **Guard Plugin** (ADR 0026): on Cline, the reviewed SDK plugin that blocks dangerous tool calls, the native
-  counterpart of Claude's `PreToolUse` guard hooks. It is executable code, so it passes the security audit gate.
+- **Guard Plugin** (ADR 0026, narrowed by ADR 0028): on Cline, the reviewed single-file SDK plugin that blocks destructive shell
+  commands, the native counterpart of Claude's `PreToolUse` guard hooks. It is executable code, so it passes the security audit
+  gate. A read-only role does not need it: a configured agent's `tools:` list is enforced by the host.
+- **Configured Agent** (ADR 0013, ADR 0028): a Cline role file `.cline/agents/<role>.yml` (fenced frontmatter `name`, `description`,
+  `maxIterations`, `skills`, `tools`, and a body that is the system prompt), exposed to the lead as the tool `subagent_<name>`.
 _Avoid_: install-time LLM generation, scoring hosts against Antigravity keys, adopting a third-party
 skill without reading its upstream original, snapshotting unaudited upstream content
 
