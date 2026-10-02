@@ -1,11 +1,25 @@
 {
   "changelog": {
-    "checkedAt": "2026-09-30T10:43:45.089Z",
+    "checkedAt": "2026-10-02T12:01:03.198Z",
     "lastSeen": {
-      "": "4.1.22"
+      "": "4.1.22",
+      "CLI": "3.0.68",
+      "SDK": "0.0.90"
     }
   },
   "files": {
+    "changelog-cli.md": {
+      "fetchedAt": "2026-10-02T12:01:03.046Z",
+      "sha256": "sha256:80afb54375b151b6dc0899f2c5eba36e4c8c4d4a99fbc0b01e2038f51e654795",
+      "url": "https://api.github.com/repos/cline/cline/releases?per_page=100&page=1",
+      "via": "gh-api"
+    },
+    "changelog-sdk.md": {
+      "fetchedAt": "2026-10-02T12:01:03.198Z",
+      "sha256": "sha256:cc69350261ec1dcb3dbb89b9eb6e1b6545f7aa8dae3c898735fe8fae0caa8d2c",
+      "url": "https://api.github.com/repos/cline/cline/releases?per_page=100&page=1",
+      "via": "gh-api"
+    },
     "changelog.md": {
       "fetchedAt": "2026-09-30T08:09:40.373Z",
       "sha256": "sha256:fca6e16fb20ccea5f8a14f660337a479b7d80cdfa0063180e888bf7724d2c8db",
