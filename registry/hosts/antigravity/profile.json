@@ -103,7 +103,7 @@
     },
     "hookFile": {
       "status": "available",
-      "note": ".agents/hooks.json, ~/.gemini/config/hooks.json and a plugin hooks.json hold command hooks on five events; a hook is workspace-wide with no documented per-agent scoping, and its failure mode and whether it sees a subagent call are not documented or verified."
+      "note": ".agents/hooks.json, ~/.gemini/config/hooks.json and a plugin hooks.json hold command hooks on five events; a hook is workspace-wide with no documented per-agent scoping, but it fires for a subagent's calls as well as the main agent's (observed on agy 1.2.15). The guard ships as .agents/hooks.json plus .agents/hooks/agents-united-guard.js; an existing hooks.json of the user must be merged, never overwritten."
     },
     "subagentInvocation": {
       "status": "available",
@@ -148,6 +148,10 @@
     "rulesFrontmatter": {
       "status": "observed",
       "note": "Every .md file inside .agents/rules/ must start with frontmatter declaring a valid trigger (always_on, model_decision, glob or manual), and the docs say a file without one is silently discarded. Observed on agy 1.2.15: with the legacy frontmatter-less rules the agent listed NONE of the persistent rules, and with the native rules it saw the two always_on ones (model_decision rules reach it as pointers). The 24 KB per-file and 20,000-token aggregate limits apply."
+    },
+    "hookContract": {
+      "status": "observed",
+      "note": "Observed on agy 1.2.15 (observations, 2026-10-02): the hook command runs with the folder holding hooks.json (.agents/) as its working directory, so a relative script path is relative to it; the payload carries artifactDirectoryPath, conversationId, modelName, stepIdx, toolCall (name and args, CommandLine for run_command and TargetFile for the file writers), transcriptPath and workspacePaths. An answer with no decision ({}), non-JSON output and a non-zero exit each block the call (\"tool call denied by pre-tool hook\", empty reason for {}), so a guard must always answer. deny delivers its reason to the agent verbatim, a subagent's call is denied the same way and the denial text comes back through the parent, and ask falls back to the user's permission settings (a workspace write went through, a command stayed gated and was auto-denied headless)."
     }
   }
 }
