@@ -119,7 +119,7 @@
     },
     "unifiedPermissionEngine": {
       "status": "macos-linux-only",
-      "note": "The permission presets (Default, Request Review, Turbo), command(...) rules and the default-on terminal sandbox exist on macOS and Linux; Windows keeps the earlier terminal-execution policy and a preview sandbox toggle, so any claim about sandboxed commands needs a non-Windows run."
+      "note": "The permission presets (Default, Request Review, Turbo), command(...) rules and the default-on terminal sandbox exist on macOS and Linux; Windows keeps the earlier terminal-execution policy and a preview sandbox toggle, so any claim about sandboxed commands needs a non-Windows run. Observed on Linux (WSL Ubuntu, agy 1.2.15, headless) the permissions page did not hold for the CLI: a plain command was not run silently in a sandbox but needed permission (see cliDefaultPermission), and the CLI reference, which says the sandbox is off by default, matched."
     },
     "workflows": {
       "status": "deprecated",
@@ -152,6 +152,10 @@
     "hookContract": {
       "status": "observed",
       "note": "Observed on agy 1.2.15 (observations, 2026-10-02): the hook command runs with the folder holding hooks.json (.agents/) as its working directory, so a relative script path is relative to it; the payload carries artifactDirectoryPath, conversationId, modelName, stepIdx, toolCall (name and args, CommandLine for run_command and TargetFile for the file writers), transcriptPath and workspacePaths. An answer with no decision ({}), non-JSON output and a non-zero exit each block the call (\"tool call denied by pre-tool hook\", empty reason for {}), so a guard must always answer. deny delivers its reason to the agent verbatim, a subagent's call is denied the same way and the denial text comes back through the parent, and ask falls back to the user's permission settings (a workspace write went through, a command stayed gated and was auto-denied headless)."
+    },
+    "cliDefaultPermission": {
+      "status": "observed",
+      "note": "Observed on Linux (WSL Ubuntu, agy 1.2.15): with default settings a plain echo was auto-denied in a headless run (\"a tool required the command permission that headless mode cannot prompt for\"), i.e. toolPermission request-review with no sandbox, as the CLI reference states and not as the permissions page describes for the Default preset; the --sandbox flag alone did not change that. Running commands in the sandbox without prompting needs toolPermission proceed-in-sandbox (with enableTerminalSandbox) or a command() allow rule in settings.json, which was not tried because it changes the user's agent permissions. The same on Windows. A hook answering ask therefore changes nothing for a command here; with a proceed-in-sandbox or allow-rule setup, whether ask forces a prompt is unverified."
     }
   }
 }
