@@ -860,9 +860,12 @@ export interface HostProfile {
   version: string;
   minVersion: string;
   reviewedAgainst: string;
+  /** Changelog section whose baseline `version` and `reviewedAgainst` pin to (`CLI` for Cline); the unsectioned changelog when absent. */
+  reviewedSection?: string;
   library: string;
   toolPolicy: string;
-  legacyProfile: string;
+  /** Version-floor profile of the legacy projection lane, for hosts that have one (Claude). */
+  legacyProfile?: string;
   semantics?: string;
   artifacts: {
     agent: { path: string; requiredKeys: string[]; allowedKeys: string[] };

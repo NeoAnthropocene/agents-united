@@ -193,7 +193,8 @@ describe('the committed Claude host profile and tool policy', () => {
   });
 
   it('keeps the legacy 2.1.271 profile as the version floor and covers its tool surface', () => {
-    const legacy = JSON.parse(fs.readFileSync(path.resolve(profile.legacyProfile), 'utf8')) as { toolSurface: Record<string, string[]> };
+    expect(profile.legacyProfile, 'the Claude profile keeps its legacy version floor').toBeDefined();
+    const legacy = JSON.parse(fs.readFileSync(path.resolve(profile.legacyProfile!), 'utf8')) as { toolSurface: Record<string, string[]> };
     const names = new Set(policy.catalog.map(tool => tool.name));
     for (const tool of Object.values(legacy.toolSurface).flat()) expect(names.has(tool), `legacy tool ${tool}`).toBe(true);
     expect(profile.minVersion).toBe('2.1.271');

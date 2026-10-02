@@ -50,3 +50,12 @@
     subagent's calls; which file the CLI reads for MCP servers (ADR 0013 decision 7 found `.cline/mcp.json` documented but
     absent from the 3.0.61 binary); whether `.agents/plugins/` Agent Plugins load skills on 3.0.68 (the 3.0.62 notes say
     they do; a probe could not reproduce it).
+
+## Addendum (2026-10-02, profile and tool-policy slice)
+
+Decision 4's open check is settled by a probe (`host-library/cline/observations/2026-10-02-cli-3.0.68.md`, "Guard hook and
+subagents"): a plugin `beforeTool` hook **does see a subagent's tool calls**, and a block ends only that subagent's run, with
+the lead continuing and receiving the error, whereas for the main agent it ends the whole run. So the single guard plugin covers
+every agent that holds `run_commands`. Still open: whether a hook can tell which agent made a call, and whether a refusal the
+model can recover from is possible.
+
