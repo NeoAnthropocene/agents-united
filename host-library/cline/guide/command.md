@@ -29,3 +29,4 @@ Cline has no documented file format for a user-defined slash command. A package 
 - Our `workflow-*` skills become `/workflow-<task>` commands simply by being skills in `.cline/skills/`, the same shape as on Claude, so a skill-only workflow needs no extra command artifact on Cline.
 - Do not invent a `commands/` folder for Cline: nothing in the library documents one.
 - A skill named like a built-in (`newtask`, `smol`, `newrule`, `deep-planning`, `reportbug`) would collide in the `/` menu, and the docs do not say which wins, so the package never uses those names.
+- **Observed ([observations](../observations/2026-10-02-cli-3.0.68.md)):** `cline config workflows` lists markdown files in `.clinerules/workflows/` and `.cline/workflows/`, which is probably where a `/name` workflow lives and a natural home for our `workflow-*` runbooks. It could not be confirmed: a prompt starting with `/` is rejected by the CLI's argument parser, so invocation was not testable headless.

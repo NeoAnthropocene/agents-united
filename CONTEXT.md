@@ -338,6 +338,9 @@ runtime host detection/rewiring (nondeterministic — churn belongs in capabilit
   ADR 0016); a *dynamic workflow* is Claude Code's scripted multi-agent orchestration (`Workflow`
   tool, `.claude/workflows/*.js`). Multi-agent workflow skills become dynamic workflows (plus a thin
   trigger) in the Claude package; single-agent runbooks stay skills.
+- **Host Observation** (ADR 0027): a dated, versioned record of what an installed host build actually does, kept in
+  `host-library/<host>/observations/` and never cited as vendor documentation. A guide's authoring notes point to it where it
+  disagrees with the docs, and an artifact that depends on one is marked "observed on `<version>`" in the delta table.
 - **Honest Gap** (ADR 0026): a piece of a native package that the host has no primitive for. It is listed as a gap
   (or partial) in the `doctor --host` delta table and is never reshaped into an artifact that pretends to the
   host's missing behaviour (for example a Claude-style agent file on Cline).
