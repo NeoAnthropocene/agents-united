@@ -34,18 +34,15 @@ function describeIssues(error: z.ZodError): string {
     .join('; ');
 }
 
-/** A non-empty list of unique non-empty strings. */
-const uniqueList = (label: string): z.ZodType<string[]> =>
-  z
-    .array(z.string().min(1))
-    .min(1, `${label} must be non-empty`)
-    .superRefine((items, ctx) => {
-      const seen = new Set<string>();
-      for (const item of items) {
-        if (seen.has(item)) ctx.addIssue({ code: 'custom', message: `${label}: duplicate entry "${item}"` });
-        seen.add(item);
-      }
-    });
+/** A list of unique non-empty strings; non-empty unless the host genuinely has none (`allowEmpty`). */
+const uniqueList = (label: string, allowEmpty = false): z.ZodType<string[]> =>
+  (allowEmpty ? z.array(z.string().min(1)) : z.array(z.string().min(1)).min(1, `${label} must be non-empty`)).superRefine((items, ctx) => {
+    const seen = new Set<string>();
+    for (const item of items) {
+      if (seen.has(item)) ctx.addIssue({ code: 'custom', message: `${label}: duplicate entry "${item}"` });
+      seen.add(item);
+    }
+  });
 
 const ProfileSchema = z
   .object({
@@ -54,9 +51,10 @@ const ProfileSchema = z
     version: z.string().regex(SEMVER, 'version must be a semver string'),
     minVersion: z.string().regex(SEMVER, 'minVersion must be a semver string'),
     reviewedAgainst: z.string().regex(SEMVER, 'reviewedAgainst must be a semver string'),
+    reviewedSection: z.string().min(1).optional(),
     library: z.string().min(1, 'library must point at host-library/<host>'),
     toolPolicy: z.string().min(1),
-    legacyProfile: z.string().min(1),
+    legacyProfile: z.string().min(1).optional(),
     semantics: z.string().optional(),
     artifacts: z
       .object({
@@ -66,7 +64,7 @@ const ProfileSchema = z
         plugin: z
           .object({
             manifestKeys: uniqueList('artifacts.plugin.manifestKeys'),
-            ignoredAgentKeys: uniqueList('artifacts.plugin.ignoredAgentKeys'),
+            ignoredAgentKeys: uniqueList('artifacts.plugin.ignoredAgentKeys', true),
             layout: z.record(z.string().min(1)),
           })
           .strict(),
@@ -97,13 +95,16 @@ const ConditionSchema = z
   .object({
     kind: z.enum(['platform', 'model', 'provider', 'version', 'setting', 'plan', 'surface', 'dependency']),
     detail: z.string().min(1),
-    source: z.string().regex(/^pages\/[\w./-]+\.md(#[\w%-]+)?$/, 'source must be a host-library snapshot path such as pages/tools/tools-reference.md#anchor'),
+    source: z
+      .string()
+      .regex(/^(pages|observations)\/[\w./-]+\.md(#[\w%-]+)?$/, 'source must be a host-library snapshot or observations path such as pages/tools/tools-reference.md#anchor')
+      .refine(source => !source.split('#')[0].split('/').includes('..'), 'source must not climb out of the host library'),
   })
   .strict();
 
 const CatalogEntrySchema = z
   .object({
-    name: z.string().regex(/^[A-Za-z][A-Za-z0-9]*$/, 'tool name must be alphanumeric'),
+    name: z.string().regex(/^[A-Za-z][A-Za-z0-9_]*$/, 'tool name must be alphanumeric (underscores allowed)'),
     class: z.string().min(1),
     subagents: z.enum(['available', 'never', 'conditional']),
     backgroundSubagent: z.boolean(),
