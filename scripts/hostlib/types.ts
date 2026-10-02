@@ -54,11 +54,30 @@ export interface AuditAllowEntry {
   reason: string;
 }
 
+/**
+ * A host's GitHub release stream used as a changelog source (for hosts that release several products from one repository
+ * and keep notes only on GitHub releases). Rendered into a sectioned changelog by `github-releases.ts`.
+ */
+export interface ReleaseSource {
+  /** `owner/name`. */
+  repo: string;
+  /** Tag prefix that selects one product's releases and is stripped to leave the version. */
+  tagPrefix: string;
+  /** Changelog section the releases are filed under; also the key of the recorded baseline. */
+  section: string;
+  /** Snapshot file name relative to the host directory (the rendered changelog). */
+  snapshot: string;
+  /** API pages of 100 releases to read (1 to 5, default 1). */
+  pages?: number;
+}
+
 export interface HostSources {
   host: string;
   label: string;
   indexes: SourceIndex[];
   changelog: { url: string; snapshot: string };
+  /** GitHub release streams followed in addition to the markdown changelog (optional). */
+  releases?: ReleaseSource[];
   pages: Partial<Record<ArtifactType, SourcePage[]>>;
   /** Reference text bundled inside the host, per artifact type (optional). */
   bundled?: Partial<Record<ArtifactType, BundledSource[]>>;

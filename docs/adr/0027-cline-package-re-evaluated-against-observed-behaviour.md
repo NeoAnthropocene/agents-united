@@ -64,3 +64,4 @@ release separately. Consequences recorded here, no decision above changes:
   `~/.agents/plugins/*`, `.cline/cron/*.md` and `*.task.md` specs). A probe found the agent YAML files are not registered as
   teammates in a plain session and could not reproduce Agent Plugin discovery, so decision 3 (listed, effect unverified)
   stands and nothing new is shipped for either.
+- **Resolved in `feat/hostlib-github-releases-changelog`:** the library now follows a host's GitHub release stream through a `releases` source (see the plan 032 log). Cline's `CLI` and `SDK` releases are tracked, so the changelog-first host update sees a CLI release.

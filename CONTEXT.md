@@ -341,6 +341,10 @@ runtime host detection/rewiring (nondeterministic — churn belongs in capabilit
 - **Host Observation** (ADR 0027): a dated, versioned record of what an installed host build actually does, kept in
   `host-library/<host>/observations/` and never cited as vendor documentation. A guide's authoring notes point to it where it
   disagrees with the docs, and an artifact that depends on one is marked "observed on `<version>`" in the delta table.
+- **Releases Source** (ADR 0027 addendum): a host's GitHub release stream followed as a changelog source, declared under
+  `releases` in `sources.json` (repo, tag prefix, section). It is rendered into the sectioned changelog the parser reads,
+  snapshotted as `changelog-<section>.md`, and tracked with its own baseline per section. For hosts that release several
+  products from one repository (Cline's CLI and SDK).
 - **Honest Gap** (ADR 0026): a piece of a native package that the host has no primitive for. It is listed as a gap
   (or partial) in the `doctor --host` delta table and is never reshaped into an artifact that pretends to the
   host's missing behaviour (for example a Claude-style agent file on Cline).
