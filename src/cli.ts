@@ -21,6 +21,7 @@ import type { AntigravityActivationPlan } from './core/antigravity-launcher.js';
 import { AntigravityCapabilityProbe } from './core/antigravity-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
+import { explicitNativeFlag } from './core/native-flag.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
@@ -313,7 +314,7 @@ cli
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
   .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline. Under Development hosts (cursor, opencode, codex) are refused')
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
-  .option('--native', 'Claude lane only: install the committed native agent (registry/hosts/claude/agents/<role>.md) for each role that has one, instead of projecting it from the canonical asset. Roles without a native agent keep the legacy projection. Sticky: recorded in the lockfile, so `agents update` keeps it. Use --no-native to turn it back off.')
+  .option('--native', 'Claude and Cline lanes: install the committed native files (registry/hosts/<host>/: agents, workflows and, for Cline, the orchestrator rule and skill and the guard plugin) instead of projecting them from the canonical assets. Anything without a native file keeps the legacy projection. Recorded per host. Sticky: recorded in the lockfile, so `agents update` keeps it. Use --no-native to turn it back off.')
   .option('--no-native', 'Turn a recorded --native choice back off (legacy projections return).')
   .option('--canonical-store', 'Keep the .agents/ main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden .claude/.agents-united/ folder, ADR 0022)')
   .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off.')
@@ -855,7 +856,8 @@ cli
         // flag inherits the recorded choice so `agents update` cannot prune the package.
         pluginLane: typeof options.plugin === 'boolean' ? options.plugin : undefined,
         // Plan 032 Phase 7 — opt-in native-package lane; same sticky semantics as the plugin lane.
-        nativeLane: typeof options.native === 'boolean' ? options.native : undefined,
+        // Read from the arguments: with `--no-native` defined, the parsed `options.native` is `true` even when the user typed nothing.
+        nativeLane: explicitNativeFlag(process.argv),
         sessionGuard,
         permissionPreset,
         storeShape,

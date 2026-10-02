@@ -244,6 +244,29 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(proj).not.toContain('hooks:');
   });
 
+  it('keeps the native lane opt-in: legacy files without the flag, the native package with --native, and the legacy files back with --no-native', async () => {
+    const run = (extra: string) => execSync(`node "${cliPath}" add software-engineering -t cline -y --copy ${extra}`, { cwd: e2eDir, encoding: 'utf8' });
+    const agent = (role: string) => path.join(e2eDir, '.cline', 'agents', `${role}.yml`);
+    const guard = path.join(e2eDir, '.cline', 'plugins', 'agents-united-guard.js');
+
+    run('');
+    expect(await fs.readFile(agent('code-reviewer'), 'utf8')).not.toContain('cline-native');
+    expect(await fs.pathExists(agent('orchestrator-engineering'))).toBe(true);
+    expect(await fs.pathExists(guard)).toBe(false);
+
+    run('--native');
+    expect(await fs.readFile(agent('code-reviewer'), 'utf8')).toContain('profile: cline-native');
+    expect(await fs.pathExists(agent('orchestrator-engineering'))).toBe(false);
+    expect(await fs.pathExists(guard)).toBe(true);
+
+    run('');
+    expect(await fs.pathExists(guard)).toBe(true); // sticky: an install without the flag keeps the recorded choice
+
+    run('--no-native');
+    expect(await fs.readFile(agent('code-reviewer'), 'utf8')).not.toContain('cline-native');
+    expect(await fs.pathExists(guard)).toBe(false);
+  });
+
   it('prints a plain-language sync tip when installing without fanout', async () => {
     const stdout = execSync(`node "${cliPath}" add software-engineering -t agents -y --copy`, {
       cwd: e2eDir,

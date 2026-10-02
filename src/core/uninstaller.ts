@@ -344,7 +344,9 @@ export class UninstallEngine {
                     // `domain:engineering` must delete nothing.
                     const declaringMatch = /^\.agents\/plugins\/([^/]+)\//.exec(projRelPath);
                     const derivedCoordination = Boolean(declaringMatch)
-                      || proj.kind === 'rule' || proj.kind === 'team-manifest' || proj.kind === 'plugin-manifest';
+                      || proj.kind === 'rule' || proj.kind === 'team-manifest' || proj.kind === 'plugin-manifest'
+                      // Plan 032 Phase 8 — a native-only file (no canonical asset) is bundle-derived coordination too.
+                      || proj.kind === 'plugin' || (proj.kind === 'skill' && !proj.canonical);
                     const covering = derivedCoordination
                       ? await survivingCoverage({ declaringBundle: declaringMatch ? declaringMatch[1] : bundleName }, bundleName)
                       : [];

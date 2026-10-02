@@ -1,6 +1,19 @@
 import yaml from 'yaml';
 import path from 'node:path';
 import fs from 'fs-extra';
+import {
+  listNativePlugins,
+  nativePluginSource,
+  nativeRoleSource,
+  nativeRuleSource,
+  nativeSkillSource,
+  nativeWorkflowSource,
+  renderNativePlugin,
+  renderNativeRole,
+  renderNativeRule,
+  renderNativeSkill,
+  renderNativeWorkflow,
+} from './native-package.js';
 import type {
   AgentPluginManifest,
   BundleDefinition,
@@ -18,6 +31,8 @@ export interface PlannedClineArtifact {
   content?: string;
   sourceFilePath?: string; // for byte-for-byte binary/resource copy
   managedMarker: boolean;
+  /** A native-only file with no canonical asset, still owned by the bundle that installs it (see `PlannedProjectionArtifact`). */
+  ownedByBundle?: boolean;
 }
 
 export class ClineProjector {
@@ -369,10 +384,22 @@ ${workflowSection}${addonSection}
     scope: InstallScope,
     resolved: ResolvedAssets,
     registryDir: string,
-    excludeAddons: string[] = []
+    excludeAddons: string[] = [],
+    nativeLane = false
   ): Promise<PlannedClineArtifact[]> {
     const artifacts: PlannedClineArtifact[] = [];
     const baseDir = `.agents/plugins/${bundle.name}`;
+
+    // Plan 032 Phase 8 / ADR 0026 decision 6 — the opt-in native lane. A role with a committed native agent is installed from it; the
+    // orchestrator has none (ADR 0028 decision 6): a committed rule plus skill named after it stand in for both its agent and the
+    // legacy coordinator rule; the guard plugin comes with any native role; a committed workflow replaces the same-named projection.
+    // Whatever has no native file keeps the legacy projection (strangler).
+    const coordinatorFile = bundle.orchestrator || `${bundle.name}.md`;
+    const coordinatorRole = this.stripSubagentPrefix(coordinatorFile.replace(/\.md$/i, ''));
+    const nativeRuleName = `agents-united-${coordinatorRole}`;
+    const orchestratorPack = nativeLane
+      && nativeRuleSource(registryDir, 'cline', nativeRuleName) !== undefined
+      && nativeSkillSource(registryDir, 'cline', coordinatorRole) !== undefined;
 
     // 0. Agent Plugin manifest (.agents/plugins/<bundle-name>/plugin.json)
     //    agent-plugins.org v1.0.0. Its presence hard-stops Cline's code-plugin
@@ -398,12 +425,16 @@ ${workflowSection}${addonSection}
       const srcPath = path.join(registryDir, 'agents', agentFile);
       if (await fs.pathExists(srcPath)) {
         const content = await fs.readFile(srcPath, 'utf8');
-        const rendered = this.renderConfiguredAgent(
-          content,
-          canonicalRel,
-          bundle.planningLoop?.enabled === true ? bundle.planningLoop.budget?.maxIterations : undefined, // ADR 0015: planner-orchestrator has no budget → undefined → key absent from .yml
-        );
         const roleName = this.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
+        if (orchestratorPack && roleName === coordinatorRole) continue; // the native rule and skill stand in for it
+        const nativeRole = nativeLane ? nativeRoleSource(registryDir, 'cline', roleName) : undefined;
+        const rendered = nativeRole !== undefined
+          ? renderNativeRole(await fs.readFile(nativeRole, 'utf8'), canonicalRel, 'cline')
+          : this.renderConfiguredAgent(
+              content,
+              canonicalRel,
+              bundle.planningLoop?.enabled === true ? bundle.planningLoop.budget?.maxIterations : undefined, // ADR 0015: planner-orchestrator has no budget → undefined → key absent from .yml
+            );
         artifacts.push({
           kind: 'role',
           canonical: canonicalRel,
@@ -465,7 +496,10 @@ ${workflowSection}${addonSection}
       if (await fs.pathExists(skillFilePath)) {
         const content = await fs.readFile(skillFilePath, 'utf8');
         const slug = skillName;
-        const rendered = this.renderWorkflowProjection(content, canonicalRel);
+        const nativeWorkflow = nativeLane ? nativeWorkflowSource(registryDir, 'cline', skillName) : undefined;
+        const rendered = nativeWorkflow !== undefined
+          ? renderNativeWorkflow(await fs.readFile(nativeWorkflow, 'utf8'), canonicalRel, 'cline')
+          : this.renderWorkflowProjection(content, canonicalRel);
         artifacts.push({
           kind: 'workflow',
           canonical: canonicalRel,
@@ -496,13 +530,43 @@ ${workflowSection}${addonSection}
 
     // 4. Coordinator Rule (.cline/rules/agents-united-<bundle>.md) - natively
     //    loaded as an always-active rule by Cline 3.x.
-    const ruleContent = this.renderCoordinatorRule(bundle, scope, excludeAddons);
-    artifacts.push({
-      kind: 'rule',
-      relPath: `.cline/rules/agents-united-${bundle.name}.md`.replace(/\\/g, '/'),
-      content: ruleContent,
-      managedMarker: true,
-    });
+    if (orchestratorPack) {
+      const ruleSource = nativeRuleSource(registryDir, 'cline', nativeRuleName)!;
+      artifacts.push({
+        kind: 'rule',
+        relPath: `.cline/rules/${nativeRuleName}.md`,
+        content: renderNativeRule(await fs.readFile(ruleSource, 'utf8'), `hosts/cline/rules/${nativeRuleName}.md`, 'cline'),
+        managedMarker: true,
+      });
+      const skillSource = nativeSkillSource(registryDir, 'cline', coordinatorRole)!;
+      artifacts.push({
+        kind: 'skill',
+        relPath: `.cline/skills/${coordinatorRole}/SKILL.md`,
+        content: renderNativeSkill(await fs.readFile(skillSource, 'utf8'), `hosts/cline/skills/${coordinatorRole}/SKILL.md`, 'cline'),
+        managedMarker: true,
+        ownedByBundle: true,
+      });
+    } else {
+      artifacts.push({
+        kind: 'rule',
+        relPath: `.cline/rules/agents-united-${bundle.name}.md`.replace(/\\/g, '/'),
+        content: this.renderCoordinatorRule(bundle, scope, excludeAddons),
+        managedMarker: true,
+      });
+    }
+
+    // The guard plugin (CLI-only) travels with any native role: it covers every agent that holds a shell or an editor.
+    if (nativeLane && resolved.agents.some(agentFile => nativeRoleSource(registryDir, 'cline', this.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''))) !== undefined)) {
+      for (const name of listNativePlugins(registryDir, 'cline')) {
+        artifacts.push({
+          kind: 'plugin',
+          relPath: `.cline/plugins/${name}.js`,
+          content: renderNativePlugin(await fs.readFile(nativePluginSource(registryDir, 'cline', name)!, 'utf8'), `hosts/cline/plugins/${name}.js`, 'cline'),
+          managedMarker: true,
+          ownedByBundle: true,
+        });
+      }
+    }
 
     // 5. Projected Domain Rules (.cline/rules/<rule-file>)
     //    Plan 015 Step 2 / §0/C6d + §0/C7. Cline has no per-agent rule scoping,

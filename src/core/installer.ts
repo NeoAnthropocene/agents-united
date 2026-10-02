@@ -331,6 +331,7 @@ private toPosix(p: string): string {
       const existingProj = lockfile.projections[artifact.relPath];
       const declares = artifact.kind === 'rule' || artifact.kind === 'team-manifest'
         || artifact.kind === 'plugin-manifest'
+        || artifact.ownedByBundle === true
         || (artifact.canonical ? declared.has(artifact.canonical) : false);
       // A projection of a shared canonical is shared. Seed its owners from the canonical's owners,
       // or the creating bundle becomes sole owner and removing it deletes projections another owner
@@ -416,9 +417,10 @@ private toPosix(p: string): string {
    * `InstallOptions.nativeLane` wins (`--native` / `--no-native`), an unset flag inherits the recorded choice, so
    * `agents update` cannot silently swap the native agents back for legacy projections.
    */
-  private static effectiveNativeLane(options: InstallOptions, lockfile?: LockfileManifest | null): boolean {
+  private static effectiveNativeLane(options: InstallOptions, lockfile?: LockfileManifest | null, host: 'claude' | 'cline' = 'claude'): boolean {
     if (typeof options.nativeLane === 'boolean') return options.nativeLane;
-    return lockfile?.nativeLane === true;
+    // ADR 0026 decision 6 — the choice is recorded per host: Claude in the long-standing `nativeLane`, Cline in `nativeLanes`.
+    return host === 'cline' ? lockfile?.nativeLanes?.cline === true : lockfile?.nativeLane === true;
   }
 
   /**
@@ -558,7 +560,7 @@ private toPosix(p: string): string {
     nativeLane = false
   ): Promise<PlannedProjectionArtifact[]> {
     if (host === 'cline') {
-      return ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir);
+      return ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir, undefined, nativeLane);
     }
     const artifacts = await ClaudeProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir, undefined, nativeLane);
     if (pluginLane) {
@@ -687,7 +689,7 @@ private toPosix(p: string): string {
     scope: InstallScope,
     targetDir?: string,
     pluginLane = false,
-    nativeLane = false
+    nativeLanes: Partial<Record<AgentHost, boolean>> = {}
   ): Promise<ProjectionInfo[]> {
     const infos: ProjectionInfo[] = [];
     if (fanoutHosts.length === 0) return infos;
@@ -709,7 +711,7 @@ private toPosix(p: string): string {
             resolved,
             registryDir,
             pluginLane,
-            nativeLane
+            nativeLanes[host as AgentHost] === true
           );
           for (const artifact of artifacts) {
             infos.push({ host, path: artifact.relPath, kind: artifact.kind, warnings: [] });
@@ -754,8 +756,17 @@ private toPosix(p: string): string {
     // rather than "prune the opted-in package"; only an explicit `false` (CLI `--no-plugin`) turns
     // it off. Persisted for the same reason `fanout` is.
     const pluginLane = InstallEngine.effectivePluginLane(options, lockfile);
-    // Plan 032 Phase 7 — the native-lane opt-in is sticky for the same reason.
-    const nativeLane = InstallEngine.effectiveNativeLane(options, lockfile);
+    // Plan 032 Phase 7 — the native-lane opt-in is sticky for the same reason, and (ADR 0026 decision 6) recorded per host.
+    const nativeLane = InstallEngine.effectiveNativeLane(options, lockfile, 'claude');
+    const nativeClineLane = InstallEngine.effectiveNativeLane(options, lockfile, 'cline');
+    if (fanoutHosts.includes('cline')) {
+      if (nativeClineLane) {
+        lockfile.nativeLanes = { ...lockfile.nativeLanes, cline: true };
+      } else if (options.nativeLane === false) {
+        delete lockfile.nativeLanes?.cline;
+        if (lockfile.nativeLanes && Object.keys(lockfile.nativeLanes).length === 0) delete lockfile.nativeLanes;
+      }
+    }
     if (fanoutHosts.includes('claude')) {
       if (pluginLane) {
         lockfile.pluginLane = true;
@@ -816,7 +827,7 @@ private toPosix(p: string): string {
             resolved,
             registryDir,
             pluginLane,
-            nativeLane
+            host === 'cline' ? nativeClineLane : nativeLane
           );
 
           await this.applyCompoundLane(host, bundleDef.name, artifacts, {
@@ -1006,6 +1017,7 @@ private toPosix(p: string): string {
       let effectiveDryFanout = fanoutHosts;
       let effectiveDryPluginLane = options.pluginLane === true;
       let effectiveDryNativeLane = options.nativeLane === true;
+      let effectiveDryNativeClineLane = options.nativeLane === true;
       const lockfilePath = path.join(stateDir, 'agents-united.json');
       if (await fs.pathExists(lockfilePath)) {
         const lockfile = await fs.readJson(lockfilePath).catch(() => null);
@@ -1021,9 +1033,12 @@ private toPosix(p: string): string {
         if (options.nativeLane === undefined && lockfile?.nativeLane === true) {
           effectiveDryNativeLane = true;
         }
+        if (options.nativeLane === undefined && lockfile?.nativeLanes?.cline === true) {
+          effectiveDryNativeClineLane = true;
+        }
       }
       const projections = hasCanonicalAgents
-        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, stateDir, effectiveDryPluginLane, effectiveDryNativeLane)
+        ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, stateDir, effectiveDryPluginLane, { claude: effectiveDryNativeLane, cline: effectiveDryNativeClineLane })
         : [];
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }
