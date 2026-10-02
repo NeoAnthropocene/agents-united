@@ -152,7 +152,7 @@ export interface LockfileAsset {
   projectedTo?: string[];
 }
 
-export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'workflow' | 'bridge' | 'plugin-manifest';
+export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'workflow' | 'bridge' | 'plugin-manifest' | 'plugin';
 
 export interface LockfileProjection {
   host: string;
@@ -185,7 +185,11 @@ export interface PlannedProjectionArtifact {
    * pointer recorded there would be dropped on the next Cline install.
    */
   distributionOnly?: boolean;
-
+  /**
+   * Plan 032 Phase 8 — a native-only file (no canonical asset it stands for, for example a Cline plugin or the orchestrator
+   * skill) is still declared by the bundle that installs it, so it is refcounted and removed with that bundle.
+   */
+  ownedByBundle?: boolean;
 }
 
 export interface ClineTeamManifest {
@@ -348,6 +352,11 @@ export interface LockfileManifest {
    * for the same reason as `pluginLane`: `agents update` re-runs the installer without the flag. Absent ⇒ off.
    */
   nativeLane?: boolean;
+  /**
+   * Plan 032 Phase 8 / ADR 0026 decision 6 — the native-lane opt-in of the other hosts, recorded per host. Today only
+   * `cline`; Claude keeps writing `nativeLane` above, so lockfiles written by earlier releases stay valid. Absent ⇒ off.
+   */
+  nativeLanes?: { cline?: true };
   /**
    * Plan 023 A (owner D1–D2) — the recorded plain-session guard decision. `{ off: true }` is a
    * remembered "no"; otherwise the settings file (workspace-relative, or absolute for `user`)

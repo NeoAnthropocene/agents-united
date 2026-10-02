@@ -10,7 +10,7 @@ import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
 import { McpLocationRegistry } from './mcp-locations.js';
-import { inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
+import { inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -189,7 +189,8 @@ export class DoctorEngine {
                 'project',
                 resolved,
                 registryDir,
-                excludeAddons
+                excludeAddons,
+                nativeLane
               )
             : await ClaudeProjector.planCompoundProjection(
                 bundleDef,
@@ -460,7 +461,7 @@ export class DoctorEngine {
 
         const variantsByHost = new Map<CompoundLaneHost, Map<string, string[]>>();
         for (const [projHost, owners] of ownersByHost) {
-          const variants = await this.renderProjectionVariants(owners, manifest.installed.bundles ?? [], projHost, manifest.nativeLane === true);
+          const variants = await this.renderProjectionVariants(owners, manifest.installed.bundles ?? [], projHost, projHost === 'cline' ? manifest.nativeLanes?.cline === true : manifest.nativeLane === true);
           if (variants) variantsByHost.set(projHost, variants);
         }
 
@@ -667,6 +668,38 @@ export class DoctorEngine {
         if (problem) {
           const owner = proj.owners[0];
           warnings.push(`Native agent ${match[1]} ${problem}.` + (owner ? ` Run: agents update ${owner} --fanout claude to restore it.` : ''));
+        }
+      }
+    }
+
+    // Plan 032 Phase 8 — the same two safety properties for the Cline native lane, whichever host the doctor was asked about,
+    // because both are recorded in the lockfile: a native role that can run commands or edit files needs the guard plugin, and a
+    // native skill is not in effect when a copy of the same name in `.agents/skills` shadows it (observed: `.agents/skills` wins).
+    if (manifest?.nativeLanes?.cline === true) {
+      const workspaceRoot = workspaceRootOf(root);
+      const projections = Object.entries(manifest.projections ?? {}).filter(([, proj]) => proj.host === 'cline');
+      const guardPlugins = projections.filter(([, proj]) => proj.kind === 'plugin').map(([relPath]) => relPath);
+      const guardPresent = guardPlugins.length > 0 && (await Promise.all(guardPlugins.map(relPath => fs.pathExists(path.join(workspaceRoot, relPath))))).every(Boolean);
+      for (const [relPath, proj] of projections) {
+        const role = proj.kind === 'role' ? /^\.cline\/agents\/([a-z0-9-]+)\.yml$/.exec(relPath) : null;
+        if (role) {
+          const abs = path.join(workspaceRoot, relPath);
+          if (!await fs.pathExists(abs)) continue; // missing is reported above
+          const text = await fs.readFile(abs, 'utf8');
+          if (!text.includes('profile: cline-native')) continue;
+          if (inspectClineNativeAgent(text).holdsWriter && !guardPresent) {
+            const owner = proj.owners[0];
+            warnings.push(
+              `Native agent ${role[1]} can run commands or edit files, but its guard plugin (.cline/plugins/agents-united-guard.js) is missing.` +
+              (owner ? ` Run: agents update ${owner} --fanout cline to restore it.` : '')
+            );
+          }
+        }
+        const skill = proj.kind === 'skill' ? /^\.cline\/skills\/([a-z0-9-]+)\/SKILL\.md$/.exec(relPath) : null;
+        if (skill && await fs.pathExists(path.join(workspaceRoot, '.agents', 'skills', skill[1], 'SKILL.md'))) {
+          warnings.push(
+            `Skill .agents/skills/${skill[1]} shadows .cline/skills/${skill[1]}: Cline loads the .agents copy first (observed on CLI 3.0.68), so the native skill is not in effect. Rename or remove the .agents copy.`
+          );
         }
       }
     }

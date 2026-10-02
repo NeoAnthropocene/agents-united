@@ -21,6 +21,24 @@ export interface NativeAgentFacts {
 
 const FRONTMATTER = /^---\n([\s\S]*?)\n---/;
 
+/** Cline tools that run a command or change a file (canonical names). A configured agent holding one needs the guard plugin. */
+export const CLINE_WRITER_TOOLS: readonly string[] = ['run_commands', 'editor', 'apply_patch'];
+
+/**
+ * Plan 032 Phase 8 — what an installed native Cline agent says about itself: the `tools:` list of its frontmatter (the host
+ * enforces it), and whether it holds a tool that runs a command or writes a file. Pure: text in, facts out.
+ */
+export function inspectClineNativeAgent(text: string): { tools: string[]; holdsWriter: boolean } {
+  let tools: string[] = [];
+  try {
+    const parsed = yaml.parse(FRONTMATTER.exec(text.replace(/\r\n/g, '\n'))?.[1] ?? '') as { tools?: unknown } | null;
+    if (Array.isArray(parsed?.tools)) tools = parsed.tools.filter((tool): tool is string => typeof tool === 'string');
+  } catch {
+    // unreadable frontmatter yields no tools
+  }
+  return { tools, holdsWriter: tools.some(tool => CLINE_WRITER_TOOLS.includes(tool)) };
+}
+
 /** Splits a `tools` value on top-level commas, so `Agent(a, b), Read` is two entries and an allowlist stays whole. */
 export function splitTools(value: unknown): string[] {
   const out: string[] = [];
