@@ -74,3 +74,8 @@ orchestrator: it must name the `subagent_<name>` tool when it delegates, because
 ## Addendum (2026-10-02, orchestrator rule and skill slice)
 
 Decision 6 is realised as a rule and a skill (`registry/hosts/cline/rules/`, `registry/hosts/cline/skills/orchestrator-engineering/`), and a real session confirmed that naming the `subagent_<name>` tools makes the lead delegate to them instead of reaching for `team_run_task`. **Parallel delegation is settled for 3.0.68:** two `subagent_*` calls in one turn ran concurrently. Still open: how reliably a lead discloses a missing specialist (it did not in the last run), the results on other models than the free default used here, the `modelId`, `providerId` and `skills:` keys, the IDE, a file-defined lead, the MCP file, `apply_patch` input shape.
+
+## Addendum (2026-10-02, workflows and skills slice)
+
+Decision 5 is realised for the three multi-agent runbooks as markdown workflows in `registry/hosts/cline/workflows/` that name the `subagent_*` tools; the other `workflow-*` skills stay skills. The bundle's skills are not copied: they are portable as written and are checked by a conformance suite. Still open: invoking a workflow through its real `/<name>` command (the sessions gave the lead the workflow text as the task), the effect of the Claude-only `disable-slash-command` key on Cline, fix rounds, size caps and other models.
+
