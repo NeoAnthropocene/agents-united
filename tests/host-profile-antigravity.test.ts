@@ -89,6 +89,13 @@ describe('the committed Antigravity host profile', () => {
     expect(features.cliDefaultPermission.note).toMatch(/request-review/);
     expect(features.cliDefaultPermission.note).toMatch(/--sandbox/);
     expect(features.cliDefaultPermission.note).toMatch(/headless/i);
+    // Then tried with the sandbox on (proceed-in-sandbox, WSL): it runs, cuts the network, hides ~/.ssh, refuses writes outside the workspace.
+    expect(features.terminalSandboxLinux.status).toBe('observed');
+    expect(features.terminalSandboxLinux.note).toMatch(/network/i);
+    expect(features.terminalSandboxLinux.note).toMatch(/\.ssh/);
+    expect(features.terminalSandboxLinux.note).toMatch(/Read-only file system/);
+    expect(features.terminalSandboxLinux.note).toMatch(/ask/);
+    expect(features.hookContract.note).toMatch(/proceed-in-sandbox/);
     expect(features.workflows.status).toBe('deprecated');
     expect(features.workflows.note).toMatch(/2026-11-01|November 1, 2026/);
     expect(features.hostEnforcedToolRestriction.status).toBe('available');
