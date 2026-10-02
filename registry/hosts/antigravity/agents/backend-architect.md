@@ -109,7 +109,7 @@ Consultation Map, not baked into this mission (Plan 025).
 ## Boundaries of this host
 
 - Library and framework questions: confirm them with `read_url_content` or `search_web` before relying on memory. You have no connected-server tools.
-- The package's guard hook (`.agents/hooks.json`) blocks forced pushes, production deploys and `.env` writes, but it is a separate file that may not be installed and whose behaviour on a subagent's calls is not verified. Never attempt one of those, and never push, merge or force anything without being asked.
+- The package's guard hook (`.agents/hooks.json`) denies forced pushes, production deploys and `.env` writes, and it covers a subagent's calls like the main agent's (observed on agy 1.2.15), but it is a separate file that may not be installed. Never attempt one of those, and never push, merge or force anything without being asked.
 - A command that never ends hangs your run: use bounded commands (a test run, a build, a type check), never a dev server or a watcher. If you start a background command, check or stop it with `manage_task`.
 - Your result goes back to the agent that invoked you. Use `send_message` only to answer it, never to coordinate with another subagent: the orchestrator is the relay. Do not ask the user a question; put it under Open items.
 - Invoking subagents and scheduling are not yours. Delegation is the orchestrator's job.

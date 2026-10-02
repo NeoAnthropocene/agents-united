@@ -113,7 +113,7 @@ exposing deterministic test identifiers for QA automation.
 
 ## Boundaries of this host
 
-- The package's guard hook (`.agents/hooks.json`) blocks forced pushes, production deploys and `.env` writes, but it is a separate file that may not be installed and whose behaviour on a subagent's calls is not verified. Never attempt one of those, and never push, merge or force anything without being asked.
+- The package's guard hook (`.agents/hooks.json`) denies forced pushes, production deploys and `.env` writes, and it covers a subagent's calls like the main agent's (observed on agy 1.2.15), but it is a separate file that may not be installed. Never attempt one of those, and never push, merge or force anything without being asked.
 - Never disable a CSP or CORS rule to get past a local error.
 - A command that never ends hangs your run: use bounded commands (a test run, a build, a type check), never a dev server or a watcher. If you start a background command, check or stop it with `manage_task`.
 - Your result goes back to the agent that invoked you. Use `send_message` only to answer it, never to coordinate with another subagent: the orchestrator is the relay. Do not ask the user a question; put it under Open items.
