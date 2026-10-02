@@ -1,0 +1,197 @@
+{
+  "host": "cline",
+  "profile": "cline@3.0.68",
+  "semantics": "Class-based tool policy for the Cline CLI (Plan 032 Phase 8, ADR 0028): the canonical tool names of the CLI build, the capability class each serves, and the conditions under which it exists. A configured agent's tools: list takes these canonical names and is enforced by the host, so a role's grant here is the list its file carries (legacy names are aliased onto the canonical ones by the CLI). Configured agents themselves appear to the lead as dynamic subagent_<name> tools and are not catalogued here. Names come from the CLI's own tables (observations, 2026-10-02), not from the docs' tools page, which uses a different vocabulary; the IDE extensions' names are unverified.",
+  "catalog": [
+    {
+      "name": "read_files",
+      "class": "read",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "search_codebase",
+      "class": "search",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "run_commands",
+      "class": "shell",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "editor",
+      "class": "edit",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "apply_patch",
+      "class": "edit",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": true,
+      "conditions": []
+    },
+    {
+      "name": "fetch_web_content",
+      "class": "web",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "web_search",
+      "class": "web",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "setting",
+          "detail": "Enabled through the tools setting (global-settings.json lists web_search) and on by default in non-yolo sessions on models that support it (CLI 3.0.62 release notes)",
+          "source": "observations/2026-10-02-cli-3.0.68.md#release-notes-cross-check-cli-3058-to-3068"
+        }
+      ]
+    },
+    {
+      "name": "skills",
+      "class": "skill",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    },
+    {
+      "name": "ask_question",
+      "class": "ask-user",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Whether a configured agent can ask the user is unverified, and a headless run has no one to answer",
+          "source": "observations/2026-10-02-cli-3.0.68.md#configured-agents-verified-in-real-sessions"
+        }
+      ]
+    },
+    {
+      "name": "spawn_agent",
+      "class": "delegate",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "The built-in sub-agent tool of the SDK and the CLI (takes systemPrompt and task); whether a configured agent can spawn one is unverified",
+          "source": "observations/2026-10-02-cli-3.0.68.md#tool-names-real-session-and-the-builds-own-tables"
+        }
+      ]
+    },
+    {
+      "name": "use_subagents",
+      "class": "delegate",
+      "subagents": "never",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "The IDE extensions' built-in read-only research subagents per the docs; the string does not appear in the CLI 3.0.68 build, which has spawn_agent instead",
+          "source": "pages/agent/subagents.md#enabling-subagents"
+        }
+      ]
+    },
+    {
+      "name": "team_spawn_teammate",
+      "class": "delegate",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Agent teams work in the CLI, the SDK and Kanban, not in the VS Code and JetBrains extensions; CLI 3.0.68 lists no --team-name flag in --help, so reaching team mode is unverified",
+          "source": "pages/orchestration/agent-teams.md#agent-teams"
+        }
+      ]
+    },
+    {
+      "name": "team_delegate_task",
+      "class": "delegate",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Agent teams work in the CLI, the SDK and Kanban, not in the VS Code and JetBrains extensions; CLI 3.0.68 lists no --team-name flag in --help, so reaching team mode is unverified",
+          "source": "pages/orchestration/agent-teams.md#agent-teams"
+        }
+      ]
+    },
+    {
+      "name": "team_run_task",
+      "class": "delegate",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": true,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Agent teams work in the CLI, the SDK and Kanban, not in the VS Code and JetBrains extensions; CLI 3.0.68 lists no --team-name flag in --help, so reaching team mode is unverified",
+          "source": "pages/orchestration/agent-teams.md#agent-teams"
+        }
+      ]
+    },
+    {
+      "name": "team_check_status",
+      "class": "delegate",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Agent teams work in the CLI, the SDK and Kanban, not in the VS Code and JetBrains extensions; CLI 3.0.68 lists no --team-name flag in --help, so reaching team mode is unverified",
+          "source": "pages/orchestration/agent-teams.md#agent-teams"
+        }
+      ]
+    },
+    {
+      "name": "team_get_result",
+      "class": "delegate",
+      "subagents": "conditional",
+      "backgroundSubagent": false,
+      "mutating": false,
+      "conditions": [
+        {
+          "kind": "surface",
+          "detail": "Agent teams work in the CLI, the SDK and Kanban, not in the VS Code and JetBrains extensions; CLI 3.0.68 lists no --team-name flag in --help, so reaching team mode is unverified",
+          "source": "pages/orchestration/agent-teams.md#agent-teams"
+        }
+      ]
+    },
+    {
+      "name": "submit_and_exit",
+      "class": "meta",
+      "subagents": "available",
+      "backgroundSubagent": true,
+      "mutating": false,
+      "conditions": []
+    }
+  ]
+}

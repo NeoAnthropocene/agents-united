@@ -1,0 +1,151 @@
+{
+  "host": "cline",
+  "profileId": "cline@3.0.68",
+  "version": "3.0.68",
+  "minVersion": "3.0.61",
+  "reviewedAgainst": "3.0.68",
+  "reviewedSection": "CLI",
+  "library": "host-library/cline",
+  "toolPolicy": "tool-policy.json",
+  "semantics": "Native Cline host profile (Plan 032 Phase 8, ADR 0028): the artifact vocabularies a native Cline package may use, pinned to the CLI release line (the CLI section of the changelog baseline) and built on ADR 0013's verified discovery registry plus the real-session observations of 2026-10-02. The docs library describes only part of this surface; the rest is marked observed. Roles are configured agents (.cline/agents/<role>.yml) whose tools: list the host enforces.",
+  "artifacts": {
+    "agent": {
+      "path": ".cline/agents/<role>.yml",
+      "requiredKeys": [
+        "name",
+        "description"
+      ],
+      "allowedKeys": [
+        "name",
+        "description",
+        "maxIterations",
+        "skills",
+        "tools",
+        "providerId",
+        "modelId"
+      ]
+    },
+    "skill": {
+      "path": ".cline/skills/<name>/SKILL.md",
+      "allowedKeys": [
+        "name",
+        "description"
+      ],
+      "portableKeys": [
+        "name",
+        "description"
+      ]
+    },
+    "hook": {
+      "events": [
+        "input",
+        "runtime_event",
+        "session_start",
+        "run_start",
+        "iteration_start",
+        "turn_start",
+        "before_agent_start",
+        "tool_call_before",
+        "tool_call_after",
+        "turn_end",
+        "stop_error",
+        "iteration_end",
+        "run_end",
+        "session_shutdown",
+        "error"
+      ],
+      "handlerTypes": [
+        "plugin-function"
+      ],
+      "registerAt": [
+        ".cline/plugins/<name>.js",
+        "~/.cline/plugins/",
+        "package.json cline.plugins[].paths"
+      ]
+    },
+    "plugin": {
+      "manifestKeys": [
+        "name",
+        "manifest",
+        "setup",
+        "hooks"
+      ],
+      "ignoredAgentKeys": [],
+      "layout": {
+        "project": ".cline/plugins/<name>.js",
+        "global": "~/.cline/plugins/",
+        "installed": "~/.cline/plugins/_installed/",
+        "packageEntry": "package.json cline.plugins[].paths and capabilities",
+        "bundledSkills": "skills/<name>/SKILL.md next to package.json"
+      }
+    },
+    "mcp": {
+      "scopes": [
+        "global"
+      ],
+      "transports": [
+        "stdio",
+        "streamableHttp",
+        "sse"
+      ]
+    },
+    "permissions": {
+      "modes": [
+        "plan",
+        "act"
+      ]
+    }
+  },
+  "features": {
+    "configuredAgents": {
+      "status": "available",
+      "since": "3.0.61",
+      "note": "Roles ship as .cline/agents/<role>.yml (fenced frontmatter plus a body that is the system prompt); each becomes a tool subagent_<name> for the lead (ADR 0013, verified again on 3.0.68)."
+    },
+    "configuredAgentSkillsFilter": {
+      "status": "available",
+      "since": "3.0.65",
+      "note": "The skills: list scopes which skills a configured agent discovers; it does not preload their bodies (cline/cline PR 9502, per the legacy projector)."
+    },
+    "hostEnforcedToolRestriction": {
+      "status": "available",
+      "note": "A configured agent with no tools: key can write, and with tools: [read_files] it cannot (observed on 3.0.68), so a read-only role needs no hook."
+    },
+    "guardPlugin": {
+      "status": "cli-only",
+      "note": "A single-file plugin in .cline/plugins/ is auto-discovered and a throwing beforeTool hook blocks the call, for the main agent and for a subagent alike (observed); the throw ends the run of the agent that made the call, the whole run for the main agent and only that subagent's run for a subagent, so the lead continues and sees the error. Plugins apply to the CLI, SDK and Kanban, not the IDE extensions."
+    },
+    "agentTeams": {
+      "status": "cli-only",
+      "note": "Teams work in the CLI, SDK and Kanban, not in the VS Code and JetBrains extensions; --team-name and --no-teams are absent from the 3.0.68 --help."
+    },
+    "workflows": {
+      "status": "listed",
+      "note": ".cline/workflows/<slug>.md and .clinerules/workflows/ are slash commands (ADR 0013) and listed by cline config; headless invocation is untestable because a leading slash is rejected as an argument."
+    },
+    "conditionalRules": {
+      "status": "not-gated-on-cli",
+      "note": "A paths: conditional rule was in context with no matching file mentioned in the headless CLI, so treat every rule as always loaded there."
+    },
+    "skillDirectories": {
+      "status": "observed",
+      "note": "Skills load from .cline/skills and .agents/skills (which wins a name clash) and ~/.agents/skills; the doctor warns on shadowing by an .agents copy."
+    },
+    "claudeSkillsDir": {
+      "status": "unsupported",
+      "note": ".claude/skills is not loaded by the CLI although the docs say it is; do not rely on it (ADR 0013's registry does not list it either)."
+    },
+    "agentPlugins": {
+      "status": "unverified",
+      "note": "The 3.0.62 notes describe packages under ~/.agents/plugins/* exposing skills as plugin:skill; a package of that shape was not discovered on 3.0.68."
+    },
+    "mcpWiring": {
+      "status": "deferred",
+      "note": "The file the CLI reads for MCP servers is unresolved (ADR 0013 found .cline/mcp.json absent from the 3.0.61 binary), so the package writes no MCP configuration yet."
+    },
+    "ideExtensions": {
+      "status": "unverified",
+      "note": "Everything in this profile was observed on the CLI; the VS Code and JetBrains extensions may use other tool names and locations."
+    }
+  }
+}
