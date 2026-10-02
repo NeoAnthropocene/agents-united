@@ -152,7 +152,7 @@ export interface LockfileAsset {
   projectedTo?: string[];
 }
 
-export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'workflow' | 'bridge' | 'plugin-manifest' | 'plugin';
+export type ProjectionKind = 'role' | 'skill' | 'rule' | 'team-manifest' | 'workflow' | 'bridge' | 'plugin-manifest' | 'plugin' | 'hook';
 
 export interface LockfileProjection {
   host: string;
@@ -358,6 +358,12 @@ export interface LockfileManifest {
    */
   nativeLanes?: { cline?: true; antigravity?: true };
   /**
+   * Plan 032 Phase 8 / ADR 0031 addendum — the Antigravity guard hook merged into the user-owned `.agents/hooks.json`: the file
+   * (workspace-relative), the canonical hash of the entry agents-united wrote (ownership proof, and how an older version is recognised),
+   * and whether agents-united created the file (only then may removal delete it). Absent when no guard is registered.
+   */
+  antigravityHooks?: AntigravityHooksRecord;
+  /**
    * Plan 023 A (owner D1–D2) — the recorded plain-session guard decision. `{ off: true }` is a
    * remembered "no"; otherwise the settings file (workspace-relative, or absolute for `user`)
    * holding our managed PreToolUse groups, the handler hash that proves ownership, and whether
@@ -386,6 +392,12 @@ export type PermissionPresetRecord =
 export type SessionGuardRecord =
   | { off: true }
   | { file: string; handlerHash: string; createdFile: boolean };
+
+export interface AntigravityHooksRecord {
+  file: string;
+  entryHash: string;
+  createdFile: boolean;
+}
 
 export type VersionDriftStatus = 'up-to-date' | 'outdated' | 'modified';
 

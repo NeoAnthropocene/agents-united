@@ -9,6 +9,7 @@ import type { IndexableAsset } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { AntigravityProjector } from './antigravity-projector.js';
 import type { AntigravityNativePlan } from './antigravity-projector.js';
+import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, loadGuardHookEntry, mergeAntigravityHook, removeAntigravityHook } from './antigravity-hooks.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
 import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
@@ -476,7 +477,40 @@ private toPosix(p: string): string {
       const projection = lockfile.projections?.[nativeRel];
       if (projection) projection.owners = Array.from(new Set([...projection.owners, ...owners]));
     }
+    await this.syncAntigravityGuardHook(root, lockfile, registryDir, projections);
     return enabled ? plan : undefined;
+  }
+
+  /**
+   * ADR 0031 addendum — keep the guard's key in the user-owned `.agents/hooks.json` in step with the guard script: the key is there
+   * exactly while the script is a recorded projection (so it follows the lane, the refcounted owners, and `--no-native`). The file is
+   * only merged, never overwritten; one that cannot be parsed, or a key the user edited, is left alone and reported.
+   */
+  private async syncAntigravityGuardHook(root: string, lockfile: LockfileManifest, registryDir: string, projections: ProjectionInfo[]): Promise<void> {
+    const file = path.join(root, ANTIGRAVITY_HOOKS_FILE);
+    const recorded = lockfile.antigravityHooks;
+    if (lockfile.projections?.[ANTIGRAVITY_GUARD_SCRIPT] === undefined) {
+      if (recorded) {
+        await removeAntigravityHook(file, { createdFile: recorded.createdFile });
+        delete lockfile.antigravityHooks;
+      }
+      return;
+    }
+    const entry = loadGuardHookEntry(registryDir);
+    const existedBefore = await fs.pathExists(file);
+    const result = await mergeAntigravityHook(file, entry, { replaceHash: recorded?.entryHash });
+    lockfile.antigravityHooks = {
+      file: ANTIGRAVITY_HOOKS_FILE,
+      entryHash: result.status === 'modified' && recorded ? recorded.entryHash : result.entryHash,
+      createdFile: recorded ? recorded.createdFile : !existedBefore,
+    };
+    const warnings: string[] = [];
+    if (result.status === 'skipped-invalid') {
+      warnings.push(`Antigravity guard hook not registered: ${ANTIGRAVITY_HOOKS_FILE} is not valid JSON (comments or trailing commas?). It was left untouched — add this entry to it by hand:\n${JSON.stringify({ [ANTIGRAVITY_HOOK_NAME]: entry }, null, 2)}`);
+    } else if (result.status === 'modified') {
+      warnings.push(`The "${ANTIGRAVITY_HOOK_NAME}" hook in ${ANTIGRAVITY_HOOKS_FILE} was edited by hand; left as-is.`);
+    }
+    projections.push({ host: 'antigravity', path: ANTIGRAVITY_HOOKS_FILE, kind: 'hook', warnings });
   }
 
   /**
@@ -1103,6 +1137,7 @@ private toPosix(p: string): string {
       if (hasCanonicalAgents && effectiveDryNativeAntigravityLane) {
         for (const artifact of (await AntigravityProjector.plan(resolved, registryDir)).artifacts) {
           projections.push({ host: 'antigravity', path: artifact.relPath, kind: artifact.kind, warnings: [] });
+          if (artifact.relPath === ANTIGRAVITY_GUARD_SCRIPT) projections.push({ host: 'antigravity', path: ANTIGRAVITY_HOOKS_FILE, kind: 'hook', warnings: [] });
         }
       }
       return { installed: resolved, targetDirs, dryRun: true, method, projections };

@@ -103,7 +103,7 @@
     },
     "hookFile": {
       "status": "available",
-      "note": ".agents/hooks.json, ~/.gemini/config/hooks.json and a plugin hooks.json hold command hooks on five events; a hook is workspace-wide with no documented per-agent scoping, but it fires for a subagent's calls as well as the main agent's (observed on agy 1.2.15). The guard ships as .agents/hooks.json plus .agents/hooks/agents-united-guard.js; an existing hooks.json of the user must be merged, never overwritten."
+      "note": ".agents/hooks.json, ~/.gemini/config/hooks.json and a plugin hooks.json hold command hooks on five events; a hook is workspace-wide with no documented per-agent scoping, but it fires for a subagent's calls as well as the main agent's (observed on agy 1.2.15). The guard ships as .agents/hooks.json plus .agents/hooks/agents-united-guard.js; the native install lane copies the script and merges the one key agents-united-guard into an existing hooks.json, never overwriting the user's hooks (ADR 0031 addendum)."
     },
     "subagentInvocation": {
       "status": "available",

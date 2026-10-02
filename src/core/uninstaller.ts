@@ -6,6 +6,7 @@ import { AgentHostAdapter } from './adapter.js';
 import { isKnownHost } from './hosts.js';
 import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
+import { ANTIGRAVITY_GUARD_SCRIPT, removeAntigravityHook } from './antigravity-hooks.js';
 import { removeSessionGuard } from './session-guard.js';
 import { removePermissionPreset } from './permission-preset.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -346,7 +347,7 @@ export class UninstallEngine {
                     const derivedCoordination = Boolean(declaringMatch)
                       || proj.kind === 'rule' || proj.kind === 'team-manifest' || proj.kind === 'plugin-manifest'
                       // Plan 032 Phase 8 — a native-only file (no canonical asset) is bundle-derived coordination too.
-                      || proj.kind === 'plugin' || (proj.kind === 'skill' && !proj.canonical);
+                      || proj.kind === 'plugin' || proj.kind === 'hook' || (proj.kind === 'skill' && !proj.canonical);
                     const covering = derivedCoordination
                       ? await survivingCoverage({ declaringBundle: declaringMatch ? declaringMatch[1] : bundleName }, bundleName)
                       : [];
@@ -483,6 +484,16 @@ export class UninstallEngine {
             // Installed-addon freshness (plan 003): a removed child bundle restores
             // its addon into the parent's recommendedAddons via a re-render here.
             await this.refreshParentCoordination(bundleName, workspaceRoot, lockfile, scope);
+
+            // ADR 0031 addendum — the Antigravity guard's key in the user-owned `.agents/hooks.json` goes with the guard script (which is
+            // refcounted above): only our key is removed, and the file is deleted only when agents-united created it and nothing remains.
+            const antigravityHooks = lockfile.antigravityHooks;
+            if (antigravityHooks && lockfile.projections?.[ANTIGRAVITY_GUARD_SCRIPT] === undefined) {
+              const hooksFile = path.join(workspaceRoot, antigravityHooks.file);
+              const outcome = await removeAntigravityHook(hooksFile, { createdFile: antigravityHooks.createdFile });
+              if (outcome === 'removed' || outcome === 'deleted-file') removedFiles.push(antigravityHooks.file);
+              delete lockfile.antigravityHooks;
+            }
 
             // Plan 023 A — the plain-session guard serves the whole workspace, so it goes with the
             // LAST bundle: only our PreToolUse groups are removed, and the settings file is deleted

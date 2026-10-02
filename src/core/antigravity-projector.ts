@@ -1,10 +1,12 @@
 /**
  * Plan 032 Phase 8 / ADR 0031 — the native install lane of Antigravity. Antigravity's layout is the canonical store the base install already
  * writes, so a committed native file can land on a path the store owns. The lane therefore plans the native agents and rules as projections
- * and reports which canonical assets they replace, so the store skips those assets while the lane is on. Pure planning: no writes.
+ * and reports which canonical assets they replace, so the store skips those assets while the lane is on. The guard hook script travels with any
+ * native role (its registration in the user-owned `hooks.json` is a merge done by the installer). Pure planning: no writes.
  */
 import fs from 'fs-extra';
-import { nativeRoleSource, nativeRuleSource, renderNativeRole, renderNativeRule } from './native-package.js';
+import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOK_NAME } from './antigravity-hooks.js';
+import { nativeHookSource, nativeRoleSource, nativeRuleSource, renderNativeHook, renderNativeRole, renderNativeRule } from './native-package.js';
 import type { PlannedProjectionArtifact, ResolvedAssets } from './types.js';
 
 export interface AntigravityNativePlan {
@@ -55,6 +57,19 @@ export class AntigravityProjector {
       });
       plan.coveredRules.add(ruleFile);
       plan.replacedBy.set(`rules/${ruleFile}`, relPath);
+    }
+
+    // The guard script travels with any native role: it covers every agent that holds a shell or an editor. Registering it in the
+    // user-owned `.agents/hooks.json` is a merge, not a projection, and is done by the installer (see `antigravity-hooks.ts`).
+    const guardSource = plan.artifacts.some(artifact => artifact.kind === 'role') ? nativeHookSource(registryDir, 'antigravity', ANTIGRAVITY_HOOK_NAME) : undefined;
+    if (guardSource !== undefined) {
+      plan.artifacts.push({
+        kind: 'hook',
+        relPath: ANTIGRAVITY_GUARD_SCRIPT,
+        content: renderNativeHook(await fs.readFile(guardSource, 'utf8'), `hosts/antigravity/hooks/${ANTIGRAVITY_HOOK_NAME}.js`, 'antigravity'),
+        managedMarker: true,
+        ownedByBundle: true,
+      });
     }
 
     return plan;
