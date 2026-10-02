@@ -59,3 +59,14 @@ the lead continuing and receiving the error, whereas for the main agent it ends 
 every agent that holds `run_commands`. Still open: whether a hook can tell which agent made a call, and whether a refusal the
 model can recover from is possible.
 
+## Addendum (2026-10-02, native agents and guard plugin slice)
+
+The four specialists now exist as `registry/hosts/cline/agents/*.yml` and the guard as `registry/hosts/cline/plugins/agents-united-guard.js`,
+and were exercised in real sessions (see the observations, "Hook context, and the shipped agents and guard in real sessions"): the
+reviewer cannot write, a writer works, and the guard blocks a forced push and a `.env` write for the lead and for a subagent while the
+lead continues. Two more open items are settled. **A hook can tell the lead from a subagent** (`snapshot.agentId` differs), though the id
+carries no role name. **The tool name is `toolCall.toolName`**, not the docs' `toolCall.name`. One operational constraint follows for the
+orchestrator: it must name the `subagent_<name>` tool when it delegates, because told only a role name the lead model may reach for
+`team_run_task`. Still open: parallel delegation, the `modelId`, `providerId` and `skills:` keys, the IDE, a file-defined lead, the MCP file,
+`apply_patch` input shape.
+

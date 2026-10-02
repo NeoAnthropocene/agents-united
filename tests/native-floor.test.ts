@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FLOOR_END, FLOOR_START, checkFloor, renderFloor, syncFloor } from '../src/core/native-floor.js';
+import { CLAUDE_FLOOR_MARKERS, CLINE_FLOOR_MARKERS, FLOOR_END, FLOOR_START, checkFloor, renderFloor, syncFloor } from '../src/core/native-floor.js';
 import { validateContractFloor } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
 
@@ -54,5 +54,37 @@ describe('native floor block', () => {
     const synced = syncFloor(template, core);
     const stale = synced.replace(/(<!-- agents-united:floor:start[^>]*-->)[\s\S]*?(<!-- agents-united:floor:end -->)/, '$1\nold\n$2') + `\n${core.safety}\n`;
     expect(checkFloor(stale, core).length).toBeGreaterThan(0);
+  });
+});
+
+
+describe('floor markers are per host', () => {
+  const clineTemplate = `---\nname: x\n---\n\nIntro.\n\n${CLINE_FLOOR_MARKERS.start}\nstale\n${CLINE_FLOOR_MARKERS.end}\n\nOutro.\n`;
+
+  it('keeps the Claude markers as the default, byte for byte', () => {
+    expect(CLAUDE_FLOOR_MARKERS).toEqual({ start: FLOOR_START, end: FLOOR_END });
+    expect(syncFloor(template, core)).toBe(syncFloor(template, core, CLAUDE_FLOOR_MARKERS));
+  });
+
+  it('gives Cline its own start marker, which names the Cline test that regenerates it, and the shared end marker', () => {
+    expect(CLINE_FLOOR_MARKERS.start).not.toBe(FLOOR_START);
+    expect(CLINE_FLOOR_MARKERS.start).toMatch(/UPDATE_NATIVE=1 npx vitest run tests\/native-cline-agents\.test\.ts/);
+    expect(CLINE_FLOOR_MARKERS.end).toBe(FLOOR_END);
+  });
+
+  it('syncs and checks a Cline file with the Cline markers, idempotently, and keeps everything outside them', () => {
+    const once = syncFloor(clineTemplate, core, CLINE_FLOOR_MARKERS);
+    expect(once.startsWith('---\nname: x\n---\n\nIntro.\n\n')).toBe(true);
+    expect(once.endsWith('\n\nOutro.\n')).toBe(true);
+    expect(once).not.toContain('stale');
+    expect(syncFloor(once, core, CLINE_FLOOR_MARKERS)).toBe(once);
+    expect(checkFloor(once, core, CLINE_FLOOR_MARKERS)).toEqual([]);
+    expect(checkFloor(once.replace('Never echo a secret', 'Echo secrets freely'), core, CLINE_FLOOR_MARKERS).join('\n')).toMatch(/safety/);
+  });
+
+  it('refuses a file that carries the other host markers, so a Claude file is never regenerated as a Cline one', () => {
+    expect(() => syncFloor(template, core, CLINE_FLOOR_MARKERS)).toThrow(/floor markers/);
+    expect(() => syncFloor(clineTemplate, core)).toThrow(/floor markers/);
+    expect(() => checkFloor(clineTemplate, core)).toThrow(/floor markers/);
   });
 });
