@@ -11,8 +11,8 @@ import type { SemanticCore } from '../src/core/types.js';
  * Plan 032 Phase 8 / ADR 0030 — the native Antigravity agents: four specialists and the orchestrator as `.agents/agents/<role>.md`.
  * Each file is authored; its Contract Floor block and its `tools:` list are generated (regenerate with
  * `UPDATE_NATIVE=1 npx vitest run tests/native-antigravity-agents.test.ts`). The frontmatter has only documented keys and never `hooks:`,
- * which hides an agent from discovery (plan 031). Unlike Cline, whether the host enforces a `tools:` list is unverified (ADR 0030
- * decision 4), so a read-only role holds no writing tool and says plainly that nothing else is promised.
+ * which hides an agent from discovery (plan 031). Like Cline, the host enforces a `tools:` list (observed on agy 1.2.15, ADR 0030
+ * decision 4 as settled): a read-only role holds no writing tool, and that alone keeps it read-only.
  */
 
 interface RoleSpec {
@@ -107,7 +107,7 @@ describe.each(ROLES)('native Antigravity $name', role => {
     expect(tools()).toEqual(expect.arrayContaining(['view_file', 'grep_search']));
   });
 
-  it(role.kind === 'reader' ? 'holds no mutating tool at all, because nothing else is promised' : 'holds the shell and the editors, as its work needs', () => {
+  it(role.kind === 'reader' ? 'holds no mutating tool at all, which is what keeps it read-only' : 'holds the shell and the editors, as its work needs', () => {
     if (role.kind === 'reader') {
       expect(tools().filter(tool => MUTATING.includes(tool))).toEqual([]);
     } else {
@@ -147,7 +147,9 @@ describe.each(ROLES)('native Antigravity $name', role => {
     expect(text).toMatch(/Boundaries of this host/);
     if (role.kind === 'reader') {
       expect(text).toMatch(/\btools:/);
-      expect(text).toMatch(/not verified|unverified/i);
+      expect(text).toMatch(/withholds/i);
+      expect(text).toMatch(/observed/i);
+      expect(text).not.toMatch(/not verified|unverified/i);
       expect(text).toMatch(/do not (try|attempt)/i);
     }
     if (role.kind === 'writer') {
@@ -183,8 +185,11 @@ describe('the orchestrator as a file-defined main agent (ADR 0030 decision 5)', 
     expect(text()).toMatch(/verbatim/i);
   });
 
-  it('is honest about what is unverified: concurrent delegation, and enforcement of a tools list', () => {
-    expect(text()).toMatch(/(parallel|concurren)[^.\n]*(unverified|not verified)|(unverified|not verified)[^.\n]*(parallel|concurren)/i);
+  it('says what was observed (several specs in one call are all created) and what was not (that they run concurrently), and that a tools list is enforced', () => {
+    expect(text()).toMatch(/creates[^.\n]*observed|observed[^.\n]*creates/i);
+    expect(text()).toMatch(/concurren[^.\n]*not verified/i);
+    expect(text()).toMatch(/enforced by the host/i);
+    expect(text()).not.toMatch(/not verified \(ADR 0030\)/);
     expect(text()).toMatch(/subagent: false|`subagent: false`/);
   });
 

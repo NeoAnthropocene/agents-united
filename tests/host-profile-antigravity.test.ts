@@ -79,16 +79,21 @@ describe('the committed Antigravity host profile', () => {
     expect(profile.artifacts.permissions.modes).toEqual(['default', 'request-review', 'turbo']);
   });
 
-  it('records what is not simply available: the platform split, the retiring workflows, the unverified enforcement', () => {
+  it('records what is not simply available: the platform split, the retiring workflows, what was observed and what is still unverified', () => {
     const features = profile.features;
     expect(features.unifiedPermissionEngine.status).toBe('macos-linux-only');
     expect(features.unifiedPermissionEngine.note).toMatch(/Windows/);
     expect(features.workflows.status).toBe('deprecated');
     expect(features.workflows.note).toMatch(/2026-11-01|November 1, 2026/);
-    expect(features.hostEnforcedToolRestriction.status).toBe('unverified');
+    expect(features.hostEnforcedToolRestriction.status).toBe('available');
+    expect(features.hostEnforcedToolRestriction.note).toMatch(/observed/i);
+    expect(features.hostEnforcedToolRestriction.note).toMatch(/control/i);
     expect(features.subagentInvocation.status).toBe('available');
     expect(features.subagentInvocation.note).toMatch(/subagent: false|subagent:\s*false/);
-    expect(features.parallelSubagents.status).toBe('unverified');
+    expect(features.subagentInvocation.note).toMatch(/global/i);
+    expect(features.parallelSubagents.status).toBe('partial');
+    expect(features.parallelSubagents.note).toMatch(/same second/i);
+    expect(features.parallelSubagents.note).toMatch(/overlap/i);
     expect(features.mcpWiring.status).toBe('deferred');
     expect(features.registryFiles.status).toBe('unverified');
     for (const [name, feature] of Object.entries(features)) expect(feature.note.length, name).toBeGreaterThan(20);

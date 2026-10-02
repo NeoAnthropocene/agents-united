@@ -1,7 +1,7 @@
 {
   "host": "antigravity",
   "profile": "antigravity@1.2.11",
-  "semantics": "Class-based tool policy for Antigravity (Plan 032 Phase 8, ADR 0030): the tools an agent and a hook matcher see, as listed on the hooks page (the vocabulary an agent's tools: frontmatter and a PreToolUse matcher use), the capability class each serves, and the conditions under which it exists. The SDK page names its built-in identifiers differently (list_directory, search_directory, find_file, create_file, edit_file, start_subagent, finish); no mapping between the two sets is documented, so those names are not catalogued. There is no skill tool: skills are read through view_file. MCP tools are permissioned as mcp(server/tool) and are not catalogued. Whether a tools: list is enforced by the host, as on Cline, is unverified; a misspelled name can hang the subagent.",
+  "semantics": "Class-based tool policy for Antigravity (Plan 032 Phase 8, ADR 0030): the tools an agent and a hook matcher see, as listed on the hooks page (the vocabulary an agent's tools: frontmatter and a PreToolUse matcher use), the capability class each serves, and the conditions under which it exists. The SDK page names its built-in identifiers differently (list_directory, search_directory, find_file, create_file, edit_file, start_subagent, finish); no mapping between the two sets is documented, so those names are not catalogued. There is no skill tool: skills are read through view_file. MCP tools are permissioned as mcp(server/tool) and are not catalogued. The host withholds a tool that is not in an agent's tools: list (observed on agy 1.2.15, as on Cline); a misspelled name can hang the subagent.",
   "catalog": [
     {
       "name": "view_file",
