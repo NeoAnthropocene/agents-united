@@ -155,6 +155,10 @@ describe.each(ROLES)('native Antigravity $name', role => {
     if (role.kind === 'writer') {
       expect(text).toMatch(/guard/i);
       expect(text).toMatch(/never push|never attempt/i);
+      // The guard hook covers a subagent's calls (observed on agy 1.2.15) and is a separate file that may not be installed.
+      expect(text).toMatch(/subagent/i);
+      expect(text).toMatch(/observed/i);
+      expect(text).not.toMatch(/not verified/i);
     }
     expect(text).toMatch(/Open items|ask the user|do not ask the user/i);
   });

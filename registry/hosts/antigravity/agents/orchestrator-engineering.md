@@ -109,7 +109,7 @@ Antigravity has no skill tool: a skill is read with `view_file` at the path the 
 
 ## Verify before delivering
 
-1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. The package's guard hook (`.agents/hooks.json`) blocks forced pushes, production deploys and `.env` writes when it is installed, but it is a separate file and its behaviour on subagent calls is not verified, so you are the guard that is always there.
+1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. The package's guard hook (`.agents/hooks.json`) denies forced pushes, production deploys and `.env` writes, for your calls and for a subagent's (observed on agy 1.2.15), but only when it is installed, so you are the guard that is always there.
 2. Work test-first: the failing test comes before the implementation, from the specialist, with the output as evidence.
 3. Run the project's own typecheck, test and build commands with `run_command`. A red run goes back to the right specialist with the failing output. It does not go into a report as done.
 4. After the implementation, give `code-reviewer` the changed files and treat its findings as input, not as a verdict.

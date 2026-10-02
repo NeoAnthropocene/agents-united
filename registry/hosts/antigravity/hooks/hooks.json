@@ -1,0 +1,16 @@
+{
+  "agents-united-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command|write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node hooks/agents-united-guard.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
