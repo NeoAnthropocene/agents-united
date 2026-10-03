@@ -55,6 +55,17 @@ export function preToolUseGroups(agentText: string): HookGroup[] {
   return Array.isArray(hooks?.PreToolUse) ? (hooks.PreToolUse as HookGroup[]) : [];
 }
 
+/** The agent file with `extra` tools added to its `tools:` line, as a later edit that grants them would (hooks and the rest untouched). */
+export function widenTools(agentText: string, extra: string[]): string {
+  if (!/^tools: .*$/m.test(agentText)) throw new Error('widenTools: the agent has no `tools:` line');
+  return agentText.replace(/^tools: (.*)$/m, (_line, tools: string) => `tools: ${[tools, ...extra].join(', ')}`);
+}
+
+/** The agent file with its `PreToolUse` hooks line emptied: what a role looks like once the guard is gone. */
+export function withoutGuard(agentText: string): string {
+  return agentText.replace(/^ {2}PreToolUse: .*$/m, '  PreToolUse: []');
+}
+
 /** The documented matcher rule: an exact list of names, or else an unanchored regular expression. */
 export function matcherMatches(matcher: string | undefined, toolName: string): boolean {
   if (matcher === undefined || matcher === '' || matcher === '*') return true;
