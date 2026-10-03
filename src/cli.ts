@@ -23,6 +23,7 @@ import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
 import { explicitNativeFlag } from './core/native-flag.js';
 import { linkedSkillAdvice, listLinkedSkills } from './core/skill-links.js';
+import { nativeWorkflowNote } from './core/native-workflows.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
@@ -900,6 +901,10 @@ cli
       if (result.projections.length > 0) {
         note(renderProjections(result.projections), 'Installed Projections');
       }
+
+      // Plan 032 close-out — the native Claude lane swaps three skills for dynamic workflows, which Pro keeps off until switched on.
+      const workflowNote = nativeWorkflowNote(result.projections);
+      if (workflowNote) note(wrapText(workflowNote, 68, '').join('\n'), 'Dynamic workflows');
 
       // Plan 032 Phase 8 — skill folders left as links are not listed by agy 1.2.16: say so once, with the way out.
       const linkedSkills = new Set<string>();

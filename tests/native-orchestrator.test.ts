@@ -51,7 +51,7 @@ describe('native orchestrator-engineering (a main-thread coordinator)', () => {
   it('refers only to slash commands that exist as skills, and to bundles that exist', () => {
     const body = read();
     for (const match of body.matchAll(/`\/([a-z0-9-]+)`/g)) {
-      if (match[1] === 'reload-skills') continue; // a Claude Code command, not a skill of ours
+      if (match[1] === 'reload-skills' || match[1] === 'config') continue; // Claude Code commands, not skills of ours
       expect(fs.existsSync(path.resolve('registry/skills', match[1], 'SKILL.md')), `/${match[1]}`).toBe(true);
     }
     for (const match of body.matchAll(/agents add ([a-z][a-z0-9:-]*)/g)) {

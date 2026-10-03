@@ -1,3 +1,4 @@
+import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import crypto from 'node:crypto';
@@ -15,6 +16,7 @@ import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME
 import { inspectAntigravityMcp, loadMcpCatalog } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
 import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
+import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -656,6 +658,22 @@ export class DoctorEngine {
         if (problem) {
           const owner = proj.owners[0];
           warnings.push(`Native agent ${match[1]} ${problem}.` + (owner ? ` Run: agents update ${owner} --fanout claude to restore it.` : ''));
+        }
+      }
+    }
+
+    // Plan 032 close-out — the native lane swaps three skills for dynamic workflows, which a documented switch can turn off.
+    if (host === 'claude' && manifest?.nativeLane === true) {
+      const workflows = installedClaudeWorkflows(Object.entries(manifest.projections ?? {}).map(([relPath, proj]) => ({ host: proj.host, path: relPath, kind: proj.kind })));
+      if (workflows.length > 0) {
+        const settings = await fs.readFile(userSettingsFile(process.env, os.homedir()), 'utf8').catch(() => undefined);
+        const why = workflowsDisabledBy(settings, process.env);
+        if (why) {
+          const owner = Object.values(manifest.projections ?? {}).find(proj => proj.host === 'claude' && proj.kind === 'workflow')?.owners[0];
+          warnings.push(
+            `Dynamic workflows are turned off (${why}), so ${workflows.map(name => `/${name}`).join(', ')} do not exist in Claude Code.` +
+            ` Turn workflows back on` + (owner ? `, or run: agents update ${owner} --fanout claude --no-native to get the skills back.` : '.')
+          );
         }
       }
     }
