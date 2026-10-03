@@ -111,6 +111,9 @@ describe('the committed Antigravity host profile', () => {
     expect(features.mcpWiring.note).toMatch(/\.agents\/mcp_config\.json/);
     expect(features.mcpWiring.note).toMatch(/switched off|disabled/i);
     expect(features.mcpWiring.note).toMatch(/no secret|never writes? a (secret|credential)/i);
+    expect(features.mcpWiring.note).toMatch(/observed on agy 1\.2\.16/i);
+    expect(features.mcpWiring.note).toMatch(/not expanded/i);
+    expect(features.mcpWiring.note).toMatch(/still started/i);
     expect(features.mcpWiring.note).toMatch(/unverified/i);
     expect(features.registryFiles.status).toBe('unverified');
     for (const [name, feature] of Object.entries(features)) expect(feature.note.length, name).toBeGreaterThan(20);
