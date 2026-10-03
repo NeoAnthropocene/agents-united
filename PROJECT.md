@@ -137,6 +137,8 @@ Architectural separation between delivery and reliability:
 
 ## 3. Master Implementation Plans Index (`plans/001`–`015`)
 
+> Plans 016 onward (Claude projection, semantic core, native host packages, `agent-factory`) are indexed with their status in [`plans/README.md`](./plans/README.md), which is current; this section was last written for 001–015.
+
 All foundational implementation plans (001–011) have been fully realized, tested under strict Test-Driven Development (TDD), and verified in production. Plan 012 is DONE — Cline + Antigravity manual rounds complete. Plan 013 is DONE — 30 Tier-1 bundles adopted Planner-Orchestrator Mode. Plan 014 is DONE — Workflows to Skills migration complete:
 
 | Plan | Title | Category | Status | Key Deliverables & Milestones |
@@ -159,6 +161,8 @@ All foundational implementation plans (001–011) have been fully realized, test
 ---
 
 ## 4. Architectural Decision Records (ADRs 0001–0017)
+
+> ADRs 0018 onward (Claude projection, semantic core, host primitive matrix, licence-tiered intake, native host packages and the per-host lanes 0025–0033) live in `docs/adr/` and are not summarised here; the directory listing is current.
 
 All architectural decisions recorded in `docs/adr/` are indexed and summarized below:
 
@@ -186,7 +190,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **188 modular skills & runbooks** (119 domain skills + 69 workflow playbooks) structured into **26 curated bundles** (8 Essentials + 17 Addons + 1 Full suite) across **8 department domains**:
+The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **188 modular skills & runbooks** (119 domain skills + 69 workflow playbooks) structured into **35 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles and 2 organization bundles, one of which, `mock-organization-under-construction`, is a placeholder and is not counted in the README's 34) across **8 department domains plus the Universal group** (the README's "Bundles by department" table has those 9 rows; the `domain` field in `bundles.json` holds 9 distinct values, with the Organization bundles under `organization`):
 
 ```
 🌐 Agents United Registry Catalog Tree
