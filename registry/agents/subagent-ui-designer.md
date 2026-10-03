@@ -37,7 +37,7 @@ skills:
   - stitch-design-taste
   - ui-component-spec
   - design-system-tokens
-  - generative_ui
+  - generative-ui
 mcpServers:
   - name: stitch
   - name: figma

@@ -459,14 +459,15 @@
       "source": "https://github.com/anthropics/skills",
       "upstreamLicence": "Apache-2.0"
     },
-    "generative_ui": {
+    "generative-ui": {
       "declaredLicence": "Apache-2.0",
       "notes": [
-        "source is not a code repository"
+        "source is not a code repository",
+        "renamed from generative_ui on 2026-10-03; the record was recovered under the old name on 2026-09-30"
       ],
       "provenance": "not-found",
       "recoveredAt": "2026-09-30",
-      "skill": "generative_ui",
+      "skill": "generative-ui",
       "source": "https://antigravity.google",
       "triedUrls": [
         "https://antigravity.google"

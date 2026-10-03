@@ -130,10 +130,11 @@ export class UpdateEngine {
    * Plan 016 Step 4 — silent, bounded, idempotent migration of the `generative_ui`
    * projection rename (ADR 0016 pattern).
    *
-   * `registry/skills/generative_ui/` is deliberately NOT renamed: the underscore is
-   * invalid in every host dialect, so the projectors normalize the name at projection
-   * time (`generative_ui` -> `generative-ui`; ADR 0018 decision 2 — normalization is
-   * projection-level). Projections recorded before that change therefore still point at
+   * (History: the canonical skill was first left as `generative_ui` because the underscore is
+   * invalid in every host dialect and the projectors normalize the name at projection
+   * time, `generative_ui` -> `generative-ui`; ADR 0018 decision 2. The canonical skill itself
+   * was renamed `generative-ui` on 2026-10-03, and `migrateLegacyGenerativeUiStore` handles the
+   * store copy.) Projections recorded before the projection-level change still point at
    * `.claude/skills/generative_ui/SKILL.md` and/or the Cline plugin copy
    * `.agents/plugins/<bundle>/skills/generative_ui/SKILL.md`, which the current renderers
    * no longer produce.
@@ -177,6 +178,40 @@ export class UpdateEngine {
     }
 
     return removed;
+  }
+
+  /**
+   * The store half of the `generative_ui` rename (2026-10-03). The canonical skill is now `generative-ui`, so an install made before
+   * the rename still holds `skills/generative_ui/SKILL.md` in the store, and the installer never prunes a store skill that left the
+   * registry: both would sit side by side. Replace the old copy, its lockfile record and its roster entry, so `agents update`
+   * leaves one skill under the compliant name. A copy the user edited is never deleted (its record stays too), and a store made by
+   * symlinks has nothing of the user's to protect.
+   */
+  private async migrateLegacyGenerativeUiStore(storeDir: string, lockfile: LockfileManifest): Promise<boolean> {
+    const key = UpdateEngine.LEGACY_GENERATIVE_UI_CANONICAL;
+    const record = lockfile.files?.[key];
+    if (!record) return false;
+
+    const file = path.join(storeDir, ...key.split('/'));
+    const folder = path.dirname(file);
+    const folderStat = await fs.lstat(folder).catch(() => null);
+    if (folderStat?.isSymbolicLink()) {
+      await fs.unlink(folder);
+    } else {
+      const fileStat = await fs.lstat(file).catch(() => null);
+      if (fileStat) {
+        if (!fileStat.isSymbolicLink()) {
+          const current = await this.calculateHash(file).catch(() => null);
+          if (current && record.hash && current !== record.hash) return false; // edited by the user: keep it and its record
+        }
+        await fs.remove(file);
+      }
+      if (folderStat && (await fs.readdir(folder).catch(() => ['keep'])).length === 0) await fs.remove(folder);
+    }
+
+    delete lockfile.files[key];
+    if (lockfile.installed?.skills) lockfile.installed.skills = lockfile.installed.skills.filter(skill => skill !== 'generative_ui');
+    return true;
   }
 
   public async checkUpdates(options: InventoryOptions = {}): Promise<UpdateCheckReport> {
@@ -332,7 +367,8 @@ export class UpdateEngine {
         workspaceRootOf(record.targetDir),
         lockfile
       );
-      if (migratedGenerativeUi.length > 0) {
+      const migratedGenerativeUiStore = await this.migrateLegacyGenerativeUiStore(record.targetDir, lockfile);
+      if (migratedGenerativeUi.length > 0 || migratedGenerativeUiStore) {
         await fs.writeJson(lockfilePath, lockfile, { spaces: 2 });
       }
 
