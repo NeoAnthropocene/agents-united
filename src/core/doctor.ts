@@ -752,6 +752,10 @@ export class DoctorEngine {
           stale: `in ${record.file} is an older version than this release ships`,
         };
         for (const [name, status] of Object.entries(state.servers)) {
+          if (status === 'withdrawn') {
+            warnings.push(`MCP server '${name}' in ${record.file} is an entry from an older release: servers that need a credential are no longer written.${fix(false).replace('to restore it', 'to remove it')}`);
+            continue;
+          }
           const reason = reasons[status];
           if (reason) warnings.push(`MCP server '${name}' ${reason}, so the roles that declare it may not reach it.${fix(status === 'disabled' || status === 'modified')}`);
         }

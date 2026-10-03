@@ -67,13 +67,12 @@ describe('the packaged catalog', () => {
     }
   });
 
-  it('names every variable the existing definitions would pass, and a server that needs one ships switched off', () => {
+  it('names every variable the existing definitions would pass, and ships no switch (a server that needs one is not written, ADR 0032 addendum 2)', () => {
     const everything = { GITHUB_PERSONAL_ACCESS_TOKEN: 'x', FIRECRAWL_API_KEY: 'x', STITCH_API_KEY: 'x', FIGMA_ACCESS_TOKEN: 'x', UPSTASH_REDIS_REST_URL: 'x', UPSTASH_REDIS_REST_TOKEN: 'x' };
     for (const [name, server] of Object.entries(catalog)) {
       const legacyEnv = Object.keys(PrerequisiteChecker.getMcpDefinition(name, 'operational', everything).env ?? {});
       expect([...server.requiresEnv, ...server.optionalEnv].sort(), name).toEqual(expect.arrayContaining(legacyEnv));
-      if (server.requiresEnv.length > 0) expect(server.entry.disabled, name).toBe(true);
-      else expect(server.entry, name).not.toHaveProperty('disabled');
+      expect(server.entry, name).not.toHaveProperty('disabled');
     }
     expect(catalog.github.requiresEnv).toEqual(['GITHUB_PERSONAL_ACCESS_TOKEN']);
     expect(catalog.context7.requiresEnv).toEqual([]);
@@ -286,7 +285,7 @@ describe('merging into mcp_config.json', () => {
 
   it('inspects only the servers of ours the lockfile records', async () => {
     const added = await sync({ a: A, b: B, c: C });
-    const shipped = { a: { entry: A, requiresEnv: [], optionalEnv: [] }, b: { entry: B, requiresEnv: [], optionalEnv: [] }, c: { entry: C, requiresEnv: ['X'], optionalEnv: [] } };
+    const shipped = { a: { entry: A, requiresEnv: [], optionalEnv: [] }, b: { entry: B, requiresEnv: [], optionalEnv: [] }, c: { entry: C, requiresEnv: [], optionalEnv: [] } };
     const view = () => inspectAntigravityMcp(file, added.record!, shipped);
     expect(await view()).toEqual({ file: 'ok', servers: { a: 'wired', b: 'wired', c: 'wired' } });
 
@@ -320,6 +319,8 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
     new InstallEngine().install(bundle, { targetDir: agentsDir, method: 'copy', nativeLane, ...extra });
   const wired = (): Record<string, Record<string, unknown>> => (JSON.parse(read(at(ANTIGRAVITY_MCP_FILE))) as { mcpServers: Record<string, Record<string, unknown>> }).mcpServers;
   const SE = ['chrome-devtools-mcp', 'context7', 'firecrawl', 'github', 'stitch'];
+  /** What the lane writes of them: the credentialed ones are not written (ADR 0032 addendum 2). */
+  const SE_WIRED = ['chrome-devtools-mcp', 'context7'];
   const SECRET = 'ghp_SECRET_VALUE_THAT_MUST_NEVER_BE_WRITTEN';
   const saved: Record<string, string | undefined> = {};
 
@@ -350,11 +351,11 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
     expect((await fs.readJson(lockPath)).antigravityMcp).toBeUndefined();
   });
 
-  it('writes the servers the bundle declares, the credentialed ones switched off, and never a secret', async () => {
+  it('writes the servers the bundle declares that need no credential, and never a secret', async () => {
     const result = await install(true);
-    expect(Object.keys(wired()).sort()).toEqual(SE);
-    for (const name of SE) expect(wired()[name], name).toEqual(catalog[name].entry);
-    expect(wired().github.disabled).toBe(true);
+    expect(Object.keys(wired()).sort()).toEqual(SE_WIRED);
+    for (const name of SE_WIRED) expect(wired()[name], name).toEqual(catalog[name].entry);
+    expect(wired()).not.toHaveProperty('github');
     expect(wired().context7).not.toHaveProperty('disabled');
     expect(read(at(ANTIGRAVITY_MCP_FILE))).not.toContain(SECRET);
     expect(read(at(ANTIGRAVITY_MCP_FILE))).not.toMatch(/"(env|headers|oauth)"/);
@@ -364,8 +365,8 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
     const lock = await fs.readJson(lockPath);
     expect(lock.antigravityMcp.file).toBe(ANTIGRAVITY_MCP_FILE);
     expect(lock.antigravityMcp.createdFile).toBe(true);
-    expect(Object.keys(lock.antigravityMcp.servers).sort()).toEqual(SE);
-    expect(lock.antigravityMcp.servers.github).toEqual({ entryHash: mcpEntryHash(catalog.github.entry), owners: [BUNDLE] });
+    expect(Object.keys(lock.antigravityMcp.servers).sort()).toEqual(SE_WIRED);
+    expect(lock.antigravityMcp.servers.context7).toEqual({ entryHash: mcpEntryHash(catalog.context7.entry), owners: [BUNDLE] });
     // mcp_config.json is the user's file, so it is not a hashed projection.
     expect(lock.projections?.[ANTIGRAVITY_MCP_FILE]).toBeUndefined();
 
@@ -373,25 +374,25 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
     const text = info?.warnings.join('\n') ?? '';
     expect(text).toContain('GITHUB_PERSONAL_ACCESS_TOKEN');
     expect(text).toContain('FIRECRAWL_API_KEY');
-    expect(text).toContain('agy mcp enable github');
+    expect(text).toContain('not written');
     expect(text).not.toContain('context7');
     expect(text).not.toContain(SECRET);
   });
 
   it("merges into a file the user already has, keeps their servers through update, a lane switch and removal, and never claims a server of theirs", async () => {
-    const own = { mine: USER.mine, github: { serverUrl: 'https://api.githubcopilot.com/mcp/' } };
+    const own = { mine: USER.mine, context7: { serverUrl: 'https://mcp.context7.com/mcp' } };
     const user = `${JSON.stringify({ mcpServers: own }, null, 2)}\n`;
     await fs.outputFile(at(ANTIGRAVITY_MCP_FILE), user);
     const result = await install(true);
-    expect(Object.keys(wired())).toEqual(['mine', 'github', ...SE.filter(name => name !== 'github')]);
-    expect(wired().github).toEqual(own.github);
+    expect(Object.keys(wired())).toEqual(['mine', 'context7', ...SE_WIRED.filter(name => name !== 'context7')]);
+    expect(wired().context7).toEqual(own.context7);
     const lock = await fs.readJson(lockPath);
     expect(lock.antigravityMcp.createdFile).toBe(false);
-    expect(lock.antigravityMcp.servers.github).toBeUndefined();
-    expect(result.projections.find(p => p.path === ANTIGRAVITY_MCP_FILE)?.warnings.join('\n')).toMatch(/github.*already in .*yours|yours.*github/i);
+    expect(lock.antigravityMcp.servers.context7).toBeUndefined();
+    expect(result.projections.find(p => p.path === ANTIGRAVITY_MCP_FILE)?.warnings.join('\n')).toMatch(/context7.*already in .*yours|yours.*context7/i);
 
     await install(undefined, { force: true }); // what `agents update` does: the lane and the wiring are sticky
-    expect(Object.keys(wired())).toHaveLength(2 + SE.length - 1);
+    expect(Object.keys(wired())).toHaveLength(2 + SE_WIRED.length - 1);
 
     await install(false, { force: true });
     expect(read(at(ANTIGRAVITY_MCP_FILE))).toBe(user);
@@ -409,7 +410,7 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
     expect(read(at(ANTIGRAVITY_MCP_FILE))).toBe(first);
 
     const config = JSON.parse(first) as { mcpServers: Record<string, Record<string, unknown>> };
-    delete config.mcpServers.github.disabled; // what `agy mcp enable github` amounts to
+    config.mcpServers.context7.disabled = true; // what `agy mcp disable context7` amounts to
     await fs.outputFile(at(ANTIGRAVITY_MCP_FILE), JSON.stringify(config, null, 2));
     const switched = read(at(ANTIGRAVITY_MCP_FILE));
     await install(undefined, { force: true });
@@ -435,7 +436,7 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
     const lock = await fs.readJson(lockPath);
     expect(lock.antigravityMcp.servers.context7.owners).toEqual(expect.arrayContaining([BUNDLE, 'system-architecture']));
     await new UninstallEngine().uninstall(BUNDLE, { targetDir: agentsDir });
-    expect(Object.keys(wired())).toEqual(['context7', 'firecrawl', 'github']); // what system-architecture declares; the rest left with the first bundle
+    expect(Object.keys(wired())).toEqual(['context7']); // what system-architecture declares and needs no credential; the rest left with the first bundle
     await new UninstallEngine().uninstall('system-architecture', { targetDir: agentsDir });
     expect(await fs.pathExists(at(ANTIGRAVITY_MCP_FILE))).toBe(false);
   });
@@ -466,7 +467,7 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
       await fs.outputFile(at(ANTIGRAVITY_MCP_FILE), JSON.stringify({ mcpServers: servers }, null, 2));
     };
 
-    it('finds a fresh install healthy, including the servers that ship switched off', async () => {
+    it('finds a fresh install healthy', async () => {
       await install(true);
       const report = await DoctorEngine.runDoctor(agentsDir);
       expect(report.issues).toEqual([]);
@@ -491,12 +492,6 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
       const text = (await mcpWarnings()).join('\n');
       expect(text).toMatch(reason);
       expect(text).toMatch(/agents update software-engineering --native/);
-    });
-
-    it('does not warn about a server of ours that is switched on when it ships off', async () => {
-      await install(true);
-      await edit(s => void delete s.github.disabled);
-      expect(await mcpWarnings()).toEqual([]);
     });
 
     it('is silent when the lane is off', async () => {

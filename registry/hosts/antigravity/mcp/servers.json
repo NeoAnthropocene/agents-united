@@ -1,5 +1,5 @@
 {
-  "note": "Packaged MCP server entries for the Antigravity native lane (Plan 032 Phase 8, ADR 0032). One entry per server name the registry agents declare in `mcpServers:`; the launch command is the one the existing server definitions use (src/core/prerequisites.ts getMcpDefinition, pinned by test). Each `entry` is merged as-is into .agents/mcp_config.json under its name. No entry carries `env`, `headers` or `oauth`: a credential is never written. A server that needs one is shipped with `disabled: true` and names the variable in `requiresEnv`; the user sets it in the environment agy starts from and runs `agy mcp enable <name>`. Whether agy passes its own environment on to a stdio server, and whether a `${VAR}` placeholder in `env` is expanded, are unverified, which is why no placeholder is written.",
+  "note": "Packaged MCP server entries for the Antigravity native lane (Plan 032 Phase 8, ADR 0032). One entry per server name the registry agents declare in `mcpServers:`; the launch command is the one the existing server definitions use (src/core/prerequisites.ts getMcpDefinition, pinned by test). Each `entry` is merged as-is into .agents/mcp_config.json under its name. No entry carries `env`, `headers` or `oauth`: a credential is never written. A server that needs one (`requiresEnv` is not empty) is not written at all: a `disabled: true` entry still started once in a real session (ADR 0032 addendum 2), so the install prints its `entry` and the variable instead, for the user to add once they hold the credential and have set it in the environment agy starts from (agy passes its own environment to a stdio server, observed 2026-10-03). No `${VAR}` placeholder is written: agy did not expand one (observed).",
   "servers": {
     "chrome-devtools-mcp": {
       "entry": { "command": "npx", "args": ["-y", "chrome-devtools-mcp"] },
@@ -12,17 +12,17 @@
       "optionalEnv": ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"]
     },
     "figma": {
-      "entry": { "command": "npx", "args": ["-y", "ai-figma-mcp"], "disabled": true },
+      "entry": { "command": "npx", "args": ["-y", "ai-figma-mcp"] },
       "requiresEnv": ["FIGMA_ACCESS_TOKEN"],
       "optionalEnv": []
     },
     "firecrawl": {
-      "entry": { "command": "npx", "args": ["-y", "firecrawl-mcp"], "disabled": true },
+      "entry": { "command": "npx", "args": ["-y", "firecrawl-mcp"] },
       "requiresEnv": ["FIRECRAWL_API_KEY"],
       "optionalEnv": ["FIRECRAWL_API_URL"]
     },
     "github": {
-      "entry": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"], "disabled": true },
+      "entry": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"] },
       "requiresEnv": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
       "optionalEnv": []
     },
@@ -37,7 +37,7 @@
       "optionalEnv": []
     },
     "stitch": {
-      "entry": { "command": "npx", "args": ["-y", "mcp-remote", "https://stitch.googleapis.com/mcp"], "disabled": true },
+      "entry": { "command": "npx", "args": ["-y", "mcp-remote", "https://stitch.googleapis.com/mcp"] },
       "requiresEnv": ["STITCH_API_KEY"],
       "optionalEnv": []
     }

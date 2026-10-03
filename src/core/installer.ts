@@ -533,7 +533,7 @@ private toPosix(p: string): string {
    * ADR 0032 — merge the MCP servers this bundle's agents declare into the user-owned `.agents/mcp_config.json`, while the lane is on
    * (it is the lane's sticky per-host choice; with the lane off every server of ours is removed). A server is ours only while the
    * lockfile records it, a name the user already has stays theirs, and the entries carry no secret (a server that needs one is written
-   * switched off and the install says which variable it needs).
+   * not written: the install prints its entry and the variable it needs).
    */
   private async syncAntigravityMcpServers(args: {
     enabled: boolean;
@@ -547,19 +547,27 @@ private toPosix(p: string): string {
     const { enabled, root, lockfile, registryDir, bundleName, declaredAgentFiles, projections } = args;
     const recorded = lockfile.antigravityMcp;
     const catalog = loadMcpCatalog(registryDir);
+    // ADR 0032 addendum 2 — a server that needs a credential is not written (agy started a `disabled: true` one once): the install prints its entry.
+    const needsCredential = (name: string): boolean => (catalog[name]?.requiresEnv.length ?? 0) > 0;
     const desired: Record<string, McpEntry> = {};
+    const withheld: string[] = [];
     if (enabled) {
       for (const name of await declaredServerNames(path.join(registryDir, 'agents'), declaredAgentFiles)) {
-        if (catalog[name]) desired[name] = catalog[name].entry;
+        if (!catalog[name]) continue;
+        if (needsCredential(name)) withheld.push(name);
+        else desired[name] = catalog[name].entry;
       }
     }
-    if (!recorded && Object.keys(desired).length === 0) return;
+    if (!recorded && Object.keys(desired).length === 0) {
+      if (enabled && withheld.length > 0) projections.push({ host: 'antigravity', path: ANTIGRAVITY_MCP_FILE, warnings: describeMcpOutcomes(undefined, catalog, desired, ANTIGRAVITY_MCP_FILE, withheld) });
+      return;
+    }
 
     const file = path.join(root, ANTIGRAVITY_MCP_FILE);
-    const result = await syncAntigravityMcp(file, { desired, bundle: bundleName, record: recorded, dropAll: !enabled });
+    const result = await syncAntigravityMcp(file, { desired, bundle: bundleName, record: recorded, dropAll: !enabled, withheld: Object.keys(catalog).filter(needsCredential) });
     if (result.record) lockfile.antigravityMcp = result.record;
     else delete lockfile.antigravityMcp;
-    if (enabled) projections.push({ host: 'antigravity', path: ANTIGRAVITY_MCP_FILE, warnings: describeMcpOutcomes(result, catalog, desired) });
+    if (enabled) projections.push({ host: 'antigravity', path: ANTIGRAVITY_MCP_FILE, warnings: describeMcpOutcomes(result, catalog, desired, ANTIGRAVITY_MCP_FILE, withheld) });
   }
 
   /**

@@ -11,7 +11,8 @@
  *     touched, claimed or removed; an entry of ours the user edited is left alone and reported;
  *   - ownership is compared through a canonical hash that ignores the `disabled` switch, which is the user's to flip (`agy mcp
  *     enable|disable`), so switching a server on or off is never drift and a re-install never undoes it;
- *   - no secret is ever written: the packaged entries carry no `env`, `headers` or `oauth`.
+ *   - no secret is ever written: the packaged entries carry no `env`, `headers` or `oauth`, and a server that needs a credential is not
+ *     written at all (the `disabled` switch was ignored once in a real session, ADR 0032 addendum 2): the install prints its entry instead.
  * A server is kept while any bundle that declares it is installed (owners are refcounted, like the native projections).
  */
 import crypto from 'node:crypto';
@@ -31,8 +32,8 @@ export interface McpCatalogServer {
 }
 export type McpCatalog = Record<string, McpCatalogServer>;
 
-export type McpSyncOutcome = 'added' | 'replaced' | 'unchanged' | 'modified' | 'user-owned' | 'removed' | 'left-edited' | 'released' | 'absent';
-export type McpInspectStatus = 'wired' | 'missing' | 'disabled' | 'modified' | 'stale';
+export type McpSyncOutcome = 'added' | 'replaced' | 'unchanged' | 'modified' | 'user-owned' | 'removed' | 'left-edited' | 'left-enabled' | 'released' | 'absent';
+export type McpInspectStatus = 'wired' | 'missing' | 'disabled' | 'modified' | 'stale' | 'withdrawn';
 
 const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
 
@@ -114,13 +115,16 @@ export interface McpSyncResult {
 /**
  * Bring the file in step with one bundle's wishes. `desired` is the servers `bundle` declares (name → shipped entry); the bundle is
  * dropped from the owners of every recorded server it no longer declares, and a server nobody owns any more is removed (unless the
- * user edited it). `dropAll` is the lane being off: every recorded server goes, whoever owns it.
+ * user edited it). `dropAll` is the lane being off: every recorded server goes, whoever owns it. `withheld` names the servers a release
+ * no longer writes (they need a credential): an entry of ours that an older release wrote is removed like any other, unless the user
+ * switched it on, which makes it theirs (left in place, no longer tracked).
  */
 export async function syncAntigravityMcp(
   file: string,
-  args: { desired: Record<string, McpEntry>; bundle: string; record?: AntigravityMcpRecord; dropAll?: boolean },
+  args: { desired: Record<string, McpEntry>; bundle: string; record?: AntigravityMcpRecord; dropAll?: boolean; withheld?: readonly string[] },
 ): Promise<McpSyncResult> {
   const { desired, bundle, record, dropAll } = args;
+  const withheld = new Set(args.withheld ?? []);
   const parsed = await parse(file);
   const outcomes: Record<string, McpSyncOutcome> = {};
   if (parsed === 'invalid') return { status: 'skipped-invalid', servers: outcomes, record: dropAll ? undefined : record, changed: false, deletedFile: false };
@@ -140,6 +144,7 @@ export async function syncAntigravityMcp(
 
     if (owners.length === 0) {
       if (present === undefined) outcomes[name] = 'absent';
+      else if (mcpEntryHash(present) === rec.entryHash && withheld.has(name) && !dropAll && isObject(present) && present.disabled !== true) outcomes[name] = 'left-enabled';
       else if (mcpEntryHash(present) === rec.entryHash) {
         delete map[name];
         changed = true;
@@ -235,7 +240,8 @@ export async function inspectAntigravityMcp(
     const shipped = catalog[name]?.entry;
     if (!shipped) continue;
     const present = parsed.servers?.[name];
-    if (present === undefined) servers[name] = 'missing';
+    if (catalog[name].requiresEnv.length > 0) servers[name] = 'withdrawn';
+    else if (present === undefined) servers[name] = 'missing';
     else if (mcpEntryHash(present) === mcpEntryHash(shipped)) servers[name] = isObject(present) && present.disabled === true && shipped.disabled !== true ? 'disabled' : 'wired';
     else servers[name] = mcpEntryHash(present) === rec.entryHash ? 'stale' : 'modified';
   }
@@ -243,23 +249,33 @@ export async function inspectAntigravityMcp(
 }
 
 /**
- * The lines an install prints about what it did to the file: which switched-off servers need which variable (the file holds none),
- * which names were already the user's, which entries were edited, and, when the file cannot be merged, the entries to add by hand.
+ * The lines an install prints about what it did to the file: the credentialed servers it does not write (with the variable each needs and
+ * the entry to add once the user holds it), which names were already the user's, which entries were edited or switched on by the user, and,
+ * when the file cannot be merged, the entries to add by hand. `result` is absent when nothing was merged (only credentialed servers declared).
  */
 export function describeMcpOutcomes(
-  result: McpSyncResult,
+  result: McpSyncResult | undefined,
   catalog: McpCatalog,
   desired: Record<string, McpEntry>,
   file: string = ANTIGRAVITY_MCP_FILE,
+  withheld: readonly string[] = [],
 ): string[] {
   const lines: string[] = [];
-  if (result.status === 'skipped-invalid') {
+  if (result?.status === 'skipped-invalid') {
     lines.push(`MCP servers not wired: ${file} is not valid JSON (comments or trailing commas?). It was left untouched — add these entries to its "mcpServers" object by hand:\n${JSON.stringify(desired, null, 2)}`);
-    return lines;
   }
+  for (const name of withheld) {
+    const server = catalog[name];
+    if (!server) continue;
+    lines.push(
+      `MCP server "${name}" is not written: it needs ${server.requiresEnv.join(', ')}, and agents-united never writes a credential or an entry that could start without one. ` +
+      `Once you hold it, set it in the environment agy starts from and add this under "mcpServers" in ${file}: ${JSON.stringify({ [name]: server.entry })}`,
+    );
+  }
+  if (!result || result.status === 'skipped-invalid') return lines;
   for (const [name, outcome] of Object.entries(result.servers)) {
-    if (outcome === 'added' && (catalog[name]?.requiresEnv.length ?? 0) > 0) {
-      lines.push(`MCP server "${name}" is written switched off (disabled) because it needs ${catalog[name].requiresEnv.join(', ')}; ${file} holds no secret. Set it in the environment agy starts from, then run: agy mcp enable ${name}`);
+    if (outcome === 'left-enabled') {
+      lines.push(`MCP server "${name}" in ${file} was switched on by you, so it is left in place as yours; agents-united no longer writes servers that need a credential and will not update or remove it.`);
     } else if (outcome === 'user-owned') {
       lines.push(`MCP server "${name}" is already in ${file}, kept as yours (agents-united did not write it).`);
     } else if (outcome === 'modified') {
