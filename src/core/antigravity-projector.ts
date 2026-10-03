@@ -18,14 +18,19 @@ export interface AntigravityNativePlan {
   coveredRules: Set<string>;
   /** For each covered canonical asset, the root-relative path of its native replacement (to seed owners and to clear the store copy). */
   replacedBy: Map<string, string>;
+  /** Canonical rule files the lane leaves out of the store with no native replacement (the legacy entrypoint, once a native rule is installed). Filled by the installer. */
+  omittedRules: Set<string>;
 }
+
+/** The legacy host-entrypoint rule: agy reads it without frontmatter (probe a, 2026-10-03), so beside the native rules it repeats their policy (ADR 0031 addendum). */
+export const ANTIGRAVITY_LEGACY_ENTRYPOINT_RULE = 'GEMINI.md';
 
 /** `subagent-code-reviewer.md` and `code-reviewer.md` are both the role `code-reviewer`; the coordinator keeps its own name. */
 export const roleNameOf = (agentFile: string): string => agentFile.replace(/\.md$/i, '').replace(/^subagent-/, '');
 
 export class AntigravityProjector {
   static async plan(resolved: ResolvedAssets, registryDir: string): Promise<AntigravityNativePlan> {
-    const plan: AntigravityNativePlan = { artifacts: [], coveredAgents: new Set(), coveredRules: new Set(), replacedBy: new Map() };
+    const plan: AntigravityNativePlan = { artifacts: [], coveredAgents: new Set(), coveredRules: new Set(), replacedBy: new Map(), omittedRules: new Set() };
 
     for (const agentFile of resolved.agents) {
       const role = roleNameOf(agentFile);
