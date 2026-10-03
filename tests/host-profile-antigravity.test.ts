@@ -107,7 +107,11 @@ describe('the committed Antigravity host profile', () => {
     expect(features.parallelSubagents.status).toBe('partial');
     expect(features.parallelSubagents.note).toMatch(/same second/i);
     expect(features.parallelSubagents.note).toMatch(/overlap/i);
-    expect(features.mcpWiring.status).toBe('deferred');
+    expect(features.mcpWiring.status).toBe('partial');
+    expect(features.mcpWiring.note).toMatch(/\.agents\/mcp_config\.json/);
+    expect(features.mcpWiring.note).toMatch(/switched off|disabled/i);
+    expect(features.mcpWiring.note).toMatch(/no secret|never writes? a (secret|credential)/i);
+    expect(features.mcpWiring.note).toMatch(/unverified/i);
     expect(features.registryFiles.status).toBe('unverified');
     for (const [name, feature] of Object.entries(features)) expect(feature.note.length, name).toBeGreaterThan(20);
   });

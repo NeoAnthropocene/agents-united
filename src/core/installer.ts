@@ -10,6 +10,8 @@ import { ClineProjector } from './cline-projector.js';
 import { AntigravityProjector } from './antigravity-projector.js';
 import type { AntigravityNativePlan } from './antigravity-projector.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, loadGuardHookEntry, mergeAntigravityHook, removeAntigravityHook } from './antigravity-hooks.js';
+import { ANTIGRAVITY_MCP_FILE, describeMcpOutcomes, loadMcpCatalog, syncAntigravityMcp, type McpEntry } from './antigravity-mcp.js';
+import { declaredServerNames } from './mcp-declarations.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
 import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
@@ -442,11 +444,13 @@ private toPosix(p: string): string {
     registryDir: string;
     bundleName: string;
     declared: Set<string>;
+    /** The registry agent files this bundle declares (its own roster, not the inherited superset): the source of its MCP servers. */
+    declaredAgentFiles: string[];
     options: InstallOptions;
     projections: ProjectionInfo[];
     now: string;
   }): Promise<AntigravityNativePlan | undefined> {
-    const { enabled, storeDir, root, lockfile, resolved, registryDir, bundleName, declared, options, projections, now } = args;
+    const { enabled, storeDir, root, lockfile, resolved, registryDir, bundleName, declared, declaredAgentFiles, options, projections, now } = args;
     const plan: AntigravityNativePlan = enabled
       ? await AntigravityProjector.plan(resolved, registryDir)
       : { artifacts: [], coveredAgents: new Set(), coveredRules: new Set(), replacedBy: new Map() };
@@ -478,7 +482,56 @@ private toPosix(p: string): string {
       if (projection) projection.owners = Array.from(new Set([...projection.owners, ...owners]));
     }
     await this.syncAntigravityGuardHook(root, lockfile, registryDir, projections);
+    await this.syncAntigravityMcpServers({ enabled, root, lockfile, registryDir, bundleName, declaredAgentFiles, projections });
     return enabled ? plan : undefined;
+  }
+
+  /** The registry agent files a bundle declares itself (its orchestrator and roster), out of what it resolves to; all of them for an unbundled install. */
+  private async declaredAgentFilesOf(resolved: ResolvedAssets): Promise<string[]> {
+    const bundle = resolved.targetBundle ? await this.registry.getBundle(resolved.targetBundle) : undefined;
+    if (!bundle) return resolved.agents;
+    const roster = new Set<string>([...(bundle.orchestrator ? [bundle.orchestrator] : []), ...(bundle.agents ?? [])]);
+    return resolved.agents.filter(agentFile => roster.has(agentFile));
+  }
+
+  /** Whether the bundle declares an MCP server the Antigravity package ships an entry for (a dry run lists the file when it does). */
+  private async declaresPackagedMcpServer(registryDir: string, resolved: ResolvedAssets): Promise<boolean> {
+    const catalog = loadMcpCatalog(registryDir);
+    const names = await declaredServerNames(path.join(registryDir, 'agents'), await this.declaredAgentFilesOf(resolved));
+    return names.some(name => catalog[name] !== undefined);
+  }
+
+  /**
+   * ADR 0032 — merge the MCP servers this bundle's agents declare into the user-owned `.agents/mcp_config.json`, while the lane is on
+   * (it is the lane's sticky per-host choice; with the lane off every server of ours is removed). A server is ours only while the
+   * lockfile records it, a name the user already has stays theirs, and the entries carry no secret (a server that needs one is written
+   * switched off and the install says which variable it needs).
+   */
+  private async syncAntigravityMcpServers(args: {
+    enabled: boolean;
+    root: string;
+    lockfile: LockfileManifest;
+    registryDir: string;
+    bundleName: string;
+    declaredAgentFiles: string[];
+    projections: ProjectionInfo[];
+  }): Promise<void> {
+    const { enabled, root, lockfile, registryDir, bundleName, declaredAgentFiles, projections } = args;
+    const recorded = lockfile.antigravityMcp;
+    const catalog = loadMcpCatalog(registryDir);
+    const desired: Record<string, McpEntry> = {};
+    if (enabled) {
+      for (const name of await declaredServerNames(path.join(registryDir, 'agents'), declaredAgentFiles)) {
+        if (catalog[name]) desired[name] = catalog[name].entry;
+      }
+    }
+    if (!recorded && Object.keys(desired).length === 0) return;
+
+    const file = path.join(root, ANTIGRAVITY_MCP_FILE);
+    const result = await syncAntigravityMcp(file, { desired, bundle: bundleName, record: recorded, dropAll: !enabled });
+    if (result.record) lockfile.antigravityMcp = result.record;
+    else delete lockfile.antigravityMcp;
+    if (enabled) projections.push({ host: 'antigravity', path: ANTIGRAVITY_MCP_FILE, warnings: describeMcpOutcomes(result, catalog, desired) });
   }
 
   /**
@@ -1139,6 +1192,7 @@ private toPosix(p: string): string {
           projections.push({ host: 'antigravity', path: artifact.relPath, kind: artifact.kind, warnings: [] });
           if (artifact.relPath === ANTIGRAVITY_GUARD_SCRIPT) projections.push({ host: 'antigravity', path: ANTIGRAVITY_HOOKS_FILE, kind: 'hook', warnings: [] });
         }
+        if (await this.declaresPackagedMcpServer(registryDir, resolved)) projections.push({ host: 'antigravity', path: ANTIGRAVITY_MCP_FILE, warnings: [] });
       }
       return { installed: resolved, targetDirs, dryRun: true, method, projections };
     }
@@ -1223,6 +1277,7 @@ private toPosix(p: string): string {
           registryDir,
           bundleName: resolved.targetBundle ?? 'unbundled',
           declared,
+          declaredAgentFiles: resolved.agents.filter(agentFile => declaresAsset(`agents/${agentFile}`)),
           options,
           projections,
           now,

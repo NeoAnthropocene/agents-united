@@ -12,6 +12,8 @@ import { AntigravityProjector } from './antigravity-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
 import { McpLocationRegistry } from './mcp-locations.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, inspectAntigravityHook, loadGuardHookEntry } from './antigravity-hooks.js';
+import { inspectAntigravityMcp, loadMcpCatalog } from './antigravity-mcp.js';
+import { declaredServerNames } from './mcp-declarations.js';
 import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
@@ -226,27 +228,7 @@ export class DoctorEngine {
    * definition never reaches this set (Risk R4).
    */
   private static async declaredMcpServers(agentsDir: string): Promise<string[]> {
-    const names = new Set<string>();
-    if (!(await fs.pathExists(agentsDir))) return [];
-    for (const file of (await fs.readdir(agentsDir)).filter(f => f.endsWith('.md'))) {
-      const content = await fs.readFile(path.join(agentsDir, file), 'utf8').catch(() => null);
-      if (content === null) continue;
-      const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-      if (!match) continue;
-      let meta: { mcpServers?: unknown } | undefined;
-      try {
-        meta = YAML.parse(match[1]) ?? undefined;
-      } catch {
-        continue; // a malformed frontmatter is reported by the frontmatter check, never guessed at
-      }
-      const entries = Array.isArray(meta?.mcpServers) ? (meta?.mcpServers as unknown[]) : [];
-      for (const entry of entries) {
-        const name =
-          typeof entry === 'string' ? entry : (entry as { name?: unknown } | null)?.name;
-        if (typeof name === 'string' && name.trim().length > 0) names.add(name.trim());
-      }
-    }
-    return [...names].sort();
+    return declaredServerNames(agentsDir);
   }
 
   /**
@@ -746,6 +728,31 @@ export class DoctorEngine {
             `Native agent${writers.length > 1 ? 's' : ''} ${writers.join(', ')} can run commands or edit files, but the guard hook is not in effect: ${reason}.` +
             (owner ? ` ${handEdited ? 'Fix or remove it by hand, then run' : 'Run'}: agents update ${owner} --native to restore it.` : '')
           );
+        }
+      }
+    }
+
+    // ADR 0032 — the MCP servers the lane wired into `.agents/mcp_config.json`: the servers of ours the lockfile records must still be there,
+    // as shipped (a switch the user flipped on a server we ship off is theirs, and a server of theirs is never looked at).
+    if (manifest?.antigravityMcp) {
+      const record = manifest.antigravityMcp;
+      const owner = Object.values(record.servers)[0]?.owners[0];
+      const fix = (handEdited: boolean): string => (owner ? ` ${handEdited ? 'Fix or remove it by hand, then run' : 'Run'}: agents update ${owner} --native to restore it.` : '');
+      const state = await inspectAntigravityMcp(path.join(workspaceRootOf(root), record.file), record, loadMcpCatalog(new RegistryResolver().getRegistryDir()));
+      if (state.file === 'absent') {
+        warnings.push(`The MCP servers agents-united wired are not in effect: ${record.file} does not exist.${fix(false)}`);
+      } else if (state.file === 'skipped-invalid') {
+        warnings.push(`The MCP servers agents-united wired cannot be verified: ${record.file} is not valid JSON.${fix(true)}`);
+      } else {
+        const reasons: Record<string, string | undefined> = {
+          missing: `is missing from ${record.file}`,
+          disabled: `is switched off in ${record.file} (disabled: true)`,
+          modified: `was edited by hand in ${record.file}`,
+          stale: `in ${record.file} is an older version than this release ships`,
+        };
+        for (const [name, status] of Object.entries(state.servers)) {
+          const reason = reasons[status];
+          if (reason) warnings.push(`MCP server '${name}' ${reason}, so the roles that declare it may not reach it.${fix(status === 'disabled' || status === 'modified')}`);
         }
       }
     }
