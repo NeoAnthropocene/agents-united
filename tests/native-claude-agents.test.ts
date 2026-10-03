@@ -65,8 +65,9 @@ const ROLES: RoleSpec[] = [
     // Delegation and orchestration: the roster allowlist, dynamic workflows, the user, schedules, watchers and worktrees.
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'Workflow', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
     mainThread: true,
+    // Maintainer decision, plan 032 close-out (after the first real Claude session): the native coordinator is pinned opus / medium.
     model: 'opus',
-    effort: 'high',
+    effort: 'medium',
   },
 ];
 

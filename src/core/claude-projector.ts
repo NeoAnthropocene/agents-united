@@ -227,7 +227,7 @@ export class ClaudeProjector {
     // than coded around: Opus is unavailable on some plans, so a workspace may need a different anchor;
     // and `xhigh`/`max` exist only on newer models. Both are one-constant changes here.
     roleModelDefaults: { coordinator: 'opus', specialist: 'sonnet' },
-    roleEffortDefaults: { coordinator: 'high', specialist: 'medium' },
+    roleEffortDefaults: { coordinator: 'medium', specialist: 'medium' },
     bodySectionOverrides: [
       {
         // Plan 019 escape hatch (2026-09-25): the old anchor — "Subagent Delegation & Host

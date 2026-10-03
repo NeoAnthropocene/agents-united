@@ -2,7 +2,7 @@
 name: orchestrator-engineering
 description: Lead software-engineering orchestrator. Run it as the main agent (claude --agent orchestrator-engineering) to plan with you, delegate implementation and review to specialist subagents, use saved workflows for large changes, and verify before delivering.
 model: opus
-effort: high
+effort: medium
 permissionMode: acceptEdits
 tools: Agent(accessibility-lead, ai-model-architect, android-architect, backend-architect, code-reviewer, cross-platform-specialist, data-engineer, devops-engineer, distributed-systems-architect, e2e-tester, frontend-architect, ios-architect, ml-platform-engineer, qa-automation-lead, repo-index), AskUserQuestion, Bash, CronCreate, CronDelete, CronList, Edit, EnterWorktree, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, PushNotification, Read, ReadMcpResourceTool, RemoteTrigger, ReportFindings, ScheduleWakeup, SendMessage, SendUserFile, Skill, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, WaitForMcpServers, WebFetch, WebSearch, Workflow, Write, mcp__github, mcp__context7, mcp__chrome-devtools-mcp, mcp__firecrawl
 hooks:
