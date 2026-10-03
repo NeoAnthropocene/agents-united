@@ -135,7 +135,7 @@
     },
     "skillNames": {
       "status": "unverified",
-      "note": "The docs name rule is lowercase with hyphens, and every skill becomes a slash command. One registry skill was not clean: it kept an underscore in its .agents/skills copy (the Claude and Cline projections normalised it), so it was renamed generative-ui on 2026-10-03; that the renamed skill loads on this host is not yet tried in a session. One name is still shared with a built-in: grill-me and the built-in /grill-me, and which wins was not tried (tests/native-antigravity-skills.test.ts pins it as the only exception)."
+      "note": "The docs name rule is lowercase with hyphens, and every skill becomes a slash command. One registry skill was not clean: it kept an underscore in its .agents/skills copy (the Claude and Cline projections normalised it), so it was renamed generative-ui on 2026-10-03; that the renamed skill loads on this host could not be established: a real headless session listed none of the project skills at all (observations/2026-10-03-agy-1.2.15-skills.md), so the cause is not the rename. One name is still shared with a built-in: grill-me and the built-in /grill-me, and which wins was not tried (tests/native-antigravity-skills.test.ts pins it as the only exception)."
     },
     "registryFiles": {
       "status": "unverified",
