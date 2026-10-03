@@ -85,12 +85,24 @@ describe('the registry skills stay Antigravity-loadable (they are installed as w
     expect(profile.features.workflows.status).toBe('deprecated');
   });
 
-  it('keep the keys the docs do not document recorded as unverified in the profile, not claimed as honoured', () => {
+  it('record the keys the docs do not document as listed by the host but not as honoured: a real folder copy of a registry skill was listed, what disable-slash-command does was not tried', () => {
     const profile = JSON.parse(read(path.join(registry, 'hosts/antigravity/profile.json'))) as { features: Record<string, { status: string; note: string }> };
     const feature = profile.features.skillFrontmatterExtras;
-    expect(feature.status).toBe('unverified');
+    expect(feature.status).toBe('observed');
     expect(feature.note).toMatch(/metadata/);
     expect(feature.note).toMatch(/disable-slash-command/);
+    expect(feature.note).toMatch(/listed/i);
+    expect(feature.note).toMatch(/not (tried|exercised)/i);
+  });
+
+  it('record that a skill folder installed as a link is not seen by the host (observed), so the default symlink install is not served on this host', () => {
+    const profile = JSON.parse(read(path.join(registry, 'hosts/antigravity/profile.json'))) as { features: Record<string, { status: string; note: string }> };
+    const feature = profile.features.skillInstallMethod;
+    expect(feature.status).toBe('observed');
+    expect(feature.note).toMatch(/junction/i);
+    expect(feature.note).toMatch(/not listed/i);
+    expect(feature.note).toMatch(/--copy/);
+    expect(feature.note).toMatch(/unverified|not established/i);
   });
 
   it('record the name that is still not clean for this host (grill-me) as unverified, and the rename of generative-ui, so a reader of the profile is not told it works', () => {
