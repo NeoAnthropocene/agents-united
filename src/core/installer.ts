@@ -9,6 +9,7 @@ import type { IndexableAsset } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { AntigravityProjector } from './antigravity-projector.js';
 import type { AntigravityNativePlan } from './antigravity-projector.js';
+import { ANTIGRAVITY_LEGACY_ENTRYPOINT_RULE } from './antigravity-projector.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, loadGuardHookEntry, mergeAntigravityHook, removeAntigravityHook } from './antigravity-hooks.js';
 import { ANTIGRAVITY_MCP_FILE, describeMcpOutcomes, loadMcpCatalog, syncAntigravityMcp, type McpEntry } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
@@ -453,7 +454,7 @@ private toPosix(p: string): string {
     const { enabled, storeDir, root, lockfile, resolved, registryDir, bundleName, declared, declaredAgentFiles, options, projections, now } = args;
     const plan: AntigravityNativePlan = enabled
       ? await AntigravityProjector.plan(resolved, registryDir)
-      : { artifacts: [], coveredAgents: new Set(), coveredRules: new Set(), replacedBy: new Map() };
+      : { artifacts: [], coveredAgents: new Set(), coveredRules: new Set(), replacedBy: new Map(), omittedRules: new Set() };
 
     // Clear the store copy each native file replaces, remembering who owned it so the projection inherits the owners.
     const inheritedOwners = new Map<string, string[]>();
@@ -477,6 +478,13 @@ private toPosix(p: string): string {
 
     await this.applyCompoundLane('antigravity', bundleName, plan.artifacts, { root, lockfile, declared, projections, now, force: options.force });
 
+    // ADR 0031 addendum — while any native rule is installed (any bundle), the legacy entrypoint rule is left out of the store: agy reads it as well,
+    // so the same policy would reach the agent twice. It is judged on the lockfile, so a second bundle cannot bring it back.
+    if (enabled && Object.values(lockfile.projections ?? {}).some(proj => proj.host === 'antigravity' && proj.kind === 'rule')) {
+      plan.omittedRules.add(ANTIGRAVITY_LEGACY_ENTRYPOINT_RULE);
+      await this.dropLegacyEntrypointRule(storeDir, lockfile, options.force, projections);
+    }
+
     for (const [nativeRel, owners] of inheritedOwners) {
       const projection = lockfile.projections?.[nativeRel];
       if (projection) projection.owners = Array.from(new Set([...projection.owners, ...owners]));
@@ -484,6 +492,35 @@ private toPosix(p: string): string {
     await this.syncAntigravityGuardHook(root, lockfile, registryDir, projections);
     await this.syncAntigravityMcpServers({ enabled, root, lockfile, registryDir, bundleName, declaredAgentFiles, projections });
     return enabled ? plan : undefined;
+  }
+
+  /**
+   * Clears the legacy entrypoint rule a store install left, when it is ours: a link is unlinked (never the registry), an unmodified copy removed. A copy
+   * the user edited is left in place and no longer tracked (so uninstall never removes it), and the install says so; `--force` removes it as for any
+   * native replacement. A file the lockfile does not record is the user's and is not touched.
+   */
+  private async dropLegacyEntrypointRule(storeDir: string, lockfile: LockfileManifest, force: boolean | undefined, projections: ProjectionInfo[]): Promise<void> {
+    const storeKey = `rules/${ANTIGRAVITY_LEGACY_ENTRYPOINT_RULE}`;
+    const record = lockfile.files[storeKey];
+    if (!record) return;
+    const dest = path.join(storeDir, storeKey);
+    const stat = await fs.lstat(dest).catch(() => null);
+    if (stat?.isSymbolicLink()) {
+      await fs.unlink(dest);
+    } else if (stat) {
+      const current = await this.calculateHash(dest).catch(() => null);
+      if (!force && record.method !== 'symlink' && current && record.hash && current !== record.hash) {
+        delete lockfile.files[storeKey];
+        projections.push({
+          host: 'antigravity',
+          path: `.agents/${storeKey}`,
+          warnings: [`${ANTIGRAVITY_LEGACY_ENTRYPOINT_RULE} was edited, so it is left in place and no longer tracked. agy reads it as well as the native rules, so the same policy reaches the agent twice; delete it by hand if you do not want both.`],
+        });
+        return;
+      }
+      await fs.remove(dest);
+    }
+    delete lockfile.files[storeKey];
   }
 
   /** The registry agent files a bundle declares itself (its orchestrator and roster), out of what it resolves to; all of them for an unbundled install. */
@@ -1413,6 +1450,7 @@ private toPosix(p: string): string {
       // Copy/Symlink Rules
       for (const ruleFile of resolved.rules) {
         if (nativePlan?.coveredRules.has(ruleFile)) continue; // a native rule replaces this store copy
+        if (nativePlan?.omittedRules.has(ruleFile)) continue; // the legacy entrypoint is left out while a native rule is installed
         const src = path.join(registryDir, 'rules', ruleFile);
         const dest = path.join(subPaths.rulesDir, ruleFile);
 

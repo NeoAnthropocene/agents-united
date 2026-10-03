@@ -80,8 +80,8 @@ describe('native install lane for Antigravity (agents add --native)', () => {
     // The prefixed specialist copies are gone, and the coordinator's path now holds the native agent, not a second copy.
     for (const role of ROLES.filter(item => item !== 'orchestrator-engineering')) expect(await fs.pathExists(at(`.agents/agents/${storeFileOf(role)}`)), role).toBe(false);
     expect(read(at('.agents/agents/orchestrator-engineering.md'))).toBe(expectedRole('orchestrator-engineering'));
-    // What has no native file stays: the host entrypoint rule and the skills.
-    expect(await fs.pathExists(at('.agents/rules/GEMINI.md'))).toBe(true);
+    // What has no native file stays: the skills. The legacy entrypoint rule is left out (ADR 0031 addendum): the native rules say the same.
+    expect(await fs.pathExists(at('.agents/rules/GEMINI.md'))).toBe(false);
     expect(await fs.pathExists(at('.agents/skills/test-driven-development/SKILL.md'))).toBe(true);
   });
 
