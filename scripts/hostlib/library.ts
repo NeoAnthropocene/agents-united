@@ -11,6 +11,7 @@ import { auditDocument } from './audit.ts';
 import type { AuditFinding } from './audit.ts';
 import { classifyEntry, latestPerSection, newEntriesSince, parseChangelog } from './changelog.ts';
 import { GITHUB_API_HOST, releasesApiUrl, renderReleases, requestHeaders } from './github-releases.ts';
+import { execCommand, renderAgyChangelog, type CommandRunner } from './command-changelog.ts';
 import { diffIndex, parseIndex } from './llms-index.ts';
 import { ARTIFACT_TYPES } from './types.ts';
 import type {
@@ -22,6 +23,7 @@ import type {
   HostSources,
   IndexLink,
   ReleaseSource,
+  CommandSource,
 } from './types.ts';
 
 const artifactType = z.enum(ARTIFACT_TYPES);
@@ -44,6 +46,20 @@ const SourcesSchema = z
             section: z.string().min(1),
             snapshot: z.string().regex(/^[\w.-]+$/),
             pages: z.number().int().min(1).max(5).optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .optional(),
+    commands: z
+      .array(
+        z
+          .object({
+            command: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/, 'command must be a bare executable name'),
+            args: z.array(z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_.-]*$/, 'arguments must be plain tokens')),
+            section: z.string().min(1),
+            snapshot: z.string().regex(/^[\w.-]+$/),
+            format: z.enum(['agy-changelog']),
           })
           .strict(),
       )
@@ -120,6 +136,12 @@ export function validateSources(raw: unknown, where = 'sources.json'): HostSourc
     if (snapshots.has(release.snapshot)) throw new Error(`Host library sources invalid (${where}): releases snapshot ${release.snapshot} clashes with another snapshot.`);
     sections.add(release.section);
     snapshots.add(release.snapshot);
+  }
+  for (const source of sources.commands ?? []) {
+    if (sections.has(source.section)) throw new Error(`Host library sources invalid (${where}): duplicate changelog section "${source.section}".`);
+    if (snapshots.has(source.snapshot)) throw new Error(`Host library sources invalid (${where}): command snapshot ${source.snapshot} clashes with another snapshot.`);
+    sections.add(source.section);
+    snapshots.add(source.snapshot);
   }
   return sources;
 }
@@ -244,6 +266,25 @@ async function fetchReleases(source: ReleaseSource, fetcher: Fetcher): Promise<R
   return { ok: true, text };
 }
 
+// ── commands (a host binary's own changelog as a changelog source) ───────────────────────────
+
+/** The label a command snapshot carries in the lock instead of a URL. */
+export const commandLabel = (source: CommandSource): string => [source.command, ...source.args].join(' ');
+export const commandSourceUrl = (source: CommandSource): string => `command:${commandLabel(source)}`;
+
+type CommandRun = { status: 'ok'; text: string } | { status: 'skipped' | 'failed'; error: string };
+
+/** Run a command source and render its output; a binary that is not installed is skipped, one that fails or prints junk is a failure. */
+async function runCommandSource(source: CommandSource, run: CommandRunner): Promise<CommandRun> {
+  const result = await run(source.command, source.args);
+  if (!result.ok) return { status: result.missing ? 'skipped' : 'failed', error: result.error };
+  try {
+    return { status: 'ok', text: renderAgyChangelog(result.text, { section: source.section }) };
+  } catch (error) {
+    return { status: 'failed', error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 // ── check ────────────────────────────────────────────────────────────────────────────────────
 
 export interface ClassifiedEntry extends Pick<ChangelogEntry, 'section' | 'version' | 'title'> {
@@ -259,6 +300,8 @@ export interface HostCheckReport {
     url: string;
     /** GitHub release streams followed in addition (one per section). */
     releases: Array<{ section: string; url: string }>;
+    /** Host binaries followed in addition: what became of each run (`skipped` = the binary is not installed here). */
+    commands: Array<{ section: string; command: string; status: 'ok' | 'skipped' | 'failed' }>;
     newEntries: ClassifiedEntry[];
     lostBaselines: string[];
     latest: Record<string, string>;
@@ -270,7 +313,7 @@ export interface HostCheckReport {
 }
 
 /** Changelog-first detection. Read-only: writes nothing. */
-export async function checkHost(hostDir: string, fetcher: Fetcher): Promise<HostCheckReport> {
+export async function checkHost(hostDir: string, fetcher: Fetcher, options: { runCommand?: CommandRunner } = {}): Promise<HostCheckReport> {
   const sources = loadSources(hostDir);
   const lock = loadLock(hostDir, sources.host);
   const errors: string[] = [];
@@ -283,6 +326,7 @@ export async function checkHost(hostDir: string, fetcher: Fetcher): Promise<Host
     changelog: {
       url: sources.changelog.url,
       releases: (sources.releases ?? []).map(source => ({ section: source.section, url: releasesApiUrl(source.repo) })),
+      commands: [],
       newEntries: [],
       lostBaselines: [],
       latest: {},
@@ -310,6 +354,12 @@ export async function checkHost(hostDir: string, fetcher: Fetcher): Promise<Host
       continue;
     }
     entries.push(...parseChangelog(fetched.text));
+  }
+  for (const source of sources.commands ?? []) {
+    const run = await runCommandSource(source, options.runCommand ?? execCommand);
+    report.changelog.commands.push({ section: source.section, command: commandLabel(source), status: run.status });
+    if (run.status === 'ok') entries.push(...parseChangelog(run.text));
+    else if (run.status === 'failed') errors.push(`command ${commandLabel(source)}: ${run.error}`);
   }
   report.changelog.latest = latestPerSection(entries);
   const fresh = newEntriesSince(entries, lock.changelog.lastSeen);
@@ -361,12 +411,14 @@ export interface RefreshOptions {
   /** Record the current newest changelog versions as seen (after the plan is written). */
   advanceChangelog?: boolean;
   now?: () => Date;
+  /** How a command source is run (default: the real binary, no shell); tests inject one. */
+  runCommand?: CommandRunner;
 }
 
 export interface SnapshotOutcome {
   file: string;
   url: string;
-  status: 'created' | 'updated' | 'unchanged' | 'blocked' | 'failed';
+  status: 'created' | 'updated' | 'unchanged' | 'blocked' | 'failed' | 'skipped';
   detail?: string;
   findings?: AuditFinding[];
 }
@@ -445,6 +497,18 @@ export async function refreshHost(hostDir: string, fetcher: Fetcher, options: Re
     if (outcome.status !== 'blocked') releaseTexts.push(fetched.text);
   }
 
+  for (const source of sources.commands ?? []) {
+    const run = await runCommandSource(source, options.runCommand ?? execCommand);
+    const url = commandSourceUrl(source);
+    if (run.status !== 'ok') {
+      outcomes.push({ file: source.snapshot, url, status: run.status, detail: run.error });
+      continue;
+    }
+    const outcome = writeSnapshot(hostDir, sources, lock, source.snapshot, url, run.text, 'command', now);
+    outcomes.push(outcome);
+    if (outcome.status !== 'blocked') releaseTexts.push(run.text);
+  }
+
   if (options.advanceChangelog && (changelogText !== undefined || releaseTexts.length > 0)) {
     const entries = [...(changelogText !== undefined ? parseChangelog(changelogText) : []), ...releaseTexts.flatMap(text => parseChangelog(text))];
     // Overlay, never replace: a section whose source failed or was blocked this time keeps its previous baseline.
@@ -473,6 +537,7 @@ export function ingestSnapshot(
     ...sources.indexes.map(index => [index.snapshot, index.url] as [string, string]),
     [sources.changelog.snapshot, sources.changelog.url],
     ...(sources.releases ?? []).map(source => [source.snapshot, releasesApiUrl(source.repo)] as [string, string]),
+    ...(sources.commands ?? []).map(source => [source.snapshot, commandSourceUrl(source)] as [string, string]),
     ...(Object.entries(sources.pages) as Array<[ArtifactType, Array<{ url: string; slug: string }>]>).flatMap(([type, pages]) =>
       pages.map(page => [pagePath(type, page.slug), page.url] as [string, string]),
     ),
@@ -483,10 +548,13 @@ export function ingestSnapshot(
   const sourceUrl = declared.get(rel);
   if (!sourceUrl) throw new Error(`ingest: ${rel} is not a snapshot declared in ${sources.host}/sources.json`);
   const now = (options.now ?? (() => new Date()))();
-  const outcome = writeSnapshot(hostDir, sources, lock, rel, sourceUrl, text, via, now);
-  const isChangelog = rel === sources.changelog.snapshot || (sources.releases ?? []).some(source => source.snapshot === rel);
+  // A command snapshot is ingested as the raw output of its command, which is rendered here exactly as a run would.
+  const commandSource = (sources.commands ?? []).find(source => source.snapshot === rel);
+  const body = commandSource ? renderAgyChangelog(text, { section: commandSource.section }) : text;
+  const outcome = writeSnapshot(hostDir, sources, lock, rel, sourceUrl, body, via, now);
+  const isChangelog = rel === sources.changelog.snapshot || (sources.releases ?? []).some(source => source.snapshot === rel) || commandSource !== undefined;
   if (outcome.status !== 'blocked' && isChangelog && options.advanceChangelog) {
-    lock.changelog.lastSeen = { ...lock.changelog.lastSeen, ...latestPerSection(parseChangelog(text)) };
+    lock.changelog.lastSeen = { ...lock.changelog.lastSeen, ...latestPerSection(parseChangelog(body)) };
     lock.changelog.checkedAt = now.toISOString();
   }
   if (outcome.status !== 'blocked') saveLock(hostDir, lock);

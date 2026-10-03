@@ -12,6 +12,15 @@
     "url": "https://antigravity.google/docs/changelog.md",
     "snapshot": "changelog.md"
   },
+  "commands": [
+    {
+      "command": "agy",
+      "args": ["changelog"],
+      "section": "Antigravity CLI (agy changelog)",
+      "snapshot": "changelog-agy.md",
+      "format": "agy-changelog"
+    }
+  ],
   "pages": {
     "agent": [
       {
