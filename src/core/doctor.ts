@@ -293,6 +293,14 @@ export class DoctorEngine {
         const parsed: LockfileManifest = await fs.readJson(subPaths.lockfile);
         manifest = parsed;
         agentsCount = parsed.installed?.agents?.length || 0;
+        // The native lanes replace the store's agent copies with role projections, so the store can list none while the roles are
+        // installed: fall back to what the lockfile records (the asked host's roles, or distinct role names across hosts).
+        if (agentsCount === 0) {
+          const roles = Object.entries(parsed.projections ?? {})
+            .filter(([, proj]) => proj.kind === 'role' && (!host || proj.host === host))
+            .map(([relPath]) => path.posix.basename(relPath.replace(/\\/g, '/')).replace(/\.(md|yml)$/, ''));
+          agentsCount = new Set(roles).size;
+        }
         skillsCount = parsed.installed?.skills?.length || 0;
         // ADR 0016 unified workflows into skills: `installed.workflows` is a
         // deprecated legacy field that stays empty on modern installs, so reading it
