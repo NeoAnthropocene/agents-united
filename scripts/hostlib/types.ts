@@ -71,6 +71,23 @@ export interface ReleaseSource {
   pages?: number;
 }
 
+/**
+ * A host binary's own changelog used as a changelog source (Antigravity: `agy changelog`, which is free and ahead of the docs). The
+ * binary is looked up on PATH by its bare name and run with these fixed arguments and no shell; a machine without it skips the source.
+ */
+export interface CommandSource {
+  /** Bare executable name (no path, no shell syntax). */
+  command: string;
+  /** Fixed arguments, each a plain token. */
+  args: string[];
+  /** Changelog section the output is filed under; also the key of the recorded baseline. */
+  section: string;
+  /** Snapshot file name relative to the host directory (the rendered changelog). */
+  snapshot: string;
+  /** How the output is read. */
+  format: 'agy-changelog';
+}
+
 export interface HostSources {
   host: string;
   label: string;
@@ -78,6 +95,8 @@ export interface HostSources {
   changelog: { url: string; snapshot: string };
   /** GitHub release streams followed in addition to the markdown changelog (optional). */
   releases?: ReleaseSource[];
+  /** Host binaries whose changelog output is followed in addition (optional). */
+  commands?: CommandSource[];
   pages: Partial<Record<ArtifactType, SourcePage[]>>;
   /** Reference text bundled inside the host, per artifact type (optional). */
   bundled?: Partial<Record<ArtifactType, BundledSource[]>>;

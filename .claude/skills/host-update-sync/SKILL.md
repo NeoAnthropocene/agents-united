@@ -42,6 +42,11 @@ Ingest runs the same audit gate and records the channel in the lock.
    A host can follow GitHub release streams as well as a markdown changelog (`sources.json` `releases`; Cline's
    CLI and SDK release separately from its extension changelog). They are read through the GitHub API and
    reported under their own section (`CLI`, `SDK`); a rate-limit error is an unreachable host, not "no change".
+   A host can also follow its own binary's changelog (`sources.json` `commands`; Antigravity's `agy changelog`, free and
+   ahead of the docs, section `Antigravity CLI (agy changelog)`). The check runs it with fixed arguments and no shell; on a
+   machine without the binary it prints `skipped` and says nothing is wrong (CI has none), so a run there does not see
+   that section. `hostlib:refresh` snapshots it like any page; to seed or to ingest it from another machine use
+   `hostlib:ingest --as changelog-agy.md --via command` with the raw output of `agy changelog`.
 2. **Refresh only what changed.**
    `npm run hostlib:refresh -- --host <h> --types <affected types> --advance-changelog`.
    New pages worth tracking (a new hook event doc, a new tool page) → add them to that host's

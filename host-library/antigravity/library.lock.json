@@ -1,14 +1,21 @@
 {
   "changelog": {
-    "checkedAt": "2026-09-30T10:43:51.225Z",
+    "checkedAt": "2026-10-03T09:49:41.446Z",
     "lastSeen": {
       "Antigravity 2.0": "2.18.1",
       "Antigravity CLI": "1.2.11",
+      "Antigravity CLI (agy changelog)": "1.2.16",
       "Antigravity IDE": "2.5.5",
       "Antigravity SDK": "0.1.18"
     }
   },
   "files": {
+    "changelog-agy.md": {
+      "fetchedAt": "2026-10-03T09:49:41.446Z",
+      "sha256": "sha256:ddd26b8207f8e7b1ea98432f89ab37cbe791bf3abdfe78a89e963bdc978a457b",
+      "url": "command:agy changelog",
+      "via": "command"
+    },
     "changelog.md": {
       "fetchedAt": "2026-09-30T08:10:02.812Z",
       "sha256": "sha256:5158578c4e9b42a67e60516484a81992018ff6d458aa1e83d5462a832d29d35b",

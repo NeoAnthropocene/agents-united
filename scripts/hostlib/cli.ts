@@ -52,6 +52,9 @@ function typesFrom(value: string | undefined): ArtifactType[] {
 function summarise(report: HostCheckReport): string {
   const lines = [`## ${report.label} (${report.host})${report.reachable ? '' : ' — UNREACHABLE (partial)'}`];
   for (const error of report.errors) lines.push(`- error: ${error}`);
+  for (const command of report.changelog.commands) {
+    if (command.status === 'skipped') lines.push(`- skipped: \`${command.command}\` is not installed on this machine (section "${command.section}" not checked)`);
+  }
   if (report.changelog.newEntries.length === 0 && report.changelog.lostBaselines.length === 0) {
     lines.push('- changelog: no new entries');
   } else {
