@@ -59,5 +59,6 @@ Native output lands in `registry/hosts/claude/hooks/` as real scripts plus the J
 ## Authoring notes (agents-united, not host behaviour)
 
 - A read-only guard for the reviewer role is one `PreToolUse` handler with `matcher: "Bash|PowerShell|Edit|Write|NotebookEdit"` that exits 2 unless the command is on a read-only list; keep the script in `registry/hosts/claude/hooks/` and register it from the agent's frontmatter (project scope) or plugin-level `hooks.json`.
+- The shipped guards are `registry/hosts/claude/hooks/agents-united-guard.js` and `agents-united-readonly-guard.js` (the inline `src/core` guards written out unchanged), installed to `.claude/hooks/` and named by an agent as `node ${CLAUDE_PROJECT_DIR}/.claude/hooks/<name>.js` (ADR 0035). A user-level (global) agent has no portable placeholder, so it keeps the inline `node -e` guard. A missing script is a fail-open gate (rule above), so the doctor checks the file exists.
 - Ship each hook with a test that pipes a sample JSON payload (including a Windows-style backslash path) into the script and asserts exit code 2 or the JSON decision.
 - The library snapshots `hooks.md` and `hooks-guide.md`; the "hooks-guide" examples were not used for any rule here.

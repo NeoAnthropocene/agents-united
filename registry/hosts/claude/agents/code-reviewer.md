@@ -9,7 +9,7 @@ skills:
   - security-audit
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
-  PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|mcp__.*","hooks":[{"type":"command","command":"node","args":["-e","let s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>{let n=\"\";try{n=String(JSON.parse(s).tool_name||\"\")}catch(e){process.stderr.write(\"Blocked by agents-united read-only guard: unreadable hook input.\\n\");process.exit(2)}const t=n.split(\"__\").pop();if(/^(Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit)$/.test(n)||(/^mcp__/.test(n)&&/^(create|update|delete|push|merge|write|edit|fork|add|remove|set|run|execute|apply|deploy|upload|reset|rebase|restore|cancel|approve|issue_write|sub_issue_write|request)/.test(t))){process.stderr.write(\"Blocked by agents-united read-only guard: \"+n+\" would change state, and this role only reads and reports.\\n\");process.exit(2)}})"]}]}]
+  PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|mcp__.*","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js"]}]}]
   # agents-united:hooks:end
 ---
 

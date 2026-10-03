@@ -1,5 +1,8 @@
 import yaml from 'yaml';
-import { managedGuardHooks } from './guard.js';
+import { managedGuardHooks, nativeGuardHooks, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
+import { readOnlyGuardHooks } from './readonly-guard.js';
+import { syncHooks } from './native-floor.js';
+import { inspectNativeAgent } from './native-guard.js';
 import path from 'node:path';
 import fs from 'fs-extra';
 import type {
@@ -15,7 +18,7 @@ import type {
 import type { ClaudeDialect } from './types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { CLAUDE_FIELD_POLICY, validateProjectionOverlays } from './overlays.js';
-import { nativeRoleSource, nativeWorkflowSource, renderNativeRole, renderNativeWorkflow } from './native-package.js';
+import { nativeHookSource, nativeRoleSource, nativeWorkflowSource, renderNativeHook, renderNativeRole, renderNativeWorkflow } from './native-package.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
 export interface ClaudeRenderResult {
@@ -34,6 +37,8 @@ export interface PlannedClaudeArtifact {
   distributionOnly?: boolean;
 
   managedMarker: boolean;
+  /** A native-only file with no canonical asset, still owned by the bundle that installs it (see `PlannedProjectionArtifact`). */
+  ownedByBundle?: boolean;
 }
 
 /** Canonical frontmatter keys that map 1:1 into a Claude field (no loss, no ledger row). */
@@ -253,10 +258,52 @@ export class ClaudeProjector {
   /**
    * Plan 032 Phase 7 — the installed bytes of a role's committed native agent (`registry/hosts/claude/agents/<role>.md`
    * behind the managed marker), or `undefined` when the role has none and keeps the legacy projection.
+   *
+   * The committed file names its guard as a script file under `.claude/hooks/` (`NATIVE_GUARD_FILES`). A GLOBAL install cannot name
+   * one portably, so it passes `guardForm: 'inline'` and the role carries the same guard as `node -e <script>`. The managed marker
+   * hashes the committed source either way, so freshness is judged the same in both scopes.
    */
-  public static nativeRoleContent(registryDir: string, roleName: string, canonicalRel: string): string | undefined {
+  public static nativeRoleContent(registryDir: string, roleName: string, canonicalRel: string, guardForm: 'file' | 'inline' = 'file'): string | undefined {
     const source = nativeRoleSource(registryDir, 'claude', roleName);
-    return source === undefined ? undefined : renderNativeRole(fs.readFileSync(source, 'utf8'), canonicalRel);
+    if (source === undefined) return undefined;
+    const text = fs.readFileSync(source, 'utf8');
+    const rendered = renderNativeRole(text, canonicalRel);
+    if (guardForm === 'file') return rendered;
+    const { guard } = inspectNativeAgent(rendered);
+    if (guard === 'none') return rendered;
+    return syncHooks(rendered, guard === 'read-only' ? readOnlyGuardHooks() : nativeGuardHooks());
+  }
+
+  /** The guard script files the given native roles name (project scope), read from their committed files, in a stable order. */
+  public static nativeGuardKinds(registryDir: string, roleNames: string[]): NativeGuardKind[] {
+    const kinds = new Set<NativeGuardKind>();
+    for (const roleName of roleNames) {
+      const source = nativeRoleSource(registryDir, 'claude', roleName);
+      if (source !== undefined) for (const kind of inspectNativeAgent(fs.readFileSync(source, 'utf8')).guardFiles) kinds.add(kind);
+    }
+    return (Object.keys(NATIVE_GUARD_FILES) as NativeGuardKind[]).filter(kind => kinds.has(kind));
+  }
+
+  /**
+   * The guard scripts as tracked projections (`registry/hosts/claude/hooks/<name>.js` to `.claude/hooks/<name>.js`): code the host runs,
+   * copied unchanged with the marker as a trailing comment. A script belongs to the bundle that installs a role naming it, and is
+   * refcounted like the roles are.
+   */
+  public static nativeGuardArtifacts(registryDir: string, kinds: NativeGuardKind[]): PlannedClaudeArtifact[] {
+    const artifacts: PlannedClaudeArtifact[] = [];
+    for (const kind of kinds) {
+      const { name, rel } = NATIVE_GUARD_FILES[kind];
+      const source = nativeHookSource(registryDir, 'claude', name);
+      if (source === undefined) continue;
+      artifacts.push({
+        kind: 'hook',
+        relPath: rel,
+        content: renderNativeHook(fs.readFileSync(source, 'utf8'), `hosts/claude/hooks/${name}.js`, 'claude'),
+        managedMarker: true,
+        ownedByBundle: true,
+      });
+    }
+    return artifacts;
   }
 
   /** The installed bytes of a committed native workflow (`registry/hosts/claude/workflows/<name>.js`), or `undefined` when there is none. */
@@ -799,7 +846,10 @@ export class ClaudeProjector {
     _excludeAddons?: string[],
     nativeLane = false
   ): Promise<PlannedClaudeArtifact[]> {
-    void scope;
+    // A global install writes its roles into `~/.claude/agents`, where `${CLAUDE_PROJECT_DIR}` cannot name a script, so the native
+    // roles keep the inline guard there and no script file is planned (see `nativeRoleContent`).
+    const guardForm = scope === 'global' ? 'inline' : 'file';
+    const nativeRoleNames: string[] = [];
     const artifacts: PlannedClaudeArtifact[] = [];
     const coordinatorFile = bundle.orchestrator || `${bundle.name}.md`;
     // A coordinator delegates to its domain team, not just this bundle's declared slice of it.
@@ -817,7 +867,8 @@ export class ClaudeProjector {
       const content = await fs.readFile(src, 'utf8');
       const isCoordinator = coordinatorFile === agentFile;
       const roleName = ClaudeProjector.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
-      const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, roleName, canonicalRel) : undefined;
+      const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, roleName, canonicalRel, guardForm) : undefined;
+      if (native !== undefined) nativeRoleNames.push(roleName);
       const rendered = native ?? ClaudeProjector.renderRole(content, canonicalRel, {
         allowlist: isCoordinator ? specialistNames : undefined,
         maxTurns: isCoordinator ? maxTurns : undefined,
@@ -830,6 +881,8 @@ export class ClaudeProjector {
         managedMarker: true,
       });
     }
+    // The guard scripts the native roles name travel with them (project scope only).
+    if (guardForm === 'file') artifacts.push(...ClaudeProjector.nativeGuardArtifacts(registryDir, ClaudeProjector.nativeGuardKinds(registryDir, nativeRoleNames)));
 
     // 2. Skills, plus every auxiliary resource copied byte-for-byte.
     for (const skillName of resolved.skills || []) {

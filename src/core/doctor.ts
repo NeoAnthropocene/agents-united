@@ -16,6 +16,7 @@ import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME
 import { inspectAntigravityMcp, loadMcpCatalog } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
 import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
+import { NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
@@ -655,6 +656,9 @@ export class DoctorEngine {
     // (edits, stale installs) is already covered by the projection hash and freshness checks above.
     if (host === 'claude' && manifest?.nativeLane === true) {
       const workspaceRoot = workspaceRootOf(root);
+      // Roles that name a guard script file (project scope), per script: a hook whose script cannot start does not block, so a gone
+      // script is the guard gone, whatever the role's frontmatter still says.
+      const needsScript = new Map<NativeGuardKind, { roles: string[]; owner?: string }>();
       for (const [relPath, proj] of Object.entries(manifest.projections ?? {})) {
         const match = proj.host === 'claude' && proj.kind === 'role' ? /^\.claude\/agents\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
         if (!match) continue;
@@ -662,11 +666,26 @@ export class DoctorEngine {
         if (!await fs.pathExists(abs)) continue; // missing is reported above
         const text = await fs.readFile(abs, 'utf8');
         if (!text.includes('profile: claude-native')) continue;
-        const problem = nativeGuardProblem(inspectNativeAgent(text));
+        const facts = inspectNativeAgent(text);
+        const problem = nativeGuardProblem(facts);
         if (problem) {
           const owner = proj.owners[0];
           warnings.push(`Native agent ${match[1]} ${problem}.` + (owner ? ` Run: agents update ${owner} --fanout claude to restore it.` : ''));
         }
+        for (const kind of facts.guardFiles) {
+          const need = needsScript.get(kind) ?? { roles: [], owner: proj.owners[0] };
+          need.roles.push(match[1]);
+          needsScript.set(kind, need);
+        }
+      }
+      for (const [kind, need] of needsScript) {
+        const { rel } = NATIVE_GUARD_FILES[kind];
+        if (await fs.pathExists(path.join(workspaceRoot, rel))) continue;
+        warnings.push(
+          `Native agent${need.roles.length > 1 ? 's' : ''} ${need.roles.join(', ')} ${need.roles.length > 1 ? 'depend' : 'depends'} on the guard script ${rel}, which is missing:` +
+          ' when a hook script cannot start, Claude Code lets the call through unguarded.' +
+          (need.owner ? ` Run: agents update ${need.owner} --fanout claude to restore it.` : '')
+        );
       }
     }
 

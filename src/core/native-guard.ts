@@ -4,7 +4,7 @@
  * has lost its guard (a safety property); the maintainers' conformance tests use it for the rest. Pure: text in, facts out.
  */
 import yaml from 'yaml';
-import { GUARD_SCRIPT } from './guard.js';
+import { GUARD_SCRIPT, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 
 export type NativeGuard = 'read-only' | 'destructive' | 'none';
@@ -16,6 +16,8 @@ export interface NativeAgentFacts {
   meta: Record<string, unknown>;
   tools: string[];
   guard: NativeGuard;
+  /** The guard script files the hooks name (empty for the inline form): each one must exist, or the host lets the call through. */
+  guardFiles: NativeGuardKind[];
   holdsWriter: boolean;
 }
 
@@ -76,15 +78,21 @@ export function splitTools(value: unknown): string[] {
   return out.filter(Boolean);
 }
 
-function guardOf(hooks: unknown): NativeGuard {
+/** The guard a role's hooks carry, and the script files they name (project scope: the guard exists only while the file does). */
+function guardOf(hooks: unknown): { guard: NativeGuard; files: NativeGuardKind[] } {
   const scripts: string[] = [];
+  const references: string[] = [];
   const groups = (hooks as { PreToolUse?: Array<{ hooks?: Array<{ args?: unknown[] }> }> } | undefined)?.PreToolUse;
   for (const group of Array.isArray(groups) ? groups : []) {
-    for (const hook of group.hooks ?? []) if (typeof hook.args?.[1] === 'string') scripts.push(hook.args[1]);
+    for (const hook of group.hooks ?? []) {
+      if (typeof hook.args?.[1] === 'string') scripts.push(hook.args[1]);
+      if (hook.args?.length === 1 && typeof hook.args[0] === 'string') references.push(hook.args[0]);
+    }
   }
-  if (scripts.includes(READ_ONLY_GUARD_SCRIPT)) return 'read-only';
-  if (scripts.includes(GUARD_SCRIPT)) return 'destructive';
-  return 'none';
+  const files = (Object.keys(NATIVE_GUARD_FILES) as NativeGuardKind[]).filter(kind => references.includes(NATIVE_GUARD_FILES[kind].reference));
+  if (scripts.includes(READ_ONLY_GUARD_SCRIPT) || files.includes('read-only')) return { guard: 'read-only', files };
+  if (scripts.includes(GUARD_SCRIPT) || files.includes('destructive')) return { guard: 'destructive', files };
+  return { guard: 'none', files };
 }
 
 /** Reads the frontmatter of a native agent file; unreadable frontmatter yields no tools and no guard. */
@@ -98,7 +106,8 @@ export function inspectNativeAgent(text: string): NativeAgentFacts {
     meta = {};
   }
   const tools = splitTools(meta.tools);
-  return { meta, tools, guard: guardOf(meta.hooks), holdsWriter: tools.some(tool => WRITER_TOOLS.includes(tool)) };
+  const { guard, files } = guardOf(meta.hooks);
+  return { meta, tools, guard, guardFiles: files, holdsWriter: tools.some(tool => WRITER_TOOLS.includes(tool)) };
 }
 
 /** A user-facing problem with the guard of an installed native agent, or `undefined` when it is as it should be. */

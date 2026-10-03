@@ -3,12 +3,12 @@ import os from 'node:os';
 import path from 'node:path';
 import yaml from 'yaml';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { nativeGuardFileHooks } from '../src/core/guard.js';
+import { GUARD_SCRIPT, nativeGuardFileHooks } from '../src/core/guard.js';
 import { checkFloor, checkHooks, syncFloor, syncHooks } from '../src/core/native-floor.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { splitTools } from '../src/core/native-guard.js';
 import { syncRoster } from '../src/core/native-roster.js';
-import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
+import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
@@ -80,10 +80,11 @@ const guardGroups = (role: RoleSpec): Record<string, unknown> => ({ ...(role.gua
 const guardProject = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-united-guard-project-'));
 afterAll(() => fs.rmSync(guardProject, { recursive: true, force: true }));
 const guardScripts = path.resolve('registry/hosts/claude/hooks');
-for (const file of fs.existsSync(guardScripts) ? fs.readdirSync(guardScripts).filter(name => name.endsWith('.js')) : []) {
-  fs.mkdirSync(path.join(guardProject, '.claude/hooks'), { recursive: true });
-  fs.copyFileSync(path.join(guardScripts, file), path.join(guardProject, '.claude/hooks', file));
-}
+/** The guard scripts are the inline guards of `src/core`, written out as files (one author), by the same regeneration as the hooks block. */
+const SCRIPT_FILES: Array<[string, string]> = [
+  ['agents-united-guard.js', GUARD_SCRIPT],
+  ['agents-united-readonly-guard.js', READ_ONLY_GUARD_SCRIPT],
+];
 
 const ceilingOf = (role: RoleSpec): string[] =>
   resolveGrant(loadToolPolicy('registry', 'claude'), cores.get(role.stem)!.capabilities ?? [], { subagent: !role.mainThread, background: false }).tools;
@@ -92,6 +93,8 @@ let cores: Map<string, SemanticCore>;
 beforeAll(async () => {
   cores = await loadSemanticCore('registry');
   if (process.env.UPDATE_NATIVE === '1') {
+    fs.mkdirSync(guardScripts, { recursive: true });
+    for (const [file, script] of SCRIPT_FILES) fs.writeFileSync(path.join(guardScripts, file), `${script}\n`);
     // Specialists first: the coordinator's map is built from their committed files.
     for (const role of [...ROLES].sort((a, b) => Number(a.mainThread ?? false) - Number(b.mainThread ?? false))) {
       if (!fs.existsSync(fileOf(role))) continue;
@@ -101,6 +104,11 @@ beforeAll(async () => {
       if (role.mainThread) synced = syncRoster(synced, rosterTypes());
       fs.writeFileSync(fileOf(role), synced);
     }
+  }
+  // A project directory where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points: the committed scripts, as installed.
+  for (const [file] of SCRIPT_FILES) {
+    fs.mkdirSync(path.join(guardProject, '.claude/hooks'), { recursive: true });
+    fs.copyFileSync(path.join(guardScripts, file), path.join(guardProject, '.claude/hooks', file));
   }
 });
 
