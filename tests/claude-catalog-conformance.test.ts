@@ -15,14 +15,11 @@ const NAME_RULE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const registryDir = path.resolve(process.cwd(), 'registry');
 
 /**
- * Documented, deliberately narrow exception list: canonical names that the Claude lane normalizes at
- * projection time instead of renaming in the store (see Plan 016 decision "generative_ui"). The
- * canonical rename is deferred to the follow-up branch because it is a cross-host migration that
- * would touch the Cline lane. A test below asserts this list cannot silently grow.
+ * Canonical names that the Claude lane normalizes at projection time instead of renaming in the store. It was
+ * `generative_ui` (Plan 016 decision "generative_ui"); the canonical skill is now `generative-ui` (2026-10-03,
+ * tests/generative-ui-rename.test.ts), so the list is empty and a test below asserts it cannot silently grow.
  */
-const KNOWN_PROJECTION_RENAMES: Record<string, string> = {
-  generative_ui: 'generative-ui',
-};
+const KNOWN_PROJECTION_RENAMES: Record<string, string> = {};
 
 function frontmatter(file: string): Record<string, unknown> {
   const match = fs.readFileSync(file, 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -81,9 +78,10 @@ describe('Claude lane catalog conformance (Plan 016 Step 2)', () => {
     expect(invalid).toEqual([]);
   });
 
-  it('keeps the projection-rename exception list minimal and necessary', () => {
+  it('keeps the projection-rename exception list empty: every canonical name is already valid as written', () => {
     const entries = Object.entries(KNOWN_PROJECTION_RENAMES);
-    expect(entries.map(([from]) => from)).toEqual(['generative_ui']);
+    expect(entries).toEqual([]);
+    expect(skillDirs.filter(dir => !NAME_RULE.test(dir))).toEqual([]);
     for (const [from, to] of entries) {
       expect(`raw ${from} is invalid: ${NAME_RULE.test(from)}`).toBe(`raw ${from} is invalid: false`);
       expect(NAME_RULE.test(to)).toBe(true);

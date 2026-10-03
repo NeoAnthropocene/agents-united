@@ -214,7 +214,7 @@ It defines exact configuration patterns for:
   }
   ```
   *(Queries public Community files by file ID without private organization access).*
-- **Fallback (No MCP)**: Agents use local design tokens defined in `registry/skills/design-system-tokens` and native Antigravity skill `/generative_ui` for rich visual widgets, Tailwind layouts, and interactive UI previews.
+- **Fallback (No MCP)**: Agents use local design tokens defined in `registry/skills/design-system-tokens` and native Antigravity skill `/generative-ui` for rich visual widgets, Tailwind layouts, and interactive UI previews.
 
 ---
 
@@ -227,7 +227,7 @@ It defines exact configuration patterns for:
 > **Subagent Configuration Rules**:
 > 1. **Strictly Native Tools in `tools:`**: Only list verified built-in tools (`view_file`, `write_to_file`, `replace_file_content`, `grep_search`, `list_dir`, `run_command`, `search_web`, `read_url_content`, `generate_image`, `manage_task`, `schedule`).
 > 2. **Never Hardcode MCP Tool Names in `tools:`**: Do not list hypothetical or speculative MCP tool names (e.g. `mcp_stitch_generate_screen`, `figma_get_file`) in subagent frontmatter. MCP servers should be configured via the `mcpServers:` array or invoked via `call_mcp_tool`.
-> 3. **Declare Domain Skills for Zero-MCP Fallback**: Equip subagents with domain skills (`skills:` frontmatter) so that in Brainstorming or Limited Operational modes (where MCPs are omitted), the specialist executes deterministic playbooks using native tools (`/generative_ui` for design, `run_command("npx playwright test")` for QA, `search_web` for growth).
+> 3. **Declare Domain Skills for Zero-MCP Fallback**: Equip subagents with domain skills (`skills:` frontmatter) so that in Brainstorming or Limited Operational modes (where MCPs are omitted), the specialist executes deterministic playbooks using native tools (`/generative-ui` for design, `run_command("npx playwright test")` for QA, `search_web` for growth).
 
 ---
 

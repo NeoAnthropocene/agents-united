@@ -104,11 +104,10 @@ Before the skill is wired to any specialist, verify it against **every** active 
   (`[[ ... ]]`, process substitution, `local -a` arrays) needs either a cross-platform rewrite
   (Python/Node, which run identically on both) or a same-named `.ps1` counterpart for Windows.
   `lintSkillPortability` flags a `.sh` script with no cross-platform counterpart.
-- One pre-existing, deliberately grandfathered exception: `registry/skills/generative_ui`
-  predates this lint and keeps an underscore in its canonical name; `ClaudeProjector.
-  normalizeSkillName()` rewrites it to `generative-ui` at projection time so Claude Code never
-  sees the raw form. **New skills do not get this exception** — name them compliant from the
-  start.
+- **No exceptions to the name rule.** A skill name is lowercase letters, digits and hyphens, and
+  the folder equals the name. The one skill that predated the rule, `generative_ui`, was renamed
+  `generative-ui` on 2026-10-03 (no projection needs to rewrite a name any more); `agents update`
+  removes the old store copy of an install made before the rename.
 
 ## 6. Bundle placement
 

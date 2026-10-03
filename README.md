@@ -828,7 +828,7 @@ These skill folders are adaptations released under CC-BY-SA-4.0 (ShareAlike), ea
 <details>
 <summary><strong>Google DeepMind Antigravity (<a href="https://antigravity.google">antigravity.google</a>)</strong></summary>
 
-- **`generative_ui`**: Inline rich interactive HTML/Tailwind widget and artifact rendering standards.
+- **`generative-ui`**: Inline rich interactive HTML/Tailwind widget and artifact rendering standards.
 </details>
 
 <details>

@@ -51,10 +51,9 @@ describe('the registry skills stay Antigravity-loadable (they are installed as w
   // The one name shared with a built-in. Which wins is not documented and unverified (guide/command.md), so it is kept by name and recorded here:
   // a NEW collision must fail this test, and a resolved one is removed from the list.
   const KNOWN_COLLISIONS = ['grill-me'];
-  // The one skill whose name is not lowercase-with-hyphens. The registry keeps `generative_ui` on purpose (updater.ts) and the Claude and Cline
-  // projections normalise it to `generative-ui`, but the `.agents/skills/` copy that Antigravity reads keeps the underscore, which the docs' name
-  // rule does not allow. Whether the host loads it anyway is unverified; a NEW such name must fail here.
-  const KNOWN_NAME_EXCEPTIONS = ['generative_ui'];
+  // Skills whose name is not lowercase-with-hyphens, which the docs' name rule does not allow. There was one, `generative_ui`, renamed
+  // `generative-ui` on 2026-10-03 (tests/generative-ui-rename.test.ts); a NEW such name must fail here, so the list stays empty.
+  const KNOWN_NAME_EXCEPTIONS: string[] = [];
   const NAME_RULE = /name must be lowercase letters, digits and hyphens only/;
 
   it('has skills to check', () => {
@@ -94,12 +93,12 @@ describe('the registry skills stay Antigravity-loadable (they are installed as w
     expect(feature.note).toMatch(/disable-slash-command/);
   });
 
-  it('record the two names that are not clean for this host (generative_ui, grill-me) as unverified, so a reader of the profile is not told they work', () => {
+  it('record the name that is still not clean for this host (grill-me) as unverified, and the rename of generative-ui, so a reader of the profile is not told it works', () => {
     const profile = JSON.parse(read(path.join(registry, 'hosts/antigravity/profile.json'))) as { features: Record<string, { status: string; note: string }> };
     const feature = profile.features.skillNames;
     expect(feature.status).toBe('unverified');
-    for (const name of KNOWN_NAME_EXCEPTIONS) expect(feature.note).toContain(name);
-    for (const name of KNOWN_COLLISIONS) expect(feature.note).toContain(name);
+    expect(feature.note).toContain('generative-ui');
+    for (const name of [...KNOWN_NAME_EXCEPTIONS, ...KNOWN_COLLISIONS]) expect(feature.note).toContain(name);
   });
 });
 

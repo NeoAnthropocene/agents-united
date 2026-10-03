@@ -96,3 +96,12 @@ above, so the amendments live here rather than silently diverging from the recor
 - Deferred to later branches: the canonical `generative_ui` rename, the Cline lane's dialect migration, and the cursor/opencode/codex/kimi dialects.
 - Manual verification results are recorded in `plans/README.md` before any Cline work begins.
 
+
+## Addendum (2026-10-03): the canonical `generative_ui` rename is done
+
+The "Follow-up" above deferred the canonical `generative_ui` rename because it is a cross-host migration. It is now done, by the maintainer's decision, and it supersedes the projection-time normalisation **for this skill**:
+
+1. **The canonical skill is `generative-ui`** (folder, frontmatter `name`, the five bundles that carry it, the two agents that list it, `mcp-setup`, the README). No skill name in the registry breaks the lowercase-with-hyphens rule any more, so the exception list in `tests/claude-catalog-conformance.test.ts` is empty and a test keeps it so. The reason: Antigravity reads the `.agents/skills/` store copy as written, so the projection-level rename never reached it (its docs ask for lowercase with hyphens).
+2. **The projection-level normaliser stays.** `ClaudeProjector.normalizeSkillName` is generic, still applied to every name, and still tested with the old spelling as input, so a legacy projection or an upstream skill with an underscore is handled the same way.
+3. **`agents update` migrates the store.** The installer never prunes a store skill that left the registry, so the updater (`migrateLegacyGenerativeUiStore`, beside the existing projection migration) removes `skills/generative_ui/SKILL.md`, its lockfile record and its roster entry before the re-install installs the new name. A copy the user edited is never deleted (the update is skipped as for any edited file, and `--force` keeps the copy and its record), and a symlinked store has nothing of the user's to protect. It is idempotent, and a fresh install never meets it (`tests/generative-ui-rename.test.ts`).
+4. **Not verified:** that Antigravity loads the renamed skill in a real session (no session was run for this change).
