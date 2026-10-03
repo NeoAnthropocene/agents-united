@@ -1260,7 +1260,8 @@ private toPosix(p: string): string {
       const projections = hasCanonicalAgents
         ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, stateDir, effectiveDryPluginLane, { claude: effectiveDryNativeLane, cline: effectiveDryNativeClineLane })
         : [];
-      if (hasCanonicalAgents && effectiveDryNativeAntigravityLane) {
+      // The Antigravity lane belongs to the `.agents/` library: a store-less Claude-only install has none (ADR 0022).
+      if (hasCanonicalAgents && !isSidecarDir(stateDir) && effectiveDryNativeAntigravityLane) {
         for (const artifact of (await AntigravityProjector.plan(resolved, registryDir)).artifacts) {
           projections.push({ host: 'antigravity', path: artifact.relPath, kind: artifact.kind, warnings: [] });
           if (artifact.relPath === ANTIGRAVITY_GUARD_SCRIPT) projections.push({ host: 'antigravity', path: ANTIGRAVITY_HOOKS_FILE, kind: 'hook', warnings: [] });
@@ -1333,7 +1334,8 @@ private toPosix(p: string): string {
 
       // Plan 032 Phase 8 / ADR 0031 — the Antigravity native lane works on the canonical store, so it runs before the store copies below.
       let nativePlan: AntigravityNativePlan | undefined;
-      if (hasCanonicalAgents && path.resolve(targetDir) === path.resolve(agentsTarget)) {
+      // Only the `.agents/` library: the store-less Claude sidecar is not an Antigravity library, and the lane would write `.agents/` at the root.
+      if (hasCanonicalAgents && !isSidecarDir(targetDir) && path.resolve(targetDir) === path.resolve(agentsTarget)) {
         const nativeAntigravity = InstallEngine.effectiveNativeLane(options, lockfile, 'antigravity');
         if (nativeAntigravity) {
           lockfile.nativeLanes = { ...lockfile.nativeLanes, antigravity: true };
