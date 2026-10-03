@@ -22,6 +22,7 @@ import { AntigravityCapabilityProbe } from './core/antigravity-capabilities.js';
 import { PrerequisiteChecker } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
 import { explicitNativeFlag } from './core/native-flag.js';
+import { linkedSkillAdvice, listLinkedSkills } from './core/skill-links.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
@@ -314,7 +315,7 @@ cli
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
   .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline. Under Development hosts (cursor, opencode, codex) are refused')
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
-  .option('--native', 'Claude, Cline and Antigravity lanes: install the committed native files (registry/hosts/<host>/: agents, workflows, rules and, for Cline, the orchestrator rule and skill and the guard plugin) instead of projecting them from the canonical assets; for Antigravity the native agents and rules replace the copies in the .agents/ main library (the legacy GEMINI.md, which repeats the rules, is left out), and the guard hook is installed in .agents/hooks/ and registered by merging one key into .agents/hooks.json (your own hooks stay); the MCP servers its agents declare are merged into .agents/mcp_config.json (your own servers stay, no credential is written, a server that needs one is added switched off). Anything without a native file keeps the legacy projection. Recorded per host. Sticky: recorded in the lockfile, so `agents update` keeps it. Use --no-native to turn it back off.')
+  .option('--native', 'Claude, Cline and Antigravity lanes: install the committed native files (registry/hosts/<host>/: agents, workflows, rules and, for Cline, the orchestrator rule and skill and the guard plugin) instead of projecting them from the canonical assets; for Antigravity the native agents and rules replace the copies in the .agents/ main library (the legacy GEMINI.md, which repeats the rules, is left out), and the guard hook is installed in .agents/hooks/ and registered by merging one key into .agents/hooks.json (your own hooks stay); the MCP servers its agents declare are merged into .agents/mcp_config.json (your own servers stay, no credential is written, a server that needs one is added switched off); the skills in .agents/skills/ are installed as real copies, not links (agy 1.2.16 does not list a skill folder that is a link). Anything without a native file keeps the legacy projection. Recorded per host. Sticky: recorded in the lockfile, so `agents update` keeps it. Use --no-native to turn it back off.')
   .option('--no-native', 'Turn a recorded --native choice back off (legacy projections return).')
   .option('--canonical-store', 'Keep the .agents/ main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden .claude/.agents-united/ folder, ADR 0022)')
   .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off.')
@@ -899,6 +900,12 @@ cli
       if (result.projections.length > 0) {
         note(renderProjections(result.projections), 'Installed Projections');
       }
+
+      // Plan 032 Phase 8 — skill folders left as links are not listed by agy 1.2.16: say so once, with the way out.
+      const linkedSkills = new Set<string>();
+      for (const dir of result.targetDirs) for (const name of await listLinkedSkills(path.join(dir, 'skills'))) linkedSkills.add(name);
+      const linkedAdvice = linkedSkillAdvice([...linkedSkills], result.installed.targetBundle);
+      if (linkedAdvice) note(wrapText(linkedAdvice, 68, '').join('\n'), 'Skills installed as links');
 
       const hasClineProjection = result.projections.some(p => p.host === 'cline');
 

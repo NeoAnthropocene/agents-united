@@ -18,6 +18,7 @@ import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAg
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
+import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
   ClaudeCapabilityReport,
   ClineCapabilityReport,
@@ -756,6 +757,10 @@ export class DoctorEngine {
         }
       }
     }
+
+    // Plan 032 Phase 8 — a skill folder installed as a link is not listed by agy 1.2.16 (probe b, 2026-10-03); the native lane installs copies.
+    const linkedAdvice = linkedSkillAdvice(await listLinkedSkills(path.join(root, 'skills')), manifest?.installed?.bundles?.[0]);
+    if (linkedAdvice) warnings.push(linkedAdvice);
 
     return {
       valid: issues.length === 0,

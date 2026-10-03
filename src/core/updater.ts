@@ -315,12 +315,16 @@ export class UpdateEngine {
 
       const lockfile: LockfileManifest = await fs.readJson(lockfilePath);
 
-      // Check for user modifications in copy mode
-      if (record.method === 'copy' && !options.force && lockfile.files) {
+      // Check for user modifications in copy mode. A symlink-mode install can still hold copies (the Antigravity native lane copies its skills):
+      // those are checked file by file, and a file recorded as a symlink is never compared (its bytes follow the registry).
+      const copyMode = record.method === 'copy';
+      const holdsCopies = copyMode || Object.values(lockfile.files ?? {}).some(meta => meta.method === 'copy');
+      if (holdsCopies && !options.force && lockfile.files) {
         let hasConflict = false;
         let conflictRelPath = '';
 
         for (const [relPath, assetMeta] of Object.entries(lockfile.files)) {
+          if (!copyMode && assetMeta.method !== 'copy') continue;
           if (assetMeta.bundle === record.name || relPath.includes(record.name)) {
             const fullPath = path.join(record.targetDir, relPath);
             if (await fs.pathExists(fullPath)) {
