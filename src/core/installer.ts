@@ -14,6 +14,7 @@ import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME
 import { ANTIGRAVITY_MCP_FILE, describeMcpOutcomes, loadMcpCatalog, syncAntigravityMcp, type McpEntry } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
 import { ClaudeProjector } from './claude-projector.js';
+import { listNativeWorkflows } from './native-package.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
 import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
 import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
@@ -456,6 +457,57 @@ private toPosix(p: string): string {
     // ADR 0026 decision 6 — the choice is recorded per host: Claude in the long-standing `nativeLane`, the others in `nativeLanes`.
     if (host === 'claude') return lockfile?.nativeLane === true;
     return lockfile?.nativeLanes?.[host] === true;
+  }
+
+  /**
+   * Plan 032 close-out — whether the `.agents/` store exists only because another host needed it (Cline, the Claude plugin lane) and Antigravity was
+   * not asked for. An explicit option wins and is recorded; an unset one inherits the recorded choice, so `agents update` keeps it. A store that
+   * already carries the Antigravity lane is an Antigravity library whatever the option says, so a later implicit install cannot take it away.
+   */
+  private static effectiveImplicitStore(options: InstallOptions, lockfile?: LockfileManifest | null): boolean {
+    const antigravityRecorded = lockfile?.nativeLanes?.antigravity === true
+      || Object.values(lockfile?.projections ?? {}).some(proj => proj.host === 'antigravity');
+    if (antigravityRecorded) return false;
+    if (typeof options.implicitStore === 'boolean') return options.implicitStore;
+    return lockfile?.implicitStore === true;
+  }
+
+  /**
+   * Plan 032 close-out — a native Cline workflow and a generic skill of the same name both answer `/<name>`, and the skill wins (observed on Cline
+   * 3.0.68: with the skill removed the host expanded the workflow). With an implicit store the generic copies are cleared from it: a link is unlinked
+   * (never the registry), an unmodified copy is removed. A copy the user edited stays, is no longer tracked and the install says so; `--force` removes it.
+   */
+  private async dropShadowedSkills(storeDir: string, lockfile: LockfileManifest, names: ReadonlySet<string>, force: boolean | undefined, projections: ProjectionInfo[]): Promise<void> {
+    for (const name of names) {
+      const prefix = `skills/${name}/`;
+      const keys = Object.keys(lockfile.files).filter(key => key.startsWith(prefix));
+      lockfile.installed.skills = lockfile.installed.skills.filter(skillName => skillName !== name);
+      if (keys.length === 0) continue;
+      const folder = path.join(storeDir, 'skills', name);
+      const stat = await fs.lstat(folder).catch(() => null);
+      if (stat?.isSymbolicLink()) {
+        await fs.unlink(folder);
+      } else if (stat) {
+        let edited = false;
+        for (const key of keys) {
+          const record = lockfile.files[key];
+          if (record.method === 'symlink') continue;
+          const current = await this.calculateHash(path.join(storeDir, key)).catch(() => null);
+          if (current && record.hash && current !== record.hash) edited = true;
+        }
+        if (edited && !force) {
+          for (const key of keys) delete lockfile.files[key];
+          projections.push({
+            host: 'cline',
+            path: `.agents/skills/${name}/SKILL.md`,
+            warnings: [`${name} was edited, so it is left in place and no longer tracked. It answers /${name} in Cline instead of the native workflow; delete it by hand to use the workflow.`],
+          });
+          continue;
+        }
+        await fs.remove(folder);
+      }
+      for (const key of keys) delete lockfile.files[key];
+    }
   }
 
   /**
@@ -1235,9 +1287,11 @@ private toPosix(p: string): string {
       let effectiveDryNativeLane = options.nativeLane === true;
       let effectiveDryNativeClineLane = options.nativeLane === true;
       let effectiveDryNativeAntigravityLane = options.nativeLane === true;
+      let dryLockfile: LockfileManifest | null = null;
       const lockfilePath = path.join(stateDir, 'agents-united.json');
       if (await fs.pathExists(lockfilePath)) {
         const lockfile = await fs.readJson(lockfilePath).catch(() => null);
+        dryLockfile = lockfile;
         if (options.fanout === undefined && hasCanonicalAgents && lockfile?.fanout) {
           effectiveDryFanout = (lockfile.fanout as string[])
             .filter(h => isKnownHost(h) && HOST_REGISTRY[h]?.projectionCapable);
@@ -1261,7 +1315,7 @@ private toPosix(p: string): string {
         ? await this.buildProjections(effectiveDryFanout, resolved, registryDir, scope, stateDir, effectiveDryPluginLane, { claude: effectiveDryNativeLane, cline: effectiveDryNativeClineLane })
         : [];
       // The Antigravity lane belongs to the `.agents/` library: a store-less Claude-only install has none (ADR 0022).
-      if (hasCanonicalAgents && !isSidecarDir(stateDir) && effectiveDryNativeAntigravityLane) {
+      if (hasCanonicalAgents && !isSidecarDir(stateDir) && effectiveDryNativeAntigravityLane && !InstallEngine.effectiveImplicitStore(options, dryLockfile)) {
         for (const artifact of (await AntigravityProjector.plan(resolved, registryDir)).artifacts) {
           projections.push({ host: 'antigravity', path: artifact.relPath, kind: artifact.kind, warnings: [] });
           if (artifact.relPath === ANTIGRAVITY_GUARD_SCRIPT) projections.push({ host: 'antigravity', path: ANTIGRAVITY_HOOKS_FILE, kind: 'hook', warnings: [] });
@@ -1334,8 +1388,16 @@ private toPosix(p: string): string {
 
       // Plan 032 Phase 8 / ADR 0031 — the Antigravity native lane works on the canonical store, so it runs before the store copies below.
       let nativePlan: AntigravityNativePlan | undefined;
-      // Only the `.agents/` library: the store-less Claude sidecar is not an Antigravity library, and the lane would write `.agents/` at the root.
-      if (hasCanonicalAgents && !isSidecarDir(targetDir) && path.resolve(targetDir) === path.resolve(agentsTarget)) {
+      // Plan 032 close-out — is the `.agents/` store an Antigravity library, or only here for another host? Recorded, sticky.
+      const implicitStore = hasCanonicalAgents && !isSidecarDir(targetDir) && InstallEngine.effectiveImplicitStore(options, lockfile);
+      if (hasCanonicalAgents && !isSidecarDir(targetDir)) {
+        if (implicitStore) lockfile.implicitStore = true;
+        else delete lockfile.implicitStore;
+      }
+
+      // Only the `.agents/` library, and only when Antigravity is a target: the store-less Claude sidecar is not an Antigravity library, and neither is a
+      // store added for Cline or the plugin lane; the lane would write `.agents/` files only Antigravity reads.
+      if (hasCanonicalAgents && !isSidecarDir(targetDir) && !implicitStore && path.resolve(targetDir) === path.resolve(agentsTarget)) {
         const nativeAntigravity = InstallEngine.effectiveNativeLane(options, lockfile, 'antigravity');
         if (nativeAntigravity) {
           lockfile.nativeLanes = { ...lockfile.nativeLanes, antigravity: true };
@@ -1400,7 +1462,13 @@ private toPosix(p: string): string {
       // Copy/Symlink Skills. With the Antigravity native lane on they are real copies whatever the method: agy 1.2.16 did not list a skill folder that
       // is a link (a junction on Windows) and does list a real one (observations 2026-10-03, probe b). Per-file records say 'copy', so drift is tracked.
       const skillMethod: InstallMethod = nativePlan ? 'copy' : iterMethod;
+      // Plan 032 close-out — with an implicit store and a native Cline lane, the generic skills a native Cline workflow replaces stay out of the store.
+      const shadowedSkills: ReadonlySet<string> = implicitStore && effectiveFanout.includes('cline') && InstallEngine.effectiveNativeLane(options, lockfile, 'cline')
+        ? new Set(listNativeWorkflows(registryDir, 'cline'))
+        : new Set<string>();
+      if (shadowedSkills.size > 0) await this.dropShadowedSkills(targetDir, lockfile, shadowedSkills, options.force, projections);
       for (const skillName of resolved.skills) {
+        if (shadowedSkills.has(skillName)) continue;
         const src = path.join(registryDir, 'skills', skillName);
         const dest = path.join(subPaths.skillsDir, skillName);
 

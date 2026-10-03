@@ -709,6 +709,17 @@ export class DoctorEngine {
             );
           }
         }
+        // Plan 032 close-out — a native workflow and a generic skill of the same name both answer `/<name>`, and the skill wins (observed on Cline 3.0.68).
+        const workflow = proj.kind === 'workflow' ? /^\.cline\/workflows\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
+        if (workflow && await fs.pathExists(path.join(workspaceRoot, '.agents', 'skills', workflow[1], 'SKILL.md'))) {
+          const text = await fs.readFile(path.join(workspaceRoot, relPath), 'utf8').catch(() => '');
+          if (text.includes('profile: cline-native')) {
+            warnings.push(
+              `Native workflow /${workflow[1]} is shadowed: the skill .agents/skills/${workflow[1]} answers the command instead (observed on Cline 3.0.68: a skill wins).` +
+              ' The store is shared with Antigravity, so it was kept; install without Antigravity as a target to leave it out, or delete it by hand.'
+            );
+          }
+        }
         const skill = proj.kind === 'skill' ? /^\.cline\/skills\/([a-z0-9-]+)\/SKILL\.md$/.exec(relPath) : null;
         if (skill && await fs.pathExists(path.join(workspaceRoot, '.agents', 'skills', skill[1], 'SKILL.md'))) {
           warnings.push(

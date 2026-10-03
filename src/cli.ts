@@ -316,7 +316,7 @@ cli
   .option('-t, --target <hosts>', 'Which assistants to set up (agents = main library; claude, cursor, cline, opencode, codex get translated copies)', { default: 'agents' })
   .option('--fanout <hosts>', 'Also make translated copies for these assistants: claude, cline. Under Development hosts (cursor, opencode, codex) are refused')
   .option('--plugin', 'Claude lane only: also emit the distribution-only plugin package (.agents/plugins/<bundle>/.claude-plugin/plugin.json + agents/) for `claude --plugin-dir`. Adds nothing when --fanout claude is absent; never the behavioural source. Sticky: the opt-in is recorded in the lockfile, so `agents update` keeps it. Use --no-plugin to turn it back off.')
-  .option('--native', 'Claude, Cline and Antigravity lanes: install the committed native files (registry/hosts/<host>/: agents, workflows, rules and, for Cline, the orchestrator rule and skill and the guard plugin) instead of projecting them from the canonical assets; for Antigravity the native agents and rules replace the copies in the .agents/ main library (the legacy GEMINI.md, which repeats the rules, is left out), and the guard hook is installed in .agents/hooks/ and registered by merging one key into .agents/hooks.json (your own hooks stay); the MCP servers its agents declare are merged into .agents/mcp_config.json (your own servers stay, no credential is written, a server that needs one is not written but printed for you to add); the skills in .agents/skills/ are installed as real copies, not links (agy 1.2.16 does not list a skill folder that is a link). Anything without a native file keeps the legacy projection. Recorded per host. Sticky: recorded in the lockfile, so `agents update` keeps it. Use --no-native to turn it back off.')
+  .option('--native', 'Claude, Cline and Antigravity lanes: install the committed native files (registry/hosts/<host>/: agents, workflows, rules and, for Cline, the orchestrator rule and skill and the guard plugin) instead of projecting them from the canonical assets; for Antigravity the native agents and rules replace the copies in the .agents/ main library (the legacy GEMINI.md, which repeats the rules, is left out), and the guard hook is installed in .agents/hooks/ and registered by merging one key into .agents/hooks.json (your own hooks stay); the MCP servers its agents declare are merged into .agents/mcp_config.json (your own servers stay, no credential is written, a server that needs one is not written but printed for you to add); the skills in .agents/skills/ are installed as real copies, not links (agy 1.2.16 does not list a skill folder that is a link). The Antigravity files in .agents/ are written only when Antigravity is a target (the default `-t agents`, or --canonical-store); a Cline- or plugin-only install keeps .agents/ for Cline and leaves out the three generic skills (workflow-implement, workflow-review, workflow-test) that a skill-named command would otherwise let shadow the native Cline workflows. Anything without a native file keeps the legacy projection. Recorded per host. Sticky: recorded in the lockfile, so `agents update` keeps it. Use --no-native to turn it back off.')
   .option('--no-native', 'Turn a recorded --native choice back off (legacy projections return).')
   .option('--canonical-store', 'Keep the .agents/ main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden .claude/.agents-united/ folder, ADR 0022)')
   .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off.')
@@ -832,10 +832,13 @@ cli
     // Plan 023 B (ADR 0022, D4) — Claude alone is store-less: no `.agents/`, the machine state
     // lives in the hidden `.claude/.agents-united/` sidecar. `--canonical-store`, the plugin lane or
     // any other assistant keeps the main library.
-    const storeShape = planInstallTargets([...selectedHosts, ...fanout], {
+    const targetPlan = planInstallTargets([...selectedHosts, ...fanout], {
       canonicalStore: options.canonicalStore === true,
       pluginLane: options.plugin === true,
-    }).storeShape;
+    });
+    const storeShape = targetPlan.storeShape;
+    // Plan 032 close-out — the .agents/ store is only implicit when it was added for another host and --canonical-store did not ask for the library.
+    const implicitStore = targetPlan.addedCanonicalStore && options.canonicalStore !== true;
     if (storeShape === 'sidecar' && !options.dryRun) {
       note(
         'Claude only: no .agents/ main library is created. The install state is kept in the hidden\n' +
@@ -860,6 +863,7 @@ cli
         // Plan 032 Phase 7 — opt-in native-package lane; same sticky semantics as the plugin lane.
         // Read from the arguments: with `--no-native` defined, the parsed `options.native` is `true` even when the user typed nothing.
         nativeLane: explicitNativeFlag(process.argv),
+        implicitStore,
         sessionGuard,
         permissionPreset,
         storeShape,
