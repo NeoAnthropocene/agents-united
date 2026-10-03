@@ -358,6 +358,11 @@ export interface LockfileManifest {
    */
   nativeLanes?: { cline?: true; antigravity?: true };
   /**
+   * Plan 032 close-out — the `.agents/` store exists only because another host needed it; Antigravity is not a target. Sticky like the lanes.
+   * Absent ⇒ the store is an Antigravity library too (every lockfile written before this field existed).
+   */
+  implicitStore?: true;
+  /**
    * Plan 032 Phase 8 / ADR 0031 addendum — the Antigravity guard hook merged into the user-owned `.agents/hooks.json`: the file
    * (workspace-relative), the canonical hash of the entry agents-united wrote (ownership proof, and how an older version is recognised),
    * and whether agents-united created the file (only then may removal delete it). Absent when no guard is registered.
@@ -533,6 +538,12 @@ export interface InstallOptions {
    * role that has one. Claude lane only; `false` turns a recorded choice off, an omitted flag inherits it.
    */
   nativeLane?: boolean;
+  /**
+   * Plan 032 close-out — `true` when the `.agents/` store was only added for another host (Cline, the Claude plugin lane) and Antigravity was
+   * not asked for; `false` when it was (`-t agents`, the default, or `--canonical-store`). An implicit store gets no Antigravity native lane,
+   * and a native Cline lane leaves the three same-named workflow skills out of it. Omitted ⇒ inherit the recorded choice.
+   */
+  implicitStore?: boolean;
   /**
    * Plan 023 A — guard plain Claude sessions too: `project` (.claude/settings.json), `local`
    * (.claude/settings.local.json), `user` (~/.claude/settings.json, explicit only), or `false`

@@ -55,6 +55,8 @@ must all be **allowed** — if any of those is blocked too, the guard is over-ma
 
 ## Confirming which hook layer is active
 
+> **Observed on Claude Code 2.1.288 (2026-10-03):** `/hooks` lists settings-file hooks only. In a `claude --agent orchestrator-engineering` session whose guard is in the role's own frontmatter, `/hooks` showed "No hooks configured for this event" for `PreToolUse`, yet the guard blocked `echo git push --force` and `echo x > .env.test` (exit 2, the agents-united message in the tool result) and let `echo hello world` through. So an empty `/hooks` does not mean an unguarded role: use the model-proof commands above, not `/hooks`, to confirm a role's frontmatter guard.
+
 Run `/hooks` inside the session. You should see the agents-united `PreToolUse` entries listed
 from at least one of:
 

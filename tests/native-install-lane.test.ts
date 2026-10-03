@@ -63,7 +63,12 @@ describe('native package helpers', () => {
   });
 });
 
-describe('native agents follow the model posture of ADR 0018 decision 7 (coordinators opus/high, specialists sonnet/medium)', () => {
+describe('native agents follow the model posture of ADR 0018 decision 7 as amended by its 2026-10-03 addendum (coordinators opus/medium, specialists sonnet/medium)', () => {
+  it('pins the coordinator to opus at medium effort in the Claude dialect', () => {
+    expect(ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults?.coordinator).toBe('opus');
+    expect(ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults?.coordinator).toBe('medium');
+  });
+
   it.each(NATIVE_ROLES)('%s pins its role posture', role => {
     const posture = COORDINATORS.includes(role) ? 'coordinator' : 'specialist';
     const text = lf(fs.readFileSync(nativeRoleSource(REGISTRY, 'claude', role)!, 'utf8'));

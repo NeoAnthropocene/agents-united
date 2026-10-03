@@ -250,7 +250,8 @@ describe('native install lane for Cline (agents add --fanout cline --native)', (
 
   describe('doctor', () => {
     it('finds a fresh native install healthy: no warning at all, in particular no shadow warning from the canonical skills', async () => {
-      await install(true);
+      // The Cline-only install the CLI makes: the store is implicit (ADR 0034), so the generic workflow skills are not in it to shadow the native workflows.
+      await install(true, { implicitStore: true });
       const report = await DoctorEngine.runDoctor(agentsDir);
       expect(report.issues).toEqual([]);
       expect(report.warnings.filter(w => /projection|drift|Outdated|guard|shadow/i.test(w))).toEqual([]);

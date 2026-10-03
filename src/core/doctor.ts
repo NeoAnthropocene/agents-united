@@ -1,3 +1,4 @@
+import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import crypto from 'node:crypto';
@@ -15,6 +16,7 @@ import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME
 import { inspectAntigravityMcp, loadMcpCatalog } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
 import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
+import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -291,6 +293,14 @@ export class DoctorEngine {
         const parsed: LockfileManifest = await fs.readJson(subPaths.lockfile);
         manifest = parsed;
         agentsCount = parsed.installed?.agents?.length || 0;
+        // The native lanes replace the store's agent copies with role projections, so the store can list none while the roles are
+        // installed: fall back to what the lockfile records (the asked host's roles, or distinct role names across hosts).
+        if (agentsCount === 0) {
+          const roles = Object.entries(parsed.projections ?? {})
+            .filter(([, proj]) => proj.kind === 'role' && (!host || proj.host === host))
+            .map(([relPath]) => path.posix.basename(relPath.replace(/\\/g, '/')).replace(/\.(md|yml)$/, ''));
+          agentsCount = new Set(roles).size;
+        }
         skillsCount = parsed.installed?.skills?.length || 0;
         // ADR 0016 unified workflows into skills: `installed.workflows` is a
         // deprecated legacy field that stays empty on modern installs, so reading it
@@ -660,6 +670,22 @@ export class DoctorEngine {
       }
     }
 
+    // Plan 032 close-out — the native lane swaps three skills for dynamic workflows, which a documented switch can turn off.
+    if (host === 'claude' && manifest?.nativeLane === true) {
+      const workflows = installedClaudeWorkflows(Object.entries(manifest.projections ?? {}).map(([relPath, proj]) => ({ host: proj.host, path: relPath, kind: proj.kind })));
+      if (workflows.length > 0) {
+        const settings = await fs.readFile(userSettingsFile(process.env, os.homedir()), 'utf8').catch(() => undefined);
+        const why = workflowsDisabledBy(settings, process.env);
+        if (why) {
+          const owner = Object.values(manifest.projections ?? {}).find(proj => proj.host === 'claude' && proj.kind === 'workflow')?.owners[0];
+          warnings.push(
+            `Dynamic workflows are turned off (${why}), so ${workflows.map(name => `/${name}`).join(', ')} do not exist in Claude Code.` +
+            ` Turn workflows back on` + (owner ? `, or run: agents update ${owner} --fanout claude --no-native to get the skills back.` : '.')
+          );
+        }
+      }
+    }
+
     // Plan 032 Phase 8 — the same two safety properties for the Cline native lane, whichever host the doctor was asked about,
     // because both are recorded in the lockfile: a native role that can run commands or edit files needs the guard plugin, and a
     // native skill is not in effect when a copy of the same name in `.agents/skills` shadows it (observed: `.agents/skills` wins).
@@ -680,6 +706,17 @@ export class DoctorEngine {
             warnings.push(
               `Native agent ${role[1]} can run commands or edit files, but its guard plugin (.cline/plugins/agents-united-guard.js) is missing.` +
               (owner ? ` Run: agents update ${owner} --fanout cline to restore it.` : '')
+            );
+          }
+        }
+        // Plan 032 close-out — a native workflow and a generic skill of the same name both answer `/<name>`, and the skill wins (observed on Cline 3.0.68).
+        const workflow = proj.kind === 'workflow' ? /^\.cline\/workflows\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
+        if (workflow && await fs.pathExists(path.join(workspaceRoot, '.agents', 'skills', workflow[1], 'SKILL.md'))) {
+          const text = await fs.readFile(path.join(workspaceRoot, relPath), 'utf8').catch(() => '');
+          if (text.includes('profile: cline-native')) {
+            warnings.push(
+              `Native workflow /${workflow[1]} is shadowed: the skill .agents/skills/${workflow[1]} answers the command instead (observed on Cline 3.0.68: a skill wins).` +
+              ' The store is shared with Antigravity, so it was kept; install without Antigravity as a target to leave it out, or delete it by hand.'
             );
           }
         }

@@ -196,7 +196,8 @@ describe('ClaudeProjector.renderRole — frontmatter translation', () => {
     const coordinator = ClaudeProjector.renderRole(coordinatorNoEffort, 'agents/orchestrator-engineering.md', {
       allowlist: ['backend-architect'],
     });
-    expect(yamlOf(coordinator.content).effort).toBe('high');
+    // ADR 0018 addendum (2026-10-03): the coordinator posture is opus at medium effort.
+    expect(yamlOf(coordinator.content).effort).toBe('medium');
   });
 
   it('renders the Consultation Budget maxIterations as maxTurns', () => {
