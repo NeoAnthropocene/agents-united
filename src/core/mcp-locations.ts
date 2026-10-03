@@ -86,6 +86,14 @@ export class McpLocationRegistry {
       resolvePath: (cwd) => path.join(cwd, '.gemini', 'config', 'mcp_config.json'),
     },
     {
+      // Plan 032 Phase 8 / ADR 0032 — the workspace file the Antigravity docs name and the native lane merges its servers into.
+      id: 'antigravity-agents-workspace',
+      host: 'gemini',
+      category: 'workspace',
+      label: 'Google Antigravity Workspace Config (.agents/mcp_config.json)',
+      resolvePath: (cwd) => path.join(cwd, '.agents', 'mcp_config.json'),
+    },
+    {
       id: 'gemini-appdata',
       host: 'gemini',
       category: 'cli',

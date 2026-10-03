@@ -364,6 +364,13 @@ export interface LockfileManifest {
    */
   antigravityHooks?: AntigravityHooksRecord;
   /**
+   * Plan 032 Phase 8 / ADR 0032 — the MCP servers merged into the user-owned `.agents/mcp_config.json`: the file, whether agents-united
+   * created the file and the `mcpServers` object (only then may removal delete them), and per server the canonical hash of the entry
+   * written (ownership proof, ignoring the user's `disabled` switch) with the bundles that declare it. A key is ours only when it is
+   * recorded here. Absent when no server is wired.
+   */
+  antigravityMcp?: AntigravityMcpRecord;
+  /**
    * Plan 023 A (owner D1–D2) — the recorded plain-session guard decision. `{ off: true }` is a
    * remembered "no"; otherwise the settings file (workspace-relative, or absolute for `user`)
    * holding our managed PreToolUse groups, the handler hash that proves ownership, and whether
@@ -397,6 +404,13 @@ export interface AntigravityHooksRecord {
   file: string;
   entryHash: string;
   createdFile: boolean;
+}
+
+export interface AntigravityMcpRecord {
+  file: string;
+  createdFile: boolean;
+  createdKey: boolean;
+  servers: Record<string, { entryHash: string; owners: string[] }>;
 }
 
 export type VersionDriftStatus = 'up-to-date' | 'outdated' | 'modified';
