@@ -128,7 +128,7 @@ You keep a small context footprint, the orchestrator picks the right addon, and 
 ### One library, every assistant
 
 > [!NOTE]
-> **Where this is heading.** Translation is being replaced by *creation*: a shared Contract Floor plus a **native package per harness**, authored from each vendor's documentation and installed by plain copying — no LLM runs on your machine. The rollout is incremental (Claude Code first); this section describes how installs work today. Design: [ADR 0025](./docs/adr/0025-native-host-packages-and-host-docs-library.md), [Plan 032](./plans/032-native-host-packages.md).
+> **Where this is heading.** Translation is being replaced by *creation*: a shared Contract Floor plus a **native package per harness**, authored from each vendor's documentation and installed by plain copying — no LLM runs on your machine. The rollout is incremental: today a native package exists for the **`software-engineering`** bundle only, on all three harnesses, and it is **opt-in** (`agents add software-engineering --native`); every other bundle is still translated. It was checked in interactive sessions on Claude Code 2.1.288, the Cline CLI 3.0.68 and the Antigravity CLI `agy` 1.2.16, on Windows; the VS Code and IDE surfaces, macOS and Linux were not exercised ([observations](./host-library)). This section describes how installs work today. Design: [ADR 0025](./docs/adr/0025-native-host-packages-and-host-docs-library.md), [Plan 032](./plans/032-native-host-packages.md).
 
 `.agents/` is the **main library**, the one folder you edit, tracked by the `agents-united.json` lockfile. Antigravity reads it directly. Other assistants cannot, so Agents United writes **translated copies** in their own folders and keeps them in sync.
 
