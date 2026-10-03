@@ -21,12 +21,18 @@
 3. **`skill-attribution` stays a rule**, wrapped for this bundle: the bundle declares it, as an on-demand rule (frontmatter first, `trigger: model_decision` on Antigravity). It is not added to any end-user bundle.
 4. **Portable versions of `realize-for-host` and `host-update-sync`, as host-parametric subagents.** The intent is subagents that work for every host, so that adding a host in future means adding that host's docs library and profile, not new agents. The existing `realize-for-host` already reads the host's guide and observations, so the host is an input, not a copy of the agent per host.
 5. **The first slice is the foundation for the bundle's orchestration** (its workflows, skills, hooks and the subagent contract), not the bundle with a single skill.
+6. **The domain value is `contributor`**, with the picker label "Developers only: contribute to Agents United" and a one-line hint (accepted 2026-10-03).
+7. **`domain` alone keeps `agent-factory` out of `full`, department installs and recommendations; no separate flag.** The purpose includes letting developers create their own agents locally, without pushing them upstream, so the bundle must work in a user's own workspace and must not assume a contribution to this repository (see the open design point below).
+8. **The subagent contract in `registry/core/` stays basic**: for each subagent, its definition and the lists of workflows, skills and hooks it may use. Everything host-specific (frontmatter, tool names, hook wiring, native format) is written per host from that host's guide, not in the shared core.
+9. **The Claude maintainer skills stay as entry points**: `.claude/skills/realize-for-host` and `host-update-sync` remain the Claude entry points for the maintainer once the bundle ships; the bundle's portable subagents are the versions other hosts (and other contributors) use, not a replacement.
 
-## Recommendation on the `domain` value (awaiting the maintainer)
+## The `domain` value (decided: `contributor`)
 
 `domain: "contributor"`, with the picker label "Developers only: contribute to Agents United" and a one-line hint. The existing domains are `architecture`, `business`, `design`, `engineering`, `marketing`, `research`, `security`, `universal` and `organization`; `engineering` already means building software for a user's project, so `development` would be confused with it, and `universal` is the shared meta-skill section. The CLI groups the two-stage picker by `domain` (a label map in `src/cli.ts`, twice), so a new value gives the separate section directly; the departments list and the "install the whole department" option need the same exclusion that `organization` and `universal` already have.
 
-Consequences to design for, not yet decided: `agent-factory` must not be pulled in by the `full` bundle or a department install; the planner-orchestrator logic that recommends bundles needs a rule for it (listed only in its own section, not suggested for ordinary tasks); a `status` or flag may be needed for "contributor-only" if `domain` alone is not enough.
+Consequences to design for (the maintainer decided that `domain` is enough, so the exclusions key on it): `agent-factory` must not be pulled in by the `full` bundle or a department install; the planner-orchestrator logic that recommends bundles needs a rule for it (listed only in its own section, not suggested for ordinary tasks).
+
+**Design point for the slice 1 ADR (not decided):** developers may want to create agents locally and never push them. Where a locally created bundle, agent or skill lives (a workspace-local registry, the existing `.agents/` store, or a user directory), how the installer and lockfile treat it, and how the bundle's skills tell a local creation from an upstream contribution (for example, whether `skill-attribution` applies to a purely local skill) are not settled in the repository today and need prior-art search before design.
 
 ## Proposal
 
@@ -56,10 +62,11 @@ The skills must stay host-neutral where possible and pass the existing portabili
 
 ## Open questions
 
-1. The `domain` value: `contributor` as recommended above, or another name?
-2. Is a flag needed beyond `domain` to keep `agent-factory` out of `full`, department installs and recommendations?
-3. Subagent form per host: Claude native agents, Cline configured agents, Antigravity agents each carry the same contract; how much of the contract is shared in `registry/core/` and how much is written per host?
-4. Do the existing `.claude/skills/realize-for-host` and `host-update-sync` stay as the Claude maintainer entry points once the bundle ships, or are they replaced by the bundle's installed versions?
+The four questions of the first round are answered (decisions 6 to 9). What is left is for the slice 1 ADR:
+
+1. **Local creation.** Where a developer's own, never-pushed agents, skills and bundles live and how the installer, the lockfile and the doctor treat them (see the design point above).
+2. **The basic contract's shape.** The exact fields of the shared subagent definition in `registry/core/` (definition, workflows, skills, hooks), and how a native package per host consumes it. Prior art: the existing Contract Floor in `registry/core/*.core.md` and the per-host profiles.
+3. **Which workflows are pipelines and which are runbooks**, per host (a Claude workflow script, a Cline markdown workflow, a skill on Antigravity).
 
 ## Out of scope
 
