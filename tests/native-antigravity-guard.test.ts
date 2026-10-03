@@ -150,5 +150,6 @@ describe('hooks.json', () => {
     expect(feature.note).toMatch(/working directory/i);
     expect(feature.note).toMatch(/subagent/i);
     expect(profile.features.hookFile.note).not.toMatch(/not documented or verified/);
+    expect(profile.features.hookFile.note).toMatch(/installed by the lane/i);
   });
 });

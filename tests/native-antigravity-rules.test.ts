@@ -101,4 +101,15 @@ describe('the Antigravity profile records the frontmatter rule', () => {
     expect(feature.note).toMatch(/NONE/);
     expect(feature.note).toMatch(/always_on/);
   });
+
+  it('and records that GEMINI.md is read without frontmatter, in .agents/ and in .agents/rules/, beside the native rules (observed), with the symlinked copy not established', () => {
+    const feature = loadHostProfile(registry, 'antigravity').features.geminiMd;
+    expect(feature.status).toBe('observed');
+    expect(feature.note).toMatch(/\.agents\/rules\/GEMINI\.md/);
+    expect(feature.note).toMatch(/\.agents\/GEMINI\.md/);
+    expect(feature.note).toMatch(/frontmatter/i);
+    expect(feature.note).toMatch(/twice|both|duplicate|overlap/i);
+    expect(feature.note).toMatch(/symlink/i);
+    expect(feature.note).toMatch(/not established/i);
+  });
 });
