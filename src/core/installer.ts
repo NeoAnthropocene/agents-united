@@ -107,8 +107,36 @@ export class InstallEngine {
       }
     }
 
+    // A copy never goes through a link: a link here points into the registry, so copying onto it would write the registry (fs-extra refuses it as the same file).
+    if ((await fs.lstat(dest).catch(() => null))?.isSymbolicLink()) await fs.unlink(dest);
     await fs.copy(src, dest, { overwrite: true });
     return 'copy';
+  }
+
+  /**
+   * A skill folder copied earlier and edited since is never overwritten without --force (as for agents). Only files the lockfile records as copies are
+   * compared; a link has no copy of its own to protect.
+   */
+  private async assertSkillCopyUnmodified(targetDir: string, dest: string, lockfile: LockfileManifest, force?: boolean): Promise<void> {
+    if (force) return;
+    const stat = await fs.lstat(dest).catch(() => null);
+    if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) return;
+    const stack: string[] = [dest];
+    while (stack.length > 0) {
+      const dir = stack.pop() as string;
+      for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+        const abs = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          stack.push(abs);
+          continue;
+        }
+        const relPath = this.toPosix(path.relative(targetDir, abs));
+        const record = lockfile.files[relPath];
+        if (record?.method !== 'copy' || !record.hash) continue;
+        const current = await this.calculateHash(abs).catch(() => null);
+        if (current && current !== record.hash) throw new Error(`File ${relPath} has user modifications. Use --force to overwrite.`);
+      }
+    }
   }
 
 /**
@@ -1322,12 +1350,15 @@ private toPosix(p: string): string {
         }
       }
 
-      // Copy/Symlink Skills
+      // Copy/Symlink Skills. With the Antigravity native lane on they are real copies whatever the method: agy 1.2.16 did not list a skill folder that
+      // is a link (a junction on Windows) and does list a real one (observations 2026-10-03, probe b). Per-file records say 'copy', so drift is tracked.
+      const skillMethod: InstallMethod = nativePlan ? 'copy' : iterMethod;
       for (const skillName of resolved.skills) {
         const src = path.join(registryDir, 'skills', skillName);
         const dest = path.join(subPaths.skillsDir, skillName);
 
-        const actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
+        await this.assertSkillCopyUnmodified(targetDir, dest, lockfile, options.force);
+        const actualMethod = await this.deployFile(src, dest, skillMethod, options.force);
         const skillFile = path.join(src, 'SKILL.md');
         if (await fs.pathExists(skillFile)) {
           const hash = await this.calculateHash(skillFile);
