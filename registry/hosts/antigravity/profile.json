@@ -142,8 +142,8 @@
       "note": "The agy changelog (1.2.10) describes agents.json, skills.json, rules.json and plugins.json registries whose directory entries load only the items directly inside the directory unless include_only names a nested one; the docs describe only .agents/rules.json, so treat the others as observed in release notes."
     },
     "mcpWiring": {
-      "status": "deferred",
-      "note": "The file and schema are documented (.agents/mcp_config.json and ~/.gemini/config/mcp_config.json, an mcpServers object, serverUrl for remote servers) but the package writes no MCP configuration yet; whether an agent mcpServers: entry resolves is untested."
+      "status": "partial",
+      "note": "The native lane merges the servers a bundle's agents declare by name into .agents/mcp_config.json (ADR 0032; the entries are registry/hosts/antigravity/mcp/servers.json, one per declared name, command and args only): the user's own servers, order, indent and line endings are kept, a key is ours only while the lockfile records it, and a name the user already has stays theirs. It never writes a secret: no env, headers or oauth block is shipped, and a server that needs a credential (github, firecrawl, stitch, figma) is written switched off (disabled: true) with the variable it needs named at install, to be enabled with agy mcp enable <name>. Unverified on a real session: that agy reads the workspace file at all (agy mcp list showed only the global servers), that a stdio server receives agy's own environment, whether a ${VAR} placeholder in env is expanded, how a server that fails to start affects a headless run, and whether an agent mcpServers: entry resolves (the native agents carry none)."
     },
     "surfaces": {
       "status": "unverified",

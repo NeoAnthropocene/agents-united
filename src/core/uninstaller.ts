@@ -7,6 +7,7 @@ import { isKnownHost } from './hosts.js';
 import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, removeAntigravityHook } from './antigravity-hooks.js';
+import { syncAntigravityMcp } from './antigravity-mcp.js';
 import { removeSessionGuard } from './session-guard.js';
 import { removePermissionPreset } from './permission-preset.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
@@ -493,6 +494,17 @@ export class UninstallEngine {
               const outcome = await removeAntigravityHook(hooksFile, { createdFile: antigravityHooks.createdFile });
               if (outcome === 'removed' || outcome === 'deleted-file') removedFiles.push(antigravityHooks.file);
               delete lockfile.antigravityHooks;
+            }
+
+            // ADR 0032 — the MCP servers wired into the user-owned `.agents/mcp_config.json` are refcounted by bundle: this bundle stops
+            // owning its servers, and a server nobody owns any more is removed (one the user edited is left, and the file is deleted only
+            // when agents-united created it and nothing remains).
+            const antigravityMcp = lockfile.antigravityMcp;
+            if (antigravityMcp) {
+              const outcome = await syncAntigravityMcp(path.join(workspaceRoot, antigravityMcp.file), { desired: {}, bundle: bundleName, record: antigravityMcp });
+              if (outcome.record) lockfile.antigravityMcp = outcome.record;
+              else delete lockfile.antigravityMcp;
+              if (outcome.deletedFile) removedFiles.push(antigravityMcp.file);
             }
 
             // Plan 023 A — the plain-session guard serves the whole workspace, so it goes with the

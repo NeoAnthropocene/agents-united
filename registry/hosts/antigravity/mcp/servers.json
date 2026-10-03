@@ -1,0 +1,45 @@
+{
+  "note": "Packaged MCP server entries for the Antigravity native lane (Plan 032 Phase 8, ADR 0032). One entry per server name the registry agents declare in `mcpServers:`; the launch command is the one the existing server definitions use (src/core/prerequisites.ts getMcpDefinition, pinned by test). Each `entry` is merged as-is into .agents/mcp_config.json under its name. No entry carries `env`, `headers` or `oauth`: a credential is never written. A server that needs one is shipped with `disabled: true` and names the variable in `requiresEnv`; the user sets it in the environment agy starts from and runs `agy mcp enable <name>`. Whether agy passes its own environment on to a stdio server, and whether a `${VAR}` placeholder in `env` is expanded, are unverified, which is why no placeholder is written.",
+  "servers": {
+    "chrome-devtools-mcp": {
+      "entry": { "command": "npx", "args": ["-y", "chrome-devtools-mcp"] },
+      "requiresEnv": [],
+      "optionalEnv": []
+    },
+    "context7": {
+      "entry": { "command": "npx", "args": ["-y", "@upstash/context7-mcp"] },
+      "requiresEnv": [],
+      "optionalEnv": ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"]
+    },
+    "figma": {
+      "entry": { "command": "npx", "args": ["-y", "ai-figma-mcp"], "disabled": true },
+      "requiresEnv": ["FIGMA_ACCESS_TOKEN"],
+      "optionalEnv": []
+    },
+    "firecrawl": {
+      "entry": { "command": "npx", "args": ["-y", "firecrawl-mcp"], "disabled": true },
+      "requiresEnv": ["FIRECRAWL_API_KEY"],
+      "optionalEnv": ["FIRECRAWL_API_URL"]
+    },
+    "github": {
+      "entry": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"], "disabled": true },
+      "requiresEnv": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "optionalEnv": []
+    },
+    "markitdown": {
+      "entry": { "command": "uvx", "args": ["markitdown-mcp"] },
+      "requiresEnv": [],
+      "optionalEnv": []
+    },
+    "playwright": {
+      "entry": { "command": "npx", "args": ["-y", "@executeautomation/playwright-mcp-server"] },
+      "requiresEnv": [],
+      "optionalEnv": []
+    },
+    "stitch": {
+      "entry": { "command": "npx", "args": ["-y", "mcp-remote", "https://stitch.googleapis.com/mcp"], "disabled": true },
+      "requiresEnv": ["STITCH_API_KEY"],
+      "optionalEnv": []
+    }
+  }
+}

@@ -8,7 +8,7 @@ reviewedAgainst: "2.0 2.18.1, CLI 1.2.11, IDE 2.5.5, SDK 0.1.18"
 
 Distilled from the snapshots in `host-library/antigravity/pages/`. Primary source: [mcp](../pages/mcp/mcp.md). Supporting sources: [plugins](../pages/plugin/plugins.md), [subagents](../pages/agent/subagents.md), [permissions](../pages/permissions/permissions.md).
 
-Native output (Plan 032, Phase 8) is a reviewed `mcp_config.json` fragment for the servers a bundle declares; MCP wiring is a later slice after the agents, rules and hooks.
+Native output (Plan 032, Phase 8, ADR 0032) is a reviewed catalog of server entries (`registry/hosts/antigravity/mcp/servers.json`) that the native lane merges into the workspace `.agents/mcp_config.json` for the servers a bundle's agents declare.
 
 ## Rules
 
@@ -33,7 +33,8 @@ Native output (Plan 032, Phase 8) is a reviewed `mcp_config.json` fragment for t
 
 ## Authoring notes (agents-united, not host behaviour)
 
-- **A config file can hold secrets (`env`, `headers`, `oauth`).** The package never writes a token or a client secret: it writes the server entry with the value read from the user's environment, or leaves a named placeholder, and says which. The `.agents/mcp_config.json` workspace file is meant to be committed, so a secret never goes in it.
-- **The packaged server entries come from what the bundles already declare for their agents** (a `- name: <server>` entry, wired through the MCP location registry in `src/core/mcp-locations.ts`), translated to `command` / `serverUrl` with no Claude or Cline field names; an agent's `mcpServers:` reference stays by name.
-- **Not verified:** whether an agent's `mcpServers:` frontmatter resolves (plan 031 left it untested), and how `agy mcp add` writes the same file (`agy mcp` has add, remove, list, enable and disable subcommands; they are documented only in `agy --help`, which this guide did not exercise).
-- The Cline MCP file is still unresolved (ADR 0028); this host is the one whose file and schema are documented, so the MCP slice can start here.
+- **A config file can hold secrets (`env`, `headers`, `oauth`).** The package never writes a token or a client secret, and its entries carry none of those three blocks. A server that needs a credential (`github`, `firecrawl`, `stitch`, `figma`) is written with `disabled: true`, and the install names the variable it needs; the user sets it in the environment agy starts from and runs `agy mcp enable <name>`. No `${VAR}` placeholder is written either, because whether the host expands one is unverified. The `.agents/mcp_config.json` workspace file is meant to be committed, so a secret never goes in it.
+- **The packaged server entries come from what the bundles already declare for their agents** (a `- name: <server>` entry in the registry agents' `mcpServers:`): one catalog entry per declared name, with the launch command of the existing server definitions (`src/core/prerequisites.ts`), as `command` / `args` with no Claude or Cline field names. The native agents carry no `mcpServers:` frontmatter, so the servers are workspace-wide. `src/core/mcp-locations.ts` only finds where a host keeps its file.
+- **The file is the user's.** The lane merges under strict JSON, keeps the user's servers, order, indent and line endings, treats a name the user already has as theirs, removes only the keys the lockfile records, and treats `disabled` as the user's switch (flipping it is never drift).
+- **Not verified:** that agy reads the workspace file in a session (`agy mcp list` printed only the global servers in a scratch workspace that had one), whether a stdio server gets agy's own environment, whether `${VAR}` is expanded in `env`, how a server that cannot start affects a headless run (a global server that could not start made every headless session hang, see the Linux observation), whether an agent's `mcpServers:` frontmatter resolves (plan 031 left it untested), and how `agy mcp add` writes the same file. `agy mcp list` prints header and argument values in plain text, so its output must not be pasted anywhere.
+- The Cline MCP file is still unresolved (ADR 0028).
