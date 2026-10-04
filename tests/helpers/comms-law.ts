@@ -26,6 +26,10 @@ export const TEAMMATE_COMMS_EVIDENCE: ReadonlyArray<{ invariant: string; evidenc
   { invariant: 'Do not wait for a reply: carry on from a stated assumption.', evidence: /do not wait for a reply/i },
   { invariant: 'A late message is answered with an updated report.', evidence: /`Peer messages received \(update\)`/ },
   { invariant: 'An exchange is one message and its reply.', evidence: /an exchange is one message and (the|its) reply/i },
+  // The shared task list (live Agent Teams page, 2026-10-04): a teammate claims the task it is given and marks it completed, and the host
+  // warns that task status can lag.
+  { invariant: 'A teammate claims only the task its brief names.', evidence: /only the task your brief names/i },
+  { invariant: 'A teammate marks its task completed.', evidence: /mark it completed/i },
   { invariant: TEAMMATE_COMMS_INVARIANTS[4], evidence: /`Peer messages received`[\s\S]*`Open items`/ },
   { invariant: TEAMMATE_COMMS_INVARIANTS[5], evidence: /team mode[^.]*brief lists each peer[^.]*`SendMessage`/i },
   // The default is the relay, and a missing peer never blocks.
@@ -45,6 +49,13 @@ export const LEAD_COMMS_EVIDENCE: ReadonlyArray<{ what: string; evidence: RegExp
   { what: 'the lead is the relay and wakes a finished teammate', evidence: /wake/i },
   { what: 'a message to a working teammate reaches it only after its turn ends, as a new turn (observed), so a briefed pair must not wait on each other', evidence: /after its turn ends[^.]*new turn[\s\S]*not wait/i },
   { what: 'a late message produces an updated report, which the lead reads in place of the first', evidence: /`Peer messages received \(update\)`/ },
+  // What the live Agent Teams page says about the shared task list, team size, shutdown and waiting (read 2026-10-04).
+  { what: 'the shared task list holds the Assembly Line as tasks with dependencies, so a task unblocks by itself', evidence: /shared task list[\s\S]*`TaskCreate`[\s\S]*dependenc/i },
+  { what: 'the Task tools are off by default on newer models, so without them the line runs through the briefs', evidence: /CLAUDE_CODE_ENABLE_TODO_TOOLS[\s\S]*(do not have them|without them)/i },
+  { what: 'a task that looks stuck is checked by the lead, who updates it (task status can lag)', evidence: /task status can lag[^.]*(check|update)/i },
+  { what: 'start with three to five teammates and spawn per tier, treating the roster as a menu', evidence: /three to five teammates[\s\S]*menu/i },
+  { what: 'ask a finished teammate to shut down by name; the team is cleaned up when the session ends', evidence: /shut down[^.]*by name[\s\S]*cleaned up[^.]*session ends/i },
+  { what: 'wait for the teammates and do not do their slices', evidence: /wait for your teammates/i },
   { what: 'one team per session, and teammates cannot spawn teammates', evidence: /one team per session[\s\S]*cannot spawn/i },
   { what: 'a resumed session does not restore teammates', evidence: /\/resume[^.]*(not|never)[^.]*restore/i },
   { what: 'a teammate is not guarded by a role\'s own frontmatter hook (observed), only by the settings-level guard', evidence: /frontmatter hook[^.]*teammate[\s\S]*--session-guard/i },
