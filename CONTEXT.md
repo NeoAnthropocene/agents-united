@@ -449,6 +449,14 @@ _Avoid_: General quiz, bot chat
 **Domain Modeling (`domain-modeling`)**:
 The capability that structures, defines, and refines domain entities and ubiquitous language in `CONTEXT.md`.
 
+**Templated Skill (ADR 0040)**:
+A skill whose body is mostly lines that other skills also carry once its own name is taken out (a template with the title swapped), measured as a share of its content lines found in a frozen boilerplate corpus (0.30 or more fails), or a hand-written in-house skill under 30 content lines with no `references/` or `scripts/` (a stub). `tests/skill-quality-ratchet.test.ts` rejects both unless the skill is on the shrinking allowlist.
+_Avoid_: Boilerplate skill, generated skill (some generated skills are fine; the test is on repetition)
+
+**Skill Allowlist Marker**:
+One small file in `tests/fixtures/templated-skills/` named for a skill that failed the audit. A rewrite deletes its own marker; no marker can be added, and a marker for a skill that now passes fails the test, so the allowlist only shrinks and parallel rewrites never conflict.
+_Avoid_: Exemption, waiver
+
 **Skill Attribution Standard**:
 A mandatory rule requiring all skills adopted from external creators to specify `metadata.author`, `metadata.version`, `metadata.source`, and `metadata.license` in their YAML frontmatter, and maintain formal acknowledgment in `README.md` under `## Credits & Acknowledgments`.
 _Avoid_: Uncredited fork, silent copy
