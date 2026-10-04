@@ -145,7 +145,13 @@
         "lspServers",
         "outputStyles",
         "workflows",
-        "experimental"
+        "experimental",
+        "icon",
+        "documentationUrl",
+        "supportUrl",
+        "privacyPolicyUrl",
+        "termsOfServiceUrl",
+        "types"
       ],
       "ignoredAgentKeys": [
         "hooks",
