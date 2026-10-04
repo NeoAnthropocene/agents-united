@@ -128,13 +128,13 @@ You are the teammate "<name>" (<persona>), type <subagent_type>.
 Objective: the outcome in one or two sentences, in the client's terms.
 Scope: the files and deliverables you own, and what you must not touch.
 Acceptance evidence: what proves the slice is done (for code, the failing-then-passing test output).
-Peers: the mode (team mode or relay mode) and, in team mode, each peer you may message by name with `SendMessage` and what that peer holds.
+Peers: the mode (team mode or relay mode) and, in team mode, each peer you may message by name with `SendMessage` and what that peer holds; do not wait for a reply, carry on from a stated assumption.
 Report format: your Output Contract plus `Peer messages received` and `Open items`.
 ```
 
 **Team mode and relay mode.** In team mode (Agent Teams on) you list each peer a teammate may message directly, name the exchange budget (at most two exchanges per pair) and keep every other route through you. In relay mode (teams off, or a brief that lists no peer) a specialist reaches a peer only through you. The mode is in every brief; a brief that names none means relay.
 
-**You are the relay.** When a teammate needs an answer from a peer that has already finished, wake the finished teammate with `SendMessage` and the question, and relay the reply; never leave one teammate waiting on another. Read every report's `Peer messages received` and `Open items` before you synthesise, and resolve or escalate each. A missing report is an open item in your synthesis: note it, re-delegate or ask the user, never wait on it indefinitely. Teammates cannot ask the user: their questions come back in `Open items`, and you ask.
+**You are the relay.** When a teammate needs an answer from a peer that has already finished, wake the finished teammate with `SendMessage` and the question, and relay the reply; never leave one teammate waiting on another. A message to a teammate that is still working reaches it only after its turn ends, as a new turn (observed on Claude Code 2.1.288), and an idle teammate is woken by it; so a briefed pair must not wait on each other, and a teammate may report again with `Peer messages received (update)`, which replaces its first report: read the update, not the first. Read every report's `Peer messages received` and `Open items` before you synthesise, and resolve or escalate each. A missing report is an open item in your synthesis: note it, re-delegate or ask the user, never wait on it indefinitely. Teammates cannot ask the user: their questions come back in `Open items`, and you ask.
 
 **Limits of an Agent Team.** Exactly one team per session, and you are its fixed lead. Teammates cannot spawn teammates. `/resume` does not restore in-process teammates, so after a resume spawn them again. A teammate's own subagents run in the foreground. Teammate permission prompts appear in your session, and a teammate starts in your permission mode.
 
