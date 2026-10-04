@@ -1,150 +1,69 @@
 ---
 name: content-calendar-strategy
-description: Production-grade Content Calendar Strategy playbook for design
-  operations, UX systems, and growth strategy.
+description: "Plan a 90-day content calendar that a small team can actually ship: pillars before cluster articles, capacity in hours, dependencies and owners per item, a refresh cadence, and a brief for each priority piece."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 📅
+  version: 3.0.0
+  icon: 🗓️
 disable-slash-command: true
 ---
 
 # Content Calendar Strategy
 
 ## Overview & Purpose
-The Content Calendar Strategy skill provides a deterministic framework for executing content calendar strategy processes in modern software products.
+A calendar is a statement of what will be finished, by whom, in what order, and why that order. Calendars fail because they list topics without hours, put cluster articles before the pillar they link to, ignore who must review, and never schedule updates to what already ranks. This skill is the editorial strategist's way of avoiding all four.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+It plans; it does not write the articles (Yavuz writes the briefs, the writers or other roles produce them) and it does not decide keyword targets (Selin validates them).
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Content Calendar Strategy tasks.
-- Auditing existing product assets or workflows.
-- Standardizing content-calendar-strategy procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Execution Triggers
+Load it for a 30, 60 or 90-day editorial plan, a content relaunch, or a quarterly review of what to publish and what to refresh. Do not use it for a single article's brief (write the ten-field brief directly) or for a social posting schedule (use `social-media-campaign`).
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+## Input/Output Requirements
+Inputs: audience and funnel stage priorities, the keyword and cluster map (or the task of building one, which comes first), existing content with its traffic, the team's capacity in hours per week by role, review and legal lead times, launch dates or events, and the channels in use.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+Outputs: the calendar table (week, title, keyword, search intent, format, owner, dependencies, status gate, publish date, channels); a capacity check; the refresh list; briefs for the priority items; and the measurement plan. Evidence to attach: the source of every keyword and volume figure and the date it was read.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/content-calendar-strategy/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/content-calendar-strategy/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/content-calendar-strategy/summary.json` | Health check and audit metric results |
+## Step-by-Step Runbook
+1. **Count capacity first.** Hours per week for writing, editing, design, subject-expert review and legal review. An item costs hours: a pillar page about 12 to 20, a cluster article 4 to 8, a case study 8 to 12 plus the customer's approval time (rough ranges; replace them with the team's own history). Total scheduled hours must stay under 80 percent of capacity; the rest is slack.
+2. **Order by dependency, not by enthusiasm.** Pillar before its cluster articles (they link up to it), research before opinion, a product release or launch date pins its related items, and anything that needs a customer, an engineer or legal goes early because those people are slow.
+3. **Assign every item** an owner, a reviewer, a status gate (brief approved, draft, review, published) and a publish date. An item without an owner is not scheduled.
+4. **Balance the mix** for the funnel: most items serve the middle and the bottom (comparisons, integration guides, documentation), a few serve awareness; do not build a calendar of only top-of-funnel topics because they are easiest to find keywords for.
+5. **Schedule refreshes.** For the pages that already earn traffic, a review at 90 days: update dates and facts, fix links, re-check the intent against the current top results. Refreshing a page that ranks often beats a new page.
+6. **Atomise on the calendar.** Each pillar creates derived items for Jale (social, email) with dates after publication; the dependency is the publish date.
+7. **Hand off.** Keyword and intent checks to Selin; copy-heavy items (landing pages) to Kaan; creative and diagram requests to Jamileh with the date they are needed; distribution items to Jale; factual or regulated claims to Defne for review. Tell the lead which items slip first if capacity drops.
 
-## Step-by-Step Execution Runbook
+## Code & Config Exemplars
+### Worked example
+A developer-tools company, capacity 30 hours a week across Yavuz's team (writer 16, editor 6, designer 4, engineer review 4). 90 days is 13 weeks, so 390 hours; plan to 310 (80 percent).
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+Pillar 1, "webhook reliability": pillar page 18 h, six cluster articles at 6 h each = 36 h, one customer case study 10 h, one integration guide 8 h: 72 h. Pillar 2, "API versioning": pillar 16 h, five cluster articles 30 h: 46 h. Refresh of the three pages with traffic: 3 x 3 h = 9 h. Distribution derivatives (Jale), design and review: 60 h. Total 187 h, well under 310: add one pillar, or keep slack for the release in week 9.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
+| Wk | Item | Keyword (source, date) | Intent | Owner | Needs | Gate | Publish |
+|---|---|---|---|---|---|---|---|
+| 1 | Pillar: webhook reliability | webhook retries (tool X, 2026-10-01) | informational | Yavuz | engineer review wk 1 | brief approved | wk 3 |
+| 4 | Cluster: idempotency keys | idempotent webhook | informational | writer | pillar published wk 3 | draft | wk 5 |
+| 9 | Release note and guide | (release) | navigational | writer | release date wk 9 | pinned | wk 9 |
+| 10 | Refresh: retries page | webhook retries | informational | editor | 90-day review | review | wk 10 |
 
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/content-calendar-strategy/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
+### Anti-patterns
+- A calendar with no hours behind it.
+- Cluster articles published before the pillar they point to.
+- 100 percent of capacity scheduled, so one illness breaks the plan.
+- New pages only; no refresh of what already ranks.
+- Keywords with a volume number and no source or date.
+- Items with no owner or review step.
 
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
+## Edge Cases & Error Recovery
+- **Capacity unknown**: ask; if you must plan, state the assumption in the first line and plan to a smaller number.
+- **A launch date moves**: the pinned items and everything dependent on them move; show the list, do not silently shift one row.
+- **A subject expert is unavailable**: switch that item to a format that does not need them, or move it later; do not publish unreviewed technical claims.
+- **A cluster keyword turns out to cannibalise an existing page**: ask Selin; merge or re-target, do not publish a duplicate.
+- **Legal review adds a week**: put it in the dependency column from the start for regulated topics (Defne).
 
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/content-calendar-strategy/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/content-calendar-strategy/ reports/content-calendar-strategy/
-   git commit -m "feat(content-calendar-strategy): implement Content Calendar Strategy playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Content Calendar Strategy Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "content-calendar-strategy"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/content-calendar-strategy/summary.json"
-```
-
-### Exemplar 2: Content Calendar Strategy Helper Module
-```typescript
-export function runContentCalendarStrategy(scope: string): boolean {
-  console.log('Running Content Calendar Strategy on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Content Calendar Strategy
-1. **Diagnosis**: Specification or code asset fails validation rules in content-calendar-strategy.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Content Calendar Strategy
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Capacity in hours per role is stated and total scheduled hours are under 80 percent.
+- [ ] Every item has an owner, a reviewer, dependencies, a gate and a date; pillars precede their clusters.
+- [ ] Every keyword and volume figure carries a source and the date it was read.
+- [ ] A refresh list for existing pages is included.
+- [ ] Hand-offs name Selin, Kaan, Jamileh, Jale and Defne with what each must deliver and by when.
+- [ ] Hour estimates are labelled as estimates unless taken from the team's own history.

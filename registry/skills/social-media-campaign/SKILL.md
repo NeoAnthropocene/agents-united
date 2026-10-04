@@ -1,150 +1,77 @@
 ---
 name: social-media-campaign
-description: Production-grade Social Media Campaign playbook for design
-  operations, UX systems, and growth strategy.
+description: "Plan and write a social campaign in shapes native to each platform: one claim per post, source material first, a calendar with owners, disclosure of paid content, no engagement bait, a response plan and measurement."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 📢
+  version: 3.0.0
+  icon: 📣
 disable-slash-command: true
 ---
 
 # Social Media Campaign
 
 ## Overview & Purpose
-The Social Media Campaign skill provides a deterministic framework for executing social media campaign processes in modern software products.
+A campaign is a message, told in the form each platform's readers expect, on a schedule, with a plan for what happens when people answer. Resizing one post for five networks is not a campaign. This skill gives the campaign specialist the order of work and the rules that keep a campaign honest.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+The campaign specialist drafts and plans. Nothing is posted by this role: publishing is the client's or the lead's act, with their accounts. Visuals belong to Jamileh and claims review to Defne.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Social Media Campaign tasks.
-- Auditing existing product assets or workflows.
-- Standardizing social-media-campaign procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Execution Triggers
+Load it for a launch announcement matrix, an always-on content plan, an event or a feature-adoption push. Do not use it for paid ad creative (use `ad-creative-design`), or for a long-form content plan (use `content-calendar-strategy`).
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+## Input/Output Requirements
+Inputs: the campaign goal as one measurable outcome, the audience and where they already are, the one message, source material (posts, articles, product demos, changelog, quotes), the channels the client actually operates, who approves, and the dates.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+Outputs: a campaign brief (goal, audience, message, channels, success metric); a matrix of posts per platform with angle, copy, asset need and call to action; a dated calendar with owners and approval step; disclosure notes; a response plan; the measurement plan with UTM scheme. Evidence to attach: the source of each fact or number used in a post.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/social-media-campaign/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/social-media-campaign/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/social-media-campaign/summary.json` | Health check and audit metric results |
+## Step-by-Step Runbook
+1. **Start from source material, not from a formula.** What did the team actually build, measure or learn? A post is the smallest true thing worth telling about it.
+2. **One claim per post.** If a post needs "and also", it is two posts. Write the claim first, then the shape.
+3. **Use the platform-native shape.** Short and concrete on X (the claim first, then the proof). Professional networks: enough context for someone outside the niche, no fake lesson. Community forums: an honest question or a post-mortem, written as a member, no sales language. Video: show the result in the first seconds, script the visual sequence. A thread, a post and a video of the same news are three pieces, each making its claim in its own form.
+4. **Plan the calendar around moments**, not slots: a release, an event, a customer story, a result. Put the pillar piece first, derivatives after, and a gap for reacting to what happens.
+5. **Disclose.** Paid, sponsored, affiliate or gifted content is labelled as such in the place the platform expects; employees and partners say who they work for. A false or buried disclosure is a reason to stop (Defne).
+6. **No engagement bait.** No "comment YES for the guide", no fake polls, no tagging people who did not agree to it, no asking for shares or votes in exchange for nothing, no purchased engagement.
+7. **Write the response plan before the first post**: who watches replies and for how long, what gets answered, what escalates to the lead (complaints, press, legal, a crisis), what is never deleted, and a pause rule (stop scheduled posts when something serious happens).
+8. **Measure what the goal is**: clicks to the campaign page via UTM, signups or replies, not impressions alone. Name one primary metric and a guardrail (unfollows, negative replies).
+9. **Hand off.** Visual briefs to Jamileh (sizes per platform), landing-page copy to Kaan, content pieces from Yavuz's calendar, claims and disclosure to Defne, link and UTM checks to Emre. The lead decides when to post.
 
-## Step-by-Step Execution Runbook
+## Code & Config Exemplars
+### Worked example
+Launch of a webhook-retry feature. Source material: the changelog, a measurement (retries now recover 94 percent of failed deliveries in a staging test of 10,000 events, invented here), and one customer quote.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+Message: "Failed webhooks now recover on their own." One claim, one proof.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
+| Platform | Shape | Copy (excerpt) | Asset | CTA |
+|---|---|---|---|---|
+| X | claim then proof | "Failed webhooks now retry on their own. In a staging test of 10,000 events, 94% recovered with no code on your side." | one chart | link to the guide, UTM tagged |
+| LinkedIn | short story | "Last year one of our customers lost a day to a missed webhook. We built retries so the next team does not." | founder photo, no stock image | link, UTM tagged |
+| Community forum | post-mortem as a member | "How we designed retry backoff and what we got wrong first" | none | the guide, no sales pitch |
+| Short video | result first | 0:00 failed event, 0:04 it retries, 0:10 delivered | screen recording | pinned link |
 
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/social-media-campaign/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
+Response plan: the campaign specialist's brief names the client's support lead as the person who answers technical replies within one working day; "this lost me data" replies escalate to the lead the same day; no post is deleted except for abuse. Metric: guide visits from the campaign UTM; guardrail: negative replies share.
 
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/social-media-campaign/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/social-media-campaign/ reports/social-media-campaign/
-   git commit -m "feat(social-media-campaign): implement Social Media Campaign playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Social Media Campaign Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "social-media-campaign"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/social-media-campaign/summary.json"
+```text
+utm_source=<platform> utm_medium=social utm_campaign=webhook-retries utm_content=<post-id>
 ```
 
-### Exemplar 2: Social Media Campaign Helper Module
-```typescript
-export function runSocialMediaCampaign(scope: string): boolean {
-  console.log('Running Social Media Campaign on:', scope);
-  return true;
-}
-```
+### Anti-patterns
+- The same text, five sizes.
+- Three claims in one post.
+- "Comment to get the link" to farm replies.
+- Posting with no one watching the replies.
+- Impressions as the success metric.
+- An undisclosed sponsored mention.
 
-## Edge Cases & Error Recovery Procedures
+## Edge Cases & Error Recovery
+- **A crisis or tragedy lands on a scheduled day**: recommend pausing the schedule; the lead decides.
+- **A negative reply with a valid point**: reply once, correct what is wrong, move the rest to support; do not argue publicly.
+- **A platform changes its format**: use the format that works now; do not invest in a deprecated one.
+- **A claim cannot be sourced**: the post waits (Defne and Yavuz).
+- **No approval path**: the campaign brief names the approver; nothing is scheduled without one.
 
-### Scenario A: Validation Failure in Social Media Campaign
-1. **Diagnosis**: Specification or code asset fails validation rules in social-media-campaign.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Social Media Campaign
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] One goal, one message, one primary metric and one guardrail.
+- [ ] Each post makes one claim in its platform's native shape, with its source in the evidence list.
+- [ ] Paid, sponsored or affiliate content has a disclosure note per post.
+- [ ] A response plan names who watches, for how long, and what escalates.
+- [ ] Every link is UTM-tagged; no post asks for engagement as a favour.
+- [ ] Hand-offs name Jamileh, Kaan, Yavuz, Defne and Emre; the lead owns the posting decision.

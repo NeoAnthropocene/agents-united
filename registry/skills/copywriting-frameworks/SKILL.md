@@ -1,10 +1,9 @@
 ---
 name: copywriting-frameworks
-description: Production-grade Copywriting Frameworks playbook for design
-  operations, UX systems, and growth strategy.
+description: "Write copy that is specific, supportable and in one voice: start from source material, choose a framework by the reader's state, make one claim per piece, and pass a claim audit and a five-second test before hand-off."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: ✍️
 disable-slash-command: true
 ---
@@ -12,139 +11,66 @@ disable-slash-command: true
 # Copywriting Frameworks
 
 ## Overview & Purpose
-The Copywriting Frameworks skill provides a deterministic framework for executing copywriting frameworks processes in modern software products.
+Frameworks (problem-agitate-solve, before-after-bridge, the four-part page story) are scaffolds, not content. Copy fails when the scaffold is filled with adjectives instead of facts from the product, the customer and the numbers. This skill gives Kaan and Yavuz a fixed order of work: source material, voice, one claim, framework, audit.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+It writes words. Layout belongs to Jamileh, typed section props to Deniz, tracking to Jale, and what the law allows a claim to say to Defne.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Copywriting Frameworks tasks.
-- Auditing existing product assets or workflows.
-- Standardizing copywriting-frameworks procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Execution Triggers
+Load it before writing any headline, page section, ad, email or post, and when reviewing copy someone else wrote. Do not use it for UI microcopy inside a product (use `ux-writing`) or for long editorial articles (Yavuz works from a content brief, and uses this for the title, the intro and the call to action).
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+## Input/Output Requirements
+Inputs, asked for rather than invented: the audience and what state they are in (unaware, problem-aware, solution-aware, ready to buy), the offer, three to five true, specific facts about it (numbers, outcomes, constraints, who uses it), real customer language (support tickets, reviews, interview quotes), existing brand or product copy for voice, and the one action the piece should cause.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+Outputs: the copy; a one-line statement of the single claim; the framework and why it fits; the voice profile used; a claim audit table; and the **evidence** list: where each fact came from. Typed section props are produced only when the lead asks and Deniz is the consumer.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/copywriting-frameworks/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/copywriting-frameworks/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/copywriting-frameworks/summary.json` | Health check and audit metric results |
+## Step-by-Step Runbook
+1. **Read the source material before you write a word**: product documents, changelog, reviews, the existing page. Collect the exact phrases customers use for their problem. If you have none, say so and mark every audience statement an assumption.
+2. **Build a short voice profile from real samples** (five to twenty if they exist): sentence length, how direct claims are, use of numbers, what the brand never says. Reuse it across every piece of the same campaign so the pieces read as one author. With no samples, write plainly and flag that the voice is unconfirmed.
+3. **Choose one claim per piece.** A piece that says three things persuades of none. Write it as a sentence a sceptic could check: "Invoices go out in under a minute", not "the fastest invoicing".
+4. **Pick the framework by reader state.** Unaware: lead with the situation they recognise, not the product. Problem-aware: problem, cost of the problem, solution (PAS). Solution-aware: contrast with the alternatives and the proof. Ready to buy: remove doubt (price, guarantee, steps, what happens next). Before-after-bridge suits case studies and launches.
+5. **Write specific.** Replace every adjective with a number, a name or a mechanism. One call to action, a verb plus the outcome ("Send your first invoice"), never "Learn more" when the next step is a signup.
+6. **Cut the banned phrases.** Never write: "game-changer", "revolutionary", "cutting-edge", "seamless", "unlock the power of", "in today's fast-paced world", a closing question that only farms replies, or forced casual tone on a serious channel. Delete them and restate the fact beneath.
+7. **Audit before you hand off.** Claim audit: each factual statement has a source or becomes an opinion or is removed. Five-second test on the headline and first screen: who is it for, what does it do, why act now? Cross-channel check: the ad promise matches the page, the subject line matches the body.
+8. **Hand off.** Final copy to the requester (Jale for campaign pieces, Jamileh for layout with the hierarchy noted, Deniz as typed props if asked); numerical, comparative or health, finance or earnings claims to Defne before anything is published.
 
-## Step-by-Step Execution Runbook
+## Code & Config Exemplars
+### Worked example
+Brief: an invoicing tool for freelancers; audience problem-aware; facts: invoices created in 45 seconds on average (product telemetry, last 30 days), reminders sent automatically, 3.1 percent of invoices are paid late among users with reminders against 11 percent without (internal analysis, sample of 2,300; invented here), no card needed for the free plan.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+Weak: "The all-in-one invoicing solution that streamlines your workflow and helps you get paid faster."
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
+Claim: "Freelancers who turn on reminders are paid late far less often." Framework: PAS.
 
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/copywriting-frameworks/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/copywriting-frameworks/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/copywriting-frameworks/ reports/copywriting-frameworks/
-   git commit -m "feat(copywriting-frameworks): implement Copywriting Frameworks playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Copywriting Frameworks Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "copywriting-frameworks"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/copywriting-frameworks/summary.json"
+Strong:
+```text
+Headline:   Chasing late invoices costs you the work you were paid for.
+Problem:    Eleven in a hundred invoices arrive late when nobody reminds the client.
+Agitate:    Each awkward email is an hour you did not bill.
+Solve:      Turn on reminders once. Late invoices fell to three in a hundred for the people who did.
+Proof:      Based on 2,300 invoices from users on the free plan, last quarter.
+CTA:        Send your first invoice, free (no card).
 ```
+Claim audit: "eleven in a hundred" and "three in a hundred" tie to the internal analysis (needs the source file path in the evidence list); "free (no card)" ties to the pricing page. Hand-off: Jamileh for layout (headline above the fold), Defne to confirm the comparison is substantiated, Jale if it becomes an email.
 
-### Exemplar 2: Copywriting Frameworks Helper Module
-```typescript
-export function runCopywritingFrameworks(scope: string): boolean {
-  console.log('Running Copywriting Frameworks on:', scope);
-  return true;
-}
-```
+### Anti-patterns
+- Filling a framework with adjectives.
+- Three claims in one hero section.
+- Inventing a statistic or a testimonial to complete the scaffold.
+- Writing before you have read the product or a customer's own words.
+- Different voices in the ad, the page and the email.
+- A closing question used only to provoke replies.
 
-## Edge Cases & Error Recovery Procedures
+## Edge Cases & Error Recovery
+- **No facts to use**: do not write persuasive copy; return a list of the five facts you need and write only a plain description.
+- **A fact you cannot source**: remove it, or print it as the client's belief ("the team believes...") and flag it under Open items.
+- **Two audiences in one piece**: split the piece; one audience, one claim.
+- **A request for urgency or scarcity that is not real**: refuse the false version, offer the true one (a real date, a real limit) and say why.
+- **Voice conflicts with the claim** (a playful brand, a serious number): lead with the number, keep the voice in the rest.
 
-### Scenario A: Validation Failure in Copywriting Frameworks
-1. **Diagnosis**: Specification or code asset fails validation rules in copywriting-frameworks.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Copywriting Frameworks
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] One claim per piece, stated in one checkable sentence.
+- [ ] Every number, comparison and testimonial has a source in the evidence list, or is flagged as an assumption or removed.
+- [ ] The five-second test is answered for the headline and first screen, in writing.
+- [ ] No banned phrase remains; one specific call to action.
+- [ ] The voice profile used is named; if samples were missing, that is stated.
+- [ ] Hand-offs are named (Jale, Jamileh, Deniz, Defne) with what each receives.
