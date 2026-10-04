@@ -45,6 +45,14 @@ Findings:
 
 Backlog: F1 is a fix to ship this week (S2, trivial); F2 and F3 become tests (ICE 7.0 and 6.3); Kaan hands F1 to Jamileh and Deniz, and F2 and F3 to `ab-test-setup` with the paid-social segment as the audience.
 
+Finding format:
+```text
+F<n> | S<1-4> | <step, element, device or segment>
+Evidence: <count, recording, screenshot path or element read>
+Principle: <clarity | effort | anxiety | relevance | distraction>
+Fix: <the change, specific enough to build>   Moves: <metric>   Owner: <Jamileh | Deniz | Selin | test>
+```
+
 ### Anti-patterns
 - Averaging across segments and recommending for the average.
 - "Make the button bigger" with no location, no evidence and no metric.

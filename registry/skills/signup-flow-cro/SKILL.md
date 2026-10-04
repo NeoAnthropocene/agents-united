@@ -48,7 +48,7 @@ A B2B scheduling tool asks for: first name, last name, work email, password, com
 New flow: one screen (email, name, password), a Google or Microsoft button above it, verification email sent at once with entry allowed, the three moved questions asked as a card on the dashboard after the first scheduled meeting. Brief for `ab-test-setup`: primary metric signup-start to first meeting scheduled within 24 hours; guardrail: share of unverified accounts that invite others.
 
 Error specification:
-```
+```text
 Field: Work email    Trigger: blur   Message: "Enter an address like name@company.com"
 Field: Password      Trigger: input  Message (live): "12+ characters, a mix is optional" ; never block paste
 On submit failure: keep all values, scroll to the first error, move focus to its field

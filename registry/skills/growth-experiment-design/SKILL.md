@@ -59,7 +59,7 @@ The leak: signup to first invoice at 25.0 percent against a self-serve benchmark
 Brief for rank 1: primary metric signups-to-first-invoice within 24 hours; guardrail: invoices sent within 7 days must not fall by more than 3 percent relative; 6,200 signups a month is about 1,430 a week, so two weeks give about 1,430 per arm; detecting 5 points on a 25 percent base needs about 1,200 per arm (16 x 0.25 x 0.75 / 0.05 squared, an estimate, check it with `ab-test-setup`), so the test fits. Decision rule: ship at 30 percent or more with the guardrail holding. Owner Kaan for copy, Deniz for the build.
 
 Log entry shape:
-```
+```text
 EXP-014 | 2026-10-04 | sample invoice on first screen
 Hypothesis: ... | Primary: first invoice within 24h | Guardrail: invoices sent in 7 days
 Result: 25.1 to 29.4 percent, n = 1,450 per arm | Decision: iterate (below the 30 percent bar, guardrail held)

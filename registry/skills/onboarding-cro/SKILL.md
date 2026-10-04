@@ -42,6 +42,13 @@ Changes in order: (1) move the survey after the first task and ask two questions
 
 Test brief for change 1: primary metric activation within 24 hours of signup; guardrail: share of accounts with a company size recorded within 14 days; two weeks at about 180 signups a day is enough for a 4-point lift (check the arithmetic with `ab-test-setup`).
 
+Events to hand to Deniz (names are a suggestion; match the product's existing convention):
+```text
+signup_completed, email_verified, first_project_created, first_task_added(activation),
+checklist_item_completed(item), question_answered(question), sample_project_opened
+properties on every event: user_id, timestamp, source, device
+```
+
 ### Anti-patterns
 - A checklist that measures completion of the checklist.
 - A tour of seven tooltips before the user has done anything.

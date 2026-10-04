@@ -44,7 +44,7 @@ What it buys: 4,000 users x 0.145 = about 580 extra activated users from one mon
 Cycle time: users send their invitations on day 9 on average. Move the prompt to the moment the first plan is shared (day 2): the same K arrives in a third of the time.
 
 Events to instrument:
-```
+```text
 referral_prompt_viewed, referral_link_copied, invite_sent,
 referee_landed, referee_signed_up, referee_activated, reward_pending, reward_granted, reward_blocked(reason)
 ```

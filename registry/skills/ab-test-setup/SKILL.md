@@ -51,7 +51,7 @@ The same idea on a page with a 1.0 percent baseline and a hoped-for 10 percent r
 SRM check at day 3: planned 50/50, observed 10,300 against 9,700 (total 20,000, expected 10,000 each). Chi-square = 300 squared / 10,000 + 300 squared / 10,000 = 18, which is above the 10.83 cut-off for p = 0.001: **stop and investigate**, do not read the result.
 
 Brief header to copy:
-```
+```text
 EXPERIMENT   <id> <name>
 PRIMARY      <numerator> / <denominator> within <window>
 GUARDRAIL    <metric> must not worsen by more than <x>
