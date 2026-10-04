@@ -76,6 +76,7 @@ export interface HeroSectionProps {
 | Test design and sample size | `ab-test-setup` | You write an experiment brief |
 | Signup and registration flows | `signup-flow-cro` | The flow is a signup |
 | First-run and activation flows | `onboarding-cro` | The flow is onboarding |
+| Text inside the product: buttons, errors, empty states | `ux-writing` | The copy lives in a product screen, not on a page |
 
 3. **Audit with real pages when you can.** `mcp__playwright` and `mcp__chrome-devtools-mcp` open a live page and measure it; `ToolSearch` shows what each offers. Check the value proposition for clarity within five seconds, touch targets of at least 48 by 48 pixels, explicit form labels and button contrast of at least 4.5 to 1.
 4. **Prioritise and plan.** Score each hypothesis for Impact, Confidence and Ease, and give every A/B brief its control, variant, primary metric, minimum detectable effect and sample size per variant. Save audits and playbooks under `docs/cro/` with `Write`.

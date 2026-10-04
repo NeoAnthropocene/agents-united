@@ -1,150 +1,89 @@
 ---
 name: responsive-design-audit
-description: Production-grade Responsive Design Audit playbook for design
-  operations, UX systems, and growth strategy.
+description: "Verify that a page holds across the viewport matrix: no horizontal scroll, reflow at 320 px, touch targets, text that survives zoom, stable layout shift, with a Playwright check, screenshots as evidence, and defects routed to their owners."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 📐
+  version: 3.0.0
+  icon: 📱
 disable-slash-command: true
 ---
 
 # Responsive Design Audit
 
 ## Overview & Purpose
-The Responsive Design Audit skill provides a deterministic framework for executing responsive design audit processes in modern software products.
+A page can look right at the width the designer used and break at the three widths people actually use. This skill gives the QA lead a short, repeatable check across the viewport matrix, with evidence a developer can act on. It verifies and reports; it does not patch another specialist's layout (the role contract says to report a defect through the lead).
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it for any change to layout, navigation, images, tables or typography, before sign-off of a page, and when a user reports "broken on my phone". Do not use it for visual taste (that is a design review) or for performance (use `debug-optimize-lcp`).
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Responsive Design Audit tasks.
-- Auditing existing product assets or workflows.
-- Standardizing responsive-design-audit procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: the URL or route and how to start the app, the design frames for comparison, the breakpoints the product uses, the list of the key journeys on the page, and whether an authenticated state is needed (credentials are the lead's to provide; never invent or request real secrets).
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Outputs: a table of viewport against result; a screenshot per viewport; the list of defects, each with the viewport, the selector or region, the measured value, severity and owner; and the gate status. **Evidence to attach**: screenshots saved under `artifacts/`, the measured overflow in pixels, the failing selectors, and the Playwright run output.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **Fix the matrix.** Mobile 375 by 667, tablet 768 by 1024, desktop 1440 by 900 (the role's standard), plus a 320 px wide check for reflow. Add the product's own breakpoints (just below and just above each) when they exist.
+2. **Run the horizontal-scroll check at each width.** The page must not scroll sideways: `document.documentElement.scrollWidth` must not exceed `window.innerWidth`. A fixed-width table or image wider than the viewport is the usual cause; content that must be wide (a data table) scrolls inside its own container.
+3. **Check reflow at 320 CSS pixels** (equivalent to 400 percent zoom on a 1280 px screen): content reads in one column with no two-dimensional scrolling, apart from content that needs it such as maps and data tables.
+4. **Check touch targets** on the narrower viewports. Interactive elements should measure at least 44 by 44 CSS pixels; below 24 by 24 is a failure of the current WCAG level AA target-size criterion unless spacing compensates. Report the measured size.
+5. **Check text and zoom.** Increase browser text size to 200 percent: nothing may be clipped or overlap; do not rely on fixed heights for text containers.
+6. **Check layout stability.** Reserve space for images and embeds (width and height or an aspect ratio); look for content that jumps as it loads.
+7. **Check the key journeys** at mobile width with the touch viewport: open the menu, fill the form, submit, reach the confirmation. A layout that looks right but cannot be operated fails.
+8. **Collect evidence and hand off the defects.** Screenshot every viewport. Layout and component defects go to Deniz; a design that cannot work at a width goes to Jamileh; copy that overflows its container goes to Kaan. Do not fix them yourself. Report through the lead.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/responsive-design-audit/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/responsive-design-audit/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/responsive-design-audit/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+### Worked example
+A pricing page (invented results). Run: `npx playwright test tests/responsive.spec.ts` against the local build.
 
-## Step-by-Step Execution Runbook
+```ts
+import { test, expect } from '@playwright/test';
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+const viewports = [
+  { name: 'mobile', width: 375, height: 667 },
+  { name: 'tablet', width: 768, height: 1024 },
+  { name: 'desktop', width: 1440, height: 900 },
+  { name: 'reflow-320', width: 320, height: 640 },
+];
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/responsive-design-audit/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/responsive-design-audit/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/responsive-design-audit/ reports/responsive-design-audit/
-   git commit -m "feat(responsive-design-audit): implement Responsive Design Audit playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Responsive Design Audit Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "responsive-design-audit"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/responsive-design-audit/summary.json"
-```
-
-### Exemplar 2: Responsive Design Audit Helper Module
-```typescript
-export function runResponsiveDesignAudit(scope: string): boolean {
-  console.log('Running Responsive Design Audit on:', scope);
-  return true;
+for (const v of viewports) {
+  test(`no horizontal scroll and usable targets at ${v.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: v.width, height: v.height });
+    await page.goto('/pricing');
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow, `horizontal overflow at ${v.name}`).toBeLessThanOrEqual(0);
+    const small = await page.evaluate(() =>
+      [...document.querySelectorAll('a, button, input, select, textarea, [role="button"]')]
+        .map((el) => ({ el: el.tagName + (el.id ? '#' + el.id : ''), r: el.getBoundingClientRect() }))
+        .filter(({ r }) => r.width > 0 && (r.width < 24 || r.height < 24))
+        .map(({ el, r }) => `${el} ${Math.round(r.width)}x${Math.round(r.height)}`),
+    );
+    expect(small, `targets under 24x24 at ${v.name}`).toEqual([]);
+    await page.screenshot({ path: `artifacts/pricing-${v.name}.png`, fullPage: true });
+  });
 }
 ```
 
-## Edge Cases & Error Recovery Procedures
+Result: mobile fails with an overflow of 38 px caused by the comparison table (no scroll container) and tablet and desktop pass; at 320 px the billing toggle's icon buttons measure 20 by 20. Defects: D1, S2, 375 px, `table.compare`, overflow 38 px, owner Deniz (add a scroll container); D2, S3, 320 px, `button.icon-toggle`, 20x20, owner Deniz (min size) with Jamileh to confirm the icon spacing. Gate: **red** until D1 is fixed and the run repeated.
 
-### Scenario A: Validation Failure in Responsive Design Audit
-1. **Diagnosis**: Specification or code asset fails validation rules in responsive-design-audit.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
+### Anti-patterns
+- Resizing the desktop browser by hand and calling it a mobile test.
+- Testing only the three standard widths and never 320.
+- A pass reported from the DevTools device toolbar alone with no saved evidence.
+- Fixing the CSS yourself and reporting green.
+- Fixed sleeps instead of waiting for the page to settle.
+- Judging a layout without operating the key journey.
 
-### Scenario B: Missing Resource for Responsive Design Audit
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
+## Edge Cases & Error Recovery
+- **The app cannot start or the route needs a login you do not have**: stop, report the exact blocker and what you did not test; do not use real credentials or work around the login.
+- **Intentional horizontal scroll inside a component**: allowed if it is contained, keyboard operable and announced; record it as an exception.
+- **A flaky layout measurement** (late-loading fonts or images): wait for the page's load state and fonts, re-run once, and report both results if they differ.
+- **Cannot reproduce a user's report**: ask for their device, browser and zoom; test that exact configuration.
+- **A headless browser cannot represent a real phone** (virtual keyboard, safe areas): say so; do not claim a mobile pass beyond what was measured.
 
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] The matrix includes 375, 768, 1440 and a 320 px reflow check, plus the product's breakpoints.
+- [ ] Horizontal overflow was measured in pixels at every width.
+- [ ] Touch target sizes were measured and the failures listed with their selectors.
+- [ ] A screenshot per viewport is saved and referenced.
+- [ ] Each defect has a severity, an owner and a proposed fix; none was patched by this role.
+- [ ] The report states what was not tested (devices, authenticated states, real browsers).

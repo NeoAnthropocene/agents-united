@@ -1,0 +1,812 @@
+{
+  "repo": "mrstev3n/balise-skills",
+  "repoLicence": {
+    "file": "LICENSE",
+    "firstLines": [
+      "                                 Apache License",
+      "                           Version 2.0, January 2004",
+      "                        http://www.apache.org/licenses/"
+    ]
+  },
+  "scannedAt": "2026-10-04",
+  "schema": 1,
+  "sha": "f596a61fa8f4471054b1ed75d17bc6699db4572d",
+  "skills": [
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 13726,
+      "extras": {
+        "content": [],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md"
+      ],
+      "name": "balise-content-test",
+      "path": "figma-skills/balise-content-test"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 20153,
+      "extras": {
+        "content": [],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md"
+      ],
+      "name": "balise-handoff",
+      "path": "figma-skills/balise-handoff"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 2738,
+      "extras": {
+        "content": [],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md"
+      ],
+      "name": "balise-idea",
+      "path": "figma-skills/balise-idea"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 17353,
+      "extras": {
+        "content": [],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md"
+      ],
+      "name": "balise-trustworthy-flows",
+      "path": "figma-skills/balise-trustworthy-flows"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 13464,
+      "extras": {
+        "content": [],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md"
+      ],
+      "name": "balise-ui-states",
+      "path": "figma-skills/balise-ui-states"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 10274,
+      "extras": {
+        "content": [],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md"
+      ],
+      "name": "balise-ux-writing",
+      "path": "figma-skills/balise-ux-writing"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 10608,
+      "extras": {
+        "content": [],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md"
+      ],
+      "name": "balise-visual-references",
+      "path": "figma-skills/balise-visual-references"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 8515,
+      "extras": {
+        "content": [
+          "references/affinity-decision-matrix.md",
+          "references/affinity-mental-model.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/affinity-decision-matrix.md",
+        "references/affinity-mental-model.md"
+      ],
+      "name": "balise-affinity",
+      "path": "skills/balise-affinity"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 19855,
+      "extras": {
+        "content": [
+          "references/affinity-concepts-and-nuances.md",
+          "references/affinity-js-patterns.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/affinity-concepts-and-nuances.md",
+        "references/affinity-js-patterns.md"
+      ],
+      "name": "balise-affinity-mcp",
+      "path": "skills/balise-affinity-mcp"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 24057,
+      "extras": {
+        "content": [
+          "references/evaluation-et-disponibilite.md",
+          "references/fondations-de-marque.md",
+          "references/structure-du-livrable.md",
+          "references/territoires-de-naming.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/evaluation-et-disponibilite.md",
+        "references/fondations-de-marque.md",
+        "references/structure-du-livrable.md",
+        "references/territoires-de-naming.md"
+      ],
+      "name": "balise-brand-naming",
+      "path": "skills/balise-brand-naming"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 42569,
+      "extras": {
+        "content": [
+          "references/accessibility-runtime.md",
+          "references/localization-unicode.md",
+          "references/remediation-patterns.md",
+          "references/resilience-contract.md",
+          "references/test-library.md"
+        ],
+        "deferred": [
+          "assets/content-resilience-report-template.md"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "assets/content-resilience-report-template.md",
+        "references/accessibility-runtime.md",
+        "references/localization-unicode.md",
+        "references/remediation-patterns.md",
+        "references/resilience-contract.md",
+        "references/test-library.md"
+      ],
+      "name": "balise-content-test",
+      "path": "skills/balise-content-test"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 132492,
+      "extras": {
+        "content": [
+          "references/audits-and-pilots.md",
+          "references/color-and-typography.md",
+          "references/components-and-patterns.md",
+          "references/consumption-and-learning.md",
+          "references/deliverable-templates.md",
+          "references/figma-to-code.md",
+          "references/framework-adoption.md",
+          "references/governance-and-maturity.md",
+          "references/implementation-pipelines.md",
+          "references/naming-and-source-authority.md",
+          "references/saas-structures.md",
+          "references/strategy-and-scope.md",
+          "references/style-dictionary.md",
+          "references/token-architecture.md"
+        ],
+        "deferred": [
+          "scripts/audit_token_usage.py",
+          "scripts/validate_dtcg.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/audits-and-pilots.md",
+        "references/color-and-typography.md",
+        "references/components-and-patterns.md",
+        "references/consumption-and-learning.md",
+        "references/deliverable-templates.md",
+        "references/figma-to-code.md",
+        "references/framework-adoption.md",
+        "references/governance-and-maturity.md",
+        "references/implementation-pipelines.md",
+        "references/naming-and-source-authority.md",
+        "references/saas-structures.md",
+        "references/strategy-and-scope.md",
+        "references/style-dictionary.md",
+        "references/token-architecture.md",
+        "scripts/audit_token_usage.py",
+        "scripts/validate_dtcg.py"
+      ],
+      "name": "balise-design-system",
+      "path": "skills/balise-design-system"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 41837,
+      "extras": {
+        "content": [
+          "references/figma-execution.md",
+          "references/implementation-evidence.md",
+          "references/readiness-model.md",
+          "references/source-of-truth-and-change.md"
+        ],
+        "deferred": [
+          "assets/handoff-readiness-contract-template.md"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "assets/handoff-readiness-contract-template.md",
+        "references/figma-execution.md",
+        "references/implementation-evidence.md",
+        "references/readiness-model.md",
+        "references/source-of-truth-and-change.md"
+      ],
+      "name": "balise-handoff",
+      "path": "skills/balise-handoff"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 28961,
+      "extras": {
+        "content": [
+          "references/discovery-and-opportunity.md",
+          "references/experiments-and-evidence.md",
+          "references/figma-handoff.md",
+          "references/ideation-and-maturation.md",
+          "references/mobilization-and-learning.md",
+          "references/output-models.md",
+          "references/router-and-trace.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/discovery-and-opportunity.md",
+        "references/experiments-and-evidence.md",
+        "references/figma-handoff.md",
+        "references/ideation-and-maturation.md",
+        "references/mobilization-and-learning.md",
+        "references/output-models.md",
+        "references/router-and-trace.md"
+      ],
+      "name": "balise-idea",
+      "path": "skills/balise-idea"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 88632,
+      "extras": {
+        "content": [
+          "references/asset-acquisition.md",
+          "references/asset-strategy.md",
+          "references/engine-routing.md",
+          "references/export-and-codecs.md",
+          "references/intake-and-formats.md",
+          "references/kinetic-typography.md",
+          "references/motion-quality-and-lessons.md",
+          "references/reference-research.md",
+          "references/sound-and-delivery.md"
+        ],
+        "deferred": [
+          "assets/motion-brief-template.md",
+          "assets/worked-example.md",
+          "scripts/extract_reference_frames.py",
+          "scripts/remove_chroma_key.py",
+          "scripts/setup_asset_pipeline.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "assets/motion-brief-template.md",
+        "assets/worked-example.md",
+        "references/asset-acquisition.md",
+        "references/asset-strategy.md",
+        "references/engine-routing.md",
+        "references/export-and-codecs.md",
+        "references/intake-and-formats.md",
+        "references/kinetic-typography.md",
+        "references/motion-quality-and-lessons.md",
+        "references/reference-research.md",
+        "references/sound-and-delivery.md",
+        "scripts/extract_reference_frames.py",
+        "scripts/remove_chroma_key.py",
+        "scripts/setup_asset_pipeline.py"
+      ],
+      "name": "balise-motion-graphic",
+      "path": "skills/balise-motion-graphic"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 164065,
+      "extras": {
+        "content": [
+          "references/country-benin.md",
+          "references/country-burkina-faso.md",
+          "references/country-cameroon.md",
+          "references/country-central-african-republic.md",
+          "references/country-chad.md",
+          "references/country-comoros.md",
+          "references/country-congo.md",
+          "references/country-cote-divoire.md",
+          "references/country-drc.md",
+          "references/country-gabon.md",
+          "references/country-guinea.md",
+          "references/country-index.md",
+          "references/country-mali.md",
+          "references/country-niger.md",
+          "references/country-senegal.md",
+          "references/country-togo.md",
+          "references/current-law-protocol.md",
+          "references/jurisdiction-router.md",
+          "references/legal-research-method.md",
+          "references/official-sources.md",
+          "references/ohada-matters.md",
+          "references/workflows-and-outputs.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/country-benin.md",
+        "references/country-burkina-faso.md",
+        "references/country-cameroon.md",
+        "references/country-central-african-republic.md",
+        "references/country-chad.md",
+        "references/country-comoros.md",
+        "references/country-congo.md",
+        "references/country-cote-divoire.md",
+        "references/country-drc.md",
+        "references/country-gabon.md",
+        "references/country-guinea.md",
+        "references/country-index.md",
+        "references/country-mali.md",
+        "references/country-niger.md",
+        "references/country-senegal.md",
+        "references/country-togo.md",
+        "references/current-law-protocol.md",
+        "references/jurisdiction-router.md",
+        "references/legal-research-method.md",
+        "references/official-sources.md",
+        "references/ohada-matters.md",
+        "references/workflows-and-outputs.md"
+      ],
+      "name": "balise-ohada",
+      "path": "skills/balise-ohada"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 38214,
+      "extras": {
+        "content": [
+          "references/decision-contract.md",
+          "references/figma-execution.md",
+          "references/pattern-taxonomy.md",
+          "references/remediation-patterns.md",
+          "references/runtime-legal-boundaries.md"
+        ],
+        "deferred": [
+          "assets/trustworthy-flow-report-template.md"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "assets/trustworthy-flow-report-template.md",
+        "references/decision-contract.md",
+        "references/figma-execution.md",
+        "references/pattern-taxonomy.md",
+        "references/remediation-patterns.md",
+        "references/runtime-legal-boundaries.md"
+      ],
+      "name": "balise-trustworthy-flows",
+      "path": "skills/balise-trustworthy-flows"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 27999,
+      "extras": {
+        "content": [
+          "references/accessibility-runtime.md",
+          "references/figma-patterns.md",
+          "references/implementation-handoff.md",
+          "references/state-taxonomy.md",
+          "references/transitions-and-recovery.md"
+        ],
+        "deferred": [
+          "assets/state-contract-template.md"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "assets/state-contract-template.md",
+        "references/accessibility-runtime.md",
+        "references/figma-patterns.md",
+        "references/implementation-handoff.md",
+        "references/state-taxonomy.md",
+        "references/transitions-and-recovery.md"
+      ],
+      "name": "balise-ui-states",
+      "path": "skills/balise-ui-states"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 38723,
+      "extras": {
+        "content": [
+          "references/interface-patterns.md",
+          "references/localization-accessibility.md",
+          "references/research-measurement.md",
+          "references/source-runtime-workflow.md",
+          "references/voice-tone-terminology.md"
+        ],
+        "deferred": [
+          "assets/balise-ux-writing-review-template.md"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "assets/balise-ux-writing-review-template.md",
+        "references/interface-patterns.md",
+        "references/localization-accessibility.md",
+        "references/research-measurement.md",
+        "references/source-runtime-workflow.md",
+        "references/voice-tone-terminology.md"
+      ],
+      "name": "balise-ux-writing",
+      "path": "skills/balise-ux-writing"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 64776,
+      "extras": {
+        "content": [
+          "references/source-catalog.json",
+          "references/taxonomy.md"
+        ],
+        "deferred": [
+          "scripts/search_catalog.py",
+          "scripts/validate_catalog.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/source-catalog.json",
+        "references/taxonomy.md",
+        "scripts/search_catalog.py",
+        "scripts/validate_catalog.py"
+      ],
+      "name": "balise-visual-references",
+      "path": "skills/balise-visual-references"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 39094,
+      "extras": {
+        "content": [
+          "references/applicability-router.md",
+          "references/audit-and-evidence.md",
+          "references/cookies-and-interface.md",
+          "references/document-set.md",
+          "references/international-overlays.md",
+          "references/jurisdictions-central-africa.md",
+          "references/jurisdictions-comoros.md",
+          "references/jurisdictions-eu-france.md",
+          "references/jurisdictions-west-africa.md",
+          "references/legal-notices-ecommerce.md",
+          "references/privacy-notice.md",
+          "references/verification-and-delivery.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/applicability-router.md",
+        "references/audit-and-evidence.md",
+        "references/cookies-and-interface.md",
+        "references/document-set.md",
+        "references/international-overlays.md",
+        "references/jurisdictions-central-africa.md",
+        "references/jurisdictions-comoros.md",
+        "references/jurisdictions-eu-france.md",
+        "references/jurisdictions-west-africa.md",
+        "references/legal-notices-ecommerce.md",
+        "references/privacy-notice.md",
+        "references/verification-and-delivery.md"
+      ],
+      "name": "balise-web-legal",
+      "path": "skills/balise-web-legal"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 64589,
+      "extras": {
+        "content": [
+          "references/asset-acquisition.md",
+          "references/autonomous-production.md",
+          "references/easter-eggs.md",
+          "references/micro-interactions.md",
+          "references/quality-rubric.md",
+          "references/research-method.md",
+          "references/source-strategy.md"
+        ],
+        "deferred": [
+          "assets/webmotion-reference-brief.md",
+          "scripts/remove_chroma_key.py",
+          "scripts/setup_asset_pipeline.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "assets/webmotion-reference-brief.md",
+        "references/asset-acquisition.md",
+        "references/autonomous-production.md",
+        "references/easter-eggs.md",
+        "references/micro-interactions.md",
+        "references/quality-rubric.md",
+        "references/research-method.md",
+        "references/source-strategy.md",
+        "scripts/remove_chroma_key.py",
+        "scripts/setup_asset_pipeline.py"
+      ],
+      "name": "balise-webmotion",
+      "path": "skills/balise-webmotion"
+    }
+  ]
+}

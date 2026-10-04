@@ -78,6 +78,9 @@ Deliver structured visual design specifications, color palette tokens, typograph
 | Visual and UX design of a page or component | `frontend-design` | A landing page or a UI surface |
 | Taste and polish for a generated design | `stitch-design-taste` | The work starts from a generated design |
 | Generative interface prototypes | `generative-ui` | A prototype is asked for |
+| Brand identity, voice and guidelines | `brand-identity` | A brand kit or identity work |
+| Banner sets and social covers | `banner-design` | A banner or cover set in several sizes |
+| Interface text inside a design | `ux-writing` | A frame needs labels, errors or empty-state text |
 
 3. **Design with the connected tools.** `mcp__figma` extracts frames and styles from a design file and `mcp__stitch` generates interface designs; `ToolSearch` shows what each offers. Claude Code has no image-generation tool: you specify and write vector and markup assets (SVG, HTML, CSS), you do not render raster images.
 4. **Specify exactly.** Give pixel-exact dimensions per aspect ratio, the safe zone, the type scale and the contrast ratios. Write the tokens to `design-tokens.json`, and the assets and mock-ups beside them, with `Write` or `Edit`.

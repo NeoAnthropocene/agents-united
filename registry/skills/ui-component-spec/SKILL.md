@@ -1,150 +1,80 @@
 ---
 name: ui-component-spec
-description: Production-grade Ui Component Spec playbook for design operations,
-  UX systems, and growth strategy.
+description: "Specify a UI component before it is built: purpose and anatomy, typed props, every state, keyboard and focus behaviour, responsive rules, content limits, test ids and analytics events, so design, build and QA read the same page."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 🎨
+  version: 3.0.0
+  icon: 🧩
 disable-slash-command: true
 ---
 
-# Ui Component Spec
+# UI Component Spec
 
 ## Overview & Purpose
-The Ui Component Spec skill provides a deterministic framework for executing ui component spec processes in modern software products.
+A component spec is the contract between whoever decides what a component does and whoever builds and tests it. Without one, the same button is built three ways and each reviewer finds a different missing state. This skill gives the front-end architect a fixed shape for that contract, short enough to read in two minutes and complete enough to test against.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+It specifies one component or a small family. It does not design the visual look (Jamileh's frames and tokens are an input), and it does not write production code beyond the typed interface.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Ui Component Spec tasks.
-- Auditing existing product assets or workflows.
-- Standardizing ui-component-spec procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Execution Triggers
+Load it before building or changing a shared component, when a designer's frame shows a pattern that will repeat, or when QA cannot tell what "correct" is for a control. Do not use it for a whole page (use `design-handoff-spec`) or for one-off markup used once.
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+## Input/Output Requirements
+Inputs: the design frames or description, the token set (`design-tokens.json` or the existing theme), the copy and its limits from Kaan, the places the component will be used, the framework and its conventions, and any existing similar component.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+Outputs: one spec file per component with these fields, none blank: purpose and when not to use it, anatomy, props as a TypeScript interface, states, interaction and keyboard behaviour, accessibility, responsive behaviour, content rules, test ids and events, open questions. **Evidence to attach**: the frame or file each rule came from, or the statement that it is an assumption.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/ui-component-spec/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/ui-component-spec/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/ui-component-spec/summary.json` | Health check and audit metric results |
+## Step-by-Step Runbook
+1. **Write the purpose in one sentence and the anti-purpose in one**: "A button triggers an action in place; it does not navigate" is the kind of line that prevents a misuse.
+2. **Draw the anatomy** as a list of parts with names (container, icon, label, helper text), each mapped to a token for its colour, size and spacing. No raw values.
+3. **Define props as a typed interface.** Required versus optional, defaults, allowed values as unions instead of free strings, and what the component does with an invalid combination. Content goes in as props (the copy owner's typed section props), not hardcoded.
+4. **Enumerate every state**: default, hover, focus-visible, active, disabled, loading, error, empty, selected where they apply. For each, what changes (token) and what the user can still do. A missing state is the most common defect found in review.
+5. **Specify keyboard and focus**: tab order, which keys act (Space and Enter for a button; arrow keys inside a group), where focus goes after the component opens, closes or errors, and that the focus indicator is visible with at least 3 to 1 contrast against its surroundings.
+6. **Specify accessibility semantics**: the native element to use first (a real `button`, not a styled `div`), the role and accessible name if a native element is impossible, the live-region behaviour for status and error text, and the reduced-motion alternative for any animation.
+7. **Specify responsive behaviour**: how it changes at the narrow breakpoint, the minimum touch target (44 by 44 CSS pixels), what happens with long and empty content.
+8. **Add the test hooks and events**: a `data-testid` on every interactive element, and the analytics events with names and properties (agreed with Jale or Ava if they consume them).
+9. **Hand off.** The spec to the builder (often Deniz himself), to Emre for the test plan derived from the states table, to Jamileh to confirm every state has a frame, and to Kaan for content limits. Open questions go to whoever owns the answer, named.
 
-## Step-by-Step Execution Runbook
+## Code & Config Exemplars
+### Worked example
+Component: `PlanCard` on a pricing page. Purpose: show one plan with its price and one action; not for comparing plans (that is the comparison table).
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+Anatomy: container (`surface.default`, `radius.lg`), plan name (`text.default`, heading 3), price (`text.default`, heading 1), billing note (`text.muted`), feature list, primary action. Props:
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/ui-component-spec/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/ui-component-spec/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/ui-component-spec/ reports/ui-component-spec/
-   git commit -m "feat(ui-component-spec): implement Ui Component Spec playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Ui Component Spec Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "ui-component-spec"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/ui-component-spec/summary.json"
-```
-
-### Exemplar 2: Ui Component Spec Helper Module
-```typescript
-export function runUiComponentSpec(scope: string): boolean {
-  console.log('Running Ui Component Spec on:', scope);
-  return true;
+```ts
+export interface PlanCardProps {
+  name: string;                 // 1 to 24 characters
+  priceMonthlyCents: number;    // integer, >= 0; 0 renders "Free"
+  billingNote?: string;         // 0 to 60 characters
+  features: readonly string[];  // 3 to 7 items, each up to 80 characters
+  highlighted?: boolean;        // default false; adds a "Most chosen" badge, never colour alone
+  ctaLabel: string;             // verb plus outcome, up to 28 characters
+  onSelect: () => void;
 }
 ```
 
-## Edge Cases & Error Recovery Procedures
+States: default; hover (action darkens one step); focus-visible (2 px outline, 3 to 1 against the card); loading (action shows a spinner and `aria-busy`, still focusable, no double submit); disabled when the plan is the current plan (label "Your plan", `aria-disabled`). No empty state: features are required.
 
-### Scenario A: Validation Failure in Ui Component Spec
-1. **Diagnosis**: Specification or code asset fails validation rules in ui-component-spec.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
+Keyboard: Tab reaches the action; Enter and Space activate it. Accessible name of the action: `"{ctaLabel}, {name} plan"`. Test ids: `plan-card-{slug}`, `plan-card-cta-{slug}`. Event: `plan_selected` with `{ plan, price_cents, position }`. Responsive: cards stack at 375 px, target 44 px high, long feature text wraps, never truncates. Open question for Kaan: maximum length of the billing note in German.
 
-### Scenario B: Missing Resource for Ui Component Spec
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
+### Anti-patterns
+- A spec that shows only the default state.
+- Props typed as `string` where a union exists.
+- Colour as the only difference between two states.
+- A `div` with a click handler where a `button` exists.
+- Hardcoded copy inside the component.
+- Specifying behaviour the design frames never show, without saying it is an assumption.
 
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Edge Cases & Error Recovery
+- **Design frames disagree with the tokens**: the tokens win; flag the frame to Jamileh as an open question.
+- **An existing component almost fits**: extend it with a variant and say which; do not create a near-duplicate.
+- **Very long, very short or missing content**: specify wrap, truncation with a tooltip only when the content is repeated elsewhere, and the empty behaviour.
+- **A state cannot be reached in the product today**: still specify it, mark it "not reachable yet", so it is built before it is needed.
+- **Third-party component library constraints**: state which parts you can and cannot change, and ask Deniz before assuming.
+
+## Verification Checklist
+- [ ] Purpose and anti-purpose are each one sentence.
+- [ ] Anatomy parts map to tokens; no raw values.
+- [ ] Props are a typed interface with ranges, defaults and invalid-combination behaviour.
+- [ ] Every applicable state is listed with what changes and what the user can still do.
+- [ ] Keyboard, focus, accessible name, live-region and reduced-motion behaviour are written.
+- [ ] Test ids and events are named; open questions have owners; hand-offs name Emre, Jamileh and Kaan.
