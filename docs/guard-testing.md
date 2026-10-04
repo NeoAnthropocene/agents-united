@@ -77,7 +77,7 @@ With `agents add <bundle> --native` (project scope) a role's frontmatter hook is
 (writers) or `.../agents-united-readonly-guard.js` (reviewers), so the host's block message is short instead of a 600-character script. The
 model-proof commands above are unchanged. Two things to know when a block does not come:
 
-- A hook whose script cannot start does **not** block (the host lets the call through). If `echo git push --force` is not refused, check
+- A hook whose script cannot start does **not** block (the host lets the call through; observed on Claude Code 2.1.288: the command ran and the TUI showed a one-line `PreToolUse:Bash hook error`, exit 1). If `echo git push --force` is not refused, check
   that the script exists: `agents doctor` names a missing one and the command that restores it.
 - A **global** install keeps the inline `node -e` form (a user-level role cannot name a script portably), so the long message is expected there.
 
