@@ -81,6 +81,12 @@ model-proof commands above are unchanged. Two things to know when a block does n
   that the script exists: `agents doctor` names a missing one and the command that restores it.
 - A **global** install keeps the inline `node -e` form (a user-level role cannot name a script portably), so the long message is expected there.
 
+What the read-only guard refuses (ADR 0038): every shell and file writer, a mutating tool of a connected server, and the six tools that hand work or
+output outside the role: `Agent`, `Workflow`, `CronCreate`, `EnterWorktree`, `Artifact` and `SendUserFile`. The coordination tools stay open
+(`SendMessage`, `ToolSearch`, `ListAgents`, `SubagentHandback`, the read-only Task and Cron listings). A reviewer is not offered any of them anyway;
+the guard is for the day a later edit grants one. The guard of a role installed before the widening stays the narrower one until `agents add --native`
+is run again.
+
 `tests/helpers/claude-host-hooks.ts` is a stand-in for the host's hook rules (allowlist, matcher, `${CLAUDE_PROJECT_DIR}`, exec form, exit 2
 blocks) that the tests use to attempt a call against an installed role. It proves what the files say; only a real session proves the host.
 
