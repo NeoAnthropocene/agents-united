@@ -1,16 +1,17 @@
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import yaml from 'yaml';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { nativeGuardHooks } from '../src/core/guard.js';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { GUARD_SCRIPT, nativeGuardFileHooks } from '../src/core/guard.js';
 import { checkFloor, checkHooks, syncFloor, syncHooks } from '../src/core/native-floor.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { splitTools } from '../src/core/native-guard.js';
 import { syncRoster } from '../src/core/native-roster.js';
-import { readOnlyGuardHooks } from '../src/core/readonly-guard.js';
+import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
+import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
 import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
 
 /**
@@ -73,7 +74,17 @@ const ROLES: RoleSpec[] = [
 
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const fileOf = (role: RoleSpec): string => path.resolve('registry/hosts/claude/agents', `${role.name}.md`);
-const guardGroups = (role: RoleSpec): Record<string, unknown> => ({ ...(role.guard === 'read-only' ? readOnlyGuardHooks() : nativeGuardHooks()) });
+const guardGroups = (role: RoleSpec): Record<string, unknown> => ({ ...(role.guard === 'read-only' ? readOnlyGuardFileHooks() : nativeGuardFileHooks()) });
+
+/** A project directory holding the committed guard scripts where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points. */
+const guardProject = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-united-guard-project-'));
+afterAll(() => fs.rmSync(guardProject, { recursive: true, force: true }));
+const guardScripts = path.resolve('registry/hosts/claude/hooks');
+/** The guard scripts are the inline guards of `src/core`, written out as files (one author), by the same regeneration as the hooks block. */
+const SCRIPT_FILES: Array<[string, string]> = [
+  ['agents-united-guard.js', GUARD_SCRIPT],
+  ['agents-united-readonly-guard.js', READ_ONLY_GUARD_SCRIPT],
+];
 
 const ceilingOf = (role: RoleSpec): string[] =>
   resolveGrant(loadToolPolicy('registry', 'claude'), cores.get(role.stem)!.capabilities ?? [], { subagent: !role.mainThread, background: false }).tools;
@@ -82,6 +93,8 @@ let cores: Map<string, SemanticCore>;
 beforeAll(async () => {
   cores = await loadSemanticCore('registry');
   if (process.env.UPDATE_NATIVE === '1') {
+    fs.mkdirSync(guardScripts, { recursive: true });
+    for (const [file, script] of SCRIPT_FILES) fs.writeFileSync(path.join(guardScripts, file), `${script}\n`);
     // Specialists first: the coordinator's map is built from their committed files.
     for (const role of [...ROLES].sort((a, b) => Number(a.mainThread ?? false) - Number(b.mainThread ?? false))) {
       if (!fs.existsSync(fileOf(role))) continue;
@@ -91,6 +104,11 @@ beforeAll(async () => {
       if (role.mainThread) synced = syncRoster(synced, rosterTypes());
       fs.writeFileSync(fileOf(role), synced);
     }
+  }
+  // A project directory where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points: the committed scripts, as installed.
+  for (const [file] of SCRIPT_FILES) {
+    fs.mkdirSync(path.join(guardProject, '.claude/hooks'), { recursive: true });
+    fs.copyFileSync(path.join(guardScripts, file), path.join(guardProject, '.claude/hooks', file));
   }
 });
 
@@ -107,12 +125,10 @@ describe.each(ROLES)('native Claude $name', role => {
 
   it('carries its guard, exactly as generated, and the embedded guard really blocks', () => {
     expect(checkHooks(read(), guardGroups(role))).toEqual([]);
-    const groups = frontmatter().hooks.PreToolUse as Array<{ matcher: string; hooks: Array<{ command: string; args: string[] }> }>;
-    const fire = (tool_name: string, tool_input: object): number | null => {
-      const { command, args } = groups[0].hooks[0];
-      return spawnSync(command, args, { input: JSON.stringify({ tool_name, tool_input }), encoding: 'utf8' }).status;
-    };
-    for (const group of groups) for (const hook of group.hooks) expect([hook.command, hook.args[0]]).toEqual(['node', '-e']);
+    const groups = preToolUseGroups(read()).map(group => ({ matcher: group.matcher ?? '', hooks: group.hooks as Array<{ command: string; args: string[] }> }));
+    // The host's own rules: which hooks match the call, `${CLAUDE_PROJECT_DIR}` substituted, no shell, exit 2 blocks.
+    const fire = (tool_name: string, tool_input: object): number => (attempt(read(), guardProject, { tool: tool_name, input: tool_input as Record<string, unknown> }).blocked ? 2 : 0);
+    for (const group of groups) for (const hook of group.hooks) expect([hook.command, hook.args.length, hook.args[0].startsWith('${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-')]).toEqual(['node', 1, true]);
     const covered = (tool: string): boolean => groups.some(group => new RegExp(`^(?:${group.matcher})$`).test(tool));
     if (role.guard === 'read-only') {
       expect(groups).toHaveLength(1);

@@ -71,9 +71,22 @@ entry exists. If `--session-guard` was never requested, `/hooks` will show nothi
 agents-united in a plain session, and that is correct, not a defect — see
 `plans/023-storeless-installs-and-session-guard.md` Workstream A.
 
+## Native Claude roles: the guard is a script file (ADR 0035)
+
+With `agents add <bundle> --native` (project scope) a role's frontmatter hook is `node ${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js`
+(writers) or `.../agents-united-readonly-guard.js` (reviewers), so the host's block message is short instead of a 600-character script. The
+model-proof commands above are unchanged. Two things to know when a block does not come:
+
+- A hook whose script cannot start does **not** block (the host lets the call through; observed on Claude Code 2.1.288: the command ran and the TUI showed a one-line `PreToolUse:Bash hook error`, exit 1). If `echo git push --force` is not refused, check
+  that the script exists: `agents doctor` names a missing one and the command that restores it.
+- A **global** install keeps the inline `node -e` form (a user-level role cannot name a script portably), so the long message is expected there.
+
+`tests/helpers/claude-host-hooks.ts` is a stand-in for the host's hook rules (allowlist, matcher, `${CLAUDE_PROJECT_DIR}`, exec form, exit 2
+blocks) that the tests use to attempt a call against an installed role. It proves what the files say; only a real session proves the host.
+
 ## Windows-specific check
 
-The guard renders in **exec form** (`command: "node"`, `args: ["-e", <script>]`), so the same
+The guard renders in **exec form** (`command: "node"`, `args: ["-e", <script>]`, or in a native project install `args: [<script file>]`), so the same
 three test commands must still block **identically** on a Windows machine with no Git Bash
 installed (Claude Code falls back to PowerShell for shell-form hooks there; exec form has no
 shell in the path at all — Plan 024 field finding, `plans/023-…md` Workstream A, Step A0).

@@ -30,6 +30,40 @@ export function managedGuardHooks(): { PreToolUse: Array<{ matcher: string; hook
   };
 }
 
+/** The two native Claude guards: the destructive-command guard (writers) and the read-only guard (roles that never mutate). */
+export type NativeGuardKind = 'destructive' | 'read-only';
+
+/**
+ * Plan 032 close-out follow-up (6) — the native lane ships each guard as a script file under `.claude/hooks/`, because Claude prints
+ * the whole `node -e <script>` in every block message (about 600 characters, which also reaches the model). The file is the same
+ * script byte for byte (`registry/hosts/claude/hooks/<name>.js` is generated from `GUARD_SCRIPT` / `READ_ONLY_GUARD_SCRIPT` and a
+ * test ties them). The role names it with `${CLAUDE_PROJECT_DIR}`, the only path placeholder a user-owned script can use, so a GLOBAL
+ * install (roles in `~/.claude/agents`, where that placeholder is whichever project is open) keeps the inline guard instead.
+ * A hook whose script cannot start does not block (it fails open), so the doctor warns when the file is gone.
+ */
+export const NATIVE_GUARD_FILES: Record<NativeGuardKind, { name: string; rel: string; reference: string }> = {
+  destructive: {
+    name: 'agents-united-guard',
+    rel: '.claude/hooks/agents-united-guard.js',
+    reference: '${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js',
+  },
+  'read-only': {
+    name: 'agents-united-readonly-guard',
+    rel: '.claude/hooks/agents-united-readonly-guard.js',
+    reference: '${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js',
+  },
+};
+
+/** The exec-form handler that runs a guard script file: `node <file>`, no shell on any OS. */
+export function guardFileHandler(kind: NativeGuardKind): { type: 'command'; command: string; args: string[] } {
+  return { type: 'command', command: 'node', args: [NATIVE_GUARD_FILES[kind].reference] };
+}
+
+/** The destructive-command guard of a native agent, as a script file (project scope): the matchers of `nativeGuardHooks`, a file handler. */
+export function nativeGuardFileHooks(): { PreToolUse: Array<{ matcher: string; hooks: ReturnType<typeof guardFileHandler>[] }> } {
+  return { PreToolUse: nativeGuardHooks().PreToolUse.map(group => ({ matcher: group.matcher, hooks: [guardFileHandler('destructive')] })) };
+}
+
 /**
  * Plan 032 PR E — the destructive-command guard for native agents: same script and exec form, but the shell matcher
  * also covers `PowerShell` (a class-derived grant holds it on Windows, and the legacy `Bash`-only matcher would let a

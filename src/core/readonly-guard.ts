@@ -7,6 +7,8 @@
  * the stderr text is shown as the reason. Unlike the destructive-command guard it fails CLOSED on unreadable input:
  * its matcher only fires for tools a read-only role must never call.
  */
+import { guardFileHandler } from './guard.js';
+
 export const READ_ONLY_GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let n="";try{n=String(JSON.parse(s).tool_name||"")}catch(e){process.stderr.write("Blocked by agents-united read-only guard: unreadable hook input.\n");process.exit(2)}const t=n.split("__").pop();if(/^(Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit)$/.test(n)||(/^mcp__/.test(n)&&/^(create|update|delete|push|merge|write|edit|fork|add|remove|set|run|execute|apply|deploy|upload|reset|rebase|restore|cancel|approve|issue_write|sub_issue_write|request)/.test(t))){process.stderr.write("Blocked by agents-united read-only guard: "+n+" would change state, and this role only reads and reports.\n");process.exit(2)}})`;
 
 /** Tools the guard intercepts: every shell and file writer, plus any connected-server tool (the script filters by verb). */
@@ -18,4 +20,9 @@ export function readOnlyGuardHandler(): { type: 'command'; command: string; args
 
 export function readOnlyGuardHooks(): { PreToolUse: Array<{ matcher: string; hooks: ReturnType<typeof readOnlyGuardHandler>[] }> } {
   return { PreToolUse: [{ matcher: READ_ONLY_GUARD_MATCHER, hooks: [readOnlyGuardHandler()] }] };
+}
+
+/** The read-only guard as a script file (project scope), see `NATIVE_GUARD_FILES`: the same matcher, a file handler. */
+export function readOnlyGuardFileHooks(): { PreToolUse: Array<{ matcher: string; hooks: ReturnType<typeof guardFileHandler>[] }> } {
+  return { PreToolUse: [{ matcher: READ_ONLY_GUARD_MATCHER, hooks: [guardFileHandler('read-only')] }] };
 }

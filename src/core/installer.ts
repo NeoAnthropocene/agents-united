@@ -1152,6 +1152,7 @@ private toPosix(p: string): string {
 
       const base = resolveHostProjectDir(host, root);
       const subdir = HOST_REGISTRY[host].agentsSubdir ?? 'agents';
+      const nativeRoleNames: string[] = [];
       for (const agentFile of resolved.agents) {
         const content = await fs.readFile(path.join(registryDir, 'agents', agentFile), 'utf8');
         const canonicalRel = this.canonicalRelAgent(agentFile);
@@ -1172,9 +1173,11 @@ private toPosix(p: string): string {
         const peerRoles = resolved.agents
           .filter(f => f !== agentFile)
           .map(f => ClaudeProjector.stripSubagentPrefix(f.replace(/\.md$/i, '')));
+        const nativeRoleName = ClaudeProjector.stripSubagentPrefix(agentFile.replace(/.md$/i, ''));
         const nativeContent = host === 'claude' && nativeLane
-          ? ClaudeProjector.nativeRoleContent(registryDir, ClaudeProjector.stripSubagentPrefix(agentFile.replace(/.md$/i, '')), canonicalRel)
+          ? ClaudeProjector.nativeRoleContent(registryDir, nativeRoleName, canonicalRel, scope === 'global' ? 'inline' : 'file')
           : undefined;
+        if (nativeContent !== undefined) nativeRoleNames.push(nativeRoleName);
         const res = host === 'claude'
           ? (nativeContent !== undefined
               ? { content: nativeContent, warnings: [] as string[] }
@@ -1251,6 +1254,28 @@ private toPosix(p: string): string {
             owners: mergeAssetOwners(existingProj, resolved.targetBundle ?? undefined)
               .concat(canonicalRecord?.owners ?? [])
               .filter((o, i, arr) => arr.indexOf(o) === i),
+            hash: await this.calculateHash(dest),
+            installedAt: existingProj?.installedAt ?? new Date().toISOString(),
+            managedMarker: true,
+          };
+        }
+      }
+
+      // The guard scripts the native roles name travel with them, as in the compound lane (project scope only: see `nativeRoleContent`).
+      if (host === 'claude' && nativeLane && scope !== 'global') {
+        for (const artifact of ClaudeProjector.nativeGuardArtifacts(registryDir, ClaudeProjector.nativeGuardKinds(registryDir, nativeRoleNames))) {
+          const dest = path.join(root, artifact.relPath);
+          if (await fs.pathExists(dest) && !options.force && !HostProjector.hasManagedMarker(await fs.readFile(dest, 'utf8'))) {
+            throw new Error(`Projection target ${artifact.relPath} already exists and is not managed by agents-united. Use --force to overwrite.`);
+          }
+          await this.deployProjection(dest, artifact.content ?? '');
+          projections.push({ host, path: artifact.relPath, kind: 'hook', warnings: [] });
+          lockfile.projections = lockfile.projections || {};
+          const existingProj = lockfile.projections[artifact.relPath];
+          lockfile.projections[artifact.relPath] = {
+            host,
+            kind: 'hook',
+            owners: mergeAssetOwners(existingProj, resolved.targetBundle ?? undefined),
             hash: await this.calculateHash(dest),
             installedAt: existingProj?.installedAt ?? new Date().toISOString(),
             managedMarker: true,
