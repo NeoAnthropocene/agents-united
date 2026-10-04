@@ -576,6 +576,24 @@ export class DoctorEngine {
       }
     }
 
+    // ADR 0036 — a native Tier-2 bundle runs as an Agent Team, and a teammate gets no frontmatter hook (observed on Claude Code 2.1.288),
+    // so only the settings-level guard protects its shell and file writes. Say so while that guard is not in effect.
+    if (host === 'claude' && manifest?.nativeLane === true && sessionGuard !== 'wired') {
+      const registry = new RegistryResolver();
+      const teams: string[] = [];
+      for (const bundleName of manifest.installed?.bundles ?? []) {
+        const definition = await registry.getBundle(bundleName).catch(() => null);
+        if (definition?.tier === 'organization') teams.push(bundleName);
+      }
+      if (teams.length > 0) {
+        warnings.push(
+          `Native Agent Team ${teams.join(', ')}: a teammate is not guarded by a role's own frontmatter hook (observed on Claude Code 2.1.288), ` +
+          `so the team's shell and file writes are guarded only by the settings-level guard, which is not installed. ` +
+          `Run: agents update ${teams[0]} --session-guard to add it.`
+        );
+      }
+    }
+
     // Plan 024 S4 — command-permission preset. Reported whenever a decision is recorded; a user
     // who removed an entry by hand is left alone (never auto-repaired).
     let permissionPreset: HealthReport['permissionPreset'];

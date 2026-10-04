@@ -24,6 +24,7 @@ import { McpLocationRegistry } from './core/mcp-locations.js';
 import { explicitNativeFlag } from './core/native-flag.js';
 import { linkedSkillAdvice, listLinkedSkills } from './core/skill-links.js';
 import { nativeWorkflowNote } from './core/native-workflows.js';
+import { nativeTeamNote, sessionGuardPrompt } from './core/native-teams.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
@@ -510,12 +511,15 @@ cli
       const recordedLockfile = path.join(resolveStateDir(scope), 'agents-united.json');
       const recorded = await fs.readJson(recordedLockfile).catch(() => null);
       if (!recorded?.sessionGuard) {
-        const answer = await confirm({
-          message: scope === 'global'
-            ? 'Also guard plain Claude sessions on this machine? (blocks git push --force, .env writes and vercel --prod in ~/.claude/settings.json)'
-            : 'Also guard plain Claude sessions in this repo? (blocks git push --force, .env writes and vercel --prod via .claude/settings.json)',
-          initialValue: true,
-        });
+        // ADR 0036 — for a native Tier-2 bundle the question says why it matters: a teammate gets no frontmatter hook, only this guard.
+        const askedBundle = identifier ? await registry.getBundle(identifier).catch(() => null) : null;
+        const answer = await confirm(
+          sessionGuardPrompt({
+            scope,
+            tier: askedBundle?.tier,
+            nativeLane: explicitNativeFlag(process.argv) === true || recorded?.nativeLane === true,
+          })
+        );
         if (typeof answer === 'boolean') sessionGuard = answer ? (scope === 'global' ? 'user' : 'project') : false;
       }
     }
@@ -909,6 +913,23 @@ cli
       // Plan 032 close-out — the native Claude lane swaps three skills for dynamic workflows, which Pro keeps off until switched on.
       const workflowNote = nativeWorkflowNote(result.projections);
       if (workflowNote) note(wrapText(workflowNote, 68, '').join('\n'), 'Dynamic workflows');
+
+      // ADR 0036 — a native Tier-2 bundle runs as an Agent Team, and only the settings-level guard protects a teammate.
+      if (result.projections.some(p => p.host === 'claude')) {
+        const installedBundle = result.installed.targetBundle || identifier;
+        const teamDefinition = installedBundle ? await registry.getBundle(installedBundle).catch(() => null) : null;
+        const lockfiles = await Promise.all(result.targetDirs.map(dir => fs.readJson(path.join(dir, 'agents-united.json')).catch(() => null)));
+        const lock = lockfiles.find(entry => entry !== null) as { nativeLane?: boolean; sessionGuard?: Record<string, unknown> } | undefined;
+        const teamNote = installedBundle
+          ? nativeTeamNote({
+              bundle: installedBundle,
+              tier: teamDefinition?.tier,
+              nativeLane: lock?.nativeLane === true,
+              sessionGuard: lock?.sessionGuard !== undefined && !('off' in lock.sessionGuard),
+            })
+          : undefined;
+        if (teamNote) note(wrapText(teamNote, 68, '').join('\n'), 'Agent Team');
+      }
 
       // Plan 032 Phase 8 — skill folders left as links are not listed by agy 1.2.16: say so once, with the way out.
       const linkedSkills = new Set<string>();
