@@ -1,0 +1,42 @@
+{
+  "host": "claude",
+  "note": "Declared deltas of the native Claude roles (ADR 0037): a Semantic Core invariant that a native role does not bind in its body on purpose. Every other invariant is evidenced in the file (tests/helpers/native-invariant-evidence.ts). A delta is stale, and fails the suite, when the role's body does evidence the invariant.",
+  "deltas": [
+    {
+      "roles": ["backend-architect", "code-reviewer", "repo-index"],
+      "feature": "Check for delivered peer messages before the final report.",
+      "disposition": "approximated",
+      "rationale": "Tier-1 specialists stay hub-and-spoke (maintainer decision, plan 032 close-out, kept 2026-10-04): their body forbids messaging a sibling and routes every peer question through the lead, so there is no peer inbox to check. The lead relays and wakes."
+    },
+    {
+      "roles": ["backend-architect", "code-reviewer", "repo-index"],
+      "feature": "The handoff report lists peer messages received and open items.",
+      "disposition": "approximated",
+      "rationale": "The two sections are bound by the lead's brief (its template asks for `Peer messages received` and `Open items` in every report), not by the Tier-1 specialist's own body, which the maintainer chose to leave as it is."
+    },
+    {
+      "roles": ["backend-architect", "code-reviewer", "repo-index"],
+      "feature": "Message a peer directly only in team mode, when the brief lists that peer.",
+      "disposition": "approximated",
+      "rationale": "Stricter than the invariant: a Tier-1 specialist never messages a peer (its body says so), because team mode belongs to the Tier-2 packages on Agent Teams."
+    },
+    {
+      "roles": ["code-reviewer", "repo-index"],
+      "feature": "At most two peer exchanges per specialist pair and one directed question per peer per planning round.",
+      "disposition": "approximated",
+      "rationale": "Stricter than the invariant: a Tier-1 reviewer or indexer holds no peer exchange at all, so the budget is zero."
+    },
+    {
+      "roles": ["backend-architect"],
+      "feature": "Test-first ordering: author the failing test before implementation.",
+      "disposition": "approximated",
+      "rationale": "The ordering is enforced by the lead's brief, which demands the failing-then-passing test output as acceptance evidence; the specialist's own steps list implementation before the tests. Found by this suite on 2026-10-04 and left for the maintainer to decide whether to reorder the text."
+    },
+    {
+      "roles": ["frontend-architect"],
+      "feature": "Component contracts settle through the orchestrator before touching peer-owned files.",
+      "disposition": "approximated",
+      "rationale": "The lead owns contract-first (it hands the contract as a fixed input before the slice starts); the specialist's body routes every question for a peer through the lead but does not name peer-owned files."
+    }
+  ]
+}
