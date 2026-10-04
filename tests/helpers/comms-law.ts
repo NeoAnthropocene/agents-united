@@ -20,6 +20,12 @@ export const TEAMMATE_COMMS_EVIDENCE: ReadonlyArray<{ invariant: string; evidenc
   { invariant: TEAMMATE_COMMS_INVARIANTS[1], evidence: /only when a peer'?s answer is genuinely required/i },
   { invariant: TEAMMATE_COMMS_INVARIANTS[2], evidence: /at most two exchanges per pair/i },
   { invariant: TEAMMATE_COMMS_INVARIANTS[3], evidence: /check your inbox before/i },
+  // Observed on Claude Code 2.1.288 (Agent Teams probe, 2026-10-04): a message to a teammate that is still working is not read mid-turn;
+  // the host delivers it after the turn ends, as a new turn. So a teammate cannot wait on a reply and must report again when one arrives.
+  { invariant: 'A late message arrives as a new turn, not mid-turn.', evidence: /after (its|your) turn ends[^.]*new turn/i },
+  { invariant: 'Do not wait for a reply: carry on from a stated assumption.', evidence: /do not wait for a reply/i },
+  { invariant: 'A late message is answered with an updated report.', evidence: /`Peer messages received \(update\)`/ },
+  { invariant: 'An exchange is one message and its reply.', evidence: /an exchange is one message and (the|its) reply/i },
   { invariant: TEAMMATE_COMMS_INVARIANTS[4], evidence: /`Peer messages received`[\s\S]*`Open items`/ },
   { invariant: TEAMMATE_COMMS_INVARIANTS[5], evidence: /team mode[^.]*brief lists each peer[^.]*`SendMessage`/i },
   // The default is the relay, and a missing peer never blocks.
@@ -37,6 +43,8 @@ export const LEAD_COMMS_EVIDENCE: ReadonlyArray<{ what: string; evidence: RegExp
   { what: 'the exchange budget', evidence: /at most two exchanges per pair/i },
   { what: 'both modes, with relay as the fallback', evidence: /team mode[\s\S]*relay mode/i },
   { what: 'the lead is the relay and wakes a finished teammate', evidence: /wake/i },
+  { what: 'a message to a working teammate reaches it only after its turn ends, as a new turn (observed), so a briefed pair must not wait on each other', evidence: /after its turn ends[^.]*new turn[\s\S]*not wait/i },
+  { what: 'a late message produces an updated report, which the lead reads in place of the first', evidence: /`Peer messages received \(update\)`/ },
   { what: 'one team per session, and teammates cannot spawn teammates', evidence: /one team per session[\s\S]*cannot spawn/i },
   { what: 'a resumed session does not restore teammates', evidence: /\/resume[^.]*(not|never)[^.]*restore/i },
   { what: 'a teammate is not guarded by a role\'s own frontmatter hook (observed), only by the settings-level guard', evidence: /frontmatter hook[^.]*teammate[\s\S]*--session-guard/i },
