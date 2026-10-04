@@ -13,6 +13,8 @@ import {
   validateToolPolicy,
 } from '../src/core/host-profile.js';
 import { loadSemanticCore, validateCoreSchema } from '../src/core/semantic-core.js';
+import { inspectNativeAgent } from '../src/core/native-guard.js';
+import { nativeText, NATIVE_ROLES } from './helpers/native-roles.js';
 
 /**
  * Plan 032 Phases 3 + 5 (ADR 0025 decisions 1, 8) — the Claude host profile and the class-based
@@ -298,29 +300,29 @@ describe('the committed Claude host profile and tool policy', () => {
     });
   });
 
-  describe('efficiency lint over the hand-written realizations', () => {
-    const realizationsDir = path.join(registry, 'realizations', 'claude');
-    const realizations = fs
-      .readdirSync(realizationsDir)
-      .filter(file => file.endsWith('.json'))
-      .map(file => ({ role: file.replace(/\.json$/, ''), tools: (JSON.parse(fs.readFileSync(path.join(realizationsDir, file), 'utf8')) as { tools: string[] }).tools }));
+  describe('efficiency lint over the committed native agents (ADR 0037: the hand-written realizations are retired)', () => {
+    /** Every tool a native agent holds, as the catalog spells it: no connected-server tools, and `Agent(...)` reduced to `Agent`. */
+    const held = (role: string): string[] =>
+      inspectNativeAgent(nativeText(role)).tools.filter(tool => !tool.startsWith('mcp__')).map(tool => tool.split('(')[0]);
 
-    it('every tool a realization grants exists in the catalog', () => {
+    it('every tool a native agent holds exists in the catalog', () => {
       const names = new Set(policy.catalog.map(tool => tool.name));
-      for (const { role, tools } of realizations) for (const tool of tools) expect(names.has(tool), `${role} grants unknown tool ${tool}`).toBe(true);
+      for (const { role } of NATIVE_ROLES) for (const tool of held(role)) expect(names.has(tool), `${role} holds unknown tool ${tool}`).toBe(true);
     });
 
-    it('reports what the class-derived grants would add or drop per role, and the tools no role reaches', async () => {
+    it('reports that each native grant equals its class ceiling (nothing to add, nothing hand-granted), and the tools no role reaches', async () => {
       const cores = await loadSemanticCore(registry);
       const report = toolPolicyReport(
         policy,
-        realizations.map(({ role, tools }) => ({ role, capabilities: cores.get(role)!.capabilities!, subagent: role !== 'orchestrator-engineering', realizationTools: tools })),
+        NATIVE_ROLES.map(({ role, stem, coordinator }) => ({ role, capabilities: cores.get(stem)!.capabilities!, subagent: !coordinator, realizationTools: held(role) })),
       );
-      expect(report.roles.map(r => r.role).sort()).toEqual(realizations.map(r => r.role).sort());
-      const reviewer = report.roles.find(r => r.role === 'subagent-code-reviewer')!;
-      expect(reviewer.gains).toEqual(expect.arrayContaining(['LSP', 'ReportFindings']));
+      expect(report.roles.map(r => r.role).sort()).toEqual(NATIVE_ROLES.map(r => r.role).sort());
+      for (const entry of report.roles) {
+        expect(entry.gains, `${entry.role}: tools its classes grant that the file leaves out`).toEqual([]);
+        expect(entry.extras, `${entry.role}: tools hand-granted beyond its classes`).toEqual([]);
+      }
       expect(report.unreachable.map(u => u.tool)).toEqual(expect.arrayContaining(['EndConversation', 'SendFeedback']));
-      expect(report.text).toMatch(/subagent-code-reviewer/);
+      expect(report.text).toMatch(/code-reviewer/);
       expect(report.text).toMatch(/unreachable/i);
     });
   });

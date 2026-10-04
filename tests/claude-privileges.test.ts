@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'yaml';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
+import { loadToolPolicy } from '../src/core/host-profile.js';
+import { inspectNativeAgent } from '../src/core/native-guard.js';
+import { nativeText, NATIVE_ROLES } from './helpers/native-roles.js';
 
 /**
  * Plan 022 Step 1 — least-privilege suite (H2/H3), acceptance gates 5 and 6.
@@ -84,23 +87,31 @@ describe('Plan 022 H4 — production-deploy exemplars need human approval', () =
   });
 });
 
-describe('Plan 022 H2/H3 — created lane (Realization Layers)', () => {
-  it('created specialists carry their own least-privilege allowlist, never the whole profile surface', async () => {
-    const { PILOT_STEMS, runPipeline } = await import('./helpers/created-golden.js');
-    const violations: string[] = [];
-    for (const stem of PILOT_STEMS) {
-      const { created } = await runPipeline(stem);
-      const front = yaml.parse(created.match(/^---\n([\s\S]*?)\n---/)![1]) as Record<string, unknown>;
-      const tools = (front.tools as string[]) ?? [];
-      if (stem.startsWith('orchestrator-')) continue;
-      if (tools.some(t => t === 'Agent' || t.startsWith('Agent('))) violations.push(`${stem}: created specialist holds Agent`);
-      if (stem === 'subagent-frontend-architect' && tools.some(t => /^(Task|Cron)/.test(t))) violations.push(`${stem}: task/cron tools`);
-      if (stem === 'subagent-code-reviewer' || stem === 'subagent-repo-index') {
-        if (front.permissionMode !== 'plan') violations.push(`${stem}: permissionMode ${String(front.permissionMode)}`);
-        const mutating = tools.filter(t => MUTATING.includes(t));
-        if (mutating.length > 0) violations.push(`${stem}: mutating tools ${mutating.join(',')}`);
-      }
-    }
-    expect(violations, violations.join('\n')).toEqual([]);
+describe('Plan 022 H2/H3 — the native lane (least privilege by capability class, ADR 0037)', () => {
+  // The created lane gave each role a hand-written allowlist; a native role gets the tools of its capability classes (ADR 0025 decision 8),
+  // so the promises of H2 and H3 are checked on what the committed native files really hold.
+  const catalog = loadToolPolicy(path.resolve(process.cwd(), 'registry'), 'claude').catalog;
+  const holds = (role: string): string[] => inspectNativeAgent(nativeText(role)).tools.map(tool => tool.split('(')[0]);
+
+  it.each(NATIVE_ROLES.filter(entry => !entry.coordinator))('specialist $role holds no Agent tool and no scheduling tool (H2)', ({ role }) => {
+    expect(holds(role).filter(tool => tool === 'Agent' || /^Cron/.test(tool) || tool === 'ScheduleWakeup' || tool === 'RemoteTrigger')).toEqual([]);
+  });
+
+  it.each(['code-reviewer', 'repo-index'])('%s is read-only: permissionMode plan and no mutating tool (H3)', role => {
+    const meta = inspectNativeAgent(nativeText(role)).meta;
+    expect(meta.permissionMode).toBe('plan');
+    expect(holds(role).filter(tool => MUTATING.includes(tool) || tool === 'MultiEdit')).toEqual([]);
+    expect(holds(role)).toEqual(expect.arrayContaining(['Read', 'Grep', 'Glob']));
+  });
+
+  it.each(NATIVE_ROLES)('$role never holds the whole tool surface of the host (H2)', ({ role }) => {
+    expect(holds(role).length).toBeLessThan(catalog.length);
+    // A role that holds a shell and the editors holds a guard; a role with neither needs none (nativeGuardProblem is the doctor's rule).
+  });
+
+  it('frontend-architect keeps the Task tools its capability classes grant: class-derived grants supersede the Plan 022 H3 line for native roles (maintainer decision, ADR 0037), and it holds no scheduling tool', () => {
+    const tools = holds('frontend-architect');
+    expect(tools).toEqual(expect.arrayContaining(['TaskCreate', 'TaskUpdate', 'TodoWrite']));
+    expect(tools.filter(tool => /^Cron/.test(tool))).toEqual([]);
   });
 });
