@@ -13,6 +13,7 @@ import type { NativeGuard } from '../../src/core/native-guard.js';
 import { inspectNativeAgent, nativeGuardProblem } from '../../src/core/native-guard.js';
 import { listNativeRoles, nativeRoleSource } from '../../src/core/native-package.js';
 import { loadSemanticCore } from '../../src/core/semantic-core.js';
+import { bundles } from './native-coordinator.js';
 
 export interface NativeDeltaRow {
   role: string;
@@ -35,6 +36,15 @@ export interface NativeDeltaOptions {
   installed?: ReadonlyMap<string, string>;
 }
 
+/** The core stem (the canonical agent file without `.md`) a bundle-scoped native role stands for, or `undefined` for an ordinary role. */
+function scopedCoreStem(role: string): string | undefined {
+  for (const bundle of Object.values(bundles())) {
+    const file = Object.entries((bundle.nativeRoles ?? {}) as Record<string, string>).find(([, name]) => name === role)?.[0];
+    if (file !== undefined) return file.replace(/\.md$/i, '');
+  }
+  return undefined;
+}
+
 /** One row per committed native agent of `host`, in role order; empty for a host with none. */
 export async function nativeDeltaRows(registryDir: string, host: string, options: NativeDeltaOptions = {}): Promise<NativeDeltaRow[]> {
   const roles = listNativeRoles(registryDir, host);
@@ -50,7 +60,8 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
     const text = (options.installed?.get(role) ?? fs.readFileSync(nativeRoleSource(registryDir, host, role)!, 'utf8')).replace(/\r\n/g, '\n');
     const facts = inspectNativeAgent(text);
     const issues: string[] = [];
-    const core = cores.get(`subagent-${role}`) ?? cores.get(role);
+    // A bundle-scoped native role (ADR 0036) stands for a canonical agent of another name: its core is that agent's.
+    const core = cores.get(scopedCoreStem(role) ?? `subagent-${role}`) ?? cores.get(role);
     // A coordinator (it can delegate) runs as the main thread, whose ceiling includes what a subagent never gets.
     const coordinator = core?.capabilities?.includes('delegate') ?? false;
     const posture = postureOf(coordinator);
