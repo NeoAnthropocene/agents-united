@@ -66,7 +66,7 @@ const ROOT = process.cwd();
 const REGISTRY_DIR = path.resolve(ROOT, 'registry');
 const CANONICAL_AGENTS_DIR = path.join(REGISTRY_DIR, 'agents');
 const CANONICAL_SKILLS_DIR = path.join(REGISTRY_DIR, 'skills');
-const GOLDEN_TREES_DIR = path.dirname(GOLDEN_ROOT); // tests/golden (claude + claude-created lanes)
+const GOLDEN_TREES_DIR = path.dirname(GOLDEN_ROOT); // tests/golden (the legacy claude lane; the created lane is retired, ADR 0037)
 const CLI_PATH = path.resolve(ROOT, 'dist', 'cli.js');
 
 /** The owner-approved baseline set (Plan 029 Objective A1) every orchestrator must declare. */

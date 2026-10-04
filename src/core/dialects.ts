@@ -31,7 +31,7 @@ export const COMMAND_TOKENS = ['team_command', 'deep_planning_command', 'intervi
 const claude = ClaudeProjector.CLAUDE_DIALECT;
 
 /**
- * The Claude Binding Table (capability profile `claude@2.1.271`). Vocabulary maps are lifted
+ * The Claude dialect: its vocabulary maps are lifted
  * from the single source `ClaudeProjector.CLAUDE_DIALECT` (Plan 016 decision 16) so no
  * mapping literal is duplicated and the renderer's bytes cannot drift.
  */
@@ -62,70 +62,6 @@ export const HOST_DIALECTS: Record<string, HostDialectSpec> = {
       notes: 'agents start --host claude [--bg] [--teams] [--plugin] --agent <role> (Plan 016 Step 6)',
     },
     markerProfile: 'claude',
-    capabilityProfile: 'claude@2.1.271',
-    invariantBindings: [
-      {
-        invariant: 'Parallel slices fan out in a single turn; exactly one synthesis point.',
-        binding: 'Agent(<specialist>) spawns run concurrently in one turn; the session thread is the single synthesis point; results arrive via SubagentHandback (v2.1.271+, auto mode).',
-      },
-      {
-        invariant: 'Hand your result back, not across.',
-        binding: 'A specialist returns one structured handoff to the spawning conversation (SubagentHandback); peers are unreachable by default.',
-      },
-      {
-        invariant: 'Bounded peer exchange only when genuinely required.',
-        binding: 'Spawn the peer yourself with Agent() within the 3-layer nesting depth; under Agent Teams (opt-in) peers are reachable by SendMessage.',
-      },
-      {
-        invariant: 'Test-first ordering: author the failing test before implementation.',
-        binding: 'Write the test file, run it via Bash to observe the red, then Edit to green — never report a slice complete with a red suite.',
-      },
-      {
-        invariant: 'Resolve ambiguity before any unverified work.',
-        binding: 'AskUserQuestion in the main conversation (subagents escalate to the calling orchestrator instead).',
-      },
-      {
-        invariant: 'Read-only roles never mutate the filesystem.',
-        binding: 'The allowlist carries Read/Grep/Glob only — no mutating capability is granted on this host.',
-      },
-      {
-        invariant: 'The orchestrator delegates every domain implementation slice.',
-        binding: 'Agent(<specialist-type>) with a self-contained prompt is the delegation mechanism; the coordinator never self-implements.',
-      },
-      {
-        invariant: 'Never busy-poll; liveness is event- or schedule-driven.',
-        binding: 'CronCreate/CronList for daemon health checks and TaskCreate/TaskUpdate for task state; completion wakes the session (approximated: cron replaces event-driven timers).',
-      },
-      // Plan 022 C1–C7 — the comms law bound to Claude mechanics (verified against the
-      // sub-agents reference, 2026-09-25: messages are read between turns; SendMessage to an
-      // agent ID resumes a finished subagent with its full history).
-      {
-        invariant: 'Check for delivered peer messages before the final report.',
-        binding: 'SendMessage deliveries are read between turns, not on arrival: read every delivered message before the final report returns through SubagentHandback; never end the turn right after sending and expect a reply.',
-      },
-      {
-        invariant: 'The handoff report lists peer messages received and open items.',
-        binding: 'The SubagentHandback report carries "Peer messages received" and "Open items" sections; a report cut short by a turn limit is marked partial by the runtime, so open items are listed, never implied.',
-      },
-      {
-        invariant: 'Every delegation brief carries objective, scope, acceptance evidence, peer routing, and report format.',
-        binding: 'The Agent(<specialist>) prompt is the whole brief — the subagent sees nothing else from the session — so it carries objective, scope, acceptance evidence, peer routing and the report format verbatim.',
-      },
-      {
-        invariant: 'The coordinator relays between specialists and wakes a finished peer before expecting its reply.',
-        binding: 'The session thread relays; a finished specialist is woken by SendMessage to its agent ID (it resumes with full history) and its reply returns to the session for relay.',
-      },
-      // Plan 024 S2 (field check 2, 2026-09-27): outside Agent Teams a subagent is addressable only by
-      // the agent ID its spawner receives, so a specialist that messages a peer by name always fails.
-      {
-        invariant: 'Message a peer directly only in team mode, when the brief lists that peer.',
-        binding: 'Team mode = Agent Teams (agents start --host claude --teams): teammates are addressed by name with SendMessage. Relay mode = ordinary subagents: peers are unreachable by name (only the session holds their agent IDs), so questions go under Open items.',
-      },
-      {
-        invariant: 'Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs.',
-        binding: 'Spawn the contract owner with Agent() first; put the resulting contract file path in every dependent Agent() prompt before spawning those slices in parallel.',
-      },
-    ],
     deltaRegistry: 'registry/translation-ledger.json',
   },
 };

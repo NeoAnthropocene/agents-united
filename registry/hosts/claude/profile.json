@@ -6,7 +6,6 @@
   "reviewedAgainst": "2.1.285",
   "library": "host-library/claude",
   "toolPolicy": "tool-policy.json",
-  "legacyProfile": "registry/profiles/claude@2.1.271.json",
   "semantics": "Native Claude Code host profile (Plan 032 Phase 3, ADR 0025): the artifact vocabularies a native package may use, generated from and drift-tested against host-library/claude snapshots. It supersedes nothing yet: the legacy 2.1.271 capability profile stays the version floor and feeds the projection lane until Claude reaches parity (strangler). Data, never probed at run time.",
   "artifacts": {
     "agent": {

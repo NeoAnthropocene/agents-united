@@ -1,7 +1,7 @@
 /**
  * The Plan 022 comms law (two-mode peer messaging) as it must appear in a native Claude body. Each Semantic Core of a role that can be a
  * teammate carries the same six invariants (Plan 022 C1 to C7, Plan 024 S2); the evidence below is what binds each one to Claude Agent
- * Teams mechanics in the authored body. Slice 3 (retire `creation/claude.ts`) ports the created lane's comms-invariant checks onto this.
+ * Teams mechanics in the authored body. (The created lane's comms-invariant checks were ported to `tests/native-invariant-coverage.test.ts`, ADR 0037.)
  */
 
 /** The shared peer-messaging invariants every teammate-capable core states, verbatim. */

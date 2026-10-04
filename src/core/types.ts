@@ -768,19 +768,9 @@ export interface ValidateDeclaredDeltasInput {
   deltas: DeclaredDelta[];
 }
 
-/** ADR 0021 decision 2 — an invariant BOUND to host mechanics, never translated. */
-export interface InvariantBinding {
-  /** Tool-neutral behavioural law as authored in the Semantic Core invariants. */
-  invariant: string;
-  /** The concrete host-native mechanic this law is bound to on this host. */
-  binding: string;
-}
-
 /**
- * ADR 0021 decision 9 — `HostDialectSpec` evolves into the per-host Binding Table schema:
- * the Plan 017 codex fields survive (they are the vocabulary surface) and the realization
- * gains `capabilityProfile`, `invariantBindings`, and a `deltaRegistry` reference. One spec
- * per host; host churn is a one-host data PR.
+ * The per-host dialect spec: the Plan 017 codex fields (the vocabulary surface) and a `deltaRegistry` reference. One spec per host;
+ * host churn is a one-host data PR. (The created lane's `capabilityProfile` and `invariantBindings` went with it, ADR 0037.)
  */
 export interface HostDialectSpec {
   id: string;
@@ -793,41 +783,8 @@ export interface HostDialectSpec {
   nameRules: { pattern: string; subagentPrefixPolicy: string };
   launcher: { flags: string[]; notes: string };
   markerProfile: string;
-  /** ADR 0021 additions — the Binding Table proper. */
-  capabilityProfile: string;
-  invariantBindings: InvariantBinding[];
   deltaRegistry: string;
 }
-
-/** Plan 021 Step 4 — the per-role binding view consumed by the Claude Creation Engine. */
-export interface ClaudeCreationBindingTable {
-  host: string;
-  /** The native role name (e.g. `backend-architect`); optional so fixtures stay minimal. */
-  roleName?: string;
-  /** `invariant` (HostDialectSpec shape) or `feature` (legacy codex shape) identify the law. */
-  invariantBindings?: Array<{ invariant?: string; feature?: string; binding: string }>;
-  /** `rendering` (Binding Table shape) or `native` (legacy shape) give the host command. */
-  commandBindings?: Array<{ command: string; rendering?: string; native?: string; rationale?: string }>;
-  commandVocabulary?: Record<string, string>;
-  deltas?: DeclaredDelta[];
-  /**
-   * Plan 022 H2/H3 — the role's own least-privilege allowlist (Realization Layer). Absent ⇒ the
-   * profile's whole surface (fixtures only); every entry must exist in the profile.
-   */
-  tools?: string[];
-  /** Plan 022 H3 — native permission mode (e.g. `plan` for read-only roles). */
-  permissionMode?: string;
-}
-
-/** Plan 021 Step 4 — the versioned tool-surface snapshot the creation engine targets. */
-export interface ClaudeCreationProfile {
-  host: string;
-  version: string;
-  tools?: string[];
-}
-
-
-
 
 /**
  * Plan 032 Phase 5 / ADR 0025 decision 8 — host-neutral capability classes. A role in

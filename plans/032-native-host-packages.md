@@ -320,7 +320,8 @@ Reconciled against the code and `gh pr list`, not against this plan's earlier te
 | 7 "doctor prints the core delta table" | Deliberately replaced | log 2026-10-01 (owner decision) | users see integrity and guard checks only |
 | 8 Cline | Done, validated in a real interactive session 2026-10-03 | #90 to #101; close-out fixes in the log entry of 2026-10-04 | MCP, the IDE surface, `/workflow-review` and `/workflow-implement` by slash |
 | 8 Antigravity | Done, validated in a real interactive session 2026-10-04 | #102 to #118 | macOS, 2.0 and IDE surfaces, symlink behaviours |
-| 8 Retire `claude-projector.ts`, `cline-projector.ts`, `FEATURE_LEDGER`, `creation/claude.ts` | **Open, follow-up** | maintainer decision B1 (log 2026-10-03), then the parity finding of 2026-10-04 | `creation/claude.ts` needs its assertions ported to the native files first; the projectors and `FEATURE_LEDGER` cannot go while 54 of 59 agents use them |
+| 8 Retire `creation/claude.ts` | **Done 2026-10-04** | follow-up 3, ADR 0037: its assertions were ported to the native and legacy files first, then the lane, its goldens, the realizations and the old profile were removed | none |
+| 8 Retire `claude-projector.ts`, `cline-projector.ts`, `FEATURE_LEDGER` | **Open, follow-up** | maintainer decision B1 (log 2026-10-03), then the parity finding of 2026-10-04 | the projectors and `FEATURE_LEDGER` cannot go while 54 of 59 agents use them |
 | 8 Batch-migrate the rest | **Deferred to a follow-up plan** | maintainer decision B2 | cursor, opencode, codex and the other 33 bundles |
 | README repositioning | Done; counts and the native-package note verified 2026-10-04 | log 2026-09-30; slice A and D | none |
 
