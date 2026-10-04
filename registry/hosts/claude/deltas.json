@@ -12,7 +12,7 @@
       "roles": ["backend-architect", "code-reviewer", "repo-index"],
       "feature": "The handoff report lists peer messages received and open items.",
       "disposition": "approximated",
-      "rationale": "The two sections are bound by the lead's brief (its template asks for `Peer messages received` and `Open items` in every report), not by the Tier-1 specialist's own body, which the maintainer chose to leave as it is."
+      "rationale": "`Open items` is bound in the specialist's own body (maintainer decision, 2026-10-04, ADR 0038). `Peer messages received` is not: a hub-and-spoke Tier-1 specialist never receives a peer message, so the section would always read none; the lead's brief template still asks for it."
     },
     {
       "roles": ["backend-architect", "code-reviewer", "repo-index"],

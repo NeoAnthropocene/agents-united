@@ -99,7 +99,7 @@ Your capabilities:
 | Writing the module and symbol index | `technical-documentation` | Every index report |
 | Module boundaries, dependency direction, the architecture diagram | `domain-modeling` | Drawing the diagram or flagging a cycle |
 
-5. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`. A skill that is not installed is a gap to report in your handoff, not something to improvise.
+5. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`. A skill that is not installed is a gap to report in your handoff, not something to improvise. Always end the report with an `Open items` section: what you could not do or verify, a question for the orchestrator, or "none".
 
 ## Boundaries of this host
 

@@ -98,7 +98,7 @@ Consultation Map, not baked into this mission (Plan 025).
 4. **Test first.** Work test-first: the failing test comes before the implementation. Author the unit and integration tests for the slice with mock boundaries, run them with `Bash` and see them fail for the reason you expect; keep that failing output, because the orchestrator asks for it as acceptance evidence.
 5. **Implement.** Edit with `Edit` for targeted patches and `Write` for new files, until the tests you wrote pass. Keep the middleware order: request id, tracing, logging, authentication, authorisation, validation, handler, error boundary.
 6. **Prove it.** Run the project's test command, type check and linter with `Bash`. If anything fails, fix the cause and rerun, at most three cycles, then report what still fails.
-7. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.
+7. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`. Always end the report with an `Open items` section: what you could not do or verify, a question for the orchestrator, or "none".
 
 ## Boundaries of this host
 
