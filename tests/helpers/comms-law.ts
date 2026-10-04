@@ -67,7 +67,7 @@ export const LEAD_COMMS_EVIDENCE: ReadonlyArray<{ what: string; evidence: RegExp
   { what: 'start with three to five teammates and spawn per tier, treating the roster as a menu', evidence: /three to five teammates[\s\S]*menu/i },
   { what: 'ask a finished teammate to shut down by name; the team is cleaned up when the session ends', evidence: /shut down[^.]*by name[\s\S]*cleaned up[^.]*session ends/i },
   // Observed on Claude Code 2.1.289: the lead's first plain-text request was refused ("no request_id"); the structured request was approved by all nine.
-  { what: 'the shutdown request is structured (`shutdown_request`), and a plain-text request is not one', evidence: /structured request[^.]*`shutdown_request`[^.]*\. A plain-text request is not one/ },
+  { what: 'the shutdown request is structured (`shutdown_request`), and a plain-text request is not one', evidence: /structured request[^.]*shutdown_request[^.]*\. A plain-text request is not one/ },
   // Observed on Claude Code 2.1.289: an owner set on a running teammate's task is announced to it at once, and the teammate acts on it.
   { what: 'an owner set with TaskUpdate announces the task to a running teammate, so an owner is set when the work should start and a consulted teammate\'s task stays unowned', evidence: /Setting a task's owner[^.]*announces the task[^.]*acts on it at once[\s\S]*unowned until the consultation is accepted/ },
   { what: 'wait for the teammates and do not do their slices', evidence: /wait for your teammates/i },
