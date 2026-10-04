@@ -27,7 +27,7 @@
       "rationale": "Stricter than the invariant: a Tier-1 reviewer or indexer holds no peer exchange at all, so the budget is zero."
     },
     {
-      "roles": ["frontend-architect"],
+      "roles": ["frontend-architect", "agency-frontend-architect"],
       "feature": "Component contracts settle through the orchestrator before touching peer-owned files.",
       "disposition": "approximated",
       "rationale": "The lead owns contract-first (it hands the contract as a fixed input before the slice starts); the specialist's body routes every question for a peer through the lead but does not name peer-owned files."

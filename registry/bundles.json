@@ -1209,12 +1209,22 @@
         "kaan-copy": "subagent-marketing-conversion-specialist",
         "jamileh-design": "subagent-marketing-creative-designer",
         "yavuz-content": "subagent-marketing-content-strategist",
-        "jale-social": "subagent-marketing-campaign-specialist"
+        "jale-social": "subagent-marketing-campaign-specialist",
+        "selin-seo": "subagent-seo-specialist",
+        "deniz-frontend": "subagent-frontend-architect",
+        "emre-qa": "subagent-qa-automation-lead",
+        "defne-grc": "subagent-compliance-grc-specialist"
       },
       "nativeRoles": {
         "subagent-marketing-growth-strategist.md": "agency-growth-strategist",
         "subagent-marketing-creative-designer.md": "agency-creative-designer",
-        "subagent-marketing-conversion-specialist.md": "agency-conversion-specialist"
+        "subagent-marketing-conversion-specialist.md": "agency-conversion-specialist",
+        "subagent-marketing-content-strategist.md": "agency-content-strategist",
+        "subagent-marketing-campaign-specialist.md": "agency-campaign-specialist",
+        "subagent-seo-specialist.md": "agency-seo-specialist",
+        "subagent-qa-automation-lead.md": "agency-qa-automation-lead",
+        "subagent-compliance-grc-specialist.md": "agency-compliance-grc-specialist",
+        "subagent-frontend-architect.md": "agency-frontend-architect"
       },
       "orchestrator": "orchestrator-digital-agency.md",
       "agents": [

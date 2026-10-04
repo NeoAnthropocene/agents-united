@@ -38,7 +38,7 @@ const LEGACY_NAMES = [
 describe('the registry entry', () => {
   it('maps every agent of the bundle but the lead to an agency-only native name, each with a committed native agent', () => {
     expect(AGENCY.nativeRoles).toEqual(EXPECTED);
-    expect(Object.keys(AGENCY.nativeRoles ?? {}).sort(), 'no agent of the bundle is left on a legacy projection').toEqual(AGENCY.agents.slice().sort());
+    expect(Object.keys(AGENCY.nativeRoles ?? {}).sort(), 'no agent of the bundle is left on a legacy projection').toEqual((AGENCY.agents ?? []).slice().sort());
     for (const [file, name] of Object.entries(AGENCY.nativeRoles ?? {})) {
       expect(AGENCY.agents, `${file} is one of the bundle's agents`).toContain(file);
       expect(fs.existsSync(path.join(REGISTRY, 'hosts/claude/agents', `${name}.md`)), `${name} has a native Claude agent`).toBe(true);

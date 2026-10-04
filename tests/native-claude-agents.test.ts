@@ -128,6 +128,8 @@ const ROLES: RoleSpec[] = [
       skills: [],
       mutating: true,
       mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', ...extra],
+      // Only the frontend architect has code intelligence; the other three search with `Glob` and `Grep` and have no `LSP`.
+      searchTools: extra.includes('LSP') ? ['Glob', 'Grep', 'LSP', 'Read'] : ['Glob', 'Grep', 'Read'],
       model: 'sonnet',
       effort: 'medium',
     })
