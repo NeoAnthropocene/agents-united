@@ -1,194 +1,82 @@
 ---
 name: schema-markup-strategy
-description: Production-grade Schema Markup Strategy playbook for JSON-LD
-  structured data architecture, Schema.org entities, rich snippet qualification,
-  and SERP visibility.
+description: "Choose and write schema.org JSON-LD that matches what the page really shows: types per page, an @graph with connected entities, required properties checked at the source, the limits on FAQ and how-to rich results, validation, and what to monitor."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 🏷️
+  version: 3.0.0
+  icon: 🧬
 disable-slash-command: true
 ---
 
-# Schema Markup Strategy & JSON-LD Structured Data Architecture
+# Schema Markup Strategy
 
 ## Overview & Purpose
-The Schema Markup Strategy skill provides a deterministic framework for architecting and deploying production-grade JSON-LD structured data conforming to Schema.org standards and Google Search Gallery specifications.
+Structured data tells a search engine, in a machine-readable form, what a page is about. It helps eligibility for rich results; it does not by itself raise rankings, and markup that disagrees with the visible page can lead to the markup being ignored or to a manual action. This skill gives Selin the rules for choosing types, connecting entities, checking required properties and validating.
 
-Following this skill structures interconnected entity graphs (`@graph`), linking Organization, WebSite, WebPage, SoftwareApplication, Product, FAQPage, BreadcrumbList, HowTo, and Article entities to unlock Google rich snippets, Knowledge Panels, and LLM semantic web parsing.
+Selin authors snippets as deliverables. Deniz places them in the templates; Yavuz and Kaan own the content that the markup describes.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Implementing structured data for SaaS product pages, blog articles, documentation, or FAQs.
-- Qualifying web pages for Google Rich Results (FAQ accordions, breadcrumbs, star ratings, software pricing).
-- Resolving Google Search Console structured data warnings and validation errors.
-- Establishing brand entity Knowledge Graph authority across organizational domains.
+## Execution Triggers
+Load it when you write or review JSON-LD for a site, a template or a launch, when rich results are expected and missing, or when a validator reports errors. Do not use it to add markup for content that is not on the page, or to chase an eligibility that Google has restricted.
 
-### Prerequisites
-- Target page URLs, entity data (authors, publish dates, ratings, pricing, FAQ items).
-- Web application framework supporting `<script type="application/ld+json">` injection.
-- Google Rich Results Test or Schema Validator testing tools.
-- Clean git working directory.
+## Input/Output Requirements
+Inputs: the page types and a representative URL for each, what each page shows (visible text, prices, ratings, authors, dates), the organisation facts (name, logo, official profiles), and the current markup if any.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `entity_types` | Array<String> | Yes | Target entities: `['SoftwareApplication', 'FAQPage', 'Organization', 'BreadcrumbList']` |
-| `page_url` | String | Yes | Canonical URL of target page |
-| `organization_metadata` | Object | Yes | Name, logo URL, sameAs social links, contact point |
-| `item_payload` | Object | Yes | Specific entity properties (pricing, ratings, steps, questions) |
-| `strict_mode` | Boolean | Optional | Enforce zero-warning validation against Google specs |
+Outputs: a type map (page type, schema type, why), the JSON-LD for each type (an `@graph` with connected entities), a list of required and recommended properties per type with the source consulted, the validation results, and a monitoring plan. **Evidence to attach**: the date and the documentation page you read for each type's requirements (they change), and the validator output.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Schema Architecture Spec | `docs/schema-markup-strategy/schema-spec.md` | Entity graph definitions and property mapping |
-| React / Next.js Component | `src/components/seo/JsonLd.tsx` | Reusable JSON-LD script injector component |
-| Validation Audit Report | `reports/schema-markup-strategy/validation.json` | Google Rich Results API test output and status |
+## Step-by-Step Runbook
+1. **Start from the visible page.** List what a visitor can see: headline, author, date, price, rating, steps, questions. Markup may describe only that. No review stars that are not on the page, no price that differs from the price shown.
+2. **Map page types to schema types** conservatively: home or about to `Organization` (name, url, logo, official profile links); articles to `Article` or `BlogPosting` (headline, image, dates, author); a software product to `SoftwareApplication` or `Product` with `offers`; hierarchy to `BreadcrumbList`; a how-to or Q&A only if the page truly is one.
+3. **Check eligibility before writing.** Rich-result eligibility changes. Today, FAQ (`FAQPage`) rich results are restricted to a narrow set of authoritative sites and how-to rich results have been withdrawn, so do not promise either; mark such markup optional and explain the expectation. Read the current requirements on the search engine's structured-data documentation for each type, and note the date.
+4. **Use JSON-LD in an `@graph`** with stable `@id` values so entities connect: the `WebSite` and `Organization` once for the site, the `WebPage` referencing them, and the page's main entity (`Article`, `Product`) referencing the page and its author or publisher.
+5. **Fill the required properties first, then the recommended ones.** For a `Product` the search engine asks for a name and at least one of `offers`, `review` or `aggregateRating`; include the price and currency from the page. Do not invent ratings or reviews; use real, visible ones.
+6. **Keep it in sync.** If markup is generated from the same data as the page (a template, not a copy), mismatch cannot drift; otherwise add a test that compares the two.
+7. **Validate** with the Rich Results Test for eligibility and the Schema Markup Validator for syntax, on the live or staged URL, and fix errors before warnings. A valid block can still be ineligible.
+8. **Hand off.** The snippets and the template rule to Deniz (and the test that compares markup with the page to Emre); the facts the markup states to Yavuz and Kaan for confirmation; anything about reviews, ratings or claims about people to Defne.
 
-## Step-by-Step Execution Runbook
+## Code & Config Exemplars
+### Worked example
+A product page for a free-and-paid invoicing tool (invented). Visible: name, short description, a price of 12.00 USD per month for the paid plan, no ratings.
 
-### Phase 1: Entity Graph Discovery & Schema Vocabulary Selection
-1. Inspect target page content to classify required Schema.org entity types.
-2. Review Google Search Gallery guidelines for eligible rich result types (e.g. Software App, FAQ, Breadcrumb).
-3. Extract core entity properties: `@id` URI anchors, `@type`, name, url, description, author, dateModified.
-4. Establish entity graph relationships using `@graph` notation to link sub-entities to parent Organization and WebPage.
-5. Verify schema licensing and compliance against Schema.org vocabulary version 26+.
-
-### Phase 2: Structured JSON-LD Graph (`@graph`) Data Modeling
-1. Author canonical Organization root entity with official logo URL and verified `sameAs` social profiles.
-2. Build WebSite and WebPage entities referencing root Organization as `publisher`.
-3. Construct specific domain entities:
-   - `SoftwareApplication`: include `operatingSystem`, `applicationCategory`, `offers` (price, currency), `aggregateRating`.
-   - `FAQPage`: build `mainEntity` array containing `Question` and accepted `Answer` blocks.
-   - `BreadcrumbList`: define `itemListElement` array with positional integers and item URLs.
-4. Link entities using unambiguous `@id` URI fragments (e.g., `https://example.com/#organization`).
-
-### Phase 3: Component Integration & Dynamic Hydration
-1. Create a typed, reusable Next.js / React component (`<JsonLd data={graph} />`) that renders sanitized JSON-LD in `<head>` or page root.
-2. Implement XSS escaping for user-generated strings injected into JSON-LD script tags.
-3. Configure dynamic metadata hooks to populate real-time pricing and rating changes into the schema payload.
-4. Integrate schema generation directly into CMS or programmatic template render pipelines.
-
-### Phase 4: Schema Validation, Google Rich Results Testing & Syntax Linting
-1. Run local JSON-LD parser validation to confirm zero trailing commas or syntax errors.
-2. Test rendered output against Google Rich Results Test API / schema validator CLI.
-   ```bash
-   npx schema-dts-gen --input docs/schema-markup-strategy/sample.json --validate
-   ```
-3. Assert that zero required fields are missing and all recommended fields are populated where applicable.
-4. Verify that schema content exactly mirrors visible on-page user content to prevent manual spam actions.
-
-### Phase 5: Deployment Verification & SERP Feature Monitoring
-1. Deploy structured data component to staging / preview environment.
-2. Execute live URL inspection check confirming correct MIME type `<script type="application/ld+json">`.
-3. Log schema deployment metadata to `reports/schema-markup-strategy/validation.json`.
-4. Commit validated schema components to repository.
-   ```bash
-   git add docs/schema-markup-strategy/ src/components/seo/
-   git commit -m "feat(schema-markup-strategy): implement nested JSON-LD structured data engine"
-   ```
-5. Set up Google Search Console Rich Results tracking.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Multi-Entity Nested JSON-LD `@graph` Specification
 ```json
 {
   "@context": "https://schema.org",
   "@graph": [
-    {
-      "@type": "Organization",
-      "@id": "https://agents-united.dev/#organization",
-      "name": "Agents United",
-      "url": "https://agents-united.dev",
-      "logo": "https://agents-united.dev/logo.png",
-      "sameAs": [
-        "https://github.com/agents-united",
-        "https://twitter.com/agentsunited"
-      ]
-    },
+    { "@type": "Organization", "@id": "https://example.com/#org", "name": "Example Inc", "url": "https://example.com/", "logo": "https://example.com/logo.png" },
+    { "@type": "WebPage", "@id": "https://example.com/product#page", "url": "https://example.com/product", "isPartOf": { "@id": "https://example.com/#site" }, "about": { "@id": "https://example.com/product#app" } },
     {
       "@type": "SoftwareApplication",
-      "@id": "https://agents-united.dev/#software",
-      "name": "Agents United CLI",
-      "operatingSystem": "All",
-      "applicationCategory": "DeveloperApplication",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "128"
-      }
-    },
-    {
-      "@type": "FAQPage",
-      "@id": "https://agents-united.dev/#faq",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How do I install Agents United?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Run npm install -g agents-united to install globally."
-          }
-        }
-      ]
+      "@id": "https://example.com/product#app",
+      "name": "Example Invoicing",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "12.00", "priceCurrency": "USD" },
+      "publisher": { "@id": "https://example.com/#org" }
     }
   ]
 }
 ```
 
-### Exemplar 2: TypeScript React Reusable JSON-LD Injection Component
-```typescript
-import React from 'react';
+Notes: no `aggregateRating` because the page shows no ratings (adding one would be markup for invisible content). The `WebSite` entity with `@id` `#site` is defined once on the home page and referenced here. Validation: Rich Results Test result recorded on the staged URL with the date; syntax checked with the Schema Markup Validator. Eligibility expectation: product information may be shown; no promise of stars.
 
-export interface JsonLdProps {
-  data: Record<string, any>;
-}
+### Anti-patterns
+- Markup for content the page does not show.
+- Fake or copied review ratings.
+- Promising FAQ or how-to rich results.
+- Several unconnected blocks, each repeating the organisation.
+- A price in markup different from the price on the page.
+- Treating a valid validator result as a guarantee of a rich result.
 
-export function JsonLd({ data }: JsonLdProps): React.JSX.Element {
-  const jsonString = JSON.stringify(data, null, 2)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
+## Edge Cases & Error Recovery
+- **The validator reports a missing required property**: add it from the visible page; if the page does not show it, drop the markup type or change the page, not the truth of the markup.
+- **Markup and page disagree after a price change**: generate both from one data source and add the comparison test.
+- **A plugin or tag manager injects duplicate markup**: find the duplicate and keep one source; conflicting blocks confuse parsers.
+- **Rich results do not appear though the markup is valid**: eligibility and display are at the engine's discretion; record the status and check again after the next crawl.
+- **Search engine documentation changed**: re-read it, update the type map and note the date.
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: jsonString }}
-    />
-  );
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Google Rich Results Error on Missing Required Schema Properties
-1. **Diagnosis**: Validator flags missing required fields (e.g., `offers.priceCurrency` or `publisher.logo`).
-2. **Recovery Protocol**:
-   - Step 1: Consult Google Search Gallery documentation for the failing entity type.
-   - Step 2: Inject fallback default values for missing required properties into data mapper.
-   - Step 3: Re-run schema validator script and assert zero errors.
-
-### Scenario B: Schema Content Mismatch with On-Page Rendered HTML
-1. **Diagnosis**: Search engine flags cloaking or deceptive markup because schema price/rating differs from page text.
-2. **Recovery Protocol**:
-   - Step 1: Ensure JSON-LD generator consumes the exact same data source object as React UI components.
-   - Step 2: Implement build-time assertion checking parity between DOM text nodes and JSON-LD properties.
-   - Step 3: Re-deploy corrected unified data source.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Nested `@graph` syntax used for cross-entity referencing.
-- [ ] XSS escaping sanitization implemented for JSON-LD strings.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Every property in the markup corresponds to something visible on the page.
+- [ ] The `@graph` connects entities with stable `@id` values; the organisation appears once.
+- [ ] Required properties are present for each type, with the documentation read and its date recorded.
+- [ ] FAQ and how-to markup are not promised as rich results.
+- [ ] Rich Results Test and Schema Markup Validator results are recorded for a live or staged URL.
+- [ ] Hand-offs name Deniz, Emre, Yavuz, Kaan and, for ratings or claims about people, Defne.
