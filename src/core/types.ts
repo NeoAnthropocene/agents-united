@@ -124,6 +124,12 @@ export interface BundleDefinition {
   /** ADR 0014 — AstrolabsAI persona → canonical roster role (`.md` stripped) map. */
   personaAliases?: Record<string, string>;
   /**
+   * Plan 032 close-out (ADR 0036) — a bundle-scoped native role name: the bundle's canonical agent file (`subagent-<role>.md`) maps to
+   * the native role the native lane installs for THIS bundle instead of the role of the same name, so a Tier-2 bundle can have its own
+   * team-mode copy of a role it shares with a Tier-1 bundle. Absent for every other bundle; ignored when the lane is off.
+   */
+  nativeRoles?: Record<string, string>;
+  /**
    * Plan 015 §0/C6d — optional bundle-level rule bindings. Forward-compatible:
    * no bundle in `registry/bundles.json` declares this today (agent frontmatter
    * `rules:` is the single source of truth). Adding it here keeps

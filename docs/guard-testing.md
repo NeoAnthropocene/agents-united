@@ -84,6 +84,13 @@ model-proof commands above are unchanged. Two things to know when a block does n
 `tests/helpers/claude-host-hooks.ts` is a stand-in for the host's hook rules (allowlist, matcher, `${CLAUDE_PROJECT_DIR}`, exec form, exit 2
 blocks) that the tests use to attempt a call against an installed role. It proves what the files say; only a real session proves the host.
 
+## Agent Teams: a teammate is guarded by the settings-level hook only (ADR 0036)
+
+Observed on Claude Code 2.1.288: an in-process teammate that reuses a definition does **not** get the definition's frontmatter hook, but a hook in
+`.claude/settings.json` or `.claude/settings.local.json` does fire for it. To test a team, install the guard with `--session-guard` and ask a teammate to
+run `echo git push --force` and to write `.env.test`; both must come back refused by the hook, and a teammate with no `Write` in its `tools:` list is never
+offered it. Without the settings-level guard the same teammate's calls go through (`agents doctor` warns about it).
+
 ## Windows-specific check
 
 The guard renders in **exec form** (`command: "node"`, `args: ["-e", <script>]`, or in a native project install `args: [<script file>]`), so the same

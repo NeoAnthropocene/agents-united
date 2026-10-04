@@ -867,18 +867,24 @@ export class ClaudeProjector {
       const content = await fs.readFile(src, 'utf8');
       const isCoordinator = coordinatorFile === agentFile;
       const roleName = ClaudeProjector.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
-      const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, roleName, canonicalRel, guardForm) : undefined;
-      if (native !== undefined) nativeRoleNames.push(roleName);
+      // ADR 0036 — a bundle-scoped native role name: this bundle installs its own native copy under another name.
+      const nativeName = bundle.nativeRoles?.[agentFile] ?? roleName;
+      const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, nativeName, canonicalRel, guardForm) : undefined;
+      if (native !== undefined) nativeRoleNames.push(nativeName);
+      // A bundle-scoped native copy is not the projection of the canonical agent for every owner of it: other bundles keep theirs. So it
+      // is owned by this bundle alone and records no canonical pointer (like a native-only file); its marker still names the canonical.
+      const scoped = native !== undefined && nativeName !== roleName;
       const rendered = native ?? ClaudeProjector.renderRole(content, canonicalRel, {
         allowlist: isCoordinator ? specialistNames : undefined,
         maxTurns: isCoordinator ? maxTurns : undefined,
       }).content;
       artifacts.push({
         kind: 'role',
-        canonical: canonicalRel,
-        relPath: `.claude/agents/${roleName}.md`,
+        canonical: scoped ? undefined : canonicalRel,
+        relPath: `.claude/agents/${native !== undefined ? nativeName : roleName}.md`,
         content: rendered,
         managedMarker: true,
+        ...(scoped ? { ownedByBundle: true } : {}),
       });
     }
     // The guard scripts the native roles name travel with them (project scope only).
@@ -1056,7 +1062,8 @@ export class ClaudeProjector {
       if (!(await fs.pathExists(src))) continue;
       const isCoordinator = coordinatorFile === agentFile;
       const roleName = ClaudeProjector.stripSubagentPrefix(agentFile.replace(/\.md$/i, ''));
-      const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, roleName, canonicalRel) : undefined;
+      const nativeName = bundle.nativeRoles?.[agentFile] ?? roleName;
+      const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, nativeName, canonicalRel) : undefined;
       const rendered = native ?? ClaudeProjector.renderRole(await fs.readFile(src, 'utf8'), canonicalRel, {
         allowlist: isCoordinator ? specialistNames : undefined,
         maxTurns: isCoordinator ? maxTurns : undefined,
@@ -1064,7 +1071,7 @@ export class ClaudeProjector {
       artifacts.push({
         kind: 'role',
         canonical: canonicalRel,
-        relPath: `${baseDir}/agents/${roleName}.md`,
+        relPath: `${baseDir}/agents/${native !== undefined ? nativeName : roleName}.md`,
         content: rendered,
         managedMarker: true,
         distributionOnly: true,

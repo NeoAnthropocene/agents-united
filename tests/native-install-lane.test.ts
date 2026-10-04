@@ -20,7 +20,13 @@ import { lintWorkflow } from './helpers/workflow-lint.js';
 
 const REGISTRY = path.resolve('registry');
 const BUNDLE = 'software-engineering';
+/** The five native roles the Tier-1 `software-engineering` bundle installs. */
 const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'orchestrator-engineering', 'repo-index'];
+/** Every committed native Claude role: those five and the Tier-2 digital-agency lead and its three agency-only teammates (ADR 0036). */
+const COMMITTED_NATIVE_ROLES = [
+  'agency-conversion-specialist', 'agency-creative-designer', 'agency-growth-strategist', 'backend-architect', 'code-reviewer', 'frontend-architect',
+  'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
+];
 const COORDINATORS = ['orchestrator-engineering'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
@@ -29,7 +35,7 @@ const lf = (text: string): string => text.replace(/\r\n/g, '\n');
 
 describe('native package helpers', () => {
   it('lists the committed native roles of a host, sorted', () => {
-    expect(listNativeRoles(REGISTRY, 'claude')).toEqual(NATIVE_ROLES);
+    expect(listNativeRoles(REGISTRY, 'claude')).toEqual(COMMITTED_NATIVE_ROLES);
     expect(listNativeRoles(REGISTRY, 'no-such-host')).toEqual([]);
   });
 

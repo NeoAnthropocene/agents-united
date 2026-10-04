@@ -17,10 +17,12 @@ interface BundleLike {
   domain?: string;
   orchestrator?: string;
   agents?: string[];
+  /** ADR 0036 — a bundle-scoped native role name: this bundle spawns its own native copy of a shared role under another name. */
+  nativeRoles?: Record<string, string>;
 }
 
 export interface RosterType {
-  /** Type name as `Agent(...)` spells it: the agent file without `.md` and without the `subagent-` prefix. */
+  /** Type name as `Agent(...)` spells it: the agent file without `.md` and without the `subagent-` prefix, or the bundle's own native role name (`nativeRoles`). */
   name: string;
   /** Bundles that declare the type, sorted. */
   bundles: string[];
@@ -40,7 +42,7 @@ export function domainTypes(bundles: Record<string, BundleLike>, coordinatorBund
     if (!coordinator.domain || bundle.domain !== coordinator.domain) continue;
     for (const agentFile of bundle.agents ?? []) {
       if (agentFile === coordinatorFile) continue;
-      const type = typeName(agentFile);
+      const type = bundle.nativeRoles?.[agentFile] ?? typeName(agentFile);
       providers.set(type, (providers.get(type) ?? new Set()).add(bundle.name ?? name));
     }
   }

@@ -4,8 +4,10 @@ import { inspectNativeAgent } from '../../src/core/native-guard.js';
 import { domainTypes } from '../../src/core/native-roster.js';
 import type { RosterType } from '../../src/core/native-roster.js';
 
-/** The bundle whose coordinator is the native orchestrator under test. */
+/** The bundle whose coordinator is the native Tier-1 orchestrator under test. */
 export const COORDINATOR_BUNDLE = 'software-engineering';
+/** The Tier-2 bundle whose coordinator runs as the lead of an Agent Team (ADR 0036). */
+export const TIER2_COORDINATOR_BUNDLE = 'digital-agency';
 
 export const bundles = (): Record<string, any> => {
   const raw = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8'));
@@ -13,8 +15,8 @@ export const bundles = (): Record<string, any> => {
 };
 
 /** The domain map as the orchestrator carries it: every type of its domain, with the facts of each native agent as committed. */
-export const rosterTypes = (): RosterType[] =>
-  domainTypes(bundles(), COORDINATOR_BUNDLE).map(type => {
+export const rosterTypes = (bundle: string = COORDINATOR_BUNDLE): RosterType[] =>
+  domainTypes(bundles(), bundle).map(type => {
     const file = path.resolve('registry/hosts/claude/agents', `${type.name}.md`);
     if (!fs.existsSync(file)) return type;
     const facts = inspectNativeAgent(fs.readFileSync(file, 'utf8'));
@@ -22,4 +24,4 @@ export const rosterTypes = (): RosterType[] =>
   });
 
 /** The coordinator's `Agent(...)` allowlist: exactly the types of its domain. */
-export const allowlist = (): string => `Agent(${domainTypes(bundles(), COORDINATOR_BUNDLE).map(type => type.name).join(', ')})`;
+export const allowlist = (bundle: string = COORDINATOR_BUNDLE): string => `Agent(${domainTypes(bundles(), bundle).map(type => type.name).join(', ')})`;

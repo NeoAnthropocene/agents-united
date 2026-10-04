@@ -236,6 +236,18 @@ _Avoid_: Calling it the sidecar (that is the store-less Claude state folder), as
 The minimal, opt-in support for Claude's experimental agent teams: `agents start --host claude --teams` injects `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` ephemerally into the spawned process and instructs the lead to spawn teammates from projected agent types by name. Nothing is persisted to `settings.json` or `~/.claude/**`, and the scaffold is never load-bearing (one team per session, fixed lead, no session resumption).
 _Avoid_: Persisted team configuration, teardown-dependent workflows, replacing subagents with teams
 
+**Native Agent Team (Tier 2)**:
+An organization-tier bundle installed with the native lane (`agents add digital-agency --native`, ADR 0036) and run as a live Claude Agent Team: a lead (`orchestrator-digital-agency`, started as the main agent, normally through `agents start`, which switches Agent Teams on for the session) and native teammates spawned with an `Agent` call that sets `name` and `subagent_type`. The Plan 022 comms law is bound to it: relay by default, team mode only when the brief lists each peer, at most two exchanges per pair (an exchange is one message and its reply), one hand-back with `Peer messages received` and `Open items`. A message to a working teammate is delivered only after its turn ends, as a new turn (observed), so teammates do not wait for replies and report again as an update. The pilot roster is the lead plus three agency-only teammates and the shared `frontend-architect`; the other roles stay legacy projections beside them.
+_Avoid_: Calling it the Agent-Teams scaffold (that is the ephemeral launch switch), assuming a teammate carries its definition's hooks or permission mode, running it as a subagent and expecting peers to be reachable by name
+
+**Bundle-scoped Native Role**:
+A native role a bundle installs under its own name in place of a role it shares with another bundle, declared by `nativeRoles` in `registry/bundles.json` (canonical agent file to native role name). It is owned by the installing bundle alone and records no canonical pointer, so the other bundles keep theirs and removing the bundle removes only its own files; the lead's `Agent(...)` allowlist and the roster use the scoped name. `digital-agency` maps three marketing roles to `agency-growth-strategist`, `agency-creative-designer` and `agency-conversion-specialist`.
+_Avoid_: Copying a canonical agent under a new name, treating it as a second owner of the canonical asset
+
+**Teammate Guard**:
+The guard a teammate actually has. A subagent definition's frontmatter hook (and `permissionMode`, and `skills`) does not apply to an in-process teammate that reuses it (observed on Claude Code 2.1.288); only a settings-level hook does, and a teammate's `tools:` list is its least privilege. So a native Tier-2 install offers the opt-in `--session-guard` merge (default yes, consent first), prints where the guard stands, and `agents doctor` warns while it is not in effect.
+_Avoid_: Relying on a role's frontmatter guard for a team, writing the settings file without consent
+
 **Claude Capability Probe**:
 The side-effect-free detection of Claude Code for a workspace: `CLAUDE_BIN_PATH` / PATH resolution (including the Windows `.cmd`/`.bat` `cmd.exe` bridge), `claude --version`, and `--help` flag parsing. `claude agents --json` and headless `-p` runs are deliberately excluded because they can start the supervisor daemon or spend tokens.
 _Avoid_: Daemon-starting probes, billed verification runs
