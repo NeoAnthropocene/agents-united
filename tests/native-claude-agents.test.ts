@@ -96,6 +96,42 @@ const ROLES: RoleSpec[] = [
       effort: 'medium',
     })
   ),
+  // Tier 2, the rest of the roster (ADR 0039). The three with editors and no shell are cut like the pilots; the four that run commands (SEO audits,
+  // test runs, compliance evidence, the build) hold a shell, so they are also guarded as writers, and the two that watch long runs hold `Monitor`.
+  ...[
+    { name: 'agency-content-strategist', stem: 'subagent-marketing-content-strategist', serverTools: ['mcp__firecrawl', 'mcp__markitdown'] },
+    { name: 'agency-campaign-specialist', stem: 'subagent-marketing-campaign-specialist', serverTools: ['mcp__context7'] },
+  ].map(
+    (spec): RoleSpec => ({
+      ...spec,
+      guard: 'destructive',
+      permissionMode: 'acceptEdits',
+      skills: [],
+      mutating: true,
+      mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+      searchTools: ['Glob', 'Grep', 'Read'],
+      workTools: ['Edit', 'Write'],
+      model: 'sonnet',
+      effort: 'medium',
+    })
+  ),
+  ...[
+    { name: 'agency-seo-specialist', stem: 'subagent-seo-specialist', serverTools: ['mcp__firecrawl', 'mcp__chrome-devtools-mcp'], extra: ['WebFetch', 'WebSearch'] },
+    { name: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead', serverTools: ['mcp__playwright', 'mcp__chrome-devtools-mcp', 'mcp__context7'], extra: ['Monitor', 'TaskCreate', 'TaskUpdate'] },
+    { name: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', serverTools: ['mcp__markitdown', 'mcp__context7', 'mcp__github__search_code', 'mcp__github__get_file_contents', 'mcp__github__list_pull_requests', 'mcp__github__pull_request_read'], extra: ['WebFetch', 'WebSearch'] },
+    { name: 'agency-frontend-architect', stem: 'subagent-frontend-architect', serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], extra: ['LSP', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'TodoWrite'] },
+  ].map(
+    ({ extra, ...spec }): RoleSpec => ({
+      ...spec,
+      guard: 'destructive',
+      permissionMode: 'acceptEdits',
+      skills: [],
+      mutating: true,
+      mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', ...extra],
+      model: 'sonnet',
+      effort: 'medium',
+    })
+  ),
   {
     name: 'orchestrator-digital-agency',
     stem: 'orchestrator-digital-agency',

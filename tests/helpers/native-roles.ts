@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * The nine committed native Claude roles and the Semantic Core stem each one stands for (the three agency-only roles stand for the
- * marketing cores, ADR 0036). Used by the conformance suites that replaced the created lane (ADR 0037).
+ * The fifteen committed native Claude roles and the Semantic Core stem each one stands for (the eight agency-only roles stand for the
+ * marketing, SEO, QA, compliance and frontend cores, ADR 0036 and ADR 0039). Used by the conformance suites that replaced the created lane (ADR 0037).
  */
 export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 | 2; coordinator: boolean }> = [
   { role: 'orchestrator-engineering', stem: 'orchestrator-engineering', tier: 1, coordinator: true },
@@ -15,6 +15,12 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'agency-growth-strategist', stem: 'subagent-marketing-growth-strategist', tier: 2, coordinator: false },
   { role: 'agency-creative-designer', stem: 'subagent-marketing-creative-designer', tier: 2, coordinator: false },
   { role: 'agency-conversion-specialist', stem: 'subagent-marketing-conversion-specialist', tier: 2, coordinator: false },
+  { role: 'agency-content-strategist', stem: 'subagent-marketing-content-strategist', tier: 2, coordinator: false },
+  { role: 'agency-campaign-specialist', stem: 'subagent-marketing-campaign-specialist', tier: 2, coordinator: false },
+  { role: 'agency-seo-specialist', stem: 'subagent-seo-specialist', tier: 2, coordinator: false },
+  { role: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead', tier: 2, coordinator: false },
+  { role: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', tier: 2, coordinator: false },
+  { role: 'agency-frontend-architect', stem: 'subagent-frontend-architect', tier: 2, coordinator: false },
 ];
 
 export const NATIVE_AGENTS_DIR = path.resolve('registry/hosts/claude/agents');

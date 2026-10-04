@@ -22,10 +22,29 @@ const TEAMMATES: Array<{ name: string; stem: string }> = [
   { name: 'agency-growth-strategist', stem: 'subagent-marketing-growth-strategist' },
   { name: 'agency-creative-designer', stem: 'subagent-marketing-creative-designer' },
   { name: 'agency-conversion-specialist', stem: 'subagent-marketing-conversion-specialist' },
-  // The Tier-1 specialist the agency also uses: its wording is two-mode too (maintainer decision, ADR 0036), and Tier-1 behaviour is unchanged.
+  { name: 'agency-content-strategist', stem: 'subagent-marketing-content-strategist' },
+  { name: 'agency-campaign-specialist', stem: 'subagent-marketing-campaign-specialist' },
+  { name: 'agency-seo-specialist', stem: 'subagent-seo-specialist' },
+  { name: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead' },
+  { name: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist' },
+  { name: 'agency-frontend-architect', stem: 'subagent-frontend-architect' },
+  // The Tier-1 specialist the agency no longer uses (it has its own copy, ADR 0039) still runs as a teammate for a user who spawns it: its
+  // wording is two-mode too (maintainer decision, ADR 0036), and Tier-1 behaviour is unchanged.
   { name: 'frontend-architect', stem: 'subagent-frontend-architect' },
 ];
 const LEAD = 'orchestrator-digital-agency';
+/** The nine teammates of the AstrolabsAI team and the type that plays each (the four named on 2026-10-04: Selin, Emre, Defne, Deniz, ADR 0039). */
+const PERSONAS: Record<string, string> = {
+  Ava: 'agency-growth-strategist',
+  Kaan: 'agency-conversion-specialist',
+  Jamileh: 'agency-creative-designer',
+  Yavuz: 'agency-content-strategist',
+  Jale: 'agency-campaign-specialist',
+  Selin: 'agency-seo-specialist',
+  Deniz: 'agency-frontend-architect',
+  Emre: 'agency-qa-automation-lead',
+  Defne: 'agency-compliance-grc-specialist',
+};
 
 describe('the cores of the teammates carry the same peer-messaging law', async () => {
   const cores = await loadSemanticCore('registry');
@@ -66,6 +85,19 @@ describe.each(TEAMMATES)('teammate $name', ({ name }) => {
   });
 });
 
+describe.each(Object.entries(PERSONAS))('persona %s', (persona, type) => {
+  it('is named in the description the lead routes by', () => {
+    const description = String(inspectNativeAgent(read(type)).meta.description);
+    expect(description).toContain(`(${persona})`);
+    expect(description.length).toBeLessThanOrEqual(300);
+  });
+
+  it('is the name the role plays by, in its identity (a core persona) or in its own body (Deniz shares the persona-free frontend core)', () => {
+    const text = type === 'agency-frontend-architect' ? afterFloor(type) : read(type);
+    expect(text).toMatch(new RegExp(`You are \\*\\*${persona}\\*\\*|In the digital agency you are ${persona}`));
+  });
+});
+
 describe('the lead', () => {
   const lead = (): string => read(LEAD);
 
@@ -73,8 +105,11 @@ describe('the lead', () => {
     const roster = domainTypes(bundles(), TIER2_COORDINATOR_BUNDLE).map(type => type.name);
     const declared = /Agent\(([^)]*)\)/.exec(String(inspectNativeAgent(lead()).meta.tools))?.[1].split(',').map(name => name.trim());
     expect(declared).toEqual(roster);
-    expect(roster).toEqual(expect.arrayContaining(['agency-growth-strategist', 'agency-creative-designer', 'agency-conversion-specialist']));
-    expect(roster).not.toContain('marketing-growth-strategist');
+    expect(roster).toEqual([
+      'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
+      'agency-frontend-architect', 'agency-growth-strategist', 'agency-qa-automation-lead', 'agency-seo-specialist',
+    ]);
+    for (const shared of ['marketing-growth-strategist', 'frontend-architect', 'seo-specialist']) expect(roster).not.toContain(shared);
   });
 
   it('does not hold the Workflow tool, because the bundle ships no workflow', () => {
@@ -87,11 +122,23 @@ describe('the lead', () => {
 
   it('maps each persona the bundle names to the teammate type that plays it', () => {
     const body = afterFloor(LEAD);
-    const personas: Record<string, string> = { Ava: 'agency-growth-strategist', Jamileh: 'agency-creative-designer', Kaan: 'agency-conversion-specialist' };
-    for (const [persona, type] of Object.entries(personas)) {
-      const row = body.split('\n').find(line => line.includes(persona) && line.includes(`\`${type}\``));
+    for (const [persona, type] of Object.entries(PERSONAS)) {
+      const row = body.split('\n').find(line => line.startsWith(`| ${persona} |`) && line.includes(`\`${type}\``));
       expect(row, `${persona} is mapped to ${type}`).toBeDefined();
     }
+    expect(body, 'no persona row is left without a name').not.toMatch(/\| \(none\) \|/);
+  });
+
+  it('spawns each teammate by the persona\'s lower-case name, the nine of them', () => {
+    const body = afterFloor(LEAD);
+    const spawn = body.split('\n').find(line => line.startsWith('**Spawn each teammate with one `Agent` call'));
+    expect(spawn).toBeDefined();
+    for (const persona of Object.keys(PERSONAS)) expect(spawn, persona).toContain(`\`${persona.toLowerCase()}\``);
+  });
+
+  it('puts every persona on the Assembly Line by name', () => {
+    const line = afterFloor(LEAD).split('\n').find(row => row.startsWith('**The Agency Assembly Line.**')) ?? '';
+    for (const persona of Object.keys(PERSONAS)) expect(line, persona).toContain(persona);
   });
 
   it('is started as the main agent, and says what to do when it was spawned as a subagent', () => {
