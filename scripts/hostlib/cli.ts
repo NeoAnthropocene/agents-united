@@ -10,6 +10,8 @@
  *   npm run hostlib:licences -- [--skill a,b] [--apply [--accept "reason" --accepted-by name]] [--cache dir]   (resolve upstream licences from evidence at the pinned commit; needs `git` + github.com)
  *   npm run hostlib:provenance -- [--only a,b] [--cache <dir>]   (recover upstream originals; needs `git` + github.com)
  *   npm run hostlib:candidates -- --repo owner/name [--sha <commit>] [--cache <dir>]   (read-only scan of a candidate upstream: audit each skill in quarantine, report name collisions with the catalog and text overlap; writes host-library/_upstream/candidates/<owner>__<name>.json)
+ *   npm run hostlib:session -- <lead.jsonl | session-id> [--project <dir>] [--json]   (read a Claude session's own records: tool calls, task and message flow, hooks, models, cost, and a verdict per open item; Plan 035 S8)
+ *   npm run hostlib:session -- trim <lead.jsonl> --out <dir>   (a sanitised, shortened copy of a session, for a test fixture)
  *
  * Exit codes: 0 ok · 1 failure (audit fail, lock drift, bad input) · 3 audit needs-review.
  */
@@ -23,6 +25,7 @@ import { checkGuides } from './guides.ts';
 import { checkHost, httpFetcher, ingestSnapshot, listHosts, refreshHost, stableJson, verifyLock } from './library.ts';
 import { applyResolvedLicence, openPinnedReader, resolveLicence, toRecord } from './licences.ts';
 import { scanCandidateRepo } from './candidates.ts';
+import { analyse, loadSession, renderReport, resolveSessionFile, trimSession } from './session-report.ts';
 import { extrasFields, recover } from './provenance.ts';
 import { missingUpstreamFiles, restoreExtras } from './restore.ts';
 import type { HostCheckReport } from './library.ts';
@@ -98,6 +101,7 @@ async function main(): Promise<number> {
       cache: { type: 'string' },
       skill: { type: 'string' },
       repartition: { type: 'boolean', default: false },
+      project: { type: 'string' },
       reconcile: { type: 'boolean', default: false },
       apply: { type: 'boolean', default: false },
       accept: { type: 'string' },
@@ -293,8 +297,26 @@ async function main(): Promise<number> {
       fs.writeFileSync(file, stableJson(doc));
       return 0;
     }
+    case 'session': {
+      const [first, second] = positionals;
+      if (first === 'trim') {
+        if (!second || !values.out) {
+          console.error('session trim: pass <lead.jsonl> --out <dir>');
+          return 1;
+        }
+        console.log(trimSession(resolveSessionFile(second, values.project), path.resolve(values.out)));
+        return 0;
+      }
+      if (!first) {
+        console.error('session: pass a lead record path or a session id (optionally --project <dir>)');
+        return 1;
+      }
+      const analysis = analyse(loadSession(resolveSessionFile(first, values.project)));
+      console.log(values.json ? JSON.stringify(analysis, null, 2) : renderReport(analysis));
+      return 0;
+    }
     default:
-      console.error('usage: hostlib <check|refresh|ingest|verify|audit|provenance|restore|licences> [options]');
+      console.error('usage: hostlib <check|refresh|ingest|verify|audit|provenance|restore|licences|session> [options]');
       return 1;
   }
 }
