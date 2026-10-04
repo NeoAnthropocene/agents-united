@@ -12,7 +12,7 @@
       "roles": ["backend-architect", "code-reviewer", "repo-index"],
       "feature": "The handoff report lists peer messages received and open items.",
       "disposition": "approximated",
-      "rationale": "The two sections are bound by the lead's brief (its template asks for `Peer messages received` and `Open items` in every report), not by the Tier-1 specialist's own body, which the maintainer chose to leave as it is."
+      "rationale": "`Open items` is bound in the specialist's own body (maintainer decision, 2026-10-04, ADR 0038). `Peer messages received` is not: a hub-and-spoke Tier-1 specialist never receives a peer message, so the section would always read none; the lead's brief template still asks for it."
     },
     {
       "roles": ["backend-architect", "code-reviewer", "repo-index"],
@@ -25,12 +25,6 @@
       "feature": "At most two peer exchanges per specialist pair and one directed question per peer per planning round.",
       "disposition": "approximated",
       "rationale": "Stricter than the invariant: a Tier-1 reviewer or indexer holds no peer exchange at all, so the budget is zero."
-    },
-    {
-      "roles": ["backend-architect"],
-      "feature": "Test-first ordering: author the failing test before implementation.",
-      "disposition": "approximated",
-      "rationale": "The ordering is enforced by the lead's brief, which demands the failing-then-passing test output as acceptance evidence; the specialist's own steps list implementation before the tests. Found by this suite on 2026-10-04 and left for the maintainer to decide whether to reorder the text."
     },
     {
       "roles": ["frontend-architect"],

@@ -17,6 +17,7 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
   const agentsDir = path.join(testWorkspace, '.agents');
 
   const TEAMS_ENV = 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS';
+  const TODO_ENV = 'CLAUDE_CODE_ENABLE_TODO_TOOLS';
 
   const capabilityReport: ClaudeCapabilityReport = {
     installed: true,
@@ -138,6 +139,17 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
     it('leaves env empty when teams is not requested', () => {
       expect(Object.keys(plan().env)).toHaveLength(0);
       expect(TEAMS_ENV in plan({ teams: false }).env).toBe(false);
+      expect(TODO_ENV in plan({ teams: false }).env).toBe(false);
+    });
+
+    // Observed on Claude Code 2.1.289 (2026-10-04, claude-sonnet-5-5): the shared Task tools are absent from a session unless this variable
+    // is set, and a team's lead and teammates plan, claim and finish work through them. The same ephemeral rules as the teams variable.
+    it('also injects the variable that offers the shared Task tools, with the teams variable and nothing else', () => {
+      const teams = plan({ teams: true });
+      expect(teams.env[TODO_ENV]).toBe('1');
+      expect(Object.keys(teams.env).sort()).toEqual([TEAMS_ENV, TODO_ENV].sort());
+      expect(teams.argv.join('\u0000')).not.toContain(TODO_ENV);
+      expect(teams.bootstrapPrompt).not.toContain(TODO_ENV);
     });
 
     it('asks the lead to spawn teammates by projected agent type name only when teams is on', () => {
