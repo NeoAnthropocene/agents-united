@@ -165,7 +165,7 @@ config/secrets.json`,
           color: '#9B7BC4',
           oneLiner: 'Topic-scoped instructions, optionally gated by file paths',
           when: <>Rules without <C>paths:</C> load at session start. Rules with <C>paths:</C> load when a matching file enters context</>,
-          description: [<>Project instructions split into topic files that can load conditionally based on file paths. A rule without <C>paths:</C> frontmatter loads at session start like CLAUDE.md; a rule with <C>paths:</C> loads only when Claude reads a matching file.</>, <>Like CLAUDE.md, rules are guidance Claude reads, not configuration Claude Code enforces. For guaranteed behavior use <A href="/docs/en/hooks">hooks</A> or <A href="/docs/en/permissions">permissions</A>.</>],
+          description: [<>Project instructions split into topic files that can load conditionally based on file paths. A rule without <C>paths:</C> frontmatter loads at session start like CLAUDE.md; a rule with <C>paths:</C> loads only when Claude reads, writes, or edits a matching file.</>, <>Like CLAUDE.md, rules are guidance Claude reads, not configuration Claude Code enforces. For guaranteed behavior use <A href="/docs/en/hooks">hooks</A> or <A href="/docs/en/permissions">permissions</A>.</>],
           tips: [<>Use <C>paths:</C> frontmatter with globs to scope rules to directories or file types</>, <>Subdirectories work: <C>.claude/rules/frontend/react.md</C> is discovered automatically</>, 'When CLAUDE.md approaches 200 lines, start splitting into rules'],
           docsLink: '/en/memory#organize-rules-with-claude/rules/',
           children: [{
@@ -497,7 +497,7 @@ Every finding must include a concrete fix.`
           oneLiner: 'Custom keyboard shortcuts',
           when: 'Read at session start and hot-reloaded when you edit the file',
           description: <>Rebind keyboard shortcuts in the interactive CLI. Run <C>/keybindings</C> to create or open this file with a schema reference. Ctrl+C, Ctrl+D, Ctrl+M, and Caps Lock are reserved and cannot be rebound.</>,
-          exampleIntro: <>This example binds <C>Ctrl+E</C> to open your external editor and unbinds <C>Ctrl+U</C> by setting it to <C>null</C>. The <C>context</C> field scopes bindings to a specific part of the CLI, here the main chat input.</>,
+          exampleIntro: <>This example binds <C>Ctrl+E</C> to open your external editor and unbinds <C>Ctrl+S</C> by setting it to <C>null</C>. The <C>context</C> field scopes bindings to a specific part of the CLI, here the main chat input.</>,
           example: `{
   "$schema": "https://www.schemastore.org/claude-code-keybindings.json",
   "$docs": "https://code.claude.com/docs/en/keybindings",
@@ -506,7 +506,7 @@ Every finding must include a concrete fix.`
       "context": "Chat",
       "bindings": {
         "ctrl+e": "chat:externalEditor",
-        "ctrl+u": null
+        "ctrl+s": null
       }
     }
   ]
@@ -1451,7 +1451,7 @@ The explorer covers files you author and edit. A few related files live elsewher
 | `managed-settings.json` | System-level, varies by OS | Enterprise-enforced settings that you can't override, apart from [narrow exceptions](/docs/en/settings#security-keys-where-the-stricter-value-applies). See [where to save the file](/docs/en/managed-settings#deploy-a-managed-settings-file) and [which managed source Claude Code uses](/docs/en/managed-settings#precedence-within-the-managed-tier). |
 | `CLAUDE.local.md` | Project root | Your private preferences for this project, loaded alongside CLAUDE.md. Create it manually and add it to `.gitignore`. |
 | `AGENTS.md` | Project root, `.claude/`, or any directory | Project instructions you write for AI coding agents. Claude Code can [load it](/docs/en/memory#agents-md) on its own or alongside `CLAUDE.md`. |
-| Installed plugins | `~/.claude/plugins` | Cloned marketplaces, installed plugin versions, the `installed_plugins.json` install record, and per-plugin data, managed by `claude plugin` commands. Plugins [synced from your claude.ai account](/docs/en/plugins/loading#synced-plugins) download into `~/.claude/plugins/synced/`. For a plugin installed from a marketplace [`command` source](/docs/en/plugins/marketplace-reference#command-plugin-source) in link mode, Claude Code stores links here instead of a copy, and the plugin's files stay in the directory the command prints. A `command` source requires Claude Code v2.1.229 or later. A plugin listed by relative path in a local-directory marketplace also [loads in place](/docs/en/plugins/loading#find-plugins-on-disk) from its source directory rather than from a cache copy. See [plugin caching](/docs/en/plugins/loading#find-plugins-on-disk) for how orphaned versions are cleaned up. |
+| Installed plugins | `~/.claude/plugins` | Cloned marketplaces, installed plugin versions, the `installed_plugins.json` install record, and per-plugin data, managed by `claude plugin` commands. Plugins [synced from your claude.ai account](/docs/en/plugins/loading#synced-plugins) download into `~/.claude/plugins/synced/`. For a plugin installed from a marketplace [`command` source](/docs/en/plugins/marketplace-reference#command-plugin-source) in link mode, Claude Code stores links here instead of a copy, and the plugin's files stay in the directory the command prints. A `command` source requires Claude Code v2.1.229 or later. A plugin listed by relative path in a marketplace you added from a local path also [loads in place](/docs/en/plugins/loading#find-plugins-on-disk) from its source directory rather than from a cache copy. See [plugin caching](/docs/en/plugins/loading#find-plugins-on-disk) for how orphaned versions are cleaned up. |
 
 `~/.claude` also holds data Claude Code writes as you work: transcripts, prompt history, file snapshots, caches, and logs. See [application data](#application-data) below.
 
@@ -1545,6 +1545,7 @@ Claude Code deletes the files in the paths below once they're older than [`clean
 | `paste-cache/` | Contents of large pastes |
 | `image-cache/<session>/` | Attached images saved by Claude Code v2.1.274 and earlier. Later versions save pasted and attached images outside `~/.claude`, in an `images/` directory for each session under the temp directory that [`CLAUDE_CODE_TMPDIR`](/docs/en/env-vars) controls. The sweep removes other sessions' leftover directories here, whatever their age. |
 | `uploads/<session>/` | Files you attach from the web or mobile app, and photos you attach from the mobile app, when messaging a [Remote Control](/docs/en/remote-control) session. An attachment to a [cloud session](/docs/en/claude-code-on-the-web) is saved in that session's own cloud environment instead, not on your machine. |
+| `dev-mods/<session>/` | [Mods that Claude wrote](/docs/en/plugins/mods/create#ask-claude-for-a-mod) during the session |
 | `session-env/` | Per-session environment metadata |
 | `tasks/` | Task lists written by the task tools, one directory per list |
 | `shell-snapshots/` | Aliases, functions, and shell options captured at startup and applied by the [Bash tool](/docs/en/tools-reference#bash-tool-behavior) to each command. Removed on clean exit. The sweep clears any left after a crash. |
@@ -1579,7 +1580,7 @@ The scratchpad lives under Claude Code's temp directory rather than `~/.claude`.
 
 `<project>` is your working directory path with every character other than letters and digits replaced by `-`, such as `-Users-you-my-project`. If you set [`CLAUDE_CODE_TMPDIR`](/docs/en/env-vars), the tree moves under that directory instead. Hooks receive the current session's path as [`scratchpad_dir`](/docs/en/hooks#common-input-fields).
 
-Scratchpad files last as long as the session's transcript: the [retention sweep](#cleaned-up-automatically) deletes the directory when it deletes the transcript, and [`claude project purge`](#clear-local-data) doesn't touch the temp directory. Because the directory sits under the system temp location, your operating system can also clear it, such as on restart. To keep something Claude wrote there, ask Claude to move it into your project.
+Scratchpad files last as long as the session's transcript: the [retention sweep](#cleaned-up-automatically) deletes the directory when it deletes the transcript, and [`claude purge`](#clear-local-data) doesn't touch the temp directory. Because the directory sits under the system temp location, your operating system can also clear it, such as on restart. To keep something Claude wrote there, ask Claude to move it into your project.
 
 A session has a scratchpad only when all of these hold:
 
@@ -1599,9 +1600,11 @@ The retention cleanup sweep doesn't remove the paths below. Claude Code keeps th
 | `cache/changelog.md` | Cached copy of the Claude Code changelog, shown by `/release-notes`. Refreshed in the background. |
 | `policy-limits.json` | Cached feature policy settings for your organization. Only present for some account types. Refreshed automatically. A `policy-limits.json.stamp.json` sidecar records which account or API key the cache belongs to. Claude Code deletes both files when you log out. |
 
-<span id="state-files-to-keep" />
+<h4 id="state-files-to-keep">
+  State files to keep
+</h4>
 
-Other files appear depending on which features you use. Caches and lock files are safe to delete. Keep these state files:
+Depending on which features you use, `~/.claude/` also holds files that the tables under [Application data](#application-data) don't list. Of those, caches and lock files are safe to delete. Keep these state files:
 
 * `.credentials.json`: your [login credentials](/docs/en/authentication#credential-management)
 * `agent-memory/`: [subagent memory](/docs/en/sub-agents#enable-persistent-memory)
@@ -1618,7 +1621,7 @@ Transcripts and history are not encrypted at rest. OS file permissions are the o
 
 ### Clear local data
 
-Run `claude project purge` to delete the state Claude Code holds for one project. It deletes:
+Run `claude purge` to delete the state Claude Code holds for one project. It deletes:
 
 * Transcripts and auto memory under `projects/`
 * Per-session `tasks/`, `debug/`, and `file-history/` entries
@@ -1629,12 +1632,14 @@ Images you pasted or attached in the project's sessions and each session's [scra
 
 The command prints the full deletion plan and asks for confirmation before removing anything.
 
+Before v2.1.288, the command was `claude project purge`.
+
 The examples below use `~/work/my-repo` as a placeholder. Replace it with the path to your project. If no state matches the path, the command prints an error and exits with status 1.
 
 Preview the plan without deleting anything:
 
 ```bash theme={null}
-claude project purge ~/work/my-repo --dry-run
+claude purge ~/work/my-repo --dry-run
 ```
 
 The plan lists each matching item and why it is included:
@@ -1657,7 +1662,7 @@ Dry run: 3 item(s) would be deleted.
 Delete with a single confirmation prompt:
 
 ```bash theme={null}
-claude project purge ~/work/my-repo
+claude purge ~/work/my-repo
 ```
 
 The command prints the same plan, then asks `Delete 3 item(s) for /home/user/work/my-repo? This cannot be undone. [y/N]` and deletes only if you answer `y`.
@@ -1667,7 +1672,7 @@ Omit the path to pick a project from an interactive list.
 Skip the confirmation prompt for use in scripts:
 
 ```bash theme={null}
-claude project purge ~/work/my-repo --yes
+claude purge ~/work/my-repo --yes
 ```
 
 Pass `--all` instead of a path to purge state for every project at once, which deletes `history.jsonl` outright rather than filtering it. Pass `-i` to step through the deletion plan one item at a time.

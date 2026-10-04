@@ -132,9 +132,9 @@ When you answer by typing your own text, Claude Code relays the answer with neut
 
 Questions stay open until you answer them. If you want a question you leave unanswered to eventually close and let Claude continue without you, set the [`askUserQuestionTimeout`](/docs/en/settings-reference#askuserquestiontimeout) setting to `60s`, `5m`, or `10m`, either in your user `settings.json` or from the **Question auto-continue timeout** row in `/config`.
 
-After a question sits that long with no input, the dialog closes on its own: it submits any options you'd already selected and tells Claude you may be away from your keyboard, so Claude proceeds on its own judgment and can re-ask later. You see a countdown for the last 20 seconds. Press any key to restart the timer; on terminals that report focus, switching to the window restarts it too.
+After a question sits that long with no input, the dialog closes on its own: it submits any options you'd already selected and tells Claude you may be away from your keyboard, so Claude proceeds on its own judgment and can re-ask later. You see a countdown for the last 20 seconds. Press any key to restart the timer. While your terminal reports that its window is focused, the timer doesn't count down.
 
-The timeout applies only to `AskUserQuestion`'s multiple-choice questions; permission prompts, including plan approval, never auto-resolve on idle.
+The timer never starts for a question Claude asks in a [background session](/docs/en/agent-view), in [screen reader mode](/docs/en/accessibility), or while the session is connected to [Remote Control](/docs/en/remote-control). Those questions wait until you answer them. The timeout applies only to `AskUserQuestion`'s multiple-choice questions; permission prompts, including plan approval, never auto-resolve on idle.
 
 ## Bash tool behavior
 
@@ -153,10 +153,14 @@ Activate your virtualenv or conda environment before launching Claude Code. To m
 
 ### Timeout and output limits
 
-Each command runs under a timeout, and Claude manages it: when it wants longer than the default for a command, it passes the `timeout` parameter with that call — you never set a per-command timeout. Two [environment variables](/docs/en/env-vars) bound what Claude gets:
+Each command runs under a timeout, and Claude manages it: when it wants longer than the default for a command, it passes the `timeout` parameter with that call. You never set a per-command timeout.
+
+Two [environment variables](/docs/en/env-vars) control what Claude gets for a command that runs in the foreground:
 
 * `BASH_DEFAULT_TIMEOUT_MS` — the default when Claude passes no timeout; two minutes out of the box
 * `BASH_MAX_TIMEOUT_MS` — with the default, sets the ceiling that caps whatever Claude requests: the effective ceiling is the larger of the two, ten minutes out of the box
+
+In a session that has a [time limit for background commands](#time-limit-for-background-commands), `timeout` on a command that Claude starts in the background instead sets how long the command may run there, with that limit's separate default and maximum. The [PowerShell tool](#powershell-tool) follows the same timeout rules and reads the same two variables.
 
 #### Output limits
 
@@ -177,9 +181,35 @@ To change how much of a valid result Claude receives inline, set the [`bashOutpu
 
 For long-running processes such as dev servers or watch builds, Claude can set `run_in_background: true` to start the command as a background task and continue working while it runs. List and stop background tasks with `/tasks`. After you stop one there, or from a connected client such as the desktop app, Claude moves on instead of waiting for it. If a subagent started the command, it's that subagent that moves on.
 
-A command that a [foreground subagent](/docs/en/sub-agents#run-subagents-in-foreground-or-background) started stops when that subagent gives its final response. A command that the main conversation or a background subagent started keeps running after a final response. In non-interactive mode with the `-p` flag, [background commands end shortly after the run's final result](/docs/en/headless#background-tasks-at-exit).
+#### When a background command stops
 
-When a command reaches its timeout without finishing, Claude Code moves it to the background instead of stopping it, unless the command starts with `sleep`. Claude keeps working while the command continues. Claude Code applies the same lifetime rules to a moved command as to any other background command, so it still ends a foreground subagent's command at that subagent's final response. Setting [`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`](/docs/en/env-vars#variables) disables auto-backgrounding along with the rest of the background task functionality.
+A command that a [foreground subagent](/docs/en/sub-agents#run-subagents-in-foreground-or-background) started stops when that subagent's run ends, whether it finished, failed, or was interrupted. A command that the main conversation or a background subagent started keeps running after a final response, until it exits, is stopped, or reaches its [time limit](#time-limit-for-background-commands). In non-interactive mode with the `-p` flag, [background commands end shortly after the run's final result](/docs/en/headless#background-tasks-at-exit).
+
+#### Time limit for background commands
+
+In a session that runs unattended, such as a run with the `-p` flag, an Agent SDK application, a CI job, or a cloud session, background Bash and PowerShell commands have a time limit. A local session you work in from a terminal, the desktop app, or the VS Code extension has no time limit on background commands.
+
+The time limit requires Claude Code v2.1.285 or later. Before v2.1.288, it applied in every session.
+
+The time limit counts from the moment the command enters the background:
+
+* A command that Claude starts in the background gets 30 minutes, or the `timeout` Claude passes with `run_in_background`, up to a maximum of 2 hours
+* A command that starts in the foreground and then moves to the background, for example at its timeout, gets 30 minutes from the move
+
+When a background command reaches its time limit, Claude Code stops it and tells Claude why, and Claude can start the command again with a longer `timeout` if the work still needs it. The stop notice reads `Background command "<description>" was stopped after reaching its background time limit`.
+
+#### Raise the time limit for background commands
+
+Two [environment variables](/docs/en/env-vars) raise these limits, for Bash and PowerShell commands alike. Both take milliseconds, and neither can shorten a limit: a lower value leaves the 30-minute default and the 2-hour maximum in place.
+
+* Set `BASH_DEFAULT_TIMEOUT_MS` above `1800000` to replace the 30-minute default with that value, both for commands Claude starts without a `timeout` and for moved commands
+* Set `BASH_MAX_TIMEOUT_MS` above `7200000` to raise the 2-hour maximum to that value. Setting `BASH_DEFAULT_TIMEOUT_MS` above `7200000` raises the maximum the same way
+
+#### Foreground commands that move to the background
+
+When a foreground command reaches its timeout without finishing, Claude Code moves it to the background instead of stopping it, unless the command starts with `sleep`. A moved command's [time limit](#time-limit-for-background-commands) counts from the move, and a foreground subagent's moved command still stops when that subagent's run ends.
+
+Setting [`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`](/docs/en/env-vars#variables) or running in [bare mode](/docs/en/headless#start-faster-with-bare-mode) disables auto-backgrounding along with the rest of the background task functionality, so a command that reaches its timeout stops instead.
 
 The result of a command moved to the background states what happened:
 
@@ -208,7 +238,6 @@ Claude Code can also count other kinds of processes it starts against the same l
 Whatever you list, these rules apply:
 
 * **Unknown names**: Claude Code ignores names it doesn't recognize
-* **Bash, PowerShell, and Monitor**: Claude Code keeps Bash, PowerShell, and Monitor tool commands under the cap whatever you list
 * **Variable unset**: Claude Code takes the set of other capped kinds from configuration Anthropic delivers from the server, and that set can change over time, so set the variable when you need a set that doesn't change
 * **Permission-gating hooks**: even with every kind capped, Claude Code excludes from the cap a hook that can block or change the outcome of an action, and any MCP server that such a hook calls, so the kernel killing a permission-gating hook can't allow the action it was blocking
 
@@ -342,7 +371,7 @@ When Monitor runs a command, it uses the same [permission rules as Bash](/docs/e
 
 The [WebSocket source](#websocket-source) has its own approval prompt, which the classifier also decides in auto mode.
 
-The tool is not available on Amazon Bedrock, Google Cloud's Agent Platform, or Microsoft Foundry. It is also not available when `DISABLE_TELEMETRY` or `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` is set.
+The tool is not available on Amazon Bedrock, Google Cloud's Agent Platform, or Microsoft Foundry. It is also not available when `DISABLE_TELEMETRY` or `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` is set. On Windows, the tool is available only when [Git Bash](/docs/en/setup#set-up-on-windows) is installed.
 
 Plugins can declare monitors that start automatically when the plugin is active, instead of asking Claude to start them. See [plugin monitors](/docs/en/plugins/components#monitors).
 
@@ -409,6 +438,17 @@ On Windows, set the variable to `0` to turn the tool off. On Linux, macOS, and W
 On Windows, Claude Code auto-detects `pwsh.exe` for PowerShell 7+ with a fallback to `powershell.exe` for PowerShell 5.1. When the tool is enabled, Claude treats PowerShell as the primary shell. The Bash tool remains available for POSIX scripts when Git Bash is installed.
 
 Claude Code spawns PowerShell with `-ExecutionPolicy Bypass` at process scope only, so `.ps1` scripts and module imports work on default Windows installs without changing the machine's policy. Process-scope bypass doesn't override Group Policy `MachinePolicy` or `UserPolicy`, so enterprise policies still apply. To respect the machine's effective execution policy instead, set `CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY=1`.
+
+### Bash deny rules also turn off the PowerShell tool
+
+On Windows with Git Bash installed, denying Bash also turns the PowerShell tool off for the session. This applies to scoped rules such as `Bash(git push *)` as well as a bare `Bash`, and to rules from one of your settings files or `--disallowedTools`. Claude Code does this because a `Bash` rule doesn't restrict the PowerShell tool, which has [its own permission rules](/docs/en/permissions#powershell). With PowerShell left on, Claude could run there what your rule denies in Bash.
+
+To keep the PowerShell tool on alongside a Bash deny rule, do either of these:
+
+* Set `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` in your environment or in the `env` block of a settings file, as shown in [Enable the PowerShell tool](#enable-the-powershell-tool).
+* Add a scoped [`PowerShell` permission rule](/docs/en/permissions#powershell) to a settings file, such as a `PowerShell(git push *)` deny rule.
+
+Without one of these, a scoped Bash deny rule leaves the Bash tool available, and Claude Code turns PowerShell off without a warning. A rule that removes the whole Bash tool leaves Claude with no shell tool for the session.
 
 ### Shell selection in settings, hooks, and skills
 
@@ -538,7 +578,7 @@ The default set described here applies in Claude Code v2.1.268 and later.
 
 ## WebFetch tool behavior
 
-WebFetch takes a URL and a prompt describing what to extract. It fetches the page, converts the response to Markdown when the server returns HTML, and runs the prompt against the content using a small, fast model. For most fetches, Claude receives that model's answer, not the raw page. The conversion step is not configurable.
+WebFetch takes a URL and a prompt describing what to extract. It fetches the page and converts the response to Markdown when the server returns HTML. For most fetches, it then runs the prompt against the content in a separate model call, and Claude receives the result of that call rather than the raw page. The conversion step is not configurable.
 
 This makes WebFetch lossy by design. The extraction prompt determines what reaches Claude, so a result that says a page doesn't mention something may only mean the prompt didn't ask about it. Ask Claude to fetch again with a more specific prompt, or use `curl` via Bash for the unprocessed page.
 
@@ -562,9 +602,19 @@ To allow a domain in advance without a prompt, add an allow rule like `WebFetch(
 
 An explicit `WebFetch(domain:...)` rule in `deny`, `ask`, or `allow` takes precedence over the preapproved set, so you can block a preapproved domain or require a prompt for it.
 
+When the URL is a claude.ai [artifact](/docs/en/artifacts) link, Claude Code can also ask for approval to read the artifact itself. For the cases where it asks, see [Read an artifact shared with you](/docs/en/artifacts#read-an-artifact-shared-with-you).
+
 WebFetch sets a `User-Agent` header beginning with `Claude-User`, and an `Accept` header that prefers Markdown over HTML so servers that support content negotiation can return Markdown directly.
 
 Sandboxed commands don't inherit WebFetch's built-in set of preapproved documentation domains. To let a sandboxed command reach a domain without a prompt, add the domain to [`allowedDomains`](/docs/en/settings-reference#sandbox-network-alloweddomains) or allow it with a `WebFetch(domain:...)` rule, which the [sandbox also honors](/docs/en/sandboxing#network-isolation). WebFetch never reads the sandbox allowlist in return, so adding a domain to a sandbox or organization network allowlist doesn't stop WebFetch from prompting for it.
+
+### WebFetch availability
+
+On Claude Code v2.1.285 or later, set [`CLAUDE_CODE_DISABLE_WEB_FETCH`](/docs/en/env-vars#variables) to `1` to turn WebFetch off.
+
+If you sign in with a Team or Enterprise claude.ai account and don't connect through an [LLM gateway](/docs/en/llm-gateway), WebFetch also depends on your organization's policy, which Claude Code requests from `api.anthropic.com` when a session starts. The same goes for a session whose plan Claude Code can't determine, such as one running under a claude.ai token that another app supplied.
+
+If WebFetch is missing from a session, run `/status` in the session. If its `Organization policy` line reports that the policy didn't load and names web fetch among the features that wait for it, Claude Code is withholding WebFetch until it can confirm that your organization allows it. Outside a session, `claude doctor` makes its own request and prints the same line. Once a policy that allows WebFetch loads, the tool returns without a restart.
 
 ## WebSearch tool behavior
 
