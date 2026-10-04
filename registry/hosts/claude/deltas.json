@@ -27,12 +27,6 @@
       "rationale": "Stricter than the invariant: a Tier-1 reviewer or indexer holds no peer exchange at all, so the budget is zero."
     },
     {
-      "roles": ["backend-architect"],
-      "feature": "Test-first ordering: author the failing test before implementation.",
-      "disposition": "approximated",
-      "rationale": "The ordering is enforced by the lead's brief, which demands the failing-then-passing test output as acceptance evidence; the specialist's own steps list implementation before the tests. Found by this suite on 2026-10-04 and left for the maintainer to decide whether to reorder the text."
-    },
-    {
       "roles": ["frontend-architect"],
       "feature": "Component contracts settle through the orchestrator before touching peer-owned files.",
       "disposition": "approximated",

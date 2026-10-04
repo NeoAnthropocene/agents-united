@@ -30,6 +30,10 @@ export const TEAMMATE_COMMS_EVIDENCE: ReadonlyArray<{ invariant: string; evidenc
   // warns that task status can lag.
   { invariant: 'A teammate claims only the task its brief names.', evidence: /only the task your brief names/i },
   { invariant: 'A teammate marks its task completed.', evidence: /mark it completed/i },
+  // Observed on Claude Code 2.1.289 (the PetPal live-team re-run, 2026-10-04): the Task tools and `SendMessage` reached every teammate as
+  // DEFERRED tools. Two teammates never loaded the Task tools and reported "could not mark task completed", so the body now says how.
+  { invariant: 'The deferred tools are loaded with ToolSearch before first use.', evidence: /`ToolSearch`[^.]*select:SendMessage,TaskGet,TaskUpdate/ },
+  { invariant: 'Without the Task tools a teammate leaves the status to the lead and says so.', evidence: /do not have them[^.]*(leave|lead)[^.]*`Open items`/i },
   { invariant: TEAMMATE_COMMS_INVARIANTS[4], evidence: /`Peer messages received`[\s\S]*`Open items`/ },
   { invariant: TEAMMATE_COMMS_INVARIANTS[5], evidence: /team mode[^.]*brief lists each peer[^.]*`SendMessage`/i },
   // The default is the relay, and a missing peer never blocks.
@@ -52,6 +56,7 @@ export const LEAD_COMMS_EVIDENCE: ReadonlyArray<{ what: string; evidence: RegExp
   // What the live Agent Teams page says about the shared task list, team size, shutdown and waiting (read 2026-10-04).
   { what: 'the shared task list holds the Assembly Line as tasks with dependencies, so a task unblocks by itself', evidence: /shared task list[\s\S]*`TaskCreate`[\s\S]*dependenc/i },
   { what: 'the Task tools are off by default on newer models, so without them the line runs through the briefs', evidence: /CLAUDE_CODE_ENABLE_TODO_TOOLS[\s\S]*(do not have them|without them)/i },
+  { what: '`agents start` sets the Task-tools variable together with the teams variable (maintainer decision, ADR 0038)', evidence: /`agents start` sets `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` together with the teams variable/ },
   // Observed on Claude Code 2.1.288 (2026-10-04): with the variable the Task tools are listed as DEFERRED tools and must be loaded with ToolSearch
   // before use (`TaskList` then answered "No tasks found"); without it the host's tool list has none of them (claude-sonnet-5-5).
   { what: 'the Task tools, when the host provides them, are deferred: check and load them with ToolSearch', evidence: /`ToolSearch`[^.]*select:TaskCreate,TaskList,TaskUpdate/ },

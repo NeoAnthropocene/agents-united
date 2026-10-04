@@ -103,15 +103,30 @@ describe.each(READ_ONLY_ROLES)('read-only role %s, as installed', role => {
   });
 });
 
-describe('what the read-only guard does not cover', () => {
-  // The guard names writers and mutating server tools. A tool that delegates, schedules, starts a workflow, makes a worktree or sends a
-  // file out is withheld from a reviewer by its allowlist ALONE; granting one by a later edit is not caught by the guard. Pinned here so
-  // that a change (widening the matcher) is a decision, and recorded in the plan log as an open question.
-  it.each(['Agent', 'Workflow', 'CronCreate', 'EnterWorktree', 'Artifact', 'SendUserFile'])('does not refuse %s if a later edit grants it, and the shipped reviewer is not offered it', tool => {
-    for (const role of READ_ONLY_ROLES) {
-      expect(toolOffered(roleText(WS, role), tool), `${role} is not offered ${tool}`).toBe(false);
+describe('delegation tools (ADR 0038: the guard was widened from writers to anything that hands work or output outside the role)', () => {
+  // A tool that delegates, schedules, starts a workflow, makes a worktree, publishes a page or sends a file out was withheld from a reviewer
+  // by its allowlist ALONE (the previous version of this suite pinned that gap). Now the guard refuses each too, so a later edit that
+  // grants one is caught the same way a granted writer is.
+  const DELEGATION = ['Agent', 'Workflow', 'CronCreate', 'EnterWorktree', 'Artifact', 'SendUserFile'];
+
+  describe.each(READ_ONLY_ROLES)('read-only role %s', role => {
+    it.each(DELEGATION)('is not offered %s, and the guard refuses it even if the host let the call through', tool => {
+      const result = attempt(roleText(WS, role), WS, { tool, input: { prompt: 'x' } });
+      expect(result.offered, 'layer 1: the allowlist').toBe(false);
+      expect(result.blocked, 'layer 2: the guard').toBe(true);
+      expect(result.statuses).toEqual([2]);
+    });
+
+    it.each(DELEGATION)('refuses %s through the guard alone when a later edit grants it', tool => {
       const result = attempt(widenTools(roleText(WS, role), [tool]), WS, { tool, input: { prompt: 'x' } });
-      expect([result.offered, result.fired, result.blocked], `${role} ${tool}`).toEqual([true, 0, false]);
-    }
+      expect([result.offered, result.fired, result.blocked]).toEqual([true, 1, true]);
+      expect(result.reason).toBe(`Blocked by agents-united read-only guard: ${tool} would hand work or output outside this role, and this role only reads and reports.\n`);
+    });
+
+    it.each(['SendMessage', 'ToolSearch', 'ListAgents', 'SubagentHandback'])('still lets the coordination tool %s through', tool => {
+      const result = attempt(roleText(WS, role), WS, { tool, input: { message: 'x' } });
+      expect(result.blocked).toBe(false);
+      expect(result.statuses.every(status => status === 0)).toBe(true);
+    });
   });
 });

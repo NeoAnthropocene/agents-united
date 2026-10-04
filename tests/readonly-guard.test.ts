@@ -43,6 +43,16 @@ describe('read-only guard', () => {
     expect(call(tool).status).toBe(2);
   });
 
+  // A role that only reads and reports must not hand work or output to anything outside itself: not to another agent, a workflow, a
+  // schedule, a worktree, a published page or a file sent to the user. Widened on 2026-10-04 (maintainer decision, ADR 0038); before
+  // that these were withheld by the role's allowlist alone.
+  it.each(['Agent', 'Workflow', 'CronCreate', 'EnterWorktree', 'Artifact', 'SendUserFile'])('blocks the delegation tool %s with exit 2 and a short reason', tool => {
+    const result = call(tool, { prompt: 'x' });
+    expect(result.status).toBe(2);
+    expect(result.stderr).toBe(`Blocked by agents-united read-only guard: ${tool} would hand work or output outside this role, and this role only reads and reports.\n`);
+    expect(result.stderr.length).toBeLessThan(200);
+  });
+
   it.each([
     'Read',
     'Grep',
@@ -51,6 +61,11 @@ describe('read-only guard', () => {
     'Skill',
     'SendMessage',
     'SubagentHandback',
+    'ToolSearch',
+    'ListAgents',
+    'TaskList',
+    'TaskGet',
+    'CronList',
     'WebFetch',
     'mcp__github__search_code',
     'mcp__github__get_file_contents',
@@ -76,9 +91,10 @@ describe('read-only guard', () => {
     const groups = readOnlyGuardHooks().PreToolUse;
     expect(groups).toHaveLength(1);
     const matcher = new RegExp(`^(?:${groups[0].matcher})$`);
-    for (const tool of ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'mcp__github__create_issue']) {
+    for (const tool of ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Agent', 'Workflow', 'CronCreate', 'EnterWorktree', 'Artifact', 'SendUserFile', 'mcp__github__create_issue']) {
       expect(matcher.test(tool), tool).toBe(true);
     }
-    for (const tool of ['Read', 'Grep', 'Glob']) expect(matcher.test(tool), tool).toBe(false);
+    // The matcher is anchored: `Agent` must not catch `ListAgents`, nor `CronCreate` catch `CronList`.
+    for (const tool of ['Read', 'Grep', 'Glob', 'ListAgents', 'CronList', 'SendMessage', 'ToolSearch', 'TaskList']) expect(matcher.test(tool), tool).toBe(false);
   });
 });
