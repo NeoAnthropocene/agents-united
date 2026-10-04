@@ -20,8 +20,8 @@ Every divergence above the Contract Floor (ADR 0021 decision 6) carries exactly 
 | `unsupported` | The host has no realization; the feature is dropped, and its absence is declared rather than silent. |
 
 **Verified against** (docs pull 2026-09-27 unless noted): Claude Code (`code.claude.com/docs`,
-`platform.claude.com/docs`) — capability profile `claude@2.1.271`+ (this repo's pinned profile,
-`registry/profiles/claude@2.1.271.json`); Antigravity (`antigravity.google/docs`) — 2026-08
+`platform.claude.com/docs`) — version floor `claude@2.1.271`+ (the pinned profile file was retired, ADR 0037;
+`registry/hosts/claude/profile.json` carries it as `minVersion`); Antigravity (`antigravity.google/docs`) — 2026-08
 capability profile; Cline (`docs.cline.bot`, `cline/cline` source) — CLI **3.0.61** (ADR 0013
 verification baseline; the `skills` field on Configured Agents was verified separately against
 `cline/cline` PR #9502, merged 2026-02-24, shipped by the currently published **3.0.65**). A

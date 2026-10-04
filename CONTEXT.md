@@ -294,20 +294,20 @@ _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanat
   every host realization must honor verbatim. Host-native specialization may never cross it.
 - **Realization Layer**: one host's native rendering of a core agent — invariant → tool bindings,
   host-native choreography, and declared deltas. Six realizations may read differently; they may
-  not *mean* differently below the floor.
+  not *mean* differently below the floor. _Claude: the committed native file is the realization; `registry/realizations/` was retired (ADR 0037)._
 - **Binding Table**: per-host data mapping invariants and behaviours to concrete host tools,
   commands, and mechanics (successor to the translator vocabulary maps). Targets a Capability
-  Profile; a host release change touches this table only.
+  Profile; a host release change touches this table only. _Retired for Claude (ADR 0037): the dialect keeps its vocabulary maps for the legacy lane; the comms law bound to Claude mechanics lives in the native bodies and `tests/helpers/comms-law.ts`._
 - **Capability Profile**: versioned snapshot of a host's tool surface (e.g. `claude@2.1.271`,
-  `antigravity@2026-08`). Absorbs host churn as one-host data PRs with a one-host blast radius.
+  `antigravity@2026-08`). Absorbs host churn as one-host data PRs with a one-host blast radius. _The Claude file `claude@2.1.271` was retired (ADR 0037); `registry/hosts/claude/profile.json` carries its version floor as `minVersion`._
 - **Declared Delta**: an audited, host-specific deviation *above* the Contract Floor (more or less
   scope, host-native affordances), classified `mapped | approximated | degraded | unsupported` with
   a rationale. Undeclared divergence is a conformance failure.
 - **Creation Engine**: deterministic codegen assembling Semantic Core + Binding Table + Capability
   Profile into native host files (successor to the Projector). Renders are creators of record —
-  never translators, never LLMs (supersedes ADR 0020 decision 1's "translators of record").
+  never translators, never LLMs (supersedes ADR 0020 decision 1's "translators of record"). _Retired (ADR 0037): `createRole` and its goldens were removed after their assertions were ported; no engine generates a native file, they are authored and committed._
 - **Conformance Suite**: per-host golden snapshots plus floor-identity assertions (successor to the
-  Plan 017 golden pin). A realization ships only when its suite is green.
+  Plan 017 golden pin). A realization ships only when its suite is green. _Now (ADR 0037): floor identity, invariant coverage (evidence or declared delta), least privilege and comms evidence over the native and legacy files; there are no created goldens._
 - **Semantic Core vs Realization**: the single most important distinction in this domain. The core
   answers *what this agent is and must never stop being*; a realization answers *how that is
   enacted on one host*. Translation loss is eliminated structurally: no cross-host prose hop exists.
@@ -345,8 +345,10 @@ runtime host detection/rewiring (nondeterministic — churn belongs in capabilit
 - **Host Profile**: `registry/hosts/<host>/profile.json` — the artifact vocabularies a native
   package may use (agent and skill frontmatter keys, hook events, plugin manifest keys, MCP scopes,
   permission modes), pinned to the docs library baseline and drift-tested against its snapshots.
-  Distinct from the legacy **Capability Profile** (`registry/profiles/claude@2.1.271.json`), which
-  stays the version floor for the projection lane until parity.
+  The legacy **Capability Profile** it once sat beside (`registry/profiles/claude@2.1.271.json`) was
+  retired with the created lane (ADR 0037); `minVersion` carries its version floor.
+- **Native Declared Delta**: a Semantic Core invariant that a native role does not bind in its body on purpose, declared in `registry/hosts/<host>/deltas.json` with a disposition (`mapped`, `approximated`, `degraded`, `unsupported`) and a rationale (ADR 0037). Every other invariant of a native role is evidenced in its file; a delta is stale, and fails the suite, when the body does evidence the invariant.
+  _Avoid_: declaring a delta instead of fixing a body that should bind the invariant, leaving an invariant silent
 - **Tool Policy Report**: `toolPolicyReport()` — per role, tools its classes would add or that were
   granted by hand outside them; overall, catalog tools no role reaches. A host's new tool surfaces
   here and in the catalog-drift test in the host-update PR.

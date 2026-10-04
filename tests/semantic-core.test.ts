@@ -18,7 +18,7 @@ import yaml from 'yaml';
  *   - Gate 4 (declared deltas): undeclared delta → conformance failure; declared delta
  *     (`mapped|approximated|degraded|unsupported` + rationale) → pass; a delta without a
  *     rationale or with an invalid disposition is itself a violation.
- *   (Gate 5 — creation byte-determinism — lives in tests/creation-engine-claude.test.ts.)
+ *   (Gate 5, creation byte-determinism, went with the retired created lane, ADR 0037.)
  *
  * RED-PHASE CONTRACT — `../src/core/semantic-core.js` lands in Plan 021 Step 2 and does not
  * exist yet. ALL module access is wrapped in `semanticCoreApi()` below (the `dialectsApi()`

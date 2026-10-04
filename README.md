@@ -634,7 +634,7 @@ Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releas
 | [`docs/host-primitive-matrix.md`](./docs/host-primitive-matrix.md) | How skills, subagents, rules, hooks, and workflows behave on Claude Code, Antigravity, and Cline |
 | [`docs/skill-intake.md`](./docs/skill-intake.md) | The checklist for adding any new skill, including licence tiers |
 | [`docs/guard-testing.md`](./docs/guard-testing.md) | How to prove the guard hook actually fires |
-| [`docs/creation-engine.md`](./docs/creation-engine.md) | The Semantic Core and per-host creation engine behind Claude projection |
+| [`docs/creation-engine.md`](./docs/creation-engine.md) | The Semantic Core (the Contract Floor of every native role) and the retired creation engine |
 | [`docs/adr/0025-native-host-packages-and-host-docs-library.md`](./docs/adr/0025-native-host-packages-and-host-docs-library.md) | Native host packages, the host docs library, and the changelog-driven update workflow |
 | [`host-library/`](./host-library) | Per-harness documentation snapshots, changelog baselines, and lockfiles |
 | [`docs/adr/`](./docs/adr) | Architecture decision records (0001 to 0025) |

@@ -2,9 +2,12 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
-import { HOST_DIALECTS } from '../src/core/dialects.js';
-import { scanCoreForHostTokens } from '../src/core/semantic-core.js';
-import { PILOT_STEMS, runPipeline } from './helpers/created-golden.js';
+import { loadSemanticCore, scanCoreForHostTokens } from '../src/core/semantic-core.js';
+import { evidenceFor } from './helpers/native-invariant-evidence.js';
+import { loadNativeDeltas, nativeText, NATIVE_ROLES } from './helpers/native-roles.js';
+
+/** The five Tier-1 pilot cores (the roles of the `software-engineering` bundle). */
+const PILOT_STEMS = ['orchestrator-engineering', 'subagent-backend-architect', 'subagent-frontend-architect', 'subagent-code-reviewer', 'subagent-repo-index'] as const;
 
 /**
  * Plan 022 Step 1 — cross-subagent comms conformance suite (C1–C7).
@@ -115,7 +118,7 @@ describe('Plan 022 comms law — coordinators (C7)', () => {
   });
 });
 
-describe('Plan 022 comms law — Semantic Core invariants + Claude bindings (created lane)', () => {
+describe('Plan 022 comms law — Semantic Core invariants (bound in the native files by the coverage suite, ADR 0037)', () => {
   const SPECIALIST_INVARIANTS = [
     'Check for delivered peer messages before the final report.',
     'The handoff report lists peer messages received and open items.',
@@ -131,24 +134,25 @@ describe('Plan 022 comms law — Semantic Core invariants + Claude bindings (cre
     expect([...SPECIALIST_INVARIANTS, ...COORDINATOR_INVARIANTS].flatMap(scanCoreForHostTokens)).toEqual([]);
   });
 
-  it('HOST_DIALECTS.claude binds every comms invariant', () => {
-    const bound = new Set(HOST_DIALECTS.claude.invariantBindings.map(entry => entry.invariant));
-    const unbound = [...SPECIALIST_INVARIANTS, ...COORDINATOR_INVARIANTS].filter(inv => !bound.has(inv));
-    expect(unbound).toEqual([]);
-  });
-
-  it('every pilot core carries its role comms invariants and the created output binds them', async () => {
+  it('every pilot core carries its role comms invariants', async () => {
+    const cores = await loadSemanticCore(path.resolve(process.cwd(), 'registry'));
     const violations: string[] = [];
     for (const stem of PILOT_STEMS) {
-      const pipeline = await runPipeline(stem);
       const expected = stem.startsWith('orchestrator-') ? COORDINATOR_INVARIANTS : SPECIALIST_INVARIANTS;
-      for (const invariant of expected) {
-        if (!pipeline.core.invariants.includes(invariant)) violations.push(`${stem}: core lacks "${invariant}"`);
-        const line = pipeline.created.split('\n').findIndex(l => l.endsWith(invariant));
-        if (line < 0) violations.push(`${stem}: created output lacks "${invariant}"`);
-        else if (/no host binding declared/.test(pipeline.created.split('\n')[line + 1] ?? '')) {
-          violations.push(`${stem}: "${invariant}" is unbound in the created output`);
-        }
+      for (const invariant of expected) if (!cores.get(stem)?.invariants.includes(invariant)) violations.push(`${stem}: core lacks "${invariant}"`);
+    }
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
+
+  it('every native role either evidences each comms invariant its core states or declares it (see native-invariant-coverage.test.ts)', async () => {
+    const cores = await loadSemanticCore(path.resolve(process.cwd(), 'registry'));
+    const deltas = loadNativeDeltas(path.resolve(process.cwd(), 'registry'), 'claude');
+    const violations: string[] = [];
+    for (const { role, stem } of NATIVE_ROLES) {
+      for (const invariant of [...SPECIALIST_INVARIANTS, ...COORDINATOR_INVARIANTS].filter(inv => cores.get(stem)!.invariants.includes(inv))) {
+        const evidenced = evidenceFor(role, invariant)?.test(nativeText(role)) ?? false;
+        const declared = deltas.some(delta => delta.roles.includes(role) && delta.feature === invariant);
+        if (!evidenced && !declared) violations.push(`${role}: "${invariant}" is neither evidenced nor declared`);
       }
     }
     expect(violations, violations.join('\n')).toEqual([]);
