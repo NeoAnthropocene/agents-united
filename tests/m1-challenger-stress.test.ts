@@ -20,7 +20,8 @@ function validateSkill(content: string, expectedName: string) {
   if (!fm.description || typeof fm.description !== 'string') errors.push('Missing description');
   if (!fm.metadata || typeof fm.metadata !== 'object') errors.push('Missing metadata');
   if (fm.metadata?.author !== 'agents-united') errors.push('Metadata author mismatch: ' + fm.metadata?.author);
-  if (fm.metadata?.version !== '2.0.0') errors.push('Metadata version mismatch: ' + fm.metadata?.version);
+  // Plan 035 (ADR 0040): a rewritten skill is at 3.0.0; the rest are still 2.0.0.
+  if (!['2.0.0', '3.0.0'].includes(String(fm.metadata?.version))) errors.push('Metadata version mismatch: ' + fm.metadata?.version);
 
   const body = content.slice(fmMatch[0].length).trim();
   const lines = content.split(/\r?\n/).length;
@@ -262,7 +263,10 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
         const skillFile = path.join(skillsDir, skillName, 'SKILL.md');
         const content = await fs.readFile(skillFile, 'utf8');
         const lineCount = content.split('\n').length;
-        expect(lineCount, `Skill ${skillName} line count ${lineCount} is less than 150`).toBeGreaterThanOrEqual(150);
+        // Plan 035 (ADR 0040): line count is not depth. The 150-line floor stays for skills still at 2.0.0;
+        // a rewritten skill (3.0.0) is held to the rewrite contract instead (tests/skill-rewrite-contract.test.ts).
+        const min = /^\s+version:\s*['"]?3\.0\.0/m.test(content) ? 60 : 150;
+        expect(lineCount, `Skill ${skillName} line count ${lineCount} is less than ${min}`).toBeGreaterThanOrEqual(min);
       }
     });
 
