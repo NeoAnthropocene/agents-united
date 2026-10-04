@@ -13,7 +13,6 @@ export const PluginExplorer = ({children}) => {
     id: 'manifest',
     name: 'Manifest',
     path: '.claude-plugin/plugin.json',
-    required: "Required by Anthropic's directory",
     lines: [{
       depth: 0,
       kind: 'folder',
@@ -434,7 +433,7 @@ Each file is the smallest valid example of its format, there to show the shape r
 
 <PluginExplorer>
   <Piece id="manifest">
-    The [manifest](/docs/en/plugins/manifest-reference) is the `plugin.json` file in a plugin's `.claude-plugin/` directory. It contains the plugin's metadata and the `userConfig` values that Claude Code prompts the user for. Claude Code loads a plugin without one, but [Anthropic's directory](/docs/en/plugins/publish#submit-to-anthropics-directory) requires it. Inside the file, only `name` is required. In this one, `description` is the text users see for the plugin in `/plugin`, and `version` keeps users on that version until you change it:
+    The [manifest](/docs/en/plugins/manifest-reference) is the `plugin.json` file in a plugin's `.claude-plugin/` directory. It contains the plugin's metadata and the `userConfig` values that Claude Code prompts the user for. Claude Code loads a plugin without one. Inside the file, only `name` is required. In this one, `description` is the text users see for the plugin in `/plugin`, and `version` keeps users on that version until you change it:
 
     ```json theme={null}
     {
@@ -506,7 +505,7 @@ Each file is the smallest valid example of its format, there to show the shape r
   </Piece>
 
   <Piece id="monitors">
-    A monitor is a shell command that Claude Code starts in the background when the session starts and keeps running until it ends, using the [Monitor tool](/docs/en/tools-reference#monitor-tool). What it prints reaches Claude as notifications. A `when` field can instead start it the first time a named skill runs. This one tails an error log:
+    A monitor is a shell command that Claude Code starts in the background when the session starts and keeps running until it ends. What it prints reaches Claude as notifications. A `when` field can instead start it the first time a named skill runs. This one tails an error log:
 
     ```json theme={null}
     [
@@ -773,6 +772,8 @@ Load the plugin and ask Claude to edit a file. A `PostToolUse` hook that exits 0
 
 Hooks in `hooks/hooks.json` and in the `hooks` manifest key both load. For every event and its payload, see [Hook events](/docs/en/hooks#hook-events).
 
+To write hooks as JavaScript functions that run inside Claude Code and can draw in its interface, list a module file under a `modules` key in the same `hooks/hooks.json`. A plugin with one is a mod. See [Create a mod](/docs/en/plugins/mods/create).
+
 #### When plugin hooks fire
 
 A plugin's hooks don't wait for one of the plugin's skills or commands to be used. Claude Code registers them when a session loads the plugin, and they fire on their events from then on. To limit when a hook runs, narrow its `matcher`.
@@ -837,6 +838,13 @@ The `mcpServers` key also accepts a packaged server as an [MCPB file](https://gi
 ```
 
 The server takes its name from the `name` in the bundle's manifest.
+
+A bundle's own manifest can declare settings the server needs from the user in a `user_config` block. A bundled server with a required setting that has no saved value doesn't start. The `/plugin` **Errors** tab shows `Bundled MCP server "<name>" was not started: it needs configuration`.
+
+Users supply the values in one of two ways:
+
+* **In `/plugin`**: select the plugin on the **Installed** tab and choose **Configure**
+* **At install, from the shell**: pass [`--config <server>.<key>=<value>`](/docs/en/plugins/cli-reference#plugin-install) to `claude plugin install`. Requires Claude Code v2.1.285 or later, and works only for a bundle packaged inside the plugin.
 
 For transports and authentication, see [MCP](/docs/en/mcp#plugin-provided-mcp-servers).
 
@@ -988,7 +996,7 @@ The command runs in a shell, in the working directory the session started in.
 
 A monitor's command is limited in where it starts and what it can reference:
 
-* **Interactive sessions only**: plugin monitors start in an interactive session and never in non-interactive mode with the `-p` flag. They also start only where the [Monitor tool](/docs/en/tools-reference#monitor-tool) is available
+* **Interactive sessions only**: plugin monitors start in an interactive session and never in non-interactive mode with the `-p` flag. They also don't start in sessions where the API provider or telemetry settings make the [Monitor tool](/docs/en/tools-reference#monitor-tool) unavailable
 * **No user configuration**: `command` gets the [path variables](#path-variables-and-persistent-data) and `${ENV_VAR}` from the environment, but never `${user_config.*}`. A monitor that references one doesn't start, and monitor processes don't receive `CLAUDE_PLUGIN_OPTION_<KEY>` either
 * **Disabling mid-session**: if you disable a plugin mid-session, Claude Code doesn't stop monitors that are already running. They stop when the session ends
 
@@ -1027,7 +1035,7 @@ This manifest asks for an endpoint and a token:
 
 ### When the configuration dialog appears
 
-The dialog appears only in the interactive `/plugin` interface. It opens for any option that isn't set yet when the user does any of the following:
+The dialog is part of the interactive `/plugin` interface. When the user does any of the following, it opens for any option that isn't set yet:
 
 * Installs the plugin in `/plugin`
 * Runs `/plugin install <plugin>@<marketplace>` inside a session
@@ -1035,7 +1043,11 @@ The dialog appears only in the interactive `/plugin` interface. It opens for any
 
 To open the same dialog at any time, the user runs `/plugin configure <plugin>@<marketplace>`.
 
-The `claude plugin install` shell command never prompts for `userConfig` values. To set values from the shell, pass each one as `--config KEY=VALUE`. When options remain unset, the command prints a `userConfig options not yet set` line that names both ways to set them. [The `userConfig` dialog never appears](/docs/en/plugins/troubleshooting#the-userconfig-dialog-never-appears) quotes the line.
+The VS Code extension's [Manage plugins dialog](/docs/en/vs-code#install-plugins) asks for unset options as a form after an install, and a gear icon on the plugin's row opens the form again with every option.
+
+The `claude plugin install` shell command never prompts for `userConfig` values. To set values from the shell, pass each one as `--config KEY=VALUE` when you install, or pipe a JSON object to [`claude plugin configure --values-stdin`](/docs/en/plugins/cli-reference#plugin-configure) afterward.
+
+When options remain unset, `claude plugin install` prints a `userConfig options not yet set` line. For the line's exact text, see [The `userConfig` dialog never appears](/docs/en/plugins/troubleshooting#the-userconfig-dialog-never-appears).
 
 For the option fields, where each value is stored, how a component references a saved value, and which fields reject `${user_config.*}`, see [User configuration](/docs/en/plugins/manifest-reference#user-configuration).
 
