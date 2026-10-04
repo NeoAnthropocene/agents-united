@@ -44,6 +44,31 @@ describe('domainTypes', () => {
   });
 });
 
+describe('domainTypes with a bundle-scoped native role name (ADR 0036)', () => {
+  const SCOPED = {
+    team: { name: 'team', domain: 'org', orchestrator: 'orchestrator-team.md', agents: ['subagent-shared.md', 'subagent-own.md'], nativeRoles: { 'subagent-shared.md': 'team-shared' } },
+    solo: { name: 'solo', domain: 'org', agents: ['subagent-shared.md'] },
+  } as never;
+
+  it('names the type the coordinator can spawn: the bundle\'s own native role, and the shared role of the others', () => {
+    expect(domainTypes(SCOPED, 'team')).toEqual([
+      { name: 'own', bundles: ['team'] },
+      { name: 'shared', bundles: ['solo'] },
+      { name: 'team-shared', bundles: ['team'] },
+    ]);
+  });
+
+  it('gives the committed digital-agency coordinator its nine teammates, three of them agency-only native copies', () => {
+    const raw = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')) as { bundles?: unknown };
+    const types = domainTypes((raw.bundles ?? raw) as never, 'digital-agency');
+    expect(types.map(t => t.name)).toEqual([
+      'agency-conversion-specialist', 'agency-creative-designer', 'agency-growth-strategist', 'compliance-grc-specialist', 'frontend-architect',
+      'marketing-campaign-specialist', 'marketing-content-strategist', 'qa-automation-lead', 'seo-specialist',
+    ]);
+    for (const type of types) expect(type.bundles, type.name).toEqual(['digital-agency']);
+  });
+});
+
 describe('renderRoster / syncRoster', () => {
   const types: RosterType[] = [
     {

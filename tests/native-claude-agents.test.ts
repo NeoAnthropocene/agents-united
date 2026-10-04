@@ -34,6 +34,11 @@ interface RoleSpec {
   mustHold: string[];
   /** A coordinator: runs as the main thread (`claude --agent`), so its ceiling includes what a subagent never gets, and it carries the domain map. */
   mainThread?: boolean;
+  /** The bundle whose domain map a coordinator carries (default: the Tier-1 engineering bundle). */
+  coordinatorBundle?: string;
+  /** What the role searches and works with, when its classes differ from a Tier-1 engineer's (no `LSP` without code intelligence, no `Bash` without a shell). */
+  searchTools?: string[];
+  workTools?: string[];
   model: string;
   effort: string;
 }
@@ -70,6 +75,43 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
+  // Tier 2 (plan 032 follow-up 2, ADR 0036): the digital-agency team. Teammates are specialists with editors and no shell, so no `Bash`,
+  // `LSP` or worktree; they carry the destructive-command guard in their own frontmatter (it guards them as subagents and the lead's
+  // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).
+  ...[
+    { name: 'agency-growth-strategist', stem: 'subagent-marketing-growth-strategist', serverTools: ['mcp__firecrawl'] },
+    { name: 'agency-creative-designer', stem: 'subagent-marketing-creative-designer', serverTools: ['mcp__figma', 'mcp__stitch'] },
+    { name: 'agency-conversion-specialist', stem: 'subagent-marketing-conversion-specialist', serverTools: ['mcp__chrome-devtools-mcp', 'mcp__playwright'] },
+  ].map(
+    (spec): RoleSpec => ({
+      ...spec,
+      guard: 'destructive',
+      permissionMode: 'acceptEdits',
+      skills: [],
+      mutating: true,
+      mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+      searchTools: ['Glob', 'Grep', 'Read'],
+      workTools: ['Edit', 'Write'],
+      model: 'sonnet',
+      effort: 'medium',
+    })
+  ),
+  {
+    name: 'orchestrator-digital-agency',
+    stem: 'orchestrator-digital-agency',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: ['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch'],
+    mutating: true,
+    // The lead of an Agent Team: the roster allowlist, the user, the shared task list, schedules and watchers; no workflows (the bundle has none).
+    mustHold: ['Agent', 'AskUserQuestion', 'SendMessage', 'Skill', 'TaskCreate', 'TaskList', 'TaskUpdate', 'Bash', 'Edit', 'Write', 'CronCreate', 'Monitor', 'PushNotification', 'ToolSearch'],
+    mainThread: true,
+    coordinatorBundle: 'digital-agency',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'opus',
+    effort: 'medium',
+  },
 ];
 
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
@@ -98,10 +140,10 @@ beforeAll(async () => {
     // Specialists first: the coordinator's map is built from their committed files.
     for (const role of [...ROLES].sort((a, b) => Number(a.mainThread ?? false) - Number(b.mainThread ?? false))) {
       if (!fs.existsSync(fileOf(role))) continue;
-      const tools = ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist() : tool));
+      const tools = ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist(role.coordinatorBundle) : tool));
       const toolsLine = `tools: ${[...[...tools].sort(), ...role.serverTools].join(', ')}`;
       let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
-      if (role.mainThread) synced = syncRoster(synced, rosterTypes());
+      if (role.mainThread) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
     }
   }
@@ -158,10 +200,10 @@ describe.each(ROLES)('native Claude $name', role => {
   });
 
   it('has Glob and Grep, and no delegation, workflow or scheduling tool', () => {
-    expect(declaredNames()).toEqual(expect.arrayContaining(['Glob', 'Grep', 'LSP', 'Read']));
+    expect(declaredNames()).toEqual(expect.arrayContaining(role.searchTools ?? ['Glob', 'Grep', 'LSP', 'Read']));
     for (const forbidden of role.mainThread ? [] : ['Agent', 'Workflow', 'CronCreate']) expect(declaredNames(), forbidden).not.toContain(forbidden);
     if (!role.mutating) for (const writer of WRITERS) expect(declaredNames(), writer).not.toContain(writer);
-    else expect(declaredNames()).toEqual(expect.arrayContaining(['Bash', 'Edit', 'Write']));
+    else expect(declaredNames()).toEqual(expect.arrayContaining(role.workTools ?? ['Bash', 'Edit', 'Write']));
   });
 
   it('keeps the frontmatter small and the description short enough for delegation routing', () => {
