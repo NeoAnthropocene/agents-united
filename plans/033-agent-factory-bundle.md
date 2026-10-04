@@ -4,7 +4,7 @@
 
 ## Status
 
-- **State**: PROPOSED, scope shaped by the maintainer on 2026-10-03 (chat). Nothing is built.
+- **State**: PROPOSED, scope shaped by the maintainer on 2026-10-03 (chat). Nothing is built. Parked; Plan 035 findings recorded on 2026-10-04 (see "Findings from Plan 035").
 - **Priority**: P2 · **Effort**: L (a bundle, a catalog section, host-parametric subagents, workflows and hooks) · **Risk**: Medium (a new catalog section touches the CLI picker, the `full` bundle and the recommendation logic).
 - **Category**: Catalog / Bundles / Contributor experience / Multi-host.
 - **Depends on**: Plan 030 (licence-aware adaptation), `docs/skill-intake.md` (ADR 0023), Plan 032 (native host packages and the host docs library; ADR 0031 and its 2026-10-03 addendum).
@@ -67,6 +67,28 @@ The four questions of the first round are answered (decisions 6 to 9). What is l
 1. **Local creation.** Where a developer's own, never-pushed agents, skills and bundles live and how the installer, the lockfile and the doctor treat them (see the design point above).
 2. **The basic contract's shape.** The exact fields of the shared subagent definition in `registry/core/` (definition, workflows, skills, hooks), and how a native package per host consumes it. Prior art: the existing Contract Floor in `registry/core/*.core.md` and the per-host profiles.
 3. **Which workflows are pipelines and which are runbooks**, per host (a Claude workflow script, a Cline markdown workflow, a skill on Antigravity).
+
+## Findings from Plan 035 (2026-10-04; this plan stays parked)
+
+Plan 035 (Claude digital-agency hardening, pull requests #128 to #137) rewrote the agency skills and built two pieces of tooling. Nothing here changes the decisions above or starts the bundle; it records what the work showed, so the foundation slice does not rediscover it.
+
+**1. A skill quality gate exists (ADR 0040, #129).** `scripts/skill-quality/measure.ts` measures the share of a skill's content lines found in a frozen corpus of lines that three or more skills carried; a skill at 0.30 or more is *templated*, a short hand-written skill with no extra files is a *stub*. A ratchet test fails any new templated or stub skill, with a shrinking allowlist of one marker file per skill (so parallel rewrites never conflict), and `tests/skill-rewrite-contract.test.ts` pins the contract of a rewritten skill (version 3.0.0: the seven sections, size limits, none of the template's phrases, a worked example, anti-patterns, evidence, a hand-off, a native role that loads it). **62 of 188 catalog skills failed the audit; 39 of them are outside the digital-agency bundle and were not touched.**
+- *Changes slice 2:* the empty-but-valid bundle shell's guard rails should include "every skill of a bundle is loaded by some role or declared reference-only" (the audit found eleven agency skills that no native role loaded: the six agency playbooks and five others).
+- *Changes slice 3:* the first skill is a strong candidate to be "write a skill that is fit for purpose", carrying the ADR 0040 contract, instead of a skill that only restates the intake procedure. The 39 other failing skills are a ready first job for the bundle (rewrite, merge or drop, per skill, by the owner of each bundle).
+
+**2. What the audit showed about attribution and provenance.** The provenance record said `not-found` for six agency skills, and the read-only `hostlib:candidates` scan of the two upstream repositories named in plan 028 found the folders but only 2 to 11 percent text overlap with ours: the skills are independent writings whose `metadata.source` and `metadata.license` *overstate* a lineage the text does not show. Also: a rewrite that follows an idea of a public collection is not an adaptation (no `metadata.source`; a README credit as inspiration, naming the repository and the commit read), and three MIT collections (obra/superpowers, garrytan/gstack, affaan-m/ECC) were read as data in a quarantine with nothing copied.
+- *Changes the `skill-attribution` rule (decision 3):* add three lines when the bundle is built: (a) compute the overlap against the named upstream with the candidate scan before claiming an adaptation; (b) a skill rewritten from ideas is original, with credit as inspiration and no source field; (c) a provenance record of `not-found` is a task with an owner, not a permanent state. The worked example is `docs/skill-quality/design-provenance.md` (#132).
+
+**3. A session-report helper reads a host's own records (#135).** `npm run hostlib:session` reads a Claude session (the lead and every teammate record), pairs tool calls with results, and gives a verdict with evidence per open item; `session trim` writes a sanitised fixture. It reproduced three defects of a live run from the records alone.
+- *Changes slice 4:* the host-parametric "realize an artifact" and "sync a host" subagents each need to read evidence from their host, not from the model's answer. Claude's reader exists; the Cline (`~/.cline/data/sessions/<id>/*.messages.json`) and Antigravity (`brain/<conversation>/.system_generated/logs/transcript.jsonl`) readers are the same kind of work and can reuse the trim and sanitise design (no system prompt, no account data, strings cut).
+
+**4. A live-test kit pattern exists (`docs/live-test-protocol.md`, #136).** Each scenario has the exact prompt, a fresh scratch install, the evidence to read, what a pass and a fail look like, a cost estimate with a ceiling, and an order cheapest first, grouped into sittings the maintainer approves one at a time. It is the template for the factory's validation step per host; the Cline and Antigravity variants are the next documents.
+- *Changes slice 4's proof:* "proven against all three hosts" can be stated as one scenario per host in this format, with the helper of finding 3 per host.
+
+**New open questions.**
+1. Where do contributor-facing quality gates live: in the bundle (a skill or a hook the contributor runs) or only in the repository's CI? The ratchet is a repository test today and no install carries it.
+2. Who owns the 39 failing skills outside the agency bundle, and are *merge* and *drop* verdicts decided per bundle by the maintainer or by the bundle's owner role?
+3. Does the bundle ship the session-report helper, or stay a maintainer tool in `scripts/hostlib/` (it needs a transcript only the maintainer's machine has)?
 
 ## Out of scope
 
