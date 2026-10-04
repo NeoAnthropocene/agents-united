@@ -98,6 +98,15 @@ describe.each(Object.entries(PERSONAS))('persona %s', (persona, type) => {
   });
 });
 
+// Observed in the full-roster live run (2026-10-04): Ava reported "38 lines" for a file of 29, and said she had not read it back; Kaan, Jamileh,
+// Yavuz and Jale reported estimated line counts. The five roles that hold editors and no shell re-read what they wrote, and label what they did not check.
+describe.each(['agency-growth-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-content-strategist', 'agency-campaign-specialist'])('shell-less teammate %s', name => {
+  it('re-reads what it wrote before it reports, and labels an unchecked figure as an estimate', () => {
+    expect(afterFloor(name)).toMatch(/\*\*Hand back\.\*\* Re-read what you wrote with `Read` first[^\n]*did not run is an estimate/);
+    expect(inspectNativeAgent(read(name)).tools.map(tool => tool.split('(')[0])).toContain('Read');
+  });
+});
+
 describe('the lead', () => {
   const lead = (): string => read(LEAD);
 
