@@ -153,7 +153,7 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
     expect(bundle).toBeDefined();
 
     const personas = bundle?.personaAliases ?? {};
-    // The six personas referenced by the workflow-agency-*.md files.
+    // The six personas referenced by the workflow-agency-*.md files, and the four the maintainer named on 2026-10-04 (ADR 0039).
     for (const persona of [
       'chris-director',
       'ava-manager',
@@ -161,9 +161,21 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
       'jamileh-design',
       'yavuz-content',
       'jale-social',
+      'selin-seo',
+      'emre-qa',
+      'defne-grc',
+      'deniz-frontend',
     ]) {
       expect(personas[persona], `missing persona alias: ${persona}`).toBeDefined();
     }
+
+    // Each of the four new aliases points at the canonical role it plays.
+    expect(personas).toMatchObject({
+      'selin-seo': 'subagent-seo-specialist',
+      'emre-qa': 'subagent-qa-automation-lead',
+      'defne-grc': 'subagent-compliance-grc-specialist',
+      'deniz-frontend': 'subagent-frontend-architect',
+    });
 
     // Every alias target must exist in the bundle roster (orchestrator or agent, .md stripped).
     const roster = new Set(

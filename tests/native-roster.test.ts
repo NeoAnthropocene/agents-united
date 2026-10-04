@@ -58,12 +58,12 @@ describe('domainTypes with a bundle-scoped native role name (ADR 0036)', () => {
     ]);
   });
 
-  it('gives the committed digital-agency coordinator its nine teammates, three of them agency-only native copies', () => {
+  it('gives the committed digital-agency coordinator its nine teammates, all of them agency-only native copies (ADR 0039)', () => {
     const raw = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')) as { bundles?: unknown };
     const types = domainTypes((raw.bundles ?? raw) as never, 'digital-agency');
     expect(types.map(t => t.name)).toEqual([
-      'agency-conversion-specialist', 'agency-creative-designer', 'agency-growth-strategist', 'compliance-grc-specialist', 'frontend-architect',
-      'marketing-campaign-specialist', 'marketing-content-strategist', 'qa-automation-lead', 'seo-specialist',
+      'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
+      'agency-frontend-architect', 'agency-growth-strategist', 'agency-qa-automation-lead', 'agency-seo-specialist',
     ]);
     for (const type of types) expect(type.bundles, type.name).toEqual(['digital-agency']);
   });

@@ -74,6 +74,28 @@ export const EVIDENCE: Record<string, RegExp> = {
   'Funnel ingestion and friction audit precede any copy change.': /\*\*Ingest the funnel\.\*\*/,
   'Every test hypothesis is ICE-scored and states its primary metric and sample size.': /Score each hypothesis for Impact, Confidence and Ease/,
   'Every call to action carries a stable test identifier for automated checks.': /a stable `testId` on every call to action/,
+
+  // ── The rest of the agency roster (ADR 0039): content, campaigns, SEO, QA and compliance.
+  'Search intent and a read of the top-ranking competitor pages precede any content brief.': /\*\*Inspect the SERP first\.\*\* Search intent and a read of the top-ranking competitor pages come before any brief/,
+  'Every content piece has one search intent and exactly one primary call to action.': /Every content piece has one search intent and exactly one primary call to action/,
+  'Every cited statistic carries its publication year and its source.': /Every cited statistic carries its publication year and its source URL/,
+  'Every outgoing campaign link carries the standard UTM parameters.': /Every outgoing link carries `utm_source`, `utm_medium`, `utm_campaign` and `utm_content`/,
+  'Every email template carries a physical postal address, a one-click unsubscribe and a truthful sender identity.': /Every email template carries a physical postal address, a one-click unsubscribe and a truthful sender identity/,
+  'Every campaign asset has exactly one primary call to action.': /Every campaign asset has exactly one primary call to action/,
+  'Every sponsored or endorsed asset carries a clear disclosure.': /Every sponsored or endorsed asset carries a clear disclosure/,
+  'Crawl and indexation reconnaissance precedes any recommendation.': /\*\*Crawl and indexation reconnaissance first\.\*\* Do it before you recommend anything/,
+  'Every audit finding carries a severity and a concrete remediation.': /Every finding carries a severity \(critical, major or minor\) and a concrete remediation/,
+  'Every structured-data block is checked against the rich-result requirements of its page type.': /Check every structured-data block against the rich-result requirements of its page type/,
+  'Core Web Vitals are judged against the 75th-percentile thresholds.': /Judge the results against the 75th-percentile thresholds/,
+  'A flaky test is quarantined and reported, never retried until green.': /A flaky test is quarantined and reported, never retried until it is green/,
+  'Tests wait with auto-waiting assertions, never with fixed sleeps.': /Wait with auto-waiting assertions such as `expect\(locator\)\.toBeVisible\(\)`, never with fixed sleeps/,
+  'A failing assertion is fixed at its cause or fails the gate, never masked.': /A failing assertion is fixed at its cause or fails the gate/,
+  'Every viewport of the matrix is covered before sign-off.': /Run every viewport \(375 by 667, 768 by 1024, 1440 by 900\) before you sign off/,
+  'The gate report states the run totals, the flaky count and the gate status.': /State the run totals \(passed, failed, flaky\), the duration and the gate status/,
+  'Every control status cites the evidence that supports it.': /Every control status cites the evidence that supports it/,
+  'Every gap carries a priority, a regulatory citation and a remediation step.': /Every gap carries a priority, a regulatory citation and a remediation step/,
+  'Raw personal data met during an audit is never copied into a report.': /Never copy raw personal or health data you meet into a report or a policy/,
+  'Questions for the user go to the calling lead in the final report, never to the user directly.': /Questions for the user go to the lead under `Open items`; you never ask the user directly/,
 };
 
 /** Per-role overrides: role name, then invariant text. */

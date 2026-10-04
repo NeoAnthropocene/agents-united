@@ -34,6 +34,9 @@ export const TEAMMATE_COMMS_EVIDENCE: ReadonlyArray<{ invariant: string; evidenc
   // DEFERRED tools. Two teammates never loaded the Task tools and reported "could not mark task completed", so the body now says how.
   { invariant: 'The deferred tools are loaded with ToolSearch before first use.', evidence: /`ToolSearch`[^.]*select:SendMessage,TaskGet,TaskUpdate/ },
   { invariant: 'Without the Task tools a teammate leaves the status to the lead and says so.', evidence: /do not have them[^.]*(leave|lead)[^.]*`Open items`/i },
+  // Observed on Claude Code 2.1.289 (the full-roster live run, 2026-10-04): the host announces a task the lead gives to a running teammate as a
+  // `task_assignment` message, and Ava, who had been asked only to consult ("write no files"), wrote her deliverable in the same turn.
+  { invariant: 'A host task assignment does not lift a read-only consultation.', evidence: /\*\*A task assignment is not a go-ahead\.\*\*[^\n]*does not lift that/ },
   { invariant: TEAMMATE_COMMS_INVARIANTS[4], evidence: /`Peer messages received`[\s\S]*`Open items`/ },
   { invariant: TEAMMATE_COMMS_INVARIANTS[5], evidence: /team mode[^.]*brief lists each peer[^.]*`SendMessage`/i },
   // The default is the relay, and a missing peer never blocks.
@@ -63,6 +66,10 @@ export const LEAD_COMMS_EVIDENCE: ReadonlyArray<{ what: string; evidence: RegExp
   { what: 'a task that looks stuck is checked by the lead, who updates it (task status can lag)', evidence: /task status can lag[^.]*(check|update)/i },
   { what: 'start with three to five teammates and spawn per tier, treating the roster as a menu', evidence: /three to five teammates[\s\S]*menu/i },
   { what: 'ask a finished teammate to shut down by name; the team is cleaned up when the session ends', evidence: /shut down[^.]*by name[\s\S]*cleaned up[^.]*session ends/i },
+  // Observed on Claude Code 2.1.289: the lead's first plain-text request was refused ("no request_id"); the structured request was approved by all nine.
+  { what: 'the shutdown request is structured (`shutdown_request`), and a plain-text request is not one', evidence: /structured request[^.]*shutdown_request[^.]*\. A plain-text request is not one/ },
+  // Observed on Claude Code 2.1.289: an owner set on a running teammate's task is announced to it at once, and the teammate acts on it.
+  { what: 'an owner set with TaskUpdate announces the task to a running teammate, so an owner is set when the work should start and a consulted teammate\'s task stays unowned', evidence: /Setting a task's owner[^.]*announces the task[^.]*acts on it at once[\s\S]*unowned until the consultation is accepted/ },
   { what: 'wait for the teammates and do not do their slices', evidence: /wait for your teammates/i },
   { what: 'one team per session, and teammates cannot spawn teammates', evidence: /one team per session[\s\S]*cannot spawn/i },
   { what: 'a resumed session does not restore teammates', evidence: /\/resume[^.]*(not|never)[^.]*restore/i },
