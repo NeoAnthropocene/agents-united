@@ -553,7 +553,7 @@ cli
         security: { label: 'Security Operations', icon: '🔒 ' },
         research: { label: 'Deep Technical Research', icon: '🔬 ' },
         business: { label: 'Business Strategy & Economics', icon: '💼 ' },
-        organization: { label: 'Organization Bundles (Experimental / Cross-Functional)', icon: '🏢 ' },
+        organization: { label: 'Organization Bundles (Cross-Functional)', icon: '🏢 ' },
       };
 
       let selectedBundle: string | undefined;
@@ -1661,7 +1661,7 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
 
   // Dedicated Organization Bundles Section
   if (orgBundles.length > 0) {
-    console.log(`\n${pc.bold(pc.cyan('🏢  Organization Bundles (Experimental / Cross-Functional)'))} ${pc.dim(`(${orgBundles.length} bundle${orgBundles.length > 1 ? 's' : ''})`)}`);
+    console.log(`\n${pc.bold(pc.cyan('🏢  Organization Bundles (Cross-Functional)'))} ${pc.dim(`(${orgBundles.length} bundle${orgBundles.length > 1 ? 's' : ''})`)}`);
     console.log(pc.dim('   Cross-domain teams modeled after real organizations. Require runtime prerequisites (MCPs/packages).'));
 
     orgBundles.forEach((b: BundleDefinition, bIdx: number) => {
@@ -1985,7 +1985,7 @@ cli
       security: { label: 'Security Operations', icon: '🔒 ' },
       research: { label: 'Deep Technical Research', icon: '🔬 ' },
       business: { label: 'Business Strategy & Economics', icon: '💼 ' },
-      organization: { label: 'Organization Bundles (Experimental / Cross-Functional)', icon: '🏢 ' },
+      organization: { label: 'Organization Bundles (Cross-Functional)', icon: '🏢 ' },
     };
 
     let activeDomain: string | undefined;

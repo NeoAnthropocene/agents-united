@@ -44,7 +44,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 - [What You Can Install](#-what-you-can-install)
 - [Platform & Cloud Tooling](#-platform--cloud-tooling)
 - [CLI Reference](#-cli-reference)
-- [Organization Bundles](#-organization-bundles-experimental)
+- [Organization Bundles](#-organization-bundles)
 - [MCP Servers](#-mcp-servers)
 - [Safety & Guardrails](#-safety--guardrails)
 - [Contributing](#-contributing)
@@ -192,7 +192,7 @@ An **Essentials** bundle is the starting team for a department. **Addons** exten
 | **🔒 Security Operations** | `security-operations` | `secops-cloud-security`, `secops-application-security`, `secops-compliance-grc` | `orchestrator-security` |
 | **🔬 Deep Research** | `deep-research` | `deep-research-analytics` | `orchestrator-research` |
 | **💼 Business Strategy** | `business-strategy` | `business-financial-modeling`, `business-market-intelligence`, `business-operations-legal` | `orchestrator-business` |
-| **🏢 Organization** *(experimental)* | `digital-agency` ⚡ | n/a (cross-functional team) | `orchestrator-digital-agency` |
+| **🏢 Organization** | `digital-agency` ⚡ | n/a (cross-functional team) | `orchestrator-digital-agency` |
 
 ```bash
 agents add software-engineering        # one bundle
@@ -202,7 +202,7 @@ agents add full                        # everything
 ```
 
 > [!NOTE]
-> **Maturity.** `software-engineering`, `product-design`, and `universal-orchestration` are marked **stable**. `digital-agency` is **experimental**. The other bundles are usable but still being hardened. The CLI gates bundles marked under construction behind `--allow-under-construction`.
+> **Maturity.** `software-engineering`, `product-design`, and `universal-orchestration` are marked **stable**. `digital-agency` and the other bundles are usable but still being hardened. The CLI gates bundles marked under construction behind `--allow-under-construction`.
 
 <details>
 <summary><strong>🔍 Full roster: which agents each bundle contains</strong></summary>
@@ -266,7 +266,7 @@ agents add full                        # everything
 - **`business-operations-legal`**: `subagent-legal-contract-analyst`, `subagent-operations-strategist`, `subagent-business-panel-experts`
 
 #### 🏢 Organization
-- **`digital-agency`** ⚡: a 9-specialist cross-functional AstrolabsAI team led by `orchestrator-digital-agency` (Chris): growth strategist, campaign, content, creative, and conversion specialists, SEO specialist, frontend architect, QA automation lead, and compliance/GRC specialist. See [Organization Bundles](#-organization-bundles-experimental).
+- **`digital-agency`** ⚡: a 9-specialist cross-functional AstrolabsAI team led by `orchestrator-digital-agency` (Chris): growth strategist, campaign, content, creative, and conversion specialists, SEO specialist, frontend architect, QA automation lead, and compliance/GRC specialist. See [Organization Bundles](#-organization-bundles).
 
 </details>
 
@@ -355,7 +355,7 @@ agents add software-engineering -t agents --fanout claude,cline -y --copy --dry-
 
 | Option | Meaning |
 | :--- | :--- |
-| `--mode <operational\|limited-operational\|brainstorming>` | Execution mode for [organization bundles](#-organization-bundles-experimental) |
+| `--mode <operational\|limited-operational\|brainstorming>` | Execution mode for [organization bundles](#-organization-bundles) |
 | `--allow-missing-prereqs` | Install even if MCP servers or packages a bundle expects are missing |
 | `--allow-under-construction` | Bypass the gate on bundles still under construction |
 | `-y, --yes` | Skip confirmation prompts |
@@ -435,7 +435,7 @@ agents doctor --host cline       # Cline runtime, capability probe, and projecti
 
 ---
 
-## 🏢 Organization Bundles (Experimental)
+## 🏢 Organization Bundles
 
 Organization bundles such as `digital-agency` run a whole cross-functional team (strategy, copy, design, engineering, compliance) through the **Model Context Protocol (MCP)** tools you have configured. Installing one prints a prerequisite report and finishes in under a second with no blocking prompts:
 
