@@ -1,185 +1,65 @@
 ---
 name: onboarding-cro
-description: Production-grade Onboarding Conversion Rate Optimization (CRO)
-  playbook for time-to-value (TTV) acceleration, activation milestone
-  gamification, and drop-off reduction.
+description: "Raise the share of new users who reach first value. Define the activation event first, measure time to value, cut what comes before it, and specify a checklist, empty states and progressive questions with the metrics and hand-offs to prove they work."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: ✨
 disable-slash-command: true
 ---
 
-# Product Onboarding CRO & Time-to-Value (TTV) Acceleration
+# Onboarding CRO
 
 ## Overview & Purpose
-The Onboarding CRO skill provides a production playbook for auditing, designing, and optimizing user onboarding flows in product-led growth (PLG) SaaS applications.
+Onboarding is the stretch between a signup and the first moment the product visibly works for the person. Its only job is to shorten that stretch. This skill gives the conversion specialist the order of work: define activation, measure how long it takes and where people stall, remove what is in the way, then add guidance only where a stall remains.
 
-Following this skill minimizes Time-to-Value (TTV), guides users directly to their first "Aha! moment", eliminates signup friction, implements progressive profiling, provides interactive checklists and empty-state guidance, and maximizes new user activation rates.
+It specifies; it does not build. The checklist, the empty states and the instrumentation are handed to Jamileh, Deniz and Emre.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Low user activation rate (< 25% of signups achieving core product value milestone).
-- High drop-off during multi-step setup or configuration wizards.
-- Launching new self-serve product tiers or redesigned onboarding experiences.
-- User session recordings showing confusion during initial product workspace exploration.
+## Execution Triggers
+Load it when signup-to-activation is below about 25 to 40 percent for a self-serve product (label the figure as a rule of thumb unless you have a benchmark with its source), when new users go quiet after day 1, or when onboarding is being redesigned. Do not use it for sales-led products where a person onboards the customer (the method changes: say so), or before the activation event is known (step 1 first).
 
-### Prerequisites
-- Analytics instrumentation tracking onboarding step completions (PostHog, Mixpanel, Segment).
-- Clearly defined user activation metric (e.g. "created 1 project and invited 1 team member").
-- UI component library supporting modal wizards, checklists, and empty state cards.
-- Clean git working directory.
+## Input/Output Requirements
+Inputs: the first-run flow screen by screen, signup and activation counts for 28 days, time from signup to the first core action (median and 75th percentile if available), what the empty product looks like, and what questions the product asks at signup.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `activation_metric` | String | Yes | Exact definition of user activation milestone |
-| `current_funnel_steps`| Array<String> | Yes | Sequence of current onboarding steps |
-| `target_ttv_seconds` | Number | Optional | Target Time-to-Value ceiling in seconds (e.g. 180) |
-| `template_options` | Array<Object> | Optional | Starter templates pre-loaded for empty states |
-| `checklist_milestones`| Array<Object> | Yes | Gamified onboarding checklist items and rewards |
+Outputs: the activation definition; a stall map (where new users stop, with counts); a prioritised change list with a reason and a metric per change; the checklist and empty-state specification; the progressive-question plan; the instrumentation list; test briefs for `ab-test-setup`. **Evidence to attach**: the step counts you read and their date range, and the screens you walked (or the statement that you did not).
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Onboarding CRO Spec | `docs/onboarding-cro/onboarding-spec.md` | Funnel architecture, checklist specs, TTV benchmarks |
-| Checklist Component | `src/components/onboarding/OnboardingChecklist.tsx` | Interactive progress tracker UI component |
-| Funnel Drop-off Report | `reports/onboarding-cro/funnel-analysis.json` | Drop-off rates and activation improvements by cohort |
+## Step-by-Step Runbook
+1. **Define activation as an event, not a feeling.** The first action that predicts retention: "created a project and invited one person within 7 days", "sent the first invoice". If the data cannot show which action predicts day-30 use, say so; name the best candidate and make confirming it the first task. Everything below depends on this event.
+2. **Measure time to value (TTV)**: median minutes from signup to the activation event, and the share who never reach it. Set a target a user would call quick (for most self-serve tools, minutes, not days).
+3. **Map the stalls.** List every step between signup and activation with the count that reaches each. The biggest drop is the first thing to fix; do not start with the checklist.
+4. **Remove before you add.** Cut mandatory steps that do not feed the first value: a long survey, a credit card for a free trial, an unneeded verification, an empty dashboard that explains nothing. Ask the other questions after the first success (progressive profiling), one at a time, when a feature needs the answer.
+5. **Replace empty states with a first action.** A blank list should offer a ready sample or a one-click starter that already works, and a sentence that says what to do next. Specify the content of each empty state, not just "add a template".
+6. **Add a checklist only if stalls remain.** Three to five items, each one a step toward the activation event, ordered by effort, the first achievable in under a minute, progress visible, dismissible. A checklist of tasks that do not lead to activation raises completion of the checklist and nothing else.
+7. **Instrument and hand off.** Events for each step and for activation (names and properties) to Deniz, who builds; visual design of the checklist and empty states to Jamileh; copy for each message to your own section props; Emre verifies events fire and the first-run works with a clean account; changes to be tested go to `ab-test-setup`. Questions about what personal data a signup question may collect go to Defne.
 
-## Step-by-Step Execution Runbook
+## Code & Config Exemplars
+### Worked example
+A team task tool (invented numbers). Signup 5,000 in 28 days; activation (created a project and added a task within 24 hours) 1,300, so 26 percent; median TTV for those who activate, 14 minutes.
 
-### Phase 1: Activation Milestone Definition & Funnel Drop-off Mapping
-1. Audit existing user signup-to-activation flow to identify the primary "Aha! moment".
-2. Measure baseline drop-off across all intermediate onboarding steps (Email verification, Persona survey, Team invite, Workspace setup).
-3. Identify friction points: defer non-essential profile questions to post-activation settings.
-4. Calculate baseline Time-to-Value (TTV) median duration from account creation to first core action.
+Stall map: signup 5,000; verified email 4,100; finished the 6-question survey 3,000; created a project 1,700; added a task 1,300. The survey loses 1,100 people (27 percent of those who verified); it feeds nothing the first screen uses.
 
-### Phase 2: Friction Reduction & Progressive Profiling UX Redesign
-1. Eliminate mandatory upfront credit card requirements and multi-field surveys.
-2. Implement 1-click social authentication (Google, GitHub, Apple) and magic link sign-in.
-3. Replace blank modal forms with sensible smart defaults and pre-selected common use cases.
-4. Implement progressive profiling: prompt for team size and advanced permissions only when triggering collaborative features.
+Changes in order: (1) move the survey after the first task and ask two questions, one at a time, on the dashboard; expected to lift activation (estimate, to be tested); (2) skip verification until the first invite; (3) empty project shows a sample project the user can edit; (4) checklist only if the survey change leaves a stall at "added a task": "Name your project" (30 seconds), "Add your first task", "Invite someone".
 
-### Phase 3: Interactive Checklist & Micro-Commitment Component Implementation
-1. Construct persistent, collapsible onboarding checklist widget pinned to product dashboard.
-2. Structure checklist with 3-5 high-impact micro-commitments:
-   - Step 1: Select starter template (instant gratification, 30 seconds).
-   - Step 2: Run first execution / create first asset (core value, 60 seconds).
-   - Step 3: Invite team collaborator or share link (network effect hook).
-3. Attach visual progress bars and celebratory micro-animations (confetti, badge unlock) on completion.
+Test brief for change 1: primary metric activation within 24 hours of signup; guardrail: share of accounts with a company size recorded within 14 days; two weeks at about 180 signups a day is enough for a 4-point lift (check the arithmetic with `ab-test-setup`).
 
-### Phase 4: Empty State & Template Pre-Population Architecture
-1. Audit all product dashboards to replace empty blank slates with interactive sample data.
-2. Provide 1-click "Clone Starter Project" buttons pre-populating fully functional templates.
-3. Embed contextual tooltips and in-line helper microcopy guiding the user's next logical click.
-4. Ensure empty states contain clear primary CTA buttons directing back to core activation path.
+### Anti-patterns
+- A checklist that measures completion of the checklist.
+- A tour of seven tooltips before the user has done anything.
+- Asking for team size, role and goals before the first value.
+- Celebrating (confetti) steps that are not progress.
+- Optimising signup volume while activation is flat.
 
-### Phase 5: A/B Testing, Heatmap Session Auditing & Cohort Activation Tracking
-1. Deploy onboarding redesign as an A/B experiment against legacy control flow.
-2. Track key funnel telemetry events: `onboarding_started`, `step_completed`, `checklist_opened`, `activated`.
-3. Review session recordings of dropped-off users to isolate unhandled edge cases or confusion points.
-4. Compile final optimization report at `reports/onboarding-cro/funnel-analysis.json`.
-5. Commit onboarding components to repository.
-   ```bash
-   git add src/components/onboarding/ docs/onboarding-cro/
-   git commit -m "feat(onboarding-cro): implement interactive onboarding checklist and empty states"
-   ```
+## Edge Cases & Error Recovery
+- **No instrumentation of the steps.** The first deliverable is the event list for Deniz and Emre; until then every number in the report is marked unknown.
+- **Activation is reached by very few paths** (an enterprise tool): treat the buyer and the user as two flows and say which one you audited.
+- **High activation, poor retention**: activation is probably defined too early; propose a stronger event and a cohort check.
+- **A change helps one segment and hurts another**: report both and recommend a segmented experience only if the segments differ in goal, not only in size.
+- **Region or privacy limits on tracking**: use only what the consent state allows; hand the question to Defne.
 
-## Code & Configuration Exemplars
-
-### Exemplar 1: Onboarding Flow State Machine Configuration
-```json
-{
-  "version": "2.0.0",
-  "flowId": "plg-saas-activation-v2",
-  "targetTtvSeconds": 120,
-  "milestones": [
-    {
-      "id": "step-1-template-select",
-      "title": "Choose your starter workspace",
-      "estimatedDurationSeconds": 15,
-      "isRequired": true,
-      "eventTrigger": "workspace_template_selected"
-    },
-    {
-      "id": "step-2-first-run",
-      "title": "Execute your first workflow",
-      "estimatedDurationSeconds": 45,
-      "isRequired": true,
-      "eventTrigger": "first_workflow_executed"
-    },
-    {
-      "id": "step-3-team-invite",
-      "title": "Invite a teammate",
-      "estimatedDurationSeconds": 30,
-      "isRequired": false,
-      "eventTrigger": "team_invitation_sent"
-    }
-  ]
-}
-```
-
-### Exemplar 2: TypeScript React Onboarding Checklist Component
-```typescript
-import React, { useState } from 'react';
-
-export interface MilestoneItem {
-  id: string;
-  title: string;
-  completed: boolean;
-  actionUrl: string;
-}
-
-export function OnboardingChecklist({ initialItems }: { initialItems: MilestoneItem[] }): React.JSX.Element {
-  const [items, setItems] = useState(initialItems);
-  const completedCount = items.filter(i => i.completed).length;
-  const progressPercent = Math.round((completedCount / items.length) * 100);
-
-  return (
-    <div className="onboarding-card border rounded-lg p-4 bg-white shadow-sm">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-semibold">Getting Started ({completedCount}/{items.length})</h3>
-        <span className="text-xs text-blue-600 font-bold">{progressPercent}%</span>
-      </div>
-      <div className="w-full bg-gray-200 h-2 rounded-full mb-4">
-        <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
-      </div>
-      <ul className="space-y-2">
-        {items.map(item => (
-          <li key={item.id} className="flex items-center text-sm gap-2">
-            <input type="checkbox" checked={item.completed} readOnly className="rounded text-blue-600" />
-            <span className={item.completed ? 'line-through text-gray-400' : 'text-gray-800'}>{item.title}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: User Closes Onboarding Wizard Prematurely
-1. **Diagnosis**: User dismisses initial modal wizard without completing core activation steps.
-2. **Recovery Protocol**:
-   - Step 1: Persist incomplete checklist state to user profile database and browser localStorage.
-   - Step 2: Render non-intrusive floating checklist widget in bottom-right corner of main workspace.
-   - Step 3: Trigger contextual in-app reminder banner when user accesses dashboard with zero projects.
-
-### Scenario B: Team Invitation Failure During Onboarding Step
-1. **Diagnosis**: Email invite fails due to rate limits or invalid teammate email formatting, blocking wizard progression.
-2. **Recovery Protocol**:
-   - Step 1: Make team invitation step strictly non-blocking with an explicit "Skip for now" link.
-   - Step 2: Display inline error explaining the email issue without resetting previously entered workspace data.
-   - Step 3: Allow user to proceed directly into workspace and generate a shareable invite link instead.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Progressive profiling rules and Time-to-Value acceleration steps defined.
-- [ ] Interactive checklist component exemplar provided.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Activation is one named event with a reason (or an explicit "unconfirmed, confirm first").
+- [ ] A stall map with counts per step exists, or its absence is stated as a gap with an owner.
+- [ ] Every change has a reason, an expected metric and a place in the order: remove, then add.
+- [ ] Checklist items each lead to activation; empty states have specified content.
+- [ ] Figures not read from data are labelled estimates or rules of thumb.
+- [ ] Hand-offs name Jamileh, Deniz, Emre, Defne and `ab-test-setup` with what each delivers.

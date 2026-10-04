@@ -1,10 +1,9 @@
 ---
 name: conversion-funnel-optimization
-description: Production-grade Conversion Funnel Optimization playbook for design
-  operations, UX systems, and growth strategy.
+description: "Audit a conversion funnel step by step, find where and for whom people leave, grade every finding by severity with a located, concrete fix, and turn the top findings into test briefs and hand-offs."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: 📈
 disable-slash-command: true
 ---
@@ -12,139 +11,59 @@ disable-slash-command: true
 # Conversion Funnel Optimization
 
 ## Overview & Purpose
-The Conversion Funnel Optimization skill provides a deterministic framework for executing conversion funnel optimization processes in modern software products.
+A funnel audit answers four questions in order: where do people leave, who leaves there, why, and what is the cheapest change that would keep them. Most audits skip the second question and so recommend a change that helps the average visitor who was never the problem.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+This skill is the conversion specialist's method. It ends in a report, not in a redesign: Kaan finds and specifies, Jamileh designs, Deniz builds, and a finding that needs a test goes to `ab-test-setup`.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Conversion Funnel Optimization tasks.
-- Auditing existing product assets or workflows.
-- Standardizing conversion-funnel-optimization procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Execution Triggers
+Load it when the brief is "our funnel converts badly", a launch page underperforms, or the lead asks for a CRO audit before spending on traffic. Do not use it when there is no traffic to learn from (fewer than about 300 visitors a week to the funnel: do a heuristic review and label it as one), or when the problem is the offer, not the funnel (say so; a better button will not fix a product nobody wants).
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+## Input/Output Requirements
+Inputs: the funnel as a list of steps with a unique visitor count for each over the same 28 days; the split of those counts by device, traffic source and new versus returning where the data allows; the URL of each step; the goal event. Ask for what is missing and list it as a gap.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+Outputs (the report order of the role contract): executive summary; friction findings, each with location, the principle it breaks, severity and a concrete fix; an ICE-scored backlog; experiment briefs for the top three; and the evidence for every finding (a count, a recording, a screenshot path or a page element you read).
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/conversion-funnel-optimization/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/conversion-funnel-optimization/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/conversion-funnel-optimization/summary.json` | Health check and audit metric results |
+## Step-by-Step Runbook
+1. **Draw the funnel with numbers.** For each step compute step conversion (visitors at step n over step n-1) and cumulative conversion. The leak is the largest *drop-off against the benchmark*, not the largest absolute drop-off: a 90 percent drop at the top of a content funnel is normal, a 60 percent drop between "added to cart" and "started checkout" is not.
+2. **Segment the leak.** Recompute the leaking step for mobile and desktop, for each main source, and for new and returning visitors. A leak that exists on mobile only is a layout bug; one that exists for paid traffic only is a message mismatch with the ad. Write down which segment carries the loss; if the data cannot split, say it is unknown.
+3. **Walk the step as the visitor.** If the `playwright` server is connected, open each step at 375 and 1280 pixels wide, follow the path, and record what you see; with `chrome-devtools-mcp` read the console and the network panel for failed requests. If no browser tool is connected, work from the page source and any screenshots the lead gives you and **say in the report that you did not run the flow**.
+4. **Name the friction, one cause at a time.** Use five questions per step: is the next action obvious (clarity), how much effort does it take (fields, clicks, waits), what does the visitor fear (cost, commitment, data), is the promise of the previous step kept (relevance), and what competes for attention (distraction).
+5. **Grade each finding**: S1 blocks completion for someone (broken button, a form that rejects valid input); S2 loses a segment (mobile layout, a missing payment method); S3 slows people down (extra field, unclear label); S4 polish. Fix S1 before testing anything; S1 and S2 are fixes, not experiments.
+6. **Write each fix so it can be built**: the element and its location ("pricing page, plan card 2, button label"), the change, the principle it rests on, and the metric it should move.
+7. **Hand off.** Copy findings to your own typed section props; layout findings to Jamileh; build and event-name needs to Deniz; page-speed and indexing findings to Selin; and the top three experiments to `ab-test-setup` for the brief. Ask Emre to verify any S1 you could not reproduce.
 
-## Step-by-Step Execution Runbook
+## Code & Config Exemplars
+### Worked example
+A course-signup funnel (invented numbers), 28 days: landing 18,400; pricing page 7,360 (40.0 percent); checkout started 1,470 (20.0 percent); paid 590 (40.1 percent). Cumulative landing-to-paid 3.2 percent.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+Checkout-start is the leak (20.0 percent of pricing visitors against an expected 30 to 40 percent for a one-plan page; benchmark source to be named). By device: desktop 28 percent, mobile 11 percent; by source: paid social 9 percent, organic 27 percent.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
+Findings:
+- **F1, S2, pricing page, mobile**: the plan card's button sits below a 900 px comparison table; on a 375 px screen it needs four scrolls. Evidence: recording at 375 px, screenshot `audit/pricing-375.png`. Fix: move the primary button above the table. Principle: clarity. Moves: pricing-to-checkout on mobile.
+- **F2, S2, paid social**: the ad promises "free first lesson", the pricing page shows only the paid plan. Evidence: ad text from the brief against the page copy. Fix: add a free-lesson link above the plan. Principle: relevance.
+- **F3, S3, checkout**: asks for a phone number with no reason given. Fix: remove it or add "for lesson reminders only" under the field. Principle: anxiety.
 
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/conversion-funnel-optimization/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
+Backlog: F1 is a fix to ship this week (S2, trivial); F2 and F3 become tests (ICE 7.0 and 6.3); Kaan hands F1 to Jamileh and Deniz, and F2 and F3 to `ab-test-setup` with the paid-social segment as the audience.
 
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
+### Anti-patterns
+- Averaging across segments and recommending for the average.
+- "Make the button bigger" with no location, no evidence and no metric.
+- Running a test for an S1 bug.
+- Quoting an industry benchmark without its source and date.
+- Reporting a flow you did not walk as if you had.
+- Rewriting the page when the finding is one field.
 
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/conversion-funnel-optimization/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/conversion-funnel-optimization/ reports/conversion-funnel-optimization/
-   git commit -m "feat(conversion-funnel-optimization): implement Conversion Funnel Optimization playbook artifacts"
-   ```
-4. Publish documentation for team review.
+## Edge Cases & Error Recovery
+- **Counts that do not reduce step to step** (a later step larger than an earlier one): the funnel is mis-instrumented or steps can be entered directly; say so and use cohort counts or the entry point you can trust.
+- **No segment data**: report the aggregate leak, mark the "who" as unknown and make instrumentation by device and source the first fix for Deniz.
+- **The tool cannot reach the site** (login, region, bot protection): do not work around it; report the gap and what you reviewed instead.
+- **Consent banner hides the real flow**: record which choice you made while testing; do not tick tracking boxes on behalf of anyone; privacy questions go to Defne.
+- **Findings contradict the data** (the page looks fine, the numbers are bad): trust the numbers, look at the step before and the traffic source.
 
-## Code & Configuration Exemplars
-
-### Exemplar 1: Conversion Funnel Optimization Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "conversion-funnel-optimization"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/conversion-funnel-optimization/summary.json"
-```
-
-### Exemplar 2: Conversion Funnel Optimization Helper Module
-```typescript
-export function runConversionFunnelOptimization(scope: string): boolean {
-  console.log('Running Conversion Funnel Optimization on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Conversion Funnel Optimization
-1. **Diagnosis**: Specification or code asset fails validation rules in conversion-funnel-optimization.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Conversion Funnel Optimization
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Every step has a count from the same date range, with step and cumulative conversion.
+- [ ] The leak is segmented, or the report says the segment is unknown.
+- [ ] Every finding has a location, an evidence item, a principle, a severity and a concrete fix.
+- [ ] S1 and S2 findings are labelled as fixes, not experiments.
+- [ ] The report says which flows you walked, at which widths, and which you did not.
+- [ ] The hand-offs name Jamileh, Deniz, Selin or Emre as needed and `ab-test-setup` for the tests.

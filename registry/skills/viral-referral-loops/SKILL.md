@@ -1,209 +1,73 @@
 ---
 name: viral-referral-loops
-description: Production-grade Viral Referral Loops playbook for double-sided
-  incentive architectures, K-factor viral loop equations, in-app share
-  mechanics, and fraud-resistant referral engines.
+description: "Design a referral or viral loop with its arithmetic (K-factor, cycle time, reward bounded by CAC), the moments to ask, the qualification and abuse controls, the consent limits, and the spec that engineering and legal can act on."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 🔄
+  version: 3.0.0
+  icon: 🔁
 disable-slash-command: true
 ---
 
-# Viral Referral Loops & Product-Led Organic Expansion Architecture
+# Viral & Referral Loops
 
 ## Overview & Purpose
-The Viral Referral Loops skill provides a comprehensive mathematical and product engineering framework for designing, implementing, and scaling high-velocity referral loops in product-led growth (PLG) SaaS platforms.
+A loop only matters if it is arithmetic you can defend: how many people each user brings, how fast, at what cost, and how much of it is real. This skill gives the growth strategist the formulas, the design rules and the controls, and ends in a spec that Deniz can build, Defne can review and Emre can verify. It does not write the interface (Jamileh and Deniz do) and it does not choose what personal data may be used (Defne does).
 
-Following this skill designs double-sided reward incentives, contextual trigger timing (leveraging the peak-end rule and satisfaction milestones), seamless modal and clipboard share interactions, server-side fraud prevention mechanisms, and mathematical tracking of viral coefficient ($K$-factor) and cycle time ($c_t$).
+Two kinds of loop exist: a **product loop** (sharing is part of using the product: invites, shared documents, public links, "made with" marks) and an **incentive loop** (a reward for inviting). Prefer the product loop; an incentive loop bolted on to a product people do not recommend produces fraud and cost, not growth.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Designing customer referral programs to lower blended Customer Acquisition Cost (CAC).
-- Engineering viral product loops (collaboration invites, public share links, powered-by badges).
-- Optimizing referral conversion rates from invitation sent to referee account activation.
-- Implementing fraud detection rules for self-referrals and reward gaming.
+## Execution Triggers
+Load it when the brief asks for a referral program, a viral mechanic, or lower blended CAC through existing users; when activation and day-30 retention are already healthy; or when a program exists and its cost per acquired user is unknown. Do not load it while the funnel leaks before activation (fix `onboarding-cro` first: a loop multiplies whatever the product does to a new user, good or bad).
 
-### Prerequisites
-- Product analytics tracking user engagement events and milestone completions.
-- Relational database schema supporting referral links, attribution tokens, and ledger credits.
-- Transactional email / notification service for sending referee invitation alerts.
-- Clean git working directory.
+## Input/Output Requirements
+Inputs: the activation event, current invites sent per active user (if any), invite-to-signup and signup-to-activation rates, CAC from paid channels, gross margin per user, what a user's friend gets on arrival.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `incentive_type` | String | Yes | `double_sided_credit`, `extended_trial`, `feature_unlock`, `revenue_share` |
-| `referrer_reward` | Number | Yes | Value granted to existing user upon successful referee activation |
-| `referee_reward` | Number | Yes | Value granted to invited user upon signup |
-| `target_k_factor` | Number | Optional | Target viral coefficient (e.g. 0.35) |
-| `qualification_criteria`| String | Yes | Milestone referee must hit before reward is unlocked (e.g. `first_project_run`) |
+Outputs: a one-page loop model (K, cycle time, the reward and its cost against CAC), the trigger moments, the qualification rule, the abuse controls, the event list, the consent notes, and the test brief for the first iteration. **Evidence to attach**: where each rate came from (a measurement with its date range, or an assumption marked as one).
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Viral Loop Spec Spec | `docs/viral-referral-loops/referral-spec.md` | Formulas, user journey diagrams, reward tiers |
-| Referral Modal Component | `src/components/referral/ReferralModal.tsx` | Share links, social intents, reward tracker |
-| Referral Engine Service | `src/services/growth/referral-engine.ts` | Token generation, attribution, fraud validation |
-| Viral Analytics Report | `reports/viral-referral-loops/k-factor-summary.json`| $K$-factor, cycle time, and invite conversion stats |
+## Step-by-Step Runbook
+1. **Write the loop as a chain**: a user does X, an invitation reaches a person, the person lands, signs up, activates, and becomes a user who can do X. Every arrow gets a rate you either have or will measure.
+2. **Model K and cycle time.** K = i x c: invitations per user (i) times the share of invitations that become activated users (c). K above 1 is self-sustaining and rare; **K of 0.2 to 0.5 is a useful boost to paid and organic acquisition**, not a replacement. Cycle time is days from signup to the invitees' own first invitation: halving it matters more than a 10 percent gain in c.
+3. **Bound the reward by economics.** A double-sided reward must cost less than the CAC you would otherwise pay: when the reward is paid on activation, cost per referred activation = referrer reward + referee reward (if you pay earlier, add the rewards that never turn into activated users); require it to stay under half your blended CAC, and under the first year's gross margin per user. If you cannot compute CAC, you cannot set a reward: say so.
+4. **Ask at a moment of success**, never during setup or errors: right after a first result is delivered, after a 9 or 10 satisfaction score, after a milestone the user cares about. One prompt per moment, easy to dismiss and not shown again for 30 days after a dismissal.
+5. **Qualify rewards on a real action** by the invitee (their first meaningful use, not just signup), hold the reward for 48 hours to 14 days against refunds and chargebacks, and cap rewards per referrer per month.
+6. **Specify abuse controls**: no reward for the same device, payment method or workspace domain as the referrer; rate limits on invites; a pending state visible to the referrer; a manual review queue above a threshold. Self-referral and reward farming are the default behaviour of any programme with money in it.
+7. **Respect consent.** Never access a user's contacts, scrape addresses or send an invitation on someone's behalf without a clear, specific action by that user; the invitee must be able to opt out of reminders at once. Personal-data and marketing-consent questions go to Defne; do not guess the law of any country.
+8. **Hand off.** The spec to Deniz (codes, attribution, ledger, events), Jamileh (the share screen, in the product's own design system), Emre (verify attribution on a blocked-cookie browser and the abuse rules), and the first test to `ab-test-setup`.
 
-## Step-by-Step Execution Runbook
+## Code & Config Exemplars
+### Worked example
+A project-planning tool (invented numbers). Active users 4,000; each sends on average i = 1.2 invitations in the first month; 22 percent of invitations become signups and 55 percent of those activate, so c = 0.22 x 0.55 = 0.121; **K = 1.2 x 0.121 = 0.145**. Paid CAC is 48 dollars.
 
-### Phase 1: Mathematical Modeling & Double-Sided Incentive Structuring
-1. Formulate the Viral Coefficient equation:
-   $$K = i \times c$$
-   where $i$ is the average number of invitations sent per user, and $c$ is the conversion rate of each invitation into an active user.
-2. Formulate the Viral Cycle Time ($c_t$) minimization target: reducing the time from user signup to sending invitations directly multiplies organic user growth rate.
-3. Structure double-sided reward mechanics: align incentives so both parties win (e.g. "$25 in API credits for you, $25 for your friend upon their first build").
-4. Establish reward qualification thresholds: require referees to achieve a meaningful product action before distributing credits to eliminate bot abuse.
+Reward proposal: 10 dollars credit to each side, paid when the invitee completes a first project (that is the activation event). Cost per referred activation = 10 + 10 = 20 dollars, which is under half of 48 (24). A 20-dollar reward on each side would cost 40, inside the CAC but not under half: reject it, or test it as a variant.
 
-### Phase 2: Contextual In-App Trigger Identification
-1. Identify high-satisfaction moments in the product journey to present referral prompts:
-   - Immediately after completing a successful build or workflow run.
-   - Upon receiving a positive NPS/CSAT score (rating 9 or 10).
-   - After saving significant compute hours or achieving milestone productivity goals.
-2. Avoid presenting referral modals during onboarding setup, high-friction configuration tasks, or error states.
+What it buys: 4,000 users x 0.145 = about 580 extra activated users from one month's cohort at about 20 dollars each (11,600 dollars), against about 28,000 dollars for the same number from paid. These are estimates from the inputs; the first month's real i and c replace them.
 
-### Phase 3: Frictionless Share Modal & One-Click Social Intent Implementation
-1. Generate unique, short, human-readable referral codes and URLs (e.g. `https://agents-united.dev/join?ref=alex2026`).
-2. Build responsive referral modal offering:
-   - 1-Click "Copy Link" button with instant visual tooltip confirmation.
-   - Pre-populated social share intents for Twitter/X, LinkedIn, and WhatsApp.
-   - Direct email invitation input box supporting comma-separated teammate invites.
-3. Include real-time reward ledger showing "Pending", "Earned", and "Redeemed" reward statuses.
+Cycle time: users send their invitations on day 9 on average. Move the prompt to the moment the first plan is shared (day 2): the same K arrives in a third of the time.
 
-### Phase 4: Fraud Prevention, Attribution Cookies & Ledger Security
-1. Set 30-day first-party referral tracking cookie on landing page visits from referral links.
-2. Implement strict fraud defense guardrails:
-   - IP rate-limiting and device fingerprint hashing to detect self-referrals.
-   - Domain matching checks: disallow referring users within the same enterprise workspace domain if rewards are personal credits.
-   - Hold period: place rewards in pending state for 48 hours to prevent payment chargeback abuse.
-3. Record all credit accruals and redemptions in an immutable ledger database table.
-
-### Phase 5: K-Factor Analytics & Viral Funnel Optimization
-1. Instrument telemetry events: `referral_modal_viewed`, `referral_link_copied`, `invite_sent`, `referee_landed`, `referee_activated`, `reward_unlocked`.
-2. Calculate weekly cohort $K$-factor and channel conversion metrics.
-3. Run A/B tests on share modal headlines, reward descriptions, and trigger placement timing.
-4. Compile performance summary at `reports/viral-referral-loops/k-factor-summary.json`.
-5. Commit referral loop components to repository.
-   ```bash
-   git add src/components/referral/ src/services/growth/ docs/viral-referral-loops/
-   git commit -m "feat(viral-referral-loops): implement double-sided referral engine and fraud guardrails"
-   ```
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: TypeScript Referral Token Generation & Attribution Service
-```typescript
-import crypto from 'node:crypto';
-
-export interface ReferralAttribution {
-  referrerId: string;
-  refereeId: string;
-  referralCode: string;
-  status: 'pending' | 'qualified' | 'rewarded' | 'flagged';
-  createdAt: string;
-}
-
-export function generateReferralCode(userId: string): string {
-  const hash = crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8);
-  return `AU-${hash.toUpperCase()}`;
-}
-
-export function validateReferralLegitimacy(referrerIp: string, refereeIp: string, referrerDomain: string, refereeEmail: string): boolean {
-  // Reject identical IP address self-referral attempts
-  if (referrerIp === refereeIp && process.env.NODE_ENV === 'production') {
-    return false;
-  }
-  // Reject internal domain match if corporate domain
-  const refereeDomain = refereeEmail.split('@')[1]?.toLowerCase();
-  const genericDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'icloud.com'];
-  if (refereeDomain && !genericDomains.includes(refereeDomain) && refereeDomain === referrerDomain.toLowerCase()) {
-    return false;
-  }
-  return true;
-}
+Events to instrument:
+```
+referral_prompt_viewed, referral_link_copied, invite_sent,
+referee_landed, referee_signed_up, referee_activated, reward_pending, reward_granted, reward_blocked(reason)
 ```
 
-### Exemplar 2: TypeScript React Referral Share Modal Component
-```typescript
-import React, { useState } from 'react';
+### Anti-patterns
+- A reward larger than the CAC it replaces.
+- Paying on signup instead of on a real action.
+- Prompting during onboarding or after an error.
+- "Import your contacts" with no explicit, per-action consent.
+- Counting invitations sent as growth (the unit is activated users).
+- Copying another product's reward without its margin.
 
-export interface ReferralModalProps {
-  referralCode: string;
-  earnedCreditsUsd: number;
-  pendingCount: number;
-  isOpen: boolean;
-  onClose: () => void;
-}
+## Edge Cases & Error Recovery
+- **Attribution lost** (blocked cookies, link opened on another device): add a manual code field at signup and match by server-side session; report the share of unattributed activations instead of ignoring it.
+- **Existing user clicks an invitation**: say rewards apply to new accounts and send them to their own invite screen.
+- **Fraud spike**: pause rewards, keep granting nothing silently, tell affected users the reason, review pending rewards; the pause is the lead's decision, you recommend it.
+- **K measured below 0.05 after two cycles**: the product is not shared; drop the incentive and look for a product loop instead.
+- **Employees or partners in the pool**: exclude them from K and cost.
 
-export function ReferralModal({ referralCode, earnedCreditsUsd, pendingCount, isOpen, onClose }: ReferralModalProps): React.JSX.Element | null {
-  const [copied, setCopied] = useState(false);
-  if (!isOpen) return null;
-
-  const shareUrl = `https://agents-united.dev/join?ref=${referralCode}`;
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Give $25, Get $25</h2>
-        <p className="text-sm text-gray-600 mb-6">
-          Invite teammates or friends. When they execute their first workflow, you both get $25 in compute credits.
-        </p>
-        <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg mb-6">
-          <input type="text" readOnly value={shareUrl} className="bg-transparent text-sm w-full outline-none px-2 text-gray-700 font-mono" />
-          <button onClick={handleCopy} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-md transition-colors">
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-        </div>
-        <div className="flex justify-between items-center bg-blue-50 p-4 rounded-xl mb-6">
-          <div>
-            <div className="text-xs text-blue-700 font-medium">Earned Credits</div>
-            <div className="text-xl font-bold text-blue-900">${earnedCreditsUsd}</div>
-          </div>
-          <div>
-            <div className="text-xs text-blue-700 font-medium">Pending Invites</div>
-            <div className="text-xl font-bold text-blue-900">{pendingCount}</div>
-          </div>
-        </div>
-        <button onClick={onClose} className="w-full text-center text-sm font-medium text-gray-500 hover:text-gray-700 py-2">
-          Close
-        </button>
-      </div>
-    </div>
-  );
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Referral Link Clicked by Existing Active User
-1. **Diagnosis**: An existing user clicks an invitation link expecting a bonus credit.
-2. **Recovery Protocol**:
-   - Step 1: Detect that the user already has an active account upon landing on the auth page.
-   - Step 2: Display polite message explaining that referral credits apply exclusively to new accounts.
-   - Step 3: Redirect user to their own referral dashboard to invite others instead.
-
-### Scenario B: Referral Attribution Cookie Blocked by Safari ITP or Brave
-1. **Diagnosis**: Browser privacy features wipe 30-day tracking cookie before user finishes signup.
-2. **Recovery Protocol**:
-   - Step 1: Provide fallback manual promo code entry box on final signup step.
-   - Step 2: Store referral attribution token in server-side session state alongside anonymous visitor ID.
-   - Step 3: Re-associate attribution upon signup completion via server-side session matching.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Viral coefficient $K$-factor and cycle time equations documented.
-- [ ] Fraud defense rules (IP checks, domain validation, hold period) detailed.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] The chain from user to new user has a rate on every arrow, each marked measured or assumed.
+- [ ] K and cycle time are computed with the arithmetic shown; the reward cost per activation is compared with CAC.
+- [ ] Rewards are qualified on a real action, held, and capped.
+- [ ] Abuse controls and the consent limits are written, and Defne is named for the consent review.
+- [ ] Every figure not computed from data you read is labelled an estimate.
+- [ ] Hand-offs name Deniz, Jamileh, Emre and `ab-test-setup` with what each delivers.
