@@ -353,6 +353,32 @@ export class RegistryResolver {
         }
       }
 
+      // ADR 0036 — a bundle-scoped native role name must name one of the bundle's own agents, be a role name, and be unique.
+      if (bundle.nativeRoles !== undefined) {
+        const roles = bundle.nativeRoles as unknown;
+        if (roles === null || typeof roles !== 'object' || Array.isArray(roles)) {
+          throw new Error(`Registry validation error: bundle "${name}" nativeRoles must be an object mapping an agent file to a native role name.`);
+        }
+        const defaults = new Map((bundle.agents ?? []).map(file => [file, file.replace(/\.md$/i, '').replace(/^subagent-/, '')]));
+        const seen = new Set<string>();
+        for (const [file, role] of Object.entries(roles as Record<string, unknown>)) {
+          if (!defaults.has(file)) {
+            throw new Error(`Registry validation error: bundle "${name}" nativeRoles key "${file}" is not one of its agents.`);
+          }
+          if (typeof role !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(role)) {
+            throw new Error(`Registry validation error: bundle "${name}" nativeRoles value ${JSON.stringify(role)} for "${file}" is not a valid role name (lowercase letters, digits and hyphens).`);
+          }
+          if (seen.has(role)) {
+            throw new Error(`Registry validation error: bundle "${name}" maps more than one agent to the native role "${role}".`);
+          }
+          seen.add(role);
+          const clash = [...defaults.entries()].find(([other, otherRole]) => other !== file && otherRole === role);
+          if (clash) {
+            throw new Error(`Registry validation error: bundle "${name}" native role "${role}" for "${file}" collides with the default role name of "${clash[0]}".`);
+          }
+        }
+      }
+
       const pl = bundle.planningLoop;
       if (!pl || !pl.enabled) continue;               // no planning → skip
 

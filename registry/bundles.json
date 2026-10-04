@@ -1211,6 +1211,11 @@
         "yavuz-content": "subagent-marketing-content-strategist",
         "jale-social": "subagent-marketing-campaign-specialist"
       },
+      "nativeRoles": {
+        "subagent-marketing-growth-strategist.md": "agency-growth-strategist",
+        "subagent-marketing-creative-designer.md": "agency-creative-designer",
+        "subagent-marketing-conversion-specialist.md": "agency-conversion-specialist"
+      },
       "orchestrator": "orchestrator-digital-agency.md",
       "agents": [
         "subagent-marketing-growth-strategist.md",

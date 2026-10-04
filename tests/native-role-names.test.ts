@@ -95,13 +95,15 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     }
   });
 
-  it('records the native file against the canonical agent it stands for, owned by the bundle', async () => {
+  it('records the native file as owned by the bundle alone, with no canonical pointer; the file\'s own marker names the canonical agent', async () => {
     await install('digital-agency', true);
     const lock = await fs.readJson(lockPath);
     for (const [file, name] of Object.entries(EXPECTED)) {
       const record = lock.projections[`.claude/agents/${name}.md`];
-      expect(record, name).toMatchObject({ host: 'claude', kind: 'role', canonical: `agents/${file}` });
-      expect(record.owners).toContain('digital-agency');
+      expect(record, name).toMatchObject({ host: 'claude', kind: 'role', managedMarker: true });
+      expect(record.owners, `${name} is owned by the agency alone`).toEqual(['digital-agency']);
+      expect(record.canonical, `${name} records no canonical, so Tier-1 marketing's pointers are not touched`).toBeUndefined();
+      expect(fs.readFileSync(agentFile(name), 'utf8')).toContain(`canonical: agents/${file}`);
       expect(lock.projections[`.claude/agents/${file.replace(/^subagent-/, '').replace(/\.md$/, '')}.md`], `no record for the legacy name of ${name}`).toBeUndefined();
     }
   });
@@ -125,9 +127,15 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     await install('marketing', true);
     await install('digital-agency', true);
     for (const name of [...Object.values(EXPECTED), 'marketing-growth-strategist']) expect(await exists(name), name).toBe(true);
+    // Side by side the doctor finds nothing wrong: the agency's copies do not move Tier-1 marketing's pointers.
+    const both = await DoctorEngine.runDoctor(sidecar, 'claude');
+    expect(both.issues).toEqual([]);
+    expect(both.warnings.filter(warning => /Content drift|Stale|Missing|Outdated|superseded/.test(warning))).toEqual([]);
     await new UninstallEngine().uninstall('digital-agency', { targetDir: sidecar });
     for (const name of Object.values(EXPECTED)) expect(await exists(name), `${name} is removed`).toBe(false);
     expect(await exists('marketing-growth-strategist')).toBe(true);
+    const after = await DoctorEngine.runDoctor(sidecar, 'claude');
+    expect(after.warnings.filter(warning => /Content drift|Stale|Missing|Outdated|superseded/.test(warning))).toEqual([]);
   });
 
   it('is byte-stable on a second install and healthy under the doctor', async () => {
