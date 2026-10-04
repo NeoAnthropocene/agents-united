@@ -52,6 +52,9 @@ export const LEAD_COMMS_EVIDENCE: ReadonlyArray<{ what: string; evidence: RegExp
   // What the live Agent Teams page says about the shared task list, team size, shutdown and waiting (read 2026-10-04).
   { what: 'the shared task list holds the Assembly Line as tasks with dependencies, so a task unblocks by itself', evidence: /shared task list[\s\S]*`TaskCreate`[\s\S]*dependenc/i },
   { what: 'the Task tools are off by default on newer models, so without them the line runs through the briefs', evidence: /CLAUDE_CODE_ENABLE_TODO_TOOLS[\s\S]*(do not have them|without them)/i },
+  // Observed on Claude Code 2.1.288 (2026-10-04): with the variable the Task tools are listed as DEFERRED tools and must be loaded with ToolSearch
+  // before use (`TaskList` then answered "No tasks found"); without it the host's tool list has none of them (claude-sonnet-5-5).
+  { what: 'the Task tools, when the host provides them, are deferred: check and load them with ToolSearch', evidence: /`ToolSearch`[^.]*select:TaskCreate,TaskList,TaskUpdate/ },
   { what: 'a task that looks stuck is checked by the lead, who updates it (task status can lag)', evidence: /task status can lag[^.]*(check|update)/i },
   { what: 'start with three to five teammates and spawn per tier, treating the roster as a menu', evidence: /three to five teammates[\s\S]*menu/i },
   { what: 'ask a finished teammate to shut down by name; the team is cleaned up when the session ends', evidence: /shut down[^.]*by name[\s\S]*cleaned up[^.]*session ends/i },
