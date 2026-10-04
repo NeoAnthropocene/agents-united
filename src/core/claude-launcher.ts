@@ -267,9 +267,14 @@ export class ClaudeLauncher {
     // process environment only. It is never written to `.claude/settings.json`, never recorded in a lockfile
     // or any other workspace file, nothing is written under `~/.claude/teams/`, and the variable name must
     // never appear in argv. `env` is otherwise empty - the launcher merges it over `process.env` at spawn.
+    //
+    // A team plans, claims and finishes its work on the shared task list, and on a newer model (observed: claude-sonnet-5-5 on 2.1.289)
+    // the host leaves the Task tools out unless CLAUDE_CODE_ENABLE_TODO_TOOLS is set; with it they arrive as deferred tools the lead and
+    // each teammate load with ToolSearch. It rides with the teams variable under the same rules (maintainer decision, ADR 0038).
     const env: Record<string, string> = {};
     if (teams === true) {
       env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = '1';
+      env.CLAUDE_CODE_ENABLE_TODO_TOOLS = '1';
     }
 
     const argv: string[] = [...command.prefixArgs];

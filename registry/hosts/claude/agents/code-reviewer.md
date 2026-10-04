@@ -9,7 +9,7 @@ skills:
   - security-audit
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
-  PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|mcp__.*","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js"]}]}]
+  PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|Agent|Workflow|CronCreate|EnterWorktree|Artifact|SendUserFile|mcp__.*","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js"]}]}]
   # agents-united:hooks:end
 ---
 

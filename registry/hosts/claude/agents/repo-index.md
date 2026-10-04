@@ -7,7 +7,7 @@ permissionMode: plan
 tools: Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
-  PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|mcp__.*","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js"]}]}]
+  PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|Agent|Workflow|CronCreate|EnterWorktree|Artifact|SendUserFile|mcp__.*","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js"]}]}]
   # agents-united:hooks:end
 ---
 

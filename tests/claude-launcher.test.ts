@@ -147,7 +147,7 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
     it('also injects the variable that offers the shared Task tools, with the teams variable and nothing else', () => {
       const teams = plan({ teams: true });
       expect(teams.env[TODO_ENV]).toBe('1');
-      expect(Object.keys(teams.env).sort()).toEqual([TEAMS_ENV, TODO_ENV]);
+      expect(Object.keys(teams.env).sort()).toEqual([TEAMS_ENV, TODO_ENV].sort());
       expect(teams.argv.join('\u0000')).not.toContain(TODO_ENV);
       expect(teams.bootstrapPrompt).not.toContain(TODO_ENV);
     });
