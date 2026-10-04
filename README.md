@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 34 bundles (including the `full` suite; `registry/bundles.json` also holds one placeholder, `mock-organization-under-construction`, which is not counted) · 59 agents (9 orchestrators + 50 sub-agents) · 188 skills (119 domain skills + 69 workflow playbooks) · 8 department domains.
+**In numbers:** 34 bundles (including the `full` suite; `registry/bundles.json` also holds one placeholder, `mock-organization-under-construction`, which is not counted) · 59 agents (9 orchestrators + 50 sub-agents) · 189 skills (120 domain skills + 69 workflow playbooks) · 8 department domains.
 
 ---
 
@@ -272,7 +272,7 @@ agents add full                        # everything
 
 ### Skills
 
-The 188 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 119 are **domain skills** (best practices, runbooks, platform guides) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 189 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 120 are **domain skills** (best practices, runbooks, platform guides) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
@@ -656,6 +656,15 @@ Agents United proudly builds upon, adapts, and integrates contributions from cre
 - **`/diagnosing-bugs`**: Evidence-driven bug diagnosis and root-cause analysis.
 - **`/git-guardrails`**: Version control safety rules and protection policies.
 - **`/handoff`**: Session progress persistence and context handoff notes.
+</details>
+
+<details>
+<summary><strong>Jesse Vincent (<a href="https://github.com/obra">@obra</a> / <a href="https://github.com/obra/superpowers">obra/superpowers</a>), Garry Tan (<a href="https://github.com/garrytan">@garrytan</a> / <a href="https://github.com/garrytan/gstack">garrytan/gstack</a>) and Affaan Mustafa (<a href="https://github.com/affaan-m">@affaan-m</a> / <a href="https://github.com/affaan-m/ECC">affaan-m/ECC</a>)</strong></summary>
+
+Three MIT-licensed skill collections read as reference material (Plan 035): obra/superpowers at `8ca22db`, garrytan/gstack at `2db0b3a`, affaan-m/ECC at `ef648e0`. **Ideas and inspiration only; no text or file was copied.** The agency skills were rewritten in this project's own words after reading them:
+
+- **`agency-brief-and-premises`**: classify the request first and say so, gate work on approval, state the client's words apart from assumptions, one question at a time (superpowers `brainstorming`); challenge premises and compare a minimal, an ideal and a lateral approach (gstack `office-hours`).
+- **The growth, content, design, QA and SEO skills** (`growth-experiment-design`, `conversion-funnel-optimization`, `copywriting-frameworks`, `social-media-campaign`, `product-launch-playbook`, `accessibility-audit`, `seo-audit` and neighbours): habits taken from ECC's `growth-log`, `click-path-audit`, `content-engine`, `brand-voice`, `marketing-campaign`, `accessibility` and `seo` skills and gstack's `plan-design-review`, `design-review` and `qa`.
 </details>
 
 <details>

@@ -99,3 +99,11 @@ The three repositories are MIT (read through the GitHub API on 2026-10-04: obra/
 2. **Role fit**: `domain-modeling` (loaded by Yavuz and Defne) and `property-based-testing`, `mutation-testing` (loaded by Emre) are good third-party skills for software work; an agency QA role that tests marketing pages rarely needs them. Keep, move to the `software-engineering`-side roles, or drop from the agency roles' tables.
 3. **The generated skills shared with engineering** (item 2 of the findings): rewrite them in a separate plan for the engineering bundles, or rewrite only the ones Deniz, Emre and Defne use (`frontend-component-design`, `performance-optimization`, `test-driven-development`, `security-audit`, `technical-documentation`).
 4. **The other 39 failing skills in the catalog** outside this bundle (product-design family, GPU and vector-database stubs): a follow-up plan, or the `agent-factory` bundle of Plan 033 as its first job.
+
+## Added after the audit
+
+Skills added to the bundle by Plan 035 itself. They are written to the contract of ADR 0040 from the start (no marker, version 3.0.0).
+
+| Skill | Loaded by | Provenance | Body lines / extra files | Templated share | Verdict | Priority | Inspiration | Slice |
+|---|---|---|---|---|---|---|---|---|
+| `agency-brief-and-premises` | Chris | in-house, original (ideas credited in README) | new | n/a | new skill, own words | P0 | superpowers `brainstorming`, gstack `office-hours` | S6 |
