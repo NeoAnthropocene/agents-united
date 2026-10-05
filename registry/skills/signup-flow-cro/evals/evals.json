@@ -1,0 +1,20 @@
+{
+  "skill_name": "signup-flow-cro",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "here's the signup for our B2B scheduling tool: first name, last name, work email, password, company name, company size, role, phone, 'how did you hear about us' and a terms checkbox, spread over 3 screens. 100 people start, 61 finish screen 1, 38 finish screen 2, 29 finish screen 3. what would you change?",
+      "expected_output": "A field table with a verdict and a one-line reason for every field: keep work email and password (or an emailed link) and merge the name, remove last name and phone, move company, size, role and the referral question to after first value. One screen, a one-tap sign-in beside a plain email path, verification late, per-field error handling and a mobile specification, one brief for ab-test-setup with a primary metric and a guardrail. Hand-offs to Jamileh, Deniz, Defne and Emre. Rules of thumb are labelled and no field-level numbers are invented."
+    },
+    {
+      "id": 2,
+      "prompt": "should we make people verify their email before they get into the app? we've had a lot of fake signups lately but activation is already low and I don't want to lose more people.",
+      "expected_output": "Separates abuse from friction and defaults to verifying late: let the person in, require verification before the action that needs a trusted address (inviting, publishing, paying), and block entry only where abuse is the main risk. Asks what abuse data exists, names the code and resend behaviour (sent at once, paste accepted, resend and use a different email on one screen), and sends the sender-domain check to Emre."
+    },
+    {
+      "id": 3,
+      "prompt": "users keep complaining about our signup page on their phones. the errors only show up at the top after they hit submit and then the whole form resets. can you fix it?",
+      "expected_output": "Calls the post-submit error at the top with a cleared form an S1 finding and specifies the fix per field: validate on blur, message next to the field saying what to do, keep what was typed, scroll to the first error and move focus to it. Adds the mobile specification (keyboard type per field, autofill on, labels above fields, a button the keyboard does not hide, targets of at least 44 pixels), hands the build to Deniz and asks Emre to verify on a phone-sized viewport and by keyboard only."
+    }
+  ]
+}
