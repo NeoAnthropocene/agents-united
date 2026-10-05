@@ -1,0 +1,20 @@
+{
+  "skill_name": "viral-referral-loops",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we have a project planning app with about 4,000 active users. each one sends around 1.2 invites in their first month, 22% of invites sign up and 55% of those get activated. our paid CAC is $48. we want to give $10 credit to both sides. is that a good idea and what would it buy us?",
+      "expected_output": "Shows K = 1.2 x 0.22 x 0.55, about 0.145, and says that is a boost to paid and organic acquisition, not a replacement. Checks the reward: 10 + 10 = 20 dollars per referred activation is under half of the 48-dollar CAC, so it passes. Estimates about 580 extra activated users at about 11,600 dollars against about 28,000 dollars from paid, labelled as estimates. Qualifies the reward on first project, holds and caps it, names abuse controls and the consent limits, lists the events, writes a first test brief for ab-test-setup and hands off to Deniz, Jamileh, Emre and Defne."
+    },
+    {
+      "id": 2,
+      "prompt": "only 12% of our signups activate right now but the CEO wants a referral program with $50 for each side starting next quarter. let's do it?",
+      "expected_output": "Does not start with the loop while the funnel leaks before activation: sends onboarding-cro first and says why (a loop multiplies whatever the product does to a new user). Says a reward cannot be set without the CAC, so it asks for it, notes that 50 + 50 = 100 dollars per activation is only acceptable if it stays under half of the blended CAC, and suggests looking for a product loop."
+    },
+    {
+      "id": 3,
+      "prompt": "marketing wants an 'import your contacts' button that emails everyone in the user's address book an invite from them, to get more signups. can you write a quick spec?",
+      "expected_output": "Refuses to access contacts or send invitations on someone's behalf without a clear, specific action by that user, and says why. Offers a spec built on a share link or an invite the user addresses person by person, with an immediate opt-out for invitees, abuse controls and the event list, and sends the personal-data and consent questions to Defne without guessing the law of any country."
+    }
+  ]
+}
