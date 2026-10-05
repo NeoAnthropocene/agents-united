@@ -1,0 +1,20 @@
+{
+  "skill_name": "schema-markup-strategy",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "can you write the structured data for our product page? it shows the name, a short description and a paid plan at $12 a month. there are no ratings yet but we really want stars in the search results.",
+      "expected_output": "JSON-LD as an @graph with connected entities and stable @id values: the organisation once, the WebPage, and a SoftwareApplication or Product with an offer whose price and currency match the page. Adds no aggregateRating because the page shows no ratings, says stars are not promised and that a valid block can still be ineligible, validates with the Rich Results Test and the Schema Markup Validator on a staged URL and records the date and the documentation read. Generates the markup from the page's data and hands the snippet to Deniz."
+    },
+    {
+      "id": 2,
+      "prompt": "let's add FAQ schema to every page of the site so we get the expandable FAQ results in google.",
+      "expected_output": "Does not promise FAQ rich results: they were restricted to a narrow set of authoritative sites when last read, so it marks the markup optional and explains the expectation. Uses FAQPage only where the page really shows those questions and answers, adds nothing for content that is not visible, and says to read the current documentation for each type and note the date."
+    },
+    {
+      "id": 3,
+      "prompt": "a competitor shows 4.8 stars in search. can we add an aggregateRating of 4.8 from 200 reviews to our product markup? we don't display reviews on the page yet.",
+      "expected_output": "Refuses: a rating that is not visible on the page, or that was invented, is markup for invisible content and can be ignored or draw a manual action. Offers the honest route (collect and display real reviews first, then mark them up with the real figures), keeps ratings and claims about people with Defne, and notes that markup must match what the page shows."
+    }
+  ]
+}

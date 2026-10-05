@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { NATIVE_AGENTS_DIR } from './helpers/native-roles.ts';
-import { skillFolderText } from './helpers/skill-layout.ts';
+import { laidOutSkills, skillFolderText } from './helpers/skill-layout.ts';
 
 /**
  * Plan 035 S5: the SEO skills (Selin) are rewritten with real, role-specific substance (ADR 0040).
@@ -24,6 +24,15 @@ describe('S5: SEO skills are rewritten', () => {
       expect(fs.existsSync(path.resolve('tests/fixtures/templated-skills', name))).toBe(false);
     });
   }
+
+  it('all four are converted to the skill layout: each is listed in tests/fixtures/laid-out-skills, where tests/skill-layout.test.ts holds it to the layout', () => {
+    expect(laidOutSkills()).toEqual(expect.arrayContaining([...SLICE]));
+  });
+
+  it('the two audits carry a helper for Selin (who has a shell); programmatic-seo and schema-markup-strategy have none', () => {
+    const withScripts = SLICE.filter(n => fs.existsSync(path.join(SKILLS, n, 'scripts')));
+    expect(withScripts).toEqual(['seo-audit', 'technical-seo-audit']);
+  });
 
   it('Selin loads all four, and Yavuz still loads seo-audit', () => {
     const selin = role('agency-seo-specialist');
