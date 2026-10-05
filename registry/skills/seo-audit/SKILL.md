@@ -1,150 +1,59 @@
 ---
 name: seo-audit
-description: Production-grade Seo Audit playbook for design operations, UX
-  systems, and growth strategy.
+description: "Use when the brief is audit our SEO, a launch or migration needs a check, traffic dropped, or a content plan needs a baseline; trigger phrases: audit our SEO, why did our traffic drop, what is wrong with our search visibility, give me an SEO health score. Produces the audit report: a health score by a stated rule, indexation status, graded findings that name a page with evidence and an owner, a per-URL intent table and a plan by impact against effort. Skip it to promise rankings (no audit can) and for paid search; crawl depth is technical-seo-audit."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 🔎
+  version: 3.0.0
+  icon: 🔍
 disable-slash-command: true
 ---
 
-# Seo Audit
+# SEO Audit
+
+An SEO audit answers one question: what, specifically, keeps these pages from being found by the people who want them, and what is the cheapest order to fix it? A useful audit is page-specific, ordered by consequence and implementable by whoever owns each fix.
 
 ## Overview & Purpose
-The Seo Audit skill provides a deterministic framework for executing seo audit processes in modern software products.
+The broad audit: Selin runs it and Yavuz uses its findings for content and keyword ownership. Crawl and indexation depth is `technical-seo-audit`, templated pages at scale `programmatic-seo`, structured data `schema-markup-strategy`.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it when the brief is "audit our SEO", a launch or migration needs a check, traffic dropped, or a content plan needs a baseline. Do not use it to promise rankings (no audit can) or for paid search.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Seo Audit tasks.
-- Auditing existing product assets or workflows.
-- Standardizing seo-audit procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: the domain and the pages that matter (revenue, signups); what can be read (the live site, the sitemap, Search Console exports if supplied); audience and topics; named competitors; what changed recently (a redesign, a migration, a CMS change).
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Output: the audit report in the role's format (summary with the health score and indexation status, the 15-point checklist, priority actions with owners, authored snippets) and a per-URL table: intent, title and description, issue, fix, owner. Shape: [examples/report-template.md](examples/report-template.md). **Evidence to attach**: per finding, the URL, the exact observation (a header, a tag, a number), the tool or command and the date.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **Scope to the pages that earn**: the 10 to 30 URLs that matter, and why; auditing everything produces noise. Note the date: pages change.
+2. **Technical blockers come first**, before judging content: can the page be crawled, rendered and indexed (checks 1 to 6 of `technical-seo-audit`)? Content work on a blocked page is wasted.
+3. **One primary search intent per URL**, in a sentence (informational, commercial, transactional, navigational), compared with the page. A product page answering an informational query, or two pages chasing one query, is a finding; resolve cannibalisation by merging, redirecting or re-targeting, with Yavuz.
+4. **On-page basics where they matter to that intent** (title about 50 to 60 characters, description about 120 to 155, one H1, anchors, alt text, internal links): [references/on-page-basics.md](references/on-page-basics.md).
+5. **Performance and experience**: field data where it exists, lab data to find the cause; the root cause via `debug-optimize-lcp`.
+6. **Grade each finding**: critical (blocks crawling, indexing or rendering of an important page), major (clearly loses visibility or clicks), minor (hygiene). Health score: 100 minus 15 per critical, 7 per major, 2 per minor, floor 0 (`node ${CLAUDE_SKILL_DIR}/scripts/health-score.mjs findings.md`, or the table in [references/health-score.md](references/health-score.md)). State the rule and the scope.
+7. **Prioritise by impact against effort**: impact is how many important pages and how much traffic or revenue; effort is who must change what. Critical and cheap first; label every impact figure an estimate.
+8. **Hand off.** Code and server changes (redirects, canonical, rendering, robots) to Deniz; content, intent and cluster ownership to Yavuz; rewritten titles and descriptions to Kaan if conversion matters; access needs (Search Console, analytics) to the lead as a request.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/seo-audit/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/seo-audit/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/seo-audit/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for a 12-URL audit with its findings table and the score.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- Generic advice ("improve content quality") with no URL: nobody can act on it.
+- Content work on pages that cannot be indexed: it cannot pay back.
+- Two pages chasing one query left alone: they compete with each other.
+- Keyword stuffing presented as optimisation: a risk, not a fix.
+- A promised ranking or traffic number: no audit can know it.
+- A health score without its rule and scope: it cannot be checked.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+## Edge Cases & Error Recovery
+- **No Search Console or analytics access**: audit what is visible from outside, say what could not be checked (queries, clicks, index coverage), list the access needed.
+- **JavaScript-rendered content**: compare the raw HTML with the rendered DOM (`chrome-devtools-mcp` if connected); content that appears only after rendering may not be indexed.
+- **A migration in progress**: freeze recommendations that touch URLs until the redirect map exists.
+- **Two findings conflict** (a canonical to a noindexed page): fix the blocker, then recheck the other.
+- **Traffic fell, nothing technical changed**: check demand, competitors and a search-engine update before blaming the site; say what you could not establish.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/seo-audit/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/seo-audit/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/seo-audit/ reports/seo-audit/
-   git commit -m "feat(seo-audit): implement Seo Audit playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Seo Audit Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "seo-audit"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/seo-audit/summary.json"
-```
-
-### Exemplar 2: Seo Audit Helper Module
-```typescript
-export function runSeoAudit(scope: string): boolean {
-  console.log('Running Seo Audit on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Seo Audit
-1. **Diagnosis**: Specification or code asset fails validation rules in seo-audit.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Seo Audit
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] The scope lists the pages audited and the date, with the reason for each.
+- [ ] Technical blockers were checked before content; each finding has a URL, an observation and its evidence.
+- [ ] Every key URL has one stated primary intent; overlaps are listed with a proposed resolution.
+- [ ] Severity, the score rule and its scope are written; priorities show impact and effort, estimates labelled.
+- [ ] Hand-offs name Deniz, Yavuz, Kaan and the lead for access requests.

@@ -1,213 +1,61 @@
 ---
 name: programmatic-seo
-description: Production-grade Programmatic SEO playbook for data-driven landing
-  page templates, dynamic URL routing, database seeding, schema JSON-LD, and
-  anti-thin-content guardrails.
+description: "Use when a brief proposes pages at scale from a dataset, such as X vs Y, best X for Y or X integration pages; trigger phrases: generate pages from our data, programmatic SEO, alternatives to X pages, city pages for every location, why are our generated pages not indexed. Produces the page-type definition, a data schema where every record differs, the taxonomy, a boilerplate ceiling and publish gate, hub and sitemap plans and monitoring. Skip it for a handful of hand-written landing pages, and when the dataset cannot make each page different (stop and say so)."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: 🤖
 disable-slash-command: true
 ---
 
-# Programmatic SEO & Data-Driven Landing Page Generation Architecture
+# Programmatic SEO
+
+Programmatic SEO generates many pages from structured data. It works when each page answers a real query with data the visitor cannot get from the next page, and fails (sometimes at the cost of the whole site's standing) when it publishes thousands of near-identical pages.
 
 ## Overview & Purpose
-The Programmatic SEO skill provides a robust architectural framework for generating hundreds or thousands of high-intent, indexable landing pages from structured databases while rigorously avoiding Google search engine penalties for thin, low-value, or duplicate content.
+For Selin: the design rules, thresholds and monitoring that keep a templated page set useful. Deniz builds the generator, Yavuz owns the clusters and editorial pages around it, Kaan writes the template copy.
 
-Following this skill establishes dynamic URL path hierarchies, high-value data-enriched page templates, automated internal linking meshes, XML sitemap indexing partitions, dynamic JSON-LD schema injection, and programmatic quality auditing.
+## Execution Triggers
+Load it when a brief proposes pages at scale (dozens or more) from a dataset: "X vs Y", "best X for Y", "X integration" pages. Do not use it for a handful of hand-written landing pages, or when the dataset cannot make each page different (stop and say so).
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Designing and deploying programmatic directory, comparison, or integration landing pages.
-- Scaling organic search traffic for long-tail keyword permutations (e.g. `{tool} vs {alternative}`, `best {category} for {platform}`).
-- Automating XML sitemap generation and indexation workflows for large-scale dynamic routes.
-- Auditing existing programmatic pages to eliminate thin content and cannibalization risks.
+## Input/Output Requirements
+Inputs: the dataset (fields, size, change rate, owner); the query pattern with evidence that people search it (keyword data, source and date); the site's authority and crawl budget in rough terms; template ideas; overlapping pages.
 
-### Prerequisites
-- Structured dataset or database table containing entity records, features, pricing, and pros/cons.
-- Framework supporting dynamic static site generation (Next.js App Router, Astro, SvelteKit).
-- Search Console / SEO crawling tools (Screaming Frog, Sitebulb) for pre-deployment validation.
-- Clean git working directory.
+Output: the page-type definition (query pattern, intent, example URL); the data schema with required fields and minimum unique content; the URL taxonomy; the template outline; the quality rules and publish gate; the linking and sitemap plan; the monitoring plan. **Evidence to attach**: the keyword data with source and date, and 10 sampled records checked against the rules.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `dataset_path` | String | Yes | Path to JSON, CSV, or database connection for page entities |
-| `url_pattern` | String | Yes | Dynamic route pattern (e.g. `/compare/[competitor]-alternatives`) |
-| `target_keyword_template` | String | Yes | Pattern for title and H1 tags (e.g. `Top 10 {competitor} Alternatives in 2026`) |
-| `min_unique_content_ratio` | Number | Optional | Minimum unique text ratio per page (default: 0.60) |
-| `max_urls_per_sitemap` | Number | Optional | Sitemap chunking limit (default: 10000) |
+## Step-by-Step Runbook
+1. **Prove the demand and the intent.** One page type per query pattern, with search volume and the intent the result page must satisfy. If the intent is "I want a person's opinion" and your data is a table, the pages will not fit.
+2. **Design the data so each page differs**: every record needs its own facts and its own text of real substance (about 150 or more unique words as a working minimum) and something the competing page lacks. Drop sparse entities; never pad.
+3. **Set a boilerplate ceiling**: at most about 40 percent of a page's text shared with other pages of the type, measured on a sample (for example the share of sentences found on other pages). Above it, a page does not ship.
+4. **Decide what is not published**: a record failing the minimums returns 404 or 410, is not generated, or is generated with `noindex` while data is gathered; it never goes live thin.
+5. **Design the URL taxonomy**: shallow, stable, readable, one canonical, one ordering of a symmetric pair.
+6. **Plan hubs and links**: a hub per category, five to eight genuine sibling links per page, `BreadcrumbList` breadcrumbs, no orphans.
+7. **Partition the sitemaps**: under 50,000 URLs each (10,000 is comfortable), in a sitemap index; `lastmod` changes only when the content does.
+8. **Launch in stages and monitor**: a first batch of 50 to 100 pages, watch indexation and impressions for weeks, expand only if the pages are indexed and earn impressions. Track indexed against submitted, impressions per page and duplicate or **cannibalised** queries (editorial overlap is resolved with Yavuz).
+9. **Hand off.** The schema and rules to Deniz, the publish gate as a test (a page below the minimums must not render as indexable); template copy to Kaan; clusters to Yavuz; markup to `schema-markup-strategy`; build verification to Emre. Details: [references/page-set-rules.md](references/page-set-rules.md).
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Programmatic Spec Spec | `docs/programmatic-seo/programmatic-spec.md` | Architecture, data schema, and template rules |
-| Dynamic Route Component | `src/app/compare/[slug]/page.tsx` | Next.js dynamic static generation template |
-| Dataset Seeder Module | `src/services/seo/dataset-seeder.ts` | Data validation, enrichment, and normalization |
-| Sitemap Generator | `src/services/seo/sitemap-generator.ts` | Chunked XML sitemap index and file builder |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for 400 candidate pages cut to 120, with the 10-record sample check, the publish gate and the staged launch.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- Pages for queries nobody makes because the data exists: they cost crawl budget, earn nothing.
+- The same paragraph with the name swapped: the thin page engines discount.
+- Publishing thin records and hoping they fill in: they are judged as published.
+- Both orderings of a symmetric comparison: two pages for one query.
+- A sitemap that includes `noindex` pages: it contradicts itself.
+- Thousands of pages at once, unmonitored: you learn it failed after the cost.
 
-### Phase 1: Keyword Opportunity Modeling & Database Schema Design
-1. Conduct keyword permutation research identifying head terms and modifier facets (`[entity] + [modifier] + [location/use-case]`).
-2. Construct the underlying database or JSON schema. Every entity record must include:
-   - Primary identifier, display name, category, and slug.
-   - Unique value proposition paragraph (minimum 150 unique words per record).
-   - Structured comparison metrics (feature flags, pricing tiers, benchmarks).
-   - Curated user review snippets, pros/cons bullet points, and verified screenshots.
-3. Validate dataset integrity: assert that no two records share identical descriptions or duplicate slugs.
+## Edge Cases & Error Recovery
+- **Few pages indexed after a month**: stop expanding; check duplication, links and sample quality; improve the data before adding pages.
+- **A competitor's page is much richer**: add the field that makes yours better or drop the page type; copy nothing.
+- **A dataset licence limit**: attribute and respect it; ask the lead (Defne for legal terms).
+- **Pages cannibalise a hand-written article**: choose one owner for the query with Yavuz; redirect or differentiate the other.
+- **Data errors after launch**: correct at source and regenerate; never hide errors under `noindex` for good.
 
-### Phase 2: Dynamic URL Hierarchy & Template Modularization
-1. Author canonical URL routing schemas ensuring shallow directory depth (e.g. `/tools/{slug}` or `/alternatives-to/{slug}`).
-2. Build modular page template combining static anchor sections with dynamic, data-driven components:
-   - Dynamic Hero with keyword-optimized H1 and metadata summary.
-   - Interactive Comparison Matrix component rendering tabular feature differences.
-   - Dynamic FAQ Accordion populated from entity-specific Q&A data.
-   - User Review & Sentiment Breakdown visualization.
-3. Ensure every page includes unique, dynamically computed insights (e.g. price per seat calculations or latency benchmarks).
-
-### Phase 3: Automated Internal Linking Mesh & Breadcrumbs
-1. Implement contextual breadcrumb navigation on every programmatic page with Schema.org `BreadcrumbList` markup.
-2. Build related-entity recommendation algorithms linking each programmatic page to 5-8 contextually relevant sibling pages within the same category.
-3. Construct hub pages (category index hubs) that aggregate and distribute PageRank across programmatic leaf nodes.
-4. Verify that no page becomes an orphan node unreachable from the root site navigation graph.
-
-### Phase 4: Anti-Thin-Content Auditing & Duplicate Content Guardrails
-1. Execute algorithmic lexical similarity check (Jaccard similarity / TF-IDF cosine distance) across generated page outputs.
-2. Enforce minimum uniqueness threshold: reject any generated page where boilerplate exceeds 40% of total page content.
-3. If data is sparse for a specific entity record, automatically redirect or return `404/410` status rather than publishing a thin page.
-4. Dynamically inject unique user-generated or API-fetched data points (real-time uptime, changelog dates) to continuously differentiate pages.
-
-### Phase 5: XML Sitemap Partitioning, Static Generation & Indexation Monitoring
-1. Generate chunked XML sitemaps partitioned into subsets of <= 10,000 URLs with `<lastmod>` timestamps reflecting data updates.
-2. Create a master `sitemap_index.xml` referencing all partition files.
-3. Execute static build (`next build` / `astro build`) to pre-render static HTML pages for sub-millisecond TTFB.
-4. Run crawler audit asserting 100% of generated URLs return HTTP 200 with valid canonical tags matching target URLs.
-5. Commit programmatic SEO architecture to repository.
-   ```bash
-   git add src/app/ src/services/seo/ docs/programmatic-seo/
-   git commit -m "feat(programmatic-seo): implement scalable programmatic page generation engine"
-   ```
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Dynamic Static Page Generation Template (Next.js App Router)
-```typescript
-import { notFound } from 'next/navigation';
-import { getEntityBySlug, getAllEntitySlugs } from '@/services/seo/dataset-seeder';
-import { JsonLd } from '@/components/seo/JsonLd';
-
-export async function generateStaticParams() {
-  const slugs = await getAllEntitySlugs();
-  return slugs.map(slug => ({ slug }));
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const entity = await getEntityBySlug(slug);
-  if (!entity) return {};
-
-  return {
-    title: `Top 10 ${entity.name} Alternatives & Competitors (2026)`,
-    description: `Compare ${entity.name} with leading competitors. In-depth pricing, feature analysis, and benchmarks.`,
-    alternates: {
-      canonical: `https://agents-united.dev/compare/${entity.slug}-alternatives`,
-    },
-  };
-}
-
-export default async function ComparePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const entity = await getEntityBySlug(slug);
-  if (!entity) notFound();
-
-  return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-4xl font-extrabold mb-4">Top {entity.name} Alternatives & Competitors</h1>
-      <p className="text-lg text-slate-700 mb-8">{entity.customSummary}</p>
-      {/* Dynamic Data-Driven Comparison Matrix */}
-      <section className="border rounded-xl p-6 bg-slate-50 mb-8">
-        <h2 className="text-2xl font-bold mb-4">Feature Comparison Matrix</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2">Feature</th>
-                <th className="py-2">{entity.name}</th>
-                <th className="py-2">Agents United</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entity.features.map((feat: any) => (
-                <tr key={feat.name} className="border-b">
-                  <td className="py-2 font-medium">{feat.name}</td>
-                  <td className="py-2">{feat.value}</td>
-                  <td className="py-2 text-emerald-600 font-semibold">{feat.ourValue}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      <JsonLd data={{
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        name: `Top ${entity.name} Alternatives`,
-        description: entity.customSummary,
-      }} />
-    </main>
-  );
-}
-```
-
-### Exemplar 2: Chunked XML Sitemap Generator
-```typescript
-export interface SitemapUrlEntry {
-  loc: string;
-  lastmod: string;
-  changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
-  priority: number;
-}
-
-export function generateSitemapXml(urls: SitemapUrlEntry[]): string {
-  const entries = urls.map(u => `  <url>
-    <loc>${u.loc}</loc>
-    <lastmod>${u.lastmod}</lastmod>
-    <changefreq>${u.changefreq}</changefreq>
-    <priority>${u.priority.toFixed(1)}</priority>
-  </url>`).join('\n');
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${entries}
-</urlset>`;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Google Flags Programmatic URLs as Thin / Soft 404
-1. **Diagnosis**: Google Search Console reports pages as "Crawled - currently not indexed" or "Soft 404" due to low unique content density.
-2. **Recovery Protocol**:
-   - Step 1: Run lexical similarity scanner identifying duplicate paragraph fragments across pages.
-   - Step 2: Enrich dataset with additional bespoke fields (user feedback quotes, automated API performance benchmarks).
-   - Step 3: Add `noindex, follow` tags to pages below the minimum content threshold until enrichment is completed.
-
-### Scenario B: Dynamic Parameter Slugs Conflict with Static Routes
-1. **Diagnosis**: Dynamic slug `/compare/[slug]` clashes with static system routes like `/compare/pricing` or `/compare/settings`.
-2. **Recovery Protocol**:
-   - Step 1: Implement reserved route blacklist in `dataset-seeder.ts` preventing slug generation for system keywords.
-   - Step 2: Use distinct subdirectory pathing for programmatic templates (e.g. `/compare/tools/[slug]`).
-   - Step 3: Add automated unit test asserting zero collision between dynamic dataset slugs and static app routes.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Next.js / framework static generation code exemplar provided with valid syntax fencing.
-- [ ] Lexical similarity threshold and anti-thin-content guardrails documented.
-- [ ] Chunked XML sitemap generation architecture detailed.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Demand evidence (source and date) exists for the page type; entities without demand are excluded.
+- [ ] The schema gives every page unique facts and text above the minimum; 10 records were checked.
+- [ ] The boilerplate ceiling and the publish gate are written and testable.
+- [ ] Taxonomy, hubs, sibling links, breadcrumbs and sitemap partitions are specified.
+- [ ] A staged launch and monitoring (including cannibalisation) are written down.
+- [ ] Hand-offs name Deniz, Kaan, Yavuz and Emre with what each delivers.

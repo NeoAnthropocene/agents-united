@@ -1,0 +1,20 @@
+{
+  "skill_name": "programmatic-seo",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we want 'alternatives to X' pages for 400 accounting tools. we have pricing tiers, supported currencies and integrations data for all of them. can you plan the programmatic SEO for it?",
+      "expected_output": "Checks demand first and builds only for the entities with measurable demand, with the keyword source and date recorded (for example 120 of the 400, not all 400). Designs the data so every record differs (its own facts and about 150 or more unique words), sets a boilerplate ceiling of about 40 percent measured on a sample, and checks a sample of 10 records, holding failing ones back as noindex. Gives the URL taxonomy with one canonical, hubs with five to eight sibling links, sitemap partitions under 50,000 URLs, a publish gate written as a test for Deniz, and a staged launch of 50 to 100 pages with indexation and cannibalisation monitoring."
+    },
+    {
+      "id": 2,
+      "prompt": "can we generate 5,000 city pages for our service from one template, just swapping the city name, and publish them all at once to see what sticks?",
+      "expected_output": "Refuses the plan as described: the same paragraph with the name swapped is a thin page, there is no evidence of demand per city and nothing makes each page different, and publishing everything at once leaves no way to monitor. Asks for the data that would differ per city, proposes the publish gate and a staged launch of 50 to 100 pages, and says to stop if the dataset cannot make each page different."
+    },
+    {
+      "id": 3,
+      "prompt": "only about 35% of our generated pages got indexed after a month, so let's add another 2,000 pages and see if that helps.",
+      "expected_output": "Says to stop expanding: a low indexed share after a month points at duplication, internal links or the quality of the data. Asks to check boilerplate share, sibling links and a sample of records, to look for cannibalisation with editorial pages (with Yavuz), to improve the data before adding pages, and to monitor indexed against submitted and impressions per page."
+    }
+  ]
+}
