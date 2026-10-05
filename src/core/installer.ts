@@ -827,10 +827,12 @@ private toPosix(p: string): string {
     resolved: ResolvedAssets,
     registryDir: string,
     pluginLane: boolean,
-    nativeLane = false
+    nativeLane = false,
+    root?: string
   ): Promise<PlannedProjectionArtifact[]> {
     if (host === 'cline') {
-      return ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir, undefined, nativeLane);
+      // `root` is the directory the install is rooted at: a global install names a workflow's supporting files by absolute path from it.
+      return ClineProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir, undefined, nativeLane, root);
     }
     const artifacts = await ClaudeProjector.planCompoundProjection(bundleDef, scope, resolved, registryDir, undefined, nativeLane);
     if (pluginLane) {
@@ -981,7 +983,8 @@ private toPosix(p: string): string {
             resolved,
             registryDir,
             pluginLane,
-            nativeLanes[host as AgentHost] === true
+            nativeLanes[host as AgentHost] === true,
+            root
           );
           for (const artifact of artifacts) {
             infos.push({ host, path: artifact.relPath, kind: artifact.kind, warnings: [] });
@@ -1097,7 +1100,8 @@ private toPosix(p: string): string {
             resolved,
             registryDir,
             pluginLane,
-            host === 'cline' ? nativeClineLane : nativeLane
+            host === 'cline' ? nativeClineLane : nativeLane,
+            root
           );
 
           await this.applyCompoundLane(host, bundleDef.name, artifacts, {

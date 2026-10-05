@@ -360,6 +360,13 @@ runtime host detection/rewiring (nondeterministic — churn belongs in capabilit
   ADR 0016); a *dynamic workflow* is Claude Code's scripted multi-agent orchestration (`Workflow`
   tool, `.claude/workflows/*.js`). Multi-agent workflow skills become dynamic workflows (plus a thin
   trigger) in the Claude package; single-agent runbooks stay skills.
+- **Cline Workflow Projection** (ADR 0016 decision 6, amended 2026-10-05): the `.cline/workflows/<slug>.md` file written for each
+  `workflow-*` skill of an installed bundle, from the body of its `SKILL.md`. A workflow file has no folder of its own, so a relative
+  link in the body to a file the install carries next to `SKILL.md` is replaced by the backticked path of that file in the canonical
+  store: `.agents/skills/<name>/<file>` from the project root, and the absolute path in the global scope (Cline reads a relative path
+  against its working directory and does not expand `~`). A skill with only `SKILL.md` projects unchanged. On Cline 3.0.68 a same-named
+  skill answers the slash command before the workflow does (ADR 0034), so this is the form that runs where the skill does not.
+  _Avoid_: calling it the skill (it is a second, flatter form of the same runbook), naming the plugin copy in it (that path names a bundle)
 - **Host Observation** (ADR 0027): a dated, versioned record of what an installed host build actually does, kept in
   `host-library/<host>/observations/` and never cited as vendor documentation. A guide's authoring notes point to it where it
   disagrees with the docs, and an artifact that depends on one is marked "observed on `<version>`" in the delta table.
