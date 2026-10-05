@@ -1,6 +1,6 @@
 ---
 name: accessibility-audit
-description: "Use when a UI surface enters QA, after a design or component change, before a launch, or when a user reports a barrier; trigger phrases: run an accessibility audit, is this page accessible, axe results, keyboard test, WCAG check, a user cannot use the form with a keyboard. Produces the gate status, a findings table (criterion, severity, location, evidence, owner, fix), what was and was not checked, and the axe report file. Skip it to claim a site is accessible or compliant (an audit finds problems, it never proves their absence) and for the root cause of one violation (use a11y-debugging)."
+description: "Use when a UI surface enters QA, after a design or component change, before a launch, when a user reports a barrier, or when someone asks for a compliance statement; trigger phrases: run an accessibility audit, is this page accessible, axe results, keyboard test, WCAG check, a user cannot use the form with a keyboard, write a WCAG compliance statement, can we say we are accessible. Produces the gate status, a findings table (criterion, severity, location, evidence, owner, fix), what was and was not checked, and the axe report file; asked for a compliance claim it declines (an audit finds problems, it never proves their absence) and hands the legal question to Defne. Skip it for the root cause of one violation (use a11y-debugging)."
 metadata:
   author: agents-united
   version: 3.0.0
@@ -16,7 +16,7 @@ Accessibility defects stop real people from using the page. Automated tools find
 The QA lead's audit. It verifies and reports: Deniz owns markup, Jamileh colours and Kaan words, and each finding is routed to them through the lead.
 
 ## Execution Triggers
-Load it for any UI surface entering QA, after a design or component change, before a launch, and when a user reports a barrier. Do not use it to claim a site "is accessible" or "is compliant": an audit finds problems, it never proves their absence. For one violation's root cause use `a11y-debugging`.
+Load it for any UI surface entering QA, after a design or component change, before a launch, and when a user reports a barrier. Load it too when asked for a compliance statement ("is compliant", "is accessible"), but only to decline it: an audit finds problems, it never proves their absence, so give the audit with its limits and hand the question to Defne. For one violation's root cause use `a11y-debugging`.
 
 ## Input/Output Requirements
 Inputs: the route or flow and how to run it; the conformance target (the agency's gate is WCAG 2.1 level AA, the 2.2 additions advisory unless the client requires them); the key journeys; whether authenticated states are needed (credentials come from the lead; never invent or request real secrets).
