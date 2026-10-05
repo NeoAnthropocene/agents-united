@@ -1,0 +1,20 @@
+{
+  "skill_name": "seo-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "can you audit the SEO for example.com? the pages that matter are /docs/webhooks, /pricing, /blog/webhook-retries and /blog/retry-strategies. organic traffic is down about 30% since the redesign last month. i can send Search Console exports.",
+      "expected_output": "Checks technical blockers first (noindex, canonical, robots, status, a staging copy) before judging content, writes one primary intent per key URL, and flags the two blog posts targeting the same query as cannibalisation to be resolved with Yavuz. Grades each finding critical, major or minor with a URL, the exact observation, the tool or command and the date as evidence, computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope, and orders actions by impact against effort with the estimates labelled. Hands code fixes to Deniz, copy to Kaan, and says what could not be checked without the exports."
+    },
+    {
+      "id": 2,
+      "prompt": "if we do everything in your SEO audit, can you guarantee we'll rank number one for 'webhook retries' within three months?",
+      "expected_output": "Declines to promise a ranking or a traffic number: no audit can know it. Says what the audit can establish (what blocks or loses visibility, in what order to fix it), labels any impact figure as an estimate, and offers to measure the result against the baseline afterwards."
+    },
+    {
+      "id": 3,
+      "prompt": "some SEO tool gave our site a score of 92 and you gave it 69. whose number is right?",
+      "expected_output": "Explains that the health score is a summary of this audit's scope by a stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0), shows the arithmetic, and says it is not an industry metric and not comparable across tools or scopes. Points out that the number matters less than the critical findings behind it, such as a noindex on an important page."
+    }
+  ]
+}

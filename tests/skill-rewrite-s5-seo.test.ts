@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { NATIVE_AGENTS_DIR } from './helpers/native-roles.ts';
+import { skillFolderText } from './helpers/skill-layout.ts';
 
 /**
  * Plan 035 S5: the SEO skills (Selin) are rewritten with real, role-specific substance (ADR 0040).
@@ -10,7 +11,8 @@ import { NATIVE_AGENTS_DIR } from './helpers/native-roles.ts';
  */
 
 const SKILLS = path.resolve('registry/skills');
-const skill = (name: string): string => fs.readFileSync(path.join(SKILLS, name, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
+/** SKILL.md together with the supporting files of a laid-out skill (Plan 035, D16): the substance may sit in examples/ or references/. */
+const skill = (name: string): string => skillFolderText(SKILLS, name);
 const role = (name: string): string => fs.readFileSync(path.join(NATIVE_AGENTS_DIR, `${name}.md`), 'utf8');
 
 const SLICE = ['seo-audit', 'technical-seo-audit', 'programmatic-seo', 'schema-markup-strategy'] as const;
