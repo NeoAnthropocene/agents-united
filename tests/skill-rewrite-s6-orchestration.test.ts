@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { NATIVE_AGENTS_DIR } from './helpers/native-roles.ts';
+import { laidOutSkills, skillFolderText } from './helpers/skill-layout.ts';
 
 /**
  * Plan 035 S6: the orchestration skills of the lead (Chris). The six `workflow-agency-*` skills are
@@ -13,7 +14,10 @@ import { NATIVE_AGENTS_DIR } from './helpers/native-roles.ts';
 
 const ROOT = process.cwd();
 const SKILLS = path.resolve('registry/skills');
+/** SKILL.md alone: for a workflow skill this is all that is projected into .cline/workflows/, so the playbook has to work from it. */
 const skill = (name: string): string => fs.readFileSync(path.join(SKILLS, name, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
+/** SKILL.md together with the supporting files of a laid-out skill (Plan 035, D16): the substance may sit in examples/ or references/. */
+const skillAll = (name: string): string => skillFolderText(SKILLS, name);
 const lead = (): string => fs.readFileSync(path.join(NATIVE_AGENTS_DIR, 'orchestrator-digital-agency.md'), 'utf8');
 const bundles = (): Record<string, { skills: string[] }> => JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')).bundles;
 
@@ -45,6 +49,22 @@ describe('S6: the six agency workflow skills are playbooks the lead loads', () =
   }
 });
 
+describe('S6: the seven are converted to the skill layout (Plan 035, D16)', () => {
+  it('each is listed in tests/fixtures/laid-out-skills, where tests/skill-layout.test.ts holds it to the layout', () => {
+    expect(laidOutSkills()).toEqual(expect.arrayContaining([...PLAYBOOKS, 'agency-brief-and-premises']));
+  });
+
+  it('no playbook has scripts or needs its supporting files: the flowchart, the phases, the gate rows and the rollback paragraph are in SKILL.md', () => {
+    for (const name of PLAYBOOKS) {
+      expect(fs.existsSync(path.join(SKILLS, name, 'scripts')), `${name} has scripts`).toBe(false);
+      const s = skill(name);
+      expect(s, name).toContain('```mermaid');
+      expect(s, name).toMatch(/^Rollback protocol:/m);
+      expect(s, name).toMatch(/Phase\s+\d+:/);
+    }
+  });
+});
+
 describe('S6: the new planning skill agency-brief-and-premises', () => {
   const NAME = 'agency-brief-and-premises';
 
@@ -58,9 +78,10 @@ describe('S6: the new planning skill agency-brief-and-premises', () => {
   });
 
   it('is original work: version 3.0.0, no metadata.source, and carries the planning substance', () => {
-    const s = skill(NAME);
-    expect(s).toMatch(/^\s+version:\s*['"]?3\.0\.0/m);
-    expect(s).not.toMatch(/^\s+source:/m);
+    const own = skill(NAME);
+    expect(own).toMatch(/^\s+version:\s*['"]?3\.0\.0/m);
+    expect(own).not.toMatch(/^\s+source:/m);
+    const s = skillAll(NAME);
     expect(s).toMatch(/classif/i);
     expect(s).toMatch(/say (it|the classification) (out loud|aloud)|aloud|out loud/i);
     expect(s).toMatch(/what the client said/i);
@@ -75,9 +96,10 @@ describe('S6: the new planning skill agency-brief-and-premises', () => {
     expect(s).toMatch(/Delegation map/i);
   });
 
-  it('never writes a deliverable: the skill states the gate and leaves production to the specialists', () => {
+  it('never writes a deliverable: SKILL.md states the hard gate itself and leaves production to the specialists', () => {
     const s = skill(NAME);
     expect(s).toMatch(/no deliverable|before the user accepts|until the user accepts/i);
+    expect(s).toMatch(/hard gate/i);
   });
 
   it('is credited in the README as inspiration, naming both upstream repositories', () => {
