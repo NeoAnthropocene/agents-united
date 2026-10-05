@@ -37,8 +37,28 @@ function walk(dir: string, prefix = ''): string[] {
 export function supportingText(skillDir: string): string {
   return walk(skillDir)
     .filter(f => f !== 'SKILL.md' && !f.startsWith('evals/') && f.endsWith('.md'))
-    .map(f => fs.readFileSync(path.join(skillDir, f), 'utf8'))
+    .map(f => fs.readFileSync(path.join(skillDir, f), 'utf8').replace(/\r\n/g, '\n'))
     .join('\n');
+}
+
+/** SKILL.md followed by its supporting markdown: what a depth or substance check sees of a laid-out skill. */
+export function skillFolderText(skillsRoot: string, name: string): string {
+  const dir = path.join(skillsRoot, name);
+  return `${fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n')}\n${supportingText(dir)}`;
+}
+
+/**
+ * The skills converted to the layout: one empty marker file per skill in `tests/fixtures/laid-out-skills/`, the mirror of the
+ * allowlist of templated skills (ADR 0040). A directory instead of an array keeps parallel pull requests from touching one line.
+ */
+export const LAID_OUT_DIR = path.resolve('tests/fixtures/laid-out-skills');
+
+export function laidOutSkills(dir: string = LAID_OUT_DIR): string[] {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true })
+    .filter(e => e.isFile() && !e.name.startsWith('.'))
+    .map(e => e.name)
+    .sort();
 }
 
 export function checkSkillLayout(skillsRoot: string, name: string): string[] {
@@ -64,6 +84,7 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
   if (whenToUse !== '') errors.push(`${name}: do not use when_to_use yet; put the trigger phrases in the description`);
   if (description.length > DESCRIPTION_MAX_CHARS) errors.push(`${name}: description is ${description.length} characters (cap ${DESCRIPTION_MAX_CHARS}, the Antigravity limit; the Claude listing cap is ${LISTING_MAX_CHARS})`);
   if (!/trigger phrases|phrases:/i.test(description)) errors.push(`${name}: the description lists no trigger phrases`);
+  if (!/\b(skip|do not use|don't use|not for)\b/i.test(description)) errors.push(`${name}: the description says nothing about when to skip the skill`);
 
   if (/(^|\s)!`|^```!/m.test(body)) errors.push(`${name}: no "!" command injection in SKILL.md: a role without a shell would abort the skill`);
 
@@ -73,6 +94,17 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
   }
   for (const link of body.matchAll(/\]\(((?:examples|references|scripts)\/[^)#\s]+)\)/g)) {
     if (!fs.existsSync(path.join(dir, link[1]!))) errors.push(`${name}: SKILL.md links to ${link[1]} which does not exist`);
+  }
+
+  // A script replaces hand arithmetic for the roles that have a shell (Selin, Emre, Deniz, Defne); Ava, Kaan, Yavuz, Jale and
+  // Jamileh have none, so a skill with scripts also carries the formula or a precomputed table in references/.
+  const scripts = files.filter(f => f.startsWith('scripts/'));
+  for (const s of scripts) {
+    if (!s.endsWith('.mjs')) errors.push(`${name}: ${s} is not a Node .mjs script (one runtime for every role that has a shell)`);
+    else if (!body.includes(`\${CLAUDE_SKILL_DIR}/${s}`)) errors.push(`${name}: ${s} is not run through \${CLAUDE_SKILL_DIR}/${s} in SKILL.md (the path must not depend on the working directory)`);
+  }
+  if (scripts.length > 0 && !files.some(f => f.startsWith('references/') && f.endsWith('.md'))) {
+    errors.push(`${name}: has scripts/ but no references/ file: a role without a shell needs the formula or a precomputed table`);
   }
 
   const evalsFile = path.join(dir, 'evals', 'evals.json');

@@ -1,21 +1,24 @@
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { checkSkillLayout, supportingText } from './helpers/skill-layout.ts';
+import { checkSkillLayout, laidOutSkills, supportingText } from './helpers/skill-layout.ts';
 import { validateRewrittenSkill } from './helpers/skill-contract.ts';
 
 /**
- * Plan 035, the skill layout (pilot: ab-test-setup). The skills are written for the Claude Code skills guidance
+ * Plan 035, the skill layout. The skills are written for the Claude Code skills guidance
  * (https://code.claude.com/docs/en/skills.md): a short SKILL.md, examples and references loaded on demand, scripts
  * that are run and not read, and evals for the with-skill against without-skill comparison. This suite pins the
- * layout for every skill listed in LAID_OUT and proves the pilot's scripts and tables agree with its worked examples.
+ * layout for every skill listed in LAID_OUT.
+ *
+ * LAID_OUT is a directory of empty marker files, one per converted skill (tests/fixtures/laid-out-skills/<skill>),
+ * for the reason the allowlist of templated skills is one (ADR 0040, D1): the restructure is five parallel pull
+ * requests, and one array that all of them extend would conflict on adjacent lines. A skill joins the list in the
+ * commit that converts it, red first; nothing here is edited by a conversion, so the file is identical on every branch.
  */
 
 const SKILLS = path.resolve('registry/skills');
-/** Skills already converted to the layout. The restructure pull requests extend this list, one skill at a time. */
-export const LAID_OUT = ['ab-test-setup'] as const;
+const LAID_OUT = laidOutSkills();
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -30,15 +33,18 @@ function tmpSkill(files: Record<string, string>): string {
   }
   return root;
 }
-const FM = (extra = ''): string => `---\nname: demo\ndescription: "Use when you demo the layout; trigger phrases: demo it, show the layout."\n${extra}---\n`;
+const FM = (extra = ''): string => `---\nname: demo\ndescription: "Use when you demo the layout; trigger phrases: demo it, show the layout. Skip it when there is nothing to demo."\n${extra}---\n`;
 const EVALS = JSON.stringify({ skill_name: 'demo', evals: [
   { id: 1, prompt: 'a realistic prompt long enough to count as one for the demo skill', expected_output: 'a described outcome that is long enough to be a real expectation' },
   { id: 2, prompt: 'another realistic prompt, differently worded, for the demo skill too', expected_output: 'another described outcome that is long enough to be a real expectation' },
 ] });
 
 describe('the layout checker', () => {
-  it('accepts a short SKILL.md with referenced supporting files and evals', () => {
-    const root = tmpSkill({ 'SKILL.md': `${FM()}\n# Demo\nSee [examples/a.md](examples/a.md) and run scripts/run.mjs.\n`, 'examples/a.md': 'x', 'scripts/run.mjs': 'x', 'evals/evals.json': EVALS });
+  it('accepts a short SKILL.md with referenced supporting files, a script run through CLAUDE_SKILL_DIR with its table, and evals', () => {
+    const root = tmpSkill({
+      'SKILL.md': `${FM()}\n# Demo\nSee [examples/a.md](examples/a.md) and [references/t.md](references/t.md); with a shell run node \${CLAUDE_SKILL_DIR}/scripts/run.mjs.\n`,
+      'examples/a.md': 'x', 'references/t.md': 'x', 'scripts/run.mjs': 'x', 'evals/evals.json': EVALS,
+    });
     expect(checkSkillLayout(root, 'demo')).toEqual([]);
   });
 
@@ -66,6 +72,38 @@ describe('the layout checker', () => {
     const none = tmpSkill({ 'SKILL.md': `${FM()}\nbody\n` });
     expect(checkSkillLayout(none, 'demo').join('\n')).toContain('evals/evals.json is missing');
   });
+
+  it('rejects a description that says nothing about when to skip the skill', () => {
+    const root = tmpSkill({ 'SKILL.md': `---\nname: demo\ndescription: "Use when you demo the layout; trigger phrases: demo it."\n---\nbody\n`, 'evals/evals.json': EVALS });
+    expect(checkSkillLayout(root, 'demo').join('\n')).toContain('says nothing about when to skip');
+  });
+
+  it('rejects a script that is not Node, one that SKILL.md does not run through CLAUDE_SKILL_DIR, and scripts with no references/ table for the roles without a shell', () => {
+    const root = tmpSkill({
+      'SKILL.md': `${FM()}\nSee scripts/run.sh and scripts/tool.mjs.\n`,
+      'scripts/run.sh': 'x', 'scripts/tool.mjs': 'x', 'evals/evals.json': EVALS,
+    });
+    const errors = checkSkillLayout(root, 'demo').join('\n');
+    expect(errors).toContain('scripts/run.sh is not a Node .mjs script');
+    expect(errors).toContain('scripts/tool.mjs is not run through ${CLAUDE_SKILL_DIR}');
+    expect(errors).toContain('has scripts/ but no references/ file');
+  });
+});
+
+describe('the list of laid-out skills', () => {
+  it('is one empty marker file per skill, sorted, and ignores dot files and folders', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'laid-out-'));
+    dirs.push(dir);
+    for (const n of ['zeta-skill', 'alpha-skill', '.gitkeep']) fs.writeFileSync(path.join(dir, n), '');
+    fs.mkdirSync(path.join(dir, 'a-folder'));
+    expect(laidOutSkills(dir)).toEqual(['alpha-skill', 'zeta-skill']);
+    expect(laidOutSkills(path.join(dir, 'missing'))).toEqual([]);
+  });
+
+  it('names only skills that exist in the registry', () => {
+    const unknown = LAID_OUT.filter(n => !fs.existsSync(path.join(SKILLS, n, 'SKILL.md')));
+    expect(unknown, `tests/fixtures/laid-out-skills names no such skill: ${unknown.join(', ')}`).toEqual([]);
+  });
 });
 
 describe('every skill converted to the layout', () => {
@@ -78,68 +116,4 @@ describe('every skill converted to the layout', () => {
       expect(fs.existsSync(path.resolve('tests/fixtures/templated-skills', name))).toBe(false);
     });
   }
-});
-
-describe('pilot: ab-test-setup scripts, table and examples agree', () => {
-  const dir = path.join(SKILLS, 'ab-test-setup');
-  const run = (script: string, ...args: string[]): string => execFileSync('node', [path.join(dir, 'scripts', script), ...args], { encoding: 'utf8' });
-
-  it('sample-size.mjs reproduces the worked examples: 9,600 per arm and 14 days; 158,400 and not feasible; 1,200', () => {
-    const a = run('sample-size.mjs', '--baseline', '0.04', '--lift', '0.20', '--daily', '1500');
-    expect(a).toContain('sample per arm: 9600');
-    expect(a).toContain('run 14 days (2 whole weeks)');
-    const b = run('sample-size.mjs', '--baseline', '0.01', '--lift', '0.10', '--daily', '1500');
-    expect(b).toContain('sample per arm: 158400');
-    expect(b).toContain('not worth running');
-    expect(run('sample-size.mjs', '--baseline', '0.25', '--abs', '0.05')).toContain('sample per arm: 1200');
-  });
-
-  it('srm-check.mjs voids 10,300 against 9,700 and passes an even split', () => {
-    expect(run('srm-check.mjs', '10300', '9700')).toContain('chi-square 18.00: invalid');
-    expect(run('srm-check.mjs', '10010', '9990')).toContain(': ok');
-  });
-
-  it('the scripts fail with a usage message and exit code 2 when called without arguments', () => {
-    for (const s of ['sample-size.mjs', 'srm-check.mjs']) {
-      let code = 0;
-      try {
-        run(s);
-      } catch (e) {
-        code = (e as { status: number }).status;
-      }
-      expect(code).toBe(2);
-    }
-  });
-
-  it('every cell of the precomputed table equals the formula', () => {
-    const table = fs.readFileSync(path.join(dir, 'references', 'sample-size-table.md'), 'utf8');
-    const lifts = [0.05, 0.1, 0.2, 0.3, 0.5];
-    let cells = 0;
-    for (const row of table.matchAll(/^\| (\d+)% \| (.+) \|$/gm)) {
-      const p = Number(row[1]) / 100;
-      const values = row[2]!.split(' | ').map(v => Number(v.replace(/,/g, '')));
-      values.forEach((v, i) => {
-        const expected = Math.ceil((16 * p * (1 - p)) / (p * lifts[i]!) ** 2 - 1e-9);
-        expect(v, `${p * 100}% at +${lifts[i]! * 100}%`).toBe(expected);
-        cells += 1;
-      });
-    }
-    expect(cells).toBe(40);
-  });
-
-  it('the worked example and the SKILL.md quote the numbers the scripts print', () => {
-    const example = fs.readFileSync(path.join(dir, 'examples', 'worked-example.md'), 'utf8');
-    for (const n of ['9,600', '158,400', '10.83', '14 days']) expect(example).toContain(n);
-    const skill = fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8');
-    expect(skill).toContain('${CLAUDE_SKILL_DIR}/scripts/sample-size.mjs');
-    expect(skill).toContain('${CLAUDE_SKILL_DIR}/scripts/srm-check.mjs');
-  });
-
-  it('the evals ask for the three situations a skill-less run tends to get wrong: a sizing brief, an SRM, an infeasible test', () => {
-    const evals = JSON.parse(fs.readFileSync(path.join(dir, 'evals', 'evals.json'), 'utf8')).evals as Array<{ expected_output: string }>;
-    const all = evals.map(e => e.expected_output).join('\n');
-    expect(all).toMatch(/9,600/);
-    expect(all).toMatch(/sample-ratio mismatch/i);
-    expect(all).toMatch(/not feasible/i);
-  });
 });
