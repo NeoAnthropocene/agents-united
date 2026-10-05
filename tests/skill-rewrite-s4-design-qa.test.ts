@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { NATIVE_AGENTS_DIR } from './helpers/native-roles.ts';
-import { skillFolderText } from './helpers/skill-layout.ts';
+import { laidOutSkills, skillFolderText } from './helpers/skill-layout.ts';
 
 /**
  * Plan 035 S4: the design, front-end and QA skills (Jamileh, Deniz, Emre) are rewritten with real,
@@ -24,6 +24,17 @@ describe('S4: design, front-end and QA skills are rewritten', () => {
       expect(fs.existsSync(path.resolve('tests/fixtures/templated-skills', name))).toBe(false);
     });
   }
+});
+
+describe('S4: the six are converted to the skill layout (Plan 035, D16)', () => {
+  it('each is listed in tests/fixtures/laid-out-skills, where tests/skill-layout.test.ts holds it to the layout', () => {
+    expect(laidOutSkills()).toEqual(expect.arrayContaining([...SLICE]));
+  });
+
+  it('only accessibility-audit has scripts: design-system-tokens carries tables instead, because its loader has no shell', () => {
+    const withScripts = SLICE.filter(n => fs.existsSync(path.join(SKILLS, n, 'scripts')));
+    expect(withScripts).toEqual(['accessibility-audit']);
+  });
 });
 
 describe('S4: skills no role loaded are wired to their owner (D4)', () => {
