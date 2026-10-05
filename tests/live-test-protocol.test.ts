@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
  */
 
 const DOC = fs.readFileSync(path.resolve('docs/live-test-protocol.md'), 'utf8').replace(/\r\n/g, '\n');
-const SCENARIOS = ['H5', 'H4', 'H3', 'H6', 'H1', 'H2'] as const; // execution order, cheapest ceiling first (H2 also covers H7)
+const SCENARIOS = ['H5', 'H4', 'H3', 'H6', 'H1', 'H8', 'H2'] as const; // execution order, cheapest ceiling first (H2 also covers H7)
 
 function section(id: string): string {
   const start = DOC.indexOf(`\n## ${id} `);
@@ -37,9 +37,9 @@ describe('the live-test protocol: structure', () => {
     });
   }
 
-  it('covers all seven open items, H7 together with H2', () => {
+  it('covers all seven open items, H7 together with H2, and H8 the skill against no skill', () => {
     expect(DOC).toMatch(/H2 and H7/);
-    for (const n of ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7']) expect(DOC).toContain(n);
+    for (const n of ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8']) expect(DOC).toContain(n);
   });
 
   it('runs the scenarios cheapest ceiling first, and the ceilings add up to the stated total', () => {
@@ -51,7 +51,8 @@ describe('the live-test protocol: structure', () => {
 
   it('groups the scenarios into sittings the maintainer can approve one at a time', () => {
     expect(DOC).toMatch(/Sitting A/);
-    expect(DOC).toMatch(/Sitting D/);
+    expect(DOC).toMatch(/Sitting E/);
+    expect(DOC).toMatch(/doubled/i);
     expect(DOC).toMatch(/approve a ceiling per sitting/i);
   });
 });
@@ -117,6 +118,18 @@ describe('the live-test protocol: content that must be exact', () => {
     expect(DOC).toMatch(/test first/i);
     expect(DOC).toMatch(/one pull request per defect cluster/i);
     expect(DOC).toMatch(/host-library\/claude\/observations/);
+  });
+});
+
+describe('the live-test protocol: H8, the skill baseline', () => {
+  it('compares the same prompt with and without the skill, from the skill evals, and says what a fail means for the skill', () => {
+    const s = section('H8');
+    expect(s).toMatch(/evals\/evals\.json/);
+    expect(s).toMatch(/skillOverrides/);
+    expect(s).toMatch(/without/i);
+    expect(s).toMatch(/pass rate/i);
+    expect(s).toMatch(/revise the skill/i);
+    expect(s).toMatch(/Skill` call|description problem/);
   });
 });
 

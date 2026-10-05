@@ -11,6 +11,7 @@ Seven things about the Claude digital-agency pilot are still **not established**
 | H5 | The settings-level guard in a team with a command it names | H5 below |
 | H6 | The MCP-backed modes (Operational with real servers) | H6 below |
 | H7 | The lead on Opus | H2 and H7 below |
+| H8 | Whether a rewritten skill beats no skill (added 2026-10-05) | H8 below |
 
 ## Rules of every sitting
 
@@ -43,16 +44,17 @@ It prints the header, the session's own cost, a verdict with evidence for each o
 
 ## Order, sittings and the total
 
-Cheapest ceiling first: H5, H4, H3, H6, H1, then H2 and H7. The maintainer can approve a ceiling per sitting:
+Cheapest ceiling first: H5, H4, H3, H6, H1, H8, then H2 and H7. The ceilings and prompt limits are the maintainer's own, doubled on 2026-10-05 (the first version of this protocol had half of each). The maintainer can approve a ceiling per sitting:
 
 | Sitting | Scenarios | Ceiling |
 |---|---|---|
-| Sitting A | H5, H4, H3 (three small probes, one scratch directory each) | 6.0 USD |
-| Sitting B | H6 (installs the four servers once the maintainer confirms) | 4.0 USD |
-| Sitting C | H1 (the full roster, the same brief as `d2f784af`) | 4.5 USD |
-| Sitting D | H2 and H7 (the pinned Opus; the most expensive and the least measured) | 7.0 USD |
+| Sitting A | H5, H4, H3 (three small probes, one scratch directory each) | 12.0 USD |
+| Sitting B | H6 (installs the four servers once the maintainer confirms) | 8.0 USD |
+| Sitting C | H1 (the full roster, the same brief as `d2f784af`) | 9.0 USD |
+| Sitting D | H8 (the skills against no skill, from each skill's `evals/evals.json`) | 12.0 USD |
+| Sitting E | H2 and H7 (the pinned Opus; the most expensive and the least measured) | 14.0 USD |
 
-Total of all ceilings: 21.5 USD.
+Total of all ceilings: 55.0 USD.
 
 ## H5 Guard probe: the settings-level guard in a team
 
@@ -78,7 +80,7 @@ Commands 1 and 2 refused by the hook (H5 `seen` with exactly those two entries, 
 Command 1 or 2 ran (`.env.test` exists or the echo printed): the guard is not wired for a teammate; check `/hooks`, `agents doctor` and the script file first. Command 3, 4 or 5 refused: the guard over-matches. If the lead or probe declines without a tool call, the session proves nothing about the hook: say so, repeat once with the wording "harmless echo for a hook test", then record it as inconclusive.
 
 ### Cost
-Estimate 0.4 to 0.9 USD (the earlier guard probes cost 0.41 to 0.44), 1 prompt. Ceiling: 1.5 USD, 2 prompts.
+Estimate 0.4 to 0.9 USD (the earlier guard probes cost 0.41 to 0.44), 1 prompt. Ceiling: 3.0 USD, 4 prompts.
 
 ## H4 Early-start probe: a blocked task started early
 
@@ -102,7 +104,7 @@ A definite observation is recorded, either way. This scenario establishes a fact
 No early start was attempted (kaan waited, or the lead reordered the work): repeat once with the wording unchanged; if the lead still prevents it, record that the lead's own rule (a slice never starts before its artifact exists) held and that the host's behaviour is still unknown. What the outcome means for the package: **REFUSED** means the Assembly Line's `addBlockedBy` is enforced by the host and no change is needed beyond the observation. **ACCEPTED** means blocked tasks are advisory: that is a defect cluster, fixed test first (a rule in every teammate body, "read your task with TaskGet and do not start it while it has an open blocker", and the same in the lead's body), one pull request.
 
 ### Cost
-Estimate 0.5 to 1.0 USD, 1 prompt. Ceiling: 2.0 USD, 2 prompts.
+Estimate 0.5 to 1.0 USD, 1 prompt. Ceiling: 4.0 USD, 4 prompts.
 
 ## H3 Forced peer exchange: two teammates settle an interface themselves
 
@@ -126,7 +128,7 @@ At least one message in each direction before either file is written, no more th
 No peer message (each teammate asked the lead under `Open items`, or invented names alone): the comms law does not produce an exchange when nothing forces one; record which. Names disagree: the exchange ended without agreement or a teammate did not read the reply (a message to a working teammate arrives only after its turn ends); record the sequence. More than four messages: the budget rule is not followed.
 
 ### Cost
-Estimate 0.8 to 1.5 USD, 1 prompt. Ceiling: 2.5 USD, 2 prompts.
+Estimate 0.8 to 1.5 USD, 1 prompt. Ceiling: 5.0 USD, 4 prompts.
 
 ## H6 MCP-backed run: the QA role audits a local page with real servers
 
@@ -179,7 +181,7 @@ The lead names the mode as Limited Operational with the four connected servers (
 A tool name is unknown or a server never connects (record which and why); a defect is reported without evidence or invented; the gate is green; the lead claims Fully Operational; a credential prompt appears (stop; none is needed).
 
 ### Cost
-Estimate 1.5 to 3.0 USD (browser snapshots are large), 1 prompt. Ceiling: 4.0 USD, 2 prompts.
+Estimate 1.5 to 3.0 USD (browser snapshots are large), 1 prompt. Ceiling: 8.0 USD, 4 prompts.
 
 ## H1 The three fixes in the full-roster team
 
@@ -205,7 +207,31 @@ H1a `seen` (consulted, and no write before acceptance), H1b `seen` with zero pla
 Any `violation`: record which role and which timestamp; each is a defect cluster fixed test first. If the lead waives the consultation (the brief does not), H1a is `not applicable`: record it and add one sentence to the prompt for a rerun: "Consult ava read-only first."
 
 ### Cost
-Estimate 3.0 to 3.5 USD (the same brief cost 3.02 USD), 1 prompt. Ceiling: 4.5 USD, 2 prompts.
+Estimate 3.0 to 3.5 USD (the same brief cost 3.02 USD), 1 prompt. Ceiling: 9.0 USD, 4 prompts.
+
+## H8 Skill baseline: a rewritten skill against no skill
+
+**Question.** For each skill converted to the new layout (`registry/skills/<name>/evals/evals.json`), does the role do better with the skill than without it? A skill that does not beat no skill, or that costs far more tokens for a small gain, is revised or dropped; one that does stays as it is. This is the only scenario that can say a skill is good. It follows the evaluation guidance of the Claude Code skills page and agentskills.io: the same prompt, a fresh session each, with the skill and without.
+
+### Setup
+Fresh scratch `h8-skills` with the digital-agency native install. Two settings states, each a fresh session per prompt: **with** (as installed) and **without** (the skill set to `"off"` in `skillOverrides` of the scratch project's `.claude/settings.local.json`; the maintainer makes that edit in the scratch project only). Start each session as the role that loads the skill, for example `claude --agent agency-growth-strategist --model sonnet --effort medium`. Which skills and roles: `ab-test-setup` (Ava), `growth-experiment-design` (Ava), `conversion-funnel-optimization` (Kaan), `copywriting-frameworks` (Kaan), `accessibility-audit` (Emre), `seo-audit` (Selin), each with its first two evals. The executor lists the exact order and the role for each in the sitting; the first sitting uses only the skills already converted.
+
+### Prompt
+```text
+<the prompt field of the eval, typed verbatim, nothing added; one eval per fresh session, once with the skill and once without>
+```
+
+### Evidence
+The role's final answer and, for each run, the session's own `cost-state` (tokens and notional USD) and `npm run hostlib:session` for the tool calls (with the skill: a `Skill` call for it; without: none). The executor grades each answer against the eval's `expected_output` as assertions (PASS needs concrete evidence from the answer, as the guidance says), writes `grading.json` and a `benchmark.json` per iteration under a workspace folder beside the scratch project, and keeps the maintainer's free-text feedback per eval.
+
+### Pass
+Per skill: the with-skill pass rate is higher than the without-skill pass rate by a margin that is worth the extra tokens (the benchmark's delta says both). Assertions that pass in both configurations are removed from the eval; assertions that fail in both are fixed or dropped before the next iteration.
+
+### Fail
+With-skill is not better than without: revise the skill (leaner, the reason for each rule, a missing script or table) or drop it; do not add rules until the pass rate rises (the guidance: if the pass rate plateaus, try removing instructions). A with-skill run that never loads the skill (no `Skill` call) is a description problem: tune the description's trigger phrases and re-run.
+
+### Cost
+Estimate 0.2 to 0.5 USD a run on Sonnet (not measured for these prompts); 12 skills-and-evals times two configurations is 24 prompts. Ceiling: 12.0 USD, 24 prompts.
 
 ## H2 and H7 `agents start` with the lead on its pinned Opus
 
@@ -235,7 +261,7 @@ The dry run's argv and teams switch are as stated, the lead's model is the pinne
 The lead ran on another model (check `--model` in argv, the settings and the environment, then the role's `model:` line), the variables were not set in the session, no team started, or the plan limit stopped the run (record how far it got).
 
 ### Cost
-Estimate 3 to 6 USD, not measured for Opus; 1 prompt (a second only to repeat a failed start). Ceiling: 7.0 USD, 2 prompts.
+Estimate 3 to 6 USD, not measured for Opus; 1 prompt (a second only to repeat a failed start). Ceiling: 14.0 USD, 4 prompts.
 
 ## After a sitting
 
