@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { analyse, loadSession, parseTeammateMessages, renderReport, resolveSessionFile, trimRecord, trimSession } from '../scripts/hostlib/session-report.ts';
 import type { Analysis } from '../scripts/hostlib/session-report.ts';
 
@@ -157,6 +157,18 @@ describe('the three Sitting A sessions of Plan 035 M3 (Claude Code 2.1.289, 2026
     expect(f.verdict).toBe('violation');
     expect(f.evidence.join('\n')).toMatch(/ava: wrote 1 file\(s\) with no shell, re-read before reporting all but notes\.md/);
     expect(f.evidence.join('\n')).toMatch(/kaan: wrote 1 file\(s\) with no shell, re-read before reporting all but notes\.md/);
+  });
+
+  it('names a written file by its last path segment on any platform (the records hold Windows paths and CI reads them on Linux, where path.basename does not split on a backslash)', () => {
+    const session = loadSession(EARLY); // loaded first: loading wants this platform's own path.basename
+    const posixBasename = vi.spyOn(path, 'basename').mockImplementation(path.posix.basename);
+    try {
+      const f = finding(analyse(session), 'H1c');
+      expect(f.evidence.join('\n')).toMatch(/ava: wrote 1 file\(s\) with no shell, re-read before reporting all but notes\.md$/m);
+      expect(f.evidence.join('\n')).not.toMatch(/\\/);
+    } finally {
+      posixBasename.mockRestore();
+    }
   });
 
   it('H3 (fec45100): the two proposals crossed, three messages in one pair, one from Deniz and two from Kaan', () => {

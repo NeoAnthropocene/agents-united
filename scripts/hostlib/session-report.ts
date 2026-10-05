@@ -238,6 +238,9 @@ export function resolveSessionFile(arg: string, projectDir?: string): string {
 const norm = (p: string): string => p.replace(/\\/g, '/').toLowerCase();
 const short = (text: string, n = 140): string => (text.length > n ? `${text.slice(0, n)}...` : text).replace(/\s+/g, ' ');
 const filePathOf = (call: ToolCall): string => str(call.input.file_path) || str(call.input.notebook_path) || str(call.input.path);
+// The last segment of a recorded path, whichever separator it uses: the records hold the paths of the machine that ran the session (Windows here),
+// and `path.basename` splits only on this platform's separator, so on Linux a Windows path came back whole.
+const baseName = (p: string): string => p.replace(/\\/g, '/').split('/').pop() ?? p;
 
 function jsonOf(text: string): Json | undefined {
   const t = text.trim();
@@ -339,7 +342,7 @@ function rereadFinding(session: Session): Finding {
     const missed: string[] = [];
     for (const w of writes) {
       const p = norm(filePathOf(w));
-      if (!a.calls.some(c => c.name === 'Read' && norm(filePathOf(c)) === p && c.at >= w.at)) missed.push(path.basename(filePathOf(w)));
+      if (!a.calls.some(c => c.name === 'Read' && norm(filePathOf(c)) === p && c.at >= w.at)) missed.push(baseName(filePathOf(w)));
     }
     const unique = [...new Set(missed)];
     if (unique.length > 0) violation = true;
