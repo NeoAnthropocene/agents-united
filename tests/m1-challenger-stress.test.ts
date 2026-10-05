@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import path from 'node:path';
 import fs from 'fs-extra';
 import YAML from 'yaml';
+import { laidOutSkills, skillFolderText } from './helpers/skill-layout.ts';
 
 // Helper validator for Skills
 function validateSkill(content: string, expectedName: string) {
@@ -83,6 +84,13 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
   const rootDir = process.cwd();
   const agentsDir = path.join(rootDir, 'registry/agents');
   const skillsDir = path.join(rootDir, 'registry/skills');
+
+  // Plan 035 (D16): a skill laid out for the Claude Code skills guidance keeps SKILL.md at 90 lines at most and moves its
+  // exemplars and long material to examples/ and references/. The depth checks below are about what the skill carries, not
+  // where it sits, so for a laid-out skill they read its whole folder: SKILL.md followed by every supporting markdown file.
+  const laidOut = new Set(laidOutSkills());
+  const readSkill = async (skillName: string): Promise<string> =>
+    laidOut.has(skillName) ? skillFolderText(skillsDir, skillName) : fs.readFile(path.join(skillsDir, skillName, 'SKILL.md'), 'utf8');
 
   const m1Agent = 'subagent-marketing-creative-designer.md';
   const m1Skills = [
@@ -178,7 +186,7 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
       const exists = await fs.pathExists(skillFile);
       expect(exists, `SKILL.md must exist in ${skillName}`).toBe(true);
 
-      const content = await fs.readFile(skillFile, 'utf8');
+      const content = await readSkill(skillName);
       const result = validateSkill(content, skillName);
 
       expect(result.valid, `Errors in ${skillName}: ${result.errors.join(', ')}`).toBe(true);
@@ -186,8 +194,7 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
     });
 
     it.each(m1Skills)('skill %s should contain structured code exemplars with valid language tags', async (skillName) => {
-      const skillFile = path.join(skillsDir, skillName, 'SKILL.md');
-      const content = await fs.readFile(skillFile, 'utf8');
+      const content = await readSkill(skillName);
       const codeBlocks = content.match(/```[a-z0-9_-]+\r?\n[\s\S]*?```/gi);
       expect(codeBlocks).not.toBeNull();
       expect(codeBlocks!.length).toBeGreaterThanOrEqual(1);
@@ -222,8 +229,7 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
   describe('4. Adversarial & Negative Boundary Tests', () => {
     it('should confirm all 9 skills have zero placeholder tokens (TODO, TBD, FIXME, lorem ipsum)', async () => {
       for (const skillName of m1Skills) {
-        const skillFile = path.join(skillsDir, skillName, 'SKILL.md');
-        const content = await fs.readFile(skillFile, 'utf8');
+        const content = await readSkill(skillName);
         expect(content).not.toMatch(/\bTODO\b/i);
         expect(content).not.toMatch(/\bTBD\b/i);
         expect(content).not.toMatch(/\bFIXME\b/i);
@@ -260,8 +266,7 @@ describe('Milestone 1 Adversarial Empirical Stress Test Suite (Isolated)', () =>
 
     it('should confirm all 9 skills have line counts >= 150 lines for deep production readiness', async () => {
       for (const skillName of m1Skills) {
-        const skillFile = path.join(skillsDir, skillName, 'SKILL.md');
-        const content = await fs.readFile(skillFile, 'utf8');
+        const content = await readSkill(skillName);
         const lineCount = content.split('\n').length;
         // Plan 035 (ADR 0040): line count is not depth. The 150-line floor stays for skills still at 2.0.0;
         // a rewritten skill (3.0.0) is held to the rewrite contract instead (tests/skill-rewrite-contract.test.ts).
