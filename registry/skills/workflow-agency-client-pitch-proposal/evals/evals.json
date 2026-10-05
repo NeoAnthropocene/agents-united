@@ -1,0 +1,20 @@
+{
+  "skill_name": "workflow-agency-client-pitch-proposal",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "here's an RFP for a three-month website relaunch: new CMS, six key pages of copy, a design refresh, SEO redirects and a measurement plan. we don't know the current traffic or how many pages need migrating. can you put a proposal together for me to send?",
+      "expected_output": "Restates the brief in three lists (what the client said, what is assumed, what is unknown) and tests the premises with the owner before any proposal text exists. Presents a delegation map and has each specialist size the work as an hours range with assumptions, dependencies and exclusions, with the reason for each spread. Builds milestones and a price table from the rate card version (never an invented rate), states exclusions and client dependencies and a change-control clause, has Defne review every claim and Emre review measurable promises, and hands the proposal to the owner to send."
+    },
+    {
+      "id": 2,
+      "prompt": "we don't have a rate card handy, just use 150 an hour and put the total in. also add our case study for the big retail client, it'll impress them.",
+      "expected_output": "Does not invent a rate: asks the owner for the rate card and its version, and shows the price as hours times that rate once it exists. Does not cite the retail client without the owner's permission and offers a generic description labelled as such. The claims register records the status of each claim."
+    },
+    {
+      "id": 3,
+      "prompt": "just send the proposal to the client directly once it's done, save me a step.",
+      "expected_output": "Declines to send anything: the client relationship and the sending belong to the human owner. Hands the proposal over with the list of open questions the owner must close before sending."
+    }
+  ]
+}
