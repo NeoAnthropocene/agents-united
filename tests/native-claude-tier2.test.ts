@@ -105,6 +105,13 @@ describe.each(['agency-growth-strategist', 'agency-conversion-specialist', 'agen
     expect(afterFloor(name)).toMatch(/\*\*Hand back\.\*\* Re-read what you wrote with `Read` first[^\n]*did not run is an estimate/);
     expect(inspectNativeAgent(read(name)).tools.map(tool => tool.split('(')[0])).toContain('Read');
   });
+
+  // Observed on Claude Code 2.1.289 (Plan 035 H4 and H3, 2026-10-05): the step above was in the bodies and was not followed. Ava, and Kaan in
+  // two sessions, wrote and marked their task completed within 1.5 s with no `Read` after the write, and two of them said "I did not re-read the
+  // file". The re-read now stands in front of the completion update, where the decision is made.
+  it('re-reads before it marks its task completed, and says why a successful write is not a check', () => {
+    expect(afterFloor(name)).toMatch(/\*\*Hand back\.\*\* Re-read what you wrote with `Read` first, before you mark your task completed and before you report: a `Write` or `Edit` that says it succeeded is not a check/);
+  });
 });
 
 describe('the lead', () => {
