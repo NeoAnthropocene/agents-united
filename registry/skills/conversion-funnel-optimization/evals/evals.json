@@ -1,0 +1,20 @@
+{
+  "skill_name": "conversion-funnel-optimization",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "our course signup funnel for the last 28 days: landing page 18,400 visitors, pricing page 7,360, checkout started 1,470, paid 590. mobile seems way worse than desktop. can you audit it and tell me what to fix first? there's no budget for a redesign.",
+      "expected_output": "Computes step and cumulative conversion (40.0, 20.0 and 40.1 percent; 3.2 percent overall), names checkout start as the leak against a benchmark whose source and date are given or flagged as missing, and segments by device and source before recommending anything. Findings are graded S1 to S4 with a location, an evidence item, a principle and a buildable fix; S1 and S2 are labelled fixes, not experiments. States which flows were walked at which widths, or that none were. Hands layout to Jamileh, build and events to Deniz, speed findings to Selin and the tests to ab-test-setup."
+    },
+    {
+      "id": 2,
+      "prompt": "Checkout start from our pricing page is 20% overall but only 9% for paid social and 27% for organic. the ad says 'free first lesson' and the pricing page only shows the paid plan. what's wrong and what do I change?",
+      "expected_output": "Identifies the mismatch between the ad's promise and the pricing page as a relevance finding specific to the paid-social segment, grades it S2 and labels it a fix to ship rather than an experiment. Names the element and its location, the change (a free-lesson link above the plan) and the metric it should move, cites the ad text against the page copy as evidence, and does not average the segments or recommend a redesign."
+    },
+    {
+      "id": 3,
+      "prompt": "we only get about 200 visitors a week to our booking flow and conversion feels low. can you run a full CRO audit and set up A/B tests for everything you find?",
+      "expected_output": "Says that fewer than about 300 visitors a week cannot support tests and that anything run would be noise, offers a heuristic review and labels it as one, and lists the data and instrumentation still missing as gaps with an owner. Does not promise measured results, does not write test briefs for every finding, and says whether the real problem could be the offer rather than the funnel."
+    }
+  ]
+}
