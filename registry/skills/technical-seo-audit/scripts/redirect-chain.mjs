@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Reads the output of `curl -sI -L <url>` (standard input or a file) and reports the redirect hops, a chain, a loop, a redirect
 // that ends in an error, and a noindex on the final response.
 // Usage: curl -sI -L https://example.com/page | node redirect-chain.mjs      (PowerShell: curl.exe -sI -L ... | node redirect-chain.mjs)

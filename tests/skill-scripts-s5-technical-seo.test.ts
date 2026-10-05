@@ -15,6 +15,10 @@ const chain = (input: string, ...args: string[]) => spawnSync('node', [CHAIN, ..
 const BLOCK = (status: string, headers: string[] = []): string => `HTTP/2 ${status}\r\n${headers.join('\r\n')}${headers.length > 0 ? '\r\n' : ''}\r\n`;
 
 describe('technical-seo-audit redirect-chain.mjs', () => {
+  it('has no shebang line: git writes CRLF on a Windows checkout and vitest cannot import a script whose first line ends in one (the script is run as `node <path>`, so it needs none)', () => {
+    expect(fs.readFileSync(CHAIN, 'utf8').startsWith('#!')).toBe(false);
+  });
+
   it('reads the output of curl -sI -L: two hops, then a noindex on the final page, is a chain and a finding', () => {
     const out = BLOCK('301', ['location: https://example.com/docs/webhooks/']) + BLOCK('301', ['location: https://www.example.com/docs/webhooks/']) + BLOCK('200', ['x-robots-tag: noindex']);
     const r = chain(out);

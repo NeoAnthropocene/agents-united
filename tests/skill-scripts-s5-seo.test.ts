@@ -20,6 +20,10 @@ const loadHealth = async (): Promise<HealthModule> => (await import(pathToFileUR
 const health = (...args: string[]) => spawnSync('node', [HEALTH, ...args], { encoding: 'utf8' });
 
 describe('seo-audit health-score.mjs', () => {
+  it('has no shebang line: git writes CRLF on a Windows checkout and vitest cannot import a script whose first line ends in one (the script is run as `node <path>`, so it needs none)', () => {
+    expect(fs.readFileSync(HEALTH, 'utf8').startsWith('#!')).toBe(false);
+  });
+
   it('applies the rule: 100 minus 15 per critical, 7 per major, 2 per minor, never below 0', async () => {
     const { healthScore } = await loadHealth();
     expect(healthScore({ critical: 1, major: 2, minor: 1 })).toBe(69);

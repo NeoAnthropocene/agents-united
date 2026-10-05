@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Health score of an SEO audit by the agency rule: start at 100, subtract 15 per critical finding, 7 per major, 2 per minor, floor 0.
 // Usage: node health-score.mjs --critical <n> --major <n> --minor <n>
 //        node health-score.mjs <findings.md>   counts the table rows whose severity cell is exactly critical, major or minor
