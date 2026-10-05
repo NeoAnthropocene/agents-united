@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Sample-ratio mismatch check for a two-arm test (chi-square, 1 degree of freedom).
 // Usage: node srm-check.mjs <arm A count> <arm B count> [--ratio 0.5]
 // chi-square >= 10.83 means p < 0.001: the assignment is broken and the result must not be read.

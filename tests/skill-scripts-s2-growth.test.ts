@@ -15,6 +15,12 @@ describe('ab-test-setup scripts, table and examples agree', () => {
   const dir = path.join(SKILLS, 'ab-test-setup');
   const run = (script: string, ...args: string[]): string => execFileSync('node', [path.join(dir, 'scripts', script), ...args], { encoding: 'utf8' });
 
+  it('the scripts have no shebang line: git writes CRLF on a Windows checkout and vitest cannot import a script whose first line ends in one (they are run as `node <path>`, so they need none)', () => {
+    for (const s of ['sample-size.mjs', 'srm-check.mjs']) {
+      expect(fs.readFileSync(path.join(dir, 'scripts', s), 'utf8').startsWith('#!'), s).toBe(false);
+    }
+  });
+
   it('sample-size.mjs reproduces the worked examples: 9,600 per arm and 14 days; 158,400 and not feasible; 1,200', () => {
     const a = run('sample-size.mjs', '--baseline', '0.04', '--lift', '0.20', '--daily', '1500');
     expect(a).toContain('sample per arm: 9600');

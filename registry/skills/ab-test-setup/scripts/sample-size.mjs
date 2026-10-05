@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Sample size and run length for a two-arm test on a conversion rate.
 // n per arm = 16 * p * (1 - p) / d^2  (5% significance, 80% power, d = absolute difference).
 // Usage: node sample-size.mjs --baseline 0.04 (--lift 0.20 | --abs 0.008) [--daily 1500]
