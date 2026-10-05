@@ -1,0 +1,20 @@
+{
+  "skill_name": "onboarding-cro",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we have a team task tool. last month 5,000 signed up, 4,100 verified their email, 3,000 finished our 6-question onboarding survey, 1,700 created a project and 1,300 added a task. what's wrong with our onboarding and what should we change first?",
+      "expected_output": "Defines activation as an event (created a project and added a task within 24 hours, 26 percent), finds the survey as the biggest stall (1,100 lost, 27 percent of those who verified) and moves it after the first task as one or two questions at a time. Skips verification until the first invite, puts a sample project in the empty state, and adds a checklist only if a stall remains. Orders the changes remove before add, gives the event list to Deniz, and writes a brief for ab-test-setup with a primary metric, a guardrail and arithmetic that checks out (about 860 per arm for a 6-point lift). Hand-offs name Jamileh, Deniz, Emre and Defne."
+    },
+    {
+      "id": 2,
+      "prompt": "we're planning a 7-step product tour with tooltips and confetti when someone finishes each step. good idea for our onboarding?",
+      "expected_output": "Pushes back: a tour before the user has done anything delays value, a checklist is added only where stalls remain and each item must lead to activation, and confetti belongs on real progress only. Asks for the activation definition, a stall map with counts and the time to value first, and says remove before add."
+    },
+    {
+      "id": 3,
+      "prompt": "we sell an enterprise analytics platform and a customer success manager walks every new customer through setup. can you optimise our onboarding the same way you would for a self-serve app?",
+      "expected_output": "Says the method changes for sales-led onboarding, treats the buyer and the user as two flows and says which one it is auditing, and does not apply the self-serve activation rule of thumb without labelling it. Asks for the activation event first, marks every unknown as unknown, and names Deniz and Emre for the missing instrumentation."
+    }
+  ]
+}
