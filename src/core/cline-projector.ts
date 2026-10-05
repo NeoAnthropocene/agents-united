@@ -23,6 +23,7 @@ import type {
   ProjectionKind,
   ResolvedAssets,
 } from './types.js';
+import { isMaintainerOnlySkillPath } from './skill-folder.js';
 
 export interface PlannedClineArtifact {
   kind: ProjectionKind;
@@ -456,6 +457,7 @@ ${workflowSection}${addonSection}
         for (const entry of entries) {
           if (entry.isFile()) {
             const entryRel = path.relative(skillSrcDir, path.join(entry.parentPath || skillSrcDir, entry.name)).replace(/\\/g, '/');
+            if (isMaintainerOnlySkillPath(entryRel)) continue; // `evals/` is for the maintainers, not the install
             const canonicalRel = `skills/${skillName}/${entryRel}`;
             const targetRel = `${baseDir}/skills/${skillName}/${entryRel}`.replace(/\\/g, '/');
             const fullSrcPath = path.join(skillSrcDir, entryRel);

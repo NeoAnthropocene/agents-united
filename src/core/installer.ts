@@ -15,6 +15,7 @@ import { ANTIGRAVITY_MCP_FILE, describeMcpOutcomes, loadMcpCatalog, syncAntigrav
 import { declaredServerNames } from './mcp-declarations.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { listNativeWorkflows } from './native-package.js';
+import { isMaintainerOnlySkillPath } from './skill-folder.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
 import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
 import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
@@ -87,7 +88,8 @@ export class InstallEngine {
     return options.scope || 'project';
   }
 
-  private async deployFile(src: string, dest: string, method: InstallMethod, force?: boolean): Promise<'symlink' | 'copy'> {
+  /** `filter` decides, for a copy only, which source paths are copied (a link is the whole source folder and cannot leave anything out). */
+  private async deployFile(src: string, dest: string, method: InstallMethod, force?: boolean, filter?: (srcPath: string) => boolean): Promise<'symlink' | 'copy'> {
     await fs.ensureDir(path.dirname(dest));
 
     if (await fs.pathExists(dest) || await fs.pathExists(dest).catch(() => false)) {
@@ -104,14 +106,14 @@ export class InstallEngine {
         return 'symlink';
       } catch {
         // Fallback to copy if OS restricts symlinks
-        await fs.copy(src, dest, { overwrite: true });
+        await fs.copy(src, dest, { overwrite: true, filter });
         return 'copy';
       }
     }
 
     // A copy never goes through a link: a link here points into the registry, so copying onto it would write the registry (fs-extra refuses it as the same file).
     if ((await fs.lstat(dest).catch(() => null))?.isSymbolicLink()) await fs.unlink(dest);
-    await fs.copy(src, dest, { overwrite: true });
+    await fs.copy(src, dest, { overwrite: true, filter });
     return 'copy';
   }
 
@@ -1498,7 +1500,8 @@ private toPosix(p: string): string {
         const dest = path.join(subPaths.skillsDir, skillName);
 
         await this.assertSkillCopyUnmodified(targetDir, dest, lockfile, options.force);
-        const actualMethod = await this.deployFile(src, dest, skillMethod, options.force);
+        // Plan 035 — a skill's `evals/` is for the maintainers: a copy leaves it out, and the records below skip it (a link still shows the whole folder).
+        const actualMethod = await this.deployFile(src, dest, skillMethod, options.force, from => !isMaintainerOnlySkillPath(path.relative(src, from)));
         const skillFile = path.join(src, 'SKILL.md');
         if (await fs.pathExists(skillFile)) {
           const hash = await this.calculateHash(skillFile);
@@ -1526,6 +1529,7 @@ private toPosix(p: string): string {
           const dir = sidecarStack.pop() as string;
           for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
             const abs = path.join(dir, entry.name);
+            if (isMaintainerOnlySkillPath(path.relative(dest, abs))) continue;
             if (entry.isDirectory()) {
               sidecarStack.push(abs);
               continue;

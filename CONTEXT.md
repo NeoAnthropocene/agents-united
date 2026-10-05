@@ -18,6 +18,10 @@ _Avoid_: Child agent, slave agent, helper script
 A modular capability folder containing a `SKILL.md` file with progressive disclosure frontmatter (`name`, `description`, `metadata: { author, version, source, license }`), execution runbooks, code exemplars, and error recovery procedures.
 _Avoid_: Action, toolset, capability-pack
 
+**Maintainer-only Skill Folder**:
+A folder directly under a skill that belongs to the maintainers and is never installed: `evals/`, the prompts a skill is tried with (Plan 035). No install lane copies it (the Claude projector, the Cline plugin copy, the canonical store's copy) and the lockfile never records it. A link shows the whole registry folder, so Symlink Mode still exposes it; `references/evals/` is an ordinary folder and ships. Defined once, in `src/core/skill-folder.ts`.
+_Avoid_: Assuming every subfolder of a skill reaches the user's project
+
 **Workflow Skill** (formerly Workflow):
 A multi-step procedural runbook or interactive orchestration skill (`skills/workflow-<task>/SKILL.md`) defining deterministic phase transitions, Mermaid execution flowcharts, verification gates, human review checkpoints, and automated rollback protocols. Conforms to the open Agent Skills standard (`agentskills.io`) while retaining `/workflow-<task>` slash command projection across host environments (ADR 0016).
 _Avoid_: Standalone legacy workflow markdown file, pipeline script, recipe
@@ -499,7 +503,7 @@ The target visibility and location where assets are installed:
 **Installation Method**:
 The mechanism used to link or replicate files into target directories:
 - **Symlink Mode** (`-s`, `--symlink`, Recommended): Creates symbolic links (or directory junctions on Windows) to a canonical registry cache. Serves as a single source of truth; package updates reflect instantly without file duplication. With the Antigravity **Native Lane** on, skills are copied instead (ADR 0033), because agy 1.2.16 did not list a skill folder that is a link.
-- **Copy Mode** (`--copy`): Creates independent physical copies of all asset files in the destination directory, enabling local modifications and offline isolated edits.
+- **Copy Mode** (`--copy`): Creates independent physical copies of all asset files in the destination directory, enabling local modifications and offline isolated edits. A skill's **Maintainer-only Skill Folder** (`evals/`) is the one thing it leaves out.
 
 **Multi-Agent Target Host**:
 The specific agent environments targeted for deployment:
