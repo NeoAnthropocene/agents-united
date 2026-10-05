@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { NATIVE_AGENTS_DIR } from './helpers/native-roles.ts';
-import { skillFolderText } from './helpers/skill-layout.ts';
+import { laidOutSkills, skillFolderText } from './helpers/skill-layout.ts';
 
 /**
  * Plan 035 S2: the growth and conversion skills (Ava and Kaan) are rewritten with real, role-specific
@@ -26,6 +26,10 @@ describe('S2: growth and conversion skills are rewritten', () => {
       expect(fs.existsSync(path.resolve('tests/fixtures/templated-skills', name))).toBe(false);
     });
   }
+
+  it('all six are converted to the skill layout: each is listed in tests/fixtures/laid-out-skills, where tests/skill-layout.test.ts holds it to the layout', () => {
+    expect(laidOutSkills()).toEqual(expect.arrayContaining([...SLICE]));
+  });
 
   it('Ava loads her four skills and Kaan loads his, by name, in their role tables', () => {
     const ava = role('agency-growth-strategist');
