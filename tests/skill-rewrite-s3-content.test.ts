@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { NATIVE_AGENTS_DIR } from './helpers/native-roles.ts';
-import { skillFolderText } from './helpers/skill-layout.ts';
+import { laidOutSkills, skillFolderText } from './helpers/skill-layout.ts';
 
 /**
  * Plan 035 S3: the content, copy and campaign skills (Yavuz, Jale, Jamileh) are rewritten with real,
@@ -25,6 +25,10 @@ describe('S3: content, copy and campaign skills are rewritten', () => {
       expect(fs.existsSync(path.resolve('tests/fixtures/templated-skills', name))).toBe(false);
     });
   }
+
+  it('all seven are converted to the skill layout: each is listed in tests/fixtures/laid-out-skills, where tests/skill-layout.test.ts holds it to the layout', () => {
+    expect(laidOutSkills()).toEqual(expect.arrayContaining([...SLICE]));
+  });
 
   it('the roles still load them by name', () => {
     const yavuz = role('agency-content-strategist');
