@@ -1,0 +1,20 @@
+{
+  "skill_name": "design-system-tokens",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we have a brand blue #1D4ED8, a warm amber #F59E0B and we use Inter. we need a design-tokens.json the devs can use for our marketing site and product, with dark mode. can you set it up and tell me which colour pairs are safe for text?",
+      "expected_output": "A design-tokens.json in three tiers (primitives, semantic, component only where needed) in the community token format with aliases and no raw hex in component tokens, spacing on a 4 px base and a type scale from a named ratio. A contrast table that records a ratio for every text and background pair: blue on white about 6.70 passes, amber on white about 2.15 fails as text so amber is a fill with a dark label and a darker amber step carries text. The brand colours are not altered, derived steps are flagged, dark mode is a remapping with its pairs re-checked, and the hand-offs name Deniz and Emre."
+    },
+    {
+      "id": 2,
+      "prompt": "our brand grey #9CA3AF looks nice for muted text but accessibility keeps flagging it. can you just tweak the brand grey a bit so it passes?",
+      "expected_output": "Does not alter the brand colour to pass a test. Records the ratio (about 2.5 to 1 on white, so it fails as normal text), derives a darker step beside it and says which step carries text, keeps the brand grey for fills or large non-text uses where it is allowed, and documents the exception for Deniz."
+    },
+    {
+      "id": 3,
+      "prompt": "we already have a tailwind theme with a few hundred hardcoded colours. just replace it with a clean token set from scratch, ok?",
+      "expected_output": "Audits the existing set instead of replacing it, since the client already has tokens, and proposes an old-to-new mapping table. Keeps the old names until Deniz confirms the migration, marks values that cannot be tokens as open questions without inventing tokens, and produces the migration list."
+    }
+  ]
+}
