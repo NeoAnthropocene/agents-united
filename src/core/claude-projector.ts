@@ -19,6 +19,7 @@ import type { ClaudeDialect } from './types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { CLAUDE_FIELD_POLICY, validateProjectionOverlays } from './overlays.js';
 import { nativeHookSource, nativeRoleSource, nativeWorkflowSource, renderNativeHook, renderNativeRole, renderNativeWorkflow } from './native-package.js';
+import { isMaintainerOnlySkillPath } from './skill-folder.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
 export interface ClaudeRenderResult {
@@ -953,13 +954,14 @@ export class ClaudeProjector {
   }
 
   /**
-   * Every file under a skill folder, as sorted POSIX-style paths relative to it
+   * Every installable file under a skill folder (not the maintainer-only `evals/`), as sorted POSIX-style paths relative to it
    * (deterministic across platforms, so projection plans and lockfile keys never differ).
    */
   private static async listSkillResources(skillDir: string, prefix = ''): Promise<string[]> {
     const out: string[] = [];
     for (const entry of await fs.readdir(path.join(skillDir, ...prefix.split('/').filter(Boolean)), { withFileTypes: true })) {
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (isMaintainerOnlySkillPath(rel)) continue;
       if (entry.isDirectory()) out.push(...await ClaudeProjector.listSkillResources(skillDir, rel));
       else if (entry.isFile()) out.push(rel);
     }

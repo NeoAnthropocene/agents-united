@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { InstallEngine } from '../src/core/installer.js';
+import { isMaintainerOnlySkillPath } from '../src/core/skill-folder.js';
 import { linkedSkillAdvice, listLinkedSkills } from '../src/core/skill-links.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
 import { UpdateEngine } from '../src/core/updater.js';
@@ -63,14 +64,17 @@ describe('Antigravity native lane: skills are copies, not links', () => {
     expect(lock.installed.skills).toContain(SKILL);
   });
 
-  it('copies the sidecar files of a skill too (references, scripts), not only SKILL.md', async () => {
+  it('copies the sidecar files of a skill too (references, scripts), not only SKILL.md, and leaves the maintainer-only evals/ out (Plan 035)', async () => {
     await install(true);
-    const registryFiles = fs.readdirSync(path.join(REGISTRY, 'skills'), { withFileTypes: true })
+    const subfolders = fs.readdirSync(path.join(REGISTRY, 'skills'), { withFileTypes: true })
       .filter(entry => entry.isDirectory())
       .flatMap(entry => fs.readdirSync(path.join(REGISTRY, 'skills', entry.name), { withFileTypes: true }).filter(sub => sub.isDirectory()).map(sub => `${entry.name}/${sub.name}`))
       .filter(rel => fs.existsSync(path.join(agentsDir, 'skills', rel.split('/')[0])));
+    const isMaintainerOnly = (rel: string): boolean => isMaintainerOnlySkillPath(rel.split('/').slice(1).join('/'));
+    const registryFiles = subfolders.filter(rel => !isMaintainerOnly(rel));
     expect(registryFiles.length, 'the registry has skills with subfolders').toBeGreaterThan(0);
     for (const rel of registryFiles.slice(0, 5)) expect(fs.existsSync(path.join(agentsDir, 'skills', rel)), rel).toBe(true);
+    for (const rel of subfolders.filter(isMaintainerOnly)) expect(fs.existsSync(path.join(agentsDir, 'skills', rel)), `${rel} is not installed`).toBe(false);
   });
 
   it('leaves the registry untouched', async () => {
