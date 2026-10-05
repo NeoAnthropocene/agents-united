@@ -34,7 +34,7 @@ The report always has these seven parts, in this order. A part you cannot fill s
 | 7 Gaps | data and access missing | an owner each |
 
 ## Step-by-Step Runbook
-1. **Draw the funnel with numbers.** The leak is the biggest drop against a benchmark, not the biggest absolute one: 90 percent lost at the top of a content funnel is normal, 60 percent between cart and checkout is not.
+1. **Draw the funnel with numbers.** The leak is the biggest drop-off against a benchmark, not the biggest absolute one: 90 percent lost at the top of a content funnel is normal, 60 percent between cart and checkout is not.
 2. **Segment the leak** by device, source, new versus returning: a mobile-only leak is a layout bug, a paid-only leak is a mismatch with the ad, and an average hides who leaves. Name the segment or say it is unknown.
 3. **Walk each step as the visitor** at 375 and 1280 pixels (`playwright`; `chrome-devtools-mcp` for console and failed requests). With no browser tool, read source and screenshots and **say you did not run the flow**: a client acts on a flow you claim to have walked.
 4. **Name one cause at a time**: clarity, effort (fields, clicks, waits), anxiety (cost, commitment, data), relevance (is the earlier promise kept), distraction.
