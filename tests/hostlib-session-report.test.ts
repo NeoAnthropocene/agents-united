@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { analyse, loadSession, parseTeammateMessages, renderReport, resolveSessionFile, trimRecord, trimSession } from '../scripts/hostlib/session-report.ts';
 import type { Analysis } from '../scripts/hostlib/session-report.ts';
 
@@ -18,6 +18,10 @@ import type { Analysis } from '../scripts/hostlib/session-report.ts';
 const FIXTURES = path.resolve('tests/fixtures/session-report');
 const FULL = path.join(FIXTURES, 'd2f784af-3f9f-4859-81f5-0d2ae2f1435b.jsonl');
 const PETPAL = path.join(FIXTURES, '123266e9-317f-46da-a335-c9c8f14584f2.jsonl');
+// Sitting A of Plan 035 M3 (2026-10-05, Claude Code 2.1.289): the first live sessions of the protocol, trimmed with `trim`.
+const GUARD = path.join(FIXTURES, 'aa5e73e8-a428-461d-87b8-d03f8c38472f.jsonl'); // H5
+const EARLY = path.join(FIXTURES, '2d33c6dd-43fa-4c1b-91f8-9c05c03d2492.jsonl'); // H4
+const PEERS = path.join(FIXTURES, 'fec45100-a1e9-45b3-a53c-628ea1fc591b.jsonl'); // H3
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -73,7 +77,10 @@ describe('the full-roster session d2f784af (nine teammates)', () => {
     expect(f.verdict).toBe('violation');
     const text = f.evidence.join('\n');
     expect(text).toMatch(/ava: wrote 1 file\(s\) with no shell, re-read before reporting all$/m);
-    for (const name of ['emre', 'jale', 'jamileh', 'kaan', 'yavuz']) expect(text).toMatch(new RegExp(`${name}: .* all but `));
+    for (const name of ['jale', 'jamileh', 'kaan', 'yavuz']) expect(text).toMatch(new RegExp(`${name}: .* all but `));
+    // Emre holds Bash and PowerShell in his role's tools, so the re-read rule is not his (his spec was written and not run: no shell call). The
+    // first version of the helper judged him shell-less from that, and this test pinned it; Sitting A (session fec45100, Deniz) showed the same.
+    expect(text).not.toMatch(/emre/);
   });
 
   it('shows the host ACCEPTED a task started while its blocker was open (the lead had reopened task 1)', () => {
@@ -122,6 +129,68 @@ describe('the PetPal re-run 123266e9 (three teammates, a peer exchange)', () => 
   it('flags the reports without the two sections the comms law asks for', () => {
     const text = renderReport(analysis);
     expect(text).toMatch(/- kaan .*\n.*final report has Peer messages received and Open items: yes/);
+  });
+});
+
+describe('the three Sitting A sessions of Plan 035 M3 (Claude Code 2.1.289, 2026-10-05)', () => {
+  const guard = analyse(loadSession(GUARD));
+  const early = analyse(loadSession(EARLY));
+  const peers = analyse(loadSession(PEERS));
+
+  it('H5 (aa5e73e8): the settings-level guard refused exactly the two commands it names, for a teammate, and the three controls ran', () => {
+    const f = finding(guard, 'H5');
+    expect(f.verdict).toBe('seen');
+    expect(f.evidence).toEqual(['probe: Bash refused by the guard (is_error): echo git push --force', 'probe: Bash refused by the guard (is_error): echo x > .env.test']);
+    const probe = guard.session.agents.find(a => a.name === 'probe')!;
+    expect(probe.calls.filter(c => c.name === 'Bash')).toHaveLength(5);
+    expect(probe.calls.filter(c => c.isError).map(c => String(c.input.command))).toEqual(['echo git push --force', 'echo x > .env.test']);
+  });
+
+  it('H4 (2d33c6dd): the host ACCEPTED kaan\'s start of a task whose blocker was open, with the answer "Updated task #2 status"', () => {
+    const f = finding(early, 'H4');
+    expect(f.verdict).toBe('violation');
+    expect(f.evidence.join('\n')).toMatch(/kaan set task 2 .* ACCEPTED it \("Updated task #2 status"\)/);
+  });
+
+  it('H1c (2d33c6dd): Ava and Kaan hold editors and no shell, and completed their tasks without a re-read of notes.md', () => {
+    const f = finding(early, 'H1c');
+    expect(f.verdict).toBe('violation');
+    expect(f.evidence.join('\n')).toMatch(/ava: wrote 1 file\(s\) with no shell, re-read before reporting all but notes\.md/);
+    expect(f.evidence.join('\n')).toMatch(/kaan: wrote 1 file\(s\) with no shell, re-read before reporting all but notes\.md/);
+  });
+
+  it('names a written file by its last path segment on any platform (the records hold Windows paths and CI reads them on Linux, where path.basename does not split on a backslash)', () => {
+    const session = loadSession(EARLY); // loaded first: loading wants this platform's own path.basename
+    const posixBasename = vi.spyOn(path, 'basename').mockImplementation(path.posix.basename);
+    try {
+      const f = finding(analyse(session), 'H1c');
+      expect(f.evidence.join('\n')).toMatch(/ava: wrote 1 file\(s\) with no shell, re-read before reporting all but notes\.md$/m);
+      expect(f.evidence.join('\n')).not.toMatch(/\\/);
+    } finally {
+      posixBasename.mockRestore();
+    }
+  });
+
+  it('H3 (fec45100): the two proposals crossed, three messages in one pair, one from Deniz and two from Kaan', () => {
+    const f = finding(peers, 'H3');
+    expect(f.verdict).toBe('seen');
+    const sent = f.evidence.filter(e => / -> /.test(e));
+    expect(sent).toHaveLength(3);
+    expect(sent.filter(e => e.startsWith('deniz -> kaan'))).toHaveLength(1);
+    expect(sent.filter(e => e.startsWith('kaan -> deniz'))).toHaveLength(2);
+  });
+
+  it('H1c (fec45100): only Kaan is judged shell-less; Deniz holds a shell by his role\'s tools, whether or not he used it', () => {
+    const f = finding(peers, 'H1c');
+    expect(f.verdict).toBe('violation');
+    expect(f.evidence.join('\n')).toMatch(/kaan: wrote 1 file\(s\) with no shell/);
+    expect(f.evidence.join('\n')).not.toMatch(/deniz/);
+  });
+
+  it('H1b: every teammate that was asked to shut down answered, counted from the teammates\' own replies (the lead\'s record does not always carry them)', () => {
+    expect(finding(guard, 'H1b').evidence.join('\n')).toContain('shutdown responses sent by teammates: 1 of 1 requested (approved 1)');
+    expect(finding(early, 'H1b').evidence.join('\n')).toContain('shutdown responses sent by teammates: 2 of 2 requested (approved 2)');
+    expect(finding(peers, 'H1b').evidence.join('\n')).toContain('shutdown responses sent by teammates: 2 of 2 requested (approved 2)');
   });
 });
 
@@ -209,6 +278,25 @@ describe('synthetic sessions', () => {
     expect(f.evidence).toHaveLength(1);
   });
 
+  it('H1c: a role is shell-less by the tools of its manifest, not by the shell calls it happened to make (found in session fec45100: Deniz was flagged)', () => {
+    const wrote = (name: string, customAgentType: string): string => writeSession([], { [name]: { meta: { customAgentType }, records: [call('w', 'Write', { file_path: '/x/a.md' }, 1)] } });
+    // Deniz's role lists Bash and PowerShell; he made no shell call, and is still not judged.
+    expect(finding(analyse(loadSession(wrote('deniz', 'agency-frontend-architect'))), 'H1c').verdict).toBe('not applicable');
+    // Ava's role holds editors and no shell: judged, and she did not re-read.
+    expect(finding(analyse(loadSession(wrote('ava', 'agency-growth-strategist'))), 'H1c').verdict).toBe('violation');
+    // A type this repository does not know falls back to what the session shows (no shell call: judged).
+    expect(finding(analyse(loadSession(wrote('zed', 'no-such-role'))), 'H1c').verdict).toBe('violation');
+  });
+
+  it('H1b: the replies teammates sent are counted against the requests the lead sent, and a missing reply shows', () => {
+    const lead = [call('s1', 'SendMessage', { to: 'ava', message: { type: 'shutdown_request', reason: 'done' } }, 1), call('s2', 'SendMessage', { to: 'kaan', message: { type: 'shutdown_request', reason: 'done' } }, 1.5)];
+    const reply = (approve: boolean): Rec => call('r', 'SendMessage', { to: 'team-lead', message: { type: 'shutdown_response', request_id: 'x@ava', approve } }, 2);
+    const one = writeSession(lead, { ava: { meta: {}, records: [reply(true)] }, kaan: { meta: {}, records: [] } });
+    expect(finding(analyse(loadSession(one)), 'H1b').evidence.join('\n')).toContain('shutdown responses sent by teammates: 1 of 2 requested (approved 1)');
+    const refused = writeSession(lead, { ava: { meta: {}, records: [reply(false)] }, kaan: { meta: {}, records: [reply(true)] } });
+    expect(finding(analyse(loadSession(refused)), 'H1b').evidence.join('\n')).toContain('shutdown responses sent by teammates: 2 of 2 requested (approved 1)');
+  });
+
   it('H4: a blocked task started early and refused by the host is a pass, and a normal order is not seen', () => {
     const create = (id: string, n: number, s: number): Rec[] => [call(`c${id}`, 'TaskCreate', { subject: `T${id}` }, s), result(`c${id}`, `Task #${n} created successfully: T${id}`, s + 0.1)];
     const lead = [...create('1', 1, 1), ...create('2', 2, 2), call('u', 'TaskUpdate', { taskId: '2', addBlockedBy: ['1'] }, 3)];
@@ -272,7 +360,7 @@ describe('trimming a session for a fixture', () => {
   });
 
   it('the committed fixtures carry no account data', () => {
-    const all = [FULL, PETPAL].flatMap(f => {
+    const all = [FULL, PETPAL, GUARD, EARLY, PEERS].flatMap(f => {
       const sub = path.join(path.dirname(f), path.basename(f, '.jsonl'), 'subagents');
       return [f, ...fs.readdirSync(sub).map(n => path.join(sub, n))];
     });
