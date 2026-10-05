@@ -1,0 +1,20 @@
+{
+  "skill_name": "marketing-creative-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we need the visuals for our webhook retry launch: a landing hero, social cards, a story, an email header and a chart. the message is '94% of failed webhooks recover on their own'. can you build the asset kit and tell me what to hand to the web dev?",
+      "expected_output": "Designs one master first with a fixed hierarchy (hook, value, proof, call to action) and recomposes each adaptation rather than scaling it. Uses SVG for the chart and a modern raster for photographs, takes colours and type from tokens, and gives an export table with a budget and a measured size per file, flagging any file over budget with a remedy. Writes alt text for informative images and empty alt for decoration, records the source and licence of every asset, hands the files to Deniz and banner sizes to Jale, sends the 94 percent claim to Defne and keeps the boundary with ad-creative-design."
+    },
+    {
+      "id": 2,
+      "prompt": "our story image export is 1 MB and the channel limit for us is 400 KB. can you just crank the quality down until it fits?",
+      "expected_output": "Does not lower quality first: reduces dimensions, simplifies the image (for example flattens a gradient to a solid) or splits it, and measures the new export, lowering quality only until text artefacts would appear. Updates the export table with the measured size against the budget."
+    },
+    {
+      "id": 3,
+      "prompt": "i found a great stock photo on google images for the campaign hero. let's use it now and sort the licence out later.",
+      "expected_output": "Refuses to use an unlicensed image: it is removed, not replaced later. Asks for the source and licence and any attribution or usage limit to be recorded, and offers alternatives (an original illustration, an SVG treatment, a licensed photo with a recorded licence)."
+    }
+  ]
+}

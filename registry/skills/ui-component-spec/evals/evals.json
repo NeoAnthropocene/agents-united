@@ -1,0 +1,20 @@
+{
+  "skill_name": "ui-component-spec",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "can you write the spec for our pricing page plan card before dev builds it? it shows the plan name, a monthly price (free plans show 'Free'), 3 to 7 feature bullets, an optional 'Most chosen' badge and a select button. tokens are in design-tokens.json.",
+      "expected_output": "One spec with no blank field: a one-sentence purpose and anti-purpose, anatomy mapped to tokens with no raw values, a typed props interface with ranges, defaults and unions and what an invalid combination does, every applicable state (default, hover, focus-visible, loading, disabled for the current plan) with what changes and what the user can still do, keyboard and focus with a 3 to 1 focus indicator, a native button with an accessible name, responsive rules with a 44 by 44 target, content limits, data-testid values, an analytics event, and open questions with owners. Hand-offs name Emre, Jamileh and Kaan."
+    },
+    {
+      "id": 2,
+      "prompt": "write a quick spec for our modal dialog component. it just needs to open and close.",
+      "expected_output": "Says open and close is not a spec and specifies the rest: the states, where focus goes when the dialog opens and closes, Escape closing it and returning focus to the trigger, the native or role-based semantics and accessible name, the live-region behaviour, the reduced-motion alternative and the narrow-screen behaviour. Marks every rule the frames do not show as an assumption with an owner."
+    },
+    {
+      "id": 3,
+      "prompt": "the new frame shows our primary button in a different colour with an icon. can you write a spec for a new IconButton component?",
+      "expected_output": "Does not create a near-duplicate: extends the existing button with a variant and says which, takes the colour from the tokens (the tokens win if the frame disagrees and the frame goes to Jamileh as an open question), and still specifies the new states, keyboard behaviour, accessible name for an icon-only control and test ids."
+    }
+  ]
+}

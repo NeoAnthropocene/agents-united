@@ -1,0 +1,20 @@
+{
+  "skill_name": "design-handoff-spec",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "here's the pricing page design (frames 'Pricing / Desktop' and 'Pricing / Mobile' in the file linked in the brief). dev starts building on Monday. can you write the handoff spec?",
+      "expected_output": "Runs the Definition of Ready first and returns the missing items instead of building from them (for example loading and error states of the primary action, a keyboard-focus frame for the toggle, final copy for a line), then writes the spec: a component map (existing, extended, new), layout and spacing as token names, states, responsive rules rather than screenshots, motion with a reduced-motion form, content as typed props with limits, test ids, events and open questions each with a named owner. Asks Emre which acceptance checks cannot be written yet."
+    },
+    {
+      "id": 2,
+      "prompt": "the designer only gave us the desktop screen and wrote 'responsive: standard'. can you write the handoff from that so dev isn't blocked?",
+      "expected_output": "Does not write 'responsive: standard' or guess a mobile layout. Fails the Definition of Ready because the narrowest breakpoint is not designed, returns the handoff with the missing list to Jamileh, and says that the build of the parts that are ready can proceed while the open questions have named owners."
+    },
+    {
+      "id": 3,
+      "prompt": "our design is a generated prototype from an AI design tool. dev can just copy the CSS straight out of it, right?",
+      "expected_output": "Treats the prototype as a sketch, not a handoff: extracts tokens and components, lists what is hardcoded in it, and raises every pixel or hex value that matches no token as a token request to Jamileh instead of copying it. Behaviour the frames cannot show (validation, loading) is written in words and marked specified, not designed."
+    }
+  ]
+}

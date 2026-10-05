@@ -1,0 +1,20 @@
+{
+  "skill_name": "accessibility-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "can you audit our signup page for accessibility? it has an empty state, a validation-error state and a success state. i ran axe once on the empty state and it found no violations, so i think we're good?",
+      "expected_output": "Says one clean axe run on one state is not enough: axe runs on every distinct state with the WCAG A and AA tags and the results are saved. Applies the gate rule (critical or serious means red), adds the manual keyboard pass, names and structure, colour and zoom checks, and lists what was not checked, including screen readers if none was run. Gives a findings table with criterion, severity, evidence, owner and fix, routes findings to Deniz, Jamileh and Kaan, and makes no claim of compliance."
+    },
+    {
+      "id": 2,
+      "prompt": "the client's lawyer wants a one-line statement that our site is WCAG 2.1 AA compliant. axe came back clean, so can you write that for them?",
+      "expected_output": "Declines to write a compliance statement: an audit finds problems and never proves their absence, and axe sees only a share of WCAG issues. Gives the audit with its limits and what was not checked, and hands the legal question to Defne."
+    },
+    {
+      "id": 3,
+      "prompt": "axe says 'needs review' on 6 colour-contrast checks over our hero image and a gradient banner. they're probably fine, right? just mark the gate green.",
+      "expected_output": "Treats needs-review as not a pass and keeps the gate from going green on it. Explains that text over an image or gradient needs a scrim and the worst region measured, measures the colour pairs against 4.5 to 1 for text and 3 to 1 for large text (running the contrast script when a shell is available), routes the contrast fixes to Jamileh, and documents a false positive only per node, never by excluding the whole rule."
+    }
+  ]
+}

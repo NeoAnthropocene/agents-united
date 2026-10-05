@@ -1,150 +1,58 @@
 ---
 name: accessibility-audit
-description: Production-grade Accessibility Audit playbook for design
-  operations, UX systems, and growth strategy.
+description: "Use when a UI surface enters QA, after a design or component change, before a launch, or when a user reports a barrier; trigger phrases: run an accessibility audit, is this page accessible, axe results, keyboard test, WCAG check, a user cannot use the form with a keyboard. Produces the gate status, a findings table (criterion, severity, location, evidence, owner, fix), what was and was not checked, and the axe report file. Skip it to claim a site is accessible or compliant (an audit finds problems, it never proves their absence) and for the root cause of one violation (use a11y-debugging)."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: ♿
 disable-slash-command: true
 ---
 
 # Accessibility Audit
 
+Accessibility defects stop real people from using the page. Automated tools find a useful share quickly and cannot find the rest, so the audit has three parts: an automated pass for what machines catch, a manual pass for what only a person at a keyboard catches, and an honest statement of what was not checked.
+
 ## Overview & Purpose
-The Accessibility Audit skill provides a deterministic framework for executing accessibility audit processes in modern software products.
+The QA lead's audit. It verifies and reports: Deniz owns markup, Jamileh colours and Kaan words, and each finding is routed to them through the lead.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it for any UI surface entering QA, after a design or component change, before a launch, and when a user reports a barrier. Do not use it to claim a site "is accessible" or "is compliant": an audit finds problems, it never proves their absence. For one violation's root cause use `a11y-debugging`.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Accessibility Audit tasks.
-- Auditing existing product assets or workflows.
-- Standardizing accessibility-audit procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: the route or flow and how to run it; the conformance target (the agency's gate is WCAG 2.1 level AA, the 2.2 additions advisory unless the client requires them); the key journeys; whether authenticated states are needed (credentials come from the lead; never invent or request real secrets).
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Output: the gate status; a findings table (id, WCAG criterion, severity, location, evidence, owner, fix); what was checked and what was not; the automated report file. **Evidence to attach**: the axe results as JSON, a screenshot or DOM snippet per finding, the keyboard path you followed.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **Run axe on every distinct page state** (`@axe-core/playwright`, the WCAG A and AA tags for 2.0 and 2.1) and save the full results; note each violation's impact: critical, serious, moderate, minor.
+2. **Apply the gate rule**: any critical or serious violation makes the gate **red**; moderate and minor are logged and scheduled, not blocking. An axe "needs review" result is not a pass: check it by hand.
+3. **Do the keyboard pass without a mouse**: every control reachable, focus always visible, no trap, Escape closes dialogs and returns focus, nothing opens on hover only. The full checklist, with names, structure, colour, motion and zoom, is [references/manual-pass.md](references/manual-pass.md).
+4. **Measure every colour pair** that meets: text needs 4.5 to 1, large text and interface boundaries 3 to 1. With a shell run `node ${CLAUDE_SKILL_DIR}/scripts/contrast.mjs '#6B7280' '#F3F4F6'` (exit code 1 on a fail); without one use the formula and tables of `design-system-tokens`.
+5. **Say what you could not check.** Automated tools catch a minority to a little over a third of WCAG issues (a commonly quoted range, not measured here). Axe cannot judge whether alt text is meaningful, whether the reading order makes sense, or how a screen reader announces a custom widget. If none was run, say so; never report one as passed.
+6. **Route and report.** Markup, roles and focus to Deniz; contrast and non-colour cues to Jamileh; link text, error wording and alt text to Kaan; anything implying a legal obligation to Defne. Use `a11y-debugging` when a fix is not obvious.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/accessibility-audit/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/accessibility-audit/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/accessibility-audit/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for an axe test in Playwright and a findings table for a signup page in three states.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- "WCAG compliant" because axe returned nothing: axe sees only a share of the issues.
+- Axe on the first page state only: errors and dialogs live in the others.
+- "Incomplete" results treated as passes: nobody has checked them.
+- Fixing the markup yourself and re-running until green: the report stops being independent.
+- Alt text findings with no look at the image: a present alt is not a meaningful one.
+- Skipping the keyboard pass after a clean axe run: it finds what axe cannot.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+## Edge Cases & Error Recovery
+- **A violation inside a third-party widget**: report the widget and version; the owner is whoever integrates it (Deniz); name a mitigation or a replacement.
+- **A false positive**: document the element, the rule and the reasoning, and exclude only that node, never a whole rule.
+- **Dynamic content and single-page routes**: run the pass after each route change and each state that renders new markup.
+- **No test account**: test only what is public and say the authenticated parts were not tested.
+- **The client asks for a compliance statement**: decline; give the audit with its limits and hand the question to Defne.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/accessibility-audit/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/accessibility-audit/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/accessibility-audit/ reports/accessibility-audit/
-   git commit -m "feat(accessibility-audit): implement Accessibility Audit playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Accessibility Audit Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "accessibility-audit"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/accessibility-audit/summary.json"
-```
-
-### Exemplar 2: Accessibility Audit Helper Module
-```typescript
-export function runAccessibilityAudit(scope: string): boolean {
-  console.log('Running Accessibility Audit on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Accessibility Audit
-1. **Diagnosis**: Specification or code asset fails validation rules in accessibility-audit.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Accessibility Audit
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Axe ran on every distinct state with the WCAG A and AA tags; the JSON is saved.
+- [ ] The gate rule was applied and incomplete results were checked by hand.
+- [ ] The keyboard, naming, colour and zoom passes were done and are in the findings table.
+- [ ] Each finding has a criterion, a severity, evidence, an owner and a fix.
+- [ ] The report lists what was not checked, including screen readers if none was used.
+- [ ] No claim of compliance appears; hand-offs name Deniz, Jamileh, Kaan and, where relevant, Defne.

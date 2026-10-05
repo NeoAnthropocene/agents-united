@@ -1,0 +1,1325 @@
+{
+  "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+  "repoLicence": {
+    "file": "LICENSE",
+    "firstLines": [
+      "MIT License",
+      "Copyright (c) 2024 Next Level Builder",
+      "Permission is hereby granted, free of charge, to any person obtaining a copy"
+    ]
+  },
+  "scannedAt": "2026-10-04",
+  "schema": 1,
+  "sha": "477bcb28c9812b385cb51a4605ddf30d7b2266e2",
+  "skills": [
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 12327,
+      "collidesWith": "banner-design",
+      "extras": {
+        "content": [
+          "references/banner-sizes-and-styles.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/banner-sizes-and-styles.md"
+      ],
+      "name": "banner-design",
+      "overlap": {
+        "localLines": 132,
+        "shared": 11,
+        "upstreamInLocal": 0.11,
+        "upstreamLines": 101
+      },
+      "path": ".claude/skills/banner-design"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": "scripts/extract-colors.cjs",
+            "line": 84,
+            "rule": "script/dynamic-eval",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/sync-brand-to-tokens.cjs",
+            "line": 355,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/sync-brand-to-tokens.cjs",
+            "line": 365,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/sync-brand-to-tokens.cjs",
+            "line": 370,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "needs-review"
+      },
+      "bytes": 109035,
+      "extras": {
+        "content": [
+          "references/approval-checklist.md",
+          "references/asset-organization.md",
+          "references/brand-guideline-template.md",
+          "references/color-palette-management.md",
+          "references/consistency-checklist.md",
+          "references/logo-usage-rules.md",
+          "references/messaging-framework.md",
+          "references/typography-specifications.md",
+          "references/update.md",
+          "references/visual-identity.md",
+          "references/voice-framework.md",
+          "templates/brand-guidelines-starter.md"
+        ],
+        "deferred": [
+          "scripts/extract-colors.cjs",
+          "scripts/inject-brand-context.cjs",
+          "scripts/sync-brand-to-tokens.cjs",
+          "scripts/tests/test_sync_brand_to_tokens.py",
+          "scripts/validate-asset.cjs"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/approval-checklist.md",
+        "references/asset-organization.md",
+        "references/brand-guideline-template.md",
+        "references/color-palette-management.md",
+        "references/consistency-checklist.md",
+        "references/logo-usage-rules.md",
+        "references/messaging-framework.md",
+        "references/typography-specifications.md",
+        "references/update.md",
+        "references/visual-identity.md",
+        "references/voice-framework.md",
+        "scripts/extract-colors.cjs",
+        "scripts/inject-brand-context.cjs",
+        "scripts/sync-brand-to-tokens.cjs",
+        "scripts/tests/test_sync_brand_to_tokens.py",
+        "scripts/validate-asset.cjs",
+        "templates/brand-guidelines-starter.md"
+      ],
+      "name": "brand",
+      "path": ".claude/skills/brand"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 70,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 72,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 73,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 74,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 212,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 28,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 30,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 31,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 32,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 56,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 36,
+            "rule": "script/network-egress",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 41,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 43,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 44,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 45,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 63,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 65,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 1,
+            "rule": "script/credential-exfiltration",
+            "severity": "high"
+          },
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "fail"
+      },
+      "bytes": 273586,
+      "extras": {
+        "content": [
+          "data/cip/deliverables.csv",
+          "data/cip/industries.csv",
+          "data/cip/mockup-contexts.csv",
+          "data/cip/styles.csv",
+          "data/icon/styles.csv",
+          "data/logo/colors.csv",
+          "data/logo/industries.csv",
+          "data/logo/styles.csv",
+          "references/banner-sizes-and-styles.md",
+          "references/cip-deliverable-guide.md",
+          "references/cip-design.md",
+          "references/cip-prompt-engineering.md",
+          "references/cip-style-guide.md",
+          "references/design-routing.md",
+          "references/icon-design.md",
+          "references/logo-color-psychology.md",
+          "references/logo-design.md",
+          "references/logo-prompt-engineering.md",
+          "references/logo-style-guide.md",
+          "references/slides-copywriting-formulas.md",
+          "references/slides-create.md",
+          "references/slides-html-template.md",
+          "references/slides-layout-patterns.md",
+          "references/slides-strategies.md",
+          "references/slides.md",
+          "references/social-photos-design.md"
+        ],
+        "deferred": [
+          "scripts/cip/core.py",
+          "scripts/cip/generate.py",
+          "scripts/cip/render-html.py",
+          "scripts/cip/search.py",
+          "scripts/icon/generate.py",
+          "scripts/logo/core.py",
+          "scripts/logo/generate.py",
+          "scripts/logo/search.py",
+          "scripts/logo/tests/test_generate.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "data/cip/deliverables.csv",
+        "data/cip/industries.csv",
+        "data/cip/mockup-contexts.csv",
+        "data/cip/styles.csv",
+        "data/icon/styles.csv",
+        "data/logo/colors.csv",
+        "data/logo/industries.csv",
+        "data/logo/styles.csv",
+        "references/banner-sizes-and-styles.md",
+        "references/cip-deliverable-guide.md",
+        "references/cip-design.md",
+        "references/cip-prompt-engineering.md",
+        "references/cip-style-guide.md",
+        "references/design-routing.md",
+        "references/icon-design.md",
+        "references/logo-color-psychology.md",
+        "references/logo-design.md",
+        "references/logo-prompt-engineering.md",
+        "references/logo-style-guide.md",
+        "references/slides-copywriting-formulas.md",
+        "references/slides-create.md",
+        "references/slides-html-template.md",
+        "references/slides-layout-patterns.md",
+        "references/slides-strategies.md",
+        "references/slides.md",
+        "references/social-photos-design.md",
+        "scripts/cip/core.py",
+        "scripts/cip/generate.py",
+        "scripts/cip/render-html.py",
+        "scripts/cip/search.py",
+        "scripts/icon/generate.py",
+        "scripts/logo/core.py",
+        "scripts/logo/generate.py",
+        "scripts/logo/search.py",
+        "scripts/logo/tests/test_generate.py"
+      ],
+      "name": "design",
+      "path": ".claude/skills/design"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 187546,
+      "extras": {
+        "content": [
+          "data/slide-backgrounds.csv",
+          "data/slide-charts.csv",
+          "data/slide-color-logic.csv",
+          "data/slide-copy.csv",
+          "data/slide-layout-logic.csv",
+          "data/slide-layouts.csv",
+          "data/slide-strategies.csv",
+          "data/slide-typography.csv",
+          "references/component-specs.md",
+          "references/component-tokens.md",
+          "references/primitive-tokens.md",
+          "references/semantic-tokens.md",
+          "references/states-and-variants.md",
+          "references/tailwind-integration.md",
+          "references/token-architecture.md",
+          "templates/design-tokens-starter.json"
+        ],
+        "deferred": [
+          "scripts/embed-tokens.cjs",
+          "scripts/fetch-background.py",
+          "scripts/generate-slide.py",
+          "scripts/generate-tokens.cjs",
+          "scripts/html-token-validator.py",
+          "scripts/search-slides.py",
+          "scripts/slide-token-validator.py",
+          "scripts/slide_search_core.py",
+          "scripts/tests/test_validate_tokens.py",
+          "scripts/validate-tokens.cjs"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "data/slide-backgrounds.csv",
+        "data/slide-charts.csv",
+        "data/slide-color-logic.csv",
+        "data/slide-copy.csv",
+        "data/slide-layout-logic.csv",
+        "data/slide-layouts.csv",
+        "data/slide-strategies.csv",
+        "data/slide-typography.csv",
+        "references/component-specs.md",
+        "references/component-tokens.md",
+        "references/primitive-tokens.md",
+        "references/semantic-tokens.md",
+        "references/states-and-variants.md",
+        "references/tailwind-integration.md",
+        "references/token-architecture.md",
+        "scripts/embed-tokens.cjs",
+        "scripts/fetch-background.py",
+        "scripts/generate-slide.py",
+        "scripts/generate-tokens.cjs",
+        "scripts/html-token-validator.py",
+        "scripts/search-slides.py",
+        "scripts/slide-token-validator.py",
+        "scripts/slide_search_core.py",
+        "scripts/tests/test_validate_tokens.py",
+        "scripts/validate-tokens.cjs",
+        "templates/design-tokens-starter.json"
+      ],
+      "name": "design-system",
+      "path": ".claude/skills/design-system"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 20473,
+      "extras": {
+        "content": [
+          "references/copywriting-formulas.md",
+          "references/create.md",
+          "references/html-template.md",
+          "references/layout-patterns.md",
+          "references/slide-strategies.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/copywriting-formulas.md",
+        "references/create.md",
+        "references/html-template.md",
+        "references/layout-patterns.md",
+        "references/slide-strategies.md"
+      ],
+      "name": "slides",
+      "path": ".claude/skills/slides"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": "scripts/.coverage",
+            "line": 0,
+            "rule": "hygiene/unexpected-binary",
+            "severity": "medium"
+          }
+        ],
+        "verdict": "needs-review"
+      },
+      "bytes": 5769149,
+      "extras": {
+        "content": [
+          "canvas-fonts/ArsenalSC-OFL.txt",
+          "canvas-fonts/ArsenalSC-Regular.ttf",
+          "canvas-fonts/BigShoulders-Bold.ttf",
+          "canvas-fonts/BigShoulders-OFL.txt",
+          "canvas-fonts/BigShoulders-Regular.ttf",
+          "canvas-fonts/Boldonse-OFL.txt",
+          "canvas-fonts/Boldonse-Regular.ttf",
+          "canvas-fonts/BricolageGrotesque-Bold.ttf",
+          "canvas-fonts/BricolageGrotesque-OFL.txt",
+          "canvas-fonts/BricolageGrotesque-Regular.ttf",
+          "canvas-fonts/CrimsonPro-Bold.ttf",
+          "canvas-fonts/CrimsonPro-Italic.ttf",
+          "canvas-fonts/CrimsonPro-OFL.txt",
+          "canvas-fonts/CrimsonPro-Regular.ttf",
+          "canvas-fonts/DMMono-OFL.txt",
+          "canvas-fonts/DMMono-Regular.ttf",
+          "canvas-fonts/EricaOne-OFL.txt",
+          "canvas-fonts/EricaOne-Regular.ttf",
+          "canvas-fonts/GeistMono-Bold.ttf",
+          "canvas-fonts/GeistMono-OFL.txt",
+          "canvas-fonts/GeistMono-Regular.ttf",
+          "canvas-fonts/Gloock-OFL.txt",
+          "canvas-fonts/Gloock-Regular.ttf",
+          "canvas-fonts/IBMPlexMono-Bold.ttf",
+          "canvas-fonts/IBMPlexMono-OFL.txt",
+          "canvas-fonts/IBMPlexMono-Regular.ttf",
+          "canvas-fonts/IBMPlexSerif-Bold.ttf",
+          "canvas-fonts/IBMPlexSerif-BoldItalic.ttf",
+          "canvas-fonts/IBMPlexSerif-Italic.ttf",
+          "canvas-fonts/IBMPlexSerif-Regular.ttf",
+          "canvas-fonts/InstrumentSans-Bold.ttf",
+          "canvas-fonts/InstrumentSans-BoldItalic.ttf",
+          "canvas-fonts/InstrumentSans-Italic.ttf",
+          "canvas-fonts/InstrumentSans-OFL.txt",
+          "canvas-fonts/InstrumentSans-Regular.ttf",
+          "canvas-fonts/InstrumentSerif-Italic.ttf",
+          "canvas-fonts/InstrumentSerif-Regular.ttf",
+          "canvas-fonts/Italiana-OFL.txt",
+          "canvas-fonts/Italiana-Regular.ttf",
+          "canvas-fonts/JetBrainsMono-Bold.ttf",
+          "canvas-fonts/JetBrainsMono-OFL.txt",
+          "canvas-fonts/JetBrainsMono-Regular.ttf",
+          "canvas-fonts/Jura-Light.ttf",
+          "canvas-fonts/Jura-Medium.ttf",
+          "canvas-fonts/Jura-OFL.txt",
+          "canvas-fonts/LibreBaskerville-OFL.txt",
+          "canvas-fonts/LibreBaskerville-Regular.ttf",
+          "canvas-fonts/Lora-Bold.ttf",
+          "canvas-fonts/Lora-BoldItalic.ttf",
+          "canvas-fonts/Lora-Italic.ttf",
+          "canvas-fonts/Lora-OFL.txt",
+          "canvas-fonts/Lora-Regular.ttf",
+          "canvas-fonts/NationalPark-Bold.ttf",
+          "canvas-fonts/NationalPark-OFL.txt",
+          "canvas-fonts/NationalPark-Regular.ttf",
+          "canvas-fonts/NothingYouCouldDo-OFL.txt",
+          "canvas-fonts/NothingYouCouldDo-Regular.ttf",
+          "canvas-fonts/Outfit-Bold.ttf",
+          "canvas-fonts/Outfit-OFL.txt",
+          "canvas-fonts/Outfit-Regular.ttf",
+          "canvas-fonts/PixelifySans-Medium.ttf",
+          "canvas-fonts/PixelifySans-OFL.txt",
+          "canvas-fonts/PoiretOne-OFL.txt",
+          "canvas-fonts/PoiretOne-Regular.ttf",
+          "canvas-fonts/RedHatMono-Bold.ttf",
+          "canvas-fonts/RedHatMono-OFL.txt",
+          "canvas-fonts/RedHatMono-Regular.ttf",
+          "canvas-fonts/Silkscreen-OFL.txt",
+          "canvas-fonts/Silkscreen-Regular.ttf",
+          "canvas-fonts/SmoochSans-Medium.ttf",
+          "canvas-fonts/SmoochSans-OFL.txt",
+          "canvas-fonts/Tektur-Medium.ttf",
+          "canvas-fonts/Tektur-OFL.txt",
+          "canvas-fonts/Tektur-Regular.ttf",
+          "canvas-fonts/WorkSans-Bold.ttf",
+          "canvas-fonts/WorkSans-BoldItalic.ttf",
+          "canvas-fonts/WorkSans-Italic.ttf",
+          "canvas-fonts/WorkSans-OFL.txt",
+          "canvas-fonts/WorkSans-Regular.ttf",
+          "canvas-fonts/YoungSerif-OFL.txt",
+          "canvas-fonts/YoungSerif-Regular.ttf",
+          "references/canvas-design-system.md",
+          "references/shadcn-accessibility.md",
+          "references/shadcn-components.md",
+          "references/shadcn-theming.md",
+          "references/tailwind-customization.md",
+          "references/tailwind-responsive.md",
+          "references/tailwind-utilities.md"
+        ],
+        "deferred": [
+          "scripts/.coverage",
+          "scripts/requirements.txt",
+          "scripts/shadcn_add.py",
+          "scripts/tailwind_config_gen.py",
+          "scripts/tests/coverage-ui.json",
+          "scripts/tests/requirements.txt",
+          "scripts/tests/test_shadcn_add.py",
+          "scripts/tests/test_tailwind_config_gen.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "LICENSE.txt",
+        "SKILL.md",
+        "canvas-fonts/ArsenalSC-OFL.txt",
+        "canvas-fonts/ArsenalSC-Regular.ttf",
+        "canvas-fonts/BigShoulders-Bold.ttf",
+        "canvas-fonts/BigShoulders-OFL.txt",
+        "canvas-fonts/BigShoulders-Regular.ttf",
+        "canvas-fonts/Boldonse-OFL.txt",
+        "canvas-fonts/Boldonse-Regular.ttf",
+        "canvas-fonts/BricolageGrotesque-Bold.ttf",
+        "canvas-fonts/BricolageGrotesque-OFL.txt",
+        "canvas-fonts/BricolageGrotesque-Regular.ttf",
+        "canvas-fonts/CrimsonPro-Bold.ttf",
+        "canvas-fonts/CrimsonPro-Italic.ttf",
+        "canvas-fonts/CrimsonPro-OFL.txt",
+        "canvas-fonts/CrimsonPro-Regular.ttf",
+        "canvas-fonts/DMMono-OFL.txt",
+        "canvas-fonts/DMMono-Regular.ttf",
+        "canvas-fonts/EricaOne-OFL.txt",
+        "canvas-fonts/EricaOne-Regular.ttf",
+        "canvas-fonts/GeistMono-Bold.ttf",
+        "canvas-fonts/GeistMono-OFL.txt",
+        "canvas-fonts/GeistMono-Regular.ttf",
+        "canvas-fonts/Gloock-OFL.txt",
+        "canvas-fonts/Gloock-Regular.ttf",
+        "canvas-fonts/IBMPlexMono-Bold.ttf",
+        "canvas-fonts/IBMPlexMono-OFL.txt",
+        "canvas-fonts/IBMPlexMono-Regular.ttf",
+        "canvas-fonts/IBMPlexSerif-Bold.ttf",
+        "canvas-fonts/IBMPlexSerif-BoldItalic.ttf",
+        "canvas-fonts/IBMPlexSerif-Italic.ttf",
+        "canvas-fonts/IBMPlexSerif-Regular.ttf",
+        "canvas-fonts/InstrumentSans-Bold.ttf",
+        "canvas-fonts/InstrumentSans-BoldItalic.ttf",
+        "canvas-fonts/InstrumentSans-Italic.ttf",
+        "canvas-fonts/InstrumentSans-OFL.txt",
+        "canvas-fonts/InstrumentSans-Regular.ttf",
+        "canvas-fonts/InstrumentSerif-Italic.ttf",
+        "canvas-fonts/InstrumentSerif-Regular.ttf",
+        "canvas-fonts/Italiana-OFL.txt",
+        "canvas-fonts/Italiana-Regular.ttf",
+        "canvas-fonts/JetBrainsMono-Bold.ttf",
+        "canvas-fonts/JetBrainsMono-OFL.txt",
+        "canvas-fonts/JetBrainsMono-Regular.ttf",
+        "canvas-fonts/Jura-Light.ttf",
+        "canvas-fonts/Jura-Medium.ttf",
+        "canvas-fonts/Jura-OFL.txt",
+        "canvas-fonts/LibreBaskerville-OFL.txt",
+        "canvas-fonts/LibreBaskerville-Regular.ttf",
+        "canvas-fonts/Lora-Bold.ttf",
+        "canvas-fonts/Lora-BoldItalic.ttf",
+        "canvas-fonts/Lora-Italic.ttf",
+        "canvas-fonts/Lora-OFL.txt",
+        "canvas-fonts/Lora-Regular.ttf",
+        "canvas-fonts/NationalPark-Bold.ttf",
+        "canvas-fonts/NationalPark-OFL.txt",
+        "canvas-fonts/NationalPark-Regular.ttf",
+        "canvas-fonts/NothingYouCouldDo-OFL.txt",
+        "canvas-fonts/NothingYouCouldDo-Regular.ttf",
+        "canvas-fonts/Outfit-Bold.ttf",
+        "canvas-fonts/Outfit-OFL.txt",
+        "canvas-fonts/Outfit-Regular.ttf",
+        "canvas-fonts/PixelifySans-Medium.ttf",
+        "canvas-fonts/PixelifySans-OFL.txt",
+        "canvas-fonts/PoiretOne-OFL.txt",
+        "canvas-fonts/PoiretOne-Regular.ttf",
+        "canvas-fonts/RedHatMono-Bold.ttf",
+        "canvas-fonts/RedHatMono-OFL.txt",
+        "canvas-fonts/RedHatMono-Regular.ttf",
+        "canvas-fonts/Silkscreen-OFL.txt",
+        "canvas-fonts/Silkscreen-Regular.ttf",
+        "canvas-fonts/SmoochSans-Medium.ttf",
+        "canvas-fonts/SmoochSans-OFL.txt",
+        "canvas-fonts/Tektur-Medium.ttf",
+        "canvas-fonts/Tektur-OFL.txt",
+        "canvas-fonts/Tektur-Regular.ttf",
+        "canvas-fonts/WorkSans-Bold.ttf",
+        "canvas-fonts/WorkSans-BoldItalic.ttf",
+        "canvas-fonts/WorkSans-Italic.ttf",
+        "canvas-fonts/WorkSans-OFL.txt",
+        "canvas-fonts/WorkSans-Regular.ttf",
+        "canvas-fonts/YoungSerif-OFL.txt",
+        "canvas-fonts/YoungSerif-Regular.ttf",
+        "references/canvas-design-system.md",
+        "references/shadcn-accessibility.md",
+        "references/shadcn-components.md",
+        "references/shadcn-theming.md",
+        "references/tailwind-customization.md",
+        "references/tailwind-responsive.md",
+        "references/tailwind-utilities.md",
+        "scripts/.coverage",
+        "scripts/requirements.txt",
+        "scripts/shadcn_add.py",
+        "scripts/tailwind_config_gen.py",
+        "scripts/tests/coverage-ui.json",
+        "scripts/tests/requirements.txt",
+        "scripts/tests/test_shadcn_add.py",
+        "scripts/tests/test_tailwind_config_gen.py"
+      ],
+      "licenceFile": "LICENSE.txt",
+      "name": "ui-styling",
+      "path": ".claude/skills/ui-styling"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 3652495,
+      "extras": {
+        "content": [
+          "data/app-interface.csv",
+          "data/catalog-summary.json",
+          "data/charts.csv",
+          "data/colors.csv",
+          "data/data-provenance.json",
+          "data/google-font-licenses.json",
+          "data/google-fonts.csv",
+          "data/icons.csv",
+          "data/landing.csv",
+          "data/motion.csv",
+          "data/phosphor-icons-upstream.json",
+          "data/products.csv",
+          "data/react-performance.csv",
+          "data/stacks/angular.csv",
+          "data/stacks/astro.csv",
+          "data/stacks/avalonia.csv",
+          "data/stacks/flutter.csv",
+          "data/stacks/html-tailwind.csv",
+          "data/stacks/javafx.csv",
+          "data/stacks/jetpack-compose.csv",
+          "data/stacks/laravel.csv",
+          "data/stacks/nextjs.csv",
+          "data/stacks/nuxt-ui.csv",
+          "data/stacks/nuxtjs.csv",
+          "data/stacks/react-native.csv",
+          "data/stacks/react.csv",
+          "data/stacks/shadcn.csv",
+          "data/stacks/svelte.csv",
+          "data/stacks/swiftui.csv",
+          "data/stacks/threejs.csv",
+          "data/stacks/uno.csv",
+          "data/stacks/uwp.csv",
+          "data/stacks/vue.csv",
+          "data/stacks/winui.csv",
+          "data/stacks/wpf.csv",
+          "data/styles.csv",
+          "data/typography.csv",
+          "data/ui-reasoning.csv",
+          "data/ux-guidelines.csv",
+          "references/pro-rules.md",
+          "references/quick-reference.md"
+        ],
+        "deferred": [
+          "scripts/core.py",
+          "scripts/design_system.py",
+          "scripts/reasoning_contract.py",
+          "scripts/search.py",
+          "scripts/tests/fixtures/catalogs/google-api.json",
+          "scripts/tests/fixtures/catalogs/google-catalog.json",
+          "scripts/tests/fixtures/catalogs/google-existing.csv",
+          "scripts/tests/fixtures/catalogs/google-metadata.json",
+          "scripts/tests/fixtures/catalogs/google-overrides.json",
+          "scripts/tests/fixtures/catalogs/icons-curated.csv",
+          "scripts/tests/fixtures/catalogs/phosphor-core.json",
+          "scripts/tests/fixtures/catalogs/phosphor-package.json",
+          "scripts/tests/fixtures/catalogs/phosphor-react-exports.json",
+          "scripts/tests/fixtures/catalogs/phosphor-react-package.json",
+          "scripts/tests/fixtures/relevance-baseline.json",
+          "scripts/tests/fixtures/relevance-cases.json",
+          "scripts/tests/fixtures/relevance-thresholds.json",
+          "scripts/tests/test_catalog_refresh.py",
+          "scripts/tests/test_catalog_summary_line_endings.py",
+          "scripts/tests/test_core.py",
+          "scripts/tests/test_core_data_quality.py",
+          "scripts/tests/test_data_contracts.py",
+          "scripts/tests/test_design_system_mode.py",
+          "scripts/tests/test_design_system_stack.py",
+          "scripts/tests/test_native_desktop_stack_freshness.py",
+          "scripts/tests/test_relevance_evaluator.py",
+          "scripts/tests/test_skill_script_paths.py",
+          "scripts/tests/test_style_taxonomy.py",
+          "scripts/tests/test_text_layout_resilience.py",
+          "scripts/tests/test_web_stack_freshness.py",
+          "scripts/validate_data.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "data/app-interface.csv",
+        "data/catalog-summary.json",
+        "data/charts.csv",
+        "data/colors.csv",
+        "data/data-provenance.json",
+        "data/google-font-licenses.json",
+        "data/google-fonts.csv",
+        "data/icons.csv",
+        "data/landing.csv",
+        "data/motion.csv",
+        "data/phosphor-icons-upstream.json",
+        "data/products.csv",
+        "data/react-performance.csv",
+        "data/stacks/angular.csv",
+        "data/stacks/astro.csv",
+        "data/stacks/avalonia.csv",
+        "data/stacks/flutter.csv",
+        "data/stacks/html-tailwind.csv",
+        "data/stacks/javafx.csv",
+        "data/stacks/jetpack-compose.csv",
+        "data/stacks/laravel.csv",
+        "data/stacks/nextjs.csv",
+        "data/stacks/nuxt-ui.csv",
+        "data/stacks/nuxtjs.csv",
+        "data/stacks/react-native.csv",
+        "data/stacks/react.csv",
+        "data/stacks/shadcn.csv",
+        "data/stacks/svelte.csv",
+        "data/stacks/swiftui.csv",
+        "data/stacks/threejs.csv",
+        "data/stacks/uno.csv",
+        "data/stacks/uwp.csv",
+        "data/stacks/vue.csv",
+        "data/stacks/winui.csv",
+        "data/stacks/wpf.csv",
+        "data/styles.csv",
+        "data/typography.csv",
+        "data/ui-reasoning.csv",
+        "data/ux-guidelines.csv",
+        "references/pro-rules.md",
+        "references/quick-reference.md",
+        "scripts/core.py",
+        "scripts/design_system.py",
+        "scripts/reasoning_contract.py",
+        "scripts/search.py",
+        "scripts/tests/fixtures/catalogs/google-api.json",
+        "scripts/tests/fixtures/catalogs/google-catalog.json",
+        "scripts/tests/fixtures/catalogs/google-existing.csv",
+        "scripts/tests/fixtures/catalogs/google-metadata.json",
+        "scripts/tests/fixtures/catalogs/google-overrides.json",
+        "scripts/tests/fixtures/catalogs/icons-curated.csv",
+        "scripts/tests/fixtures/catalogs/phosphor-core.json",
+        "scripts/tests/fixtures/catalogs/phosphor-package.json",
+        "scripts/tests/fixtures/catalogs/phosphor-react-exports.json",
+        "scripts/tests/fixtures/catalogs/phosphor-react-package.json",
+        "scripts/tests/fixtures/relevance-baseline.json",
+        "scripts/tests/fixtures/relevance-cases.json",
+        "scripts/tests/fixtures/relevance-thresholds.json",
+        "scripts/tests/test_catalog_refresh.py",
+        "scripts/tests/test_catalog_summary_line_endings.py",
+        "scripts/tests/test_core.py",
+        "scripts/tests/test_core_data_quality.py",
+        "scripts/tests/test_data_contracts.py",
+        "scripts/tests/test_design_system_mode.py",
+        "scripts/tests/test_design_system_stack.py",
+        "scripts/tests/test_native_desktop_stack_freshness.py",
+        "scripts/tests/test_relevance_evaluator.py",
+        "scripts/tests/test_skill_script_paths.py",
+        "scripts/tests/test_style_taxonomy.py",
+        "scripts/tests/test_text_layout_resilience.py",
+        "scripts/tests/test_web_stack_freshness.py",
+        "scripts/validate_data.py"
+      ],
+      "name": "ui-ux-pro-max",
+      "path": ".claude/skills/ui-ux-pro-max"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 12327,
+      "collidesWith": "banner-design",
+      "extras": {
+        "content": [
+          "references/banner-sizes-and-styles.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/banner-sizes-and-styles.md"
+      ],
+      "name": "banner-design",
+      "overlap": {
+        "localLines": 132,
+        "shared": 11,
+        "upstreamInLocal": 0.11,
+        "upstreamLines": 101
+      },
+      "path": "cli/assets/skills/banner-design"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": "scripts/extract-colors.cjs",
+            "line": 84,
+            "rule": "script/dynamic-eval",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/sync-brand-to-tokens.cjs",
+            "line": 355,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/sync-brand-to-tokens.cjs",
+            "line": 365,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/sync-brand-to-tokens.cjs",
+            "line": 370,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "needs-review"
+      },
+      "bytes": 109035,
+      "extras": {
+        "content": [
+          "references/approval-checklist.md",
+          "references/asset-organization.md",
+          "references/brand-guideline-template.md",
+          "references/color-palette-management.md",
+          "references/consistency-checklist.md",
+          "references/logo-usage-rules.md",
+          "references/messaging-framework.md",
+          "references/typography-specifications.md",
+          "references/update.md",
+          "references/visual-identity.md",
+          "references/voice-framework.md",
+          "templates/brand-guidelines-starter.md"
+        ],
+        "deferred": [
+          "scripts/extract-colors.cjs",
+          "scripts/inject-brand-context.cjs",
+          "scripts/sync-brand-to-tokens.cjs",
+          "scripts/tests/test_sync_brand_to_tokens.py",
+          "scripts/validate-asset.cjs"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/approval-checklist.md",
+        "references/asset-organization.md",
+        "references/brand-guideline-template.md",
+        "references/color-palette-management.md",
+        "references/consistency-checklist.md",
+        "references/logo-usage-rules.md",
+        "references/messaging-framework.md",
+        "references/typography-specifications.md",
+        "references/update.md",
+        "references/visual-identity.md",
+        "references/voice-framework.md",
+        "scripts/extract-colors.cjs",
+        "scripts/inject-brand-context.cjs",
+        "scripts/sync-brand-to-tokens.cjs",
+        "scripts/tests/test_sync_brand_to_tokens.py",
+        "scripts/validate-asset.cjs",
+        "templates/brand-guidelines-starter.md"
+      ],
+      "name": "brand",
+      "path": "cli/assets/skills/brand"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 70,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 72,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 73,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 74,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/cip/generate.py",
+            "line": 212,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 28,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 30,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 31,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 32,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/icon/generate.py",
+            "line": 56,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 36,
+            "rule": "script/network-egress",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 41,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 43,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 44,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 45,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 63,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 65,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "scripts/logo/generate.py",
+            "line": 1,
+            "rule": "script/credential-exfiltration",
+            "severity": "high"
+          },
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "fail"
+      },
+      "bytes": 273586,
+      "extras": {
+        "content": [
+          "data/cip/deliverables.csv",
+          "data/cip/industries.csv",
+          "data/cip/mockup-contexts.csv",
+          "data/cip/styles.csv",
+          "data/icon/styles.csv",
+          "data/logo/colors.csv",
+          "data/logo/industries.csv",
+          "data/logo/styles.csv",
+          "references/banner-sizes-and-styles.md",
+          "references/cip-deliverable-guide.md",
+          "references/cip-design.md",
+          "references/cip-prompt-engineering.md",
+          "references/cip-style-guide.md",
+          "references/design-routing.md",
+          "references/icon-design.md",
+          "references/logo-color-psychology.md",
+          "references/logo-design.md",
+          "references/logo-prompt-engineering.md",
+          "references/logo-style-guide.md",
+          "references/slides-copywriting-formulas.md",
+          "references/slides-create.md",
+          "references/slides-html-template.md",
+          "references/slides-layout-patterns.md",
+          "references/slides-strategies.md",
+          "references/slides.md",
+          "references/social-photos-design.md"
+        ],
+        "deferred": [
+          "scripts/cip/core.py",
+          "scripts/cip/generate.py",
+          "scripts/cip/render-html.py",
+          "scripts/cip/search.py",
+          "scripts/icon/generate.py",
+          "scripts/logo/core.py",
+          "scripts/logo/generate.py",
+          "scripts/logo/search.py",
+          "scripts/logo/tests/test_generate.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "data/cip/deliverables.csv",
+        "data/cip/industries.csv",
+        "data/cip/mockup-contexts.csv",
+        "data/cip/styles.csv",
+        "data/icon/styles.csv",
+        "data/logo/colors.csv",
+        "data/logo/industries.csv",
+        "data/logo/styles.csv",
+        "references/banner-sizes-and-styles.md",
+        "references/cip-deliverable-guide.md",
+        "references/cip-design.md",
+        "references/cip-prompt-engineering.md",
+        "references/cip-style-guide.md",
+        "references/design-routing.md",
+        "references/icon-design.md",
+        "references/logo-color-psychology.md",
+        "references/logo-design.md",
+        "references/logo-prompt-engineering.md",
+        "references/logo-style-guide.md",
+        "references/slides-copywriting-formulas.md",
+        "references/slides-create.md",
+        "references/slides-html-template.md",
+        "references/slides-layout-patterns.md",
+        "references/slides-strategies.md",
+        "references/slides.md",
+        "references/social-photos-design.md",
+        "scripts/cip/core.py",
+        "scripts/cip/generate.py",
+        "scripts/cip/render-html.py",
+        "scripts/cip/search.py",
+        "scripts/icon/generate.py",
+        "scripts/logo/core.py",
+        "scripts/logo/generate.py",
+        "scripts/logo/search.py",
+        "scripts/logo/tests/test_generate.py"
+      ],
+      "name": "design",
+      "path": "cli/assets/skills/design"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 187546,
+      "extras": {
+        "content": [
+          "data/slide-backgrounds.csv",
+          "data/slide-charts.csv",
+          "data/slide-color-logic.csv",
+          "data/slide-copy.csv",
+          "data/slide-layout-logic.csv",
+          "data/slide-layouts.csv",
+          "data/slide-strategies.csv",
+          "data/slide-typography.csv",
+          "references/component-specs.md",
+          "references/component-tokens.md",
+          "references/primitive-tokens.md",
+          "references/semantic-tokens.md",
+          "references/states-and-variants.md",
+          "references/tailwind-integration.md",
+          "references/token-architecture.md",
+          "templates/design-tokens-starter.json"
+        ],
+        "deferred": [
+          "scripts/embed-tokens.cjs",
+          "scripts/fetch-background.py",
+          "scripts/generate-slide.py",
+          "scripts/generate-tokens.cjs",
+          "scripts/html-token-validator.py",
+          "scripts/search-slides.py",
+          "scripts/slide-token-validator.py",
+          "scripts/slide_search_core.py",
+          "scripts/tests/test_validate_tokens.py",
+          "scripts/validate-tokens.cjs"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "data/slide-backgrounds.csv",
+        "data/slide-charts.csv",
+        "data/slide-color-logic.csv",
+        "data/slide-copy.csv",
+        "data/slide-layout-logic.csv",
+        "data/slide-layouts.csv",
+        "data/slide-strategies.csv",
+        "data/slide-typography.csv",
+        "references/component-specs.md",
+        "references/component-tokens.md",
+        "references/primitive-tokens.md",
+        "references/semantic-tokens.md",
+        "references/states-and-variants.md",
+        "references/tailwind-integration.md",
+        "references/token-architecture.md",
+        "scripts/embed-tokens.cjs",
+        "scripts/fetch-background.py",
+        "scripts/generate-slide.py",
+        "scripts/generate-tokens.cjs",
+        "scripts/html-token-validator.py",
+        "scripts/search-slides.py",
+        "scripts/slide-token-validator.py",
+        "scripts/slide_search_core.py",
+        "scripts/tests/test_validate_tokens.py",
+        "scripts/validate-tokens.cjs",
+        "templates/design-tokens-starter.json"
+      ],
+      "name": "design-system",
+      "path": "cli/assets/skills/design-system"
+    },
+    {
+      "audit": {
+        "findings": [
+          {
+            "file": ".",
+            "line": 0,
+            "rule": "hygiene/license-missing",
+            "severity": "low"
+          }
+        ],
+        "verdict": "pass"
+      },
+      "bytes": 20473,
+      "extras": {
+        "content": [
+          "references/copywriting-formulas.md",
+          "references/create.md",
+          "references/html-template.md",
+          "references/layout-patterns.md",
+          "references/slide-strategies.md"
+        ],
+        "deferred": [],
+        "skipped": []
+      },
+      "files": [
+        "SKILL.md",
+        "references/copywriting-formulas.md",
+        "references/create.md",
+        "references/html-template.md",
+        "references/layout-patterns.md",
+        "references/slide-strategies.md"
+      ],
+      "name": "slides",
+      "path": "cli/assets/skills/slides"
+    },
+    {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "bytes": 182670,
+      "extras": {
+        "content": [
+          "references/canvas-design-system.md",
+          "references/shadcn-accessibility.md",
+          "references/shadcn-components.md",
+          "references/shadcn-theming.md",
+          "references/tailwind-customization.md",
+          "references/tailwind-responsive.md",
+          "references/tailwind-utilities.md"
+        ],
+        "deferred": [
+          "scripts/requirements.txt",
+          "scripts/shadcn_add.py",
+          "scripts/tailwind_config_gen.py",
+          "scripts/tests/coverage-ui.json",
+          "scripts/tests/requirements.txt",
+          "scripts/tests/test_shadcn_add.py",
+          "scripts/tests/test_tailwind_config_gen.py"
+        ],
+        "skipped": []
+      },
+      "files": [
+        "LICENSE.txt",
+        "SKILL.md",
+        "references/canvas-design-system.md",
+        "references/shadcn-accessibility.md",
+        "references/shadcn-components.md",
+        "references/shadcn-theming.md",
+        "references/tailwind-customization.md",
+        "references/tailwind-responsive.md",
+        "references/tailwind-utilities.md",
+        "scripts/requirements.txt",
+        "scripts/shadcn_add.py",
+        "scripts/tailwind_config_gen.py",
+        "scripts/tests/coverage-ui.json",
+        "scripts/tests/requirements.txt",
+        "scripts/tests/test_shadcn_add.py",
+        "scripts/tests/test_tailwind_config_gen.py"
+      ],
+      "licenceFile": "LICENSE.txt",
+      "name": "ui-styling",
+      "path": "cli/assets/skills/ui-styling"
+    }
+  ]
+}

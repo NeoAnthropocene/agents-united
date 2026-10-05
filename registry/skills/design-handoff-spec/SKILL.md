@@ -1,150 +1,61 @@
 ---
 name: design-handoff-spec
-description: Production-grade Design Handoff Spec playbook for design
-  operations, UX systems, and growth strategy.
+description: "Use when a design (frames, a generated prototype, a Figma file) is about to be built, or when the builder reports missing information; trigger phrases: hand this design to dev, is this handoff ready, the builder keeps asking questions, spec the pricing page for build. Produces one handoff spec per page or flow: component map, layout in tokens, states, responsive rules per breakpoint, motion with a reduced-motion form, content bindings, test ids, events and open questions. Skip it for early exploration (nothing to hand off yet) and for tweaks inside an existing handoff (amend the spec)."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: 🤝
 disable-slash-command: true
 ---
 
 # Design Handoff Spec
 
+Handoff fails when the builder has to ask, or worse, to guess. This is the checklist and the document shape that close the gap between Jamileh's frames, Kaan's copy and Deniz's build.
+
 ## Overview & Purpose
-The Design Handoff Spec skill provides a deterministic framework for executing design handoff spec processes in modern software products.
+Read by the front-end architect when translating a handoff into component structure, and used by the designer to decide whether a handoff is ready to send. It describes a page or a flow; one reusable component is specified with `ui-component-spec`.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it when a design (frames, a generated prototype, a Figma file) is about to be built, or when the builder reports missing information. Do not use it for early exploration (nothing to hand off yet) or for tweaks inside an existing handoff (amend the spec).
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Design Handoff Spec tasks.
-- Auditing existing product assets or workflows.
-- Standardizing design-handoff-spec procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: the frames or file link with frame identifiers; the token set; the copy as typed section props from Kaan; the component inventory already built; the target breakpoints; analytics and SEO requirements; the acceptance criteria.
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Output: one handoff spec per page or flow: scope and links, component map (existing, extended, new), layout and spacing in tokens, states, responsive rules per breakpoint, motion, content bindings, accessibility notes, assets, test ids and events, open questions. Shape: [examples/handoff-template.md](examples/handoff-template.md). **Evidence to attach**: the frame identifier or link for each section, so a reviewer can compare spec to design.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **Check Definition of Ready first.** Ready only if: frames exist for every state of every interactive element; desktop and the narrowest breakpoint are both designed; all copy is final or has a length limit; the tokens needed exist; the open questions are listed with owners. If not, return the handoff with the missing list instead of building from it.
+2. **Map components**: for each part of the page, the existing component it uses, which needs a new variant, and which is new (and needs `ui-component-spec`).
+3. **State layout in tokens**: spacing between and inside sections as token names, grid columns and gutters per breakpoint, maximum content width. A pixel value that matches no token is a defect in the design, raised as an open question, never copied.
+4. **Give responsive rules as rules**, not as three screenshots: what reflows, stacks or hides (and where it goes instead), the content order on the narrow layout, which images swap; name the product's breakpoints.
+5. **List the states and transitions**: loading, empty, error, success, disabled; what each shows, and how long loading may last before an error appears.
+6. **Specify motion**: purpose, duration (typically 150 to 300 ms for interface feedback), easing, and the reduced-motion alternative (no movement, a fade or an instant change). If you cannot say what an animation is for, remove it.
+7. **Bind content**: the copy as the typed props Kaan supplies, with maximum lengths and what happens beyond them; images with alt text written or marked decorative.
+8. **Add the hooks**: a `data-testid` for every interactive element and key region, the analytics events, and the headings and landmarks outline for accessibility and for Selin's SEO needs.
+9. **Hand off with the open questions**, each addressed to a named owner (Jamileh for design, Kaan for copy, Selin for SEO, Defne for legal text), and ask Emre to say which acceptance checks cannot be written yet.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/design-handoff-spec/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/design-handoff-spec/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/design-handoff-spec/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for a pricing-page handoff: the Definition of Ready check that sent three items back, and a spec excerpt.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- Raw pixel and hex values copied from the design tool: the tokens are bypassed.
+- "Responsive: standard" with no rules: the builder has to guess.
+- Only the happy state designed: loading and error get built by guesswork.
+- Animation with no purpose or reduced-motion form: it cannot be justified or made safe.
+- Copy pasted as a screenshot instead of typed props: it cannot be built or limited.
+- Starting the build while open questions have no owner: nobody will answer them.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+## Edge Cases & Error Recovery
+- **The design uses a new colour or size**: raise a token request to Jamileh; the builder invents no value.
+- **A generated prototype is the "design"**: treat it as a sketch; extract tokens and components and list what is hardcoded in it.
+- **Frames contradict the copy lengths**: copy limits win; ask Jamileh to redraw with the real length.
+- **Behaviour frames cannot show** (validation, loading): write it in words and mark it specified, not designed.
+- **The builder finds a gap mid-build**: record it in the spec's open list and stop only the affected part.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/design-handoff-spec/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/design-handoff-spec/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/design-handoff-spec/ reports/design-handoff-spec/
-   git commit -m "feat(design-handoff-spec): implement Design Handoff Spec playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Design Handoff Spec Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "design-handoff-spec"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/design-handoff-spec/summary.json"
-```
-
-### Exemplar 2: Design Handoff Spec Helper Module
-```typescript
-export function runDesignHandoffSpec(scope: string): boolean {
-  console.log('Running Design Handoff Spec on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Design Handoff Spec
-1. **Diagnosis**: Specification or code asset fails validation rules in design-handoff-spec.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Design Handoff Spec
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Definition of Ready was checked and the missing items, if any, were returned.
+- [ ] Layout and spacing are token names; no raw values appear.
+- [ ] Responsive rules, states, motion with its reduced-motion form and content limits are written.
+- [ ] Test ids, events and the headings outline are listed.
+- [ ] Each section links to its frame identifier.
+- [ ] Open questions each name an owner, and Emre has been asked to review the acceptance checks.
