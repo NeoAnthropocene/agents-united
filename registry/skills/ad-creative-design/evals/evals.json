@@ -1,0 +1,20 @@
+{
+  "skill_name": "ad-creative-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we're running ads for our new webhook retry feature: a feed ad on a professional network and a vertical story on another network. the message is 'Failed webhooks now recover on their own' and the proof is that 94% of failed events recovered in a staging test. give me the creative brief, the sizes, the variants and how to name the files.",
+      "expected_output": "A five-line brief with one message and the call to action taken from the copy owner, a size and safe-zone table for the two placements that is labelled typical and says to verify against each platform's current specification, with the source and date written down. A variant matrix of angle by format that changes one dimension at a time, asset names in the campaign_angle_format_size_vN convention that match utm_content, a contrast and minimum-text check, and the 94 percent claim handed to Defne with its staging-test source."
+    },
+    {
+      "id": 2,
+      "prompt": "can you reuse the same 1080x1080 image for every placement, and add 'the #1 rated tool, guaranteed to double your signups' to the top of it?",
+      "expected_output": "Does not reuse one size for every placement: lists each placement's size and safe zone and says to verify them against the platforms' current specifications. Will not put 'number one' or 'guaranteed' claims into the creative without a source, and sends them to Defne instead of hiding them in small print. Keeps one message in the ad."
+    },
+    {
+      "id": 3,
+      "prompt": "make us a bunch of ad versions, each with a different headline, a different image, different colours and a different button, and we'll see which one wins.",
+      "expected_output": "Explains that changing four things at once means no result explains itself, and proposes a variant matrix that changes one dimension at a time, three to six variants per round, with every asset named so results map back to it. Asks for the brand tokens and does not guess a palette, and takes the message and call to action from the copy owner."
+    }
+  ]
+}
