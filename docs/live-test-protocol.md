@@ -24,11 +24,15 @@ Seven things about the Claude digital-agency pilot are still **not established**
 ## Common setup (free)
 
 ```powershell
-cd D:\AI\agents-united; git switch <the branch under test>; npm run build
-$S = "D:\AI\scratch-pilot\<scenario-dir>"; mkdir $S; cd $S; git init
-node D:\AI\agents-united\dist\cli.js add digital-agency -t claude --native --session-guard local -y
-node D:\AI\agents-united\dist\cli.js doctor --host claude
+$R = "<this clone, for example C:\github\agents-united>"
+$SCRATCH = "<a folder outside the repository and outside any synced drive, for example C:\github\scratch-pilot>"
+cd $R; git switch <the branch under test>; npm run build
+$S = "$SCRATCH\<scenario-dir>"; mkdir $S; cd $S; git init
+node $R\dist\cli.js add digital-agency -t claude --native --session-guard local -y
+node $R\dist\cli.js doctor --host claude
 ```
+
+The first version of this protocol named a fixed folder on drive `D:`; on the maintainer's machine of 2026-10-05 that folder did not exist and `D:` was a Google Drive mount (only `My Drive` and `Shared drives` at its root), where a scratch project with a `.git` folder would be synced. The paths are variables so the protocol holds on any machine.
 
 `doctor` must be healthy (ten native files, the guard script, no warning other than the missing MCP servers) before any prompt. Start commands are given per scenario. Both variables are set for the session by `agents start`; with a plain `claude` start they are set by hand (PowerShell: `$env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS='1'; $env:CLAUDE_CODE_ENABLE_TODO_TOOLS='1'`).
 
@@ -241,7 +245,7 @@ Estimate 0.2 to 0.5 USD a run on Sonnet (not measured for these prompts); 12 ski
 Fresh scratch `h2-start`. First, free: check the plan limits (`get_usage`; Opus has its own weekly window on some plans, and the cost of an Opus lead is **not measured** here, the ceiling is a guess from the Sonnet ledger) and the launch plan:
 
 ```powershell
-node D:\AI\agents-united\dist\cli.js start digital-agency --host claude --dry-run
+node $R\dist\cli.js start digital-agency --host claude --dry-run
 ```
 
 Once the CLI is installed globally this is `agents start digital-agency --host claude`. The dry run must show `--agent orchestrator-digital-agency`, **no** `--model` and no `--effort` in argv, and the teams switch (the two variables are injected into the process, never into argv or the prompt). Then start for real with the same command without `--dry-run`; the maintainer types the prompt in the TUI.
