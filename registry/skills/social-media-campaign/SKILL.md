@@ -1,6 +1,6 @@
 ---
 name: social-media-campaign
-description: "Plan and write a social campaign in shapes native to each platform: one claim per post, source material first, a calendar with owners, disclosure of paid content, no engagement bait, a response plan and measurement."
+description: "Use when planning a launch announcement matrix, an always-on social content plan, an event or a feature-adoption push; trigger phrases: plan our social campaign, write the launch posts for each platform, social media calendar, how should we announce this on X and LinkedIn, what do we do if people reply badly. Produces a campaign brief, a post matrix per platform with owners and dates, disclosure notes, a response plan and a measurement plan with a UTM scheme. Skip it for paid ad creative (use ad-creative-design) and for a long-form content plan (use content-calendar-strategy)."
 metadata:
   author: agents-united
   version: 3.0.0
@@ -10,56 +10,40 @@ disable-slash-command: true
 
 # Social Media Campaign
 
-## Overview & Purpose
-A campaign is a message, told in the form each platform's readers expect, on a schedule, with a plan for what happens when people answer. Resizing one post for five networks is not a campaign. This skill gives the campaign specialist the order of work and the rules that keep a campaign honest.
+A campaign is a message, told in the form each platform's readers expect, on a schedule, with a plan for what happens when people answer. Resizing one post for five networks is not a campaign.
 
-The campaign specialist drafts and plans. Nothing is posted by this role: publishing is the client's or the lead's act, with their accounts. Visuals belong to Jamileh and claims review to Defne.
+## Overview & Purpose
+For the campaign specialist, who drafts and plans: nothing is posted by this role, because publishing is the client's or the lead's act, with their accounts. Visuals belong to Jamileh and claims review to Defne.
 
 ## Execution Triggers
-Load it for a launch announcement matrix, an always-on content plan, an event or a feature-adoption push. Do not use it for paid ad creative (use `ad-creative-design`), or for a long-form content plan (use `content-calendar-strategy`).
+Load it for a launch announcement matrix, an always-on content plan, an event or a feature-adoption push. Do not use it for paid ad creative (`ad-creative-design`) or a long-form content plan (`content-calendar-strategy`).
 
 ## Input/Output Requirements
-Inputs: the campaign goal as one measurable outcome, the audience and where they already are, the one message, source material (posts, articles, product demos, changelog, quotes), the channels the client actually operates, who approves, and the dates.
+Inputs: the campaign goal as one measurable outcome, the audience and where it already is, the one message, source material (posts, articles, demos, changelog, quotes), the channels the client actually operates, who approves, the dates.
 
-Outputs: a campaign brief (goal, audience, message, channels, success metric); a matrix of posts per platform with angle, copy, asset need and call to action; a dated calendar with owners and approval step; disclosure notes; a response plan; the measurement plan with UTM scheme. Evidence to attach: the source of each fact or number used in a post.
+Output: a campaign brief (goal, audience, message, channels, success metric); a post matrix per platform (angle, copy, asset need, call to action); a dated calendar with owners and the approval step; disclosure notes; a response plan; the measurement plan with its UTM scheme. **Evidence to attach**: the source of each fact or number used in a post.
 
 ## Step-by-Step Runbook
-1. **Start from source material, not from a formula.** What did the team actually build, measure or learn? A post is the smallest true thing worth telling about it.
-2. **One claim per post.** If a post needs "and also", it is two posts. Write the claim first, then the shape.
-3. **Use the platform-native shape.** Short and concrete on X (the claim first, then the proof). Professional networks: enough context for someone outside the niche, no fake lesson. Community forums: an honest question or a post-mortem, written as a member, no sales language. Video: show the result in the first seconds, script the visual sequence. A thread, a post and a video of the same news are three pieces, each making its claim in its own form.
-4. **Plan the calendar around moments**, not slots: a release, an event, a customer story, a result. Put the pillar piece first, derivatives after, and a gap for reacting to what happens.
-5. **Disclose.** Paid, sponsored, affiliate or gifted content is labelled as such in the place the platform expects; employees and partners say who they work for. A false or buried disclosure is a reason to stop (Defne).
-6. **No engagement bait.** No "comment YES for the guide", no fake polls, no tagging people who did not agree to it, no asking for shares or votes in exchange for nothing, no purchased engagement.
+1. **Start from source material, not a formula**: what did the team build, measure or learn? A post is the smallest true thing worth telling about it.
+2. **One claim per post**: a post that needs "and also" is two posts. Write the claim first, then the shape.
+3. **Use the platform-native shape** ([references/platform-shapes.md](references/platform-shapes.md)): short and concrete on X, context for outsiders on a professional network, an honest question or post-mortem as a member on a community forum, the result in the first seconds on video. A thread, a post and a video of the same news are three pieces.
+4. **Plan the calendar around moments**, not slots: a release, an event, a customer story, a result. The pillar piece first, derivatives after, a gap for reacting to what happens.
+5. **Disclose.** Paid, sponsored, affiliate or gifted content is labelled where the platform expects it; employees and partners say who they work for. A false or buried disclosure is a reason to stop (Defne).
+6. **No engagement bait**: no "comment YES for the guide", no fake polls, no tagging people who did not agree, no asking for shares or votes in exchange for nothing, no purchased engagement.
 7. **Write the response plan before the first post**: who watches replies and for how long, what gets answered, what escalates to the lead (complaints, press, legal, a crisis), what is never deleted, and a pause rule (stop scheduled posts when something serious happens).
-8. **Measure what the goal is**: clicks to the campaign page via UTM, signups or replies, not impressions alone. Name one primary metric and a guardrail (unfollows, negative replies).
+8. **Measure what the goal is**: clicks to the campaign page via UTM, signups or replies, not impressions alone. One primary metric and one guardrail (unfollows, negative replies).
 9. **Hand off.** Visual briefs to Jamileh (sizes per platform), landing-page copy to Kaan, content pieces from Yavuz's calendar, claims and disclosure to Defne, link and UTM checks to Emre. The lead decides when to post.
 
 ## Code & Config Exemplars
-### Worked example
-Launch of a webhook-retry feature. Source material: the changelog, a measurement (retries now recover 94 percent of failed deliveries in a staging test of 10,000 events, invented here), and one customer quote.
+Load [examples/worked-example.md](examples/worked-example.md) for a four-platform launch matrix with its response plan and UTM scheme.
 
-Message: "Failed webhooks now recover on their own." One claim, one proof.
-
-| Platform | Shape | Copy (excerpt) | Asset | CTA |
-|---|---|---|---|---|
-| X | claim then proof | "Failed webhooks now retry on their own. In a staging test of 10,000 events, 94% recovered with no code on your side." | one chart | link to the guide, UTM tagged |
-| LinkedIn | short story | "Last year one of our customers lost a day to a missed webhook. We built retries so the next team does not." | founder photo, no stock image | link, UTM tagged |
-| Community forum | post-mortem as a member | "How we designed retry backoff and what we got wrong first" | none | the guide, no sales pitch |
-| Short video | result first | 0:00 failed event, 0:04 it retries, 0:10 delivered | screen recording | pinned link |
-
-Response plan: the campaign specialist's brief names the client's support lead as the person who answers technical replies within one working day; "this lost me data" replies escalate to the lead the same day; no post is deleted except for abuse. Metric: guide visits from the campaign UTM; guardrail: negative replies share.
-
-```text
-utm_source=<platform> utm_medium=social utm_campaign=webhook-retries utm_content=<post-id>
-```
-
-### Anti-patterns
-- The same text, five sizes.
-- Three claims in one post.
-- "Comment to get the link" to farm replies.
-- Posting with no one watching the replies.
-- Impressions as the success metric.
-- An undisclosed sponsored mention.
+Anti-patterns, each with its reason:
+- The same text in five sizes: each platform's readers see a stranger's post.
+- Three claims in one post: none of them lands.
+- "Comment to get the link": it farms replies and spends goodwill.
+- Posting with no one watching replies: the first complaint waits for days.
+- Impressions as the success metric: they do not show the goal moved.
+- An undisclosed sponsored mention: a reason to stop, and a risk for Defne.
 
 ## Edge Cases & Error Recovery
 - **A crisis or tragedy lands on a scheduled day**: recommend pausing the schedule; the lead decides.
