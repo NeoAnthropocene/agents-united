@@ -20,6 +20,10 @@ const load = async (): Promise<ContrastModule> => (await import(pathToFileURL(SC
 const run = (...args: string[]) => spawnSync('node', [SCRIPT, ...args], { encoding: 'utf8' });
 
 describe('accessibility-audit contrast.mjs', () => {
+  it('has no shebang line: git writes CRLF on a Windows checkout and vitest cannot import a script whose first line ends in one (the script is run as `node <path>`, so it needs none)', () => {
+    expect(fs.readFileSync(SCRIPT, 'utf8').startsWith('#!')).toBe(false);
+  });
+
   it('computes the WCAG ratio: black on white is 21, a colour on itself is 1, order does not matter', async () => {
     const { contrastRatio } = await load();
     expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 5);

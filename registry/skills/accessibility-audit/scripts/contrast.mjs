@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // WCAG 2.x contrast ratio of two sRGB colours, with the four verdicts.
 // Usage: node contrast.mjs <foreground hex> <background hex> [--large] [--level AA|AAA]
 // Exit code: 0 when the chosen requirement passes, 1 when it fails, 2 for a usage error.
