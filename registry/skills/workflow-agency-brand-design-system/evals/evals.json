@@ -1,0 +1,20 @@
+{
+  "skill_name": "workflow-agency-brand-design-system",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we have a brand blue #1D4ED8 and an amber #F59E0B, a few logos, and no design system. can you refresh the brand and set up a proper system our developers can build from?",
+      "expected_output": "Presents a delegation map first, records which brand values are given and which are proposed, then has Jamileh and Kaan settle identity and a voice guide from real samples. Jamileh writes design-tokens.json in three tiers with every text and boundary pair computed (amber on white is about 2.15 to 1, so amber is a fill with a dark label and a derived darker step carries text) and a dark theme by remapping, the file is read back before anything is built, components are specified with every state, Deniz builds from tokens only, and Emre and Defne gate the built result. Ends with a hand-over document and a rollback route for a token change."
+    },
+    {
+      "id": 2,
+      "prompt": "the amber fails contrast as text on white. can jamileh just darken our brand amber a bit so it passes the check?",
+      "expected_output": "Does not alter the client's brand colour to pass a test: the given amber stays, a derived darker step is added beside it and labelled, amber is used as a fill with a dark label, and if the client insists on the original as text the exception is documented, restricted and put in the report."
+    },
+    {
+      "id": 3,
+      "prompt": "we already have a token file and a themed component library. just replace it all with a fresh design system from scratch.",
+      "expected_output": "Audits and extends the existing set instead of replacing it, since the client already has tokens, maps old names to new ones, keeps the old names until Deniz confirms migration, and states what a third-party component library allows to be themed before Jamileh specifies beyond it."
+    }
+  ]
+}
