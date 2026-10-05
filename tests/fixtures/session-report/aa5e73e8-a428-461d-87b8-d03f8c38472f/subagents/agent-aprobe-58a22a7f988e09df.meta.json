@@ -1,0 +1,1 @@
+{"agentType":"probe","description":"Guard hook probe","name":"probe","spawnDepth":0,"requestShape":"background","requestNonInteractive":true,"model":"sonnet","taskKind":"in_process_teammate","teamName":"session-aa5e73e8","color":"blue","planModeRequired":false,"customAgentType":"agency-qa-automation-lead","permissionMode":"auto"}

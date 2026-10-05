@@ -249,6 +249,28 @@ function jsonOf(text: string): Json | undefined {
   }
 }
 
+/** What a structured message says (`{"type": ...}`), whether the call carried it as an object or as JSON text. */
+const structuredOf = (message: unknown): Json | undefined => (typeof message === 'string' ? jsonOf(message) : typeof message === 'object' && message !== null ? obj(message) : undefined);
+
+/**
+ * The `tools:` line of a Claude role: from the copy installed in the session's own project, else from this repository's native file (read from
+ * the working directory, as the other hostlib commands read `registry/`). `'*'` when the file has no `tools:` key (the role holds every tool);
+ * undefined when the role is unknown here, and the caller then goes by what the session shows.
+ */
+function roleTools(type: string | undefined, cwd: string | undefined): string | undefined {
+  if (!type) return undefined;
+  for (const file of [cwd ? path.join(cwd, '.claude', 'agents', `${type}.md`) : '', path.resolve('registry/hosts/claude/agents', `${type}.md`)]) {
+    if (file === '' || !fs.existsSync(file)) continue;
+    const front = /^---\r?\n([\s\S]*?)\r?\n---/.exec(fs.readFileSync(file, 'utf8'));
+    if (!front) continue;
+    const line = /^tools:[ \t]*(.*?)\r?$/m.exec(front[1]!);
+    return line ? line[1] || undefined : '*';
+  }
+  return undefined;
+}
+
+const grantsShell = (tools: string): boolean => tools === '*' || /(^|[\s,])(Bash|PowerShell)(?=[\s,]|$)/.test(tools.replace(/\([^)]*\)/g, ''));
+
 function consultationFinding(session: Session): Finding {
   const evidence: string[] = [];
   let violation = false;
@@ -293,6 +315,10 @@ function shutdownFinding(session: Session): Finding {
   const responses = session.agents.flatMap(a => a.received.filter(r => r.kind === 'shutdown_response' || r.kind === 'shutdown_approved'));
   const refusals = (lead ? lead.received : []).filter(r => /request_id/i.test(r.text) && /shut ?down/i.test(r.text));
   evidence.unshift(`structured shutdown_request: ${structured}, plain-text shutdown requests: ${plain}, shutdown responses received by the lead: ${responses.length}`);
+  // The teammates' own replies, from their own records: the lead's record carries one only if the lead was still reading when it arrived
+  // (session aa5e73e8: the probe answered, the lead's record shows none).
+  const replies = session.agents.filter(a => !a.isLead).flatMap(a => a.calls.filter(c => c.name === 'SendMessage').map(c => structuredOf(c.input.message)).filter((m): m is Json => m !== undefined && str(m.type) === 'shutdown_response'));
+  evidence.splice(1, 0, `shutdown responses sent by teammates: ${replies.length} of ${structured} requested (approved ${replies.filter(m => m.approve === true).length})`);
   if (refusals.length > 0) evidence.push(`${refusals.length} reply(ies) mention a missing request_id`);
   const verdict: Verdict = structured + plain === 0 ? 'not seen' : plain > 0 ? 'violation' : 'seen';
   return { id: 'H1b', title: 'Shutdown is asked with a structured shutdown_request', verdict, evidence };
@@ -303,7 +329,10 @@ function rereadFinding(session: Session): Finding {
   let anyShellLess = false;
   let violation = false;
   for (const a of session.agents.filter(x => !x.isLead)) {
-    const hasShell = a.calls.some(c => SHELL_TOOLS.has(c.name));
+    // A role is shell-less by the tools of its manifest, not by the calls it happened to make (session fec45100: Deniz holds a shell and made
+    // none); a role this repository does not know is judged by what the session shows.
+    const tools = roleTools(a.customAgentType, session.cwd);
+    const hasShell = tools !== undefined ? grantsShell(tools) : a.calls.some(c => SHELL_TOOLS.has(c.name));
     const writes = a.calls.filter(c => WRITE_TOOLS.has(c.name));
     if (hasShell || writes.length === 0) continue;
     anyShellLess = true;
