@@ -107,6 +107,14 @@ describe('the live-test protocol: content that must be exact', () => {
     expect(s).toMatch(/not measured/i);
   });
 
+  it('names this clone and the scratch root by variable, never by a drive-letter path of one machine (found on 2026-10-05: D:\\AI did not exist and D: was a synced drive)', () => {
+    expect(DOC).not.toMatch(/\b[A-Za-z]:\\AI\\/);
+    expect(DOC).toMatch(/\$R\b/);
+    expect(DOC).toMatch(/\$SCRATCH\b/);
+    expect(DOC).toMatch(/outside the repository and outside any synced drive/i);
+    expect(DOC).toMatch(/node \$R\\dist\\cli\.js start digital-agency --host claude --dry-run/);
+  });
+
   it('points at the session-report helper that exists in package.json, and at where the records live', () => {
     expect(DOC).toContain('npm run hostlib:session');
     const scripts = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8')).scripts as Record<string, string>;
