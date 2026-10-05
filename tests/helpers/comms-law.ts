@@ -37,6 +37,9 @@ export const TEAMMATE_COMMS_EVIDENCE: ReadonlyArray<{ invariant: string; evidenc
   // Observed on Claude Code 2.1.289 (the full-roster live run, 2026-10-04): the host announces a task the lead gives to a running teammate as a
   // `task_assignment` message, and Ava, who had been asked only to consult ("write no files"), wrote her deliverable in the same turn.
   { invariant: 'A host task assignment does not lift a read-only consultation.', evidence: /\*\*A task assignment is not a go-ahead\.\*\*[^\n]*does not lift that/ },
+  // Observed on Claude Code 2.1.289 (Plan 035 H4, 2026-10-05): a teammate set a task to `in_progress` while the task that blocks it was still
+  // open, and the host answered "Updated task #2 status". `blockedBy` is advisory, so the order is kept by the teammates and the lead.
+  { invariant: 'A blocked task is not started: the teammate reads its task again with the task tools it loaded and reports the open blocker.', evidence: /\*\*A blocked task is not yours to start\.\*\*[^\n]*select:SendMessage,TaskGet,TaskUpdate[^\n]*`blockedBy`[^\n]*`Open items`/ },
   { invariant: TEAMMATE_COMMS_INVARIANTS[4], evidence: /`Peer messages received`[\s\S]*`Open items`/ },
   { invariant: TEAMMATE_COMMS_INVARIANTS[5], evidence: /team mode[^.]*brief lists each peer[^.]*`SendMessage`/i },
   // The default is the relay, and a missing peer never blocks.
@@ -70,6 +73,8 @@ export const LEAD_COMMS_EVIDENCE: ReadonlyArray<{ what: string; evidence: RegExp
   { what: 'the shutdown request is structured (`shutdown_request`), and a plain-text request is not one', evidence: /structured request[^.]*shutdown_request[^.]*\. A plain-text request is not one/ },
   // Observed on Claude Code 2.1.289: an owner set on a running teammate's task is announced to it at once, and the teammate acts on it.
   { what: 'an owner set with TaskUpdate announces the task to a running teammate, so an owner is set when the work should start and a consulted teammate\'s task stays unowned', evidence: /Setting a task's owner[^.]*announces the task[^.]*acts on it at once[\s\S]*unowned until the consultation is accepted/ },
+  // Observed on Claude Code 2.1.289 (Plan 035 H4, 2026-10-05): the host accepted `in_progress` on a task whose blocker was still open.
+  { what: 'the host does not enforce `blockedBy` (observed), so the lead keeps the order itself and never tells a teammate to start a blocked slice', evidence: /does not enforce `blockedBy`[^\n]*never tell a teammate to start a blocked task/ },
   { what: 'wait for the teammates and do not do their slices', evidence: /wait for your teammates/i },
   { what: 'one team per session, and teammates cannot spawn teammates', evidence: /one team per session[\s\S]*cannot spawn/i },
   { what: 'a resumed session does not restore teammates', evidence: /\/resume[^.]*(not|never)[^.]*restore/i },
