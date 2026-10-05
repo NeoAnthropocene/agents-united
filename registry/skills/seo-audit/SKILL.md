@@ -1,6 +1,6 @@
 ---
 name: seo-audit
-description: "Use when the brief is audit our SEO, a launch or migration needs a check, traffic dropped, or a content plan needs a baseline; trigger phrases: audit our SEO, why did our traffic drop, what is wrong with our search visibility, give me an SEO health score. Produces the audit report: a health score by a stated rule, indexation status, graded findings that name a page with evidence and an owner, a per-URL intent table and a plan by impact against effort. Skip it to promise rankings (no audit can) and for paid search; crawl depth is technical-seo-audit."
+description: "Use when the brief is audit our SEO, a launch or migration needs a check, traffic dropped, a content plan needs a baseline, or someone asks to guarantee a ranking; trigger phrases: audit our SEO, why did our traffic drop, what is wrong with our search visibility, give me an SEO health score, can you guarantee we rank number one. Produces the audit report: a health score by a stated rule, indexation status, graded findings that name a page with evidence and an owner, a per-URL intent table and a plan by impact against effort; asked to promise a ranking or traffic number it declines (no audit can know it) and says what the audit can establish. Skip it for paid search; crawl depth is technical-seo-audit."
 metadata:
   author: agents-united
   version: 3.0.0
@@ -10,16 +10,16 @@ disable-slash-command: true
 
 # SEO Audit
 
-An SEO audit answers one question: what, specifically, keeps these pages from being found by the people who want them, and what is the cheapest order to fix it? A useful audit is page-specific, ordered by consequence and implementable by whoever owns each fix.
+An SEO audit answers one question: what, specifically, keeps these pages from being found by the people who want them, and what is the cheapest order to fix it? A useful audit is page-specific, ordered by consequence and implementable by each fix's owner.
 
 ## Overview & Purpose
-The broad audit: Selin runs it and Yavuz uses its findings for content and keyword ownership. Crawl and indexation depth is `technical-seo-audit`, templated pages at scale `programmatic-seo`, structured data `schema-markup-strategy`.
+The broad audit: Selin runs it and Yavuz uses its findings for content and keyword ownership. Crawl and indexation depth is `technical-seo-audit`, templated pages `programmatic-seo`, structured data `schema-markup-strategy`.
 
 ## Execution Triggers
-Load it when the brief is "audit our SEO", a launch or migration needs a check, traffic dropped, or a content plan needs a baseline. Do not use it to promise rankings (no audit can) or for paid search.
+Load it when the brief is "audit our SEO", a launch or migration needs a check, traffic dropped, or a content plan needs a baseline. Load it too when asked to guarantee a ranking or a traffic number, only to decline: no audit can know it, so say what the audit can establish. Do not use it for paid search.
 
 ## Input/Output Requirements
-Inputs: the domain and the pages that matter (revenue, signups); what can be read (the live site, the sitemap, Search Console exports if supplied); audience and topics; named competitors; what changed recently (a redesign, a migration, a CMS change).
+Inputs: the domain and the pages that matter (revenue, signups); what can be read (the live site, the sitemap, Search Console exports if supplied); audience and topics; named competitors; what changed recently (redesign, migration, CMS).
 
 Output: the audit report in the role's format (summary with the health score and indexation status, the 15-point checklist, priority actions with owners, authored snippets) and a per-URL table: intent, title and description, issue, fix, owner. Shape: [examples/report-template.md](examples/report-template.md). **Evidence to attach**: per finding, the URL, the exact observation (a header, a tag, a number), the tool or command and the date.
 
@@ -27,7 +27,7 @@ Output: the audit report in the role's format (summary with the health score and
 1. **Scope to the pages that earn**: the 10 to 30 URLs that matter, and why; auditing everything produces noise. Note the date: pages change.
 2. **Technical blockers come first**, before judging content: can the page be crawled, rendered and indexed (checks 1 to 6 of `technical-seo-audit`)? Content work on a blocked page is wasted.
 3. **One primary search intent per URL**, in a sentence (informational, commercial, transactional, navigational), compared with the page. A product page answering an informational query, or two pages chasing one query, is a finding; resolve cannibalisation by merging, redirecting or re-targeting, with Yavuz.
-4. **On-page basics where they matter to that intent** (title about 50 to 60 characters, description about 120 to 155, one H1, anchors, alt text, internal links): [references/on-page-basics.md](references/on-page-basics.md).
+4. **On-page basics where they matter to that intent**: [references/on-page-basics.md](references/on-page-basics.md).
 5. **Performance and experience**: field data where it exists, lab data to find the cause; the root cause via `debug-optimize-lcp`.
 6. **Grade each finding**: critical (blocks crawling, indexing or rendering of an important page), major (clearly loses visibility or clicks), minor (hygiene). Health score: 100 minus 15 per critical, 7 per major, 2 per minor, floor 0 (`node ${CLAUDE_SKILL_DIR}/scripts/health-score.mjs findings.md`, or the table in [references/health-score.md](references/health-score.md)). State the rule and the scope.
 7. **Prioritise by impact against effort**: impact is how many important pages and how much traffic or revenue; effort is who must change what. Critical and cheap first; label every impact figure an estimate.
@@ -41,7 +41,6 @@ Anti-patterns, each with its reason:
 - Content work on pages that cannot be indexed: it cannot pay back.
 - Two pages chasing one query left alone: they compete with each other.
 - Keyword stuffing presented as optimisation: a risk, not a fix.
-- A promised ranking or traffic number: no audit can know it.
 - A health score without its rule and scope: it cannot be checked.
 
 ## Edge Cases & Error Recovery

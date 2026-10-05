@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://staging.hookrelay.example/docs/webhooks</loc></url>
+  <url><loc>https://staging.hookrelay.example/pricing</loc></url>
+  <url><loc>https://staging.hookrelay.example/blog/webhook-retries</loc></url>
+  <url><loc>https://staging.hookrelay.example/blog/retry-strategies</loc></url>
+  <url><loc>https://www.hookrelay.example/docs/webhook-guide</loc></url>
+</urlset>
