@@ -1,0 +1,20 @@
+{
+  "skill_name": "workflow-agency-cro-funnel-teardown",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "our course checkout converts badly. pricing page 7,360 visitors, checkout started 1,470, paid 590 over 28 days, and mobile is far worse than desktop. can you run a CRO teardown with the whole team?",
+      "expected_output": "Presents a delegation map first, then has Ava draw the funnel with counts and name the segment that carries the leak against a sourced benchmark. Kaan audits each step and grades findings S1 to S4 while Emre walks the flow at 375 and 1280 pixels and checks events and the console, with S1 and S2 handled as fixes and not experiments. Jamileh specs, Deniz builds, Ava queues experiments and Kaan briefs them through ab-test-setup, and Defne reviews new tracking and consent text. Emre re-verifies the changed pages, a rollback route exists for fixes and a stop rule for experiments, and the report names the read-out day."
+    },
+    {
+      "id": 2,
+      "prompt": "the audit found that the checkout error banner never clears on mobile. let's A/B test a fixed version against it and see if it helps.",
+      "expected_output": "Says an S1 bug is fixed and not tested: a test on a broken step measures the bug. Deniz fixes it, Emre verifies it on the changed page, and an experiment is only started afterwards on the corrected baseline if there is a separate hypothesis."
+    },
+    {
+      "id": 3,
+      "prompt": "we only get around 200 visitors a week to our booking funnel but the client wants a full CRO teardown and A/B tests on everything.",
+      "expected_output": "Says under about 300 visitors a week the playbook does not apply as a test programme: it offers a heuristic review labelled as one, refuses tests on tiny traffic by showing the sample arithmetic from ab-test-setup, offers qualitative research, and says plainly if the offer rather than the funnel is the problem."
+    }
+  ]
+}
