@@ -1,0 +1,20 @@
+{
+  "skill_name": "responsive-design-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "can you check that our pricing page is responsive? it's the /pricing route on the local build, you start it with npm run dev. we mostly care about phones.",
+      "expected_output": "Runs the viewport matrix (375 by 667, 768 by 1024, 1440 by 900 and a 320 px reflow check) in Playwright, measures horizontal overflow in pixels and touch target sizes at each width, saves a screenshot per viewport under artifacts, and operates the key journey at mobile width. Reports each defect with viewport, selector, measured value, severity and owner (layout to Deniz, design to Jamileh, copy to Kaan), patches nothing itself, gives the gate status, and lists what was not tested (real devices, authenticated states)."
+    },
+    {
+      "id": 2,
+      "prompt": "i dragged my desktop browser window narrow and it looked fine, so mobile is good. can you mark the responsive audit as passed?",
+      "expected_output": "Does not mark it passed: a hand-resized window is not a measured mobile test. Asks for the viewport matrix with measured overflow at every width, the 320 px reflow check, touch target sizes and screenshots as saved evidence, and says a headless browser cannot represent a real phone (virtual keyboard, safe areas), so no mobile pass is claimed beyond what was measured."
+    },
+    {
+      "id": 3,
+      "prompt": "customers keep saying the checkout page is broken on their phones but nobody on the team can reproduce it. what do you do?",
+      "expected_output": "Asks for the customer's device, browser and zoom and tests that exact configuration, runs the matrix with a wait for the load state and fonts, re-runs once if a measurement is flaky and reports both results if they differ. Reports what could not be reproduced and what was not tested, and routes defects through the lead without patching the layout."
+    }
+  ]
+}
