@@ -453,6 +453,10 @@ The capability that structures, defines, and refines domain entities and ubiquit
 A skill whose body is mostly lines that other skills also carry once its own name is taken out (a template with the title swapped), measured as a share of its content lines found in a frozen boilerplate corpus (0.30 or more fails), or a hand-written in-house skill under 30 content lines with no `references/` or `scripts/` (a stub). `tests/skill-quality-ratchet.test.ts` rejects both unless the skill is on the shrinking allowlist.
 _Avoid_: Boilerplate skill, generated skill (some generated skills are fine; the test is on repetition)
 
+**Skill Layout (ADR 0040, Plan 035)**:
+How a rewritten skill of the digital-agency bundle is laid out, after the Claude Code skills guidance. A short `SKILL.md` (at most 90 lines and 6,000 characters, the most important text first, the description leading with "Use when" and listing trigger phrases and when to skip) points to supporting folders that are read only when needed: `examples/` (worked examples and templates), `references/` (checklists, tables, formulas), `scripts/` (Node `.mjs`, only where the role that loads the skill has a shell) and `evals/evals.json` (for the maintainers: no install copies it). A skill is held to the layout once a marker file for it exists in `tests/fixtures/laid-out-skills/` (a **laid-out skill**); `tests/skill-layout.test.ts` checks it.
+_Avoid_: Template (that is a Templated Skill), skill pack
+
 **Skill Allowlist Marker**:
 One small file in `tests/fixtures/templated-skills/` named for a skill that failed the audit. A rewrite deletes its own marker; no marker can be added, and a marker for a skill that now passes fails the test, so the allowlist only shrinks and parallel rewrites never conflict.
 _Avoid_: Exemption, waiver
