@@ -30,7 +30,8 @@
     "hostlib:provenance": "node scripts/hostlib/cli.ts provenance",
     "hostlib:candidates": "node scripts/hostlib/cli.ts candidates",
     "hostlib:restore": "node scripts/hostlib/cli.ts restore",
-    "hostlib:licences": "node scripts/hostlib/cli.ts licences"
+    "hostlib:licences": "node scripts/hostlib/cli.ts licences",
+    "hostlib:session": "node scripts/hostlib/cli.ts session"
   },
   "keywords": [
     "antigravity",
