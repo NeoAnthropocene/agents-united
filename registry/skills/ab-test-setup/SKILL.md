@@ -1,150 +1,56 @@
 ---
 name: ab-test-setup
-description: Production-grade Ab Test Setup playbook for design operations, UX
-  systems, and growth strategy.
+description: "Use when writing an experiment brief, sizing an A/B test, or judging whether a finished test can be trusted; trigger phrases: how long should we run this, how many visitors do we need, is this result real, can we call the winner, the split looks off. Produces one brief: a single primary metric, the minimum detectable effect, sample size and run length, a stopping rule and the checks that catch a broken test. Skip it for changes shipped without measuring and for steps under about 500 visitors a week (use qualitative research and say why a test would be noise)."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: 📊
 disable-slash-command: true
 ---
 
-# Ab Test Setup
+# A/B Test Setup
+
+Most failed tests fail before launch: a vague metric, a sample too small for the hoped-for effect, or a broken split nobody checks. This skill turns an idea into a brief someone else can build and verify. You work by hand: every figure is an estimate unless it comes from data you read, and the brief says which.
 
 ## Overview & Purpose
-The Ab Test Setup skill provides a deterministic framework for executing ab test setup processes in modern software products.
+One brief per test, built from the hypothesis of `growth-experiment-design` or a CRO finding. It does not run the test or see your data.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it when you write a brief, are asked "how long should we run this", or must judge a finished test. Do not load it for untested changes or for steps under about 500 visitors a week.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Ab Test Setup tasks.
-- Auditing existing product assets or workflows.
-- Standardizing ab-test-setup procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: the change, the page or step, weekly visitors, the baseline rate with its date range, the smallest lift worth shipping. Output: the brief of [examples/brief-template.md](examples/brief-template.md), no field blank. **Evidence to attach**: where the baseline and the traffic came from.
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+## Step-by-Step Runbook
+1. **One primary metric**, as numerator over denominator with a time window. Three metrics are three hypotheses; demote the others to secondary or guardrail.
+2. **Set the minimum detectable effect (MDE) from business value**, not hope: the lift that pays for the build and the risk. A smaller lift is not worth a test.
+3. **Size it.** n per arm = 16 x p x (1 - p) / d squared, with d the *absolute* difference (0.008, not "20 percent"). Look it up in [references/sample-size-table.md](references/sample-size-table.md); with a shell run `node ${CLAUDE_SKILL_DIR}/scripts/sample-size.mjs --baseline 0.04 --lift 0.20 --daily 1500`.
+4. **Run length in whole weeks**, so every weekday appears equally: at least 7 days, and over 28 is not worth running at this volume.
+5. **Write the stopping and decision rules before launch**: stop at the planned sample or date, whichever is later. Do not peek: stopping at the first p below 0.05 inflates false positives several times over (general statistics, not measured here).
+6. **Plan the checks.** Before launch: sticky assignment, the event fires in both arms, the variant renders. During the run: sample-ratio mismatch (SRM) at day 3 and at the end; chi-square of 10.83 or more (p below 0.001) voids the result and the cause is found first. With a shell: `node ${CLAUDE_SKILL_DIR}/scripts/srm-check.mjs 10300 9700`; formulas in [references/formulas.md](references/formulas.md).
+7. **Hand off.** Deniz builds (flag, variant, event names and payload); Emre verifies assignment, events and SRM; Kaan writes copy variants; anything that sets a cookie goes to Defne for consent first.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) when you write your first brief or want numbers to check yours against: a feasible test, an infeasible one, and an SRM that voids a result.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/ab-test-setup/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/ab-test-setup/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/ab-test-setup/summary.json` | Health check and audit metric results |
+Anti-patterns, each with its reason:
+- Stopping when the dashboard turns green: the false-positive rate climbs with every look.
+- Five metrics reported, the one that moved called primary afterwards: that is a new hypothesis, tested on the same data.
+- A "winner" on 300 conversions in total: too small to separate from noise.
+- Testing the change and a new audience together: a difference then has two explanations.
+- Adding the lifts of two simultaneous winners: they interact.
 
-## Step-by-Step Execution Runbook
+## Edge Cases & Error Recovery
+- **Baseline under 1 percent:** the sample explodes; test a higher-frequency proxy that predicts the outcome, and call it a proxy.
+- **Traffic shared with other tests:** separate pages or exclusive buckets; if neither is possible, do not run both.
+- **A sale or launch in the window:** extend or restart and say so.
+- **An arm has a broken event:** the test is void; fix and relaunch, never stitch the halves.
+- **The interval contains zero:** record "no detectable effect at this MDE"; iterate once with a bolder variant or drop it.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
-
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/ab-test-setup/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/ab-test-setup/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/ab-test-setup/ reports/ab-test-setup/
-   git commit -m "feat(ab-test-setup): implement Ab Test Setup playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Ab Test Setup Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "ab-test-setup"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/ab-test-setup/summary.json"
-```
-
-### Exemplar 2: Ab Test Setup Helper Module
-```typescript
-export function runAbTestSetup(scope: string): boolean {
-  console.log('Running Ab Test Setup on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Ab Test Setup
-1. **Diagnosis**: Specification or code asset fails validation rules in ab-test-setup.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Ab Test Setup
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] One primary metric with numerator, denominator and window; guardrails with thresholds.
+- [ ] MDE in absolute and relative terms; the sample arithmetic is visible.
+- [ ] Run length is whole weeks, 7 to 28 days.
+- [ ] Stopping and decision rules are written before launch.
+- [ ] Verification plan for assignment, events and SRM is handed to Emre; tracking changes to Defne.
+- [ ] Every figure not computed from data you read is labelled an estimate.

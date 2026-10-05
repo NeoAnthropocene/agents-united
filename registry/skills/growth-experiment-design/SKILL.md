@@ -1,150 +1,58 @@
 ---
 name: growth-experiment-design
-description: Production-grade Growth Experiment Design playbook for design
-  operations, UX systems, and growth strategy.
+description: "Use when a funnel number is bad and nobody knows what to test, or the brief asks for a growth plan, an experiment backlog or a ranked test list; trigger phrases: what should we test first, build us an experiment backlog, where is the funnel leaking, activation is low, we need a growth plan, the last test was inconclusive. Produces a bottleneck statement, an ICE-ranked backlog, briefs for the top three and an experiment log. Skip it for a one-off copy tweak with no measurable outcome (hand it to Kaan as a finding) and for sizing a single test (use ab-test-setup)."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: 🧪
 disable-slash-command: true
 ---
 
 # Growth Experiment Design
 
+A growth experiment is a bet with a price, a deadline and a stated way to lose. Two rules carry the rest: work on the funnel stage that leaks earliest, and fix what result means ship, kill or iterate before anyone sees data, because afterwards every result can be called a win.
+
 ## Overview & Purpose
-The Growth Experiment Design skill provides a deterministic framework for executing growth experiment design processes in modern software products.
+For the growth strategist who decides which bets to place, in what order, and what was learned. It produces the backlog, the briefs and the log; Kaan and the product team run tests, and `ab-test-setup` sizes one.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it when the brief asks for a growth plan or "what should we test first", when a funnel number is bad and the cause unknown (day-7 retention under 20 percent, signup-to-activation under 25 percent, trial-to-paid under 2 percent for self-serve), or when a test was inconclusive. Do not load it for a copy tweak with no measurable outcome, or to size one test.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Growth Experiment Design tasks.
-- Auditing existing product assets or workflows.
-- Standardizing growth-experiment-design procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: the funnel with a count at every stage for the last 28 days (ask, never invent), the activation event, weekly traffic to the step, who can ship a change and how fast, past experiments.
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Output, in this order: a bottleneck statement (one stage, its conversion, the benchmark and its source); a backlog table (rank, experiment, hypothesis, I, C, E, ICE); briefs for the top three only; an experiment log entry per experiment. Shapes: [examples/templates.md](examples/templates.md). **Evidence to attach**: where each count and benchmark came from, with the date range.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **Locate the leak.** Divide each stage by the one before it. The bottleneck is the stage with the largest gap against its benchmark that sits earliest in the funnel: fixing a late stage while an early one leaks hides the real cost.
+2. **Write every hypothesis in one form**: "Because [evidence], we believe [change] will move [metric] by [amount], and we will know within [days] when [metric] passes [threshold]." With no evidence clause it is a wish: Confidence 1 to 3.
+3. **Score Impact, Confidence and Ease from 1 to 10; ICE is their mean.** Impact 9 to 10 means the bottleneck stage moves 20 percent relative or more; Confidence 7 or more needs numbers from this funnel; Ease 10 is one person in a day. Full bands: [references/ice-rubric.md](references/ice-rubric.md); a rubric makes two people score one idea alike.
+4. **Cut to what fits two weeks.** An experiment that needs more than 14 days of traffic at this volume leaves the backlog: make the change bigger, test a step higher, or log "needs more traffic". Check with `ab-test-setup` before promising.
+5. **One guardrail per experiment**, a metric that must not get worse (refund rate, support contacts, page speed, unsubscribe rate) with its threshold: a lift that costs trust is not a win.
+6. **Fix the decision rule now**, in the brief: ship at X with the guardrail holding; kill if the lower bound is below zero at the planned sample; otherwise iterate once.
+7. **Hand off, then log.** The brief goes to Kaan (variant copy) and Deniz (build, event names); Emre verifies that events fire before launch. Write the log entry within a day of the result: result, decision, one sentence of learning.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/growth-experiment-design/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/growth-experiment-design/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/growth-experiment-design/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) when you build your first backlog or want numbers to check yours against; [examples/templates.md](examples/templates.md) holds the backlog row, brief and log entry to copy.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- A backlog sorted by enthusiasm: without a rubric reason per score, two people rank one list differently.
+- Ten experiments at once on one page: they interact and no result is readable; one per page per run.
+- "Increase conversion" as a hypothesis: no number, evidence or end date, so it cannot fail.
+- Scaling acquisition into a leaking funnel: the leak eats the spend.
+- Choosing the decision rule after the results: any result can then be called a win.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+## Edge Cases & Error Recovery
+- **No funnel data**: say so in the first line; make instrumentation experiment zero for Deniz and Emre; score everything Confidence 1 to 3; never present industry averages as this product's numbers.
+- **Under about 500 visitors a week to the step**: recommend qualitative work (five user sessions, a ticket review) and say why a test would be noise.
+- **A surprising result**: check for sample-ratio mismatch and a broken event first; hand the check to Emre.
+- **Two experiments both won**: ship one at a time or test the combination; lifts do not add.
+- **Out of role**: pricing and anything touching consent or personal data go to the lead; privacy questions to Defne.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/growth-experiment-design/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/growth-experiment-design/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/growth-experiment-design/ reports/growth-experiment-design/
-   git commit -m "feat(growth-experiment-design): implement Growth Experiment Design playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Growth Experiment Design Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "growth-experiment-design"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/growth-experiment-design/summary.json"
-```
-
-### Exemplar 2: Growth Experiment Design Helper Module
-```typescript
-export function runGrowthExperimentDesign(scope: string): boolean {
-  console.log('Running Growth Experiment Design on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Growth Experiment Design
-1. **Diagnosis**: Specification or code asset fails validation rules in growth-experiment-design.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Growth Experiment Design
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] The bottleneck is one stage, with a count at every stage and a named benchmark source.
+- [ ] Every backlog row has I, C and E from the rubric, and ICE is their mean.
+- [ ] The top three have a primary metric, a guardrail with a threshold, a run length of 14 days or fewer and a decision rule.
+- [ ] Every figure not computed from data you read is labelled an estimate.
+- [ ] You re-read the playbook file after writing it and report what you saw.
+- [ ] Hand-offs name Kaan, Deniz and Emre and what each must deliver.

@@ -1,0 +1,20 @@
+{
+  "skill_name": "growth-experiment-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we're a small invoicing app. last month: 41k visits, 6.2k signups, 1,550 of those made a first invoice, 930 sent it, and 410 are still active after 30 days. what should we test first? I can get a dev for about two days a week.",
+      "expected_output": "Names signup to first invoice (25.0 percent of signups) as the leak and says acquisition is not the problem, so no paid-spend advice. Gives a ranked backlog in which every row has Impact, Confidence and Ease from the rubric with a reason and ICE as their mean, and briefs for the top three only. Each brief has a primary metric, a guardrail with a threshold, a run length of 14 days or fewer and a decision rule fixed before launch. Any benchmark is labelled as needing a source and a date. Copy goes to Kaan, build and event names to Deniz, event verification to Emre."
+    },
+    {
+      "id": 2,
+      "prompt": "Our SaaS has been flat for months and the board wants action. Give me a list of ten growth experiments we should run this quarter.",
+      "expected_output": "Does not invent a funnel or quote industry averages as this product's numbers. Says in the first line that stage counts for the last 28 days are missing and asks for them, makes instrumentation (the events and where they fire) experiment zero with Deniz and Emre as owners, scores every idea Confidence 1 to 3, and does not hand over ten experiments to run in parallel on one page."
+    },
+    {
+      "id": 3,
+      "prompt": "we ran a new headline on the pricing page for 3 weeks. about 300 visitors a week. control got 11 conversions and the variant got 14, so marketing says it won. what do we do next?",
+      "expected_output": "Says the result is inconclusive and cannot be read: about 25 conversions in total from roughly 900 visitors, far below what a realistic lift needs, so no winner is called. Recommends qualitative work (user sessions, a support ticket review) or a bolder change at a step with more traffic instead of another headline test, and writes an experiment-log entry with the result, a decision of iterate or park, and one sentence of learning."
+    }
+  ]
+}

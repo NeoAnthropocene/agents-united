@@ -1,150 +1,59 @@
 ---
 name: signup-flow-cro
-description: Production-grade Signup Flow Cro playbook for design operations, UX
-  systems, and growth strategy.
+description: "Use when signup-to-activation or visit-to-signup is the bottleneck, a signup flow is being specified, or support reports people who could not register; trigger phrases: audit our signup flow, too many form fields, people abandon registration, should we use social login, when should we verify email. Produces a field table with one reason per field, the screen order, the sign-in and verification choice, inline error and mobile specs, and test briefs. Skip it for legally identity-checked flows (financial, health, age-gated: audit order, wording and errors only) and for pricing or data-collection decisions."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 🚪
+  version: 3.0.0
+  icon: 📝
 disable-slash-command: true
 ---
 
-# Signup Flow Cro
+# Signup Flow CRO
+
+Every field and screen between "I want this" and "I'm in" costs a share of the people who arrive: keep only what the first value needs, move the rest later, and make the remaining steps hard to fail.
 
 ## Overview & Purpose
-The Signup Flow Cro skill provides a deterministic framework for executing signup flow cro processes in modern software products.
+A field-by-field method for web signup flows, with defaults for authentication and verification and rules for errors and mobile. It does not decide pricing or what personal data the business may collect: that is a legal question for Defne.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it when signup-to-activation or visit-to-signup is the bottleneck, a new signup flow is being specified, or support reports people who "could not register". Do not use it for a flow that must verify identity by law (financial, health, age-gated): the fields are given, so audit only order, wording and errors.
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Signup Flow Cro tasks.
-- Auditing existing product assets or workflows.
-- Standardizing signup-flow-cro procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: the current flow as ordered screens with every field, the drop-off per screen if it exists, the device split, the sign-in options offered now, and what the business does with each piece of data.
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Output: a field table (keep, move later, remove, one reason each); the screen order; the authentication and verification choice with its reason; the error and mobile specifications; one or two briefs for `ab-test-setup`. Shapes: [examples/templates.md](examples/templates.md). **Evidence to attach**: the screen-by-screen counts you read, and whether you walked the flow on a phone-sized viewport.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **List every field and ask what breaks without it.** Needed to create the account: email (or phone) and a credential. Needed for first value: only what the first screen uses. Everything else moves to after activation or goes: a field kept "for later" is paid for now, by everyone.
+2. **Count the cost**: fields, required taps and screens on mobile. Quote no per-field loss without this product's data, and label rules of thumb as such.
+3. **Choose authentication.** Offer one-tap sign-in with providers your audience already has (work accounts for B2B, a platform account for consumers) beside a plain email path. Passwords only: allow paste, add a show/hide control, state the rule before the field, not after the error. Passwordless links suit low-frequency products.
+4. **Verify late.** Let the person in, then require verification before the action that needs a trusted address (inviting, publishing, paying); block entry only where abuse is the main risk. Send the code at once, accept a pasted one, offer "resend" and "use a different email" on the same screen.
+5. **Specify errors.** Validate on blur, show the message next to the field, say what to do ("Use at least 12 characters"), keep what was typed, never clear the form. An error shown only after submit, at the top of the page, is an S1 finding: people cannot see what to fix.
+6. **Specify mobile**: the right keyboard per field (email, telephone), autofill attributes on, labels above fields, a primary button the keyboard does not hide, targets of at least 44 pixels.
+7. **Hand off.** Typed copy and error strings to your own section props; screen layout to Jamileh; build, autofill attributes and an event per screen to Deniz; each field's purpose to Defne before anything is added. Emre verifies on a phone-sized viewport and by keyboard only.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/signup-flow-cro/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/signup-flow-cro/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/signup-flow-cro/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for a ten-field B2B flow cut to one screen, with the brief and the error specification filled in.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- Phone, company size and role "for later" on screen one: everyone pays now for a benefit nobody has yet.
+- Validation only after submit, form cleared: the person retypes everything and guesses the cause.
+- Verification before any value is seen: they leave before they know why it matters.
+- A password rule shown only when broken: they fail first and learn the rule second.
+- Disabling paste in a password field: it defeats password managers.
+- Pre-ticked consent boxes: consent that is not a choice (hand to Defne).
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+## Edge Cases & Error Recovery
+- **Email already registered**: say so and offer sign-in or a reset link; where saying so discloses membership you must protect, ask Defne.
+- **Verification email never arrives**: show a resend, a "wrong address" fix and a support route; ask Emre whether the sender domain is authenticated.
+- **Corporate email filters or social sign-in fails**: always keep the plain email path.
+- **Regulated fields cannot go**: keep them, put them last, say why in one line, measure that step alone.
+- **A third-party sign-in changes**: its screens are outside your control; test the full round trip.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/signup-flow-cro/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/signup-flow-cro/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/signup-flow-cro/ reports/signup-flow-cro/
-   git commit -m "feat(signup-flow-cro): implement Signup Flow Cro playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Signup Flow Cro Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "signup-flow-cro"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/signup-flow-cro/summary.json"
-```
-
-### Exemplar 2: Signup Flow Cro Helper Module
-```typescript
-export function runSignupFlowCro(scope: string): boolean {
-  console.log('Running Signup Flow Cro on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Signup Flow Cro
-1. **Diagnosis**: Specification or code asset fails validation rules in signup-flow-cro.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Signup Flow Cro
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Every field has a verdict and a one-line reason; none is kept "for later".
+- [ ] Authentication and verification choices are stated with the reason.
+- [ ] Error handling is specified per field, with trigger and message text.
+- [ ] Mobile behaviour is specified: keyboard type, autofill, label position, target size.
+- [ ] Any rule-of-thumb figure is labelled; no invented field-level numbers.
+- [ ] Hand-offs name Jamileh, Deniz, Defne and Emre with what each must deliver.

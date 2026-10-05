@@ -1,0 +1,20 @@
+{
+  "skill_name": "ab-test-setup",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we want to test a shorter signup form on our pricing page. about 1500 people a day see it and 4% of them click through to the paid plan right now. we think the new form could bump that by a fifth. how long do we need to run it and how do I write it up for the dev?",
+      "expected_output": "A complete brief: one primary metric defined as numerator over denominator with a window, a guardrail, the MDE in absolute and relative terms (0.8 points, 20 percent), about 9,600 visitors per arm, a run of 14 days (two whole weeks), a stopping rule and a decision rule written before launch, a verification plan handed to Emre and tracking questions to Defne, with the figures labelled as estimates."
+    },
+    {
+      "id": 2,
+      "prompt": "our test has been running 3 days. control has 10,300 visitors and the variant has 9,700 and the variant is up 12% on signups, p is 0.03. can we call it?",
+      "expected_output": "No. It flags a sample-ratio mismatch (chi-square about 18, above 10.83, p below 0.001), says the result is void and the assignment must be investigated first, and also says that stopping at day 3 on a first significant reading is peeking."
+    },
+    {
+      "id": 3,
+      "prompt": "hey, can we A/B test the new checkout button colour? our checkout page only gets about 40 visitors a day and 1% buy.",
+      "expected_output": "It sizes the test (about 158,400 per arm for a 10 percent lift at a 1 percent baseline, years of traffic), says a test is not feasible, and proposes a bolder change, a higher-frequency proxy metric labelled as a proxy, or qualitative research instead of running the test."
+    }
+  ]
+}
