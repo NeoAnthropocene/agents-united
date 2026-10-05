@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import YAML from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { NATIVE_AGENTS_DIR, NATIVE_ROLES } from './helpers/native-roles.ts';
+import { MAX_CHARS, validateRewrittenSkill } from './helpers/skill-contract.ts';
+import { supportingText } from './helpers/skill-layout.ts';
 
 /**
  * Plan 035 (ADR 0040): the contract of a rewritten skill.
@@ -16,60 +17,6 @@ import { NATIVE_AGENTS_DIR, NATIVE_ROLES } from './helpers/native-roles.ts';
 const ROOT = process.cwd();
 const SKILLS = path.join(ROOT, 'registry', 'skills');
 const MARKERS = path.join(ROOT, 'tests', 'fixtures', 'templated-skills');
-
-export const REQUIRED_HEADINGS = [
-  '## Overview & Purpose',
-  '## Execution Triggers',
-  '## Input/Output Requirements',
-  '## Step-by-Step Runbook',
-  '## Code & Config Exemplars',
-  '## Edge Cases & Error Recovery',
-  '## Verification Checklist',
-];
-
-/** Phrases that only the template (or an unfinished skill) contains. */
-export const BANNED_PHRASES: ReadonlyArray<RegExp> = [
-  /deterministic framework/i,
-  /clean git working directory/i,
-  /npm run typecheck/i,
-  /npx agents-united doctor/i,
-  /zero dummy placeholder/i,
-  /<placeholder>/i,
-  /\bTODO\b/,
-  /\bTBD\b/,
-  /lorem ipsum/i,
-  /git commit -m/i,
-];
-
-export const MAX_BODY_LINES = 500;
-/** About 5k tokens at 4 characters per token (docs/skill-intake.md step 5). */
-export const MAX_CHARS = 20000;
-
-export function validateRewrittenSkill(name: string, content: string): string[] {
-  const errors: string[] = [];
-  const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!fm) return [`${name}: no front matter`];
-  const meta = YAML.parse(fm[1]) as { name?: string; description?: string; metadata?: { author?: string; version?: string | number; source?: string } };
-  const body = content.slice(fm[0].length);
-  if (meta.name !== name) errors.push(`${name}: front matter name is ${meta.name}`);
-  const description = (meta.description ?? '').replace(/\s+/g, ' ').trim();
-  if (description.length < 40 || description.length > 400) errors.push(`${name}: description must be 40 to 400 characters, is ${description.length}`);
-  if (meta.metadata?.author !== 'agents-united') errors.push(`${name}: metadata.author must be agents-united`);
-  if (meta.metadata?.source) errors.push(`${name}: original work carries no metadata.source`);
-  for (const heading of REQUIRED_HEADINGS) {
-    if (!new RegExp(`^${heading.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`, 'm').test(body)) errors.push(`${name}: missing section "${heading}"`);
-  }
-  if (content.split(/\r?\n/).length > MAX_BODY_LINES) errors.push(`${name}: over ${MAX_BODY_LINES} lines`);
-  if (content.length > MAX_CHARS) errors.push(`${name}: over ${MAX_CHARS} characters (about 5k tokens)`);
-  for (const phrase of BANNED_PHRASES) {
-    if (phrase.test(content)) errors.push(`${name}: contains template phrase ${phrase}`);
-  }
-  if (!/worked example/i.test(body)) errors.push(`${name}: no "worked example"`);
-  if (!/anti-pattern/i.test(body)) errors.push(`${name}: no anti-patterns`);
-  if (!/evidence/i.test(body)) errors.push(`${name}: names no evidence to produce`);
-  if (!/hand(s)?[ -]?(off|over)|hand(s)? to |handoff/i.test(body)) errors.push(`${name}: no hand-off to a teammate`);
-  return errors;
-}
 
 const GOOD = `---
 name: sample-skill
@@ -144,7 +91,7 @@ describe('every rewritten skill of the catalog (version 3.0.0)', () => {
     .filter((n) => /^\s+version:\s*['"]?3\.0\.0/m.test(fs.readFileSync(path.join(SKILLS, n, 'SKILL.md'), 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? ''));
 
   it('meets the contract', () => {
-    const errors = rewritten.flatMap((n) => validateRewrittenSkill(n, fs.readFileSync(path.join(SKILLS, n, 'SKILL.md'), 'utf8')));
+    const errors = rewritten.flatMap((n) => validateRewrittenSkill(n, fs.readFileSync(path.join(SKILLS, n, 'SKILL.md'), 'utf8'), supportingText(path.join(SKILLS, n))));
     expect(errors).toEqual([]);
   });
 
