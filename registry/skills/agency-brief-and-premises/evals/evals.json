@@ -1,0 +1,20 @@
+{
+  "skill_name": "agency-brief-and-premises",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "client message: 'We need more signups for our invoicing tool before the end of the quarter.' they've sent nothing else. you're the lead, where do you start?",
+      "expected_output": "Says a classification aloud with its reason (Standard), restates the request as three lists (what the client said, what is assumed, what is unknown), asks one question that would change the plan (signups or paying customers, with plain options), puts three to five premises to the client as agree or disagree with a cheap check for each shaky one, then offers a minimal and an ideal approach (and a lateral one if there is a different framing) with effort and risk and a recommendation tied to the client's goal. Stops and waits, creates no deliverable file and briefs no specialist to produce one before the brief and then the delegation map are accepted, and closes with the client's next action."
+    },
+    {
+      "id": 2,
+      "prompt": "the client is busy and says 'just do it, you know what we need'. can we start the specialists on a landing page now and sort the brief out afterwards?",
+      "expected_output": "Does not start production: the hard gate holds until the client accepts the brief and then the delegation map. Writes the brief with every default marked as an assumption, stops at the gate and says what will not be done without acceptance. A clear low-risk request can become a Quick confirmation in one message, but the gate is never skipped."
+    },
+    {
+      "id": 3,
+      "prompt": "we're halfway through the campaign and the client just added 'and also relaunch the whole brand' to the scope. keep going?",
+      "expected_output": "Re-classifies (a heavier track) and says so, stops spawning new work, redoes the premises, the approaches and the brief for the new scope with the client, and re-issues the delegation map before anything new is produced. Records any disagreement between stakeholders as an open question with names."
+    }
+  ]
+}

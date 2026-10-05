@@ -47,6 +47,11 @@
       "recoveredAt": "2026-09-30",
       "skill": "ad-creative-design"
     },
+    "agency-brief-and-premises": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-04",
+      "skill": "agency-brief-and-premises"
+    },
     "ai-prototype-refactoring": {
       "declaredLicence": "MIT",
       "provenance": "in-house",

@@ -1102,7 +1102,8 @@
         "security-diff-review",
         "terraform-style-guide",
         "property-based-testing",
-        "mutation-testing"
+        "mutation-testing",
+        "agency-brief-and-premises"
       ],
       "version": "1.0.0"
     },
@@ -1291,7 +1292,8 @@
         "brand-identity",
         "ux-writing",
         "property-based-testing",
-        "mutation-testing"
+        "mutation-testing",
+        "agency-brief-and-premises"
       ],
       "version": "1.0.0"
     },

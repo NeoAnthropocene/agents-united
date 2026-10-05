@@ -1,0 +1,20 @@
+{
+  "skill_name": "workflow-agency-seo-content-engine",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we migrated our docs site two months ago and organic traffic dropped. we also want a content programme to grow it. the content team has about 25 hours a week. can you run the whole SEO and content engagement?",
+      "expected_output": "Presents a delegation map and waits for the client to accept it. Runs Selin's audit first and fixes critical blockers (noindex, robots, canonical, redirects) before content is scheduled, then Yavuz's keyword and intent map and a 90-day calendar at or under 80 percent of capacity with sources and dates, with Selin checking cannibalisation. Phase 3 follows the contract-first rule (the keyword map and metadata snippets exist as files), then Emre's and Defne's gates, the client publishes, and the first batch is read at day 28. The report promises effort and indicators, not rankings, and a rollback route exists for template changes."
+    },
+    {
+      "id": 2,
+      "prompt": "the client wants a number: can you promise we'll be top 3 for their main keywords within 90 days?",
+      "expected_output": "Declines to promise rankings or a traffic number: search takes weeks to months to show effects. Agrees in the delegation map what the report will say instead (effort and leading indicators), names the day-28 read-out (indexed against submitted, impressions, cannibalisation) and what decisions follow."
+    },
+    {
+      "id": 3,
+      "prompt": "we don't have search console access yet. can yavuz just start on the content calendar so we don't lose time?",
+      "expected_output": "Audits from outside and lists what could not be checked, makes the export request the first action, and holds the content calendar until Selin's critical blockers have owners, because content on a blocked page is wasted. May let Yavuz begin the keyword map read-only, with sources and dates, but schedules nothing."
+    }
+  ]
+}

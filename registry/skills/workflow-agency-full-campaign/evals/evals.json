@@ -1,0 +1,20 @@
+{
+  "skill_name": "workflow-agency-full-campaign",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "the brief is accepted: launch our webhook retry feature, 400 connections in 14 days from a baseline of 60. we have the whole team installed but no Figma access. run the full campaign.",
+      "expected_output": "Consults at least one specialist read-only and records who, presents the delegation map and creates no deliverable file until the client accepts it, and states the integration state as Limited Operational because Figma is missing. Runs Ava first, then Kaan, Jamileh and Yavuz in parallel with the contract-first rule (props and tokens exist as files before Deniz starts, the keyword map before Selin), then Deniz, Selin and Jale in parallel, then Emre and Defne verify the whole. A red result goes back to the owning specialist, the final report lists evidence per slice and open items, and a rollback route exists for each gate."
+    },
+    {
+      "id": 2,
+      "prompt": "we're short on time and it's a small campaign. just start all nine specialists at once.",
+      "expected_output": "Declines to spawn all nine at once: it would run slices before the artefacts they depend on exist and cost more than it saves. Asks whether a narrower playbook fits, presents the delegation map for acceptance, and runs parallel only where slices are independent after the contract-first artefacts exist."
+    },
+    {
+      "id": 3,
+      "prompt": "emre's gate came back red twice on the same defect in the landing page. can we get a different specialist to fix it this time?",
+      "expected_output": "A red result goes back to the owning specialist, not to a new one. A gate that fails twice on the same defect is escalated to the client with the evidence rather than looped a third time. Offers the rollback protocol: only the owner reworks and the gate re-runs on the changed files."
+    }
+  ]
+}

@@ -1,63 +1,71 @@
 ---
 name: workflow-agency-client-pitch-proposal
-description: Cross-functional client discovery, pitch deck ingestion, technical
-  scope estimation, and executive agency proposal blueprint creation. Use when
-  executing agency client pitch proposal & scoping blueprint workflows, phase
-  transitions, and verification gates.
+description: "Use when the input is an RFP, a discovery call, a deck or a brief to be answered with a proposal; trigger phrases: respond to this RFP, write a proposal for this client, scope and price this engagement. Produces the restated brief with assumptions and unknowns, a scope with milestones and exclusions, each specialist's sizing as an hours range, a price table from the rate card, a claims register and Defne's review. Skip it to run the engagement itself (use workflow-agency-full-campaign); this team never sends the proposal."
 metadata:
-  author: Agents United
-  version: 1.0.0
-  source: https://github.com/NeoAnthropocene/agents-united
+  author: agents-united
+  version: 3.0.0
   license: MIT
   icon: 🔄
 ---
 
-# Workflow: Agency Client Pitch Proposal & Scoping Blueprint
+# Workflow: Agency Client Pitch and Proposal
 
-## Overview & Scope
-Transforms raw client discovery calls, RFPs, or PDF pitch decks into a comprehensive, high-impact digital agency project proposal and scoping blueprint.
+## Overview & Purpose
+A proposal is a promise in writing: what is delivered, in what order, by when, for how much, under which assumptions. The expensive mistakes: an unstated assumption, a missing exclusion, an unreviewed estimate. Chris builds it with Ava, Yavuz, Kaan, Jamileh, Selin and Deniz sizing the work and Defne reviewing what it claims and commits to.
 
-## Execution Flowchart
+## Execution Triggers
+Load it when the input is an RFP, a discovery call, a deck or a brief to be answered with a proposal. Do not load it to run the engagement itself (`workflow-agency-full-campaign`), and send the proposal to no one: the client relationship and the sending belong to the human owner.
+
+## Input/Output Requirements
+Inputs: the client's material (ingest PDFs and decks through `markitdown` when connected); the rate card and standard terms from the owner; past work the owner permits to cite; the deadline; who approves internally.
+
+Output: a restated brief with assumptions and unknowns (`agency-brief-and-premises`); a scope with deliverables, milestones and exclusions; each specialist's sizing in hours with assumptions; a price table from the rate card; the risks; the claims register; Defne's review. **Evidence to attach**: the page or line of the client material behind each requirement, and the rate card version.
+
+## Step-by-Step Runbook
 ```mermaid
 graph TD
-    Start([Client RFP / Ingest]) --> P1[Phase 1: Multi-Agent Discovery & Sizing]
-    P1 --> P2[Phase 2: Milestone Blueprint & SOW Generation]
-    P2 --> Gate1{"Executive Review Passed?"}
-    Gate1 -->|Fail| P2
-    Gate1 -->|Pass| P3[Phase 3: Client Proposal Delivery]
-    P3 --> Done([Proposal Ready])
+    R([RFP or deck]) --> P0[Phase 0: ingest, restate, premises]
+    P0 --> G0{Owner confirms the restated brief?}
+    G0 -->|No| P0
+    G0 -->|Yes| P1[Phase 1: specialists size the work]
+    P1 --> P2[Phase 2: scope, milestones, price]
+    P2 --> P3[Phase 3: Defne review]
+    P3 --> Done([Proposal ready for the owner to send])
 ```
 
-## Required Tool Inputs & Context
-- Client RFP, discovery call transcripts, or PDF pitch deck
-- MarkItDown MCP / voice memo ingestion
-- Agency rate card and milestone estimation framework
+1. **Phase 0.** Ingest the material, restate it in three lists (what the client said, what you assume, what is unknown), test the premises with the owner and present the Delegation map for the sizing consultations. No proposal text before the owner confirms the restated brief.
+2. **Phase 1: sizing.** Each relevant specialist writes a bounded estimate: deliverables, hours as a range with the reason for the spread (one number hides the risk), assumptions, dependencies and exclusions.
+3. **Phase 2: scope and price.** The lead assembles milestones in assembly-line order, prices hours from the rate card (never an invented rate), lists exclusions and assumptions in plain words, names client dependencies (access, approvals, content) and adds change control.
+4. **Phase 3: review.** Defne reviews every claim (results, case studies, guarantees, comparisons) and the terms committed to; a case study needs the owner's permission, otherwise a generic description labelled as such. Emre reviews measurable commitments for what can be verified.
+5. **Hand-over.** The owner reads, adjusts and sends; the lead lists the owner's open questions.
 
-## Phase 0: Planning Council (ADR 0014)
-- Grill ambiguous briefs with the user (`/grill-me` or `/grill-with-docs`), then spawn up to 2 planning sidekicks.
-- Collect a Scope-of-Work Statement (≤150 words) from every relevant specialist; peer exchanges capped at 2 per pair; max 2 planning rounds.
-- Synthesize the Delegation Map (task → specialist, using the spawnable `subagent_*` tools declared in the Team Manifest) and present it to the user before Phase 1.
-- Transition criteria: Delegation Map approved by user. Deterministic phase gate: specialist roster resolves against the Team Manifest (`.agents/plugins/digital-agency/agents-united/teams/digital-agency.yaml`).
-
-## Phase 1: Context & Discovery Sizing
-- Ingest client materials and extract core functional requirements.
-- Calculate timeline estimates across Design, Engineering, and Growth.
-
-## Phase 2: SOW & Milestone Architecture
-- Structure deliverables into vertical phased milestones (M1–M4).
-- Define Acceptance Criteria, SLA expectations, and risk contingencies.
-
-## Phase 3: Verification & Packaging
-- Verify timeline feasibility and budget alignment with the Director (Chris / `orchestrator-digital-agency`).
-- Output executive markdown proposal and client presentation outline.
-
-## Phase Transition Criteria & Deterministic Verification Gates
-| Transition | Prerequisites | Verification Command / Gate | Success Criteria |
+| Transition | Prerequisites | Gate (evidence) | Success criteria |
 |---|---|---|---|
-| Phase 1 -> Phase 2 | Sizing completed | `npx agents-united doctor` | Doctor health check succeeds with 0 errors |
-| Phase 2 -> Phase 3 | Proposal drafted | `npm run test --if-present` | Proposal validator confirms all deliverables have explicit acceptance criteria |
-| Phase 3 -> Completion | Final review complete | `npm run build --if-present` | Proposal documentation renders with 0 errors |
+| Phase 0 -> Phase 1 | Restated brief confirmed by the owner | Owner acceptance in the conversation | Assumptions and unknowns listed |
+| Phase 1 -> Phase 2 | Each specialist's estimate as a range with assumptions | Estimates read back by the lead | Exclusions stated; no single-point estimates |
+| Phase 2 -> Phase 3 | Scope, milestones, price and risks drafted | Rate card version recorded | Every price line traces to hours and a rate |
+| Phase 3 -> Hand-over | Defne cleared; Emre reviewed measurable promises | Claims register read in full | No claim without a source or the owner's permission |
 
-## Validation Checkpoints & Automated Rollback Protocols
-- **Validation Checkpoint 1**: Every vertical milestone has measurable success criteria.
-- **Automated Rollback Protocol**: Re-scope deliverables if total project duration exceeds client deadline.
+Rollback protocol: if the owner or Defne withdraws a claim, the claims register and the paragraph are corrected and Phase 3 re-runs on the changed text; if an estimate changes after review, price and milestones are recomputed from the table, never edited by hand.
+
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for the sizing sheet of a three-month relaunch RFP. The playbook works without it.
+
+Anti-patterns, each with its reason:
+- A proposal drafted before the brief is confirmed: it answers the wrong question.
+- Single-number estimates with no assumption: they hide the risk.
+- An invented rate or an unknown rate card version: the price cannot be defended.
+- A past client cited without permission: a breach of trust.
+- A measurable promise nobody checked: it becomes a liability.
+
+## Edge Cases & Error Recovery
+- **The RFP is contradictory or incomplete**: list the contradictions as questions for the owner; resolve none silently.
+- **A price ceiling below the estimate**: present options (reduced scope, phased delivery) with their price, not an unexplained discount.
+- **A required skill is not on the team**: say so and give the options (partner, exclude, client-supplied).
+
+## Verification Checklist
+- [ ] The owner confirmed the restated brief before any proposal text existed.
+- [ ] Every estimate is a range with assumptions and exclusions; every price line traces to hours and a rate.
+- [ ] Client dependencies and change control are stated.
+- [ ] Defne's review and Emre's check of measurable promises are attached; case studies are cleared.
+- [ ] A rollback route exists; the owner's open questions are listed; the proposal is handed over, not sent.

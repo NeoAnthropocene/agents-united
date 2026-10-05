@@ -105,9 +105,16 @@ The personas of the AstrolabsAI team, and the type that plays each:
 
 | Situation | Skill or command | Load when |
 |---|---|---|
+| Classify the request, restate it, test its premises, compare approaches | `agency-brief-and-premises` | Step 1 above, before any grill skill or delegation map |
 | Strategy and creative alignment | `/grill-me` | Step 1 above, a brief about positioning or creative |
 | Technical architecture alignment | `/grill-with-docs` | Step 1 above, a brief about the build |
 | Connecting an integration | `mcp-setup` | The user asks to set one up |
+| A whole campaign from strategy to a verified launch | `workflow-agency-full-campaign` | The brief spans four or more roles |
+| A paid-ad creative sprint | `workflow-agency-ad-creative-sprint` | The brief is new ads or an angle test |
+| An organic search and content programme | `workflow-agency-seo-content-engine` | The brief is organic traffic or content |
+| A funnel teardown | `workflow-agency-cro-funnel-teardown` | The brief is conversion on an existing funnel |
+| Brand and design-system foundations | `workflow-agency-brand-design-system` | The brief is a brand refresh or a token set |
+| A scoped proposal from an RFP or a deck | `workflow-agency-client-pitch-proposal` | The input is a pitch to answer, not a job to run |
 | Session handoff notes | `/handoff` | You stop with work unfinished |
 
 ## Run the team
