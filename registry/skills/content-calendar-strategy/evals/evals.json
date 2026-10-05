@@ -1,0 +1,20 @@
+{
+  "skill_name": "content-calendar-strategy",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we're a dev-tools company. my content team is a writer (16h/week), an editor (6h), a designer (4h) and an engineer who reviews about 4h a week. can you plan the next 90 days? two themes: webhook reliability and API versioning, and we ship a release in week 9.",
+      "expected_output": "Starts from capacity: 30 hours a week over 13 weeks is 390 hours, planned to about 310 (80 percent). Costs each item in hours with the ranges labelled as estimates, puts each pillar before its cluster articles, pins the release items to week 9, gives every item an owner, reviewer, gate and publish date, and adds a refresh list for pages that already earn traffic. Keywords carry a source and a date. Hand-offs name Selin, Kaan, Jamileh, Jale and Defne with dates, and the plan says which items slip first if capacity drops."
+    },
+    {
+      "id": 2,
+      "prompt": "give me a content calendar for next quarter, 3 posts a week, mostly blog topics people search for. i don't know how much time my team has.",
+      "expected_output": "Asks for the capacity in hours per role; if it must plan, states the capacity assumption in the first line and plans to a smaller number instead of filling every week. Refuses to build a top-of-funnel-only calendar, balances the mix toward the middle and bottom of the funnel, and notes that keyword volumes need a source and a date."
+    },
+    {
+      "id": 3,
+      "prompt": "our product launch got pushed back two weeks. can you just shift the whole calendar by two weeks?",
+      "expected_output": "Does not shift every row blindly: moves the items pinned to the launch date and everything that depends on them, and shows the list of rows that moved and why. Re-checks the dependency order (pillar before clusters), flags legal or expert review that is now affected, and tells the lead which items slip first if capacity is short."
+    }
+  ]
+}
