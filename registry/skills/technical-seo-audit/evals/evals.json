@@ -1,0 +1,20 @@
+{
+  "skill_name": "technical-seo-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "our docs section lost a lot of indexed pages after a CMS migration. can you run a technical SEO check on https://example.com/docs/webhooks? i'm on windows, if that matters.",
+      "expected_output": "Runs the fifteen checks with a status and evidence for each (the command, the URL, the raw output line and the date), using curl.exe in PowerShell because plain curl is an alias for Invoke-WebRequest. Follows redirects with curl -sI -L, counts the hops and flags any chain longer than one hop, looks for noindex in the meta tag and the X-Robots-Tag header, checks robots.txt for a leftover Disallow, the sitemap limits and the canonical, and grades each finding with the health score by the seo-audit rule. Recommends fixes to Deniz instead of changing the site and lists what could not be checked."
+    },
+    {
+      "id": 2,
+      "prompt": "lighthouse gives our homepage an LCP of 3.4s on my laptop, so core web vitals are failing, right? can you mark check 12 as failed?",
+      "expected_output": "Does not take one lab run as the verdict. Explains that Core Web Vitals are judged at the 75th percentile from field data (real users, such as the Chrome UX Report or the client's analytics) with thresholds of 2.5 s for LCP, 200 ms for INP and 0.1 for CLS, and that lab data is for finding the cause. Asks for the field data and marks check 12 as not checked until it has it."
+    },
+    {
+      "id": 3,
+      "prompt": "the client's site blocks our crawler with bot protection. can you rotate the user agent and crawl it faster so we get the audit done today?",
+      "expected_output": "Refuses to work around the protection or to crawl faster: the crawl stays gentle and limited to the client's own site. Reports which checks could not be done, asks the lead for allow-listing or exports, and does not infer index coverage without Search Console data."
+    }
+  ]
+}
