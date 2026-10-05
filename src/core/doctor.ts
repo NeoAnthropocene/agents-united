@@ -25,6 +25,7 @@ import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
   ClaudeCapabilityReport,
   ClineCapabilityReport,
+  InstallScope,
   LockfileManifest,
   TranslationLedgerEntry,
 } from './types.js';
@@ -164,12 +165,19 @@ export class DoctorEngine {
    * (installer primary path vs parent-bundle refresh path). Matching *either* means the
    * projection is fresh, which keeps the check false-positive free while still catching
    * content that matches neither.
+   *
+   * The Cline render is given the scope the install recorded and the directory it is rooted at, because both change what is written:
+   * a global install names `~/.agents/...` in its coordinator rule and the absolute path of a workflow skill's supporting files
+   * (ADR 0016 decision 6 amendment). Rendering every install as `project` made a global one look outdated. The Claude and
+   * Antigravity renders keep the `project` scope they always had.
    */
   private static async renderProjectionVariants(
     owners: Set<string>,
     installedBundles: string[],
     host: CompoundLaneHost,
-    nativeLane = false
+    nativeLane = false,
+    scope: InstallScope = 'project',
+    workspaceRoot?: string
   ): Promise<Map<string, string[]> | null> {
     if (owners.size === 0) return null;
 
@@ -196,11 +204,12 @@ export class DoctorEngine {
             : host === 'cline'
             ? await ClineProjector.planCompoundProjection(
                 bundleDef,
-                'project',
+                scope,
                 resolved,
                 registryDir,
                 excludeAddons,
-                nativeLane
+                nativeLane,
+                workspaceRoot
               )
             : await ClaudeProjector.planCompoundProjection(
                 bundleDef,
@@ -460,7 +469,14 @@ export class DoctorEngine {
 
         const variantsByHost = new Map<CompoundLaneHost, Map<string, string[]>>();
         for (const [projHost, owners] of ownersByHost) {
-          const variants = await this.renderProjectionVariants(owners, manifest.installed.bundles ?? [], projHost, projHost === 'claude' ? manifest.nativeLane === true : manifest.nativeLanes?.[projHost] === true);
+          const variants = await this.renderProjectionVariants(
+            owners,
+            manifest.installed.bundles ?? [],
+            projHost,
+            projHost === 'claude' ? manifest.nativeLane === true : manifest.nativeLanes?.[projHost] === true,
+            manifest.scope ?? 'project',
+            workspaceRoot
+          );
           if (variants) variantsByHost.set(projHost, variants);
         }
 

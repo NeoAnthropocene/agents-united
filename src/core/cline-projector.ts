@@ -1,4 +1,5 @@
 import yaml from 'yaml';
+import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import {
@@ -23,7 +24,24 @@ import type {
   ProjectionKind,
   ResolvedAssets,
 } from './types.js';
+import { isRelativeTarget, rewriteMarkdownLinks } from './markdown-links.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
+
+/**
+ * What a workflow projection needs to name the supporting files of its skill (ADR 0016 decision 6 amendment). A workflow is one
+ * markdown file with no folder of its own, so a relative link in it points nowhere; the install holds the same skill folder under
+ * `.agents/skills/<name>/`, and that is the path the projection names.
+ */
+export interface WorkflowSkillFiles {
+  /** The skill's folder name under `registry/skills/`. */
+  skillName: string;
+  /** The files an install carries for the skill, POSIX paths relative to the skill folder (the maintainer-only `evals/` is not among them). */
+  files: readonly string[];
+  /** The install scope. A project install is named from the project root; a global one by absolute path. */
+  scope: InstallScope;
+  /** The directory the install is rooted at (the home directory for a global install). Read only for the global scope; defaults to the home directory. */
+  root?: string;
+}
 
 export interface PlannedClineArtifact {
   kind: ProjectionKind;
@@ -144,8 +162,11 @@ export class ClineProjector {
    * Render a Cline workflow projection (.cline/workflows/<slug>.md). The frontmatter
    * `name` is slugified so the workflow surfaces as a usable /<slug> command; the
    * human-readable title stays in `description` and the untouched body.
+   *
+   * With `skillFiles`, a relative link in the body to a file the install carries next to `SKILL.md` is replaced by the backticked
+   * path of that file (see {@link WorkflowSkillFiles}); without it, or with nothing to replace, the output is byte-identical.
    */
-  static renderWorkflowProjection(canonicalContent: string, canonicalRelPath: string): string {
+  static renderWorkflowProjection(canonicalContent: string, canonicalRelPath: string, skillFiles?: WorkflowSkillFiles): string {
     const slug = this.workflowSlug(canonicalContent, canonicalRelPath);
     const match = canonicalContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
     let description: string | undefined;
@@ -164,9 +185,49 @@ export class ClineProjector {
     if (description) cleanFrontmatter.description = description;
 
     const frontmatterStr = yaml.stringify(cleanFrontmatter).trim();
-    const bodyStr = match ? match[2].trim() : canonicalContent.trim();
+    const trimmedBody = match ? match[2].trim() : canonicalContent.trim();
+    const bodyStr = skillFiles ? this.nameSkillFiles(trimmedBody, skillFiles) : trimmedBody;
 
     return `---\n${frontmatterStr}\n---\n${this.marker(canonicalRelPath)}\n\n${bodyStr}\n`;
+  }
+
+  /**
+   * Replace each relative link to a file the install carries with the backticked path of that file. A link to anything else (a URL, an
+   * anchor, a file the install does not carry, `evals/`) stays as written. A link whose text only repeats its target becomes the path
+   * alone; otherwise the text stays and the path follows it in parentheses.
+   */
+  private static nameSkillFiles(body: string, skill: WorkflowSkillFiles): string {
+    const carried = new Set(skill.files);
+    return rewriteMarkdownLinks(body, link => {
+      if (!isRelativeTarget(link.target)) return undefined;
+      const rel = path.posix.normalize(link.target.split('#')[0]);
+      if (!carried.has(rel)) return undefined;
+      const named = `\`${this.skillFilePath(skill, rel)}\``;
+      const label = link.label.trim();
+      return label === '' || label === link.target || label === rel ? named : `${label} (${named})`;
+    });
+  }
+
+  /**
+   * Where a skill's file sits in the install's canonical store. Cline reads a relative path against the working directory of its
+   * process and does not expand `~` (observed in the source of CLI 3.0.68), so a global install, whose workflow file is read from any
+   * project, is named by absolute path, with forward slashes (valid on every platform, and no backslash for a model to mangle).
+   */
+  private static skillFilePath(skill: WorkflowSkillFiles, rel: string): string {
+    const local = `.agents/skills/${skill.skillName}/${rel}`;
+    if (skill.scope !== 'global') return local;
+    const root = (skill.root ?? os.homedir()).replace(/\\/g, '/').replace(/\/+$/, '');
+    return `${root}/${local}`;
+  }
+
+  /** The files an install carries for a skill: every file of its folder but the maintainer-only ones, POSIX paths relative to the folder, sorted. */
+  private static async listSkillFiles(skillDir: string): Promise<string[]> {
+    const entries = await fs.readdir(skillDir, { recursive: true, withFileTypes: true });
+    return entries
+      .filter(entry => entry.isFile())
+      .map(entry => path.relative(skillDir, path.join(entry.parentPath || skillDir, entry.name)).replace(/\\/g, '/'))
+      .filter(rel => !isMaintainerOnlySkillPath(rel))
+      .sort();
   }
 
   /**
@@ -379,6 +440,9 @@ ${workflowSection}${addonSection}
    * Plan all compound artifacts for a bundle installation into Cline.
    * @param excludeAddons optional addon names forwarded to the coordinator rule and
    *   team manifest renderers so already-installed bundles are not advertised.
+   * @param root the directory the install is rooted at (the project, or the home directory for a global install). Only the workflow
+   *   projections read it, to name a skill's supporting files by absolute path in the global scope (see {@link WorkflowSkillFiles});
+   *   a caller that uses only the rule and the team manifest may leave it out.
    */
   static async planCompoundProjection(
     bundle: BundleDefinition,
@@ -386,7 +450,8 @@ ${workflowSection}${addonSection}
     resolved: ResolvedAssets,
     registryDir: string,
     excludeAddons: string[] = [],
-    nativeLane = false
+    nativeLane = false,
+    root?: string
   ): Promise<PlannedClineArtifact[]> {
     const artifacts: PlannedClineArtifact[] = [];
     const baseDir = `.agents/plugins/${bundle.name}`;
@@ -453,35 +518,31 @@ ${workflowSection}${addonSection}
     for (const skillName of resolved.skills) {
       const skillSrcDir = path.join(registryDir, 'skills', skillName);
       if (await fs.pathExists(skillSrcDir)) {
-        const entries = await fs.readdir(skillSrcDir, { recursive: true, withFileTypes: true });
-        for (const entry of entries) {
-          if (entry.isFile()) {
-            const entryRel = path.relative(skillSrcDir, path.join(entry.parentPath || skillSrcDir, entry.name)).replace(/\\/g, '/');
-            if (isMaintainerOnlySkillPath(entryRel)) continue; // `evals/` is for the maintainers, not the install
-            const canonicalRel = `skills/${skillName}/${entryRel}`;
-            const targetRel = `${baseDir}/skills/${skillName}/${entryRel}`.replace(/\\/g, '/');
-            const fullSrcPath = path.join(skillSrcDir, entryRel);
+        // `evals/` is for the maintainers, not the install: `listSkillFiles` leaves it out
+        for (const entryRel of await this.listSkillFiles(skillSrcDir)) {
+          const canonicalRel = `skills/${skillName}/${entryRel}`;
+          const targetRel = `${baseDir}/skills/${skillName}/${entryRel}`.replace(/\\/g, '/');
+          const fullSrcPath = path.join(skillSrcDir, entryRel);
 
-            if (entry.name === 'SKILL.md') {
-              const content = await fs.readFile(fullSrcPath, 'utf8');
-              const rendered = this.renderSkillMd(content, canonicalRel);
-              artifacts.push({
-                kind: 'skill',
-                canonical: canonicalRel,
-                relPath: targetRel,
-                content: rendered,
-                managedMarker: true,
-              });
-            } else {
-              // Auxiliary resource: byte-for-byte copy
-              artifacts.push({
-                kind: 'skill',
-                canonical: canonicalRel,
-                relPath: targetRel,
-                sourceFilePath: fullSrcPath,
-                managedMarker: false,
-              });
-            }
+          if (path.posix.basename(entryRel) === 'SKILL.md') {
+            const content = await fs.readFile(fullSrcPath, 'utf8');
+            const rendered = this.renderSkillMd(content, canonicalRel);
+            artifacts.push({
+              kind: 'skill',
+              canonical: canonicalRel,
+              relPath: targetRel,
+              content: rendered,
+              managedMarker: true,
+            });
+          } else {
+            // Auxiliary resource: byte-for-byte copy
+            artifacts.push({
+              kind: 'skill',
+              canonical: canonicalRel,
+              relPath: targetRel,
+              sourceFilePath: fullSrcPath,
+              managedMarker: false,
+            });
           }
         }
       }
@@ -491,6 +552,8 @@ ${workflowSection}${addonSection}
     //    slash commands by Cline 3.x.
     //    ADR 0016: Project workflow skills (name starting with workflow-) into .cline/workflows/
     //    retaining the workflow-* prefix so Cline users retain /workflow-* slash commands.
+    //    The workflow file has no folder of its own, so the skill's supporting files are named by the path of the
+    //    installed copy under `.agents/skills/<name>/` (ADR 0016 decision 6 amendment, WorkflowSkillFiles).
     const workflowSkillNames = resolved.skills.filter(s => s.startsWith('workflow-'));
     for (const skillName of workflowSkillNames) {
       const canonicalRel = `skills/${skillName}/SKILL.md`;
@@ -501,7 +564,12 @@ ${workflowSection}${addonSection}
         const nativeWorkflow = nativeLane ? nativeWorkflowSource(registryDir, 'cline', skillName) : undefined;
         const rendered = nativeWorkflow !== undefined
           ? renderNativeWorkflow(await fs.readFile(nativeWorkflow, 'utf8'), canonicalRel, 'cline')
-          : this.renderWorkflowProjection(content, canonicalRel);
+          : this.renderWorkflowProjection(content, canonicalRel, {
+              skillName,
+              files: await this.listSkillFiles(path.join(registryDir, 'skills', skillName)),
+              scope,
+              root,
+            });
         artifacts.push({
           kind: 'workflow',
           canonical: canonicalRel,
