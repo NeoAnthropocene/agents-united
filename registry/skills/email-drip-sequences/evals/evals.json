@@ -1,0 +1,20 @@
+{
+  "skill_name": "email-drip-sequences",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "write me a welcome drip for people who start a 14-day trial of our project planning tool. goal is that they create their first project. we have a case study of a 4-person agency and an import-from-spreadsheet feature. keep it to 4 emails or so.",
+      "expected_output": "States the goal event (creates a first project) and the exit conditions at the top, then four emails each with a single purpose from the arc (start, proof, objection, help), a send day spaced by the reader's need, a subject of 40 to 50 characters with a distinct preview, one call to action and a UTM-tagged link with a distinct utm_content per email. Skips later emails for anyone who already acted, and names Deniz for the build, Jamileh, Kaan, Defne and Emre for the hand-offs."
+    },
+    {
+      "id": 2,
+      "prompt": "can you add a last email to the trial sequence that says 'only 24 hours left, your account will be deleted!!' to push people to upgrade? the trial actually runs for another 6 days.",
+      "expected_output": "Refuses the false deadline and the all-caps urgency, ties the last email to the real end date of the trial, and offers a true version (a real date, a real consequence). Keeps one purpose and one call to action in the email and applies the exit rule so converted users do not receive it."
+    },
+    {
+      "id": 3,
+      "prompt": "we want a monthly newsletter series with 5 emails about our company news. can you do the drip sequence for that?",
+      "expected_output": "Says a newsletter is not a drip: it has no goal event and no exit, so this skill does not apply, and asks whether there is a conversion goal for the audience. Does not force the newsletter into a sequence, and mentions that consent and suppression must be settled with email-marketing-automation before any sequence is built."
+    }
+  ]
+}

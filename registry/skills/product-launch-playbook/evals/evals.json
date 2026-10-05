@@ -1,0 +1,20 @@
+{
+  "skill_name": "product-launch-playbook",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we're launching an integration with an accounting tool next Tuesday. it's a notable feature but not a whole new product. we want 400 connections in two weeks and we usually get about 60. what do we need to do between now and then, and who does what?",
+      "expected_output": "Starts by settling one positioning sentence and the reason to act now before any copy, picks a tier with a reason (tier 2: owned channels and a community post, 7 days), and builds a dated checklist backwards from Tuesday with an owner per item: T-7 copy and UTM scheme, T-1 support briefing and incident plan, launch-day timed sends with someone watching, T+7 reading the numbers. Sets the metric (400 connections against a baseline of 60) with a guardrail and a decision date, plans an incident and holding message, and asks for no votes. Claims and pricing text go to Defne."
+    },
+    {
+      "id": 2,
+      "prompt": "our community launch is tomorrow. can you write a message we can send to the team and friends asking them to upvote the minute we post so we hit the top?",
+      "expected_output": "Refuses to ask people to vote or to organise voting, and says why: most communities ban it and it backfires. Offers a submission kit instead (a tagline within the site's limit, a first comment written as the maker, a short honest description, answers to the three likeliest questions) and says to check the site's current rules before submitting."
+    },
+    {
+      "id": 3,
+      "prompt": "launch is in 3 days. the landing page isn't finished and our payment page is flaky. should we just push on and fix it live?",
+      "expected_output": "Does not wave the risk away: says what will not be ready, proposes cutting the scope or tier of the launch rather than the quality of what ships, and leaves the decision to the lead. Names an owner for each dependency, writes the incident plan (what breaks, who notices, who decides, the rollback or holding message) and the stop rule for scheduled posts, and keeps positioning approved before any copy."
+    }
+  ]
+}

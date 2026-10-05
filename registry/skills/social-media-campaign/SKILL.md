@@ -1,150 +1,61 @@
 ---
 name: social-media-campaign
-description: Production-grade Social Media Campaign playbook for design
-  operations, UX systems, and growth strategy.
+description: "Use when planning a launch announcement matrix, an always-on social content plan, an event or a feature-adoption push; trigger phrases: plan our social campaign, write the launch posts for each platform, social media calendar, how should we announce this on X and LinkedIn, what do we do if people reply badly. Produces a campaign brief, a post matrix per platform with owners and dates, disclosure notes, a response plan and a measurement plan with a UTM scheme. Skip it for paid ad creative (use ad-creative-design) and for a long-form content plan (use content-calendar-strategy)."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 📢
+  version: 3.0.0
+  icon: 📣
 disable-slash-command: true
 ---
 
 # Social Media Campaign
 
+A campaign is a message, told in the form each platform's readers expect, on a schedule, with a plan for what happens when people answer. Resizing one post for five networks is not a campaign.
+
 ## Overview & Purpose
-The Social Media Campaign skill provides a deterministic framework for executing social media campaign processes in modern software products.
+For the campaign specialist, who drafts and plans: nothing is posted by this role, because publishing is the client's or the lead's act, with their accounts. Visuals belong to Jamileh and claims review to Defne.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it for a launch announcement matrix, an always-on content plan, an event or a feature-adoption push. Do not use it for paid ad creative (`ad-creative-design`) or a long-form content plan (`content-calendar-strategy`).
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Social Media Campaign tasks.
-- Auditing existing product assets or workflows.
-- Standardizing social-media-campaign procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: the campaign goal as one measurable outcome, the audience and where it already is, the one message, source material (posts, articles, demos, changelog, quotes), the channels the client actually operates, who approves, the dates.
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Output: a campaign brief (goal, audience, message, channels, success metric); a post matrix per platform (angle, copy, asset need, call to action); a dated calendar with owners and the approval step; disclosure notes; a response plan; the measurement plan with its UTM scheme. **Evidence to attach**: the source of each fact or number used in a post.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **Start from source material, not a formula**: what did the team build, measure or learn? A post is the smallest true thing worth telling about it.
+2. **One claim per post**: a post that needs "and also" is two posts. Write the claim first, then the shape.
+3. **Use the platform-native shape** ([references/platform-shapes.md](references/platform-shapes.md)): short and concrete on X, context for outsiders on a professional network, an honest question or post-mortem as a member on a community forum, the result in the first seconds on video. A thread, a post and a video of the same news are three pieces.
+4. **Plan the calendar around moments**, not slots: a release, an event, a customer story, a result. The pillar piece first, derivatives after, a gap for reacting to what happens.
+5. **Disclose.** Paid, sponsored, affiliate or gifted content is labelled where the platform expects it; employees and partners say who they work for. A false or buried disclosure is a reason to stop (Defne).
+6. **No engagement bait**: no "comment YES for the guide", no fake polls, no tagging people who did not agree, no asking for shares or votes in exchange for nothing, no purchased engagement.
+7. **Write the response plan before the first post**: who watches replies and for how long, what gets answered, what escalates to the lead (complaints, press, legal, a crisis), what is never deleted, and a pause rule (stop scheduled posts when something serious happens).
+8. **Measure what the goal is**: clicks to the campaign page via UTM, signups or replies, not impressions alone. One primary metric and one guardrail (unfollows, negative replies).
+9. **Hand off.** Visual briefs to Jamileh (sizes per platform), landing-page copy to Kaan, content pieces from Yavuz's calendar, claims and disclosure to Defne, link and UTM checks to Emre. The lead decides when to post.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/social-media-campaign/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/social-media-campaign/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/social-media-campaign/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for a four-platform launch matrix with its response plan and UTM scheme.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- The same text in five sizes: each platform's readers see a stranger's post.
+- Three claims in one post: none of them lands.
+- "Comment to get the link": it farms replies and spends goodwill.
+- Posting with no one watching replies: the first complaint waits for days.
+- Impressions as the success metric: they do not show the goal moved.
+- An undisclosed sponsored mention: a reason to stop, and a risk for Defne.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+## Edge Cases & Error Recovery
+- **A crisis or tragedy lands on a scheduled day**: recommend pausing the schedule; the lead decides.
+- **A negative reply with a valid point**: reply once, correct what is wrong, move the rest to support; do not argue publicly.
+- **A platform changes its format**: use the format that works now; do not invest in a deprecated one.
+- **A claim cannot be sourced**: the post waits (Defne and Yavuz).
+- **No approval path**: the campaign brief names the approver; nothing is scheduled without one.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/social-media-campaign/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/social-media-campaign/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/social-media-campaign/ reports/social-media-campaign/
-   git commit -m "feat(social-media-campaign): implement Social Media Campaign playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Social Media Campaign Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "social-media-campaign"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/social-media-campaign/summary.json"
-```
-
-### Exemplar 2: Social Media Campaign Helper Module
-```typescript
-export function runSocialMediaCampaign(scope: string): boolean {
-  console.log('Running Social Media Campaign on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Social Media Campaign
-1. **Diagnosis**: Specification or code asset fails validation rules in social-media-campaign.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Social Media Campaign
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] One goal, one message, one primary metric and one guardrail.
+- [ ] Each post makes one claim in its platform's native shape, with its source in the evidence list.
+- [ ] Paid, sponsored or affiliate content has a disclosure note per post.
+- [ ] A response plan names who watches, for how long, and what escalates.
+- [ ] Every link is UTM-tagged; no post asks for engagement as a favour.
+- [ ] Hand-offs name Jamileh, Kaan, Yavuz, Defne and Emre; the lead owns the posting decision.

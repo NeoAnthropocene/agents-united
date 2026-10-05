@@ -1,150 +1,59 @@
 ---
 name: email-marketing-automation
-description: Production-grade Email Marketing Automation playbook for design
-  operations, UX systems, and growth strategy.
+description: "Use when a brief asks for welcome, activation, win-back or promotional email flows, automation rules, or a deliverability problem; trigger phrases: set up our email automation, build a welcome flow, win-back emails, our open rates collapsed, emails are landing in spam. Produces a flow map, suppression and consent spec, frequency policy, authentication and footer checklists, and a measurement and test plan. Skip it for a one-off announcement (a single send needs only the footer checklist) and for transactional mail (receipts and security notices follow other rules)."
 metadata:
   author: agents-united
-  version: 2.0.0
-  icon: 📧
+  version: 3.0.0
+  icon: ✉️
 disable-slash-command: true
 ---
 
 # Email Marketing Automation
 
+Automation sends the right message when something happens, and it multiplies mistakes: a wrong trigger emails every user, a missing suppression list emails people who left. The order of work: authenticate, consent, segment, trigger, cap, measure.
+
 ## Overview & Purpose
-The Email Marketing Automation skill provides a deterministic framework for executing email marketing automation processes in modern software products.
+For the campaign specialist, who specifies and writes copy briefs. It holds no email service account, sends nothing and gives no legal advice: consent and regional law go to Defne.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it when a brief asks for welcome, activation, win-back or promotional flows, automation rules, or a deliverability problem (open rates collapse, mail lands in spam). Do not load it for a one-off announcement (a single send needs only the footer checklist) or transactional mail (receipts and security notices are not marketing: say so).
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Email Marketing Automation tasks.
-- Auditing existing product assets or workflows.
-- Standardizing email-marketing-automation procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: lifecycle stages and the events that mark them; the sending domain and its authentication; the email service; list sources and how consent was collected; complaint and unsubscribe rates if known; the goal per flow.
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Output: a flow map (trigger, audience, exit condition, steps with delays); a suppression and consent specification; a frequency policy; the authentication checklist; the footer checklist per message; the measurement plan; a test plan. **Evidence to attach**: what you read (DNS records, a sample header, a dashboard export), or that you saw none.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **Confirm authentication before designing flows**: SPF, DKIM and a DMARC policy (monitoring first, enforcement once reports are clean). Complaints above 0.1 percent are a warning, 0.3 percent an emergency. If you cannot see the records, "verify SPF, DKIM, DMARC" is the first task, with an owner (Deniz or the client's IT).
+2. **Define consent and suppression.** Mail only people who agreed, to the kind of mail they agreed to. A global suppression list (unsubscribed, bounced, complained, deleted) is checked before every send by every flow, and an unsubscribe applies to all marketing flows within a stated time. Unclear regional consent: stop and ask Defne.
+3. **Segment by behaviour, not by guess**: events (created a project, no return in 7 days, hit a plan limit). A segment needs a rule a developer can implement and a size you can check.
+4. **Give every flow an exit condition**: purchase, activation, unsubscribe or reply ends it at once. Someone who has done the thing must not get the email that asks them to.
+5. **Cap frequency across flows**, not within one: for example one marketing email in 24 hours, a stated weekly maximum, and a priority order when flows collide (activation outranks promotion).
+6. **Specify send mechanics**: local-time sending where useful, plus the footer checklist in [references/deliverability.md](references/deliverability.md).
+7. **Measure without lying**: opens are unreliable under mail privacy features, so judge by clicks, activation and revenue per recipient, with unsubscribe and complaint rates as guardrails. Test one thing at a time with `ab-test-setup`.
+8. **Hand off.** Flow rules and events to Deniz; copy to Kaan or your own drafting with `email-drip-sequences`; layout to Jamileh; authentication and consent questions to Defne and the client's IT; verification (links, unsubscribe, rendering) to Emre.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/email-marketing-automation/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/email-marketing-automation/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/email-marketing-automation/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for a flow audit (18,000 contacts, 0.18 percent complaints), its plan and a win-back flow to copy; [references/deliverability.md](references/deliverability.md) has the authentication and footer checklists.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- Flows on a domain nobody has authenticated: the mail may never reach the inbox.
+- Open rate as the measure of success: privacy features inflate it.
+- The "get started" email to people who started: it shows nobody is listening.
+- An unsubscribe in one flow ignored by the others: it breaks the promise made.
+- Buying or scraping lists: no consent, and complaints follow.
+- Legal conclusions instead of a hand-off to Defne: not this role's job.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+## Edge Cases & Error Recovery
+- **Complaint rate rising**: recommend pausing promotional flows (the lead decides), keep transactional mail, find the flow and segment behind it, tighten the audience before the copy.
+- **Bounces above about 2 percent**: remove hard bounces, check the list source, never re-send to old addresses.
+- **Two flows fire the same day**: apply the priority order; never send both.
+- **Time zone unknown**: send at a fixed hour in the audience's main zone and say so.
+- **Consent record missing for a segment**: exclude it until Defne confirms.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/email-marketing-automation/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/email-marketing-automation/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/email-marketing-automation/ reports/email-marketing-automation/
-   git commit -m "feat(email-marketing-automation): implement Email Marketing Automation playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Email Marketing Automation Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "email-marketing-automation"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/email-marketing-automation/summary.json"
-```
-
-### Exemplar 2: Email Marketing Automation Helper Module
-```typescript
-export function runEmailMarketingAutomation(scope: string): boolean {
-  console.log('Running Email Marketing Automation on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Email Marketing Automation
-1. **Diagnosis**: Specification or code asset fails validation rules in email-marketing-automation.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Email Marketing Automation
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] Authentication (SPF, DKIM, DMARC) is verified, or listed as the first task with an owner.
+- [ ] Every flow has a trigger, an audience rule, an exit condition and a delay per step.
+- [ ] A suppression check and a frequency cap with a priority order apply across all flows.
+- [ ] Each message carries the footer checklist; success is clicks, activation or revenue, not opens.
+- [ ] Hand-offs name Deniz, Kaan, Jamileh, Defne and Emre; legal questions are not answered here.

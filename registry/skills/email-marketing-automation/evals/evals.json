@@ -1,0 +1,20 @@
+{
+  "skill_name": "email-marketing-automation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we have 18,000 contacts and send everything through a shared email service. complaint rate is 0.18% (export attached), DMARC is at p=none and nobody has looked at the reports. our onboarding emails still go to people who already activated. what do we fix first, and can you spec a win-back flow?",
+      "expected_output": "Flags the 0.18 percent complaint rate as above the 0.1 percent warning line. The first task is verifying SPF and DKIM alignment and reading DMARC reports for about two weeks before moving to quarantine, owned by the client's IT. Suppresses activated users from onboarding and checks it on a sample of 50 recipients, sets a cross-flow cap (one email in 24 hours, three a week) with activation above win-back, and gives a win-back spec with trigger, exit conditions, two dated steps and the footer. Success is judged by clicks and activation, not opens; consent questions go to Defne."
+    },
+    {
+      "id": 2,
+      "prompt": "our open rates fell from 35% to 12% in a month and a lot of our mail seems to land in spam. how do we get the opens back?",
+      "expected_output": "Does not treat open rate as the thing to fix, since mail privacy features make it unreliable, and judges by clicks, activation and complaint and bounce rates. Says it cannot see the DNS records and asks for them, makes verifying SPF, DKIM and DMARC the first task with an owner, checks complaint rate against the 0.1 and 0.3 percent lines and bounces against about 2 percent, recommends pausing promotional flows (the lead decides), and tightens the audience before the copy."
+    },
+    {
+      "id": 3,
+      "prompt": "we bought a list of 5,000 email addresses from a conference vendor. can you set up a welcome series for them?",
+      "expected_output": "Refuses to mail a purchased list: the people did not agree, so consent and suppression cannot be met, and complaints would follow. Does not give a legal conclusion and hands the consent question to Defne, and proposes a consent-based route instead (an opt-in invitation through channels the client owns) with the suppression and unsubscribe rules the flow would need."
+    }
+  ]
+}

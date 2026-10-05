@@ -1,150 +1,59 @@
 ---
 name: product-launch-playbook
-description: Production-grade Product Launch Playbook playbook for design
-  operations, UX systems, and growth strategy.
+description: "Use when a brief names a launch (product, feature, pricing change, integration, rebrand) with a date, or a scheduled launch needs a plan; trigger phrases: plan our product launch, launch checklist, we launch on Tuesday, what do we need before launch day, what if something breaks on launch day. Produces the positioning brief, the launch tier, a dated T-minus checklist with owners, submission kits, an incident and rollback plan, the measurement plan and a post-launch review. Skip it for always-on social content (use social-media-campaign) and for a sequence to existing users (use email-drip-sequences)."
 metadata:
   author: agents-united
-  version: 2.0.0
+  version: 3.0.0
   icon: 🚀
 disable-slash-command: true
 ---
 
 # Product Launch Playbook
 
+A launch is a coordinated set of dated actions around one message. Most fail quietly: the message was not settled before the copy, an asset had no owner, nobody planned for what broke on the day, or no one read the numbers afterwards.
+
 ## Overview & Purpose
-The Product Launch Playbook skill provides a deterministic framework for executing product launch playbook processes in modern software products.
+One shared plan for the campaign specialist and the growth strategist. The lead assembles the team; this skill defines what each role contributes and when.
 
-Following this skill ensures high usability, visual consistency, rapid iteration, and complete cross-functional team alignment.
+## Execution Triggers
+Load it when a brief names a launch (product, feature, pricing change, integration, rebrand) with a date, or a launch is scheduled and needs a plan. Do not use it for always-on social content (`social-media-campaign`) or a sequence to existing users (`email-drip-sequences`).
 
-## Execution Triggers & Prerequisites
-### Execution Triggers
-- Direct request to execute Product Launch Playbook tasks.
-- Auditing existing product assets or workflows.
-- Standardizing product-launch-playbook procedures across team projects.
-- Preparing design handoffs or growth campaign launches.
+## Input/Output Requirements
+Inputs: what launches and for whom; the date and any fixed constraint (an event, a conference, a contract); what is ready and what is not; the success metric; owners available; channels; embargo or press rules; budget.
 
-### Prerequisites
-- Project workspace configured with design system tokens or component libraries.
-- Target UI design specification or growth experiment hypothesis.
-- Testing and linting tools operational.
-- Clean git working directory.
+Output: the positioning brief; the launch tier; the dated checklist with an owner per item; the asset list; submission kits where relevant; the incident and rollback plan; the measurement plan; the post-launch review. **Evidence to attach**: the source of each claim in the message, and who confirmed the product is ready.
 
-## Input & Output Requirements
-### Inputs
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `target_scope` | String | Yes | Target UI component, page, or campaign scope |
-| `config` | Object | Optional | Specific parameters and threshold configurations |
-| `output_dir` | Directory Path | Optional | Destination directory for generated artifacts |
-| `strict_mode` | Boolean | Optional | Enforce strict zero-warning validation |
+## Step-by-Step Runbook
+1. **Settle positioning before writing anything**: "[Product] helps [audience] [outcome] by [mechanism]", plus the single reason to act now. Test it with Ava and Kaan; it must survive a sceptical reading. No copy is drafted until the sentence is approved.
+2. **Choose the launch tier**, so effort matches stakes. Tier 1, a new product or major change: full plan, press and community, 14 days of preparation. Tier 2, a notable feature: owned channels and a community post, 7 days. Tier 3, a small improvement: a changelog entry and one post, 1 day. Say the tier and why; the lead can overrule.
+3. **Build the checklist backwards from the date**, each item with an owner and a due date: T-14, T-7, T-1, launch day, T+1 and T+7. The items are in [references/launch-checklists.md](references/launch-checklists.md).
+4. **Prepare submission kits** for community or directory launches (contents in the reference). Never ask people to vote or organise voting: most communities ban it and it backfires. Check each site's current rules first.
+5. **Plan for failure.** For each launch-day dependency (the signup, the payment page, the API) name what breaks, who notices, who decides, and the rollback or holding message. Decide the stop rule for scheduled posts if something serious happens.
+6. **Measure against the goal**: one primary metric with a number, one guardrail (support contacts, refund requests), a baseline from the last 28 days and a decision date. One `utm_campaign` for the launch, `utm_source` per channel, `utm_content` per asset.
+7. **Hand off.** Positioning to Kaan for the landing page; calendar and posts via `social-media-campaign`, the user email via `email-drip-sequences`; visuals to Jamileh; build, tracking and rollback to Deniz; verification to Emre; claims, pricing text and legal notices to Defne.
 
-### Outputs
-| Artifact | Path / Format | Description |
-|---|---|---|
-| Specification Document | `docs/product-launch-playbook/spec.md` | Full specification and guidelines document |
-| Component / Asset Files | `src/product-launch-playbook/*` | Implemented design tokens, components, or campaign assets |
-| Audit Report | `reports/product-launch-playbook/summary.json` | Health check and audit metric results |
+## Code & Config Exemplars
+Load [examples/worked-example.md](examples/worked-example.md) for a tier 2 launch: its goal, positioning, checklist rows and incident plan.
 
-## Step-by-Step Execution Runbook
+Anti-patterns, each with its reason:
+- Copy written before the message is settled: it is rewritten, late.
+- No owner for the landing page or the tracking: each becomes someone's assumption.
+- Asking for upvotes or arranging a voting ring: the community bans it and the launch pays.
+- No plan for the day something breaks: the decision is made in a panic.
+- A tier that ignores the stakes: too much work for a small change, too little for a big one.
+- Success declared by impressions: they do not show the goal moved.
 
-### Phase 1: Pre-Execution Discovery & Workspace Analysis
-1. Inspect workspace repository to locate relevant UI components, tokens, or campaign assets.
-   ```bash
-   find src/ docs/ -maxdepth 3 -type f
-   ```
-2. Analyze domain requirements and classify core UI elements, interaction flows, or growth metrics.
-3. Establish baseline quality metrics and target benchmarks.
-4. Verify working tree status to ensure clean git workspace.
-   ```bash
-   git status --short
-   ```
-5. Formulate initial execution plan.
+## Edge Cases & Error Recovery
+- **The date is fixed and the product is not ready**: say what will not be ready and cut the scope of the launch (a lower tier) rather than the quality of what ships; the lead decides.
+- **An owner is missing**: the item goes to the lead on the checklist, not to "the team".
+- **Embargo or press timing**: the date and time zone sit next to every press item; nothing is sent early.
+- **A competitor launches the same week**: do not rewrite the message in a panic; check the positioning still holds and, if it does, keep the plan.
+- **Results are below the goal at T+7**: record why (message, channel, product) with evidence; hand the next move to Ava as an experiment, not a second launch.
 
-### Phase 2: Input Contract Validation & Strategy Selection
-1. Validate input parameters against technical feasibility and design system guidelines.
-2. Select implementation pattern matching component or campaign architecture.
-3. Establish verification rules and accessibility / conversion thresholds.
-4. Formulate atomic step-by-step execution sequence.
-5. Create temporary working directory if needed.
-
-### Phase 3: Core Step-by-Step Implementation Execution
-1. Author primary specification document at `docs/product-launch-playbook/spec.md`.
-2. Generate code, token, or layout implementation files.
-   ```bash
-   npm run typecheck
-   ```
-3. Apply automated formatting and linting tools.
-4. Execute unit or visual regression tests.
-   ```bash
-   npm test
-   ```
-5. Refactor asset structure for optimal performance and maintainability.
-
-### Phase 4: Verification, Testing & Quality Gate Checking
-1. Run full project verification suite.
-   ```bash
-   npm run typecheck && npm test && npm run build
-   ```
-2. Verify zero lint errors, type warnings, or broken references.
-3. Execute CLI health doctor check.
-   ```bash
-   npx agents-united doctor
-   ```
-4. Assert all acceptance criteria are satisfied.
-
-### Phase 5: Post-Execution Cleanup & Artifact Generation
-1. Generate execution summary report at `reports/product-launch-playbook/summary.md`.
-2. Clean up temporary build artifacts and scratch files.
-3. Commit generated files to git repository.
-   ```bash
-   git add docs/product-launch-playbook/ reports/product-launch-playbook/
-   git commit -m "feat(product-launch-playbook): implement Product Launch Playbook playbook artifacts"
-   ```
-4. Publish documentation for team review.
-
-## Code & Configuration Exemplars
-
-### Exemplar 1: Product Launch Playbook Configuration Specification
-```yaml
-version: "2.0.0"
-metadata:
-  skill: "product-launch-playbook"
-  author: "agents-united"
-rules:
-  strictValidation: true
-  reporting:
-    format: "json"
-    output: "reports/product-launch-playbook/summary.json"
-```
-
-### Exemplar 2: Product Launch Playbook Helper Module
-```typescript
-export function runProductLaunchPlaybook(scope: string): boolean {
-  console.log('Running Product Launch Playbook on:', scope);
-  return true;
-}
-```
-
-## Edge Cases & Error Recovery Procedures
-
-### Scenario A: Validation Failure in Product Launch Playbook
-1. **Diagnosis**: Specification or code asset fails validation rules in product-launch-playbook.
-2. **Recovery Protocol**:
-   - Step 1: Inspect error log at reports directory.
-   - Step 2: Correct non-compliant syntax or structure.
-   - Step 3: Re-run verification pipeline.
-
-### Scenario B: Missing Resource for Product Launch Playbook
-1. **Diagnosis**: Target design token or configuration asset missing from workspace.
-2. **Recovery Protocol**:
-   - Step 1: Generate baseline resource file from standard template.
-   - Step 2: Update configuration references.
-   - Step 3: Resume runbook execution.
-
-## Verification & Validation Checklist
-- [ ] Frontmatter conforms strictly to `author: "agents-united"` and `version: "2.0.0"`.
-- [ ] All 7 mandatory sections present with explicit headers.
-- [ ] Step-by-Step Execution Runbook body contains >= 50 lines.
-- [ ] Code exemplars provided with valid syntax fencing.
-- [ ] Zero dummy placeholder strings or unpopulated template markers present.
-- [ ] Project build, test suite, and doctor check pass 100% cleanly.
+## Verification Checklist
+- [ ] The positioning sentence is approved before any copy is drafted.
+- [ ] A tier is chosen with a reason; the checklist has T-14, T-7, T-1, T0 and T+7 items, each with an owner and a due date.
+- [ ] Submission kits follow the site's current rules and contain no vote request.
+- [ ] An incident and rollback plan names who notices, who decides and the holding message.
+- [ ] One primary metric with a baseline, one guardrail and a decision date are written down.
+- [ ] Hand-offs name Kaan, Jale, Jamileh, Deniz, Emre, Defne and Ava with what each delivers.

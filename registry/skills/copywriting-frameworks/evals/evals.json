@@ -1,0 +1,20 @@
+{
+  "skill_name": "copywriting-frameworks",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "can you write the hero section for our invoicing tool landing page? it's for freelancers who already know late payment is a problem. we have telemetry that invoices take 45 seconds to create, reminders go out automatically, and our analysis of 2,300 invoices says 3.1% are paid late with reminders vs 11% without. free plan needs no card.",
+      "expected_output": "Copy built on one checkable claim about reminders and late payment, in a problem-aware framework (PAS), with the numbers rewritten in plain words and a proof line that names the 2,300-invoice sample. One specific call to action (a verb plus the outcome). A claim audit that ties each figure to its source, a note that the voice is unconfirmed if no samples were given, and hand-offs: Jamileh for layout, Defne to substantiate the comparison, Jale if it becomes an email. No banned phrase appears."
+    },
+    {
+      "id": 2,
+      "prompt": "write me something punchy for our new project management tool launch post. it's revolutionary, seamless and a total game-changer for teams. need it by tonight.",
+      "expected_output": "Does not write persuasive copy from adjectives. Says it has no facts to use and returns the five facts it needs (numbers, outcomes, constraints, who uses it, customer language), may offer a plain factual description meanwhile, and names the banned phrases it will not use (revolutionary, seamless, game-changer). Asks for the audience's state and the one action the post should cause."
+    },
+    {
+      "id": 3,
+      "prompt": "marketing wants this hero line added to the page: 'Only 3 spots left this month! Offer ends tonight!' but honestly we have no cap on signups. can you tidy the wording?",
+      "expected_output": "Refuses to polish a false scarcity and urgency claim and says why, offers a true alternative (a real date or a real limit if one exists, otherwise a specific benefit), and flags the claim for Defne. Applies the claim audit: a statement with no source becomes an opinion or is removed."
+    }
+  ]
+}

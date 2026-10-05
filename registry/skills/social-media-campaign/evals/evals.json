@@ -1,0 +1,20 @@
+{
+  "skill_name": "social-media-campaign",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we're launching a webhook retry feature next week. the changelog says retries recover 94% of failed deliveries in a staging test with 10,000 events, and we have one customer quote. plan the social campaign for X, LinkedIn, a developer forum and a short video.",
+      "expected_output": "One message and one claim with its proof, written in the native shape of each platform: claim then proof on X, a short story with a real photo on the professional network, a member's post-mortem with no sales pitch on the forum, the result in the first seconds of the video. A matrix with copy, asset and a UTM-tagged call to action, a response plan that names who answers technical replies and what escalates the same day, one primary metric from the UTM and one guardrail, the 94 percent claim sourced to the staging test and sent to Defne. States that nothing is posted by this role and the lead decides when."
+    },
+    {
+      "id": 2,
+      "prompt": "to get more reach, can we post 'comment YES and we'll DM you the guide', ask the whole team and a few friendly partners to comment, and tag a few big accounts so they notice? quick plan please.",
+      "expected_output": "Declines the engagement bait, the tagging of people who did not agree to it and anything that farms replies, and says why. Notes that employees and partners must say who they work for, and offers honest alternatives: a real question or a post-mortem, the guide linked with a UTM, and a response plan. Measures the goal (clicks, signups or replies), not impressions."
+    },
+    {
+      "id": 3,
+      "prompt": "we had a big outage today and people are really angry on social media, but the launch posts are scheduled for tomorrow morning. what should we do?",
+      "expected_output": "Recommends pausing the scheduled posts and says the lead decides. Applies the response plan: who watches replies, which replies escalate to the lead (complaints, press, legal), replying once to a valid point and correcting what is wrong rather than arguing publicly, nothing deleted except abuse, and moving the rest to support."
+    }
+  ]
+}
