@@ -193,7 +193,12 @@ describe('the live-test protocol: H9, the lead provisions a missing MCP server',
     expect(h9()).toMatch(/rewrites that file at every session start/);
     expect(h9()).not.toMatch(/SHA-256 of `~\/\.claude\.json`/);
     expect(h9()).not.toMatch(/`~\/\.claude\.json` is unchanged/);
-    for (const needle of ['claude mcp get', 'claude mcp list', 'ToolSearch', '/mcp reconnect', 'claude --continue', '--resume <session-id>']) expect(h9(), needle).toContain(needle);
+    for (const needle of ['claude mcp get', 'claude mcp list', 'ToolSearch', '/mcp reconnect', 'claude --continue', 'agents start digital-agency --host claude', 'Use this MCP server']) expect(h9(), needle).toContain(needle);
+    // The maintainer's probe of 2026-10-06 answered it: a running session does not load the server, so the install ends with a restart and a starting prompt, not a reconnect.
+    expect(h9()).toMatch(/Answered by the maintainer's probe/);
+    expect(h9()).toMatch(/self-contained starting prompt of at most 25 lines/);
+    expect(h9()).not.toContain('--resume <session-id>');
+    expect(h9()).not.toContain('say only "continue" afterwards');
   });
 
   it('never asks for or writes a key, prints a placeholder, and invents no pull request', () => {
@@ -205,7 +210,7 @@ describe('the live-test protocol: H9, the lead provisions a missing MCP server',
 
   it('runs the baseline first and says what is not yet known', () => {
     expect(h9()).toMatch(/Baseline first/);
-    expect(h9()).toMatch(/Not in the library snapshot/);
+    expect(h9()).toMatch(/\*\*Still unverified:\*\*/);
   });
 
   it('keeps both prompts under 2,000 characters, the first being the H6 prompt plus one sentence', () => {
