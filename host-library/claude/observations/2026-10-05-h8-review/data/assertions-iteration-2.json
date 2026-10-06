@@ -1,0 +1,29 @@
+{
+ "seo1-fixture": [
+  "Checks technical blockers first (noindex, canonical, robots, sitemap, staging host) before judging content",
+  "Finds the noindex on /pricing and grades it critical",
+  "Finds the canonical to the staging host on /docs/webhooks and grades it critical",
+  "Finds that robots.txt and the sitemap name the staging host",
+  "Flags the two blog posts as targeting one query (cannibalisation), to be resolved with Yavuz",
+  "Writes one primary intent per key URL (a per-URL intent table)",
+  "Grades each finding critical, major or minor with URL, exact observation, tool or command and date",
+  "Computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope",
+  "Says status codes could not be checked on a static copy",
+  "Hands code fixes to Deniz and copy to Kaan",
+  "Says what could not be checked without the Search Console exports"
+ ],
+ "funnel4-fixture": [
+  "Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent overall)",
+  "Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing",
+  "Says the pages were read from source, not walked, at no width",
+  "Finds the card field whose pattern rejects the format its placeholder shows, and grades it S1",
+  "Finds the pricing page mobile defect (no viewport meta, fixed 960 px table, small far-end button) and grades it S2",
+  "Finds the landing page promising a free first lesson that the pricing page does not offer, and grades it S2",
+  "Finds an S3: phone, company or address line 2 required with no reason, or no price or money-back line near the pay button",
+  "Finds an S4: the Submit label or the lower-case page title",
+  "Each finding has a location, a quoted line as evidence, a principle and a buildable fix",
+  "S1 and S2 findings are labelled fixes, not experiments",
+  "Hand-offs: Jamileh for layout, Deniz for build and events, ab-test-setup for tests",
+  "Does not recommend a redesign"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "total_tokens": 199699,
+ "output_tokens": 13702,
+ "cache_read_tokens": 147581,
+ "duration_ms": 117420,
+ "cost_usd": 0.3212,
+ "skill_calls_loaded": [
+  "growth-experiment-design",
+  "ab-test-setup"
+ ],
+ "skill_calls_refused": []
+}

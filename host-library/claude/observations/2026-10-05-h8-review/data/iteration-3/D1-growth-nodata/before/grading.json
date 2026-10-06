@@ -1,0 +1,46 @@
+{
+ "prompt": "D1-growth-nodata",
+ "configuration": "before",
+ "session": "d7b4aa0e-26b2-4fdd-896a-0f4793f2433f",
+ "assertion_results": [
+  {
+   "text": "First line says the stage counts for the last 28 days are missing, and asks for them",
+   "passed": true,
+   "evidence": "No funnel data was available. ... I need these inputs: Counts at every stage for the last 28 days"
+  },
+  {
+   "text": "Does not invent a funnel or quote industry averages as this product's numbers",
+   "passed": true,
+   "evidence": "I have used no industry averages as your numbers"
+  },
+  {
+   "text": "Makes instrumentation (the events and where they fire) experiment zero with Deniz and Emre as owners",
+   "passed": true,
+   "evidence": "Experiment 0 (prerequisite): instrumentation. Deniz adds the funnel events and Emre verifies they fire."
+  },
+  {
+   "text": "Scores every idea Confidence 1 to 3",
+   "passed": false,
+   "evidence": "Every Confidence score is capped at 4; the table has a 4 (cancel-reason survey)"
+  },
+  {
+   "text": "Does not hand over ten experiments to run in parallel on one page",
+   "passed": true,
+   "evidence": "Experiment 10: run it only after activation and day-30 retention are healthy; sequencing notes on 3, 5, 6, 8"
+  },
+  {
+   "text": "Writes no file and no brief",
+   "passed": false,
+   "evidence": "Briefs for the top three are written in the chat (no file)"
+  },
+  {
+   "text": "Labels what it gives provisional",
+   "passed": true,
+   "evidence": "Growth Strategy Playbook (draft); This is a draft backlog"
+  }
+ ],
+ "summary": {
+  "passed": 5,
+  "total": 7
+ }
+}

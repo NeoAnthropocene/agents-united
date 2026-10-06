@@ -1,0 +1,29 @@
+{
+ "eval_id": 2,
+ "skill": "seo-audit",
+ "configuration": "with_skill",
+ "session": "7f43d1be-6316-41a6-92af-19b5b6a3cc20",
+ "assertion_results": [
+  {
+   "text": "Declines to promise a ranking or traffic number",
+   "passed": true,
+   "evidence": "No. I can't guarantee that, and no one honestly can."
+  },
+  {
+   "text": "Says what the audit can establish",
+   "passed": true,
+   "evidence": "What the audit can promise: crawl and indexation clean ... necessary conditions"
+  },
+  {
+   "text": "Offers to measure the result against the baseline",
+   "passed": true,
+   "evidence": "I can also run the technical audit now to set the baseline; trend against a baseline"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "failed": 0,
+  "total": 3,
+  "pass_rate": 1
+ }
+}

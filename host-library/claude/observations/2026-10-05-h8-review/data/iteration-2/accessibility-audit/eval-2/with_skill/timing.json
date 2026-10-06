@@ -1,0 +1,9 @@
+{
+ "total_tokens": 32926,
+ "output_tokens": 864,
+ "duration_ms": 10956,
+ "cost_usd": 0.1009626,
+ "skill_calls_loaded": [],
+ "skill_calls_refused": [],
+ "mode": "headless claude -p, sonnet, effort medium"
+}

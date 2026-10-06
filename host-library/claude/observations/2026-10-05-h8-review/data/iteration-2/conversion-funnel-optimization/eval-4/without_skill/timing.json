@@ -1,0 +1,12 @@
+{
+ "total_tokens": 177735,
+ "output_tokens": 6602,
+ "duration_ms": 62092,
+ "cost_usd": 0.2209564,
+ "skill_calls_loaded": [
+  "ab-test-setup",
+  "responsive-design-audit"
+ ],
+ "skill_calls_refused": [],
+ "mode": "headless claude -p, sonnet, effort medium"
+}

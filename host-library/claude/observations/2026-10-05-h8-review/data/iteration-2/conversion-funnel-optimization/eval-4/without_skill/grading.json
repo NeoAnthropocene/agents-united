@@ -1,0 +1,75 @@
+{
+ "eval_id": 4,
+ "skill": "conversion-funnel-optimization",
+ "configuration": "without_skill",
+ "session": "5778cd27-2779-4302-b157-8dad4b6d1228",
+ "note": "skill folder removed; ab-test-setup and responsive-design-audit loaded instead",
+ "assertion_results": [
+  {
+   "text": "Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent overall)",
+   "passed": true,
+   "evidence": "Funnel from your counts: 40.0%, 20.0%, 40.1%; End to end: 3.2%"
+  },
+  {
+   "text": "Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing",
+   "passed": false,
+   "evidence": "Only 20% of pricing-page visitors start checkout ... That step loses 5,890 people: no benchmark, sourced or flagged"
+  },
+  {
+   "text": "Says the pages were read from source, not walked, at no width",
+   "passed": true,
+   "evidence": "I only read the HTML. I did not render the pages or measure anything"
+  },
+  {
+   "text": "Finds the card field whose pattern rejects the format its placeholder shows, and grades it S1",
+   "passed": false,
+   "evidence": "The card field pattern=\"[0-9]{16}\" rejects the spaced format its own placeholder shows: found, but no S-grade anywhere"
+  },
+  {
+   "text": "Finds the pricing page mobile defect (no viewport meta, fixed 960 px table, small far-end button) and grades it S2",
+   "passed": false,
+   "evidence": "No <meta name=\"viewport\"> ... fixed at 960px ...: found, not graded"
+  },
+  {
+   "text": "Finds the landing page promising a free first lesson that the pricing page does not offer, and grades it S2",
+   "passed": false,
+   "evidence": "Landing page, last. \"Your first lesson is free\" is not a button: the mismatch with the pricing page is not named; not graded"
+  },
+  {
+   "text": "Finds an S3: phone, company or address line 2 required with no reason, or no price or money-back line near the pay button",
+   "passed": true,
+   "evidence": "Remove Company, Phone and Address line 2 ... Show the product and price, and change \"Submit\" to \"Pay 149 USD\""
+  },
+  {
+   "text": "Finds an S4: the Submit label or the lower-case page title",
+   "passed": true,
+   "evidence": "change \"Submit\" to \"Pay 149 USD\""
+  },
+  {
+   "text": "Each finding has a location, a quoted line as evidence, a principle and a buildable fix",
+   "passed": false,
+   "evidence": "locations and fixes, some quoted values, but no principle for any finding"
+  },
+  {
+   "text": "S1 and S2 findings are labelled fixes, not experiments",
+   "passed": true,
+   "evidence": "Pricing page, today: These are bugs, so ship them without a test."
+  },
+  {
+   "text": "Hand-offs: Jamileh for layout, Deniz for build and events, ab-test-setup for tests",
+   "passed": false,
+   "evidence": "no Jamileh, Deniz or ab-test-setup named; the skill is described as not installed"
+  },
+  {
+   "text": "Does not recommend a redesign",
+   "passed": true,
+   "evidence": "no redesign recommended"
+  }
+ ],
+ "summary": {
+  "passed": 6,
+  "failed": 6,
+  "total": 12,
+  "pass_rate": 0.5
+ }
+}

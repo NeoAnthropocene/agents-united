@@ -1,0 +1,51 @@
+{
+ "prompt": "L1-lead-signups",
+ "configuration": "after (lead change)",
+ "session": "7f059d1d-5150-4844-b13e-8f8f95e1db6f",
+ "assertion_results": [
+  {
+   "text": "Says a classification aloud with its reason (Standard)",
+   "passed": false,
+   "evidence": "no classification said"
+  },
+  {
+   "text": "Restates the request as three lists: what the client said, what is assumed, what is unknown",
+   "passed": false,
+   "evidence": "no three lists; 'We don't yet know' four items"
+  },
+  {
+   "text": "Asks one question that would change the plan (signups or paying customers), with plain options",
+   "passed": true,
+   "evidence": "1. Target: ... Is a signup a free trial, a freemium account or a paid plan?"
+  },
+  {
+   "text": "Puts three to five premises to the client as agree or disagree, with a cheap check for each shaky one",
+   "passed": false,
+   "evidence": "no premises put as agree or disagree"
+  },
+  {
+   "text": "Lists the data the first slices will need (funnel counts by stage for 28 days, weekly traffic, the current signup rate, analytics access) as one list with who can supply each",
+   "passed": false,
+   "evidence": "2. Funnel data: traffic by channel, visit-to-signup rate, signup-to-activation rate, top sources, access to the site: a list, but no who can supply each and no 28-day counts or weekly traffic"
+  },
+  {
+   "text": "Creates no deliverable file and briefs no specialist; stops and waits",
+   "passed": true,
+   "evidence": "I won't create or change any files until you've accepted it."
+  },
+  {
+   "text": "Offers a minimal and an ideal approach with effort, risk and a recommendation tied to the goal",
+   "passed": true,
+   "evidence": "A. Fix the funnel first ... B. Add traffic ... C. Build organic search; My default recommendation is A, with a small B alongside it"
+  },
+  {
+   "text": "Closes with the client's next action",
+   "passed": true,
+   "evidence": "Can you send me the client's answers to questions 1-3 at least?"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "total": 8
+ }
+}

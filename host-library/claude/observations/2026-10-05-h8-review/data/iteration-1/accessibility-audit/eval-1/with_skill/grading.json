@@ -1,0 +1,44 @@
+{
+ "eval_id": 1,
+ "skill": "accessibility-audit",
+ "configuration": "with_skill",
+ "session": "b1470442-0480-4943-a343-b0f70d95a015",
+ "assertion_results": [
+  {
+   "text": "Says one clean axe run on one state is not enough; axe on every state with A and AA tags, results saved",
+   "passed": true,
+   "evidence": "You ran axe on the empty state only ... axe (WCAG 2.0/2.1 A and AA) on the empty, error, success states, and save the JSON"
+  },
+  {
+   "text": "Gate rule: critical or serious means red",
+   "passed": true,
+   "evidence": "Any critical or serious violation makes it red"
+  },
+  {
+   "text": "Adds manual keyboard pass, names/structure, colour and zoom checks",
+   "passed": true,
+   "evidence": "keyboard pass ... contrast ... 375x667, 768x1024, 1440x900"
+  },
+  {
+   "text": "Lists what was not checked, including screen readers",
+   "passed": true,
+   "evidence": "I can't use a real screen reader here, so that will be listed as not checked"
+  },
+  {
+   "text": "Routes findings to Deniz, Jamileh, Kaan",
+   "passed": true,
+   "evidence": "owner (Deniz for markup, Jamileh for colour, Kaan for wording)"
+  },
+  {
+   "text": "Makes no claim of compliance",
+   "passed": true,
+   "evidence": "I can't confirm that from one run; no compliance claim"
+  }
+ ],
+ "summary": {
+  "passed": 6,
+  "failed": 0,
+  "total": 6,
+  "pass_rate": 1
+ }
+}

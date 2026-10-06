@@ -1,0 +1,46 @@
+{
+ "prompt": "D1-growth-nodata",
+ "configuration": "after v2",
+ "session": "bd7893c4-3c1a-4387-9fe8-2b0021d55a70",
+ "assertion_results": [
+  {
+   "text": "First line says the stage counts for the last 28 days are missing, and asks for them",
+   "passed": true,
+   "evidence": "I can't responsibly rank ten experiments yet. The only number I have is 'flat for months'"
+  },
+  {
+   "text": "Does not invent a funnel or quote industry averages as this product's numbers",
+   "passed": true,
+   "evidence": "A list of ten without data would be a generic backlog that I'd be guessing at"
+  },
+  {
+   "text": "Makes instrumentation (the events and where they fire) experiment zero with Deniz and Emre as owners",
+   "passed": false,
+   "evidence": "Weeks 1-2: diagnose, don't test; no Deniz and Emre"
+  },
+  {
+   "text": "Scores every idea Confidence 1 to 3",
+   "passed": false,
+   "evidence": "no idea is scored"
+  },
+  {
+   "text": "Does not hand over ten experiments to run in parallel on one page",
+   "passed": true,
+   "evidence": "Weeks 3-12: run 2-3 two-week tests on the stage that data shows is weakest, then expand"
+  },
+  {
+   "text": "Writes no file and no brief",
+   "passed": true,
+   "evidence": "I have not written any file"
+  },
+  {
+   "text": "Labels what it gives provisional",
+   "passed": true,
+   "evidence": "Provisional plan (it only claims what the data supports, which is very little)"
+  }
+ ],
+ "summary": {
+  "passed": 5,
+  "total": 7
+ }
+}

@@ -1,0 +1,177 @@
+{
+ "date": "2026-10-06",
+ "mode": "headless claude -p on the subscription, sonnet, effort medium",
+ "configs": "before = dev plus #148 to #150; after v1 = plus the first inputs-first rule and the lead change; after v2 = the rule tightened",
+ "total_cost_usd": 1.428,
+ "summary": [
+  {
+   "prompt": "D1-growth-nodata",
+   "kind": "data-poor",
+   "role": "agency-growth-strategist",
+   "rows": [
+    {
+     "cfg": "before",
+     "label": "iter4-D1-before",
+     "passed": 5,
+     "total": 7,
+     "out": 3683,
+     "cost": 0.14517180000000002,
+     "wall": 31.916,
+     "tools": {
+      "Skill": 1,
+      "Glob": 1
+     },
+     "loaded": [
+      "growth-experiment-design"
+     ]
+    },
+    {
+     "cfg": "after v1",
+     "label": "iter4-D1-after",
+     "passed": 5,
+     "total": 7,
+     "out": 1119,
+     "cost": 0.10211940000000001,
+     "wall": 12.685,
+     "tools": {},
+     "loaded": []
+    },
+    {
+     "cfg": "after v2",
+     "label": "iter5-D1-after",
+     "passed": 5,
+     "total": 7,
+     "out": 1169,
+     "cost": 0.0869648,
+     "wall": 14.424,
+     "tools": {},
+     "loaded": []
+    }
+   ]
+  },
+  {
+   "prompt": "D2-funnel-numbers",
+   "kind": "data-poor",
+   "role": "agency-conversion-specialist",
+   "rows": [
+    {
+     "cfg": "before",
+     "label": "iter4-D2-before",
+     "passed": 5,
+     "total": 6,
+     "out": 4547,
+     "cost": 0.168009,
+     "wall": 40.837,
+     "tools": {
+      "Skill": 1,
+      "Glob": 1,
+      "Write": 1,
+      "Read": 1
+     },
+     "loaded": [
+      "conversion-funnel-optimization"
+     ]
+    },
+    {
+     "cfg": "after v1",
+     "label": "iter4-D2-after",
+     "passed": 4,
+     "total": 6,
+     "out": 1754,
+     "cost": 0.1088374,
+     "wall": 18.002,
+     "tools": {},
+     "loaded": []
+    },
+    {
+     "cfg": "after v2",
+     "label": "iter5-D2-after",
+     "passed": 4,
+     "total": 6,
+     "out": 1553,
+     "cost": 0.1070874,
+     "wall": 16.887,
+     "tools": {},
+     "loaded": []
+    }
+   ]
+  },
+  {
+   "prompt": "C1-growth-data",
+   "kind": "control",
+   "role": "agency-growth-strategist",
+   "rows": [
+    {
+     "cfg": "before",
+     "label": "iter4-C1-before",
+     "passed": 3,
+     "total": 7,
+     "out": 3814,
+     "cost": 0.13062079999999998,
+     "wall": 37.252,
+     "tools": {
+      "Skill": 1
+     },
+     "loaded": [
+      "growth-experiment-design"
+     ]
+    },
+    {
+     "cfg": "after v1",
+     "label": "iter4-C1-after",
+     "passed": 2,
+     "total": 7,
+     "out": 2171,
+     "cost": 0.0971362,
+     "wall": 23.181,
+     "tools": {},
+     "loaded": []
+    },
+    {
+     "cfg": "after v2",
+     "label": "iter5-C1-after",
+     "passed": 3,
+     "total": 7,
+     "out": 5282,
+     "cost": 0.1659026,
+     "wall": 46.798,
+     "tools": {
+      "Skill": 1
+     },
+     "loaded": [
+      "growth-experiment-design"
+     ]
+    }
+   ]
+  },
+  {
+   "prompt": "L1-lead-signups",
+   "kind": "lead",
+   "role": "orchestrator-digital-agency",
+   "rows": [
+    {
+     "cfg": "before",
+     "label": "iter4-L1-before",
+     "passed": 3,
+     "total": 8,
+     "out": 1427,
+     "cost": 0.18202600000000002,
+     "wall": 15.103,
+     "tools": {},
+     "loaded": []
+    },
+    {
+     "cfg": "after (lead change)",
+     "label": "iter4-L1-after",
+     "passed": 4,
+     "total": 8,
+     "out": 1352,
+     "cost": 0.1341372,
+     "wall": 14.587,
+     "tools": {},
+     "loaded": []
+    }
+   ]
+  }
+ ]
+}

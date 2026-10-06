@@ -1,0 +1,70 @@
+{
+ "eval_id": 1,
+ "skill": "seo-audit",
+ "configuration": "without_skill",
+ "session": "6805083c-b5b3-4728-98b5-75ac4f81d9b4",
+ "note": "skill folder removed from the scratch project; technical-seo-audit still installed",
+ "assertion_results": [
+  {
+   "text": "Checks technical blockers first (noindex, canonical, robots, sitemap, staging host) before judging content",
+   "passed": true,
+   "evidence": "15-point checklist with robots.txt, Sitemap, Status codes, Redirects, Canonical, Indexing directives first"
+  },
+  {
+   "text": "Finds the noindex on /pricing and grades it critical",
+   "passed": true,
+   "evidence": "6 | Indexing directives | Critical | pricing.html:7 has <meta name=\"robots\" content=\"noindex, nofollow\">"
+  },
+  {
+   "text": "Finds the canonical to the staging host on /docs/webhooks and grades it critical",
+   "passed": true,
+   "evidence": "5 | Canonical | Critical | docs/webhooks.html:7 canonicals to the staging host"
+  },
+  {
+   "text": "Finds that robots.txt and the sitemap name the staging host",
+   "passed": true,
+   "evidence": "robots.txt:3 declares Sitemap: https://staging.hookrelay.example/sitemap.xml; sitemap.xml:3-6 lists all four key pages on staging"
+  },
+  {
+   "text": "Flags the two blog posts as targeting one query (cannibalisation), to be resolved with Yavuz",
+   "passed": true,
+   "evidence": "Resolve the cannibalisation between webhook-retries and retry-strategies ... Owner: Yavuz"
+  },
+  {
+   "text": "Writes one primary intent per key URL (a per-URL intent table)",
+   "passed": false,
+   "evidence": "no per-URL intent table; intent is not stated for any URL"
+  },
+  {
+   "text": "Grades each finding critical, major or minor with URL, exact observation, tool or command and date",
+   "passed": true,
+   "evidence": "findings carry severity, file:line observation; 'findings below come from reading the files on 2026-10-05'"
+  },
+  {
+   "text": "Computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope",
+   "passed": false,
+   "evidence": "'about 30/100, provisional. The seo-audit skill that defines the scoring rule is not installed, so I used a stand-in' (15 per critical, 7 per major; no minor weight, no scope)"
+  },
+  {
+   "text": "Says status codes could not be checked on a static copy",
+   "passed": true,
+   "evidence": "Status codes, redirects, headers and Core Web Vitals are therefore not checked"
+  },
+  {
+   "text": "Hands code fixes to Deniz and copy to Kaan",
+   "passed": true,
+   "evidence": "Owner: Deniz; Owner: Kaan"
+  },
+  {
+   "text": "Says what could not be checked without the Search Console exports",
+   "passed": true,
+   "evidence": "What I need from you: Search Console exports; I can't tie any of these to the traffic loss without Search Console data"
+  }
+ ],
+ "summary": {
+  "passed": 9,
+  "failed": 2,
+  "total": 11,
+  "pass_rate": 0.818
+ }
+}

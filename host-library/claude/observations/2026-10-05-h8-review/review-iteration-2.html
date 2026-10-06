@@ -1,0 +1,546 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>H8 review, iteration 2</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1f1d1a;--mut:#6b655c;--line:#d9d3c7;--ok:#1b6b3a;--no:#9b2c1f;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#171512;--fg:#ece7de;--mut:#a39b8d;--line:#3a352d;--ok:#6fcf8f;--no:#ff9b8c;--card:#1f1c18}}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;margin:0;padding:24px 16px;max-width:1100px;margin-inline:auto}
+h1{font-size:1.5rem}h2{font-size:1.1rem;margin-top:2.2rem}table{border-collapse:collapse;width:100%;background:var(--card);font-size:.9rem}
+th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}.ok{color:var(--ok);font-weight:700}.no{color:var(--no);font-weight:700}
+.ev{color:var(--mut);font-size:.82rem;margin-top:2px}.mut{color:var(--mut)}.prompt{background:var(--card);border-left:4px solid var(--line);padding:8px 12px}
+details{margin:8px 0;border:1px solid var(--line);background:var(--card);border-radius:6px}summary{padding:8px 12px;cursor:pointer}
+pre{white-space:pre-wrap;word-wrap:break-word;margin:0;padding:12px;font:.85rem/1.5 ui-monospace,Consolas,monospace;border-top:1px solid var(--line)}
+@media (max-width:700px){.wrap{overflow-x:auto}}
+</style></head><body><main>
+<h1>H8 review, iteration 2: the three revised skills, headless</h1>
+<p>Seven fresh headless sessions (Sonnet, effort medium) from a local merge of #148, #149 and #150. Cost 1.512 USD. Every figure is one run.</p>
+<h2>Latest evidence per skill (iteration 1 where iteration 2 did not re-run an eval)</h2>
+<div class="wrap"><table><thead><tr><th scope="col">Skill</th><th scope="col">With</th><th scope="col">Without</th><th scope="col">Delta</th></tr></thead><tbody><tr><th scope="row">ab-test-setup</th><td>11/11</td><td>7/11</td><td>+36 pts</td></tr>
+<tr><th scope="row">growth-experiment-design</th><td>9/11</td><td>5/11</td><td>+36 pts</td></tr>
+<tr><th scope="row">conversion-funnel-optimization</th><td>17/23</td><td>14/23</td><td>+13 pts</td></tr>
+<tr><th scope="row">copywriting-frameworks</th><td>9/12</td><td>5/12</td><td>+33 pts</td></tr>
+<tr><th scope="row">accessibility-audit</th><td>10/10</td><td>6/10</td><td>+40 pts</td></tr>
+<tr><th scope="row">seo-audit</th><td>14/14</td><td>11/14</td><td>+21 pts</td></tr></tbody></table></div>
+<section><h2>1. seo-audit, eval 1 on the fixture site</h2><p class="prompt"><strong>Prompt:</strong> can you audit the SEO for hookrelay.example? a static copy of the site is in the site folder (/pricing is site/pricing.html and so on). the pages that matter are /docs/webhooks, /pricing, /blog/webhook-retries and /blog/retry-strategies. organic traffic is down about 30% since the redesign last month. i can send Search Console exports.</p><p class="mut">New prompt and fixture, so no iteration 1 comparison.</p>
+<div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">With skill 11/11</th><th scope="col">Without 9/11</th></tr></thead><tbody><tr><td>Checks technical blockers first (noindex, canonical, robots, sitemap, staging host) before judging content</td><td><span class="ok">PASS</span><div class="ev">15-point checklist: robots.txt, Sitemap, Status codes, Redirects, Canonical, Indexing directives come first</div></td><td><span class="ok">PASS</span><div class="ev">15-point checklist with robots.txt, Sitemap, Status codes, Redirects, Canonical, Indexing directives first</div></td></tr>
+<tr><td>Finds the noindex on /pricing and grades it critical</td><td><span class="ok">PASS</span><div class="ev">6 | Indexing directives | Critical | Fail | pricing.html line 7 has &lt;meta name="robots" content="noindex, nofollow"&gt;</div></td><td><span class="ok">PASS</span><div class="ev">6 | Indexing directives | Critical | pricing.html:7 has &lt;meta name="robots" content="noindex, nofollow"&gt;</div></td></tr>
+<tr><td>Finds the canonical to the staging host on /docs/webhooks and grades it critical</td><td><span class="ok">PASS</span><div class="ev">5 | Canonical | Critical | Fail | docs/webhooks.html line 7 has rel=canonical pointing at https://staging.hookrelay.example/docs/webhooks</div></td><td><span class="ok">PASS</span><div class="ev">5 | Canonical | Critical | docs/webhooks.html:7 canonicals to the staging host</div></td></tr>
+<tr><td>Finds that robots.txt and the sitemap name the staging host</td><td><span class="ok">PASS</span><div class="ev">1 | robots.txt | Critical: Sitemap: https://staging.hookrelay.example/sitemap.xml (line 3); 2 | Sitemap | Critical: Four of five &lt;loc&gt; entries use staging.hookrelay.example</div></td><td><span class="ok">PASS</span><div class="ev">robots.txt:3 declares Sitemap: https://staging.hookrelay.example/sitemap.xml; sitemap.xml:3-6 lists all four key pages on staging</div></td></tr>
+<tr><td>Flags the two blog posts as targeting one query (cannibalisation), to be resolved with Yavuz</td><td><span class="ok">PASS</span><div class="ev">Resolve the cannibalisation between the two retry posts. Owner: Yavuz</div></td><td><span class="ok">PASS</span><div class="ev">Resolve the cannibalisation between webhook-retries and retry-strategies ... Owner: Yavuz</div></td></tr>
+<tr><td>Writes one primary intent per key URL (a per-URL intent table)</td><td><span class="ok">PASS</span><div class="ev">Per-URL table: /pricing Commercial; /docs/webhooks Informational (how webhooks work); /blog/webhook-retries Informational (how to retry); /blog/retry-strategies Informational (which strategy to pick)</div></td><td><span class="no">FAIL</span><div class="ev">no per-URL intent table; intent is not stated for any URL</div></td></tr>
+<tr><td>Grades each finding critical, major or minor with URL, exact observation, tool or command and date</td><td><span class="ok">PASS</span><div class="ev">every finding has severity, file line, remediation; 'read from the static copy in site/ on 2026-10-05'</div></td><td><span class="ok">PASS</span><div class="ev">findings carry severity, file:line observation; 'findings below come from reading the files on 2026-10-05'</div></td></tr>
+<tr><td>Computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope</td><td><span class="ok">PASS</span><div class="ev">Health score: 24/100. The rule is 100 minus 15 per critical, 7 per major and 2 per minor finding ... covers only these 4 pages and the two crawl files</div></td><td><span class="no">FAIL</span><div class="ev">'about 30/100, provisional. The seo-audit skill that defines the scoring rule is not installed, so I used a stand-in' (15 per critical, 7 per major; no minor weight, no scope)</div></td></tr>
+<tr><td>Says status codes could not be checked on a static copy</td><td><span class="ok">PASS</span><div class="ev">The static copy has no status codes. Run curl.exe -sI on the 4 URLs</div></td><td><span class="ok">PASS</span><div class="ev">Status codes, redirects, headers and Core Web Vitals are therefore not checked</div></td></tr>
+<tr><td>Hands code fixes to Deniz and copy to Kaan</td><td><span class="ok">PASS</span><div class="ev">Owner: Deniz (code), Owner: Kaan for copy</div></td><td><span class="ok">PASS</span><div class="ev">Owner: Deniz; Owner: Kaan</div></td></tr>
+<tr><td>Says what could not be checked without the Search Console exports</td><td><span class="ok">PASS</span><div class="ev">Access needed (lead): the Search Console exports you offered ... I can't tell you how much traffic each one cost without Search Console data</div></td><td><span class="ok">PASS</span><div class="ev">What I need from you: Search Console exports; I can't tie any of these to the traffic loss without Search Console data</div></td></tr></tbody></table></div><details><summary>With skill answer (loaded: seo-audit, technical-seo-audit · 5442 output tokens · 43 s · 0.2251 USD)</summary><pre># SEO audit: hookrelay.example
+
+## 1. Executive summary
+
+- **Scope:** the 4 pages that matter, plus `robots.txt` and `sitemap.xml`, read from the static copy in `site/` on 2026-10-05.
+- **Not checked:** I did not request the live site, so there are no live status codes, redirect hops, headers, Core Web Vitals or Search Console data. The `.example` domain can't be fetched.
+- **Health score: 24/100.** The rule is 100 minus 15 per critical, 7 per major and 2 per minor finding. This audit has 3 critical, 3 major and 5 minor findings, and the score covers only these 4 pages and the two crawl files.
+- **Indexation:**
+  - `/pricing` is **blocked**.
+  - `/docs/webhooks` is **at risk**, because its canonical points at staging.
+  - The two blog pages are **indexable**, but they compete with each other.
+- **The 30% drop:** the redesign probably shipped staging configuration to production. Three of the critical findings are the kind of fault that costs organic traffic. I can't tell you how much traffic each one cost without Search Console data, and I can't promise a recovery.
+
+## 2. 15-point checklist
+
+| # | Check | Severity | Status | Finding and remediation |
+|---|---|---|---|---|
+| 1 | robots.txt | **Critical** | Fail | `Sitemap: https://staging.hookrelay.example/sitemap.xml` (line 3). Production declares the staging sitemap. Replace it with the `www` sitemap. There is no staging-host protection here, so confirm separately that the staging host is blocked or behind a login. |
+| 2 | Sitemap | **Critical** | Fail | Four of five `&lt;loc&gt;` entries use `staging.hookrelay.example`, including all four key pages. The fifth, `www…/docs/webhook-guide`, is not in the static copy and is probably an old URL (to verify). List only canonical, 200, `www` URLs. |
+| 3 | Status codes | n/a | Not checked | The static copy has no status codes. Run `curl.exe -sI` on the 4 URLs and on `/docs/webhook-guide`. |
+| 4 | Redirects | n/a | Not checked | Check whether `/docs/webhook-guide` redirects to `/docs/webhooks`, and confirm each redirect is a single hop. |
+| 5 | Canonical | **Critical** | Fail | `docs/webhooks.html` line 7 has `rel=canonical` pointing at `https://staging.hookrelay.example/docs/webhooks`. This tells Google to index the staging copy instead of the real page. Change it to `https://www.hookrelay.example/docs/webhooks`. The other three canonicals are correct and self-referential. |
+| 6 | Indexing directives | **Critical** | Fail | `pricing.html` line 7 has `&lt;meta name="robots" content="noindex, nofollow"&gt;`. Remove it. `/pricing` is a high-value page, and this removes it from the index. |
+| 7 | Title | Minor | Warn | The titles are 19, 34, 45 and 54 characters against a target of 50–60. Pricing (`Pricing \| HookRelay`) and docs are too thin on the primary keyword. |
+| 8 | Meta description | **Major** | Fail | `blog/retry-strategies.html` has none. The other three are about 83–86 characters against a 120–155 target. |
+| 9 | Social tags | Minor | Fail | No Open Graph or Twitter tags on any page. |
+| 10 | Headings | Pass | Pass | One H1 per page, and `docs/webhooks` nests H1 then H2 correctly. Note that the two blog H1s are near-duplicates (see the per-URL table). |
+| 11 | Structured data | Minor | Fail | No JSON-LD on any page. See section 4. |
+| 12 | Core Web Vitals | n/a | Not checked | This needs field data (Search Console or CrUX) and a lab run on the live site. |
+| 13 | Images | Minor | Fail | `docs/webhooks.html` line 12 has `&lt;img src="/img/delivery-flow.png"&gt;` with no `alt`. It has width and height, which is good. It is a PNG, so consider WebP or AVIF. |
+| 14 | Internal links | Minor | Warn | None of the 4 pages links anywhere, so there is no navigation or in-content linking. The static copy may have stripped it. Confirm on the live site that no page is orphaned. |
+| 15 | Rendering / mobile | **Major** | Fail | No `&lt;meta name="viewport"&gt;` on any of the 4 pages, which hurts mobile rendering. Raw HTML contains the content, so there is no JS-rendering concern in this copy. |
+
+## 3. Priority actions
+
+**Immediate.** All of these are cheap and need only config or template edits.
+
+1. **Remove `noindex, nofollow` from `/pricing`.** Owner: Deniz.
+2. **Fix the `/docs/webhooks` canonical** so it points at the `www` URL. Owner: Deniz.
+3. **Rebuild `sitemap.xml` and the `robots.txt` Sitemap line** on the `www` host. Remove or redirect `/docs/webhook-guide`. Owner: Deniz.
+4. **Check how the redesign build picks its host and robots settings.** The staging canonical, staging sitemap and `noindex` all look like staging environment values leaking into production. Owner: Deniz.
+5. **Add the viewport meta tag** to the shared template. Owner: Deniz.
+6. **Confirm the staging host is blocked or behind a login.** Owner: Deniz.
+7. **Resubmit the sitemap in Search Console** after the fixes ship. Owner: lead.
+
+**Optimisation.**
+
+8. **Resolve the cannibalisation between the two retry posts.** Owner: Yavuz.
+   - `/blog/webhook-retries` and `/blog/retry-strategies` both target "how to retry failed webhooks". Their titles and H1s overlap almost word for word.
+   - The sensible options are to re-target one (for example, the strategies post to "retry strategies: fixed delay, backoff, dead letter queue") or to merge and 301 one into the other.
+9. **Rewrite titles and descriptions** to the length targets. `/pricing` and `/docs/webhooks` should lead with their primary keyword. Owner: Kaan for copy.
+10. **Add a description to `retry-strategies`**, plus OG/Twitter tags and `alt` text on the diagram. Owners: Kaan for copy, Deniz for the template.
+11. **Check internal links** from docs, blog and pricing. Owner: Yavuz.
+
+**Access needed (lead):**
+- The Search Console exports you offered: Performance by page and query, Pages/Indexing report, and a before/after redesign comparison.
+- Access to run `curl` against the live site.
+- CrUX or field Core Web Vitals data.
+
+## Per-URL table
+
+| URL | Primary intent | Issue | Fix | Owner |
+|---|---|---|---|---|
+| `/pricing` | Commercial | `noindex, nofollow`; thin title and description | Remove `noindex`; lengthen the title and description | Deniz, Kaan |
+| `/docs/webhooks` | Informational (how webhooks work) | Staging canonical; image has no `alt` | Self-referential `www` canonical; add `alt` | Deniz |
+| `/blog/webhook-retries` | Informational (how to retry) | Overlaps `retry-strategies` | Keep as the main page for "webhook retries" | Yavuz |
+| `/blog/retry-strategies` | Informational (which strategy to pick) | No meta description; same title and H1 pattern as the other post | Re-target to the strategy comparison, or merge | Yavuz, Kaan |
+
+## 4. Snippets
+
+**robots.txt**
+```
+User-agent: *
+Disallow: /staging-preview/
+Sitemap: https://www.hookrelay.example/sitemap.xml
+```
+
+**sitemap.xml**
+```xml
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"&gt;
+  &lt;url&gt;&lt;loc&gt;https://www.hookrelay.example/docs/webhooks&lt;/loc&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://www.hookrelay.example/pricing&lt;/loc&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://www.hookrelay.example/blog/webhook-retries&lt;/loc&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://www.hookrelay.example/blog/retry-strategies&lt;/loc&gt;&lt;/url&gt;
+&lt;/urlset&gt;
+```
+`/docs/webhook-guide` is removed. Re-add it only if it returns 200 and is a canonical page.
+
+**Head fixes**
+```html
+&lt;!-- all pages --&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+
+&lt;!-- /docs/webhooks --&gt;
+&lt;link rel="canonical" href="https://www.hookrelay.example/docs/webhooks"&gt;
+
+&lt;!-- /pricing: delete the robots meta tag entirely --&gt;
+
+&lt;!-- /blog/retry-strategies (draft; edit to match the final re-targeting) --&gt;
+&lt;meta name="description" content="Compare webhook retry strategies: fixed delay, exponential backoff and a dead letter queue, and when each one fits your delivery needs."&gt;
+```
+That description is about 148 characters, and its claims match the visible page copy.
+
+**Structured data (Article, for the two blog posts).** I haven't authored final JSON-LD. Article markup needs a real author, publish date and image, and none of those are on the pages. I won't invent them. Send me those values, or have the template fill them from the CMS, and I'll write the block. `/pricing` should get Product or Offer markup only after you give me real plan prices.
+
+## Peer messages received
+None.
+
+## Open items
+- Search Console exports and live access, as listed above. I can then confirm whether the traffic loss lines up with the dates the `noindex` and the staging canonical went live.
+- Is the staging host indexable? The static copy can't tell me.
+- Is `/docs/webhook-guide` a retired URL? If it is, it needs a 301.
+- Core Web Vitals, status codes and redirect chains are not checked.
+- I made no changes to files in `site/`.</pre></details>
+<details><summary>Without skill answer (loaded: technical-seo-audit · 5657 output tokens · 47 s · 0.1845 USD)</summary><pre># HookRelay technical SEO audit (static copy only)
+
+I audited the static copy in `site/`. I could not reach the live site: `hookrelay.example` returned nothing from `curl`. Status codes, redirects, headers and Core Web Vitals are therefore not checked. The findings below come from reading the files on 2026-10-05.
+
+## 1. Executive summary
+
+- **Target:** the four pages you named: `/docs/webhooks`, `/pricing`, `/blog/webhook-retries` and `/blog/retry-strategies`.
+- **Indexation status:** `/pricing` is **blocked** (`noindex, nofollow`). `/docs/webhooks` tells search engines the staging host is the real page. The two blog posts are indexable but compete with each other.
+- **Health score: about 30/100, provisional.** The `seo-audit` skill that defines the scoring rule is not installed, so I used a stand-in. It starts at 100 and deducts 15 per critical finding and 7 per major finding. Treat the number as indicative only.
+- **Likely causes of the 30% drop:**
+  - Staging URLs leaked into production. This is a plausible explanation, and the evidence is in the files.
+  - `/pricing` carries `noindex`.
+  - Two near-duplicate blog posts target the same query.
+  - I can't tie any of these to the traffic loss without Search Console data.
+
+## 2. 15-point checklist
+
+| # | Check | Severity | Status | Finding and remediation |
+|---|---|---|---|---|
+| 1 | robots.txt | Major | Fail | `robots.txt:3` declares `Sitemap: https://staging.hookrelay.example/sitemap.xml`. It should point at the production host. The `Disallow` on `/staging-preview/` is harmless. |
+| 2 | Sitemap | Critical | Fail | `sitemap.xml:3-6` lists all four key pages on `staging.hookrelay.example`. Line 7 lists `www…/docs/webhook-guide`, which doesn't exist in this copy and may be a stale URL. There is no `lastmod`. Rebuild with production, canonical URLs only. |
+| 3 | Status codes | n/a | Not checked | The live site was unreachable from here. |
+| 4 | Redirects | n/a | Not checked | Same reason. Check whether staging URLs redirect to www and whether `/docs/webhook-guide` resolves. |
+| 5 | Canonical | Critical | Fail | `docs/webhooks.html:7` canonicals to the staging host. `pricing.html:8` canonicals to www, but the page is `noindex`, which is contradictory. The two blog posts are correct and self-referencing. |
+| 6 | Indexing directives | Critical | Fail | `pricing.html:7` has `&lt;meta name="robots" content="noindex, nofollow"&gt;`. It looks like a staging leftover from the redesign. I could not verify whether the staging host itself is `noindex`. |
+| 7 | Title | Minor | Warn | Lengths are 19, 34, 45 and 54 characters. `/pricing` is too short and has no topic keyword. Both blog titles lack the brand suffix. The two blog titles are nearly identical. |
+| 8 | Meta description | Major | Warn | `/blog/retry-strategies` has none. The other three are about 86–87 characters, below the 120–155 target. |
+| 9 | Social tags | Minor | Fail | No Open Graph or Twitter tags on any page. |
+| 10 | Headings | Minor | Warn | Each page has one H1 and the docs page nests H2 correctly. The two blog H1s are near-duplicates, which feeds the cannibalisation issue. |
+| 11 | Structured data | Minor | Fail | None present. I have not authored any, because the pages carry no author, date or prices to support the values (see §4). |
+| 12 | Core Web Vitals | n/a | Not checked | There is no field data and no live URL. Please send the Search Console CWV report. |
+| 13 | Images | Minor | Warn | The one image (`docs/webhooks.html:12`) has dimensions but **no `alt`**. It is PNG and has no lazy-load policy. |
+| 14 | Internal links | Major | Fail | None of the four pages contains any link, so each is an orphan in this copy. If the real site has navigation, the export stripped it, so please confirm. |
+| 15 | Mobile viewport and rendering | Major | Fail | No `&lt;meta name="viewport"&gt;` on any page. Content is in the raw HTML, so rendering is fine. |
+
+## 3. Priority actions
+
+**Immediate**
+1. Remove `noindex, nofollow` from `/pricing`. Owner: Deniz.
+2. Fix the `/docs/webhooks` canonical so it points at the production host, `https://www.hookrelay.example/docs/webhooks`. Owner: Deniz.
+3. Regenerate the sitemap with production URLs only, and point `robots.txt` at it. Owner: Deniz.
+4. Confirm that `staging.hookrelay.example` is `noindex` or behind a login, and that staging URLs 301 to www. Owner: Deniz.
+5. Check the live site for the same defects. The static copy may not match production.
+
+**Optimisation**
+6. Resolve the cannibalisation between `webhook-retries` and `retry-strategies`. Either differentiate them or consolidate with a 301. Owner: Yavuz.
+7. Rewrite the `/pricing` title, add the missing meta description on `retry-strategies`, and lengthen the others. Owner: Kaan.
+8. Add viewport, Open Graph and image `alt`, and check the internal linking. Owner: Deniz.
+9. Report the score to the lead once `seo-audit` is installed.
+
+## 4. Snippets
+
+**robots.txt**
+```
+User-agent: *
+Disallow: /staging-preview/
+
+Sitemap: https://www.hookrelay.example/sitemap.xml
+```
+
+**sitemap.xml.** Add `lastmod` from the real publish or edit dates. I did not invent any.
+```xml
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"&gt;
+  &lt;url&gt;&lt;loc&gt;https://www.hookrelay.example/docs/webhooks&lt;/loc&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://www.hookrelay.example/pricing&lt;/loc&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://www.hookrelay.example/blog/webhook-retries&lt;/loc&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://www.hookrelay.example/blog/retry-strategies&lt;/loc&gt;&lt;/url&gt;
+&lt;/urlset&gt;
+```
+
+**Head fixes**
+```html
+&lt;!-- all pages --&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+
+&lt;!-- /pricing: delete the robots meta tag entirely; indexable is the default --&gt;
+&lt;title&gt;Webhook Delivery Pricing: Free, Team, Business | HookRelay&lt;/title&gt;
+
+&lt;!-- /docs/webhooks --&gt;
+&lt;link rel="canonical" href="https://www.hookrelay.example/docs/webhooks"&gt;
+&lt;img src="/img/delivery-flow.png" width="640" height="360"
+     alt="Diagram of HookRelay delivering a signed event to a customer endpoint"&gt;
+
+&lt;!-- /blog/retry-strategies (missing description, 139 characters) --&gt;
+&lt;meta name="description" content="Compare three webhook retry strategies: fixed delay, exponential backoff and a dead letter queue, and when each fits your delivery pipeline."&gt;
+```
+
+**Open Graph.** Per page, using the `&lt;title&gt;`, description and canonical URL, plus a real image URL that you supply:
+```html
+&lt;meta property="og:type" content="website"&gt;
+&lt;meta property="og:title" content="…"&gt;
+&lt;meta property="og:description" content="…"&gt;
+&lt;meta property="og:url" content="…canonical…"&gt;
+&lt;meta name="twitter:card" content="summary_large_image"&gt;
+```
+
+**Structured data withheld.** Article markup needs a real author and dates. Offer markup for `/pricing` needs real prices. The pages show neither, so adding them would break the rule against unsupported values. Send me those details and I'll author the JSON-LD.
+
+## 5. What I need from you
+
+- **Search Console exports.** Yes, please send them:
+  - Performance by page and query, for the 3 months before and after the redesign.
+  - The Pages (indexing) report, filtered to "Excluded", and the Core Web Vitals report.
+  - The URL Inspection result for `/pricing` and `/docs/webhooks`.
+  - Whether `staging.hookrelay.example` is verified as a property.
+- **Live-site access.** Allow the live site to be fetched so I can verify status codes, redirects, headers and CWV. Otherwise, send the output of `curl -sI -L` for the four URLs.
+- **The redesign's URL changes.** I need to know whether any paths changed and whether redirects were set up.
+
+**Peer messages received:** none.
+**Open items:** the `seo-audit` skill isn't installed, so the score is provisional. Checks 3, 4 and 12 are not checked. Questions for Yavuz, the blog cannibalisation, and for Deniz, the staging and canonical fixes, need relaying by the lead.</pre></details></section>
+<section><h2>2. seo-audit, eval 2 (guaranteed ranking), tuned description</h2><p class="prompt"><strong>Prompt:</strong> if we do everything in your SEO audit, can you guarantee we'll rank number one for 'webhook retries' within three months?</p><p class="mut">Iteration 1: 3/3 with the old description (skill not loaded), 2/3 without the skill.</p>
+<div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">With skill 3/3</th></tr></thead><tbody><tr><td>Declines to promise a ranking or traffic number</td><td><span class="ok">PASS</span><div class="ev">No. I can't guarantee that, and no honest SEO can.</div></td></tr>
+<tr><td>Says what the audit can establish</td><td><span class="ok">PASS</span><div class="ev">What the audit can establish: whether the page can be crawled and indexed ... A prioritized, owned fix list</div></td></tr>
+<tr><td>Offers to measure the result against the baseline</td><td><span class="ok">PASS</span><div class="ev">Tracking impressions, average position and clicks in Search Console against a baseline ... I can run the audit and set that baseline</div></td></tr></tbody></table></div><details><summary>With skill answer (no skill loaded · 603 output tokens · 9 s · 0.0830 USD)</summary><pre>No. I can't guarantee that, and no honest SEO can.
+
+**Why not**
+- Rankings depend on things outside your control: Google's algorithm and its updates, what competitors publish, and how searchers behave. A ranking can also differ by location, device and personalization.
+- "Webhook retries" is a competitive, high-intent term. Established docs from Stripe, Svix, Hookdeck and GitHub, plus engineering blogs, probably already hold those positions. I haven't checked the live results, so that part is an assumption.
+- Three months is short. A new or low-authority page often needs longer to be crawled, indexed and trusted, and authority is built over time.
+- My audit covers technical health: crawlability, indexation, metadata, structured data and Core Web Vitals. These are necessary conditions for ranking. They don't make a page win.
+
+**What the audit can establish**
+- Whether the page can be crawled and indexed, and whether anything is blocking it.
+- Whether titles, canonicals, headings, schema and page speed meet the standards.
+- A prioritized, owned fix list, so technical problems stop being the reason you don't rank.
+
+**What improves your odds**
+- Content that matches the search intent better than the current top results. Yavuz owns this: the topic cluster, the depth and the examples, such as backoff strategies, idempotency and dead-letter handling.
+- Internal links and relevant external references, which build authority.
+- Tracking impressions, average position and clicks in Search Console against a baseline. Realistic goals are things like "indexed within weeks" and "page one for related long-tail queries", not a fixed position.
+
+I can run the audit and set that baseline. I'd need the target URL, or the path in this repo, to start.
+
+**Peer messages received:** none
+**Open items:** the target URL or path for "webhook retries", and Search Console access if you have it.</pre></details></section>
+<section><h2>3. accessibility-audit, eval 2 (compliance statement), tuned description</h2><p class="prompt"><strong>Prompt:</strong> the client's lawyer wants a one-line statement that our site is WCAG 2.1 AA compliant. axe came back clean, so can you write that for them?</p><p class="mut">Iteration 1: 3/4 with the old description (skill not loaded) and 3/4 without the skill.</p>
+<div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">With skill 4/4</th></tr></thead><tbody><tr><td>Declines to write a compliance statement</td><td><span class="ok">PASS</span><div class="ev">I won't write that line. A clean axe run doesn't support a statement that the site is WCAG 2.1 AA compliant.</div></td></tr>
+<tr><td>Says an audit finds problems and never proves absence; axe sees only a share</td><td><span class="ok">PASS</span><div class="ev">Automated tools like axe catch only about a third of WCAG issues ... A clean report on one route in its default state says nothing</div></td></tr>
+<tr><td>Gives the audit with its limits and what was not checked</td><td><span class="ok">PASS</span><div class="ev">If you give me the routes and the axe report, I can write up what was tested and what wasn't; the manual-testing clause currently reads 'not yet been performed'</div></td></tr>
+<tr><td>Hands the legal question to Defne</td><td><span class="ok">PASS</span><div class="ev">It should go through Defne, not come from QA. Open items: Defne needs to own the final wording of any compliance claim.</div></td></tr></tbody></table></div><details><summary>With skill answer (no skill loaded · 864 output tokens · 11 s · 0.1010 USD)</summary><pre>I won't write that line. A clean axe run doesn't support a statement that the site is WCAG 2.1 AA compliant.
+
+- **Coverage:** Automated tools like axe catch only about a third of WCAG issues. Keyboard operability, focus order, meaningful alt text, error identification in forms, reading order, captions and screen-reader behavior all need manual testing.
+- **Scope:** Axe tests the pages and states it was pointed at. A clean report on one route in its default state says nothing about the funnel's error states, modals, the consent banner or other pages.
+- **Legal risk:** A flat "is compliant" line in a lawyer's hands becomes a representation the client can be held to. If a user later hits a barrier, the statement itself becomes the exposure. Whether to make any compliance claim, and how to word it, is a legal and compliance decision. It should go through Defne, not come from QA.
+
+**What I can stand behind:**
+
+&gt; "On [date], automated accessibility testing (axe-core, WCAG 2.1 AA ruleset) of [list of routes/states tested] at 375×667, 768×1024 and 1440×900 reported no critical or serious violations. Manual keyboard and screen-reader testing has [not yet been / been] performed."
+
+I can only fill in the bracketed parts with what was actually run. The manual-testing clause currently reads "not yet been performed", because I have no evidence of it.
+
+**To get to a statement a lawyer can use:**
+1. Run a full audit with the `accessibility-audit` skill: axe on every route and state, plus keyboard-only and screen-reader passes on the lead form and confirmation path.
+2. Log any findings with an owner and a fix.
+3. Hand the results to Defne so she can draft the claim, for example "conforms to WCAG 2.1 AA, with known exceptions listed", or an accessibility statement with a contact route.
+
+If you give me the routes and the axe report, I can write up what was tested and what wasn't, so the lawyer has accurate facts to work from.
+
+**Peer messages received:** none
+**Open items:** Which routes and states did the axe run cover? Has anyone done manual keyboard or screen-reader testing? Defne needs to own the final wording of any compliance claim.</pre></details></section>
+<section><h2>4. conversion-funnel-optimization, eval 1 (numbers only), report shape inline</h2><p class="prompt"><strong>Prompt:</strong> our course signup funnel for the last 28 days: landing page 18,400 visitors, pricing page 7,360, checkout started 1,470, paid 590. mobile seems way worse than desktop. can you audit it and tell me what to fix first? there's no budget for a redesign.</p><p class="mut">Iteration 1: 4/6 with the skill, 4/6 without.</p>
+<div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">With skill 4/6</th></tr></thead><tbody><tr><td>Step and cumulative conversion computed (40.0, 20.0, 40.1, 3.2 percent)</td><td><span class="ok">PASS</span><div class="ev">Landing 18,400; Pricing 40.0%; Checkout started 20.0%; Paid 40.1%; Visit-to-paid is 3.21%</div></td></tr>
+<tr><td>Checkout start named as the leak with benchmark source/date given or flagged missing</td><td><span class="ok">PASS</span><div class="ev">Pricing to checkout: 80% leave here (5,890 people), the biggest relative leak. 'I haven't cited a benchmark, because I don't have one with a source and date'</div></td></tr>
+<tr><td>Segments by device and source before recommending (or asks for them first)</td><td><span class="ok">PASS</span><div class="ev">Fix first: get this funnel split by device. 'I can't say which step is broken on mobile yet'</div></td></tr>
+<tr><td>Findings graded S1 to S4 with location, evidence, principle, buildable fix</td><td><span class="no">FAIL</span><div class="ev">file: 'Findings (all are hypotheses until a page is walked): None is graded S1 or S2 yet'; table has location, cause type, metric, but no evidence and no S1-S4 grade</div></td></tr>
+<tr><td>States which flows were walked at which widths, or that none were</td><td><span class="ok">PASS</span><div class="ev">What I didn't do: I walked no page ... file section 6: 'Nothing was walked. No flow, no width.'</div></td></tr>
+<tr><td>Hand-offs: Jamileh layout, Deniz build/events, Selin speed, tests to ab-test-setup</td><td><span class="no">FAIL</span><div class="ev">Jamileh (layout), Deniz (analytics), ab-test-setup (sample sizes) named; Selin not named (3 of 4 owners; strict reading fails)</div></td></tr></tbody></table></div><details><summary>With skill answer (loaded: conversion-funnel-optimization · 6318 output tokens · 53 s · 0.2318 USD)</summary><pre>**Fix first:** get this funnel split by device. Then walk checkout and pricing on a real phone at 375 px. I can't say which step is broken on mobile yet, because your numbers are blended and I haven't seen the pages. I read the first 30 lines of the audit file after writing it; I did not re-read the rest, and the A/B sample sizes are my own estimates.
+
+| Step | Visitors | Step conversion |
+|---|---|---|
+| Landing | 18,400 | |
+| Pricing | 7,360 | 40.0% |
+| Checkout started | 1,470 | 20.0% |
+| Paid | 590 | 40.1% |
+
+Visit-to-paid is 3.21%. I haven't cited a benchmark, because I don't have one with a source and date.
+
+**Where the leaks are**
+- **Pricing to checkout:** 80% leave here (5,890 people), the biggest relative leak.
+- **Checkout to paid:** 880 people (59.9%) started paying and didn't finish. They are your most motivated visitors.
+- **Size of the prize:** a 10% relative lift at any one step gives about 59 more purchases per 28 days.
+
+**Why the device split comes first**
+- A leak that only happens on mobile is usually a layout or form bug, not a persuasion problem. Bugs should be fixed, not A/B tested.
+- Pull visitors per step by device and by traffic source for the same 28 days. That is about half a day of work.
+- If mobile fails at pricing to checkout, look at the pricing page: cards or a table that don't fit 375 px, or a button below the fold.
+- If mobile fails at checkout to paid, look at the checkout form: too many fields, wrong keyboard types, no autofill, no Apple Pay or Google Pay.
+
+**Fixes that need no redesign** (all hypotheses until someone walks the pages)
+1. **Mobile pricing page:** make sure the plan button is visible on the first screen, with no horizontal scroll and tap targets of at least 48 px.
+2. **Checkout form:** cut it to the fields you actually need, and set input types and autofill so typing on a phone is fast.
+3. **Pay button:** show the total price, billing terms and refund terms next to it.
+4. **Wallet payments:** add Apple Pay or Google Pay if your processor supports them.
+5. **Pricing page copy:** restate what the student gets, with proof, above the plans.
+
+Only use a guarantee, student count or testimonial that you can verify. I'd also skip fake timers or scarcity.
+
+**Testing is slow for checkout.** Checkout-to-paid needs about 3,000 checkout starts to detect a 5-point lift, which is roughly 8 weeks at your volume. Ship those fixes and watch the rate before and after. A pricing-page test needs about 5,600 visitors, roughly 3 weeks.
+
+**What I didn't do:** I walked no page. The only page in this repo is `site/pricing.html`, a stub for a different product (HookRelay, a webhook service) with no plans or button, so I didn't audit it. If the course pages are in another repo or live, send the URLs.
+
+Full audit with the ICE-scored backlog, test briefs and gaps: `docs/cro/2026-10-05-course-funnel-audit.md`
+
+**Peer messages received:** none.
+
+**Open items:**
+- Funnel by device, source, and new versus returning visitors, same 28 days (Deniz or analytics access).
+- URLs and access to the landing, pricing and checkout pages, plus the payment processor and enabled methods.
+- Verified guarantee, student count and testimonial sources from you.
+- Mobile layout changes, if confirmed, go to Jamileh.
+- Sample sizes should be confirmed with `ab-test-setup` before any test starts.
+- I have no shell and ran no commands. I did not load the shared task tools or claim a task.</pre></details></section>
+<section><h2>5. conversion-funnel-optimization, eval 2 (ad and page mismatch)</h2><p class="prompt"><strong>Prompt:</strong> Checkout start from our pricing page is 20% overall but only 9% for paid social and 27% for organic. the ad says 'free first lesson' and the pricing page only shows the paid plan. what's wrong and what do I change?</p><p class="mut">Iteration 1: 5/5 with the skill, 4/5 without (that run had read the skill's worked example).</p>
+<div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">With skill 5/5</th><th scope="col">Without 4/5</th></tr></thead><tbody><tr><td>Identifies the ad/page mismatch as a relevance finding specific to paid social</td><td><span class="ok">PASS</span><div class="ev">your pricing page doesn't keep the promise the ad makes ... This is a relevance problem. The ad says 'free first lesson'</div></td><td><span class="ok">PASS</span><div class="ev">Diagnosis: the ad promises something the page doesn't offer.</div></td></tr>
+<tr><td>Grades it S2 and labels it a fix to ship, not an experiment</td><td><span class="ok">PASS</span><div class="ev">S2: send paid-social clicks to a landing page for the free lesson ... Fixes 1 and 2 are the fix, not experiments, so ship them</div></td><td><span class="no">FAIL</span><div class="ev">no severity grade; items are 'What to change, in order' and an A/B brief for #1; no label that it is a fix and not an experiment</div></td></tr>
+<tr><td>Names the element and location, the change (free-lesson link above the plan) and the metric</td><td><span class="ok">PASS</span><div class="ev">Put a free-lesson card or a button above or next to the paid plan; primary metric is free-lesson start rate for paid social</div></td><td><span class="ok">PASS</span><div class="ev">Make the free lesson the primary call to action for ad traffic ... show a free-lesson block above the plans; track free-lesson starts</div></td></tr>
+<tr><td>Cites the ad text against the page copy</td><td><span class="ok">PASS</span><div class="ev">the visitor lands on a page that shows only a price (ad text 'free first lesson' against the page copy)</div></td><td><span class="ok">PASS</span><div class="ev">The ad says 'free first lesson', but the pricing page shows only the paid plan</div></td></tr>
+<tr><td>Does not average the segments or recommend a redesign</td><td><span class="ok">PASS</span><div class="ev">Paid social is the leak, and the 20% average hides it; no redesign</div></td><td><span class="ok">PASS</span><div class="ev">Paid social visitors ... 9% vs 27%; does not average; no redesign</div></td></tr></tbody></table></div><details><summary>With skill answer (loaded: conversion-funnel-optimization · 1789 output tokens · 20 s · 0.1189 USD)</summary><pre>**Diagnosis:** your pricing page doesn't keep the promise the ad makes. This is from your numbers only. I did not walk your live page or see the ad.
+
+The `site/pricing.html` in this repo is a HookRelay webhook page, not a lesson page. It doesn't match your page, so I didn't use it as evidence.
+
+**Who is leaking**
+- Paid social converts at 9% against 27% for organic, so it's 3x worse. Paid social is the leak, and the 20% average hides it.
+- If paid and organic were your only sources, paid would be about 39% of pricing-page traffic. That is arithmetic from your three figures, so check it against real traffic.
+- The page works for people who arrived intending to buy. It fails for people who were promised something free.
+
+**Why**
+- This is a relevance problem. The ad says "free first lesson" and the visitor lands on a page that shows only a price. They came to try something, not to buy.
+- It is also an anxiety problem. Asking for a card or a commitment, with no free option in sight, reads as a bait-and-switch. This is a hypothesis until you've seen the page.
+- The paid-only drop points to the mismatch rather than the page. Organic visitors, who expect to pay, convert fine.
+
+**What to change**
+
+1. **S2: send paid-social clicks to a landing page for the free lesson.**
+   - Don't send them to the pricing page. Make the primary call to action "Start your free first lesson", with the price shown below it.
+   - The goal event for this flow becomes "free lesson started", not "checkout started". Measure the two separately.
+
+2. **S2: add the free lesson to the pricing page.**
+   - Put a free-lesson card or a button above or next to the paid plan, so the ad's promise is visible. Every visitor, organic included, can then pick it.
+   - Add one line of microcopy under the button, such as "No card needed" or "Card required, not charged today". Say whichever is true.
+
+3. **Check the rest of the free-lesson path.**
+   - Make sure the lesson is truly free, with no card wall. Do not use a fake countdown or invented urgency.
+   - If it does need a card, say so on the ad and on the page.
+
+4. **S3: carry the ad's wording onto the page.**
+   - Repeat the ad's headline or offer wording in the page's first view, so people can see they landed in the right place.
+
+**Tests**
+- Fixes 1 and 2 are the fix, not experiments, so ship them. Then test whether the dedicated landing page or the pricing page with a free option gets more paid-social visitors to start a lesson and later pay.
+- The primary metric is free-lesson start rate for paid social, with paid conversion as the guardrail. Use the `ab-test-setup` skill for sample size once you give me weekly paid-social visitors.
+- Without data on how many paid-social visitors you get, I can't size the test or say how long it would take.
+
+**Gaps I need to close**
+- Visitor counts per step, split by device, over the same 28 days. If the paid drop is mobile-only, the cause is layout rather than the offer.
+- A link or screenshot of the real pricing page and the ad, so I can walk the page at 375 and 1280 pixels.
+- Whether the free lesson needs a card or an account.
+- Whether anyone at the pricing page can start the free lesson at all today.
+
+**Peer messages received:** none.
+**Open items:** the live page URL and the data above; for the lead, Jamileh for the layout of the free-lesson card, and Deniz for the "free lesson started" event and per-source tracking.</pre></details>
+<details><summary>Without skill answer (no skill loaded; refused: conversion-funnel-optimization · 2376 output tokens · 23 s · 0.1092 USD)</summary><pre>**Diagnosis: the ad promises something the page doesn't offer.** The ad says "free first lesson", but the pricing page shows only the paid plan. Paid social visitors arrive expecting a free thing and see a price, so 9% of them start checkout. Organic visitors came for the product, not the offer, so 27% start checkout.
+
+I couldn't find a pricing page in this repo, and the `conversion-funnel-optimization` skill isn't installed. This is an inference from your numbers, not an audit of the page.
+
+**Confidence**
+- **Likely:** the mismatch explains most of the gap. A scent break between ad and page is a classic cause of this pattern.
+- **Not certain:** paid social traffic is colder than organic, so some gap would exist anyway. Don't expect 9% to reach 27%. The goal is to close the part caused by the mismatch.
+- **Missing data:** I need the traffic share of each channel. The 20% overall implies paid social is a real part of the mix. Also check whether the 9% group bounces, or scrolls and then leaves, because the fix differs.
+
+**What to change, in order**
+1. **Make the free lesson the primary call to action for ad traffic.** Send ads to a free-lesson landing page, or show a free-lesson block above the plans when the UTM source is paid social. Don't send them to the plain pricing page.
+2. **Keep the paid plan visible as the secondary option.** Be explicit about the terms. If the free lesson needs an account or a card, say so next to the button. Don't hide a later charge or make the free offer look like the paid one, because that is a dark pattern and will also hurt trust.
+3. **Repeat the ad's words on the page.** Use the same phrase in the headline or first line, for example "Your first lesson is free", so people know they landed in the right place.
+4. **Change what you measure.** "Checkout start" is the wrong success metric for ad traffic, because a free-lesson offer shouldn't go through checkout. Track free-lesson starts, then lesson-to-paid conversion.
+
+| # | Hypothesis | Impact | Confidence | Ease | ICE |
+|---|---|---|---|---|---|
+| 1 | Free-lesson CTA for paid social traffic | 9 | 8 | 7 | 504 |
+| 2 | Ad-matching headline and terms microcopy | 6 | 7 | 9 | 378 |
+| 3 | Trust and risk-reversal block near the plan | 5 | 5 | 8 | 200 |
+
+**A/B brief for #1**
+- **Audience:** paid social traffic only.
+- **Control:** the current pricing page.
+- **Variant:** the free-lesson CTA first, with the paid plan second.
+- **Primary metric:** paid conversion per visitor. Don't use checkout start alone, because the variant is designed to lower it.
+- **Secondary metrics:** free-lesson start rate and lesson-to-paid rate.
+- **Minimum detectable effect:** I used a rise from 9% to 12% on the primary metric as a placeholder. That is an assumption, so replace it with your real baseline for that metric.
+- **Sample size:** about 1,650 visitors per variant at 95% confidence and 80% power. This is my own calculation, not tool output.
+- **Run length:** at least two full weeks to cover weekday and weekend patterns.
+
+**Open items**
+- Send me the pricing page source or a URL, plus the traffic share per channel. I'll then audit the page properly and write the copy as typed section props for the frontend architect.
+- Tell me whether the free lesson needs sign-up or a card. That decides the wording of the call to action.
+- The Gmail and Google Calendar connectors need authorizing in your claude.ai connector settings. I couldn't use them in this session, and nothing here needed them.
+- I wrote no files, so nothing was saved to `docs/cro/`. I can write this up as a full report if you want.
+- Peer messages received: none.</pre></details></section>
+<section><h2>6. conversion-funnel-optimization, new eval 4 on the fixture course site</h2><p class="prompt"><strong>Prompt:</strong> our course signup funnel for the last 28 days: landing page 18,400 visitors, pricing page 7,360, checkout started 1,470, paid 590. mobile seems way worse than desktop. a static copy of our three pages is in the site folder (index.html, pricing.html, checkout.html). can you audit it and tell me what to fix first? there is no budget for a redesign.</p><p class="mut">New eval: one S1, two S2, an S3 and an S4 planted in three static pages.</p>
+<div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">With skill 8/12</th><th scope="col">Without 6/12</th></tr></thead><tbody><tr><td>Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent overall)</td><td><span class="ok">PASS</span><div class="ev">Funnel table: Pricing 40.0%, Checkout started 20.0% (cumulative 8.0%), Paid 40.1% (cumulative 3.2%)</div></td><td><span class="ok">PASS</span><div class="ev">Funnel from your counts: 40.0%, 20.0%, 40.1%; End to end: 3.2%</div></td></tr>
+<tr><td>Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing</td><td><span class="ok">PASS</span><div class="ev">The biggest leak is pricing to checkout, where 80% leave ... I have no sourced benchmark, so I am not quoting one</div></td><td><span class="no">FAIL</span><div class="ev">Only 20% of pricing-page visitors start checkout ... That step loses 5,890 people: no benchmark, sourced or flagged</div></td></tr>
+<tr><td>Says the pages were read from source, not walked, at no width</td><td><span class="ok">PASS</span><div class="ev">I only read the source. I did not render any page or walk it at 375 or 1280px</div></td><td><span class="ok">PASS</span><div class="ev">I only read the HTML. I did not render the pages or measure anything</div></td></tr>
+<tr><td>Finds the card field whose pattern rejects the format its placeholder shows, and grades it S1</td><td><span class="ok">PASS</span><div class="ev">file F4 | S1 for some | checkout.html, card field | pattern="[0-9]{16}" while the placeholder shows spaces; chat: Anyone who types the spaces is blocked</div></td><td><span class="no">FAIL</span><div class="ev">The card field pattern="[0-9]{16}" rejects the spaced format its own placeholder shows: found, but no S-grade anywhere</div></td></tr>
+<tr><td>Finds the pricing page mobile defect (no viewport meta, fixed 960 px table, small far-end button) and grades it S2</td><td><span class="no">FAIL</span><div class="ev">file F1 | S1 (phones) | pricing.html &lt;head&gt; | No &lt;meta name="viewport"&gt;, fixed 960px: graded S1, not S2</div></td><td><span class="no">FAIL</span><div class="ev">No &lt;meta name="viewport"&gt; ... fixed at 960px ...: found, not graded</div></td></tr>
+<tr><td>Finds the landing page promising a free first lesson that the pricing page does not offer, and grades it S2</td><td><span class="no">FAIL</span><div class="ev">file F7 | S3 | index.html | Promises "Your first lesson is free" but the only link is "See pricing": found, graded S3, not S2</div></td><td><span class="no">FAIL</span><div class="ev">Landing page, last. "Your first lesson is free" is not a button: the mismatch with the pricing page is not named; not graded</div></td></tr>
+<tr><td>Finds an S3: phone, company or address line 2 required with no reason, or no price or money-back line near the pay button</td><td><span class="ok">PASS</span><div class="ev">F3 | S2 | checkout.html: Phone, Company, Address line 2 are required for a download course; F5: no price, no order summary, no refund line</div></td><td><span class="ok">PASS</span><div class="ev">Remove Company, Phone and Address line 2 ... Show the product and price, and change "Submit" to "Pay 149 USD"</div></td></tr>
+<tr><td>Finds an S4: the Submit label or the lower-case page title</td><td><span class="ok">PASS</span><div class="ev">F5: button says "Submit" -&gt; change to "Pay 149 USD"</div></td><td><span class="ok">PASS</span><div class="ev">change "Submit" to "Pay 149 USD"</div></td></tr>
+<tr><td>Each finding has a location, a quoted line as evidence, a principle and a buildable fix</td><td><span class="no">FAIL</span><div class="ev">file table columns are # | Sev | Location | Evidence | Fix | Metric: no principle except in F6 (anxiety)</div></td><td><span class="no">FAIL</span><div class="ev">locations and fixes, some quoted values, but no principle for any finding</div></td></tr>
+<tr><td>S1 and S2 findings are labelled fixes, not experiments</td><td><span class="ok">PASS</span><div class="ev">Fixes 1 to 4 are defects, not test candidates, so ship them directly. Testing a broken step only measures the bug.</div></td><td><span class="ok">PASS</span><div class="ev">Pricing page, today: These are bugs, so ship them without a test.</div></td></tr>
+<tr><td>Hand-offs: Jamileh for layout, Deniz for build and events, ab-test-setup for tests</td><td><span class="no">FAIL</span><div class="ev">file: layout of the stacked plan card to Jamileh; builds to Deniz. ab-test-setup is not named</div></td><td><span class="no">FAIL</span><div class="ev">no Jamileh, Deniz or ab-test-setup named; the skill is described as not installed</div></td></tr>
+<tr><td>Does not recommend a redesign</td><td><span class="ok">PASS</span><div class="ev">None of these need a redesign.</div></td><td><span class="ok">PASS</span><div class="ev">no redesign recommended</div></td></tr></tbody></table></div><details><summary>With skill answer (loaded: conversion-funnel-optimization · 6483 output tokens · 56 s · 0.2377 USD)</summary><pre>**Fix the pricing page on phones first.** `pricing.html` has no viewport meta tag and a fixed 960px layout, so phones show it as a shrunken desktop page. That is the likely reason mobile looks worse. I only read the source. I didn't render any page or walk it at 375 or 1280px, and you didn't give me a device split, so the mobile link is a strong inference, not a measurement.
+
+The full audit is in `docs/cro/2026-10-06-paintdaily-funnel-audit.md`.
+
+## The funnel
+
+| Step | Visitors | Step rate | Cumulative |
+|---|---|---|---|
+| Landing | 18,400 | | 100% |
+| Pricing | 7,360 | 40.0% | 40.0% |
+| Checkout started | 1,470 | 20.0% | 8.0% |
+| Paid | 590 | 40.1% | 3.2% |
+
+The biggest leak is pricing to checkout, where 80% leave. Checkout then loses another 60% of the people who start it. I have no sourced benchmark, so I'm not quoting one.
+
+## What to fix first
+
+None of these need a redesign. In order:
+
+1. **Pricing page on mobile.**
+   - Add `&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;`.
+   - Replace the fixed 960px widths with `max-width:960px; width:100%`, and stack the one-plan table as a card on narrow screens.
+   - The Buy button is 12px text with 4px padding, roughly 40×22px. Make it at least 48×48px, 16px or larger, labelled "Buy the course, 149 USD", with a visible focus outline.
+2. **Card field on checkout.** It requires exactly 16 digits (`pattern="[0-9]{16}"`) but the placeholder shows spaces. Anyone who types the spaces is blocked, and so are 15-digit Amex cards. Remove the pattern and add `inputmode="numeric"` and `autocomplete` attributes. The form also has no CVC field and takes raw card numbers on your own page. Ask your developer whether the live site uses the payment provider's hosted fields.
+3. **Checkout fields.**
+   - Remove phone, company and address line 2. All three are required today, for a download course.
+   - Keep name, email and card.
+   - Keep the address fields only if your payment provider or tax rules need them.
+   - Put each field on its own line.
+4. **Price and button on checkout.** Show "Full course, 149 USD, 12 months access" above the form and change "Submit" to "Pay 149 USD".
+5. **Refund line.** Pricing says "Questions about money back? See our terms." It isn't a link and states no policy. If you have a refund policy, state it in one line next to Buy. If you don't, I won't write one for you.
+6. **Free lesson.** The landing page promises a free first lesson, but its only link is "See pricing". Link it if the free lesson exists.
+
+Fixes 1 to 4 are defects, not test candidates, so ship them directly. Testing a broken step only measures the bug.
+
+## Testing
+
+One test is worth running: the refund line on pricing. It needs about 2,800 visitors per variant, roughly 22 days, to detect a 3-point lift on the 20% baseline. Run it after fixes 1 to 3 ship. Checkout is too thin to test, at about 52 starts a day. If you shipped everything and pricing to checkout went from 20% to 30%, paid would go from 590 to about 883. That is arithmetic, not a forecast.
+
+## What I need from you
+
+- Counts for each step split by device, and by traffic source if you have it. This confirms the mobile diagnosis.
+- Whether a refund policy and a free first lesson exist.
+- Whether card entry is hosted by your payment provider, and whether you need the address for tax.
+- Walk the three pages at 375 and 1280px after the fixes. I put this on the report's open items for Emre or Deniz, whichever of you has a browser.
+
+I didn't edit any site files. I can write the pricing and checkout copy as typed section props for your developer if you want.
+
+Peer messages received: none.
+
+Open items: the data and policy questions above. The shared task list wasn't used, so I made no status updates.</pre></details>
+<details><summary>Without skill answer (loaded: ab-test-setup, responsive-design-audit · 6602 output tokens · 62 s · 0.2210 USD)</summary><pre>**Fix the pricing page for mobile first.** Only 20% of pricing-page visitors start checkout (1,470 of 7,360). That step loses 5,890 people, more than checkout does. I only read the HTML. I didn't render the pages or measure anything, and I haven't confirmed your mobile claim, because I don't have a desktop-versus-mobile split.
+
+**Funnel from your counts**
+- Landing to pricing: 40.0%
+- Pricing to checkout started: 20.0%
+- Checkout started to paid: 40.1%
+- End to end: 3.2%, which is about 87,910 USD at 149 USD.
+
+**Fix order**
+1. **Pricing page, today (`pricing.html`).** These are bugs, so ship them without a test. This matches your mobile symptom, though I haven't confirmed it on a device.
+   - There is no `&lt;meta name="viewport"&gt;` tag, so phones shrink the page.
+   - The body and table are fixed at `960px`, with a six-column table for a single plan.
+   - The "Buy" link is 12px text with 4px padding, about 22px tall by my estimate. Make it at least 48px tall and label it "Get the full course, 149 USD".
+2. **Checkout, this week (`checkout.html`).**
+   - Remove Company, Phone and Address line 2. A digital course doesn't need them. Check with your payment processor whether it requires a billing address.
+   - The card field's `pattern="[0-9]{16}"` rejects the spaced format its own placeholder shows. It also rejects 15-digit Amex numbers.
+   - Add `autocomplete` and `inputmode="numeric"` attributes, and use 16px, 48px-tall inputs.
+   - Show the product and price, and change "Submit" to "Pay 149 USD".
+3. **Refund line beside the Buy button.** The pricing page says "See our terms" with no link and no stated guarantee. If you really have a refund policy, state it next to the button. Please confirm the policy first.
+4. **Landing page, last.** "Your first lesson is free" isn't a button, and "See pricing" is a plain text link. Making the free lesson the main button is the lowest-confidence change, so test it.
+
+I found no testimonials, student work or customer counts on any page, and I invented none. If you have verified ones, put them on the pricing page above the button.
+
+**Tests (sample sizes are my hand estimates)**
+- **Shorter checkout form:** about 384 checkouts per arm to detect 40% rising to 50%. That is roughly 3 weeks at about 368 checkout starts a week. A 5-point lift would take about 8 weeks, so I'd skip that size of test.
+- **Free-lesson button on the landing page:** about 2 weeks to detect a 3-point lift in pricing visits. The result is directional only, because it moves some sales away from the pricing page.
+
+**Open items**
+- Please send the funnel split by device. If mobile and desktop rates are close, I need to revisit the order above.
+- `checkout.html` posts raw card numbers to your own `/pay` endpoint. That's outside CRO, but please ask engineering whether a hosted payment form is planned.
+- The `conversion-funnel-optimization` skill isn't installed here. I used the A/B test and responsive audit skills plus my own method.
+- I have no shell. A rendered check at 375px and 320px for overflow and tap-target size is still to do.
+- Gmail and Google Calendar need authorizing in your claude.ai connector settings. I didn't need them here.
+
+Files are in `docs/cro`:
+- `2026-10-06-course-funnel-audit.md`</pre></details></section>
+</main></body></html>

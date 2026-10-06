@@ -1,0 +1,51 @@
+{
+ "prompt": "L1-lead-signups",
+ "configuration": "before",
+ "session": "9d7e1566-6b62-4224-a73b-201c84914ede",
+ "assertion_results": [
+  {
+   "text": "Says a classification aloud with its reason (Standard)",
+   "passed": false,
+   "evidence": "no classification (Quick, Standard or Programme) is said"
+  },
+  {
+   "text": "Restates the request as three lists: what the client said, what is assumed, what is unknown",
+   "passed": false,
+   "evidence": "one restating sentence; no three lists"
+  },
+  {
+   "text": "Asks one question that would change the plan (signups or paying customers), with plain options",
+   "passed": true,
+   "evidence": "3. Definition. Is a signup a free account, a trial start or a paid conversion?"
+  },
+  {
+   "text": "Puts three to five premises to the client as agree or disagree, with a cheap check for each shaky one",
+   "passed": false,
+   "evidence": "Step 3: test the premise: one premise, no agree or disagree"
+  },
+  {
+   "text": "Lists the data the first slices will need (funnel counts by stage for 28 days, weekly traffic, the current signup rate, analytics access) as one list with who can supply each",
+   "passed": false,
+   "evidence": "5. Funnel. Where does traffic come from today, and where do people drop off? 6. analytics access; not a data list with who supplies each"
+  },
+  {
+   "text": "Creates no deliverable file and briefs no specialist; stops and waits",
+   "passed": true,
+   "evidence": "No files get created until they accept it."
+  },
+  {
+   "text": "Offers a minimal and an ideal approach with effort, risk and a recommendation tied to the goal",
+   "passed": false,
+   "evidence": "no minimal or ideal approach offered; a fast path only if the deadline is short"
+  },
+  {
+   "text": "Closes with the client's next action",
+   "passed": true,
+   "evidence": "Next action for you: send the client the six questions above."
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "total": 8
+ }
+}

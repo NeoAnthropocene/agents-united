@@ -1,0 +1,30 @@
+{
+ "eval_id": 2,
+ "skill": "seo-audit",
+ "configuration": "with_skill",
+ "session": "df054743-d405-4338-9d18-c57803f076d7",
+ "note": "tuned description; the skill was not loaded",
+ "assertion_results": [
+  {
+   "text": "Declines to promise a ranking or traffic number",
+   "passed": true,
+   "evidence": "No. I can't guarantee that, and no honest SEO can."
+  },
+  {
+   "text": "Says what the audit can establish",
+   "passed": true,
+   "evidence": "What the audit can establish: whether the page can be crawled and indexed ... A prioritized, owned fix list"
+  },
+  {
+   "text": "Offers to measure the result against the baseline",
+   "passed": true,
+   "evidence": "Tracking impressions, average position and clicks in Search Console against a baseline ... I can run the audit and set that baseline"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "failed": 0,
+  "total": 3,
+  "pass_rate": 1
+ }
+}

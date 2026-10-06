@@ -1,0 +1,11 @@
+{
+ "total_tokens": 151211,
+ "output_tokens": 5657,
+ "duration_ms": 47203,
+ "cost_usd": 0.18445720000000002,
+ "skill_calls_loaded": [
+  "technical-seo-audit"
+ ],
+ "skill_calls_refused": [],
+ "mode": "headless claude -p, sonnet, effort medium"
+}

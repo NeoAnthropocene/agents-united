@@ -1,0 +1,34 @@
+{
+ "eval_id": 2,
+ "skill": "ab-test-setup",
+ "configuration": "with_skill",
+ "session": "a2321b9e-485d-4763-ab7d-6a772c5aae67",
+ "assertion_results": [
+  {
+   "text": "Flags a sample-ratio mismatch with chi-square about 18 against 10.83",
+   "passed": true,
+   "evidence": "Chi-square is ... 9 + 9 = 18 ... 10.83 or more voids the result"
+  },
+  {
+   "text": "Says the result is void / assignment must be investigated first",
+   "passed": true,
+   "evidence": "Until someone finds the cause, the 12% lift can't be trusted"
+  },
+  {
+   "text": "Says stopping at day 3 on a first significant reading is peeking",
+   "passed": true,
+   "evidence": "A p of 0.03 after a peek ... is not a real 0.03"
+  },
+  {
+   "text": "Does not call the test",
+   "passed": true,
+   "evidence": "No, don't call it."
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 0,
+  "total": 4,
+  "pass_rate": 1
+ }
+}

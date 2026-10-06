@@ -1,0 +1,70 @@
+{
+ "eval_id": 1,
+ "skill": "seo-audit",
+ "configuration": "with_skill",
+ "session": "c6716e77-aadb-4007-ae99-6d68c8b01ff5",
+ "note": "eval 1 now audits the fixture site (new prompt)",
+ "assertion_results": [
+  {
+   "text": "Checks technical blockers first (noindex, canonical, robots, sitemap, staging host) before judging content",
+   "passed": true,
+   "evidence": "15-point checklist: robots.txt, Sitemap, Status codes, Redirects, Canonical, Indexing directives come first"
+  },
+  {
+   "text": "Finds the noindex on /pricing and grades it critical",
+   "passed": true,
+   "evidence": "6 | Indexing directives | Critical | Fail | pricing.html line 7 has <meta name=\"robots\" content=\"noindex, nofollow\">"
+  },
+  {
+   "text": "Finds the canonical to the staging host on /docs/webhooks and grades it critical",
+   "passed": true,
+   "evidence": "5 | Canonical | Critical | Fail | docs/webhooks.html line 7 has rel=canonical pointing at https://staging.hookrelay.example/docs/webhooks"
+  },
+  {
+   "text": "Finds that robots.txt and the sitemap name the staging host",
+   "passed": true,
+   "evidence": "1 | robots.txt | Critical: Sitemap: https://staging.hookrelay.example/sitemap.xml (line 3); 2 | Sitemap | Critical: Four of five <loc> entries use staging.hookrelay.example"
+  },
+  {
+   "text": "Flags the two blog posts as targeting one query (cannibalisation), to be resolved with Yavuz",
+   "passed": true,
+   "evidence": "Resolve the cannibalisation between the two retry posts. Owner: Yavuz"
+  },
+  {
+   "text": "Writes one primary intent per key URL (a per-URL intent table)",
+   "passed": true,
+   "evidence": "Per-URL table: /pricing Commercial; /docs/webhooks Informational (how webhooks work); /blog/webhook-retries Informational (how to retry); /blog/retry-strategies Informational (which strategy to pick)"
+  },
+  {
+   "text": "Grades each finding critical, major or minor with URL, exact observation, tool or command and date",
+   "passed": true,
+   "evidence": "every finding has severity, file line, remediation; 'read from the static copy in site/ on 2026-10-05'"
+  },
+  {
+   "text": "Computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope",
+   "passed": true,
+   "evidence": "Health score: 24/100. The rule is 100 minus 15 per critical, 7 per major and 2 per minor finding ... covers only these 4 pages and the two crawl files"
+  },
+  {
+   "text": "Says status codes could not be checked on a static copy",
+   "passed": true,
+   "evidence": "The static copy has no status codes. Run curl.exe -sI on the 4 URLs"
+  },
+  {
+   "text": "Hands code fixes to Deniz and copy to Kaan",
+   "passed": true,
+   "evidence": "Owner: Deniz (code), Owner: Kaan for copy"
+  },
+  {
+   "text": "Says what could not be checked without the Search Console exports",
+   "passed": true,
+   "evidence": "Access needed (lead): the Search Console exports you offered ... I can't tell you how much traffic each one cost without Search Console data"
+  }
+ ],
+ "summary": {
+  "passed": 11,
+  "failed": 0,
+  "total": 11,
+  "pass_rate": 1
+ }
+}

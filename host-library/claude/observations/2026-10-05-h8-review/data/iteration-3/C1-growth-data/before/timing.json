@@ -1,0 +1,12 @@
+{
+ "output_tokens": 3814,
+ "duration_ms": 37252,
+ "cost_usd": 0.13062079999999998,
+ "tools": {
+  "Skill": 1
+ },
+ "skill_calls_loaded": [
+  "growth-experiment-design"
+ ],
+ "mode": "headless claude -p, sonnet, effort medium"
+}

@@ -1,0 +1,45 @@
+{
+ "eval_id": 1,
+ "skill": "conversion-funnel-optimization",
+ "configuration": "with_skill",
+ "session": "1b939e90-2185-4014-bc23-522c99b5ad07",
+ "note": "report shape inline; a site/ folder of another product was in the project",
+ "assertion_results": [
+  {
+   "text": "Step and cumulative conversion computed (40.0, 20.0, 40.1, 3.2 percent)",
+   "passed": true,
+   "evidence": "Landing 18,400; Pricing 40.0%; Checkout started 20.0%; Paid 40.1%; Visit-to-paid is 3.21%"
+  },
+  {
+   "text": "Checkout start named as the leak with benchmark source/date given or flagged missing",
+   "passed": true,
+   "evidence": "Pricing to checkout: 80% leave here (5,890 people), the biggest relative leak. 'I haven't cited a benchmark, because I don't have one with a source and date'"
+  },
+  {
+   "text": "Segments by device and source before recommending (or asks for them first)",
+   "passed": true,
+   "evidence": "Fix first: get this funnel split by device. 'I can't say which step is broken on mobile yet'"
+  },
+  {
+   "text": "Findings graded S1 to S4 with location, evidence, principle, buildable fix",
+   "passed": false,
+   "evidence": "file: 'Findings (all are hypotheses until a page is walked): None is graded S1 or S2 yet'; table has location, cause type, metric, but no evidence and no S1-S4 grade"
+  },
+  {
+   "text": "States which flows were walked at which widths, or that none were",
+   "passed": true,
+   "evidence": "What I didn't do: I walked no page ... file section 6: 'Nothing was walked. No flow, no width.'"
+  },
+  {
+   "text": "Hand-offs: Jamileh layout, Deniz build/events, Selin speed, tests to ab-test-setup",
+   "passed": false,
+   "evidence": "Jamileh (layout), Deniz (analytics), ab-test-setup (sample sizes) named; Selin not named (3 of 4 owners; strict reading fails)"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 2,
+  "total": 6,
+  "pass_rate": 0.667
+ }
+}

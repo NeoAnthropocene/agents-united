@@ -1,0 +1,41 @@
+{
+ "prompt": "D2-funnel-numbers",
+ "configuration": "after v1",
+ "session": "819538df-d4cb-41b5-8f59-d249df58f939",
+ "assertion_results": [
+  {
+   "text": "Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent)",
+   "passed": true,
+   "evidence": "table with step conversions; Overall, 3.2% of landing visitors pay"
+  },
+  {
+   "text": "Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing",
+   "passed": false,
+   "evidence": "Each stage is a similar-sized lever: the leak is not named; no benchmark mentioned"
+  },
+  {
+   "text": "Asks for the missing inputs in one message (the device split by step, the page URLs or access)",
+   "passed": true,
+   "evidence": "What I need, with why: 1 the device split, 2 source by device, 3 course price and checkout steps, 4 where the pages live"
+  },
+  {
+   "text": "Writes no file",
+   "passed": true,
+   "evidence": "no file written"
+  },
+  {
+   "text": "Labels what it gives provisional, or from the numbers",
+   "passed": true,
+   "evidence": "Provisional plan (no redesign, nothing here is confirmed)"
+  },
+  {
+   "text": "Says that no flow was walked",
+   "passed": false,
+   "evidence": "never says no flow was walked; says what it could check with access"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "total": 6
+ }
+}

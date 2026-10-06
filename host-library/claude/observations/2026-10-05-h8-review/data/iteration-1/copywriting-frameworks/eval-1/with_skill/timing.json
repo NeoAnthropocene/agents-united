@@ -1,0 +1,11 @@
+{
+ "total_tokens": 127237,
+ "output_tokens": 3630,
+ "cache_read_tokens": 98717,
+ "duration_ms": 28172,
+ "cost_usd": 0.1684,
+ "skill_calls_loaded": [
+  "copywriting-frameworks"
+ ],
+ "skill_calls_refused": []
+}

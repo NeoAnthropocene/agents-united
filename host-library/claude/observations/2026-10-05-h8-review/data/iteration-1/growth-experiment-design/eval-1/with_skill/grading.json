@@ -1,0 +1,44 @@
+{
+ "eval_id": 1,
+ "skill": "growth-experiment-design",
+ "configuration": "with_skill",
+ "session": "95d19e30-be2b-4d40-94c6-eb32fcb605fc",
+ "assertion_results": [
+  {
+   "text": "Names signup to first invoice (25.0 percent) as the leak",
+   "passed": true,
+   "evidence": "Signups -> first invoice 25.0% ... Main leak"
+  },
+  {
+   "text": "Gives no paid-spend advice",
+   "passed": true,
+   "evidence": "Paid traffic: I'd hold off"
+  },
+  {
+   "text": "Ranked backlog where every row has Impact, Confidence, Ease with a reason and ICE as their mean",
+   "passed": true,
+   "evidence": "file: I 8, C 6, E 7, ICE 7.0 with a Reasons paragraph (chat table shows ICE only)"
+  },
+  {
+   "text": "Briefs for the top three only, each with primary metric, guardrail with threshold, run of 14 days or fewer, decision rule",
+   "passed": true,
+   "evidence": "file: GUARDRAIL ... not below 57%; DECIDE ship if +4.6 points ... ; 14 days"
+  },
+  {
+   "text": "Any benchmark labelled as needing a source and a date",
+   "passed": false,
+   "evidence": "No external benchmark was fetched; treat as an estimate (no source and date requirement)"
+  },
+  {
+   "text": "Copy to Kaan, build and events to Deniz, event verification to Emre",
+   "passed": true,
+   "evidence": "Kaan (copy), Deniz (build), Emre (verify events)"
+  }
+ ],
+ "summary": {
+  "passed": 5,
+  "failed": 1,
+  "total": 6,
+  "pass_rate": 0.833
+ }
+}

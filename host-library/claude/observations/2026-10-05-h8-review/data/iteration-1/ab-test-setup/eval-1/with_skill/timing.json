@@ -1,0 +1,11 @@
+{
+ "total_tokens": 89483,
+ "output_tokens": 2403,
+ "cache_read_tokens": 56586,
+ "duration_ms": 21358,
+ "cost_usd": 0.1738,
+ "skill_calls_loaded": [
+  "ab-test-setup"
+ ],
+ "skill_calls_refused": []
+}

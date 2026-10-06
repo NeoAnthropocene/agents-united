@@ -1,0 +1,40 @@
+{
+ "eval_id": 2,
+ "skill": "conversion-funnel-optimization",
+ "configuration": "without_skill",
+ "session": "e8cac07e-e183-4b0c-822e-e7570f67a117",
+ "assertion_results": [
+  {
+   "text": "Identifies the ad/page mismatch as a relevance finding specific to paid social",
+   "passed": true,
+   "evidence": "the ad's promise doesn't match what the page shows"
+  },
+  {
+   "text": "Grades it S2 and labels it a fix to ship, not an experiment",
+   "passed": false,
+   "evidence": "'This is a fix to ship now, not a test' but no severity grade (S2)"
+  },
+  {
+   "text": "Names the element and location, the change (free-lesson link above the plan) and the metric",
+   "passed": true,
+   "evidence": "Show the free lesson on the pricing page, above the paid plan ... Measure free-lesson start, then lesson to paid"
+  },
+  {
+   "text": "Cites the ad text against the page copy",
+   "passed": true,
+   "evidence": "Paid-social visitors clicked 'free first lesson' and landed on a page that only shows a price"
+  },
+  {
+   "text": "Does not average the segments or recommend a redesign",
+   "passed": true,
+   "evidence": "segments paid social; no redesign (CONTAMINATED: the role read the skill's worked-example.md)"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 1,
+  "total": 5,
+  "pass_rate": 0.8
+ },
+ "notes": "Contaminated: the role read the disabled skill's examples/worked-example.md (the override blocks invocation, not reads)."
+}

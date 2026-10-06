@@ -1,0 +1,41 @@
+{
+ "prompt": "D2-funnel-numbers",
+ "configuration": "before",
+ "session": "33cf4382-305e-4314-9ec2-39a7546bd912",
+ "assertion_results": [
+  {
+   "text": "Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent)",
+   "passed": true,
+   "evidence": "table: Landing 18,400; Pricing 40.0% / 40.0%; Checkout started 20.0% / 8.0%; Paid 40.1% / 3.2%"
+  },
+  {
+   "text": "Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing",
+   "passed": true,
+   "evidence": "Fix first: the pricing page to checkout step ... I have no sourced benchmark for course sales"
+  },
+  {
+   "text": "Asks for the missing inputs in one message (the device split by step, the page URLs or access)",
+   "passed": true,
+   "evidence": "What I need from you: the device and source split; your live landing, pricing and checkout URLs; whether checkout is hosted"
+  },
+  {
+   "text": "Writes no file",
+   "passed": false,
+   "evidence": "The full audit is in docs/cro/2026-10-06-course-signup-funnel-audit.md (a file was written)"
+  },
+  {
+   "text": "Labels what it gives provisional, or from the numbers",
+   "passed": true,
+   "evidence": "Mobile is unverified ... every cause is a hypothesis"
+  },
+  {
+   "text": "Says that no flow was walked",
+   "passed": true,
+   "evidence": "Pages not walked. The repo has no page source and I don't have your URLs"
+  }
+ ],
+ "summary": {
+  "passed": 5,
+  "total": 6
+ }
+}

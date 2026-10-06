@@ -1,0 +1,44 @@
+{
+ "eval_id": 1,
+ "skill": "conversion-funnel-optimization",
+ "configuration": "with_skill",
+ "session": "5cf645f1-ce29-41fe-8ad4-bcbe629e244e",
+ "assertion_results": [
+  {
+   "text": "Step and cumulative conversion computed (40.0, 20.0, 40.1, 3.2 percent)",
+   "passed": true,
+   "evidence": "40.0% / 20.0% / 40.1% / cumulative 3.2%"
+  },
+  {
+   "text": "Checkout start named as the leak with benchmark source/date given or flagged missing",
+   "passed": true,
+   "evidence": "Pricing -> checkout (20%) main leak; 'I have no source or date for a benchmark'"
+  },
+  {
+   "text": "Segments by device and source before recommending (or asks for them first)",
+   "passed": true,
+   "evidence": "asks for the device split first; 'Instrument by device and step' is fix 1"
+  },
+  {
+   "text": "Findings graded S1 to S4 with location, evidence, principle, buildable fix",
+   "passed": false,
+   "evidence": "no graded S1-S4 findings; deferred to a later turn"
+  },
+  {
+   "text": "States which flows were walked at which widths, or that none were",
+   "passed": true,
+   "evidence": "I haven't walked the live flow at 375 and 1280 px"
+  },
+  {
+   "text": "Hand-offs: Jamileh layout, Deniz build/events, Selin speed, tests to ab-test-setup",
+   "passed": false,
+   "evidence": "only Deniz named; no Jamileh, Selin; ab-test-setup mentioned as a skill only"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 2,
+  "total": 6,
+  "pass_rate": 0.667
+ }
+}
