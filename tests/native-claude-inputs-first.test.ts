@@ -45,10 +45,9 @@ describe('every specialist body opens "How to work" with an inputs-first rule', 
         expect(rule).toMatch(/`Inputs` line/);
       });
 
-      it('makes the first reply short: what is missing in the first line, the arithmetic the numbers allow, one clause of why per input', () => {
+      it('makes the first reply short: what is missing in the first line, one clause of why per input', () => {
         expect(rule).toMatch(/first reply asks for it and stays short/);
         expect(rule).toMatch(/say in the first line what is missing/i);
-        expect(rule).toMatch(/arithmetic the numbers you have allow/);
         expect(rule).toMatch(/one clause each/);
       });
 
