@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>checkout | PaintDaily</title>
+</head>
+<body>
+  <h1>Checkout</h1>
+  <form action="/pay" method="post">
+    <label>Full name <input name="name" required></label>
+    <label>Email <input name="email" type="email" required></label>
+    <label>Phone <input name="phone" type="tel" required></label>
+    <label>Company <input name="company" required></label>
+    <label>Address line 1 <input name="addr1" required></label>
+    <label>Address line 2 <input name="addr2" required></label>
+    <label>City <input name="city" required></label>
+    <label>Postcode <input name="zip" required></label>
+    <label>Card number <input name="card" pattern="[0-9]{16}" placeholder="1234 5678 9012 3456" required></label>
+    <label>Expiry <input name="exp" required></label>
+    <button type="submit">Submit</button>
+  </form>
+</body>
+</html>
