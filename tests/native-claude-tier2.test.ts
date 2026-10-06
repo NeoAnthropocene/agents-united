@@ -112,6 +112,13 @@ describe.each(['agency-growth-strategist', 'agency-conversion-specialist', 'agen
   it('re-reads before it marks its task completed, and says why a successful write is not a check', () => {
     expect(afterFloor(name)).toMatch(/\*\*Hand back\.\*\* Re-read what you wrote with `Read` first, before you mark your task completed and before you report: a `Write` or `Edit` that says it succeeded is not a check/);
   });
+
+  // Observed on Claude Code 2.1.291 (Plan 035 H1 rerun, 2026-10-06, session 3a0dca4d): Yavuz wrote his file, read lines 36 to 42, trimmed one line
+  // with an `Edit` to meet the 40-line cap and marked the task completed in the same response as the edit, then reported "I did not re-read the
+  // file after the edit". Four of five shell-less roles re-read correctly; the rule had no word for a write that comes after the re-read.
+  it('starts the re-read over after a later edit, and never completes in the same response as a write or an edit', () => {
+    expect(afterFloor(name)).toMatch(/A later `Edit` or `Write` starts the re-read over: `Read` the changed file again before you mark the task completed, and never put the completion update in the same response as a write or an edit/);
+  });
 });
 
 describe('the lead', () => {
