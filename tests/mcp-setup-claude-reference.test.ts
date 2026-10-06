@@ -48,15 +48,29 @@ describe('mcp-setup: references/claude-code.md', () => {
   it('holds the exact commands of the four servers that need no account or key', () => {
     const text = REF();
     for (const command of [
-      'claude mcp add --scope project context7 -- npx -y @upstash/context7-mcp',
-      'claude mcp add --scope project playwright -- npx -y @executeautomation/playwright-mcp-server',
-      'claude mcp add --scope project chrome-devtools-mcp -- npx -y chrome-devtools-mcp',
-      'claude mcp add --scope project markitdown -- uvx markitdown-mcp',
+      'claude mcp add --scope project context7 -- npx -y @upstash/context7-mcp@4.1.1',
+      'claude mcp add --scope project playwright -- npx -y @playwright/mcp@0.0.83',
+      'claude mcp add --scope project chrome-devtools-mcp -- npx -y chrome-devtools-mcp@1.10.1',
+      'claude mcp add --scope project markitdown -- uvx markitdown-mcp@0.0.1a7',
     ]) expect(text, command).toContain(command);
   });
 
-  it('says what the Playwright server needs, with its download, and the other prerequisites', () => {
+  // Observed on 2.1.291 (H9 retest, 2026-10-06): the lead installed `@playwright/mcp@latest` from memory and the team drove the browser with it, with no browser
+  // download (no new browser build appeared; only the server's profile folder). The community server the reference first held pins Playwright 1.57.0 and a browser build.
+  it('pins every package, says how to refresh the pins and which ones were seen working, and never writes @latest', () => {
     const text = REF();
+    expect(text).toMatch(/Versions pinned on 2026-10-06/);
+    expect(text).toContain('npm view <package> version');
+    expect(text).toMatch(/Seen working on 2\.1\.291[^\n]*context7[^\n]*@playwright\/mcp[^\n]*chrome-devtools-mcp[^\n]*markitdown/);
+    expect(text).toMatch(/not run[^\n]*github[^\n]*firecrawl[^\n]*stitch[^\n]*figma/i);
+    expect(text).not.toMatch(/npx -y [^\s`]+@latest/);
+  });
+
+  it('says that @playwright/mcp uses the installed Chrome with no browser download, and keeps the community server as an alternative with its facts', () => {
+    const text = REF();
+    expect(text).toMatch(/uses the installed Chrome/);
+    expect(text).toMatch(/no browser download/);
+    expect(text).toContain('@executeautomation/playwright-mcp-server@1.0.12');
     expect(text).toContain('npx -y playwright@1.57.0 install chromium');
     expect(text).toMatch(/Chromium build 1200/);
     expect(text).toContain('PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1');
@@ -68,11 +82,14 @@ describe('mcp-setup: references/claude-code.md', () => {
   it('holds the four credentialed servers as commands with placeholders, in a scope that stays out of the shared file', () => {
     const text = REF();
     for (const needle of [
-      'claude mcp add --scope local github --env GITHUB_PERSONAL_ACCESS_TOKEN=<your-token> -- npx -y @modelcontextprotocol/server-github',
-      'claude mcp add --scope local firecrawl --env FIRECRAWL_API_KEY=<your-api-key> -- npx -y firecrawl-mcp',
-      'claude mcp add --scope local stitch -- npx -y mcp-remote https://stitch.googleapis.com/mcp --header "X-Goog-Api-Key: <your-api-key>"',
-      'claude mcp add --scope local figma --env FIGMA_ACCESS_TOKEN=<your-token> -- npx -y ai-figma-mcp',
+      'claude mcp add --scope local --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer <your-token>"',
+      'claude mcp add --scope local firecrawl --env FIRECRAWL_API_KEY=<your-api-key> -- npx -y firecrawl-mcp@3.27.3',
+      'claude mcp add --scope local --transport http stitch https://stitch.googleapis.com/mcp --header "X-Goog-Api-Key: <your-api-key>"',
+      'claude mcp add --scope local figma --env FIGMA_ACCESS_TOKEN=<your-token> -- npx -y ai-figma-mcp@1.0.8',
     ]) expect(text, needle).toContain(needle);
+    // `@modelcontextprotocol/server-github` (the skill's matrix) is deprecated on npm ("Package no longer supported"); the host docs use GitHub's remote server.
+    expect(text).toMatch(/@modelcontextprotocol\/server-github[^\n]*deprecated/);
+    expect(text).not.toMatch(/claude mcp add[^\n]*@modelcontextprotocol\/server-github/);
     expect(text).toMatch(/never runs these/i);
     expect(text).toMatch(/shared with the team/);
   });
