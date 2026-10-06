@@ -157,3 +157,56 @@ describe('the live-test protocol: safety', () => {
     for (const block of DOC.matchAll(/### Prompt[\s\S]*?```text\n([\s\S]*?)\n```/g)) expect(block[1]!.length).toBeLessThan(2000);
   });
 });
+
+describe('the live-test protocol: H6 amendment, the isolated first run', () => {
+  it('starts H6 with the strict MCP flags and pins the Playwright browser the server needs', () => {
+    const s = section('H6');
+    expect(s).toContain('--strict-mcp-config --mcp-config .mcp.json');
+    expect(s).toContain('PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1');
+    expect(s).toContain('playwright@1.57.0 install chromium');
+    expect(s).toMatch(/no `cmd \/c`/);
+  });
+});
+
+describe('the live-test protocol: H9, the lead provisions a missing MCP server', () => {
+  const h9 = (): string => section('H9');
+
+  it('has two tiers, each with its own prompt, evidence, pass and fail, and a ceiling for the sitting', () => {
+    for (const heading of ['### H9a Prompt', '### H9a Evidence', '### H9a Pass', '### H9a Fail', '### H9b Prompt', '### H9b Evidence and Pass', '### Cost']) expect(h9(), heading).toContain(heading);
+    expect(h9()).toMatch(/Ceiling for Sitting F: \d+(\.\d+)? USD and \d+ prompts/);
+    expect(DOC).toMatch(/Sitting F/);
+  });
+
+  it('keeps the maintainer\'s order: consult, settle the plan, then a preflight before any teammate is spawned', () => {
+    expect(h9()).toMatch(/read-only consultation/);
+    expect(h9()).toMatch(/before any teammate is spawned/);
+    expect(h9()).toMatch(/credential-free/);
+    expect(h9()).toMatch(/credentialed/);
+  });
+
+  it('installs in project scope only, with `--` before the command, checks the install and names the ways to pick it up', () => {
+    expect(h9()).toContain('claude mcp add --scope project <name> -- <command>');
+    expect(h9()).toMatch(/never `~\/\.claude\.json`/);
+    expect(h9()).toMatch(/SHA-256 of `~\/\.claude\.json` \(the hash only/);
+    for (const needle of ['claude mcp get', 'claude mcp list', 'ToolSearch', '/mcp reconnect', 'claude --continue', '--resume <session-id>']) expect(h9(), needle).toContain(needle);
+  });
+
+  it('never asks for or writes a key, prints a placeholder, and invents no pull request', () => {
+    expect(h9()).toMatch(/never ask for a key in the chat and never write one/);
+    expect(h9()).toContain('<your-token>');
+    expect(h9()).toMatch(/invents no pull request/);
+    expect(h9()).toMatch(/Decline every install proposal in this tier/);
+  });
+
+  it('runs the baseline first and says what is not yet known', () => {
+    expect(h9()).toMatch(/Baseline first/);
+    expect(h9()).toMatch(/Not in the library snapshot/);
+  });
+
+  it('keeps both prompts under 2,000 characters, the first being the H6 prompt plus one sentence', () => {
+    const blocks = [...h9().matchAll(/```text\n([\s\S]*?)\n```/g)].map(m => m[1]!);
+    expect(blocks).toHaveLength(2);
+    for (const block of blocks) expect(block.length).toBeLessThan(2000);
+    expect(blocks[0]).toContain('Consult emre read-only first.');
+  });
+});
