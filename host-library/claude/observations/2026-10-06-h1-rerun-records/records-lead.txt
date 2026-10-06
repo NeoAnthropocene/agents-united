@@ -1,0 +1,23 @@
+--- typed prompts / synthetic / first assistant texts
+[user 10:38:54] '\n\n<pasted_content id="6c43">\nScratch exercise, no real client. Product: PetPal, a pet-sitting marketplace. Produce, under docs/pilot/, a tiny launch kit with a '
+[lead 10:38:57] I'm Chris, the orchestrator. I'll start by checking the team setup and loading the task and messaging tools.
+[lead 10:39:14] The task list and dependencies are set. Next I'll consult Ava read-only, with no file writes and no task owner yet.
+  [Agent 10:39:17] {"description": "Consult Ava read-only", "name": "ava", "subagent_type": "agency-growth-strategist", "prompt": "You are the teammate \"ava\" (Ava), type agency-growth-strategist.\nCONSULTATION ONLY. Write NO files, claim no task, use no web research or connected tools.\nObjective: scratch exercise, no real client. Product: PetPal, a pet-sitting marketplace. We will produce a tiny launch kit under docs/pilot/ (<=40 lines per deliverable). Your later deliverable will be docs/pilot/strategy.md: a 5-line growth brief with one ICE-scored hypothesis.\nFixed contract: CTA colour token is color.cta.primary; CTA testId is hero-primary-cta.\nQuestion: in a bounded scope-of-work statement (max 120 words) tell me: (1) the five lines you will write, in outline, (2) the one hypothesis and its I/C/E scoring approach, (3) anything you need from the user or peers. Assumptions are fine;
+[lead 10:39:19] The consultation is with Ava and still running. I'll wait for her answer before mapping.
+[lead 10:39:28] Ava's consultation is recorded. She has no baseline data, because this is a scratch exercise. I'm treating her numbers as labelled assumptions and starting Tier 1.
+  [SendMessage 10:39:31] {"to": "ava", "summary": "Consultation accepted; write strategy.md now", "message": "Consultation accepted; write docs/pilot/strategy.md now (task #1, yours).\nObjective: PetPal pet-sitting marketplace, scratch exercise. 5-line growth brief with one ICE-scored hypothesis, as you outlined.\nScope: write only docs/pilot/strategy.md, max 40 lines. Label every number \"assumption, no baseline data\" (no user data exists; do not wait for it). Use CTA colour token color.cta.primary and testId hero-primary-cta exactly. No web, no tools, no installs.\nMode: team mode. Peers you may message with SendMessage (max 2 exchanges per pair, never wait on a reply): kaan (hero copy, will read your hypothesis), jamileh (tokens), yavuz (content plan). Other routes go through me.\nReport: Output Contract summary, `Peer messages received`, `Open items`. Mark task #1 completed when don
+[lead 10:39:33] Tier 1 is running. Ava is writing `strategy.md`, and Tier 2 starts once task #1 completes.
+  [SendMessage 10:39:37] {"to": "ava", "summary": "Explicit go-ahead to deliver strategy.md", "message": "Go-ahead: the consultation is over and you may now write files. Deliver docs/pilot/strategy.md (task #1, owner set to you, no blockers). Placeholder CTA variant and \"provisional\" labels are fine; do not wait for user data or Kaan. Then report with `Peer messages received` and `Open items`.", "type": "message", "recipient": "ava", "content": "Go-ahead: the consultation is over and you may no\u2026"}
+[lead 10:39:39] Ava's last message likely crossed with my earlier go-ahead, so I sent a second, explicit one. I'm waiting for her to deliver `strategy.md`.
+[lead 10:39:56] Ava reports `strategy.md` delivered. I'll check the file before releasing Tier 2.
+[lead 10:40:00] Ava's file checks out at 16 lines with the assumptions labelled. I'm releasing Tier 2 and spawning Kaan, Jamileh and Yavuz in parallel.
+[lead 10:40:14] Tier 2 is running with Kaan, Jamileh and Yavuz in parallel, and I've sent Ava a shutdown request. I'm waiting for their reports.
+[lead 10:40:15] Ava has nothing new. Her open items are for Kaan and Jamileh, whom I've already briefed, and Deniz and Emre are confirmed as the build and event-check owners. I'm waiting for the Tier 2 reports.
+[lead 10:40:17] Ava has shut down. Kaan, Jamileh and Yavuz are still working on Tier 2.
+[lead 10:40:38] Kaan has delivered `hero.ts`, and I've sent him a shutdown request. His open items go into my final report. I'm still waiting on Jamileh and Yavuz before releasing Tier 3.
+[lead 10:40:41] Kaan has shut down. Jamileh and Yavuz are still working.
+[SYNTHETIC 10:41:40] "You've hit your session limit · resets 1:10pm (Europe/Berlin)"
+[SYNTHETIC 10:41:42] "You've hit your session limit · resets 1:10pm (Europe/Berlin)"
+[SYNTHETIC 10:41:42] "You've hit your session limit · resets 1:10pm (Europe/Berlin)"
+[SYNTHETIC 10:41:43] "You've hit your session limit · resets 1:10pm (Europe/Berlin)"
+[user 11:28:58] 'resume'
