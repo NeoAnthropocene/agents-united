@@ -191,6 +191,9 @@ describe('the live-test protocol: H9, the lead provisions a missing MCP server',
     expect(h9()).toMatch(/never `~\/\.claude\.json`/);
     expect(h9()).toMatch(/hash of the MCP server blocks of `~\/\.claude\.json`/);
     expect(h9()).toMatch(/rewrites that file at every session start/);
+    // The first H9a run (2026-10-06) changed an all-blocks hash with no server added: Claude Code had created the entry of the new folder, with an empty block.
+    expect(h9()).toMatch(/Hash only the non-empty blocks/);
+    expect(h9()).toMatch(/adds a project entry with an empty `mcpServers` block for every folder it starts in/);
     expect(h9()).not.toMatch(/SHA-256 of `~\/\.claude\.json`/);
     expect(h9()).not.toMatch(/`~\/\.claude\.json` is unchanged/);
     for (const needle of ['claude mcp get', 'claude mcp list', 'ToolSearch', '/mcp reconnect', 'claude --continue', '--resume <session-id>']) expect(h9(), needle).toContain(needle);
