@@ -198,9 +198,12 @@ describe('the three Sitting A sessions of Plan 035 M3 (Claude Code 2.1.289, 2026
 
 type Rec = Record<string, unknown>;
 const T = (s: number): string => new Date(Date.UTC(2026, 9, 5, 9, 0, s)).toISOString();
-const call = (id: string, name: string, input: Rec, s: number): Rec => ({ type: 'assistant', timestamp: T(s), isSidechain: false, message: { role: 'assistant', model: 'claude-sonnet-5-5', content: [{ type: 'tool_use', id, name, input }] } });
+const call = (id: string, name: string, input: Rec, s: number, messageId?: string): Rec => ({ type: 'assistant', timestamp: T(s), isSidechain: false, message: { role: 'assistant', model: 'claude-sonnet-5-5', ...(messageId ? { id: messageId } : {}), content: [{ type: 'tool_use', id, name, input }] } });
 const result = (id: string, content: string, s: number, isError = false): Rec => ({ type: 'user', timestamp: T(s), isSidechain: false, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content, is_error: isError }] } });
 const mail = (from: string, body: unknown, s: number): Rec => ({ type: 'user', timestamp: T(s), isSidechain: true, message: { role: 'user', content: `<teammate-message teammate_id="${from}">\n${typeof body === 'string' ? body : JSON.stringify(body)}\n</teammate-message>` } });
+
+/** A message that reaches the lead: the lead's own record holds it, so it is not a sidechain record. */
+const leadMail = (from: string, body: unknown, s: number): Rec => ({ ...mail(from, body, s), isSidechain: false });
 
 function writeSession(lead: Rec[], subs: Record<string, { meta: Rec; records: Rec[] }>): string {
   const dir = tmp();
@@ -295,6 +298,57 @@ describe('synthetic sessions', () => {
     expect(finding(analyse(loadSession(one)), 'H1b').evidence.join('\n')).toContain('shutdown responses sent by teammates: 1 of 2 requested (approved 1)');
     const refused = writeSession(lead, { ava: { meta: {}, records: [reply(false)] }, kaan: { meta: {}, records: [reply(true)] } });
     expect(finding(analyse(loadSession(refused)), 'H1b').evidence.join('\n')).toContain('shutdown responses sent by teammates: 2 of 2 requested (approved 1)');
+  });
+
+  it('H1b: a reply the host refused is not counted as sent, and the refusals are listed with who made them (session 4b08fd11: Deniz passed the JSON as text twice)', () => {
+    const refusal = 'message text must not be a teammate protocol frame (permission/mode/plan/shutdown JSON)';
+    const reply = { type: 'shutdown_response', request_id: 'x@deniz', approve: true };
+    const lead = [call('s1', 'SendMessage', { to: 'deniz', message: { type: 'shutdown_request', reason: 'done' } }, 1)];
+    const refusedTwice = [
+      call('a', 'SendMessage', { to: 'team-lead', message: JSON.stringify(reply) }, 2),
+      result('a', refusal, 2.1, true),
+      call('b', 'SendMessage', { to: 'team-lead', message: JSON.stringify(reply) }, 3),
+      result('b', refusal, 3.1, true),
+    ];
+    const accepted = [call('c', 'SendMessage', { to: 'team-lead', message: reply }, 4), result('c', '{"success":true,"message":"Shutdown approved."}', 4.1)];
+    const third = finding(analyse(loadSession(writeSession(lead, { deniz: { meta: {}, records: [...refusedTwice, ...accepted] } }))), 'H1b');
+    expect(third.verdict).toBe('seen');
+    expect(third.evidence.join('\n')).toContain('shutdown responses sent by teammates: 1 of 1 requested (approved 1)');
+    expect(third.evidence.join('\n')).toMatch(/2 reply\(ies\) refused by the host: deniz x2 \("message text must not be a teammate protocol frame/);
+    // A teammate whose only replies were refused has sent none.
+    const never = finding(analyse(loadSession(writeSession(lead, { deniz: { meta: {}, records: refusedTwice } }))), 'H1b');
+    expect(never.evidence.join('\n')).toContain('shutdown responses sent by teammates: 0 of 1 requested (approved 0)');
+  });
+
+  it('H1b: the line about the lead\'s record names who sent no shutdown reply (session 4b08fd11: eight of nine, none from Defne)', () => {
+    const request = (id: string, to: string, s: number): Rec => call(id, 'SendMessage', { to, message: { type: 'shutdown_request', reason: 'done' } }, s);
+    const approved = (from: string, s: number): Rec => leadMail(from, { type: 'shutdown_approved', requestId: `x@${from}`, from }, s);
+    const lead = [request('s1', 'ava', 1), request('s2', 'defne', 2), approved('ava', 3)];
+    const partial = finding(analyse(loadSession(writeSession(lead, {}))), 'H1b').evidence.join('\n');
+    expect(partial).toContain('shutdown responses received by the lead: 1 (none from defne)');
+    const complete = finding(analyse(loadSession(writeSession([...lead, approved('defne', 4)], {}))), 'H1b').evidence.join('\n');
+    expect(complete).toContain('shutdown responses received by the lead: 2');
+    expect(complete).not.toContain('none from');
+  });
+
+  it('H1c: a re-read issued in the same response as the completion is named, and the verdict stays seen (session 4b08fd11: Jamileh)', () => {
+    const wrote = (readResponse: string): string =>
+      writeSession([], {
+        ava: {
+          meta: {},
+          records: [
+            call('w', 'Write', { file_path: '/x/a.md' }, 1, 'msg_write'),
+            call('r', 'Read', { file_path: '/x/a.md' }, 2, readResponse),
+            call('u', 'TaskUpdate', { taskId: '1', status: 'completed' }, 2.1, 'msg_done'),
+          ],
+        },
+      });
+    const same = finding(analyse(loadSession(wrote('msg_done'))), 'H1c');
+    expect(same.verdict).toBe('seen');
+    expect(same.evidence.join('\n')).toMatch(/ava: wrote 1 file\(s\) with no shell, re-read before reporting all; the re-read of a\.md was issued in the same response as the task's completion/);
+    const later = finding(analyse(loadSession(wrote('msg_read'))), 'H1c');
+    expect(later.verdict).toBe('seen');
+    expect(later.evidence.join('\n')).not.toMatch(/same response/);
   });
 
   it('H4: a blocked task started early and refused by the host is a pass, and a normal order is not seen', () => {

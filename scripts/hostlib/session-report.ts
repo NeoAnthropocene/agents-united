@@ -24,6 +24,8 @@ export interface ToolCall {
   at: string;
   isError?: boolean;
   result?: string;
+  /** The id of the model response that issued the call: two calls with one id were issued together, before either result was read. */
+  messageId?: string;
 }
 
 export interface Received {
@@ -152,7 +154,7 @@ function buildAgent(records: Json[], name: string, isLead: boolean, meta: Json):
       for (const raw of arr(message.content)) {
         const block = obj(raw);
         if (block.type === 'tool_use') {
-          const call: ToolCall = { id: str(block.id), name: str(block.name), input: obj(block.input), at };
+          const call: ToolCall = { id: str(block.id), name: str(block.name), input: obj(block.input), at, messageId: str(message.id) || undefined };
           agent.calls.push(call);
           byId.set(call.id, call);
         } else if (block.type === 'text' && str(block.text).trim() !== '') {
@@ -304,24 +306,43 @@ function shutdownFinding(session: Session): Finding {
   const sends = lead ? lead.calls.filter(c => c.name === 'SendMessage') : [];
   let structured = 0;
   let plain = 0;
+  const asked: string[] = [];
   const evidence: string[] = [];
   for (const call of sends) {
     const message = call.input.message;
     const m = typeof message === 'string' ? jsonOf(message) : obj(message);
     const type = m ? str(m.type) : '';
-    if (type === 'shutdown_request') structured += 1;
-    else if (typeof message === 'string' && /shut ?down|stand down|wrap up/i.test(message) && !m) {
+    if (type === 'shutdown_request') {
+      structured += 1;
+      asked.push(str(call.input.to));
+    } else if (typeof message === 'string' && /shut ?down|stand down|wrap up/i.test(message) && !m) {
       plain += 1;
       evidence.push(`plain-text shutdown request to ${str(call.input.to)} at ${call.at}: "${short(message, 80)}"`);
     }
   }
   const responses = session.agents.flatMap(a => a.received.filter(r => r.kind === 'shutdown_response' || r.kind === 'shutdown_approved'));
   const refusals = (lead ? lead.received : []).filter(r => /request_id/i.test(r.text) && /shut ?down/i.test(r.text));
-  evidence.unshift(`structured shutdown_request: ${structured}, plain-text shutdown requests: ${plain}, shutdown responses received by the lead: ${responses.length}`);
+  // Who the lead's record holds a reply from: a reply names its sender, and a request names its target (session 4b08fd11: eight of nine, none from Defne).
+  const teammate = (name: string): string => name.replace(/@.*$/, '').toLowerCase();
+  const answered = new Set(responses.map(r => teammate(r.from)));
+  const silent = [...new Set(asked.map(teammate))].filter(name => name !== '' && !answered.has(name));
+  evidence.unshift(`structured shutdown_request: ${structured}, plain-text shutdown requests: ${plain}, shutdown responses received by the lead: ${responses.length}${silent.length > 0 ? ` (none from ${silent.join(', ')})` : ''}`);
   // The teammates' own replies, from their own records: the lead's record carries one only if the lead was still reading when it arrived
-  // (session aa5e73e8: the probe answered, the lead's record shows none).
-  const replies = session.agents.filter(a => !a.isLead).flatMap(a => a.calls.filter(c => c.name === 'SendMessage').map(c => structuredOf(c.input.message)).filter((m): m is Json => m !== undefined && str(m.type) === 'shutdown_response'));
-  evidence.splice(1, 0, `shutdown responses sent by teammates: ${replies.length} of ${structured} requested (approved ${replies.filter(m => m.approve === true).length})`);
+  // (session aa5e73e8: the probe answered, the lead's record shows none). A reply counts when the host took it: a call it refused delivered
+  // nothing (session 4b08fd11: Deniz passed the JSON as the message text twice before he sent the object).
+  const replies = session.agents
+    .filter(a => !a.isLead)
+    .flatMap(a => a.calls.filter(c => c.name === 'SendMessage').flatMap(c => {
+      const message = structuredOf(c.input.message);
+      return message !== undefined && str(message.type) === 'shutdown_response' ? [{ agent: a.name, call: c, message }] : [];
+    }));
+  const delivered = replies.filter(r => r.call.isError !== true);
+  const refusedByHost = replies.filter(r => r.call.isError === true);
+  evidence.splice(1, 0, `shutdown responses sent by teammates: ${delivered.length} of ${structured} requested (approved ${delivered.filter(r => r.message.approve === true).length})`);
+  if (refusedByHost.length > 0) {
+    const who = [...new Set(refusedByHost.map(r => r.agent))].map(name => `${name} x${refusedByHost.filter(r => r.agent === name).length}`).join(', ');
+    evidence.splice(2, 0, `${refusedByHost.length} reply(ies) refused by the host: ${who} ("${short(refusedByHost[0]?.call.result ?? '', 90)}")`);
+  }
   if (refusals.length > 0) evidence.push(`${refusals.length} reply(ies) mention a missing request_id`);
   const verdict: Verdict = structured + plain === 0 ? 'not seen' : plain > 0 ? 'violation' : 'seen';
   return { id: 'H1b', title: 'Shutdown is asked with a structured shutdown_request', verdict, evidence };
@@ -340,13 +361,20 @@ function rereadFinding(session: Session): Finding {
     if (hasShell || writes.length === 0) continue;
     anyShellLess = true;
     const missed: string[] = [];
+    const together: string[] = [];
     for (const w of writes) {
       const p = norm(filePathOf(w));
-      if (!a.calls.some(c => c.name === 'Read' && norm(filePathOf(c)) === p && c.at >= w.at)) missed.push(baseName(filePathOf(w)));
+      const reread = a.calls.find(c => c.name === 'Read' && norm(filePathOf(c)) === p && c.at >= w.at);
+      if (!reread) missed.push(baseName(filePathOf(w)));
+      // A re-read issued in the same response as the completion cannot have informed it (session 4b08fd11: Jamileh's Read and TaskUpdate carry one
+      // message id). The order holds and the dependence does not, so this is shown and does not change the verdict.
+      const completion = a.calls.find(c => c.name === 'TaskUpdate' && str(c.input.status) === 'completed' && c.at >= w.at);
+      if (reread?.messageId !== undefined && reread.messageId === completion?.messageId) together.push(baseName(filePathOf(w)));
     }
     const unique = [...new Set(missed)];
+    const sameResponse = [...new Set(together)];
     if (unique.length > 0) violation = true;
-    evidence.push(`${a.name}: wrote ${new Set(writes.map(w => norm(filePathOf(w)))).size} file(s) with no shell, re-read before reporting ${unique.length === 0 ? 'all' : `all but ${unique.join(', ')}`}`);
+    evidence.push(`${a.name}: wrote ${new Set(writes.map(w => norm(filePathOf(w)))).size} file(s) with no shell, re-read before reporting ${unique.length === 0 ? 'all' : `all but ${unique.join(', ')}`}${sameResponse.length > 0 ? `; the re-read of ${sameResponse.join(', ')} was issued in the same response as the task's completion` : ''}`);
   }
   if (!anyShellLess) return { id: 'H1c', title: 'Shell-less roles re-read their files before reporting', verdict: 'not applicable', evidence: ['no shell-less teammate wrote a file'] };
   return { id: 'H1c', title: 'Shell-less roles re-read their files before reporting', verdict: violation ? 'violation' : 'seen', evidence };
