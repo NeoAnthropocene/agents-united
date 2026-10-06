@@ -121,6 +121,22 @@ describe.each(['agency-growth-strategist', 'agency-conversion-specialist', 'agen
   });
 });
 
+// Observed on Claude Code 2.1.291 (Plan 035 H1, 2026-10-05 and 2026-10-06): the nine bodies never said how to answer a `shutdown_request`. Deniz (twice, Sitting C)
+// and Defne (twice, the rerun) passed the reply as a string of JSON; the host refused it ("message text must not be a teammate protocol frame ... use the
+// structured object form") and each was accepted on the third call, with the object and `to: "team-lead"`. Four refused calls in eighteen replies.
+describe.each([
+  'agency-growth-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-content-strategist', 'agency-campaign-specialist',
+  'agency-frontend-architect', 'agency-seo-specialist', 'agency-qa-automation-lead', 'agency-compliance-grc-specialist',
+])('teammate %s: the shutdown reply', name => {
+  it('shows the structured shape of the reply and says that a string of JSON is refused', () => {
+    const body = afterFloor(name);
+    expect(body).toMatch(/\*\*Answer a shutdown request with the structured object\.\*\*/);
+    expect(body).toContain('`SendMessage` to `team-lead` whose `message` is an object, not a string');
+    expect(body).toContain('{"type":"shutdown_response","request_id":"<the request_id of the request>","approve":true}');
+    expect(body).toMatch(/message text must not be a teammate protocol frame/);
+  });
+});
+
 describe('the lead', () => {
   const lead = (): string => read(LEAD);
 
