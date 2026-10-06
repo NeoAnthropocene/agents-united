@@ -170,3 +170,79 @@ describe('the lead', () => {
     expect(body).toMatch(/spawned as a subagent/i);
   });
 });
+
+// Observed on Claude Code 2.1.291 (Plan 035 H9, 2026-10-06): the lead told Emre and Selin to use Playwright and chrome-devtools-mcp, which were not
+// connected ("Emre and Selin have Playwright and chrome-devtools-mcp in their own tool lists"), offered a script or an npm install and never the servers,
+// ran no `claude mcp add`, checked nothing and gave no restart command; for GitHub it delegated to Defne first and printed a `gh` fallback for "print
+// the command". The maintainer's probe: a server added to `.mcp.json` mid-session is absent from the running session, `/mcp reconnect` says "not found",
+// and a restart offers it for approval.
+describe('the lead: the preflight of the integrations the plan needs', () => {
+  const HEADING = '\n## Preflight: the integrations the plan needs';
+  const body = (): string => afterFloor(LEAD);
+  const preflight = (): string => {
+    const text = body();
+    const start = text.indexOf(HEADING);
+    expect(start, 'the Preflight section exists').toBeGreaterThan(-1);
+    const end = text.indexOf('\n## ', start + 5);
+    return text.slice(start, end === -1 ? undefined : end);
+  };
+
+  it('sits between the plan and the team, and runs before the first task or spawn', () => {
+    const text = body();
+    expect(text.indexOf('\n## Plan with the user')).toBeLessThan(text.indexOf(HEADING));
+    expect(text.indexOf(HEADING)).toBeLessThan(text.indexOf('\n## Run the team'));
+    expect(preflight()).toMatch(/before the first `TaskCreate` or `Agent` call/);
+  });
+
+  it('takes a role\'s tool list for an allowlist, not for proof, and checks in its own session with ToolSearch', () => {
+    expect(preflight()).toMatch(/allowlist, not proof that a server is connected/);
+    expect(preflight()).toMatch(/check each one in this session with `ToolSearch`/);
+    expect(preflight()).toMatch(/Never delegate a slice whose integration is not callable/);
+  });
+
+  it('classes the missing servers: four need no account or key, four need a credential', () => {
+    const text = preflight();
+    expect(text).toMatch(/No account or key:[^\n]*context7[^\n]*playwright[^\n]*chrome-devtools-mcp[^\n]*markitdown/);
+    expect(text).toMatch(/Needs a credential:[^\n]*github[^\n]*firecrawl[^\n]*stitch[^\n]*figma/);
+  });
+
+  it('loads mcp-setup when a needed server is missing, not only when the user asks', () => {
+    expect(body()).toMatch(/\| Connecting an integration \| `mcp-setup` \| An integration the plan needs is missing, or the user asks to set one up \|/);
+    expect(preflight()).toMatch(/Load `mcp-setup` and read its Claude Code reference/);
+  });
+
+  it('asks before it installs, installs in project scope with `--` before the command, and checks the install', () => {
+    const text = preflight();
+    expect(text).toMatch(/`AskUserQuestion`/);
+    expect(text).toContain('claude mcp add --scope project <name> -- <command> [args]');
+    expect(text).toMatch(/never user scope or local scope/);
+    expect(text).toMatch(/only after a yes/);
+    expect(text).toContain('`claude mcp get <name>`');
+    expect(text).toContain('`claude mcp list`');
+    expect(text).toMatch(/anything it downloads/);
+  });
+
+  it('knows a running session never loads a server added later, and ends the install with a restart command and a starting prompt', () => {
+    const text = preflight();
+    expect(text).toMatch(/A running session never loads a server added after it started/);
+    expect(text).toMatch(/`\/mcp reconnect` says it is not found/);
+    expect(text).toMatch(/spawn nobody, create no deliverable/);
+    expect(text).toContain('claude --continue --agent orchestrator-digital-agency');
+    expect(text).toMatch(/both team variables/);
+    expect(text).toMatch(/Use this MCP server/);
+    expect(text).toMatch(/\*\*starting prompt\*\*/);
+    expect(text).toMatch(/at most 25 lines/);
+    expect(text).toMatch(/A resume does not restore teammates/);
+  });
+
+  it('never asks for a key in the chat and prints a command with a placeholder for a credentialed server', () => {
+    const text = preflight();
+    expect(text).toMatch(/Never ask for a key in the chat/);
+    expect(text).toContain('<your-token>');
+    expect(text).toMatch(/Limited Operational/);
+  });
+
+  it('checks again after the restart, before it spawns anyone', () => {
+    expect(preflight()).toMatch(/When you are back after the restart, check again with `ToolSearch` before you spawn anyone/);
+  });
+});
