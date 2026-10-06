@@ -67,9 +67,18 @@ describe('every specialist body opens "How to work" with an inputs-first rule', 
         expect(rule).toMatch(/As a teammate, put the question under `Open items`: the lead asks the user/);
       });
 
+      it('defines a required input narrowly, so that a brief with the numbers the question needs is answered in full', () => {
+        expect(rule).toMatch(/An input is required only when, without it, your answer would rest on numbers or pages you have not seen/);
+        expect(rule).toMatch(/one that would only sharpen the answer goes under `Open items` and you still deliver the full artifact/);
+      });
+
+      it('has the first reply say what the numbers it already has show, so that the leak or the bottleneck is still named', () => {
+        expect(rule).toMatch(/say what the numbers you have already show/);
+      });
+
       it('is one paragraph of reasonable size', () => {
         expect(rule.length).toBeGreaterThan(500);
-        expect(rule.length).toBeLessThan(1000);
+        expect(rule.length).toBeLessThan(1300);
       });
     });
   }
