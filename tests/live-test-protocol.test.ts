@@ -210,7 +210,7 @@ describe('the live-test protocol: H9, the lead provisions a missing MCP server',
 
   it('runs the baseline first and says what is not yet known', () => {
     expect(h9()).toMatch(/Baseline first/);
-    expect(h9()).toMatch(/Not in the library snapshot/);
+    expect(h9()).toMatch(/\*\*Still unverified:\*\*/);
   });
 
   it('keeps both prompts under 2,000 characters, the first being the H6 prompt plus one sentence', () => {
