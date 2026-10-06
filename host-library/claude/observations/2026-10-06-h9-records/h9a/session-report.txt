@@ -1,0 +1,52 @@
+# Session a5de969c-6d85-4136-be87-8798662e5047
+cwd C:\github\scratch-pilot\h9-provision · Claude Code 2.1.291 · agent orchestrator-digital-agency · permission mode auto
+from 2026-10-06T11:52:21.893Z to 2026-10-06T11:56:57.109Z · 1 prompt(s) · 2 teammate record(s)
+cost 1.1976 USD (the session's own record) · API 316 s · wall 403 s
+  claude-haiku-4-5-20251001: 2211 in, 30 out, 0 cache-read, 0.0024 USD
+  claude-sonnet-5-5: 4152 in, 24948 out, 2457649 cache-read, 1.1952 USD
+
+## Findings (the seven open items)
+- H1a A task owner set on a running teammate lifts a read-only consultation: **seen**
+    emre: wrote only after an accepting message (2026-10-06T11:56:19.553Z)
+- H1b Shutdown is asked with a structured shutdown_request: **seen**
+    structured shutdown_request: 2, plain-text shutdown requests: 0, shutdown responses received by the lead: 1 (none from emre)
+    shutdown responses sent by teammates: 2 of 2 requested (approved 2)
+- H1c Shell-less roles re-read their files before reporting: **not applicable**
+    no shell-less teammate wrote a file
+- H2/H7 The lead runs on its pinned Opus: **not seen**
+    lead models: claude-sonnet-5-5
+    agent setting: orchestrator-digital-agency, permission mode: auto
+    emre: model sonnet (messages: claude-sonnet-5-5), type agency-qa-automation-lead, in_process_teammate
+    selin: model sonnet (messages: claude-sonnet-5-5), type agency-seo-specialist, in_process_teammate
+- H3 A peer exchange between teammates without a fixed contract: **not seen**
+    peer messages sent: 0 across 0 pair(s); received from a peer: 0
+- H4 The host refuses a blocked task started early: **not seen**
+    10 task call(s), 3 task(s); starts while blocked: 0 (refused 0, accepted 0)
+- H5 The settings-level guard refuses a command it names, in a team: **not seen**
+    no tool result carries the guard block message
+- H6 MCP-backed tools are called: **not seen**
+    no tool call has an mcp__ name
+
+## Agents
+- lead: TaskUpdate 5, SendMessage 4, Bash 3, TaskCreate 3, ToolSearch 2, Agent 2, AskUserQuestion 1
+- emre (agency-qa-automation-lead): Bash 5, ToolSearch 3, Read 1, Write 1, TaskGet 1, TaskUpdate 1, SendMessage 1
+    final report has Peer messages received and Open items: yes
+- selin (agency-seo-specialist): ToolSearch 4, Bash 4, TaskGet 1, TaskUpdate 1, SendMessage 1
+    error in Bash at 2026-10-06T11:55:41.534Z: Exit code 1 node:events:487 throw er; // Unhandled 'error' event ^ Error: spawn C:Program Fil...
+    final report has Peer messages received and Open items: yes
+
+## Lead: team flow
+  11:52:39 TaskCreate task "Emre: consult (read-only scope of work)"
+  11:52:40 TaskCreate task "Emre: audit page (viewports, a11y, console, network) -> docs..."
+  11:52:41 TaskCreate task "Selin: chrome-devtools-mcp check -> docs/h6/selin-devtools-r..."
+  11:52:44 Agent spawn emre as agency-qa-automation-lead
+  11:54:40 TaskUpdate task 1 completed
+  11:54:47 TaskUpdate task 2 owner emre
+  11:54:48 TaskUpdate task 3 owner selin
+  11:55:00 SendMessage message to emre: Emre: consultation accepted, deliver task #2 now. The client wants the...
+  11:55:10 Agent spawn selin as agency-seo-specialist
+  11:55:20 SendMessage message to emre: Deliver. Go ahead with task #2 now (this repeats my previous message, ...
+  11:56:11 TaskUpdate task 3 completed
+  11:56:12 SendMessage message to selin: {"type":"shutdown_request","reason":"Task #3 delivered and accepted; r...
+  11:56:43 TaskUpdate task 2 completed
+  11:56:44 SendMessage message to emre: {"type":"shutdown_request","reason":"Task #2 delivered and accepted; r...
