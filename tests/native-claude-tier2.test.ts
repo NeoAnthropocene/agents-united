@@ -243,7 +243,11 @@ describe('the lead: the preflight of the integrations the plan needs', () => {
 
   it('loads mcp-setup when a needed server is missing, not only when the user asks', () => {
     expect(body()).toMatch(/\| Connecting an integration \| `mcp-setup` \| An integration the plan needs is missing, or the user asks to set one up \|/);
-    expect(preflight()).toMatch(/Load `mcp-setup` and read its Claude Code reference/);
+    expect(preflight()).toMatch(/Load `mcp-setup` and read its Claude Code reference before you propose a package/);
+    // Observed in the H9 retest: a lead that skipped the skill installed `@playwright/mcp@latest` from memory.
+    expect(preflight()).toMatch(/install the command it gives, pinned, never one from memory/);
+    expect(preflight()).toMatch(/its version, its source and anything it downloads/);
+    expect(preflight()).not.toMatch(/290 MB/);
   });
 
   it('asks before it installs, installs in project scope with `--` before the command, and checks the install', () => {
