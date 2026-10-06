@@ -3,12 +3,19 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SCRIPT = HERE.parent.parent / "registry" / "skills" / "semgrep-scanning" / "scripts" / "run_scans.py"
 FAKE = f'"{sys.executable}" "{HERE / "fake_semgrep.py"}"'
+
+
+def read_calls(log):
+    """Every call the fake logged: the log itself and any per-process file next to it (log.<pid>)."""
+    files = sorted(log.parent.glob(log.name + "*")) if log.parent.exists() else []
+    return [json.loads(l) for f in files for l in f.read_text(encoding="utf-8").splitlines()]
 
 
 class SplitCommand(unittest.TestCase):
@@ -18,6 +25,40 @@ class SplitCommand(unittest.TestCase):
 
         parts = run_scans.split_command(r'"C:\Program Files\Python\python.exe" "C:\a b\fake.py"', posix=False)
         self.assertEqual(parts, [r"C:\Program Files\Python\python.exe", r"C:\a b\fake.py"])
+
+
+class FakeSemgrepLog(unittest.TestCase):
+    """run_scans.py runs scans concurrently and the fake logs each call. On Windows two buffered appends to one file can overwrite or
+    interleave each other: a full-suite run saw one call instead of two, and then invalid JSON (Plan 035 H8, 2026-10-06). Forty
+    processes spin until one shared instant and then call the fake five times each, so that the contention is not left to chance."""
+
+    DRIVER = (
+        "import runpy, sys, time\n"
+        "start, fake, tag = float(sys.argv[1]), sys.argv[2], sys.argv[3]\n"
+        "while time.time() < start:\n"
+        "    pass\n"
+        "for j in range(5):\n"
+        "    sys.argv = [fake, '--config', f'p/{tag}-{j}', '--metrics=off']\n"
+        "    try:\n"
+        "        runpy.run_path(fake, run_name='__main__')\n"
+        "    except SystemExit:\n"
+        "        pass\n"
+    )
+
+    def test_two_hundred_concurrent_calls_are_all_logged_intact(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "calls.log"
+            env = dict(os.environ, FAKE_SEMGREP_LOG=str(log))
+            start = time.time() + 4
+            procs = [
+                subprocess.Popen([sys.executable, "-c", self.DRIVER, str(start), str(HERE / "fake_semgrep.py"), str(i)],
+                                 env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                for i in range(40)
+            ]
+            for p in procs:
+                p.wait()
+            calls = read_calls(log)
+            self.assertEqual(sorted(a[1] for a in calls), sorted(f"p/{i}-{j}" for i in range(40) for j in range(5)))
 
 
 class RunScans(unittest.TestCase):
@@ -46,7 +87,7 @@ class RunScans(unittest.TestCase):
         )
 
     def calls(self):
-        return [json.loads(l) for l in self.log.read_text().splitlines()] if self.log.exists() else []
+        return read_calls(self.log)
 
     def summary(self):
         return json.loads((self.out / "scans.json").read_text())
