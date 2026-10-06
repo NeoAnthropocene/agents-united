@@ -3,8 +3,16 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "can you audit the SEO for example.com? the pages that matter are /docs/webhooks, /pricing, /blog/webhook-retries and /blog/retry-strategies. organic traffic is down about 30% since the redesign last month. i can send Search Console exports.",
-      "expected_output": "Checks technical blockers first (noindex, canonical, robots, status, a staging copy) before judging content, writes one primary intent per key URL, and flags the two blog posts targeting the same query as cannibalisation to be resolved with Yavuz. Grades each finding critical, major or minor with a URL, the exact observation, the tool or command and the date as evidence, computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope, and orders actions by impact against effort with the estimates labelled. Hands code fixes to Deniz, copy to Kaan, and says what could not be checked without the exports."
+      "prompt": "can you audit the SEO for hookrelay.example? a static copy of the site is in the site folder (/pricing is site/pricing.html and so on). the pages that matter are /docs/webhooks, /pricing, /blog/webhook-retries and /blog/retry-strategies. organic traffic is down about 30% since the redesign last month. i can send Search Console exports.",
+      "expected_output": "Checks technical blockers first (noindex, canonical, robots, the sitemap, a staging host) before judging content, and says that a static copy cannot show status codes, writes one primary intent per key URL, and flags the two blog posts targeting the same query as cannibalisation to be resolved with Yavuz. Grades each finding critical, major or minor with a URL, the exact observation, the tool or command and the date as evidence, computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope, and orders actions by impact against effort with the estimates labelled. Hands code fixes to Deniz, copy to Kaan, and says what could not be checked without the exports. Planted in the copy: noindex on /pricing and a canonical to the staging host on /docs/webhooks (critical); robots.txt and the sitemap naming the staging host and the two blog posts on one query (major); one post with no meta description and an image with no alt text (minor); the rule gives 52.",
+      "files": [
+        "files/site/robots.txt",
+        "files/site/sitemap.xml",
+        "files/site/docs/webhooks.html",
+        "files/site/pricing.html",
+        "files/site/blog/webhook-retries.html",
+        "files/site/blog/retry-strategies.html"
+      ]
     },
     {
       "id": 2,
