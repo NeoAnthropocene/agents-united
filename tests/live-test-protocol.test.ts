@@ -189,7 +189,10 @@ describe('the live-test protocol: H9, the lead provisions a missing MCP server',
   it('installs in project scope only, with `--` before the command, checks the install and names the ways to pick it up', () => {
     expect(h9()).toContain('claude mcp add --scope project <name> -- <command>');
     expect(h9()).toMatch(/never `~\/\.claude\.json`/);
-    expect(h9()).toMatch(/SHA-256 of `~\/\.claude\.json` \(the hash only/);
+    expect(h9()).toMatch(/hash of the MCP server blocks of `~\/\.claude\.json`/);
+    expect(h9()).toMatch(/rewrites that file at every session start/);
+    expect(h9()).not.toMatch(/SHA-256 of `~\/\.claude\.json`/);
+    expect(h9()).not.toMatch(/`~\/\.claude\.json` is unchanged/);
     for (const needle of ['claude mcp get', 'claude mcp list', 'ToolSearch', '/mcp reconnect', 'claude --continue', '--resume <session-id>']) expect(h9(), needle).toContain(needle);
   });
 
