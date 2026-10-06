@@ -243,6 +243,6 @@ describe('the lead: the preflight of the integrations the plan needs', () => {
   });
 
   it('checks again after the restart, before it spawns anyone', () => {
-    expect(preflight()).toMatch(/When you are back after the restart, check again with `ToolSearch` before you spawn anyone/);
+    expect(preflight()).toMatch(/When you are back after the restart,\*{0,2} check again with `ToolSearch` before you spawn anyone/);
   });
 });
