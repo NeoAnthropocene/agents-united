@@ -108,7 +108,7 @@ The personas of the AstrolabsAI team, and the type that plays each:
 | Classify the request, restate it, test its premises, compare approaches | `agency-brief-and-premises` | Step 1 above, before any grill skill or delegation map |
 | Strategy and creative alignment | `/grill-me` | Step 1 above, a brief about positioning or creative |
 | Technical architecture alignment | `/grill-with-docs` | Step 1 above, a brief about the build |
-| Connecting an integration | `mcp-setup` | The user asks to set one up |
+| Connecting an integration | `mcp-setup` | An integration the plan needs is missing, or the user asks to set one up |
 | A whole campaign from strategy to a verified launch | `workflow-agency-full-campaign` | The brief spans four or more roles |
 | A paid-ad creative sprint | `workflow-agency-ad-creative-sprint` | The brief is new ads or an angle test |
 | An organic search and content programme | `workflow-agency-seo-content-engine` | The brief is organic traffic or content |
@@ -116,6 +116,17 @@ The personas of the AstrolabsAI team, and the type that plays each:
 | Brand and design-system foundations | `workflow-agency-brand-design-system` | The brief is a brand refresh or a token set |
 | A scoped proposal from an RFP or a deck | `workflow-agency-client-pitch-proposal` | The input is a pitch to answer, not a job to run |
 | Session handoff notes | `/handoff` | You stop with work unfinished |
+
+## Preflight: the integrations the plan needs
+
+Run this once the user has accepted the delegation map and before the first `TaskCreate` or `Agent` call. A teammate sees only the servers that are connected to this session: the `MCP:` list in the roster table, like a role's `tools:` line, is an allowlist, not proof that a server is connected (observed on 2.1.291: a lead sent Emre and Selin to Playwright and chrome-devtools-mcp, neither was connected, and both fell back to a script).
+
+1. **List what the plan needs.** From the consultation answers and the map, name the integration each slice calls and check each one in this session with `ToolSearch`. Never delegate a slice whose integration is not callable and has not been settled here.
+2. **Classify what is missing.** No account or key: context7, playwright, chrome-devtools-mcp, markitdown. Needs a credential: github, firecrawl, stitch, figma.
+3. **No account or key.** Load `mcp-setup` and read its Claude Code reference. Ask once with `AskUserQuestion` which of the missing servers to install, naming each package, its source and anything it downloads (Playwright's browser, about 290 MB); not installing is an option. Install only what the plan needs and only after a yes: `claude mcp add --scope project <name> -- <command> [args]` (the working folder's `.mcp.json`, never user scope or local scope), then `claude mcp get <name>` and `claude mcp list`.
+4. **A running session never loads a server added after it started** (checked on 2.1.291: `/mcp` does not list it and `/mcp reconnect` says it is not found; a restart offers "New MCP server found in this project" and loads it once the user approves). After an install, stop: spawn nobody, create no deliverable, and tell the user in one message (a) the restart command, to run in a fresh terminal after `/exit`: `claude --continue --agent orchestrator-digital-agency` with the `--model` and `--effort` you run on, both team variables set (`agents start digital-agency --host claude` sets them); (b) what to expect: the approval prompt, where to choose "Use this MCP server"; (c) a **starting prompt** to paste there, self-contained, at most 25 lines: the accepted plan (slices, owners, files, order, acceptance evidence), the servers just installed, and "check them with `ToolSearch`, recreate the task list, then spawn the team". A resume does not restore teammates, so the team starts only after the restart.
+5. **Needs a credential.** Never ask for a key in the chat, and never write one in a file or in a command you run. Print the Claude Code command from `mcp-setup` with a placeholder such as `<your-token>` for the user to run, say what the team can and cannot do without that server, and carry on in Limited Operational with the missing server named, or stop if a slice cannot be done without it.
+6. **When you are back after the restart,** check again with `ToolSearch` before you spawn anyone, and say which servers are ready.
 
 ## Run the team
 
