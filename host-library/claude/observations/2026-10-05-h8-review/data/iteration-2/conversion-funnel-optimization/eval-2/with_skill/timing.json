@@ -1,0 +1,11 @@
+{
+ "total_tokens": 89165,
+ "output_tokens": 1789,
+ "duration_ms": 19590,
+ "cost_usd": 0.118881,
+ "skill_calls_loaded": [
+  "conversion-funnel-optimization"
+ ],
+ "skill_calls_refused": [],
+ "mode": "headless claude -p, sonnet, effort medium"
+}

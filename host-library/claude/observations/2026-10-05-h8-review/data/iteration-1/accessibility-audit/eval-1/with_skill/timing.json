@@ -1,0 +1,11 @@
+{
+ "total_tokens": 103927,
+ "output_tokens": 1463,
+ "cache_read_tokens": 66723,
+ "duration_ms": 15240,
+ "cost_usd": 0.1839,
+ "skill_calls_loaded": [
+  "accessibility-audit"
+ ],
+ "skill_calls_refused": []
+}

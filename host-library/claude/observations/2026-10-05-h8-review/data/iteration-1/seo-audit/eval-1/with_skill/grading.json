@@ -1,0 +1,49 @@
+{
+ "eval_id": 1,
+ "skill": "seo-audit",
+ "configuration": "with_skill",
+ "session": "e4ef38ba-09e8-46d8-86da-a5a63743f450",
+ "assertion_results": [
+  {
+   "text": "Checks technical blockers first (noindex, canonical, robots, status, staging)",
+   "passed": true,
+   "evidence": "curl -sIL on /, /robots.txt, /sitemap.xml and the four URLs; will check robots, noindex, canonicals, status first"
+  },
+  {
+   "text": "One primary intent per key URL",
+   "passed": false,
+   "evidence": "no per-URL intent (pages 404 on example.com)"
+  },
+  {
+   "text": "Flags the two blog posts as cannibalisation, to be resolved with Yavuz",
+   "passed": true,
+   "evidence": "They look like possible cannibalisation ... with Yavuz"
+  },
+  {
+   "text": "Findings graded critical/major/minor with URL, observation, tool, date",
+   "passed": false,
+   "evidence": "table of observations with tool and date, but no critical/major/minor grading"
+  },
+  {
+   "text": "Health score by the stated rule with its scope",
+   "passed": false,
+   "evidence": "no score; example.com is a placeholder"
+  },
+  {
+   "text": "Hands code fixes to Deniz, copy to Kaan",
+   "passed": false,
+   "evidence": "Deniz and Kaan not named"
+  },
+  {
+   "text": "Says what could not be checked without the exports",
+   "passed": true,
+   "evidence": "Search Console exports needed ... list"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "failed": 4,
+  "total": 7,
+  "pass_rate": 0.429
+ }
+}

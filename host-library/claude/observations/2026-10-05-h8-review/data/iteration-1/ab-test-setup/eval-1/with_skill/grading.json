@@ -1,0 +1,49 @@
+{
+ "eval_id": 1,
+ "skill": "ab-test-setup",
+ "configuration": "with_skill",
+ "session": "39126809-0e0e-488d-a2ab-4ad507b37749",
+ "assertion_results": [
+  {
+   "text": "MDE stated in absolute and relative terms (0.8 points, 20 percent)",
+   "passed": true,
+   "evidence": "0.8 pt absolute (20% relative)"
+  },
+  {
+   "text": "About 9,600 visitors per arm",
+   "passed": true,
+   "evidence": "N per arm 9,600"
+  },
+  {
+   "text": "A run of 14 days (two whole weeks)",
+   "passed": true,
+   "evidence": "RUN 14 days"
+  },
+  {
+   "text": "A guardrail metric is named",
+   "passed": true,
+   "evidence": "GUARDRAIL (a) completed signups per visitor must not fall more than 5% relative"
+  },
+  {
+   "text": "A stopping rule and a decision rule written before launch",
+   "passed": true,
+   "evidence": "STOP 14 days or 19,200 visitors, whichever is later; no peeking / DECIDE ship if the 95% interval..."
+  },
+  {
+   "text": "Verification handed to Emre, tracking/consent questions to Defne",
+   "passed": true,
+   "evidence": "OWNERS build Deniz verify Emre copy Kaan consent Defne"
+  },
+  {
+   "text": "Figures labelled as estimates",
+   "passed": true,
+   "evidence": "every figure is an estimate"
+  }
+ ],
+ "summary": {
+  "passed": 7,
+  "failed": 0,
+  "total": 7,
+  "pass_rate": 1
+ }
+}

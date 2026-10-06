@@ -1,0 +1,39 @@
+{
+ "eval_id": 2,
+ "skill": "conversion-funnel-optimization",
+ "configuration": "with_skill",
+ "session": "41466120-c05e-4eff-a274-0d70f2374bc0",
+ "assertion_results": [
+  {
+   "text": "Identifies the ad/page mismatch as a relevance finding specific to paid social",
+   "passed": true,
+   "evidence": "the ad makes a promise the page doesn't keep ... Relevance: the ad says 'free first lesson'"
+  },
+  {
+   "text": "Grades it S2 and labels it a fix to ship, not an experiment",
+   "passed": true,
+   "evidence": "Fix, not a test (S2: a segment loses out)"
+  },
+  {
+   "text": "Names the element and location, the change (free-lesson link above the plan) and the metric",
+   "passed": true,
+   "evidence": "show the free first lesson on the pricing page, above the plan cards ... Start free lesson; track free-lesson start"
+  },
+  {
+   "text": "Cites the ad text against the page copy",
+   "passed": true,
+   "evidence": "the ad says 'free first lesson', and the visitor lands on a page showing only a price"
+  },
+  {
+   "text": "Does not average the segments or recommend a redesign",
+   "passed": true,
+   "evidence": "treats paid social separately; no redesign"
+  }
+ ],
+ "summary": {
+  "passed": 5,
+  "failed": 0,
+  "total": 5,
+  "pass_rate": 1
+ }
+}

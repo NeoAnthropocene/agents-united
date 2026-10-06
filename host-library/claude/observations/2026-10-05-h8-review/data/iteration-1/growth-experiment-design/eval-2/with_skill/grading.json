@@ -1,0 +1,39 @@
+{
+ "eval_id": 2,
+ "skill": "growth-experiment-design",
+ "configuration": "with_skill",
+ "session": "1a980139-f20e-4f03-93e0-9d1fe8e74f63",
+ "assertion_results": [
+  {
+   "text": "First line says stage counts for the last 28 days are missing, and asks for them",
+   "passed": true,
+   "evidence": "I have no funnel data, so this is a draft ... What I need from you: funnel counts for the last 28 days"
+  },
+  {
+   "text": "Does not invent a funnel or quote averages as this product's numbers",
+   "passed": true,
+   "evidence": "I haven't quoted benchmarks as your numbers"
+  },
+  {
+   "text": "Instrumentation is experiment zero with Deniz and Emre as owners",
+   "passed": true,
+   "evidence": "0 | Instrument the funnel ... Prerequisite; Deniz: build and event names; Emre: confirm events fire"
+  },
+  {
+   "text": "Every idea scored Confidence 1 to 3",
+   "passed": true,
+   "evidence": "Confidence column holds only 2 and 3"
+  },
+  {
+   "text": "Does not hand over ten experiments to run in parallel on one page",
+   "passed": false,
+   "evidence": "ten experiments handed over with no sequencing; only 'All ten experiments fit in 14 days'"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 1,
+  "total": 5,
+  "pass_rate": 0.8
+ }
+}

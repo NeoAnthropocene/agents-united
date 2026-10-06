@@ -1,0 +1,255 @@
+{
+ "iteration": 2,
+ "date": "2026-10-05",
+ "mode": "headless claude -p on the subscription, sonnet, effort medium, built from the combined local branch of the three pull requests",
+ "total_cost_usd": 1.512,
+ "runs": {
+  "seo1-with": {
+   "skill": "seo-audit",
+   "eval": 1,
+   "cfg": "with_skill",
+   "asserts": [
+    "Checks technical blockers first (noindex, canonical, robots, sitemap, staging host) before judging content",
+    "Finds the noindex on /pricing and grades it critical",
+    "Finds the canonical to the staging host on /docs/webhooks and grades it critical",
+    "Finds that robots.txt and the sitemap name the staging host",
+    "Flags the two blog posts as targeting one query (cannibalisation), to be resolved with Yavuz",
+    "Writes one primary intent per key URL (a per-URL intent table)",
+    "Grades each finding critical, major or minor with URL, exact observation, tool or command and date",
+    "Computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope",
+    "Says status codes could not be checked on a static copy",
+    "Hands code fixes to Deniz and copy to Kaan",
+    "Says what could not be checked without the Search Console exports"
+   ],
+   "note": "eval 1 now audits the fixture site (new prompt)",
+   "passed": 11,
+   "total": 11,
+   "cost": 0.2251474,
+   "out": 5442,
+   "wall": 43.319,
+   "loaded": [
+    "seo-audit",
+    "technical-seo-audit"
+   ]
+  },
+  "seo1-without": {
+   "skill": "seo-audit",
+   "eval": 1,
+   "cfg": "without_skill",
+   "asserts": [
+    "Checks technical blockers first (noindex, canonical, robots, sitemap, staging host) before judging content",
+    "Finds the noindex on /pricing and grades it critical",
+    "Finds the canonical to the staging host on /docs/webhooks and grades it critical",
+    "Finds that robots.txt and the sitemap name the staging host",
+    "Flags the two blog posts as targeting one query (cannibalisation), to be resolved with Yavuz",
+    "Writes one primary intent per key URL (a per-URL intent table)",
+    "Grades each finding critical, major or minor with URL, exact observation, tool or command and date",
+    "Computes the health score by the stated rule (100 minus 15 per critical, 7 per major, 2 per minor, floor 0) with its scope",
+    "Says status codes could not be checked on a static copy",
+    "Hands code fixes to Deniz and copy to Kaan",
+    "Says what could not be checked without the Search Console exports"
+   ],
+   "note": "skill folder removed from the scratch project; technical-seo-audit still installed",
+   "passed": 9,
+   "total": 11,
+   "cost": 0.18445720000000002,
+   "out": 5657,
+   "wall": 47.203,
+   "loaded": [
+    "technical-seo-audit"
+   ]
+  },
+  "seo2-with": {
+   "skill": "seo-audit",
+   "eval": 2,
+   "cfg": "with_skill",
+   "asserts": [
+    "Declines to promise a ranking or traffic number",
+    "Says what the audit can establish",
+    "Offers to measure the result against the baseline"
+   ],
+   "note": "tuned description; the skill was not loaded",
+   "passed": 3,
+   "total": 3,
+   "cost": 0.083028,
+   "out": 603,
+   "wall": 8.661,
+   "loaded": []
+  },
+  "a11y2-with": {
+   "skill": "accessibility-audit",
+   "eval": 2,
+   "cfg": "with_skill",
+   "asserts": [
+    "Declines to write a compliance statement",
+    "Says an audit finds problems and never proves absence; axe sees only a share",
+    "Gives the audit with its limits and what was not checked",
+    "Hands the legal question to Defne"
+   ],
+   "note": "tuned description; the skill was not loaded",
+   "passed": 4,
+   "total": 4,
+   "cost": 0.1009626,
+   "out": 864,
+   "wall": 10.956,
+   "loaded": []
+  },
+  "funnel1-with": {
+   "skill": "conversion-funnel-optimization",
+   "eval": 1,
+   "cfg": "with_skill",
+   "asserts": [
+    "Step and cumulative conversion computed (40.0, 20.0, 40.1, 3.2 percent)",
+    "Checkout start named as the leak with benchmark source/date given or flagged missing",
+    "Segments by device and source before recommending (or asks for them first)",
+    "Findings graded S1 to S4 with location, evidence, principle, buildable fix",
+    "States which flows were walked at which widths, or that none were",
+    "Hand-offs: Jamileh layout, Deniz build/events, Selin speed, tests to ab-test-setup"
+   ],
+   "note": "report shape inline; a site/ folder of another product was in the project",
+   "passed": 4,
+   "total": 6,
+   "cost": 0.23176999999999998,
+   "out": 6318,
+   "wall": 53.411,
+   "loaded": [
+    "conversion-funnel-optimization"
+   ]
+  },
+  "funnel2-with": {
+   "skill": "conversion-funnel-optimization",
+   "eval": 2,
+   "cfg": "with_skill",
+   "asserts": [
+    "Identifies the ad/page mismatch as a relevance finding specific to paid social",
+    "Grades it S2 and labels it a fix to ship, not an experiment",
+    "Names the element and location, the change (free-lesson link above the plan) and the metric",
+    "Cites the ad text against the page copy",
+    "Does not average the segments or recommend a redesign"
+   ],
+   "note": "report shape inline; a site/ folder of another product was in the project",
+   "passed": 5,
+   "total": 5,
+   "cost": 0.118881,
+   "out": 1789,
+   "wall": 19.59,
+   "loaded": [
+    "conversion-funnel-optimization"
+   ]
+  },
+  "funnel4-with": {
+   "skill": "conversion-funnel-optimization",
+   "eval": 4,
+   "cfg": "with_skill",
+   "asserts": [
+    "Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent overall)",
+    "Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing",
+    "Says the pages were read from source, not walked, at no width",
+    "Finds the card field whose pattern rejects the format its placeholder shows, and grades it S1",
+    "Finds the pricing page mobile defect (no viewport meta, fixed 960 px table, small far-end button) and grades it S2",
+    "Finds the landing page promising a free first lesson that the pricing page does not offer, and grades it S2",
+    "Finds an S3: phone, company or address line 2 required with no reason, or no price or money-back line near the pay button",
+    "Finds an S4: the Submit label or the lower-case page title",
+    "Each finding has a location, a quoted line as evidence, a principle and a buildable fix",
+    "S1 and S2 findings are labelled fixes, not experiments",
+    "Hand-offs: Jamileh for layout, Deniz for build and events, ab-test-setup for tests",
+    "Does not recommend a redesign"
+   ],
+   "note": "new eval 4 on the fixture course site",
+   "passed": 8,
+   "total": 12,
+   "cost": 0.23767320000000003,
+   "out": 6483,
+   "wall": 55.939,
+   "loaded": [
+    "conversion-funnel-optimization"
+   ]
+  },
+  "funnel4-without": {
+   "skill": "conversion-funnel-optimization",
+   "eval": 4,
+   "cfg": "without_skill",
+   "asserts": [
+    "Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent overall)",
+    "Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing",
+    "Says the pages were read from source, not walked, at no width",
+    "Finds the card field whose pattern rejects the format its placeholder shows, and grades it S1",
+    "Finds the pricing page mobile defect (no viewport meta, fixed 960 px table, small far-end button) and grades it S2",
+    "Finds the landing page promising a free first lesson that the pricing page does not offer, and grades it S2",
+    "Finds an S3: phone, company or address line 2 required with no reason, or no price or money-back line near the pay button",
+    "Finds an S4: the Submit label or the lower-case page title",
+    "Each finding has a location, a quoted line as evidence, a principle and a buildable fix",
+    "S1 and S2 findings are labelled fixes, not experiments",
+    "Hand-offs: Jamileh for layout, Deniz for build and events, ab-test-setup for tests",
+    "Does not recommend a redesign"
+   ],
+   "note": "skill folder removed; ab-test-setup and responsive-design-audit loaded instead",
+   "passed": 6,
+   "total": 12,
+   "cost": 0.2209564,
+   "out": 6602,
+   "wall": 62.092,
+   "loaded": [
+    "ab-test-setup",
+    "responsive-design-audit"
+   ]
+  },
+  "funnel2-without": {
+   "skill": "conversion-funnel-optimization",
+   "eval": 2,
+   "cfg": "without_skill",
+   "asserts": [
+    "Identifies the ad/page mismatch as a relevance finding specific to paid social",
+    "Grades it S2 and labels it a fix to ship, not an experiment",
+    "Names the element and location, the change (free-lesson link above the plan) and the metric",
+    "Cites the ad text against the page copy",
+    "Does not average the segments or recommend a redesign"
+   ],
+   "note": "clean baseline: skill folder removed, no read of its files",
+   "passed": 4,
+   "total": 5,
+   "cost": 0.1091738,
+   "out": 2376,
+   "wall": 22.536,
+   "loaded": []
+  }
+ },
+ "latest_per_skill": [
+  {
+   "skill": "ab-test-setup",
+   "with": "11/11",
+   "without": "7/11",
+   "delta_pts": 36
+  },
+  {
+   "skill": "growth-experiment-design",
+   "with": "9/11",
+   "without": "5/11",
+   "delta_pts": 36
+  },
+  {
+   "skill": "conversion-funnel-optimization",
+   "with": "17/23",
+   "without": "14/23",
+   "delta_pts": 13
+  },
+  {
+   "skill": "copywriting-frameworks",
+   "with": "9/12",
+   "without": "5/12",
+   "delta_pts": 33
+  },
+  {
+   "skill": "accessibility-audit",
+   "with": "10/10",
+   "without": "6/10",
+   "delta_pts": 40
+  },
+  {
+   "skill": "seo-audit",
+   "with": "14/14",
+   "without": "11/14",
+   "delta_pts": 21
+  }
+ ]
+}

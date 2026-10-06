@@ -1,0 +1,75 @@
+{
+ "eval_id": 4,
+ "skill": "conversion-funnel-optimization",
+ "configuration": "with_skill",
+ "session": "dd8a900b-e8fc-4e03-9abb-03b6bd47f857",
+ "note": "new eval 4 on the fixture course site",
+ "assertion_results": [
+  {
+   "text": "Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent overall)",
+   "passed": true,
+   "evidence": "Funnel table: Pricing 40.0%, Checkout started 20.0% (cumulative 8.0%), Paid 40.1% (cumulative 3.2%)"
+  },
+  {
+   "text": "Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing",
+   "passed": true,
+   "evidence": "The biggest leak is pricing to checkout, where 80% leave ... I have no sourced benchmark, so I am not quoting one"
+  },
+  {
+   "text": "Says the pages were read from source, not walked, at no width",
+   "passed": true,
+   "evidence": "I only read the source. I did not render any page or walk it at 375 or 1280px"
+  },
+  {
+   "text": "Finds the card field whose pattern rejects the format its placeholder shows, and grades it S1",
+   "passed": true,
+   "evidence": "file F4 | S1 for some | checkout.html, card field | pattern=\"[0-9]{16}\" while the placeholder shows spaces; chat: Anyone who types the spaces is blocked"
+  },
+  {
+   "text": "Finds the pricing page mobile defect (no viewport meta, fixed 960 px table, small far-end button) and grades it S2",
+   "passed": false,
+   "evidence": "file F1 | S1 (phones) | pricing.html <head> | No <meta name=\"viewport\">, fixed 960px: graded S1, not S2"
+  },
+  {
+   "text": "Finds the landing page promising a free first lesson that the pricing page does not offer, and grades it S2",
+   "passed": false,
+   "evidence": "file F7 | S3 | index.html | Promises \"Your first lesson is free\" but the only link is \"See pricing\": found, graded S3, not S2"
+  },
+  {
+   "text": "Finds an S3: phone, company or address line 2 required with no reason, or no price or money-back line near the pay button",
+   "passed": true,
+   "evidence": "F3 | S2 | checkout.html: Phone, Company, Address line 2 are required for a download course; F5: no price, no order summary, no refund line"
+  },
+  {
+   "text": "Finds an S4: the Submit label or the lower-case page title",
+   "passed": true,
+   "evidence": "F5: button says \"Submit\" -> change to \"Pay 149 USD\""
+  },
+  {
+   "text": "Each finding has a location, a quoted line as evidence, a principle and a buildable fix",
+   "passed": false,
+   "evidence": "file table columns are # | Sev | Location | Evidence | Fix | Metric: no principle except in F6 (anxiety)"
+  },
+  {
+   "text": "S1 and S2 findings are labelled fixes, not experiments",
+   "passed": true,
+   "evidence": "Fixes 1 to 4 are defects, not test candidates, so ship them directly. Testing a broken step only measures the bug."
+  },
+  {
+   "text": "Hand-offs: Jamileh for layout, Deniz for build and events, ab-test-setup for tests",
+   "passed": false,
+   "evidence": "file: layout of the stacked plan card to Jamileh; builds to Deniz. ab-test-setup is not named"
+  },
+  {
+   "text": "Does not recommend a redesign",
+   "passed": true,
+   "evidence": "None of these need a redesign."
+  }
+ ],
+ "summary": {
+  "passed": 8,
+  "failed": 4,
+  "total": 12,
+  "pass_rate": 0.667
+ }
+}

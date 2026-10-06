@@ -1,0 +1,14 @@
+{
+ "total_tokens": 61775,
+ "output_tokens": 4181,
+ "cache_read_tokens": 35792,
+ "duration_ms": 36652,
+ "cost_usd": 0.1578,
+ "skill_calls_loaded": [
+  "onboarding-cro"
+ ],
+ "skill_calls_refused": [
+  "growth-experiment-design",
+  "ab-test-setup"
+ ]
+}

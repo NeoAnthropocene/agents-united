@@ -1,0 +1,44 @@
+{
+ "eval_id": 1,
+ "skill": "conversion-funnel-optimization",
+ "configuration": "without_skill",
+ "session": "383c638e-6b9a-4bd5-ab86-5d853a0b4bf9",
+ "assertion_results": [
+  {
+   "text": "Step and cumulative conversion computed (40.0, 20.0, 40.1, 3.2 percent)",
+   "passed": true,
+   "evidence": "40.0% / 20.0% / 40.1%; Overall, 3.2% of visitors pay"
+  },
+  {
+   "text": "Checkout start named as the leak with benchmark source/date given or flagged missing",
+   "passed": true,
+   "evidence": "Pricing page to checkout started ... 'I have no verified benchmarks for course funnels'"
+  },
+  {
+   "text": "Segments by device and source before recommending (or asks for them first)",
+   "passed": true,
+   "evidence": "I couldn't split the numbers by device ... Do first: pull the funnel by device"
+  },
+  {
+   "text": "Findings graded S1 to S4 with location, evidence, principle, buildable fix",
+   "passed": false,
+   "evidence": "no graded S1-S4 findings; friction hypotheses and an ICE backlog instead"
+  },
+  {
+   "text": "States which flows were walked at which widths, or that none were",
+   "passed": true,
+   "evidence": "I haven't seen your pages ... hypotheses to verify on mobile"
+  },
+  {
+   "text": "Hand-offs: Jamileh layout, Deniz build/events, Selin speed, tests to ab-test-setup",
+   "passed": false,
+   "evidence": "no Jamileh, Deniz or Selin; ab-test-setup named only as not installed"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 2,
+  "total": 6,
+  "pass_rate": 0.667
+ }
+}

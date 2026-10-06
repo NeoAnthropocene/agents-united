@@ -1,0 +1,9 @@
+{
+ "total_tokens": 29793,
+ "output_tokens": 2406,
+ "cache_read_tokens": 8406,
+ "duration_ms": 20277,
+ "cost_usd": 0.1027,
+ "skill_calls_loaded": [],
+ "skill_calls_refused": []
+}

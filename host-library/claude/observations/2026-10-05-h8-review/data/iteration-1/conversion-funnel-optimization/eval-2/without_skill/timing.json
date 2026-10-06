@@ -1,0 +1,11 @@
+{
+ "total_tokens": 87613,
+ "output_tokens": 2858,
+ "cache_read_tokens": 64087,
+ "duration_ms": 24585,
+ "cost_usd": 0.1251,
+ "skill_calls_loaded": [],
+ "skill_calls_refused": [
+  "conversion-funnel-optimization"
+ ]
+}

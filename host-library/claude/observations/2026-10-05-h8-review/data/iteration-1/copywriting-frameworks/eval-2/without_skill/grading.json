@@ -1,0 +1,34 @@
+{
+ "eval_id": 2,
+ "skill": "copywriting-frameworks",
+ "configuration": "without_skill",
+ "session": "90b21529-73e2-4097-8f6c-30aad90e7a2b",
+ "assertion_results": [
+  {
+   "text": "Does not write persuasive copy from adjectives; says it has no facts",
+   "passed": false,
+   "evidence": "writes three options of copy with invented hooks ('Your team's work lives in 12 tabs. Now it lives in one.')"
+  },
+  {
+   "text": "Returns the five facts it needs",
+   "passed": false,
+   "evidence": "asks for four inputs, not the five (no numbers/constraints/customer language)"
+  },
+  {
+   "text": "Names the banned phrases it will not use",
+   "passed": true,
+   "evidence": "I'd also drop 'revolutionary,' 'seamless,' and 'game-changer'"
+  },
+  {
+   "text": "Asks for the audience's state and the one action",
+   "passed": false,
+   "evidence": "asks who it's for and the offer; not the audience's state or the one action"
+  }
+ ],
+ "summary": {
+  "passed": 1,
+  "failed": 3,
+  "total": 4,
+  "pass_rate": 0.25
+ }
+}

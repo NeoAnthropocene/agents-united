@@ -1,0 +1,54 @@
+{
+ "eval_id": 1,
+ "skill": "copywriting-frameworks",
+ "configuration": "without_skill",
+ "session": "57ecddec-b6b5-4efb-9e5f-ec3e40eb2c0b",
+ "assertion_results": [
+  {
+   "text": "Copy built on one checkable claim, in PAS or another named problem-aware framework",
+   "passed": false,
+   "evidence": "file: 'problem-aware, so we skip problem education'; no framework named"
+  },
+  {
+   "text": "Proof line names the 2,300-invoice sample",
+   "passed": true,
+   "evidence": "Footnote: Based on our analysis of 2,300 invoices"
+  },
+  {
+   "text": "Numbers rewritten in plain words",
+   "passed": false,
+   "evidence": "'With reminders, 3.1% of invoices were paid late. Without them, 11%.'"
+  },
+  {
+   "text": "One specific CTA (verb plus outcome)",
+   "passed": true,
+   "evidence": "Start free, no card needed"
+  },
+  {
+   "text": "Claim audit ties each figure to its source",
+   "passed": true,
+   "evidence": "file Notes: 'Every claim traces to a source supplied by the client: 45 seconds (telemetry) ... 3.1% vs 11% (2,300-invoice analysis)'"
+  },
+  {
+   "text": "Notes the voice is unconfirmed",
+   "passed": false,
+   "evidence": "voice not mentioned"
+  },
+  {
+   "text": "Hand-offs: Jamileh layout, Defne substantiation, Jale if email",
+   "passed": false,
+   "evidence": "'frontend architect' only; no Jamileh, Defne or Jale"
+  },
+  {
+   "text": "No banned phrase appears",
+   "passed": true,
+   "evidence": "no banned phrase in the copy"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 4,
+  "total": 8,
+  "pass_rate": 0.5
+ }
+}

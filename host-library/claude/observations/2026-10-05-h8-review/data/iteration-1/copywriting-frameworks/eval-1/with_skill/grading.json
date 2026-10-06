@@ -1,0 +1,54 @@
+{
+ "eval_id": 1,
+ "skill": "copywriting-frameworks",
+ "configuration": "with_skill",
+ "session": "7a66a8a3-3f66-44ba-83ca-8a89a500ab45",
+ "assertion_results": [
+  {
+   "text": "Copy built on one checkable claim, in PAS or another named problem-aware framework",
+   "passed": false,
+   "evidence": "'there's no pain-point opener. The headline goes straight to what the tool does'; file: Framework: contrast and proof (solution-aware)"
+  },
+  {
+   "text": "Proof line names the 2,300-invoice sample",
+   "passed": true,
+   "evidence": "Proof line: In our analysis of 2,300 invoices, 3.1% ... vs 11%"
+  },
+  {
+   "text": "Numbers rewritten in plain words",
+   "passed": false,
+   "evidence": "3.1% and 11% kept as figures"
+  },
+  {
+   "text": "One specific CTA (verb plus outcome)",
+   "passed": true,
+   "evidence": "Send your first invoice free"
+  },
+  {
+   "text": "Claim audit ties each figure to its source",
+   "passed": true,
+   "evidence": "file: Claim audit table: 3.1% vs 11% paid late, n = 2,300 | Internal analysis | Needs Defne's review"
+  },
+  {
+   "text": "Notes the voice is unconfirmed",
+   "passed": true,
+   "evidence": "Voice: I had no brand copy to match"
+  },
+  {
+   "text": "Hand-offs: Jamileh layout, Defne substantiation, Jale if email",
+   "passed": false,
+   "evidence": "Defne named; no Jamileh, no Jale (Deniz for rendering)"
+  },
+  {
+   "text": "No banned phrase appears",
+   "passed": true,
+   "evidence": "no banned phrase in the copy"
+  }
+ ],
+ "summary": {
+  "passed": 5,
+  "failed": 3,
+  "total": 8,
+  "pass_rate": 0.625
+ }
+}

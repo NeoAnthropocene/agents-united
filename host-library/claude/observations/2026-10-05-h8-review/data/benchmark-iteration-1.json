@@ -1,0 +1,465 @@
+{
+ "iteration": 1,
+ "date": "2026-10-05",
+ "model": "sonnet (claude-sonnet-5-5), effort medium",
+ "per_skill": {
+  "ab-test-setup": {
+   "with_skill": {
+    "pass_rate": {
+     "mean": 1,
+     "stddev": 0,
+     "assertions": "11/11"
+    },
+    "time_seconds": {
+     "mean": 17.9,
+     "stddev": 4.8
+    },
+    "output_tokens": {
+     "mean": 2001,
+     "stddev": 569
+    },
+    "total_tokens": {
+     "mean": 73867,
+     "stddev": 22085
+    },
+    "cost_usd": {
+     "mean": 0.1471,
+     "total": 0.2942
+    }
+   },
+   "without_skill": {
+    "pass_rate": {
+     "mean": 0.714,
+     "stddev": 0.404,
+     "assertions": "7/11"
+    },
+    "time_seconds": {
+     "mean": 16.5,
+     "stddev": 5.4
+    },
+    "output_tokens": {
+     "mean": 1864,
+     "stddev": 767
+    },
+    "total_tokens": {
+     "mean": 29241,
+     "stddev": 781
+    },
+    "cost_usd": {
+     "mean": 0.0973,
+     "total": 0.1945
+    }
+   },
+   "delta": {
+    "pass_rate": 0.286,
+    "time_seconds": 1.4,
+    "output_tokens": 137,
+    "total_tokens": 44626,
+    "cost_usd": 0.0498
+   }
+  },
+  "growth-experiment-design": {
+   "with_skill": {
+    "pass_rate": {
+     "mean": 0.817,
+     "stddev": 0.024,
+     "assertions": "9/11"
+    },
+    "time_seconds": {
+     "mean": 73.1,
+     "stddev": 62.7
+    },
+    "output_tokens": {
+     "mean": 8607,
+     "stddev": 7205
+    },
+    "total_tokens": {
+     "mean": 130152,
+     "stddev": 98355
+    },
+    "cost_usd": {
+     "mean": 0.2349,
+     "total": 0.4698
+    }
+   },
+   "without_skill": {
+    "pass_rate": {
+     "mean": 0.467,
+     "stddev": 0.189,
+     "assertions": "5/11"
+    },
+    "time_seconds": {
+     "mean": 32.1,
+     "stddev": 6.4
+    },
+    "output_tokens": {
+     "mean": 3791,
+     "stddev": 552
+    },
+    "total_tokens": {
+     "mean": 46264,
+     "stddev": 21937
+    },
+    "cost_usd": {
+     "mean": 0.1351,
+     "total": 0.2703
+    }
+   },
+   "delta": {
+    "pass_rate": 0.35,
+    "time_seconds": 41,
+    "output_tokens": 4816,
+    "total_tokens": 83888,
+    "cost_usd": 0.0998
+   }
+  },
+  "conversion-funnel-optimization": {
+   "with_skill": {
+    "pass_rate": {
+     "mean": 0.833,
+     "stddev": 0.236,
+     "assertions": "9/11"
+    },
+    "time_seconds": {
+     "mean": 20.8,
+     "stddev": 1.9
+    },
+    "output_tokens": {
+     "mean": 2194,
+     "stddev": 321
+    },
+    "total_tokens": {
+     "mean": 74324,
+     "stddev": 20739
+    },
+    "cost_usd": {
+     "mean": 0.1328,
+     "total": 0.2655
+    }
+   },
+   "without_skill": {
+    "pass_rate": {
+     "mean": 0.733,
+     "stddev": 0.094,
+     "assertions": "8/11"
+    },
+    "time_seconds": {
+     "mean": 27.8,
+     "stddev": 4.5
+    },
+    "output_tokens": {
+     "mean": 3248,
+     "stddev": 552
+    },
+    "total_tokens": {
+     "mean": 59353,
+     "stddev": 39966
+    },
+    "cost_usd": {
+     "mean": 0.1201,
+     "total": 0.2402
+    }
+   },
+   "delta": {
+    "pass_rate": 0.1,
+    "time_seconds": -7,
+    "output_tokens": -1054,
+    "total_tokens": 14971,
+    "cost_usd": 0.0127
+   }
+  },
+  "copywriting-frameworks": {
+   "with_skill": {
+    "pass_rate": {
+     "mean": 0.813,
+     "stddev": 0.265,
+     "assertions": "9/12"
+    },
+    "time_seconds": {
+     "mean": 19.9,
+     "stddev": 11.7
+    },
+    "output_tokens": {
+     "mean": 2386,
+     "stddev": 1760
+    },
+    "total_tokens": {
+     "mean": 92603,
+     "stddev": 48981
+    },
+    "cost_usd": {
+     "mean": 0.142,
+     "total": 0.284
+    }
+   },
+   "without_skill": {
+    "pass_rate": {
+     "mean": 0.375,
+     "stddev": 0.177,
+     "assertions": "5/12"
+    },
+    "time_seconds": {
+     "mean": 19.5,
+     "stddev": 11
+    },
+    "output_tokens": {
+     "mean": 2279,
+     "stddev": 1556
+    },
+    "total_tokens": {
+     "mean": 73776,
+     "stddev": 64475
+    },
+    "cost_usd": {
+     "mean": 0.1163,
+     "total": 0.2326
+    }
+   },
+   "delta": {
+    "pass_rate": 0.438,
+    "time_seconds": 0.4,
+    "output_tokens": 107,
+    "total_tokens": 18827,
+    "cost_usd": 0.0257
+   }
+  },
+  "accessibility-audit": {
+   "with_skill": {
+    "pass_rate": {
+     "mean": 0.875,
+     "stddev": 0.177,
+     "assertions": "9/10"
+    },
+    "time_seconds": {
+     "mean": 11.4,
+     "stddev": 5.4
+    },
+    "output_tokens": {
+     "mean": 1123,
+     "stddev": 482
+    },
+    "total_tokens": {
+     "mean": 68462,
+     "stddev": 50155
+    },
+    "cost_usd": {
+     "mean": 0.1356,
+     "total": 0.2713
+    }
+   },
+   "without_skill": {
+    "pass_rate": {
+     "mean": 0.625,
+     "stddev": 0.177,
+     "assertions": "6/10"
+    },
+    "time_seconds": {
+     "mean": 12,
+     "stddev": 6.8
+    },
+    "output_tokens": {
+     "mean": 1211,
+     "stddev": 721
+    },
+    "total_tokens": {
+     "mean": 68533,
+     "stddev": 50342
+    },
+    "cost_usd": {
+     "mean": 0.1048,
+     "total": 0.2096
+    }
+   },
+   "delta": {
+    "pass_rate": 0.25,
+    "time_seconds": -0.6,
+    "output_tokens": -88,
+    "total_tokens": -71,
+    "cost_usd": 0.0308
+   }
+  },
+  "seo-audit": {
+   "with_skill": {
+    "pass_rate": {
+     "mean": 0.714,
+     "stddev": 0.404,
+     "assertions": "6/10"
+    },
+    "time_seconds": {
+     "mean": 21.7,
+     "stddev": 21.1
+    },
+    "output_tokens": {
+     "mean": 1263,
+     "stddev": 856
+    },
+    "total_tokens": {
+     "mean": 71000,
+     "stddev": 55535
+    },
+    "cost_usd": {
+     "mean": 0.1239,
+     "total": 0.2477
+    }
+   },
+   "without_skill": {
+    "pass_rate": {
+     "mean": 0.548,
+     "stddev": 0.168,
+     "assertions": "5/10"
+    },
+    "time_seconds": {
+     "mean": 13.9,
+     "stddev": 10.3
+    },
+    "output_tokens": {
+     "mean": 1370,
+     "stddev": 984
+    },
+    "total_tokens": {
+     "mean": 69546,
+     "stddev": 52515
+    },
+    "cost_usd": {
+     "mean": 0.1089,
+     "total": 0.2177
+    }
+   },
+   "delta": {
+    "pass_rate": 0.166,
+    "time_seconds": 7.8,
+    "output_tokens": -107,
+    "total_tokens": 1454,
+    "cost_usd": 0.015
+   }
+  }
+ },
+ "both_pass": {
+  "ab-test-setup": [
+   "eval 1: A run of 14 days (two whole weeks)",
+   "eval 1: A guardrail metric is named",
+   "eval 1: A stopping rule and a decision rule written before launch",
+   "eval 2: Flags a sample-ratio mismatch with chi-square about 18 against 10.83",
+   "eval 2: Says the result is void / assignment must be investigated first",
+   "eval 2: Says stopping at day 3 on a first significant reading is peeking",
+   "eval 2: Does not call the test"
+  ],
+  "growth-experiment-design": [
+   "eval 1: Names signup to first invoice (25.0 percent) as the leak",
+   "eval 1: Gives no paid-spend advice",
+   "eval 2: First line says stage counts for the last 28 days are missing, and asks for them",
+   "eval 2: Does not invent a funnel or quote averages as this product's numbers"
+  ],
+  "conversion-funnel-optimization": [
+   "eval 1: Step and cumulative conversion computed (40.0, 20.0, 40.1, 3.2 percent)",
+   "eval 1: Checkout start named as the leak with benchmark source/date given or flagged missing",
+   "eval 1: Segments by device and source before recommending (or asks for them first)",
+   "eval 1: States which flows were walked at which widths, or that none were",
+   "eval 2: Identifies the ad/page mismatch as a relevance finding specific to paid social",
+   "eval 2: Names the element and location, the change (free-lesson link above the plan) and the metric",
+   "eval 2: Cites the ad text against the page copy",
+   "eval 2: Does not average the segments or recommend a redesign"
+  ],
+  "copywriting-frameworks": [
+   "eval 1: Proof line names the 2,300-invoice sample",
+   "eval 1: One specific CTA (verb plus outcome)",
+   "eval 1: Claim audit ties each figure to its source",
+   "eval 1: No banned phrase appears",
+   "eval 2: Names the banned phrases it will not use"
+  ],
+  "accessibility-audit": [
+   "eval 1: Gate rule: critical or serious means red",
+   "eval 1: Adds manual keyboard pass, names/structure, colour and zoom checks",
+   "eval 1: Makes no claim of compliance",
+   "eval 2: Declines to write a compliance statement",
+   "eval 2: Says an audit finds problems and never proves absence; axe sees only a share",
+   "eval 2: Gives the audit with its limits and what was not checked"
+  ],
+  "seo-audit": [
+   "eval 1: Checks technical blockers first (noindex, canonical, robots, status, staging)",
+   "eval 1: Flags the two blog posts as cannibalisation, to be resolved with Yavuz",
+   "eval 1: Says what could not be checked without the exports",
+   "eval 2: Declines to promise a ranking or traffic number",
+   "eval 2: Says what the audit can establish"
+  ]
+ },
+ "both_fail": {
+  "ab-test-setup": [],
+  "growth-experiment-design": [
+   "eval 1: Any benchmark labelled as needing a source and a date"
+  ],
+  "conversion-funnel-optimization": [
+   "eval 1: Findings graded S1 to S4 with location, evidence, principle, buildable fix",
+   "eval 1: Hand-offs: Jamileh layout, Deniz build/events, Selin speed, tests to ab-test-setup"
+  ],
+  "copywriting-frameworks": [
+   "eval 1: Copy built on one checkable claim, in PAS or another named problem-aware framework",
+   "eval 1: Numbers rewritten in plain words",
+   "eval 1: Hand-offs: Jamileh layout, Defne substantiation, Jale if email"
+  ],
+  "accessibility-audit": [
+   "eval 2: Hands the legal question to Defne"
+  ],
+  "seo-audit": [
+   "eval 1: One primary intent per key URL",
+   "eval 1: Findings graded critical/major/minor with URL, observation, tool, date",
+   "eval 1: Health score by the stated rule with its scope",
+   "eval 1: Hands code fixes to Deniz, copy to Kaan"
+  ]
+ },
+ "run_summary": {
+  "with_skill": {
+   "pass_rate": {
+    "mean": 0.842,
+    "stddev": 0.193,
+    "assertions": "53/65"
+   },
+   "time_seconds": {
+    "mean": 27.5,
+    "stddev": 29.7
+   },
+   "output_tokens": {
+    "mean": 2929,
+    "stddev": 3521
+   },
+   "total_tokens": {
+    "mean": 85068,
+    "stddev": 46902
+   },
+   "cost_usd": {
+    "mean": 0.1527,
+    "total": 1.8325
+   }
+  },
+  "without_skill": {
+   "pass_rate": {
+    "mean": 0.577,
+    "stddev": 0.213,
+    "assertions": "36/65"
+   },
+   "time_seconds": {
+    "mean": 20.3,
+    "stddev": 9.6
+   },
+   "output_tokens": {
+    "mean": 2294,
+    "stddev": 1200
+   },
+   "total_tokens": {
+    "mean": 57785,
+    "stddev": 36241
+   },
+   "cost_usd": {
+    "mean": 0.1137,
+    "total": 1.3649
+   }
+  },
+  "delta": {
+   "pass_rate": 0.265,
+   "time_seconds": 7.2,
+   "output_tokens": 635,
+   "total_tokens": 27283,
+   "cost_usd": 0.039
+  }
+ }
+}

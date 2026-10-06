@@ -1,0 +1,34 @@
+{
+ "eval_id": 2,
+ "skill": "copywriting-frameworks",
+ "configuration": "with_skill",
+ "session": "d87a9692-be6c-474d-b744-7486f03c4d83",
+ "assertion_results": [
+  {
+   "text": "Does not write persuasive copy from adjectives; says it has no facts",
+   "passed": true,
+   "evidence": "I can't write a punchy launch post yet, because I don't have any facts"
+  },
+  {
+   "text": "Returns the five facts it needs",
+   "passed": true,
+   "evidence": "What I need from you (five facts...)"
+  },
+  {
+   "text": "Names the banned phrases it will not use",
+   "passed": true,
+   "evidence": "'Revolutionary, seamless, game-changer' are adjectives, not facts"
+  },
+  {
+   "text": "Asks for the audience's state and the one action",
+   "passed": true,
+   "evidence": "1. Audience ... 5. One action and offer"
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 0,
+  "total": 4,
+  "pass_rate": 1
+ }
+}

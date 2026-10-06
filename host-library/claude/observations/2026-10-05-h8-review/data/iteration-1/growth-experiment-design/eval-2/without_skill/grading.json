@@ -1,0 +1,39 @@
+{
+ "eval_id": 2,
+ "skill": "growth-experiment-design",
+ "configuration": "without_skill",
+ "session": "58c19439-4567-49cc-8d14-45486e6cf9eb",
+ "assertion_results": [
+  {
+   "text": "First line says stage counts for the last 28 days are missing, and asks for them",
+   "passed": true,
+   "evidence": "I haven't seen your funnel data ... Please share the funnel and retention numbers"
+  },
+  {
+   "text": "Does not invent a funnel or quote averages as this product's numbers",
+   "passed": true,
+   "evidence": "They are my priors for a typical flat B2B SaaS; no numbers presented as the product's"
+  },
+  {
+   "text": "Instrumentation is experiment zero with Deniz and Emre as owners",
+   "passed": false,
+   "evidence": "Week 0 is a baseline with no owners; Deniz and Emre absent"
+  },
+  {
+   "text": "Every idea scored Confidence 1 to 3",
+   "passed": false,
+   "evidence": "Conf column holds 7, 7, 7, 7, 6, 6, 6, 5, 5, 4"
+  },
+  {
+   "text": "Does not hand over ten experiments to run in parallel on one page",
+   "passed": true,
+   "evidence": "Run #8 and #10 only if D30 retention holds up at baseline (sequencing gates)"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "failed": 2,
+  "total": 5,
+  "pass_rate": 0.6
+ }
+}

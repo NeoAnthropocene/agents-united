@@ -1,0 +1,49 @@
+{
+ "eval_id": 1,
+ "skill": "ab-test-setup",
+ "configuration": "without_skill",
+ "session": "433d77f3-60a3-4fd2-817e-165eb26e3d5a",
+ "assertion_results": [
+  {
+   "text": "MDE stated in absolute and relative terms (0.8 points, 20 percent)",
+   "passed": false,
+   "evidence": "table: 'Target (a 20% relative lift) 4.8%'; no minimum detectable effect named, absolute 0.8 points not stated"
+  },
+  {
+   "text": "About 9,600 visitors per arm",
+   "passed": false,
+   "evidence": "'about 10,300 visitors per arm' (exact two-proportion formula; the skill's rule of thumb gives 9,600)"
+  },
+  {
+   "text": "A run of 14 days (two whole weeks)",
+   "passed": true,
+   "evidence": "Run it for 14 days (two full weeks)"
+  },
+  {
+   "text": "A guardrail metric is named",
+   "passed": true,
+   "evidence": "Guardrail metrics (must not drop): signup completion rate, day-7 activation..."
+  },
+  {
+   "text": "A stopping rule and a decision rule written before launch",
+   "passed": true,
+   "evidence": "Duration and stopping rule ... No early stop; Decision rule: Ship the variant if the primary metric is significantly higher (p < 0.05) and no guardrail has dropped"
+  },
+  {
+   "text": "Verification handed to Emre, tracking/consent questions to Defne",
+   "passed": false,
+   "evidence": "no role named; Pre-launch check without owners"
+  },
+  {
+   "text": "Figures labelled as estimates",
+   "passed": false,
+   "evidence": "'I computed this by hand ... haven't checked it in a calculator' (not labelled as an estimate)"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "failed": 4,
+  "total": 7,
+  "pass_rate": 0.429
+ }
+}

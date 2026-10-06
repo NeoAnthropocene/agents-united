@@ -1,0 +1,44 @@
+{
+ "eval_id": 1,
+ "skill": "growth-experiment-design",
+ "configuration": "without_skill",
+ "session": "c84fb1b9-9e45-4d33-8d91-ad140310c468",
+ "assertion_results": [
+  {
+   "text": "Names signup to first invoice (25.0 percent) as the leak",
+   "passed": true,
+   "evidence": "Signup -> first invoice 25.0%, lost 4,650: Activation"
+  },
+  {
+   "text": "Gives no paid-spend advice",
+   "passed": true,
+   "evidence": "Until you share them, don't scale paid spend"
+  },
+  {
+   "text": "Ranked backlog where every row has Impact, Confidence, Ease with a reason and ICE as their mean",
+   "passed": false,
+   "evidence": "table has I/C/E/ICE per row but no reason per score ('These scores are my estimates')"
+  },
+  {
+   "text": "Briefs for the top three only, each with primary metric, guardrail with threshold, run of 14 days or fewer, decision rule",
+   "passed": false,
+   "evidence": "briefs for two experiments, no decision rule, guardrail without a threshold"
+  },
+  {
+   "text": "Any benchmark labelled as needing a source and a date",
+   "passed": false,
+   "evidence": "'A 15% visit-to-signup rate is unusually high for a SaaS product' (unsourced, undated)"
+  },
+  {
+   "text": "Copy to Kaan, build and events to Deniz, event verification to Emre",
+   "passed": false,
+   "evidence": "no role named; Kaan, Deniz, Emre absent"
+  }
+ ],
+ "summary": {
+  "passed": 2,
+  "failed": 4,
+  "total": 6,
+  "pass_rate": 0.333
+ }
+}

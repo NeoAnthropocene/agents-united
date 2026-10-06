@@ -1,0 +1,44 @@
+{
+ "eval_id": 1,
+ "skill": "accessibility-audit",
+ "configuration": "without_skill",
+ "session": "cd6f5db9-20e0-4257-8511-bba89f050bfa",
+ "assertion_results": [
+  {
+   "text": "Says one clean axe run on one state is not enough; axe on every state with A and AA tags, results saved",
+   "passed": false,
+   "evidence": "axe on three states with wcag2a/2aa/21a/21aa tags, but results are not saved"
+  },
+  {
+   "text": "Gate rule: critical or serious means red",
+   "passed": true,
+   "evidence": "Any critical or serious violation fails the gate"
+  },
+  {
+   "text": "Adds manual keyboard pass, names/structure, colour and zoom checks",
+   "passed": true,
+   "evidence": "keyboard-only walkthrough; accessibility-tree snapshot for names, roles, heading order; contrast and tap-target; 375 reflow"
+  },
+  {
+   "text": "Lists what was not checked, including screen readers",
+   "passed": false,
+   "evidence": "no list of what was not checked; screen reader not mentioned as unchecked"
+  },
+  {
+   "text": "Routes findings to Deniz, Jamileh, Kaan",
+   "passed": false,
+   "evidence": "only Deniz named"
+  },
+  {
+   "text": "Makes no claim of compliance",
+   "passed": true,
+   "evidence": "'We're good' isn't supported yet; gate status: not verified"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "failed": 3,
+  "total": 6,
+  "pass_rate": 0.5
+ }
+}

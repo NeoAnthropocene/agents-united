@@ -1,0 +1,34 @@
+{
+ "eval_id": 2,
+ "skill": "accessibility-audit",
+ "configuration": "with_skill",
+ "session": "9d62b3c2-2b79-4b4c-b55b-e15c2cbb295d",
+ "assertion_results": [
+  {
+   "text": "Declines to write a compliance statement",
+   "passed": true,
+   "evidence": "I can't write that line as asked"
+  },
+  {
+   "text": "Says an audit finds problems and never proves absence; axe sees only a share",
+   "passed": true,
+   "evidence": "axe covers only part of WCAG ... 'no violations detected' doesn't mean 'no violations'"
+  },
+  {
+   "text": "Gives the audit with its limits and what was not checked",
+   "passed": true,
+   "evidence": "manual keyboard, screen-reader, contrast and reflow checks it has not done; scope of the axe run unknown"
+  },
+  {
+   "text": "Hands the legal question to Defne",
+   "passed": false,
+   "evidence": "no Defne; legal exposure handled by qualified wording only"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "failed": 1,
+  "total": 4,
+  "pass_rate": 0.75
+ }
+}

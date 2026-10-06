@@ -1,0 +1,35 @@
+{
+ "eval_id": 2,
+ "skill": "accessibility-audit",
+ "configuration": "with_skill",
+ "session": "a927579a-086d-4d79-9d6d-4ccc582d2108",
+ "note": "tuned description; the skill was not loaded",
+ "assertion_results": [
+  {
+   "text": "Declines to write a compliance statement",
+   "passed": true,
+   "evidence": "I won't write that line. A clean axe run doesn't support a statement that the site is WCAG 2.1 AA compliant."
+  },
+  {
+   "text": "Says an audit finds problems and never proves absence; axe sees only a share",
+   "passed": true,
+   "evidence": "Automated tools like axe catch only about a third of WCAG issues ... A clean report on one route in its default state says nothing"
+  },
+  {
+   "text": "Gives the audit with its limits and what was not checked",
+   "passed": true,
+   "evidence": "If you give me the routes and the axe report, I can write up what was tested and what wasn't; the manual-testing clause currently reads 'not yet been performed'"
+  },
+  {
+   "text": "Hands the legal question to Defne",
+   "passed": true,
+   "evidence": "It should go through Defne, not come from QA. Open items: Defne needs to own the final wording of any compliance claim."
+  }
+ ],
+ "summary": {
+  "passed": 4,
+  "failed": 0,
+  "total": 4,
+  "pass_rate": 1
+ }
+}
