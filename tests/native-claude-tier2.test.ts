@@ -169,4 +169,23 @@ describe('the lead', () => {
     expect(body).toMatch(/claude --agent orchestrator-digital-agency/);
     expect(body).toMatch(/spawned as a subagent/i);
   });
+
+  // Observed on Claude Code 2.1.289 and 2.1.291 (Plan 035 M3, 2026-10-06): without a sentence in the prompt the lead skipped the read-only consultation its
+  // body requires in three of four runs ("I treated your brief as the accepted delegation map", "I treated your request as the accepted map", "this is a
+  // single scratch task and you named Defne directly"), and consulted in the two runs whose prompt said "Consult ava read-only first". The rule stood
+  // twice in the body and was not followed, so the excuses are named and a gate stands where the decision is made.
+  it('names the excuses that are not a waiver, and says what a waiver is', () => {
+    const body = afterFloor(LEAD);
+    expect(body).toMatch(/unless the user explicitly waives it/);
+    expect(body).toMatch(/A clear brief, a brief that names the specialists, their files or their order, a small or scratch task, and a single named specialist are not waivers/);
+    expect(body).toMatch(/I treated your brief as the accepted map/);
+  });
+
+  it('holds a gate before any task owner is set or any teammate is spawned for a deliverable', () => {
+    const body = afterFloor(LEAD);
+    expect(body).toMatch(/\*\*Gate before the first task owner or deliverable spawn\.\*\*/);
+    expect(body).toMatch(/at least one specialist must have answered a read-only consultation/);
+    expect(body).toMatch(/CONSULTATION ONLY/);
+    expect(body).toMatch(/Record who you consulted or the waiver/);
+  });
 });
