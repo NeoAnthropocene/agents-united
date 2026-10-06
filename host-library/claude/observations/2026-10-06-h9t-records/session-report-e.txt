@@ -1,0 +1,37 @@
+# Session 917a9407-71f6-4fa8-84ec-b388238b31d6
+cwd C:\github\scratch-pilot\h2-start · Claude Code 2.1.291 · agent orchestrator-digital-agency · permission mode auto
+from 2026-10-06T14:41:28.251Z to 2026-10-06T14:41:58.084Z · 1 prompt(s) · 1 teammate record(s)
+cost 0.5847 USD (the session's own record) · API 33 s · wall 171 s
+  claude-haiku-4-5-20251001: 2112 in, 23 out, 0 cache-read, 0.0022 USD
+  claude-opus-5-5: 18 in, 1743 out, 328115 cache-read, 0.4412 USD
+  claude-sonnet-5-5: 8 in, 572 out, 40159 cache-read, 0.1413 USD
+
+## Findings (the seven open items)
+- H1a A task owner set on a running teammate lifts a read-only consultation: **seen**
+    ava: consulted read-only, no task assignment was delivered during the consultation
+- H1b Shutdown is asked with a structured shutdown_request: **seen**
+    structured shutdown_request: 1, plain-text shutdown requests: 0, shutdown responses received by the lead: 1
+    shutdown responses sent by teammates: 1 of 1 requested (approved 1)
+- H1c Shell-less roles re-read their files before reporting: **not applicable**
+    no shell-less teammate wrote a file
+- H2/H7 The lead runs on its pinned Opus: **seen**
+    lead models: claude-opus-5-5
+    agent setting: orchestrator-digital-agency, permission mode: auto
+    ava: model sonnet (messages: claude-sonnet-5-5), type agency-growth-strategist, in_process_teammate
+- H3 A peer exchange between teammates without a fixed contract: **not seen**
+    peer messages sent: 0 across 0 pair(s); received from a peer: 0
+- H4 The host refuses a blocked task started early: **not seen**
+    0 task call(s), 0 task(s); starts while blocked: 0 (refused 0, accepted 0)
+- H5 The settings-level guard refuses a command it names, in a team: **not seen**
+    no tool result carries the guard block message
+- H6 MCP-backed tools are called: **not seen**
+    no tool call has an mcp__ name
+
+## Agents
+- lead: ToolSearch 2, Bash 1, Agent 1, SendMessage 1
+- ava (agency-growth-strategist): ToolSearch 1, SendMessage 1
+    final report has Peer messages received and Open items: yes
+
+## Lead: team flow
+  14:41:43 Agent spawn ava as agency-growth-strategist
+  14:41:51 SendMessage message to ava: {"type":"shutdown_request","reason":"Consultation answered and relayed...
