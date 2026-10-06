@@ -173,7 +173,9 @@ describe('the live-test protocol: H9, the lead provisions a missing MCP server',
 
   it('has two tiers, each with its own prompt, evidence, pass and fail, and a ceiling for the sitting', () => {
     for (const heading of ['### H9a Prompt', '### H9a Evidence', '### H9a Pass', '### H9a Fail', '### H9b Prompt', '### H9b Evidence and Pass', '### Cost']) expect(h9(), heading).toContain(heading);
-    expect(h9()).toMatch(/Ceiling for Sitting F: \d+(\.\d+)? USD and \d+ prompts/);
+    expect(h9()).toMatch(/Ceiling for Sitting F: 10\.0 USD and 16 prompts \(the maintainer's, 2026-10-06\)/);
+    expect(DOC).toMatch(/\| Sitting F \|[^\n]*\| 10\.0 USD and 16 prompts/);
+    expect(DOC).toMatch(/65\.0 USD with Sitting F/);
     expect(DOC).toMatch(/Sitting F/);
   });
 
