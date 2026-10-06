@@ -1,0 +1,46 @@
+# Session a2e814d1-8d82-40e3-849d-33711702c292
+cwd C:\github\scratch-pilot\h6-mcp · Claude Code 2.1.291 · agent orchestrator-digital-agency · permission mode auto
+from 2026-10-06T09:22:49.206Z to 2026-10-06T09:33:42.174Z · 2 prompt(s) · 2 teammate record(s)
+cost 0.9129 USD (the session's own record) · API 129 s · wall 1071 s
+  claude-haiku-4-5-20251001: 2213 in, 30 out, 0 cache-read, 0.0024 USD
+  claude-sonnet-5-5: 1270 in, 14243 out, 1395623 cache-read, 0.9105 USD
+
+## Findings (the seven open items)
+- H1a A task owner set on a running teammate lifts a read-only consultation: **not applicable**
+    no teammate was briefed as a read-only consultation
+- H1b Shutdown is asked with a structured shutdown_request: **seen**
+    structured shutdown_request: 2, plain-text shutdown requests: 0, shutdown responses received by the lead: 1 (none from emre)
+    shutdown responses sent by teammates: 2 of 2 requested (approved 2)
+- H1c Shell-less roles re-read their files before reporting: **not applicable**
+    no shell-less teammate wrote a file
+- H2/H7 The lead runs on its pinned Opus: **not seen**
+    lead models: claude-sonnet-5-5
+    agent setting: orchestrator-digital-agency, permission mode: auto
+    emre: model sonnet (messages: claude-sonnet-5-5), type agency-qa-automation-lead, in_process_teammate
+    selin: model sonnet (messages: claude-sonnet-5-5), type agency-seo-specialist, in_process_teammate
+- H3 A peer exchange between teammates without a fixed contract: **not seen**
+    peer messages sent: 0 across 0 pair(s); received from a peer: 0
+- H4 The host refuses a blocked task started early: **not seen**
+    8 task call(s), 2 task(s); starts while blocked: 0 (refused 0, accepted 0)
+- H5 The settings-level guard refuses a command it names, in a team: **not seen**
+    no tool result carries the guard block message
+- H6 MCP-backed tools are called: **seen**
+    emre: playwright: 11 call(s)
+    selin: chrome-devtools-mcp: 6 call(s)
+
+## Agents
+- lead: Bash 2, TaskCreate 2, TaskUpdate 2, Agent 2, SendMessage 2, ToolSearch 1
+- emre (agency-qa-automation-lead): mcp__playwright__playwright_evaluate 4, mcp__playwright__playwright_screenshot 3, TaskUpdate 2, mcp__playwright__playwright_resize 2, Bash 2, ToolSearch 1, Skill 1, TaskGet 1, mcp__playwright__playwright_navigate 1, mcp__playwright__playwright_console_logs 1, SendMessage 1
+    final report has Peer messages received and Open items: yes
+- selin (agency-seo-specialist): TaskUpdate 2, ToolSearch 1, TaskGet 1, mcp__chrome-devtools-mcp__list_pages 1, mcp__chrome-devtools-mcp__navigate_page 1, mcp__chrome-devtools-mcp__list_console_messages 1, mcp__chrome-devtools-mcp__performance_start_trace 1, mcp__chrome-devtools-mcp__list_network_requests 1, mcp__chrome-devtools-mcp__performance_analyze_insight 1, Write 1, SendMessage 1
+    final report has Peer messages received and Open items: yes
+
+## Lead: team flow
+  09:22:59 TaskCreate task "Emre: QA audit of localhost:4173 (viewports, a11y, console, ..."
+  09:23:00 TaskCreate task "Selin: chrome-devtools-mcp check of localhost:4173 (console ..."
+  09:23:01 TaskUpdate task 1 owner emre
+  09:23:02 TaskUpdate task 2 owner selin
+  09:23:05 Agent spawn emre as agency-qa-automation-lead
+  09:23:07 Agent spawn selin as agency-seo-specialist
+  09:23:44 SendMessage message to selin: {"type":"shutdown_request","reason":"Task #2 delivered; report receive...
+  09:24:02 SendMessage message to emre: {"type":"shutdown_request","reason":"Task #1 delivered; report receive...
