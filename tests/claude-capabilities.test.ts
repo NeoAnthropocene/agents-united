@@ -135,7 +135,7 @@ describe('Plan 016 Step 6 — ClaudeCapabilityProbe', () => {
     }
   });
 
-  it('3. parses --version stdout first line as the version and leaves --help-only flags false', async () => {
+  it('3. parses --version stdout first line as the version and leaves the --help-only flag false', async () => {
     const fakeRunner: ProcessRunner = async (exec, args) => {
       if (args.includes('--version')) {
         // Observed contract: stdout '2.1.272 (Claude Code)' => version '2.1.272 (Claude Code)'.
@@ -158,7 +158,8 @@ describe('Plan 016 Step 6 — ClaudeCapabilityProbe', () => {
     // Exact observed value (trimmed stdout; only the first line is kept).
     expect(report.version).toBe('2.1.272 (Claude Code)');
     expect(report.pluginSupport).toBe(false);
-    expect(report.agentTeamsExperimental).toBe(false);
+    // 2.1.272 is past the agent-teams floor (2.1.32), so the version alone reports the feature although --help names nothing.
+    expect(report.agentTeamsExperimental).toBe(true);
   });
 
   it('4a. derives pluginSupport from --help text only (--plugin-dir marker)', async () => {
@@ -189,16 +190,17 @@ describe('Plan 016 Step 6 — ClaudeCapabilityProbe', () => {
     expect(unsupported.pluginSupport).toBe(false);
   });
 
-  it('4b. derives agentTeamsExperimental from --help text only (env marker or "agent teams"), false for plain help', async () => {
+  it('4b. derives agentTeamsExperimental from --help text (env marker or "agent teams") on a build below the agent-teams floor, false for plain help', async () => {
+    // Below the floor (2.1.32) only --help can say anything about agent teams.
     const withTeams: ProcessRunner = async (exec, args) =>
       args.includes('--help')
         ? { exitCode: 0, stdout: TEAMS_HELP, stderr: '' }
-        : { exitCode: 0, stdout: '2.1.272 (Claude Code)', stderr: '' };
+        : { exitCode: 0, stdout: '2.1.31 (Claude Code)', stderr: '' };
 
     const plain: ProcessRunner = async (exec, args) =>
       args.includes('--help')
         ? { exitCode: 0, stdout: PLAIN_HELP, stderr: '' }
-        : { exitCode: 0, stdout: '2.1.272 (Claude Code)', stderr: '' };
+        : { exitCode: 0, stdout: '2.1.31 (Claude Code)', stderr: '' };
 
     const command = {
       executable: 'node',
@@ -304,7 +306,7 @@ describe('Plan 016 Step 6 — ClaudeCapabilityProbe', () => {
     }
   );
 
-  it('8. keeps both capability flags false when --help returns no usable text', async () => {
+  it('8. keeps pluginSupport false when --help returns no usable text, and still reports agent teams from the version floor', async () => {
     const fakeRunner: ProcessRunner = async (exec, args) => {
       if (args.includes('--version')) {
         return { exitCode: 0, stdout: '2.1.272 (Claude Code)', stderr: '' };
@@ -322,10 +324,10 @@ describe('Plan 016 Step 6 — ClaudeCapabilityProbe', () => {
 
     expect(report.installed).toBe(true);
     expect(report.pluginSupport).toBe(false);
-    expect(report.agentTeamsExperimental).toBe(false);
+    expect(report.agentTeamsExperimental).toBe(true);
   });
 
-  it('9. reports installed=true with no capability flags when --help exits non-zero, and never throws', async () => {
+  it('9. reports installed=true with no --help-derived flag when --help exits non-zero, and never throws', async () => {
     const fakeRunner: ProcessRunner = async (exec, args) => {
       if (args.includes('--version')) {
         return { exitCode: 0, stdout: '2.1.272 (Claude Code)', stderr: '' };
@@ -343,8 +345,10 @@ describe('Plan 016 Step 6 — ClaudeCapabilityProbe', () => {
 
     expect(report.installed).toBe(true);
     expect(report.pluginSupport).toBe(false);
-    expect(report.agentTeamsExperimental).toBe(false);
+    // Agent teams come from the version floor, so a failed --help leaves nothing unverified about them.
+    expect(report.agentTeamsExperimental).toBe(true);
     expect(report.diagnostics.join('\n')).toContain('help probe returned non-zero');
+    expect(report.diagnostics.join('\n')).not.toContain('agent-team');
   });
 
   it('10. derives subagentHandback from the probed version, at the documented v2.1.271 floor', async () => {

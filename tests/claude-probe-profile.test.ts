@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ClaudeCapabilityProbe } from '../src/core/claude-capabilities.js';
 import { loadHostProfile } from '../src/core/host-profile.js';
@@ -31,6 +33,28 @@ describe('profile-backed Claude capability probe', () => {
     expect((await probeFor('2.2.0')).subagentHandback).toBe(true);
     expect((await probeFor('2.1.270')).subagentHandback).toBe(false);
     expect((await probeFor('1.9.999')).subagentHandback).toBe(false);
+  });
+
+  it('the profile carries the agent-teams version floor as data, dated by the changelog snapshot', () => {
+    expect(profile.features.agentTeams.since).toBe('2.1.32');
+    const changelog = fs.readFileSync(path.join('host-library', 'claude', 'changelog.md'), 'utf8').split(/\r?\n/);
+    const entry = changelog.findIndex((line) => /Added research preview agent teams feature/.test(line));
+    expect(entry).toBeGreaterThan(-1);
+    let heading = entry;
+    while (heading > 0 && !/^## \d+\.\d+\.\d+/.test(changelog[heading])) heading -= 1;
+    expect(changelog[heading]).toBe(`## ${profile.features.agentTeams.since}`);
+  });
+
+  // `claude --help` on 2.1.289 and 2.1.291 names neither agent teams nor CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS (checked
+  // 2026-10-06), and the feature runs there: session 4b08fd11 ran nine in-process teammates on 2.1.291 (Plan 035 H1).
+  it('derives agent-teams support from the profile floor when --help does not name it: the floor and later versions have it, earlier ones do not', async () => {
+    const helpWithoutTeams = 'Usage: claude\n  --plugin-dir <path>   load plugins\n';
+    for (const version of ['2.1.32', '2.1.289', '2.1.291', '2.2.0']) {
+      expect((await probeFor(version, helpWithoutTeams)).agentTeamsExperimental, version).toBe(true);
+    }
+    for (const version of ['2.1.31', '2.0.0', '1.9.999']) {
+      expect((await probeFor(version, helpWithoutTeams)).agentTeamsExperimental, version).toBe(false);
+    }
   });
 
   it('reports the profile it checked against, with no diagnostics for a version the profile was reviewed against', async () => {
