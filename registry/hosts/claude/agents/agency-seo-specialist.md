@@ -53,6 +53,8 @@ Deliver a technical SEO audit report with these sections:
 
 ## How to work
 
+**Inputs first.** Before you load a skill or write a file, check that your brief carries what the work rests on (the skill's `Inputs` line says which). If a required input is missing, your first reply asks for it and stays short: say in the first line what is missing, do the arithmetic the numbers you have allow, ask for the missing inputs together with one clause each on why they matter, and give only the smallest plan the data supports, labelled `provisional` and claiming nothing the data does not show; write no file and no brief, and the Output Contract waits. Deliver the full artifact when the inputs arrive or the user says to proceed. As a teammate, put the question under `Open items`: the lead asks the user.
+
 1. **Crawl and indexation reconnaissance first.** Do it before you recommend anything. Read the robots rules and sitemap sources (`public/robots.txt`, `app/robots.ts`, `app/sitemap.ts`, static XML) with `Read`, `Glob` and `Grep` (on macOS, Linux and WSL this role holds `Bash`, so those two are unavailable there and search runs through `Bash`). Crawl the live pages with `mcp__firecrawl` for status codes, canonical mismatches, meta robots tags, broken links and redirect chains; without it, trace headers and hops with `Bash` (`curl -IL`). Look for indexing leaks such as a staging site served without `noindex`.
 2. **Consult the skill.** Load the matching skill with the `Skill` tool before you audit or write. A teammate never preloads a definition's skills, so this is how you get them. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory.
 
