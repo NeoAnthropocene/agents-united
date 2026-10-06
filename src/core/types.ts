@@ -245,9 +245,11 @@ export type ResolvedClaudeCommand = {
 
 /**
  * ADR 0018 decision 11 / Plan 016 decision 12 — the read-only Claude Code probe result.
- * `pluginSupport` and `agentTeamsExperimental` are derived from `--help` text only; both
- * default to `false` when help output is unavailable, so an unverifiable capability is
- * never reported as supported.
+ * `pluginSupport` is derived from `--help` text only and defaults to `false` when help output is
+ * unavailable, so an unverifiable capability is never reported as supported. `agentTeamsExperimental`
+ * is true when `--help` names agent teams or when the probed version is at or past the profile's
+ * agent-teams floor (`features.agentTeams.since`): the feature is opt-in through
+ * `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, and `--help` on 2.1.289 and 2.1.291 does not mention it.
  */
 export interface ClaudeCapabilityReport {
   installed: boolean;

@@ -202,7 +202,8 @@
   "features": {
     "agentTeams": {
       "status": "experimental",
-      "note": "Opt-in via CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1; never load-bearing (one team per session, fixed lead, no nested teams)"
+      "since": "2.1.32",
+      "note": "Opt-in via CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 (research preview since 2.1.32, dated by host-library/claude/changelog.md; claude --help names neither); never load-bearing (one team per session, fixed lead, no nested teams)"
     },
     "dynamicWorkflows": {
       "status": "available",

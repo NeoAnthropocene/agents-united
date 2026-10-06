@@ -2797,7 +2797,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     note(pc.cyan('Agent Teams explicitly requested with --teams; the scaffold stays experimental.'), 'Agent Teams');
   }
   if (teamsActive && !probeReport.agentTeamsExperimental) {
-    note(pc.yellow('The capability probe could not confirm agent-team support from --help; the scaffold stays experimental and unverified.'), 'Agent Teams');
+    note(pc.yellow('The capability probe could not confirm agent-team support (neither the version nor --help names it); the scaffold stays experimental and unverified.'), 'Agent Teams');
   }
   if (pluginDir && !probeReport.pluginSupport) {
     note(pc.yellow('The capability probe could not confirm --plugin-dir support from --help.'), 'Plugin Dir');

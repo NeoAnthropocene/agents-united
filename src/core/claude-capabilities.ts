@@ -24,8 +24,10 @@ export interface ClaudeProbeResolverOptions {
  * deliberately never invoked:
  *   - `claude agents --json` — it can start the supervisor daemon (a mutating side effect).
  *   - headless `-p` runs — they cost tokens (a billed side effect).
- * `--help` text is the only source of truth for capability flags, so the probe stays free of
- * both side effects; anything it cannot verify is reported as unsupported with a diagnostic.
+ * A flag that `--help` names is read from it. A feature `--help` does not name is reported from the
+ * profile's version floor instead (`SubagentHandback`, agent teams: `claude --help` on 2.1.289 and
+ * 2.1.291 carries no agent-teams text although the feature runs there), so the probe stays free of
+ * both side effects; anything it can verify by neither is reported as unsupported with a diagnostic.
  *
  * The process primitive is the shared `defaultProcessRunner` (argv arrays, `shell: false`,
  * hard timeout, never throws) that the Cline probe uses, so the Windows `.cmd`/`.bat`
@@ -35,10 +37,13 @@ export interface ClaudeProbeResolverOptions {
  * Plan 032 Phase 7 — what the probe knows about the host lives in the Claude host profile
  * (`registry/hosts/claude/profile.json`), not in code: the `SubagentHandback` version floor
  * (`features.subagentHandback.since`, dated by the live tools reference; the tool is provided only in auto mode, and
- * only `--version` is readable here, so this reports the version floor), the minimum version and the version the
- * profile was last reviewed against. The fallback floor applies only if the profile cannot be read.
+ * only `--version` is readable here, so this reports the version floor), the agent-teams floor
+ * (`features.agentTeams.since`, dated by the changelog snapshot: the research preview arrived in 2.1.32), the minimum
+ * version and the version the profile was last reviewed against. The fallback floors apply only if the profile cannot
+ * be read.
  */
 const FALLBACK_SUBAGENT_HANDBACK_MIN = '2.1.271';
+const FALLBACK_AGENT_TEAMS_MIN = '2.1.32';
 
 function parseVersion(version: string | undefined): [number, number, number] | undefined {
   const match = version?.match(/(\d+)\.(\d+)\.(\d+)/);
@@ -181,8 +186,10 @@ export class ClaudeCapabilityProbe {
     // 1. Version check — `--version` only (ADR 0018 decision 11).
     const hostProfile = readClaudeProfile();
     const handbackFloor = hostProfile?.features.subagentHandback?.since ?? FALLBACK_SUBAGENT_HANDBACK_MIN;
+    const agentTeamsFloor = hostProfile?.features.agentTeams?.since ?? FALLBACK_AGENT_TEAMS_MIN;
     let version: string | undefined;
     let subagentHandback = false;
+    let agentTeamsFromVersion = false;
     try {
       const verRes = await this.runner(cmd.executable, [...cmd.prefixArgs, '--version'], {
         timeoutMs: 5000,
@@ -191,6 +198,7 @@ export class ClaudeCapabilityProbe {
       if (verRes.exitCode === 0) {
         version = verRes.stdout.trim().split('\n')[0]?.trim();
         subagentHandback = supportsVersion(version, handbackFloor);
+        agentTeamsFromVersion = supportsVersion(version, agentTeamsFloor);
       } else {
         diagnostics.push(`Claude Code version check failed (exit code ${verRes.exitCode}): ${verRes.stderr.trim()}`);
         return {
@@ -218,7 +226,7 @@ export class ClaudeCapabilityProbe {
     // 2. Flag surface — `--help` text only. No `claude agents --json` (it can start the
     //    supervisor daemon) and no headless `-p` run (it costs tokens) — see the class JSDoc.
     let pluginSupport = false;
-    let agentTeamsExperimental = false;
+    let agentTeamsExperimental = agentTeamsFromVersion;
     let helpRead = false;
     try {
       const helpRes = await this.runner(cmd.executable, [...cmd.prefixArgs, '--help'], {
@@ -230,10 +238,10 @@ export class ClaudeCapabilityProbe {
         const help = helpRes.stdout;
         pluginSupport = help.includes('--plugin-dir');
         agentTeamsExperimental =
-          /agent teams/i.test(help) || help.includes('CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS');
+          agentTeamsFromVersion || /agent teams/i.test(help) || help.includes('CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS');
       } else {
         diagnostics.push(
-          `Claude Code help probe returned non-zero (exit code ${helpRes.exitCode}); plugin and agent-team support could not be verified.`
+          `Claude Code help probe returned non-zero (exit code ${helpRes.exitCode}); plugin support could not be verified.`
         );
       }
     } catch (err: unknown) {
