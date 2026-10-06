@@ -3,7 +3,7 @@
 Behaviour is chosen by the --config value: contains "boom" -> exit 7 with nothing written;
 "partial" -> exit 2 with full output; "empty" -> exit 0 covering no files; "garbage" -> exit 0 with
 invalid JSON; anything else -> exit 0 with one finding and one scanned file. Every invocation is
-appended to $FAKE_SEMGREP_LOG so tests can assert on the exact command line.
+appended to $FAKE_SEMGREP_LOG.<pid> (one file per process) so tests can assert on the exact command line.
 """
 import json
 import os
@@ -12,7 +12,9 @@ import sys
 args = sys.argv[1:]
 log = os.environ.get("FAKE_SEMGREP_LOG")
 if log:
-    with open(log, "a", encoding="utf-8") as fh:
+    # One file per process (log.<pid>): run_scans.py runs scans concurrently, and two appends to one file can overwrite or
+    # interleave on Windows. The tests read the log and every log.<pid> next to it.
+    with open(f"{log}.{os.getpid()}", "a", encoding="utf-8") as fh:
         fh.write(json.dumps(args) + "\n")
 
 config = args[args.index("--config") + 1] if "--config" in args else ""
