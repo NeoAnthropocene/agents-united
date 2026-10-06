@@ -217,6 +217,37 @@ function writeSession(lead: Rec[], subs: Record<string, { meta: Rec; records: Re
   return path.join(dir, `${id}.jsonl`);
 }
 
+/** A user record the way the host writes one: a prompt id shared by everything that one prompt caused. */
+const typed = (promptId: string, content: string, s: number, isMeta?: boolean): Rec => ({ type: 'user', timestamp: T(s), isSidechain: false, promptId, ...(isMeta ? { isMeta } : {}), message: { role: 'user', content } });
+
+// Observed in H6 (session a2e814d1, 2026-10-06): the maintainer typed `/mcp reconnect chrome-devtools-mcp`, a local command that sends nothing to the model.
+// The host wrote three records under a prompt id of their own (a caveat, the command, its stdout) and the helper counted it as a second prompt.
+describe('the prompt count', () => {
+  const caveat = (id: string, s: number): Rec => typed(id, '<local-command-caveat>The command below was run directly in Claude Code, not sent to you as a request.</local-command-caveat>', s, true);
+  const command = (id: string, name: string, s: number): Rec => typed(id, `<command-name>/${name}</command-name>\n            <command-message>${name}</command-message>\n            <command-args>reconnect</command-args>`, s);
+  const stdout = (id: string, s: number): Rec => typed(id, '<local-command-stdout>Reconnected to chrome-devtools-mcp.</local-command-stdout>', s);
+
+  it('does not count a local command such as /mcp reconnect, which sends nothing to the model', () => {
+    const file = writeSession([typed('p1', 'Scratch exercise.', 1), caveat('p2', 30), command('p2', 'mcp', 31), stdout('p2', 32)], {});
+    expect(loadSession(file).prompts).toBe(1);
+  });
+
+  it('counts a typed prompt after a local command, and a skill invocation (a command with no local-command record)', () => {
+    const file = writeSession([
+      typed('p1', 'Scratch exercise.', 1),
+      caveat('p2', 30), command('p2', 'mcp', 31), stdout('p2', 32),
+      typed('p3', 'resume', 40),
+      typed('p4', '<command-message>grill-me</command-message>\n<command-name>/grill-me</command-name>', 50),
+    ], {});
+    expect(loadSession(file).prompts).toBe(3);
+  });
+
+  it('still counts every record of one prompt once, teammate messages included', () => {
+    const file = writeSession([typed('p1', 'Scratch exercise.', 1), { ...leadMail('ava', 'done', 5), promptId: 'p1' }, { ...leadMail('kaan', 'done', 6), promptId: 'p1' }], {});
+    expect(loadSession(file).prompts).toBe(1);
+  });
+});
+
 describe('synthetic sessions', () => {
   it('ignores a half-written last line and still reads the rest', () => {
     const file = writeSession([call('t1', 'Bash', { command: 'echo hi' }, 1), result('t1', 'hi', 2)], {});

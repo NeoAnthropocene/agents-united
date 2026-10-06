@@ -192,6 +192,7 @@ export function loadSession(leadFile: string): Session {
   const lead = buildAgent(records.filter(r => r.isSidechain !== true), 'lead', true, {});
   const session: Session = { sessionId, prompts: 0, agents: [lead] };
   const promptIds = new Set<string>();
+  const localCommandIds = new Set<string>(); // a built-in command such as /mcp leaves a caveat and a stdout record under an id of its own and sends nothing to the model
   for (const rec of records) {
     const at = str(rec.timestamp);
     if (at !== '') {
@@ -202,7 +203,11 @@ export function loadSession(leadFile: string): Session {
     session.version ??= str(rec.version) || undefined;
     if (rec.type === 'agent-setting') session.agentSetting = str(rec.agentSetting);
     if (rec.type === 'permission-mode') session.permissionMode = str(rec.permissionMode);
-    if (rec.type === 'user' && rec.isSidechain !== true && typeof obj(rec.message).content === 'string' && !str(obj(rec.message).content).startsWith('<teammate-message') && str(rec.promptId) !== '') promptIds.add(str(rec.promptId));
+    if (rec.type === 'user' && rec.isSidechain !== true && typeof obj(rec.message).content === 'string' && str(rec.promptId) !== '') {
+      const text = str(obj(rec.message).content);
+      if (/^<local-command-(caveat|stdout)>/.test(text)) localCommandIds.add(str(rec.promptId));
+      else if (!text.startsWith('<teammate-message')) promptIds.add(str(rec.promptId));
+    }
     if (rec.type === 'cost-state') {
       const byModel: NonNullable<Session['cost']>['byModel'] = {};
       for (const [model, usage] of Object.entries(obj(rec.modelUsage))) {
@@ -212,7 +217,7 @@ export function loadSession(leadFile: string): Session {
       session.cost = { totalCostUSD: Number(rec.totalCostUSD ?? 0), totalAPIDurationMs: Number(rec.totalAPIDuration ?? 0), totalDurationMs: Number(rec.totalDuration ?? 0), byModel };
     }
   }
-  session.prompts = promptIds.size;
+  session.prompts = [...promptIds].filter(id => !localCommandIds.has(id)).length;
   const subDir = path.join(path.dirname(leadFile), sessionId, 'subagents');
   if (fs.existsSync(subDir)) {
     for (const file of fs.readdirSync(subDir).filter(f => f.endsWith('.jsonl')).sort()) {
