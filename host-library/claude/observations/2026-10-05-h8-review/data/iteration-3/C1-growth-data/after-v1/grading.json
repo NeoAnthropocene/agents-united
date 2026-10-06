@@ -1,0 +1,46 @@
+{
+ "prompt": "C1-growth-data",
+ "configuration": "after v1",
+ "session": "2b6a385a-aebc-4a1b-9b07-d2e73a5375f7",
+ "assertion_results": [
+  {
+   "text": "Names signup to first invoice (25.0 percent) as the leak",
+   "passed": true,
+   "evidence": "The bottleneck is Activation: three out of four signups never create an invoice ... 25.0%"
+  },
+  {
+   "text": "Gives no paid-spend advice",
+   "passed": true,
+   "evidence": "I wouldn't spend on acquisition until this improves"
+  },
+  {
+   "text": "Ranked backlog where every row has Impact, Confidence, Ease with a reason and ICE as their mean",
+   "passed": false,
+   "evidence": "no backlog table; 'Provisional test order' of three items"
+  },
+  {
+   "text": "Briefs for the top three only, each with primary metric, guardrail with threshold, run of 14 days or fewer, decision rule",
+   "passed": false,
+   "evidence": "no briefs: 'I haven't written a file or a brief'"
+  },
+  {
+   "text": "Any benchmark labelled as needing a source and a date",
+   "passed": false,
+   "evidence": "no benchmark discussion"
+  },
+  {
+   "text": "Copy to Kaan, build and events to Deniz, event verification to Emre",
+   "passed": false,
+   "evidence": "no role named"
+  },
+  {
+   "text": "Delivers the full artifact (does not stop to ask for inputs it already has)",
+   "passed": false,
+   "evidence": "'Missing: the pricing/plan model and what a user sees right after signup. I can't ... write an experiment brief without them. This is provisional.' (stopped to ask although the funnel counts were given)"
+  }
+ ],
+ "summary": {
+  "passed": 2,
+  "total": 7
+ }
+}

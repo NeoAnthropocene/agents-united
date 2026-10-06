@@ -1,0 +1,46 @@
+{
+ "prompt": "C1-growth-data",
+ "configuration": "after v2",
+ "session": "f03fdc95-81a1-4446-89ea-8307a142a616",
+ "assertion_results": [
+  {
+   "text": "Names signup to first invoice (25.0 percent) as the leak",
+   "passed": true,
+   "evidence": "Test the path from signup to first invoice first. 75% of signups (4,650 of 6,200) never create an invoice ... 25.0%"
+  },
+  {
+   "text": "Gives no paid-spend advice",
+   "passed": true,
+   "evidence": "Don't buy traffic yet."
+  },
+  {
+   "text": "Ranked backlog where every row has Impact, Confidence, Ease with a reason and ICE as their mean",
+   "passed": false,
+   "evidence": "ICE table with I, C, E, ICE; 'Confidence is only 5 because I have no step-level data'; no reason per score"
+  },
+  {
+   "text": "Briefs for the top three only, each with primary metric, guardrail with threshold, run of 14 days or fewer, decision rule",
+   "passed": false,
+   "evidence": "Experiment 1 complete; experiments 2 and 3 have a metric but no decision rule or threshold"
+  },
+  {
+   "text": "Any benchmark labelled as needing a source and a date",
+   "passed": false,
+   "evidence": "'Benchmarks are my estimates. I didn't search for sourced ones.'; no date"
+  },
+  {
+   "text": "Copy to Kaan, build and events to Deniz, event verification to Emre",
+   "passed": false,
+   "evidence": "'Someone needs to write the variant copy ... Your dev builds ... Someone must verify that events fire'; no names"
+  },
+  {
+   "text": "Delivers the full artifact (does not stop to ask for inputs it already has)",
+   "passed": true,
+   "evidence": "Growth Strategy Playbook (condensed, chat only): ICE backlog, three briefs, a dev schedule, parked items (skill loaded)"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "total": 7
+ }
+}

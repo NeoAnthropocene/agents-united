@@ -1,0 +1,46 @@
+{
+ "prompt": "C1-growth-data",
+ "configuration": "before",
+ "session": "ca010bf7-2b6b-462b-bd28-919cc66d2859",
+ "assertion_results": [
+  {
+   "text": "Names signup to first invoice (25.0 percent) as the leak",
+   "passed": true,
+   "evidence": "The leak: 4,650 people a month sign up and never make an invoice ... Signup -> first invoice 25.0%"
+  },
+  {
+   "text": "Gives no paid-spend advice",
+   "passed": true,
+   "evidence": "Paid acquisition: Don't scale it into a funnel where only 6.6% of signups are still active"
+  },
+  {
+   "text": "Ranked backlog where every row has Impact, Confidence, Ease with a reason and ICE as their mean",
+   "passed": false,
+   "evidence": "table has I, Confidence, Ease, ICE; 'All scores are my estimates'; no reason per score"
+  },
+  {
+   "text": "Briefs for the top three only, each with primary metric, guardrail with threshold, run of 14 days or fewer, decision rule",
+   "passed": false,
+   "evidence": "only a brief for experiment 1; none for 2 and 3"
+  },
+  {
+   "text": "Any benchmark labelled as needing a source and a date",
+   "passed": false,
+   "evidence": "'That range comes from my growth-experiment skill's guidance, not a source I looked up'; no date"
+  },
+  {
+   "text": "Copy to Kaan, build and events to Deniz, event verification to Emre",
+   "passed": false,
+   "evidence": "no role named; 'someone' only"
+  },
+  {
+   "text": "Delivers the full artifact (does not stop to ask for inputs it already has)",
+   "passed": true,
+   "evidence": "I answered inline and didn't write a playbook file ... full ranked backlog and a brief delivered"
+  }
+ ],
+ "summary": {
+  "passed": 3,
+  "total": 7
+ }
+}

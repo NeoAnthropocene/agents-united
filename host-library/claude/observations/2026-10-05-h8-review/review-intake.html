@@ -1,0 +1,479 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Inputs-first review</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1f1d1a;--mut:#6b655c;--line:#d9d3c7;--ok:#1b6b3a;--no:#9b2c1f;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#171512;--fg:#ece7de;--mut:#a39b8d;--line:#3a352d;--ok:#6fcf8f;--no:#ff9b8c;--card:#1f1c18}}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;margin:0;padding:24px 16px;max-width:1100px;margin-inline:auto}
+h1{font-size:1.5rem}h2{font-size:1.1rem;margin-top:2.2rem}h2 small{color:var(--mut);font-weight:400}table{border-collapse:collapse;width:100%;background:var(--card);font-size:.9rem}
+th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}.ok{color:var(--ok);font-weight:700}.no{color:var(--no);font-weight:700}
+.ev{color:var(--mut);font-size:.82rem;margin-top:2px}.prompt{background:var(--card);border-left:4px solid var(--line);padding:8px 12px}
+details{margin:8px 0;border:1px solid var(--line);background:var(--card);border-radius:6px}summary{padding:8px 12px;cursor:pointer}
+pre{white-space:pre-wrap;word-wrap:break-word;margin:0;padding:12px;font:.85rem/1.5 ui-monospace,Consolas,monospace;border-top:1px solid var(--line)}
+@media (max-width:700px){.wrap{overflow-x:auto}}
+</style></head><body><main>
+<h1>Inputs-first and the lead's data inventory: before and after</h1>
+<p>Eleven fresh headless sessions (Sonnet, effort medium), 2026-10-06, 1.4280 USD. One run per cell. <strong>before</strong>: dev plus #148 to #150. <strong>after v1</strong>: the first version of the rule (it stopped the data-rich control). <strong>after v2</strong>: the rule tightened. For the lead, one after run.</p>
+<div class="wrap"><table><thead><tr><th scope="col">Configuration</th><th scope="col">Assertions</th><th scope="col">Output tokens</th><th scope="col">Cost USD</th><th scope="col">Skill and files</th></tr></thead><tbody><tr><th scope="row" colspan="5">D1-growth-nodata (data-poor)</th></tr><tr><td>before</td><td>5/7</td><td>3683</td><td>0.1452</td><td>growth-experiment-design</td></tr><tr><td>after v1</td><td>5/7</td><td>1119</td><td>0.1021</td><td>no skill loaded</td></tr><tr><td>after v2</td><td>5/7</td><td>1169</td><td>0.0870</td><td>no skill loaded</td></tr>
+<tr><th scope="row" colspan="5">D2-funnel-numbers (data-poor)</th></tr><tr><td>before</td><td>5/6</td><td>4547</td><td>0.1680</td><td>conversion-funnel-optimization, wrote a file</td></tr><tr><td>after v1</td><td>4/6</td><td>1754</td><td>0.1088</td><td>no skill loaded</td></tr><tr><td>after v2</td><td>4/6</td><td>1553</td><td>0.1071</td><td>no skill loaded</td></tr>
+<tr><th scope="row" colspan="5">C1-growth-data (control)</th></tr><tr><td>before</td><td>3/7</td><td>3814</td><td>0.1306</td><td>growth-experiment-design</td></tr><tr><td>after v1</td><td>2/7</td><td>2171</td><td>0.0971</td><td>no skill loaded</td></tr><tr><td>after v2</td><td>3/7</td><td>5282</td><td>0.1659</td><td>growth-experiment-design</td></tr>
+<tr><th scope="row" colspan="5">L1-lead-signups (lead)</th></tr><tr><td>before</td><td>3/8</td><td>1427</td><td>0.1820</td><td>no skill loaded</td></tr><tr><td>after (lead change)</td><td>4/8</td><td>1352</td><td>0.1341</td><td>no skill loaded</td></tr></tbody></table></div>
+<section><h2>Growth, no data: "flat SaaS, give me ten experiments" <small>data-poor, agency-growth-strategist</small></h2><p class="prompt"><strong>Prompt:</strong> Our SaaS has been flat for months and the board wants action. Give me a list of ten growth experiments we should run this quarter.</p><div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">before 5/7</th><th scope="col">after v1 5/7</th><th scope="col">after v2 5/7</th></tr></thead><tbody><tr><td>First line says the stage counts for the last 28 days are missing, and asks for them</td><td><span class="ok">PASS</span><div class="ev">No funnel data was available. ... I need these inputs: Counts at every stage for the last 28 days</div></td><td><span class="ok">PASS</span><div class="ev">Missing: I have no funnel data for your SaaS, so I can't name the bottleneck or rank ten experiments yet.</div></td><td><span class="ok">PASS</span><div class="ev">I can't responsibly rank ten experiments yet. The only number I have is 'flat for months'</div></td></tr>
+<tr><td>Does not invent a funnel or quote industry averages as this product's numbers</td><td><span class="ok">PASS</span><div class="ev">I have used no industry averages as your numbers</div></td><td><span class="ok">PASS</span><div class="ev">With no numbers, I can't do any arithmetic either.</div></td><td><span class="ok">PASS</span><div class="ev">A list of ten without data would be a generic backlog that I'd be guessing at</div></td></tr>
+<tr><td>Makes instrumentation (the events and where they fire) experiment zero with Deniz and Emre as owners</td><td><span class="ok">PASS</span><div class="ev">Experiment 0 (prerequisite): instrumentation. Deniz adds the funnel events and Emre verifies they fire.</div></td><td><span class="no">FAIL</span><div class="ev">no instrumentation experiment; Deniz and Emre not named</div></td><td><span class="no">FAIL</span><div class="ev">Weeks 1-2: diagnose, don't test; no Deniz and Emre</div></td></tr>
+<tr><td>Scores every idea Confidence 1 to 3</td><td><span class="no">FAIL</span><div class="ev">Every Confidence score is capped at 4; the table has a 4 (cancel-reason survey)</div></td><td><span class="no">FAIL</span><div class="ev">no idea is scored</div></td><td><span class="no">FAIL</span><div class="ev">no idea is scored</div></td></tr>
+<tr><td>Does not hand over ten experiments to run in parallel on one page</td><td><span class="ok">PASS</span><div class="ev">Experiment 10: run it only after activation and day-30 retention are healthy; sequencing notes on 3, 5, 6, 8</div></td><td><span class="ok">PASS</span><div class="ev">Which ten, and in what order, depends on the stage the data points to. Anything I listed now would be guesswork.</div></td><td><span class="ok">PASS</span><div class="ev">Weeks 3-12: run 2-3 two-week tests on the stage that data shows is weakest, then expand</div></td></tr>
+<tr><td>Writes no file and no brief</td><td><span class="no">FAIL</span><div class="ev">Briefs for the top three are written in the chat (no file)</div></td><td><span class="ok">PASS</span><div class="ev">I wrote no file</div></td><td><span class="ok">PASS</span><div class="ev">I have not written any file</div></td></tr>
+<tr><td>Labels what it gives provisional</td><td><span class="ok">PASS</span><div class="ev">Growth Strategy Playbook (draft); This is a draft backlog</div></td><td><span class="ok">PASS</span><div class="ev">Provisional plan (not ranked, no claims about your numbers)</div></td><td><span class="ok">PASS</span><div class="ev">Provisional plan (it only claims what the data supports, which is very little)</div></td></tr></tbody></table></div><details><summary>before answer (loaded: growth-experiment-design · 3683 output tokens · 32 s · 0.1452 USD)</summary><pre>**No funnel data was available.** I found nothing in the workspace, so I don't know which stage is flat. This is a draft backlog. Every Confidence score is capped at 4, and I've used no industry averages as your numbers.
+
+## Growth Strategy Playbook (draft)
+
+### Executive summary
+A flat SaaS usually has a leak at activation or retention. Acquisition is the less likely cause, and scaling it into a leak wastes the spend. Don't buy paid traffic this quarter unless LTV:CAC is at least 3:1 and CAC payback is 12 months or less. Both figures are unverified.
+
+**Current bottleneck:** unknown. I need these inputs:
+- Counts at every stage for the last 28 days: visit, signup, activated, paid, day-30 retained.
+- Your activation event.
+- Weekly traffic to each step.
+- Who can ship changes, and how fast.
+
+**Experiment 0 (prerequisite): instrumentation.** Deniz adds the funnel events and Emre verifies they fire. Without this, none of the ten results can be read.
+
+### ICE backlog
+ICE is the mean of Impact, Confidence and Ease. Ties are broken by funnel position, with the earliest stage first.
+
+| Rank | Experiment | Hypothesis, to be confirmed by funnel data | I | C | E | ICE |
+|---|---|---|---|---|---|---|
+| 1 | Onboarding checklist (3 steps with a progress bar) | Guided steps raise signup-to-activation | 8 | 3 | 7 | 6.0 |
+| 2 | Signup friction cut (fewer fields, social login) | Fewer fields raise visit-to-signup completion | 7 | 3 | 8 | 6.0 |
+| 3 | Day-1 stall nudge (email or in-app, triggered when the activation event hasn't fired) | Users who go quiet after signup can be re-engaged | 7 | 3 | 8 | 6.0 |
+| 4 | Cancel-reason survey (one question, optional) | Reasons for leaving will show the real churn drivers | 5 | 4 | 9 | 6.0 |
+| 5 | Win-back email to lapsed users, with a clear unsubscribe | A portion of lapsed users will return | 5 | 3 | 9 | 5.7 |
+| 6 | Annual-plan prompt at the upgrade moment | Annual plans cut churn and lift cash | 6 | 3 | 8 | 5.7 |
+| 7 | Sample data or a template at first login | Faster time-to-value lifts activation | 8 | 3 | 5 | 5.3 |
+| 8 | Pause or downgrade option in the cancel flow, with cancelling kept easy | Some leavers will take a lighter option | 6 | 3 | 7 | 5.3 |
+| 9 | Landing page headline and proof test | A sharper message lifts visit-to-signup | 5 | 2 | 9 | 5.3 |
+| 10 | In-product teammate invite at the first value moment | Invites start a product loop | 7 | 2 | 6 | 5.0 |
+
+- **Experiment 10:** run it only after activation and day-30 retention are healthy. Otherwise it feeds a leaky funnel.
+- **Experiments 6 and 8:** these touch pricing, so the lead decides on them.
+- **Experiments 3 and 5:** consent and suppression for these emails go to Defne. They need confirming before launch.
+- **Traffic:** if a step gets under about 500 visitors a week, a test there will be noise. Use five user sessions and a support-ticket review instead.
+
+### Briefs for the top three
+Each runs 14 days or fewer. The decision rule is fixed now: ship if the primary metric clears its target with the guardrail holding. Kill if the lower bound is below zero at the planned sample. Otherwise iterate once.
+
+**1. Onboarding checklist**
+- **Primary metric:** signup-to-activation rate.
+- **Target:** about a 15% relative lift. This is an estimate and needs your baseline.
+- **Control:** the current first-run experience.
+- **Variant:** a 3-step checklist whose steps end at the activation event.
+- **Guardrail:** day-7 retention must not drop.
+- **Owners:** Kaan writes the copy, Deniz builds it, Emre checks the events.
+
+**2. Signup friction cut**
+- **Primary metric:** visit-to-signup completion.
+- **Target:** to be set once the baseline is known.
+- **Control:** the current form.
+- **Variant:** only the fields that are needed, with a reason for each, plus social login.
+- **Guardrail:** the share of signups that go on to activate. Easy signups that never activate don't count as a win.
+
+**3. Day-1 stall nudge**
+- **Primary metric:** activation within 7 days among users who stalled.
+- **Control:** no message.
+- **Variant:** one message that names the single next step.
+- **Guardrail:** unsubscribe rate and support contacts.
+
+### Chart specification
+I haven't drawn a funnel or retention projection. With no data, any curve would be invented. I'll add it once you send the stage counts.
+
+### Hand-offs and open items
+- **Peer messages received:** none.
+- **Needed from you:** the funnel counts, the activation event, weekly traffic per step, and past experiment results.
+- **Pricing and plan changes (6, 8):** need a decision from the lead.
+- **Email consent and suppression (3, 5):** need Defne's review before any send.
+- **Task list:** I had no task-tracking tools, so I haven't updated any task status.
+
+I wrote no file, because this workspace is the Agents United repo and not your product. I can save the playbook to a path you choose once the funnel data is in.</pre></details>
+<details><summary>after v1 answer (no skill loaded · 1119 output tokens · 13 s · 0.1021 USD)</summary><pre>**Missing: I have no funnel data for your SaaS, so I can't name the bottleneck or rank ten experiments yet.** I looked at no metrics because none came with the brief, and the working directory holds Agents United tooling, not your product. With no numbers, I can't do any arithmetic either.
+
+Please send these together:
+
+1. **Signups per month and the trend over the last 6 months.** This tells me whether "flat" means flat acquisition or flat net growth.
+2. **Signup-to-activation rate, and what counts as "activated."** Activation is the first place a flat funnel usually leaks, and I won't recommend scaling acquisition into a leaky funnel.
+3. **Day-7 and day-30 retention, plus monthly logo churn and net revenue retention.** Flat revenue often means new MRR is cancelling out churn, which calls for different experiments than weak acquisition.
+4. **ARPA, gross margin, blended CAC and CAC payback by channel.** I need these to compute LTV:CAC against the 3:1 floor before I suggest any paid spend.
+5. **Weekly visitors and signups to the funnel.** Below about 500 visitors a week, A/B tests are noise. I would then give you qualitative and sequential tests instead.
+6. **Sales motion and pricing model:** self-serve, sales-led or hybrid, and whether there's a free tier or trial. This decides whether PLG loops or outbound experiments fit.
+7. **Engineering capacity this quarter.** Every experiment must run in 2 weeks with little engineering work, so I need to know how many you can run in parallel.
+
+**Provisional plan (not ranked, no claims about your numbers):**
+- **Weeks 1–2:** audit the funnel and find the weakest AARRR stage using items 1–4.
+- **Weeks 3–12:** run 10 experiments, weighted toward that stage and scored with ICE. As a default I'd expect most to target activation and retention, with one or two on referral or acquisition only if retention holds.
+- Which ten, and in what order, depends on the stage the data points to. Anything I listed now would be guesswork.
+
+If you'd rather not wait, say "proceed" and I'll write the playbook with stated assumptions. Every ICE score and projection will be labelled as an assumption, and I'd expect the board to treat it that way too.
+
+**Peer messages received:** none.
+**Open items:**
+- The data above, which the lead or user must supply.
+- I wrote no file and claimed no task, because the brief names none.
+- The Gmail and Google Calendar connectors need authorizing through your claude.ai connector settings. This session can't do it, and I don't need them for this task.</pre></details>
+<details><summary>after v2 answer (no skill loaded · 1169 output tokens · 14 s · 0.0870 USD)</summary><pre>**I can't responsibly rank ten experiments yet. The only number I have is "flat for months", and that doesn't tell me which stage is stuck.** A flat line could be stalled signups, a leaky onboarding flow, churn cancelling out new growth, or no expansion revenue. Each of those needs different experiments. A list of ten without data would be a generic backlog that I'd be guessing at, and it could send the board's urgency into the wrong stage.
+
+**What I need, with the reason for each:**
+1. **Funnel counts for the last 6 months**, by month: visitors, signups, activated users (and your definition of "activated"), paying customers. This is how I find the leak.
+2. **Retention**: day-7 and day-30 for recent signup cohorts, plus monthly logo churn and net revenue retention (NRR). If retention is weak, more acquisition just fills a leaky bucket, so this decides whether the experiments target acquisition or retention.
+3. **Unit economics**: ARPA or ACV, gross margin, blended CAC, and the split of spend by channel. I won't recommend paid spend unless LTV:CAC is at least 3:1.
+4. **Motion and traffic**: self-serve/PLG or sales-led, and weekly visitors to signup. Below about 500 visitors a week, A/B tests are noise and I'd use qualitative research instead.
+5. **Context** (nice to have): the last few experiments you ran and what happened, and whether there's a pitch deck or analytics export I should read. Point me to a file path if so.
+
+**Provisional plan** (it only claims what the data supports, which is very little):
+- **Weeks 1–2: diagnose, don't test.** Build the funnel and cohort-retention table above and name the bottleneck. Nothing else in the quarter should start before this.
+- **Weeks 2–3: freeze new paid acquisition** until day-30 retention and LTV:CAC are known.
+- **Weeks 3–12:** run 2–3 two-week tests on the stage that data shows is weakest, then expand to the full ten-item ICE backlog. Each test gets a hypothesis, control and variant, primary metric, and sample size.
+
+Send the numbers, or tell me to proceed anyway. If you want me to proceed without data, I'll deliver the full playbook with the ten-experiment backlog. It will rest on stated benchmark assumptions and be labelled as such.
+
+**Peer messages received:** none
+**Open items:** the data in points 1–4 above. I have not written any file.</pre></details></section><section><h2>Funnel audit from four numbers, no page <small>data-poor, agency-conversion-specialist</small></h2><p class="prompt"><strong>Prompt:</strong> our course signup funnel for the last 28 days: landing page 18,400 visitors, pricing page 7,360, checkout started 1,470, paid 590. mobile seems way worse than desktop. can you audit it and tell me what to fix first? there's no budget for a redesign.</p><div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">before 5/6</th><th scope="col">after v1 4/6</th><th scope="col">after v2 4/6</th></tr></thead><tbody><tr><td>Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent)</td><td><span class="ok">PASS</span><div class="ev">table: Landing 18,400; Pricing 40.0% / 40.0%; Checkout started 20.0% / 8.0%; Paid 40.1% / 3.2%</div></td><td><span class="ok">PASS</span><div class="ev">table with step conversions; Overall, 3.2% of landing visitors pay</div></td><td><span class="ok">PASS</span><div class="ev">table with step conversions; Overall visit-to-paid is 3.2%</div></td></tr>
+<tr><td>Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing</td><td><span class="ok">PASS</span><div class="ev">Fix first: the pricing page to checkout step ... I have no sourced benchmark for course sales</div></td><td><span class="no">FAIL</span><div class="ev">Each stage is a similar-sized lever: the leak is not named; no benchmark mentioned</div></td><td><span class="no">FAIL</span><div class="ev">The sharpest leak is pricing to checkout: named; but no benchmark source or date, and none flagged as missing</div></td></tr>
+<tr><td>Asks for the missing inputs in one message (the device split by step, the page URLs or access)</td><td><span class="ok">PASS</span><div class="ev">What I need from you: the device and source split; your live landing, pricing and checkout URLs; whether checkout is hosted</div></td><td><span class="ok">PASS</span><div class="ev">What I need, with why: 1 the device split, 2 source by device, 3 course price and checkout steps, 4 where the pages live</div></td><td><span class="ok">PASS</span><div class="ev">What I need, with why: 1 split by mobile and desktop, 2 source by device, 3 page URLs or repo path, 4 payment failure counts</div></td></tr>
+<tr><td>Writes no file</td><td><span class="no">FAIL</span><div class="ev">The full audit is in docs/cro/2026-10-06-course-signup-funnel-audit.md (a file was written)</div></td><td><span class="ok">PASS</span><div class="ev">no file written</div></td><td><span class="ok">PASS</span><div class="ev">no file written</div></td></tr>
+<tr><td>Labels what it gives provisional, or from the numbers</td><td><span class="ok">PASS</span><div class="ev">Mobile is unverified ... every cause is a hypothesis</div></td><td><span class="ok">PASS</span><div class="ev">Provisional plan (no redesign, nothing here is confirmed)</div></td><td><span class="ok">PASS</span><div class="ev">Provisional plan (low confidence until I see the split)</div></td></tr>
+<tr><td>Says that no flow was walked</td><td><span class="ok">PASS</span><div class="ev">Pages not walked. The repo has no page source and I don't have your URLs</div></td><td><span class="no">FAIL</span><div class="ev">never says no flow was walked; says what it could check with access</div></td><td><span class="no">FAIL</span><div class="ev">does not say that no flow was walked; says the directory does not hold the site</div></td></tr></tbody></table></div><details><summary>before answer (loaded: conversion-funnel-optimization · 4547 output tokens · 41 s · 0.1680 USD)</summary><pre>**Fix first: the pricing page to checkout step.** Of 7,360 pricing visitors, only 1,470 (20%) start checkout, so 5,890 leave there. Checkout to paid loses 880 (40% convert). I couldn't see the pages, so I can't say why people leave, only where.
+
+| Step | Visitors | Step conversion | Cumulative |
+|---|---|---|---|
+| Landing | 18,400 | – | 100% |
+| Pricing | 7,360 | 40.0% | 40.0% |
+| Checkout started | 1,470 | 20.0% | 8.0% |
+| Paid | 590 | 40.1% | 3.2% |
+
+I have no sourced benchmark for course sales, so I'm ranking the steps by how many people are lost and how much a fix would gain, not against a market average. On your counts:
+- **Pricing to checkout:** +5 points (20% to 25%) is about +148 paid, roughly +25%.
+- **Checkout to paid:** the same +5 points is about +74 paid, roughly +12%.
+
+**Mobile is unverified.** You gave me combined numbers, so I can't confirm it or say how much worse it is. It's plausible, because a mobile-only leak usually means a layout bug, and that is the cheapest kind to fix. Some mobile visitors may also browse on a phone and pay later on desktop, which would make mobile look worse than it is.
+
+**What to do, in order, with no redesign:**
+1. **Get the split.** Export the same four steps for the same 28 days by device, and by source and new vs returning if you can. This is the prerequisite for everything else.
+2. **Walk pricing and checkout at 375 px and 1280 px.** Look for a buy button below the fold, plan cards that need sideways scrolling, a payment form that misbehaves on a phone, or a missing wallet option. Fix anything that blocks a purchase directly. Don't A/B test it, because a test on a broken step only measures the bug.
+3. **Test one pricing-page change.** Put the outcome, what's included and your real refund terms directly above each plan's buy button. Only state a guarantee you actually offer. At about 3,680 visitors per arm, I estimate you could detect roughly a 2.5-point change in about 4 weeks. That is my estimate, so size it properly before launch.
+4. **Then look at the checkout form.** Cut any field that has no reason to be there, and offer guest checkout or a wallet if your processor supports it.
+
+**What I didn't do:**
+- **Pages not walked.** The repo has no page source and I don't have your URLs, so every cause is a hypothesis.
+- **No benchmark used.** I didn't use one because I don't have a sourced, dated one.
+- **Scores are estimates.** The priority scores in the file are my own estimates, not measured.
+- **File re-read.** I re-read only the first 30 lines of the file after writing it.
+
+**What I need from you:**
+- the device and source split
+- your live landing, pricing and checkout URLs
+- whether checkout is hosted by the payment processor or embedded in your site
+
+The full audit is in `docs/cro/2026-10-06-course-signup-funnel-audit.md`. I didn't load the Task tools, so I haven't touched any task status, and I sent no messages to other agents.</pre></details>
+<details><summary>after v1 answer (no skill loaded · 1754 output tokens · 18 s · 0.1088 USD)</summary><pre>**Missing: the mobile vs desktop split.** You gave me blended numbers only, so I can't yet confirm mobile is the problem or say where it leaks.
+
+**What the blended numbers show**
+
+| Step | Reached | Step conversion | Lost |
+|---|---|---|---|
+| Landing | 18,400 | n/a | n/a |
+| Pricing | 7,360 | 40.0% | 11,040 |
+| Checkout started | 1,470 | 20.0% | 5,890 |
+| Paid | 590 | 40.1% | 880 |
+
+Overall, 3.2% of landing visitors pay. About 60% of people who start checkout don't finish.
+
+Each stage is a similar-sized lever. A 25% relative lift at any one step gives about 148 more paid, which is +25% (590 to ~738). The first fix therefore depends on where mobile loses people, and the blended data can't show that.
+
+**What I need, with why**
+1. **Visitors at each of the four stages, split by mobile and desktop (tablet if you track it).** This shows whether mobile is worse overall or only at one step, and it sets the first fix.
+2. **Traffic source split by device (for example social vs search vs email).** Mobile traffic often comes from colder sources, which would explain low conversion without any page fault.
+3. **Course price and the checkout steps.** Forced account creation, payment methods offered (Apple Pay, Google Pay, cards only) and the number of form fields drive mobile checkout drop-off.
+4. **Where the pricing and checkout pages live.** Give me a live URL or the source path. This repo looks like the Agents United tooling, not your site. With access I can check touch targets (48 by 48 px), field labels and button contrast, and I can make copy-only edits.
+
+**Provisional plan (no redesign, nothing here is confirmed)**
+1. Pull the device split for the four stages from your analytics. It's free and takes about 10 minutes.
+2. Use that split to find the one step where mobile falls furthest behind desktop.
+3. Make config and copy fixes at that step first. Examples are wallet payments, fewer fields, price and guarantee wording near the buy button, and a larger tap target.
+4. At 1,470 checkout starts per 28 days, a test at that step is slow. It would need roughly a month or more for a large effect, and longer for a small one. I'd ship the obvious fixes and compare before and after. I'd A/B test only the higher-traffic steps.
+
+Once I have the split, I'll write the full audit with the ICE-scored backlog and experiment briefs to `docs/cro/`. If you want to proceed without the split, say so and I'll audit the pages directly. The ranking would then be a heuristic review and labelled that way.
+
+**Peer messages received:** none
+**Open items:** the four inputs above. The Gmail and Google Calendar connectors need authorizing in your claude.ai connector settings if you want them used later. Neither is needed for this task.</pre></details>
+<details><summary>after v2 answer (no skill loaded · 1553 output tokens · 17 s · 0.1071 USD)</summary><pre>**Missing: the funnel split by device.** You have only the combined numbers, so I can't yet confirm that mobile is worse or say where it loses people.
+
+**What the combined numbers show**
+
+| Step | Reached | Step rate | Lost |
+|---|---|---|---|
+| Landing | 18,400 | n/a | n/a |
+| Pricing | 7,360 | 40% | 11,040 |
+| Checkout started | 1,470 | 20% | 5,890 |
+| Paid | 590 | 40% | 880 |
+
+Overall visit-to-paid is 3.2%. The sharpest leak is **pricing to checkout**: 80% of the people who see prices never start checkout. Landing-to-pricing loses more people in absolute terms, but that step is mostly about traffic quality and the page's pull. Checkout-to-paid loses 60% of those who started, and that is where mobile payment friction usually shows up.
+
+**What I need, with why**
+1. **Visitors, pricing views, checkout starts and paid, split by mobile and desktop (28 days).** This shows whether the mobile gap is at pricing, at checkout or at both. Each needs a different fix.
+2. **Traffic source by device, if you have it.** Mobile visitors may be mostly social or ads, which would lower their intent and make mobile look worse than the funnel really is.
+3. **The pricing and checkout page URLs, or the repo path if the site code is in this workspace.** The current directory doesn't appear to hold your site. I need the pages to audit the mobile layout, tap targets, form fields and payment options.
+4. **Whether you have payment failure or error counts, and which payment methods checkout offers.** That separates "people chose not to pay" from "payment didn't work".
+
+**Provisional plan (low confidence until I see the split)**
+No-redesign fixes, in this order:
+1. **Pricing page:** put one clear primary button above the fold on mobile, with a one-line statement of what is included and your refund terms, if you have a real one.
+2. **Checkout:** add Apple Pay and Google Pay if you don't offer them, and cut form fields to the minimum.
+3. **Testing:** at about 370 checkout starts a week, only large effects can be detected in a reasonable time. I'd ship these fixes and compare before and after by device, rather than run small A/B tests.
+
+Send the device split and the page access and I'll deliver the full audit. It will include findings with fixes, an ICE-scored backlog, test briefs where a test is worth running, and copy as typed section props.
+
+**Open items:** device-split funnel data, traffic source by device, page URLs or repo path, payment failure data.</pre></details></section><section><h2>Control, data-rich: "what should we test first?" with the funnel counts <small>control, agency-growth-strategist</small></h2><p class="prompt"><strong>Prompt:</strong> we're a small invoicing app. last month: 41k visits, 6.2k signups, 1,550 of those made a first invoice, 930 sent it, and 410 are still active after 30 days. what should we test first? I can get a dev for about two days a week.</p><div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">before 3/7</th><th scope="col">after v1 2/7</th><th scope="col">after v2 3/7</th></tr></thead><tbody><tr><td>Names signup to first invoice (25.0 percent) as the leak</td><td><span class="ok">PASS</span><div class="ev">The leak: 4,650 people a month sign up and never make an invoice ... Signup -&gt; first invoice 25.0%</div></td><td><span class="ok">PASS</span><div class="ev">The bottleneck is Activation: three out of four signups never create an invoice ... 25.0%</div></td><td><span class="ok">PASS</span><div class="ev">Test the path from signup to first invoice first. 75% of signups (4,650 of 6,200) never create an invoice ... 25.0%</div></td></tr>
+<tr><td>Gives no paid-spend advice</td><td><span class="ok">PASS</span><div class="ev">Paid acquisition: Don't scale it into a funnel where only 6.6% of signups are still active</div></td><td><span class="ok">PASS</span><div class="ev">I wouldn't spend on acquisition until this improves</div></td><td><span class="ok">PASS</span><div class="ev">Don't buy traffic yet.</div></td></tr>
+<tr><td>Ranked backlog where every row has Impact, Confidence, Ease with a reason and ICE as their mean</td><td><span class="no">FAIL</span><div class="ev">table has I, Confidence, Ease, ICE; 'All scores are my estimates'; no reason per score</div></td><td><span class="no">FAIL</span><div class="ev">no backlog table; 'Provisional test order' of three items</div></td><td><span class="no">FAIL</span><div class="ev">ICE table with I, C, E, ICE; 'Confidence is only 5 because I have no step-level data'; no reason per score</div></td></tr>
+<tr><td>Briefs for the top three only, each with primary metric, guardrail with threshold, run of 14 days or fewer, decision rule</td><td><span class="no">FAIL</span><div class="ev">only a brief for experiment 1; none for 2 and 3</div></td><td><span class="no">FAIL</span><div class="ev">no briefs: 'I haven't written a file or a brief'</div></td><td><span class="no">FAIL</span><div class="ev">Experiment 1 complete; experiments 2 and 3 have a metric but no decision rule or threshold</div></td></tr>
+<tr><td>Any benchmark labelled as needing a source and a date</td><td><span class="no">FAIL</span><div class="ev">'That range comes from my growth-experiment skill's guidance, not a source I looked up'; no date</div></td><td><span class="no">FAIL</span><div class="ev">no benchmark discussion</div></td><td><span class="no">FAIL</span><div class="ev">'Benchmarks are my estimates. I didn't search for sourced ones.'; no date</div></td></tr>
+<tr><td>Copy to Kaan, build and events to Deniz, event verification to Emre</td><td><span class="no">FAIL</span><div class="ev">no role named; 'someone' only</div></td><td><span class="no">FAIL</span><div class="ev">no role named</div></td><td><span class="no">FAIL</span><div class="ev">'Someone needs to write the variant copy ... Your dev builds ... Someone must verify that events fire'; no names</div></td></tr>
+<tr><td>Delivers the full artifact (does not stop to ask for inputs it already has)</td><td><span class="ok">PASS</span><div class="ev">I answered inline and didn't write a playbook file ... full ranked backlog and a brief delivered</div></td><td><span class="no">FAIL</span><div class="ev">'Missing: the pricing/plan model and what a user sees right after signup. I can't ... write an experiment brief without them. This is provisional.' (stopped to ask although the funnel counts were given)</div></td><td><span class="ok">PASS</span><div class="ev">Growth Strategy Playbook (condensed, chat only): ICE backlog, three briefs, a dev schedule, parked items (skill loaded)</div></td></tr></tbody></table></div><details><summary>before answer (loaded: growth-experiment-design · 3814 output tokens · 37 s · 0.1306 USD)</summary><pre>**Test first: get new signups to their first invoice faster.** That step loses the most people, and it's early enough in the funnel that fixing it improves everything after it.
+
+## Funnel, last month
+
+| Stage | Count | Step conversion |
+|---|---|---|
+| Visits → signups | 41,000 → 6,200 | 15.1% |
+| Signup → first invoice made | 1,550 | **25.0%** |
+| Made → sent | 930 | 60.0% |
+| Sent → active at day 30 | 410 | 44.1% |
+| Signup → active at day 30 | 410 | 6.6% |
+
+- **The leak:** 4,650 people a month sign up and never make an invoice. A 25% activation rate is at the bottom of the 25–40% self-serve range. That range comes from my growth-experiment skill's guidance, not a source I looked up, so treat it as an estimate.
+- **Second leak:** 620 people start an invoice and never send it. It's real, but it comes later in the funnel and can't be tested in two weeks at this volume.
+- **Caveat on the 410:** these are probably not the same people as the 6,200 signups, because day-30 activity comes from earlier cohorts. Use the ratios as rough guides.
+- **Visit-to-signup looks too high.** 15% is far above typical SaaS rates, which I'd guess at 2–5%. Check for bot signups or an undercounted visit number before you trust the top of the funnel.
+
+## What you can test with this traffic
+
+You get about 1,430 signups a week, so a two-week test has roughly 1,430 per arm. At a 25% baseline that can only detect a lift of about 4.6 points (about 18% relative) at 80% power. That's my own back-of-envelope sample-size calculation, not a tool run.
+
+So your tests need bold changes. A small copy tweak would be noise. The created-to-sent step sees only about 360 users a week and would need a 10-point lift, so look at it with user sessions instead.
+
+## Ranked backlog
+
+All scores are my estimates. Confidence is low because I have no session data yet.
+
+| Rank | Experiment | Impact | Confidence | Ease | ICE |
+|---|---|---|---|---|---|
+| 0 | Check the events, define "active", and watch 5–10 sessions or calls with signups who never made an invoice (no dev time) | n/a | n/a | 10 | do this first |
+| 1 | **New signups land straight in the invoice editor, with business setup (logo, tax, address) deferred to the send step** | 9 | 5 | 6 | 6.7 |
+| 2 | 24-hour reminder email to signups with no invoice, with a one-click link to the editor | 6 | 6 | 9 | 7.0 |
+| 3 | First-invoice checklist and an empty-state button ("Make your first invoice in 2 minutes") | 6 | 5 | 9 | 6.7 |
+| 4 | Fewer steps from draft to send (client email, preview) | 5 | 4 | 6 | 5.0 (not testable yet) |
+
+Run the experiments in this order: 0, then 1, then 2 and 3.
+
+Experiment 2 scores highest, but it's a modest nudge. Experiment 1 changes the product the most, and I expect it to be the only one big enough to detect in two weeks.
+
+## Brief for experiment 1
+
+- **Hypothesis:** Because 75% of signups never make an invoice, we believe landing them in a pre-filled invoice editor with setup deferred will lift signup-to-first-invoice from 25% to 30% or more. We'll know within 14 days, at about 2,800 signups.
+- **Control:** The current post-signup flow.
+- **Variant:** Signups go straight to the editor with a sample invoice. Business details are asked for only when they hit Send.
+- **Primary metric:** Share of signups who make a first invoice within 7 days.
+- **Guardrail:** Invoices sent per signup must not fall. Support contacts must not rise by more than 20%.
+- **Decision rule, fixed before launch:**
+  - Ship if the lift is at least 4 points, the lower bound is above zero and the guardrail holds.
+  - Kill if the lower bound is below zero at the planned sample.
+  - Otherwise iterate once.
+- **Dev cost:** About one week of your two-day-a-week dev, so roughly three calendar weeks including the run.
+
+## Your two dev days a week
+
+- **Week 1:** Fix the events, build the checklist and empty state (experiment 3, small), and do the user sessions.
+- **Weeks 2–3:** Build and launch experiment 1. Run one test per page at a time.
+- **After the result:** Ship the 24-hour email, then look at the draft-to-send step using what the sessions showed.
+
+## What to hold off on
+
+- **Paid acquisition:** Don't scale it into a funnel where only 6.6% of signups are still active at day 30. I haven't seen your LTV or CAC, so I can't confirm the unit economics.
+- **Referral program:** Wait until activation improves. Your best loop is probably the invoice itself, with a "pay online" link or small branding on the 930 invoices you send each month. Test it later.
+
+## What I need from you
+
+- How you define "active" at day 30.
+- Whether the 410 comes from the same signup cohort as the 6,200.
+- Your price and churn, so I can model LTV and CAC.
+
+I answered inline and didn't write a playbook file or run any searches. If you want the full playbook with the funnel chart spec saved to the repo, say so.</pre></details>
+<details><summary>after v1 answer (no skill loaded · 2171 output tokens · 23 s · 0.0971 USD)</summary><pre>**Missing: the pricing/plan model and what a user sees right after signup.** I can't size a paid-spend recommendation or write an experiment brief without them. This is provisional. I haven't written a file or a brief.
+
+**What your numbers show**
+
+| Step | Users | Step conversion | Lost |
+|---|---|---|---|
+| Visit → signup | 41,000 → 6,200 | 15.1% | n/a |
+| Signup → first invoice | 6,200 → 1,550 | **25.0%** | **4,650** |
+| Invoice created → sent | 1,550 → 930 | 60.0% | 620 |
+| Sent → active at day 30 | 930 → 410 | 44.1% | 520 |
+
+Only 6.6% of signups end up active. The bottleneck is **Activation**: three out of four signups never create an invoice, and that step loses far more people than any other. I wouldn't spend on acquisition until this improves. Visit-to-signup is already strong, so more traffic would mostly add to the leak.
+
+**Caveat on the data.** The day-30 count of 410 can't come from last month's signups, because those users haven't reached day 30 yet. These are probably different cohorts, so the 44% retention figure is soft. Cohort it properly before trusting it.
+
+**Provisional test order (a dev two days a week is enough)**
+1. **Signup → first invoice.** Send new users straight into the invoice editor with a sample or prefilled invoice. Ask for business details only when they hit send. This is a small change on one screen. At about 1,430 signups a week, two weeks gives roughly 1,430 per arm. That detects a lift of about 4–5 points (25% to ~30%), not smaller ones. Treat that as an estimate, not a finished power calculation.
+2. **Created → sent (60%).** Remove friction at the send step: client email capture, a preview, and fewer required fields. Run it after test 1, since it needs the same dev time.
+3. **Retention after send.** Add payment-status or "invoice viewed" notifications. This is the likely day-30 lever, but fix the cohort data first.
+
+**What I need, with why**
+- **Price, plan model (free or trial) and gross margin:** needed for LTV and CAC payback. Without them I can't say whether any paid channel is viable.
+- **What happens between signup and the empty invoice screen:** it tells me which activation fix to test first. For example, is there an onboarding questionnaire, email verification or a blank dashboard?
+- **How "active" is defined, and whether the counts come from the same cohort:** this decides whether the retention numbers can be used.
+- **Traffic mix:** 15% visit-to-signup is unusually high. If "visits" includes logged-in or returning users, the top of the funnel is overstated.
+
+When you send those, I'll build the full ICE-ranked backlog, the briefs for the top three tests and the funnel projection.
+
+**Open items:** none beyond the questions above. This was a direct reply, so no peers or task list were involved.</pre></details>
+<details><summary>after v2 answer (loaded: growth-experiment-design · 5282 output tokens · 47 s · 0.1659 USD)</summary><pre>## Growth Strategy Playbook (condensed, chat only, no file written)
+
+### Executive Summary &amp; Unit Economics
+**Test the path from signup to first invoice first.** 75% of signups (4,650 of 6,200) never create an invoice. That is the earliest big leak, and it is cheaper to fix than anything downstream. Don't buy traffic yet.
+
+| Stage | Count | Step conversion |
+|---|---|---|
+| Visit → signup | 41,000 → 6,200 | 15.1% |
+| Signup → first invoice | 6,200 → 1,550 | **25.0%** |
+| First invoice → sent | 1,550 → 930 | 60.0% |
+| Sent → active at day 30 | 930 → 410 | 44.1% |
+| Signup → day-30 active | 6,200 → 410 | 6.6% |
+
+- **Current bottleneck:** Activation. Signup → first invoice sits at the bottom of the usual 25–40% self-serve range.
+- **Acquisition looks fine.** A 15% visit-to-signup rate is high. Check that "visits" isn't counting only signup-intent pages.
+- **Second leak:** 620 people (40%) built an invoice and never sent it.
+- **Unit economics:** I can't model LTV, CAC or payback without price and ARPU. The plan recommends no paid spend, so that doesn't block it.
+- **Benchmarks are my estimates.** I didn't search for sourced ones.
+
+### ICE Experiment Backlog
+| Rank | Experiment | Hypothesis | I | C | E | ICE |
+|---|---|---|---|---|---|---|
+| 1 | Short path to first invoice | Because 75% never create an invoice, dropping the user into the invoice editor with only client, one line item and amount required (business details and logo deferred) lifts signup → invoice from 25% to 30% within 14 days | 9 | 5 | 6 | 6.7 |
+| 2 | "Finish your invoice" nudge email | Because most signups go quiet in session one, a day-1 email to signups with no invoice lifts signup → invoice by 2–3pp | 5 | 5 | 9 | 6.3 |
+| 3 | Simpler send step | Because 40% of created invoices aren't sent, a one-click send with a preview and no blocking setup lifts created → sent from 60% to 68% | 6 | 5 | 6 | 5.7 |
+
+Confidence is only 5 because I have no step-level data on where people stop inside the first session. Ranks 1 and 2 are close, so the tie-break is bottleneck impact.
+
+### Detailed Experiment Briefs
+
+#### Experiment 1: Short path to first invoice
+- **Primary metric:** share of new signups who create a first invoice within 7 days.
+- **Target lift:** +5pp (25% → 30%).
+- **Control:** the current post-signup flow.
+- **Variant:** land straight in the invoice editor with sample data prefilled. Require only client name, one line item and amount. Ask for business details at send time.
+- **Guardrail:** created → sent must not fall below 55%, and support contacts must not rise.
+- **Run length:** 14 days, about 2,860 signups, so about 1,430 per arm.
+  - At a 25% baseline that detects roughly 4.6pp (rough rule of thumb, 80% power, my estimate).
+  - The variant therefore has to be a big change, not a tweak.
+- **Decision rule, fixed now:**
+  - **Ship** if the lift is at least +4pp, the confidence interval's lower bound is above 0, and the guardrail holds.
+  - **Kill** if the lower bound is below 0 and the point lift is under +2pp.
+  - **Otherwise** iterate once.
+- **Dev cost:** about 2 days of build plus an event check, so it fits one week of your dev time.
+
+#### Experiment 2: Nudge email (no dev time)
+- **Timing:** send it in the week the dev builds Experiment 1, so the two never overlap on the same users.
+- **Test:** randomly hold out half of the signups with no invoice.
+- **Metric:** invoice created within 3 days of the email.
+- **Guardrail:** unsubscribe rate.
+- **Then:** keep the email on in both arms of Experiment 1.
+
+#### Experiment 3: Simpler send step
+- **Timing:** run it after Experiment 1 is decided, to avoid two tests on one population.
+- **Cost:** about 2 dev days.
+- **Metric:** created → sent.
+
+**Dev schedule:**
+- Week 1: build Experiment 1.
+- Weeks 2–3: run it.
+- Week 3: build Experiment 3.
+
+### Parked
+- **Referral loops and paid acquisition.** Wait until activation is healthy.
+- **Day-30 retention.** Senders retain at 44%, which looks workable. Revisit once you have cohort data.
+
+### Funnel Projection
+```json
+{"type":"bar","data":{"labels":["Visit","Signup","First invoice","Sent","Active D30"],"datasets":[{"label":"Last month","data":[41000,6200,1550,930,410]}]}}
+```
+
+### Open items
+- **Activation event.** Do you count "first invoice created" or "first invoice sent"? I assumed created.
+- **Cohort mismatch.** Last month's signups may not all have reached day 30. Also confirm the 410 "active" users come from the same cohort as the 6,200 signups.
+- **Session-one drop-off.** Where do signups stop in their first session? A session recording or event data would raise Experiment 1's confidence from 5 to 7 or higher.
+- **Price and ARPU.** I need them for LTV and payback.
+- **Email consent.** Do signups consent to lifecycle email? Experiment 2 depends on it.
+- **Hand-offs.**
+  - Someone needs to write the variant copy and the email.
+  - Your dev builds the flow and the events.
+  - Someone must verify that events fire before launch.
+
+I didn't write a playbook file. Say so if you want one saved.</pre></details></section><section><h2>The lead: "we need more signups", nothing else sent <small>lead, orchestrator-digital-agency</small></h2><p class="prompt"><strong>Prompt:</strong> client message: 'We need more signups for our invoicing tool before the end of the quarter.' they've sent nothing else. you're the lead, where do you start?</p><div class="wrap"><table><thead><tr><th scope="col">Assertion</th><th scope="col">before 3/8</th><th scope="col">after (lead change) 4/8</th></tr></thead><tbody><tr><td>Says a classification aloud with its reason (Standard)</td><td><span class="no">FAIL</span><div class="ev">no classification (Quick, Standard or Programme) is said</div></td><td><span class="no">FAIL</span><div class="ev">no classification said</div></td></tr>
+<tr><td>Restates the request as three lists: what the client said, what is assumed, what is unknown</td><td><span class="no">FAIL</span><div class="ev">one restating sentence; no three lists</div></td><td><span class="no">FAIL</span><div class="ev">no three lists; 'We don't yet know' four items</div></td></tr>
+<tr><td>Asks one question that would change the plan (signups or paying customers), with plain options</td><td><span class="ok">PASS</span><div class="ev">3. Definition. Is a signup a free account, a trial start or a paid conversion?</div></td><td><span class="ok">PASS</span><div class="ev">1. Target: ... Is a signup a free trial, a freemium account or a paid plan?</div></td></tr>
+<tr><td>Puts three to five premises to the client as agree or disagree, with a cheap check for each shaky one</td><td><span class="no">FAIL</span><div class="ev">Step 3: test the premise: one premise, no agree or disagree</div></td><td><span class="no">FAIL</span><div class="ev">no premises put as agree or disagree</div></td></tr>
+<tr><td>Lists the data the first slices will need (funnel counts by stage for 28 days, weekly traffic, the current signup rate, analytics access) as one list with who can supply each</td><td><span class="no">FAIL</span><div class="ev">5. Funnel. Where does traffic come from today, and where do people drop off? 6. analytics access; not a data list with who supplies each</div></td><td><span class="no">FAIL</span><div class="ev">2. Funnel data: traffic by channel, visit-to-signup rate, signup-to-activation rate, top sources, access to the site: a list, but no who can supply each and no 28-day counts or weekly traffic</div></td></tr>
+<tr><td>Creates no deliverable file and briefs no specialist; stops and waits</td><td><span class="ok">PASS</span><div class="ev">No files get created until they accept it.</div></td><td><span class="ok">PASS</span><div class="ev">I won't create or change any files until you've accepted it.</div></td></tr>
+<tr><td>Offers a minimal and an ideal approach with effort, risk and a recommendation tied to the goal</td><td><span class="no">FAIL</span><div class="ev">no minimal or ideal approach offered; a fast path only if the deadline is short</div></td><td><span class="ok">PASS</span><div class="ev">A. Fix the funnel first ... B. Add traffic ... C. Build organic search; My default recommendation is A, with a small B alongside it</div></td></tr>
+<tr><td>Closes with the client's next action</td><td><span class="ok">PASS</span><div class="ev">Next action for you: send the client the six questions above.</div></td><td><span class="ok">PASS</span><div class="ev">Can you send me the client's answers to questions 1-3 at least?</div></td></tr></tbody></table></div><details><summary>before answer (no skill loaded · 1427 output tokens · 15 s · 0.1820 USD)</summary><pre>I start with the brief, not with delegation. "More signups" is a goal, not a brief, so no specialist gets work yet.
+
+**Operating mode:** Limited Operational. From my own tool list I can reach Context7 and Stitch. Firecrawl is a claude.ai connector that may be usable. I can't see GitHub, Playwright, MarkItDown, Chrome DevTools or Figma from here. Some specialists carry their own, so I'll confirm that before I plan around it. I'm Chris, and my team is Ava (growth), Kaan (conversion), Jamileh (design), Yavuz (content), Jale (campaigns), Selin (SEO), Deniz (frontend), Emre (QA) and Defne (compliance).
+
+**Step 1: classify and restate.** I'd say this back to the client: "You want more signups for your invoicing tool by quarter end, and you haven't told us who it's for, what a signup is, or how many you need."
+
+**Step 2: ask a few questions that change the plan.** These are the ones I'd put to the client:
+1. **Deadline.** Which date is "end of quarter"? Today is 6 Oct, so it could be 31 Dec or a fiscal date. That sets whether we have about 12 weeks or about 4.
+2. **Target.** How many signups, and from what baseline? What is the current monthly rate?
+3. **Definition.** Is a signup a free account, a trial start or a paid conversion? An account that never sends an invoice may not count for them.
+4. **Audience.** Who is it for: freelancers, small businesses or accountants? Which countries? That decides the regulatory angle (e-invoicing mandates) and the channels.
+5. **Funnel.** Where does traffic come from today, and where do people drop off (visit, signup, first invoice sent)?
+6. **Constraints.** What is the budget, who can ship site changes, and what can we measure (analytics access)?
+
+**Step 3: test the premise.** If signups are leaking after the visit, buying traffic wastes money. If the funnel is healthy, traffic is the lever. That's why I wouldn't pick a channel yet.
+
+**Step 4: consult before mapping.** Once the answers are in, I'd consult Ava read-only for a bottleneck hypothesis and a sizing of the gap. I'd consult Kaan on a quick signup-flow audit if there's a live URL. Then I'd present a delegation map for the client to accept. It would run Ava first, then Kaan, Jamileh and Yavuz in parallel, then Deniz, Selin and Jale, and last Emre and Defne as the verification gates. No files get created until they accept it.
+
+**Next action for you:** send the client the six questions above. If the deadline is under a month away, tell me. I'd then recommend a fast path (fix the signup funnel and run a campaign to existing leads) over content or SEO, which are slow.</pre></details>
+<details><summary>after (lead change) answer (no skill loaded · 1352 output tokens · 15 s · 0.1341 USD)</summary><pre>Hi, I'm Chris, lead of the AstrolabsAI agency team. I haven't started any work yet.
+
+**Operating mode: Limited Operational.** From this session I can call only two of the eight integrations: Context7 and Stitch. GitHub, Firecrawl, Playwright, MarkItDown, Chrome DevTools and Figma aren't callable from here. I haven't yet checked the install record or whether Agent Teams are on, so I'll run those checks before I spawn anyone. Gmail and Google Calendar also need authorizing in your claude.ai connector settings before they work.
+
+**Where I start:** with the brief, not the team. "More signups" is a goal, not a brief. We don't yet know:
+- what a signup is worth,
+- where the funnel leaks,
+- what "more" means,
+- what we can ship before quarter end.
+
+If I delegated now, the specialists would be working from guesses. I'll run `agency-brief-and-premises` first. That means restating the goal, testing the assumptions behind it, comparing two or three approaches, and getting the client's agreement before I issue a delegation map.
+
+**Questions for the client (one round):**
+1. **Target:** What is the current number of signups per week, and what number do they want by the end of the quarter? Is a signup a free trial, a freemium account or a paid plan?
+2. **Funnel data:** Can they share the following?
+   - Traffic by channel.
+   - The visit-to-signup rate.
+   - The signup-to-activation rate.
+   - Their top acquisition sources.
+   - Access to the site or landing page.
+3. **Unit economics:** What are their price, CAC and trial-to-paid conversion? Is a signup only a vanity metric if it doesn't convert to paid?
+4. **Audience:** Who is the ideal customer: freelancers, small businesses or accountants? What market and which regions? This matters because invoicing rules and tax laws vary by country.
+5. **Constraints:** What's the budget, the quarter-end date, who can approve changes to the site, and what can we ship in the time left?
+6. **Prior attempts:** What have they already tried, and what worked?
+
+**Likely approaches (to confirm once we have answers):**
+- **A. Fix the funnel first.** Run a conversion and signup-flow teardown on existing traffic. This is the fastest route if traffic exists but converts badly. Ava and Kaan lead.
+- **B. Add traffic.** Run paid or launch campaigns and email. This only pays off if the funnel already converts. Jale and Jamileh lead.
+- **C. Build organic search and content.** This is slow, so it's unlikely to move signups much before quarter end. Yavuz and Selin lead.
+
+My default recommendation is A, with a small B alongside it. Given the deadline, I'd consult Ava read-only on the funnel before I commit to a map. Defne reviews consent, CAN-SPAM and FTC disclosures before anything launches.
+
+Can you send me the client's answers to questions 1–3 at least? I'll then restate the brief and put the delegation map to you for acceptance. I won't create or change any files until you've accepted it.</pre></details></section>
+</main></body></html>

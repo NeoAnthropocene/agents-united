@@ -1,0 +1,38 @@
+{
+ "D1-growth-nodata": [
+  "First line says the stage counts for the last 28 days are missing, and asks for them",
+  "Does not invent a funnel or quote industry averages as this product's numbers",
+  "Makes instrumentation (the events and where they fire) experiment zero with Deniz and Emre as owners",
+  "Scores every idea Confidence 1 to 3",
+  "Does not hand over ten experiments to run in parallel on one page",
+  "Writes no file and no brief",
+  "Labels what it gives provisional"
+ ],
+ "C1-growth-data": [
+  "Names signup to first invoice (25.0 percent) as the leak",
+  "Gives no paid-spend advice",
+  "Ranked backlog where every row has Impact, Confidence, Ease with a reason and ICE as their mean",
+  "Briefs for the top three only, each with primary metric, guardrail with threshold, run of 14 days or fewer, decision rule",
+  "Any benchmark labelled as needing a source and a date",
+  "Copy to Kaan, build and events to Deniz, event verification to Emre",
+  "Delivers the full artifact (does not stop to ask for inputs it already has)"
+ ],
+ "D2-funnel-numbers": [
+  "Computes step and cumulative conversion (40.0, 20.0, 40.1 and 3.2 percent)",
+  "Names pricing to checkout as the leak, with a benchmark source and date given or flagged as missing",
+  "Asks for the missing inputs in one message (the device split by step, the page URLs or access)",
+  "Writes no file",
+  "Labels what it gives provisional, or from the numbers",
+  "Says that no flow was walked"
+ ],
+ "L1-lead-signups": [
+  "Says a classification aloud with its reason (Standard)",
+  "Restates the request as three lists: what the client said, what is assumed, what is unknown",
+  "Asks one question that would change the plan (signups or paying customers), with plain options",
+  "Puts three to five premises to the client as agree or disagree, with a cheap check for each shaky one",
+  "Lists the data the first slices will need (funnel counts by stage for 28 days, weekly traffic, the current signup rate, analytics access) as one list with who can supply each",
+  "Creates no deliverable file and briefs no specialist; stops and waits",
+  "Offers a minimal and an ideal approach with effort, risk and a recommendation tied to the goal",
+  "Closes with the client's next action"
+ ]
+}

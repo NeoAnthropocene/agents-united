@@ -6,8 +6,9 @@ The record behind `../2026-10-05-claude-2.1.289-hardening-h8.md`: what the six s
 | --- | --- |
 | `review-iteration-1.html` | Open it in a browser. Iteration 1: 12 prompts with the skill and 12 without, each prompt, both answers, every assertion with PASS or FAIL and the quoted evidence. |
 | `review-iteration-2.html` | Iteration 2: the three revised skills re-run headless, with the latest evidence per skill at the top, and the fixture evals for `seo-audit` and `conversion-funnel-optimization`. |
-| `data/assertions-iteration-1.json`, `data/assertions-iteration-2.json` | The assertions, written from each eval's `expected_output` before any without-skill answer was read. |
-| `data/iteration-1/<skill>/eval-<id>/{with_skill,without_skill}/` | `grading.json` (each assertion, passed or not, with its evidence), `timing.json` (tokens, time, cost, which skills loaded or were refused) and `outputs/answer.md`. Same layout for `data/iteration-2/`. |
+| `review-intake.html` | The follow-up of 2026-10-06 (see `../2026-10-06-claude-2.1.289-inputs-first.md`): eleven headless runs of the inputs-first rule and the lead's data inventory, before and after, on data-poor prompts and a data-rich control. |
+| `data/assertions-iteration-1.json`, `data/assertions-iteration-2.json`, `data/assertions-iteration-3.json` | The assertions, written from each eval's `expected_output` (iteration 3: from the intended behaviour) before any without-skill or after answer was read. |
+| `data/iteration-1/<skill>/eval-<id>/{with_skill,without_skill}/` | `grading.json` (each assertion, passed or not, with its evidence), `timing.json` (tokens, time, cost, which skills loaded or were refused) and `outputs/answer.md`. Same layout for `data/iteration-2/`; `data/iteration-3/<prompt>/<before|after-v1|after-v2>/` for the follow-up. |
 | `data/benchmark-iteration-1.json`, `data/benchmark-iteration-2.json` | Pass rate, tokens, time and cost per skill; the assertions that passed in both configurations and the ones that failed in both. |
 | `scripts/` | The scripts that produced them: `extract*.mjs` (read the host's session records), `benchmark*.mjs`, `review*.mjs`, `costs.mjs`, `run-headless.sh`. They have the paths of the machine of the run hard-coded (`C:/github/scratch-pilot/h8-workspace`) and the inputs they read (the raw answers, the prompts) are in the review pages. |
 

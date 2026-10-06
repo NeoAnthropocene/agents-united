@@ -1,0 +1,46 @@
+{
+ "prompt": "D1-growth-nodata",
+ "configuration": "after v1",
+ "session": "9ce50c17-f337-42f8-8c47-8a0a727cbf65",
+ "assertion_results": [
+  {
+   "text": "First line says the stage counts for the last 28 days are missing, and asks for them",
+   "passed": true,
+   "evidence": "Missing: I have no funnel data for your SaaS, so I can't name the bottleneck or rank ten experiments yet."
+  },
+  {
+   "text": "Does not invent a funnel or quote industry averages as this product's numbers",
+   "passed": true,
+   "evidence": "With no numbers, I can't do any arithmetic either."
+  },
+  {
+   "text": "Makes instrumentation (the events and where they fire) experiment zero with Deniz and Emre as owners",
+   "passed": false,
+   "evidence": "no instrumentation experiment; Deniz and Emre not named"
+  },
+  {
+   "text": "Scores every idea Confidence 1 to 3",
+   "passed": false,
+   "evidence": "no idea is scored"
+  },
+  {
+   "text": "Does not hand over ten experiments to run in parallel on one page",
+   "passed": true,
+   "evidence": "Which ten, and in what order, depends on the stage the data points to. Anything I listed now would be guesswork."
+  },
+  {
+   "text": "Writes no file and no brief",
+   "passed": true,
+   "evidence": "I wrote no file"
+  },
+  {
+   "text": "Labels what it gives provisional",
+   "passed": true,
+   "evidence": "Provisional plan (not ranked, no claims about your numbers)"
+  }
+ ],
+ "summary": {
+  "passed": 5,
+  "total": 7
+ }
+}

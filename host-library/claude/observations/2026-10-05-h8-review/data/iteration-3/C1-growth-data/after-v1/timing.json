@@ -1,0 +1,8 @@
+{
+ "output_tokens": 2171,
+ "duration_ms": 23181,
+ "cost_usd": 0.0971362,
+ "tools": {},
+ "skill_calls_loaded": [],
+ "mode": "headless claude -p, sonnet, effort medium"
+}
