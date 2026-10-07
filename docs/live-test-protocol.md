@@ -343,3 +343,5 @@ Estimate 3 to 6 USD, not measured for Opus; 1 prompt (a second only to repeat a 
 ## After a sitting
 
 The executor reads the records with `npm run hostlib:session`, writes the observation to `host-library/claude/observations/<date>-claude-<version>-hardening-<scenario>.md` (what was seen, what was not, the ledger line), and fixes every defect **test first, one pull request per defect cluster**. Plan 035's log gets a dated entry. The ledger of the sitting (prompts and USD from the session's own record) goes in the observation and the pull request.
+
+**Mode-line gate amendment (R2 defect fix, 2026-10-07, ADR 0044).** The earlier one-time-hold expectations describe the earlier build. R2 showed that streamed calls in one response can be more than two seconds apart and pass without a mode line. The existing gate now holds lead calls other than ToolSearch until the line is visible in the saved transcript; a retry may be held again while the transcript lags. Read the line and its saved ordering, not a fixed hold count. Teammate calls remain outside this gate. This change is unverified live; no further prompt is authorized under the exhausted N3 ceiling.
