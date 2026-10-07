@@ -28,9 +28,9 @@ const path = load("path");
 const WINDOW_MS = 2000;
 const LINE = /^Mode: (?:Fully|Limited) Operational\./;
 const MESSAGE = [
-  "Mode line first. Before this call, write the mode line as the first line of a text message, filled in:",
+  "Mode line first. Before this call, write the mode line as the first line of your text, filled in:",
   "Mode: <Fully Operational or Limited Operational>. Callable: <the required integrations you can call, or none>. Missing: <the required integrations you cannot call, or none>. Extras: <MarkItDown and Stitch, only those you can call, or none>.",
-  "Your definition asks for it under \"The first message\". If your last message already began with that line, repeat the call now.",
+  "Your definition asks for it under \"The first message\". Do this even if you believe you wrote it already: the host cannot see the message you are writing, so this call is held once. Then make the call again, and write the line in the same message as the call you repeat.",
 ].join("\n");
 
 function block() {
