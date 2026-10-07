@@ -31,7 +31,7 @@ export function managedGuardHooks(): { PreToolUse: Array<{ matcher: string; hook
 }
 
 /** The two native Claude guards: the destructive-command guard (writers) and the read-only guard (roles that never mutate). */
-export type NativeGuardKind = 'destructive' | 'read-only';
+export type NativeGuardKind = 'destructive' | 'read-only' | 'mode-line';
 
 /**
  * Plan 032 close-out follow-up (6) — the native lane ships each guard as a script file under `.claude/hooks/`, because Claude prints
@@ -51,6 +51,13 @@ export const NATIVE_GUARD_FILES: Record<NativeGuardKind, { name: string; rel: st
     name: 'agents-united-readonly-guard',
     rel: '.claude/hooks/agents-united-readonly-guard.js',
     reference: '${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js',
+  },
+  // Plan 035 N2 slice (e): not a guard of what a role may do but a gate on the lead's first message (`mode-line-gate.ts`); it rides on the same
+  // script-file machinery, so it is installed, refcounted, uninstalled and checked by the doctor like the other two.
+  'mode-line': {
+    name: 'agents-united-mode-line-gate',
+    rel: '.claude/hooks/agents-united-mode-line-gate.js',
+    reference: '${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-mode-line-gate.js',
   },
 };
 

@@ -1,0 +1,32 @@
+# Session 7bd94b81-015a-490e-8580-e6f500c1ce9e
+cwd C:\github\scratch-pilot\n2-start3 · Claude Code 2.1.292 · agent orchestrator-digital-agency · permission mode auto
+from 2026-10-07T10:57:09.300Z to 2026-10-07T10:57:38.890Z · 1 prompt(s) · 0 teammate record(s)
+cost 0.5260 USD (the session's own record) · API 27 s · wall 43 s
+  claude-haiku-4-5-20251001: 1358 in, 12 out, 0 cache-read, 0.0014 USD
+  claude-opus-5-5: 8 in, 2593 out, 193404 cache-read, 0.5246 USD
+
+## Findings (the seven open items)
+- H1a A task owner set on a running teammate lifts a read-only consultation: **not applicable**
+    no teammate was briefed as a read-only consultation
+- H1b Shutdown is asked with a structured shutdown_request: **not seen**
+    structured shutdown_request: 0, plain-text shutdown requests: 0, shutdown responses received by the lead: 0
+    shutdown responses sent by teammates: 0 of 0 requested (approved 0)
+- H1c Shell-less roles re-read their files before reporting: **not applicable**
+    no shell-less teammate wrote a file
+- H2/H7 The lead runs on its pinned Opus: **seen**
+    lead models: claude-opus-5-5
+    agent setting: orchestrator-digital-agency, permission mode: auto
+- H3 A peer exchange between teammates without a fixed contract: **not seen**
+    peer messages sent: 0 across 0 pair(s); received from a peer: 0
+- H4 The host refuses a blocked task started early: **not seen**
+    0 task call(s), 0 task(s); starts while blocked: 0 (refused 0, accepted 0)
+- H5 The settings-level guard refuses a command it names, in a team: **not seen**
+    no tool result carries the guard block message
+- H6 MCP-backed tools are called: **not seen**
+    no tool call has an mcp__ name
+
+## Agents
+- lead: ToolSearch 8, Bash 2
+    error in Bash at 2026-10-07T10:57:22.054Z: PreToolUse:Bash hook error: [node ${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-mode-line-gate.js]: Mode l...
+
+## Lead: team flow

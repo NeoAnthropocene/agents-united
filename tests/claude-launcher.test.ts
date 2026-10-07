@@ -53,10 +53,11 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
 
       expect(activation.argv[0]).toBe('--agent');
       expect(activation.argv[1]).toBe('orchestrator-engineering');
-      expect(activation.argv[2]).toBe('--add-dir');
-      expect(activation.argv[3]).toBe(testWorkspace);
-      // --agent + name, --add-dir + workspace, the prompt. Nothing else.
-      expect(activation.argv).toHaveLength(5);
+      // `--add-dir` is variadic on the host, so its value rides inside the same element (see
+      // tests/claude-launcher-variadic-add-dir.test.ts).
+      expect(activation.argv[2]).toBe(`--add-dir=${testWorkspace}`);
+      // --agent + name, --add-dir=workspace, the prompt. Nothing else.
+      expect(activation.argv).toHaveLength(4);
       expect(activation.executable).toBe('claude');
       expect(activation.argv.every(entry => typeof entry === 'string')).toBe(true);
     });
@@ -113,7 +114,7 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
 
       const background = plan({ background: true });
       expect(background.argv).toContain('--bg');
-      expect(background.argv.indexOf('--bg')).toBe(4);
+      expect(background.argv.indexOf('--bg')).toBe(3);
     });
 
     it('carries the plugin root as its own --plugin-dir element when a plugin dir is set', () => {
