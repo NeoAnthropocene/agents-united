@@ -195,3 +195,27 @@ describe('the reference: what the live runs of 2026-10-07 showed (Claude Code 2.
     expect(between(REF, '## Where this runs', '\n## ')).toMatch(/2\.1\.291 and 2\.1\.292/);
   });
 });
+
+describe('the documents of N1 name the routes (Plan 035 N1)', () => {
+  it('CONTEXT.md defines the MCP Route and the protocol amends H9 with the dated findings', () => {
+    const context = read('CONTEXT.md');
+    const term = between(context, '**MCP Route**:', '**Multimodal Asset Inlining');
+    expect(term).not.toBe('');
+    expect(term).toMatch(/manual \(`claude mcp add --scope project`/);
+    expect(term).toMatch(/plugin \(`claude plugin install <name>@claude-plugins-official --scope project`/);
+    expect(term).toMatch(/or connector \(a claude\.ai directory page/);
+    expect(term).toMatch(/different tool names/);
+    expect(term).toMatch(/_Avoid_/);
+    const protocol = read('docs/live-test-protocol.md');
+    const h9 = between(protocol, '## H9 Provisioning', '\n## H1 ');
+    expect(h9).toMatch(/Amended 2026-10-07 \(Plan 035 N1, the routes\)/);
+    expect(h9).toContain('`claude --continue` with no flags');
+    expect(h9).toContain('2026-10-07-claude-2.1.292-n1-routes.md');
+  });
+
+  it('the ADR is numbered after the last one and states its status, context, decision and consequences', () => {
+    const adr = read('docs/adr/0041-claude-integration-routes-and-optional-extras.md');
+    for (const marker of ['- **Status**', '- **Context**', '- **Decision**', '- **Consequences**']) expect(adr).toContain(marker);
+    expect(adr).toContain('# ADR 0041:');
+  });
+});
