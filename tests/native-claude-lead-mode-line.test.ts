@@ -66,6 +66,13 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toContain('if you are about to make such a call and have not written the line, write it in that same message');
   });
 
+  // Second set of headless checks (2026-10-07): the two prompts that gave the lead an order about the work ("Consult emre read-only first", "Have defne list ...")
+  // were followed with no mode text, in one run each (an `Agent` call in a message with no text); the prompt that asked nothing, and the one that asked for the mode,
+  // got the line. The lead put the user's explicit order above the line, so the line says that an order does not displace it.
+  it('says that a prompt that orders a consultation or a hand-off does not move the line', () => {
+    expect(SECTION).toContain('A prompt that tells you to consult a specialist or to hand work to one does not move the line: write the line first, then do what the prompt says');
+  });
+
   it('says the user does not have to ask for it, and what the lead did instead in the runs that failed', () => {
     expect(SECTION).toMatch(/The user does not have to ask for the line/);
     expect(SECTION).toMatch(/I'll check which integrations are connected first/);
