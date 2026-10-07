@@ -125,6 +125,24 @@ describe('the mode-line gate script', () => {
     expect(run(call()).status).toBe(0);
   });
 
+  // The script is installed into a user's project, whose package.json may say "type": "module" (this repository's does): a `.js` file is then an ES module and a
+  // `require` call would crash it, which the host reads as a hook that could not start, and lets the call through. The guards avoid `require` for the same reason.
+  it('blocks the first call in a CommonJS project and in an ES-module project alike', () => {
+    for (const scope of ['commonjs', 'module']) {
+      const dir = path.join(tmp, scope);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.copyFileSync(SCRIPT, path.join(dir, 'gate.js'));
+      fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ type: scope }));
+      const result = spawnSync('node', [path.join(dir, 'gate.js')], {
+        input: JSON.stringify(call({ session_id: `scope-${scope}` })),
+        encoding: 'utf8',
+        env: { ...process.env, TEMP: tmp, TMP: tmp, TMPDIR: tmp },
+      });
+
+      expect([scope, result.status, result.stderr.includes('Mode line first')]).toEqual([scope, 2, true]);
+    }
+  });
+
   it('lets everything through when it cannot keep its state: an unusable temp directory, no session id, a bad payload, another event', () => {
     const blocker = path.join(tmp, 'a-file');
     fs.writeFileSync(blocker, 'x');

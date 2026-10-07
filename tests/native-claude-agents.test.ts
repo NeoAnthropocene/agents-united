@@ -8,6 +8,7 @@ import { checkFloor, checkHooks, syncFloor, syncHooks } from '../src/core/native
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { splitTools } from '../src/core/native-guard.js';
 import { syncRoster } from '../src/core/native-roster.js';
+import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
@@ -155,7 +156,11 @@ const ROLES: RoleSpec[] = [
 
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const fileOf = (role: RoleSpec): string => path.resolve('registry/hosts/claude/agents', `${role.name}.md`);
-const guardGroups = (role: RoleSpec): Record<string, unknown> => ({ ...(role.guard === 'read-only' ? readOnlyGuardFileHooks() : nativeGuardFileHooks()) });
+/** The hooks of a role as generated: its guard, and for the digital-agency lead also the gate on its first message (Plan 035 N2 slice e, `mode-line-gate.ts`). */
+const guardGroups = (role: RoleSpec): Record<string, unknown> => {
+  const guard = role.guard === 'read-only' ? readOnlyGuardFileHooks() : nativeGuardFileHooks();
+  return role.name === 'orchestrator-digital-agency' ? { PreToolUse: [...guard.PreToolUse, ...modeLineGateHooks().PreToolUse] } : { ...guard };
+};
 
 /** A project directory holding the committed guard scripts where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points. */
 const guardProject = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-united-guard-project-'));
@@ -165,6 +170,7 @@ const guardScripts = path.resolve('registry/hosts/claude/hooks');
 const SCRIPT_FILES: Array<[string, string]> = [
   ['agents-united-guard.js', GUARD_SCRIPT],
   ['agents-united-readonly-guard.js', READ_ONLY_GUARD_SCRIPT],
+  ['agents-united-mode-line-gate.js', MODE_LINE_GATE_SCRIPT],
 ];
 
 const ceilingOf = (role: RoleSpec): string[] =>
@@ -208,7 +214,9 @@ describe.each(ROLES)('native Claude $name', role => {
     expect(checkHooks(read(), guardGroups(role))).toEqual([]);
     const groups = preToolUseGroups(read()).map(group => ({ matcher: group.matcher ?? '', hooks: group.hooks as Array<{ command: string; args: string[] }> }));
     // The host's own rules: which hooks match the call, `${CLAUDE_PROJECT_DIR}` substituted, no shell, exit 2 blocks.
-    const fire = (tool_name: string, tool_input: object): number => (attempt(read(), guardProject, { tool: tool_name, input: tool_input as Record<string, unknown> }).blocked ? 2 : 0);
+    // Fired as a subagent of the role (it carries an `agent_id`), which is the case the guards were written for; the lead's mode-line gate leaves such calls
+    // alone and has its own tests (tests/claude-mode-line-gate.test.ts).
+    const fire = (tool_name: string, tool_input: object): number => (attempt(read(), guardProject, { tool: tool_name, input: tool_input as Record<string, unknown> }, { agentType: role.name }).blocked ? 2 : 0);
     for (const group of groups) for (const hook of group.hooks) expect([hook.command, hook.args.length, hook.args[0].startsWith('${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-')]).toEqual(['node', 1, true]);
     const covered = (tool: string): boolean => groups.some(group => new RegExp(`^(?:${group.matcher})$`).test(tool));
     if (role.guard === 'read-only') {
