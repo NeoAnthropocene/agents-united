@@ -4,7 +4,7 @@ description: QA automation lead (Emre) of the digital agency team. Use to write 
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, Write, mcp__playwright, mcp__chrome-devtools-mcp, mcp__context7
+tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, Write, mcp__playwright, mcp__plugin_playwright_playwright, mcp__chrome-devtools-mcp, mcp__plugin_chrome-devtools-mcp_chrome-devtools, mcp__context7, mcp__plugin_context7_context7
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]}]

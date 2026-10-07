@@ -4,7 +4,7 @@ description: Frontend architect (Deniz) of the digital agency team. Use to turn 
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Bash, Edit, EnterWorktree, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, WebFetch, WebSearch, Write, mcp__stitch, mcp__context7, mcp__chrome-devtools-mcp
+tools: Bash, Edit, EnterWorktree, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, WebFetch, WebSearch, Write, mcp__stitch, mcp__context7, mcp__plugin_context7_context7, mcp__chrome-devtools-mcp, mcp__plugin_chrome-devtools-mcp_chrome-devtools
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]}]

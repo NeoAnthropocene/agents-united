@@ -4,7 +4,7 @@ description: Conversion specialist (Kaan) of the digital agency team. Use to aud
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, Write, mcp__chrome-devtools-mcp, mcp__playwright
+tools: Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, Write, mcp__chrome-devtools-mcp, mcp__plugin_chrome-devtools-mcp_chrome-devtools, mcp__playwright, mcp__plugin_playwright_playwright
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]}]

@@ -4,7 +4,7 @@ description: Technical SEO specialist (Selin) of the digital agency team. Use to
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, Write, mcp__firecrawl, mcp__chrome-devtools-mcp
+tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, Write, mcp__firecrawl, mcp__claude_ai_Firecrawl, mcp__chrome-devtools-mcp, mcp__plugin_chrome-devtools-mcp_chrome-devtools
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]}]

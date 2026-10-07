@@ -5,6 +5,7 @@
  * the orchestrator's file is generated from `registry/bundles.json` and the native agent files, so it cannot drift.
  * Pure string work: no I/O, no clock.
  */
+import { integrationOf } from './claude-mcp-routes.js';
 import { WRITER_TOOLS } from './native-guard.js';
 import type { NativeGuard } from './native-guard.js';
 
@@ -63,7 +64,8 @@ function capabilityNotes(native: NonNullable<RosterType['native']>): string {
   if (tools.has('Monitor')) notes.push('Monitor');
   if (tools.has('EnterWorktree')) notes.push('worktrees');
   if (tools.has('ReportFindings')) notes.push('ReportFindings (foreground)');
-  const servers = [...new Set(native.tools.filter(tool => tool.startsWith('mcp__')).map(tool => tool.split('__')[1]))].sort();
+  // Plan 035 N1: a role can name one integration under three forms (manual, plugin, connector); the note names it once.
+  const servers = [...new Set(native.tools.filter(tool => tool.startsWith('mcp__')).map(integrationOf))].sort();
   if (servers.length > 0) notes.push(`MCP: ${servers.join(', ')}`);
   return notes.join('; ');
 }
