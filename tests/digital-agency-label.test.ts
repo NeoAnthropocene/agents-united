@@ -33,6 +33,12 @@ describe('digital-agency is no longer labelled experimental', () => {
     expect(read('PROJECT.md')).not.toMatch(/digital-agency ⚡ \[Experimental\]/);
   });
 
+  it('CONTEXT.md does not call the Organization Bundle experimental either', () => {
+    const context = read('CONTEXT.md');
+    expect(context).not.toContain('Organization Bundle (Tier 2 / Experimental)');
+    expect(context).toContain('**Organization Bundle (Tier 2)**:');
+  });
+
   it('other bundles keep their statuses (the change touches one bundle)', () => {
     const b = bundles();
     expect(b['software-engineering']!.status).toBe('stable');

@@ -42,7 +42,7 @@ _Avoid_: Plugin pack, preset, collection
 A single-discipline team package scoped to one expertise domain (e.g. `software-engineering`, `product-design`, `growth-marketing`). Domain bundles are self-contained prompt/workflow units with minimal external runtime prerequisites, lean token footprints, and can be recommended autonomously by Lead Orchestrators.
 _Avoid_: Simple pack, basic bundle
 
-**Organization Bundle (Tier 2 / Experimental)**:
+**Organization Bundle (Tier 2)**:
 A cross-functional composite team modeled after real-world professional organizations (e.g. `digital-agency`, `venture-studio`). Unlike domain bundles, organization bundles orchestrate cross-discipline agents and integrate **Model Context Protocol (MCP) server tool calling**, external packages, and API keys. Because they require runtime prerequisites, they are not recommended autonomously by global orchestrators and require explicit user opt-in. Led by dedicated Tier-2 organization orchestrators such as `orchestrator-digital-agency.md` (Campaign Director / Chris).
 _Avoid_: Mega bundle, company bot
 
