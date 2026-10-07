@@ -1,6 +1,6 @@
 # Claude Code: provisioning MCP servers
 
-Reference for the `mcp-setup` skill, for the digital-agency lead. Checked on Claude Code 2.1.291 (Windows 11), 2026-10-06; the observations are in `host-library/claude/observations/2026-10-06-claude-2.1.291-hardening-h9.md` and `...-h9-retest.md`, the command shapes follow the host's own page (`host-library/claude/pages/mcp/mcp.md`). Where something was not run it says so.
+Reference for the `mcp-setup` skill, for the digital-agency lead. Checked on Claude Code 2.1.291 (Windows 11), 2026-10-06, and on 2.1.292, 2026-10-07 (the routes); the observations are in `host-library/claude/observations/2026-10-06-claude-2.1.291-hardening-h9.md`, `...-h9-retest.md` and `2026-10-07-claude-2.1.292-n1-routes.md`, the command shapes follow the host's own page (`host-library/claude/pages/mcp/mcp.md`). Where something was not run it says so.
 
 ## Routes: manual, plugin, connector
 
@@ -9,16 +9,16 @@ An integration can reach the session by three routes. They give the same service
 | Route | Who runs it | The tools are named | After the install |
 |---|---|---|---|
 | **Manual**: `claude mcp add --scope project`, the pinned commands below | the lead, after the user's yes | `mcp__<name>__<tool>` | a running session never loads it: restart (seen) |
-| **Plugin**: `claude plugin install <name>@claude-plugins-official --scope project` | the lead, after the user's yes | `mcp__plugin_<plugin>_<server>__<tool>` | the user types `/reload-plugins --force` and the running session loads it: no restart (seen with context7) |
+| **Plugin**: `claude plugin install <name>@claude-plugins-official --scope project` | the lead, after the user's yes | `mcp__plugin_<plugin>_<server>__<tool>` | the user types `/reload-plugins --force` and the running session loads it: no restart (seen with context7, playwright and chrome-devtools-mcp) |
 | **Connector**: a claude.ai directory page, authorised in a browser | the user | CLI `mcp__claude_ai_<Name>__<tool>`, desktop app `mcp__<directory id>__<tool>` | the lead checks with `claude mcp list` and `ToolSearch` |
 
-The manual route is the default: its commands are pinned, the names are the ones the roles have always named, and a server that needs no account needs nothing but the user's yes. Offer the plugin route when the user wants to avoid the restart (a restart ends the team, because a resume restores no teammate) and the integration has a plugin that carries an MCP server (the table below): the plugin floats with its own version, and its server may ask the user to authenticate. A connector is the user's own act: print its directory link, say what it gives, and check afterwards; the roles name the CLI form of Firecrawl's connector only.
+The manual route is the default: its commands are pinned, the names are the ones the roles have always named, and a server that needs no account needs nothing but the user's yes. Offer the plugin route in the same question, as the option for a user who wants to avoid the restart (a restart ends the team, because a resume restores no teammate), for every integration that has a plugin that carries an MCP server (the table below): the plugin floats with its own version, and its server may ask the user to authenticate. A connector is the user's own act: print its directory link, say what it gives, and check afterwards; the roles name the CLI form of Firecrawl's connector only.
 
 ### The plugin route, step by step
 
 1. **Search.** `node ${CLAUDE_SKILL_DIR}/scripts/find-plugin.mjs <word>` reads the two plugin catalogs on disk and prints the surfaces, the source and the install command (exit 1: no plugin matches). It changes nothing and needs no network; `claude plugin marketplace update` refreshes the catalogs.
-2. **Install, after the user's yes:** `claude plugin install <name>@claude-plugins-official --scope project`.
-3. **Ask for the reload.** Say: "type `/reload-plugins --force`", because only the user can type a slash command. The command warns and skips when the reload would change which MCP tools are loaded and invalidate the prompt cache (the host docs), so ask for `--force`. Seen on 2.1.291 in a session with no model turn yet: the plain command loaded the server, and `--force` changed nothing.
+2. **Install, after the user's yes:** `claude plugin install <name>@claude-plugins-official --scope project`. If the user changes their mind after a manual install, remove the entries you added (`claude mcp remove <name> --scope project`) before the plugin install, so that the names do not double up: `/reload-plugins` does not load a server that `claude mcp add` added (seen: "0 plugin MCP servers").
+3. **Ask for the reload.** Say: "type `/reload-plugins --force`", because only the user can type a slash command. The command warns and skips when the reload would change which MCP tools are loaded and invalidate the prompt cache (the host docs), so ask for `--force`. Seen on 2.1.291 in a session with no model turn yet: the plain command loaded the server, and `--force` changed nothing. Seen on 2.1.292 in a session with model turns: `/reload-plugins --force` loaded two plugin MCP servers (playwright and chrome-devtools-mcp), the lead found their tools with `ToolSearch`, and the team used them in the same session; the plain command was not tried there.
 4. **Check.** Then check with `ToolSearch` and report what it lists. A server that needs authentication (`/mcp` and `claude mcp list` say so; the context7 plugin does) has no tools until the user authenticates in `/mcp`: name that step, and never ask for a token. A plugin that ships no MCP server (the firecrawl plugin ships skills) gives skills, not tools.
 5. **If the server does not load,** use the restart message below: the plugin is stored in the user's plugin folder and the project settings, so a new session loads it.
 
@@ -40,8 +40,8 @@ Checked on 2026-10-07 against the official marketplace and the plugins' own mani
 ## Names by route
 
 - **Manual:** `mcp__<name>__<tool>`; the server keeps the name given to `claude mcp add` (seen in every run of this plan).
-- **Plugin:** the server is `plugin:<plugin>:<server>` (seen: `plugin:context7:context7` in `claude mcp list` and `/mcp`), and its tools are `mcp__plugin_<plugin>_<server>__<tool>` (the host docs, `host-library/claude/pages/mcp/mcp.md`; no tool name has been seen yet, because the context7 server needs authentication and lists none).
-- **Connector:** in the CLI `mcp__claude_ai_<Name>__<tool>`, the display name's spaces turned into `_` (seen in earlier CLI sessions: Firecrawl, Vercel, Supabase, Claude Docs, Google Calendar, Gmail); in the desktop app's Code tab `mcp__<directory id>__<tool>`, where the id is the one in the connector's directory link (seen for Stitch, `c25fdbda-aebd-4312-95fb-6513ffae0f43`).
+- **Plugin:** the server is `plugin:<plugin>:<server>` (seen: `plugin:context7:context7` in `claude mcp list` and `/mcp`), and its tools are `mcp__plugin_<plugin>_<server>__<tool>` (the host docs, `host-library/claude/pages/mcp/mcp.md`; seen on 2.1.292: `mcp__plugin_playwright_playwright__browser_navigate` and `mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages`; the context7 server lists no tool until the user authenticates).
+- **Connector:** in the CLI `mcp__claude_ai_<Name>__<tool>`, the display name's spaces turned into `_` (seen in earlier CLI sessions: Firecrawl, Vercel, Supabase, Claude Docs, Google Calendar, Gmail; on 2026-10-07 the CLI listed no claude.ai connector until the user ran `/login`, and after it Firecrawl's tools appeared in `ToolSearch`); in the desktop app's Code tab `mcp__<directory id>__<tool>`, where the id is the one in the connector's directory link (seen for Stitch, `c25fdbda-aebd-4312-95fb-6513ffae0f43`).
 
 A grant in a role's `tools:` line names one server. The digital-agency roles and the lead name the manual form of each of their servers, the plugin form of the five that have a plugin MCP server (github, playwright, context7, figma, chrome-devtools-mcp), and Firecrawl's CLI connector form. They do not name the desktop app's directory ids, and no other connector name was seen: a connector connected there, or in the CLI under another name, is not reachable by the roles, and the lead says so instead of reporting the integration as ready.
 
@@ -116,11 +116,11 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 CLAUDE_CODE_ENABLE_TODO_TOOLS=1
 claude --continue --agent orchestrator-digital-agency
 ```
 
-Add the `--model` and `--effort` the session ran on. Unverified: whether `claude --continue` keeps the agent, the model and the team variables without these flags, and whether the combination of `--continue` and `--agent` is accepted as written (it was not run); the starting prompt makes the restart work either way, because it carries the plan. Unverified: the desktop app. There, start a new session in the same folder, approve the server when asked, and paste the starting prompt.
+A bare `claude --continue` keeps the session and the agent (seen on 2.1.292: the same session id, and the agent setting written again after the resume) but not the model: the first start had `--model sonnet` and the resumed session ran on Opus, which is both this account's default and the agent's pinned model, so the record cannot say which. Add the `--model` and `--effort` the session ran on to keep them (`claude --continue --agent orchestrator-digital-agency --model sonnet --effort low` was accepted as written and kept the session on 2026-10-06). The two team variables are the shell's, not the session's: set them before `claude --continue`; the lead checks them with `echo` before it spawns. The starting prompt makes the restart work either way, because it carries the plan. Unverified: the desktop app. There, start a new session in the same folder, approve the server when asked, and paste the starting prompt.
 
 ## Where this runs
 
-- **The CLI** (Claude Code 2.1.291, Windows 11): everything above that says "seen" was run there.
+- **The CLI** (Claude Code 2.1.291 and 2.1.292, Windows 11): everything above that says "seen" was run there.
 - **The desktop app's Code tab** runs the same engine and reads `.mcp.json` and `~/.claude.json`. Its connectors carry directory ids in their tool names, and the host docs say `/reload-plugins` there runs only on input typed into the session and does not apply plugin MCP server changes: use the manual route and a new session, as in the restart message above. Not verified.
 - **The VS Code extension** runs the same engine; what it shows for connectors and plugins is not in the host library, and it was not run: not verified.
 
