@@ -40,7 +40,9 @@ describe('PrerequisiteChecker & Organization Bundles', () => {
     const agencyBundle = await registry.getBundle('digital-agency');
     expect(agencyBundle).toBeDefined();
     expect(agencyBundle?.tier).toBe('organization');
-    expect(agencyBundle?.status).toBe('experimental');
+    // Plan 035 S9: the experimental label is removed after the live hardening; no status claims more than that.
+    expect(agencyBundle?.status).toBeUndefined();
+    expect(agencyBundle?.category).not.toMatch(/experimental/i);
     expect(agencyBundle?.prerequisites?.requiredMcps).toBeDefined();
     expect(agencyBundle?.modes?.operational).toBeDefined();
     expect(agencyBundle?.modes?.brainstorming).toBeDefined();
@@ -247,9 +249,10 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
 
   it('should list Organization Bundles in a separate dedicated section with status badges', () => {
     const stdout = execSync(`node "${cliPath}" list`, { encoding: 'utf8' });
-    expect(stdout).toContain('Organization Bundles (Experimental / Cross-Functional)');
+    expect(stdout).toContain('Organization Bundles (Cross-Functional)');
     expect(stdout).toContain('digital-agency');
-    expect(stdout).toContain('[Experimental]');
+    // Plan 035 S9: no bundle is experimental any more, so the badge no longer appears for digital-agency.
+    expect(stdout).not.toContain('[Experimental]');
     expect(stdout).toContain('mock-organization-under-construction');
     expect(stdout).toContain('[Under Construction (TBA)]');
     expect(stdout).toContain('[Prerequisites Required]');
@@ -270,7 +273,7 @@ describe('CLI Organization Bundles, Lifecycle Badges & Gates', () => {
 
     expect(agency).toBeDefined();
     expect(agency.tier).toBe('organization');
-    expect(agency.status).toBe('experimental');
+    expect(agency.status).toBeUndefined();
     expect(agency.prerequisites.requiredMcps.length).toBeGreaterThan(0);
     expect(agency.modes.operational).toBeDefined();
     expect(agency.modes.limitedOperational || agency.modes['limited-operational']).toBeDefined();
