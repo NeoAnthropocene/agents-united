@@ -11,6 +11,8 @@
 
 ## Why this exists
 
+**Authorization amendment, 2026-10-07:** the maintainer has started slice 1 only. The parked status above is the historical starting state; foundation design is in ADR 0045 and the local-installation options are proposed in ADR 0046. Slices 2–5 remain separate reviewed PRs, in order (slice 4: realize, then sync). Plan 034's security hold and reviewed baseline remain intact.
+
 1. **A gap the Antigravity lane opened, accepted on purpose.** With the native lane on, the legacy `.agents/rules/GEMINI.md` is omitted (it duplicated the native rules). It was the only thing that delivered its skill-attribution section (author metadata in `SKILL.md`, README credits, adapt rather than import raw); no bundle declares `registry/rules/skill-attribution.md`. That guidance is about adopting external skills into this project, so it does not belong in end-user bundles, where a rule no end-user task needs only adds to every session's context.
 2. **Contributor workflows live where only some hosts see them.** The maintainer skills (`realize-for-host`, `host-update-sync`) sit in `.claude/skills/`, and `docs/skill-intake.md`, `docs/workflow-guide.md` and the bundle mechanics are prose a contributor has to find. A contributor using Cline or Antigravity gets none of it from the packages.
 
@@ -67,6 +69,47 @@ The four questions of the first round are answered (decisions 6 to 9). What is l
 1. **Local creation.** Where a developer's own, never-pushed agents, skills and bundles live and how the installer, the lockfile and the doctor treat them (see the design point above).
 2. **The basic contract's shape.** The exact fields of the shared subagent definition in `registry/core/` (definition, workflows, skills, hooks), and how a native package per host consumes it. Prior art: the existing Contract Floor in `registry/core/*.core.md` and the per-host profiles.
 3. **Which workflows are pipelines and which are runbooks**, per host (a Claude workflow script, a Cline markdown workflow, a skill on Antigravity).
+
+**Foundation answers (2026-10-07):** ADR 0045 reuses the Semantic Core via a definition stem and adds only three permitted-identifier lists. The host input, binding/evidence record and pipeline/runbook responsibilities are specified in `docs/agent-factory-foundation.md`. Local drafts are reversible; installer, lockfile and doctor behavior is still **proposed**, with concrete options in ADR 0046. Repository CI remains authoritative; tool packaging and reader distribution are deferred. Merge/drop of the 39 other skills remains the maintainer's decision. These answers do not start later slices.
+
+## Foundation execution milestones (authorized 2026-10-07)
+
+| Milestone | Acceptance criteria | State |
+| --- | --- | --- |
+| M0 Ground | Locate cloud checkout; read rules/plans/ADRs/guides; verify #172–#174 merged and #137 closed; fresh `origin/dev`, clean `codex/` branch; continuation and local-executor capability checked. | Complete; `gh` network access denied, connector verifies PR states. |
+| M1 Design | ADR 0045 and foundation specification preserve all nine decisions; proposed ADR 0046 defers local install; record conservative defaults and host evidence. | Recorded. |
+| M2 Red / green | Meaningful failing contract tests and red commit; minimal basic validator/type, host-reference checks and green commit. No catalog, bundle, native artifact or install-lane change. | Next. |
+| M3 Verification | Narrow checks then full `npm run typecheck && npm test`; save raw output and actual exit codes. Prepare exact local recipe; never substitute static/headless evidence for interactive behavior. | Pending. |
+| M4 Review | Inspect complete diff and every staged diff; check all PRs before each push; one PR to `dev`, no merge; inspect CI and repair relevant failures. | Pending. |
+| M5 R3 handoff | Candidate includes merged #174; exact commit/install/launch/prompt and record-reading commands, all eight expectations under ADR 0044. Stop for maintainer's interactive evidence. | Pending. |
+
+### Fresh Claude allowance and ledger
+
+Maintainer authorization: **50 USD TOTAL**, **16 headless prompts**, **16 interactive prompts**, retries count; original instruction: extra usage off. Quota resets replenish neither counter nor cost allowance. Codex five-hour allowance reported **100% available** at start; no tool exposes a current Codex reading. At approximately 15:17 UTC on 2026-10-07 the maintainer reported Claude **five-hour 0% used**, **weekly 58% used**, weekly reset **in 20 hr 47 min**; the five-hour reset time and current extra-usage switch were not supplied. The maintainer also authorized doubling the test amount if needed after checking quota; no increase has been used, and the original ceilings remain the working allowance. Obtain current readings before R3; never begin above approximately 85% five-hour usage.
+
+| Method / account | Model / session / tested commit | Commands | Prompts | Cost | Claude quota |
+| --- | --- | --- | --- | --- | --- |
+| Cloud preparation; no Claude account invoked | No model/session; foundation candidate pending | Files, Node checks and repository verification only | Headless 0/16; interactive 0/16 | No Claude runs incurred; 50 USD unspent | Maintainer reading: five-hour 0%, weekly 58%; reset in 20 hr 47 min at receipt; recheck before run |
+
+For each actual run add account, model(s), session id, tested commit, exact command/prompt, prompt-counter delta (including retries), per-model and teammate costs, aggregate cost and before/after quota readings. Unknown costs are pending, not zero, and block further spending until reconciled. No Claude CLI is installed in this cloud session and no Windows executor is exposed; live local checks are **unverified**.
+
+### Continuation and checkpoint
+
+Tool discovery found hosted reminder/automation tools, but no persistent-goal API, quota-reset trigger or target capable of resuming this same cloud task. No automatic resumption is configured. Preserve this checkpoint before any interruption; resume it instead of restarting completed work.
+
+- Branch: `codex/plan-033-foundation`, from fresh `origin/dev` (`aa7dbe3`, contains merged #174).
+- Commit: baseline `aa7dbe38126471151ee6aad3558bbc354ce8b024`; design files pending commit.
+- Milestone: M2 red tests confirmed, before red commit.
+- Completed: ground, instructions/prior-art search, foundation design and proposed local installation options.
+- Verification: Node v24.19.0; clean baseline; git fetch succeeded; connector confirms #172/#173/#174 merged and #137 closed. Required `gh` attempt failed with proxy `Forbidden`; no files changed before initial ground report.
+- Remaining budget: headless 16, interactive 16, 50 USD aggregate; no Claude run; current Codex quota unavailable (start reported 100% available); last Claude readings above.
+- Blockers: `gh` API blocked by proxy; Claude CLI and local executor absent; live tests await maintainer.
+- Exact next action: inspect staged diff and commit red; then implement the smallest validator/type change. Raw red output: `/workspace/plan-033-evidence/red.txt`; actual exit code `1` saved in `red.exit`.
+
+## Foundation progress log
+
+- 2026-10-07 (M0–M1, OpenAI Codex): checkout `/workspace/agents-united` was clean on `work` at old main snapshot `4342cad`, so missing current documents were not treated as absent prior art. Fetched `origin/dev` and created `codex/plan-033-foundation` at `aa7dbe3`. PR states verified through the connector after `gh` was proxy-denied. Read cloud runtime/network policy (restricted, no VPN, no ready credential bindings reported), tracked `registry/rules/` because generated `.claude/rules/` is absent, the required documents, closing logs and host guides/observations. Recorded ADR 0045, proposed ADR 0046 and the foundation specification. No Claude prompts spent; no automatic waking or Windows executor established. The nine decisions are unchanged.
+- 2026-10-07 (M2 red, OpenAI Codex): `npx vitest run tests/subagent-contract.test.ts tests/plan-033-findings.test.ts` exited **1**: 29 failed, 8 passed. All 28 new contract/reference tests fail because `validateSubagentContract` is absent; the plan-state test also requires foundation activation. This is the intended red state, before implementation. Maintainer selected a guided contribution PR to `dev`; the current PR template and artifact proposal issue forms were read before designing the focused template and future contribution runbook. No workflow/skill is installed in this slice.
 
 ## Findings from Plan 035 (2026-10-04; this plan stays parked)
 
