@@ -104,6 +104,9 @@ export function validateSubagentContract(raw: unknown, definitions: ReadonlyMap<
   for (const key of Object.keys(record)) {
     if (!fields.includes(key)) fail(`unknown field ${key}`);
   }
+  for (const field of fields) {
+    if (!Object.hasOwn(record, field)) fail(`${field} must be explicitly declared`);
+  }
   const identifier = (value: unknown, field: string): string => {
     if (typeof value !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) return fail(`${field} must be a semantic identifier`);
     return value;
@@ -115,7 +118,7 @@ export function validateSubagentContract(raw: unknown, definitions: ReadonlyMap<
   const list = (field: string): string[] => {
     const value = record[field];
     if (!Array.isArray(value)) return fail(`${field} must be an explicit array`);
-    const entries = value.map((entry, index) => identifier(entry, `${field}[${index}]`));
+    const entries = Array.from(value, (entry, index) => identifier(entry, `${field}[${index}]`));
     if (new Set(entries).size !== entries.length) fail(`${field} contains duplicate identifiers`);
     return entries;
   };

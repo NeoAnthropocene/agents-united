@@ -47,12 +47,19 @@ describe('basic host-parametric Subagent Contract', () => {
     await expect(validate(input, definitions)).rejects.toThrow(new RegExp(field));
   });
 
+  it('does not accept a permitted list inherited from another object', async () => {
+    const input = contract();
+    delete input.skills;
+    Object.setPrototypeOf(input, { skills: ['inspect-provenance'] });
+    await expect(validate(input, definitions)).rejects.toThrow(/skills/);
+  });
+
   it.each(['host', 'tools', 'frontmatter', 'model', 'permissionMode', 'hookEvents'])('rejects host mechanics in %s', async field => {
     await expect(validate({ ...contract(), [field]: 'host-specific' }, definitions)).rejects.toThrow(new RegExp(field));
   });
 
   it.each(['workflows', 'skills', 'hooks'])('rejects malformed or duplicate %s, with no silent normalization', async field => {
-    for (const value of [undefined, null, 'one', [1], [''], ['Two'], ['../one'], ['one/two'], ['read_files'], ['one', 'one'], [{ event: 'PreToolUse' }]]) {
+    for (const value of [undefined, null, 'one', [1], Array(1), [''], ['Two'], ['../one'], ['one/two'], ['read_files'], ['one', 'one'], [{ event: 'PreToolUse' }]]) {
       await expect(validate({ ...contract(), [field]: value }, definitions)).rejects.toThrow(new RegExp(field));
     }
   });
