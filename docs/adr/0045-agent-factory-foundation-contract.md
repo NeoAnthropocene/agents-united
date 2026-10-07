@@ -25,3 +25,5 @@ Local drafts work without deciding storage precedence, but they are not installa
 ## Verification
 
 Red `4c47bc3`, green `232f518`, review regression/fix `89a8597`: 121 narrow checks, host-library integrity and final full gate passed (165 suites, 3625 passed, 210 skipped; typecheck/test exits 0). Raw output/exit files are in `docs/plan-033-foundation-records/`; see Plan 033 for PR/CI and the dated checkpoint. The contributor workflow/skill realization and local installer decision remain proposed/deferred. All foundation live-host behavior and R3 results are **unverified** until records arrive.
+
+PR [#175](https://github.com/NeoAnthropocene/agents-united/pull/175) targets `dev`; CI [37646280108](https://github.com/NeoAnthropocene/agents-united/actions/runs/37646280108) passed on `6809c0b` with the same full-suite counts. R3 remains prepared and unverified; no session was started by the executor. The final checkpoint-only publication is checked separately before handoff.
