@@ -222,6 +222,6 @@ describe('the mode-line gate, wired into the lead', () => {
   it('is the script that the generated constant says it is', async () => {
     const { MODE_LINE_GATE_SCRIPT } = await import('../src/core/mode-line-gate.js');
 
-    expect(fs.readFileSync(SCRIPT, 'utf8')).toBe(`${MODE_LINE_GATE_SCRIPT}\n`);
+    expect(fs.readFileSync(SCRIPT, 'utf8').replace(/\r\n/g, '\n')).toBe(`${MODE_LINE_GATE_SCRIPT}\n`);
   });
 });
