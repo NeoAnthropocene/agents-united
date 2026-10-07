@@ -83,6 +83,14 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toMatch(/Under the line, introduce yourself as Chris and name your team/);
   });
 
+  // Slice (e): a PreToolUse gate holds the first call once (registry/hosts/claude/hooks/agents-united-mode-line-gate.js). The lead has to know that it will meet it and
+  // what to do, since in live test 6 it answered the first message of the gate with a false claim that the line was written.
+  it('tells the lead about the gate: the first call is held once, whatever it wrote, and the line goes in the same message as the repeated call', () => {
+    expect(SECTION).toContain('A hook holds your first call other than `ToolSearch` once, with the message "Mode line first"');
+    expect(SECTION).toContain('write the line, even if you believe you wrote it, in the same message as the call you repeat');
+    expect(SECTION).toContain('the host cannot see the message you are writing');
+  });
+
   it('leaves a pointer in "How this agent runs", where the rule used to be a bullet', () => {
     expect(RUNS).toContain('Your first message is the mode line: see the section above');
   });
