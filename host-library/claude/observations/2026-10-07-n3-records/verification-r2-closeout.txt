@@ -1,0 +1,7 @@
+R2 closeout verification (Windows, Node v24.19.0)
+Red: npm test -- --run tests/plan-035-closure.test.ts; exit 1, missing quota-stopped outcome as intended.
+Green: npm run typecheck && npm test (test ran only after typecheck succeeded).
+typecheck exit: 0
+test exit: 0
+164 test files passed; 3596 tests passed; 208 skipped.
+R2 live full-roster regression remains unverified; this gate checks repository code and evidence records.
