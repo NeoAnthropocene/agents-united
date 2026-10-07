@@ -1,0 +1,149 @@
+R2 artifact snapshot, session 75b89b2c-9b9b-484b-ae23-9df2a515d676
+Inspected after the quota stop; these are scratch deliverables, not repository code.
+
+--- content-plan.md (38 lines) ---
+# PetPal content plan (provisional, scratch exercise)
+Input: strategy.md (ICP: owners of 1-2 dogs/cats, 2+ trips a year; trust over price). All keywords are hypotheses, volumes unknown. Machine-drafted: needs human editorial review.
+
+## Pillar (2,000+ words)
+How to choose a pet sitter you can trust. Hypothesis keyword: "pet sitter near me". Intent: commercial.
+
+## Clusters (each links to the pillar with a descriptive anchor)
+1. What to ask a pet sitter before you book (hypothesis: "questions to ask a pet sitter")
+2. Pet sitter vs boarding kennel: which is right for your dog (hypothesis: "pet sitter vs kennel")
+3. How to prepare your home and pet for a sitter's first visit (hypothesis: "pet sitter checklist")
+4. What a good daily photo update from a sitter looks like (hypothesis: "pet sitter updates")
+5. How to do a meet-and-greet with a new sitter (hypothesis: "pet sitter meet and greet")
+
+## Brief 1
+- Working title: What to ask a pet sitter before you book
+- Primary keyword: "questions to ask a pet sitter" (hypothesis)
+- Search intent: informational, leaning commercial
+- Audience: owner booking a sitter for the first time, worried about a stranger in the home
+- Angle: trust over price; ten questions, each with what a good answer sounds like
+- Outline: why ask; ten questions in groups (experience, safety, emergencies, updates); red flags; how PetPal shows these answers
+- CTA (one): Start a booking request (booking-request flow)
+- Internal links: pillar; cluster 5 (meet-and-greet); cluster 4 (photo updates)
+- Proof/sources: PetPal sitter-profile fields; verification claim only after Defne confirms; cite outside sources with year and URL
+- Success metric: booking-request starts from this page per unique visitor (no baseline yet)
+
+## Brief 2
+- Working title: Pet sitter vs boarding kennel: which is right for your dog
+- Primary keyword: "pet sitter vs kennel" (hypothesis)
+- Search intent: commercial comparison
+- Audience: owner of an anxious or older pet planning a trip
+- Angle: fair comparison by pet temperament, cost and routine; no price claims without data
+- Outline: decision factors; side-by-side table; which pets suit which; questions to settle; where a sitter fits
+- CTA (one): Start a booking request (booking-request flow)
+- Internal links: pillar; cluster 1 (questions to ask); cluster 3 (home preparation)
+- Proof/sources: owner interviews or vet-behaviourist input (to be gathered); outside sources with year and URL
+- Success metric: booking-request starts from this page per unique visitor (no baseline yet)
+
+Open items: keyword volumes and difficulty (Selin); lawful wording of the verification claim (Defne); author and publish dates not set.
+
+
+--- design-tokens.json (32 lines) ---
+{
+  "$description": "PetPal tokens, provisional (scratch exercise). Trust over price: calm teal, high-contrast neutrals. Palette is proposed, not client-given.",
+  "color": {
+    "$type": "color",
+    "text": {
+      "default": { "$value": "#1F2933", "$description": "On background and surface: about 14:1 (estimated, Emre to measure)." },
+      "muted": { "$value": "#4A5560", "$description": "Secondary text on white: about 7.5:1 (estimated, Emre to measure)." }
+    },
+    "background": { "default": { "$value": "#FFFFFF" } },
+    "surface": { "raised": { "$value": "#F2F6F5" } },
+    "cta": {
+      "primary": { "$value": "#0F6B5C", "$description": "Fixed contract name. CTA fill; label is color.cta.onPrimary." },
+      "onPrimary": { "$value": "#FFFFFF", "$description": "Label on color.cta.primary: 6.4:1 computed by WCAG formula, passes AA 4.5:1." }
+    },
+    "focus": { "ring": { "$value": "#0F6B5C", "$description": "3:1 or better against white (6.4:1)." } }
+  },
+  "font": {
+    "family": { "base": { "$value": "system-ui, -apple-system, 'Segoe UI', sans-serif", "$type": "fontFamily" } },
+    "size": {
+      "$type": "dimension",
+      "$description": "Ratio 1.25 from 16px base, whole pixels.",
+      "body": { "$value": "16px" }, "lead": { "$value": "20px" }, "h3": { "$value": "25px" },
+      "h2": { "$value": "31px" }, "h1": { "$value": "39px" }, "display": { "$value": "49px" }
+    }
+  },
+  "space": {
+    "$type": "dimension",
+    "$description": "4px base. Minimum interactive target 48px (space.12).",
+    "1": { "$value": "4px" }, "2": { "$value": "8px" }, "3": { "$value": "12px" }, "4": { "$value": "16px" },
+    "6": { "$value": "24px" }, "8": { "$value": "32px" }, "12": { "$value": "48px" }, "16": { "$value": "64px" }
+  }
+}
+
+
+--- hero.ts (28 lines) ---
+export interface HeroSectionProps {
+  headline: string;
+  subhead: string;
+  primaryCta: {
+    label: string;
+    href: string;
+    testId: string;
+    colorToken: string;
+  };
+  trustLine: string;
+  microcopy: string;
+}
+
+// Single checkable claim: "identity-checked" (see trustLine).
+export const heroProps: HeroSectionProps = {
+  headline: "Leave town knowing someone you can trust has your pet",
+  subhead:
+    "Local sitters, a daily photo update while you are away, and one place to message them.",
+  primaryCta: {
+    label: "Find a sitter near you",
+    href: "/sitters",
+    testId: "hero-primary-cta",
+    colorToken: "color.cta.primary",
+  },
+  // pending Defne confirmation: drop "identity-checked" if the check or wording is not confirmed.
+  trustLine: "Every PetPal sitter is identity-checked before their first booking.",
+  microcopy: "Free to browse. No payment to send a booking request.",
+};
+
+
+--- strategy.md (38 lines) ---
+## Growth Strategy Playbook: PetPal launch (scratch exercise, provisional)
+
+### Growth Brief (5 lines)
+1. **ICP:** pet owners of 1-2 dogs or cats who travel 2+ times a year (owner side of the marketplace).
+2. **Primary KPI:** booking-request rate = booking requests / unique hero visitors (single KPI; no baseline yet).
+3. **Positioning angle:** trust over price. "Verified local sitters and a daily photo update while you are away."
+4. **Bottleneck:** Acquisition-to-Activation (visit to first booking request). Provisional: no funnel data seen.
+5. **UTM scheme:** `utm_source=<channel>&utm_medium=<email|social|cpc|referral>&utm_campaign=petpal_launch&utm_content=<asset>`
+
+### Checkable Headline Claim
+"Every PetPal sitter is identity-checked before their first booking."
+Defne must confirm the check exists and the wording is lawful before it ships. If unconfirmed, drop "identity-checked".
+
+### Fixed Contract (do not change downstream)
+- CTA colour token: `color.cta.primary`
+- CTA testId: `hero-primary-cta`
+
+### ICE Experiment Backlog (one hypothesis)
+| Rank | Experiment | Hypothesis | Impact | Conf | Ease | ICE |
+|------|------------|------------|--------|------|------|-----|
+| 1 | Hero trust-proof CTA | Verified-sitter proof next to the CTA lifts booking requests by 15% | 8 | 5 | 9 | 7.3 |
+
+Conf 5 is an **assumption**: there is no baseline conversion rate and no benchmark was consulted. Re-score once data exists.
+
+### Experiment Brief
+- **Primary Metric:** booking-request rate (hero visit to request).
+- **Target Lift:** +15% relative.
+- **Control:** hero with headline and CTA only.
+- **Variant:** same hero plus the headline claim and a sitter-verification line beside `hero-primary-cta`.
+- **Run rule:** 2 weeks maximum; size with ab-test-setup once weekly traffic is known (under ~500 visitors a week, use qualitative review instead).
+
+### Guardrails
+- No paid spend until LTV:CAC >= 3:1 is verified; none can be shown today.
+- No dark patterns; every claim must be true and checkable.
+
+### Open Items
+- Baseline conversion rate and weekly hero traffic.
+- Confirmation of the sitter-verification process (Defne).

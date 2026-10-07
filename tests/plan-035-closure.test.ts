@@ -60,14 +60,17 @@ describe('the close-out checklist of Plan 035', () => {
     expect(open).toMatch(/39/);
   });
 
-  it('records the one live check that is still pending (R2, the full-roster regression) with its recipe, its expected results and what to update after it', () => {
-    const s = section(checklist(), '### R2 pending');
-    expect(s).toMatch(/hostlib:session/);
-    expect(s).toMatch(/\*\*Recipe\.?\*\*/);
-    expect(s).toMatch(/\*\*Expected results\*\*/);
-    expect(s).toMatch(/\*\*After the run\.?\*\*/);
-    expect(s).toMatch(/accept the delegation map/i);
-    expect(s).toMatch(/n3-regress2/);
+  it('records the quota-stopped R2 outcome without claiming a completed full-roster regression', () => {
+    const s = section(checklist(), '### R2: quota-stopped');
+    expect(s).toContain('75b89b2c');
+    expect(s).toContain('n3-regress2');
+    expect(s).toMatch(/mode line/i);
+    expect(s).toMatch(/unverified/);
+    expect(s).toContain('1.2726');
+    expect(s).toContain('98% to 100%');
+    for (const file of ['session-report-r2-quota-stopped.txt', 'trace-r2-lead.txt', 'trace-r2-ava.txt', 'trace-r2-kaan.txt', 'trace-r2-jamileh.txt', 'trace-r2-yavuz.txt']) {
+      expect(fs.existsSync(path.resolve('host-library/claude/observations/2026-10-07-n3-records', file)), file).toBe(true);
+    }
   });
 
   it('records the decision on the `experimental` label and where the draft pull request went', () => {
