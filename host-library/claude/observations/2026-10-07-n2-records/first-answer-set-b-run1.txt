@@ -1,0 +1,10 @@
+file: C:/github/scratch-pilot/n2-fa-results-b/run1.jsonl
+model: claude-sonnet-5-5 | mcp servers: context7:connected, stitch:connected, claude.ai Claude Docs:connected, claude.ai Supabase:connected, claude.ai Vercel:connected, claude.ai Firecrawl:connected, claude.ai Gmail:needs-auth, claude.ai Google Calendar:needs-auth
+assistant messages: 7 | cost: 0.1615118 | subtype: error_max_budget_usd
+  #1 call: ToolSearch {"query":"github pull requests","max_results":5}
+  #2 call: ToolSearch {"query":"select:mcp__context7__query-docs,mcp__claude_ai_Firecrawl__firecrawl_scrape","max_results":5}
+  #3 call: ToolSearch {"query":"playwright browser","max_results":5}
+  #4 call: ToolSearch {"query":"chrome devtools","max_results":5}
+  #5 call: ToolSearch {"query":"figma","max_results":5}
+
+mode line found: NO (in the whole run)

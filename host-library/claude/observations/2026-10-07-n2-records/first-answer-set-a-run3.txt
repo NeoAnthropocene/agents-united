@@ -1,0 +1,11 @@
+file: C:/github/scratch-pilot/n2-fa-results-a/run3.jsonl
+model: claude-sonnet-5-5 | mcp servers: context7:connected, stitch:connected, claude.ai Claude Docs:connected, claude.ai Supabase:connected, claude.ai Vercel:pending, claude.ai Firecrawl:connected, claude.ai Gmail:needs-auth, claude.ai Google Calendar:needs-auth
+assistant messages: 3 | cost: 0.1706884 | subtype: success
+  #1 call: ToolSearch {"query":"github playwright chrome-devtools figma context7 firecrawl","max_results":10}
+  #2 text: "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.\n\nI'm Chris, lead of the AstrolabsAI digital agency team. The team is Ava (growth strategy), K"
+
+mode line found: yes, in assistant message #2
+  line: Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+  four-field shape: true
+  calls before it: ToolSearch
+  only ToolSearch before it: true

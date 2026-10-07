@@ -199,6 +199,10 @@ _Avoid_: Arbitrary tool injection, undocumented MCP dependencies
 How an integration of the Canonical Agency MCP Suite reaches a Claude Code session: manual (`claude mcp add --scope project`, pinned commands, the tool names the roles have always carried), plugin (`claude plugin install <name>@claude-plugins-official --scope project`, then the user's `/reload-plugins --force`, no restart) or connector (a claude.ai directory page that only the user can authorise). The routes give the same service under different tool names (`mcp__<name>__`, `mcp__plugin_<plugin>_<server>__`, `mcp__claude_ai_<Name>__`), a role's allowlist names servers, and `src/core/claude-mcp-routes.ts` is where the other forms are named. The lead recommends manual, offers plugin in the same install question, and prints a connector as a link.
 _Avoid_: Calling a plugin a connector, assuming a plugin carries an MCP server (the firecrawl plugin ships skills only)
 
+**Mode-Line Gate**:
+The `PreToolUse` hook of the digital-agency lead (`registry/hosts/claude/hooks/agents-united-mode-line-gate.js`, guard kind `mode-line`) that holds the lead's first call other than `ToolSearch` once per session until it writes its mode line (`Mode: <Fully|Limited> Operational. Callable: ... Missing: ... Extras: ...`, the section "The first message" of its definition). It cannot see the message being written, so it holds the call whatever the lead wrote; it ignores teammates' calls and fails open (ADR 0042).
+_Avoid_: Calling it a guard of what a role may do, expecting it to check the content of the line
+
 **Multimodal Asset Inlining (`@path/to/file`)**:
 The unified cross-host asset intake standard supported across Google Antigravity (2.11.0+) and Cline (4.1.x), allowing agents to ingest local PDF pitch decks (`@deck.pdf` via `StartPage`/`EndPage`), spreadsheets (`@metrics.csv`), and high-resolution UI screenshots (`@screenshot.png`) directly into prompt context without context bloat.
 _Avoid_: External OCR scripts, blind asset generation

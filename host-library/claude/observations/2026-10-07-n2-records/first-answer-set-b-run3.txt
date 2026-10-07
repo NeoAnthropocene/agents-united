@@ -1,0 +1,14 @@
+file: C:/github/scratch-pilot/n2-fa-results-b/run3.jsonl
+model: claude-sonnet-5-5 | mcp servers: context7:connected, stitch:connected, claude.ai Claude Docs:connected, claude.ai Supabase:connected, claude.ai Vercel:connected, claude.ai Firecrawl:connected, claude.ai Gmail:needs-auth, claude.ai Google Calendar:needs-auth
+assistant messages: 9 | cost: ? | subtype: ?
+  #1 call: ToolSearch {"query":"select:mcp__context7__query-docs","max_results":3}
+  #2 call: ToolSearch {"query":"github","max_results":3}
+  #3 call: ToolSearch {"query":"playwright browser","max_results":3}
+  #4 call: ToolSearch {"query":"chrome devtools","max_results":3}
+  #5 call: ToolSearch {"query":"figma","max_results":3}
+
+mode line found: yes, in assistant message #8
+  line: Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+  four-field shape: true
+  calls before it: ToolSearch, ToolSearch, ToolSearch, ToolSearch, ToolSearch, ToolSearch
+  only ToolSearch before it: true
