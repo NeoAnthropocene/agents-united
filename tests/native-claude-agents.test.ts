@@ -13,6 +13,7 @@ import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
 import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
+import { withRoutes } from '../src/core/claude-mcp-routes.js';
 
 /**
  * Plan 032 PR E — the native Claude agents (milestone 1: code-reviewer; milestone 2: backend-architect,
@@ -79,9 +80,9 @@ const ROLES: RoleSpec[] = [
   // `LSP` or worktree; they carry the destructive-command guard in their own frontmatter (it guards them as subagents and the lead's
   // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).
   ...[
-    { name: 'agency-growth-strategist', stem: 'subagent-marketing-growth-strategist', serverTools: ['mcp__firecrawl'] },
-    { name: 'agency-creative-designer', stem: 'subagent-marketing-creative-designer', serverTools: ['mcp__figma', 'mcp__stitch'] },
-    { name: 'agency-conversion-specialist', stem: 'subagent-marketing-conversion-specialist', serverTools: ['mcp__chrome-devtools-mcp', 'mcp__playwright'] },
+    { name: 'agency-growth-strategist', stem: 'subagent-marketing-growth-strategist', serverTools: withRoutes(['mcp__firecrawl']) },
+    { name: 'agency-creative-designer', stem: 'subagent-marketing-creative-designer', serverTools: withRoutes(['mcp__figma', 'mcp__stitch']) },
+    { name: 'agency-conversion-specialist', stem: 'subagent-marketing-conversion-specialist', serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__playwright']) },
   ].map(
     (spec): RoleSpec => ({
       ...spec,
@@ -99,8 +100,8 @@ const ROLES: RoleSpec[] = [
   // Tier 2, the rest of the roster (ADR 0039). The three with editors and no shell are cut like the pilots; the four that run commands (SEO audits,
   // test runs, compliance evidence, the build) hold a shell, so they are also guarded as writers, and the two that watch long runs hold `Monitor`.
   ...[
-    { name: 'agency-content-strategist', stem: 'subagent-marketing-content-strategist', serverTools: ['mcp__firecrawl', 'mcp__markitdown'] },
-    { name: 'agency-campaign-specialist', stem: 'subagent-marketing-campaign-specialist', serverTools: ['mcp__context7'] },
+    { name: 'agency-content-strategist', stem: 'subagent-marketing-content-strategist', serverTools: withRoutes(['mcp__firecrawl', 'mcp__markitdown']) },
+    { name: 'agency-campaign-specialist', stem: 'subagent-marketing-campaign-specialist', serverTools: withRoutes(['mcp__context7']) },
   ].map(
     (spec): RoleSpec => ({
       ...spec,
@@ -116,10 +117,10 @@ const ROLES: RoleSpec[] = [
     })
   ),
   ...[
-    { name: 'agency-seo-specialist', stem: 'subagent-seo-specialist', serverTools: ['mcp__firecrawl', 'mcp__chrome-devtools-mcp'], extra: ['WebFetch', 'WebSearch'] },
-    { name: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead', serverTools: ['mcp__playwright', 'mcp__chrome-devtools-mcp', 'mcp__context7'], extra: ['Monitor', 'TaskCreate', 'TaskUpdate'] },
-    { name: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', serverTools: ['mcp__markitdown', 'mcp__context7', 'mcp__github__search_code', 'mcp__github__get_file_contents', 'mcp__github__list_pull_requests', 'mcp__github__pull_request_read'], extra: ['WebFetch', 'WebSearch'] },
-    { name: 'agency-frontend-architect', stem: 'subagent-frontend-architect', serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], extra: ['LSP', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'TodoWrite'] },
+    { name: 'agency-seo-specialist', stem: 'subagent-seo-specialist', serverTools: withRoutes(['mcp__firecrawl', 'mcp__chrome-devtools-mcp']), extra: ['WebFetch', 'WebSearch'] },
+    { name: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead', serverTools: withRoutes(['mcp__playwright', 'mcp__chrome-devtools-mcp', 'mcp__context7']), extra: ['Monitor', 'TaskCreate', 'TaskUpdate'] },
+    { name: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', serverTools: withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__github__search_code', 'mcp__github__get_file_contents', 'mcp__github__list_pull_requests', 'mcp__github__pull_request_read']), extra: ['WebFetch', 'WebSearch'] },
+    { name: 'agency-frontend-architect', stem: 'subagent-frontend-architect', serverTools: withRoutes(['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp']), extra: ['LSP', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'TodoWrite'] },
   ].map(
     ({ extra, ...spec }): RoleSpec => ({
       ...spec,
@@ -140,7 +141,7 @@ const ROLES: RoleSpec[] = [
     guard: 'destructive',
     permissionMode: 'acceptEdits',
     skills: [],
-    serverTools: ['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch'],
+    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch']),
     mutating: true,
     // The lead of an Agent Team: the roster allowlist, the user, the shared task list, schedules and watchers; no workflows (the bundle has none).
     mustHold: ['Agent', 'AskUserQuestion', 'SendMessage', 'Skill', 'TaskCreate', 'TaskList', 'TaskUpdate', 'Bash', 'Edit', 'Write', 'CronCreate', 'Monitor', 'PushNotification', 'ToolSearch'],
