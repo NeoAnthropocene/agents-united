@@ -13,14 +13,9 @@ import { inspectNativeAgent } from '../src/core/native-guard.js';
  *
  * Text did not make the lead write its mode line first: it held in one of eight checks, including two live runs whose prompt asked for the mode in so many words
  * (the lead obeys the user turn and its own plan over a section of its definition). The host's own agent guide says "Prose is not enforcement; a PreToolUse hook is".
- * The probe of 2026-10-07 (session `b164b3d5`, a logging-only hook on a scratch copy of the lead) settled the design:
- * - the transcript does NOT yet hold the current call when PreToolUse fires (0 of 12), and it lags seconds behind (it stayed at 29 lines across eight calls in two
- *   seconds), so a gate that waits for the line to show up would block a lead that did comply. The gate therefore blocks the first call once, and says what to do
- *   when the line was already written ("repeat the call");
- * - the lead's frontmatter hooks also fire for its teammates' calls, which carry an `agent_id`: the gate leaves those alone;
- * - the host runs every matching handler for parallel calls at once: a call that comes within the window of the first block is blocked too, so a message with
- *   three `Agent` calls is held as a whole.
- * Everything that can go wrong inside the gate lets the call through: a gate that wedges the session is worse than a lead that forgets a line.
+ * R2 (`75b89b2c`) disproved the two-second release window: a held Bash call and an allowed Agent call shared one assistant response 3.433 seconds apart,
+ * and the lead never wrote its mode line. A readable transcript must show the line before lead calls pass, even if the host saves the current response late.
+ * ToolSearch and teammate calls stay outside the gate. I/O errors fail open; readable but delayed evidence keeps the call held.
  */
 
 const SCRIPT = path.resolve('registry/hosts/claude/hooks/agents-united-mode-line-gate.js');
@@ -40,6 +35,7 @@ let transcript = '';
 beforeEach(() => {
   tmp = scratch();
   transcript = path.join(tmp, 'transcript.jsonl');
+  fs.writeFileSync(transcript, '');
 });
 
 const markerOf = (session: string): string => path.join(tmp, 'agents-united', `mode-line-${session}`);
@@ -66,7 +62,7 @@ describe('the mode-line gate script', () => {
     expect(fs.existsSync(SCRIPT)).toBe(true);
   });
 
-  it('blocks the first call of the lead other than ToolSearch, once, and says what to write and what to do if it was written', () => {
+  it('blocks a lead call without a saved mode line and says what to write', () => {
     const first = run(call());
 
     expect(first.status).toBe(2);
@@ -83,7 +79,8 @@ describe('the mode-line gate script', () => {
     const { stderr } = run(call());
 
     expect(stderr).toContain('Do this even if you believe you wrote it already');
-    expect(stderr).toContain('the host cannot see the message you are writing, so this call is held once');
+    expect(stderr).toContain('the host cannot see the message you are writing');
+    expect(stderr).toContain('until the mode line is visible in the saved transcript');
     expect(stderr).toContain('write the line in the same message as the call you repeat');
     expect(stderr).not.toMatch(/already began with that line, repeat the call/);
     expect(stderr).not.toMatch(/if your last message/i);
@@ -93,27 +90,44 @@ describe('the mode-line gate script', () => {
   // session, and the maintainer read the held spawn as a failure of the spawned agent (it was the lead's first call, held once by design; the spawned agent had no hook error).
   // The host's own prefix cannot be changed, so the first line of the message says in plain words that the hold is expected and happens once, and it keeps "Mode line first"
   // because the lead's definition and a test name it.
-  it('says in its first line, in plain words, that the hold is expected and happens once, because the host shows it to the user as an error', () => {
+  it('says in its first line that the hold is expected, because the host shows it to the user as an error', () => {
     const first = run(call()).stderr.split('\n')[0]!;
 
     expect(first).toMatch(/^Mode line first\./);
-    expect(first).toContain('expected one-time hold');
+    expect(first).toContain('expected hold');
     expect(first).toContain('not a failure');
   });
 
-  it('lets the same session through once the window of the first block has passed', () => {
+  it('does not release a call on elapsed time alone; a saved mode line releases later calls', () => {
     expect(run(call()).status).toBe(2);
     const marker = markerOf('sess-1');
     fs.writeFileSync(marker, JSON.stringify({ at: Date.now() - 10_000 }));
 
+    expect(run(call({ tool_use_id: 'toolu_2' })).status).toBe(2);
+    writeTranscript(assistantText(`${LINE}\nI am Chris.`));
     expect(run(call({ tool_use_id: 'toolu_2' })).status).toBe(0);
     expect(run(call({ tool_use_id: 'toolu_3', tool_name: 'Bash' })).status).toBe(0);
   });
 
-  it('holds a parallel call that comes inside the window, so that a message of three Agent calls is held as a whole', () => {
+  it('holds streamed calls even beyond the old two-second window (R2: Bash then Agent in one response)', () => {
     expect(run(call({ tool_use_id: 'a' })).status).toBe(2);
+    fs.writeFileSync(markerOf('sess-1'), JSON.stringify({ at: Date.now() - 3_433 }));
     expect(run(call({ tool_use_id: 'b' })).status).toBe(2);
     expect(run(call({ tool_use_id: 'c', tool_name: 'Skill' })).status).toBe(2);
+  });
+
+  it('does not trust a done marker from the old timed-release gate when the mode line is absent', () => {
+    fs.mkdirSync(path.dirname(markerOf('sess-1')), { recursive: true });
+    fs.writeFileSync(markerOf('sess-1'), JSON.stringify({ done: true }));
+    expect(run(call()).status).toBe(2);
+  });
+
+  it('keeps holding while the current response is missing from disk, then releases after it is saved', () => {
+    writeTranscript(assistantText("I'll check the integrations."));
+    expect(run(call()).status).toBe(2);
+    expect(run(call({ tool_use_id: 'retry' })).status).toBe(2);
+    writeTranscript(assistantText(`${LINE}\nRepeating the held call.`));
+    expect(run(call({ tool_use_id: 'saved-retry' })).status).toBe(0);
   });
 
   it('never blocks ToolSearch, which the lead needs for the integration check the line reports', () => {
@@ -174,6 +188,8 @@ describe('the mode-line gate script', () => {
 
     expect(run(call(), { TEMP: blocker, TMP: blocker, TMPDIR: blocker }).status).toBe(0);
     expect(run(call({ session_id: undefined })).status).toBe(0);
+    expect(run(call({ transcript_path: path.join(tmp, 'missing.jsonl') })).status).toBe(0);
+    expect(run(call({ transcript_path: tmp })).status).toBe(0);
     expect(run('this is not json').status).toBe(0);
     expect(run(call({ hook_event_name: 'UserPromptSubmit' })).status).toBe(0);
     expect(run(call({ session_id: '../../escape' })).status).toBe(2);

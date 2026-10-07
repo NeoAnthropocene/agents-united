@@ -3,12 +3,11 @@ const fs = load("fs");
 const os = load("os");
 const path = load("path");
 
-const WINDOW_MS = 2000;
 const LINE = /^Mode: (?:Fully|Limited) Operational\./;
 const MESSAGE = [
-  "Mode line first. This is an expected one-time hold, not a failure. Before this call, write the mode line as the first line of your text, filled in:",
+  "Mode line first. This is an expected hold, not a failure. Before this call, write the mode line as the first line of your text, filled in:",
   "Mode: <Fully Operational or Limited Operational>. Callable: <the required integrations you can call, or none>. Missing: <the required integrations you cannot call, or none>. Extras: <MarkItDown and Stitch, only those you can call, or none>.",
-  "Your definition asks for it under \"The first message\". Do this even if you believe you wrote it already: the host cannot see the message you are writing, so this call is held once. Then make the call again, and write the line in the same message as the call you repeat.",
+  "Your definition asks for it under \"The first message\". Do this even if you believe you wrote it already: the host cannot see the message you are writing. Calls stay held until the mode line is visible in the saved transcript. Then make the call again, and write the line in the same message as the call you repeat. A retry can be held again while the transcript lags; elapsed time alone never releases it.",
 ].join("\n");
 
 function block() {
@@ -27,7 +26,7 @@ function hasLine(file) {
         if (part && part.type === "text" && typeof part.text === "string" && LINE.test(part.text.replace(/^\s+/, ""))) return true;
       }
     }
-  } catch (e) { /* no transcript on disk yet */ }
+  } catch (e) { return null; /* unreadable evidence fails open */ }
   return false;
 }
 
@@ -50,11 +49,11 @@ process.stdin.on("data", chunk => { raw += chunk; }).on("end", () => {
 
   let state = {};
   try { state = JSON.parse(fs.readFileSync(marker, "utf8")); } catch (e) { /* the first call of the session */ }
-  const now = Date.now();
-  if (state.done) process.exit(0);
-  if (state.at && now - state.at > WINDOW_MS) { save({ done: true }); process.exit(0); }
-  if (state.at) block();
-  if (hasLine(input.transcript_path)) { save({ done: true }); process.exit(0); }
-  if (!save({ at: now })) process.exit(0);
+  // A version-1 done marker can come from elapsed time alone, so it is not proof that the line was seen.
+  if (state.done && state.version === 2) process.exit(0);
+  const seen = hasLine(input.transcript_path);
+  if (seen === null) process.exit(0);
+  if (seen) { save({ done: true, version: 2 }); process.exit(0); }
+  if (!save({ pending: true, version: 2 })) process.exit(0);
   block();
 });
