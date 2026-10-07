@@ -77,8 +77,8 @@ describe('ADR 0043, the outcome of Plan 035', () => {
     const a = adr();
     expect(a).toMatch(/^# ADR 0043: /);
     expect(a).toMatch(/\n- \*\*Status\*\*: \w+, 2026-10-07/);
-    expect(a).toMatch(/\n- \*\*Context\*\*: /);
-    expect(a).toMatch(/\n- \*\*Decision\*\*: /);
+    expect(a).toMatch(/\n- \*\*Context\*\*:/);
+    expect(a).toMatch(/\n- \*\*Decision\*\*:/);
     expect(a).toMatch(/\n- \*\*Consequences\*\*:/);
   });
 

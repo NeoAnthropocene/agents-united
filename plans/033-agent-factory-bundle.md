@@ -4,7 +4,7 @@
 
 ## Status
 
-- **State**: PROPOSED, scope shaped by the maintainer on 2026-10-03 (chat). Nothing is built. Parked; Plan 035 findings recorded on 2026-10-04 (see "Findings from Plan 035").
+- **State**: PROPOSED, scope shaped by the maintainer on 2026-10-03 (chat). Nothing is built. Parked; Plan 035 findings recorded on 2026-10-04 and extended on 2026-10-07 (see "Findings from Plan 035").
 - **Priority**: P2 · **Effort**: L (a bundle, a catalog section, host-parametric subagents, workflows and hooks) · **Risk**: Medium (a new catalog section touches the CLI picker, the `full` bundle and the recommendation logic).
 - **Category**: Catalog / Bundles / Contributor experience / Multi-host.
 - **Depends on**: Plan 030 (licence-aware adaptation), `docs/skill-intake.md` (ADR 0023), Plan 032 (native host packages and the host docs library; ADR 0031 and its 2026-10-03 addendum).
@@ -89,6 +89,29 @@ Plan 035 (Claude digital-agency hardening, pull requests #128 to #137) rewrote t
 1. Where do contributor-facing quality gates live: in the bundle (a skill or a hook the contributor runs) or only in the repository's CI? The ratchet is a repository test today and no install carries it.
 2. Who owns the 39 failing skills outside the agency bundle, and are *merge* and *drop* verdicts decided per bundle by the maintainer or by the bundle's owner role?
 3. Does the bundle ship the session-report helper, or stay a maintainer tool in `scripts/hostlib/` (it needs a transcript only the maintainer's machine has)?
+
+### Addendum, 2026-10-07 (the live hardening and the close-out: M3 and sessions N1 to N3; ADR 0042 and ADR 0043)
+
+Plan 035 closed on 2026-10-07 (ADR 0043). Its live sittings added four findings that the foundation slice should carry. The plan stays parked and none of this starts the bundle.
+
+**5. A rule that must hold on the first action needs a hook, and a hook needs a probe first (ADR 0042).** A prose rule for the digital-agency lead's first message held in 3 of 11 checks and in 0 of 6 live runs, four of them with a prompt that asked for it; a `PreToolUse` gate that holds the first call once did hold. What the probe showed is what a generated hook may rely on: at `PreToolUse` the transcript never holds the call being made (0 of 12) and lags by seconds; `UserPromptSubmit` fires from an agent's frontmatter; the lead's frontmatter hooks also fire for its teammates' calls (those carry an `agent_id`); `claude -p` skips the frontmatter hooks of a project agent, so a hook cannot be measured headless; a hook's message must offer no way out (the first version did, and the Opus lead used it falsely); a `.js` hook script must not call `require` at its top, because in a user's ES-module project it crashes and the host lets the call through; a global install has no project script to name, so it carries the agent without the hook.
+- *Changes slice 1:* the contract's "hooks it may use" must say, per rule, whether the rule is enforced by a hook (a guard kind: a script file that is registered, refcounted and checked by the doctor) or only written down, and a rule that matters on the first action is the first kind.
+- *Changes slice 5:* the host guides must say what each host's hook can see before a hook is designed; for Claude the facts above are the starting list.
+
+**6. Provisioning is a procedure, not an install command (`mcp-setup`, ADR 0041; #161, #167, #170, #171; D44 to D58 and D63).** A lead that needs an integration checks it in its own session with `ToolSearch`, classes what is missing, asks once, installs only after the yes and checks the result. A running session never loads a server added after it started, so the lead then stops and hands over a restart command and a starting prompt. Claude Code has three routes: manual `claude mcp add --scope project`, a plugin that `/reload-plugins --force` loads without a restart, and a connector that only the user can sign in to. The tool names differ by route (`mcp__<server>`, `mcp__plugin_<plugin>_<server>`, `mcp__claude_ai_<Name>`), and `scripts/find-plugin.mjs` searches both catalogs because `claude plugin` has no search. Every package in the reference is pinned and dated, and one of the first choices was deprecated on npm.
+- *Changes slice 3:* the bundle's first skill can be this one (`mcp-setup` is the worked example), and its references are the part that must carry a "checked on" date.
+- *Changes slice 4:* Cline and Antigravity each have their own answer to "does a running session see a new server"; the host-parametric subagent needs it per host from the guide, never from Claude's.
+
+**7. Proof against a real host has a price, and the price is part of the design (the M3 ledger of Plan 035).** A nine-role Sonnet team prompt costs about 3 USD and 13 points of a 5-hour Pro window; an Opus lead costs 0.5 to 0.6 USD for one kickoff (112k to 193k tokens of cache reads); the executor's own turns drew as much quota as the sittings (47 points of a window in session N2, for 11 typed prompts); a context past 400k tokens makes every turn dearer. Headless `claude -p` checks measure a single agent's first answer cheaply and nothing that depends on a frontmatter hook.
+- *Changes slice 4's proof:* "proven against all three hosts" means one scenario per host with a ceiling, a fresh scratch install and a ledger row, plus a decision on which scenarios may run headless.
+
+**8. A prompt rule is measured against a control (D38, #153).** The "inputs first" rule cut output tokens by 61 to 68 percent on data-poor prompts; its first version failed the data-rich control and was tightened. A rule is only as good as its control, and one run per cell is a thin sample.
+- *Changes slice 3:* the first skill ships with an eval pair (with the skill and without it) and a control prompt on which the rule must not fire.
+
+**Further open questions.**
+4. Is a guard kind (a hook as a script file with a doctor check) part of the basic subagent contract in `registry/core/`, or a per-host addition? ADR 0042 built one for Claude only.
+5. Does provisioning belong to this bundle, or to every bundle whose lead needs integrations? Today it sits in `mcp-setup`, which the digital-agency lead loads.
+6. Who owns the lead's open gaps (it asks six questions at once and does not say who supplies each item): the factory's "author an agent" skill, or the owner of each bundle?
 
 ## Out of scope
 
