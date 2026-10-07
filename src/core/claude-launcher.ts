@@ -237,9 +237,17 @@ export class ClaudeLauncher {
         `\`--fanout cline\` install).`
       : `Read the Team Manifest at "${manifestRel}" and your coordinator role definition at "${coordinatorRel}" before acting.`;
 
+    // Observed on 2.1.292 (Plan 035 N2, live test 1): a lead that was asked to "introduce your coordinator role" followed that user-turn
+    // instruction over the first-message section of its own definition and never wrote the mode line. The launcher knows no bundle, so the
+    // sentence names the section; a definition without it has nothing to follow.
+    const firstMessageText =
+      'If your coordinator definition has a section named "The first message", follow it in your first message, ' +
+      'before the introduction and before anything else.';
+
     const bootstrapLines = [
       `You are coordinating the "${bundleName}" team in Agents United.`,
       manifestInstruction,
+      firstMessageText,
       delegationNoteText,
       'Use specialist roles only when necessary.',
       addonPolicyText,
