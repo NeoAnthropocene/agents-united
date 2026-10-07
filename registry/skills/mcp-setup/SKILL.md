@@ -30,7 +30,7 @@ It defines exact configuration patterns for:
 | **Cursor** | `.cursor/mcp.json` (Workspace) or `~/.cursor/mcp.json` (Global) | Standard JSON `{ "mcpServers": { ... } }` |
 | **Cline (VS Code)** | `cline_mcp_settings.json` (Workspace) or `%APPDATA%/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` | JSON with `"disabled": false, "autoApprove": []` |
 | **Claude Desktop** | `%APPDATA%/Claude/claude_desktop_config.json` (Win) / `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac) | Standard JSON `{ "mcpServers": { ... } }` |
-| **Claude Code (CLI)** | `.mcp.json` (project scope, in the working folder) or `~/.claude.json` (local and user scopes) | `claude mcp add --scope project <name> -- <command> [args...]`; the exact commands of the eight servers, the checks and the restart are in `references/claude-code.md` |
+| **Claude Code (CLI)** | `.mcp.json` (project scope, in the working folder) or `~/.claude.json` (local and user scopes) | `claude mcp add --scope project <name> -- <command> [args...]`; the three routes (manual, plugin, connector), the exact commands of the eight servers, the checks and the restart are in `references/claude-code.md` |
 | **OpenCode** | `opencode.json` or `.opencode/mcp.json` | `opencode mcp install <name>` |
 | **OpenAI Codex CLI** | `codex_config.json` (Workspace) | Injected via environment / stdio tool descriptors |
 
@@ -369,7 +369,7 @@ It defines exact configuration patterns for:
 2. The user can switch modes anytime via `/mode operational`, `/mode limited-operational`, or `/mode brainstorming`.
 
 ### Phase 3 — Provisioning & Validation
-1. **On Claude Code, follow `references/claude-code.md`:** install only after the user's yes, in project scope with the `--` before the command; check with `claude mcp get` and `claude mcp list`; then restart, because a running session never loads a server added after it started. A credentialed server is printed with a placeholder for the user to run, never run for them.
+1. **On Claude Code, follow `references/claude-code.md`:** install only after the user's yes, in project scope with the `--` before the command; check with `claude mcp get` and `claude mcp list`; then restart, because a running session never loads a server added after it started. A credentialed server is printed with a placeholder for the user to run, never run for them. To look for a plugin that carries an integration, run `node ${CLAUDE_SKILL_DIR}/scripts/find-plugin.mjs <word>` (read-only: it prints the surfaces, the source and the install command from the catalogs on disk); a plugin install is followed by the user's `/reload-plugins --force`, not a restart, and a connector is a directory link that only the user can authorise.
 2. On the other hosts, if the user chooses to provision MCP servers, execute the corresponding client configuration or CLI commands:
    ```bash
    agy mcp add firecrawl --type stdio --command npx --args -y,firecrawl-mcp --env FIRECRAWL_API_KEY=fc_...
