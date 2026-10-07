@@ -1,0 +1,72 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-plugins-official",
+  "description": "A fixture with the shape of the official marketplace catalog (fields read on Claude Code 2.1.291, 2026-10-07). Not the real catalog.",
+  "owner": { "name": "Fixture owner" },
+  "plugins": [
+    {
+      "name": "context7",
+      "description": "Upstash Context7 MCP server for up-to-date documentation lookup.",
+      "author": { "name": "Upstash" },
+      "category": "development",
+      "source": "./external_plugins/context7",
+      "homepage": "https://github.com/upstash/context7"
+    },
+    {
+      "name": "github",
+      "description": "Official GitHub MCP server for repository management.",
+      "author": { "name": "GitHub" },
+      "category": "productivity",
+      "source": "./external_plugins/github"
+    },
+    {
+      "name": "playwright-extras",
+      "description": "Extra helpers for Playwright test suites.",
+      "category": "testing",
+      "source": "./plugins/playwright-extras"
+    },
+    {
+      "name": "playwright",
+      "description": "Browser automation and end-to-end testing MCP server by Microsoft.",
+      "author": { "name": "Microsoft" },
+      "category": "testing",
+      "source": "./external_plugins/playwright"
+    },
+    {
+      "name": "firecrawl",
+      "description": "Web scraping and crawling powered by Firecrawl.",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/firecrawl/firecrawl-claude-plugin.git",
+        "sha": "b310aa498d2bb661903d4b4e04653352fe60f74b"
+      }
+    },
+    {
+      "name": "figma",
+      "description": "Figma design platform integration.",
+      "category": "design",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/figma/mcp-server-guide.git",
+        "sha": "172920731eedf414e9b22ae60017d9a5b6c9f81f"
+      }
+    },
+    {
+      "name": "chrome-devtools-mcp",
+      "description": "Control and inspect a live Chrome browser from your coding agent.",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp.git",
+        "sha": "1cec9cd1a3bbf1895c98fa4b4e0e2da5a36e4075"
+      }
+    },
+    {
+      "name": "frontend-design",
+      "description": "A frontend skill for distinctive, production-grade interfaces.",
+      "category": "development",
+      "source": "./plugins/frontend-design"
+    }
+  ]
+}
