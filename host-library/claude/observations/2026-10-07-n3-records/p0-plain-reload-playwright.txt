@@ -1,0 +1,14 @@
+P0: the plain /reload-plugins with the playwright plugin (Plan 035 N3, 2026-10-07)
+
+Session 075336f9-aef5-4fdd-92a3-66cb9d5edecb, scratch folder n3-reload, Claude Code 2.1.292, Haiku 4.5.
+Order: `claude --model haiku`, "hi" (a model turn, 11:17:49, so that a prompt cache exists); in a second terminal
+`claude plugin install playwright@claude-plugins-official --scope project`; then the plain `/reload-plugins` (no flag) at 11:18:09; then `/mcp`.
+
+The record (a system/local_command entry):
+  <local-command-stdout>Reloaded: 1 plugin, 0 skills, 6 agents, 0 hooks, 1 plugin MCP server, 0 plugin LSP servers</local-command-stdout>
+There is no warning and no skip in the record, and no second reload command.
+
+The maintainer's /mcp (typed in chat; /mcp is a UI command and leaves no record):
+  plugin:playwright:playwright   connected, 25 tools
+
+cost-state of the session: totalCostUSD 0.090762.

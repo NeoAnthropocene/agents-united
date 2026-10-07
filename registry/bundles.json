@@ -1131,9 +1131,8 @@
     "digital-agency": {
       "name": "digital-agency",
       "tier": "organization",
-      "status": "experimental",
       "domain": "organization",
-      "category": "Cross-Functional Digital Agency (Experimental)",
+      "category": "Cross-Functional Digital Agency",
       "aliases": [
         "agency"
       ],

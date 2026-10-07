@@ -71,4 +71,27 @@ describe('Plan 033 after Plan 035', () => {
     const s = section('Findings from Plan 035');
     for (const pr of ['#128', '#129', '#135', '#136']) expect(s).toContain(pr);
   });
+
+  it('adds what the live hardening showed (2026-10-07): the hook that held, provisioning, the cost of proof and the measured rule', () => {
+    const s = section('Findings from Plan 035');
+    expect(s).toMatch(/Addendum, 2026-10-07/);
+    expect(s).toMatch(/ADR 0042/);
+    expect(s).toMatch(/ADR 0043/);
+    expect(s).toMatch(/PreToolUse/);
+    expect(s).toMatch(/prose/i);
+    expect(s).toMatch(/mcp-setup/);
+    expect(s).toMatch(/find-plugin/);
+    expect(s).toMatch(/inputs first/i);
+    expect(s).toMatch(/quota/i);
+  });
+
+  it('says what each new finding changes in slices 1, 3, 4 and 5, and the questions it adds', () => {
+    const s = section('Findings from Plan 035');
+    const addendum = s.slice(s.indexOf('Addendum, 2026-10-07'));
+    expect(addendum).toMatch(/Changes slice 1/);
+    expect(addendum).toMatch(/Changes slice 3/);
+    expect(addendum).toMatch(/Changes slice 4/);
+    expect(addendum).toMatch(/Changes slice 5/);
+    expect(addendum).toMatch(/Further open questions/i);
+  });
 });

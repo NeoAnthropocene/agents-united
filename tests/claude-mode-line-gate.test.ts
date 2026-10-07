@@ -89,6 +89,18 @@ describe('the mode-line gate script', () => {
     expect(stderr).not.toMatch(/if your last message/i);
   });
 
+  // N3 regression run (session `8e2c3d9e`): the host prints a held call to the user as "Error: PreToolUse:Agent hook error: [node ...]: <this message>", at the start of every
+  // session, and the maintainer read the held spawn as a failure of the spawned agent (it was the lead's first call, held once by design; the spawned agent had no hook error).
+  // The host's own prefix cannot be changed, so the first line of the message says in plain words that the hold is expected and happens once, and it keeps "Mode line first"
+  // because the lead's definition and a test name it.
+  it('says in its first line, in plain words, that the hold is expected and happens once, because the host shows it to the user as an error', () => {
+    const first = run(call()).stderr.split('\n')[0]!;
+
+    expect(first).toMatch(/^Mode line first\./);
+    expect(first).toContain('expected one-time hold');
+    expect(first).toContain('not a failure');
+  });
+
   it('lets the same session through once the window of the first block has passed', () => {
     expect(run(call()).status).toBe(2);
     const marker = markerOf('sess-1');
@@ -222,6 +234,6 @@ describe('the mode-line gate, wired into the lead', () => {
   it('is the script that the generated constant says it is', async () => {
     const { MODE_LINE_GATE_SCRIPT } = await import('../src/core/mode-line-gate.js');
 
-    expect(fs.readFileSync(SCRIPT, 'utf8')).toBe(`${MODE_LINE_GATE_SCRIPT}\n`);
+    expect(fs.readFileSync(SCRIPT, 'utf8').replace(/\r\n/g, '\n')).toBe(`${MODE_LINE_GATE_SCRIPT}\n`);
   });
 });

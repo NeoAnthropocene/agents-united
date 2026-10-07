@@ -42,7 +42,7 @@ _Avoid_: Plugin pack, preset, collection
 A single-discipline team package scoped to one expertise domain (e.g. `software-engineering`, `product-design`, `growth-marketing`). Domain bundles are self-contained prompt/workflow units with minimal external runtime prerequisites, lean token footprints, and can be recommended autonomously by Lead Orchestrators.
 _Avoid_: Simple pack, basic bundle
 
-**Organization Bundle (Tier 2 / Experimental)**:
+**Organization Bundle (Tier 2)**:
 A cross-functional composite team modeled after real-world professional organizations (e.g. `digital-agency`, `venture-studio`). Unlike domain bundles, organization bundles orchestrate cross-discipline agents and integrate **Model Context Protocol (MCP) server tool calling**, external packages, and API keys. Because they require runtime prerequisites, they are not recommended autonomously by global orchestrators and require explicit user opt-in. Led by dedicated Tier-2 organization orchestrators such as `orchestrator-digital-agency.md` (Campaign Director / Chris).
 _Avoid_: Mega bundle, company bot
 
@@ -200,7 +200,7 @@ How an integration of the Canonical Agency MCP Suite reaches a Claude Code sessi
 _Avoid_: Calling a plugin a connector, assuming a plugin carries an MCP server (the firecrawl plugin ships skills only)
 
 **Mode-Line Gate**:
-The `PreToolUse` hook of the digital-agency lead (`registry/hosts/claude/hooks/agents-united-mode-line-gate.js`, guard kind `mode-line`) that holds the lead's first call other than `ToolSearch` once per session until it writes its mode line (`Mode: <Fully|Limited> Operational. Callable: ... Missing: ... Extras: ...`, the section "The first message" of its definition). It cannot see the message being written, so it holds the call whatever the lead wrote; it ignores teammates' calls and fails open (ADR 0042).
+The `PreToolUse` hook of the digital-agency lead (`registry/hosts/claude/hooks/agents-united-mode-line-gate.js`, guard kind `mode-line`) that holds the lead's first call other than `ToolSearch` once per session until it writes its mode line (`Mode: <Fully|Limited> Operational. Callable: ... Missing: ... Extras: ...`, the section "The first message" of its definition). It cannot see the message being written, so it holds the call whatever the lead wrote; it ignores teammates' calls and fails open (ADR 0042). A lead that writes the line before its first call writes it twice, which the maintainer accepted (ADR 0043). The host prints the hold as an error line, so the message begins by saying that the hold is expected and happens once.
 _Avoid_: Calling it a guard of what a role may do, expecting it to check the content of the line
 
 **Multimodal Asset Inlining (`@path/to/file`)**:

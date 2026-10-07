@@ -264,8 +264,8 @@ The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organiza
 │   │   └── 🤖 Sub-agents: market-intelligence-analyst
 │   └── 📦 business-operations-legal [inherits: business-strategy]
 │       └── 🤖 Sub-agents: legal-contract-analyst, operations-strategist
-├── 🏢  Organization Bundles (Experimental / Cross-Functional) (1 bundle)
-│   └── 📦 digital-agency ⚡ [Experimental] [Tri-Tier Execution Framework] [Planning Dialogue Loop (ADR 0014)]
+├── 🏢  Organization Bundles (Cross-Functional) (1 bundle)
+│   └── 📦 digital-agency ⚡ [Tri-Tier Execution Framework] [Planning Dialogue Loop (ADR 0014)]
 │       ├── 🤖 Lead: orchestrator-digital-agency (Campaign Director / Chris)
 │       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Kaan), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), seo-specialist, frontend-architect, qa-automation-lead, compliance-grc-specialist
 │       ├── 🔌 Prerequisites: github (MCP), firecrawl (MCP), context7 (MCP), playwright (MCP), markitdown (MCP), chrome-devtools (MCP), stitch (MCP), figma (MCP)
