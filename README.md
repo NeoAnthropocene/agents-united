@@ -496,7 +496,7 @@ QA Automation Lead (Playwright E2E) + Compliance GRC Specialist (FTC / GDPR / CA
 Organization (Tier-2) bundles are the most open area for contributors. The registry keeps one deliberate template for them: **`mock-organization-under-construction`** in [`registry/bundles.json`](./registry/bundles.json). It is not a real team and is not counted in the bundle total above; it exists to show the shape of an organization bundle and to exercise the CLI's under-construction gate in tests.
 
 - Copy its entry and set `tier: "organization"`, a `status` (`under-construction` while you build, then `experimental`), `orchestrator`, `agents` and `skills`.
-- Add `prerequisites` (`requiredMcps`, packages, environment variables) and `modes` (`operational`, `limited-operational`, `brainstorming`), as `digital-agency` does.
+- Add `prerequisites` (`requiredMcps`, packages, environment variables; mark an extra the bundle can use but does not need with `optional: true`, so that the doctor and the install gate do not count it, as `digital-agency` does for `markitdown` and `stitch`) and `modes` (`operational`, `limited-operational`, `brainstorming`), as `digital-agency` does.
 - Opt into the planning loop with `planningLoop` (`mode: "subagent-first"` plus a consultation budget) and add `personaAliases` if your team has named personas.
 - Try it: `agents add mock-organization-under-construction --allow-under-construction --mode brainstorming --dry-run` resolves the bundle without writing anything. Drop `--allow-under-construction` to watch the gate block it.
 
@@ -510,7 +510,7 @@ Agents United never installs or configures MCP servers for you, and never writes
 
 - **Every orchestrator** declares `context7`, `firecrawl`, and `github`. Engineering, architecture, and security specialists that need current vendor docs also get `context7`, and the security specialists get `github`.
 - **On Claude Code**, projected roles carry these servers in their `mcpServers:` frontmatter, so they can call the tools despite each role's explicit `tools:` list.
-- **`agents doctor --host <host>`** warns about each declared server your assistant has not configured and prints the matching command: `claude mcp add ...`, `agy mcp add ...`, or the `cline mcp` wizard.
+- **`agents doctor --host <host>`** warns about each declared server your assistant has not configured and prints the matching command: `claude mcp add ...`, `agy mcp add ...`, or the `cline mcp` wizard. A server that an installed bundle lists as an optional extra (`optional: true`, as `digital-agency` does for `markitdown` and `stitch`) is not warned about.
 - **The `mcp-setup` skill** (in `universal-skills`) walks an orchestrator through configuring a server with you.
 
 ---

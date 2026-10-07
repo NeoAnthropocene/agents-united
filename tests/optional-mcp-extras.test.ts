@@ -170,3 +170,24 @@ describe('the doctor warns for the required servers only', () => {
     expect(text).not.toContain('is declared by the installed roles but not configured');
   });
 });
+
+describe('the documents say how the extras are treated', () => {
+  const read = (relative: string): string => fs.readFileSync(path.resolve(relative), 'utf8').replace(/\r\n/g, '\n');
+
+  it('README: the doctor bullet and the authoring bullet name `optional: true`', () => {
+    const readme = read('README.md');
+    const doctor = readme.split('\n').find(line => line.startsWith('- **`agents doctor --host <host>`**')) ?? '';
+    expect(doctor).not.toBe('');
+    expect(doctor).toContain('`optional: true`');
+    const authoring = readme.split('\n').find(line => line.startsWith('- Add `prerequisites`')) ?? '';
+    expect(authoring).not.toBe('');
+    expect(authoring).toContain('`optional: true`');
+  });
+
+  it('CONTEXT.md: the suite term says that the doctor and the install gate leave the extras out', () => {
+    const context = read('CONTEXT.md');
+    const term = context.slice(context.indexOf('**Canonical Agency MCP Suite**:'), context.indexOf('**Multimodal Asset Inlining'));
+    expect(term).toContain('`optional: true`');
+    expect(term).toMatch(/the doctor and the install gate leave them out/);
+  });
+});

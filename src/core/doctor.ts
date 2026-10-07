@@ -15,6 +15,7 @@ import { McpLocationRegistry } from './mcp-locations.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, inspectAntigravityHook, loadGuardHookEntry } from './antigravity-hooks.js';
 import { inspectAntigravityMcp, loadMcpCatalog } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
+import { optionalMcpNames } from './prerequisites.js';
 import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
 import { NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
@@ -23,6 +24,7 @@ import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
+  BundleDefinition,
   ClaudeCapabilityReport,
   ClineCapabilityReport,
   InstallScope,
@@ -245,6 +247,24 @@ export class DoctorEngine {
   }
 
   /**
+   * Plan 035 N1 — the servers the installed bundles list as optional extras and no installed bundle requires, by lower-case name. A bundle the registry no
+   * longer knows (a retired one, a `domain:*` pseudo-entry) adds nothing, so the doctor keeps warning for what it cannot place.
+   */
+  private static async optionalMcpExtras(installedBundles: readonly string[]): Promise<Set<string>> {
+    const resolver = new RegistryResolver();
+    const definitions: BundleDefinition[] = [];
+    for (const name of installedBundles) {
+      try {
+        const definition = await resolver.getBundle(name);
+        if (definition) definitions.push(definition);
+      } catch {
+        continue; // never emit a speculative change of the warnings
+      }
+    }
+    return optionalMcpNames(definitions);
+  }
+
+  /**
    * Plan 029 A3 — warn for every server an installed role declares that this host has NOT
    * configured, printing that host's own add command. STRICTLY READ-ONLY: doctor reads the MCP
    * location registry, never installs a server and never writes a config file (the printed command
@@ -254,9 +274,11 @@ export class DoctorEngine {
     host: string,
     workspaceRoot: string,
     agentsDir: string,
-    warnings: string[]
+    warnings: string[],
+    optionalExtras: ReadonlySet<string> = new Set()
   ): Promise<string[]> {
-    const declared = await DoctorEngine.declaredMcpServers(agentsDir);
+    // Plan 035 N1 — an optional extra of an installed bundle (the digital-agency lists markitdown and stitch) is not a missing server.
+    const declared = (await DoctorEngine.declaredMcpServers(agentsDir)).filter(server => !optionalExtras.has(server.toLowerCase()));
     if (declared.length === 0) return [];
 
     const discovered = await McpLocationRegistry.discoverForHosts(
@@ -665,7 +687,8 @@ export class DoctorEngine {
     // this host has not configured is reported with the host's own add command; doctor never
     // installs a server and never writes an MCP config file.
     if (host && MCP_AUDIT_HOSTS.has(host)) {
-      await DoctorEngine.auditMcpServers(host, workspaceRootOf(root), subPaths.agentsDir, warnings);
+      const optionalExtras = await DoctorEngine.optionalMcpExtras(manifest?.installed?.bundles ?? []);
+      await DoctorEngine.auditMcpServers(host, workspaceRootOf(root), subPaths.agentsDir, warnings, optionalExtras);
     }
 
     // Host-specific checks (e.g. --host cline, --host claude)
