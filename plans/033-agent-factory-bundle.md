@@ -4,14 +4,14 @@
 
 ## Status
 
-- **State**: PROPOSED, scope shaped by the maintainer on 2026-10-03 (chat). Nothing is built. Parked; Plan 035 findings recorded on 2026-10-04 and extended on 2026-10-07 (see "Findings from Plan 035").
+- **State**: FOUNDATION CANDIDATE — slice 1 authorized 2026-10-07; basic contract under verification. Slices 2–5 remain parked pending separate reviewed PRs. Plan 035 findings remain historical below.
 - **Priority**: P2 · **Effort**: L (a bundle, a catalog section, host-parametric subagents, workflows and hooks) · **Risk**: Medium (a new catalog section touches the CLI picker, the `full` bundle and the recommendation logic).
 - **Category**: Catalog / Bundles / Contributor experience / Multi-host.
 - **Depends on**: Plan 030 (licence-aware adaptation), `docs/skill-intake.md` (ADR 0023), Plan 032 (native host packages and the host docs library; ADR 0031 and its 2026-10-03 addendum).
 
 ## Why this exists
 
-**Authorization amendment, 2026-10-07:** the maintainer has started slice 1 only. The parked status above is the historical starting state; foundation design is in ADR 0045 and the local-installation options are proposed in ADR 0046. Slices 2–5 remain separate reviewed PRs, in order (slice 4: realize, then sync). Plan 034's security hold and reviewed baseline remain intact.
+**Authorization amendment, 2026-10-07:** the maintainer has started slice 1 only. The plan was previously parked; foundation design is in ADR 0045 and the local-installation options are proposed in ADR 0046. Slices 2–5 remain separate reviewed PRs, in order (slice 4: realize, then sync). Plan 034's security hold and reviewed baseline remain intact.
 
 1. **A gap the Antigravity lane opened, accepted on purpose.** With the native lane on, the legacy `.agents/rules/GEMINI.md` is omitted (it duplicated the native rules). It was the only thing that delivered its skill-attribution section (author metadata in `SKILL.md`, README credits, adapt rather than import raw); no bundle declares `registry/rules/skill-attribution.md`. That guidance is about adopting external skills into this project, so it does not belong in end-user bundles, where a rule no end-user task needs only adds to every session's context.
 2. **Contributor workflows live where only some hosts see them.** The maintainer skills (`realize-for-host`, `host-update-sync`) sit in `.claude/skills/`, and `docs/skill-intake.md`, `docs/workflow-guide.md` and the bundle mechanics are prose a contributor has to find. A contributor using Cline or Antigravity gets none of it from the packages.
@@ -72,13 +72,15 @@ The four questions of the first round are answered (decisions 6 to 9). What is l
 
 **Foundation answers (2026-10-07):** ADR 0045 reuses the Semantic Core via a definition stem and adds only three permitted-identifier lists. The host input, binding/evidence record and pipeline/runbook responsibilities are specified in `docs/agent-factory-foundation.md`. Local drafts are reversible; installer, lockfile and doctor behavior is still **proposed**, with concrete options in ADR 0046. Repository CI remains authoritative; tool packaging and reader distribution are deferred. Merge/drop of the 39 other skills remains the maintainer's decision. These answers do not start later slices.
 
+**Upstream contribution decision (2026-10-07):** guide contributors to open a scoped PR to `dev`. Existing PR/proposal templates were checked; the focused artifact PR template and `docs/artifact-contribution.md` specify the proposed contribution runbook. Its workflow/skill implementation waits for later reviewed slices. Local creation remains independent and does not require a PR.
+
 ## Foundation execution milestones (authorized 2026-10-07)
 
 | Milestone | Acceptance criteria | State |
 | --- | --- | --- |
 | M0 Ground | Locate cloud checkout; read rules/plans/ADRs/guides; verify #172–#174 merged and #137 closed; fresh `origin/dev`, clean `codex/` branch; continuation and local-executor capability checked. | Complete; `gh` network access denied, connector verifies PR states. |
 | M1 Design | ADR 0045 and foundation specification preserve all nine decisions; proposed ADR 0046 defers local install; record conservative defaults and host evidence. | Recorded. |
-| M2 Red / green | Meaningful failing contract tests and red commit; minimal basic validator/type, host-reference checks and green commit. No catalog, bundle, native artifact or install-lane change. | Next. |
+| M2 Red / green | Meaningful failing contract tests and red commit; minimal basic validator/type, host-reference checks and green commit. No catalog, bundle, native artifact or install-lane change. | Red `4c47bc3`; green narrow run 37/37, exit 0; green commit follows. |
 | M3 Verification | Narrow checks then full `npm run typecheck && npm test`; save raw output and actual exit codes. Prepare exact local recipe; never substitute static/headless evidence for interactive behavior. | Pending. |
 | M4 Review | Inspect complete diff and every staged diff; check all PRs before each push; one PR to `dev`, no merge; inspect CI and repair relevant failures. | Pending. |
 | M5 R3 handoff | Candidate includes merged #174; exact commit/install/launch/prompt and record-reading commands, all eight expectations under ADR 0044. Stop for maintainer's interactive evidence. | Pending. |
@@ -98,18 +100,19 @@ For each actual run add account, model(s), session id, tested commit, exact comm
 Tool discovery found hosted reminder/automation tools, but no persistent-goal API, quota-reset trigger or target capable of resuming this same cloud task. No automatic resumption is configured. Preserve this checkpoint before any interruption; resume it instead of restarting completed work.
 
 - Branch: `codex/plan-033-foundation`, from fresh `origin/dev` (`aa7dbe3`, contains merged #174).
-- Commit: baseline `aa7dbe38126471151ee6aad3558bbc354ce8b024`; design files pending commit.
-- Milestone: M2 red tests confirmed, before red commit.
+- Commit: red `4c47bc3`; baseline `aa7dbe38126471151ee6aad3558bbc354ce8b024`.
+- Milestone: M2 red committed; minimal validator/type implemented, awaiting green checks.
 - Completed: ground, instructions/prior-art search, foundation design and proposed local installation options.
 - Verification: Node v24.19.0; clean baseline; git fetch succeeded; connector confirms #172/#173/#174 merged and #137 closed. Required `gh` attempt failed with proxy `Forbidden`; no files changed before initial ground report.
 - Remaining budget: headless 16, interactive 16, 50 USD aggregate; no Claude run; current Codex quota unavailable (start reported 100% available); last Claude readings above.
 - Blockers: `gh` API blocked by proxy; Claude CLI and local executor absent; live tests await maintainer.
-- Exact next action: inspect staged diff and commit red; then implement the smallest validator/type change. Raw red output: `/workspace/plan-033-evidence/red.txt`; actual exit code `1` saved in `red.exit`.
+- Exact next action: run the narrow green checks, inspect staged diff and commit the minimal implementation. Raw red output: `/workspace/plan-033-evidence/red.txt`; actual exit code `1` saved in `red.exit`.
 
 ## Foundation progress log
 
 - 2026-10-07 (M0–M1, OpenAI Codex): checkout `/workspace/agents-united` was clean on `work` at old main snapshot `4342cad`, so missing current documents were not treated as absent prior art. Fetched `origin/dev` and created `codex/plan-033-foundation` at `aa7dbe3`. PR states verified through the connector after `gh` was proxy-denied. Read cloud runtime/network policy (restricted, no VPN, no ready credential bindings reported), tracked `registry/rules/` because generated `.claude/rules/` is absent, the required documents, closing logs and host guides/observations. Recorded ADR 0045, proposed ADR 0046 and the foundation specification. No Claude prompts spent; no automatic waking or Windows executor established. The nine decisions are unchanged.
 - 2026-10-07 (M2 red, OpenAI Codex): `npx vitest run tests/subagent-contract.test.ts tests/plan-033-findings.test.ts` exited **1**: 29 failed, 8 passed. All 28 new contract/reference tests fail because `validateSubagentContract` is absent; the plan-state test also requires foundation activation. This is the intended red state, before implementation. Maintainer selected a guided contribution PR to `dev`; the current PR template and artifact proposal issue forms were read before designing the focused template and future contribution runbook. No workflow/skill is installed in this slice.
+- 2026-10-07 (M2 green, OpenAI Codex): added `SubagentContract` to shared types and the pure validator alongside the existing Semantic Core gate. The narrow command above passed **37/37**, exit **0**, with raw output and exit in `/workspace/plan-033-evidence/green.{txt,exit}`. Reference checks pin two native roles on each of Claude, Cline and Antigravity and detect a seeded safety-floor mutation; this is static evidence only. Added foundation terms and the contributor guide/focused template; no registry, installer, native role, security hold or host baseline changed.
 
 ## Findings from Plan 035 (2026-10-04; this plan stays parked)
 

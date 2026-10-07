@@ -20,6 +20,8 @@ The validator and reference-host tests establish an offline contract without cha
 
 Local drafts work without deciding storage precedence, but they are not installable bundles. ADR 0046 records the concrete product options; slice 2 may proceed independently of local installation, while any local installer change waits for that decision. Subsequent development order stays slices 2, 3, 4 (realize, then sync), 5, after foundation review and interactive evidence.
 
+**Maintainer decision, 2026-10-07:** guide upstream contributors to a PR targeting `dev`. The existing default PR template and four artifact proposal forms were checked first. A focused artifact template and `docs/artifact-contribution.md` specify evidence and the proposed `prepare-artifact-contribution` runbook; implementing its workflow/skill is later-slice work. This upstream route does not change decision 7 or resolve local installation.
+
 ## Verification
 
 Pending the test-first implementation and full gate; see Plan 033's dated log and checkpoint. All foundation live-host behavior and R3 results are **unverified** until records arrive.

@@ -4,17 +4,13 @@ import yaml from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { loadHostProfile, loadToolPolicy } from '../src/core/host-profile.js';
 import { ANTIGRAVITY_FLOOR_MARKERS, CLAUDE_FLOOR_MARKERS, CLINE_FLOOR_MARKERS, checkFloor } from '../src/core/native-floor.js';
-import { loadSemanticCore } from '../src/core/semantic-core.js';
-import type { SemanticCore } from '../src/core/types.js';
+import { loadSemanticCore, validateSubagentContract } from '../src/core/semantic-core.js';
+import type { SemanticCore, SubagentContract } from '../src/core/types.js';
 
 // The foundation is opt-in: a pure validator, no loader or install-time host dispatch.
-// Dynamic lookup makes the red failure explicit while the existing module still compiles.
-async function validate(raw: unknown, definitions: ReadonlyMap<string, SemanticCore>): Promise<unknown> {
-  const api = await import('../src/core/semantic-core.js') as unknown as {
-    validateSubagentContract?: (input: unknown, cores: ReadonlyMap<string, SemanticCore>) => unknown;
-  };
-  if (!api.validateSubagentContract) throw new Error('Foundation API missing: validateSubagentContract');
-  return api.validateSubagentContract(raw, definitions);
+// The red commit used dynamic lookup to report the missing API; green checks its typed export.
+async function validate(raw: unknown, definitions: ReadonlyMap<string, SemanticCore>): Promise<SubagentContract> {
+  return validateSubagentContract(raw, definitions);
 }
 
 const core: SemanticCore = {
