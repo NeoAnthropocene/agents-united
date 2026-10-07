@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 2,
+  "fetchedAt": "2026-10-06T13:41:39.964Z",
+  "listings": [
+    {
+      "id": "plugin_fixture_context7",
+      "name": "context7",
+      "summary": "Upstash Context7 MCP server for up-to-date documentation lookup.",
+      "links": {},
+      "surfaces": ["claude_code", "cowork", "claude_ai"],
+      "source": {
+        "type": "repository",
+        "repository": {
+          "url": "https://github.com/anthropics/claude-plugins-official",
+          "path": "external_plugins/context7",
+          "reviewed_commit": "7d7dbbd9bc87745d2345a36b54be642f6145fd15"
+        }
+      },
+      "checks": {}
+    },
+    {
+      "id": "plugin_fixture_playwright",
+      "name": "playwright",
+      "summary": "Browser automation and end-to-end testing MCP server by Microsoft.",
+      "links": {},
+      "surfaces": ["claude_code", "cowork"],
+      "source": {
+        "type": "directory",
+        "repository": {
+          "url": "https://github.com/anthropics/claude-plugins-official",
+          "path": "external_plugins/playwright",
+          "reviewed_commit": "7d7dbbd9bc87745d2345a36b54be642f6145fd15"
+        }
+      },
+      "checks": {}
+    },
+    {
+      "id": "plugin_fixture_figma",
+      "name": "Figma",
+      "summary": "Figma design platform integration.",
+      "links": {},
+      "surfaces": ["claude_code", "cowork", "claude_ai"],
+      "source": {
+        "type": "repository",
+        "repository": {
+          "url": "https://github.com/figma/mcp-server-guide",
+          "path": "",
+          "reviewed_commit": "172920731eedf414e9b22ae60017d9a5b6c9f81f"
+        }
+      },
+      "checks": {}
+    },
+    {
+      "id": "plugin_fixture_acme",
+      "name": "acme-notes",
+      "summary": "Take notes in Acme from the terminal.",
+      "links": {},
+      "surfaces": ["claude_code"],
+      "source": {
+        "type": "repository",
+        "repository": {
+          "url": "https://github.com/acme/notes-plugin",
+          "path": "",
+          "reviewed_commit": "abcdef1234567890abcdef1234567890abcdef12"
+        }
+      },
+      "checks": {}
+    }
+  ],
+  "entryNames": {},
+  "entryNameClaims": {}
+}

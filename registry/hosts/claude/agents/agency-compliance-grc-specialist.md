@@ -4,7 +4,7 @@ description: Compliance specialist (Defne) of the digital agency team. Use to au
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, Write, mcp__markitdown, mcp__context7, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read
+tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, Write, mcp__markitdown, mcp__context7, mcp__plugin_context7_context7, mcp__github__search_code, mcp__plugin_github_github__search_code, mcp__github__get_file_contents, mcp__plugin_github_github__get_file_contents, mcp__github__list_pull_requests, mcp__plugin_github_github__list_pull_requests, mcp__github__pull_request_read, mcp__plugin_github_github__pull_request_read
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]}]

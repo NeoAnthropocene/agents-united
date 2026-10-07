@@ -4,7 +4,7 @@ description: Content strategist (Yavuz) of the digital agency team. Use for keyw
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, Write, mcp__firecrawl, mcp__markitdown
+tools: Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, Write, mcp__firecrawl, mcp__claude_ai_Firecrawl, mcp__markitdown
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"]}]}]

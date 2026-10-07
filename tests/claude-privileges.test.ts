@@ -105,7 +105,9 @@ describe('Plan 022 H2/H3 — the native lane (least privilege by capability clas
   });
 
   it.each(NATIVE_ROLES)('$role never holds the whole tool surface of the host (H2)', ({ role }) => {
-    expect(holds(role).length).toBeLessThan(catalog.length);
+    // The catalog is the host's built-in tools. An `mcp__` grant names a server, not a built-in tool, and one integration can now appear under its manual,
+    // plugin and connector names (Plan 035 N1), so only the built-in tools are counted against the catalog.
+    expect(holds(role).filter(tool => !tool.startsWith('mcp__')).length).toBeLessThan(catalog.length);
     // A role that holds a shell and the editors holds a guard; a role with neither needs none (nativeGuardProblem is the doctor's rule).
   });
 

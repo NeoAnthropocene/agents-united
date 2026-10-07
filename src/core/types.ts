@@ -48,6 +48,8 @@ export interface RequiredMcp {
   name: string;
   purpose?: string;
   optionalForBrainstorming?: boolean;
+  /** An optional extra (Plan 035 N1): listed and shown, never counted as missing by the install gate or the doctor. */
+  optional?: boolean;
 }
 
 export interface BundlePrerequisites {
@@ -69,6 +71,8 @@ export interface PrerequisiteItemCheck {
   status: 'ok' | 'missing' | 'partial';
   details?: string;
   optionalForBrainstorming?: boolean;
+  /** Copied from `RequiredMcp.optional`: an unmet optional item does not stop `allSatisfied`. */
+  optional?: boolean;
   detectedInHosts?: string[];
   missingInHosts?: string[];
 }

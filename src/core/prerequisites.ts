@@ -7,6 +7,7 @@ import type {
   PrerequisiteEvaluation,
   PrerequisiteItemCheck,
   BundlePrerequisites,
+  RequiredMcp,
   AgentHost,
 } from './types.js';
 
@@ -351,6 +352,7 @@ export class PrerequisiteChecker {
           status,
           details,
           optionalForBrainstorming: mcp.optionalForBrainstorming ?? true,
+          ...(mcp.optional === true ? { optional: true } : {}),
           detectedInHosts: detectedHostLabels,
           missingInHosts: missingHostLabels,
         });
@@ -388,7 +390,8 @@ export class PrerequisiteChecker {
     }
 
     const hasPrerequisites = items.length > 0;
-    const allSatisfied = items.length === 0 || items.every(i => i.satisfied);
+    // An optional extra is shown but never stops the gate (Plan 035 N1): the lead reports it when callable and does not count it.
+    const allSatisfied = items.length === 0 || items.every(i => i.satisfied || i.optional === true);
     const operationalPossible = allSatisfied;
 
     return {
@@ -621,4 +624,33 @@ export class PrerequisiteChecker {
       return { success: false, output: err.message || String(err) };
     }
   }
+}
+
+/**
+ * Plan 035 N1 — the servers that no installed bundle requires and at least one lists as an optional extra, lower-cased. The doctor leaves them out of its
+ * missing-server warnings. A server another installed bundle requires is not here, and neither is one that no bundle lists: the doctor keeps warning for those.
+ */
+export function optionalMcpNames(bundles: readonly BundleDefinition[]): Set<string> {
+  const optional = new Set<string>();
+  const required = new Set<string>();
+  for (const bundle of bundles) {
+    for (const mcp of bundle.prerequisites?.requiredMcps ?? []) {
+      (mcp.optional === true ? optional : required).add(mcp.name.toLowerCase());
+    }
+  }
+  for (const name of required) optional.delete(name);
+  return optional;
+}
+
+/** How the install panel labels one evaluated item. An unmet optional extra is neither a failure nor a warning. */
+export function prerequisiteStatusLabel(item: PrerequisiteItemCheck): { label: string; tone: 'ok' | 'partial' | 'missing' | 'optional' } {
+  if (item.satisfied) return { label: 'Detected', tone: 'ok' };
+  if (item.optional === true) return { label: 'Optional, not configured', tone: 'optional' };
+  if (item.status === 'partial') return { label: 'Partial', tone: 'partial' };
+  return { label: 'Missing', tone: 'missing' };
+}
+
+/** The MCP names of a bundle's prerequisites for a list line, an optional extra marked as such. */
+export function describeRequiredMcps(requiredMcps: readonly RequiredMcp[]): string {
+  return requiredMcps.map(mcp => (mcp.optional === true ? `${mcp.name} (optional)` : mcp.name)).join(', ');
 }

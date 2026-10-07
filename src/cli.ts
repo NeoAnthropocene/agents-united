@@ -19,14 +19,14 @@ import { ClaudeCapabilityProbe } from './core/claude-capabilities.js';
 import { AntigravityLauncher } from './core/antigravity-launcher.js';
 import type { AntigravityActivationPlan } from './core/antigravity-launcher.js';
 import { AntigravityCapabilityProbe } from './core/antigravity-capabilities.js';
-import { PrerequisiteChecker } from './core/prerequisites.js';
+import { PrerequisiteChecker, describeRequiredMcps, prerequisiteStatusLabel } from './core/prerequisites.js';
 import { McpLocationRegistry } from './core/mcp-locations.js';
 import { explicitNativeFlag } from './core/native-flag.js';
 import { linkedSkillAdvice, listLinkedSkills } from './core/skill-links.js';
 import { nativeWorkflowNote } from './core/native-workflows.js';
 import { nativeTeamNote, sessionGuardPrompt } from './core/native-teams.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
-import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
+import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, PrerequisiteItemCheck, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
 const cli = cac('agents-united');
 const registry = new RegistryResolver();
@@ -795,22 +795,7 @@ cli
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
-        for (const item of prereqEval.items) {
-          const typeLabel = item.type === 'mcp' ? 'MCP' : item.type === 'env' ? 'Env' : 'Pkg';
-          let icon = pc.green('✓');
-          let statusText = pc.green('Detected');
-          if (!item.satisfied) {
-            if (item.status === 'partial') {
-              icon = pc.yellow('~');
-              statusText = pc.yellow('Partial');
-            } else {
-              icon = pc.red('✗');
-              statusText = pc.red('Missing');
-            }
-          }
-          const details = pc.dim(`(${item.details || ''})`);
-          checkLines.push(`  ${icon} [${typeLabel}] ${pc.bold(item.name)}: ${statusText} ${details}`);
-        }
+        for (const item of prereqEval.items) checkLines.push(prerequisiteLine(item));
 
         note(
           checkLines.join('\n'),
@@ -1414,6 +1399,15 @@ cli
     }
   });
 
+/** One line of a prerequisite panel. An unmet optional extra (Plan 035 N1) is dim and never red: the install gate does not count it. */
+function prerequisiteLine(item: PrerequisiteItemCheck): string {
+  const typeLabel = item.type === 'mcp' ? 'MCP' : item.type === 'env' ? 'Env' : 'Pkg';
+  const { label, tone } = prerequisiteStatusLabel(item);
+  const paint = tone === 'ok' ? pc.green : tone === 'partial' ? pc.yellow : tone === 'optional' ? pc.dim : pc.red;
+  const icon = tone === 'ok' ? '✓' : tone === 'partial' ? '~' : tone === 'optional' ? '-' : '✗';
+  return `  ${paint(icon)} [${typeLabel}] ${pc.bold(item.name)}: ${paint(label)} ${pc.dim(`(${item.details || ''})`)}`;
+}
+
 function renderBundleDetailTree(bundle: BundleDefinition): string {
   // Special-case full universal suite for clean, structured high-level breakdown
   if (bundle.name === 'full') {
@@ -1524,7 +1518,7 @@ function renderBundleDetailTree(bundle: BundleDefinition): string {
   if (bundle.prerequisites) {
     const prereqParts: string[] = [];
     if (bundle.prerequisites.requiredMcps && bundle.prerequisites.requiredMcps.length > 0) {
-      prereqParts.push(`MCPs: ${bundle.prerequisites.requiredMcps.map(m => m.name).join(', ')}`);
+      prereqParts.push(`MCPs: ${describeRequiredMcps(bundle.prerequisites.requiredMcps)}`);
     }
     if (bundle.prerequisites.requiredPackages && bundle.prerequisites.requiredPackages.length > 0) {
       prereqParts.push(`Packages: ${bundle.prerequisites.requiredPackages.join(', ')}`);
@@ -1717,7 +1711,7 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
       if (b.prerequisites) {
         const prereqParts: string[] = [];
         if (b.prerequisites.requiredMcps && b.prerequisites.requiredMcps.length > 0) {
-          prereqParts.push(`MCPs: ${b.prerequisites.requiredMcps.map(m => m.name).join(', ')}`);
+          prereqParts.push(`MCPs: ${describeRequiredMcps(b.prerequisites.requiredMcps)}`);
         }
         if (b.prerequisites.requiredPackages && b.prerequisites.requiredPackages.length > 0) {
           prereqParts.push(`Packages: ${b.prerequisites.requiredPackages.join(', ')}`);
@@ -1824,12 +1818,7 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
-        for (const item of prereqEval.items) {
-          const typeLabel = item.type === 'mcp' ? 'MCP' : item.type === 'env' ? 'Env' : 'Pkg';
-          const icon = item.satisfied ? pc.green('✓') : pc.red('✗');
-          const details = pc.dim(`(${item.details || ''})`);
-          checkLines.push(`  ${icon} [${typeLabel}] ${pc.bold(item.name)}: ${item.satisfied ? pc.green('Detected') : pc.red('Missing')} ${details}`);
-        }
+        for (const item of prereqEval.items) checkLines.push(prerequisiteLine(item));
 
         note(
           checkLines.join('\n'),

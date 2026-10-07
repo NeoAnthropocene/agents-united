@@ -1,0 +1,7 @@
+07:51:35 USER    <local-command-caveat>The command below was run directly in Claude Code, not sent to you as a request, and its output goes straight to the user. It's recorded here as context for later messages.</local-command-caveat>
+07:51:35 USER    <command-name>/reload-plugins</command-name> <command-message>reload-plugins</command-message> <command-args></command-args>
+07:51:35 SYS:local_command <local-command-stdout>Reloaded: 1 plugin · 0 skills · 6 agents · 0 hooks · 1 plugin MCP server · 0 plugin LSP servers</local-command-stdout>
+07:54:53 USER    <local-command-caveat>The command below was run directly in Claude Code, not sent to you as a request, and its output goes straight to the user. It's recorded here as context for later messages.</local-command-caveat>
+07:54:53 USER    <command-name>/reload-plugins</command-name> <command-message>reload-plugins</command-message> <command-args>--force</command-args>
+07:54:53 SYS:local_command <local-command-stdout>Reloaded: 1 plugin · 0 skills · 6 agents · 0 hooks · 1 plugin MCP server · 0 plugin LSP servers</local-command-stdout>
+-- 6 lines

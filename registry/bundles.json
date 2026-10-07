@@ -1137,7 +1137,7 @@
       "aliases": [
         "agency"
       ],
-      "description": "Full-service digital product agency powered by the AstrolabsAI persona team (Chris, Ava, Jamileh, Kaan). Features dynamic DAG orchestration and Tri-Tier Execution Modes with 8 MCP servers.",
+      "description": "Full-service digital product agency powered by the AstrolabsAI persona team (Chris, Ava, Jamileh, Kaan). Features dynamic DAG orchestration and Tri-Tier Execution Modes with 6 required MCP servers and 2 optional extras.",
       "prerequisites": {
         "requiredMcps": [
           {
@@ -1163,7 +1163,8 @@
           {
             "name": "markitdown",
             "purpose": "Ingestion of client PDF/DOCX pitch decks",
-            "optionalForBrainstorming": true
+            "optionalForBrainstorming": true,
+            "optional": true
           },
           {
             "name": "chrome-devtools-mcp",
@@ -1173,7 +1174,8 @@
           {
             "name": "stitch",
             "purpose": "AI UI generation and design token construction",
-            "optionalForBrainstorming": true
+            "optionalForBrainstorming": true,
+            "optional": true
           },
           {
             "name": "figma",

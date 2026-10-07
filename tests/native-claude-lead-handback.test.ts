@@ -21,7 +21,7 @@ describe('the lead reports its mode first', () => {
   });
 
   it('keeps the rule for how the mode is named', () => {
-    expect(AFTER_FLOOR).toMatch(/Say \*\*Fully Operational\*\* only when all eight are callable; otherwise say \*\*Limited Operational\*\* and name the missing ones/);
+    expect(AFTER_FLOOR).toMatch(/Say \*\*Fully Operational\*\* only when all six are callable; otherwise say \*\*Limited Operational\*\* and name the missing ones/);
   });
 });
 

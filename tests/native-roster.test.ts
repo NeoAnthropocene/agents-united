@@ -129,3 +129,22 @@ describe('the committed bundles', () => {
     expect(types.find(t => t.name === 'code-reviewer')!.bundles).toEqual(['software-engineering']);
   });
 });
+
+describe('the MCP note of a role that carries more than one route (Plan 035 N1)', () => {
+  it('names each integration once, whatever the form of the grant', () => {
+    const table = renderRoster([
+      {
+        name: 'qa',
+        bundles: ['agency'],
+        native: {
+          description: 'Tests pages.',
+          tools: ['Read', 'mcp__playwright', 'mcp__plugin_playwright_playwright', 'mcp__chrome-devtools-mcp', 'mcp__plugin_chrome-devtools-mcp_chrome-devtools', 'mcp__firecrawl', 'mcp__claude_ai_Firecrawl'],
+          guard: 'destructive',
+        },
+      },
+    ]);
+    expect(table).toContain('MCP: chrome-devtools-mcp, firecrawl, playwright');
+    expect(table).not.toContain('plugin_');
+    expect(table).not.toContain('claude_ai');
+  });
+});
