@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * AGENTS.md is the instruction file that OpenAI Codex and other agents read by convention (Claude Code reads CLAUDE.md). It
@@ -12,6 +12,15 @@ import { describe, expect, it } from 'vitest';
 const read = (p: string): string => fs.readFileSync(path.resolve(p), 'utf8').replace(/\r\n/g, '\n');
 
 describe('AGENTS.md', () => {
+  const existsSync = fs.existsSync;
+  beforeEach(() => {
+    // A clean CI checkout has no generated Claude rule projection, even when the local workspace does.
+    vi.spyOn(fs, 'existsSync').mockImplementation(target =>
+      target === path.resolve('.claude/rules/') ? false : existsSync(target),
+    );
+  });
+  afterEach(() => { vi.restoreAllMocks(); });
+
   it('exists and stays a short pointer file', () => {
     expect(fs.existsSync(path.resolve('AGENTS.md')), 'AGENTS.md exists').toBe(true);
     expect(read('AGENTS.md').trimEnd().split('\n').length).toBeLessThanOrEqual(40);
