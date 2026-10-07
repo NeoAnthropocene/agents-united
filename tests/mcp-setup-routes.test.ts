@@ -37,7 +37,7 @@ describe('the reference: the three routes', () => {
 
   it('makes the manual route the default and says when to offer the plugin and what a connector is', () => {
     expect(ROUTES).toContain('The manual route is the default');
-    expect(ROUTES).toMatch(/Offer the plugin route when the user wants to avoid the restart/);
+    expect(ROUTES).toMatch(/Offer the plugin route in the same question, as the option for a user who wants to avoid the restart/);
     expect(ROUTES).toMatch(/A connector is the user's own act: print its directory link/);
   });
 
@@ -133,7 +133,11 @@ describe('the lead: the route choice in the Preflight', () => {
   });
 
   it('uses the manual route unless the user asks to avoid the restart, and searches the plugin catalogs with the script', () => {
-    expect(routes).toContain('Use the manual route unless the user asks to avoid the restart');
+    expect(routes).toContain('The manual route is the recommended one');
+    // Found by the live runs of 2026-10-07: a lead that asked only "install both?" gave the user no way to say they did not want a restart.
+    expect(routes).toContain('Put the route in the same `AskUserQuestion` that asks which servers to install');
+    expect(routes).toMatch(/a user who has already said they do not want to restart gets the plugin route without being asked/);
+    expect(routes).toMatch(/If the user changes their mind after a manual install, remove the entries you added \(`claude mcp remove <name> --scope project`\) before the plugin install/);
     expect(routes).toContain('find-plugin.mjs');
     expect(routes).toContain('claude plugin install <name>@claude-plugins-official --scope project');
   });
@@ -154,5 +158,40 @@ describe('the lead: the route choice in the Preflight', () => {
 
   it('keeps the restart for the manual route', () => {
     expect(PREFLIGHT).toMatch(/After a manual install, stop/);
+  });
+});
+
+describe('the reference: what the live runs of 2026-10-07 showed (Claude Code 2.1.292)', () => {
+  it('names the plugin tools that were seen, not only the documented form', () => {
+    const names = between(REF, '## Names by route', '\n## ');
+    expect(names).toContain('mcp__plugin_playwright_playwright__browser_navigate');
+    expect(names).toContain('mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages');
+    expect(names).toMatch(/seen on 2\.1\.292/);
+    expect(names).not.toMatch(/no tool name has been seen yet/);
+  });
+
+  it('records that the reload loaded two plugin servers into a session with model turns, and that it does not load a server `claude mcp add` added', () => {
+    const steps = between(REF, '### The plugin route, step by step', '\n## ');
+    expect(steps).toMatch(/loaded two plugin MCP servers/);
+    expect(steps).toContain('does not load a server that `claude mcp add` added (seen: "0 plugin MCP servers")');
+    expect(steps).toContain('If the user changes their mind after a manual install, remove the entries you added');
+  });
+
+  it('says what a bare `claude --continue` keeps and what it does not', () => {
+    const restart = between(REF, '## The restart message', '\n## ');
+    expect(restart).not.toBe('');
+    expect(restart).toContain('A bare `claude --continue` keeps the session and the agent');
+    expect(restart).toMatch(/not the model/);
+    expect(restart).toMatch(/the shell's, not the session's/);
+    expect(restart).toMatch(/Unverified/);
+  });
+
+  it('says that the CLI listed no connector until the user signed in again', () => {
+    const names = between(REF, '## Names by route', '\n## ');
+    expect(names).toMatch(/no claude\.ai connector until the user ran `\/login`/);
+  });
+
+  it('names both versions where it ran', () => {
+    expect(between(REF, '## Where this runs', '\n## ')).toMatch(/2\.1\.291 and 2\.1\.292/);
   });
 });
