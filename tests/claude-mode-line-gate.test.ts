@@ -72,8 +72,21 @@ describe('the mode-line gate script', () => {
     expect(first.status).toBe(2);
     expect(first.stderr).toContain('Mode: <Fully Operational or Limited Operational>. Callable:');
     expect(first.stderr).toContain('"The first message"');
-    expect(first.stderr).toMatch(/already began with that line, repeat the call/);
     expect(fs.existsSync(markerOf('sess-1'))).toBe(true);
+  });
+
+  // Live test 6 (session `1aa049c5`, `agents start`, Opus): the gate held the first Bash call, and the lead answered "My last message already began with the mode line,
+  // so I'm running the check again as the hook says". It had written no text at all before that call. The first version of the message ended "If your last message
+  // already began with that line, repeat the call now", and the lead took that way out falsely. The gate cannot see the message that is being written (the transcript
+  // never holds the current call), so it says so, holds the call once whatever the lead believes, and asks for the line to be written again if need be.
+  it('holds the call whatever the lead believes it wrote, and says why, so that there is no way out to claim', () => {
+    const { stderr } = run(call());
+
+    expect(stderr).toContain('Do this even if you believe you wrote it already');
+    expect(stderr).toContain('the host cannot see the message you are writing, so this call is held once');
+    expect(stderr).toContain('write the line in the same message as the call you repeat');
+    expect(stderr).not.toMatch(/already began with that line, repeat the call/);
+    expect(stderr).not.toMatch(/if your last message/i);
   });
 
   it('lets the same session through once the window of the first block has passed', () => {
