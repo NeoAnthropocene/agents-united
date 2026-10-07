@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /workspace/agents-united
+
+ ✓ tests/plan-033-findings.test.ts (9 tests) 7ms
+ ✓ tests/semantic-core.test.ts (13 tests) 65ms
+ ✓ tests/subagent-contract.test.ts (28 tests) 155ms
+
+ Test Files  3 passed (3)
+      Tests  50 passed (50)
+   Start at  15:26:29
+   Duration  598ms (transform 180ms, setup 0ms, collect 291ms, tests 226ms, environment 1ms, prepare 285ms)
+

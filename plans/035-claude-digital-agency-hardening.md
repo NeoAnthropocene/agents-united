@@ -363,6 +363,10 @@ Evidence: `2026-10-07-n3-records/session-report-r2-quota-stopped.txt`, `trace-r2
 
 **Follow-up.** The lead mode-line defect is fixed test first in its own pull request; its live behaviour remains unverified until the maintainer authorizes and types a further prompt. R1 (`8e2c3d9e`) remains the earlier stopped-at-the-map attempt. Antigravity, Cline and the deferred work stay out of scope.
 
+### R3: prepared, awaiting maintainer (2026-10-07)
+
+Merged #174 (`aa7dbe3`) supersedes the historical two-second / one-held-call premise above with ADR 0044: readable transcripts without a saved mode prefix remain held, and repeated holds during transcript lag are permitted. The full-roster result is still **unverified**. Plan 033's authorized foundation candidate contains that fix; [the R3 handoff](../docs/plan-033-r3-handoff.md) gives the exact code commit, isolated local worktree/scratch install, H1 plus “Consult ava read-only first.”, launch and verified-project record-reading commands (including the committed reader with `600`). The maintainer accepts the delegation map and declines installation questions. All eight R2 expectations will be judged from R3 host records under the current gate policy; no session is started by the executor. The fresh shared allowance and quota readings are in Plan 033, separate from N3's exhausted historical ledger. No deferred Plan 035 work is started.
+
 ### The `experimental` label
 
 **Decided by the maintainer on 2026-10-07: removed, with no status** (D12; ADR 0043). `digital-agency` now claims only that it is usable and still being hardened, like the thirty other bundles. `stable` stays a separate decision, and the list above is what it would have to answer. The draft #137 was folded into this plan's single pull request as a slice of its own (a red commit with its tests, a green commit with the label, README, PROJECT.md, CONTEXT.md and the amendment of ADR 0039); it merged cleanly into the current `dev`. The maintainer closes #137 as superseded after merging the pull request of N3.

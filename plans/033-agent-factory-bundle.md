@@ -1,10 +1,10 @@
 # Plan 033: `agent-factory` Domain Bundle (maintainer and contributor tooling)
 
-> **Executor instructions**: this is a plan, not yet built. The maintainer's answers of 2026-10-03 are recorded under "Decisions"; what is still open is under "Open questions". Write the ADR and the tests first, one reviewed PR per slice, each from a fresh `origin/dev`.
+> **Executor instructions**: only the foundation slice is authorized; later slices are not built. The maintainer's answers of 2026-10-03 are recorded under "Decisions"; what is still open is under "Open questions". Write the ADR and the tests first, one reviewed PR per slice, each from a fresh `origin/dev`.
 
 ## Status
 
-- **State**: FOUNDATION CANDIDATE — slice 1 authorized 2026-10-07; basic contract under verification. Slices 2–5 remain parked pending separate reviewed PRs. Plan 035 findings remain historical below.
+- **State**: FOUNDATION CANDIDATE — slice 1 authorized 2026-10-07; basic contract verified offline; awaiting foundation review and R3. Slices 2–5 remain parked pending separate reviewed PRs. Plan 035 findings remain historical below.
 - **Priority**: P2 · **Effort**: L (a bundle, a catalog section, host-parametric subagents, workflows and hooks) · **Risk**: Medium (a new catalog section touches the CLI picker, the `full` bundle and the recommendation logic).
 - **Category**: Catalog / Bundles / Contributor experience / Multi-host.
 - **Depends on**: Plan 030 (licence-aware adaptation), `docs/skill-intake.md` (ADR 0023), Plan 032 (native host packages and the host docs library; ADR 0031 and its 2026-10-03 addendum).
@@ -80,10 +80,10 @@ The four questions of the first round are answered (decisions 6 to 9). What is l
 | --- | --- | --- |
 | M0 Ground | Locate cloud checkout; read rules/plans/ADRs/guides; verify #172–#174 merged and #137 closed; fresh `origin/dev`, clean `codex/` branch; continuation and local-executor capability checked. | Complete; `gh` network access denied, connector verifies PR states. |
 | M1 Design | ADR 0045 and foundation specification preserve all nine decisions; proposed ADR 0046 defers local install; record conservative defaults and host evidence. | Recorded. |
-| M2 Red / green | Meaningful failing contract tests and red commit; minimal basic validator/type, host-reference checks and green commit. No catalog, bundle, native artifact or install-lane change. | Red `4c47bc3`; green narrow run 37/37, exit 0; green commit follows. |
-| M3 Verification | Narrow checks then full `npm run typecheck && npm test`; save raw output and actual exit codes. Prepare exact local recipe; never substitute static/headless evidence for interactive behavior. | Pending. |
+| M2 Red / green | Meaningful failing contract tests and red commit; minimal basic validator/type, host-reference checks and green commit. No catalog, bundle, native artifact or install-lane change. | Red `4c47bc3`; green `232f518`; review fix `89a8597` verified with 51 focused tests. |
+| M3 Verification | Narrow checks then full `npm run typecheck && npm test`; save raw output and actual exit codes. Prepare exact local recipe; never substitute static/headless evidence for interactive behavior. | Final code: typecheck/test exit 0; 165 suites, 3625 passed, 210 skipped; raw records in `docs/plan-033-foundation-records/`. Cloud scratch static install/doctor exit 0; Windows/live unverified. |
 | M4 Review | Inspect complete diff and every staged diff; check all PRs before each push; one PR to `dev`, no merge; inspect CI and repair relevant failures. | Pending. |
-| M5 R3 handoff | Candidate includes merged #174; exact commit/install/launch/prompt and record-reading commands, all eight expectations under ADR 0044. Stop for maintainer's interactive evidence. | Pending. |
+| M5 R3 handoff | Candidate includes merged #174; exact commit/install/launch/prompt and record-reading commands, all eight expectations under ADR 0044. Stop for maintainer's interactive evidence. | Prepared in `docs/plan-033-r3-handoff.md`; not run. |
 
 ### Fresh Claude allowance and ledger
 
@@ -91,7 +91,7 @@ Maintainer authorization: **50 USD TOTAL**, **16 headless prompts**, **16 intera
 
 | Method / account | Model / session / tested commit | Commands | Prompts | Cost | Claude quota |
 | --- | --- | --- | --- | --- | --- |
-| Cloud preparation; no Claude account invoked | No model/session; foundation candidate pending | Files, Node checks and repository verification only | Headless 0/16; interactive 0/16 | No Claude runs incurred; 50 USD unspent | Maintainer reading: five-hour 0%, weekly 58%; reset in 20 hr 47 min at receipt; recheck before run |
+| Cloud preparation; no Claude account invoked | No model/session; code candidate `89a8597` | Files, Node checks and repository verification only | Headless 0/16; interactive 0/16 | No Claude runs incurred; 50 USD unspent | Maintainer reading: five-hour 0%, weekly 58%; reset in 20 hr 47 min at receipt; recheck before run |
 
 For each actual run add account, model(s), session id, tested commit, exact command/prompt, prompt-counter delta (including retries), per-model and teammate costs, aggregate cost and before/after quota readings. Unknown costs are pending, not zero, and block further spending until reconciled. No Claude CLI is installed in this cloud session and no Windows executor is exposed; live local checks are **unverified**.
 
@@ -100,19 +100,21 @@ For each actual run add account, model(s), session id, tested commit, exact comm
 Tool discovery found hosted reminder/automation tools, but no persistent-goal API, quota-reset trigger or target capable of resuming this same cloud task. No automatic resumption is configured. Preserve this checkpoint before any interruption; resume it instead of restarting completed work.
 
 - Branch: `codex/plan-033-foundation`, from fresh `origin/dev` (`aa7dbe3`, contains merged #174).
-- Commit: red `4c47bc3`; baseline `aa7dbe38126471151ee6aad3558bbc354ce8b024`.
-- Milestone: M2 red committed; minimal validator/type implemented, awaiting green checks.
-- Completed: ground, instructions/prior-art search, foundation design and proposed local installation options.
-- Verification: Node v24.19.0; clean baseline; git fetch succeeded; connector confirms #172/#173/#174 merged and #137 closed. Required `gh` attempt failed with proxy `Forbidden`; no files changed before initial ground report.
+- Commit: code candidate `89a859767e4dc7cb68d1b78c3be2023ed52d4d93`; red `4c47bc3`, green `232f518`; baseline `aa7dbe38126471151ee6aad3558bbc354ce8b024`. Handoff/evidence-only documentation follows; `git rev-parse codex/plan-033-foundation` identifies its tip.
+- Milestone: M3 complete offline; M4 reviewed diff, PR/CI next; M5 recipe ready, all live results unverified.
+- Completed: ground/prior art, design/ADRs, red/green contract, review regression/fix, contributor guide/template and proposed runbook, exact R3 recipe.
+- Verification: 121 narrow tests and hostlib integrity passed; final full gate: typecheck/test exit 0, 165 suites, 3625 passed, 210 skipped; full output read. Review regression: four intended failures (exit 1), then 51 focused passes (exit 0). Static cloud scratch install/doctor exit 0; no host session. Node v24.19.0; clean baseline; git fetch succeeded; connector confirms #172/#173/#174 merged and #137 closed. Required `gh` attempt failed with proxy `Forbidden`; no files changed before initial ground report.
 - Remaining budget: headless 16, interactive 16, 50 USD aggregate; no Claude run; current Codex quota unavailable (start reported 100% available); last Claude readings above.
 - Blockers: `gh` API blocked by proxy; Claude CLI and local executor absent; live tests await maintainer.
-- Exact next action: run the narrow green checks, inspect staged diff and commit the minimal implementation. Raw red output: `/workspace/plan-033-evidence/red.txt`; actual exit code `1` saved in `red.exit`.
+- Exact next action: commit handoff/evidence after inspecting staged diff, attempt the required `gh` list and verify branch PR state through the connector, push and open one PR to `dev`, inspect CI. Then stop for the maintainer to follow the R3 handoff. Do not repeat completed work or start later slices.
 
 ## Foundation progress log
 
 - 2026-10-07 (M0–M1, OpenAI Codex): checkout `/workspace/agents-united` was clean on `work` at old main snapshot `4342cad`, so missing current documents were not treated as absent prior art. Fetched `origin/dev` and created `codex/plan-033-foundation` at `aa7dbe3`. PR states verified through the connector after `gh` was proxy-denied. Read cloud runtime/network policy (restricted, no VPN, no ready credential bindings reported), tracked `registry/rules/` because generated `.claude/rules/` is absent, the required documents, closing logs and host guides/observations. Recorded ADR 0045, proposed ADR 0046 and the foundation specification. No Claude prompts spent; no automatic waking or Windows executor established. The nine decisions are unchanged.
 - 2026-10-07 (M2 red, OpenAI Codex): `npx vitest run tests/subagent-contract.test.ts tests/plan-033-findings.test.ts` exited **1**: 29 failed, 8 passed. All 28 new contract/reference tests fail because `validateSubagentContract` is absent; the plan-state test also requires foundation activation. This is the intended red state, before implementation. Maintainer selected a guided contribution PR to `dev`; the current PR template and artifact proposal issue forms were read before designing the focused template and future contribution runbook. No workflow/skill is installed in this slice.
-- 2026-10-07 (M2 green, OpenAI Codex): added `SubagentContract` to shared types and the pure validator alongside the existing Semantic Core gate. The narrow command above passed **37/37**, exit **0**, with raw output and exit in `/workspace/plan-033-evidence/green.{txt,exit}`. Reference checks pin two native roles on each of Claude, Cline and Antigravity and detect a seeded safety-floor mutation; this is static evidence only. Added foundation terms and the contributor guide/focused template; no registry, installer, native role, security hold or host baseline changed.
+- 2026-10-07 (M2 green, OpenAI Codex): added `SubagentContract` to shared types and the pure validator alongside the existing Semantic Core gate. The narrow command above passed **37/37**, exit **0**; adding the existing semantic-core suite gave **50/50**, exit **0**, saved as `green.{txt,exit}`. Reference checks pin two native roles on each of Claude, Cline and Antigravity and detect a seeded safety-floor mutation; this is static evidence only. Added foundation terms and the contributor guide/focused template; no registry, installer, native role, security hold or host baseline changed.
+
+- 2026-10-07 (M3/review, OpenAI Codex): 121 narrow tests and hostlib integrity passed. Initial full gate in the restricted sandbox produced child-process `EPERM`/empty output; a controlled Node child probe worked with the tool network capability, which also permits local test servers. That run was stopped with actual test/gate exit **143** (typecheck **0**), preserved as `restricted-*`. With that capability, the full gate passed: **165 suites, 3624 passed, 210 skipped**, both command exits **0**. Diff review found sparse-array holes and inherited list fields accepted as explicit declarations: four meaningful red assertions (exit **1**), then the minimal fix (`89a8597`) and **51 focused passes** (exit **0**). Final full gate on that code passed: **165 suites, 3625 passed, 210 skipped**, typecheck/test/gate exits **0/0/0**; full raw output read and saved with exit files in `docs/plan-033-foundation-records/`. The cloud scratch install and doctor exited **0**: ten agency agents, two scripts and local session-guard wiring; Claude executable absent, so runtime warnings and live behavior remain unverified. R3 recipe pins `89a8597`, preserves the local clone, verifies the host project cwd and uses both readers including `600`. No Claude usage incurred.
 
 ## Findings from Plan 035 (2026-10-04; this plan stays parked)
 

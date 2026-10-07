@@ -24,4 +24,4 @@ Local drafts work without deciding storage precedence, but they are not installa
 
 ## Verification
 
-Pending the test-first implementation and full gate; see Plan 033's dated log and checkpoint. All foundation live-host behavior and R3 results are **unverified** until records arrive.
+Red `4c47bc3`, green `232f518`, review regression/fix `89a8597`: 121 narrow checks, host-library integrity and final full gate passed (165 suites, 3625 passed, 210 skipped; typecheck/test exits 0). Raw output/exit files are in `docs/plan-033-foundation-records/`; see Plan 033 for PR/CI and the dated checkpoint. The contributor workflow/skill realization and local installer decision remain proposed/deferred. All foundation live-host behavior and R3 results are **unverified** until records arrive.

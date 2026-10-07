@@ -1,0 +1,15 @@
+
+ RUN  v3.2.7 /workspace/agents-united
+
+ ✓ tests/semantic-core.test.ts (13 tests) 89ms
+ ✓ tests/host-profile-antigravity.test.ts (13 tests) 103ms
+ ✓ tests/host-profile.test.ts (43 tests) 253ms
+ ✓ tests/host-profile-cline.test.ts (15 tests) 102ms
+ ✓ tests/subagent-contract.test.ts (28 tests) 133ms
+ ✓ tests/native-floor.test.ts (9 tests) 11ms
+
+ Test Files  6 passed (6)
+      Tests  121 passed (121)
+   Start at  15:26:43
+   Duration  1.16s (transform 363ms, setup 0ms, collect 1.02s, tests 691ms, environment 1ms, prepare 456ms)
+

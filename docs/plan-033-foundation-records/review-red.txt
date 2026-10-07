@@ -1,0 +1,110 @@
+
+ RUN  v3.2.7 /workspace/agents-united
+
+ ❯ tests/subagent-contract.test.ts (29 tests | 4 failed) 164ms
+   ✓ basic host-parametric Subagent Contract > accepts explicit permitted identifiers and explicit empty lists 3ms
+   ✓ basic host-parametric Subagent Contract > returns independent list values so one caller cannot change another declaration 0ms
+   ✓ basic host-parametric Subagent Contract > rejects non-object input null 1ms
+   ✓ basic host-parametric Subagent Contract > rejects non-object input %j 0ms
+   ✓ basic host-parametric Subagent Contract > rejects non-object input "subagent-example" 0ms
+   ✓ basic host-parametric Subagent Contract > rejects non-object input 1 0ms
+   ✓ basic host-parametric Subagent Contract > requires explicit definition 0ms
+   ✓ basic host-parametric Subagent Contract > requires explicit workflows 0ms
+   ✓ basic host-parametric Subagent Contract > requires explicit skills 0ms
+   ✓ basic host-parametric Subagent Contract > requires explicit hooks 0ms
+   × basic host-parametric Subagent Contract > does not accept a permitted list inherited from another object 11ms
+     → promise resolved "{ definition: 'subagent-example', …(3) }" instead of rejecting
+   ✓ basic host-parametric Subagent Contract > rejects host mechanics in host 0ms
+   ✓ basic host-parametric Subagent Contract > rejects host mechanics in tools 0ms
+   ✓ basic host-parametric Subagent Contract > rejects host mechanics in frontmatter 0ms
+   ✓ basic host-parametric Subagent Contract > rejects host mechanics in model 0ms
+   ✓ basic host-parametric Subagent Contract > rejects host mechanics in permissionMode 0ms
+   ✓ basic host-parametric Subagent Contract > rejects host mechanics in hookEvents 0ms
+   × basic host-parametric Subagent Contract > rejects malformed or duplicate workflows, with no silent normalization 2ms
+     → promise resolved "{ definition: 'subagent-example', …(3) }" instead of rejecting
+   × basic host-parametric Subagent Contract > rejects malformed or duplicate skills, with no silent normalization 2ms
+     → promise resolved "{ definition: 'subagent-example', …(3) }" instead of rejecting
+   × basic host-parametric Subagent Contract > rejects malformed or duplicate hooks, with no silent normalization 1ms
+     → promise resolved "{ definition: 'subagent-example', …(3) }" instead of rejecting
+   ✓ basic host-parametric Subagent Contract > resolves the definition against the supplied core map and rejects a path or unknown stem 1ms
+   ✓ basic host-parametric Subagent Contract > reuses the core purity and schema gate instead of trusting the supplied map 1ms
+   ✓ basic host-parametric Subagent Contract > needs no hard-coded host roster: the same contract works with a caller-provided definition map 0ms
+   ✓ foundation reference on 'claude' (static, not live) > pins one shared definition to two existing native roles without foreign frontmatter or tools 56ms
+   ✓ foundation reference on 'claude' (static, not live) > detects a seeded safety-floor mutation in that host representation 21ms
+   ✓ foundation reference on 'cline' (static, not live) > pins one shared definition to two existing native roles without foreign frontmatter or tools 21ms
+   ✓ foundation reference on 'cline' (static, not live) > detects a seeded safety-floor mutation in that host representation 11ms
+   ✓ foundation reference on 'antigravity' (static, not live) > pins one shared definition to two existing native roles without foreign frontmatter or tools 14ms
+   ✓ foundation reference on 'antigravity' (static, not live) > detects a seeded safety-floor mutation in that host representation 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/subagent-contract.test.ts > basic host-parametric Subagent Contract > does not accept a permitted list inherited from another object
+AssertionError: promise resolved "{ definition: 'subagent-example', …(3) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "definition": "subagent-example",
++   "hooks": [
++     "protect-authored-source",
++   ],
++   "skills": [
++     "inspect-provenance",
++   ],
++   "workflows": [
++     "review-artifact",
++   ],
+  }
+
+ ❯ tests/subagent-contract.test.ts:54:46
+     52|     delete input.skills;
+     53|     Object.setPrototypeOf(input, { skills: ['inspect-provenance'] });
+     54|     await expect(validate(input, definitions)).rejects.toThrow(/skills…
+       |                                              ^
+     55|   });
+     56| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  tests/subagent-contract.test.ts > basic host-parametric Subagent Contract > rejects malformed or duplicate workflows, with no silent normalization
+ FAIL  tests/subagent-contract.test.ts > basic host-parametric Subagent Contract > rejects malformed or duplicate skills, with no silent normalization
+ FAIL  tests/subagent-contract.test.ts > basic host-parametric Subagent Contract > rejects malformed or duplicate hooks, with no silent normalization
+AssertionError: promise resolved "{ definition: 'subagent-example', …(3) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "definition": "subagent-example",
++   "hooks": [
++     "protect-authored-source",
++   ],
++   "skills": [
++     "inspect-provenance",
++   ],
++   "workflows": [
++     undefined,
++   ],
+  }
+
+ ❯ tests/subagent-contract.test.ts:63:76
+     61|   it.each(['workflows', 'skills', 'hooks'])('rejects malformed or dupl…
+     62|     for (const value of [undefined, null, 'one', [1], Array(1), [''], …
+     63|       await expect(validate({ ...contract(), [field]: value }, definit…
+       |                                                                            ^
+     64|     }
+     65|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 25 passed (29)
+   Start at  15:35:38
+   Duration  547ms (transform 91ms, setup 0ms, collect 155ms, tests 164ms, environment 0ms, prepare 68ms)
+
