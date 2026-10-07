@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * AGENTS.md is the instruction file that OpenAI Codex and other agents read by convention (Claude Code reads CLAUDE.md). It
  * must point at the rules that already exist and must not copy them, so that there is one set of rules: CLAUDE.md, the
- * standing rules in .claude/rules/ and the session gate docs/session-start.md. `/AGENTS.md` is in .gitignore (the installer
+ * standing rules projected into .claude/rules/ from registry/rules/ and the session gate docs/session-start.md. The projection
+ * is ignored install output, so a clean checkout must be checked against the tracked source. `/AGENTS.md` is in .gitignore (the installer
  * generates one for the Codex host), so the file is tracked by force and the test fails if it is ever dropped from the index.
  */
 
@@ -26,11 +27,12 @@ describe('AGENTS.md', () => {
     expect(read('AGENTS.md').trimEnd().split('\n').length).toBeLessThanOrEqual(40);
   });
 
-  it('points at CLAUDE.md, the standing rules and the session gate, and each of them exists', () => {
+  it('points at CLAUDE.md, the standing rules and the session gate, whose sources exist in a clean checkout', () => {
     const agents = read('AGENTS.md');
     for (const target of ['CLAUDE.md', '.claude/rules/', 'docs/session-start.md']) {
       expect(agents, `names ${target}`).toContain(target);
-      expect(fs.existsSync(path.resolve(target)), `${target} exists`).toBe(true);
+      const source = target === '.claude/rules/' ? 'registry/rules/' : target;
+      expect(fs.existsSync(path.resolve(source)), `${source} exists`).toBe(true);
     }
   });
 
