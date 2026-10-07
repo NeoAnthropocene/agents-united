@@ -60,6 +60,16 @@ describe('the close-out checklist of Plan 035', () => {
     expect(open).toMatch(/39/);
   });
 
+  it('records the one live check that is still pending (R2, the full-roster regression) with its recipe, its expected results and what to update after it', () => {
+    const s = section(checklist(), '### R2 pending');
+    expect(s).toMatch(/hostlib:session/);
+    expect(s).toMatch(/\*\*Recipe\.?\*\*/);
+    expect(s).toMatch(/\*\*Expected results\*\*/);
+    expect(s).toMatch(/\*\*After the run\.?\*\*/);
+    expect(s).toMatch(/accept the delegation map/i);
+    expect(s).toMatch(/n3-regress2/);
+  });
+
   it('records the decision on the `experimental` label and where the draft pull request went', () => {
     const s = section(checklist(), '### The `experimental` label');
     expect(s).toMatch(/#137/);
