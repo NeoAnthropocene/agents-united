@@ -77,11 +77,11 @@ Upon receiving the user's first message in any session, or whenever the user gre
    - **If `<mcp_servers>` is present in your context (e.g. Antigravity)**:
      - **Connected**: An MCP server that has active, callable tools declared under it.
      - **Deactivated / Inactive**: An MCP server listed in `<mcp_servers>` but with 0 tools. Mark as `<server> (Deactivated)`.
-     - **Missing**: Prerequisite bundle tools completely absent from `<mcp_servers>`.
+     - **Missing**: Required agency MCPs (GitHub, Firecrawl, Context7, Playwright, Chrome DevTools, Figma) completely absent from `<mcp_servers>`. MarkItDown and Stitch are optional extras: list them under Connected when they have callable tools, and never mark them as Missing.
    - **If `<mcp_servers>` is NOT present (e.g. Claude Code, Cursor, Cline, OpenCode, Codex)**:
      - You cannot detect deactivated servers. Simply evaluate the tools you can actively call (e.g., `execute_command`, `mcp_..._tool`).
      - **Connected**: Any tool you can actively call.
-     - **Missing**: Explicitly cross-check your active tools against the 8 canonical agency MCPs: GitHub, Firecrawl, Context7, Playwright, MarkItDown, Chrome DevTools, Stitch, Figma. Any of these that are NOT in your active tools list must be marked as Missing.
+     - **Missing**: Explicitly cross-check your active tools against the 6 required agency MCPs: GitHub, Firecrawl, Context7, Playwright, Chrome DevTools, Figma. Any of these that are NOT in your active tools list must be marked as Missing. MarkItDown and Stitch are optional extras: list them under Connected when you can actively call them, and never mark them as Missing.
 
 2. You MUST format your opening greeting with this EXACT structure:
 
@@ -91,7 +91,7 @@ Upon receiving the user's first message in any session, or whenever the user gre
   • [✓] Connected: <comma-separated list of ONLY active tools with callable functions>
   • [⚡ Available to Connect]: <comma-separated list of missing or deactivated tools>
 ```
-*(Note: You must ONLY output `🚀 Operational Mode: Fully Operational` if EVERY SINGLE tool in the required list (GitHub, Firecrawl, Context7, Playwright, MarkItDown, Chrome DevTools, Stitch, Figma) is currently active. If even one is missing or deactivated, you MUST output `🌿 Operational Mode: Limited Operational` and list the missing ones).*
+*(Note: You must ONLY output `🚀 Operational Mode: Fully Operational` if EVERY SINGLE tool in the required list (GitHub, Firecrawl, Context7, Playwright, Chrome DevTools, Figma) is currently active. If even one is missing or deactivated, you MUST output `🌿 Operational Mode: Limited Operational` and list the missing ones. MarkItDown and Stitch are optional extras: they never change the mode, and you list them under Connected when you can call them).*
 
 3. Immediately follow the status block with:
 
@@ -308,7 +308,7 @@ When running organization bundles (`digital-agency`) or executing advanced workf
    - Perform a 0ms tool inventory check on your context at the start of a conversation.
    - If tools are missing, greet the user with transparency using the `<mandatory_first_turn_response>` format.
 2. **Tri-Tier Execution Envelope**:
-   - **Fully Operational**: Uses authenticated MCP servers (`github`, `firecrawl`, `context7`, `playwright`, `markitdown`, `chrome-devtools-mcp`, `stitch`, `figma`) with valid API tokens.
+   - **Fully Operational**: Uses authenticated MCP servers (`github`, `firecrawl`, `context7`, `playwright`, `chrome-devtools-mcp`, `figma`) with valid API tokens. `markitdown` and `stitch` are optional extras: reported under Connected when callable, never counted for the mode.
    - **Limited Operational**: Uses unauthenticated/community MCP servers (Playwright local browser, MarkItDown document conversion, Chrome DevTools profiling, Context7 public cache) within public rate limits.
    - **Brainstorming / Native Fallback**: Uses standard terminal and workspace tools (`run_command` with git/curl, `grep_search`, `list_dir`, `write_to_file`) with explicit notification to the user.
 3. **Conversational Tool Setup**:

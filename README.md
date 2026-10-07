@@ -453,7 +453,7 @@ o Prerequisite Evaluation: digital-agency (Organization Bundle) ----------------
 
 | Mode | Needs | Behavior |
 | :--- | :--- | :--- |
-| **🚀 Fully Operational** | Authenticated MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `markitdown`, `chrome-devtools-mcp`, `stitch`, `figma`) | Live browser automation, deep crawling, design token extraction, automated GitHub PRs |
+| **🚀 Fully Operational** | Authenticated MCP tools (`github`, `firecrawl`, `context7`, `playwright`, `chrome-devtools-mcp`, `figma`); `markitdown` and `stitch` are optional extras that the lead reports when it can call them | Live browser automation, deep crawling, design token extraction, automated GitHub PRs |
 | **🌿 Limited Operational** | Local tools only (`git`, `curl`, code generators) | Real work with local browsers and the terminal, no API keys needed |
 | **💡 Brainstorming** | Nothing | Strategy, copywriting, and specifications with zero tool calls; suits offline or air-gapped use |
 

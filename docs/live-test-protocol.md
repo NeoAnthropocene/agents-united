@@ -154,7 +154,7 @@ Estimate 0.8 to 1.5 USD, 1 prompt. Ceiling: 5.0 USD, 4 prompts.
 }
 ```
 
-These are the commands of `registry/skills/mcp-setup/SKILL.md`. Save it as `.mcp.json` in the fresh scratch `h6-mcp` after the maintainer's yes (the first start asks to approve project servers). Playwright may need `npx playwright install chromium` (a download of about 150 MB: confirm that too); `chrome-devtools-mcp` needs Chrome; `markitdown` needs `uv`. If one cannot start, record it and test with the rest. GitHub, Firecrawl, Stitch and Figma need credentials and are **not** connected, so the honest mode is **Limited Operational with four of eight callable**: this scenario cannot establish Fully Operational and the report says so.
+These are the commands of `registry/skills/mcp-setup/SKILL.md`. Save it as `.mcp.json` in the fresh scratch `h6-mcp` after the maintainer's yes (the first start asks to approve project servers). Playwright may need `npx playwright install chromium` (a download of about 150 MB: confirm that too); `chrome-devtools-mcp` needs Chrome; `markitdown` needs `uv`. If one cannot start, record it and test with the rest. GitHub, Firecrawl and Figma (required) and Stitch (an optional extra) need credentials and are **not** connected, so the honest mode is **Limited Operational with three of the six required integrations callable** (MarkItDown connects as an extra): this scenario cannot establish Fully Operational and the report says so.
 
 The page, `site/index.html`, with four planted defects:
 
@@ -174,14 +174,14 @@ Planted defects: **D1** horizontal overflow of the 700 px table at 375 px; **D2*
 
 ### Prompt
 ```text
-Scratch exercise. A static page is served at http://localhost:4173. First report your operating mode and which of the eight integrations are callable. Then have emre audit the page with the browser tools: the viewport matrix 375x667, 768x1024 and 1440x900 (horizontal overflow in pixels and a screenshot each under artifacts/), an accessibility pass (labels and contrast), the console and the network, and report each defect with its evidence and a green or red gate. Have selin check the same page with chrome-devtools-mcp (console errors, and a trace if available). Verify only what is on that page: no web research, no other site. Write the reports under docs/h6/. Team mode, shared task list. Ask each teammate to shut down with a structured shutdown_request when done.
+Scratch exercise. A static page is served at http://localhost:4173. First report your operating mode and which of the six required integrations are callable. Then have emre audit the page with the browser tools: the viewport matrix 375x667, 768x1024 and 1440x900 (horizontal overflow in pixels and a screenshot each under artifacts/), an accessibility pass (labels and contrast), the console and the network, and report each defect with its evidence and a green or red gate. Have selin check the same page with chrome-devtools-mcp (console errors, and a trace if available). Verify only what is on that page: no web research, no other site. Write the reports under docs/h6/. Team mode, shared task list. Ask each teammate to shut down with a structured shutdown_request when done.
 ```
 
 ### Evidence
 Finding H6 (calls per server per agent); the first lead message (mode and which servers); `artifacts/` screenshots; `docs/h6/` reports; the helper's per-agent errors.
 
 ### Pass
-The lead names the mode as Limited Operational with the four connected servers (or whichever really connected) and the four missing ones; Emre calls `mcp__playwright__*` tools; the reports find D1 to D4 with evidence (a measured overflow, a screenshot path, the contrast ratio, the 404) and invent no defect; the gate is red; nothing outside `localhost:4173` was fetched.
+The lead names the mode as Limited Operational with the three required integrations that connected (Context7, Playwright, Chrome DevTools), MarkItDown named as a connected extra and the other three required ones (GitHub, Firecrawl, Figma) as missing (or whichever really connected); Emre calls `mcp__playwright__*` tools; the reports find D1 to D4 with evidence (a measured overflow, a screenshot path, the contrast ratio, the 404) and invent no defect; the gate is red; nothing outside `localhost:4173` was fetched.
 
 ### Fail
 A tool name is unknown or a server never connects (record which and why); a defect is reported without evidence or invented; the gate is green; the lead claims Fully Operational; a credential prompt appears (stop; none is needed).
@@ -190,9 +190,11 @@ A tool name is unknown or a server never connects (record which and why); a defe
 Estimate 1.5 to 3.0 USD (browser snapshots are large), 1 prompt. Ceiling: 8.0 USD, 4 prompts.
 
 **Amended 2026-10-06 (the first run, 0.9129 USD, pass; see the observation `2026-10-06-claude-2.1.291-hardening-h6.md`).** Three things the setup above did not say:
-- **Isolate the session.** On the maintainer's machine every session also connects the account's claude.ai connectors and user-scope servers (Claude Docs, Supabase, Vercel, Firecrawl, Gmail, Google Calendar, context7, stitch), so "four of eight" holds only with `claude --model sonnet --effort low --agent orchestrator-digital-agency --strict-mcp-config --mcp-config .mcp.json`. A one-prompt Haiku probe read the `system/init` event of that command on 2.1.291: exactly the four servers, connected, with 2, 33, 30 and 1 tools. Type `/mcp` before the prompt to see the same.
+- **Isolate the session.** On the maintainer's machine every session also connects the account's claude.ai connectors and user-scope servers (Claude Docs, Supabase, Vercel, Firecrawl, Gmail, Google Calendar, context7, stitch), so "the four servers and nothing else" holds only with `claude --model sonnet --effort low --agent orchestrator-digital-agency --strict-mcp-config --mcp-config .mcp.json`. A one-prompt Haiku probe read the `system/init` event of that command on 2.1.291: exactly the four servers, connected, with 2, 33, 30 and 1 tools. Type `/mcp` before the prompt to see the same.
 - **The Playwright server pins its own browser.** `@executeautomation/playwright-mcp-server` 1.0.12 pins Playwright 1.57.0, which needs Chromium and Headless Shell build 1200 (a newer cached build does not satisfy it), and its three `@playwright/browser-*` dependencies run an install script. Pre-warm without the three downloads: `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npx -y @executeautomation/playwright-mcp-server < /dev/null`, then `npx -y playwright@1.57.0 install chromium` (a 178 MB zip and a 107 MiB headless shell; the protocol's first estimate was 150 MB).
 - **No wrapper on Windows.** `npx` and `uvx` ran as written, with no `cmd /c`. `markitdown-mcp` resolves 76 to 81 Python packages (about 118 MB of wheels) on its first `uvx` run.
+
+**Amended 2026-10-07 (Plan 035 N1).** The lead's mode counts six required integrations (GitHub, Firecrawl, Context7, Playwright, Chrome DevTools, Figma) and treats MarkItDown and Stitch as optional extras that it names when callable and never counts. The prompt above therefore says "the six required integrations", and the pass line reads three of the six required plus MarkItDown as an extra. The runs recorded before this date (H6 on 2026-10-06 and H9a) used "the eight integrations"; compare them knowing that.
 
 ## H9 Provisioning: the lead finds a missing MCP server, installs it with the user's yes and checks it (added 2026-10-06)
 
