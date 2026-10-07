@@ -69,7 +69,8 @@ export interface ResolveClaudeInstallationOptions {
  *      `CLAUDE.md` / `CLAUDE.local.md` / `.claude/settings.json` / `.claude/workflows/**`, and the teams
  *      scaffold persists nothing anywhere (no `~/.claude/teams/`, no settings key).
  *   2. Every value is one argv element. `--agent` and its value are pushed separately, the workspace is a
- *      single `--add-dir` argument, and the bootstrap prompt is a single final *positional* argument (the
+ *      single `--add-dir=<workspace>` element (the flag is variadic on the host, so a space-separated value
+ *      would swallow the prompt), and the bootstrap prompt is a single final *positional* argument (the
  *      only opening-prompt mechanism Claude Code offers — there is intentionally no
  *      `--prompt-interactive` flag on this host), so no prompt text is ever word-split, shell-expanded
  *      or joined into a command string.
@@ -283,8 +284,11 @@ export class ClaudeLauncher {
     // a no-op for coordinators - so this value MUST equal the projected file basename without `.md`.
     argv.push('--agent');
     argv.push(coordinatorName);
-    argv.push('--add-dir');
-    argv.push(workspace);
+    // `--add-dir <directories...>` is variadic: written as two elements, it takes every operand that follows it, so
+    // the bootstrap prompt (the last operand) was read as a second directory and never reached the input box
+    // (observed on 2.1.291, Plan 035 D52). The `--add-dir=<dir>` form carries its one value inside the element and
+    // leaves no option open for the prompt to fall into, whatever flag order a later change picks.
+    argv.push(`--add-dir=${workspace}`);
     if (background === true) {
       argv.push('--bg');
     }
