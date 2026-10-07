@@ -12,6 +12,12 @@ import { describe, expect, it } from 'vitest';
  * request is where the teammate has to answer, so the template of the reply goes there too, in words (a frame written into the request's reason would be a second
  * protocol frame to parse).
  * Both sit after the generated Contract Floor, which belongs to the shared core and is compared byte for byte elsewhere.
+ *
+ * Live test 3 (2026-10-07, session `6c86e269`) showed that the pair and the template were not enough: Emre, a consultant, sent the string twice (10:02:03 and
+ * 10:02:05) although the host's own text under the request gave the exact object, and was accepted on the third call, after `ToolSearch select:SendMessage`.
+ * The same sequence is in the second H9 retest (Emre, 14:27:49 to 14:27:57). A teammate that loaded `SendMessage` early replied with the object at once (Yavuz in
+ * the H1 rerun, Emre in the first H9 retest). The bodies already say "load `SendMessage` before first use" under the task list, and a consultant never reaches
+ * that rule, since a plain answer needs no task. So the load is now tied to the reply itself, to the brief every teammate gets and to the request's reason.
  */
 
 const AGENTS = path.resolve('registry/hosts/claude/agents');
@@ -33,6 +39,12 @@ describe.each([
     expect(lines[rule + 2]).toBe(WRONG);
   });
 
+  it('tells the teammate to load SendMessage with ToolSearch before it sends the reply, on the rule line itself', () => {
+    const rule = afterFloor(name).split('\n').find(line => line.startsWith('- **Answer a shutdown request with the structured object.**')) ?? '';
+    expect(rule).toContain('Load `SendMessage` first: run `ToolSearch` with `select:SendMessage` before you send the reply');
+    expect(rule).toMatch(/sent the string twice/);
+  });
+
   it('keeps the rule sentence that the earlier test pins, and the next rule after the pair', () => {
     const body = afterFloor(name);
     expect(body).toContain('`SendMessage` to `team-lead` whose `message` is an object, not a string');
@@ -45,7 +57,13 @@ describe('the lead: the template of the shutdown request', () => {
 
   it('puts the reply instruction in the request, in words, where the teammate has to answer', () => {
     expect(lead).toContain('Put the reply instruction in the reason, in words, and write no frame in it:');
-    expect(lead).toContain('`Delivered, thank you. Reply with one SendMessage to team-lead whose message is an object, not a string of JSON: type shutdown_response, the request_id of this request, approve true.`');
+    expect(lead).toContain('`Delivered, thank you. First run ToolSearch with select:SendMessage, then reply with one SendMessage to team-lead whose message is an object, not a string of JSON: type shutdown_response, the request_id of this request, approve true.`');
+  });
+
+  it('puts the load of SendMessage into the brief every teammate gets, so that a consultant has it before its first reply', () => {
+    const brief = lead.slice(lead.indexOf('You are the teammate "<name>"'), lead.indexOf('**Team mode and relay mode.**'));
+    expect(brief).not.toBe('');
+    expect(brief).toContain('Tools: before your first reply, load `SendMessage` with `ToolSearch` (`select:SendMessage`)');
   });
 
   it('keeps the request itself structured, as an earlier test pins', () => {
