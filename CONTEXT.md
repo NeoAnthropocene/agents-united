@@ -200,7 +200,7 @@ How an integration of the Canonical Agency MCP Suite reaches a Claude Code sessi
 _Avoid_: Calling a plugin a connector, assuming a plugin carries an MCP server (the firecrawl plugin ships skills only)
 
 **Mode-Line Gate**:
-The `PreToolUse` hook of the digital-agency lead (`registry/hosts/claude/hooks/agents-united-mode-line-gate.js`, guard kind `mode-line`) that holds the lead's first call other than `ToolSearch` once per session until it writes its mode line (`Mode: <Fully|Limited> Operational. Callable: ... Missing: ... Extras: ...`, the section "The first message" of its definition). It cannot see the message being written, so it holds the call whatever the lead wrote; it ignores teammates' calls and fails open (ADR 0042).
+The `PreToolUse` hook of the digital-agency lead (`registry/hosts/claude/hooks/agents-united-mode-line-gate.js`, guard kind `mode-line`) that holds the lead's first call other than `ToolSearch` once per session until it writes its mode line (`Mode: <Fully|Limited> Operational. Callable: ... Missing: ... Extras: ...`, the section "The first message" of its definition). It cannot see the message being written, so it holds the call whatever the lead wrote; it ignores teammates' calls and fails open (ADR 0042). A lead that writes the line before its first call writes it twice, which the maintainer accepted (ADR 0043). The host prints the hold as an error line, so the message begins by saying that the hold is expected and happens once.
 _Avoid_: Calling it a guard of what a role may do, expecting it to check the content of the line
 
 **Multimodal Asset Inlining (`@path/to/file`)**:
