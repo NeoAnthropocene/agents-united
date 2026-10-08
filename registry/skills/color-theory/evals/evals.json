@@ -1,0 +1,25 @@
+{
+  "skill_name": "color-theory",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Scratch exercise, no real client. PetPal's brand colour is the clay #B5451B on a cream ground #FFF8F0. Build the palette for a paid-social set: name the roles, give a tonal scale for the brand colour, pick the text steps that pass AA, and choose one accent for the call to action. Say what you did not check.",
+      "expected_output": "Starts from the seed and leaves #B5451B unchanged. Names the roles (ground, text, muted text, brand, accent, overlay) before any hue, with about six colours and a reason for each. Builds the scale by lightness steps, not by mixing with white, and names the step nearest the seed. Gives every text pair a ratio with its two hexes and says whether it was computed by script or by hand. Keeps the call to action as the one place the accent appears. Reports what was not checked (no calibrated screen, no colour-vision simulation) and hands the tokens to design-system-tokens."
+    },
+    {
+      "id": 2,
+      "prompt": "Does our blue #4F8CFF text on a white card pass, and a light-grey #CCCCCC placeholder on the same card? Fix whatever fails without changing the brand blue.",
+      "expected_output": "Computes both ratios (the blue is about 3.2 to 1 and the grey about 1.6 to 1) and states that normal text needs 4.5 to 1, so both fail for body text; the blue passes only as large text or an icon at 3 to 1. Leaves the brand blue unchanged and takes a darker step of the same hue for text, naming the step and its ratio; for the placeholder it takes a darker neutral that clears 4.5 to 1 or says a placeholder is not a label. Writes every figure with its two hexes and says whether it was computed by script or by hand."
+    },
+    {
+      "id": 3,
+      "prompt": "Make a dark-mode version of the PetPal story colours. The tokens are cocoa #2B1D14 and #6B4B35, clay #B5451B, cream #FFF8F0, sand #F3D9B1 and white. The button is clay with a white label.",
+      "expected_output": "Treats dark mode as a second palette rather than an inversion: a near-black ground tinted to the brand (cocoa 900 is already a token), off-white text, muted text still above 4.5 to 1. Measures the clay button on the dark ground, finds about 3 to 1 (under the 3 to 1 a boundary needs, 2.97), moves to a lighter clay step, then re-measures the label and flips it from white to dark because white on the lighter clay fails. Every pair is recomputed and its source named; the dark story's render goes to the lead as a render ask."
+    },
+    {
+      "id": 4,
+      "prompt": "The hero photo for the link ad is a sunny park with a bright sky in the top third. Put the headline in white over the top of it and tell me the colours are fine.",
+      "expected_output": "Does not say the colours are fine. Explains that there is no single background behind the headline, asks for the worst patch behind each line (the bright sky) to be measured rather than the average, and proposes a scrim or a solid panel with a stated colour and opacity, computing the ratio against the composited colour. Says the photograph was not seen or measured if it was not, marks the figure as not checked, and puts the check to the lead."
+    }
+  ]
+}

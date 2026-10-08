@@ -90,7 +90,7 @@ describe('the runbook teaches the decisions, not the arithmetic', () => {
     const r = runbook();
     expect(r).toMatch(/Name the roles before the hues/);
     for (const role of ['ground', 'text', 'muted text', 'brand', 'accent', 'semantic', 'overlay']) expect(r, role).toContain(role);
-    expect(r).toMatch(/Six to eight colours/);
+    expect(r).toMatch(/An ad needs about six colours, an interface about ten; a colour with no role is decoration/);
     expect(r).toMatch(/60 ground, 30 brand, 10 accent/);
   });
 

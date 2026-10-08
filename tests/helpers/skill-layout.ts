@@ -26,7 +26,12 @@ export const KNOWN_KEYS = new Set([
   'disable-slash-command',
 ]);
 
-const SUPPORT_DIRS = ['examples', 'references', 'scripts'];
+/**
+ * What a skill folder may hold beside SKILL.md: `examples/` (worked examples), `references/` (read when a step calls for them),
+ * `assets/` (templates and lookup files a role copies or fills in; the official skills guide, https://claude.com/docs/skills/how-to.md,
+ * names the folder) and `scripts/` (run, not read). Each file is mentioned in SKILL.md at the step that needs it.
+ */
+const SUPPORT_DIRS = ['examples', 'references', 'assets', 'scripts'];
 
 function walk(dir: string, prefix = ''): string[] {
   if (!fs.existsSync(dir)) return [];
@@ -92,7 +97,7 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
   for (const f of files) {
     if (!body.includes(f)) errors.push(`${name}: ${f} is not referenced from SKILL.md (say what it holds and when to load it)`);
   }
-  for (const link of body.matchAll(/\]\(((?:examples|references|scripts)\/[^)#\s]+)\)/g)) {
+  for (const link of body.matchAll(/\]\(((?:examples|references|assets|scripts)\/[^)#\s]+)\)/g)) {
     if (!fs.existsSync(path.join(dir, link[1]!))) errors.push(`${name}: SKILL.md links to ${link[1]} which does not exist`);
   }
 

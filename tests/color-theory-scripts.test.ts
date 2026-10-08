@@ -98,6 +98,31 @@ describe('the scale', () => {
   });
 });
 
+describe('the rules of references/tonal-scales.md hold for every family of references/hue-families.md', () => {
+  it('step 500 on white clears 3, 600 clears 4.5, 700 clears 7 except lime, green, teal and cyan, 700 on step 50 clears 4.5, 400 on step 950 clears 4.5', async () => {
+    const lib2 = (await lib()) as Lib & { FAMILIES: Array<{ name: string; h: number; s: number }>; LIGHTNESS: Record<number, number>; TAPER: Record<number, number> };
+    const hex = (f: { h: number; s: number }, step: number): string => lib2.oklchToHex(lib2.LIGHTNESS[step]!, f.h, f.s * lib2.TAPER[step]!);
+    const under7: string[] = [];
+    const under45on50: string[] = [];
+    for (const f of lib2.FAMILIES) {
+      expect(lib2.contrastRatio(hex(f, 500), '#FFFFFF'), `${f.name} 500 on white`).toBeGreaterThanOrEqual(3);
+      expect(lib2.contrastRatio(hex(f, 600), '#FFFFFF'), `${f.name} 600 on white`).toBeGreaterThanOrEqual(4.5);
+      if (lib2.contrastRatio(hex(f, 700), '#FFFFFF') < 7) under7.push(f.name);
+      if (lib2.contrastRatio(hex(f, 600), hex(f, 50)) < 4.5) under45on50.push(f.name);
+      expect(lib2.contrastRatio(hex(f, 700), hex(f, 50)), `${f.name} 700 on 50`).toBeGreaterThanOrEqual(6.2);
+      expect(lib2.contrastRatio(hex(f, 400), hex(f, 950)), `${f.name} 400 on 950`).toBeGreaterThanOrEqual(5.7);
+    }
+    expect(under7.sort()).toEqual(['cyan', 'green', 'lime', 'teal']);
+    expect(under45on50.sort()).toEqual(['green', 'teal']);
+  });
+
+  it('keeps the curve table of the reference equal to the curve of the script', async () => {
+    const lib2 = (await lib()) as Lib & { LIGHTNESS: Record<number, number>; TAPER: Record<number, number> };
+    const page = fs.readFileSync(path.resolve('registry/skills/color-theory/references/tonal-scales.md'), 'utf8').replace(/\r\n/g, '\n');
+    for (const step of lib2.STEPS) expect(page, `step ${step}`).toContain(`| ${step} | ${lib2.LIGHTNESS[step]!.toFixed(2)} | ${lib2.TAPER[step]!.toFixed(2)} |`);
+  });
+});
+
 describe('the harmony', () => {
   it('shifts the hue by the scheme\'s offsets and keeps the seed\'s lightness: complementary +180, split +150 and +210, triadic, analogous, tetradic', async () => {
     const { harmony, hexToOklch } = await lib();
