@@ -200,6 +200,11 @@
       "snapshot": true,
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/static-analysis/skills/codeql"
     },
+    "color-theory": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-08",
+      "skill": "color-theory"
+    },
     "component-library-management": {
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",

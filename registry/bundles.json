@@ -1104,7 +1104,8 @@
         "property-based-testing",
         "mutation-testing",
         "agency-brief-and-premises",
-        "design-artifact-publishing"
+        "design-artifact-publishing",
+        "color-theory"
       ],
       "version": "1.0.0"
     },
@@ -1296,7 +1297,8 @@
         "property-based-testing",
         "mutation-testing",
         "agency-brief-and-premises",
-        "design-artifact-publishing"
+        "design-artifact-publishing",
+        "color-theory"
       ],
       "version": "1.0.0"
     },
