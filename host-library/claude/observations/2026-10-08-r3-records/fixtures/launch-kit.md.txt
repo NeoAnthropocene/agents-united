@@ -1,0 +1,34 @@
+# PetPal Launch Kit (pilot)
+Scratch exercise: placeholder domain, no real client. Goal event: sitter search started. Audience (assumed): opted-in sign-ups, urban owners 25-45. No statistics, testimonials or urgency. "ID-checked" and "reviews" await Defne's review. Landing page CTA contract (once): testId `hero-primary-cta`, token `color.cta.primary`, label "Find a sitter near you".
+
+## (a) 3-email drip
+All emails: one CTA "Find a sitter near you" (matches hero.ts ctaLabel). Exit rule for all: search started, unsubscribe, or reply with a question.
+
+**E1, day 0. Purpose:** welcome, say why they get it, start the search.
+- Subject: Find a sitter for your pet at home
+- Preview: See who is nearby, free to search.
+- Body: You signed up for PetPal updates. PetPal connects owners with in-home pet sitters, so your pet stays in familiar surroundings. Searching is free and needs no card.
+- CTA link: [Find a sitter near you](https://petpal.example/search?utm_source=petpal&utm_medium=email&utm_campaign=launch-drip&utm_content=email1-welcome)
+
+**E2, day 3. Purpose:** answer the stranger-in-my-home worry.
+- Subject: How we check the sitters you can book
+- Preview: ID checks and reviews, explained.
+- Body: Every sitter is ID-checked, and you can read reviews from other pet owners before you choose. Compare sitters at your own pace.
+- CTA link: [Find a sitter near you](https://petpal.example/search?utm_source=petpal&utm_medium=email&utm_campaign=launch-drip&utm_content=email2-trust)
+
+**E3, day 7. Purpose:** give a practical next step (interview questions).
+- Subject: Questions worth asking any pet sitter
+- Preview: A short list before your first booking.
+- Body: Ask about emergencies, medication and daily updates before you book. Our guide lists the questions at petpal.example/guides (to be published; plain text, not a second CTA).
+- CTA link: [Find a sitter near you](https://petpal.example/search?utm_source=petpal&utm_medium=email&utm_campaign=launch-drip&utm_content=email3-questions)
+
+## (b) Compliance footer (every email)
+- Sent by PetPal, [PetPal legal entity name - to be supplied]. From: PetPal <[sender address on petpal.example - to be supplied]>.
+- [PetPal postal address - to be supplied]
+- You are receiving this because you signed up for PetPal updates. [Unsubscribe in one click](https://petpal.example/unsubscribe?token=[placeholder]) (also send the `List-Unsubscribe` and one-click header).
+- Not sponsored; no endorsements. Lawful basis and consent record: Defne to confirm.
+
+## (c) Press release (draft)
+- Headline: PetPal Launches a Marketplace for Owners Who Want Trusted In-Home Pet Sitters
+- Dateline: [CITY, STATE - placeholder], [Month DD, YYYY - placeholder]
+- Still needed: executive quote, boilerplate, release date (not in this pilot).

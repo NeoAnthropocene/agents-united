@@ -1,0 +1,26 @@
+// PetPal hero copy for Deniz to render. Claim: every sitter is ID-checked and reviewed.
+// "ID-checked" and "reviewed" await Defne's review; no statistics, no testimonials.
+
+export interface HeroSectionProps {
+  headline: string;
+  subhead: string;
+  trustPoints: string[];
+  ctaLabel: string;
+  ctaTestId: "hero-primary-cta";
+  ctaColorToken: "color.cta.primary";
+  microcopy: string;
+}
+
+export const heroProps: HeroSectionProps = {
+  headline: "Trusted sitters, happy pets, calm owners.",
+  subhead:
+    "Leave your pet at home with a sitter whose ID we have checked and whose reviews you can read.",
+  trustPoints: [
+    "Every sitter is ID-checked",
+    "Read reviews from other pet owners before you choose",
+  ],
+  ctaLabel: "Find a sitter near you",
+  ctaTestId: "hero-primary-cta",
+  ctaColorToken: "color.cta.primary",
+  microcopy: "Free to search. No card needed.",
+};

@@ -1,0 +1,29 @@
+# PetPal Growth Brief (pilot)
+
+No funnel data exists (pre-launch scratch exercise); every number below is a placeholder estimate, not a benchmark.
+
+1. **ICP:** urban owners aged 25-45 with one or two pets, travelling two or more times a year, who distrust kennels. Sitter-side supply is a later brief.
+2. **Bottleneck:** Activation (visit to sitter search started). Unmeasured, so treated as the assumed leak.
+3. **Positioning line:** "Trusted sitters, happy pets, calm owners."
+4. **Primary KPI:** hero CTA click-through (testId `hero-primary-cta`, token `color.cta.primary`). Secondary: search-started rate. Guardrail: bounce rate must not rise by more than 5% relative.
+5. **Measurement:** instrument the CTA click and search-start events first (experiment zero, Deniz builds, Emre verifies). No paid spend until LTV:CAC of at least 3:1 is modelled.
+
+## ICE-scored hypothesis
+
+Because owners distrust strangers in their home (opinion, no data yet), we believe a hero that leads with verified-sitter proof (ID-checked, reviewed) will lift hero CTA click-through by 15% relative. We will know within 14 days when the lower bound of the lift is above zero at the planned sample.
+
+| Experiment | Impact | Conf | Ease | ICE |
+|---|---|---|---|---|
+| Trust-proof hero vs. plain hero | 7 | 2 | 7 | 5.3 |
+
+- **Impact 7:** 15% relative sits in the 10-20% band.
+- **Confidence 2:** opinion only; no evidence clause from this funnel.
+- **Ease 7:** one front-end hero change, one to three days.
+- **Decision rule:** ship if the lift holds with the guardrail intact; kill if the lower bound is below zero at the planned sample; otherwise iterate once.
+
+## Handoffs
+
+- **Kaan:** hero copy variants built on the positioning line; claims limited to what PetPal can verify.
+- **Deniz and Emre:** CTA click and search-start events, then verification that they fire.
+- **Defne:** review of "verified" and "ID-checked" before any copy ships.
+- **Traffic caveat:** under about 500 visitors a week this test is noise; use five user sessions instead (`ab-test-setup` sizes it).
