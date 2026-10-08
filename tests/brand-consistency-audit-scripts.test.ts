@@ -34,9 +34,9 @@ describe('the planted drifts of the flawed set are found, and nothing else', () 
       'feed.svg:3 colour #C2410C',
       'feed.svg:4 font Impact',
       'feed.svg:6 copy Book now!',
-      'story.html:5 colour #333333',
-      'story.html:6 colour #FFD1A9',
-      'story.html:6 colour #FF0000',
+      'story.html:4 colour #333333',
+      'story.html:5 colour #FFD1A9',
+      'story.html:5 colour #FF0000',
     ]);
   });
 
@@ -60,7 +60,7 @@ describe('the planted drifts of the flawed set are found, and nothing else', () 
     const { report } = json(TOKENS, FLAWED, '--copy', COPY);
     expect(report.findings.some(f => f.file === 'brand.css')).toBe(false);
     expect(report.findings.some(f => f.value === '#F3D9B1')).toBe(false);
-    expect(report.alpha).toEqual([{ file: 'story.html', line: 7, hex: '#2B1D14' }]);
+    expect(report.alpha).toEqual([{ file: 'story.html', line: 6, hex: '#2B1D14' }]);
   });
 
   it('does not take a link target for a colour: href="#add" is no finding', () => {
@@ -93,9 +93,9 @@ describe('the command line and the colour maths', () => {
     expect(r.stdout).toMatch(/^feed\.svg:3 +colour +#C2410C +not a token; nearest color\.clay\.600 #B5451B/m);
     expect(r.stdout).toMatch(/^feed\.svg:4 +font +Impact +not a token font; the tokens' first font is Helvetica/m);
     expect(r.stdout).toMatch(/^feed\.svg:6 +copy +Book now! +not in the copy file/m);
-    expect(r.stdout).toMatch(/^story\.html:6 +colour +#FF0000 \(red\)/m);
+    expect(r.stdout).toMatch(/^story\.html:5 +colour +#FF0000 \(red\)/m);
     expect(r.stdout).toMatch(/scanned 3 files: 16 colours, 5 fonts and 6 strings checked; 6 findings \(colour 4, font 1, copy 1\)/);
-    expect(r.stdout).toMatch(/info: 1 token colour used with alpha \(story\.html:7\)/);
+    expect(r.stdout).toMatch(/info: 1 token colour used with alpha \(story\.html:6\)/);
   });
 
   it('converts rgb() and hsl() to the hex they stand for', async () => {

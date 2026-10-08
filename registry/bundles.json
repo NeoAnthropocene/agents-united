@@ -1105,7 +1105,8 @@
         "mutation-testing",
         "agency-brief-and-premises",
         "design-artifact-publishing",
-        "color-theory"
+        "color-theory",
+        "brand-consistency-audit"
       ],
       "version": "1.0.0"
     },
@@ -1298,7 +1299,8 @@
         "mutation-testing",
         "agency-brief-and-premises",
         "design-artifact-publishing",
-        "color-theory"
+        "color-theory",
+        "brand-consistency-audit"
       ],
       "version": "1.0.0"
     },
