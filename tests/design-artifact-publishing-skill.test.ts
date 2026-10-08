@@ -13,7 +13,7 @@ import { nativeText } from './helpers/native-roles.js';
  * host-only skill lane; `mcp-setup` is the precedent), carried by the digital-agency bundle and loaded from her table.
  */
 
-const SKILL = 'claude-design-artifacts';
+const SKILL = 'design-artifact-publishing';
 const DIR = path.resolve('registry/skills', SKILL);
 const read = (rel: string): string => fs.readFileSync(path.join(DIR, rel), 'utf8').replace(/\r\n/g, '\n');
 const skill = (): string => read('SKILL.md');

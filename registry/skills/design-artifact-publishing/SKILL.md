@@ -1,5 +1,5 @@
 ---
-name: claude-design-artifacts
+name: design-artifact-publishing
 description: "Use when the user asks to publish a design to Claude Design (a canvas of artboards, or a design system with a brand book) through the Artifact tool, or to update one already published; trigger phrases: put this in Claude Design, make a canvas I can review in the browser, publish the design system, publish the brand book, update the canvas. Produces a private Design or Design System artifact built from the supplied tokens and copy, a read-back of every file published, and a report of what was not checked. Claude Code only, and only while the Artifact tool is held; skip it for plain SVG or HTML files, for sharing an artifact (the user's act, never yours) and for a design system the client already keeps in Claude Design (read it, do not replace it)."
 metadata:
   author: agents-united
@@ -8,7 +8,7 @@ metadata:
 disable-slash-command: true
 ---
 
-# Claude Design Artifacts
+# Publishing to Claude Design
 
 Claude Design shows a canvas or a brand book in the browser, where the user reviews and edits it. It is a page on Anthropic's servers: what you publish leaves the project. So you publish only what was asked for, privately, and you say exactly what you did and did not check.
 

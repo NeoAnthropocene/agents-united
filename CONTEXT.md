@@ -226,7 +226,7 @@ _Avoid_: The stateless generic fanout lane, Antigravity-dialect copies left in `
 
 **Claude Skills Lane**:
 The `.claude/skills/<name>/SKILL.md` surface through which canonical skills (including `workflow-*` skills) become native Claude slash commands. Frontmatter is translated to Claude semantics — crucially `disable-slash-command: true` becomes **`user-invocable: false`** (hidden from the `/` palette, still model-invocable) and **never** `disable-model-invocation`, whose polarity is inverted. Non-standard fields are stripped, auxiliary files copy byte-for-byte, and only installed-bundle skills project (listings cap each skill at 1,536 description characters).
-_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting all 189 skills regardless of installed bundles
+_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting all 190 skills regardless of installed bundles
 
 **Claude Lean Rules Lane**:
 The `.claude/rules/<rule>.md` projection of the deduplicated, agent-referenced rule set only — each file capped at ~200 lines, with `paths:` frontmatter where a rule is file-type-scoped. Host entrypoint rules are skipped, and bundle coordination policy lives in the orchestrator agent body rather than in an always-on rule, because Claude loads unscoped rules unconditionally in every session.
@@ -456,7 +456,7 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 189 modular skills (120 domain skills + 69 workflow playbooks).
+   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 190 modular skills (121 domain skills + 69 workflow playbooks).
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
@@ -500,7 +500,7 @@ A pasteable block (`CLAUDE DESIGN BRIEF: ...`) that the creative designer ends h
 _Avoid_: Design prompt, design export
 
 **Design artifact**:
-An Artifact of the Design type (a canvas of artboards) or the Design System type (tokens in list form, a brand book and a cover) that the creative designer publishes to Claude Design through the `Artifact` tool, only when the user asks, private, and then reads back (Plan 036 S11, ADR 0047). The skill `claude-design-artifacts` carries the rules; the vendor format is read live from the type's own instructions.
+An Artifact of the Design type (a canvas of artboards) or the Design System type (tokens in list form, a brand book and a cover) that the creative designer publishes to Claude Design through the `Artifact` tool, only when the user asks, private, and then reads back (Plan 036 S11, ADR 0047). The skill `design-artifact-publishing` carries the rules; the vendor format is read live from the type's own instructions.
 _Avoid_: calling a plain SVG or HTML file one, saying it is shared, publishing as a side effect of a design task
 
 ### Testing & Code Quality Standards
@@ -510,7 +510,7 @@ A deterministic test verification hierarchy:
 - **Tier 1 (Feature Coverage)**: Happy path validation of exported functions, interfaces, frontmatter schemas, and expected return types.
 - **Tier 2 (Boundary & Corner Cases)**: Negative testing covering empty inputs, malformed files, invalid enums, and graceful error handling.
 - **Tier 3 (Cross-Feature Pairwise)**: Interoperability testing between Registry, Installer, Adapters, Lockfile Engine, and CLI.
-- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 189 skills.
+- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 190 skills.
 
 **Deterministic Verification**:
 Testing practices that eliminate arbitrary timeouts (`setTimeout`) in favor of auto-waiting assertions, isolated test workspaces, predictable mock factories, and clean teardowns.

@@ -259,6 +259,11 @@
       "recoveredAt": "2026-09-30",
       "skill": "dependency-management"
     },
+    "design-artifact-publishing": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-08",
+      "skill": "design-artifact-publishing"
+    },
     "design-handoff-spec": {
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",

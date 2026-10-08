@@ -1103,7 +1103,8 @@
         "terraform-style-guide",
         "property-based-testing",
         "mutation-testing",
-        "agency-brief-and-premises"
+        "agency-brief-and-premises",
+        "design-artifact-publishing"
       ],
       "version": "1.0.0"
     },
@@ -1295,7 +1296,7 @@
         "property-based-testing",
         "mutation-testing",
         "agency-brief-and-premises",
-        "claude-design-artifacts"
+        "design-artifact-publishing"
       ],
       "version": "1.0.0"
     },
