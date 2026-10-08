@@ -368,6 +368,12 @@ runtime host detection/rewiring (nondeterministic — churn belongs in capabilit
   permission modes), pinned to the docs library baseline and drift-tested against its snapshots.
   The legacy **Capability Profile** it once sat beside (`registry/profiles/claude@2.1.271.json`) was
   retired with the created lane (ADR 0037); `minVersion` carries its version floor.
+- **Unsupported Skill**: a skill that a host profile lists under `unsupportedSkills` (name, since,
+  rationale) because it is written for another host and would send the model to a tool this host
+  lacks. That host's projection leaves it out, `agents update` prunes a copy an earlier release
+  installed, and the canonical store keeps it for the hosts that can use it (Plan 036 S1b; the
+  first entry is `generative-ui` on Claude).
+  _Avoid_: calling it retired or deprecated (it still ships for its own host), deleting it from the registry
 - **Native Declared Delta**: a Semantic Core invariant that a native role does not bind in its body on purpose, declared in `registry/hosts/<host>/deltas.json` with a disposition (`mapped`, `approximated`, `degraded`, `unsupported`) and a rationale (ADR 0037). Every other invariant of a native role is evidenced in its file; a delta is stale, and fails the suite, when the body does evidence the invariant.
   _Avoid_: declaring a delta instead of fixing a body that should bind the invariant, leaving an invariant silent
 - **Tool Policy Report**: `toolPolicyReport()` — per role, tools its classes would add or that were

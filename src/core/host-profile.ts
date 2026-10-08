@@ -44,6 +44,15 @@ const uniqueList = (label: string, allowEmpty = false): z.ZodType<string[]> =>
     }
   });
 
+/** A skill the host does not install (Plan 036 S1b): a slug, the date it was left out, and a reason that says what it relies on. */
+const UnsupportedSkillSchema = z
+  .object({
+    name: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'name must be a skill slug (lowercase letters, digits and hyphens)'),
+    since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'since must be a YYYY-MM-DD date'),
+    rationale: z.string().min(20, 'rationale must say why the host cannot use the skill'),
+  })
+  .strict();
+
 const ProfileSchema = z
   .object({
     host: z.string().regex(/^[a-z0-9-]+$/, 'host must be a lowercase slug'),
@@ -73,6 +82,16 @@ const ProfileSchema = z
       })
       .strict(),
     features: z.record(z.object({ status: z.string().min(1), note: z.string().min(1), since: z.string().regex(/^\d+\.\d+\.\d+$/, 'since must be a x.y.z version').optional() }).strict()),
+    unsupportedSkills: z
+      .array(UnsupportedSkillSchema)
+      .superRefine((items, ctx) => {
+        const seen = new Set<string>();
+        for (const item of items) {
+          if (seen.has(item.name)) ctx.addIssue({ code: 'custom', message: `duplicate entry "${item.name}"` });
+          seen.add(item.name);
+        }
+      })
+      .optional(),
   })
   .strict();
 
@@ -154,6 +173,15 @@ function readJson(file: string): unknown {
 export function loadHostProfile(registryDir: string, host: string): HostProfile {
   const file = path.join(registryDir, 'hosts', host, 'profile.json');
   return validateHostProfile(readJson(file), file);
+}
+
+/**
+ * Plan 036 S1b: the skills a host's profile lists as not installed, by name. A registry with no profile for the host (a synthetic one, or
+ * one of an older shape) lists none; a profile that is present but malformed rejects at load, like every committed profile.
+ */
+export function unsupportedSkillNames(registryDir: string, host: string): ReadonlySet<string> {
+  if (!fs.existsSync(path.join(registryDir, 'hosts', host, 'profile.json'))) return new Set();
+  return new Set((loadHostProfile(registryDir, host).unsupportedSkills ?? []).map(entry => entry.name));
 }
 
 export function loadToolPolicy(registryDir: string, host: string): ToolPolicy {

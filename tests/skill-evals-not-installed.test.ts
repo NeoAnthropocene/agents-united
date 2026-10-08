@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { ClineProjector } from '../src/core/cline-projector.js';
+import { unsupportedSkillNames } from '../src/core/host-profile.js';
 import { InstallEngine } from '../src/core/installer.js';
 import { RegistryResolver } from '../src/core/registry.js';
 import type { BundleDefinition, ResolvedAssets } from '../src/core/types.js';
@@ -154,8 +155,8 @@ describe('evals/ is not installed: the whole catalog', () => {
         expect(artifact.relPath, `${skill}`).not.toContain(`/skills/${skill}/evals/`);
       }
     }
-    // The plans still carry the skills themselves: a filter that dropped everything would pass the loop above.
-    expect(claude.filter(a => a.kind === 'skill' && a.relPath.endsWith('/SKILL.md')).length).toBe(everySkill.length);
+    // The plans still carry the skills themselves: a filter that dropped everything would pass the loop above. Claude leaves out the skills its profile lists as unsupported (Plan 036 S1b).
+    expect(claude.filter(a => a.kind === 'skill' && a.relPath.endsWith('/SKILL.md')).length).toBe(everySkill.length - unsupportedSkillNames(realRegistry, 'claude').size);
     expect(cline.filter(a => a.kind === 'skill' && a.relPath.endsWith('/SKILL.md')).length).toBe(everySkill.length);
   });
 });

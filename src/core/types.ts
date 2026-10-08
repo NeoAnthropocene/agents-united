@@ -900,4 +900,16 @@ export interface HostProfile {
   };
   /** `since` is the first host version that has the feature, where the live docs date it. */
   features: Record<string, { status: string; note: string; since?: string }>;
+  /** Skills the host does not install: its projection leaves them out and an update prunes an earlier copy (Plan 036 S1b). Absent when there are none. */
+  unsupportedSkills?: UnsupportedSkill[];
+}
+
+/** A skill a host profile lists as one the host does not install: written for another host, so it would send the model to a tool this host lacks. */
+export interface UnsupportedSkill {
+  /** The skill folder under `registry/skills`. */
+  name: string;
+  /** The date (YYYY-MM-DD) from which the host leaves it out. */
+  since: string;
+  /** Why the host cannot use it, naming what it relies on. */
+  rationale: string;
 }
