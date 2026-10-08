@@ -122,7 +122,7 @@ describe('the H10 baseline observation: the grading', () => {
   it('marks F2, F3, F4d and F9 seen or not seen, each with its rule and its evidence', () => {
     const o = observation();
     for (const finding of ['F2', 'F3', 'F4d', 'F9']) {
-      const row = o.split('\n').find(l => l.startsWith(`| ${finding} |`));
+      const row = o.split('\n').find(l => new RegExp(`^\\| ${finding}\\b`).test(l));
       expect(row, `${finding} row`).toBeDefined();
       const cells = row!.slice(1, -1).split('|').map(c => c.trim());
       expect(cells[2], `${finding} verdict`).toMatch(/^\*\*(seen|not seen)\*\*/);

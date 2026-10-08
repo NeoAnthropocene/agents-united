@@ -1,0 +1,12 @@
+claude mcp list from a scratch directory of the H10 sitting, 2026-10-08, Claude Code 2.1.294 (no model call; the CLI is signed in, so the account's connectors are listed):
+
+Checking MCP server health…
+
+claude.ai Claude Docs: https://api.anthropic.com/v1/pages/mcp - √ Connected
+claude.ai Supabase: https://mcp.supabase.com/mcp - √ Connected
+claude.ai Vercel: https://mcp.vercel.com - √ Connected
+claude.ai Firecrawl: https://mcp.firecrawl.dev/v2/mcp-search - √ Connected
+claude.ai Gmail: https://gmailmcp.googleapis.com/mcp/v1 - √ Connected
+claude.ai Google Calendar: https://calendarmcp.googleapis.com/mcp/v1 - √ Connected
+context7: https://mcp.context7.com/mcp (HTTP) - √ Connected
+stitch: https://stitch.googleapis.com/mcp (HTTP) - √ Connected

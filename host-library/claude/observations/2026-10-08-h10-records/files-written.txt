@@ -1,0 +1,5 @@
+Files each headless run added or changed in its scratch directory (the sha256 manifest of every file outside .git, before and after the run).
+h10a-suite: ./docs/pilot/creative/petpal-pilot_comfort_static_1080x1350_v1.svg, ./docs/pilot/creative/petpal-pilot_comfort_static_1080x1920_v1.svg, ./docs/pilot/creative/petpal-pilot_comfort_static_1200x628_v1.svg, ./docs/pilot/creative/petpal-pilot_proof_static_1080x1350_v1.svg, ./docs/pilot/creative/petpal-pilot_proof_static_1080x1920_v1.svg, ./docs/pilot/creative/petpal-pilot_proof_static_1200x628_v1.svg, ./docs/pilot/creative/petpal-pilot_trust_static_1080x1350_v1.svg, ./docs/pilot/creative/petpal-pilot_trust_static_1080x1920_v1.svg, ./docs/pilot/creative/petpal-pilot_trust_static_1200x628_v1.svg
+h10b-plain: none
+h10b-injected: none
+h10c-photo: ./ad-feed-1x1-photo-slot.svg, ./hero-photo-brief.md
