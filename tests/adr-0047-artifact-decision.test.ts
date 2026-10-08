@@ -40,7 +40,7 @@ describe('ADR 0047: the creative designer may publish to Claude Design', () => {
     const a = adr();
     for (const piece of [/One role holds the tool/, /Publishing is opt-in/, /Private and reported/, /The how lives in a skill/, /The floor says what leaves the project/, /No guard script yet/, /Availability is stated/]) expect(a).toMatch(piece);
     expect(a).toMatch(/agency-creative-designer/);
-    expect(a).toMatch(/`claude-design-artifacts`/);
+    expect(a).toMatch(/`design-artifact-publishing`/);
     expect(a).toMatch(/go-ahead for each publish/);
   });
 
@@ -94,6 +94,6 @@ describe('what is built today', () => {
   it('is nothing: her tools line has no Artifact yet, which is what the ADR says (S12 flips this with the ADR)', () => {
     const tools = /^tools: (.*)$/m.exec(nativeText('agency-creative-designer'))![1]!.split(',').map(t => t.trim());
     expect(tools).not.toContain('Artifact');
-    expect(fs.existsSync(path.resolve('registry/skills/claude-design-artifacts/SKILL.md'))).toBe(false);
+    expect(fs.existsSync(path.resolve('registry/skills/design-artifact-publishing/SKILL.md'))).toBe(false);
   });
 });
