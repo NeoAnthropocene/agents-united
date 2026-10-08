@@ -1,0 +1,62 @@
+[
+ {
+  "run": "h10f1-display",
+  "file": "petpal_trust_static_160x600_v1.svg",
+  "canvas": "160x600",
+  "texts": 9,
+  "buttons": 1,
+  "minFont": 12,
+  "defects": []
+ },
+ {
+  "run": "h10f1-display",
+  "file": "petpal_trust_static_300x250_v1.svg",
+  "canvas": "300x250",
+  "texts": 6,
+  "buttons": 1,
+  "minFont": 13,
+  "defects": []
+ },
+ {
+  "run": "h10f1-display",
+  "file": "petpal_trust_static_728x90_v1.svg",
+  "canvas": "728x90",
+  "texts": 4,
+  "buttons": 1,
+  "minFont": 12,
+  "defects": []
+ },
+ {
+  "run": "h10f2-longcopy",
+  "file": "petpal_trust_static_1080x1350_v1.svg",
+  "canvas": "1080x1350",
+  "texts": 2,
+  "buttons": 1,
+  "minFont": 44,
+  "defects": []
+ },
+ {
+  "run": "h10f2-longcopy",
+  "file": "petpal_trust_static_1200x628_v1.svg",
+  "canvas": "1200x628",
+  "texts": 2,
+  "buttons": 0,
+  "minFont": 36,
+  "defects": []
+ },
+ {
+  "run": "h10g2-note",
+  "file": "feed-4x5-fixed.svg",
+  "canvas": "1080x1350",
+  "texts": 6,
+  "buttons": 1,
+  "minFont": 36,
+  "defects": [
+   {
+    "kind": "text-overlaps-text",
+    "a": "Sitters you",
+    "b": "can trust"
+   }
+  ]
+ }
+]

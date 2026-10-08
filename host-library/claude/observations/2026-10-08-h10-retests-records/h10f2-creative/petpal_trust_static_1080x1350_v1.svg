@@ -1,0 +1,28 @@
+<svg viewBox="0 0 1080 1350" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+  <title id="t">PetPal 4:5 feed ad</title>
+  <desc id="d">Background-checked sitters, reviewed by your neighbours and insured up to $1M, for dogs, cats and small pets</desc>
+  <!-- 4:5 Feed Ad, 1080x1350. Safe zone 80%: x 108-972, y 135-1215. Tokens: surface.base #FFF8F0, surface.accent #F3D9B1, text.default #2B1D14, cta.primary #B5451B -->
+  <rect width="1080" height="1350" fill="#FFF8F0"/>
+  <!-- Wordmark (text.default on surface.base) -->
+  <text x="108" y="190" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="#2B1D14">PetPal</text>
+  <!-- Accent rule -->
+  <rect x="108" y="250" width="96" height="12" fill="#B5451B"/>
+  <!-- Headline, whole, 72px bold, 80px leading, 6 lines max 19 chars -->
+  <text font-family="Helvetica, Arial, sans-serif" font-size="72" font-weight="700" fill="#2B1D14">
+    <tspan x="108" y="350">Background-checked</tspan>
+    <tspan x="108" y="430">sitters, reviewed</tspan>
+    <tspan x="108" y="510">by your neighbours</tspan>
+    <tspan x="108" y="590">and insured up to</tspan>
+    <tspan x="108" y="670">$1M, for dogs, cats</tspan>
+    <tspan x="108" y="750">and small pets</tspan>
+  </text>
+  <!-- Accent panel with decorative paw mark (no photography supplied) -->
+  <rect x="0" y="840" width="1080" height="510" fill="#F3D9B1"/>
+  <g aria-hidden="true" fill="#2B1D14">
+    <ellipse cx="540" cy="1110" rx="130" ry="100"/>
+    <ellipse cx="390" cy="990" rx="40" ry="55" transform="rotate(-20 390 990)"/>
+    <ellipse cx="480" cy="930" rx="42" ry="58"/>
+    <ellipse cx="600" cy="930" rx="42" ry="58"/>
+    <ellipse cx="690" cy="990" rx="40" ry="55" transform="rotate(20 690 990)"/>
+  </g>
+</svg>

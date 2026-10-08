@@ -1,0 +1,27 @@
+<svg viewBox="0 0 1200 628" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+  <title id="t">PetPal 1.91:1 link ad</title>
+  <desc id="d">Background-checked sitters, reviewed by your neighbours and insured up to $1M, for dogs, cats and small pets</desc>
+  <!-- 1.91:1 Link Ad, 1200x628. Safe zone 80%: x 120-1080, y 63-565. Tokens: surface.base #FFF8F0, surface.accent #F3D9B1, text.default #2B1D14, cta.primary #B5451B -->
+  <rect width="1200" height="628" fill="#FFF8F0"/>
+  <!-- Wordmark -->
+  <text x="120" y="110" font-family="Helvetica, Arial, sans-serif" font-size="36" font-weight="700" fill="#2B1D14">PetPal</text>
+  <!-- Headline, whole, 48px bold, 58px leading, 6 lines max 20 chars -->
+  <text font-family="Helvetica, Arial, sans-serif" font-size="48" font-weight="700" fill="#2B1D14">
+    <tspan x="120" y="190">Background-checked</tspan>
+    <tspan x="120" y="248">sitters, reviewed by</tspan>
+    <tspan x="120" y="306">your neighbours and</tspan>
+    <tspan x="120" y="364">insured up to $1M,</tspan>
+    <tspan x="120" y="422">for dogs, cats and</tspan>
+    <tspan x="120" y="480">small pets</tspan>
+  </text>
+  <!-- Accent panel with decorative paw mark -->
+  <rect x="840" y="0" width="360" height="628" fill="#F3D9B1"/>
+  <rect x="840" y="0" width="12" height="628" fill="#B5451B"/>
+  <g aria-hidden="true" fill="#2B1D14" transform="translate(1026 314) scale(0.8) translate(-540 -1040)">
+    <ellipse cx="540" cy="1110" rx="130" ry="100"/>
+    <ellipse cx="390" cy="990" rx="40" ry="55" transform="rotate(-20 390 990)"/>
+    <ellipse cx="480" cy="930" rx="42" ry="58"/>
+    <ellipse cx="600" cy="930" rx="42" ry="58"/>
+    <ellipse cx="690" cy="990" rx="40" ry="55" transform="rotate(20 690 990)"/>
+  </g>
+</svg>

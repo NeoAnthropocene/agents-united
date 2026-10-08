@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 76298,
+  "stop_reason": "end_turn",
+  "session_id": "3bcee18e-9f6a-4929-913e-5306c3951fe9",
+  "total_cost_usd": 0.2558812,
+  "usage": {
+    "input_tokens": 8,
+    "cache_creation_input_tokens": 34787,
+    "cache_read_input_tokens": 112036,
+    "output_tokens": 9431,
+    "output_tokens_details": {
+      "thinking_tokens": 4585
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 34787,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1186,
+        "cache_read_input_tokens": 40997,
+        "cache_creation_input_tokens": 3436,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 3436
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 8,
+      "outputTokens": 9431,
+      "cacheReadInputTokens": 112036,
+      "cacheCreationInputTokens": 34787,
+      "webSearchRequests": 0,
+      "costUSD": 0.2558812,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 4585,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 11,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "I wrote the three PetPal banners and re-read each file after writing. I haven't rendered them, so the layouts come from my own arithmetic on character widths and positions, and I haven't checked them in a browser.\n\nEach banner uses the hero.ts copy word for word: \"Sitters you can trust\", the subhead and \"Book now\". There's no photography, so the visual is a paw mark from SVG shapes on a sand panel, plus a small \"PetPal\" text wordmark. No logo file was supplied, so the wordmark is a placeholder.\n\nThe CTA fill is `color.cta.primary` (#B5451B) with white text. Headlines are `color.text.default`, subheads `color.text.muted`, and the background is `color.surface.base`. I left the proof line (\"4.9 average rating, 12,000 stays\") out to keep one message per banner.\n\n| File | Size | Safe zone (80%) |\n|---|---|---|\n| `petpal_trust_static_300x250_v1.svg` | 300×250 | x30–270, y25–225 |\n| `petpal_trust_static_728x90_v1.svg` | 728×90 | x73–655, y9–81 |\n| `petpal_trust_static_160x600_v1.svg` | 160×600 | x16–144, y60–540 |\n\nAll three are in `docs/pilot/creative/`. The file names follow the skill's `<campaign>_<angle>_<format>_<size>_v<n>` convention.\n\nThe SVGs are the files listed above; I haven't pasted their code into this message, because it would only repeat what's on disk. Each file is a single `viewBox` block at its own size, with the safe-zone note and the token for each colour in its comments.\n\n**Contrast** (my own arithmetic, not a tool run):\n\n| Pair | Ratio | Needed |\n|---|---|---|\n| Headline on cream | about 15.5:1 | 3:1 |\n| Subhead on cream | about 7.4:1 | 4.5:1 |\n| \"PetPal\" wordmark (clay) on cream | about 5.2:1 | 4.5:1 |\n| White CTA label on clay | about 5.5:1 | 4.5:1 |\n| Paw mark on sand (160×600 only) | about 4.0:1 | 3:1 |\n\n**Deviations and risks**\n- **Type sizes:** The 96/36/28 px type scale is defined for 1080-px canvases, so I scaled it down for these small sizes. Headlines are 24–30 px and subheads 12–13 px, which is below the skill's 24 px guideline for 1080-wide designs. The 12 px subhead in 728×90 and 160×600 is the weakest point for legibility. If it fails in review, shorten the line rather than shrink the type.\n- **Fonts:** Text widths assume Helvetica or Arial. A fallback font could push the 728×90 subhead toward the CTA, which has about 45 px of slack.\n- **Platform sizes:** I took the three sizes from the brief and haven't checked them against any platform's current specification. Verify them before export.\n- **Claims:** \"Insured up to $1M\" and \"background-checked\" are fictional, unsubstantiated claims from hero.ts. In a real run they would go to Defne for review before launch.\n\n**Open items**\n- None are blocking. If you want a variant round, hero.ts has two more hooks (\"Your dog, happy at home\" and \"12,000 stays, 4.9 stars\"). They'd change only the headline, so a result would have one explanation.\n- I didn't mark any task completed: I had no task list in this brief.\n- Peer messages received: none.",
+  "ttft_ms": 2434,
+  "type": "result",
+  "duration_ms": 79108,
+  "uuid": "0e951798-7518-4c44-a7a9-80e7f3fcea1e",
+  "ttft_stream_ms": 2092,
+  "time_to_request_ms": 191,
+  "first_content_frame_ms": 2092,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

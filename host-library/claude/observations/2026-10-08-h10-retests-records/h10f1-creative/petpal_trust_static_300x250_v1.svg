@@ -1,0 +1,21 @@
+<svg viewBox="0 0 300 250" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+  <!-- 300x250 Medium Rectangle. Safe zone (80%): x30-270, y25-225. Source: design-tokens.json, copy: hero.ts (angle: trust) -->
+  <title id="t">PetPal: Sitters you can trust</title>
+  <desc id="d">Background-checked, reviewed by neighbours, insured up to $1M. Book now.</desc>
+  <rect width="300" height="250" fill="#FFF8F0"/> <!-- color.surface.base -->
+  <circle cx="290" cy="225" r="80" fill="#F3D9B1"/> <!-- color.surface.accent, decorative -->
+  <g aria-hidden="true" transform="translate(250 198) scale(1.2)" fill="#B5451B"> <!-- paw mark, decorative -->
+    <ellipse cx="0" cy="10" rx="14" ry="11"/>
+    <circle cx="-17" cy="-4" r="6"/><circle cx="-6" cy="-14" r="6.5"/><circle cx="6" cy="-14" r="6.5"/><circle cx="17" cy="-4" r="6"/>
+  </g>
+  <g font-family="Helvetica, Arial, sans-serif">
+    <text x="30" y="52" font-size="16" font-weight="700" fill="#B5451B">PetPal</text> <!-- clay on cream 5.2:1 -->
+    <text x="30" y="88" font-size="30" font-weight="700" fill="#2B1D14">Sitters you</text> <!-- cocoa-900 on cream 15.5:1 -->
+    <text x="30" y="122" font-size="30" font-weight="700" fill="#2B1D14">can trust</text>
+    <text x="30" y="152" font-size="13" fill="#6B4B35">Background-checked, reviewed by</text> <!-- cocoa-600 on cream 7.4:1 -->
+    <text x="30" y="170" font-size="13" fill="#6B4B35">neighbours, insured up to $1M.</text>
+    <rect x="30" y="184" width="130" height="36" rx="12" fill="#B5451B"/> <!-- color.cta.primary, radius.md -->
+    <text x="95" y="207" font-size="16" font-weight="700" text-anchor="middle" fill="#FFFFFF">Book now</text> <!-- white on clay 5.5:1 -->
+  </g>
+  <rect x="0.5" y="0.5" width="299" height="249" fill="none" stroke="#6B4B35"/>
+</svg>
