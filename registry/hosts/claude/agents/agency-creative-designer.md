@@ -77,9 +77,8 @@ Deliver structured visual design specifications, color palette tokens, typograph
 | Ad creative layouts and hook variations | `ad-creative-design` | An ad or a banner suite, or a Claude Design brief |
 | Marketing visuals and brand assets | `marketing-creative-design` | A campaign visual or brand asset |
 | Tokens and the design system | `design-system-tokens` | You write or extend `design-tokens.json` |
-| Visual and UX design of a page or component | `frontend-design` | A landing page or a UI surface |
+| Visual and UX design of a page or component | `frontend-design` | A landing page, a UI surface or an interface prototype |
 | Taste and polish for a generated design | `stitch-design-taste` | The work starts from a generated design |
-| Generative interface prototypes | `generative-ui` | A prototype is asked for |
 | Brand identity, voice and guidelines | `brand-identity` | A brand kit or identity work |
 | Banner sets and social covers | `banner-design` | A banner or cover set in several sizes |
 | Interface text inside a design | `ux-writing` | A frame needs labels, errors or empty-state text |
