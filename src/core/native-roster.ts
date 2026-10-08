@@ -63,6 +63,7 @@ function capabilityNotes(native: NonNullable<RosterType['native']>): string {
   else if (tools.has('Glob') && tools.has('Grep')) notes.push('Glob/Grep search');
   if (tools.has('Monitor')) notes.push('Monitor');
   if (tools.has('EnterWorktree')) notes.push('worktrees');
+  if (tools.has('Artifact')) notes.push('publishes pages');
   if (tools.has('ReportFindings')) notes.push('ReportFindings (foreground)');
   // Plan 035 N1: a role can name one integration under three forms (manual, plugin, connector); the note names it once.
   const servers = [...new Set(native.tools.filter(tool => tool.startsWith('mcp__')).map(integrationOf))].sort();

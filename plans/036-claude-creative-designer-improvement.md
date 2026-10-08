@@ -118,7 +118,7 @@ Milestones: **M1** fit and baseline (S0 to S3), **M2** probes (S4, S5), **M3** o
 | S9 | M3 | **Claude Design brief and intake** (O1): the brief block in `ad-creative-design`, her sentence, Deniz's intake rule, the term in `CONTEXT.md`; no new tool | **done** (PR 180) |
 | S10 | M3 | **Claude Design token form** (O2): `design-system-tokens/references/claude-design-format.md` with two worked examples held to the rules by a tested converter; no script (D24) | **done** (PR 181) |
 | S11 | M5 | **The Design artifact skill** (Q8): `design-artifact-publishing` and its row in her table; the rules P3 showed she skips | proposed |
-| S12 | M5 | **The grant** (O3, ADR 0047): `Artifact` in her tools, one floor line, the lead's go-ahead sentence | proposed, after S11; the floor line needs the maintainer's yes |
+| S12 | M5 | **The grant** (O3, ADR 0047): `Artifact` in her tools, one floor line, the lead's go-ahead sentence, a roster note | **in review**; the floor line needs the maintainer's yes |
 | S13 | M5 | **Evidence**: H10h and H10i on a real install, and H10j (a prototype brief) before and after S1 | proposed, gated on a maintainer sitting |
 | S14 | M5 | **`logo-design`**: no skill creates a logo today | proposed, gated on Q9 |
 | S15 | M5 | **`color-theory`**: palette from a seed, harmony, roles, accessible pairs | proposed, gated on Q9 |

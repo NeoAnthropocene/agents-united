@@ -506,7 +506,7 @@ A pasteable block (`CLAUDE DESIGN BRIEF: ...`) that the creative designer ends h
 _Avoid_: Design prompt, design export
 
 **Design artifact**:
-An Artifact of the Design type (a canvas of artboards) or the Design System type (tokens in list form, a brand book and a cover) that the creative designer publishes to Claude Design through the `Artifact` tool, only when the user asks, private, and then reads back (Plan 036 S11, ADR 0047). The skill `design-artifact-publishing` carries the rules; the vendor format is read live from the type's own instructions.
+An Artifact of the Design type (a canvas of artboards) or the Design System type (tokens in list form, a brand book and a cover) that the creative designer publishes to Claude Design through the `Artifact` tool, only when the user asks, private, and then reads back (Plan 036 S11, ADR 0047). The lead offers it to the user as the option **Publish Artifact**, whose description says where the page goes, who can see it, what it needs and that client material leaves the project (S12). The skill `design-artifact-publishing` carries the rules; the vendor format is read live from the type's own instructions.
 _Avoid_: calling a plain SVG or HTML file one, saying it is shared, publishing as a side effect of a design task
 
 ### Testing & Code Quality Standards
