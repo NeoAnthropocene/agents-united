@@ -20,6 +20,7 @@ import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { CLAUDE_FIELD_POLICY, validateProjectionOverlays } from './overlays.js';
 import { nativeHookSource, nativeRoleSource, nativeWorkflowSource, renderNativeHook, renderNativeRole, renderNativeWorkflow } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
+import { unsupportedSkillNames } from './host-profile.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
 export interface ClaudeRenderResult {
@@ -892,7 +893,11 @@ export class ClaudeProjector {
     if (guardForm === 'file') artifacts.push(...ClaudeProjector.nativeGuardArtifacts(registryDir, ClaudeProjector.nativeGuardKinds(registryDir, nativeRoleNames)));
 
     // 2. Skills, plus every auxiliary resource copied byte-for-byte.
+    // Plan 036 S1b — a skill the Claude profile lists as unsupported (written for another host) is not projected; the canonical store keeps it.
+    // The doctor plans with this method too, so it never expects the projection, and `applyCompoundLane` prunes a copy an earlier release made.
+    const unsupported = unsupportedSkillNames(registryDir, 'claude');
     for (const skillName of resolved.skills || []) {
+      if (unsupported.has(skillName)) continue;
       const skillDir = path.join(registryDir, 'skills', skillName);
       const skillFile = path.join(skillDir, 'SKILL.md');
       if (!(await fs.pathExists(skillFile))) continue;

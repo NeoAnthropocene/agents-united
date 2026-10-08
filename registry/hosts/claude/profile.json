@@ -222,5 +222,12 @@
       "status": "unsupported",
       "note": "No image-generation tool exists on this host; asset creation happens outside the agent run"
     }
-  }
+  },
+  "unsupportedSkills": [
+    {
+      "name": "generative-ui",
+      "since": "2026-10-08",
+      "rationale": "Written for Antigravity: it tells the model to save a widget with write_to_file, set ArtifactMetadata and embed it with an agent-embed tag, none of which Claude Code has. It stays in the registry and the canonical store for the hosts that do have them (Plan 036 F1, S1b)."
+    }
+  ]
 }
