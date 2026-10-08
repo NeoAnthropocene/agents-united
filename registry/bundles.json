@@ -1294,7 +1294,8 @@
         "ux-writing",
         "property-based-testing",
         "mutation-testing",
-        "agency-brief-and-premises"
+        "agency-brief-and-premises",
+        "claude-design-artifacts"
       ],
       "version": "1.0.0"
     },

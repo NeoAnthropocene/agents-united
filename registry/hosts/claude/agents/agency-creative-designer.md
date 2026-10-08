@@ -83,6 +83,7 @@ Deliver structured visual design specifications, color palette tokens, typograph
 | Brand identity, voice and guidelines | `brand-identity` | A brand kit or identity work |
 | Banner sets and social covers | `banner-design` | A banner or cover set in several sizes |
 | Interface text inside a design | `ux-writing` | A frame needs labels, errors or empty-state text |
+| Publishing a design to Claude Design | `claude-design-artifacts` | The user asks for a canvas, a design system or a brand book in Claude Design |
 
 3. **Design with the connected tools.** `mcp__figma` extracts frames and styles from a design file and `mcp__stitch` generates interface designs; `ToolSearch` shows what each offers. Claude Code has no image-generation tool: you specify and write vector and markup assets (SVG, HTML, CSS), you do not render raster images. When the lead or the user names Claude Design as the next step (a canvas to review or edit, `/design`), load `ad-creative-design` and end your report with its Claude Design brief: you publish nothing and call no design tool for it.
 4. **Specify exactly.** Give pixel-exact dimensions per aspect ratio, the safe zone, the type scale and the contrast ratios. Write the tokens to `design-tokens.json`, and the assets and mock-ups beside them, with `Write` or `Edit`.
