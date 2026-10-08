@@ -314,8 +314,8 @@ describe('the Sitting K observation: H10h, the Design canvas re-run', () => {
 });
 
 describe('the Sitting K observation: H10i, the Design System re-run', () => {
-  const tokens = (): { colors: Array<{ usage?: string }>; spacing: Array<{ usage?: string }>; radius: Array<{ usage?: string }> } =>
-    JSON.parse(record('published-h10i/tokens.json')) as ReturnType<typeof tokens>;
+  type Group = { tokens: Array<{ usage?: string }> };
+  const tokens = (): { color: Group; spacing: Group; radius: Group } => JSON.parse(record('published-h10i/tokens.json')) as ReturnType<typeof tokens>;
 
   it('holds tokens.json to the converter: the validator finds no problem, no nested $value, 0 differences, and the type block differs only by usage fields', () => {
     const t = record('tokens-comparison.txt');
@@ -330,9 +330,10 @@ describe('the Sitting K observation: H10i, the Design System re-run', () => {
 
   it('has 18 colour, spacing and radius tokens of which 16 have an empty usage note, and her answer says 15, so a count in her report is wrong', () => {
     const t = tokens();
-    const all = [...(t.colors ?? []), ...(t.spacing ?? []), ...(t.radius ?? [])];
+    const all = [...t.color.tokens, ...t.spacing.tokens, ...t.radius.tokens];
     expect(all).toHaveLength(18);
-    expect(all.filter(x => !x.usage).length).toBe(16);
+    expect(t.color.tokens.filter(x => !x.usage)).toHaveLength(10);
+    expect(all.filter(x => !x.usage)).toHaveLength(16);
     expect(record('answer-h10i-rerun.md')).toMatch(/15 of 18 colour, spacing and radius tokens have an empty usage note/);
     const o = observation();
     expect(o).toMatch(/15 of 18/);
@@ -364,7 +365,7 @@ describe('the Sitting K observation: H10i, the Design System re-run', () => {
 
   it('says in the README only what the source says, marks the two cover inferences, and still claims a list of open items that the README does not hold', () => {
     const readme = record('published-h10i/README.md');
-    expect(readme).toMatch(/tagline[^.]*placeholder/);
+    expect(readme).toMatch(/tagline[\s\S]*?is a placeholder written for the cover/);
     expect(readme).toMatch(/inferred from the radius tokens/);
     expect(readme).toMatch(/they are listed as open items for the owner/);
     expect(readme).not.toMatch(/^#+ .*open items/im);

@@ -1,0 +1,12 @@
+H10h  cocoa 900 on cream               #2B1D14 on #FFF8F0  computed 15.47  she gave 15.5  right to one decimal
+H10h  cocoa 600 on cream               #6B4B35 on #FFF8F0  computed 7.43  she gave 7.4  right to one decimal
+H10h  cocoa 600 on sand                #6B4B35 on #F3D9B1  computed 5.73  she gave 5.7  right to one decimal
+H10h  white on clay                    #FFFFFF on #B5451B  computed 5.48  she gave 5.5  right to one decimal
+H10h  cocoa 900 on sand                #2B1D14 on #F3D9B1  computed 11.93  she gave 11.9  right to one decimal
+H10i  text-default on surface-base     #2B1D14 on #FFF8F0  computed 15.47  she gave 15.5  right to one decimal
+H10i  text-default on surface-accent   #2B1D14 on #F3D9B1  computed 11.93  she gave 11.9  right to one decimal
+H10i  text-muted on surface-base       #6B4B35 on #FFF8F0  computed 7.43  she gave 7.4  right to one decimal
+H10i  text-muted on surface-accent     #6B4B35 on #F3D9B1  computed 5.73  she gave 5.7  right to one decimal
+H10i  text-on-action on cta-primary    #FFFFFF on #B5451B  computed 5.48  she gave 5.5  right to one decimal
+H10i  text-muted on cta-primary        #6B4B35 on #B5451B  computed 1.43  she gave 1.4  right to one decimal
+11 figures, 0 wrong

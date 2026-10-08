@@ -1,0 +1,14 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": { "v": 1, "at": "2026-10-08T00:00:00Z" },
+  "title": "PetPal",
+  "namespace": "PetPal",
+  "libraries": [],
+  "sections": {},
+  "groups": [],
+  "assetGroups": {},
+  "blobs": {},
+  "docs": { "readme": "project/README.md", "sections": [] },
+  "lastChange": { "by": "Claude", "via": "Claude Code", "at": "2026-10-08T00:00:00Z", "note": "Scratch import of docs/pilot/design-tokens.json" }
+}

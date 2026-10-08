@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PetPal booking – clickable prototype</title>
+<style>
+/* Values come from docs/pilot/design-tokens.json. Sizes marked "scaled" are the 1080 px canvas tokens
+   rescaled for a 390 px phone screen (see the handback note). */
+:root {
+  --color-cocoa-900: #2B1D14;
+  --color-cocoa-600: #6B4B35;
+  --color-clay-600: #B5451B;
+  --color-cream-50: #FFF8F0;
+  --color-sand-300: #F3D9B1;
+  --color-white: #FFFFFF;
+
+  --text-default: var(--color-cocoa-900);
+  --text-muted: var(--color-cocoa-600);
+  --text-on-action: var(--color-white);
+  --surface-base: var(--color-cream-50);
+  --surface-accent: var(--color-sand-300);
+  --cta-primary: var(--color-clay-600);
+
+  --font-base: Helvetica, Arial, sans-serif;
+  --font-headline: 32px; /* scaled from 96px */
+  --font-body: 16px;     /* scaled from 36px */
+  --font-caption: 14px;  /* scaled from 28px, kept legible */
+
+  --space-1: 8px; --space-2: 16px; --space-4: 32px; --space-8: 64px;
+  --radius-md: 12px; --radius-pill: 999px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface-accent); color: var(--text-default); font-family: var(--font-base); font-size: var(--font-body); line-height: 1.4; }
+main { max-width: 390px; min-height: 100vh; margin: 0 auto; background: var(--surface-base); padding: var(--space-4) var(--space-2); }
+.proto-note { font-size: var(--font-caption); color: var(--text-muted); margin: 0 0 var(--space-2); }
+h1 { font-size: var(--font-headline); line-height: 1.1; margin: 0 0 var(--space-1); }
+.lead { color: var(--text-muted); margin: 0 0 var(--space-4); }
+ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.card { display: grid; grid-template-columns: 64px 1fr; gap: var(--space-2); padding: var(--space-2); background: var(--color-white); border: 1px solid var(--surface-accent); border-radius: var(--radius-md); }
+.avatar { width: 64px; height: 64px; border-radius: var(--radius-pill); background: var(--surface-accent); display: grid; place-items: center; }
+.card h2 { font-size: var(--font-body); margin: 0; }
+.meta { font-size: var(--font-caption); color: var(--text-muted); margin: 2px 0 0; }
+.row { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.price { font-weight: 700; }
+button { font: inherit; min-height: 48px; min-width: 48px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: 2px solid var(--cta-primary); cursor: pointer; }
+.primary { background: var(--cta-primary); color: var(--text-on-action); font-weight: 700; }
+.secondary { background: transparent; color: var(--text-default); border-color: var(--text-muted); }
+button:disabled { background: var(--surface-accent); color: var(--text-default); border-color: var(--surface-accent); cursor: default; }
+button:focus-visible { outline: 3px solid var(--text-default); outline-offset: 3px; }
+dialog { width: min(358px, calc(100vw - 32px)); padding: var(--space-4) var(--space-2); border: 0; border-radius: var(--radius-md); background: var(--surface-base); color: var(--text-default); }
+dialog::backdrop { background: rgba(43, 29, 20, .6); }
+dialog h2 { font-size: 24px; margin: 0 0 var(--space-1); }
+dialog p { margin: 0 0 var(--space-2); }
+.actions { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.actions button { flex: 1 1 140px; padding: 0 var(--space-2); }
+#status { font-size: var(--font-caption); color: var(--text-muted); min-height: 1.4em; margin: var(--space-2) 0 0; }
+@media (prefers-reduced-motion: no-preference) { button { transition: background-color .15s; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="proto-note">Prototype with sample sitters. Nothing is booked or sent.</p>
+  <header>
+    <h1>Find a sitter</h1>
+    <p class="lead">Three sitters near you.</p>
+  </header>
+  <ul id="sitters"></ul>
+  <p id="status" role="status" aria-live="polite"></p>
+
+  <dialog id="confirm" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title">Book <span id="c-name"></span>?</h2>
+      <p id="c-detail"></p>
+      <div class="actions">
+        <button class="secondary" value="cancel">Not now</button>
+        <button class="primary" value="confirm" id="c-ok">Confirm booking</button>
+      </div>
+    </form>
+  </dialog>
+</main>
+
+<script>
+const sitters = [
+  { id: "mara",  name: "Mara Quill",   initials: "MQ", services: "Dog walks, drop-ins",     distance: "0.8 km", price: "$24 per visit" },
+  { id: "teo",   name: "Teo Ardent",   initials: "TA", services: "Overnight stays, cats",   distance: "1.6 km", price: "$38 per night" },
+  { id: "ines",  name: "Ines Harrow",  initials: "IH", services: "Daycare, small dogs",     distance: "2.3 km", price: "$30 per day" }
+];
+const list = document.getElementById("sitters");
+const dlg = document.getElementById("confirm");
+const statusEl = document.getElementById("status");
+let current = null, opener = null;
+
+for (const s of sitters) {
+  const li = document.createElement("li");
+  li.className = "card";
+  li.innerHTML = `
+    <div class="avatar" aria-hidden="true">
+      <svg width="40" height="40" viewBox="0 0 40 40"><text x="20" y="26" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#2B1D14">${s.initials}</text></svg>
+    </div>
+    <div><h2>${s.name}</h2><p class="meta">${s.services}</p><p class="meta">${s.distance} away</p></div>
+    <div class="row"><span class="price">${s.price}</span>
+      <button class="primary" data-id="${s.id}" aria-label="Book ${s.name} now">Book now</button></div>`;
+  list.appendChild(li);
+}
+
+list.addEventListener("click", e => {
+  const b = e.target.closest("button[data-id]");
+  if (!b || b.disabled) return;
+  current = sitters.find(s => s.id === b.dataset.id);
+  opener = b;
+  document.getElementById("c-name").textContent = current.name;
+  document.getElementById("c-detail").textContent = `${current.services}. ${current.price}.`;
+  dlg.showModal();
+});
+
+dlg.addEventListener("close", () => {
+  if (dlg.returnValue === "confirm" && current) {
+    opener.textContent = "Booked";
+    opener.disabled = true;
+    opener.setAttribute("aria-label", `${current.name} booked`);
+    statusEl.textContent =`${current.name} booked (prototype only).`;
+  } else if (opener) {
+    opener.focus();
+  }
+  dlg.returnValue = "";
+});
+</script>
+</body>
+</html>

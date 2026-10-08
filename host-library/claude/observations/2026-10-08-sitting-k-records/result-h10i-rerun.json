@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 133566,
+  "stop_reason": "end_turn",
+  "session_id": "984c52f7-d7ba-4e28-b321-8d10bb42aceb",
+  "total_cost_usd": 0.6751660000000002,
+  "usage": {
+    "input_tokens": 22,
+    "cache_creation_input_tokens": 99676,
+    "cache_read_input_tokens": 750190,
+    "output_tokens": 12638,
+    "output_tokens_details": {
+      "thinking_tokens": 4936
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 99676,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1053,
+        "cache_read_input_tokens": 98598,
+        "cache_creation_input_tokens": 1078,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1078
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 22,
+      "outputTokens": 12638,
+      "cacheReadInputTokens": 750190,
+      "cacheCreationInputTokens": 99676,
+      "webSearchRequests": 0,
+      "costUSD": 0.6751660000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 4936,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 23,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "The PetPal design system is published, private, and I haven't touched its sharing: https://claude.ai/artifact/9CrVbP[elided]\n\nOnly you can open the link until you share it from the page's Share menu. This is project material leaving the repo, which is fine for a scratch exercise.\n\n**What I did**\n- **Tokens:** I built `project/tokens.json` from `docs/pilot/design-tokens.json`, in the list form Claude Design reads (from the design-system-tokens skill's reference). The nested `$value` form would show up empty on the page. Counts: 12 colours (6 palette, 6 role aliases that all point at palette colours), 1 font family, 3 type styles, 4 spacing steps and 2 radii.\n- **Brand book:** `project/README.md` has what the source states, its two rules, and a contrast table. It also lists what the source doesn't cover.\n- **Cover:** The system type requires a cover (`components/Cover/preview.html`). I made one from palette colours, with a pattern of discs and pills.\n- **Index:** `project/design-system.json` is the required index file.\n- **Read-back:** I read all four files back after the first publish. Token content and README are as written. I then corrected two overclaiming sentences (one in the README, one in the cover's derivation comment) and republished. I did not read the corrected README or cover back, and neither the new README nor the new cover was checked. The artifact is now at version 4.\n\n**What I did not check**\n- **Rendering:** I didn't render or look at the page. The cover layout (the name and tagline fitting the left zone, nothing crossing it) is checked only against my own numbers, not by eye.\n- **Contrast figures:** The README's contrast ratios are hand-computed from the hex values, not run through a tool, and the README says so.\n- **Parsing:** I had no shell, so `tokens.json` was not parsed by a tool. I checked by eye that names are unique and aliases resolve.\n- **File sizes:** The sizes the listing reports were not compared with byte counts of what I wrote.\n- **Dropped values:** I can't see which values the page itself drops. For example, whether `font.size` entries without weights or line heights display fully.\n\n**Placeholders and gaps**\n- **Placeholder time:** Both timestamps in `design-system.json` are `2026-10-08T00:00:00Z`, because I have no clock.\n- **Invented tagline:** The cover tagline, \"Everyday care for pets and the people who feed them.\", is mine. The source has no tagline, and the README says so.\n- **Empty usage notes:** 15 of 18 colour, spacing and radius tokens have an empty usage note, because the source gives only two. The headline style's note comes from the source. Nothing was invented to fill them.\n- **Missing from the source:** No dark theme, font weights, line heights or font files.\n\n**Not done**\n- I did not write a `claude-design-tokens.json` next to the source in `docs/pilot/`. The published `tokens.json` is that conversion. I can add the copy if you want the repo to hold it.\n- The design-system type is on contract 0.2.47 and the newest is 0.2.74. I left it as the type set it.",
+  "ttft_ms": 3265,
+  "type": "result",
+  "duration_ms": 144271,
+  "uuid": "f217bf56-6403-4d78-ab94-9679c41c6deb",
+  "ttft_stream_ms": 2569,
+  "time_to_request_ms": 272,
+  "first_content_frame_ms": 2569,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

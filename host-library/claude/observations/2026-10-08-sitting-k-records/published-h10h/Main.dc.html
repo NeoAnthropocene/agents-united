@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PetPal feed ad</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1080px; height: 1350px; box-sizing: border-box; padding: 64px 64px 160px 64px; background: #FFF8F0; color: #2B1D14; font-family: Helvetica, Arial, sans-serif; display: flex; flex-direction: column; gap: 32px">
+<h1 style="margin: 0; font-size: 96px; line-height: 1.05; font-weight: 700; color: #2B1D14">Sitters you can trust</h1>
+<div style="flex-grow: 1; box-sizing: border-box; padding: 64px; background: #F3D9B1; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between">
+<p style="margin: 0; font-size: 28px; color: #6B4B35">[Photo: sitter with a dog]</p>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<p style="margin: 0; font-size: 36px; line-height: 1.35; color: #2B1D14">Background-checked, reviewed by neighbours, insured up to $1M.</p>
+<p style="margin: 0; font-size: 28px; line-height: 1.2; color: #6B4B35">4.9 average rating, 12,000 stays</p>
+</div>
+</div>
+<button data-testid="hero-primary-cta" style="align-self: flex-start; min-height: 96px; padding: 0 64px; border: 0; border-radius: 999px; background: #B5451B; color: #FFFFFF; font-family: inherit; font-size: 36px; font-weight: 700">Book now</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1080,"height":1350}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

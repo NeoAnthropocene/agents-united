@@ -1,0 +1,1 @@
+Scratch exercise, no real client. Build an interface prototype of the PetPal booking screen that I can click through: a list of three sitters, each with a Book now button that opens a confirmation. Use `docs/pilot/design-tokens.json`, and write the prototype under `docs/pilot/prototype/`. No photography is supplied.
