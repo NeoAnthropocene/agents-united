@@ -88,11 +88,11 @@ describe('the Claude Design exploration: the repository facts its argument rests
     expect(DOC).toMatch(/`subagents: available`/);
   });
 
-  it('neither designer holds Artifact today, and both hold Stitch, as the exploration says', () => {
+  it('the front-end roles hold no Artifact, and all three designers hold Stitch; the creative designer holds Artifact since ADR 0047 (the exploration was written before the grant)', () => {
     const tools = (file: string): string[] => /^tools: (.+)$/m.exec(read(file))![1]!.split(',').map(t => t.trim());
     for (const file of ['registry/hosts/claude/agents/agency-creative-designer.md', 'registry/hosts/claude/agents/agency-frontend-architect.md', 'registry/hosts/claude/agents/frontend-architect.md']) {
-      expect(tools(file), file).not.toContain('Artifact');
       expect(tools(file), file).toContain('mcp__stitch');
+      expect(tools(file).includes('Artifact'), file).toBe(file.endsWith('agency-creative-designer.md'));
     }
     expect(tools('registry/hosts/claude/agents/agency-frontend-architect.md')).toContain('WebFetch');
   });
