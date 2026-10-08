@@ -1,0 +1,34 @@
+<svg viewBox="0 0 1080 1080" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="1:1 feed ad layout with a photo slot, headline, and call to action">
+  <!-- 1:1 Square Feed Ad Concept. PROVISIONAL palette (no brand tokens supplied). All bracketed text is a placeholder: copy owner supplies the real lines. -->
+  <title>1:1 feed ad: photo slot layout (provisional)</title>
+  <defs>
+    <linearGradient id="slotTone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9D3B8"/>
+      <stop offset="1" stop-color="#D9BC98"/>
+    </linearGradient>
+  </defs>
+
+  <!-- PHOTO SLOT: 1080x640, full bleed. Replace this group with the real image (object-fit: cover). Not a photo: a labelled placeholder. -->
+  <g id="photo-slot">
+    <rect x="0" y="0" width="1080" height="640" fill="url(#slotTone)"/>
+    <!-- subject zone: sitter + dog, faces inside this box -->
+    <rect x="270" y="110" width="540" height="420" fill="none" stroke="#2B2118" stroke-width="3" stroke-dasharray="14 10"/>
+    <text x="540" y="300" text-anchor="middle" font-family="Georgia, serif" font-size="40" fill="#2B2118">PHOTO SLOT</text>
+    <text x="540" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#2B2118">Sitter + dog on sofa, faces in dashed box</text>
+  </g>
+
+  <!-- TEXT PANEL: all type inside the 80% safe zone (x 108 to 972, y 108 to 972) -->
+  <rect x="0" y="640" width="1080" height="440" fill="#FFF6EA"/>
+  <text x="108" y="745" font-family="Georgia, serif" font-size="60" font-weight="700" fill="#2B2118">[Headline line 1: one claim]</text>
+  <text x="108" y="815" font-family="Georgia, serif" font-size="60" font-weight="700" fill="#2B2118">[Headline line 2]</text>
+
+  <!-- CTA: 80 px tall, white on #B5472A is 5.4:1 -->
+  <a href="#cta">
+    <rect id="cta" x="108" y="860" width="400" height="80" rx="40" fill="#B5472A"/>
+    <text x="308" y="911" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#FFFFFF">[CTA label]</text>
+  </a>
+
+  <!-- Logo placeholder -->
+  <rect x="772" y="860" width="200" height="80" fill="none" stroke="#2B2118" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="872" y="910" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" fill="#2B2118">[Logo]</text>
+</svg>

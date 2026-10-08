@@ -1,0 +1,32 @@
+{
+  "$description": "Scratch fixture for plan 036 (H10). PetPal is a fictional product; every value here is invented.",
+  "color": {
+    "cocoa": { "900": { "$value": "#2B1D14", "$type": "color" }, "600": { "$value": "#6B4B35", "$type": "color" } },
+    "clay": { "600": { "$value": "#B5451B", "$type": "color" } },
+    "cream": { "50": { "$value": "#FFF8F0", "$type": "color" } },
+    "sand": { "300": { "$value": "#F3D9B1", "$type": "color" } },
+    "white": { "$value": "#FFFFFF", "$type": "color" },
+    "text": {
+      "default": { "$value": "{color.cocoa.900}", "$type": "color" },
+      "muted": { "$value": "{color.cocoa.600}", "$type": "color", "$description": "on cream or sand, never on clay" },
+      "on-action": { "$value": "{color.white}", "$type": "color" }
+    },
+    "surface": {
+      "base": { "$value": "{color.cream.50}", "$type": "color" },
+      "accent": { "$value": "{color.sand.300}", "$type": "color" }
+    },
+    "cta": {
+      "primary": { "$value": "{color.clay.600}", "$type": "color", "$description": "fill; the label is color.text.on-action" }
+    }
+  },
+  "font": {
+    "family": { "base": { "$value": "Helvetica, Arial, sans-serif", "$type": "fontFamily" } },
+    "size": {
+      "headline": { "$value": "96px", "$type": "dimension", "$description": "for 1080 px wide canvases" },
+      "body": { "$value": "36px", "$type": "dimension" },
+      "caption": { "$value": "28px", "$type": "dimension" }
+    }
+  },
+  "space": { "1": { "$value": "8px", "$type": "dimension" }, "2": { "$value": "16px", "$type": "dimension" }, "4": { "$value": "32px", "$type": "dimension" }, "8": { "$value": "64px", "$type": "dimension" } },
+  "radius": { "md": { "$value": "12px", "$type": "dimension" }, "pill": { "$value": "999px", "$type": "dimension" } }
+}

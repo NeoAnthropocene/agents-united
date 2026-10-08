@@ -1,0 +1,21 @@
+<svg viewBox="0 0 1080 1920" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+  <title id="t">PetPal 9:16 story ad, comfort hook</title>
+  <desc id="d">Clay paw print on a sand panel above the headline "Your dog, happy at home", the line "Background-checked, reviewed by neighbours, insured up to $1M." and a clay Book now button. Scratch exercise: PetPal and every figure are fictional.</desc>
+  <defs>
+    <pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="3" fill="#6B4B35" opacity=".14"/></pattern>
+    <g id="paw" fill="#B5451B"><ellipse cx="0" cy="40" rx="78" ry="64"/><ellipse cx="-88" cy="-48" rx="28" ry="38" transform="rotate(-22 -88 -48)"/><ellipse cx="-32" cy="-92" rx="30" ry="40" transform="rotate(-8 -32 -92)"/><ellipse cx="32" cy="-92" rx="30" ry="40" transform="rotate(8 32 -92)"/><ellipse cx="88" cy="-48" rx="28" ry="38" transform="rotate(22 88 -48)"/></g>
+  </defs>
+  <!-- 9:16 1080x1920. Text safe zone x 108-972, y 250-1670 (top and bottom 250 px free of text; 80% inner). -->
+  <rect width="1080" height="1920" fill="#FFF8F0"/>
+  <rect width="1080" height="980" fill="#F3D9B1"/>
+  <rect width="1080" height="980" fill="url(#dots)"/>
+  <circle cx="540" cy="620" r="330" fill="#FFF8F0" opacity=".7"/>
+  <use href="#paw" transform="translate(540 640) scale(2.6)" aria-hidden="true"/>
+  <g font-family="Helvetica, Arial, sans-serif">
+    <text x="108" y="330" font-size="28" font-weight="700" fill="#2B1D14">PetPal</text>
+    <g font-size="96" font-weight="700" fill="#2B1D14"><text x="108" y="1190">Your dog,</text><text x="108" y="1300">happy at home</text></g>
+    <g font-size="36" fill="#6B4B35"><text x="108" y="1390">Background-checked, reviewed by</text><text x="108" y="1440">neighbours, insured up to $1M.</text></g>
+    <rect id="cta" x="108" y="1490" width="340" height="104" rx="12" fill="#B5451B"/>
+    <text x="278" y="1555" font-size="36" font-weight="700" fill="#FFFFFF" text-anchor="middle">Book now</text>
+  </g>
+</svg>

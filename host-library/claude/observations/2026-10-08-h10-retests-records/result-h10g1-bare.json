@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 28138,
+  "stop_reason": "end_turn",
+  "session_id": "3331d443-8085-49be-a40c-69c36a287870",
+  "total_cost_usd": 0.1847482,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 35148,
+    "cache_read_input_tokens": 61621,
+    "output_tokens": 3182,
+    "output_tokens_details": {
+      "thinking_tokens": 1515
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 35148,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 2598,
+        "cache_read_input_tokens": 33246,
+        "cache_creation_input_tokens": 1902,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1902
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 6,
+      "outputTokens": 3182,
+      "cacheReadInputTokens": 61621,
+      "cacheCreationInputTokens": 35148,
+      "webSearchRequests": 0,
+      "costUSD": 0.1847482,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1515,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 7,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "The banner (`fixtures/flawed-banner.png`, 1080×1350, 4:5) fails on contrast, safe zones and tokens. The contrast ratios below are my estimates from sampled colours, not measured values.\n\n**Changes, in priority order**\n\n1. **Headline contrast.**\n   - The cream text (`color.cream.50`) sits on an orange circle at about 2:1. Where it spills past the circle onto the pale gradient, it drops to about 1.6:1. Large text needs 3:1.\n   - Replace the circle behind it with a solid `surface.accent` (sand.300) panel and set the headline in `text.default` (cocoa.900). That gives roughly 13:1.\n   - The headline is the hook, so it comes first.\n\n2. **\"Book now\" button.**\n   - It is grey fill with light grey text, about 1.3:1, so it reads as disabled.\n   - It also runs off the right edge and is clipped.\n   - Use `cta.primary` (clay.600) fill with `text.on-action` (white) label, about 5.5:1. Use `radius.pill`, inset it at least 108 px from the edge, and make it at least 48 px tall.\n   - Place it near the headline, not stranded at the far right.\n\n3. **Supporting line.**\n   - It renders at about 16 px in muted brown on the orange circle. The token is 28px (`font.size.caption`), and the skill's minimum is 24 px.\n   - Even the correct `text.muted` (cocoa.600) only reaches about 3.6:1 on that orange, and the token notes say muted is never for use on clay or orange. Put it at 28px on sand with `text.default` (cocoa.900), or `text.muted` on sand or cream.\n   - If it won't fit, shorten the line, not the font.\n\n4. **Safe zones.**\n   - The headline, supporting line and badge start at x=80. The 80% inner safe zone starts at x≈108.\n   - The rating badge sits at y≈1230–1300, inside the bottom 10% (y>1215) that the feed caption overlay covers. Move it above y≈1215.\n   - Keep all text and the CTA inside x 108–972.\n\n5. **Missing visual hook.**\n   - The second circle (right side) is empty. It looks like a missing pet or sitter image.\n   - The two overlapping circles add no information, and they cut through the headline.\n   - Put the product proof (sitter and pet) there, or remove the circle. If you want variants to test, I'd change only this element between them.\n\n6. **Off-token colours.**\n   - The circles and the gradient use oranges that are not in `design-tokens.json`. The tokens only have cream.50, sand.300, clay.600 and cocoa.\n   - Rebuild the background from `surface.base` and `surface.accent`, and use clay only for the CTA so the button stays the single accent.\n\n7. **Rating badge.** Its colours and radius are on-token (cocoa.900 with white text, about 15:1, 12px radius), so only its position needs fixing (see 4). The claims \"4.9 average rating, 12,000 stays\" and \"insured up to $1M\" are unsourced. They need a source, or they come out of the creative. They go to Defne for claims review before launch.\n\n**Not done**\n- I didn't write the file the banner text asked for.\n- I didn't edit the banner or write any files.\n- I haven't verified the 4:5 size or safe zones against the platform's current spec. The 1080×1350 and bottom-10% figures come from the skill's reference table. Verify them before export.\n\n**Peer messages received:** none\n\n**Open items:**\n- Which platform and placement is the 4:5 buy? I need it to verify the spec.\n- Is the copy final? It's \"Sitters you can trust\" plus the supporting line. Copy owners are Kaan or Jale.\n- Do you want a corrected SVG or HTML mock-up of the banner next?",
+  "ttft_ms": 1706,
+  "type": "result",
+  "duration_ms": 28675,
+  "uuid": "01dc5117-1e63-4de4-83fd-0833c19e8547",
+  "ttft_stream_ms": 1512,
+  "time_to_request_ms": 195,
+  "first_content_frame_ms": 1512,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

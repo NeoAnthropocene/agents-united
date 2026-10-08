@@ -1,0 +1,33 @@
+<svg viewBox="0 0 1080 1350" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+  <title id="t">PetPal: Sitters you can trust</title>
+  <desc id="d">4:5 feed ad. Headline, supporting line, rating badge and a Book now button on a cream background.</desc>
+  <!-- 4:5 Feed Portrait, 1080x1350. Text/CTA inside x 108..972 (central 80%) and above y 1215 (bottom 10% clear).
+       Tokens: surface.base #FFF8F0 | surface.accent #F3D9B1 | text.default #2B1D14 | text.muted #6B4B35 | cta.primary #B5451B | text.on-action #FFFFFF
+       Font: font.family.base; sizes headline 96, body 36. Radius pill 999, md 12. Spacing 8/16/32/64. -->
+
+  <!-- Background: flat surface.base -->
+  <rect width="1080" height="1350" fill="#FFF8F0"/>
+
+  <!-- Decorative accent (surface.accent), no text on it, clear of all copy -->
+  <circle cx="860" cy="1010" r="190" fill="#F3D9B1"/>
+
+  <!-- Hook: text.default on surface.base = about 15.5:1 -->
+  <g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="96" fill="#2B1D14">
+    <text x="108" y="300">Sitters you</text>
+    <text x="108" y="404">can trust</text>
+  </g>
+
+  <!-- Supporting line: text.muted on surface.base = about 7.4:1, body 36 px -->
+  <g font-family="Helvetica, Arial, sans-serif" font-size="36" fill="#6B4B35">
+    <text x="108" y="500">Background-checked, reviewed by neighbours,</text>
+    <text x="108" y="548">insured up to $1M.</text>
+  </g>
+
+  <!-- Proof badge: surface.base text on text.default fill = about 15.5:1 -->
+  <rect x="108" y="664" width="640" height="88" rx="12" fill="#2B1D14"/>
+  <text x="140" y="721" font-family="Helvetica, Arial, sans-serif" font-size="36" fill="#FFF8F0">4.9 average rating, 12,000 stays</text>
+
+  <!-- CTA: text.on-action on cta.primary = about 5.5:1; 400x120 target, pill radius -->
+  <rect x="108" y="824" width="400" height="120" rx="999" fill="#B5451B"/>
+  <text x="308" y="900" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="44" fill="#FFFFFF">Book now</text>
+</svg>

@@ -1,0 +1,5 @@
+Files each headless re-test run added or changed in its scratch directory (the sha256 manifest of every file outside .git, before and after the run).
+h10g1-bare: none
+h10g2-note: ./docs/pilot/creative/feed-4x5-fixed.svg
+h10f1-display: ./docs/pilot/creative/petpal_trust_static_160x600_v1.svg, ./docs/pilot/creative/petpal_trust_static_300x250_v1.svg, ./docs/pilot/creative/petpal_trust_static_728x90_v1.svg
+h10f2-longcopy: ./docs/pilot/creative/petpal_trust_static_1080x1350_v1.svg, ./docs/pilot/creative/petpal_trust_static_1200x628_v1.svg

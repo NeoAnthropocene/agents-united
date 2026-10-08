@@ -1,0 +1,623 @@
+[
+ {
+  "file": "petpal-pilot_comfort_static_1080x1350_v1.svg",
+  "W": 1080,
+  "H": 1350,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 108,
+    "x1": 194,
+    "y0": 165,
+    "y1": 196
+   },
+   {
+    "text": "Your dog,",
+    "size": 96,
+    "x0": 107,
+    "x1": 549,
+    "y0": 713,
+    "y1": 820
+   },
+   {
+    "text": "happy at home",
+    "size": 96,
+    "x0": 108,
+    "x1": 785,
+    "y0": 823,
+    "y1": 930
+   },
+   {
+    "text": "Background-checked, reviewed by",
+    "size": 36,
+    "x0": 108,
+    "x1": 658,
+    "y0": 957,
+    "y1": 998
+   },
+   {
+    "text": "neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 108,
+    "x1": 604,
+    "y0": 1007,
+    "y1": 1048
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 172,
+    "x1": 345,
+    "y0": 1113,
+    "y1": 1154
+   }
+  ],
+  "cta": {
+   "x0": 108,
+   "y0": 1085,
+   "x1": 408,
+   "y1": 1181
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ },
+ {
+  "file": "petpal-pilot_comfort_static_1080x1920_v1.svg",
+  "W": 1080,
+  "H": 1920,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 108,
+    "x1": 194,
+    "y0": 305,
+    "y1": 336
+   },
+   {
+    "text": "Your dog,",
+    "size": 96,
+    "x0": 107,
+    "x1": 549,
+    "y0": 1103,
+    "y1": 1210
+   },
+   {
+    "text": "happy at home",
+    "size": 96,
+    "x0": 108,
+    "x1": 785,
+    "y0": 1213,
+    "y1": 1320
+   },
+   {
+    "text": "Background-checked, reviewed by",
+    "size": 36,
+    "x0": 108,
+    "x1": 658,
+    "y0": 1357,
+    "y1": 1398
+   },
+   {
+    "text": "neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 108,
+    "x1": 604,
+    "y0": 1407,
+    "y1": 1448
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 192,
+    "x1": 365,
+    "y0": 1522,
+    "y1": 1563
+   }
+  ],
+  "cta": {
+   "x0": 108,
+   "y0": 1490,
+   "x1": 448,
+   "y1": 1594
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ },
+ {
+  "file": "petpal-pilot_comfort_static_1200x628_v1.svg",
+  "W": 1200,
+  "H": 628,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 120,
+    "x1": 206,
+    "y0": 85,
+    "y1": 116
+   },
+   {
+    "text": "Your dog,",
+    "size": 80,
+    "x0": 119,
+    "x1": 487,
+    "y0": 158,
+    "y1": 247
+   },
+   {
+    "text": "happy at home",
+    "size": 80,
+    "x0": 120,
+    "x1": 685,
+    "y0": 244,
+    "y1": 333
+   },
+   {
+    "text": "Background-checked, reviewed",
+    "size": 36,
+    "x0": 120,
+    "x1": 622,
+    "y0": 359,
+    "y1": 400
+   },
+   {
+    "text": "by neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 120,
+    "x1": 664,
+    "y0": 405,
+    "y1": 446
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 154,
+    "x1": 327,
+    "y0": 490,
+    "y1": 531
+   }
+  ],
+  "cta": {
+   "x0": 120,
+   "y0": 474,
+   "x1": 360,
+   "y1": 550
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ },
+ {
+  "file": "petpal-pilot_proof_static_1080x1350_v1.svg",
+  "W": 1080,
+  "H": 1350,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 108,
+    "x1": 194,
+    "y0": 165,
+    "y1": 196
+   },
+   {
+    "text": "12,000 stays,",
+    "size": 96,
+    "x0": 108,
+    "x1": 701,
+    "y0": 713,
+    "y1": 820
+   },
+   {
+    "text": "4.9 stars",
+    "size": 96,
+    "x0": 108,
+    "x1": 498,
+    "y0": 823,
+    "y1": 930
+   },
+   {
+    "text": "Background-checked, reviewed by",
+    "size": 36,
+    "x0": 108,
+    "x1": 658,
+    "y0": 957,
+    "y1": 998
+   },
+   {
+    "text": "neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 108,
+    "x1": 604,
+    "y0": 1007,
+    "y1": 1048
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 172,
+    "x1": 345,
+    "y0": 1113,
+    "y1": 1154
+   }
+  ],
+  "cta": {
+   "x0": 108,
+   "y0": 1085,
+   "x1": 408,
+   "y1": 1181
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ },
+ {
+  "file": "petpal-pilot_proof_static_1080x1920_v1.svg",
+  "W": 1080,
+  "H": 1920,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 108,
+    "x1": 194,
+    "y0": 305,
+    "y1": 336
+   },
+   {
+    "text": "12,000 stays,",
+    "size": 96,
+    "x0": 108,
+    "x1": 701,
+    "y0": 1103,
+    "y1": 1210
+   },
+   {
+    "text": "4.9 stars",
+    "size": 96,
+    "x0": 108,
+    "x1": 498,
+    "y0": 1213,
+    "y1": 1320
+   },
+   {
+    "text": "Background-checked, reviewed by",
+    "size": 36,
+    "x0": 108,
+    "x1": 658,
+    "y0": 1357,
+    "y1": 1398
+   },
+   {
+    "text": "neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 108,
+    "x1": 604,
+    "y0": 1407,
+    "y1": 1448
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 192,
+    "x1": 365,
+    "y0": 1522,
+    "y1": 1563
+   }
+  ],
+  "cta": {
+   "x0": 108,
+   "y0": 1490,
+   "x1": 448,
+   "y1": 1594
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ },
+ {
+  "file": "petpal-pilot_proof_static_1200x628_v1.svg",
+  "W": 1200,
+  "H": 628,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 120,
+    "x1": 206,
+    "y0": 85,
+    "y1": 116
+   },
+   {
+    "text": "12,000 stays,",
+    "size": 80,
+    "x0": 120,
+    "x1": 614,
+    "y0": 158,
+    "y1": 247
+   },
+   {
+    "text": "4.9 stars",
+    "size": 80,
+    "x0": 120,
+    "x1": 445,
+    "y0": 244,
+    "y1": 333
+   },
+   {
+    "text": "Background-checked, reviewed",
+    "size": 36,
+    "x0": 120,
+    "x1": 622,
+    "y0": 359,
+    "y1": 400
+   },
+   {
+    "text": "by neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 120,
+    "x1": 664,
+    "y0": 405,
+    "y1": 446
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 154,
+    "x1": 327,
+    "y0": 490,
+    "y1": 531
+   }
+  ],
+  "cta": {
+   "x0": 120,
+   "y0": 474,
+   "x1": 360,
+   "y1": 550
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ },
+ {
+  "file": "petpal-pilot_trust_static_1080x1350_v1.svg",
+  "W": 1080,
+  "H": 1350,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 108,
+    "x1": 194,
+    "y0": 165,
+    "y1": 196
+   },
+   {
+    "text": "Sitters you",
+    "size": 96,
+    "x0": 108,
+    "x1": 604,
+    "y0": 713,
+    "y1": 820
+   },
+   {
+    "text": "can trust",
+    "size": 96,
+    "x0": 108,
+    "x1": 513,
+    "y0": 823,
+    "y1": 930
+   },
+   {
+    "text": "Background-checked, reviewed by",
+    "size": 36,
+    "x0": 108,
+    "x1": 658,
+    "y0": 957,
+    "y1": 998
+   },
+   {
+    "text": "neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 108,
+    "x1": 604,
+    "y0": 1007,
+    "y1": 1048
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 172,
+    "x1": 345,
+    "y0": 1113,
+    "y1": 1154
+   }
+  ],
+  "cta": {
+   "x0": 108,
+   "y0": 1085,
+   "x1": 408,
+   "y1": 1181
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ },
+ {
+  "file": "petpal-pilot_trust_static_1080x1920_v1.svg",
+  "W": 1080,
+  "H": 1920,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 108,
+    "x1": 194,
+    "y0": 305,
+    "y1": 336
+   },
+   {
+    "text": "Sitters you",
+    "size": 96,
+    "x0": 108,
+    "x1": 604,
+    "y0": 1103,
+    "y1": 1210
+   },
+   {
+    "text": "can trust",
+    "size": 96,
+    "x0": 108,
+    "x1": 513,
+    "y0": 1213,
+    "y1": 1320
+   },
+   {
+    "text": "Background-checked, reviewed by",
+    "size": 36,
+    "x0": 108,
+    "x1": 658,
+    "y0": 1357,
+    "y1": 1398
+   },
+   {
+    "text": "neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 108,
+    "x1": 604,
+    "y0": 1407,
+    "y1": 1448
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 192,
+    "x1": 365,
+    "y0": 1522,
+    "y1": 1563
+   }
+  ],
+  "cta": {
+   "x0": 108,
+   "y0": 1490,
+   "x1": 448,
+   "y1": 1594
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ },
+ {
+  "file": "petpal-pilot_trust_static_1200x628_v1.svg",
+  "W": 1200,
+  "H": 628,
+  "texts": [
+   {
+    "text": "PetPal",
+    "size": 28,
+    "x0": 120,
+    "x1": 206,
+    "y0": 85,
+    "y1": 116
+   },
+   {
+    "text": "Sitters you",
+    "size": 80,
+    "x0": 120,
+    "x1": 533,
+    "y0": 158,
+    "y1": 247
+   },
+   {
+    "text": "can trust",
+    "size": 80,
+    "x0": 120,
+    "x1": 458,
+    "y0": 244,
+    "y1": 333
+   },
+   {
+    "text": "Background-checked, reviewed",
+    "size": 36,
+    "x0": 120,
+    "x1": 622,
+    "y0": 359,
+    "y1": 400
+   },
+   {
+    "text": "by neighbours, insured up to $1M.",
+    "size": 36,
+    "x0": 120,
+    "x1": 664,
+    "y0": 405,
+    "y1": 446
+   },
+   {
+    "text": "Book now",
+    "size": 36,
+    "x0": 154,
+    "x1": 327,
+    "y0": 490,
+    "y1": 531
+   }
+  ],
+  "cta": {
+   "x0": 120,
+   "y0": 474,
+   "x1": 360,
+   "y1": 550
+  },
+  "fills": [
+   "#6B4B35",
+   "#B5451B",
+   "#FFF8F0",
+   "#F3D9B1",
+   "#2B1D14",
+   "#FFFFFF"
+  ]
+ }
+]

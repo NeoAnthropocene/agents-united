@@ -1,0 +1,30 @@
+# Session eddf277d-ee65-49f7-a2ae-72c65155f474
+cwd C:\github\scratch-pilot\h10g2-note · Claude Code 2.1.294 · agent agency-creative-designer · permission mode unknown
+from 2026-10-08T08:47:29.909Z to 2026-10-08T08:48:15.764Z · 1 prompt(s) · 0 teammate record(s)
+cost 0.1984 USD (the session's own record) · API 43 s · wall 50 s
+  claude-sonnet-5-5: 10 in, 4895 out, 143305 cache-read, 0.1984 USD
+
+## Findings (the seven open items)
+- H1a A task owner set on a running teammate lifts a read-only consultation: **not applicable**
+    no teammate was briefed as a read-only consultation
+- H1b Shutdown is asked with a structured shutdown_request: **not seen**
+    structured shutdown_request: 0, plain-text shutdown requests: 0, shutdown responses received by the lead: 0
+    shutdown responses sent by teammates: 0 of 0 requested (approved 0)
+- H1c Shell-less roles re-read their files before reporting: **not applicable**
+    no shell-less teammate wrote a file
+- H2/H7 The lead runs on its pinned Opus: **not seen**
+    lead models: claude-sonnet-5-5
+    agent setting: agency-creative-designer, permission mode: unknown
+- H3 A peer exchange between teammates without a fixed contract: **not seen**
+    peer messages sent: 0 across 0 pair(s); received from a peer: 0
+- H4 The host refuses a blocked task started early: **not seen**
+    0 task call(s), 0 task(s); starts while blocked: 0 (refused 0, accepted 0)
+- H5 The settings-level guard refuses a command it names, in a team: **not seen**
+    no tool result carries the guard block message
+- H6 MCP-backed tools are called: **not seen**
+    no tool call has an mcp__ name
+
+## Agents
+- lead: Read 4, Glob 3, Skill 1, Write 1
+
+## Lead: team flow
