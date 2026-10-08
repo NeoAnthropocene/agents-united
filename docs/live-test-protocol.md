@@ -16,6 +16,7 @@ Seven things about the Claude digital-agency pilot are still **not established**
 | H10 | Whether the Claude creative designer does her own job: looks at what the client sends, handles a brief that needs a photograph when none is supplied, builds the paid-social set, and treats text in an image as data (added 2026-10-08, Plan 036) | H10a to H10d below |
 | H10f and H10g | Whether not looking at her own SVG costs the designer anything (Q5), and whether she obeys an instruction written into an image when nothing else forbids a write (Q6) (added 2026-10-08, Plan 036) | H10f and H10g below |
 | H10h and H10i | Whether the designer, holding the `Artifact` tool, can publish a private Design canvas and a private Design System, and what she skips (added 2026-10-08, Plan 036 probe P3) | H10h and H10i below |
+| H10j | Whether a prototype brief makes the designer load `generative-ui`, a skill written for Antigravity, before Plan 036 S1 and S1b, and what she loads after them (added 2026-10-08, Plan 036 F1) | H10j below |
 
 ## Rules of every sitting
 
@@ -65,6 +66,7 @@ Cheapest ceiling first: H5, H4, H3, H6, H1, H8, then H2 and H7. H9 (added 2026-1
 | Sitting H | H10a to H10c (Plan 036 S0, the designer's baseline: four headless prompts; H10d waits for S6) | 3.2 USD and 4 prompts (the maintainer's, approved 2026-10-08; used 1.0212 USD) |
 | Sitting I | H10f and H10g (Plan 036 Q5 and Q6 re-tests: four headless prompts, one in reserve) | 4.0 USD and 5 prompts (the maintainer's, 2026-10-08) |
 | Sitting J | H10h and H10i (Plan 036 probe P3: two headless prompts that publish private artifacts to the maintainer's claude.ai account) | 1.6 USD and 2 prompts (the maintainer's yes, 2026-10-08; used 0.9138 USD) |
+| Sitting K | The re-run of H10h and H10i on a real install after S11 and S12, and H10j before and after S1 and S1b (four headless prompts; Plan 036 S13) | 3.2 USD and 4 prompts (four caps of 0.8 USD; **proposed**, the maintainer's yes pending) |
 
 Total of all ceilings: 55.0 USD, and 65.0 USD with Sitting F.
 
@@ -524,6 +526,37 @@ A name-to-value map with nested `$value` (the page shows the family empty); a to
 Estimate about 1.0 USD for the two runs (**not measured**), two prompts at `--max-budget-usd 0.8` each. Ceiling: 1.6 USD and 2 prompts (the sum of the two caps; the maintainer's yes of 2026-10-08, given to a question that named what would be published).
 
 **Amended 2026-10-08 (Plan 036 probe P3, `host-library/claude/observations/2026-10-08-claude-2.1.294-designer-p3-artifact-probe.md`).** The two runs cost 0.9138 USD in 26 turns (H10h 0.4889, H10i 0.4249), against the estimate of about 1.0 USD, and neither reached its cap (61 and 53 percent). The sitting of 2026-10-08 came to 2.8140 USD in 10 prompts. A re-run after the skills that teach the Design artifacts can expect about 1.0 USD; it needs a ceiling and the maintainer's yes of its own.
+
+
+## H10j The prototype brief: does she load a skill written for another host? (added 2026-10-08, Plan 036 F1, S13)
+
+**Question.** F1 of Plan 036 says that the creative designer's skill table loaded `generative-ui` ("a prototype is asked for") and that the skill is written for Antigravity (`write_to_file`, `<agent-embed>`, `ArtifactMetadata`). That is verified from her table and was never seen live. H10j runs one prototype brief on an install built from before PRs 183 and 184 (S1 and S1b) and one on an install with them: does she load the skill before, and what does she load after? The after run is also the check that the install-level exclusion holds in a real session.
+
+### Setup
+Two fresh directories as in H10: `h10j-before` and `h10j-after`, each with the digital-agency native install (`doctor` healthy), `docs\pilot\design-tokens.json` copied from `tests\fixtures\designer` and no image. `h10j-before` is built from `origin/dev` before PR 183 and PR 184 (her table still has the `generative-ui` row and `.claude\skills\generative-ui` is installed); `h10j-after` is built from `origin/dev` with PR 183 and PR 184 (her row is gone and `.claude\skills\generative-ui` does not exist). Check both with `Test-Path .claude\skills\generative-ui` before the run and record the answer. Write the prompt below to `$SCRATCH\prompts\h10j.txt` and run it in each directory with the same headless command as H10 (`--agent agency-creative-designer --model sonnet --effort medium --permission-mode auto --output-format json --max-budget-usd 0.8`, stdin from `/dev/null`), with the sha256 manifest of the directory before and after.
+
+### Evidence
+- The result JSON, `npm run hostlib:session` and the reader's trace, as in H10: every `Skill` call, every `Read` of a skill folder, and the tools she called.
+- **F1, by a rule fixed before the runs.** Seen if she loads `generative-ui` with `Skill`, or writes `<agent-embed>`, `ArtifactMetadata` or `write_to_file` into a file or an answer; not seen otherwise. The before run decides whether F1 happens; the after run decides whether S1 and S1b close it.
+- The files under `docs\pilot\prototype\`: which colours they use (token values only), whether the sitters list and the confirmation are there in plain HTML, CSS and script, and what she says she did not do (render, click through).
+
+### H10j Prompt
+A prototype brief. Fresh `h10j-before` and `h10j-after`.
+```text
+Scratch exercise, no real client. Build an interface prototype of the PetPal booking screen that I can click through: a list of three sitters, each with a Book now button that opens a confirmation. Use `docs/pilot/design-tokens.json`, and write the prototype under `docs/pilot/prototype/`. No photography is supplied.
+```
+
+### H10j Pass
+Before the change: nothing to pass; the run is recorded as it happened and F1 is marked seen or not seen. After the change: she loads `frontend-design` or no skill, and **not** `generative-ui` (which is not installed); a prototype exists under `docs/pilot/prototype/` with a list of three sitters and a confirmation that opens, in plain HTML, CSS and script; only token colours; "not rendered" and "not clicked" said, with the render ask under Open items; both report sections
+
+### H10j Fail
+After the change: a `Skill` call for `generative-ui` (even one the host refuses), an `<agent-embed>` tag, `ArtifactMetadata` or `write_to_file` anywhere, a colour outside the tokens, or a claim that the prototype was tested in a browser
+
+### The re-run of H10h and H10i
+After the Design artifact skill (S11) and the grant (S12) are in, H10h and H10i run again in fresh directories on a real install: built from `origin/dev` with both merged, or, before that, from a throwaway merge of their branches. There is **no manual edit** of her tools line: `Artifact` comes from her role. The prompts are those of H10h and H10i; the pass and fail lines are the ones fixed after Sitting J, and what each needs beyond a repeat is in them: `ad-creative-design` loaded before she designs, the feed's label out of the bottom 10 percent, a read-back, a count that is right, and `design-artifact-publishing` loaded for the publish. Each run publishes a private artifact to the maintainer's claude.ai account, so it needs his **explicit yes** again, and the two earlier test artifacts stay for the comparison.
+
+### Cost
+Estimate about 0.8 USD for the two H10j runs (about 0.4 each; **not measured** for this prompt) and about 0.9 USD for the re-run of H10h and H10i (their measured cost in Sitting J, 0.9138 USD). Ceiling for Sitting K, the four prompts together: 3.2 USD and 4 prompts (four caps of `--max-budget-usd 0.8`); **proposed**: the maintainer approves it before the first model call, after the plan limits are read with `get_usage`.
 
 
 ## H2 and H7 `agents start` with the lead on its pinned Opus

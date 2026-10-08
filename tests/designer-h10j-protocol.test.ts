@@ -73,7 +73,7 @@ describe('H10j in the live-test protocol: the prototype brief, before and after 
 
   it('says what a pass after the change is, and what fails', () => {
     expect(sub('H10j Pass')).toMatch(/`frontend-design`/);
-    expect(sub('H10j Pass')).toMatch(/not `generative-ui`|not\s+`generative-ui`/);
+    expect(sub('H10j Pass')).toMatch(/\*\*not\*\* `generative-ui`/);
     expect(sub('H10j Pass')).toMatch(/docs\/pilot\/prototype\//);
     expect(sub('H10j Pass')).toMatch(/only token colours/);
     expect(sub('H10j Fail')).toMatch(/`Skill` call for `generative-ui`/);
