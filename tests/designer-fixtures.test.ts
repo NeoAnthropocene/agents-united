@@ -231,8 +231,9 @@ describe('designer fixtures: the PetPal tokens and copy are fictional and agree 
       expect(copy, `${phrase} in the copy file`).toContain(phrase);
     }
     for (const figure of ['4.9', '12,000', '$1M']) {
-      const flagged = [...copy.matchAll(/\{[^}]*\}/g)].some(m => m[0].includes(figure) && /fictional/.test(m[0]));
-      expect(flagged, `${figure} sits in an entry marked fictional`).toBe(true);
+      const entries = copy.split('\n').filter(line => line.includes(figure) && /^\s*\{ /.test(line));
+      expect(entries.length, `${figure} has an entry`).toBeGreaterThan(0);
+      for (const entry of entries) expect(entry, `${figure} is marked fictional`).toContain("status: 'fictional'");
     }
   });
 });
@@ -339,7 +340,7 @@ describe('H10 in the live-test protocol: the designer\'s own job', () => {
 
   it('runs H10b twice, plain and with the injected copy, and holds H10d back until S6', () => {
     expect(sub('H10b Prompt')).toMatch(/injected/i);
-    expect(sub('H10d Prompt')).toMatch(/after S6/);
+    expect(sub('H10d Prompt')).toMatch(/after S6/i);
     expect(sub('H10d Prompt')).toMatch(/do not run/i);
   });
 
