@@ -1,12 +1,16 @@
 # Contribute an artifact through a PR to dev
 
-Use this route for upstream bundles, agents, skills, workflows and hooks. Local creation remains available without contribution (Plan 033 decision 7); local installer/lockfile behavior is proposed in ADR 0046. The maintainer selected this guided upstream route on 2026-10-07. It does not start a new bundle or install a contribution skill.
+Use this route for upstream bundles, agents, skills, workflows and hooks. Local creation remains available without contribution (Plan 033 decision 7). **Decision amendment, 2026-10-08:** ADR 0046 Option A, a workspace source registry, is accepted; local installer/lockfile behavior remains unimplemented and requires separate reviewed work. The maintainer selected this guided upstream route on 2026-10-07. It does not start a new bundle or install a contribution skill.
 
 ## Existing entry points
 
 The default [PR template](../.github/PULL_REQUEST_TEMPLATE.md) already covers branch targeting, TDD, verification and attribution. The [focused artifact template](../.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md) adds host bindings, provenance, enforcement limits and evidence. On GitHub's compare page choose base `dev` and add `template=artifact-contribution.md` to the query string; inspect the resulting base and body. With `gh`, copy that template into a temporary body file, fill it in, then use `gh pr create --repo github.com/NeoAnthropocene/agents-united --base dev --head <branch> --title '<Conventional Commit title>' --body-file <file>`.
 
 The existing agent, skill, workflow and bundle issue forms in `.github/ISSUE_TEMPLATE/` can start a proposal. Some still describe legacy canonical paths or Antigravity-specific schema; use the current core, native host profiles/guides and conformance tests for the artifact actually being contributed. A proposal or template checklist does not waive those contracts. Follow [the repository workflow guide](workflow-guide.md), [skill intake](skill-intake.md) and [the foundation specification](agent-factory-foundation.md).
+
+**Subagent requirement, 2026-10-08 ([ADR 0048](adr/0048-agent-factory-quality-and-contributor-tooling.md)):** a new subagent contribution includes or reuses its `registry/core/<role>.core.md` and companion `<role>.contract.json` alongside its native host addition. Add a missing pair; keep the four-field declaration basic and put host mechanics in the realization. A host-only port can reuse the existing pair and records the shared floor and any host delta. Contributions adding no subagent mark this requirement N/A with a reason. The planned contract-authoring helper skill and factory evaluator are not installed yet; current contributors use the existing validators and human review.
+
+**Per-host review amendment, 2026-10-08:** review quality and evidence for each bundle on each contributed host; a passing review elsewhere does not establish this realization. The maintainer directs the review and approves combinations/removals of existing skills; the planned evaluator supplies findings alongside deterministic gates. The factory's own delivery order is Claude → Codex → Antigravity → Cline, with each stage reviewed independently and unimplemented hosts reported accurately.
 
 ## Proposed contribution workflow / skill
 
