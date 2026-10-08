@@ -512,6 +512,10 @@ _Avoid_: Design prompt, design export
 An Artifact of the Design type (a canvas of artboards) or the Design System type (tokens in list form, a brand book and a cover) that the creative designer publishes to Claude Design through the `Artifact` tool, only when the user asks, private, and then reads back (Plan 036 S11, ADR 0047). The lead offers it to the user as the option **Publish Artifact**, whose description says where the page goes, who can see it, what it needs and that client material leaves the project (S12). The skill `design-artifact-publishing` carries the rules; the vendor format is read live from the type's own instructions.
 _Avoid_: calling a plain SVG or HTML file one, saying it is shared, publishing as a side effect of a design task
 
+**Image route**:
+The optional path by which the creative designer gets a generated photograph: the MCP server `image-gen` (the `mcp-image` package, pinned, Gemini models through the user's own Google AI Studio key), which the user installs with a command the lead prints, and its one tool `mcp__image-gen__generate_image`, granted to her alone (Plan 036 S18 and S19, ADR 0049). The lead offers it as the option **Generate images** beside **Placeholders and image briefs**, with the explanation in the option (who pays, what goes to Google, what the user does, the restart). The skill `image-creation` carries the rules: the sourcing ladder, the go-ahead, the cap of two regenerations, the provenance file. It is never in `requiredMcps`, so the doctor, the install gate and the Antigravity sync do not know it.
+_Avoid_: calling it a required server, installing it for the user, a key in a file or in the chat, generating without a go-ahead
+
 ### Testing & Code Quality Standards
 
 **4-Tier Testing Methodology**:

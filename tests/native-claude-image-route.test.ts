@@ -112,8 +112,9 @@ describe('the lead\'s offer', () => {
     expect(p).toMatch(/go-ahead that names how many images and at which size/);
     expect(p).toContain('`mcp-setup`');
     expect(p).toMatch(/never run it/);
-    expect(p).toContain('`ToolSearch`');
-    expect(p).toContain(`\`${TOOL}\``);
+    // The lead does not hold the tool, so it names the server and not the tool (a native role may not name a tool outside its grant).
+    expect(p).toMatch(/`ToolSearch` that the server `image-gen` shows its generate tool/);
+    expect(p).not.toContain(TOOL);
   });
 
   it('briefs Jamileh with the go in the user\'s words, and generates nothing without the server', () => {

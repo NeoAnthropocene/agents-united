@@ -338,10 +338,11 @@ describe('H10 in the live-test protocol: the designer\'s own job', () => {
     }
   });
 
-  it('runs H10b twice, plain and with the injected copy, and holds H10d back until S6', () => {
+  it('runs H10b twice, plain and with the injected copy, and holds H10d back until S19 (the grant) and the maintainer\'s own key', () => {
     expect(sub('H10b Prompt')).toMatch(/injected/i);
-    expect(sub('H10d Prompt')).toMatch(/after S6/i);
+    expect(sub('H10d Prompt')).toMatch(/before S19/i);
     expect(sub('H10d Prompt')).toMatch(/do not run/i);
+    expect(sub('H10d Prompt')).toMatch(/with their own key/);
   });
 
   it('stages the fixtures where the prompts look for them, in a fresh scratch directory per run', () => {
