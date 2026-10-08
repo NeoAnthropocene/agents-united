@@ -13,10 +13,10 @@ disable-slash-command: true
 A token is a named decision: this is our primary action colour, this is the gap between a label and its field. A good set lets a developer build every screen without choosing a colour or a pixel value, and lets a brand change in one place.
 
 ## Overview & Purpose
-For the creative designer: the structure, the rules that generate the scales, the checks that keep it accessible and the file engineering expects. It builds no components or Tailwind theme (Deniz) and chooses no brand (the brief and `brand-identity`).
+For the creative designer: the structure, the scale rules, the accessibility checks and the file engineering expects. It builds no components or Tailwind theme (Deniz) and chooses no brand (the brief and `brand-identity`).
 
 ## Execution Triggers
-Load it when you write or extend `design-tokens.json`, when a campaign needs a palette that must also work in a product, or when engineering reports hardcoded values. Do not use it for a one-off banner (`ad-creative-design`) or when the client already has a token set (audit it, do not replace it).
+Load it to write or extend `design-tokens.json`, for a campaign palette that must also work in a product, or when engineering reports hardcoded values. Not for a one-off banner (`ad-creative-design`) or a client that already has a token set (audit it, do not replace it).
 
 ## Input/Output Requirements
 Inputs: brand colours and fonts as given (hex, font files or families); the surfaces (marketing site, product, email); whether a dark theme is required; target platforms; any existing tokens or Tailwind config.
@@ -31,7 +31,7 @@ Output: `design-tokens.json` in three tiers; a contrast table for every text and
 5. **Tier 3, component tokens** only where a component needs an override (`button.primary.background`); each one adds maintenance, so none by default.
 6. **Check contrast for every pair that will meet**: normal text 4.5 to 1; large text (24 px, or 19 px bold), interface boundaries and icons 3 to 1. Record the ratio (neutrals in [references/contrast-table.md](references/contrast-table.md); Emre measures any other pair). A brand colour that fails as text on white is a fill with a dark label, or a darker step carries the text.
 7. **Define the dark theme by remapping** semantic tokens to other primitives (surface to a near-black step, text to a light step), not by inverting colours; re-check every pair.
-8. **Write `design-tokens.json`** in the community token format (`$value`, `$type`, aliases in braces); every reference is an alias, never raw hex in a component token.
+8. **Write `design-tokens.json`** in the community token format (`$value`, `$type`, aliases in braces); every reference is an alias, never raw hex in a component token. For Claude Design, derive the list form it reads: [references/claude-design-format.md](references/claude-design-format.md).
 9. **Hand off.** The file, contrast table and usage notes to Deniz for the theme extension; Emre runs the contrast check in the built page; token documentation copy to Kaan only if asked. A one-off value is an open question, never an invented token.
 
 ## Code & Config Exemplars
