@@ -40,15 +40,17 @@ describe('the grant: one role holds Artifact', () => {
 });
 
 describe('the floor: what leaves the project', () => {
-  it('says in one tool-free line that she publishes only when asked, keeps it private and leaves sharing to the user', async () => {
+  it('says in one line, named for the option the user sees (Publish Artifact), that she publishes only when asked, keeps it private and leaves sharing to the user', async () => {
     const core = (await loadSemanticCore('registry')).get(HER_STEM)!;
-    const bullet = core.safety.split('\n').find(l => /Opt-In Publishing/.test(l)) ?? '';
+    const bullet = core.safety.split('\n').find(l => /Publish Artifact/.test(l)) ?? '';
     expect(bullet).not.toBe('');
+    expect(bullet.trim()).toMatch(/^- \*\*Publish Artifact\*\*: /);
     expect(bullet).toMatch(/only when the user asked for it/);
     expect(bullet).toMatch(/private/);
     expect(bullet).toMatch(/leave who can see it to the user/);
     expect(bullet).toMatch(/client material has left the project/);
-    expect(bullet).not.toMatch(/Artifact|Claude Design/);
+    expect(bullet).not.toMatch(/`Artifact`|Claude Design/);
+    expect(core.safety).not.toMatch(/Opt-In Publishing/);
     expect(core.safety.trim()).toMatch(/\.$/);
   });
 
@@ -63,17 +65,27 @@ describe('her authored body and the lead\'s', () => {
   it('tells her when she may publish, that it is private, what the tool needs and what she does without it', () => {
     const body = authored(HER);
     expect(body).toMatch(/publish to Claude Design only when the user asks/);
+    expect(body).toMatch(/\*\*Publish Artifact\*\*/);
     expect(body).toMatch(/private/);
     expect(body).toMatch(/Pro or higher plan/);
     expect(body).toMatch(/write the files/);
     expect(body).toMatch(/`design-artifact-publishing`/);
   });
 
-  it('has the lead offer publishing as an optional extra, with the user\'s go-ahead for each publish, and name no tool it does not hold', () => {
+  it('has the lead offer publishing as an optional extra, as the option Publish Artifact with its explanation, with the user\'s go-ahead for each publish, and name no tool it does not hold', () => {
     const body = authored(LEAD);
     expect(body).toMatch(/Publishing to Claude Design is an optional extra/);
-    expect(body).toMatch(/go-ahead for each publish/);
     expect(body).toMatch(/never by default/);
+    expect(body).toMatch(/go-ahead for each publish/);
+    expect(body).toMatch(/`AskUserQuestion`/);
+    expect(body).toMatch(/option \*\*Publish Artifact\*\*/);
+    expect(body).toMatch(/\*\*Keep it in the project\*\*/);
+    // the explanation that goes into the option's description: where it goes, who sees it, what it needs, what leaves the project
+    expect(body).toMatch(/private page on your claude\.ai account/);
+    expect(body).toMatch(/Pro or higher plan/);
+    expect(body).toMatch(/signed-in Claude Code/);
+    expect(body).toMatch(/unless you share it/);
+    expect(body).toMatch(/Anthropic-hosted page/);
     expect(body).not.toMatch(/`Artifact`/);
   });
 
