@@ -1,0 +1,20 @@
+{
+  "file": "example-hero-a1.png",
+  "asset": "example-hero",
+  "attempt": 1,
+  "createdAt": "2026-10-09T09:12:41Z",
+  "server": "image-gen (mcp-image <version the lead installed>)",
+  "model": "gemini-3.1-flash-image",
+  "prompt": "<the exact prompt sent, character for character, at most 4,000 characters>",
+  "parameters": {
+    "aspectRatio": "4:5",
+    "imageSize": "2K",
+    "quality": "fast"
+  },
+  "approvedBy": "<who said go, and their words, for example: the user: go, two images, 2K>",
+  "estimatedCostUsd": 0.101,
+  "disclosure": "Generated with Gemini; carries an invisible SynthID mark. Platform label: <the label the placement requires, or: label rule not checked>.",
+  "inputImage": null,
+  "usedIn": ["<design file that places the image>"],
+  "notes": "<what you saw when you opened it, what a downscaled copy could not show, what you would change>"
+}

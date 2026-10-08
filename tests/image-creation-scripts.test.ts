@@ -104,9 +104,8 @@ describe('the header reader: PNG, JPEG and the three WebP encodings', () => {
       ['d.webp', 'webp', 1024, 1024, '1:1'],
       ['e.webp', 'webp', 1376, 768, '16:9'],
     ]);
-    expect(report.images[0]!.offPercent).toBeLessThan(0.1);
-    expect(report.images[2]!.offPercent).toBeGreaterThan(0.5);
-    expect(report.images[2]!.offPercent).toBeLessThan(1);
+    // the model's pixel grid is not the exact ratio: 1856 x 2304 is 0.69 percent off 4:5, 768 x 1376 is 0.78 percent off 9:16
+    expect(report.images.map(r => r.offPercent)).toEqual([0.69, 0.78, 0.78, 0, 0.78]);
   });
 
   it('gives the byte count and the SHA-256 of the file', () => {
@@ -178,6 +177,13 @@ describe('the ratio she asked for is the ratio she got', () => {
     const { report } = json();
     expect(report.findings.map(f => `${f.file} ${f.type}`)).toEqual(['wide-a1.png ratio']);
     expect(report.findings[0]!.detail).toMatch(/asked 16:9.*got 2048 x 2048.*1:1/);
+  });
+
+  it('calls a ratio the server does not offer an incomplete file: 1.91:1 is asked as 16:9 and cropped in the design', () => {
+    put('feed-a1.png', png(1376, 768), sidecar('feed-a1.png', 'feed', 1, {}, { aspectRatio: '1.91:1' }));
+    const { report } = json();
+    expect(report.findings.map(f => f.type)).toEqual(['incomplete']);
+    expect(report.findings[0]!.detail).toMatch(/1\.91:1 is not one the server offers/);
   });
 });
 

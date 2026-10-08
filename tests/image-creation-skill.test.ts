@@ -135,7 +135,7 @@ describe('the runbook teaches a route that is honest, cheap and recorded', () =>
     const r = runbook();
     expect(r).toMatch(/Write the prompt/);
     expect(r).toMatch(/under 4,000 characters/);
-    expect(r).toMatch(/the prompt you send is the prompt you record/);
+    expect(r).toMatch(/the prompt you send is the prompt you record/i);
     for (const never of ['text', 'logos', 'real people']) expect(r, never).toContain(never);
   });
 
@@ -160,7 +160,7 @@ describe('the runbook teaches a route that is honest, cheap and recorded', () =>
 
   it('lists the failures with their reasons: a faked photo, a generated endorser, the real product, text in the picture, an unbounded loop, a reused name', () => {
     const a = section('Code & Config Exemplars');
-    for (const pattern of [/photograph faked in SVG/, /generated face as a customer, reviewer or endorser/, /generated picture of the client's real product/, /text asked of the model/, /regenerating until it is perfect/, /reused file name/, /go-ahead assumed/]) {
+    for (const pattern of [/photograph faked in SVG/, /generated face as a customer, reviewer or endorser/, /generated picture of the client's real product/, /text asked of the model/i, /regenerating until it is perfect/i, /reused file name/, /go-ahead assumed/]) {
       expect(a, String(pattern)).toMatch(pattern);
     }
   });

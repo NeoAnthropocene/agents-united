@@ -86,6 +86,33 @@ claude mcp add --scope local figma --env FIGMA_ACCESS_TOKEN=<your-token> -- npx 
 
 `@modelcontextprotocol/server-github`, the package in the skill's server matrix, is deprecated on npm ("Package no longer supported", checked 2026-10-06); GitHub's remote server above is the one the host's own page uses (`host-library/claude/pages/mcp/mcp.md`, "Connect to GitHub for code reviews"). Stitch is an HTTP server (`claude mcp list` shows it that way for an account that has it); its header comes from the skill's matrix.
 
+## Photographic images: the optional `image-gen` server
+
+An optional extra for the creative designer, never part of the required list: the doctor, the install gate and the Antigravity sync do not know it. It gives her one tool, `mcp__image-gen__generate_image`, which makes an image with Google's Gemini models from the user's AI Studio key and saves it in the project. Offer it only when a plan holds photograph-like assets that nobody supplied and the user wants them generated. Once it is connected, the designer follows the skill `image-creation`.
+
+The server must be named `image-gen`: the role's grant names it, and any other name leaves her without the tool. The lead never runs it and never asks for the key in the chat. It prints this command with its placeholders, and the user runs it in their own terminal, with a key from `aistudio.google.com/apikey` in a project that has billing:
+
+```bash
+claude mcp add --scope local image-gen --env GEMINI_API_KEY=<your-ai-studio-key> --env IMAGE_PROVIDER=gemini --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.14.0
+```
+
+`--scope local` keeps the key in the user's own file and the server out of the `.mcp.json` that is shared with the team. Write the path in the form of the user's shell (`C:\work\petpal\assets\generated` in PowerShell, `C:/work/petpal/assets/generated` in Git Bash).
+
+| Setting | Why |
+|---|---|
+| `GEMINI_API_KEY` | The user's AI Studio key. Their project is billed per image |
+| `IMAGE_PROVIDER=gemini` | The default, stated, so that the route is in the command |
+| `SKIP_PROMPT_ENHANCEMENT=true` | The server would otherwise rewrite the designer's prompt with a second Gemini call. Off, the prompt she writes is the prompt that is sent and recorded, and an image costs one call |
+| `IMAGE_OUTPUT_DIR` | Absolute, and inside the project. The designer holds no shell and cannot move a file, so the picture has to land where the design can use it. The server creates the folder and overwrites a file of the same name |
+
+**Why this version.** `mcp-image@0.14.0` (MIT, one maintainer, Node 22 or later) was published 2026-09-08, the newest release older than two weeks on 2026-10-08; 0.15.0 to 0.18.0 were published between 2026-10-05 and 2026-10-08. It has no install script and no npm provenance attestation, and its dependencies (`@google/genai`, `openai`, `@modelcontextprotocol/sdk`) are ranges that `npx` resolves on the day. Read, not run: `package.json`, the entry points, the configuration, the Gemini client, the file manager, the security manager, the input validator, the tool handler and the response builder of 0.14.0, and a search of every `.js` file in the package for subprocess, `eval`, network, environment and file use. Its own code reads only the settings above and `NODE_ENV`; it starts no process; it reaches Google through the Google SDK, and the OpenAI and Seedream clients (one `fetch`, to BytePlus) run only when that provider is chosen and its key is set, which neither is. It reads a file only when a call names an input image (PNG, JPEG or WebP, at most 10 MiB), which then goes to Google, and it writes one image per call into `IMAGE_OUTPUT_DIR`. Not run here: it needs the user's key, so no call was made. Refresh the pin as for the others: `npm view mcp-image version time`, read what changed, then change this section and its test together.
+
+**Cost.** Image models have no free tier: the key's project needs billing, and each call is charged (about $0.07 to $0.15 on the default model, twice that on `quality`). The table and the arithmetic are in the `image-creation` skill (`references/server-and-cost.md`). Suggest a budget alert on the project.
+
+**Check.** After the restart below, `claude mcp get image-gen` shows it, and `ToolSearch` must list `mcp__image-gen__generate_image`: a server that is not listed is not usable. Report what was seen. A running session does not load a server added after it started.
+
+**Undo.** `claude mcp remove image-gen --scope local`, and revoke the key in AI Studio when it is no longer wanted.
+
 ## Check an install
 
 - `claude mcp get <name>` shows one server; `claude mcp list` shows all, with a status: Connected, Failed, or **Pending approval** (a project-scoped server the user has not approved yet; it is the normal status right after an install).
