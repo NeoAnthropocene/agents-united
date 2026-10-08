@@ -1,0 +1,9 @@
+validator on her file: no problems
+a nested $value anywhere in her file: false
+color: her file 12 tokens, the converter 12, differences in name, value or usage: 0; empty usage in her file: 10
+spacing: her file 4 tokens, the converter 4, differences in name, value or usage: 0; empty usage in her file: 4
+radius: her file 2 tokens, the converter 2, differences in name, value or usage: 0; empty usage in her file: 2
+themes the same: true
+type the same: true
+colour order the same: false (hers: cocoa-900,cocoa-600,clay-600,cream-50,sand-300,white,text-default,text-muted,text-on-action,surface-base,surface-accent,cta-primary) (converter: cocoa-600,cocoa-900,clay-600,cream-50,sand-300,white,text-default,text-muted,text-on-action,surface-base,surface-accent,cta-primary)
+token differences, order aside: 0

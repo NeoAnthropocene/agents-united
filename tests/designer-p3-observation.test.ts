@@ -80,10 +80,23 @@ describe('the P3 observation: the record', () => {
     }
   });
 
+  it("keeps no full link to the two private artifacts: only the type publisher's two public type links stay whole", () => {
+    const allowed = new Set(['QKN21svewxgyPb6SYRqWnd', '5M7UeXXcx16TP3vzVFNDzd']); // the Design and Design System types, published by the host
+    const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]));
+    let links = 0;
+    for (const file of walk(RECORDS)) {
+      for (const m of text(file).matchAll(/claude\.ai\/artifact\/([A-Za-z0-9]+)(\[elided\])?/g)) {
+        links += 1;
+        expect(allowed.has(m[1]!) || m[2] !== undefined, `${path.relative(RECORDS, file)}: ${m[1]}`).toBe(true);
+      }
+    }
+    expect(links).toBeGreaterThan(0);
+  });
+
   it('hashes the copies it keeps: the first twelve characters of each sha256 are in the observation', () => {
     const o = observation();
     for (const rel of KEPT_COPIES) {
-      const sha = createHash('sha256').update(fs.readFileSync(path.join(RECORDS, rel))).digest('hex');
+      const sha = createHash('sha256').update(text(path.join(RECORDS, rel)), 'utf8').digest('hex'); // line endings normalised: a Windows checkout may hold CRLF
       expect(o, rel).toContain(sha.slice(0, 12));
     }
   });

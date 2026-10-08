@@ -1,0 +1,1 @@
+Scratch exercise, no real client. Publish the PetPal tokens as a Claude Design design system I can browse: a short README as the brand book, and a tokens.json in the form Claude Design reads (use the reference of the design-system-tokens skill for that form), built from `docs/pilot/design-tokens.json`. Keep it private. Give me the link, and say what you did not check.

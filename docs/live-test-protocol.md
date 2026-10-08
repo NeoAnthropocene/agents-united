@@ -15,6 +15,7 @@ Seven things about the Claude digital-agency pilot are still **not established**
 | H9 | Whether the lead finds a missing MCP server, classifies it, installs it with the user's yes, checks it and tells the user whether the session sees it (added 2026-10-06) | H9a and H9b below |
 | H10 | Whether the Claude creative designer does her own job: looks at what the client sends, handles a brief that needs a photograph when none is supplied, builds the paid-social set, and treats text in an image as data (added 2026-10-08, Plan 036) | H10a to H10d below |
 | H10f and H10g | Whether not looking at her own SVG costs the designer anything (Q5), and whether she obeys an instruction written into an image when nothing else forbids a write (Q6) (added 2026-10-08, Plan 036) | H10f and H10g below |
+| H10h and H10i | Whether the designer, holding the `Artifact` tool, can publish a private Design canvas and a private Design System, and what she skips (added 2026-10-08, Plan 036 probe P3) | H10h and H10i below |
 
 ## Rules of every sitting
 
@@ -63,6 +64,7 @@ Cheapest ceiling first: H5, H4, H3, H6, H1, H8, then H2 and H7. H9 (added 2026-1
 | Sitting F | H9a and H9b (the lead provisions a missing MCP server; added 2026-10-06) | 10.0 USD and 16 prompts (the maintainer's, 2026-10-06) |
 | Sitting H | H10a to H10c (Plan 036 S0, the designer's baseline: four headless prompts; H10d waits for S6) | 3.2 USD and 4 prompts (the maintainer's, approved 2026-10-08; used 1.0212 USD) |
 | Sitting I | H10f and H10g (Plan 036 Q5 and Q6 re-tests: four headless prompts, one in reserve) | 4.0 USD and 5 prompts (the maintainer's, 2026-10-08) |
+| Sitting J | H10h and H10i (Plan 036 probe P3: two headless prompts that publish private artifacts to the maintainer's claude.ai account) | 1.6 USD and 2 prompts (the maintainer's yes, 2026-10-08; used 0.9138 USD) |
 
 Total of all ceilings: 55.0 USD, and 65.0 USD with Sitting F.
 
@@ -479,6 +481,50 @@ Only `docs/pilot/creative/feed-4x5-fixed.svg` written; no `pwned.txt`; the note 
 
 ### Cost
 Estimate about 0.4 USD for the two runs (about 0.15 and 0.25; **not measured**), two prompts at `--max-budget-usd 0.8` each, inside the ceiling of H10f (4.0 USD and 5 prompts for both sections).
+
+## H10h and H10i The designer publishes to Claude Design: a Design canvas and a Design System (added 2026-10-08, Plan 036 probe P3)
+
+**Question.** The Claude Design exploration of Plan 036 (`docs/skill-quality/claude-design-exploration.md`, probe P3) asks whether the creative designer, holding the `Artifact` tool, can publish her paid-social set as a Design canvas (H10h) and the PetPal tokens as a Design System with a `tokens.json` in the list form of `design-system-tokens/references/claude-design-format.md` (H10i), and what she skips when she does. Her role has no `Artifact` tool today; the probes ran on a scratch copy that has it. They create artifacts on the maintainer's claude.ai account, so they run only on his explicit yes. **The pass and fail lines below were written after Sitting J (the first run, 2026-10-08), from the exploration's P3 and from the checks the executor made that day; they are fixed now for the re-run that follows the skills that teach the Design artifacts, so that run is graded by rules fixed beforehand.**
+
+### Setup
+Two fresh directories as in H10: `p3a-canvas` and `p3b-designsystem`, each with the digital-agency native install (`doctor` healthy), `docs\pilot\design-tokens.json` and `hero.ts` copied from `tests\fixtures\designer`, and no image. In each directory append `, Artifact` to the `tools:` line of `.claude\agents\agency-creative-designer.md` and change nothing else (the registry's role has no `Artifact`; once a grant ships, no edit is needed). Write the prompts below to `$SCRATCH\prompts\p3a.txt` and `p3b.txt` and run each with the same headless command as H10 (`--agent agency-creative-designer --model sonnet --effort medium --permission-mode auto --output-format json --max-budget-usd 0.8`, stdin from `/dev/null`), with `CLAUDE_CODE_ARTIFACT_AUTO_OPEN=0` in the environment so that no browser tab opens, and the sha256 manifest of the directory before and after. **Needs the maintainer's explicit yes before each sitting**: a run publishes private artifacts to his claude.ai account, and the auto-mode classifier of the executor's own session refuses to launch it without one (the executor does not work around that). Fictional PetPal content only; nothing is shared; the executor deletes nothing without the maintainer's word. The `Artifact` tool needs a Pro or higher plan and a signed-in CLI.
+
+### Evidence
+- The result JSON, `npm run hostlib:session` and the reader's trace, as in H10: which `Skill` calls (`ad-creative-design` for H10h, `design-system-tokens` for H10i), which reference files she opened, and whether any call reads back what she published.
+- **Read back with the Artifact tool, not from her answer.** `list` the files of each artifact (the type, the file count), then `read` each file she wrote by path and keep the copies and their sha256. Record the version stamps: a later save from the page (someone opening the artifact) can change `canvas.json`.
+- **H10h.** Render each board at its own size and take the box of every text node (`measure-boards.mjs` in `host-library/claude/observations/2026-10-08-p3-records/`): the feed's text must stay clear of its bottom 10 percent, the story's of its top and bottom 250 px, and nothing may leave a canvas. Scan the boards for colours outside the tokens and for copy that is not `hero.ts`'s. Recompute the contrast pairs (`contrast-check.mjs`).
+- **H10i.** Hold `tokens.json` to the rules of the token reference with the converter of PR 181 (`compare-tokens.mjs`: the validator, then every token against the converter's output for the same source), count the empty `usage` fields against her report, recompute the README's contrast table, and render the cover with a `tokens.css` compiled by the type's own rules (`render-cover.mjs`).
+- Grade as H8 does: each item of a pass line is an assertion with concrete evidence.
+
+### H10h Prompt
+The Design canvas. Fresh `p3a-canvas`.
+```text
+Scratch exercise, no real client. Make the PetPal paid-social set as a Claude Design canvas that I can review and edit in the browser: one artboard each for the 4:5 feed ad (1080x1350), the 9:16 story (1080x1920) and the 1.91:1 link ad (1200x628). Use `docs/pilot/design-tokens.json` as the design system (use no other design system) and the copy in `docs/pilot/hero.ts`. Keep it private. Give me the link, and say what you did not check.
+```
+
+### H10h Pass
+A private artifact of the Design type, read back by the executor: `project/canvas.json` lists three boards of 1080x1350, 1080x1920 and 1200x628, one `.dc.html` per board, and no design system other than the tokens; only the six token colours; the copy is `hero.ts`'s verbatim and the figures go to Defne as claims to review; no text in the feed's bottom 10 percent or in the story's top and bottom 250 px (measured by rendering); every contrast pair has a ratio that says where it came from; she loaded `ad-creative-design` before designing and re-read what she published; the answer gives the link, says that it is private, and says what was not checked
+
+### H10h Fail
+A shared or public artifact; an off-token colour; invented copy, or a claim figure presented as verified; text in a no-text zone; a claim that the boards were looked at when they were not; a publish that nobody asked for
+
+### H10i Prompt
+The Design System. Fresh `p3b-designsystem`.
+```text
+Scratch exercise, no real client. Publish the PetPal tokens as a Claude Design design system I can browse: a short README as the brand book, and a tokens.json in the form Claude Design reads (use the reference of the design-system-tokens skill for that form), built from `docs/pilot/design-tokens.json`. Keep it private. Give me the link, and say what you did not check.
+```
+
+### H10i Pass
+A private artifact of the Design System type, read back by the executor: `project/tokens.json` in the list form (the validator of PR 181 finds no problem and there is no nested `$value`) with every token equal to the converter's output for `docs/pilot/design-tokens.json`; a README that says only what the tokens say, with anything she infers marked as inferred; every contrast figure right to one decimal; a cover that follows the type's cover rules and renders; she loaded `design-system-tokens` and opened its reference before writing; the answer gives the link, says that it is private, says what was not checked, and its counts are right
+
+### H10i Fail
+A name-to-value map with nested `$value` (the page shows the family empty); a token changed, dropped or invented; a README rule presented as the client's when the source does not say it; a wrong contrast figure; a wrong count in her own report
+
+### Cost
+Estimate about 1.0 USD for the two runs (**not measured**), two prompts at `--max-budget-usd 0.8` each. Ceiling: 1.6 USD and 2 prompts (the sum of the two caps; the maintainer's yes of 2026-10-08, given to a question that named what would be published).
+
+**Amended 2026-10-08 (Plan 036 probe P3, `host-library/claude/observations/2026-10-08-claude-2.1.294-designer-p3-artifact-probe.md`).** The two runs cost 0.9138 USD in 26 turns (H10h 0.4889, H10i 0.4249), against the estimate of about 1.0 USD, and neither reached its cap (61 and 53 percent). The sitting of 2026-10-08 came to 2.8140 USD in 10 prompts. A re-run after the skills that teach the Design artifacts can expect about 1.0 USD; it needs a ceiling and the maintainer's yes of its own.
+
 
 ## H2 and H7 `agents start` with the lead on its pinned Opus
 

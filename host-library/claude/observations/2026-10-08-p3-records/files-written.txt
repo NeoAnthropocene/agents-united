@@ -1,0 +1,3 @@
+Files each headless probe run added or changed in its scratch directory (the sha256 manifest of every file outside .git, before and after the run). The files she published were written under the session scratchpad, outside the directory.
+p3a-canvas: none
+p3b-designsystem: none
