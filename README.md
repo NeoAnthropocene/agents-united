@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 34 bundles (including the `full` suite; `registry/bundles.json` also holds one placeholder, `mock-organization-under-construction`, which is not counted) · 59 agents (9 orchestrators + 50 sub-agents) · 189 skills (120 domain skills + 69 workflow playbooks) · 8 department domains.
+**In numbers:** 34 bundles (including the `full` suite; `registry/bundles.json` also holds one placeholder, `mock-organization-under-construction`, which is not counted) · 59 agents (9 orchestrators + 50 sub-agents) · 190 skills (121 domain skills + 69 workflow playbooks) · 8 department domains.
 
 ---
 
@@ -272,7 +272,7 @@ agents add full                        # everything
 
 ### Skills
 
-The 189 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 120 are **domain skills** (best practices, runbooks, platform guides) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 190 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 121 are **domain skills** (best practices, runbooks, platform guides) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 

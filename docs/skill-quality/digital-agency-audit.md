@@ -107,3 +107,4 @@ Skills added to the bundle by Plan 035 itself. They are written to the contract 
 | Skill | Loaded by | Provenance | Body lines / extra files | Templated share | Verdict | Priority | Inspiration | Slice |
 |---|---|---|---|---|---|---|---|---|
 | `agency-brief-and-premises` | Chris | in-house, original (ideas credited in README) | new | n/a | new skill, own words | P0 | superpowers `brainstorming`, gstack `office-hours` | S6 |
+| `design-artifact-publishing` | Jamileh | in-house, original | new | n/a | new skill, own words | P1 | the P3 observation of Plan 036 and the Design System type's own references | 036 S11 |
