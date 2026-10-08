@@ -40,12 +40,19 @@ const EVALS = JSON.stringify({ skill_name: 'demo', evals: [
 ] });
 
 describe('the layout checker', () => {
-  it('accepts a short SKILL.md with referenced supporting files, a script run through CLAUDE_SKILL_DIR with its table, and evals', () => {
+  it('accepts a short SKILL.md with referenced supporting files, a template in assets/, a script run through CLAUDE_SKILL_DIR with its table, and evals', () => {
     const root = tmpSkill({
-      'SKILL.md': `${FM()}\n# Demo\nSee [examples/a.md](examples/a.md) and [references/t.md](references/t.md); with a shell run node \${CLAUDE_SKILL_DIR}/scripts/run.mjs.\n`,
-      'examples/a.md': 'x', 'references/t.md': 'x', 'scripts/run.mjs': 'x', 'evals/evals.json': EVALS,
+      'SKILL.md': `${FM()}\n# Demo\nSee [examples/a.md](examples/a.md) and [references/t.md](references/t.md); fill in [assets/w.md](assets/w.md); with a shell run node \${CLAUDE_SKILL_DIR}/scripts/run.mjs.\n`,
+      'examples/a.md': 'x', 'references/t.md': 'x', 'assets/w.md': 'x', 'scripts/run.mjs': 'x', 'evals/evals.json': EVALS,
     });
     expect(checkSkillLayout(root, 'demo')).toEqual([]);
+  });
+
+  it('holds assets/ to the same rule as references/: a template nobody references, or a link to one that is not there, is rejected', () => {
+    const root = tmpSkill({ 'SKILL.md': `${FM()}\nFill in [assets/gone.md](assets/gone.md).\n`, 'assets/orphan.md': 'x', 'evals/evals.json': EVALS });
+    const errors = checkSkillLayout(root, 'demo').join('\n');
+    expect(errors).toContain('assets/orphan.md is not referenced');
+    expect(errors).toContain('links to assets/gone.md which does not exist');
   });
 
   it('rejects an over-long SKILL.md, an unknown key, a description that does not lead with the use case, no when_to_use, and "!" injection', () => {
