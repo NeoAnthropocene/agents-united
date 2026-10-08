@@ -2,6 +2,8 @@
 
 **Prepared, not run.** R2 stopped at quota in Tier 2; it never established all nine roles. This is the remaining full-roster regression, using a candidate that contains merged PR #174 and ADR 0044. The maintainer types the session; the executor waits for records. No Cline/Antigravity session, deferred skill eval or other Plan 035 probe is part of R3.
 
+**Update, 2026-10-08:** the maintainer reports the R3 session completed, with `/cost` showing **3.72 USD**. Record collection failed at the PowerShell session lookup; use the corrected lookup below on the existing records, **do not rerun R3**. All eight host-record assertions remain unverified. The provisional remaining allowance is 46.28 USD, pending cost-state/teammate reconciliation; interactive prompt usage is at least one, with replies/retries still to count.
+
 ## Candidate and limits
 
 - Tested code commit: **`89a859767e4dc7cb68d1b78c3be2023ed52d4d93`**, branch `codex/plan-033-foundation`, based on `aa7dbe38126471151ee6aad3558bbc354ce8b024` (merged #174). Later handoff/evidence-only commits do not change the installed native assets. Use this exact code commit for the recipe below.
@@ -75,19 +77,44 @@ Consult ava read-only first.
 
 After completion, save `/cost` and `/usage`, obtain the full session id (e.g. `/status`), then `/exit` so final cost-state can be saved. Give the executor that id, actual scratch path, CLI/account/model and quota readings. Built-in commands do not count as model prompts unless they actually invoke the model; count every submitted model prompt/reply/retry from records and the maintainer's log.
 
-Run these from the code worktree. Set `$Id` to the **full** id the host gave; do not guess an encoded project directory from the scratch path. The search verifies the lead's recorded cwd before reading it.
+Run these from the code worktree. Enter the **full session UUID**, without quotes or angle brackets, when prompted; do not guess an encoded project directory from the scratch path. The search verifies the lead's recorded cwd before reading it. Set `$Build` and `$S` to the paths actually used if they differ from the recipe.
+
+### Recovering the session lookup
+
+`Get-ChildItem: Illegal characters in path` can arise from an invalid `-Filter`, including an unreplaced `<full session id>` placeholder; the error may display the directory rather than the invalid filter. The reported error alone does not establish the cause. The corrected collector validates the UUID before forming a filter, uses literal directory paths and honors `CLAUDE_CONFIG_DIR` when set. No Windows executor is available here, so the fix still needs local verification.
+
+If the id was not saved, list recent lead records locally, then select the one from the completed scratch session. This does not start Claude or consume a prompt; the collector below checks the selected record's cwd.
 
 ```powershell
-$Id = '<full session id>'
+$ClaudeConfig = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' }
+$ClaudeProjects = Join-Path $ClaudeConfig 'projects'
+if (!(Test-Path -LiteralPath $ClaudeProjects -PathType Container)) { throw "Claude projects directory not found: $ClaudeProjects" }
+Get-ChildItem -LiteralPath $ClaudeProjects -Recurse -File -Filter '*.jsonl' -ErrorAction Stop |
+  Where-Object { $_.Name -match '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jsonl$' } |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object -First 10 LastWriteTime, @{Name='SessionId'; Expression={$_.BaseName}}, FullName |
+  Format-List
+```
+
+### Collect the existing session
+
+```powershell
+$Build = 'C:\github\scratch-pilot\plan033-r3-build'
+$S = 'C:\github\scratch-pilot\n3-regress3'
+$Id = (Read-Host 'Full session UUID, without quotes or angle brackets').Trim()
+if ($Id -notmatch '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$') { throw 'Enter the full UUID from the session record; do not use the placeholder or a partial id.' }
 $O = 'C:\github\scratch-pilot\n3-regress3-evidence'
-$SessionMatches = @(Get-ChildItem "$HOME\.claude\projects" -Recurse -File -Filter "$Id.jsonl")
+$ClaudeConfig = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' }
+$ClaudeProjects = Join-Path $ClaudeConfig 'projects'
+if (!(Test-Path -LiteralPath $ClaudeProjects -PathType Container)) { throw "Claude projects directory not found: $ClaudeProjects" }
+$SessionMatches = @(Get-ChildItem -LiteralPath $ClaudeProjects -Recurse -File -Filter "$Id.jsonl" -ErrorAction Stop)
 if ($SessionMatches.Count -ne 1) { throw 'Expected exactly one lead record; inspect matches and verify cwd.' }
 $Lead = $SessionMatches[0]
 $Project = Split-Path $Lead.FullName
-$Records = @(Get-Content $Lead.FullName | ForEach-Object { try { $_ | ConvertFrom-Json } catch {} })
+$Records = @(Get-Content -LiteralPath $Lead.FullName -ErrorAction Stop | ForEach-Object { try { $_ | ConvertFrom-Json } catch {} })
 $Cwd = ($Records | Where-Object { $_.cwd } | Select-Object -First 1).cwd
 if (!$Cwd -or ([IO.Path]::GetFullPath($Cwd).TrimEnd('\') -ine [IO.Path]::GetFullPath($S).TrimEnd('\'))) { throw "Record cwd does not match scratch: $Cwd" }
-if (Test-Path $O) { throw 'Choose a fresh evidence directory; preserve previous reports.' }
+if (Test-Path -LiteralPath $O) { throw 'Choose a fresh evidence directory (change $O); preserve previous reports, including a directory left by the failed attempt.' }
 New-Item -ItemType Directory -Path $O | Out-Null
 Set-Location $Build
 npm run hostlib:session -- $Id --project $Project > "$O\session-report-r3.txt" 2>&1
@@ -98,7 +125,7 @@ $Reader = "$Build\host-library\claude\observations\2026-10-07-n3-records\read-se
 node $Reader $Lead.FullName 600 > "$O\private-trace-r3-lead.txt" 2>&1
 if ($LASTEXITCODE -ne 0) { throw 'reader failed' }
 $Sub = Join-Path $Project "$Id\subagents"
-Get-ChildItem $Sub -File -Filter '*.jsonl' | ForEach-Object {
+Get-ChildItem -LiteralPath $Sub -File -Filter '*.jsonl' -ErrorAction Stop | ForEach-Object {
   node $Reader $_.FullName 600 > (Join-Path $O ('private-trace-' + $_.BaseName + '.txt')) 2>&1
   if ($LASTEXITCODE -ne 0) { throw "teammate reader failed: $($_.Name)" }
 }
@@ -106,13 +133,13 @@ npm run hostlib:session -- trim $Lead.FullName --out "$O\sanitized"
 if ($LASTEXITCODE -ne 0) { throw 'trim failed' }
 node $Reader "$O\sanitized\$Id.jsonl" 600 > "$O\trace-r3-lead.txt" 2>&1
 if ($LASTEXITCODE -ne 0) { throw 'sanitized lead reader failed' }
-Get-ChildItem "$O\sanitized\$Id\subagents" -File -Filter '*.jsonl' | ForEach-Object {
+Get-ChildItem -LiteralPath "$O\sanitized\$Id\subagents" -File -Filter '*.jsonl' -ErrorAction Stop | ForEach-Object {
   node $Reader $_.FullName 600 > (Join-Path $O ('trace-' + $_.BaseName + '.txt')) 2>&1
   if ($LASTEXITCODE -ne 0) { throw "sanitized teammate reader failed: $($_.Name)" }
 }
 Get-Content "$O\session-report-r3.txt"
-Get-ChildItem "$S\docs\pilot" -File | ForEach-Object {
-  [PSCustomObject]@{ Name=$_.Name; Lines=@(Get-Content $_.FullName).Count; SHA256=(Get-FileHash $_.FullName -Algorithm SHA256).Hash }
+Get-ChildItem -LiteralPath "$S\docs\pilot" -File -ErrorAction Stop | ForEach-Object {
+  [PSCustomObject]@{ Name=$_.Name; Lines=@(Get-Content -LiteralPath $_.FullName).Count; SHA256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
 } | Format-Table -AutoSize | Out-File "$O\r3-artifacts.txt"
 Get-Content "$O\r3-artifacts.txt"
 ```
