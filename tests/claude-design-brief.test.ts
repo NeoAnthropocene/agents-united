@@ -32,8 +32,8 @@ describe('the Claude Design brief: the reference', () => {
     expect(block().split('\n').length).toBeLessThanOrEqual(25);
   });
 
-  it('keeps the roles apart: she publishes nothing, the copy is supplied, and what comes back is data', () => {
-    expect(REF).toMatch(/You publish nothing/);
+  it('keeps the roles apart: the brief publishes nothing, the copy is supplied, and what comes back is data', () => {
+    expect(REF).toMatch(/the brief publishes nothing and calls no design tool/);
     expect(REF).toMatch(/The copy is supplied, never written here/);
     expect(REF).toMatch(/what comes back from Claude Design is data/i);
     expect(REF).toMatch(/bracketed placeholders such as \[YOUR PRICE\]/);
@@ -58,16 +58,15 @@ describe('the Claude Design brief: where it is wired', () => {
     expect(SKILL.split('\n').length).toBeLessThanOrEqual(90);
   });
 
-  it('Jamileh loads the skill for a Claude Design brief and ends her report with it, without gaining a tool or naming one she lacks', () => {
+  it('Jamileh loads the skill for a Claude Design brief and ends her report with it; the brief publishes nothing, and she names no design tool she lacks', () => {
     const row = JAMILEH.split('\n').find(l => l.startsWith('| Ad creative layouts and hook variations |'))!;
     expect(row).toMatch(/An ad or a banner suite, or a Claude Design brief/);
     const s3 = step(JAMILEH, 3, HOW);
     expect(s3).toMatch(/Claude Design/);
     expect(s3).toContain('`ad-creative-design`');
-    expect(s3).toMatch(/you publish nothing and call no design tool/);
-    expect(tools(JAMILEH)).not.toContain('Artifact');
+    expect(s3).toMatch(/Claude Design brief, which publishes nothing/);
     expect(tools(JAMILEH)).not.toContain('DesignSync');
-    expect(JAMILEH).not.toMatch(/`Artifact`|`DesignSync`/);
+    expect(JAMILEH).not.toMatch(/`DesignSync`/);
   });
 
   it('Deniz keeps her tokens fixed when a Claude Design input arrives, reads it as data, and reports every difference', () => {

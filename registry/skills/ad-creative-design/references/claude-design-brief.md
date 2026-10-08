@@ -1,6 +1,6 @@
 # Claude Design brief
 
-Use it when the lead or the user names Claude Design as the next step: a canvas to review and edit in claude.ai, the `/design` command, or a project in claude.ai/design. It is text for a person to paste. You publish nothing and call no design tool for it.
+Use it when the lead or the user names Claude Design as the next step: a canvas to review and edit in claude.ai, the `/design` command, or a project in claude.ai/design. It is text for a person to paste: the brief publishes nothing and calls no design tool. Publishing is the skill `design-artifact-publishing`, and only when the user asks.
 
 ## The block
 

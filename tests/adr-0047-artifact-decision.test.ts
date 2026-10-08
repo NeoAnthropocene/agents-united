@@ -7,7 +7,7 @@ import { nativeText } from './helpers/native-roles.js';
  * ADR 0047 and Plan 036 after probe P3 (2026-10-08): the maintainer decided that the creative designer keeps the `Artifact` tool
  * (option O3 of the Claude Design exploration), taught first by a skill (S11) and granted next (S12), with the evidence in S13.
  * This pins the decision where it is written: the ADR has the four parts and says what is decided and what is not built, the
- * plan records Q8 and Q9, the new findings and the slices, the plan index agrees, and the statement that the grant is not built yet
+ * plan records Q8 and Q9, the new findings and the slices, the plan index agrees, and the statement that the grant is built
  * is true of the registry today. **S12 flips the last assertion**: it grants the tool, so it must also change the ADR's status
  * line and the plan's state, and this test with them.
  */
@@ -26,11 +26,11 @@ describe('ADR 0047: the creative designer may publish to Claude Design', () => {
     for (const part of ['Status', 'Context', 'Decision', 'Consequences']) expect(a, part).toMatch(new RegExp(`^- \\*\\*${part}\\*\\*:`, 'm'));
   });
 
-  it('records the maintainer\'s words and the date, and says that the grant is not built yet and which slices build it', () => {
+  it('records the maintainer\'s words and the date, and says that the grant is built and by which slices', () => {
     const a = adr();
     expect(a).toMatch(/Accepted, 2026-10-08/);
     expect(a).toMatch(/I want to keep the Artifact for agency-creative-designer/);
-    expect(a).toMatch(/The grant is not built yet/);
+    expect(a).toMatch(/The grant is built \(Plan 036 S12\)/);
     expect(a).toMatch(/S11/);
     expect(a).toMatch(/S12/);
     expect(a).toMatch(/ADR 0021/);
@@ -91,8 +91,8 @@ describe('Plan 036 after P3', () => {
 });
 
 describe('what is built today', () => {
-  it('is not the grant: her tools line has no Artifact yet, which is what the ADR says (S12 flips this with the ADR; the skill of S11 may already exist)', () => {
+  it('is the grant: her tools line holds Artifact, which is what the ADR says', () => {
     const tools = /^tools: (.*)$/m.exec(nativeText('agency-creative-designer'))![1]!.split(',').map(t => t.trim());
-    expect(tools).not.toContain('Artifact');
+    expect(tools).toContain('Artifact');
   });
 });
