@@ -1,0 +1,36 @@
+# PetPal Content Plan (pilot)
+Keywords are unvalidated hypotheses (no research tools used); no statistics are cited. Machine-drafted: needs human editorial review. Claims such as "verified" await Defne's review. Ownership: hero and conversion copy is Kaan's, social is Jale's, structured data is Selin's.
+
+## Pillar (TOFU/MOFU, ICP: urban owners 25-45 who distrust kennels)
+**How to Choose a Trusted Pet Sitter: The Owner's Guide to Leaving Your Pet at Home** (`/guides/choose-a-pet-sitter`, 2,000+ words)
+
+## Clusters (each links to the pillar with a descriptive anchor)
+1. Pet Sitter vs. Kennel: Which Is Right for Your Pet? (comparison, MOFU)
+2. 12 Questions to Ask a Pet Sitter Before the First Booking (checklist, MOFU)
+3. How to Prepare Your Home and Pet for a Sitter's First Visit (how-to, MOFU)
+4. What Does Pet Sitting Cost? A Line-by-Line Price Guide (commercial, BOFU)
+5. Leaving a Pet With a Stranger: How ID Checks and Reviews Work (trust, BOFU)
+
+## Brief 1
+- **Working title:** Pet Sitter vs. Kennel: Which Is Right for Your Pet?
+- **Target keyword:** "pet sitter vs kennel" (variants: "kennel alternatives", "in-home pet sitting")
+- **Search intent:** commercial investigation, owner comparing options before a trip.
+- **Audience:** urban owner of one or two pets who has used or dreads a kennel.
+- **Angle:** fair side-by-side by pet type and stress level; concedes where a kennel fits.
+- **Outline:** H2 decision factors; H2 comparison table; H2 cases where a kennel wins; H2 how to vet a sitter; H2 FAQ.
+- **CTA:** one only: "Find a sitter near you" (sitter search start).
+- **Internal links:** pillar; cluster 2; cluster 4 (descriptive anchors).
+- **Sources needed:** veterinary or animal-welfare body guidance on boarding stress; PetPal's own vetting policy, confirmed by the team. Each cited with year and URL.
+- **Success metric:** organic click-through to sitter search; threshold set after a baseline exists.
+
+## Brief 2
+- **Working title:** 12 Questions to Ask a Pet Sitter Before the First Booking
+- **Target keyword:** "questions to ask a pet sitter" (variants: "pet sitter interview", "pet sitter checklist")
+- **Search intent:** informational with booking intent; owner about to contact a sitter.
+- **Audience:** same ICP; first-time sitter bookers anxious about strangers at home.
+- **Angle:** a printable question set, each question paired with a good and a red-flag answer.
+- **Outline:** H2 why interview; H2 experience and emergencies; H2 routines and meds; H2 communication and updates; H2 red flags; H2 FAQ.
+- **CTA:** one only: "Message a sitter on PetPal".
+- **Internal links:** pillar; cluster 5; cluster 3.
+- **Sources needed:** pet first-aid and emergency guidance from a recognised vet or rescue body; PetPal's verification steps (Defne-reviewed). Year and URL for each.
+- **Success metric:** search-started rate from readers; threshold set after instrumentation (see strategy.md).

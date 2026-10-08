@@ -1,0 +1,22 @@
+# PetPal Landing Page SEO Audit (pilot, pre-launch)
+No live site exists: every item is a pre-launch recommendation, not an observed defect. No crawl or Core Web Vitals data was collected.
+
+| # | Check | Severity | Pre-launch recommendation |
+|---|---|---|---|
+| 1 | Indexation and canonical | Critical | Staging sends `noindex`; production has a self-referential canonical and a robots.txt that declares the sitemap. Owner: Deniz. |
+| 2 | Meta title | High | `Pet Sitters Near You: ID-Checked and Reviewed | PetPal` (54 chars). "ID-checked" awaits Defne's review. |
+| 3 | Meta description | High | `Find a pet sitter to care for your pet at home. Every sitter is ID-checked, and you can read owner reviews first. Free to search.` (129 chars) |
+| 4 | Heading hierarchy | Medium | One `<h1>` (the hero headline). It has no search term, so put "pet sitter" in the subhead or first H2. Owner: Kaan with Deniz. |
+| 5 | FAQ schema and pillar link | Low | Add the block below only if the same Q&As are visible on the page. Link to `/guides/choose-a-pet-sitter` (Yavuz's unconfirmed assumption: confirm the slug first). |
+
+## FAQPage JSON-LD
+```json
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Is a pet sitter or a kennel better for my pet?",
+ "acceptedAnswer":{"@type":"Answer","text":"It depends on your pet and how it handles unfamiliar places. A sitter keeps your pet at home, while a kennel can suit some pets. Our guide compares both."}},
+{"@type":"Question","name":"What should I ask a pet sitter before the first booking?",
+ "acceptedAnswer":{"@type":"Answer","text":"Ask about experience, emergencies, routines and medication, and how they will keep in touch. Watch for vague answers."}},
+{"@type":"Question","name":"How do ID checks and reviews work on PetPal?",
+ "acceptedAnswer":{"@type":"Answer","text":"PLACEHOLDER: replace with the verification steps once Defne confirms what PetPal actually does."}}]}
+```
+Q3 is a placeholder: do not publish until Defne confirms the steps. Checked by parsing the block with `JSON.parse` in node.

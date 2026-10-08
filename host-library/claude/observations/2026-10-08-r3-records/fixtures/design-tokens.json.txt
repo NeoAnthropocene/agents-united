@@ -1,0 +1,23 @@
+{
+  "$description": "PetPal pilot tokens (provisional, derived from positioning 'Trusted sitters, happy pets, calm owners.'). Path convention: nested objects, leaf = {value}; CTA is color.cta.primary. WCAG contrast computed by hand (sRGB relative luminance): cta.label on cta.primary 6.41:1; text.default on surface.page 13.60:1; text.default on surface.card 14.53:1; text.muted on surface.page 7.07:1; text.muted on surface.card 7.55:1; text.default on accent.sun 8.12:1; cta.primary on surface.page as boundary 6.00:1. Not machine-verified: Emre to confirm in the built page. accent.sun is a fill only, never text. No purple or violet.",
+  "color": {
+    "cta": { "primary": { "value": "#0F6B5C" }, "label": { "value": "#FFFFFF" } },
+    "text": { "default": { "value": "#1F2A37" }, "muted": { "value": "#4B5563" } },
+    "surface": { "page": { "value": "#FAF7F2" }, "card": { "value": "#FFFFFF" } },
+    "accent": { "sun": { "value": "#F2B84B" } }
+  },
+  "font": {
+    "family": { "base": { "value": "system-ui, -apple-system, 'Segoe UI', sans-serif" } },
+    "size": {
+      "$description": "16px body, ratio 1.25, whole pixels",
+      "body": { "value": "16px" }, "lead": { "value": "20px" }, "h3": { "value": "25px" },
+      "h2": { "value": "31px" }, "h1": { "value": "39px" }, "display": { "value": "49px" }
+    },
+    "lineHeight": { "body": { "value": "1.5" }, "heading": { "value": "1.2" } }
+  },
+  "space": {
+    "$description": "4px base",
+    "1": { "value": "4px" }, "2": { "value": "8px" }, "3": { "value": "12px" }, "4": { "value": "16px" },
+    "6": { "value": "24px" }, "8": { "value": "32px" }, "12": { "value": "48px" }, "16": { "value": "64px" }
+  }
+}

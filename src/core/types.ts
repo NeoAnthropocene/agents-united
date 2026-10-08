@@ -767,6 +767,14 @@ export interface SemanticCore {
   capabilities?: CapabilityClass[];
 }
 
+/** ADR 0045 — a core reference and permitted host-neutral affordances, not runtime grants. */
+export interface SubagentContract {
+  definition: string;
+  workflows: string[];
+  skills: string[];
+  hooks: string[];
+}
+
 /** Plan 021 gate 4 — conformance input: what the realization binds, adds, and declares. */
 export interface ValidateDeclaredDeltasInput {
   realization: { boundInvariants: string[]; aboveFloorScope: string[] };

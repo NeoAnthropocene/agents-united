@@ -3,10 +3,10 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Plan 035 S10: parked Plan 033 (the `agent-factory` bundle) records what Plan 035 learned, and stays parked.
+ * Plan 035 S10 findings stay historical; the maintainer authorized Plan 033's foundation on 2026-10-07.
  * The findings are the skill quality gate (ADR 0040), the session-report helper, the live-test kit, and what the
  * audit showed about skill attribution and provenance. This suite pins that they are recorded, that each says
- * what it changes in the plan, and that the plan is still only proposed (nothing is built, nothing is promoted).
+ * what it changes in the plan, and that later slices remain parked while the foundation is reviewed.
  */
 
 const plan = fs.readFileSync(path.resolve('plans/033-agent-factory-bundle.md'), 'utf8').replace(/\r\n/g, '\n');
@@ -20,10 +20,10 @@ function section(title: string): string {
 }
 
 describe('Plan 033 after Plan 035', () => {
-  it('stays parked: still PROPOSED, nothing built, and the index row says so', () => {
-    expect(plan).toMatch(/\*\*State\*\*: PROPOSED/);
-    expect(plan).toMatch(/Nothing is built/);
-    expect(index).toMatch(/\| \[033\][^\n]*\*\*PROPOSED/);
+  it('records the authorized foundation while leaving later slices parked', () => {
+    expect(plan).toMatch(/\*\*State\*\*: FOUNDATION/);
+    expect(plan).toMatch(/Slices 2–5 remain/);
+    expect(index).toMatch(/\| \[033\][^\n]*\*\*FOUNDATION/);
   });
 
   it('records the findings of Plan 035 in their own section', () => {

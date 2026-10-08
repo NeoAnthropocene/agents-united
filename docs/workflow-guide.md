@@ -3,6 +3,8 @@
 > Feature development, small changes & release automation for `agents-united`.
 > Applies from **v0.6.0** (ADR 0013 era, auto-sync enabled).
 
+For a new bundle, agent, skill, workflow or hook, use [the artifact contribution guide](artifact-contribution.md) and focused PR template. It records host bindings, provenance and evidence for a contribution to `dev`; the proposed contribution skill/workflow is later Plan 033 work.
+
 ## Branch model
 
 | Branch | Purpose |

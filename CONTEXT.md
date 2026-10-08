@@ -296,6 +296,15 @@ _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanat
 
 ---
 
+### Agent-factory foundation terms (ADR 0045)
+
+- **Subagent Contract**: a Semantic Core stem (`definition`) and explicit permitted `workflows`, `skills`, `hooks` identifier lists. It carries no host mechanics and grants no runtime permissions.
+- **Host Authoring Input**: host, surface, observed version, artifact types, workspace/output root, create/update operation, local/upstream intent and evidence budget supplied before authoring.
+- **Affordance Binding**: the host realization's record of a permitted identifier's native source, loading/invocation, prerequisites, enforcement, declared delta and evidence. The shared core does not hold this record.
+- **Contributor Draft**: authored files in a user-selected directory outside managed install outputs; local installation semantics remain proposed in ADR 0046.
+- **Contribution Runbook**: the proposed procedure that validates an artifact, assembles provenance and host evidence, and prepares an authorized contribution PR to `dev`. Its future skill/workflow realization is deferred to Plan 033's later slices.
+- **Pipeline / Runbook**: a pipeline schedules delegated stages and checks their results; a runbook guides one agent's decisions. Host-native realization determines whether scheduling is scripted or prose.
+
 ### Semantic Core Architecture Terms (ADR 0021)
 
 - **Semantic Core**: tool-free definition of what an agent *is* — identity, mission, scope

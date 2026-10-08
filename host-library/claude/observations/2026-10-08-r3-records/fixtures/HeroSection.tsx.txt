@@ -1,0 +1,34 @@
+"use client";
+// Token mapping: dotted token path -> CSS custom property, dots to hyphens, "--" prefix
+// (color.cta.primary -> var(--color-cta-primary), space.4 -> var(--space-4)). Theme layer defines them.
+// Tracking: the dataLayer push must only fire once the CMP grants consent (gate in GTM/CMP, not here).
+import type { HeroSectionProps } from "./hero";
+
+declare global {
+  interface Window { dataLayer?: Record<string, unknown>[] }
+}
+
+function trackCtaClick(): void {
+  if (typeof window === "undefined") return;
+  (window.dataLayer = window.dataLayer ?? []).push({ event: "hero_cta_click" });
+}
+
+export function HeroSection(props: HeroSectionProps) {
+  const { headline, subhead, trustPoints, ctaLabel, ctaTestId, microcopy } = props;
+  return (
+    <section style={{ background: "var(--color-surface-page)", color: "var(--color-text-default)",
+      fontFamily: "var(--font-family-base)", padding: "var(--space-12) var(--space-4)" }}>
+      <h1 style={{ fontSize: "var(--font-size-h1)", lineHeight: "var(--font-lineHeight-heading)" }}>{headline}</h1>
+      <p style={{ fontSize: "var(--font-size-lead)" }}>{subhead}</p>
+      <ul>{trustPoints.map((point) => <li key={point}>{point}</li>)}</ul>
+      <a href="/sitters" data-testid={ctaTestId} onClick={trackCtaClick} className="hero-cta"
+        style={{ display: "inline-flex", alignItems: "center", minHeight: "48px", minWidth: "48px",
+          padding: "var(--space-3) var(--space-6)", background: "var(--color-cta-primary)",
+          color: "var(--color-cta-label)", fontSize: "var(--font-size-body)" }}>
+        {ctaLabel}
+      </a>
+      <p style={{ color: "var(--color-text-muted)", marginTop: "var(--space-2)" }}>{microcopy}</p>
+      <style>{".hero-cta:focus-visible{outline:3px solid var(--color-text-default);outline-offset:2px}"}</style>
+    </section>
+  );
+}

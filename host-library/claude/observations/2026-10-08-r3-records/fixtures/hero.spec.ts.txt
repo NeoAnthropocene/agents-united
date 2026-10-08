@@ -1,0 +1,37 @@
+import { test, expect } from "@playwright/test";
+import { heroProps } from "./hero";
+
+// ASSUMPTION: the hero renders at the app root "/" (no route was specified). baseURL comes from playwright config.
+test.describe("PetPal hero primary CTA", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+  });
+
+  test("is visible with the expected label", async ({ page }) => {
+    const cta = page.getByTestId("hero-primary-cta");
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveText(heroProps.ctaLabel); // "Find a sitter near you"
+  });
+
+  test("meets the 48x48 minimum target size", async ({ page }) => {
+    const cta = page.getByTestId("hero-primary-cta");
+    await expect(cta).toBeVisible();
+    const box = await cta.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(48);
+    expect(box?.height).toBeGreaterThanOrEqual(48);
+  });
+
+  test("click pushes hero_cta_click onto window.dataLayer", async ({ page }) => {
+    const cta = page.getByTestId("hero-primary-cta");
+    // The CTA is a link to /sitters; stop the navigation so the page (and its dataLayer) survives the click.
+    await cta.evaluate((el) => el.addEventListener("click", (e) => e.preventDefault()));
+    await cta.click();
+    await expect
+      .poll(() => page.evaluate(() => (window as any).dataLayer ?? []))
+      .toContainEqual({ event: "hero_cta_click" });
+  });
+
+  // BLOCKED: no CMP exists yet (Deniz's open item), so "no hero_cta_click before consent" cannot be asserted.
+  // Once the CMP lands: load "/", do not grant consent, click the CTA, and expect dataLayer to lack the event.
+  test.fixme("does not fire hero_cta_click before consent is granted", async () => {});
+});

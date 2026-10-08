@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'yaml';
 import { CLASS_DEFINITIONS, isCapabilityClass } from './capability-classes.js';
-import type { CapabilityClass, DeclaredDelta, SemanticCore, ValidateDeclaredDeltasInput } from './types.js';
+import type { CapabilityClass, DeclaredDelta, SemanticCore, SubagentContract, ValidateDeclaredDeltasInput } from './types.js';
 
 /**
  * Gate 2's corpus: the 18 canonical tool tokens + the 3 command tokens (Plan 020 note 7) +
@@ -93,6 +93,36 @@ export function validateCoreSchema(core: unknown): SemanticCore {
     invariants,
     ...(capabilities ? { capabilities } : {}),
   };
+}
+
+/** ADR 0045 — opt-in declaration validation; no loading, host dispatch or installation. */
+export function validateSubagentContract(raw: unknown, definitions: ReadonlyMap<string, SemanticCore>): SubagentContract {
+  const fail = (message: string): never => { throw new Error(`Subagent Contract schema violation: ${message}.`); };
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return fail('expected an object');
+  const record = raw as Record<string, unknown>;
+  const fields = ['definition', 'workflows', 'skills', 'hooks'];
+  for (const key of Object.keys(record)) {
+    if (!fields.includes(key)) fail(`unknown field ${key}`);
+  }
+  for (const field of fields) {
+    if (!Object.hasOwn(record, field)) fail(`${field} must be explicitly declared`);
+  }
+  const identifier = (value: unknown, field: string): string => {
+    if (typeof value !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) return fail(`${field} must be a semantic identifier`);
+    return value;
+  };
+  const definition = identifier(record.definition, 'definition');
+  const core = definitions.get(definition);
+  if (!core) return fail(`definition ${definition} is not in the supplied core map`);
+  validateCoreSchema(core);
+  const list = (field: string): string[] => {
+    const value = record[field];
+    if (!Array.isArray(value)) return fail(`${field} must be an explicit array`);
+    const entries = Array.from(value, (entry, index) => identifier(entry, `${field}[${index}]`));
+    if (new Set(entries).size !== entries.length) fail(`${field} contains duplicate identifiers`);
+    return entries;
+  };
+  return { definition, workflows: list('workflows'), skills: list('skills'), hooks: list('hooks') };
 }
 
 /** Plan 032 Phase 5 — optional host-neutral capability classes; unknown, duplicate or non-grantable ones reject. */

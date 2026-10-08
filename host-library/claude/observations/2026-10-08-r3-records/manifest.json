@@ -1,0 +1,107 @@
+{
+  "sourceArchive": "n3-regress3-evidence.zip",
+  "sourceArchiveSha256": "3361eb7f15def3256809a52fe904abfb8e283f2627aad66415af820fc1f213f2",
+  "sessionId": "f69ab2b9-b375-484c-9d24-bf6008d3ab4f",
+  "candidateCommitConfirmedByMaintainer": "89a859767e4dc7cb68d1b78c3be2023ed52d4d93",
+  "accountConfirmedByMaintainer": "Claude Pro",
+  "extraUsageConfirmedByMaintainer": "off",
+  "hostProjectFromUploadedCommand": "<USERPROFILE>\\.claude\\projects\\C--github-scratch-pilot-n3-regress3",
+  "cwd": "C:\\github\\scratch-pilot\\n3-regress3",
+  "claudeVersion": "2.1.292",
+  "teammates": 9,
+  "hostPromptCount": 1,
+  "conservativeInteractiveCounter": 2,
+  "countingBasis": "one H1 submission plus one map-acceptance reply; automatic hook retries are tool retries, not additional user submissions",
+  "costState": {
+    "type": "cost-state",
+    "sessionId": "f69ab2b9-b375-484c-9d24-bf6008d3ab4f",
+    "totalCostUSD": 3.722810100000001,
+    "totalAPIDuration": 501999,
+    "totalAPIDurationWithoutRetries": 501622,
+    "totalToolDuration": 5558,
+    "totalLinesAdded": 317,
+    "totalLinesRemoved": 44,
+    "totalDuration": 833495,
+    "startTime": 1791438025366,
+    "modelUsage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 2467,
+        "outputTokens": 31,
+        "thinkingTokens": 0,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.002622
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 35737,
+        "outputTokens": 59155,
+        "thinkingTokens": 8436,
+        "cacheReadInputTokens": 7611153,
+        "cacheCreationInputTokens": 539619,
+        "webSearchRequests": 0,
+        "costUSD": 3.7201881000000014
+      }
+    },
+    "hasUnknownModelCost": false
+  },
+  "remainingFrom50USD": 46.277189899999996,
+  "perTeammateCostAllocation": "unverified; supplied trim omits message usage; do not assign zero or add a second team charge to the session rollup",
+  "fixtures": {
+    "HeroSection.tsx": {
+      "lines": 34,
+      "sha256": "857020d6c91779d046bb5ba23cbbc73c5cbb4cae437b50181577cd730f9941f2",
+      "matchesUploadedHash": true,
+      "storedAs": "HeroSection.tsx.txt"
+    },
+    "compliance-review.md": {
+      "lines": 23,
+      "sha256": "4e2d3f34ebfc1fde4cd24f71645d5a187451965a12213ca5533505c3359b6437",
+      "matchesUploadedHash": true,
+      "storedAs": "compliance-review.md.txt"
+    },
+    "content-plan.md": {
+      "lines": 36,
+      "sha256": "f5c214e4efbd15d0e30fa801ccec3ce44cc33fbeff60d01ae7bfe1158655928b",
+      "matchesUploadedHash": true,
+      "storedAs": "content-plan.md.txt"
+    },
+    "design-tokens.json": {
+      "lines": 23,
+      "sha256": "daf050a08853379c03806b4e23e54ca5490f42e244bb14498509fa165c170f0e",
+      "matchesUploadedHash": true,
+      "storedAs": "design-tokens.json.txt"
+    },
+    "hero.spec.ts": {
+      "lines": 37,
+      "sha256": "abc9c5c0186672b54ccb864c673b04132ac5520cc238668cb597caacdb2d5ee6",
+      "matchesUploadedHash": true,
+      "storedAs": "hero.spec.ts.txt"
+    },
+    "hero.ts": {
+      "lines": 26,
+      "sha256": "0b00450736d7be07fdfa011ed3963ee223519c87c69c6a2eb6383a840f448d62",
+      "matchesUploadedHash": true,
+      "storedAs": "hero.ts.txt"
+    },
+    "launch-kit.md": {
+      "lines": 34,
+      "sha256": "55cd4d2e75dc31f33fac945d7ae818113e13c9939ddbdea981bac37ead2393f5",
+      "matchesUploadedHash": true,
+      "storedAs": "launch-kit.md.txt"
+    },
+    "seo-audit.md": {
+      "lines": 22,
+      "sha256": "bbcd81f004e6d439026d5855d2a48daacaf46954dbec70f5e722bfc235e512c6",
+      "matchesUploadedHash": true,
+      "storedAs": "seo-audit.md.txt"
+    },
+    "strategy.md": {
+      "lines": 29,
+      "sha256": "e9ae0ab6213f1a45d736a8c0ecd7ff0493f5e58758a782b93d26d4b10e962d4f",
+      "matchesUploadedHash": true,
+      "storedAs": "strategy.md.txt"
+    }
+  },
+  "redaction": "uploaded trim retained; local user-profile paths replaced with <USERPROFILE>; original private-trace files excluded"
+}

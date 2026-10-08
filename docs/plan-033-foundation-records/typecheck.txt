@@ -1,0 +1,31 @@
+
+> agents-united@0.15.0 typecheck
+> npm run build && tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc -p scripts/hostlib/tsconfig.json && tsc -p scripts/skill-quality/tsconfig.json
+
+
+> agents-united@0.15.0 build
+> tsup
+
+CLI Building entry: src/cli.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /workspace/agents-united/tsup.config.ts
+CLI Target: node24
+CLI Cleaning output folder
+ESM Build start
+ESM dist/cli.js     468.27 KB
+ESM dist/cli.js.map 974.00 KB
+ESM ⚡️ Build success in 117ms
+DTS Build start
+DTS ⚡️ Build success in 2036ms
+DTS dist/cli.d.ts 2.76 KB
+npm notice
+npm notice New major version of npm available! 10.9.9 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
