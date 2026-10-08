@@ -495,6 +495,10 @@ _Avoid_: Uncredited fork, silent copy
 
 ---
 
+**Claude Design brief**:
+A pasteable block (`CLAUDE DESIGN BRIEF: ...`) that the creative designer ends her report with when the lead or the user names Claude Design as the next step: the placements, the design system or the tokens as lines of name, value and usage, the supplied copy, the hook variants, the safe zones, what the design must not contain, the photography, what was not rendered and the claims for review. A person pastes it into `/design` or claude.ai/design; she publishes nothing and calls no design tool (`ad-creative-design/references/claude-design-brief.md`, Plan 036 O1).
+_Avoid_: Design prompt, design export
+
 ### Testing & Code Quality Standards
 
 **4-Tier Testing Methodology**:

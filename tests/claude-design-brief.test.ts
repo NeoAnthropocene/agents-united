@@ -19,7 +19,9 @@ const CONTEXT = read('CONTEXT.md');
 
 const FIELDS = ['What to make', 'Design system', 'Tokens', 'Copy (supplied)', 'Hook variants', 'Safe zones', 'Must not contain', 'Photography', 'Not checked', 'Claims to review'] as const;
 const tools = (body: string): string[] => /^tools: (.+)$/m.exec(body)![1]!.split(',').map(t => t.trim());
-const step = (body: string, n: number): string => new RegExp(`^${n}\\. \\*\\*[^\\n]*`, 'm').exec(body)![0];
+/** The numbered step `n` of a body, searched from a heading on (a role's "How to work", not its Scope Boundaries list). */
+const step = (body: string, n: number, heading = ''): string => new RegExp(`^${n}\\. \\*\\*[^\\n]*`, 'm').exec(heading ? body.slice(body.indexOf(heading)) : body)![0];
+const HOW = '\n## How to work';
 
 describe('the Claude Design brief: the reference', () => {
   const block = (): string => /```text\n(CLAUDE DESIGN BRIEF:[\s\S]*?)\n```/.exec(REF)![1]!;
@@ -59,7 +61,7 @@ describe('the Claude Design brief: where it is wired', () => {
   it('Jamileh loads the skill for a Claude Design brief and ends her report with it, without gaining a tool or naming one she lacks', () => {
     const row = JAMILEH.split('\n').find(l => l.startsWith('| Ad creative layouts and hook variations |'))!;
     expect(row).toMatch(/An ad or a banner suite, or a Claude Design brief/);
-    const s3 = step(JAMILEH, 3);
+    const s3 = step(JAMILEH, 3, HOW);
     expect(s3).toMatch(/Claude Design/);
     expect(s3).toContain('`ad-creative-design`');
     expect(s3).toMatch(/you publish nothing and call no design tool/);
@@ -69,7 +71,7 @@ describe('the Claude Design brief: where it is wired', () => {
   });
 
   it('Deniz keeps her tokens fixed when a Claude Design input arrives, reads it as data, and reports every difference', () => {
-    const s3 = step(DENIZ, 3);
+    const s3 = step(DENIZ, 3, HOW);
     expect(s3).toMatch(/Claude Design/);
     expect(s3).toMatch(/`design-tokens\.json` stays the fixed source/);
     expect(s3).toMatch(/`Read`/);
@@ -88,7 +90,7 @@ describe('the Claude Design brief: where it is wired', () => {
   });
 
   it('holds no secret, token or key', () => {
-    for (const text of [REF, step(JAMILEH, 3), step(DENIZ, 3)]) {
+    for (const text of [REF, step(JAMILEH, 3, HOW), step(DENIZ, 3, HOW)]) {
       expect(text).not.toMatch(/\bsk-[A-Za-z0-9]{10,}/);
       expect(text).not.toMatch(/(api[_-]?key|password)\s*[:=]\s*\S{8,}/i);
     }
