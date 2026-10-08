@@ -1,0 +1,25 @@
+Main.dc.html  board 1080x1350  scroll 1080x1350  text boxes 7
+  y   71 -  112  x  136 -  246  PetPal
+  y  323 -  430  x   64 -  950  Sitters you can trust
+  y  459 -  547  x   64 -  991  Background-checked, reviewed by neighbou
+  y  791 -  832  x   96 -  402  4.9 average rating
+  y  849 -  890  x   96 -  308  12,000 stays
+  y  907 -  948  x   96 -  404  insured up to $1M
+  y 1217 - 1258  x  128 -  300  Book now   <-- breaks the rule
+  rule, feed: text clear of the bottom 10 percent (y >= 1215): 1 text box(es) break it: "Book now" y 1217-1258
+Story.dc.html  board 1080x1920  scroll 1080x1920  text boxes 7
+  y  257 -  298  x  136 -  246  PetPal
+  y  545 -  652  x   64 -  950  Sitters you can trust
+  y  681 -  769  x   64 -  991  Background-checked, reviewed by neighbou
+  y 1049 - 1090  x   96 -  402  4.9 average rating
+  y 1107 - 1148  x   96 -  308  12,000 stays
+  y 1165 - 1206  x   96 -  404  insured up to $1M
+  y 1511 - 1552  x  128 -  300  Book now
+  rule, story: no text in the top 250 px or the bottom 250 px: kept
+LinkAd.dc.html  board 1200x628  scroll 1200x628  text boxes 5
+  y   58 -  261  x   64 -  722  Sitters you can trust
+  y  325 -  413  x   64 -  614  Background-checked, reviewed by neighbou
+  y  503 -  544  x  120 -  292  Book now
+  y  508 -  539  x  380 -  780  4.9 average rating, 12,000 stays
+  y  365 -  406  x  941 - 1051  PetPal
+  rule, link ad: nothing outside the canvas: kept

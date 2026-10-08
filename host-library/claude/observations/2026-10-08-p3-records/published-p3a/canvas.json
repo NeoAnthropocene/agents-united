@@ -1,0 +1,23 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-08T12:00:00Z" },
+  "title": "PetPal Paid Social Set",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1080, "h": 1350, "title": "4:5 Feed ad (1080x1350)" },
+    "Story.dc.html": { "x": 1160, "y": 0, "w": 1080, "h": 1920, "title": "9:16 Story (1080x1920)" },
+    "LinkAd.dc.html": { "x": 2320, "y": 0, "w": 1200, "h": 628, "title": "1.91:1 Link ad (1200x628)" }
+  },
+  "order": ["Main.dc.html", "Story.dc.html", "LinkAd.dc.html"],
+  "notes": {
+    "t1": { "x": 0, "y": -260, "text": "PetPal paid social set", "kind": "title1", "maxW": 3520 },
+    "n1": {
+      "x": 2320,
+      "y": 748,
+      "w": 420,
+      "text": "Scratch exercise: PetPal is fictional. The rating, stay count and $1M insurance figures are invented and unsubstantiated. Do not run these."
+    }
+  },
+  "designSystems": []
+}

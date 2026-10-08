@@ -1,0 +1,12 @@
+H10h  text on the cream ground (feed, story, link ad)    #2B1D14 on #FFF8F0  15.47 : 1
+H10h  label on the clay button                           #FFFFFF on #B5451B  5.48 : 1
+H10h  muted rating line on cream (link ad)               #6B4B35 on #FFF8F0  7.43 : 1
+H10h  text on the sand panel                             #2B1D14 on #F3D9B1  11.93 : 1
+H10i  text-default on surface-base                       #2B1D14 on #FFF8F0  15.47 : 1  she says 15.5: right to one decimal
+H10i  text-default on surface-accent                     #2B1D14 on #F3D9B1  11.93 : 1  she says 11.9: right to one decimal
+H10i  text-muted on surface-base                         #6B4B35 on #FFF8F0  7.43 : 1  she says 7.4: right to one decimal
+H10i  text-muted on surface-accent                       #6B4B35 on #F3D9B1  5.73 : 1  she says 5.7: right to one decimal
+H10i  text-on-action on cta-primary                      #FFFFFF on #B5451B  5.48 : 1  she says 5.5: right to one decimal
+H10i  text-muted on cta-primary                          #6B4B35 on #B5451B  1.43 : 1  she says 1.4: right to one decimal
+H10i  text-default on cta-primary                        #2B1D14 on #B5451B  2.97 : 1  she says 3: right to one decimal
+figures she gave that are wrong to one decimal: 0

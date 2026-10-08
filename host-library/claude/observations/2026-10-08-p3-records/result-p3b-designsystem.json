@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 72925,
+  "stop_reason": "end_turn",
+  "session_id": "b18266d6-1b0f-4f27-b8b1-0f4e2e3d371c",
+  "total_cost_usd": 0.424858,
+  "usage": {
+    "input_tokens": 14,
+    "cache_creation_input_tokens": 63919,
+    "cache_read_input_tokens": 411470,
+    "output_tokens": 8686,
+    "output_tokens_details": {
+      "thinking_tokens": 2923
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 63919,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 745,
+        "cache_read_input_tokens": 83694,
+        "cache_creation_input_tokens": 1259,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1259
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 14,
+      "outputTokens": 8686,
+      "cacheReadInputTokens": 411470,
+      "cacheCreationInputTokens": 63919,
+      "webSearchRequests": 0,
+      "costUSD": 0.424858,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2923,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 14,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "The PetPal design system is published and private (only you can open it): https://claude.ai/artifact/SuSxY8[elided]\n\n**What I did**\n- **tokens.json:** I converted `docs/pilot/design-tokens.json` into the list form Claude Design reads, following the design-system-tokens reference. The nested `$value` form shows empty on the page.\n  - Colour has one `light` theme: six colours and six roles. The role tokens are aliases, for example `text-default` → `{cocoa-900}`.\n  - Type has one family and three styles: headline 96px, body 36px, caption 28px.\n  - Spacing has four steps and radius has two.\n- **README.md:** It has role-to-colour and contrast tables, type, space and shape, and three rules.\n- **Cover:** The type requires one, so I added `components/Cover/preview.html`. It uses cocoa, clay, sand and cocoa-600 blocks with a disc pattern, chosen because the system's only extra shape is the pill radius.\n\n**What I did not check**\n- **No render and no re-read:** I didn't open the published page or re-read the files after writing them. The cover's layout and the page's parsing of `tokens.json` are unchecked. I also didn't verify the `--clay-600`-style variable names I used in the cover. Open the page and look at the cover and the Colors tab.\n- **Contrast figures:** I calculated them by hand with the WCAG formula, and no tool checked them. The two weak pairs are `text-muted` on clay at about 1.4:1 and `text-default` on clay at about 3.0:1. Both are noted in the README.\n- **Dropped or empty fields:** The `headline` note (\"for 1080 px wide canvases\") has nowhere to live in the format, so it appears only in the README. Eleven of the twelve colour tokens, plus all spacing and radius tokens, have an empty `usage` because the source had no description for them. I didn't invent any. Say if you want me to write those notes.\n- **Not supplied:** The source has no dark theme, weights, line heights, logo, icons or voice. The README says so and doesn't make any up.\n- **Sharing:** I can't change sharing. Others can't open the link until you share it from the page's Share menu.",
+  "ttft_ms": 3819,
+  "type": "result",
+  "duration_ms": 79654,
+  "uuid": "0c005565-c84a-4848-adb9-ab7f2b6434a8",
+  "ttft_stream_ms": 2876,
+  "time_to_request_ms": 209,
+  "first_content_frame_ms": 2876,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

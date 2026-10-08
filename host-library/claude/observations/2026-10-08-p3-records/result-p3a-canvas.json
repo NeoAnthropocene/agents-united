@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 83441,
+  "stop_reason": "end_turn",
+  "session_id": "ed8d60c9-5810-44fb-8f1d-147636967480",
+  "total_cost_usd": 0.4889414000000001,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 72605,
+    "cache_read_input_tokens": 489577,
+    "output_tokens": 10057,
+    "output_tokens_details": {
+      "thinking_tokens": 3589
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 72605,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 963,
+        "cache_read_input_tokens": 71557,
+        "cache_creation_input_tokens": 1048,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1048
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 18,
+      "outputTokens": 10057,
+      "cacheReadInputTokens": 489577,
+      "cacheCreationInputTokens": 72605,
+      "webSearchRequests": 0,
+      "costUSD": 0.4889414000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 3589,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 12,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "The PetPal canvas is published with all three artboards: the 4:5 feed ad (1080×1350), the 9:16 story (1080×1920) and the 1.91:1 link ad (1200×628). It's private, readable only by you. Anyone else needs it shared from the page's Share menu, which I can't do.\n\nLink: https://claude.ai/artifact/QiKSxb[elided]\n\n**What I did**\n- **Design system:** I used only `docs/pilot/design-tokens.json`. Colours, Helvetica/Arial, the 96/36/28 px type sizes, the spacing steps and the 12px and pill radii are in the artboards as literal values. I attached no other design system.\n- **Copy:** `hero.ts` is verbatim: headline, subhead, \"Book now\" and the three figures. The book button is clay with a white label and carries `data-testid=\"hero-primary-cta\"`.\n- **Layouts:** The feed ad and the story stack wordmark, headline, subhead, a sand panel of the three figures, then the button. The link ad is two columns: copy and button on the left, a sand paw-mark panel on the right. It uses the proof line \"4.9 average rating, 12,000 stays\" instead of the figures panel.\n- **Story safe zone:** I left 250px clear at the top and 340px at the bottom. Those two numbers are my assumptions about where story UI overlays sit.\n- **Contrast:** I worked out the pairs by hand from the token hex values. White on clay is about 5.5:1. Muted text on sand is about 5.7:1. Default text on cream is very high.\n- **Notes on the canvas:** There's a title note, plus a sticky saying PetPal is fictional and the figures must not run.\n\n**What I did not check**\n- **Rendering:** I didn't open or screenshot the canvas, so I haven't seen the layouts. I didn't confirm that the 96px headline and the stacked copy fit the link ad's 628px height, or that no text overflows on any artboard.\n- **Contrast:** The ratios above are hand-calculated, not measured with a tool.\n- **Platform specs:** The story safe-zone numbers and the three formats' current specs are unchecked against Meta.\n- **Files:** I didn't re-read my files after writing them. The canvas accepted each publish.\n- **Editing:** I didn't try editing in the browser.\n- **Claims:** The rating, the 12,000 stays and the $1M insurance are invented and unsubstantiated, as `hero.ts` says. They're on the ads as written, so they need claims review before any real use.\n- **Imagery:** There are no photos or illustrations, only type, colour blocks and a simple paw mark. That's my choice, not something the tokens asked for.\n\n**Open items**\n- None blocking.\n- Gmail and Google Calendar need authorizing in your claude.ai connector settings. I didn't need them here.",
+  "ttft_ms": 3237,
+  "type": "result",
+  "duration_ms": 93549,
+  "uuid": "0135c445-8ec7-4fa5-94e5-3412a1fe8610",
+  "ttft_stream_ms": 2084,
+  "time_to_request_ms": 324,
+  "first_content_frame_ms": 2085,
+  "queued_turn_count": 0,
+  "result_index": 0
+}
