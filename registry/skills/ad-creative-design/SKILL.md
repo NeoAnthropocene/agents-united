@@ -30,7 +30,7 @@ Output: the creative brief; the size and safe-zone table for the chosen placemen
 4. **Build the variant matrix**: angle (what we say: outcome, proof, price, objection) crossed with format (static, carousel, short video). Change one thing between variants so a difference in result has one explanation; three to six variants per round is enough to learn from.
 5. **Check contrast and legibility.** Text over an image needs a solid or gradient scrim; body text at least 4.5 to 1 against its background, large text at least 3 to 1; nothing below about 24 px in a 1080-wide design.
 6. **Name every asset** so results map back to the variant: `<campaign>_<angle>_<format>_<size>_v<n>`, for example `webhook-retries_proof_static_1080x1350_v2`. The same string goes into the ad name and `utm_content`.
-7. **Hand off.** Final files and the matrix to the lead and the campaign specialist for the media setup; copy and claims (numbers, comparisons, "best", "free", health, finance, earnings) to Defne before launch; landing-page continuity to Kaan; build or export issues to Deniz.
+7. **Hand off.** Final files and the matrix to the lead and the campaign specialist for the media setup; copy and claims (numbers, comparisons, "best", "free", health, finance, earnings) to Defne before launch; landing-page continuity to Kaan; build or export issues to Deniz. To continue in Claude Design, end with the block in [references/claude-design-brief.md](references/claude-design-brief.md).
 
 ## Code & Config Exemplars
 Load [examples/worked-example.md](examples/worked-example.md) for a campaign with its variant matrix, asset names and claims handover.
