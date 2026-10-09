@@ -1,0 +1,2 @@
+estimate: gemini gemini-nano-banana-2.1, 1 image: $0.0504 each, $0.0504 in all, $0.1512 at most (3 calls per asset). Input images add a small token charge; useGoogleSearch adds $14 per 1,000 searches beyond the 5,000 free each month.
+exit 0
