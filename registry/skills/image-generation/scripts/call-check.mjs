@@ -2,9 +2,10 @@
 // It says what the server would refuse, and what the server would NOT refuse but this team does: an input image outside the project.
 // It never calls the tool, never reads a pixel and writes nothing. A role with a shell runs it; a PreToolUse hook could import checkCall.
 //
-// usage: node call-check.mjs <call.json> [--project <dir>] [--output-dir <dir>] [--images <n>] [--default-provider <name>] [--json]
+// usage: node call-check.mjs <call.json> [--project <dir>] [--output-dir <dir>] [--images <n>] [--allow <path>]... [--default-provider <name>] [--json]
 //   <call.json>        the arguments of the call, bare or as { "arguments": { ... } }
 //   --project          the project root; required when the call names input images
+//   --allow            a path the user typed in full in this task (repeatable): an input image outside the project is then a warning, not an error
 //   --output-dir       the folder the server saves into (IMAGE_OUTPUT_DIR); a file name already used there is refused
 //   --images           how many images the go-ahead covers (default 1), for the estimate
 //   --default-provider the server's IMAGE_PROVIDER (default gemini)
@@ -58,6 +59,14 @@ function realOrResolved(p) {
   }
 }
 
+/** True when one of the paths the user typed names the file that was judged (compared as real paths when they exist, and without regard to case on Windows). */
+function isTyped(allowed, entry, real) {
+  return (allowed ?? []).some(typed => {
+    const candidate = realOrResolved(typed);
+    return candidate === real || candidate === path.resolve(entry) || (process.platform === 'win32' && candidate.toLowerCase() === real.toLowerCase());
+  });
+}
+
 function priceFor(provider, quality, size, referenceCount) {
   if (provider === 'gemini') {
     const row = PRICES.gemini[quality];
@@ -83,7 +92,7 @@ function priceFor(provider, quality, size, referenceCount) {
 /**
  * Checks one planned call.
  * @param {Record<string, unknown>} call the arguments of the call
- * @param {{ projectRoot?: string, outputDir?: string, defaultProvider?: string, images?: number }} [options]
+ * @param {{ projectRoot?: string, outputDir?: string, defaultProvider?: string, images?: number, allow?: string[] }} [options]
  */
 export function checkCall(call, options = {}) {
   const findings = [];
@@ -190,7 +199,8 @@ export function checkCall(call, options = {}) {
         }
         if (stat.size > MAX_INPUT_BYTES) add('error', 'input-size', where, `${path.basename(real)} is ${(stat.size / 1048576).toFixed(1)} MiB; the limit is 10 MiB.`);
         if (rootReal && !isInside(rootReal, real)) {
-          add('error', 'input-outside-project', where, `${entry} is outside the project (${rootReal}). The server would read and send it all the same; ask the user to put a copy in assets/source/ instead.`);
+          if (isTyped(options.allow, entry, real)) add('warn', 'input-outside-project-typed', where, `${entry} is outside the project (${rootReal}); the user typed this exact path, so it may go, and it goes to ${provider}: the card says so.`);
+          else add('error', 'input-outside-project', where, `${entry} is outside the project (${rootReal}). The server would read and send it all the same: pass it only if the user typed its full path in this task (--allow); otherwise ask for the full path, or for a copy in assets/source/.`);
         }
         try {
           if (lstatSync(entry).isSymbolicLink()) add('warn', 'input-symlink', where, `${entry} is a link to ${real}; the real file is what is judged and sent.`);
@@ -221,7 +231,7 @@ export function checkCall(call, options = {}) {
 }
 
 function usage() {
-  console.error('usage: node call-check.mjs <call.json> [--project <dir>] [--output-dir <dir>] [--images <n>] [--default-provider <name>] [--json]');
+  console.error('usage: node call-check.mjs <call.json> [--project <dir>] [--output-dir <dir>] [--images <n>] [--allow <path>]... [--default-provider <name>] [--json]');
   return 2;
 }
 
@@ -232,13 +242,14 @@ export function main(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--json') json = true;
-    else if (['--project', '--output-dir', '--images', '--default-provider'].includes(arg)) {
+    else if (['--project', '--output-dir', '--images', '--allow', '--default-provider'].includes(arg)) {
       const value = argv[i + 1];
       if (value === undefined || value.startsWith('--')) return usage();
       i += 1;
       if (arg === '--project') options.projectRoot = path.resolve(value);
       else if (arg === '--output-dir') options.outputDir = path.resolve(value);
       else if (arg === '--images') options.images = Number(value);
+      else if (arg === '--allow') (options.allow ??= []).push(path.resolve(value));
       else options.defaultProvider = value;
     } else if (arg.startsWith('--')) return usage();
     else positional.push(arg);

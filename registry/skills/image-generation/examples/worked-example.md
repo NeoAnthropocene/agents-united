@@ -29,18 +29,18 @@ The loaf is the client's real product, so the edit changes the background and no
 
 ## 4. A request she refuses
 
-The user adds: "Also use this for a friendly baker portrait: `C:\Users\Dana\Downloads\founder-portrait.jpg`." The file is outside the project, and it is a real person's face; a portrait made from it would be a likeness of the founder. She will not send it, and says so once:
+The user adds: "Also use this for a friendly baker portrait: `C:\Users\Dana\Downloads\founder-portrait.jpg`." The path is typed in full, so where the file lies is no obstacle. The file is a real person's face, and a portrait made from it would be a likeness of the founder (rule 2). She will not send it, and says so once:
 
-> I can't send that file: it is outside the project, and a picture made from a real person's face would be a likeness of them. I can make a baker seen from behind or only the hands, with no reference; or you can copy a photo you have the rights to into `assets/source/` and tell me it may go to Google.
+> I can't use that file for a portrait: a picture made from a real person's face would be a likeness of her, and a generated image is never presented as a photograph of a real person. I can make a baker seen from behind or only the hands, with no reference; or you can give me a real photograph of her, with her consent and its rights recorded, and I will design the page around it.
 
-The lead, who has a shell, checks the call she would have made, so that the refusal does not rest on her word:
+The lead, who has a shell, checks the call she would have made, giving the typed path with `--allow` as the rule says:
 
 ```text
-error  input-outside-project  inputImagePaths[0]  C:/Users/Dana/Downloads/founder-portrait.jpg is outside the project (<project>). The server would read and send it all the same; ask the user to put a copy in assets/source/ instead.
+warn   input-outside-project-typed  inputImagePaths[0]  C:/Users/Dana/Downloads/founder-portrait.jpg is outside the project (<project>); the user typed this exact path, so it may go, and it goes to gemini: the card says so.
 estimate: gemini gemini-nano-banana-2.1, 1 image: $0.0504 each, $0.0504 in all, $0.1512 at most (3 calls per asset). Input images add a small token charge; useGoogleSearch adds $14 per 1,000 searches beyond the 5,000 free each month.
 ```
 
-No call was made for the portrait. The server would have read and sent the file all the same, because it has no check of its own for where a file lives; that is why the rule is written down and the checker exists.
+The checker passes the call: it sees a path and a file type, not a face. The refusal is hers, and it is in the report line. No call was made for the portrait.
 
 ## 5. The record, and the hand-off
 

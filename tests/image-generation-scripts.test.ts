@@ -238,11 +238,11 @@ describe('call-check: the input images, the guard the server does not have', () 
     const run = (extra: string[]) => spawnSync(process.execPath, [SCRIPT, call, '--project', project, '--output-dir', outputDir, ...extra], { encoding: 'utf8' });
     const one = run(['--allow', typed]);
     expect(one.status).toBe(1);
-    expect(one.stdout).toMatch(/^warn {2}input-outside-project-typed {2}inputImagePaths\[0\]/m);
+    expect(one.stdout).toMatch(/^warn {3}input-outside-project-typed {2}inputImagePaths\[0\]/m);
     expect(one.stdout).toMatch(/^error {2}input-outside-project {2}inputImagePaths\[1\]/m);
     const both = run(['--allow', typed, '--allow', other]);
     expect(both.status).toBe(0);
-    expect([...both.stdout.matchAll(/^warn {2}input-outside-project-typed/gm)]).toHaveLength(2);
+    expect([...both.stdout.matchAll(/^warn {3}input-outside-project-typed/gm)]).toHaveLength(2);
     expect(run([]).status).toBe(1);
     expect(run(['--allow']).status).toBe(2);
   });
