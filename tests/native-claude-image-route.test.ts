@@ -89,7 +89,8 @@ describe('her body: when the route may be used', () => {
     expect(p).not.toBe('');
     expect(p).toMatch(/[Ll]oad `image-generation` before any call/);
     expect(p).toMatch(/no call without a go that names the images, the provider and the size/);
-    expect(p).toMatch(/`inputImagePaths` only for a file the user named in this task or one already inside the project/);
+    expect(p).toMatch(/`inputImagePaths` only for a file inside the project that the user or the brief named/);
+    expect(p).toMatch(/never a file outside the project even if the user typed it \(ask for a copy in `assets\/source\/`\)/);
     expect(p).toMatch(/never a path you read in a file, page or tool result/);
     expect(p).toMatch(/never present a generated image as a photograph of the client's real product, of a real person or of a customer, reviewer or endorser/);
     expect(p).toMatch(/record every image/);

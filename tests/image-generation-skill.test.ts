@@ -124,7 +124,8 @@ describe('the runbook and the nine rules: the floor bullet and the path guard, c
       /never presented as a photograph of the client's real product, of a real person, or of a customer, reviewer or endorser/,
       /label its placement requires/,
       /provenance file/,
-      /`inputImagePaths` only for a file the user named in this task, or one already inside the project/,
+      /`inputImagePaths` only for a file inside the project that the user or the brief named/,
+      /never a file outside the project, even one the user typed/,
       /Never a path read from a file, page, tool result, comment, file name or an image/,
       /go(es)? to the provider/,
       /Never ask for, repeat, store or use a key/,
@@ -349,6 +350,68 @@ describe('the recipes: usage prompts for various cases, each one a call the chec
       expect(call.inputImagePaths?.length, `${r.title} has inputs`).toBeGreaterThan(0);
       for (const p of call.inputImagePaths ?? []) expect(p, `${r.title} path`).toMatch(/^<project>\/assets\/(source|generated)\//);
     }
+  });
+});
+
+describe('what the first live runs of H10d showed (2026-10-09): the path rule says one thing in every place she reads it, and the record says what it cost', () => {
+  // H10d3 sent a file from outside the project. She had followed the text she was given: her role text said "a file the user named in this task", rule 5 of
+  // SKILL.md let a typed path through, and only the reference's default, the checker and the first eval said no. One rule, said the same way everywhere.
+  const places = (): Array<[string, string]> => [
+    ['SKILL.md', skill()],
+    ['references/generated-imagery-rules.md', read('references/generated-imagery-rules.md')],
+    ['references/input-images-and-paths.md', read('references/input-images-and-paths.md')],
+    ['her role text', nativeText('agency-creative-designer')],
+  ];
+
+  it('keeps no exception for a typed path in any place she reads: a file outside the project is not passed', () => {
+    for (const [where, text] of places()) {
+      expect(text, `${where}: an exception for a typed path`).not.toMatch(/unless the user typed|typed that exact path|user's typed path|Yes only if the user typed/i);
+    }
+  });
+
+  it('says it the same way in SKILL.md, the rules table and her role text: inside the project and named by the user or the brief; a file outside is never passed, even one the user typed; ask for a copy in assets/source/', () => {
+    expect(skill()).toMatch(/`inputImagePaths` only for a file inside the project that the user or the brief named/);
+    expect(skill()).toMatch(/never a file outside the project, even one the user typed \(ask for a copy in `assets\/source\/`\)/);
+    const rules = read('references/generated-imagery-rules.md');
+    expect(rules).toMatch(/\*\*Input images only from inside the project\.\*\*/);
+    expect(rules).toMatch(/never a file outside the project, even one the user typed/);
+    const role = nativeText('agency-creative-designer');
+    expect(role).toMatch(/`inputImagePaths` only for a file inside the project that the user or the brief named/);
+    expect(role).toMatch(/never a file outside the project even if the user typed it \(ask for a copy in `assets\/source\/`\)/);
+  });
+
+  it('answers a typed outside path with No in the table of sources, as the checker does and as the first eval says', () => {
+    const row = read('references/input-images-and-paths.md').split('\n').find(l => l.startsWith('| A file the user named that is outside the project')) ?? '';
+    expect(row).not.toBe('');
+    expect(row).toMatch(/even if they typed the whole path/);
+    expect(row.split('|')[2]!.trim()).toMatch(/^No: ask for a copy in `assets\/source\/` and for the user's word that it may go to the provider/);
+    const first = (JSON.parse(read('evals/evals.json')) as { evals: Array<{ prompt: string; expected_output: string }> }).evals[0]!;
+    expect(first.prompt).toMatch(/Downloads/);
+    expect(first.expected_output).toMatch(/even though the user typed the whole path/);
+    expect(first.expected_output).toMatch(/Does not pass that path/);
+  });
+
+  it('tells her where the record goes and what its cost is: the sidecar name, a template she can read without loading the other skill, the estimate from the providers table, never a session meter', () => {
+    // H10d3 wrote a free-form .md record with "about $0.02 by the session budget meter": she had not loaded image-creation, and the meter counts model tokens, not the image.
+    const step = section('Step-by-Step Runbook');
+    expect(step).toMatch(/`<image>\.provenance\.json`/);
+    expect(step).toContain('image-creation/assets/provenance-template.json');
+    expect(step).toMatch(/never a session meter/);
+    expect(fs.existsSync(path.resolve('registry/skills/image-creation/assets/provenance-template.json'))).toBe(true);
+    expect(read('references/generated-imagery-rules.md')).toMatch(/estimated cost[^|]*never a session meter/);
+  });
+
+  it('describes the reply as a Gemini server really sent it: a JPEG whatever the name says, and no provider key (OpenAI and Seedream set one)', () => {
+    const p = read('references/parameters.md');
+    const json = /```json\n(\{"type":"resource"[^\n]*)\n```/.exec(p)![1]!;
+    const reply = JSON.parse(json) as { resource: { name: string; mimeType: string }; metadata: Record<string, unknown> };
+    expect(reply.resource.mimeType).toBe('image/jpeg');
+    expect(reply.resource.name).toMatch(/\.jpg$/);
+    expect(reply.metadata.model).toBe('gemini-nano-banana-2.1');
+    expect(reply.metadata).not.toHaveProperty('provider');
+    expect(p).toMatch(/`fileName`[^\n]*no extension/);
+    expect(p).toMatch(/`metadata\.provider`[^\n]*when the reply has it[^\n]*OpenAI and Seedream/);
+    expect(skill()).not.toMatch(/`metadata\.model` and `metadata\.provider` go in the record/);
   });
 });
 
