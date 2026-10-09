@@ -1,0 +1,21 @@
+Main.dc.html  board 1080x1350  scroll 1080x1350  text boxes 5
+  y   60 -  167  x   64 -  992  Sitters you can trust
+  y  261 -  292  x  128 -  428  [Photo: sitter with a dog]
+  y  854 -  944  x  128 -  876  Background-checked, reviewed by neighbou
+  y  965 -  996  x  128 -  528  4.9 average rating, 12,000 stays
+  y 1121 - 1162  x  128 -  300  Book now
+  rule, feed: text clear of the bottom 10 percent (y >= 1215): kept
+Story.dc.html  board 1080x1920  scroll 1080x1920  text boxes 5
+  y  256 -  363  x   64 -  992  Sitters you can trust
+  y  457 -  488  x  128 -  428  [Photo: sitter with a dog]
+  y 1324 - 1414  x  128 -  876  Background-checked, reviewed by neighbou
+  y 1435 - 1466  x  128 -  528  4.9 average rating, 12,000 stays
+  y 1591 - 1632  x  128 -  300  Book now
+  rule, story: no text in the top 250 px or the bottom 250 px: kept
+Link.dc.html  board 1200x628  scroll 1200x628  text boxes 5
+  y   82 -  255  x   64 -  638  Sitters you can trust
+  y  288 -  377  x   64 -  614  Background-checked, reviewed by neighbou
+  y  399 -  430  x   64 -  464  4.9 average rating, 12,000 stays
+  y  482 -  523  x  128 -  300  Book now
+  y   96 -  159  x  808 - 1046  [Photo: sitter with a dog]
+  rule, link ad: nothing outside the canvas: kept

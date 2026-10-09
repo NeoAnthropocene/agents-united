@@ -1,0 +1,25 @@
+{
+  "skill_name": "brand-consistency-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Scratch exercise, no real client. Before we ship, check the PetPal creative set in docs/pilot/creative/ against docs/pilot/design-tokens.json and the copy in docs/pilot/hero.ts. Is it on brand? Give me the findings and say what you did not check.",
+      "expected_output": "Does not answer 'on brand' or 'off brand' without a count. Lists the assets and counts them from the list, scans colours and first fonts against the tokens and the visible strings against the copy (with the script when it has a shell, with Grep patterns when it has not), and writes each finding with file, line, the value found, the rule and its source, a severity and an owner. Keeps taste-based remarks apart as suggestions, reports a clean dimension as 'checked, none', and lists what was not checked (logo and imagery not stated, rendering, run-time values). Edits nothing."
+    },
+    {
+      "id": 2,
+      "prompt": "Is this banner on brand? Here is the PNG. We have no brand guidelines and no tokens yet, just the logo file.",
+      "expected_output": "Does not invent a rule. Says that nothing is stated beyond the logo, so almost nothing can be audited, and stops before a verdict. Offers to record the colours as found in the logo (labelled inferred from the logo) if the lead accepts that as the reference, and hands the missing guidelines and tokens to brand-identity. Opens the PNG with Read and says what a downscaled copy did not let it judge."
+    },
+    {
+      "id": 3,
+      "prompt": "Audit the spring campaign set against the brand tokens. The client approved an orange gradient on the hero for this campaign only, on 2 October, so that is allowed. Also fix whatever is off-brand while you are in there.",
+      "expected_output": "Audits the set, records the gradient under approved exceptions with who approved it and when instead of counting it as a finding, and still reports every other drift. Does not edit any file during the audit: it hands the fixes to the owners (Jamileh for creatives, Deniz for a built page) and offers a separate fix pass after the report is accepted."
+    },
+    {
+      "id": 4,
+      "prompt": "The tokens say the CTA fill is clay #B5451B, but the brand guidelines PDF's palette table lists the CTA as #C2410C. The new banners use #C2410C. Are they on brand?",
+      "expected_output": "Reports a conflict between two sources of the brand's own truth rather than a finding against the banners or against either source, names both sources with their values, does not pick one, and routes the question to whoever owns the brand (and to design-system-tokens or brand-identity to reconcile). States that the banners match the guidelines and differ from the tokens, with the evidence for each, and does not give a verdict until the sources agree."
+    }
+  ]
+}

@@ -66,7 +66,7 @@ Cheapest ceiling first: H5, H4, H3, H6, H1, H8, then H2 and H7. H9 (added 2026-1
 | Sitting H | H10a to H10c (Plan 036 S0, the designer's baseline: four headless prompts; H10d waits for S19 and the maintainer's own key) | 3.2 USD and 4 prompts (the maintainer's, approved 2026-10-08; used 1.0212 USD) |
 | Sitting I | H10f and H10g (Plan 036 Q5 and Q6 re-tests: four headless prompts, one in reserve) | 4.0 USD and 5 prompts (the maintainer's, 2026-10-08) |
 | Sitting J | H10h and H10i (Plan 036 probe P3: two headless prompts that publish private artifacts to the maintainer's claude.ai account) | 1.6 USD and 2 prompts (the maintainer's yes, 2026-10-08; used 0.9138 USD) |
-| Sitting K | The re-run of H10h and H10i on a real install after S11 and S12, and H10j before and after S1 and S1b (four headless prompts; Plan 036 S13) | 3.2 USD and 4 prompts (four caps of 0.8 USD; **proposed**, the maintainer's yes pending) |
+| Sitting K | The re-run of H10h and H10i on a real install after S11 and S12, and H10j before and after S1 and S1b (four headless prompts; Plan 036 S13) | 3.2 USD and 4 prompts (four caps of 0.8 USD; the maintainer's go, 2026-10-08; used 1.6981 USD) |
 
 Total of all ceilings: 55.0 USD, and 65.0 USD with Sitting F.
 
@@ -569,6 +569,8 @@ After the Design artifact skill (S11) and the grant (S12) are in, H10h and H10i 
 
 ### Cost
 Estimate about 0.8 USD for the two H10j runs (about 0.4 each; **not measured** for this prompt) and about 0.9 USD for the re-run of H10h and H10i (their measured cost in Sitting J, 0.9138 USD). Ceiling for Sitting K, the four prompts together: 3.2 USD and 4 prompts (four caps of `--max-budget-usd 0.8`); **proposed**: the maintainer approves it before the first model call, after the plan limits are read with `get_usage`.
+
+**Amended 2026-10-08 (Plan 036 S13, `host-library/claude/observations/2026-10-08-claude-2.1.294-designer-sitting-k.md`).** The maintainer gave his go for the ceiling as proposed. The four prompts cost 1.6981 USD in 60 turns, against the estimates of about 0.8 USD for the two H10j runs (measured: 0.4910 USD) and about 0.9 USD for the re-run of H10h and H10i (measured: 1.2071 USD, 0.2933 USD more than the same two prompts cost in Sitting J, because she now loads the skills first and reads back), and no run reached its cap (the dearest used 84 percent). The sitting of 2026-10-08 came to 4.5121 USD in 14 prompts. Another re-run of the two Design prompts after the follow-ups the observation names can expect about 1.2 USD, and one of H10j about 0.5 USD; each needs a ceiling and the maintainer's yes of its own.
 
 
 ## H2 and H7 `agents start` with the lead on its pinned Opus

@@ -84,6 +84,7 @@ Deliver structured visual design specifications, color palette tokens, typograph
 | Banner sets and social covers | `banner-design` | A banner or cover set in several sizes |
 | Interface text inside a design | `ux-writing` | A frame needs labels, errors or empty-state text |
 | Publishing a design to Claude Design | `design-artifact-publishing` | The user asks for a canvas, a design system or a brand book in Claude Design |
+| Checking a set against the brand | `brand-consistency-audit` | A set is about to leave the team, or someone asks whether the work is on brand |
 | Choosing or checking colour: a palette, a pair, a mode | `color-theory` | A palette or a colour pair needs a decision, a design may fail contrast, or text sits on a photo |
 | A photograph or raster scene when none is supplied | `image-creation` | A brief needs a photograph and none is supplied, or the user asks for an AI image |
 
