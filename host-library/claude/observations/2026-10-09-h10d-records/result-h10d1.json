@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 19559,
+  "stop_reason": "end_turn",
+  "session_id": "cd7e2b33-5356-4540-bf9a-3977c65120f5",
+  "total_cost_usd": 0.19893319999999998,
+  "usage": {
+    "input_tokens": 8,
+    "cache_creation_input_tokens": 40316,
+    "cache_read_input_tokens": 99266,
+    "output_tokens": 1780,
+    "output_tokens_details": {
+      "thinking_tokens": 378
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 40316,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 954,
+        "cache_read_input_tokens": 38098,
+        "cache_creation_input_tokens": 2218,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 2218
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 8,
+      "outputTokens": 1780,
+      "cacheReadInputTokens": 99266,
+      "cacheCreationInputTokens": 40316,
+      "webSearchRequests": 0,
+      "costUSD": 0.19893319999999998,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 378,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 8,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "I haven't generated anything yet. The image tool is connected, but generating costs money and sends the prompt to a provider, so I need your go first. I wrote no files and made no calls.\n\n**Where each source stands**\n1. **Supplied or owned photo:** none, and I found none in the project.\n2. **Licensed stock:** your choice. If you pick a licence, I'll design around that file.\n3. **Generated:** available, and the one I'd use. It needs your go.\n4. **Placeholder:** I'll build the feed ad with a clearly marked PHOTO frame in the hero slot, so the layout can be signed off and the real image dropped in. I won't draw a fake photo in SVG.\n\n**Go-ahead card**\n- **Image:** one 4:5 feed hero (1080×1350). A sitter and a dog on a sofa in warm, natural window light. The sitter is a generic, unidentifiable person. There's no text or logo, and a calm area is left clear for the headline and call to action.\n- **Provider and model:** Gemini `gemini-nano-banana-2.1`, `fast` quality. This is the default, and the quality tier is `fast` unless you name another.\n- **Size:** 2K, which is enough to ship. You can start at 1K to explore.\n- **Estimated cost:** $0.05 for one image. Worst case is three calls (the first plus two regenerations) at $0.15. That is well inside the $0.80 budget.\n- **Where the words go:** the prompt goes to Google under your own key. There's no input photo and no client data in it.\n- **Billing:** image models have no free tier, so the Google account needs billing enabled. If it doesn't, the call will fail with a quota error and I'll stop.\n\n**Limits on what it can show**\n- It will be an AI-generated scene. It must not be presented as a photo of a real sitter, a customer or your actual service, and it can't carry a testimonial or a named person.\n- Check whether the Meta placement needs an \"AI-generated\" label. I haven't verified that, so it goes under Open items. I'll record the prompt, model, cost and your go beside the file.\n\n**To go ahead, tell me:**\n1. Do I generate with the card above (1 image, Gemini `fast`, 2K, 4:5)? Or do you want a different provider, size or count?\n2. What is the brand name, palette and logo? What does the ad sell, for example dog sitting or walking, and where? Without these I'll use a neutral warm palette and generic copy slots.\n\n**Open items**\n- Your go and the answers above.\n- The label requirement for AI imagery on Meta.\n- Once the image exists, someone with a shell should run the hash and size check: `node C:/github/scratch-pilot/h10d-local-test/h10d1-no-go/.claude/skills/image-creation/scripts/image-check.mjs <folder> --stamp`. I have no shell.\n- Peer messages received: none.",
+  "ttft_ms": 2513,
+  "type": "result",
+  "duration_ms": 19978,
+  "uuid": "1e880709-4207-41cc-8935-89bef5e22d14",
+  "ttft_stream_ms": 1742,
+  "time_to_request_ms": 144,
+  "first_content_frame_ms": 1742,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

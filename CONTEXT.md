@@ -226,7 +226,7 @@ _Avoid_: The stateless generic fanout lane, Antigravity-dialect copies left in `
 
 **Claude Skills Lane**:
 The `.claude/skills/<name>/SKILL.md` surface through which canonical skills (including `workflow-*` skills) become native Claude slash commands. Frontmatter is translated to Claude semantics — crucially `disable-slash-command: true` becomes **`user-invocable: false`** (hidden from the `/` palette, still model-invocable) and **never** `disable-model-invocation`, whose polarity is inverted. Non-standard fields are stripped, auxiliary files copy byte-for-byte, and only installed-bundle skills project (listings cap each skill at 1,536 description characters).
-_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting all 193 skills regardless of installed bundles
+_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting all 194 skills regardless of installed bundles
 
 **Claude Lean Rules Lane**:
 The `.claude/rules/<rule>.md` projection of the deduplicated, agent-referenced rule set only — each file capped at ~200 lines, with `paths:` frontmatter where a rule is file-type-scoped. Host entrypoint rules are skipped, and bundle coordination policy lives in the orchestrator agent body rather than in an always-on rule, because Claude loads unscoped rules unconditionally in every session.
@@ -465,7 +465,7 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 193 modular skills (124 domain skills + 69 workflow playbooks).
+   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 194 modular skills (125 domain skills + 69 workflow playbooks).
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
@@ -512,6 +512,10 @@ _Avoid_: Design prompt, design export
 An Artifact of the Design type (a canvas of artboards) or the Design System type (tokens in list form, a brand book and a cover) that the creative designer publishes to Claude Design through the `Artifact` tool, only when the user asks, private, and then reads back (Plan 036 S11, ADR 0047). The lead offers it to the user as the option **Publish Artifact**, whose description says where the page goes, who can see it, what it needs and that client material leaves the project (S12). The skill `design-artifact-publishing` carries the rules; the vendor format is read live from the type's own instructions.
 _Avoid_: calling a plain SVG or HTML file one, saying it is shared, publishing as a side effect of a design task
 
+**Image route**:
+The optional path by which the creative designer gets a generated photograph: the MCP server `image-gen` (the `mcp-image` package, pinned to the version of the `latest` tag on the day it was read), which makes images with Gemini, OpenAI or Seedream through the user's own keys, one for each provider they choose, and which the user installs with a command the lead prints; and its one tool `mcp__image-gen__generate_image`, granted to her alone (Plan 036 S18 and S19, ADR 0049). The lead offers it as the option **Generate images** beside **Placeholders and image briefs**, with the explanation in the option (who pays, what goes to which provider, what the user does, the restart). Two skills carry the rules: `image-creation` (the sourcing ladder, the go-ahead, the cap of two regenerations, the provenance file) and `image-generation` (the nine rules that stand in for a floor bullet and a path guard, the providers, the parameters, sixteen recipes and the checker `call-check.mjs`). It is never in `requiredMcps`, so the doctor, the install gate and the Antigravity sync do not know it.
+_Avoid_: calling it a required server, installing it for the user, a key in a file or in the chat, generating without a go-ahead
+
 ### Testing & Code Quality Standards
 
 **4-Tier Testing Methodology**:
@@ -519,7 +523,7 @@ A deterministic test verification hierarchy:
 - **Tier 1 (Feature Coverage)**: Happy path validation of exported functions, interfaces, frontmatter schemas, and expected return types.
 - **Tier 2 (Boundary & Corner Cases)**: Negative testing covering empty inputs, malformed files, invalid enums, and graceful error handling.
 - **Tier 3 (Cross-Feature Pairwise)**: Interoperability testing between Registry, Installer, Adapters, Lockfile Engine, and CLI.
-- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 193 skills.
+- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 194 skills.
 
 **Deterministic Verification**:
 Testing practices that eliminate arbitrary timeouts (`setTimeout`) in favor of auto-waiting assertions, isolated test workspaces, predictable mock factories, and clean teardowns.

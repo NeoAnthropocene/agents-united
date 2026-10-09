@@ -4,17 +4,18 @@
   "attempt": 1,
   "createdAt": "2026-10-09T09:12:41Z",
   "server": "image-gen (mcp-image <version the lead installed>)",
-  "model": "gemini-3.1-flash-image",
+  "model": "gemini-nano-banana-2.1",
   "prompt": "<the exact prompt sent, character for character, at most 4,000 characters>",
   "parameters": {
+    "provider": "gemini",
     "aspectRatio": "4:5",
     "imageSize": "2K",
     "quality": "fast"
   },
   "approvedBy": "<who said go, and their words, for example: the user: go, two images, 2K>",
-  "estimatedCostUsd": 0.101,
-  "disclosure": "Generated with Gemini; carries an invisible SynthID mark. Platform label: <the label the placement requires, or: label rule not checked>.",
-  "inputImage": null,
+  "estimatedCostUsd": 0.0504,
+  "disclosure": "Generated with <provider and model>; <the mark the provider adds, for Gemini an invisible SynthID mark>. Platform label: <the label the placement requires, or: label rule not checked>.",
+  "inputImages": [],
   "usedIn": ["<design file that places the image>"],
   "notes": "<what you saw when you opened it, what a downscaled copy could not show, what you would change>"
 }

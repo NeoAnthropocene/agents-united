@@ -11,7 +11,7 @@ import { pathToFileURL } from 'node:url';
 
 const IMAGE_FORMAT = new Map([['.png', 'png'], ['.jpg', 'jpeg'], ['.jpeg', 'jpeg'], ['.webp', 'webp']]);
 const SKIP_DIRS = new Set(['node_modules', '.git']);
-/** The ratios the image server offers for `aspectRatio` (mcp-image 0.14.0). */
+/** The ratios the image server offers for `aspectRatio` (mcp-image 0.18.0). */
 export const RATIOS = ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9'];
 /** How far (percent) the measured ratio may be from the ratio asked for: the server rounds to the model's pixel grid (928 x 1152 for 4:5 is 0.7 off). */
 const RATIO_TOLERANCE = 3;

@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "The PetPal feed ad (4:5, 1080 x 1350) needs a hero photo of a sleepy dog on a sofa in morning light. We have no photography and no stock account. The image server is connected (ToolSearch lists mcp__image-gen__generate_image). I say go: one image, 2K.",
-      "expected_output": "Climbs the ladder out loud (nothing supplied, no stock, so rung 3) and states the estimate before calling: one image at 2K, about $0.10, worst case about $0.30 with two regenerations, and that the prompt goes to Google. Writes a scene prompt in English with subject, setting, light, lens and an empty copy zone, with no text, logo or real person, and calls once with aspectRatio 4:5, imageSize 2K and a new fileName. Opens the saved file with Read, names any defect, writes a provenance file beside it with the exact prompt, and reports the rung, the calls, the estimated cost and the label question under Open items, asking the lead for the shell step."
+      "expected_output": "Climbs the ladder out loud (nothing supplied, no stock, so rung 3) and states the estimate before calling: one image at 2K, about $0.05, worst case about $0.15 with two regenerations, and that the prompt goes to the provider (Google, by default). Loads the image-generation skill, then writes a scene prompt in English with subject, setting, light, lens and an empty copy zone, with no text, logo or real person, and calls once with aspectRatio 4:5, imageSize 2K and a new fileName. Opens the saved file with Read, names any defect, writes a provenance file beside it with the exact prompt, and reports the rung, the calls, the estimated cost and the label question under Open items, asking the lead for the shell step."
     },
     {
       "id": 2,
