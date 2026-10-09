@@ -28,7 +28,7 @@ import { nativeTeamNote, sessionGuardPrompt } from './core/native-teams.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, PrerequisiteItemCheck, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
 
-const cli = cac('agents-united');
+export const cli = cac('agents-united');
 const registry = new RegistryResolver();
 const installer = new InstallEngine(registry);
 const uninstaller = new UninstallEngine(registry);

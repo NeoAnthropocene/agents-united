@@ -17,6 +17,22 @@ describe('RegistryResolver', () => {
     expect(manifest.bundles['product-design']).toBeDefined();
   });
 
+  it('declares the empty contributor Domain Bundle shell as under construction', async () => {
+    const bundle = await resolver.getBundle('agent-factory');
+    expect(bundle).toMatchObject({
+      name: 'agent-factory',
+      domain: 'contributor',
+      tier: 'domain',
+      status: 'under-construction',
+      agents: [],
+      skills: [],
+      workflows: [],
+      rules: [],
+    });
+    expect(bundle?.orchestrator).toBeUndefined();
+    expect(bundle?.parentBundle).toBeUndefined();
+  });
+
   it('should resolve software-engineering bundle assets', async () => {
     const resolved = await resolver.resolve('software-engineering');
     expect(resolved.targetBundle).toBe('software-engineering');
