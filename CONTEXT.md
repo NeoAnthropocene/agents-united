@@ -200,7 +200,7 @@ How an integration of the Canonical Agency MCP Suite reaches a Claude Code sessi
 _Avoid_: Calling a plugin a connector, assuming a plugin carries an MCP server (the firecrawl plugin ships skills only)
 
 **Mode-Line Gate**:
-The `PreToolUse` hook of the digital-agency lead (`registry/hosts/claude/hooks/agents-united-mode-line-gate.js`, guard kind `mode-line`) that holds lead calls other than `ToolSearch` until a saved assistant text block opens with `Mode: <Fully|Limited> Operational.` (ADR 0044). It ignores calls carrying `agent_id` and fails open on unreadable evidence or unusable state. The transcript may lag the current response, so a retry can be held again; elapsed time never releases it. A version-2 marker records that a line was seen; a marker from the older timed gate is rechecked. The message calls the hold expected, and a duplicate line remains accepted (ADR 0043). Presence of a mode prefix is checked, not the accuracy of the integration report. Live behaviour after this R2 fix is unverified.
+The `PreToolUse` hook of the digital-agency lead (`registry/hosts/claude/hooks/agents-united-mode-line-gate.js`, guard kind `mode-line`) that holds lead calls other than `ToolSearch` until a saved assistant text block opens with `Mode: <Fully|Limited> Operational.` (ADR 0044). It ignores calls carrying `agent_id` and fails open on unreadable evidence or unusable state. The transcript may lag the current response, so a retry can be held again; elapsed time never releases it. A version-2 marker records that a line was seen; a marker from the older timed gate is rechecked. The message calls the hold expected, and a duplicate line remains accepted (ADR 0043). Presence of a mode prefix is checked, not the accuracy of the integration report. **Evidence amendment, 2026-10-08:** [R3 on build `89a8597`](host-library/claude/observations/2026-10-08-claude-2.1.292-r3-foundation-regression.md) witnessed holds and release in one fixture. Other host surfaces, instantaneous on-disk visibility and general timing guarantees remain unverified.
 _Avoid_: Treating a timer as proof that the line was written, assuming every hold is one-time, treating the gate as a role tool-permission guard
 
 **Multimodal Asset Inlining (`@path/to/file`)**:
@@ -226,7 +226,7 @@ _Avoid_: The stateless generic fanout lane, Antigravity-dialect copies left in `
 
 **Claude Skills Lane**:
 The `.claude/skills/<name>/SKILL.md` surface through which canonical skills (including `workflow-*` skills) become native Claude slash commands. Frontmatter is translated to Claude semantics — crucially `disable-slash-command: true` becomes **`user-invocable: false`** (hidden from the `/` palette, still model-invocable) and **never** `disable-model-invocation`, whose polarity is inverted. Non-standard fields are stripped, auxiliary files copy byte-for-byte, and only installed-bundle skills project (listings cap each skill at 1,536 description characters).
-_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting all 192 skills regardless of installed bundles
+_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting all 193 skills regardless of installed bundles
 
 **Claude Lean Rules Lane**:
 The `.claude/rules/<rule>.md` projection of the deduplicated, agent-referenced rule set only — each file capped at ~200 lines, with `paths:` frontmatter where a rule is file-type-scoped. Host entrypoint rules are skipped, and bundle coordination policy lives in the orchestrator agent body rather than in an always-on rule, because Claude loads unscoped rules unconditionally in every session.
@@ -301,9 +301,12 @@ _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanat
 - **Subagent Contract**: a Semantic Core stem (`definition`) and explicit permitted `workflows`, `skills`, `hooks` identifier lists. It carries no host mechanics and grants no runtime permissions.
 - **Host Authoring Input**: host, surface, observed version, artifact types, workspace/output root, create/update operation, local/upstream intent and evidence budget supplied before authoring.
 - **Affordance Binding**: the host realization's record of a permitted identifier's native source, loading/invocation, prerequisites, enforcement, declared delta and evidence. The shared core does not hold this record.
-- **Contributor Draft**: authored files in a user-selected directory outside managed install outputs; local installation semantics remain proposed in ADR 0046.
+- **Contributor Draft**: authored files in a user-selected directory outside managed install outputs. ADR 0046's workspace source model is accepted; its installation remains deferred.
+- **Workspace Source Registry**: a user-selected authoring registry in a workspace for local bundles, agents and skills, distinct from managed install outputs and optional upstream contribution (ADR 0046, accepted 2026-10-08).
 - **Contribution Runbook**: the proposed procedure that validates an artifact, assembles provenance and host evidence, and prepares an authorized contribution PR to `dev`. Its future skill/workflow realization is deferred to Plan 033's later slices.
 - **Pipeline / Runbook**: a pipeline schedules delegated stages and checks their results; a runbook guides one agent's decisions. Host-native realization determines whether scheduling is scripted or prose.
+- **Factory Evaluator**: a subagent delegated by the factory orchestrator to assess a bundle's host realization and report quality findings separately from deterministic checks and host evidence (ADR 0048; realization pending).
+- **Bundle Template**: a reusable authoring pattern for a Domain Bundle or Organization Bundle, stating the team's responsibilities and prerequisites (ADR 0048; templates pending).
 
 ### Semantic Core Architecture Terms (ADR 0021)
 
@@ -462,7 +465,7 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 192 modular skills (123 domain skills + 69 workflow playbooks).
+   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 193 modular skills (124 domain skills + 69 workflow playbooks).
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
@@ -516,7 +519,7 @@ A deterministic test verification hierarchy:
 - **Tier 1 (Feature Coverage)**: Happy path validation of exported functions, interfaces, frontmatter schemas, and expected return types.
 - **Tier 2 (Boundary & Corner Cases)**: Negative testing covering empty inputs, malformed files, invalid enums, and graceful error handling.
 - **Tier 3 (Cross-Feature Pairwise)**: Interoperability testing between Registry, Installer, Adapters, Lockfile Engine, and CLI.
-- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 192 skills.
+- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 193 skills.
 
 **Deterministic Verification**:
 Testing practices that eliminate arbitrary timeouts (`setTimeout`) in favor of auto-waiting assertions, isolated test workspaces, predictable mock factories, and clean teardowns.
