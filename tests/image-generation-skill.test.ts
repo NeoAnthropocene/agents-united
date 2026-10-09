@@ -377,7 +377,19 @@ describe('what the first live runs of H10d showed (2026-10-09): the path rule sa
     expect(rules).toMatch(/never a file outside the project, even one the user typed/);
     const role = nativeText('agency-creative-designer');
     expect(role).toMatch(/`inputImagePaths` only for a file inside the project that the user or the brief named/);
-    expect(role).toMatch(/never a file outside the project even if the user typed it \(ask for a copy in `assets\/source\/`\)/);
+    expect(role).toMatch(/never a file outside the project even if the user typed it \(you cannot copy a picture: ask the user or the lead for a copy in `assets\/source\/`/);
+  });
+
+  it('says how to say no to an outside file where she reads it: she cannot copy a picture, the user or the lead does; the user\'s word that it may go to the provider is asked for; the placeholder is offered meanwhile', () => {
+    // H10d3 again (2026-10-09, on the strict rule): no call and nothing left the project, but she did not ask for the user's word, offered no placeholder, and offered
+    // to copy the picture herself "with a file-read and write", which cannot copy a JPEG (Read shows the picture, Write writes text). Her loaded text asked for none of the three.
+    const edge = section('Edge Cases & Error Recovery');
+    expect(edge).toMatch(/\*\*A path outside the project\*\*: do not pass it; you cannot copy it\. Ask the user or the lead for a copy in `assets\/source\/` and for the user's word that it may go to the provider; offer the placeholder meanwhile\./);
+    const role = nativeText('agency-creative-designer');
+    expect(role).toMatch(/\(you cannot copy a picture: ask the user or the lead for a copy in `assets\/source\/` and for the user's word that it may go to the provider, and offer the placeholder with an image brief meanwhile\)/);
+    const t = read('references/input-images-and-paths.md');
+    expect(t).toMatch(/You hold no shell, so you cannot make the copy yourself: the user makes it, or the lead with its shell\./);
+    expect(t).toMatch(/offer the placeholder with an image brief/);
   });
 
   it('answers a typed outside path with No in the table of sources, as the checker does and as the first eval says', () => {
