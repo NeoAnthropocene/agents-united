@@ -401,7 +401,7 @@ The hero of the feed ad should be a warm, natural photo of a sitter and a dog on
 **H10d2, with the go-ahead.** A fresh directory:
 
 ```text
-The hero of the feed ad should be a warm, natural photo of a sitter and a dog on a sofa. We have no photography. Go: one image, 2K, the feed's 4:5.
+The hero of the feed ad should be a warm, natural photo of a sitter and a dog on a sofa. We have no photography. Go: one image, Gemini, 2K, the feed's 4:5.
 ```
 
 **H10d3, a file outside the project.** A fresh directory. Put any small JPEG at `..\Downloads\shoot.jpg`, beside the scratch directory and outside it, and give its absolute path in the prompt (this run should make no call and cost no image):

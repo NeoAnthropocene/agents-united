@@ -225,6 +225,8 @@ describe('the record', () => {
     expect(h10d).toMatch(/H10d2/);
     expect(h10d).toMatch(/with their own key|the maintainer's own key/);
     expect(h10d).toMatch(/about 0\.05 USD/);
+    // the go of H10d2 names the provider, because rule 1 of `image-generation` says a go does; without it a careful designer would ask, and that is not what H10d2 tests
+    expect(h10d).toMatch(/Go: one image, Gemini, 2K, the feed's 4:5\./);
     expect(h10d).not.toMatch(/about 0\.10 USD for one image|about 0\.10 USD, at most 0\.30/);
     expect(h10d).toMatch(/loaded? `image-generation`|loads `image-generation`/);
     expect(h10d).not.toMatch(/probe P2 has passed|S5 server/);
