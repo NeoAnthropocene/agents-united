@@ -216,7 +216,7 @@ describe('the references, the assets, the example and the evals', () => {
     expect(s).toMatch(/no free tier/i);
     expect(s).toMatch(/three calls/i);
     expect(s).toMatch(/probe/i);
-    expect(s).toMatch(/goes? to the provider/i);
+    expect(s).toMatch(/go(es)? to the provider/i);
     expect(s).toMatch(/SynthID/);
     expect(s, 'the old default model\'s prices are gone').not.toMatch(/\$0\.067|\$0\.101|\$0\.151/);
   });

@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 34 bundles (including the `full` suite; `registry/bundles.json` also holds one placeholder, `mock-organization-under-construction`, which is not counted) · 59 agents (9 orchestrators + 50 sub-agents) · 193 skills (124 domain skills + 69 workflow playbooks) · 8 department domains.
+**In numbers:** 34 bundles (including the `full` suite; `registry/bundles.json` also holds one placeholder, `mock-organization-under-construction`, which is not counted) · 59 agents (9 orchestrators + 50 sub-agents) · 194 skills (125 domain skills + 69 workflow playbooks) · 8 department domains.
 
 ---
 
@@ -272,7 +272,7 @@ agents add full                        # everything
 
 ### Skills
 
-The 193 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 124 are **domain skills** (best practices, runbooks, platform guides) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 194 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 125 are **domain skills** (best practices, runbooks, platform guides) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
@@ -673,6 +673,14 @@ Three MIT-licensed skill collections read as reference material (Plan 035): obra
 One MIT-licensed skill read as reference material (Plan 036 S15): Owl-Listener/designer-skills at `9a6930c`. **Ideas and inspiration only; no text or file was copied.**
 
 - **`color-theory`**: written in this project's own words after reading its `color-system` skill (`ui-design/skills/color-system`): build a palette in layers (brand, neutral, semantic, extended) with tonal scales, name the roles before the hues, test every foreground and background pair. The catalog's own contrast table (`design-system-tokens`) and script (`accessibility-audit`) are reused, not copied.
+</details>
+
+<details>
+<summary><strong>Shinpr (<a href="https://github.com/shinpr">@shinpr</a> / <a href="https://github.com/shinpr/mcp-image">shinpr/mcp-image</a>)</strong></summary>
+
+The MIT-licensed `mcp-image` server, which the optional image route installs for the user (pinned, never vendored: the user runs it with `npx`), and its `skills/image-generation` prompt skill, read as reference material (Plan 036 S19): shinpr/mcp-image at `12ef66f`. **Ideas and inspiration only; no text or file was copied.**
+
+- **`image-generation`**: written in this project's own words, and going beyond that skill (a prompt structure of subject, context and style): the nine rules a generated picture lives by, three providers, the parameters and their errors, a rule for the paths the server reads, and sixteen recipes whose calls a script checks.
 </details>
 
 <details>

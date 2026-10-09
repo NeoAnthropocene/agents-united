@@ -210,7 +210,10 @@ describe('call-check: the input images, the guard the server does not have', () 
     const opts = { projectRoot: project };
     expect(codes(checkCall({ ...clean, inputImagePaths: ['assets/source/packshot.png'] }, opts), 'error')).toContain('input-relative');
     source('packshot.png');
-    expect(codes(checkCall({ ...clean, inputImagePaths: [path.join(project, 'assets', 'source', '..', 'source', 'packshot.png')] }, opts), 'error')).toContain('input-traversal');
+    // path.join would normalise the ".." away; the model writes the string as it is
+    const withDots = `${path.join(project, 'assets', 'source')}${path.sep}..${path.sep}source${path.sep}packshot.png`;
+    expect(withDots).toContain('..');
+    expect(codes(checkCall({ ...clean, inputImagePaths: [withDots] }, opts), 'error')).toContain('input-traversal');
     expect(codes(checkCall({ ...clean, inputImagePaths: [path.join(project, 'assets', 'source', 'nothing.png')] }, opts), 'error')).toContain('input-missing');
     expect(codes(checkCall({ ...clean, inputImagePaths: [path.join(project, 'assets', 'source')] }, opts), 'error')).toContain('input-missing');
     expect(codes(checkCall({ ...clean, inputImagePaths: [source('moodboard.gif')] }, opts), 'error')).toContain('input-extension');
@@ -262,6 +265,20 @@ describe('call-check: the input images, the guard the server does not have', () 
     const link = path.join(project, 'assets', 'source', 'innocent.png');
     fs.symlinkSync(outside, link);
     expect(codes(checkCall({ ...clean, inputImagePaths: [link] }, { projectRoot: project }), 'error')).toContain('input-outside-project');
+  });
+});
+
+describe('call-check: the inside test is exact', () => {
+  it('counts only a real parent segment as outside: a folder or file whose name starts with two dots is inside', async () => {
+    const mod = (await api()) as unknown as { isInside: (root: string, file: string) => boolean };
+    const root = path.resolve(tmp, 'p');
+    expect(mod.isInside(root, root)).toBe(true);
+    expect(mod.isInside(root, path.join(root, 'assets', 'source', 'a.png'))).toBe(true);
+    expect(mod.isInside(root, path.join(root, '..cache', 'a.png'))).toBe(true);
+    expect(mod.isInside(root, path.join(root, '..a.png'))).toBe(true);
+    expect(mod.isInside(root, path.resolve(root, '..'))).toBe(false);
+    expect(mod.isInside(root, path.resolve(root, '..', 'q', 'a.png'))).toBe(false);
+    expect(mod.isInside(root, path.resolve(tmp, 'pp', 'a.png'))).toBe(false);
   });
 });
 

@@ -138,7 +138,9 @@ describe('mcp-setup: the optional image server', () => {
   it('uses the same version everywhere the route is described', () => {
     const adr = fs.readFileSync(path.resolve('docs/adr/0049-the-creative-designer-may-generate-photographs.md'), 'utf8');
     const providers = fs.readFileSync(path.resolve('registry/skills/image-generation/references/providers.md'), 'utf8');
-    for (const [name, text] of [['ADR 0049', adr], ['providers.md', providers], ['the section', section()]] as const) expect(text, name).toContain(VERSION);
+    for (const [name, text] of [['providers.md', providers], ['the section', section()]] as const) expect(text, name).toContain(`mcp-image@${VERSION}`);
+    // not just the string: the ADR must say that this is the number it pins (its old text mentions 0.18.0 as a release it did not pin)
+    expect(adr, 'ADR 0049 pins the same number').toMatch(new RegExp(`pinned to \\*\\*${VERSION.replace(/\./g, '\\.')}\\*\\*`));
     const pinned = [...section().matchAll(/mcp-image@(\d+\.\d+\.\d+)/g)].map(m => m[1]);
     expect([...new Set(pinned)]).toEqual([VERSION]);
   });
