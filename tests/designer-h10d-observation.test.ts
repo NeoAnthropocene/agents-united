@@ -61,7 +61,7 @@ describe('the Sitting L observation: the record', () => {
     const start = PROTOCOL.indexOf('### H10d Prompt');
     const section = PROTOCOL.slice(start, PROTOCOL.indexOf('### H10d Pass', start));
     const fences = [...section.matchAll(/```text\n([\s\S]*?)\n```/g)].map(m => m[1]!);
-    expect(fences).toHaveLength(3);
+    expect(fences.length).toBeGreaterThanOrEqual(3); // the runs added after this sitting (H10d4 to H10d7) come after these three
     expect(record('prompt-h10d1.txt').trim()).toBe(fences[0]);
     expect(record('prompt-h10d2.txt').trim()).toBe(fences[1]);
     expect(record('prompt-h10d3.txt').trim()).toBe(fences[2]!.replace('<the absolute path of ..\\Downloads\\shoot.jpg>', INPUT_PATH));
