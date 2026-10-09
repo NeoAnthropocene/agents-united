@@ -686,6 +686,11 @@
         "https://github.com/huggingface/skills/tree/80f9fa530e46f4ae642fcb9e1725bad0e1979395"
       ]
     },
+    "image-creation": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-08",
+      "skill": "image-creation"
+    },
     "interaction-pattern-library": {
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
