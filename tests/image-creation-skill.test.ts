@@ -101,7 +101,7 @@ describe('the skill: what it is and where it lives', () => {
 
   it('points only to skills that exist', () => {
     const named = [...new Set([...body().matchAll(/`([a-z][a-z0-9]*(?:-[a-z0-9]+)+)`/g)].map(m => m[1]!))];
-    for (const name of ['brand-identity', 'color-theory', 'mcp-setup', 'accessibility-audit']) expect(named, name).toContain(name);
+    for (const name of ['brand-identity', 'color-theory', 'mcp-setup', 'accessibility-audit', 'image-generation']) expect(named, name).toContain(name);
     for (const n of named.filter(x => !/^(image-check|image-gen|mcp-image|mjs)/.test(x))) expect(fs.existsSync(path.resolve('registry/skills', n, 'SKILL.md')), `${n} exists`).toBe(true);
   });
 });
@@ -128,7 +128,7 @@ describe('the runbook teaches a route that is honest, cheap and recorded', () =>
   it('gets the go-ahead before the first call, with the number of images, the size, the model, the estimate and where the prompt goes', () => {
     const r = runbook();
     expect(r).toMatch(/go-ahead before the first call/);
-    for (const part of ['number of images', 'size', 'model', 'estimate', 'goes to Google']) expect(r, part).toContain(part);
+    for (const part of ['number of images', 'provider', 'size', 'model', 'estimate', 'goes to the provider']) expect(r, part).toContain(part);
   });
 
   it('writes the prompt as a scene, under 4,000 characters, records exactly what was sent, and keeps text, logos and people out', () => {
@@ -137,6 +137,13 @@ describe('the runbook teaches a route that is honest, cheap and recorded', () =>
     expect(r).toMatch(/under 4,000 characters/);
     expect(r).toMatch(/the prompt you send is the prompt you record/i);
     for (const never of ['text', 'logos', 'real people']) expect(r, never).toContain(never);
+  });
+
+  it('loads image-generation before the first call: the rules, the provider and the recipes are there, not here', () => {
+    const r = runbook();
+    expect(r).toContain('`image-generation`');
+    expect(r).toMatch(/load `image-generation`/i);
+    expect(skill()).toMatch(/provider/);
   });
 
   it('calls once per image with a ratio for the placement, a size that fits it and a new file name, and caps regeneration at two', () => {
@@ -170,7 +177,7 @@ describe('the runbook teaches a route that is honest, cheap and recorded', () =>
     expect(e).toMatch(/No tool|Tool not listed/i);
     expect(e).toMatch(/billing|quota/i);
     expect(e).toMatch(/refuses|refused/i);
-    expect(e).toMatch(/inputImagePath/);
+    expect(e).toMatch(/inputImagePaths/);
     expect(e).toMatch(/1\.91:1/);
     expect(e).toMatch(/key pasted in the chat/);
   });
@@ -192,27 +199,33 @@ describe('the references, the assets, the example and the evals', () => {
     for (const row of ['| Feed 4:5 (1080 x 1350)', '| Story 9:16 (1080 x 1920)', '| Banner 16:9', '| Square 1:1']) expect(p, row).toContain(row);
     expect(p).toContain('1856 x 2304');
     expect(p).toMatch(/semantic negative|what you want, not what you do not/i);
+    expect(p).toContain('image-generation');
+    expect(p).toMatch(/Gemini's pixel sizes|pixel sizes are Gemini's|Gemini model's/i);
     expect(p).toMatch(/Weak:/);
     expect(p).toMatch(/Better:/);
   });
 
-  it('has the server facts: the tool and its parameters, the three models with a dated price table, the caps, the privacy and the return shape', () => {
+  it('has the estimate and the caps: the tool, the three providers, the arithmetic, the default model\'s prices (dated), the cap of three calls, the probe for a provider with no published price, and where the full table lives', () => {
     const s = read('references/server-and-cost.md');
     expect(s).toContain(TOOL);
-    for (const param of ['prompt', 'aspectRatio', 'imageSize', 'fileName', 'quality', 'inputImagePath', 'purpose', 'useGoogleSearch']) expect(s, param).toContain(`\`${param}\``);
-    for (const model of ['gemini-3.1-flash-image', 'gemini-3-pro-image', 'gemini-nano-banana-2.1']) expect(s, model).toContain(model);
-    expect(s).toMatch(/Prices read on 2026-10-08/);
-    for (const price of ['$0.067', '$0.101', '$0.151', '$0.134', '$0.24']) expect(s, price).toContain(price);
+    for (const provider of ['Gemini', 'OpenAI', 'Seedream']) expect(s, provider).toContain(provider);
+    expect(s).toContain('image-generation');
+    expect(s).toContain('references/providers.md');
+    for (const price of ['$0.0336', '$0.0504', '$0.113']) expect(s, price).toContain(price);
+    expect(s).toMatch(/Prices read on 2026-10-09/);
     expect(s).toMatch(/no free tier/i);
+    expect(s).toMatch(/three calls/i);
+    expect(s).toMatch(/probe/i);
+    expect(s).toMatch(/goes? to the provider/i);
     expect(s).toMatch(/SynthID/);
-    expect(s).toMatch(/file:\/\//);
-    expect(s).toMatch(/overwrites/i);
-    expect(s).toMatch(/4,000 characters/);
+    expect(s, 'the old default model\'s prices are gone').not.toMatch(/\$0\.067|\$0\.101|\$0\.151/);
   });
 
   it('has the provenance fields, the disclosure rule and the never-generate list', () => {
     const d = read('references/provenance-and-disclosure.md');
-    for (const field of ['file', 'asset', 'attempt', 'createdAt', 'server', 'model', 'prompt', 'parameters', 'approvedBy', 'estimatedCostUsd', 'disclosure']) expect(d, field).toContain(`\`${field}\``);
+    for (const field of ['file', 'asset', 'attempt', 'createdAt', 'server', 'model', 'prompt', 'parameters', 'approvedBy', 'estimatedCostUsd', 'disclosure', 'inputImages']) expect(d, field).toContain(`\`${field}\``);
+    expect(d).toMatch(/provider/);
+    expect(d).not.toContain('`inputImage`');
     expect(d).toMatch(/Never generate/);
     for (const never of ['a real person', 'a customer', 'a logo', 'a screenshot']) expect(d, never).toContain(never);
     expect(d).toMatch(/SynthID/);
@@ -265,12 +278,12 @@ describe('the references, the assets, the example and the evals', () => {
       asset,
       attempt,
       createdAt: '2026-10-09T09:12:00Z',
-      server: 'image-gen (mcp-image 0.14.0)',
-      model: 'gemini-3.1-flash-image',
+      server: 'image-gen (mcp-image 0.18.0)',
+      model: 'gemini-nano-banana-2.1',
       prompt: 'A scene.',
       parameters: { aspectRatio, imageSize, quality: 'fast' },
       approvedBy: 'the user: go, two images, 2K',
-      estimatedCostUsd: 0.101,
+      estimatedCostUsd: 0.0504,
       disclosure: 'Generated with Gemini; invisible SynthID mark; no platform label required, checked 2026-10-09.',
     });
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'au-image-example-'));

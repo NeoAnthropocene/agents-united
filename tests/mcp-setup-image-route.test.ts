@@ -3,17 +3,18 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Plan 036 S18: the install route of the optional image server. The maintainer chose Gemini through their own Google AI Studio key (2026-10-08). The rule of
- * every credentialed server in `mcp-setup` holds: the lead prints the command with a placeholder and the user runs it in their own terminal; the key is never
- * asked for in the chat and never written to a file. The package is pinned to a release old enough to have been seen by others, and the section says what was
- * read for the pin and what was not run. The server is an optional extra: it is not in the required list, so the doctor, the install gate and the Antigravity
- * MCP sync do not move.
+ * Plan 036 S18 and its amendment of 2026-10-09: the install route of the optional image server. The maintainer chose Gemini through their own Google AI
+ * Studio key (2026-10-08), then asked for the latest tag of the package and for the other providers to be wired (2026-10-09). The rule of every credentialed
+ * server in `mcp-setup` holds: the lead prints the command with placeholders and the user runs it in their own terminal; no key is asked for in the chat or
+ * written to a file. The package is pinned to the NUMBER the `latest` tag pointed to on the day (a floating tag would run unread code with the user's keys),
+ * and the section says what was read for the pin and what was not run. The server is an optional extra: it is not in the required list, so the doctor, the
+ * install gate and the Antigravity MCP sync do not move.
  */
 
 const SKILL_DIR = path.resolve('registry/skills/mcp-setup');
 const read = (rel: string): string => fs.readFileSync(path.join(SKILL_DIR, rel), 'utf8').replace(/\r\n/g, '\n');
-const COMMAND =
-  'claude mcp add --scope local image-gen --env GEMINI_API_KEY=<your-ai-studio-key> --env IMAGE_PROVIDER=gemini --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.14.0';
+const VERSION = '0.18.0';
+const COMMAND = `claude mcp add --scope local image-gen --env GEMINI_API_KEY=<your-ai-studio-key> --env IMAGE_PROVIDER=gemini --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@${VERSION}`;
 
 const section = (): string => {
   const text = read('references/claude-code.md');
@@ -28,14 +29,28 @@ describe('mcp-setup: the optional image server', () => {
     const s = section();
     expect(s).toContain(COMMAND);
     expect(s).toMatch(/```bash\n[^`]*image-gen[^`]*```/);
-    expect(s).not.toMatch(/npx -y mcp-image(?!@0\.14\.0)/);
-    expect(s).not.toMatch(/@latest/);
+    expect(s).not.toMatch(/npx -y mcp-image(?!@0\.18\.0)/);
+    expect(s).not.toMatch(/mcp-image@latest/);
   });
 
-  it('holds no key, no key shape and no value for the key variable', () => {
+  it('adds a provider by adding one key pair, and says which key each provider needs, where to get it and what it must have', () => {
+    const s = section();
+    expect(s).toContain('--env OPENAI_API_KEY=<your-openai-key>');
+    expect(s).toContain('--env ARK_API_KEY=<your-byteplus-ark-key>');
+    expect(s).toMatch(/one key pair for each other provider|add one `--env` pair for each other provider/i);
+    expect(s).toContain('IMAGE_PROVIDER');
+    expect(s).toMatch(/a provider without its key|names a provider whose key is not set/i);
+    for (const where of ['aistudio.google.com/apikey', 'platform.openai.com/api-keys', 'console.byteplus.com']) expect(s, where).toContain(where);
+    expect(s).toMatch(/organization verification|verified organization|verification/i);
+    expect(s).toMatch(/ap-southeast-1|AP region/);
+    expect(s).toMatch(/billing/i);
+  });
+
+  it('holds no key, no key shape and no value for any key variable', () => {
     for (const text of [read('references/claude-code.md'), read('SKILL.md')]) {
       expect(text).not.toMatch(/AIza[0-9A-Za-z_-]{20,}/);
-      for (const m of text.matchAll(/GEMINI_API_KEY\s*[=:]\s*['"]?([^\s'"`]+)/g)) expect(m[1], 'GEMINI_API_KEY value').toMatch(/^<[a-z -]+>$/);
+      expect(text).not.toMatch(/\bsk-[0-9A-Za-z_-]{20,}/);
+      for (const m of text.matchAll(/(GEMINI|OPENAI|ARK)_API_KEY\s*[=:]\s*['"]?([^\s'"`]+)/g)) expect(m[2], `${m[1]}_API_KEY value`).toMatch(/^<[a-z -]+>$/);
     }
   });
 
@@ -44,7 +59,7 @@ describe('mcp-setup: the optional image server', () => {
     expect(s).toMatch(/optional extra/i);
     expect(s).toMatch(/never part of the required list|not in the required list/i);
     expect(s).toMatch(/The lead never runs it/);
-    expect(s).toMatch(/never asks for the key in the chat/);
+    expect(s).toMatch(/never asks for a key in the chat|never asks for the key in the chat/);
     expect(s).toMatch(/in their own terminal/);
     expect(s).toMatch(/shared with the team|stays out of the shared file/);
   });
@@ -55,31 +70,41 @@ describe('mcp-setup: the optional image server', () => {
     expect(s).toContain('mcp__image-gen__generate_image');
   });
 
-  it('says why this version: the newest release older than two weeks on the day, what was read, what was not run, and the pin refresh', () => {
+  it('says why this version: the number the latest tag pointed to, pinned to the number and not to the tag, what was read (the diff against 0.14.0), what was not run, and the pin refresh', () => {
     const s = section();
-    expect(s).toContain('`mcp-image@0.14.0`');
-    expect(s).toMatch(/published 2026-09-08/);
-    expect(s).toMatch(/older than two weeks/);
+    expect(s).toContain(`\`mcp-image@${VERSION}\``);
+    expect(s).toMatch(/`latest` tag/);
+    expect(s).toMatch(/2026-10-09/);
+    expect(s).toMatch(/published 2026-10-08/);
+    expect(s).toMatch(/pinned to the number|pinned to that number/i);
+    expect(s).toMatch(/floating tag|unread release|runs? with (the user's )?keys?/i);
+    expect(s).toMatch(/maintainer asked/i);
     expect(s).toMatch(/MIT/);
     expect(s).toMatch(/no install script/i);
     expect(s).toMatch(/no npm provenance/i);
     expect(s).toMatch(/Node 22/);
     expect(s).toMatch(/Read, not run/);
+    expect(s).toMatch(/0\.14\.0/);
     expect(s).toMatch(/Not run here/);
     expect(s).toContain('npm view mcp-image');
   });
 
-  it('says what the server reads, writes and sends, and what each setting in the command is for', () => {
+  it('says what the server reads, writes and sends, what it does not check, and what each setting in the command is for', () => {
     const s = section();
     expect(s).toMatch(/Google/);
+    expect(s).toMatch(/OpenAI/);
+    expect(s).toMatch(/BytePlus/);
     expect(s).toContain('IMAGE_OUTPUT_DIR');
     expect(s).toMatch(/overwrites/);
     expect(s).toMatch(/creates the folder/);
-    expect(s).toMatch(/input image/i);
+    expect(s).toMatch(/input images?/i);
     expect(s).toContain('SKIP_PROMPT_ENHANCEMENT=true');
     expect(s).toContain('IMAGE_PROVIDER=gemini');
     expect(s).toMatch(/inside the project/);
     expect(s).toMatch(/cannot move a file|holds no shell/);
+    expect(s).toMatch(/no check that the path is inside the project/);
+    expect(s).toMatch(/skills install/);
+    expect(s).toContain('inputImagePaths');
   });
 
   it('says what it costs and who pays, and points to the skill that holds the table', () => {
@@ -87,8 +112,9 @@ describe('mcp-setup: the optional image server', () => {
     expect(s).toMatch(/no free tier/i);
     expect(s).toMatch(/billing/i);
     expect(s).toMatch(/budget/i);
-    expect(s).toContain('image-creation');
-    expect(s).toContain('references/server-and-cost.md');
+    expect(s).toMatch(/by token|per token/i);
+    expect(s).toContain('image-generation');
+    expect(s).toContain('references/providers.md');
   });
 
   it('checks the install with ToolSearch, says the restart applies, and gives the undo with the revoke', () => {
@@ -105,6 +131,15 @@ describe('mcp-setup: the optional image server', () => {
     const phase3 = skill.slice(skill.indexOf('### Phase 3'));
     expect(phase3).toContain('image-gen');
     expect(phase3).toContain('references/claude-code.md');
+    expect(phase3).toMatch(/key or keys|keys/);
     expect(read('references/claude-code.md')).toContain('claude mcp add --scope local firecrawl --env FIRECRAWL_API_KEY=<your-api-key> -- npx -y firecrawl-mcp@3.27.3');
+  });
+
+  it('uses the same version everywhere the route is described', () => {
+    const adr = fs.readFileSync(path.resolve('docs/adr/0049-the-creative-designer-may-generate-photographs.md'), 'utf8');
+    const providers = fs.readFileSync(path.resolve('registry/skills/image-generation/references/providers.md'), 'utf8');
+    for (const [name, text] of [['ADR 0049', adr], ['providers.md', providers], ['the section', section()]] as const) expect(text, name).toContain(VERSION);
+    const pinned = [...section().matchAll(/mcp-image@(\d+\.\d+\.\d+)/g)].map(m => m[1]);
+    expect([...new Set(pinned)]).toEqual([VERSION]);
   });
 });
