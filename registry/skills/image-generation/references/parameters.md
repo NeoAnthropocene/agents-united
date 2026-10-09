@@ -9,7 +9,7 @@
 | `prompt` | always | Required. 1 to 4,000 characters, English. A scene in sentences ([recipes](prompt-recipes.md)) |
 | `aspectRatio` | always | One of 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9. Left out, it is 1:1. Not every provider has every one ([providers](providers.md)) |
 | `imageSize` | always | `1K`, `2K` or `4K` (Seedream: `1K` or `2K`). Left out, the provider's own default |
-| `fileName` | always | A new descriptive name with no folder in it, such as `petpal-hero-sofa-a1`. The server strips path characters and puts the real extension on the saved file. `.png`, `.jpg` or `.jpeg` asks OpenAI and Seedream for that format. **A name already used in the folder is overwritten**, with no warning |
+| `fileName` | always | A new descriptive name with no folder in it and no extension, such as `petpal-hero-sofa-a1`. The server strips path characters and puts the real extension on the saved file: Gemini saved a JPEG for a name that ended `.png`. `.png`, `.jpg` or `.jpeg` only asks OpenAI and Seedream for that format. **A name already used in the folder is overwritten**, with no warning |
 | `provider` | only when the go names one | `gemini`, `openai` or `seedream`. Left out, the server's `IMAGE_PROVIDER` (Gemini unless the install says otherwise). The provider's key must be set on the server |
 | `quality` | only when the go names one | `fast` (the server default), `balanced` or `quality`. What each means differs by provider ([providers](providers.md)) |
 | `inputImagePaths` | only under rule 5 | An array of 1 to 14 (Gemini), 16 (OpenAI) or 10 (Seedream) absolute paths, in prompt order, even for one image. PNG, JPEG or WebP, at most 10 MiB each (Seedream: PNG and JPEG). Each file goes to the provider. [The rule](input-images-and-paths.md) decides which files |
@@ -23,10 +23,10 @@
 One text block holding JSON, not the picture:
 
 ```json
-{"type":"resource","resource":{"uri":"file:///.../assets/generated/petpal-hero-sofa-a1.png","name":"petpal-hero-sofa-a1.png","mimeType":"image/png"},"metadata":{"model":"gemini-nano-banana-2.1","provider":"gemini","processingTime":0,"contextMethod":"structured_prompt","timestamp":"2026-10-09T09:12:41.000Z"}}
+{"type":"resource","resource":{"uri":"file:///.../assets/generated/petpal-hero-sofa-a1.jpg","name":"petpal-hero-sofa-a1.jpg","mimeType":"image/jpeg"},"metadata":{"model":"gemini-nano-banana-2.1","processingTime":0,"contextMethod":"structured_prompt","timestamp":"2026-10-09T10:13:02.313Z"}}
 ```
 
-`Read` the path in `resource.uri` (the `file://` form) to see the image. Record `resource.name` as the file, `metadata.model` as the model and `metadata.provider` as the provider (a reply that has none came from the server default). The file lands in the folder the user set when installing (`IMAGE_OUTPUT_DIR`, inside the project, normally `assets/generated`); the server creates the folder if it is missing and overwrites a file of the same name. A call takes seconds to a few minutes: make them one at a time.
+`Read` the path in `resource.uri` (the `file://` form) to see the image. Record `resource.name` as the file, `metadata.model` as the model and `metadata.provider` as the provider when the reply has it (OpenAI and Seedream set it; the Gemini reply captured on 2026-10-09, shown above, has none, so the provider is the one the call named, or the server default). The file lands in the folder the user set when installing (`IMAGE_OUTPUT_DIR`, inside the project, normally `assets/generated`); the server creates the folder if it is missing and overwrites a file of the same name. A call takes seconds to a few minutes: make them one at a time.
 
 An error is `{"error":{"code","message","suggestion","details"}}` with the reply marked as an error. Read `message` and `suggestion`, then the table.
 
