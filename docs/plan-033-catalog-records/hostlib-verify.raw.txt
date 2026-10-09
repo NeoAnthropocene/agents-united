@@ -1,0 +1,5 @@
+
+> agents-united@0.15.0 hostlib:verify
+> node scripts/hostlib/cli.ts verify
+
+✔ host library snapshots match their lockfiles and every guide citation resolves

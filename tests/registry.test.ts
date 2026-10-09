@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
 import { RegistryResolver } from '../src/core/registry.js';
+import { contributorCatalogFixture } from './helpers/contributor-catalog.js';
 
 describe('RegistryResolver', () => {
   let resolver: RegistryResolver;
@@ -31,6 +32,10 @@ describe('RegistryResolver', () => {
     });
     expect(bundle?.orchestrator).toBeUndefined();
     expect(bundle?.parentBundle).toBeUndefined();
+  });
+
+  it('refuses resolving the unavailable empty contributor shell', async () => {
+    await expect(resolver.resolve('agent-factory')).rejects.toThrow('unavailable empty contributor shell');
   });
 
   it('should resolve software-engineering bundle assets', async () => {
@@ -142,6 +147,122 @@ describe('RegistryResolver', () => {
   });
 });
 
+describe('contributor catalog isolation (Plan 033 slice 2)', () => {
+  it('keeps populated contributor content discoverable and explicitly resolvable while preserving shared end-user assets', async () => {
+    const fixture = await contributorCatalogFixture();
+    try {
+      await expect(fixture.resolver.loadBundles()).resolves.toBeDefined();
+      expect((await fixture.resolver.getBundlesByDomain('contributor')).map(bundle => bundle.name)).toEqual(['fixture-factory']);
+      expect((await fixture.resolver.find('', { domain: 'contributor', type: 'bundle' })).bundles.map(bundle => bundle.name)).toEqual(['fixture-factory']);
+      const contributor = await fixture.resolver.resolve('fixture-authoring');
+      expect(contributor.skills).toContain('fixture-contribute');
+      expect(contributor.agents).toContain('fixture-contributor-lead.md');
+      for (const identifier of ['full', 'domain:engineering']) {
+        const ordinary = await fixture.resolver.resolve(identifier);
+        expect(ordinary.agents).not.toContain('fixture-contributor-lead.md');
+        expect(ordinary.agents).not.toContain('fixture-contributor.md');
+        expect(ordinary.skills).not.toContain('fixture-contribute');
+        expect(ordinary.workflows).not.toContain('fixture-contribute.md');
+        expect(ordinary.rules).not.toContain('contributor-rule.md');
+        expect(ordinary.agents).toContain('fixture-engineer.md');
+        expect(ordinary.workflows).toContain('fixture-build.md');
+        expect(ordinary.rules).toContain('shared-rule.md');
+        expect(ordinary.skills).toEqual(expect.arrayContaining(['color-theory', 'image-creation', 'brand-consistency-audit']));
+      }
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it.each([
+    ['agents', 'fixture-contributor.md'],
+    ['workflows', 'fixture-contribute.md'],
+    ['rules', 'contributor-rule.md'],
+  ] as const)('rejects contributor-only %s in full', async (kind, asset) => {
+    const fixture = await contributorCatalogFixture(manifest => {
+      manifest.bundles.full[kind]!.push(asset);
+    });
+    try {
+      await expect(fixture.resolver.loadBundles()).rejects.toThrow(`full includes contributor-only ${kind} "${asset}"`);
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it('rejects a contributor-only orchestrator declared as the full leader', async () => {
+    const fixture = await contributorCatalogFixture(manifest => {
+      manifest.bundles.full.orchestrator = 'fixture-contributor-lead.md';
+    });
+    try {
+      await expect(fixture.resolver.loadBundles()).rejects.toThrow('full includes contributor-only agents "fixture-contributor-lead.md"');
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it('does not make an empty contributor bundle available through a status change or alias', async () => {
+    const fixture = await contributorCatalogFixture(manifest => {
+      manifest.bundles['fixture-factory'] = {
+        name: 'fixture-factory',
+        domain: 'contributor',
+        description: 'Empty shell',
+        status: 'stable',
+        aliases: ['fixture-authoring'],
+      };
+    });
+    try {
+      await expect(fixture.resolver.resolve('fixture-authoring')).rejects.toThrow('unavailable empty contributor shell');
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it('rejects ordinary bundle inheritance from a contributor alias', async () => {
+    const fixture = await contributorCatalogFixture(manifest => {
+      manifest.bundles['fixture-engineering'].parentBundle = 'fixture-authoring';
+    });
+    try {
+      await expect(fixture.resolver.loadBundles()).rejects.toThrow('cannot inherit contributor bundle "fixture-factory"');
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it('rejects contributor-only skills in the explicit full inventory', async () => {
+    const fixture = await contributorCatalogFixture(manifest => {
+      manifest.bundles.full.skills!.push('fixture-contribute');
+    });
+    try {
+      await expect(fixture.resolver.loadBundles()).rejects.toThrow('full includes contributor-only skills "fixture-contribute"');
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it('keeps a rejected contributor catalog unavailable on subsequent public reads', async () => {
+    const fixture = await contributorCatalogFixture(manifest => {
+      manifest.bundles.full.skills!.push('fixture-contribute');
+    });
+    try {
+      await expect(fixture.resolver.loadBundles()).rejects.toThrow('contributor-only skills');
+      await expect(fixture.resolver.loadBundles()).rejects.toThrow('contributor-only skills');
+      await expect(fixture.resolver.getBundle('full')).rejects.toThrow('contributor-only skills');
+      await expect(fixture.resolver.resolve('full')).rejects.toThrow('contributor-only skills');
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it('refuses installing a populated contributor domain as an ordinary department', async () => {
+    const fixture = await contributorCatalogFixture();
+    try {
+      await expect(fixture.resolver.resolve('domain:contributor')).rejects.toThrow('contributor is not an end-user department');
+    } finally {
+      await fixture.remove();
+    }
+  });
+});
+
 describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)', () => {
   let resolver: RegistryResolver;
 
@@ -224,10 +345,15 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
       expect(b.planningLoop?.sidekicks).toBeUndefined();
     }
 
-    // excluded bundles (universal-orchestration, universal-skills, full,
-    // mock-organization-under-construction)
+    // The contributor shell has no planning or runtime entry points.
     const excluded = Object.values(manifest.bundles).filter((b) => b.planningLoop?.enabled !== true);
-    expect(excluded.length).toBe(4);
+    expect(excluded.map(b => b.name).sort()).toEqual([
+      'agent-factory',
+      'full',
+      'mock-organization-under-construction',
+      'universal-orchestration',
+      'universal-skills',
+    ]);
   });
 
   it('should reject planner-orchestrator bundle with budget', () => {
@@ -397,7 +523,7 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
       expect(() => (r as any).validateBundles(good)).not.toThrow();
     });
 
-    it('confirms no bundle in the real manifest declares a `rules` key yet (inert branch)', async () => {
+    it('confirms the real manifest declares no nonempty bundle-level rules yet (inert branch)', async () => {
       const manifest = await resolver.loadBundles();
       const declaring = Object.values(manifest.bundles).filter(
         (b) => Array.isArray(b.rules) && b.rules.length > 0
