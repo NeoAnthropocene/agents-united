@@ -1,0 +1,2 @@
+:root { --brand: #b5451b; --muted: #6b4b35; --ink: #2b1d14; }
+.cta { background: var(--brand); color: #fff; font-family: "Helvetica", Arial, sans-serif; }

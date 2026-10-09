@@ -1,0 +1,3 @@
+:root { --brand: #b5451b; --muted: #6b4b35; --ink: #2b1d14; --ground: hsl(33, 100%, 97%); }
+.cta { background: var(--brand); color: #fff; font-family: "Helvetica", Arial, sans-serif; border: 1px solid transparent; }
+.scrim { background: rgba(43, 29, 20, 0.6); }
