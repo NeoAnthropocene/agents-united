@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 18151,
+  "stop_reason": "end_turn",
+  "session_id": "51fb6684-0e71-4b06-a842-199960d67a3f",
+  "total_cost_usd": 0.12943,
+  "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 27786,
+    "cache_read_input_tokens": 33840,
+    "output_tokens": 1151,
+    "output_tokens_details": {
+      "thinking_tokens": 276
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 27786,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 823,
+        "cache_read_input_tokens": 29193,
+        "cache_creation_input_tokens": 3240,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 3240
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 4,
+      "outputTokens": 1151,
+      "cacheReadInputTokens": 33840,
+      "cacheCreationInputTokens": 27786,
+      "webSearchRequests": 0,
+      "costUSD": 0.12943,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 276,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 3,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "I haven't generated the image. `shoot.jpg` is in `C:\\github\\scratch-pilot\\h10d-local-test\\Downloads\\`, which is outside this project (`h10d3-outside`). I can't send a file from outside the project to the image provider. That holds even though you typed the path and you own the photo. I can't copy the file in myself either, because I have no shell.\n\n**What I need from you:**\n1. Copy `shoot.jpg` to `C:\\github\\scratch-pilot\\h10d-local-test\\h10d3-outside\\assets\\source\\shoot.jpg`.\n2. Confirm that this photo, and any details in it, may be sent to Google (Gemini). The photo goes to the provider along with the prompt.\n3. Tell me what the variation should be, for example a new crop, a different setting, a lighting or colour mood, or the same scene with a different background. It would also help to know what the ad promotes and the brand palette, so the hero leaves room for the headline and CTA. I can write a prompt without these, but it would be a guess.\n\n**Go-ahead card, ready to run once the file is in place:**\n- Images: 1\n- Provider: Gemini, `fast` quality\n- Size: `imageSize` 2K, `aspectRatio` 1:1 for the 1080×1080 feed ad\n- Input image: `assets/source/shoot.jpg`\n- File name: new, e.g. `hero-feed-v1`\n- Provenance: saved next to the image as `hero-feed-v1.provenance.json`\n\n**Constraints on the output:**\n- It contains no text, logo or real person's likeness.\n- If the stock photo shows a recognisable face, tell me. I won't send faces to the provider, so we'd need a different source photo or a face-free crop.\n- It is labelled as a generated variation, not as a photograph of your real product. I can't confirm the label your ad placement requires, so \"label rule not checked\" goes under Open items.\n\n**Meanwhile:** I can build the 1:1 feed-ad layout in SVG with a placeholder in the hero slot and a written image brief, so the layout is ready when the image arrives. Say if you want that.\n\n**Peer messages received:** none\n\n**Open items:**\n- The copy of `shoot.jpg` in `assets/source/`.\n- Your confirmation that the photo may go to Gemini.\n- The variation direction.\n- Whether the image server is connected: I haven't checked with `ToolSearch` yet, and I'll do that before the call.\n- The placement's label requirement.",
+  "ttft_ms": 9330,
+  "type": "result",
+  "duration_ms": 18387,
+  "uuid": "89898a41-b5b4-45b4-a3a7-5afb806c944b",
+  "ttft_stream_ms": 6754,
+  "time_to_request_ms": 138,
+  "first_content_frame_ms": 6754,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

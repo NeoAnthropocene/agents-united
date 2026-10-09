@@ -1,0 +1,1 @@
+The brief is in docs/pilot/creative-brief.md. Make the feed hero from it. Go: one image, Gemini, 2K, the feed's 4:5.

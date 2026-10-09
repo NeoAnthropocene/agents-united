@@ -111,11 +111,10 @@ describe('H10d4 to H10d7: the runs that close the Gemini part, fixed before they
     expect(sub('H10d Prompt')).toContain(prompt);
   });
 
-  it('proposes the sitting that runs them, with a ceiling of five caps, and has not run it', () => {
+  it('names the sitting that runs them in the protocol, with a ceiling of five caps (it was proposed, then run: designer-h10d-closing-observation.test.ts pins the result)', () => {
     const row = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting N |')) ?? '';
     expect(row).toMatch(/H10d3 again, H10d4, H10d5, H10d6 and H10d7/);
     expect(row).toMatch(/4\.0 USD and 5 prompts/);
-    expect(row).toMatch(/proposed/);
-    expect(row).not.toMatch(/\bused \d/);
+    expect(row).toMatch(/proposed 2026-10-09/);
   });
 });

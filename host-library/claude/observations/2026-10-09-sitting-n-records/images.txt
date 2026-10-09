@@ -1,0 +1,3 @@
+The two pictures of Sitting N (not kept in the repository: only their size, dimensions and hash). H10d5 edited the picture of H10d2 (hash 1f0ee432d0e9), which was left unchanged.
+h10d4  petpal-feed-hero-4x5-v1.jpg  3112021 bytes  1856 x 2304  sha256 3a54748fce0b0073cb78076106791a9d42d51da746d62718df358dbb9d5e0ab9
+h10d5  feed-hero-sitter-dog-sofa-4x5-v2.jpg  3096879 bytes  1856 x 2304  sha256 84954e0bd4543c0884a153b18c512683ef197c70ecb25d09dedc27f6d0613863

@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 21081,
+  "stop_reason": "end_turn",
+  "session_id": "d5581446-bcc4-4f67-af83-83af28071f25",
+  "total_cost_usd": 0.13690580000000002,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 25883,
+    "cache_read_input_tokens": 75259,
+    "output_tokens": 1831,
+    "output_tokens_details": {
+      "thinking_tokens": 212
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 25883,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 910,
+        "cache_read_input_tokens": 35543,
+        "cache_creation_input_tokens": 866,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 866
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 6,
+      "outputTokens": 1831,
+      "cacheReadInputTokens": 75259,
+      "cacheCreationInputTokens": 25883,
+      "webSearchRequests": 0,
+      "costUSD": 0.13690580000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 212,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 7,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "I made no image. The image server has no Seedream key configured, so the one call failed with `CONFIG_ERROR` (\"provider seedream is not configured on this server\"). Nothing was generated or saved, and the call cost nothing. I didn't switch to Gemini or OpenAI: your go named Seedream, and another provider needs its own go.\n\n**To unblock it:** whoever runs the image server needs to set the Seedream key (`ARK_API_KEY`) in the server's own environment and restart it. Don't paste the key into this chat. Alternatively, say go for another provider, with its size and price.\n\n**The call, ready to run once Seedream is configured:**\n- **Provider:** Seedream, 2K, 4:5, one image, saved as `feed-hero-sitter-dog-sofa-4x5-v1`.\n- **Prompt:** a candid, warm lifestyle photo of an adult pet sitter in an oatmeal knit sweater on a terracotta sofa. A golden retriever rests its head on their lap, with soft window light from the left. The subjects sit in the lower two-thirds of the frame. The top third is a clean, softly blurred area left clear for the headline. Palette: cream, terracotta, sage and honey. It asks for no text, logo or real person.\n- **Rung:** generated, because you have no photography and no licensed stock has been chosen.\n\n**What happens after the image arrives:**\n- I'll open the saved file to check the dog and hands, any stray lettering, the empty headline area and the palette. I'll regenerate at most twice, each time changing one instruction.\n- I'll write a provenance file beside the image: provider, model, exact prompt, parameters, your go, and the estimated cost.\n- Seedream rewrites prompts, so the recorded prompt will be the one I sent.\n\n**Rules for using it:**\n- **Not a real photo:** It must not be presented as a real photograph of your sitters, of a customer, or of the client's real dogs or home. It's a generated stand-in, so the sitter and dog aren't real people or pets.\n- **Label:** I haven't checked whether the ad platform or your market requires an AI-image label. Treat that as unchecked until someone confirms it.\n- **Headline:** The headline stays a live text overlay on a scrim. I'll check its contrast pair against the photo (AA 4.5:1) once I can see the image.\n\n**Peer messages received:** none.\n\n**Open items:**\n1. The lead or whoever runs the server must configure the Seedream key and restart it. Or give a go for another provider.\n2. Once the image exists, someone with a shell should run `image-check.mjs <folder> --stamp`. I have no shell, so I can't record file size or hash.\n3. Please confirm the AI-image label requirement for the placement.",
+  "ttft_ms": 2949,
+  "type": "result",
+  "duration_ms": 21503,
+  "uuid": "90e6fab7-7219-4f01-8121-b7ee231904f5",
+  "ttft_stream_ms": 2259,
+  "time_to_request_ms": 190,
+  "first_content_frame_ms": 2259,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

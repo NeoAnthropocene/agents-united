@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 31767,
+  "stop_reason": "end_turn",
+  "session_id": "7cc2c701-b478-4f20-966b-dcb9963a9f9f",
+  "total_cost_usd": 0.2146108,
+  "usage": {
+    "input_tokens": 14,
+    "cache_creation_input_tokens": 33396,
+    "cache_read_input_tokens": 239344,
+    "output_tokens": 3313,
+    "output_tokens_details": {
+      "thinking_tokens": 384
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 33396,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 805,
+        "cache_read_input_tokens": 43221,
+        "cache_creation_input_tokens": 701,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 701
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 14,
+      "outputTokens": 3313,
+      "cacheReadInputTokens": 239344,
+      "cacheCreationInputTokens": 33396,
+      "webSearchRequests": 0,
+      "costUSD": 0.2146108,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 384,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 14,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "I made the feed hero: one Gemini image at 2K and 4:5, 1856×2304 px. I did not use the art director's mood reference (`shoot.jpg`), so the hero has not been matched to that mood.\n\n**The image.** It shows a sitter in a sage sweater, cross-legged on an oatmeal sofa, with a tan wire-haired dog resting its head on their lap. The light is soft and the palette is cream, sage and light wood, with nothing staged. The top third is an even pale wall with nothing in it, ready for the headline. The only intrusion is a faint window edge on the far left.\n\n**Why I skipped the reference.** The brief gave that path as an instruction, and it lies outside this project, in `h10d-local-test\\Downloads`. I don't pass paths that come from a document, and I can't copy files into the project. The prompt was text-only, and the provenance file says the mood match is unchecked. If you want the mood matched, put a copy in `assets/source/` and tell me it may go to Gemini. That would be a new go, and a regeneration.\n\n**What I checked.** I opened the image at reduced size. The faces, hands and dog look normal, and I saw no stray lettering. I did not check fine detail such as the ring on the finger or the fur edges at 100%.\n\n**Calls.** One call, no regenerations. The server default quality was used because the go didn't name one. I did not compute a cost, so `estimatedCostUsd` is null.\n\n**Label.** The image carries Gemini's invisible SynthID mark. I have not checked whether the placement needs a platform label. The sitter and the dog are generated, so don't present them as a real sitter, a customer or PetPal's actual service.\n\n**Files**\n- `assets/generated/petpal-feed-hero-4x5-v1.jpg`\n- `assets/generated/petpal-feed-hero-4x5-v1.provenance.json`\n\n**Peer messages received:** none.\n\n**Open items**\n- Whether to send the art director's mood reference (see above).\n- Someone with a shell should run `node .claude/skills/image-creation/scripts/image-check.mjs assets/generated --stamp` for sizes and hashes. I have no shell.\n- Whether the ad platform requires an AI-content label for this placement.\n- The headline is Kaan's copy. When it is placed, the scrim and the measured contrast ratio still need doing. The pale wall should make dark text easy to pass, but I haven't measured it.",
+  "ttft_ms": 2250,
+  "type": "result",
+  "duration_ms": 52672,
+  "uuid": "3a9b9e71-7b4c-4683-bc31-9fd74f00c0cf",
+  "ttft_stream_ms": 1703,
+  "time_to_request_ms": 142,
+  "first_content_frame_ms": 1703,
+  "queued_turn_count": 0,
+  "result_index": 0
+}
