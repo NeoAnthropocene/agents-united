@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "bundles": {
+    "fixture-engineering": {
+      "name": "fixture-engineering",
+      "domain": "engineering",
+      "tier": "domain",
+      "description": "Ordinary end-user fixture bundle",
+      "orchestrator": "fixture-engineering-lead.md",
+      "agents": ["fixture-engineer.md"],
+      "skills": ["fixture-build", "color-theory", "image-creation", "brand-consistency-audit"],
+      "workflows": ["fixture-build.md"],
+      "rules": ["shared-rule.md"]
+    },
+    "fixture-factory": {
+      "name": "fixture-factory",
+      "domain": "contributor",
+      "tier": "domain",
+      "description": "Populated contributor fixture for later content",
+      "aliases": ["fixture-authoring"],
+      "orchestrator": "fixture-contributor-lead.md",
+      "agents": ["fixture-contributor.md", "fixture-engineer.md"],
+      "skills": ["fixture-contribute", "color-theory", "image-creation", "brand-consistency-audit"],
+      "workflows": ["fixture-contribute.md", "fixture-build.md"],
+      "rules": ["contributor-rule.md", "shared-rule.md"]
+    },
+    "full": {
+      "name": "full",
+      "domain": "universal",
+      "tier": "domain",
+      "description": "Explicit end-user inventory",
+      "orchestrator": "fixture-engineering-lead.md",
+      "agents": ["fixture-engineer.md"],
+      "skills": ["fixture-build", "color-theory", "image-creation", "brand-consistency-audit"],
+      "workflows": ["fixture-build.md"],
+      "rules": ["shared-rule.md"]
+    }
+  }
+}

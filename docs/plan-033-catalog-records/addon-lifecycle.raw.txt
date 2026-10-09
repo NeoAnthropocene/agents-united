@@ -1,0 +1,309 @@
+
+ RUN  v3.2.7 C:/Users/ozy/.codex/worktrees/ecb0/agents-united
+
+ ✓ tests/e2e-domain-conformance.test.ts (317 tests) 410988ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A1: essentials-only canonical records owned by essentials  1653ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A2: shared canonical records owned by exactly both  1718ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A3: addon-only canonical records owned by addon  1743ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A4: projections owners mirror canonical split  1722ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A5: first-install timestamps survive second install  1776ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A6: ownership holds with reversed install order  1797ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B1: removing essentials first leaves addon assets alive  1838ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B2: essentials then addon — zero managed files  2240ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B3: addon then essentials — same end state  2236ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B4: zero-ownership removal rejects, lockfile unchanged  1778ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B5: shared orchestrator stays on roster after essentials removal  1836ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > C1: both bundles resolve and produce a dry activation plan  1794ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > C2: addon resolves after essentials removal; essentials rejects  1900ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > A1: essentials-only canonical records owned by essentials  2948ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > A2: shared canonical records owned by exactly both  2376ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > A3: addon-only canonical records owned by addon  1581ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > A4: projections owners mirror canonical split  1636ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > A5: first-install timestamps survive second install  1688ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > A6: ownership holds with reversed install order  1687ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > B1: removing essentials first leaves addon assets alive  1739ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > B2: essentials then addon — zero managed files  2066ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > B3: addon then essentials — same end state  2122ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > B4: zero-ownership removal rejects, lockfile unchanged  1613ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > B5: shared orchestrator stays on roster after essentials removal  1740ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > C1: both bundles resolve and produce a dry activation plan  1738ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > frontend-engineering > C2: addon resolves after essentials removal; essentials rejects  1685ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > A1: essentials-only canonical records owned by essentials  1718ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > A2: shared canonical records owned by exactly both  1739ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > A3: addon-only canonical records owned by addon  1670ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > A4: projections owners mirror canonical split  1764ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > A5: first-install timestamps survive second install  1674ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > A6: ownership holds with reversed install order  1735ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > B1: removing essentials first leaves addon assets alive  2014ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > B2: essentials then addon — zero managed files  2286ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > B3: addon then essentials — same end state  2241ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > B4: zero-ownership removal rejects, lockfile unchanged  1737ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > B5: shared orchestrator stays on roster after essentials removal  1972ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > C1: both bundles resolve and produce a dry activation plan  1668ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > backend-distributed-systems > C2: addon resolves after essentials removal; essentials rejects  1995ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > A1: essentials-only canonical records owned by essentials  2802ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > A2: shared canonical records owned by exactly both  2762ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > A3: addon-only canonical records owned by addon  2744ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > A4: projections owners mirror canonical split  2733ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > A5: first-install timestamps survive second install  2837ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > A6: ownership holds with reversed install order  2833ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > B1: removing essentials first leaves addon assets alive  3291ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > B2: essentials then addon — zero managed files  3244ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > B3: addon then essentials — same end state  3658ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > B4: zero-ownership removal rejects, lockfile unchanged  2855ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > B5: shared orchestrator stays on roster after essentials removal  3077ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > C1: both bundles resolve and produce a dry activation plan  2740ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > qa-automation > C2: addon resolves after essentials removal; essentials rejects  3082ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > A1: essentials-only canonical records owned by essentials  1563ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > A2: shared canonical records owned by exactly both  1643ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > A3: addon-only canonical records owned by addon  1563ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > A4: projections owners mirror canonical split  1662ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > A5: first-install timestamps survive second install  1609ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > A6: ownership holds with reversed install order  1545ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > B1: removing essentials first leaves addon assets alive  1906ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > B2: essentials then addon — zero managed files  2068ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > B3: addon then essentials — same end state  2045ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > B4: zero-ownership removal rejects, lockfile unchanged  1665ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > B5: shared orchestrator stays on roster after essentials removal  1823ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > C1: both bundles resolve and produce a dry activation plan  1535ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > devops-engineering > C2: addon resolves after essentials removal; essentials rejects  1918ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > A1: essentials-only canonical records owned by essentials  1556ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > A2: shared canonical records owned by exactly both  1687ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > A3: addon-only canonical records owned by addon  1533ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > A4: projections owners mirror canonical split  1509ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > A5: first-install timestamps survive second install  1575ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > A6: ownership holds with reversed install order  1565ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > B1: removing essentials first leaves addon assets alive  1964ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > B2: essentials then addon — zero managed files  2120ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > B3: addon then essentials — same end state  1960ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > B4: zero-ownership removal rejects, lockfile unchanged  1570ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > B5: shared orchestrator stays on roster after essentials removal  1773ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > C1: both bundles resolve and produce a dry activation plan  1482ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > ai-ml-engineering > C2: addon resolves after essentials removal; essentials rejects  1755ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A1: essentials-only canonical records owned by essentials  519ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A2: shared canonical records owned by exactly both  483ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A3: addon-only canonical records owned by addon  487ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A4: projections owners mirror canonical split  1701ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A5: first-install timestamps survive second install  580ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A6: ownership holds with reversed install order  1482ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B1: removing essentials first leaves addon assets alive  617ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B2: essentials then addon — zero managed files  658ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B3: addon then essentials — same end state  641ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B4: zero-ownership removal rejects, lockfile unchanged  463ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B5: shared orchestrator stays on roster after essentials removal  518ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > C1: both bundles resolve and produce a dry activation plan  469ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > C2: addon resolves after essentials removal; essentials rejects  518ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > A1: essentials-only canonical records owned by essentials  521ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > A2: shared canonical records owned by exactly both  484ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > A3: addon-only canonical records owned by addon  467ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > A4: projections owners mirror canonical split  517ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > A5: first-install timestamps survive second install  484ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > A6: ownership holds with reversed install order  473ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > B1: removing essentials first leaves addon assets alive  527ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > B2: essentials then addon — zero managed files  614ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > B3: addon then essentials — same end state  681ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > B4: zero-ownership removal rejects, lockfile unchanged  495ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > B5: shared orchestrator stays on roster after essentials removal  531ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > C1: both bundles resolve and produce a dry activation plan  549ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-cloud > C2: addon resolves after essentials removal; essentials rejects  547ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > A1: essentials-only canonical records owned by essentials  709ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > A2: shared canonical records owned by exactly both  690ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > A3: addon-only canonical records owned by addon  745ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > A4: projections owners mirror canonical split  742ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > A5: first-install timestamps survive second install  804ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > A6: ownership holds with reversed install order  777ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > B1: removing essentials first leaves addon assets alive  781ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > B2: essentials then addon — zero managed files  944ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > B3: addon then essentials — same end state  995ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > B4: zero-ownership removal rejects, lockfile unchanged  720ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > B5: shared orchestrator stays on roster after essentials removal  768ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > C1: both bundles resolve and produce a dry activation plan  730ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-data > C2: addon resolves after essentials removal; essentials rejects  749ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > A1: essentials-only canonical records owned by essentials  540ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > A2: shared canonical records owned by exactly both  455ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > A3: addon-only canonical records owned by addon  459ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > A4: projections owners mirror canonical split  454ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > A5: first-install timestamps survive second install  450ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > A6: ownership holds with reversed install order  467ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > B1: removing essentials first leaves addon assets alive  562ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > B2: essentials then addon — zero managed files  618ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > B3: addon then essentials — same end state  626ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > B4: zero-ownership removal rejects, lockfile unchanged  473ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > B5: shared orchestrator stays on roster after essentials removal  511ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > C1: both bundles resolve and produce a dry activation plan  437ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > system-architecture-finops > C2: addon resolves after essentials removal; essentials rejects  529ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A1: essentials-only canonical records owned by essentials  827ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A2: shared canonical records owned by exactly both  785ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A3: addon-only canonical records owned by addon  748ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A4: projections owners mirror canonical split  739ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A5: first-install timestamps survive second install  740ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A6: ownership holds with reversed install order  709ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B1: removing essentials first leaves addon assets alive  775ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B2: essentials then addon — zero managed files  901ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B3: addon then essentials — same end state  903ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B4: zero-ownership removal rejects, lockfile unchanged  701ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B5: shared orchestrator stays on roster after essentials removal  770ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > C1: both bundles resolve and produce a dry activation plan  712ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > C2: addon resolves after essentials removal; essentials rejects  762ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > A1: essentials-only canonical records owned by essentials  896ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > A2: shared canonical records owned by exactly both  743ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > A3: addon-only canonical records owned by addon  718ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > A4: projections owners mirror canonical split  737ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > A5: first-install timestamps survive second install  743ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > A6: ownership holds with reversed install order  796ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > B1: removing essentials first leaves addon assets alive  808ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > B2: essentials then addon — zero managed files  1002ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > B3: addon then essentials — same end state  929ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > B4: zero-ownership removal rejects, lockfile unchanged  722ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > B5: shared orchestrator stays on roster after essentials removal  839ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > C1: both bundles resolve and produce a dry activation plan  740ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-research-testing > C2: addon resolves after essentials removal; essentials rejects  796ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A1: essentials-only canonical records owned by essentials  1451ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A2: shared canonical records owned by exactly both  1403ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A3: addon-only canonical records owned by addon  1375ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A4: projections owners mirror canonical split  1345ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A5: first-install timestamps survive second install  1335ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A6: ownership holds with reversed install order  1304ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B1: removing essentials first leaves addon assets alive  1538ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B2: essentials then addon — zero managed files  1716ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B3: addon then essentials — same end state  1706ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B4: zero-ownership removal rejects, lockfile unchanged  1345ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B5: shared orchestrator stays on roster after essentials removal  1527ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > C1: both bundles resolve and produce a dry activation plan  1342ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > C2: addon resolves after essentials removal; essentials rejects  1559ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > A1: essentials-only canonical records owned by essentials  1321ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > A2: shared canonical records owned by exactly both  1328ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > A3: addon-only canonical records owned by addon  1299ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > A4: projections owners mirror canonical split  1281ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > A5: first-install timestamps survive second install  1277ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > A6: ownership holds with reversed install order  1277ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > B1: removing essentials first leaves addon assets alive  1481ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > B2: essentials then addon — zero managed files  1730ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > B3: addon then essentials — same end state  1684ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > B4: zero-ownership removal rejects, lockfile unchanged  1421ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > B5: shared orchestrator stays on roster after essentials removal  1406ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > C1: both bundles resolve and produce a dry activation plan  1305ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > performance-paid-acquisition > C2: addon resolves after essentials removal; essentials rejects  1376ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > A1: essentials-only canonical records owned by essentials  1289ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > A2: shared canonical records owned by exactly both  1256ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > A3: addon-only canonical records owned by addon  1253ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > A4: projections owners mirror canonical split  1270ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > A5: first-install timestamps survive second install  1301ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > A6: ownership holds with reversed install order  1262ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > B1: removing essentials first leaves addon assets alive  1428ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > B2: essentials then addon — zero managed files  1569ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > B3: addon then essentials — same end state  1582ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > B4: zero-ownership removal rejects, lockfile unchanged  1279ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > B5: shared orchestrator stays on roster after essentials removal  1610ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > C1: both bundles resolve and produce a dry activation plan  1285ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > product-led-growth > C2: addon resolves after essentials removal; essentials rejects  1536ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > A1: essentials-only canonical records owned by essentials  1333ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > A2: shared canonical records owned by exactly both  1286ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > A3: addon-only canonical records owned by addon  1287ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > A4: projections owners mirror canonical split  1459ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > A5: first-install timestamps survive second install  1334ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > A6: ownership holds with reversed install order  1291ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > B1: removing essentials first leaves addon assets alive  1553ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > B2: essentials then addon — zero managed files  1686ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > B3: addon then essentials — same end state  1795ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > B4: zero-ownership removal rejects, lockfile unchanged  1295ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > B5: shared orchestrator stays on roster after essentials removal  1477ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > C1: both bundles resolve and produce a dry activation plan  1296ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > lifecycle-email-marketing > C2: addon resolves after essentials removal; essentials rejects  1556ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A1: essentials-only canonical records owned by essentials  2689ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A2: shared canonical records owned by exactly both  2629ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A3: addon-only canonical records owned by addon  2636ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A4: projections owners mirror canonical split  2588ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A5: first-install timestamps survive second install  2488ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A6: ownership holds with reversed install order  2537ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B1: removing essentials first leaves addon assets alive  2682ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B2: essentials then addon — zero managed files  2843ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B3: addon then essentials — same end state  2890ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B4: zero-ownership removal rejects, lockfile unchanged  2637ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B5: shared orchestrator stays on roster after essentials removal  2517ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > C1: both bundles resolve and produce a dry activation plan  2475ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > C2: addon resolves after essentials removal; essentials rejects  2477ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > A1: essentials-only canonical records owned by essentials  2536ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > A2: shared canonical records owned by exactly both  2547ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > A3: addon-only canonical records owned by addon  2435ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > A4: projections owners mirror canonical split  2258ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > A5: first-install timestamps survive second install  2324ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > A6: ownership holds with reversed install order  2460ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > B1: removing essentials first leaves addon assets alive  2553ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > B2: essentials then addon — zero managed files  2481ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > B3: addon then essentials — same end state  2716ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > B4: zero-ownership removal rejects, lockfile unchanged  2439ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > B5: shared orchestrator stays on roster after essentials removal  2414ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > C1: both bundles resolve and produce a dry activation plan  2404ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-application-security > C2: addon resolves after essentials removal; essentials rejects  2427ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > A1: essentials-only canonical records owned by essentials  2341ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > A2: shared canonical records owned by exactly both  2327ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > A3: addon-only canonical records owned by addon  2310ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > A4: projections owners mirror canonical split  2299ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > A5: first-install timestamps survive second install  2293ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > A6: ownership holds with reversed install order  2320ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > B1: removing essentials first leaves addon assets alive  2372ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > B2: essentials then addon — zero managed files  2632ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > B3: addon then essentials — same end state  2596ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > B4: zero-ownership removal rejects, lockfile unchanged  2317ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > B5: shared orchestrator stays on roster after essentials removal  2317ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > C1: both bundles resolve and produce a dry activation plan  2310ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-compliance-grc > C2: addon resolves after essentials removal; essentials rejects  2352ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A1: essentials-only canonical records owned by essentials  328ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A2: shared canonical records owned by exactly both  320ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A3: addon-only canonical records owned by addon  313ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A4: projections owners mirror canonical split  328ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A5: first-install timestamps survive second install  380ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A6: ownership holds with reversed install order  330ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B1: removing essentials first leaves addon assets alive  339ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B2: essentials then addon — zero managed files  410ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B3: addon then essentials — same end state  427ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B4: zero-ownership removal rejects, lockfile unchanged  332ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B5: shared orchestrator stays on roster after essentials removal  337ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > C1: both bundles resolve and produce a dry activation plan  328ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > C2: addon resolves after essentials removal; essentials rejects  338ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > A1: essentials-only canonical records owned by essentials  306ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > B2: essentials then addon — zero managed files  355ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > B3: addon then essentials — same end state  355ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > C2: addon resolves after essentials removal; essentials rejects  316ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > A1: essentials-only canonical records owned by essentials  335ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > A2: shared canonical records owned by exactly both  309ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > A3: addon-only canonical records owned by addon  309ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > A4: projections owners mirror canonical split  312ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > A6: ownership holds with reversed install order  317ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > B1: removing essentials first leaves addon assets alive  324ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > B2: essentials then addon — zero managed files  391ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > B3: addon then essentials — same end state  425ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > B4: zero-ownership removal rejects, lockfile unchanged  313ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > B5: shared orchestrator stays on roster after essentials removal  370ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > C1: both bundles resolve and produce a dry activation plan  326ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-market-intelligence > C2: addon resolves after essentials removal; essentials rejects  344ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > A1: essentials-only canonical records owned by essentials  384ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > A2: shared canonical records owned by exactly both  342ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > A3: addon-only canonical records owned by addon  330ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > A4: projections owners mirror canonical split  324ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > A5: first-install timestamps survive second install  315ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > B1: removing essentials first leaves addon assets alive  319ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > B2: essentials then addon — zero managed files  400ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > B3: addon then essentials — same end state  406ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > B4: zero-ownership removal rejects, lockfile unchanged  310ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > B5: shared orchestrator stays on roster after essentials removal  327ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > C1: both bundles resolve and produce a dry activation plan  300ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-operations-legal > C2: addon resolves after essentials removal; essentials rejects  316ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.software-engineering: every files and projections key is POSIX  1701ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.software-engineering: double-install of essentials is idempotent  1299ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.system-architecture: every files and projections key is POSIX  540ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.system-architecture: double-install of essentials is idempotent  384ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.product-design: every files and projections key is POSIX  775ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.product-design: double-install of essentials is idempotent  576ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.growth-marketing: every files and projections key is POSIX  1492ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.growth-marketing: double-install of essentials is idempotent  1191ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.security-operations: every files and projections key is POSIX  2568ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.security-operations: double-install of essentials is idempotent  2273ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.deep-research: every files and projections key is POSIX  344ms
+
+ Test Files  1 passed (1)
+      Tests  317 passed (317)
+   Start at  15:45:19
+   Duration  411.92s (transform 172ms, setup 0ms, collect 567ms, tests 410.99s, environment 0ms, prepare 63ms)
+

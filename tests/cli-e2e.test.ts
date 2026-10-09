@@ -30,6 +30,8 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(stdout).toContain('ai-ml-engineering');
     expect(stdout).toContain('growth-marketing');
     expect(stdout).toContain('seo-content-marketing');
+    expect(stdout).toContain('Developers only: contribute to Agents United');
+    expect(stdout).toContain('agent-factory');
   });
 
   it('should search for bundles and skills with find command and support --json', () => {
@@ -53,6 +55,60 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(stdout).toContain('Agents United — Registry Catalog Tree');
     expect(stdout).toContain('software-engineering');
     expect(stdout).toContain('universal-skills');
+  });
+
+  it('keeps the contributor shell discoverable through JSON list and domain search', () => {
+    const list = JSON.parse(execSync(`node "${cliPath}" list --json`, { encoding: 'utf8' })) as Array<{
+      name: string; domain?: string; tier?: string; status?: string; agents?: string[]; skills?: string[];
+    }>;
+    const shell = list.find(bundle => bundle.name === 'agent-factory');
+    expect(shell).toMatchObject({ domain: 'contributor', tier: 'domain', status: 'under-construction', agents: [], skills: [] });
+    const search = JSON.parse(execSync(`node "${cliPath}" find --category contributor --type bundle --json`, { encoding: 'utf8' })) as {
+      bundles: Array<{ name: string }>;
+    };
+    expect(search.bundles.map(bundle => bundle.name)).toEqual(['agent-factory']);
+  });
+
+  it.each([
+    { label: 'without overrides', flags: [] },
+    { label: 'with the construction override', flags: ['--allow-under-construction'] },
+    { label: 'with force', flags: ['--force'] },
+    { label: 'with both overrides', flags: ['--allow-under-construction', '--force'] },
+    { label: 'in dry-run mode', flags: ['--dry-run', '--allow-under-construction', '--force'] },
+  ])('refuses the empty contributor shell $label before writing any files', async ({ flags }) => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'agent-factory', '-y', '--copy', ...flags], {
+      cwd: e2eDir, encoding: 'utf8',
+    });
+    expect(result.status).toBe(1);
+    const output = result.stdout + result.stderr;
+    expect(output).toMatch(/unavailable.*empty contributor shell/i);
+    expect(output).toContain('--allow-under-construction and --force cannot make it installable');
+    expect(output).not.toContain('successfully');
+    expect(await fs.readdir(e2eDir)).toEqual([]);
+  });
+
+  it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
+      cwd: e2eDir, encoding: 'utf8',
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout + result.stderr).toContain('not an end-user department');
+    expect(await fs.readdir(e2eDir)).toEqual([]);
+  });
+
+  it.each([
+    { label: 'without an override', flags: [], status: 1 },
+    { label: 'with the construction override', flags: ['--allow-under-construction'], status: 0 },
+    { label: 'with force', flags: ['--force'], status: 0 },
+  ])('preserves the existing draft construction gate $label', async ({ flags, status }) => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'mock-tba', '-y', '--copy', '--dry-run', ...flags], {
+      cwd: e2eDir, encoding: 'utf8',
+    });
+    expect(result.status).toBe(status);
+    const output = result.stdout + result.stderr;
+    if (status === 0) expect(output).toContain('[DRY RUN]');
+    else expect(output).toContain('currently under construction');
+    expect(await fs.readdir(e2eDir)).toEqual([]);
   });
 
   it('should add and remove bundles in non-interactive mode with -y flag', async () => {

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import path from 'node:path';
 import fs from 'fs-extra';
 import YAML from 'yaml';
+import type { BundlesManifest } from '../src/core/types.js';
 
 export interface SkillMetadata {
   author?: string;
@@ -209,15 +210,22 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
   // Tier 3: Cross-Feature Pairwise Audit
   describe('Tier 3: Cross-Feature Pairwise Audit', () => {
     it('should cross-validate all skills listed in bundles.json against registry/skills/ directory', async () => {
-      const bundlesJson = await fs.readJson(bundlesPath);
-      const fullBundleSkills: string[] = bundlesJson.bundles.full.skills;
+      const bundlesJson: BundlesManifest = await fs.readJson(bundlesPath);
+      const fullBundleSkills = bundlesJson.bundles.full.skills ?? [];
       const entries = await fs.readdir(skillsDir, { withFileTypes: true });
-      const skillDirCount = entries.filter(e => e.isDirectory()).length;
+      const skillDirs = entries.filter(e => e.isDirectory()).map(e => e.name);
+      const bundles = Object.values(bundlesJson.bundles);
+      const contributorSkills = new Set(bundles
+        .filter(bundle => bundle.domain?.toLowerCase() === 'contributor')
+        .flatMap(bundle => bundle.skills ?? []));
+      const ordinarySkills = new Set(bundles
+        .filter(bundle => bundle.domain?.toLowerCase() !== 'contributor' && bundle.name !== 'full')
+        .flatMap(bundle => bundle.skills ?? []));
+      const endUserSkillDirs = skillDirs.filter(skill => !contributorSkills.has(skill) || ordinarySkills.has(skill));
 
-      // Catalog contract: derived, not a literal (Plan 027) — `full` must list
-      // every skill directory, no more and no fewer.
-      expect(fullBundleSkills.length).toBeGreaterThanOrEqual(166);
-      expect(fullBundleSkills.length).toBe(skillDirCount);
+      // Plan 033: exact end-user inventory; contributor-only directories are
+      // excluded, while assets shared with ordinary bundles remain included.
+      expect([...fullBundleSkills].sort()).toEqual(endUserSkillDirs.sort());
 
       for (const skillName of fullBundleSkills) {
         const skillFolderPath = path.join(skillsDir, skillName);

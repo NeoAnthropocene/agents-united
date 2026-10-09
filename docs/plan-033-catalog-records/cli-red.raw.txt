@@ -1,0 +1,52 @@
+
+> agents-united@0.15.0 pretest
+> npm run build
+
+
+> agents-united@0.15.0 build
+> tsup
+
+CLI Building entry: src/cli.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\ozy\.codex\worktrees\ecb0\agents-united\tsup.config.ts
+CLI Target: node24
+CLI Cleaning output folder
+ESM Build start
+ESM dist\cli.js     469.33 KB
+ESM dist\cli.js.map 1007.53 KB
+ESM ⚡️ Build success in 38ms
+DTS Build start
+DTS ⚡️ Build success in 1046ms
+DTS dist\cli.d.ts 2.82 KB
+
+> agents-united@0.15.0 test
+> vitest run --testTimeout=30000 --hookTimeout=30000 tests/cli-contributor-wizards.test.ts -t add wizard labels the contributor section and explains its purpose before cancellation
+
+
+ RUN  v3.2.7 C:/Users/ozy/.codex/worktrees/ecb0/agents-united
+
+ ❯ tests/cli-contributor-wizards.test.ts (1 test | 1 failed) 8ms
+   × Contributor CLI wizards > add wizard labels the contributor section and explains its purpose before cancellation 7ms
+     → the add wizard must offer the separate contributor section: expected undefined to be defined
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/cli-contributor-wizards.test.ts > Contributor CLI wizards > add wizard labels the contributor section and explains its purpose before cancellation
+AssertionError: the add wizard must offer the separate contributor section: expected undefined to be defined
+ ❯ tests/cli-contributor-wizards.test.ts:53:87
+     51|     const departmentPrompt = prompts.select.mock.calls[0]?.[0] as Sele…
+     52|     const contributor = departmentPrompt.options.find(option => option…
+     53|     expect(contributor, 'the add wizard must offer the separate contri…
+       |                                                                                       ^
+     54|     expect(contributor?.label).toContain('Developers only: contribute …
+     55|     expect(contributor?.hint).toMatch(/author|contribut/i);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  15:29:07
+   Duration  1.31s (transform 274ms, setup 0ms, collect 936ms, tests 8ms, environment 0ms, prepare 58ms)
+

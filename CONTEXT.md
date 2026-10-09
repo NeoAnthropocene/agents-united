@@ -34,6 +34,10 @@ _Avoid_: System prompt snippet, instruction file
 A high-level business or engineering discipline grouping multiple related team bundles (e.g. `Software Engineering & Delivery`, `System Architecture & SRE`, `Product Design & UI/UX`, `Growth & Marketing Operations`, `Security Operations`, `Deep Technical Research`, `Business Strategy & Economics`, `Universal Autonomous Department`).
 _Avoid_: Category folder, tag group
 
+**Contributor Domain**:
+The developer catalog group for authoring and maintaining Agents United artifacts, including private local drafts and optional upstream contributions. Its bundles are separate from end-user departments and the `full` suite.
+_Avoid_: Software Engineering department, universal baseline, installed factory tooling
+
 **Bundle**:
 A curated, named package grouping an orchestrator agent, sub-agents, skills, workflows, and rules tailored for a specific team or domain discipline.
 _Avoid_: Plugin pack, preset, collection
@@ -88,8 +92,12 @@ The formal release maturity status of a bundle:
 _Avoid_: Dev/prod tag, informal draft
 
 **Under-Construction Gate**:
-A protective safety barrier evaluated by `agents add` preventing the accidental installation of placeholder or in-development bundles. In interactive mode, it displays planned capabilities and offers a cancel/preview prompt; in non-interactive mode, it exits with error code `1` unless overridden via `--allow-under-construction` or `--force`.
+A protective safety barrier evaluated by `agents add` preventing the accidental installation of placeholder or in-development bundles. In interactive mode, it displays planned capabilities and offers a cancel/preview prompt; in non-interactive mode, it exits with error code `1` unless overridden via `--allow-under-construction` or `--force`. An empty Contributor Domain shell remains unavailable under either override.
 _Avoid_: Broken installer, silent failure
+
+**Agent Factory Shell**:
+The empty, under-construction `agent-factory` Domain Bundle in the Contributor Domain. It is discoverable but unavailable for installation until useful contributor entry points exist.
+_Avoid_: Working authoring journey, installed contributor tools, native factory support
 
 **Essentials Bundle**:
 The base foundational bundle of a department domain (e.g. `software-engineering`, `system-architecture`, `growth-marketing`, `product-design`, `security-operations`, `deep-research`, `business-strategy`) providing core orchestrators, fundamental skills, and master workflows.

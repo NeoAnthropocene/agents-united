@@ -1,0 +1,23 @@
+
+ RUN  v3.2.7 C:/Users/ozy/.codex/worktrees/ecb0/agents-united
+
+ ✓ tests/cli-contributor-wizards.test.ts (12 tests) 26ms
+ ✓ tests/cli-e2e.test.ts (39 tests) 18661ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should add and remove bundles in non-interactive mode with -y flag  398ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > refuses under-development --fanout hosts on update with a non-zero exit  508ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > update --fanout projects a bundle that was installed without fanout (fix scenario)  2120ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > reroutes -t cline to the main library + translated copies  753ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > keeps the native lane opt-in: legacy files without the flag, the native package with --native, and the legacy files back with --no-native  3262ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > prints a plain-language sync tip when installing without fanout  402ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > prints a sync tip after update when the bundle is not synced to other assistants  799ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should run doctor health check  367ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should handle update command with --all and --dry-run  972ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > runs agents start in --dry-run mode reporting team name, strategy, and safe argv  2544ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > runs doctor --host cline reporting Cline runtime audit  2682ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > agents add renders clean Installation Success note without line overflow  334ms
+
+ Test Files  2 passed (2)
+      Tests  51 passed (51)
+   Start at  15:40:33
+   Duration  19.29s (transform 427ms, setup 0ms, collect 1.17s, tests 18.69s, environment 0ms, prepare 104ms)
+

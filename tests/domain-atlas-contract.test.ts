@@ -74,6 +74,7 @@ function extractAtlasRows(content: string): AtlasRow[] {
 function expectedRoutableBundles(manifest: { bundles: Record<string, any> }): string[] {
   const essentials: string[] = [];
   for (const [name, b] of Object.entries(manifest.bundles as Record<string, any>)) {
+    if (b.domain?.toLowerCase() === 'contributor') continue;
     if (b.tier === 'organization') continue;
     if (b.parentBundle) continue;
     // Universal has three non-parent bundles; only universal-skills & full are
@@ -129,6 +130,16 @@ describe('Domain Atlas contract (universal-orchestration / Prime Orchestrator)',
     // If more org bundles appear later, ensure none are routable either.
     for (const [name, b] of Object.entries(manifestFile.bundles) as any) {
       if (b.tier === 'organization') expect(atlasCommandNames(rows)).not.toContain(name);
+    }
+  });
+
+  it('C5: contributor bundles are never ordinary Atlas recommendations', () => {
+    const names = atlasCommandNames(rows);
+    for (const bundle of Object.values(manifestFile.bundles)) {
+      if (bundle.domain?.toLowerCase() === 'contributor') {
+        expect(names).not.toContain(bundle.name);
+        for (const alias of bundle.aliases ?? []) expect(names).not.toContain(alias);
+      }
     }
   });
 

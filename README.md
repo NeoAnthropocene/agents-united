@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 34 bundles (including the `full` suite; `registry/bundles.json` also holds one placeholder, `mock-organization-under-construction`, which is not counted) · 59 agents (9 orchestrators + 50 sub-agents) · 193 skills (124 domain skills + 69 workflow playbooks) · 8 department domains.
+**In numbers:** 34 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor shell and `mock-organization-under-construction` placeholder · 59 agents (9 orchestrators + 50 sub-agents) · 193 skills (124 domain skills + 69 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
 
 ---
 
@@ -184,7 +184,7 @@ An **Essentials** bundle is the starting team for a department. **Addons** exten
 
 | Department | Essentials | Addon bundles | Lead orchestrator |
 | :--- | :--- | :--- | :--- |
-| **🌐 Universal** | `universal-skills` ⭐ (recommended baseline) | `universal-orchestration` (guided routing), `full` (everything) | `orchestrator-universal` |
+| **🌐 Universal** | `universal-skills` ⭐ (recommended baseline) | `universal-orchestration` (guided routing), `full` (end-user suite) | `orchestrator-universal` |
 | **🛠️ Software Engineering** | `software-engineering` | `frontend-engineering`, `backend-distributed-systems`, `mobile-development`, `qa-automation`, `devops-engineering`, `ai-ml-engineering` | `orchestrator-engineering` |
 | **🏛️ System Architecture & SRE** | `system-architecture` | `sysops-sre`, `system-architecture-cloud`, `system-architecture-data`, `system-architecture-finops` | `orchestrator-system-architecture` |
 | **🎨 Product Design** | `product-design` | `design-systems-ops`, `design-research-testing` | `orchestrator-design` |
@@ -198,7 +198,7 @@ An **Essentials** bundle is the starting team for a department. **Addons** exten
 agents add software-engineering        # one bundle
 agents add domain:marketing            # a whole department, picked interactively
 agents add qa-automation               # an addon
-agents add full                        # everything
+agents add full                        # end-user suite; excludes contributor-only content
 ```
 
 > [!NOTE]
@@ -212,7 +212,7 @@ agents add full                        # everything
 #### 🌐 Universal
 - **`universal-skills`** ⭐: Socratic grilling, PRD generation, ADRs, session handoff, MCP setup. No agents, skills only.
 - **`universal-orchestration`**: `orchestrator-universal`, the Prime Orchestrator front door. It grills ambiguous requests, routes to the right department using its Domain Atlas, installs with consent, and hands off.
-- **`full`**: every bundle, agent, and skill.
+- **`full`**: the end-user suite; contributor-only content is excluded, while shared end-user skills remain included.
 
 #### 🛠️ Software Engineering
 - **Lead**: `orchestrator-engineering`
@@ -540,6 +540,10 @@ Run `agents doctor` at any time to audit schemas, hooks, and lockfile state.
 ---
 
 ## 🧰 Contributing
+
+**Developers only: contribute to Agents United** is a separate catalog section for authoring and maintaining Agents United artifacts. Local drafts do not require an upstream contribution; the upstream route is a reviewed PR to `dev` using [the artifact contribution guide](./docs/artifact-contribution.md).
+
+The `agent-factory` Domain Bundle is currently an **empty, under-construction shell and unavailable for installation**. Explore it with `agents list`, `agents list --json` or `agents find agent-factory`; the list explorer opens its details. No authoring tools or native factory support ship yet. Neither `--allow-under-construction` nor `--force` installs the empty shell. Direct `agents add domain:contributor` is refused; contributor tools are selected by name when available. They stay out of `full`, ordinary department installs and ordinary recommendations ([ADR 0050](./docs/adr/0050-contributor-catalog-boundary.md)).
 
 Contributions are welcome. The short version:
 
