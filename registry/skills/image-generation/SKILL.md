@@ -1,6 +1,6 @@
 ---
 name: image-generation
-description: "Use when you are about to call, or to brief a call to, the image tool mcp__image-gen__generate_image; trigger phrases: generate an image, edit this photo, input image, which image provider, OpenAI image, Seedream, prompt for an image. Holds the nine rules a generated picture lives by, the choice of provider, the parameters and their errors, and recipes for sixteen cases. Skip it when no image server is connected, when SVG or CSS can draw the asset, for a logo, a chart or text in a picture, and for whether to generate at all (image-creation)."
+description: "Use when you are about to call, or to brief a call to, the image tool mcp__image-gen__generate_image; trigger phrases: generate an image, edit this photo, input image, which image provider, OpenAI image, Seedream, prompt for an image. Holds the nine rules, the choice of provider, the parameters and their errors, and sixteen recipes. Skip it when no image server is connected, when SVG or CSS can draw the asset, for a logo, a chart or text in a picture, and for whether to generate at all (image-creation)."
 metadata:
   author: agents-united
   version: 1.0.0
@@ -13,13 +13,13 @@ disable-slash-command: true
 The rules and the recipes for one tool: a picture that is honest, recorded and worth its price.
 
 ## Overview & Purpose
-For whoever calls `mcp__image-gen__generate_image` (the creative designer) or briefs a call. The nine rules below stand in for a floor bullet on generated imagery and for a guard on the paths the server reads (ADR 0049). Prose is not enforcement: they are restated in your role text, and a script checks a planned call. Whether to generate, the look and the provenance file are `image-creation`; installing the server is the lead's (`mcp-setup`).
+For whoever calls `mcp__image-gen__generate_image` (the creative designer) or briefs a call. The nine rules below stand in for a floor bullet on generated imagery and for a guard on the paths the server reads. Prose is not enforcement: they are restated in your role text, and a script checks a planned call. Whether to generate, the look and the provenance file are `image-creation`; installing the server is the lead's (`mcp-setup`).
 
 ## Execution Triggers
-Load it when you plan a generation (the go-ahead needs a provider, a model and a price) and again before every call. Skip it when `ToolSearch` does not list the tool, and for vector work.
+Load it when you plan a generation (the go needs a provider, a model and a price) and again before every call. Skip it when `ToolSearch` does not list the tool, and for vector work.
 
 ## Input/Output Requirements
-Inputs: the go (images, provider, size, ceiling), the brief, any file the user named for input. Output: a filled [go-ahead card](assets/go-ahead-card.md), one call per image, the saved path from the reply, and a hand-off to `image-creation` for the look, the cap and the record.
+Inputs: the go (images, provider, size, ceiling), the brief, any file the user named. Output: a filled [go-ahead card](assets/go-ahead-card.md), one call per image, the saved path, and a hand-off to `image-creation` for the look, the cap and the record.
 
 ## Step-by-Step Runbook
 1. **Hold the nine rules** ([in full](references/generated-imagery-rules.md), [the paths](references/input-images-and-paths.md)):
@@ -51,11 +51,11 @@ Anti-patterns, each with its reason:
 
 ## Edge Cases & Error Recovery
 - **A key is not set** for the named provider: stop and tell the lead; another provider is a new go.
-- **A path outside the project**: ask for a copy in `assets/source/` and the user's word; do not pass it.
+- **A path outside the project**: do not pass it; you cannot copy it. Ask the user or the lead for a copy in `assets/source/` and for the user's word that it may go to the provider; offer the placeholder meanwhile.
 - **A refusal or moderation**: drop the element; never rephrase around it.
 - **Billing, quota, OpenAI verification**: stop and tell the user; image models have no free tier.
 - **Not offered**: Seedream 4K, OpenAI 1:8, grounding off Gemini ([providers](references/providers.md)).
-- **Evidence** is the card, the checker's output and the provenance files.
+- **Evidence**: the card, the checker's output, the provenance files.
 
 ## Verification Checklist
 - [ ] The go named images, provider and size first; the card is in the report.

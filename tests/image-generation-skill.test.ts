@@ -388,7 +388,8 @@ describe('what the first live runs of H10d showed (2026-10-09): the path rule sa
     const role = nativeText('agency-creative-designer');
     expect(role).toMatch(/\(you cannot copy a picture: ask the user or the lead for a copy in `assets\/source\/` and for the user's word that it may go to the provider, and offer the placeholder with an image brief meanwhile\)/);
     const t = read('references/input-images-and-paths.md');
-    expect(t).toMatch(/You hold no shell, so you cannot make the copy yourself: the user makes it, or the lead with its shell\./);
+    expect(t).toMatch(/You hold no shell, so you cannot make the copy yourself: the user makes it, or the lead with its shell/);
+    expect(t).toMatch(/a line that says the photo goes to Google and asks to be told if it is confidential is not a request for a yes/);
     expect(t).toMatch(/offer the placeholder with an image brief/);
   });
 
