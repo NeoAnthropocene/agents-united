@@ -199,6 +199,64 @@ describe('call-check: the input images, the guard the server does not have', () 
     expect(r.findings.find(f => f.code === 'input-outside-project')!.message).toContain('passport-scan.jpg');
   });
 
+  it('lets a file outside the project through as a warning when the user typed its full path (the option allow), and only that file', async () => {
+    const { checkCall } = await api();
+    const typed = path.join(tmp, 'Downloads', 'shoot.jpg');
+    const other = path.join(tmp, 'Downloads', 'other.jpg');
+    fs.mkdirSync(path.dirname(typed), { recursive: true });
+    fs.writeFileSync(typed, 'x');
+    fs.writeFileSync(other, 'x');
+    const allowed = checkCall({ ...clean, inputImagePaths: [typed] }, { projectRoot: project, allow: [typed] });
+    expect(codes(allowed, 'error')).toEqual([]);
+    expect(codes(allowed, 'warn')).toContain('input-outside-project-typed');
+    expect(allowed.findings.find(f => f.code === 'input-outside-project-typed')!.message).toContain('goes to gemini');
+    const both = checkCall({ ...clean, inputImagePaths: [typed, other] }, { projectRoot: project, allow: [typed] });
+    expect(codes(both, 'error')).toEqual(['input-outside-project']);
+    expect(both.findings.find(f => f.code === 'input-outside-project')!.message).toContain('other.jpg');
+    // without the option the file is still refused, as the server would not refuse it
+    expect(codes(checkCall({ ...clean, inputImagePaths: [typed] }, { projectRoot: project }), 'error')).toContain('input-outside-project');
+    // and the message of the refusal says what lets a file go
+    expect(both.findings.find(f => f.code === 'input-outside-project')!.message).toMatch(/pass it only if the user typed its full path in this task \(--allow\)/);
+  });
+
+  it('does not let the option excuse a file inside the project, and says nothing about one inside it', async () => {
+    const { checkCall } = await api();
+    const png = source('packshot.png');
+    const r = checkCall({ ...clean, inputImagePaths: [png] }, { projectRoot: project, allow: [png] });
+    expect(codes(r)).not.toContain('input-outside-project-typed');
+    expect(codes(r, 'error')).toEqual([]);
+  });
+
+  it('reads the option on the command line, once for each path: exit 0 with a warning for the typed path, 1 for any other, 2 for an option without a value', () => {
+    const typed = path.join(tmp, 'Downloads', 'shoot.jpg');
+    const other = path.join(tmp, 'Downloads', 'other.jpg');
+    fs.mkdirSync(path.dirname(typed), { recursive: true });
+    fs.writeFileSync(typed, 'x');
+    fs.writeFileSync(other, 'x');
+    const call = path.join(tmp, 'call.json');
+    fs.writeFileSync(call, JSON.stringify({ ...clean, inputImagePaths: [typed, other] }));
+    const run = (extra: string[]) => spawnSync(process.execPath, [SCRIPT, call, '--project', project, '--output-dir', outputDir, ...extra], { encoding: 'utf8' });
+    const one = run(['--allow', typed]);
+    expect(one.status).toBe(1);
+    expect(one.stdout).toMatch(/^warn {2}input-outside-project-typed {2}inputImagePaths\[0\]/m);
+    expect(one.stdout).toMatch(/^error {2}input-outside-project {2}inputImagePaths\[1\]/m);
+    const both = run(['--allow', typed, '--allow', other]);
+    expect(both.status).toBe(0);
+    expect([...both.stdout.matchAll(/^warn {2}input-outside-project-typed/gm)]).toHaveLength(2);
+    expect(run([]).status).toBe(1);
+    expect(run(['--allow']).status).toBe(2);
+  });
+
+  it.skipIf(process.platform !== 'win32')('compares a typed path without regard to case on Windows, where a path is the same path in any case', async () => {
+    const { checkCall } = await api();
+    const typed = path.join(tmp, 'Downloads', 'shoot.jpg');
+    fs.mkdirSync(path.dirname(typed), { recursive: true });
+    fs.writeFileSync(typed, 'x');
+    const r = checkCall({ ...clean, inputImagePaths: [typed] }, { projectRoot: project, allow: [typed.toUpperCase()] });
+    expect(codes(r, 'error')).toEqual([]);
+    expect(codes(r, 'warn')).toContain('input-outside-project-typed');
+  });
+
   it('refuses an input image when it is not told where the project is, because it cannot tell inside from outside', async () => {
     const { checkCall } = await api();
     const r = checkCall({ ...clean, inputImagePaths: [source('packshot.png')] });
