@@ -239,7 +239,7 @@ describe('the protocol and ADR 0049 state the sitting', () => {
     expect(ADR).toMatch(/H10d3 did not/);
     expect(ADR).toMatch(/the permission mode `auto` let the call go/);
     expect(ADR).toMatch(/Not established: a call to OpenAI or Seedream/);
-    expect(ADR).toMatch(/that she refuses an outside path on the corrected text/);
+    expect(ADR).toMatch(/that she holds the refusal of an outside path over several runs/);
     expect(ADR).toMatch(/a case for correcting the text/);
   });
 });

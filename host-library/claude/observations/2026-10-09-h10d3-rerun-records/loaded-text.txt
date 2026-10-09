@@ -1,0 +1,8 @@
+What her session record (c1af9c1c-5e02-4df5-a13d-330f2b69e280) shows of the text she loaded; yes or no for each phrase.
+yes  SKILL.md, rule 5: the strict rule: "never a file outside the project, even one the user typed"
+yes  her role text: the strict rule: "never a file outside the project even if the user typed it"
+yes  the record and its cost source: "image-creation/assets/provenance-template.json"
+yes  the cost is never a session meter: "never a session meter"
+no   the old exception of SKILL.md: "unless the user typed that exact path here"
+no   the old wording of her role text: "a file the user named in this task or one already inside the project"
+no   the edge case that asks for the user's word and the placeholder (the later correction): "you cannot copy it. Ask the user or the lead for a copy"
