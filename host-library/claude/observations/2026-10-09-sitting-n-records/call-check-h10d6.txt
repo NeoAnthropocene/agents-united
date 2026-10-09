@@ -1,0 +1,2 @@
+estimate: seedream dola-seedream-5-0-pro-260628, 1 image: $0.09 each, $0.09 in all, $0.27 at most (3 calls per asset). The first reference image is free, each further one costs $0.003. BytePlus rewrites the prompt on its side.
+exit 0

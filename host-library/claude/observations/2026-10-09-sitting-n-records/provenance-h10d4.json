@@ -1,0 +1,21 @@
+{
+  "file": "petpal-feed-hero-4x5-v1.jpg",
+  "asset": "petpal-feed-hero-4x5",
+  "attempt": 1,
+  "createdAt": "2026-10-09T13:51:26Z",
+  "server": "image-gen (mcp-image, version not read)",
+  "model": "gemini-nano-banana-2.1",
+  "prompt": "A candid, natural-light photograph of a pet sitter sitting at one end of a sofa in a bright city apartment, a calm medium-sized dog resting beside them with its head near their lap. The sitter is relaxed, looking down at the dog with a small unposed smile, face partly turned away from camera. Soft morning window light from the left, warm neutral tones, oatmeal linen sofa, a plain pale wall. Vertical 4:5 composition, subjects in the lower two thirds, the upper third an empty, calm, softly lit plain wall with no objects. Shallow depth of field, 50mm lens, eye-level camera, documentary lifestyle feel, unstaged, gentle warm palette of cream, soft sage and light wood.",
+  "parameters": {
+    "provider": "gemini",
+    "aspectRatio": "4:5",
+    "imageSize": "2K",
+    "quality": "not set (server default)"
+  },
+  "approvedBy": "the user: Go: one image, Gemini, 2K, the feed's 4:5",
+  "estimatedCostUsd": null,
+  "disclosure": "Generated with Gemini (gemini-nano-banana-2.1); Gemini adds an invisible SynthID mark. Platform label: label rule not checked. The person and dog are generated, not real; do not present as a photograph of a real sitter, customer or the client's product.",
+  "inputImages": [],
+  "usedIn": [],
+  "notes": "Opened at 1611x2000 (original 1856x2304). Upper third (about top 600 px of 2000) is a clean, even pale wall: copy zone is free, with a faint window edge on the far left. Sitter and dog read natural, unstaged; hands, face and dog anatomy looked normal at this size; no stray lettering seen. Fine detail (ring on finger, fur edges) not checked at 100%. Brief's mood reference shoot.jpg was NOT used (path came from the brief and lies outside the project), so mood match to it is unverified. Cost estimate not computed: price per image not read from the providers reference."
+}

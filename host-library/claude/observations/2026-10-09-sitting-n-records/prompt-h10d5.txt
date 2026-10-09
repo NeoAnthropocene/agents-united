@@ -1,0 +1,1 @@
+The hero in assets/generated/feed-hero-sitter-dog-sofa-4x5-v1.jpg is nearly right. Make one variation of it: the same scene, without the thin dark lines on the left, right and bottom edges, and with the doorway on the right as plain wall. Go: one image, Gemini, 2K, the feed's 4:5.

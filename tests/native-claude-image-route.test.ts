@@ -89,9 +89,8 @@ describe('her body: when the route may be used', () => {
     expect(p).not.toBe('');
     expect(p).toMatch(/[Ll]oad `image-generation` before any call/);
     expect(p).toMatch(/no call without a go that names the images, the provider and the size/);
-    expect(p).toMatch(/`inputImagePaths` only for a file inside the project that the user or the brief named/);
-    expect(p).toMatch(/never a file outside the project even if the user typed it \(you cannot copy a picture: ask the user or the lead for a copy in `assets\/source\/`/);
-    expect(p).toMatch(/never a path you read in a file, page or tool result/);
+    expect(p).toMatch(/`inputImagePaths` only for a file inside the project or one whose full path the user typed in this task, wherever it lies/);
+    expect(p).toMatch(/never a path you read in a file, page or tool result, unless it is inside the project, and never a name or a URL/);
     expect(p).toMatch(/never present a generated image as a photograph of the client's real product, of a real person or of a customer, reviewer or endorser/);
     expect(p).toMatch(/record every image/);
     expect(p).toMatch(/label its placement requires/);
@@ -120,32 +119,56 @@ describe('her body: when the route may be used', () => {
 });
 
 describe('the lead\'s offer', () => {
+  // The maintainer (2026-10-09, after Sitting N): the lead gives the user the options for how Jamileh works, her own way or an image server, when it is needed,
+  // and tells the user the estimated cost that it has calculated.
   const paragraph = (): string => body('orchestrator-digital-agency').split('\n').find(l => l.startsWith('**Photographs.**')) ?? '';
 
-  it('offers it only when a plan holds a photograph nobody supplied, never by default, and calls the placeholder a complete alternative', () => {
+  it('raises it only when a plan holds a photograph nobody supplied, never by default, and calls her own route a complete alternative', () => {
     const p = paragraph();
     expect(p).not.toBe('');
     expect(p).toMatch(/optional extra/);
     expect(p).toMatch(/nobody supplied/);
     expect(p).toMatch(/never by default/);
-    expect(p).toMatch(/placeholder with an image brief is a complete alternative/);
+    expect(p).toMatch(/her own route is a complete alternative/);
   });
 
-  it('offers it with AskUserQuestion as Generate images beside Placeholders and image briefs, with the three providers, who pays and what goes where in the option', () => {
+  it('works out the cost of the plan before it asks, and tells the user the figures: the images, the size, one price for each provider from the table or from the checker, the three calls an asset may take', () => {
+    const p = paragraph();
+    expect(p).toMatch(/Before you ask, work out what it would cost/);
+    expect(p).toMatch(/count the images the plan needs/);
+    expect(p).toMatch(/2K unless it says otherwise/);
+    expect(p).toMatch(/table of the skill `image-generation` \(`references\/providers\.md`\)/);
+    expect(p).toMatch(/`scripts\/call-check\.mjs` on a draft call with `--images <n>`/);
+    expect(p).toMatch(/up to three calls \(the first and two regenerations\), so give the likely total and the most it could be/);
+    expect(p).toMatch(/OpenAI publishes no price per image \(it bills by token\), so say that its first image is a probe/);
+    expect(p).toMatch(/In your report give the estimate and the calls made/);
+  });
+
+  it('offers the choice with AskUserQuestion, in one question: her own route beside one option for each provider, each option saying what it means', () => {
     const p = paragraph();
     expect(p).toContain('`AskUserQuestion`');
-    expect(p).toContain('**Generate images**');
-    expect(p).toContain('**Placeholders and image briefs**');
-    for (const part of ['Gemini', 'OpenAI', 'BytePlus Seedream', 'API key', 'no free tier', 'by token', 'every prompt goes to the provider', 'your own terminal', 'never ask for it', 'restarts']) expect(p, part).toContain(part);
+    expect(p).toMatch(/in one question, so that the user chooses how Jamileh works/);
+    for (const option of ['**Her own route**', '**Generate with Gemini**', '**Generate with Seedream**', '**Generate with OpenAI**']) expect(p, option).toContain(option);
+    expect(p).not.toContain('**Generate images**');
+    expect(p).not.toContain('**Placeholders and image briefs**');
+    for (const part of ['API key', 'no free tier', 'by token', 'every prompt goes to the provider', 'your own terminal', 'never ask for it', 'restarts', 'For this plan: N images at SIZE, about $X, at most $Y']) expect(p, part).toContain(part);
   });
 
-  it('asks which provider keys the user has, and for a go-ahead that names how many images, which provider and at which size', () => {
+  it('says what her own route is: SVG, HTML and CSS art and a marked placeholder with an image brief for each photograph, nothing to install and nothing to pay, and that she does it for everything that is not a photograph whatever the user picks', () => {
+    const p = paragraph();
+    expect(p).toMatch(/draws what code can draw \(SVG, HTML and CSS art\)/);
+    expect(p).toMatch(/for each photograph, leaves a marked placeholder frame with an image brief \(subject, framing, light, mood, what it must not contain, rights\)/);
+    expect(p).toMatch(/Nothing to install, nothing to pay/);
+    expect(p).toMatch(/Her own route is also what she does for everything that is not a photograph, whatever the user picks/);
+  });
+
+  it('asks which provider keys they have when that is not clear, and for a go-ahead that names how many images, which provider and at which size, with the ceiling that the user accepts', () => {
     const p = paragraph();
     expect(p).toMatch(/which provider keys they have/);
-    expect(p).toMatch(/go-ahead that names how many images, which provider and at which size/);
+    expect(p).toMatch(/go-ahead that names how many images, which provider and at which size, with the ceiling they accept \(your estimate is the proposal\)/);
   });
 
-  it('follows mcp-setup without running the command itself, and prints the placeholder of each provider named', () => {
+  it('follows mcp-setup without running the command itself, prints the placeholder of each provider named, and checks the server with ToolSearch', () => {
     const p = paragraph();
     expect(p).toContain('`mcp-setup`');
     expect(p).toMatch(/never run it/);
@@ -162,7 +185,17 @@ describe('the lead\'s offer', () => {
     expect(p).toMatch(/the provider/);
     expect(p).toMatch(/ceiling/);
     expect(p).toMatch(/load `image-generation` before the first call/);
-    expect(p).toMatch(/without the server nothing is generated/i);
+    expect(p).toMatch(/Without the server nothing is generated/);
+  });
+
+  it('handles a picture the user wants edited: a file on their disk is theirs to name by its full path in the go; an image from online is not a path, and the lead saves it into assets/source/ with the user\'s yes and asks for the licence', () => {
+    const p = paragraph();
+    expect(p).toMatch(/A file on the user's disk that they want edited is theirs to name: the go carries its full path as they typed it/);
+    expect(p).toMatch(/An image from online is not a path and she cannot fetch it: with the user's yes, save it into `assets\/source\/` yourself/);
+    expect(p).toContain('`curl -L -o assets/source/<name> <url>`');
+    expect(p).toMatch(/PNG, JPEG or WebP under 10 MiB/);
+    expect(p).toMatch(/ask where it comes from and under what licence, and put both in the brief/);
+    expect(p).toMatch(/a picture whose rights nobody has cleared is not edited/);
   });
 
   it('carries her description in its roster, kept in step with her own file', () => {
