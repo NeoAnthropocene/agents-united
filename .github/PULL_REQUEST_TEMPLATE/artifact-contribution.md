@@ -20,6 +20,7 @@
 | | | | |
 
 - [ ] Core/floor, host conformance and artifact-specific gates apply and are documented.
+- [ ] For a subagent, included/reused its shared `.core.md` and companion `.contract.json` as well as the host realization (ADR 0048); otherwise marked N/A with a reason.
 - [ ] Every shipped non-reference skill has a loading role; reference-only status is explicit.
 - [ ] Provenance/licence/attribution claims match evidence; pending findings have an owner.
 - [ ] Guard claims state enforced mechanism versus prose, input visibility and known limits.
