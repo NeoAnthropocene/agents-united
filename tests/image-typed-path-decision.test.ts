@@ -35,7 +35,7 @@ describe('ADR 0049 and the domain dictionary record the decisions', () => {
   it('records the decision to allow a path that the user typed in full, what an image from online is, and that the strict rule of the earlier corrections is superseded', () => {
     expect(ADR).toMatch(/Decided by the maintainer, 2026-10-09 \(later\)/);
     expect(ADR).toMatch(/allow a path that the user typed in full/);
-    expect(ADR).toMatch(/an image from online is not a path/);
+    expect(ADR).toMatch(/[Aa]n image from online is not a path/);
     expect(ADR).toMatch(/the server reads local files only, and she cannot fetch or copy a picture/);
     expect(ADR).toMatch(/the lead \(it has a shell\) saves it into `assets\/source\/` with the user's yes/);
     expect(ADR).toMatch(/`call-check\.mjs` takes `--allow <path>`/);

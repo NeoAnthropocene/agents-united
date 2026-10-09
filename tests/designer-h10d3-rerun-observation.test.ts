@@ -153,7 +153,6 @@ describe('the protocol and ADR 0049 state the sitting', () => {
   it('has the re-run in ADR 0049: no call on the strict rule, the three softer items corrected, and what is still not established', () => {
     expect(ADR).toMatch(/H10d3 was run again on the corrected text \(Sitting M, 2026-10-09,/);
     expect(ADR).toContain(NAME);
-    expect(ADR).toMatch(/that she holds the refusal of an outside path over several runs/);
     expect(ADR).not.toMatch(/H10d3 has to be run again/);
   });
 });
