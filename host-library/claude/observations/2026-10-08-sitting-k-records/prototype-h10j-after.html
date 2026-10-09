@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PetPal – Choose a sitter (prototype)</title>
+<style>
+  /* Values copied from docs/pilot/design-tokens.json (resolved aliases). */
+  :root {
+    --color-text-default: #2B1D14;   /* color.text.default -> cocoa.900 */
+    --color-text-muted: #6B4B35;     /* color.text.muted -> cocoa.600 (cream/sand only) */
+    --color-text-on-action: #FFFFFF; /* color.text.on-action */
+    --color-surface-base: #FFF8F0;   /* color.surface.base -> cream.50 */
+    --color-surface-accent: #F3D9B1; /* color.surface.accent -> sand.300 */
+    --color-white: #FFFFFF;          /* color.white */
+    --color-cta-primary: #B5451B;    /* color.cta.primary -> clay.600 */
+    --font-base: Helvetica, Arial, sans-serif; /* font.family.base */
+    --space-1: 8px; --space-2: 16px; --space-4: 32px; --space-8: 64px;
+    --radius-md: 12px; --radius-pill: 999px;
+
+    /* Prototype-local: font.size.* tokens are specified for 1080 px canvases (headline 96 / body 36 / caption 28).
+       A phone screen needs its own scale; these are NOT in the token file (see report). */
+    --size-headline: 2rem;
+    --size-body: 1rem;
+    --size-caption: 0.875rem;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--color-surface-accent); color: var(--color-text-default);
+         font-family: var(--font-base); font-size: var(--size-body); line-height: 1.45; }
+  .screen { max-width: 480px; min-height: 100vh; margin: 0 auto; background: var(--color-surface-base);
+            padding: var(--space-4) var(--space-2) var(--space-8); }
+  header h1 { font-size: var(--size-headline); line-height: 1.1; margin: 0 0 var(--space-1); letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--color-text-muted); font-size: var(--size-caption); }
+  .sample { margin-top: var(--space-2); display: inline-block; background: var(--color-surface-accent);
+            padding: 4px var(--space-2); border-radius: var(--radius-pill); font-size: var(--size-caption); }
+  ul.sitters { list-style: none; margin: var(--space-4) 0 0; padding: 0; display: grid; gap: var(--space-2); }
+  .card { background: var(--color-white); border: 2px solid var(--color-surface-accent);
+          border-radius: var(--radius-md); padding: var(--space-2); display: grid;
+          grid-template-columns: 72px 1fr; gap: var(--space-2); }
+  .avatar { width: 72px; height: 72px; background: var(--color-surface-accent); color: var(--color-text-default);
+            display: grid; place-items: center; font-weight: 700; font-size: 1.5rem; }
+  .avatar.a { border-radius: 50%; }
+  .avatar.b { border-radius: var(--radius-md); }
+  .avatar.c { border-radius: 50% 50% var(--radius-md) var(--radius-md); }
+  .card h2 { font-size: 1.25rem; margin: 0; line-height: 1.2; }
+  .meta { margin: 4px 0 0; font-size: var(--size-caption); color: var(--color-text-muted); }
+  .card .bio { grid-column: 1 / -1; margin: 0; }
+  .row { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
+  .price { font-weight: 700; }
+  .price small { font-weight: 400; font-size: var(--size-caption); color: var(--color-text-muted); }
+  button { font: inherit; min-height: 48px; min-width: 48px; padding: 0 var(--space-4); border-radius: var(--radius-pill);
+           cursor: pointer; font-weight: 700; }
+  .primary { background: var(--color-cta-primary); color: var(--color-text-on-action); border: 2px solid var(--color-cta-primary); }
+  .primary:disabled { background: var(--color-surface-accent); color: var(--color-text-default); border-color: var(--color-surface-accent); cursor: default; }
+  .secondary { background: var(--color-white); color: var(--color-text-default); border: 2px solid var(--color-text-default); }
+  button:hover:not(:disabled) { filter: brightness(0.92); }
+  :focus-visible { outline: 3px solid var(--color-text-default); outline-offset: 3px; }
+  .status { grid-column: 1 / -1; margin: 0; padding: var(--space-1) var(--space-2); background: var(--color-surface-accent);
+            border-radius: var(--radius-md); font-weight: 700; }
+  .status[hidden] { display: none; }
+  dialog { border: 0; border-radius: var(--radius-md); padding: var(--space-4); width: min(92vw, 420px);
+           background: var(--color-surface-base); color: var(--color-text-default); font-family: var(--font-base); }
+  dialog::backdrop { background: rgba(43, 29, 20, 0.6); }
+  dialog h2 { margin: 0 0 var(--space-2); font-size: 1.5rem; line-height: 1.2; }
+  dl { margin: 0 0 var(--space-4); display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-2); }
+  dt { color: var(--color-text-muted); font-size: var(--size-caption); }
+  dd { margin: 0; font-weight: 700; }
+  .actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+  .actions button { flex: 1 1 140px; padding: 0 var(--space-2); }
+  @media (prefers-reduced-motion: no-preference) { button { transition: filter 120ms; } }
+</style>
+</head>
+<body>
+<main class="screen">
+  <header>
+    <h1>Choose a sitter for Biscuit</h1>
+    <p>Three sitters are free for your dates.</p>
+    <span class="sample">Prototype · sample sitters and dates</span>
+  </header>
+
+  <ul class="sitters" id="sitters">
+    <li class="card" data-name="Maya Okafor" data-price="$38 per night">
+      <div class="avatar a" aria-hidden="true">MO</div>
+      <div><h2>Maya Okafor</h2><p class="meta">Cats and small dogs · Ground-floor flat</p></div>
+      <p class="bio">Works from home, so Biscuit is never alone for more than an hour.</p>
+      <div class="row"><span class="price">$38 <small>per night</small></span>
+        <button type="button" class="primary book">Book now</button></div>
+      <p class="status" role="status" tabindex="-1" hidden></p>
+    </li>
+    <li class="card" data-name="Tom Brennan" data-price="$45 per night">
+      <div class="avatar b" aria-hidden="true">TB</div>
+      <div><h2>Tom Brennan</h2><p class="meta">Dogs of any size · Fenced garden</p></div>
+      <p class="bio">Two long walks a day and a sofa that dogs are allowed on.</p>
+      <div class="row"><span class="price">$45 <small>per night</small></span>
+        <button type="button" class="primary book">Book now</button></div>
+      <p class="status" role="status" tabindex="-1" hidden></p>
+    </li>
+    <li class="card" data-name="Ines Duarte" data-price="$32 per night">
+      <div class="avatar c" aria-hidden="true">ID</div>
+      <div><h2>Ines Duarte</h2><p class="meta">Dogs, cats and rabbits · House with yard</p></div>
+      <p class="bio">Retired vet nurse who can give medication on schedule.</p>
+      <div class="row"><span class="price">$32 <small>per night</small></span>
+        <button type="button" class="primary book">Book now</button></div>
+      <p class="status" role="status" tabindex="-1" hidden></p>
+    </li>
+  </ul>
+</main>
+
+<dialog id="confirm" aria-labelledby="confirm-title">
+  <form method="dialog" id="confirm-form">
+    <h2 id="confirm-title">Book <span id="c-name"></span>?</h2>
+    <dl>
+      <dt>Pet</dt><dd>Biscuit</dd>
+      <dt>Dates</dt><dd>Sat 14 – Mon 16 Nov (2 nights)</dd>
+      <dt>Price</dt><dd id="c-price"></dd>
+    </dl>
+    <div class="actions">
+      <button type="submit" value="cancel" class="secondary">Cancel</button>
+      <button type="submit" value="confirm" class="primary" id="c-ok">Confirm booking</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  const dialog = document.getElementById('confirm');
+  let current = null;
+
+  document.querySelectorAll('.card').forEach((card) => {
+    const btn = card.querySelector('.book');
+    btn.setAttribute('aria-label', 'Book now with ' + card.dataset.name);
+    btn.addEventListener('click', () => {
+      current = card;
+      document.getElementById('c-name').textContent = card.dataset.name;
+      document.getElementById('c-price').textContent = card.dataset.price;
+      dialog.showModal();
+    });
+  });
+
+  dialog.addEventListener('close', () => {
+    if (dialog.returnValue !== 'confirm' || !current) { current = null; return; }
+    const btn = current.querySelector('.book');
+    const status = current.querySelector('.status');
+    btn.disabled = true;
+    btn.textContent = 'Booked';
+    btn.setAttribute('aria-label', 'Booked with ' + current.dataset.name);
+    status.textContent = 'Booked with ' + current.dataset.name + ' for Sat 14 – Mon 16 Nov.';
+    status.hidden = false;
+    status.focus();
+    dialog.returnValue = '';
+    current = null;
+  });
+
+  // Click on the backdrop closes the dialog as a cancel.
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close('cancel'); });
+</script>
+</body>
+</html>

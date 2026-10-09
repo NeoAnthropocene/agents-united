@@ -1,0 +1,51 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; }
+  body { background: var(--surface-base); }
+  .cover { position: relative; width: 960px; height: 288px; overflow: hidden; background: var(--surface-base); }
+  .cover svg { position: absolute; left: 0; top: 0; width: 960px; height: 288px; }
+  .text { position: absolute; left: 32px; bottom: 32px; width: 440px; }
+  .name { margin: 0; font-family: var(--font-base); font-size: 112px; line-height: .95; font-weight: 700; color: var(--text-default); }
+  .tag { margin: 8px 0 0; font-family: var(--font-base); font-size: 14px; line-height: 20px; color: var(--text-muted); }
+  .cocoa9 { fill: var(--cocoa-900); }
+  .cocoa6 { fill: var(--cocoa-600); }
+  .clay { fill: var(--clay-600); }
+  .sand { fill: var(--sand-300); }
+  .cut { fill: var(--surface-base); }
+  .tile { rx: var(--radius-md); }
+</style>
+</head>
+<body>
+<div class="cover">
+  <svg viewBox="0 0 960 288" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <!--
+    Blocks: cocoa-900 192x160 (tile), clay-600 256x96 bleeding off top-right, cocoa-600 160x176 bleeding off bottom, clay-600 pill 192x48, sand-300 pill 192x48 and disc 80x80; all sides are multiples of space-2 (16px).
+    Arrangement: staggered stack right of x=480, two blocks bleeding off the top and right, one off the bottom, nothing left of x=496.
+    Pattern: discs and pills, inferred from the tokens (a 12px radius and a 999px pill radius), not stated by the source; 30 discs of 16px diameter (space-2) on a 32px pitch (space-4) cut out of the cocoa-900 block in the ground colour.
+    Steps and radii: space-2, space-4, radius-md (tiles), radius-pill (pills and discs set to half the short side).
+    -->
+    <rect class="cocoa9 tile" x="496" y="0" width="192" height="160"/>
+    <g class="cut">
+      <circle cx="512" cy="16" r="8"/><circle cx="544" cy="16" r="8"/><circle cx="576" cy="16" r="8"/><circle cx="608" cy="16" r="8"/><circle cx="640" cy="16" r="8"/><circle cx="672" cy="16" r="8"/>
+      <circle cx="512" cy="48" r="8"/><circle cx="544" cy="48" r="8"/><circle cx="576" cy="48" r="8"/><circle cx="608" cy="48" r="8"/><circle cx="640" cy="48" r="8"/><circle cx="672" cy="48" r="8"/>
+      <circle cx="512" cy="80" r="8"/><circle cx="544" cy="80" r="8"/><circle cx="576" cy="80" r="8"/><circle cx="608" cy="80" r="8"/><circle cx="640" cy="80" r="8"/><circle cx="672" cy="80" r="8"/>
+      <circle cx="512" cy="112" r="8"/><circle cx="544" cy="112" r="8"/><circle cx="576" cy="112" r="8"/><circle cx="608" cy="112" r="8"/><circle cx="640" cy="112" r="8"/><circle cx="672" cy="112" r="8"/>
+      <circle cx="512" cy="144" r="8"/><circle cx="544" cy="144" r="8"/><circle cx="576" cy="144" r="8"/><circle cx="608" cy="144" r="8"/><circle cx="640" cy="144" r="8"/><circle cx="672" cy="144" r="8"/>
+    </g>
+    <rect class="clay tile" x="704" y="0" width="256" height="96"/>
+    <rect class="cocoa6 tile" x="704" y="112" width="160" height="176"/>
+    <circle class="sand" cx="920" cy="152" r="40"/>
+    <rect class="clay" x="496" y="176" width="192" height="48" rx="24"/>
+    <rect class="sand" x="496" y="240" width="192" height="48" rx="24"/>
+  </svg>
+  <div class="text">
+    <h1 class="name">PetPal</h1>
+    <p class="tag">Everyday care for pets and the people who feed them.</p>
+  </div>
+</div>
+</body>
+</html>

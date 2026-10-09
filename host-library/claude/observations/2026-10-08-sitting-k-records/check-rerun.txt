@@ -1,0 +1,46 @@
+token colours: #6B4B35 #2B1D14 #B5451B #FFF8F0 #F3D9B1 #FFFFFF
+--- hero.ts strings:
+   fictional
+   trust
+   comfort
+   proof
+   fictional
+   hero-primary-cta
+   color.cta.primary
+   Sitters you can trust
+   Background-checked, reviewed by neighbours, insured up to $1M.
+   Book now
+   hero-primary-cta
+   color.cta.primary
+   4.9 average rating, 12,000 stays
+   4.9 average rating
+   fictional
+   12,000 stays
+   fictional
+   insured up to $1M
+   fictional
+   trust
+   Sitters you can trust
+   fictional
+   comfort
+   Your dog, happy at home
+   fictional
+   proof
+   12,000 stays, 4.9 stars
+   fictional
+--- canvas boards: Main.dc.html 1080x1350, Story.dc.html 1080x1920, Link.dc.html 1200x628 | designSystems: [] | createdOnFiles.at: 2026-10-08T00:00:00Z
+--- Main: hex colours #FFF8F0 #2B1D14 #F3D9B1 #6B4B35 #B5451B #FFFFFF | outside tokens: none
+    visible strings: ["PetPal feed ad","Sitters you can trust","[Photo: sitter with a dog]","Background-checked, reviewed by neighbours, insured up to $1M.","4.9 average rating, 12,000 stays","Book now"]
+    not in hero.ts: ["PetPal feed ad","[Photo: sitter with a dog]"]
+--- Story: hex colours #FFF8F0 #2B1D14 #F3D9B1 #6B4B35 #B5451B #FFFFFF | outside tokens: none
+    visible strings: ["PetPal story ad","Sitters you can trust","[Photo: sitter with a dog]","Background-checked, reviewed by neighbours, insured up to $1M.","4.9 average rating, 12,000 stays","Book now"]
+    not in hero.ts: ["PetPal story ad","[Photo: sitter with a dog]"]
+--- Link: hex colours #FFF8F0 #2B1D14 #6B4B35 #B5451B #FFFFFF #F3D9B1 | outside tokens: none
+    visible strings: ["PetPal link ad","Sitters you can trust","Background-checked, reviewed by neighbours, insured up to $1M.","4.9 average rating, 12,000 stays","Book now","[Photo: sitter with a dog]"]
+    not in hero.ts: ["PetPal link ad","[Photo: sitter with a dog]"]
+--- colour: 12 tokens, 10 empty usage, 2 with usage (text-muted, cta-primary)
+--- spacing: 4 tokens, 4 empty usage, 0 with usage (none)
+--- radius: 2 tokens, 2 empty usage, 0 with usage (none)
+colour+spacing+radius: 18 tokens, 16 empty usage notes (she reported "15 of 18"); type styles 3, with usage 1; families 1; nested $value anywhere: false
+colour tokens: 12 (palette 6, aliases 6); aliases resolve: true
+README says "only three" usage notes in the source; source usage fields: null

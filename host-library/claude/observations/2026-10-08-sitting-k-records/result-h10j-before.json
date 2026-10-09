@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 92003,
+  "stop_reason": "end_turn",
+  "session_id": "c730b2ad-8222-4c18-93a5-503984e06825",
+  "total_cost_usd": 0.233307,
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 37525,
+    "cache_read_input_tokens": 132435,
+    "output_tokens": 5670,
+    "output_tokens_details": {
+      "thinking_tokens": 1397
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 37525,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 809,
+        "cache_read_input_tokens": 37210,
+        "cache_creation_input_tokens": 315,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 315
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 10,
+      "outputTokens": 5670,
+      "cacheReadInputTokens": 132435,
+      "cacheCreationInputTokens": 37525,
+      "webSearchRequests": 0,
+      "costUSD": 0.233307,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1397,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 9,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "I wrote the clickable PetPal booking prototype to `docs/pilot/prototype/index.html`. I haven't opened it in a browser or run any check, because I have no shell here. I re-read the file with a grep for the one name I changed. It is not a full read-back.\n\n**What it does**\n- It shows three sample sitters: Mara Quill, Teo Ardent and Ines Harrow. Each has an initials avatar, services, distance, a price and a **Book now** button.\n- **Book now** opens a confirmation dialog with **Confirm booking** and **Not now**. Esc also closes it.\n- After you confirm, that sitter's button changes to a disabled \"Booked\", and a status line under the list announces it. If you cancel, focus goes back to the button you clicked.\n- A visible note at the top says it is a prototype with sample data and that nothing is booked or sent.\n\n**Tokens and choices**\n- All colours, spacing, radius and the font family come from `design-tokens.json`, mapped to CSS variables.\n- No photography was supplied, so the avatars are SVG initials on the sand surface rather than photos or stock images.\n- The \"on clay\" rule is respected: the white label sits on the clay button, and the muted text only sits on cream and white.\n- By my arithmetic the contrast is above 4.5:1 for every pair. White on clay is about 5.5:1, and muted cocoa is about 7.5:1 on cream and about 5.7:1 on sand. I did not measure these with a tool.\n- Buttons are 48px tall and have a visible focus ring. The dialog is a native `<dialog>`, so focus is trapped inside it.\n\n**Open items**\n- The font-size tokens are set for 1080px-wide canvases. I rescaled them for a 390px phone screen, to 32px headline, 16px body and 14px caption (the 28px caption token would scale to about 12px, which I raised for legibility). Please confirm this, or add phone-size tokens.\n- Please open the file and click through it once. I couldn't run a browser or a contrast checker.\n- The sitter names, prices and distances are invented. I left out ratings and reviews so the prototype doesn't show fake social proof.\n- The copy (\"Book Mara Quill?\", \"Confirm booking\", \"Not now\") is placeholder text, not final copy from Kaan.\n\nPeer messages received: none.",
+  "ttft_ms": 3110,
+  "type": "result",
+  "duration_ms": 95304,
+  "uuid": "273c353d-e3c3-488a-808b-42ed01a0a441",
+  "ttft_stream_ms": 2568,
+  "time_to_request_ms": 307,
+  "first_content_frame_ms": 2568,
+  "queued_turn_count": 0,
+  "result_index": 0
+}
