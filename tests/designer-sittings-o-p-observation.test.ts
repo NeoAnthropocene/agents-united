@@ -408,24 +408,27 @@ describe('the protocol, ADR 0049 and the plan state the sittings', () => {
     expect(cost).toMatch(/Sitting Q repeats H10k2/);
   });
 
-  it('amends the pass and fail lines of H10k and its scripted answers: the figures in or before the question, a wait when the reads are held, no prose, a word and not a number, no delegation map', () => {
+  // The wait rule that Sitting P added ("If its reads of the prices are held or fail, it says so and waits for the user's reply") was corrected after Sitting Q: a hold of the mode-line hook is repeated,
+  // only a read that fails is waited on (docs/live-test-protocol.md, the amendment of Sitting Q; tests/designer-sitting-q-observation.test.ts).
+  it('amends the pass and fail lines of H10k and its scripted answers: the figures in or before the question, a repeat and not a wait when the hook holds the reads, a wait when they fail, no prose, a word and not a number, no delegation map', () => {
     const k = protocolSection('## H10k ');
     const pass = k.slice(k.indexOf('### H10k Pass'), k.indexOf('### H10k Fail'));
     expect(pass).toMatch(/In the question or before it, it states the figures for this plan/);
-    expect(pass).toMatch(/If its reads of the prices are held or fail, it says so and waits for the user's reply: it asks nothing until it can read them\./);
+    expect(pass).toMatch(/If the mode-line hook holds its reads it writes the line and repeats them, and does not stop or wait for a reply because of the hold; if its reads fail for another reason it says so and waits for the user's reply\. It asks nothing until it can read them\./);
     const fail = k.slice(k.indexOf('### H10k Fail'), k.indexOf('### Cost'));
     expect(fail).toMatch(/the choice asked in prose, or before the figures/);
+    expect(fail).toMatch(/the lead stops, asks the user to reply or ends its turn because the mode-line hook held a call/);
     expect(k).toMatch(/Do not accept a delegation map in either/);
     expect(k).toMatch(/If the lead asks the choice in plain text instead of a selection list, that is a finding: answer with the word "Gemini", not a number/);
-    expect(k).toMatch(/if it only asks for a short reply because its calls were held, type "go" and wait for its question/);
+    expect(k).toMatch(/if it stops and only asks for a short reply because its calls were held, that is a finding: type "go" and wait for its question/);
   });
 
-  it('has Sittings O and P in ADR 0049: what they covered, how many items were met, what was added to the text, and the lead that waits for the prices', () => {
+  it('has Sittings O and P in ADR 0049: what they covered, how many items were met, what was added to the text, and the lead that never asks without the prices', () => {
     expect(ADR).toContain(NAME);
     expect(ADR).toMatch(/Sittings O and P \(`host-library\/claude\/observations\/2026-10-12-claude-2\.1\.294-designer-sittings-o-and-p\.md`\)/);
     expect(ADR).toMatch(/28 of 33 pass-line items met/);
     expect(ADR).toMatch(/[Tt]he keys of the record in step 5/);
-    expect(ADR).toMatch(/If its reads of the prices are held or fail it says so and waits for the user's reply, and never asks without the figures or in prose/);
+    expect(ADR).toMatch(/If the mode-line hook holds its reads it writes the line and repeats them, and a hold is never a reason to wait; if its reads fail for another reason it says so and waits for the user's reply; it never asks without the figures or in prose/);
     expect(ADR).toMatch(/the Gemini branch of the lead's offer/);
   });
 

@@ -92,6 +92,16 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toContain('the host cannot see the message you are writing');
   });
 
+  // Sitting Q (H10k2, 2026-10-12, Claude Code 2.1.296, session `314be482`): six calls held in four messages. The line was in the lead's reasoning in the first three, which the hook cannot read; the fourth
+  // had it in a text block and was held by the lag of the host's save; the lead then ended its turn and asked the user to reply ("I've paused ... when you reply with anything, such as 'continue'").
+  // The section said that a retry can be held again, but not what to do about it: it has to say not to stop, that the line is a text block, and to repeat the call.
+  it('says that a hold is not a reason to stop: no end of turn, no question, no wait; the line is a text block and not reasoning; repeat the call in the next message, again if it is held again', () => {
+    expect(SECTION).toContain('A hold is not a failure and not a reason to stop: do not end your turn to get the line saved, do not ask the user and do not wait for a reply.');
+    expect(SECTION).toContain('The line must be a text block of your reply, since your reasoning is not text and the hook reads only text');
+    expect(SECTION).toMatch(/observed on 2\.1\.296: a lead wrote the line in its reasoning three times and was held each time; after a fourth hold, with the line in a text block, it ended its turn and asked the user to reply/);
+    expect(SECTION).toContain('Repeat the call in your next message, with the line written again, and if it is held again repeat it again.');
+  });
+
   it('leaves a pointer in "How this agent runs", where the rule used to be a bullet', () => {
     expect(RUNS).toContain('Your first message is the mode line: see the section above');
   });

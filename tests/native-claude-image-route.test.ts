@@ -97,6 +97,14 @@ describe('her body: when the route may be used', () => {
     expect(p).toMatch(/never ask for a key/);
   });
 
+  // Sitting Q (H10d3, 2026-10-12): her record had every key and `image-check` accepted it, but its `inputImages` held the bare path. The reference says that an entry carries the
+  // path, the row of the table that allowed it and who cleared the rights, and she did not open the reference (she read the template). So her own text says it, in the reference's words.
+  it('says in her own text what an entry of `inputImages` carries, in the words of the reference that she may not open', () => {
+    const p = pictures();
+    expect(p).toMatch(/list every input file under `inputImages` with its path, the row of the table in `image-generation` that allowed it and who cleared the rights/);
+    expect(read('registry/skills/image-creation/references/provenance-and-disclosure.md')).toMatch(/`inputImages` \(for each input file: its path, the row of the table in `image-generation`, `references\/input-images-and-paths\.md`, that allowed it, and who cleared the rights\)/);
+  });
+
   it('is reachable for a teammate: she holds Skill, the skill is in her table and in the team\'s bundles, and no `skills` preload stands in for that', () => {
     expect(tools('agency-creative-designer')).toContain('Skill');
     expect(nativeText('agency-creative-designer')).toMatch(/\| `image-creation` \|/);
@@ -144,12 +152,16 @@ describe('the lead\'s offer', () => {
     expect(p).toMatch(/In your report give the estimate and the calls made/);
   });
 
-  it('asks only when it holds the figures, and never in prose: if its reads of the prices are held or fail it says so and waits for the user\'s reply (Sitting P, h10k2)', () => {
-    // h10k2: the mode-line hook held the lead's reads three times, and its text turn already asked "1. Jamileh's own route 2. Generate with Gemini, Seedream or OpenAI" and promised the
+  it('asks only when it holds the figures, and never in prose; a hold of the mode-line hook is never a reason to wait, a read that fails is (Sitting P and Sitting Q, h10k2)', () => {
+    // Sitting P, h10k2: the mode-line hook held the lead's reads three times, and its text turn already asked "1. Jamileh's own route 2. Generate with Gemini, Seedream or OpenAI" and promised the
     // prices "once I've read the pricing table"; the user, shown no selection list and no figure, typed "option 1". In h10k1 the reads went through and the lead asked once, with the
     // figures in every option.
+    // Sitting Q, h10k2 (session `314be482`): the paragraph then said "If your reads of the prices are held or fail, say so and wait for the user's reply". The hook held six calls in four messages,
+    // and the lead did what the paragraph said to the letter: "I've paused. The 'Mode line first' hook has held every call except `ToolSearch` four times in a row ... when you reply with anything,
+    // such as 'continue'". A hold clears once the line is saved, so a hold is never a reason to wait; only a read that fails for another reason is.
     const p = paragraph();
-    expect(p).toMatch(/If your reads of the prices are held or fail, say so and wait for the user's reply; never ask without the figures, and never in prose\. Then offer the choice with `AskUserQuestion`, in one question/);
+    expect(p).not.toMatch(/held or fail/);
+    expect(p).toMatch(/If a read of the prices is held by the mode-line hook, write the line and repeat the read \(see "The first message"\): a hold is never a reason to wait\. If it fails for another reason, say so and wait for the user's reply\. Never ask without the figures, and never in prose\. Then offer the choice with `AskUserQuestion`, in one question/);
   });
 
   it('offers the choice with AskUserQuestion, in one question: her own route beside one option for each provider, each option saying what it means', () => {
