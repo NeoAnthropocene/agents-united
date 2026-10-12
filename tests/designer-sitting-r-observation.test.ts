@@ -243,7 +243,7 @@ describe('the Sitting R observation: the grading', () => {
     expect(o).toMatch(/Both the message of the hook and the sentence added after Sitting Q told the lead to write the line again with every repeat/);
     expect(o).toMatch(/It never introduced itself/);
     expect(o).toMatch(/## Not established/);
-    expect(o).toMatch(/Whether the lead follows the order of ADR 0050/);
+    expect(o).toMatch(/Whether the lead follows the order of ADR 0051/);
   });
 });
 

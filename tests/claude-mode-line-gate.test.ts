@@ -75,7 +75,7 @@ describe('the mode-line gate script', () => {
   // so I'm running the check again as the hook says". It had written no text at all before that call. The first version of the message ended "If your last message
   // already began with that line, repeat the call now", and the lead took that way out falsely. The gate cannot see the message that is being written (the transcript
   // never holds the current call), so it says so, holds the call once whatever the lead believes, and asks for the line to be written again if need be.
-  // Changed after Sitting R (2026-10-12, ADR 0050): the message used to say "Do this even if you believe you wrote it already", so that every retry wrote the line again, which the user saw twice in
+  // Changed after Sitting R (2026-10-12, ADR 0051): the message used to say "Do this even if you believe you wrote it already", so that every retry wrote the line again, which the user saw twice in
   // Sitting R. The way out that live test 6 closed is now closed by saying what counts as written (a text block), and what to do in each case.
   it('holds the call whatever the lead believes it wrote, and says what counts as written, so that the way out is a text block and not a claim', () => {
     const { stderr } = run(call());

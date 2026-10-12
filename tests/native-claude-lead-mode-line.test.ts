@@ -61,7 +61,7 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toContain('The only calls you may make before the line are `ToolSearch` calls');
   });
 
-  // Changed after Sitting R (2026-10-12, ADR 0050): the line used to open "the first message that holds any other call", which the host holds once by design (it saves a message a moment
+  // Changed after Sitting R (2026-10-12, ADR 0051): the line used to open "the first message that holds any other call", which the host holds once by design (it saves a message a moment
   // after it ends) and which made the user see the hook's error and the line twice. The line now comes one message earlier, with an allowed call, and the same sentence is the fallback.
   it('puts the line before every message that holds another call, and keeps the rule for a lead that is about to make such a call without it: write it in that same message, and expect a hold', () => {
     expect(SECTION).toMatch(/No message that holds any other call, such as `Skill`, `AskUserQuestion`, `Agent`, `TaskCreate`, `Bash` or `Read`, comes before the message that holds the line/);
@@ -76,7 +76,7 @@ describe('the mode line of the Claude lead', () => {
   it('says in which order the first messages go: the searches, then the line with the introduction and the ToolSearch that loads the task tools, then the first other call', () => {
     expect(SECTION).toContain('**In order.** Your first message holds `ToolSearch` calls and nothing else: one for each of the six integrations, MarkItDown and Stitch.');
     expect(SECTION).toContain('Your second message opens with the mode line, as a text block, then the introduction, and holds one `ToolSearch` that checks for and loads the task tools and `SendMessage` (`select:TaskCreate,TaskList,TaskUpdate,SendMessage`, see "The shared task list") and no other call.');
-    expect(SECTION).toContain('Your first other call is in the third message: the host has saved the line by then, so the hook holds nothing and the user sees no error (ADR 0050).');
+    expect(SECTION).toContain('Your first other call is in the third message: the host has saved the line by then, so the hook holds nothing and the user sees no error (ADR 0051).');
     expect(SECTION.indexOf('**In order.**')).toBeLessThan(SECTION.indexOf('Your first answer in a session reports the operating mode'));
   });
 
@@ -85,9 +85,9 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toMatch(/observed on 2\.1\.296: a lead wrote the line twice while it repeated a held call and a third time in its last message/);
   });
 
-  it('records the decision in ADR 0050, which keeps the gate of ADRs 0042 and 0044 and changes only where the lead writes the line', () => {
-    const adr = fs.readFileSync(path.resolve('docs/adr/0050-the-lead-writes-its-mode-line-before-its-first-gated-call.md'), 'utf8').replace(/\r\n/g, '\n');
-    expect(adr).toMatch(/^# ADR 0050: The lead writes its mode line before its first gated call/);
+  it('records the decision in ADR 0051, which keeps the gate of ADRs 0042 and 0044 and changes only where the lead writes the line', () => {
+    const adr = fs.readFileSync(path.resolve('docs/adr/0051-the-lead-writes-its-mode-line-before-its-first-gated-call.md'), 'utf8').replace(/\r\n/g, '\n');
+    expect(adr).toMatch(/^# ADR 0051: The lead writes its mode line before its first gated call/);
     expect(adr).toMatch(/\*\*Status\*\*: Accepted, 2026-10-12/);
     expect(adr).toContain('yes, we should do that I think');
     for (const ref of ['ADR 0042', 'ADR 0044', 'Sitting Q', 'Sitting R', '314be482', '1269c24c']) expect(adr, ref).toContain(ref);
