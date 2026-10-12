@@ -1,0 +1,60 @@
+{
+ "calls": [
+  {
+   "call": {
+    "questions": [
+     {
+      "question": "How should the three hero photographs (sitter and dog on a sofa) be made? The plan needs 3 images at 2K, one each for 4:5, 9:16 and 1.91:1. The 1.91:1 image is made at the nearest native ratio and cropped.",
+      "header": "Photos",
+      "multiSelect": false,
+      "options": [
+       {
+        "label": "Her own route",
+        "description": "Jamileh draws what code can draw (SVG, HTML and CSS art). For each photograph she leaves a marked placeholder frame with an image brief (subject, framing, light, mood, what it must not contain, rights) that a photographer, a stock licence or an image tool fills later. Nothing to install, nothing to pay."
+       },
+       {
+        "label": "Generate with Gemini",
+        "description": "Jamileh makes the photographs through your own Gemini API key. For this plan: 3 images at 2K, about $0.15, at most $0.45 if each needs two regenerations. Google bills your account (no free tier), and every prompt goes to Google. You run one command in your own terminal with your key; I never ask for it or see it. Then the team restarts."
+       },
+       {
+        "label": "Generate with Seedream",
+        "description": "Jamileh makes the photographs through your own BytePlus key. For this plan: 3 images at 2K, about $0.27, at most $0.81. BytePlus bills your account (no free tier), and every prompt goes to BytePlus, which also rewrites the prompt on its side. You run one command in your own terminal with your key; I never ask for it or see it. Then the team restarts."
+       },
+       {
+        "label": "Generate with OpenAI",
+        "description": "Jamileh makes the photographs through your own OpenAI key. OpenAI bills by token and publishes no price per image, so the first image is a probe and you read its charge on the usage page before the rest. Every prompt goes to OpenAI. You run one command in your own terminal with your key; I never ask for it or see it. Then the team restarts."
+       }
+      ]
+     }
+    ]
+   },
+   "answer": "Your questions have been answered: \"How should the three hero photographs (sitter and dog on a sofa) be made? The plan needs 3 images at 2K, one each for 4:5, 9:16 and 1.91:1. The 1.91:1 image is made at the nearest native ratio and cropped.\"=\"Generate with Gemini\". You can now continue with these answers in mind."
+  },
+  {
+   "call": {
+    "questions": [
+     {
+      "question": "Go-ahead for the Gemini photographs: 3 images (4:5, 9:16 and 1.91:1 cropped from a wider frame), Gemini fast, 2K, about $0.15. Worst case is $0.45 (each image regenerated twice). Which ceiling do you accept?",
+      "header": "Ceiling",
+      "multiSelect": false,
+      "options": [
+       {
+        "label": "Up to $0.45 (Recommended)",
+        "description": "Covers the first call and two regenerations for each of the 3 images. Prompts go to Google under your key."
+       },
+       {
+        "label": "Up to $0.15",
+        "description": "No regenerations: the first image of each ratio is kept, whatever it looks like."
+       },
+       {
+        "label": "Do not generate",
+        "description": "Go back to Jamileh's own route: marked placeholders with image briefs."
+       }
+      ]
+     }
+    ]
+   },
+   "answer": "Your questions have been answered: \"Go-ahead for the Gemini photographs: 3 images (4:5, 9:16 and 1.91:1 cropped from a wider frame), Gemini fast, 2K, about $0.15. Worst case is $0.45 (each image regenerated twice). Which ceiling do you accept?\"=\"Up to $0.45 (Recommended)\". You can now continue with these answers in mind."
+  }
+ ]
+}

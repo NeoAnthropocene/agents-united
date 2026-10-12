@@ -1,0 +1,27 @@
+{
+  "file": "feed-hero-shoot-variation-01.jpg",
+  "asset": "feed-hero",
+  "attempt": 1,
+  "createdAt": "2026-10-12T09:54:15Z",
+  "server": "image-gen (mcp-image, version installed by the lead; not checked)",
+  "model": "gemini-nano-banana-2.1",
+  "prompt": "A variation of the reference image: keep its warm beige, sand-coloured palette and its fine, evenly repeating surface texture, but reimagine it as a soft, premium editorial backdrop for a social feed ad. Gentle raking daylight from the upper left casts subtle shadows that give the texture depth and a slight natural gradient from lighter at the top to a deeper sand tone at the bottom. Shallow depth of field, matte finish, calm and minimal. The lower third is a clean, quiet, uncluttered area left empty for a headline and a button overlay. No people, no objects, no text, no logos.",
+  "parameters": {
+    "provider": "gemini",
+    "aspectRatio": "4:5",
+    "imageSize": "2K",
+    "quality": "server default (fast not set explicitly)"
+  },
+  "approvedBy": "the user: \"Go: one image, 2K, Gemini.\"",
+  "estimatedCostUsd": 0.0504,
+  "disclosure": "Generated with Gemini (gemini-nano-banana-2.1); the provider adds an invisible SynthID mark. Platform label: label rule not checked.",
+  "inputImages": [
+    {
+      "path": "C:\\github\\scratch-pilot\\h10d-local-test\\Downloads\\shoot.jpg",
+      "tableRow": "A file outside the project whose full path the user typed in this task",
+      "rightsClearedBy": "the user, who stated they own it; not independently verified"
+    }
+  ],
+  "usedIn": ["feed ad hero (4:5), design file not yet created"],
+  "notes": "Opened with Read. Warm sand matte textured surface, raking light from the upper left, soft depth of field, no text, objects, faces or stray marks seen. Lower third is quiet and usable as a copy zone, but the upper left is the brightest area, so a scrim and a measured contrast pair are needed under any text. The source file read as a tiny beige texture tile, not a photo of a shoot, so this is a texture variation; the output is 1856x2304 as displayed by Read, at 2K request. Cost is the price-table estimate, not a meter."
+}

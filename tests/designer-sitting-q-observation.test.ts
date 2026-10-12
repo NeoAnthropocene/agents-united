@@ -325,7 +325,7 @@ describe('the Sitting Q observation: the grading', () => {
 });
 
 describe('the protocol, ADR 0049 and the plan state Sitting Q', () => {
-  it('records Sitting Q as run, with its cost and what it did not reach, and Sitting R as proposed', () => {
+  it('records Sitting Q as run, with its cost and what it did not reach, and has a row for Sitting R (its result is pinned in tests/designer-sitting-r-observation.test.ts)', () => {
     const q = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting Q |')) ?? '';
     expect(q).toMatch(/H10d3, H10d6 and H10d8 again on the lines added after Sitting O/);
     expect(q).toMatch(/run 2026-10-12/);
@@ -337,8 +337,6 @@ describe('the protocol, ADR 0049 and the plan state Sitting Q', () => {
     expect(r).toMatch(/H10k2 again/);
     expect(r).toMatch(/H10d3 again/);
     expect(r).toMatch(/2\.8 USD and 2 prompts/);
-    expect(r).toMatch(/proposed 2026-10-12, not yet run/);
-    expect(r).not.toMatch(/\bused \d/);
   });
 
   it('amends the cost of H10d with the results of Sitting Q, and the cost of H10k with its result', () => {
@@ -364,7 +362,8 @@ describe('the protocol, ADR 0049 and the plan state Sitting Q', () => {
     expect(ADR).toMatch(/Sitting Q \(`host-library\/claude\/observations\/2026-10-12-claude-2\.1\.296-designer-sitting-q\.md`\)/);
     expect(ADR).toMatch(/24 of 25 pass-line items met in the three headless runs/);
     expect(ADR).toMatch(/the lead stopped after four holds of the mode-line hook, as the rule of Sitting P told it to/);
-    expect(ADR).toMatch(/whether the lead repeats a held read instead of stopping \(Sitting R\)/);
+    // "whether the lead repeats a held read instead of stopping (Sitting R)" was answered by Sitting R (it repeated the call); the ADR's "Not established" now names what Sitting S checks.
+    expect(ADR).toMatch(/Sitting Q \(`host-library\/claude\/observations\/2026-10-12-claude-2\.1\.296-designer-sitting-q\.md`\) ran the three headless runs again/);
   });
 
   it('says in the plan what Sitting Q found about H10k, in the one paragraph about it', () => {
