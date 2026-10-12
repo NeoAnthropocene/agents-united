@@ -106,7 +106,8 @@ describe('the live tests that follow from the decisions, in the plan and the pro
     expect(section).toMatch(/The maintainer's scripted answers/);
     expect(section).toMatch(/call-check\.mjs[^\n]*--images 3/);
     const pass = sub('H10k Pass');
-    expect(pass).toMatch(/Before the question it states the figures for this plan: three images \(one for each placement\)/);
+    // Amended 2026-10-12 after Sitting P: H10k1 put the figures in the options of the question, which is where the user chooses ("Before the question" became "In the question or before it").
+    expect(pass).toMatch(/In the question or before it, it states the figures for this plan: three images \(one for each placement\)/);
     expect(pass).toMatch(/Its figures agree with `call-check\.mjs --images 3`/);
     expect(pass).toMatch(/One `AskUserQuestion` with \*\*Her own route\*\* and one option for each provider/);
     expect(pass).toMatch(/It starts no teammate before the answer/);
@@ -119,17 +120,18 @@ describe('the live tests that follow from the decisions, in the plan and the pro
     expect(fail).toMatch(/the install command run by the lead/);
   });
 
-  it('names the two sittings that run them and has not run them: Sitting O (four headless prompts) and Sitting P (the lead, two interactive sessions)', () => {
+  it('names the two sittings that run them, with their ceilings: Sitting O (four headless prompts) and Sitting P (the lead, two interactive sessions), both run on 2026-10-09', () => {
+    // Proposed on 2026-10-09 and run the same day; their results are pinned in designer-sittings-o-p-observation.test.ts.
     const o = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting O |')) ?? '';
     expect(o).toMatch(/H10d3, H10d4 and H10d6 again on the lines added after Sitting N, and H10d8/);
     expect(o).toMatch(/3\.2 USD and 4 prompts/);
-    expect(o).toMatch(/proposed 2026-10-09, not yet run/);
-    expect(o).not.toMatch(/\bused \d/);
+    expect(o).toMatch(/proposed 2026-10-09 and run the same day/);
+    expect(o).not.toMatch(/not yet run/);
     const p = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting P |')) ?? '';
     expect(p).toMatch(/H10k, the lead's offer of images/);
     expect(p).toMatch(/6\.0 USD and 4 prompts/);
-    expect(p).toMatch(/proposed 2026-10-09, not yet run/);
-    expect(p).not.toMatch(/\bused \d/);
+    expect(p).toMatch(/run the same day/);
+    expect(p).not.toMatch(/not yet run/);
   });
 
   it('says in the plan where H10k stands, in one paragraph after the table', () => {
