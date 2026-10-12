@@ -26,8 +26,8 @@ const LINE = /^Mode: (?:Fully|Limited) Operational\./;
 const MESSAGE = [
   "Mode line first. This is an expected hold, not a failure. Before this call, write the mode line as the first line of your text, filled in:",
   "Mode: <Fully Operational or Limited Operational>. Callable: <the required integrations you can call, or none>. Missing: <the required integrations you cannot call, or none>. Extras: <MarkItDown and Stitch, only those you can call, or none>.",
-  "Your definition asks for it under \"The first message\". Do this even if you believe you wrote it already: the host cannot see the message you are writing. Calls stay held until the mode line is visible in the saved transcript. Then make the call again, and write the line in the same message as the call you repeat. A retry can be held again while the transcript lags; elapsed time alone never releases it.",
-  "A hold is not a reason to stop: do not end your turn, do not ask the user and do not wait for a reply. The line must be a text block of your reply: your reasoning is not text, and neither the hook nor the user sees it. Repeat the call in your next message with the line written again, and if it is held again, repeat it again: the host saves a message a moment after it ends.",
+  "Your definition asks for it under \"The first message\", and the host cannot see the message you are writing. Calls stay held until the mode line is visible in the saved transcript. A retry can be held again while the transcript lags; elapsed time alone never releases it.",
+  "A hold is not a reason to stop: do not end your turn, do not ask the user and do not wait for a reply. The line must be a text block of your reply: your reasoning is not text, and neither the hook nor the user sees it. If you have not written the line as a text block, write the line in the same message as the call you repeat. If you have, the host has not saved it yet: repeat the call alone, with no text, and again if it is held again. Write the line once.",
 ].join("\n");
 
 function block() {
