@@ -248,7 +248,7 @@ describe('the Sitting R observation: the grading', () => {
 });
 
 describe('the protocol, ADR 0049 and the plan state Sitting R', () => {
-  it('records Sitting R as run, with its cost and what it reached, and Sitting S as proposed', () => {
+  it('records Sitting R as run, with its cost and what it reached, and has a row for Sitting S (its result is pinned in tests/designer-sitting-s-observation.test.ts)', () => {
     const r = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting R |')) ?? '';
     expect(r).toMatch(/H10k2 again, the Gemini branch of the lead's offer/);
     expect(r).toMatch(/run 2026-10-12/);
@@ -259,8 +259,6 @@ describe('the protocol, ADR 0049 and the plan state Sitting R', () => {
     expect(s).toMatch(/H10k2 again/);
     expect(s).toMatch(/G1 of Plan 035 N3 again/);
     expect(s).toMatch(/3\.0 USD and 2 prompts/);
-    expect(s).toMatch(/proposed 2026-10-12, not yet run/);
-    expect(s).not.toMatch(/\bused \d/);
   });
 
   it('amends the cost of H10d with the result of Sitting R, and the cost of H10k with its result', () => {
@@ -286,7 +284,8 @@ describe('the protocol, ADR 0049 and the plan state Sitting R', () => {
     expect(ADR).toMatch(/Sitting R \(`host-library\/claude\/observations\/2026-10-12-claude-2\.1\.296-designer-sitting-r\.md`\)/);
     expect(ADR).toMatch(/19 of 21 pass-line items met/);
     expect(ADR).toMatch(/the Gemini branch of the lead's offer, reached for the first time/);
-    expect(ADR).toMatch(/whether the lead writes its line once and is not held \(Sitting S\)/);
+    // "whether the lead writes its line once and is not held (Sitting S)" was answered by Sitting S (it failed); the ADR's "Not established" now names what Sitting T checks.
+    expect(ADR).toMatch(/which ADR 0051 addresses/);
   });
 
   it('says in the plan what Sitting R found about H10k, in the one paragraph about it', () => {
