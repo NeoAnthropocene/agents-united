@@ -78,6 +78,9 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toContain('Your second message opens with the mode line, as a text block, then the introduction, and holds one `ToolSearch` that checks for and loads the task tools and `SendMessage` (`select:TaskCreate,TaskList,TaskUpdate,SendMessage`, see "The shared task list") and no other call.');
     expect(SECTION).toContain('Your first other call is in the third message: the host has saved the line by then, so the hook holds nothing and the user sees no error (ADR 0051).');
     expect(SECTION.indexOf('**In order.**')).toBeLessThan(SECTION.indexOf('Your first answer in a session reports the operating mode'));
+    // Sitting S: in both sessions the second message held the ToolSearch and the line only in the reasoning ("As Chris, lead of the digital agency team, I'll load the task and messaging tools ...").
+    expect(SECTION).toContain('A message with a `ToolSearch` and no text block is a mistake: the line is a text block of that message and not a thought');
+    expect(SECTION).toMatch(/observed on 2\.1\.296 in two sessions: the second message held the `ToolSearch` and the line only in the lead's reasoning, and its first other call was then held 11 and 13 times/);
   });
 
   it('says to write the line once: no repeat of the mode or of what is callable in a later message, unless the user asks or the plan depends on a missing integration', () => {
@@ -85,15 +88,26 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toMatch(/observed on 2\.1\.296: a lead wrote the line twice while it repeated a held call and a third time in its last message/);
   });
 
-  it('records the decision in ADR 0051, which keeps the gate of ADRs 0042 and 0044 and changes only where the lead writes the line', () => {
+  it('records the decision in ADR 0051, which keeps the release rule of ADRs 0042 and 0044 and changes where the lead writes the line and what the hold says', () => {
     const adr = fs.readFileSync(path.resolve('docs/adr/0051-the-lead-writes-its-mode-line-before-its-first-gated-call.md'), 'utf8').replace(/\r\n/g, '\n');
     expect(adr).toMatch(/^# ADR 0051: The lead writes its mode line before its first gated call/);
     expect(adr).toMatch(/\*\*Status\*\*: Accepted, 2026-10-12/);
     expect(adr).toContain('yes, we should do that I think');
-    for (const ref of ['ADR 0042', 'ADR 0044', 'Sitting Q', 'Sitting R', '314be482', '1269c24c']) expect(adr, ref).toContain(ref);
-    expect(adr).toMatch(/The gate is not changed/);
+    for (const ref of ['ADR 0042', 'ADR 0044', 'Sitting Q', 'Sitting R', 'Sitting S', '314be482', '1269c24c', 'a7acda03', '7c3e1121']) expect(adr, ref).toContain(ref);
     expect(adr).toMatch(/repeat the call alone, with no text/);
-    expect(adr).toMatch(/unverified live \(Sitting S\)/);
+    expect(adr).toMatch(/unverified live \(Sitting T\)/);
+  });
+
+  // Sitting S (2026-10-12): decision 3 of ADR 0051 failed in both sessions; the amendment replaces it and says why.
+  it('amends ADR 0051 after Sitting S: a fallback that depends on the lead\'s own report cannot work, so the hook counts the rounds of holds and its message depends on the round; the release rule is unchanged', () => {
+    const adr = fs.readFileSync(path.resolve('docs/adr/0051-the-lead-writes-its-mode-line-before-its-first-gated-call.md'), 'utf8').replace(/\r\n/g, '\n');
+    expect(adr).toMatch(/## Amendment, 2026-10-12, after Sitting S/);
+    expect(adr).toMatch(/a fallback that depends on the lead's own report of what it wrote cannot work for a lead whose failure is a false report/);
+    expect(adr).toMatch(/the hook counts the rounds of holds of a session/);
+    expect(adr).toMatch(/The count changes the message and never the release/);
+    expect(adr).toMatch(/Decision 3 is replaced/);
+    expect(adr).toMatch(/told the user that the hook was broken and that they could disable it/);
+    expect(fs.readFileSync(path.resolve('docs/adr/0044-release-the-mode-line-gate-only-on-recorded-evidence.md'), 'utf8')).toMatch(/Amended in part by ADR 0051/);
   });
 
   // Second set of headless checks (2026-10-07): the two prompts that gave the lead an order about the work ("Consult emre read-only first", "Have defne list ...")
@@ -121,14 +135,20 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toContain('the host cannot see the message you are writing');
   });
 
-  // Changed after Sitting R: "write the line, even if you believe you wrote it, in the same message as the call you repeat" made every retry write the line again (twice in Sitting R). The false claim that
-  // it was the reason for (live test 6: "my last message already began with the mode line", after a message with no text; Sitting Q: three times, in the reasoning) is now met by saying what counts as
-  // written: a text block. A lead that has written one repeats the call alone; a lead that has not, writes it.
-  it('says what to do with a hold by what the lead has written: no text block, write the line and repeat the call there; a text block, repeat the call alone and never write the line a second time', () => {
-    expect(SECTION).toContain('If you have not written the line as a text block, write it in your next message and repeat the call there. If you have, the host has not saved it yet: repeat the call alone, with no text, and again if it is held again; never write the line a second time.');
+  // After Sitting R the section told a lead that "has written the line as a text block" to repeat the call alone and never to write the line a second time. In Sitting S both leads had the line only in their
+  // reasoning, believed they had written it, and obeyed: 11 and 13 holds, a lead that stopped ("Writing the line again would go against my own rule") and a lead that told the user that the hook was broken
+  // and that they could disable it. The hook's message now depends on the round of holds, and the section says to do what the message says, not what the lead believes it wrote.
+  it('says to do what the message of the hold says by the round, and not what the lead believes it wrote: the first time write the line even if you believe you wrote it; the second time alone if a text block has it; from the third time write it again', () => {
+    expect(SECTION).toContain('The message of the hold says what to do, and you do what it says: the first time, write the line as the first line of a text block in the same message as the call you repeat, even if you believe you wrote it already; the second time, repeat the call alone, with no text, if your last message opened a text block with the line, and write the line if it did not; from the third time, write it again.');
     expect(SECTION).toContain('When you meet it, look at your last message: a line that you thought but did not write as a text block is not written');
     expect(SECTION).toMatch(/observed on 2\.1\.292: a lead claimed "my last message already began with the mode line" after a message with no text, and repeated its call/);
-    expect(SECTION).not.toContain('write the line, even if you believe you wrote it');
+    expect(SECTION).toMatch(/observed on 2\.1\.296 in Sittings Q and S: a lead wrote "I wrote the line twice" and had written it only in its reasoning, and was held 6, 11 and 13 times/);
+    expect(SECTION).not.toContain('never write the line a second time');
+    expect(SECTION).not.toContain('If you have not written the line as a text block, write it in your next message');
+  });
+
+  it('never tells the user that the hook is broken and never suggests that they disable or edit it: it reads text blocks only', () => {
+    expect(SECTION).toContain('Never tell the user that the hook is broken, and never suggest that they disable or edit it: it reads text blocks only.');
   });
 
   // Sitting Q (H10k2, 2026-10-12, Claude Code 2.1.296, session `314be482`): six calls held in four messages. The line was in the lead's reasoning in the first three, which the hook cannot read; the fourth

@@ -416,9 +416,11 @@ describe('the protocol, ADR 0049 and the plan state the sittings', () => {
     const fail = k.slice(k.indexOf('### H10k Fail'), k.indexOf('### Cost'));
     expect(fail).toMatch(/the choice asked in prose, or before the figures/);
     expect(fail).toMatch(/the lead stops, asks the user to reply or ends its turn because the mode-line hook held a call/);
-    // Added after Sitting R (ADR 0051): the line is written once, in the message of the last ToolSearch, so that no hold is shown.
-    expect(pass).toMatch(/It writes the mode line once, as a text block, in the message of its last `ToolSearch` and before its first other call, and introduces itself under it; a hold of the hook that it repeats is noted, and a line written twice is a fail\./);
-    expect(fail).toMatch(/a mode line written twice/);
+    // Added after Sitting R (ADR 0051) and changed after Sitting S: the line is written as a text block in the message of the last ToolSearch, so that no hold is shown; if the hook holds the lead anyway
+    // it does what the message of the hold says and is released within three rounds of holds (Sitting S: 11 and 13 holds, a lead that stopped and a lead that told the user to disable the hook).
+    expect(pass).toMatch(/It writes the mode line as a text block in the message of its last `ToolSearch` and before its first other call, and introduces itself under it; if the hook holds it anyway it does what the message of the hold says and is released within three rounds of holds, and it never stops, never asks the user to reply and never tells the user that the hook is broken or to disable it\./);
+    expect(fail).toMatch(/more than three rounds of holds, a lead that tells the user that the hook is broken or to disable or edit it/);
+    expect(PROTOCOL).toMatch(/a hold that the lead follows and that releases within three rounds is noted, more than three rounds of holds is a fail/);
     expect(k).toMatch(/Do not accept a delegation map in either/);
     expect(k).toMatch(/If the lead asks the choice in plain text instead of a selection list, that is a finding: answer with the word "Gemini", not a number/);
     expect(k).toMatch(/if it stops and only asks for a short reply because its calls were held, that is a finding: type "go" and wait for its question/);
