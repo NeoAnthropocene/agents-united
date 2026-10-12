@@ -416,6 +416,9 @@ describe('the protocol, ADR 0049 and the plan state the sittings', () => {
     const fail = k.slice(k.indexOf('### H10k Fail'), k.indexOf('### Cost'));
     expect(fail).toMatch(/the choice asked in prose, or before the figures/);
     expect(fail).toMatch(/the lead stops, asks the user to reply or ends its turn because the mode-line hook held a call/);
+    // Added after Sitting R (ADR 0050): the line is written once, in the message of the last ToolSearch, so that no hold is shown.
+    expect(pass).toMatch(/It writes the mode line once, as a text block, in the message of its last `ToolSearch` and before its first other call, and introduces itself under it; a hold of the hook that it repeats is noted, and a line written twice is a fail\./);
+    expect(fail).toMatch(/a mode line written twice/);
     expect(k).toMatch(/Do not accept a delegation map in either/);
     expect(k).toMatch(/If the lead asks the choice in plain text instead of a selection list, that is a finding: answer with the word "Gemini", not a number/);
     expect(k).toMatch(/if it stops and only asks for a short reply because its calls were held, that is a finding: type "go" and wait for its question/);

@@ -75,13 +75,15 @@ describe('the mode-line gate script', () => {
   // so I'm running the check again as the hook says". It had written no text at all before that call. The first version of the message ended "If your last message
   // already began with that line, repeat the call now", and the lead took that way out falsely. The gate cannot see the message that is being written (the transcript
   // never holds the current call), so it says so, holds the call once whatever the lead believes, and asks for the line to be written again if need be.
-  it('holds the call whatever the lead believes it wrote, and says why, so that there is no way out to claim', () => {
+  // Changed after Sitting R (2026-10-12, ADR 0050): the message used to say "Do this even if you believe you wrote it already", so that every retry wrote the line again, which the user saw twice in
+  // Sitting R. The way out that live test 6 closed is now closed by saying what counts as written (a text block), and what to do in each case.
+  it('holds the call whatever the lead believes it wrote, and says what counts as written, so that the way out is a text block and not a claim', () => {
     const { stderr } = run(call());
 
-    expect(stderr).toContain('Do this even if you believe you wrote it already');
+    expect(stderr).not.toContain('Do this even if you believe you wrote it already');
     expect(stderr).toContain('the host cannot see the message you are writing');
     expect(stderr).toContain('until the mode line is visible in the saved transcript');
-    expect(stderr).toContain('write the line in the same message as the call you repeat');
+    expect(stderr).toContain('If you have not written the line as a text block, write the line in the same message as the call you repeat.');
     expect(stderr).not.toMatch(/already began with that line, repeat the call/);
     expect(stderr).not.toMatch(/if your last message/i);
   });
@@ -91,12 +93,13 @@ describe('the mode-line gate script', () => {
   // The lead then ended its turn: "I've paused ... the host hasn't saved the line to the transcript yet. That line is now the first thing in this finished message", and waited for the user to reply.
   // The message said that the host cannot see the message the lead is writing, and only "make the call again" about what to do, so the lead read it as "finish the message". It has to say not to stop,
   // that reasoning is not text, and to repeat the call in the next message, again if need be. (In Sitting P, h10k1, the third message was released: the line of the second had been saved by then.)
-  it('tells the lead that a hold is not a reason to stop, that its reasoning is not text, and to repeat the call in its next message, again if it is held again', () => {
+  it('tells the lead that a hold is not a reason to stop, that its reasoning is not text, and what to do by what it has written: no text block, write the line with the call; a text block, repeat the call alone, and write the line once', () => {
     const { stderr } = run(call());
 
     expect(stderr).toContain('A hold is not a reason to stop: do not end your turn, do not ask the user and do not wait for a reply.');
     expect(stderr).toContain('The line must be a text block of your reply: your reasoning is not text, and neither the hook nor the user sees it.');
-    expect(stderr).toContain('Repeat the call in your next message with the line written again, and if it is held again, repeat it again: the host saves a message a moment after it ends.');
+    expect(stderr).toContain('If you have not written the line as a text block, write the line in the same message as the call you repeat. If you have, the host has not saved it yet: repeat the call alone, with no text, and again if it is held again. Write the line once.');
+    expect(stderr).not.toContain('with the line written again');
     expect(stderr.split('\n')[0]).toContain('not a failure');
   });
 

@@ -171,7 +171,16 @@ describe('the lead\'s offer', () => {
     for (const option of ['**Her own route**', '**Generate with Gemini**', '**Generate with Seedream**', '**Generate with OpenAI**']) expect(p, option).toContain(option);
     expect(p).not.toContain('**Generate images**');
     expect(p).not.toContain('**Placeholders and image briefs**');
-    for (const part of ['API key', 'no free tier', 'by token', 'every prompt goes to the provider', 'your own terminal', 'never ask for it', 'restarts', 'For this plan: N images at SIZE, about $X, at most $Y']) expect(p, part).toContain(part);
+    for (const part of ['API key', 'no free tier', 'by token', 'every prompt goes to the provider', 'your own terminal', 'never ask for it', 'restarts']) expect(p, part).toContain(part);
+  });
+
+  // Sitting R (H10k2, 2026-10-12, session `1269c24c`): the lead's options carried the plan's total and its worst case, but no price for one image (the pass line asks for it: H10k1 had "3 x $0.0504"),
+  // and the OpenAI option did not say "no free tier" (the paragraph's own words were "no free tier; OpenAI by token", which read as an exception; the skill says that none of the three has one).
+  it('gives the price of one image in every provider option and says "no free tier" for every provider, OpenAI included', () => {
+    const p = paragraph();
+    expect(p).toContain('For this plan: N images at SIZE, $P each, about $X, at most $Y');
+    expect(p).toContain('The provider bills your account (no free tier, whichever provider you pick; OpenAI by token)');
+    expect(p).not.toContain('(no free tier; OpenAI by token)');
   });
 
   it('says what her own route is: SVG, HTML and CSS art and a marked placeholder with an image brief for each photograph, nothing to install and nothing to pay, and that she does it for everything that is not a photograph whatever the user picks', () => {
