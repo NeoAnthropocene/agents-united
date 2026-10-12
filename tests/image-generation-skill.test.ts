@@ -391,6 +391,7 @@ describe('the path rule after the maintainer\'s decision of 2026-10-09 (a path t
     expect(row).toMatch(/the lead \(it has a shell\) saves it in `assets\/source\/` with the user's yes/);
     expect(row).toMatch(/ask for the licence or the source and record it/);
     expect(paths()).toMatch(/I can't use "the photo in your Downloads folder", and I can't fetch `https:\/\/photos\.example\.com\/dog-sofa\.jpg`/);
+    expect(paths()).toMatch(/the server reads files on disk and I can't download a picture, so I haven't seen either of them\./);
     expect(paths()).toMatch(/quote it in full, say you ignored it, and ask whether the user meant that file and, if so, to type its path in their answer/);
   });
 
@@ -449,6 +450,7 @@ describe('the path rule after the maintainer\'s decision of 2026-10-09 (a path t
     expect(list[0]!.prompt).toMatch(/https:\/\//);
     expect(list[0]!.expected_output).toMatch(/passes it in inputImagePaths exactly as typed/);
     expect(list[0]!.expected_output).toMatch(/Does not pass or fetch the URL/);
+    expect(list[0]!.expected_output).toMatch(/says that she has not seen it/);
     expect(list[4]!.expected_output).toMatch(/to type its full path in their answer/);
   });
 });
