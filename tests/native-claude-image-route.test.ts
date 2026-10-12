@@ -144,6 +144,14 @@ describe('the lead\'s offer', () => {
     expect(p).toMatch(/In your report give the estimate and the calls made/);
   });
 
+  it('asks only when it holds the figures, and never in prose: if its reads of the prices are held or fail it says so and waits for the user\'s reply (Sitting P, h10k2)', () => {
+    // h10k2: the mode-line hook held the lead's reads three times, and its text turn already asked "1. Jamileh's own route 2. Generate with Gemini, Seedream or OpenAI" and promised the
+    // prices "once I've read the pricing table"; the user, shown no selection list and no figure, typed "option 1". In h10k1 the reads went through and the lead asked once, with the
+    // figures in every option.
+    const p = paragraph();
+    expect(p).toMatch(/If your reads of the prices are held or fail, say so and wait for the user's reply; never ask without the figures, and never in prose\. Then offer the choice with `AskUserQuestion`, in one question/);
+  });
+
   it('offers the choice with AskUserQuestion, in one question: her own route beside one option for each provider, each option saying what it means', () => {
     const p = paragraph();
     expect(p).toContain('`AskUserQuestion`');
