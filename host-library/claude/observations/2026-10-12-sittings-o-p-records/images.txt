@@ -1,0 +1,3 @@
+The two pictures of Sitting O (not kept in the repository: only their size, dimensions and hash). H10d3 made a variation of a synthetic 64 x 64 beige tile (the stand-in for the stock photo); H10d4 made the hero from the written brief, with no input file.
+h10d3  feed-hero-variation-01.jpg  2654202 bytes  2048 x 2048  sha256 b85c8279a0b03c474f6e5344240e38cc7df7db3ca494502fe15815c186c05169
+h10d4  petpal-hero-sofa-a1.jpg  3102485 bytes  1856 x 2304  sha256 f4204427b8ea56d6fc819dda29c52b3880c2467b8075eea8119925d00f9aa240

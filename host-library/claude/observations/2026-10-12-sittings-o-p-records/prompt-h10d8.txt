@@ -1,0 +1,1 @@
+The hero of the feed ad should be a variation of the photo at https://photos.example.com/petpal/dog-sofa.jpg, which we have the licence for. Go: one image, 2K, Gemini.

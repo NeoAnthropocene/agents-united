@@ -203,7 +203,7 @@ describe('the Sittings O and P observation: her calls, her records and her own c
     expect(e).toMatch(/she looked at the file with Read: yes \(call 3, before the first image call\)/);
     expect(e).toMatch(/image-check \(exit 1\)/);
     expect(e).toContain('missing asset, missing createdAt, missing server, missing approvedBy, missing disclosure, attempt must be a positive whole number, estimatedCostUsd must be a number');
-    expect(record('call-check-h10d3.txt')).toMatch(/^warn {2}input-outside-project-typed/m);
+    expect(record('call-check-h10d3.txt')).toMatch(/^warn {3}input-outside-project-typed/m);
     expect(record('call-check-h10d3.txt')).toMatch(/exit 0\s*$/);
     expect(record('call-check-h10d3-no-allow.txt')).toMatch(/^error {2}input-outside-project /m);
     expect(record('call-check-h10d3-no-allow.txt')).toMatch(/exit 1\s*$/);
@@ -424,7 +424,7 @@ describe('the protocol, ADR 0049 and the plan state the sittings', () => {
     expect(ADR).toContain(NAME);
     expect(ADR).toMatch(/Sittings O and P \(`host-library\/claude\/observations\/2026-10-12-claude-2\.1\.294-designer-sittings-o-and-p\.md`\)/);
     expect(ADR).toMatch(/28 of 33 pass-line items met/);
-    expect(ADR).toMatch(/the keys of the record in step 5/);
+    expect(ADR).toMatch(/[Tt]he keys of the record in step 5/);
     expect(ADR).toMatch(/If its reads of the prices are held or fail it says so and waits for the user's reply, and never asks without the figures or in prose/);
     expect(ADR).toMatch(/the Gemini branch of the lead's offer/);
   });

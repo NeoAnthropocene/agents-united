@@ -1,0 +1,6 @@
+Per-token prices fitted by least squares on the four headless runs of Sitting O (their results carry the tokens and the cost): not published prices, an estimate for the sessions whose record holds no dollar figure.
+output 10.01 USD per million tokens, cache write 4.00, cache read 0.20
+run h10d3: actual 0.1884, fitted 0.1884
+run h10d4: actual 0.2986, fitted 0.2986
+run h10d6: actual 0.2105, fitted 0.2105
+run h10d8: actual 0.1215, fitted 0.1215

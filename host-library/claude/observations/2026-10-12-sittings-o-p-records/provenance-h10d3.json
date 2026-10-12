@@ -1,0 +1,16 @@
+{
+  "file": "feed-hero-variation-01.jpg",
+  "provider": "gemini",
+  "model": "gemini-nano-banana-2.1",
+  "quality": "fast",
+  "parameters": { "aspectRatio": "1:1", "imageSize": "2K" },
+  "prompt": "Create a variation of the reference photograph: keep its subject, warm beige colour palette, lighting and mood, but reframe it with a fresh composition and slightly different angle. Leave calm, uncluttered space in the lower third for an overlaid headline and button. Photographic, soft natural light, shallow depth of field, high detail. No text, no logos, no people, no watermarks.",
+  "inputImagePaths": ["C:\\github\\scratch-pilot\\h10d-local-test\\Downloads\\shoot.jpg"],
+  "inputImageNote": "User-owned stock photo, path typed by the user in this task; sent to the provider.",
+  "goBy": "user (task message: one image, 2K, Gemini)",
+  "timestamp": "2026-10-09T14:47:21.605Z",
+  "costUsd": 0.0504,
+  "costBasis": "price table estimate, Gemini fast 2K",
+  "calls": 1,
+  "label": "AI-generated image, derived from a user-owned stock photo. Not a photograph of the client's real product, a real person or a customer. Placement label rule not checked."
+}

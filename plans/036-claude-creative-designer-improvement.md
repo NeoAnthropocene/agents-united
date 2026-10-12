@@ -220,7 +220,7 @@ Each scenario runs in a fresh scratch directory with the digital-agency native i
 
 Not scheduled: Figma and Stitch. `mcp__figma` needs the maintainer's authentication and Stitch spends the team's monthly generations, and neither is on the baseline's critical path. When both are connected, add an H10e that asks for a landing-page hero concept and checks that she reads the design file or system before she generates.
 
-**H10k (added 2026-10-09, S19).** The lead's offer of images: the lead works out the cost of the plan, then lets the user choose how Jamileh works (her own route, or one of three image providers). It is defined in `docs/live-test-protocol.md` (H10k) and has no row here, because it runs the lead and not the designer alone.
+**H10k (added 2026-10-09, S19).** The lead's offer of images: the lead works out the cost of the plan, then lets the user choose how Jamileh works (her own route, or one of three image providers). It is defined in `docs/live-test-protocol.md` (H10k) and has no row here, because it runs the lead and not the designer alone. Run on 2026-10-09 (Sitting P, `host-library/claude/observations/2026-10-12-claude-2.1.294-designer-sittings-o-and-p.md`): H10k1 passed on its own route, with the figures in the options of the question; H10k2 asked in prose with no figures after the mode-line hook held the lead's reads, and did not reach the Gemini branch, so the lead's text was corrected and Sitting Q repeats it.
 
 ## Decisions taken (proposed defaults, reversible)
 

@@ -1,0 +1,30 @@
+{
+ "call": {
+  "questions": [
+   {
+    "question": "How should the three PetPal hero photographs (sitter and dog on a sofa) be made?",
+    "header": "Pictures",
+    "multiSelect": false,
+    "options": [
+     {
+      "label": "Her own route (Recommended)",
+      "description": "Jamileh draws what code can draw and leaves a marked placeholder frame plus an image brief (subject, framing, light, mood, exclusions, rights) for each of the 3 photos, for a photographer, stock licence or image tool to fill later. Nothing to install, nothing to pay, no restart."
+     },
+     {
+      "label": "Generate with Gemini",
+      "description": "Jamileh makes 3 images at 2K (4:5, 9:16, 1.91:1) with Gemini. About $0.15 (3 x $0.0504); at most about $0.45 if each needs two regenerations. Billed to your own Google API key, no free tier. Every prompt goes to Google. You run one command in your own terminal with your key (I never ask for it or see it), then the team restarts."
+     },
+     {
+      "label": "Generate with Seedream",
+      "description": "3 images at 2K with Seedream (BytePlus). About $0.27 (3 x $0.09); at most about $0.81. Billed to your own BytePlus key. Seedream rewrites the prompt on its side. Prompts go to BytePlus ModelArk. You run one command with your key, then the team restarts."
+     },
+     {
+      "label": "Generate with OpenAI",
+      "description": "3 images at 2K with OpenAI. OpenAI publishes no price per image (it bills by token), so the first image is a probe: you read its charge on the OpenAI usage page and set the ceiling for the rest. Billed to your own key; prompts go to OpenAI. You run one command with your key, then the team restarts."
+     }
+    ]
+   }
+  ]
+ },
+ "answer": "Your questions have been answered: \"How should the three PetPal hero photographs (sitter and dog on a sofa) be made?\"=\"Her own route (Recommended)\". You can now continue with these answers in mind."
+}
