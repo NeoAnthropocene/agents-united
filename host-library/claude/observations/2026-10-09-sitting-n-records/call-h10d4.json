@@ -1,0 +1,8 @@
+{
+ "prompt": "A candid, natural-light photograph of a pet sitter sitting at one end of a sofa in a bright city apartment, a calm medium-sized dog resting beside them with its head near their lap. The sitter is relaxed, looking down at the dog with a small unposed smile, face partly turned away from camera. Soft morning window light from the left, warm neutral tones, oatmeal linen sofa, a plain pale wall. Vertical 4:5 composition, subjects in the lower two thirds, the upper third an empty, calm, softly lit plain wall with no objects. Shallow depth of field, 50mm lens, eye-level camera, documentary lifestyle feel, unstaged, gentle warm palette of cream, soft sage and light wood.",
+ "aspectRatio": "4:5",
+ "imageSize": "2K",
+ "provider": "gemini",
+ "fileName": "petpal-feed-hero-4x5-v1",
+ "purpose": "Hero image for a 4:5 social feed ad for a pet-sitting service launch; upper third kept calm for a headline overlay"
+}

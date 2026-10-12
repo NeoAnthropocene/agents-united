@@ -1,0 +1,26 @@
+{
+  "file": "feed-hero-sitter-dog-sofa-4x5-v2.jpg",
+  "asset": "feed-hero-sitter-dog-sofa",
+  "attempt": 2,
+  "createdAt": "2026-10-09T13:53:20Z",
+  "server": "image-gen (version not checked)",
+  "model": "gemini-nano-banana-2.1",
+  "prompt": "Edit the supplied photograph into a variation of the same scene. Keep the woman, the golden retriever, the sofa, cushions, knitted throw, plant, window, warm late-afternoon light, colours, framing and composition exactly as they are. Make two changes only. First, remove the thin dark lines along the left, right and bottom edges so the picture runs cleanly to the edge of the frame with no border or film-edge. Second, replace the open doorway on the right side, with the cluttered room visible through it, with plain continuous cream wall in the same tone, texture and lighting as the wall beside it, with no door frame, no opening and no objects.",
+  "parameters": {
+    "provider": "gemini",
+    "aspectRatio": "4:5",
+    "imageSize": "2K",
+    "quality": "server default (not set)"
+  },
+  "approvedBy": "the user: \"Go: one image, Gemini, 2K, the feed's 4:5.\"",
+  "estimatedCostUsd": 0.0504,
+  "disclosure": "Generated and edited with Gemini (gemini-nano-banana-2.1) from an earlier generated image; the provider adds an invisible SynthID mark. Platform label: label rule not checked (Meta/Google AI-content labelling to be verified before the ad runs). Edited, not photographed. Not a photograph of a real person, a customer or the client's service; the sitter and dog are synthetic.",
+  "inputImages": [
+    {
+      "path": "assets/generated/feed-hero-sitter-dog-sofa-4x5-v1.jpg",
+      "source": "earlier generated output v1, named by the user"
+    }
+  ],
+  "usedIn": [],
+  "notes": "Opened with Read (1856x2304, 4:5). Left, right and bottom dark edge lines gone; doorway on the right is now plain cream wall. Woman, dog, sofa, cushions, throw, plant and window look unchanged at the downscaled view; pixel-level differences (e.g. sweater speckle, fine fur) not compared. Upper ~40% is calm wall for the headline. Sitter must not be presented as a real employee, customer or reviewer. Alt text: 'A smiling woman on a sofa strokes a golden retriever resting its head on her lap.'"
+}

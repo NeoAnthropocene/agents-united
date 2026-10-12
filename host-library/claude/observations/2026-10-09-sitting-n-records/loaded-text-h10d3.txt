@@ -1,0 +1,8 @@
+What the session record of the third H10d3 run (51fb6684-0e71-4b06-a842-199960d67a3f) shows of the text she loaded; yes or no for each phrase.
+
+yes  SKILL.md, rule 5: the strict rule: "never a file outside the project, even one the user typed"
+yes  her role text: the strict rule: "never a file outside the project even if the user typed it"
+yes  SKILL.md, edge case: she cannot copy it, ask the user or the lead: "you cannot copy it. Ask the user or the lead for a copy"
+yes  SKILL.md, edge case: the user's word and the placeholder: "for the user's word that it may go to the provider; offer the placeholder meanwhile"
+yes  her role text: the placeholder with an image brief meanwhile: "offer the placeholder with an image brief meanwhile"
+no   the old exception of SKILL.md: "unless the user typed that exact path here"

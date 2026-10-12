@@ -1119,7 +1119,8 @@
         "design-artifact-publishing",
         "color-theory",
         "image-creation",
-        "brand-consistency-audit"
+        "brand-consistency-audit",
+        "image-generation"
       ],
       "version": "1.0.0"
     },
@@ -1314,7 +1315,8 @@
         "design-artifact-publishing",
         "color-theory",
         "image-creation",
-        "brand-consistency-audit"
+        "brand-consistency-audit",
+        "image-generation"
       ],
       "version": "1.0.0"
     },

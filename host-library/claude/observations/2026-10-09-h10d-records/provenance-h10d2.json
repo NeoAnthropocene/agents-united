@@ -1,0 +1,21 @@
+{
+  "file": "feed-hero-sitter-dog-sofa-4x5-v1.jpg",
+  "asset": "feed-hero-sitter-dog-sofa",
+  "attempt": 1,
+  "createdAt": "2026-10-09T10:13:02Z",
+  "server": "image-gen (version not checked)",
+  "model": "gemini-nano-banana-2.1",
+  "prompt": "A warm, natural lifestyle photograph of a friendly pet sitter sitting on a comfortable sofa in a cozy living room, with a relaxed golden retriever resting its head on the sitter's lap. The sitter is an adult in casual knitwear, smiling softly and looking down at the dog, face partly turned. Soft late-afternoon window light from the left, warm honey tones, shallow depth of field, shot on a 50mm lens at eye level. Linen cushions and a knitted throw on the sofa, a green houseplant softly blurred in the background. Composition: subjects in the lower two thirds of the frame, with calm, uncluttered wall space in the upper third left empty for an overlay. Palette of warm cream, oatmeal, terracotta and soft sage green. Natural, candid, authentic documentary feel.",
+  "parameters": {
+    "provider": "gemini",
+    "aspectRatio": "4:5",
+    "imageSize": "2K",
+    "quality": "server default (not set)"
+  },
+  "approvedBy": "the user: \"Go: one image, Gemini, 2K, the feed's 4:5.\"",
+  "estimatedCostUsd": 0.0504,
+  "disclosure": "Generated with Gemini (gemini-nano-banana-2.1); the provider adds an invisible SynthID mark. Platform label: label rule not checked (Meta/Google AI-content labelling to be verified before the ad runs). Not a photograph of a real person, a customer or the client's service; the sitter and dog are synthetic.",
+  "inputImages": [],
+  "usedIn": [],
+  "notes": "Opened with Read (1856x2304, 4:5). Warm cream/terracotta/sage palette as briefed; sitter and golden retriever anatomy look correct (hands, paws, ring). Upper ~40% is calm wall, usable for headline with a scrim; a plant sits left of centre and a doorway with clutter on the right edge (x>88%), keep copy left of it. Thin dark edge lines on the left, right and bottom borders (film-frame look): crop ~1-2% on each side in the design. Sofa fabric and sweater have slight speckle texture. Sitter must not be presented as a real employee, customer or reviewer. Alt text: 'A smiling woman on a sofa strokes a golden retriever resting its head on her lap.'"
+}

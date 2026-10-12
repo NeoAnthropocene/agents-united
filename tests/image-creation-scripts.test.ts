@@ -59,12 +59,12 @@ const sidecar = (file: string, asset: string, attempt: number, extra: Sidecar = 
   asset,
   attempt,
   createdAt: '2026-10-09T09:12:00Z',
-  server: 'image-gen (mcp-image 0.14.0)',
-  model: 'gemini-3.1-flash-image',
+  server: 'image-gen (mcp-image 0.18.0)',
+  model: 'gemini-nano-banana-2.1',
   prompt: 'A warm morning photograph of a sleepy dog on a cream sofa, soft window light, 50mm lens, shallow depth of field.',
   parameters: { aspectRatio: '4:5', imageSize: '2K', quality: 'fast', ...parameters },
   approvedBy: 'the user, in the brief: "go, two images, 2K"',
-  estimatedCostUsd: 0.101,
+  estimatedCostUsd: 0.0504,
   disclosure: 'Generated with Gemini; carries an invisible SynthID mark; platform label: none required for this placement, checked 2026-10-09.',
   ...extra,
 });
@@ -134,7 +134,7 @@ describe('the provenance file beside each image', () => {
     expect(status).toBe(0);
     expect(report.findings).toEqual([]);
     expect(report.calls).toBe(2);
-    expect(report.costUsd).toBeCloseTo(0.202, 5);
+    expect(report.costUsd).toBeCloseTo(0.1008, 5);
   });
 
   it('finds an image with no file, a file that names another image, and a file with missing fields', () => {
@@ -240,7 +240,7 @@ describe('the command line', () => {
     expect(r.stdout).toMatch(/^hero-a1\.png +png +1856 x 2304 +4:5 +\d+ B +sha256:[0-9a-f]{12} +provenance ok$/m);
     expect(r.stdout).toMatch(/^wide-a1\.png +png +2048 x 2048 +1:1 +\d+ B +sha256:[0-9a-f]{12} +provenance ok$/m);
     expect(r.stdout).toMatch(/^wide-a1\.png +ratio +asked 16:9, got 2048 x 2048 \(1:1\)/m);
-    expect(r.stdout).toMatch(/checked 2 images; 1 finding \(ratio 1\); 2 calls recorded, estimated cost 0\.20 USD/);
+    expect(r.stdout).toMatch(/checked 2 images; 1 finding \(ratio 1\); 2 calls recorded, estimated cost 0\.10 USD/);
   });
 
   it('walks sub-folders and lists files in name order', () => {

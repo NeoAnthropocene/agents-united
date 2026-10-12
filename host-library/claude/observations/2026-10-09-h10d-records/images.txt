@@ -1,0 +1,4 @@
+The pictures of the two runs that made one (not kept in the repository: only their size, dimensions and hash).
+h10d2  feed-hero-sitter-dog-sofa-4x5-v1.jpg  3219384 bytes  1856 x 2304  sha256 1f0ee432d0e93e772eb961cda6ee97e10a0cb9c975a3714bcd8f014806706715
+h10d3  feed-hero-variation-01.jpg  2704463 bytes  2048 x 2048  sha256 ac88c67a4f81f4d99f7d0c0895cad7a7c88b4f24186bf2f9548ca10cef71844e
+h10d3 input  shoot.jpg  693 bytes  64 x 64  sha256 62377cb9f620ef5d1c1103ad7c3c7a78e06ddd4be32334b0da6efcf0694ffa9b

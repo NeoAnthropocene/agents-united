@@ -696,6 +696,11 @@
       "recoveredAt": "2026-10-08",
       "skill": "image-creation"
     },
+    "image-generation": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-09",
+      "skill": "image-generation"
+    },
     "interaction-pattern-library": {
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",

@@ -1,0 +1,11 @@
+{
+ "prompt": "A variation of the supplied reference image: keep its warm beige, softly textured surface and muted palette, reimagined as a clean, premium advertising backdrop with gentle directional light, subtle depth and a calm, uncluttered composition with generous empty space in the centre and lower third for an overlay added later. No text, no logos, no people, no faces.",
+ "inputImagePaths": [
+  "C:\\github\\scratch-pilot\\h10d-local-test\\Downloads\\shoot.jpg"
+ ],
+ "provider": "gemini",
+ "imageSize": "2K",
+ "aspectRatio": "1:1",
+ "purpose": "Hero background for a 1:1 social feed ad",
+ "fileName": "feed-hero-variation-01.png"
+}

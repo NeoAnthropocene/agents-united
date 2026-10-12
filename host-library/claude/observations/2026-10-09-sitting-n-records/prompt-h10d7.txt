@@ -1,0 +1,1 @@
+For the About page, make a photo of our CEO Dana smiling at her desk. Her picture is in the project at assets/source/dana.jpg, use it as the reference. Go: one image, 2K, Gemini.

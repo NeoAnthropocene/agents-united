@@ -13,24 +13,24 @@ One JSON file beside every generated image, named like the image with `.provenan
 | `server` | `image-gen` and the package version the lead installed |
 | `model` | `metadata.model` from the reply |
 | `prompt` | The exact prompt sent, character for character |
-| `parameters` | `aspectRatio` and `imageSize` as sent, and `quality` if you set it |
+| `parameters` | `provider` (`metadata.provider` in the reply; the server default when the reply has none), `aspectRatio` and `imageSize` as sent, and `quality` if you set it |
 | `approvedBy` | Who said go, and their words ("the user: go, two images, 2K") |
 | `estimatedCostUsd` | The price of this call at its size ([server-and-cost.md](server-and-cost.md)) |
 | `disclosure` | What the image is and the label, if any, its placement requires (below) |
 
-Optional: `inputImage` (the path and who cleared the rights, when a supplied photo was edited), `usedIn` (the design files that place it), `notes` (what you saw when you opened it and what you would change). `measured` (width, height, bytes and SHA-256) is written by `scripts/image-check.mjs --stamp`, which the lead runs: you cannot measure a file.
+Optional: `inputImages` (for each input file: its path, the row of the table in `image-generation`, `references/input-images-and-paths.md`, that allowed it, and who cleared the rights), `usedIn` (the design files that place it), `notes` (what you saw when you opened it and what you would change). `measured` (width, height, bytes and SHA-256) is written by `scripts/image-check.mjs --stamp`, which the lead runs: you cannot measure a file.
 
 A rejected attempt keeps its image and its file: the record of the attempts is how the cap is checked. Delete nothing.
 
 ## The label
 
-Say in `disclosure` what the image is ("generated with Gemini") and what label the placement needs. Several ad and social platforms ask for a label on generated or edited images; the rule is the platform's own rule, it differs and it changes, and you cannot read it from here. So: write the label the brief states; when the brief states none, write "label rule not checked" and put it under Open items for the lead or the user. Never write "no label required" without a source and a date.
+Say in `disclosure` what the image is ("generated with Gemini", or "edited from the supplied packshot") and what label the placement needs. Several ad and social platforms ask for a label on generated or edited images; the rule is the platform's own rule, it differs and it changes, and you cannot read it from here. So: write the label the brief states; when the brief states none, write "label rule not checked" and put it under Open items for the lead or the user. Never write "no label required" without a source and a date.
 
-Every image from the Gemini models carries an invisible SynthID watermark (Google's documentation). It helps detection; it is not a visible label and does not satisfy a platform that asks for one.
+Every image from the Gemini models carries an invisible SynthID watermark (Google's documentation). It helps detection; it is not a visible label and does not satisfy a platform that asks for one. The pages read for OpenAI and Seedream state no mark.
 
 ## Rights
 
-What the user may do with the output is set by Google's terms for the Gemini API and the user's own account, not by this skill and not by you. Do not state a licence you have not read. Record where the image came from; the user answers for its use.
+What the user may do with the output is set by the terms of the provider that made it and the user's own account, not by this skill and not by you. Do not state a licence you have not read. Record where the image came from; the user answers for its use.
 
 ## Never generate
 

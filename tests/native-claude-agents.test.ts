@@ -82,7 +82,8 @@ const ROLES: RoleSpec[] = [
   // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).
   ...[
     { name: 'agency-growth-strategist', stem: 'subagent-marketing-growth-strategist', serverTools: withRoutes(['mcp__firecrawl']) },
-    { name: 'agency-creative-designer', stem: 'subagent-marketing-creative-designer', serverTools: withRoutes(['mcp__figma', 'mcp__stitch']) },
+    // Plan 036 S19 (ADR 0049): the image route is the one tool of the optional `image-gen` server, not the server (least privilege; the server has one tool today and may gain others).
+    { name: 'agency-creative-designer', stem: 'subagent-marketing-creative-designer', serverTools: withRoutes(['mcp__figma', 'mcp__stitch', 'mcp__image-gen__generate_image']) },
     { name: 'agency-conversion-specialist', stem: 'subagent-marketing-conversion-specialist', serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__playwright']) },
   ].map(
     (spec): RoleSpec => ({

@@ -88,30 +88,39 @@ claude mcp add --scope local figma --env FIGMA_ACCESS_TOKEN=<your-token> -- npx 
 
 ## Photographic images: the optional `image-gen` server
 
-An optional extra for the creative designer, never part of the required list: the doctor, the install gate and the Antigravity sync do not know it. It gives her one tool, `mcp__image-gen__generate_image`, which makes an image with Google's Gemini models from the user's AI Studio key and saves it in the project. Offer it only when a plan holds photograph-like assets that nobody supplied and the user wants them generated. Once it is connected, the designer follows the skill `image-creation`.
+An optional extra for the creative designer, never part of the required list: the doctor, the install gate and the Antigravity sync do not know it. It gives her one tool, `mcp__image-gen__generate_image`, which makes an image with the models of Google (Gemini, the default), OpenAI or BytePlus (Seedream), from the user's own keys, and saves it in the project. Offer it only when a plan holds photograph-like assets that nobody supplied and the user wants them generated. Once it is connected, the designer follows two skills: `image-creation` (whether to generate, the look, the record) and `image-generation` (the rules, the provider, the call).
 
-The server must be named `image-gen`: the role's grant names it, and any other name leaves her without the tool. The lead never runs it and never asks for the key in the chat. It prints this command with its placeholders, and the user runs it in their own terminal, with a key from `aistudio.google.com/apikey` in a project that has billing:
+The server must be named `image-gen`: the role's grant names it, and any other name leaves her without the tool. The lead never runs it and never asks for a key in the chat. It asks which provider keys the user has, prints this command with the placeholders of those providers, and the user runs it in their own terminal. The base command is for Gemini, with a key from `aistudio.google.com/apikey` in a Google project that has billing:
 
 ```bash
-claude mcp add --scope local image-gen --env GEMINI_API_KEY=<your-ai-studio-key> --env IMAGE_PROVIDER=gemini --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.14.0
+claude mcp add --scope local image-gen --env GEMINI_API_KEY=<your-ai-studio-key> --env IMAGE_PROVIDER=gemini --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.18.0
 ```
 
-`--scope local` keeps the key in the user's own file and the server out of the `.mcp.json` that is shared with the team. Write the path in the form of the user's shell (`C:\work\petpal\assets\generated` in PowerShell, `C:/work/petpal/assets/generated` in Git Bash).
+To wire another provider, add one `--env` pair for each other provider the user has a key for, before the `--`:
+
+| Provider | Pair to add | Where the user gets the key, and what the account needs |
+|---|---|---|
+| OpenAI | `--env OPENAI_API_KEY=<your-openai-key>` | `platform.openai.com/api-keys`; billing; the GPT Image models may need organization verification at OpenAI |
+| BytePlus Seedream | `--env ARK_API_KEY=<your-byteplus-ark-key>` | `console.byteplus.com`, ModelArk, an API key made in the AP region (ap-southeast-1); billing |
+
+Set `IMAGE_PROVIDER` to the provider used when a call names none: `gemini` (stated in the base command), `openai` or `seedream`. A user with no Gemini key leaves out the Gemini pair and sets `IMAGE_PROVIDER` to the provider they have. A call that names a provider without its key fails with a message that asks for that key and a restart: that is the lead's to fix with this section, never the designer's.
+
+`--scope local` keeps the keys in the user's own file and the server out of the `.mcp.json` that is shared with the team. Write the path in the form of the user's shell (`C:\work\petpal\assets\generated` in PowerShell, `C:/work/petpal/assets/generated` in Git Bash).
 
 | Setting | Why |
 |---|---|
-| `GEMINI_API_KEY` | The user's AI Studio key. Their project is billed per image |
-| `IMAGE_PROVIDER=gemini` | The default, stated, so that the route is in the command |
-| `SKIP_PROMPT_ENHANCEMENT=true` | The server would otherwise rewrite the designer's prompt with a second Gemini call. Off, the prompt she writes is the prompt that is sent and recorded, and an image costs one call |
+| `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ARK_API_KEY` | The user's own keys, one for each provider they chose. Each account is billed per image |
+| `IMAGE_PROVIDER=gemini` | The provider used when a call names none, stated so that the route is in the command |
+| `SKIP_PROMPT_ENHANCEMENT=true` | The server would otherwise rewrite the designer's prompt with a second model call. Off, the prompt she writes is the prompt that is sent and recorded, and an image costs one call (Seedream still optimises the prompt on BytePlus's side) |
 | `IMAGE_OUTPUT_DIR` | Absolute, and inside the project. The designer holds no shell and cannot move a file, so the picture has to land where the design can use it. The server creates the folder and overwrites a file of the same name |
 
-**Why this version.** `mcp-image@0.14.0` (MIT, one maintainer, Node 22 or later) was published 2026-09-08, the newest release older than two weeks on 2026-10-08; 0.15.0 to 0.18.0 were published between 2026-10-05 and 2026-10-08. It has no install script and no npm provenance attestation, and its dependencies (`@google/genai`, `openai`, `@modelcontextprotocol/sdk`) are ranges that `npx` resolves on the day. Read, not run: `package.json`, the entry points, the configuration, the Gemini client, the file manager, the security manager, the input validator, the tool handler and the response builder of 0.14.0, and a search of every `.js` file in the package for subprocess, `eval`, network, environment and file use. Its own code reads only the settings above and `NODE_ENV`; it starts no process; it reaches Google through the Google SDK, and the OpenAI and Seedream clients (one `fetch`, to BytePlus) run only when that provider is chosen and its key is set, which neither is. It reads a file only when a call names an input image (PNG, JPEG or WebP, at most 10 MiB), which then goes to Google, and it writes one image per call into `IMAGE_OUTPUT_DIR`. Not run here: it needs the user's key, so no call was made. Refresh the pin as for the others: `npm view mcp-image version time`, read what changed, then change this section and its test together.
+**Why this version.** `mcp-image@0.18.0` is the number the `latest` tag pointed to on 2026-10-09 (published 2026-10-08). The maintainer asked for the latest tag on that day; it is pinned to the number and not to the floating tag, so that a later release cannot run with the user's keys before anyone has read it. (The first pin, 0.14.0, followed the rule "the newest release older than two weeks"; the maintainer replaced that rule.) MIT, one maintainer, Node 22 or later, no install script, no npm provenance attestation; three dependencies (`@google/genai`, `openai`, `@modelcontextprotocol/sdk`), the same three as 0.14.0, as ranges that `npx` resolves on the day. Read, not run: the diff of its `dist` against 0.14.0 (three new small modules for reference images and eleven changed files, mostly for reference images and a newer default Gemini model), and a search of every `.js` file in the package for subprocess, `eval`, network, environment and file use. It starts no process; it reaches Google and OpenAI through their SDKs and BytePlus with one `fetch` (`ark.ap-southeast.bytepluses.com`); it reads a file only when a call names input images (`inputImagePaths`: PNG, JPEG or WebP, at most 10 MiB each), which go to the provider; it writes one image per call into `IMAGE_OUTPUT_DIR`. **It has no check that the path is inside the project**: it resolves links and asks for an absolute path, an image extension and a regular file, and nothing more, so the rule for input files is the skill `image-generation`'s (`references/input-images-and-paths.md`). Its command line has a `skills install` that copies a skill folder; the server never runs it and nothing here uses it. Not run here: it needs the user's keys, so no call was made. Refresh the pin as for the others: `npm view mcp-image version time`, read what changed, then change this section and its test together.
 
-**Cost.** Image models have no free tier: the key's project needs billing, and each call is charged (about $0.07 to $0.15 on the default model, twice that on `quality`). The table and the arithmetic are in the `image-creation` skill (`references/server-and-cost.md`). Suggest a budget alert on the project.
+**Cost.** Image models have no free tier at any of the three providers: each account needs billing, and each call is charged. Gemini costs about $0.03 to $0.24 an image depending on the model and the size, Seedream $0.045 or $0.09, and OpenAI is billed by token with no published price per image (its first image is a probe). The dated table and the arithmetic are in the `image-generation` skill (`references/providers.md`). Suggest a budget alert on each account.
 
 **Check.** After the restart below, `claude mcp get image-gen` shows it, and `ToolSearch` must list `mcp__image-gen__generate_image`: a server that is not listed is not usable. Report what was seen. A running session does not load a server added after it started.
 
-**Undo.** `claude mcp remove image-gen --scope local`, and revoke the key in AI Studio when it is no longer wanted.
+**Undo.** `claude mcp remove image-gen --scope local`, and revoke the keys at their providers when they are no longer wanted.
 
 ## Check an install
 

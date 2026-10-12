@@ -1,0 +1,3 @@
+error  input-outside-project  inputImagePaths[0]  C:\github\scratch-pilot\h10d-local-test\Downloads\shoot.jpg is outside the project (C:\github\scratch-pilot\h10d-local-test\h10d3-outside). The server would read and send it all the same; ask the user to put a copy in assets/source/ instead.
+estimate: gemini gemini-nano-banana-2.1, 1 image: $0.0504 each, $0.0504 in all, $0.1512 at most (3 calls per asset). Input images add a small token charge; useGoogleSearch adds $14 per 1,000 searches beyond the 5,000 free each month.
+exit 1

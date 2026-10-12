@@ -36,6 +36,8 @@ Independent read-only review of the frozen source, tests, manifest and documenta
 
 ## Limits
 
+**Integration follow-up, 2026-10-12:** #194 and #196 are now merged. [The dev-integration record](dev-integration-2026-10-12/README.md) supersedes the October 9 candidate results for PR #195's conflict repair while preserving those earlier outputs. New end-user image assets remain intact; `full` now holds 194 skills.
+
 These are deterministic local checks and CLI simulations, not live native factory evidence. The shell contains no authoring role, skill, workflow or rule; per-host factory support and managed local-source installation remain unavailable. No host session was started, resumed or rerun and no new spend was incurred.
 
 R3 is carried unchanged: seven expectations seen, Defne completion unverified, five fixed-value brief violations. Claude Pro, extra usage off; aggregate **3.7228101 USD**, remaining **46.2771899 USD**; headless **0/16**, interactive **2/16 conservatively**. Plan 036 evidence and allowance are separate.

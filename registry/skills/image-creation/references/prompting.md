@@ -17,6 +17,8 @@ The model reads a description of a scene better than a list of keywords. Write s
 
 The provider's own guidance says the same: be hyper-specific, give the purpose, use photographic language for the camera, and describe the scene you want instead of listing what to leave out (a semantic negative: "an empty, deserted street" instead of "no cars").
 
+The recipes for sixteen cases (a copy zone, a banner, a story, food, an interior, a texture, an unnamed person, an illustration, an edit of a supplied photograph, a style reference, a blend, a variation, a set across ratios, a grounded scene, short text, another provider) are in the skill `image-generation`, `references/prompt-recipes.md`. This file keeps the parts, the placements and the weak and better prompt.
+
 ## What to leave out of every prompt
 
 - Text, letters, numbers or a slogan: raster text drifts. The copy is an SVG or HTML overlay on a clean region (the copy zone).
@@ -27,7 +29,7 @@ The provider's own guidance says the same: be hyper-specific, give the purpose, 
 
 ## One placement, one ratio, one size
 
-Pick the ratio from the placement. Pick the smallest `imageSize` whose pixel width is at least the placement's width; use 1K to explore and 2K to ship. The pixel sizes are the provider's, read on 2026-10-08, and are the same for the three models.
+Pick the ratio from the placement. Pick the smallest `imageSize` whose pixel width is at least the placement's width; use 1K to explore and 2K to ship. The pixel sizes are Gemini's, read on 2026-10-09 from Google's size table; OpenAI and Seedream return their own sizes, so measure (the lead's `image-check` finds a ratio that came back wrong).
 
 | Placement | aspectRatio | imageSize | Pixels at that size |
 |---|---|---|---|

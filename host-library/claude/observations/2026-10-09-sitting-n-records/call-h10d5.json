@@ -1,0 +1,11 @@
+{
+ "prompt": "Edit the supplied photograph into a variation of the same scene. Keep the woman, the golden retriever, the sofa, cushions, knitted throw, plant, window, warm late-afternoon light, colours, framing and composition exactly as they are. Make two changes only. First, remove the thin dark lines along the left, right and bottom edges so the picture runs cleanly to the edge of the frame with no border or film-edge. Second, replace the open doorway on the right side, with the cluttered room visible through it, with plain continuous cream wall in the same tone, texture and lighting as the wall beside it, with no door frame, no opening and no objects.",
+ "inputImagePaths": [
+  "C:\\github\\scratch-pilot\\h10d-local-test\\h10d5-edit\\assets\\generated\\feed-hero-sitter-dog-sofa-4x5-v1.jpg"
+ ],
+ "provider": "gemini",
+ "aspectRatio": "4:5",
+ "imageSize": "2K",
+ "fileName": "feed-hero-sitter-dog-sofa-4x5-v2",
+ "purpose": "Paid social feed ad hero, 4:5, upper area left calm for a text overlay"
+}
