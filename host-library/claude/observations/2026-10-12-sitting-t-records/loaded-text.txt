@@ -1,0 +1,39 @@
+the Sitting T folders were built from the clone at bedad6a (the branch of PR 198 after the amended hook: verify-installed, all 20 files equal; the installed hook and the lead file equal the clone's apart from the managed-by header); this is what the lead held in them.
+
+== The lead, Photographs paragraph: what it says about reads of the prices that are held
+- If a read of the prices is held by the mode-line hook, write the line and repeat the read (see "The first message"): a hold is never a reason to wait.
+
+== The lead, "The first message" section: what it says about a hold and a retry
+- Your first other call is in the third message: the host has saved the line by then, so the hook holds nothing and the user sees no error (ADR 0051).
+- A hook holds your calls other than `ToolSearch` until the mode line is visible in the saved transcript, with the message "Mode line first": the host cannot see the message you are writing, so a line written in this response may not be saved yet.
+- A retry can be held again while the transcript lags; elapsed time alone never releases it.
+
+== The lead, "The first message" section: what it says to do with a hold, by what the lead has written
+- Your second message opens with the mode line, as a text block, then the introduction, and holds one `ToolSearch` that checks for and loads the task tools and `SendMessage` (`select:TaskCreate,TaskList,TaskUpdate,SendMessage`, see "The shared task list") and no other call.
+- A message with a `ToolSearch` and no text block is a mistake: the line is a text block of that message and not a thought (observed on 2.1.296 in two sessions: the second message held the `ToolSearch` and the line only in the lead's reasoning, and its first other call was then held 11 and 13 times).
+- The line must be a text block of your reply, since your reasoning is not text and the hook reads only text (observed on 2.1.296: a lead wrote the line in its reasoning three times and was held each time; after a fourth hold, with the line in a text block, it ended its turn and asked the user to reply).
+- The message of the hold says what to do, and you do what it says: the first time, write the line as the first line of a text block in the same message as the call you repeat, even if you believe you wrote it already; the second time, repeat the call alone, with no text, if your last message opened a text block with the line, and write the line if it did not; from the third time, write it again.
+- Never tell the user that the hook is broken, and never suggest that they disable or edit it: it reads text blocks only.
+- When you meet it, look at your last message: a line that you thought but did not write as a text block is not written (observed on 2.1.292: a lead claimed "my last message already began with the mode line" after a message with no text, and repeated its call; observed on 2.1.296 in Sittings Q and S: a lead wrote "I wrote the line twice" and had written it only in its reasoning, and was held 6, 11 and 13 times).
+
+== The lead, "The first message" section: any sentence that says not to stop, not to ask or not to wait on a hold
+- A hold is not a failure and not a reason to stop: do not end your turn to get the line saved, do not ask the user and do not wait for a reply.
+
+
+== The designer, "Generated pictures": the clause about the record (and whether it says what an `inputImages` entry carries)
+- write `<image>.provenance.json` for every image with every key of `.claude/skills/image-creation/assets/provenance-template.json` and its cost as a number from the price table, list every input file under `inputImages` with its path, the row of the table in `image-generation` that allowed it and who cleared the rights, and keep the label its placement requires
+- says what an inputImages entry carries: yes
+
+== The mode-line hook installed in the folder, replayed on a transcript that holds no line (the final transcript of H10k2 in Sitting S), three holds in a row: the whole message of each
+hold 1: exit 2; Mode line first. This is an expected hold, not a failure. Before this call, write the mode line as the first line of your text, filled in:
+    Mode: <Fully Operational or Limited Operational>. Callable: <the required integrations you can call, or none>. Missing: <the required integrations you cannot call, or none>. Extras: <MarkItDown and Stitch, only those you can call, or none>.
+    Your definition asks for it under "The first message", and the host cannot see the message you are writing. Calls stay held until the mode line is visible in the saved transcript. A retry can be held again while the transcript lags; elapsed time alone never releases it.
+    A hold is not a reason to stop: do not end your turn, do not ask the user and do not wait for a reply. The line must be a text block of your reply: your reasoning is not text, and neither the hook nor the user sees it. Write the line as the first line of a text block in the same message as the call you repeat, even if you believe you wrote it already.
+hold 2: exit 2; Mode line first. This is an expected hold, not a failure (hold 2).
+    If your last message opened a text block with the mode line, the host has not saved it yet: repeat the call alone, with no text. If it did not (your reasoning is not text), write the line as the first line of a text block in the same message as the call you repeat, filled in:
+    Mode: <Fully Operational or Limited Operational>. Callable: <the required integrations you can call, or none>. Missing: <the required integrations you cannot call, or none>. Extras: <MarkItDown and Stitch, only those you can call, or none>.
+    Do not stop, do not ask the user and do not wait for a reply.
+hold 3: exit 2; Mode line first. This is an expected hold, not a failure (hold 3).
+    The saved transcript has 4 text block(s) of yours and none opens with the mode line; your reasoning is not text. Write the line now as the first line of a text block in the same message as the call you repeat, even if you believe you wrote it already, filled in:
+    Mode: <Fully Operational or Limited Operational>. Callable: <the required integrations you can call, or none>. Missing: <the required integrations you cannot call, or none>. Extras: <MarkItDown and Stitch, only those you can call, or none>.
+    Do not stop, do not ask the user, do not wait for a reply, and do not tell the user that the hook is broken: it reads text blocks only.

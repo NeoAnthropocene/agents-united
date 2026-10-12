@@ -211,7 +211,7 @@ describe('the Sitting T observation: the grading', () => {
     expect(o).toMatch(/a subagent inherits the MCP tools of the main conversation/);
     expect(o).toMatch(/Five servers were connected and the lead's pool held the tools of two/);
     expect(o).toMatch(/The lead told the user to expect an approval prompt that a local server does not have/);
-    expect(o).toMatch(/The restart commands carried neither `--model sonnet` nor the two team variables/);
+    expect(o).toMatch(/the first restart carried no `--model sonnet`, and neither restart set the task-list variable/);
     expect(o).toMatch(/The image route had only ever been run with Jamileh as the main agent/);
   });
 

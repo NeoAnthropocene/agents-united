@@ -143,7 +143,8 @@ const ROLES: RoleSpec[] = [
     guard: 'destructive',
     permissionMode: 'acceptEdits',
     skills: [],
-    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch']),
+    // Sitting T (2026-10-12): the lead holds the one image tool too, so that Jamileh's pool has it. A teammate gets the MCP tools of the main conversation, and the main conversation of `--agent` is cut to this list; the lead never calls the tool (ADR 0049).
+    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch', 'mcp__image-gen__generate_image']),
     mutating: true,
     // The lead of an Agent Team: the roster allowlist, the user, the shared task list, schedules and watchers; no workflows (the bundle has none).
     mustHold: ['Agent', 'AskUserQuestion', 'SendMessage', 'Skill', 'TaskCreate', 'TaskList', 'TaskUpdate', 'Bash', 'Edit', 'Write', 'CronCreate', 'Monitor', 'PushNotification', 'ToolSearch'],
