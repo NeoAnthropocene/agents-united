@@ -1,0 +1,284 @@
+H10k evidence: h10k2 (h10k2-gemini)
+
+== The session
+file ccb31540-7603-470f-a6da-42768e0d7aec.jsonl (239 records), session ccb31540-7603-470f-a6da-42768e0d7aec
+Claude Code 2.1.295
+from 2026-10-09T15:29:14.929Z to 2026-10-12T05:48:50.986Z (224376 s; a long gap means the session sat idle)
+tokens, once for each API message: lead 32 messages, 13602 out, 169783 written to the cache, 2537890 read from the cache; about 1.32 USD
+  teammate ava      Ava strategy slice                         5144 out   51818 cache-write   404724 cache-read  about 0.34 USD
+  teammate defne    Defne compliance review                    7439 out   70163 cache-write   331192 cache-read  about 0.42 USD
+  teammate jamileh  Jamileh consultation on ad set             1362 out   41579 cache-write   108884 cache-read  about 0.20 USD
+  teammate jamileh  Jamileh layouts slice                     31114 out  176091 cache-write   607336 cache-read  about 1.14 USD
+  teammate kaan     Kaan ad copy slice                         4213 out   44345 cache-write   324171 cache-read  about 0.28 USD
+estimated cost of the session with its 5 teammate transcript(s): 3.71 USD (lead 1.32, teammates 2.38). The record holds no dollar figure: this is an estimate from per-token prices fitted on headless runs (10.01 output, 4 cache write, 0.2 cache read per million), not a bill. Take the line of /cost that you copied, or your usage page.
+
+== What you typed (4 message(s) of yours, in order; 12 teammate notice(s) are left out)
+1 +   0s  Scratch exercise, no real client. Plan the PetPal paid-social set from `docs/pilot`: a 4:5 feed ad, a 9:16 story and a 1.91:1 link ad, each with a warm, natural photograph of a sitter and a dog on a sofa as its hero. No photography is supplied. Do not start any teammate until I have chosen how the pictures are made.
+2 +  57s  option 1
+3 + 118s  yes accapted
+4 +224097s  resume
+
+== Everything the lead did and said before the choice was asked (its figures should be here, or in the options of the question)
+calls held by the mode-line hook in the whole session: 5 (an expected hold, but it can push the lead into a text-only turn)
++   3s  tool ToolSearch {"query":"github","max_results":5}
++   3s  tool ToolSearch {"query":"firecrawl","max_results":5}
++   3s  tool ToolSearch {"query":"context7","max_results":5}
++   4s  tool ToolSearch {"query":"playwright","max_results":5}
++   4s  tool ToolSearch {"query":"chrome-devtools","max_results":5}
++   4s  tool ToolSearch {"query":"figma","max_results":5}
++   5s  tool ToolSearch {"query":"markitdown","max_results":3}
++   5s  tool ToolSearch {"query":"select:TaskCreate,TaskList,TaskUpdate,SendMessage","max_results":5}
++  12s  tool Glob {"pattern":"docs/pilot/**/*"}
++  12s  tool Skill {"skill":"image-generation"}
++  14s  the lead says:
+    Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+    
+    I'm retrying the two calls with the line in this message.
++  15s  tool Glob {"pattern":"docs/pilot/**/*"}
++  15s  tool Skill {"skill":"image-generation"}
++  20s  tool Glob {"pattern":"docs/pilot/**/*"}
++  30s  the lead says:
+    Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+    
+    I'm Chris, lead of the AstrolabsAI team: Ava (growth), Kaan (copy), Jamileh (creative), Yavuz (content), Jale (campaigns), Selin (SEO), Deniz (frontend), Emre (QA) and Defne (compliance).
+    
+    I haven't started anyone, and I haven't read `docs/pilot` yet. A mode-line hook is holding my file and skill calls. It says it can't see the line in the saved transcript, and it has refused three retries. This message is a text-only turn so the line gets saved. Send any short reply, such as "go", and I'll read the brief and price the picture options.
+    
+    **The decision I need from you.** All three ads need the same hero: a warm, natural photograph of a sitter and a dog on a sofa. Nobody has supplied one. How should the pictures be made?
+    
+    1. **Jamileh's own route (nothing to install, nothing to pay).**
+       - She draws what code can draw.
+       - For each photograph she leaves a marked placeholder frame and an image brief. The brief covers subject, framing, light, mood, what it must not contain and rights.
+       - A photographer, a stock licence or an image tool fills the frames later.
+    2. **Generate with Gemini, Seedream or OpenAI.**
+       - You pay the provider through your own API key.
+       - Every prompt goes to the provider you pick.
+       - You run one command in your own terminal with your key. I never ask for the key and never see it.
+       - Then the team restarts.
+       - Image count: probably three, one per placement (4:5, 9:16, 1.91:1). Generating one hero and cropping it is cheaper, but the sitter and dog would sit awkwardly across the three ratios.
+       - Cost: I'll give per-provider prices and the most it could cost once I've read the pricing table.
+    
+    I'd lean towards Jamileh's own route for a scratch exercise. Once you choose, I'll consult one specialist read-only, then present the delegation map for your approval before any deliverable is made.
+
+== The question: 0 call(s) of AskUserQuestion (want exactly 1 offer, before any teammate)
+The lead asked no AskUserQuestion. If it asked in prose (above), that is a deviation: no selection list, and the user types a reply.
+the answer, typed in reply to the prose question at +  57s: "option 1"
+
+== After the answer (the lead's messages and tool calls)
++  62s  the lead says:
+    Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+    
+    You chose Jamileh's own route. She'll leave placeholder frames and image briefs, and no image server is needed. I'm reading the brief now.
++  62s  tool Glob {"pattern":"docs/pilot/**/*"}
++  64s  tool Read {"file_path":"C:\\github\\scratch-pilot\\h10d-local-test\\h10k2-gemini\\docs\\pilot\\design-tokens.json"}
++  64s  tool Read {"file_path":"C:\\github\\scratch-pilot\\h10d-local-test\\h10k2-gemini\\docs\\pilot\\hero.ts"}
++  71s  the lead says:
+    Next is the read-only consultation, with Jamileh. It writes no files and claims no task.
++  74s  tool Agent {"description":"Jamileh consultation on ad set","name":"jamileh","subagent_type":"agency-creative-designer","prompt":"CONSULTATION ONLY: write no files, claim no task. Reply with a scope-of-work statement in at most 120  ...[+924 characters]
++  76s  the lead says:
+    I've asked Jamileh for a read-only consultation, and I'm waiting for her answer. She is the only teammate running, and she has no task and writes no files. I'll put her answer into the delegation map for you to approve.
++  97s  tool SendMessage {"to":"jamileh","message":{"type":"shutdown_request","reason":"Consultation delivered, thank you. First run ToolSearch with select:SendMessage, then reply with one SendMessage to team-lead whose message is an object, not ...[+226 characters]
++ 106s  the lead says:
+    Jamileh's consultation is in, and I've asked her to shut down. I haven't created any deliverable, and nobody else is running.
+    
+    ## Proposed delegation map (nothing starts until you accept)
+    
+    **Photographs:** Jamileh's own route. Each ad gets a marked PLACEHOLDER frame, and one image brief covers the sofa photograph. No generation and no image server are involved.
+    
+    | # | Slice | Type | Owned files | Acceptance evidence | Depends on |
+    |---|---|---|---|---|---|
+    | 1 | Strategy and angle choice: which of the trust, comfort and proof hooks leads each format | `agency-growth-strategist` (Ava) | `docs/pilot/strategy.md` | One-page angle ranking with ICE scores | none |
+    | 2 | Copy: per-format headline, subhead and CTA as typed props, with the invented figures kept as flagged fictional | `agency-conversion-specialist` (Kaan) | `docs/pilot/ad-copy.ts` | Typed props that keep `hero-primary-cta` and `color.cta.primary` | 1 |
+    | 3 | Creative: three layouts (HTML/CSS and SVG) with placeholder frames, one `image-briefs.md` (subject, framing, light, mood, must-not-contain, rights), a contrast table, and a scrim token proposal | `agency-creative-designer` (Jamileh) | `assets/petpal-{4x5,9x16,1.91x1}.{html,svg}`, `assets/image-briefs.md` | Contrast table (white on clay about 5.5:1), safe zones respected, placeholders marked | 1, 2 |
+    | 4 | Claims and disclosure review: the 4.9 rating, 12,000 stays, $1M insurance and "background-checked" are fictional. Check the on-canvas labelling and the rights basis for the future photo. | `agency-compliance-grc-specialist` (Defne) | `docs/pilot/compliance-review.md` | Findings table with an owner for each | 3 |
+    
+    **Not mapped:**
+    - Deniz, Selin, Emre and Jale are not needed. These are static ad files, not a built page or a campaign sequence.
+    - Playwright and Chrome DevTools aren't connected, so there is no browser-run QA. Defne's review is the only gate.
+    
+    **Order:** Ava, then Kaan, then Jamileh, then Defne. Teammates run one at a time because each slice needs the previous output. There are no parallel slices, so I'd start with Ava.
+    
+    **Two things I need from you, from Jamileh's consultation:**
+    1. Confirm the figures are placeholders only. I'd keep them marked fictional on the canvas.
+    2. What is the rights basis for the future photo? Examples are a commissioned shoot, a stock licence, or a generated image in a later round. I can leave this as "to be decided" in the image brief.
+    
+    **Her main layout notes:**
+    - 9:16 needs about 250 px clear at top and bottom.
+    - The 96 px headline token is for 1080-wide canvases, so it has to be rescaled for the 1.91:1 ad.
+    - Text over the photo needs a scrim, and the tokens don't define one.
+    
+    Do you accept this map? If you want any slice changed, tell me which. If you accept it, say so and answer the two questions above, or tell me to go with the defaults.
++ 110s  the lead says:
+    Jamileh has approved the shutdown, so no teammate is running now. The delegation map above is still waiting for your decision. I haven't created any files or started anyone else.
+    
+    To go ahead, I need three things from you:
+    1. Accept the map, or tell me which slice to change.
+    2. Confirm the figures (4.9 rating, 12,000 stays, $1M insurance) are placeholders only. If you say nothing, I'll keep them marked fictional on the canvas.
+    3. Say what the rights basis for the future photograph is. If you say nothing, I'll leave it as "to be decided" in the image brief.
++ 118s  you typed: yes accapted
++ 123s  tool TaskCreate {"subject":"Strategy and angle ranking (Ava)","description":"docs/pilot/strategy.md: rank trust/comfort/proof hooks per format with ICE scores."}
++ 123s  tool TaskCreate {"subject":"Ad copy as typed props (Kaan)","description":"docs/pilot/ad-copy.ts: per-format copy, figures flagged fictional."}
++ 124s  tool TaskCreate {"subject":"Three ad layouts with placeholder frames (Jamileh)","description":"assets/petpal-{4x5,9x16,1.91x1}.{html,svg}, assets/image-briefs.md, contrast table, scrim token proposal."}
++ 125s  tool TaskCreate {"subject":"Claims and disclosure review (Defne)","description":"docs/pilot/compliance-review.md: fictional figures labelling, rights basis, findings table."}
++ 128s  tool TaskUpdate {"taskId":"2","addBlockedBy":["1"]}
++ 128s  tool TaskUpdate {"taskId":"3","addBlockedBy":["1","2"]}
++ 129s  tool TaskUpdate {"taskId":"4","addBlockedBy":["3"]}
++ 129s  tool TaskUpdate {"taskId":"1","owner":"ava"}
++ 137s  tool Agent {"description":"Ava strategy slice","name":"ava","subagent_type":"agency-growth-strategist","prompt":"You are the teammate \"ava\" (Ava), type agency-growth-strategist.\nObjective: for PetPal (fictional scratch client, p ...[+939 characters]
++ 140s  the lead says:
+    The map is accepted and the work has started. I used the defaults for your two open questions: the figures stay marked fictional, and the photo's rights basis is "to be decided" in the image brief.
+    
+    - **Task list:** the four tasks are created in order, Ava, then Kaan, then Jamileh, then Defne. Each one is blocked by the one before it.
+    - **Running now:** Ava, on task #1. She writes only `docs/pilot/strategy.md`.
+    - **Next:** when Ava reports, I'll start Kaan, then Jamileh, then Defne, one at a time.
+    - **Photographs:** Jamileh's own route, as you chose. The three ads get placeholder frames and image briefs, and no image is generated.
++ 142s  the lead says:
+    Jamileh has shut down, as expected. That was the consultant instance, and I'll spawn a fresh Jamileh for task #3 when it unblocks. Ava is still working on task #1, and I'm waiting for her report before I start Kaan.
++ 195s  tool SendMessage {"to":"ava","message":{"type":"shutdown_request","reason":"Delivered, thank you. First run ToolSearch with select:SendMessage, then reply with one SendMessage to team-lead whose message is an object, not a string of JSON ...[+205 characters]
++ 195s  tool TaskUpdate {"taskId":"2","owner":"kaan"}
++ 200s  tool Agent {"description":"Kaan ad copy slice","name":"kaan","subagent_type":"agency-conversion-specialist","prompt":"You are the teammate \"kaan\" (Kaan), type agency-conversion-specialist.\nObjective: write the PetPal (fictional  ...[+1390 characters]
++ 204s  the lead says:
+    Ava's strategy is in `docs/pilot/strategy.md`. I've asked her to shut down, and Kaan is now working on task #2.
+    
+    **Ava's ranking:**
+    - **4:5 feed:** the trust hook leads.
+    - **9:16 story:** the comfort hook leads.
+    - **1.91:1 link ad:** trust leads, and the proof figures appear only as a supporting line.
+    - **CTA:** "Book now" on all three.
+    - **Confidence:** the rankings are a judgement call. PetPal has no funnel data, so every confidence score is capped at 3.
+    
+    **Open item for you:** Ava needs 28-day funnel counts, the activation event, weekly ad traffic and budget before anyone recommends spend. This is a scratch exercise, so I'll leave it as noted unless you want to supply numbers.
+    
+    Next is Jamileh (task #3) when Kaan finishes, then Defne (task #4).
++ 208s  the lead says:
+    Ava has shut down. Kaan is the only teammate running, working on task #2, `docs/pilot/ad-copy.ts`. I'm waiting for his report before I start Jamileh.
++ 211s  the lead says:
+    Ava's shutdown is confirmed. Kaan is still working on task #2, and I'm waiting for his report.
++ 242s  tool SendMessage {"to":"kaan","message":{"type":"shutdown_request","reason":"Delivered, thank you. First run ToolSearch with select:SendMessage, then reply with one SendMessage to team-lead whose message is an object, not a string of JSO ...[+207 characters]
++ 242s  tool TaskUpdate {"taskId":"3","owner":"jamileh"}
++ 243s  tool Bash {"command":"cd docs/pilot && npx --yes -p typescript tsc --noEmit --strict --target es2020 --moduleResolution node hero.ts ad-copy.ts 2>&1 | head -20; echo exit=$?","timeout":120000}
++ 248s  tool Agent {"description":"Jamileh layouts slice","name":"jamileh","subagent_type":"agency-creative-designer","prompt":"You are the teammate \"jamileh\" (Jamileh), type agency-creative-designer. Relay mode: you message nobody.\nObj ...[+1957 characters]
++ 256s  tool Bash {"command":"npx --yes -p typescript tsc --noEmit --strict --target es2020 hero.ts ad-copy.ts 2>&1 | head -20; echo done","timeout":120000}
++ 262s  the lead says:
+    Kaan's copy is in `docs/pilot/ad-copy.ts`, and it type-checks. I ran `tsc --strict --noEmit` on `hero.ts` and `ad-copy.ts` together myself and got no errors. The first attempt failed on a TypeScript version flag, and the rerun without it was clean. I've asked Kaan to shut down.
+    
+    **Kaan's copy:**
+    - **4:5 feed:** "Sitters you can trust". The supporting line carries the invented "insured up to $1M", flagged fictional.
+    - **9:16 story:** "Your dog, happy at home", headline only.
+    - **1.91:1 link ad:** "Sitters you can trust". The supporting line carries the invented 4.9 rating and 12,000 stays, flagged fictional.
+    - **CTA:** "Book now" on all three, with the microcopy "Pick your dates and your sitter."
+    
+    **Your call:** that microcopy is Kaan's own wording of the booking step, not something taken from PetPal's real flow. Tell me if you want a different line. Otherwise I'll leave it as is, since this is a scratch exercise.
+    
+    **Jamileh (task #3):** she's now building the three layouts, with placeholder frames for the sofa photograph. She also writes the image briefs, with the rights basis left as "to be decided". She has no browser, so she can't check the layouts visually. Defne reviews the claims and disclosures afterwards (task #4).
+    
+    My shell moved into `docs/pilot` during the type-check. That's harmless, but Jamileh writes to `assets/` at the project root.
++ 266s  the lead says:
+    Kaan has shut down. Jamileh is the only teammate running, on task #3. I'm waiting for her report before I start Defne.
++ 473s  the lead says:
+    You've hit your session limit (the host printed when the window resets: left out)
++224097s  you typed: resume
++224101s  tool SendMessage {"to":"jamileh","message":{"type":"shutdown_request","reason":"Delivered, thank you. First run ToolSearch with select:SendMessage, then reply with one SendMessage to team-lead whose message is an object, not a string of  ...[+213 characters]
++224101s  tool TaskUpdate {"taskId":"4","owner":"defne"}
++224105s  tool Agent {"description":"Defne compliance review","name":"defne","subagent_type":"agency-compliance-grc-specialist","prompt":"You are the teammate \"defne\" (Defne), type agency-compliance-grc-specialist. Relay mode: you message  ...[+1591 characters]
++224111s  the lead says:
+    Jamileh's creative set is written (task #3). I've asked her to shut down, and Defne is now reviewing it (task #4).
+    
+    **What Jamileh delivered**, all in `assets/`:
+    - **Layouts:** an SVG and an HTML file for each ratio, 4:5, 9:16 and 1.91:1.
+    - **Photograph frames:** each ad has a labelled PLACEHOLDER frame where the sofa photograph goes. Nothing was generated.
+    - **`image-briefs.md`:** the briefs, a proposed scrim token and the contrast table. The rights basis is "to be decided".
+    - **Contrast:** all rows pass except one that fails by design (the CTA colour alone against the scrim). The CTA gets a cream ring there instead. The numbers are hand-computed.
+    - **Safe zones:** 250 px clear top and bottom on the story, and the link-ad headline is rescaled to 56 px.
+    
+    **Not verified:**
+    - She had no browser, so nothing is rendered. Line breaks, the Helvetica or Arial fallback and the HTML text positions need a real browser check.
+    - Sizes and safe zones are typical values. They must be checked against each platform's current spec before export.
+    - The contrast table should be re-checked with a tool.
+    
+    **Open items for you (her report was cut off at the claims-review item):**
+    - **Missing tokens:** the tokens file has no bold font-weight token and no link-ad type sizes. She proposed them and didn't edit the file. Say if you want them added.
+    - **Alt text:** `ad-copy.ts` carries a "(placeholder photograph)" suffix that her final alt text drops. This goes into Defne's review.
+    
+    I'll summarise Defne's findings and the compliance gate when she reports.
++224114s  the lead says:
+    Jamileh has shut down. Defne is the only teammate running, on task #4, the claims and disclosure review. I'm waiting for her report.
++224116s  the lead says:
+    Jamileh's shutdown is confirmed. Defne is still working on the review, and I'm waiting for her report.
++224186s  tool SendMessage {"to":"defne","message":{"type":"shutdown_request","reason":"Delivered, thank you. First run ToolSearch with select:SendMessage, then reply with one SendMessage to team-lead whose message is an object, not a string of JS ...[+209 characters]
++224194s  the lead says:
+    The PetPal set is drafted and reviewed. It is fine as a labelled scratch set, but it fails Defne's gate for any live launch. I've asked Defne to shut down. No teammate is running apart from her shutdown.
+    
+    **Gate (Defne):** fail for launch as written, pass with conditions as a labelled scratch set. Nothing is spent or published. Her 15 findings are in `docs/pilot/compliance-review.md`.
+    
+    **Files:**
+    - `docs/pilot/strategy.md`: Ava's hook ranking.
+    - `docs/pilot/ad-copy.ts`: Kaan's typed copy. It type-checks, which I ran myself.
+    - `assets/petpal-{4x5,9x16,1.91x1}.{html,svg}`: Jamileh's three layouts, each with a labelled placeholder frame for the sofa photograph.
+    - `assets/image-briefs.md`: the image briefs, a proposed scrim token and the contrast table.
+    - `docs/pilot/compliance-review.md`: Defne's review.
+    
+    **Defne's main findings:**
+    - **Unsubstantiated claims (High):** "Background-checked", "reviewed by neighbours", "insured up to $1M", "4.9 average rating" and "12,000 stays" have no evidence behind them. A real launch needs evidence, or the claims go.
+    - **"Illustrative figures" label:** fine for a mock-up, but it doesn't cure a claim that reads as fact.
+    - **Label coverage (Medium):** the label doesn't cover "Background-checked" or "reviewed by neighbours". Only "insured up to $1M" is listed in the `figures` of `ad-copy.ts`.
+    - **Type size (Medium):** passes contrast but is small on a phone. The link-ad label is about 7.8 pt.
+    - **Photo rights (Medium, blocks launch):** the rights basis is still "to be decided".
+    - **Tracking and consent (Medium):** not designed yet. Ad pixels need to be gated behind the consent banner.
+    - **Alt text (Low):** the text differs between `ad-copy.ts` and `image-briefs.md`.
+    - **Clean:** no fake testimonials, countdowns or urgency in the assets.
+    
+    **Not verified:**
+    - Nothing was rendered on any device.
+    - The contrast numbers were computed by hand, and Defne re-computed two of them.
+    - Platform ad specs and the legal texts are unchecked, and counsel is needed on background-check, insurance and review wording.
+    
+    **Decisions for you:**
+    1. **Target market:** US (FTC) or UK/EU? Defne assumed neither.
+    2. **Fixes:** should I send Kaan back to cover all the claims in `ad-copy.ts` and fix the alt text, and Jamileh to enlarge the on-canvas label? Neither is needed if the set stays a scratch mock-up.
+    3. **Tokens:** do you want the bold font-weight and link-ad type-size tokens Jamileh proposed added to the tokens file?
+    4. **Funnel data:** Ava's rankings are provisional without it. I'm leaving that open.
+
+== Teammates and commands
+teammates started: 5; before the answer (+  57s): 0 (want 0)
+  +  74s  Agent {"description":"Jamileh consultation on ad set","name":"jamileh","subagent_type":"agency-creative-designer","prompt":"CONSULTATION ONLY: write no files, claim no task. Reply with a scope-of-work state ...[+944 characters]
+  + 137s  Agent {"description":"Ava strategy slice","name":"ava","subagent_type":"agency-growth-strategist","prompt":"You are the teammate \"ava\" (Ava), type agency-growth-strategist.\nObjective: for PetPal (fiction ...[+959 characters]
+  + 200s  Agent {"description":"Kaan ad copy slice","name":"kaan","subagent_type":"agency-conversion-specialist","prompt":"You are the teammate \"kaan\" (Kaan), type agency-conversion-specialist.\nObjective: write th ...[+1410 characters]
+  + 248s  Agent {"description":"Jamileh layouts slice","name":"jamileh","subagent_type":"agency-creative-designer","prompt":"You are the teammate \"jamileh\" (Jamileh), type agency-creative-designer. Relay mode: you  ...[+1977 characters]
+  +224105s  Agent {"description":"Defne compliance review","name":"defne","subagent_type":"agency-compliance-grc-specialist","prompt":"You are the teammate \"defne\" (Defne), type agency-compliance-grc-specialist. Rela ...[+1611 characters]
+shell commands the lead tried: 2
+  + 243s  [RAN] cd docs/pilot && npx --yes -p typescript tsc --noEmit --strict --target es2020 --moduleResolution node hero.ts ad-copy.ts 2>&1 | head -20; echo exit=$?  (a package fetch that is not the image server: noted, not a failure of H10k)
+  + 256s  [RAN] npx --yes -p typescript tsc --noEmit --strict --target es2020 hero.ts ad-copy.ts 2>&1 | head -20; echo done  (a package fetch that is not the image server: noted, not a failure of H10k)
+all tool calls by name: ToolSearch 8, Glob 4, Skill 2, Read 2, Agent 5, SendMessage 5, TaskCreate 4, TaskUpdate 7, Bash 2
+
+== Read off mechanically (you judge the rest, against the pass line in docs/live-test-protocol.md, H10k)
+figures in the text before the question: none; in the options of the question: none  <- FAIL (figures missing)
+says three images / one for each placement: yes (read the sentence)
+states the size (1K, 2K or 4K): no
+says OpenAI publishes no price per image, or that its first image is a probe: no
+a range instead of a figure for this plan ("$x to $y an image"): no
+an option for her own route: no
+an option that names Gemini: no
+an option that names Seedream: no
+an option that names OpenAI: no
+generation offered as the default (first option, or "Recommended"): no
+the descriptions mention who pays / where the prompt goes / a restart / no free tier: pays: no, where the prompt goes: no, restart: no, no free tier: no
+after the answer it asks for the go-ahead naming images, provider and size: something like it (read it); asks for your ceiling: yes
+prints the install command with a placeholder where the key goes: no command printed
+says the team must restart: no; says it will check the server with ToolSearch: no
+a key requested from you: no (a sentence that says the lead never asks for it is not a request)
+the choice was put in prose as a numbered list: yes  <- FAIL of "one AskUserQuestion" (the user typed a reply to it)
+
+== The checker's figures for this plan (call-check.mjs --images 3, the copy installed in the folder)
+  1K gemini   gemini-nano-banana-2.1: $0.0336 each, $0.1008 for 3, $0.3024 at most
+  1K seedream dola-seedream-5-0-pro-260628: $0.045 each, $0.135 for 3, $0.405 at most
+  1K openai   gpt-image-2.5-flare: no published price each, no published price for 3, no published price at most
+  2K gemini   gemini-nano-banana-2.1: $0.0504 each, $0.1512 for 3, $0.4536 at most
+  2K seedream dola-seedream-5-0-pro-260628: $0.09 each, $0.27 for 3, $0.81 at most
+  2K openai   gpt-image-2.5-flare: no published price each, no published price for 3, no published price at most
+  Compare the lead's figures with the line of the size it chose. A figure that disagrees, or a price for OpenAI, is a FAIL.
+
+== A key-shaped string anywhere (the folder, the session record)
+none found
+files the lead wrote or edited: none
+.mcp.json exists in the folder: no

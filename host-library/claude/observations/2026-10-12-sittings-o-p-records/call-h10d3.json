@@ -1,0 +1,12 @@
+{
+ "prompt": "Create a variation of the reference photograph: keep its subject, warm beige colour palette, lighting and mood, but reframe it with a fresh composition and slightly different angle. Leave calm, uncluttered space in the lower third for an overlaid headline and button. Photographic, soft natural light, shallow depth of field, high detail. No text, no logos, no people, no watermarks.",
+ "inputImagePaths": [
+  "C:\\github\\scratch-pilot\\h10d-local-test\\Downloads\\shoot.jpg"
+ ],
+ "provider": "gemini",
+ "quality": "fast",
+ "imageSize": "2K",
+ "aspectRatio": "1:1",
+ "fileName": "feed-hero-variation-01",
+ "purpose": "Hero image for a 1:1 social feed ad (1080x1080 safe-zone layout)"
+}

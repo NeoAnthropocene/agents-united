@@ -1,0 +1,49 @@
+What the session records of the four runs show of the text she loaded; yes or no for each phrase. The text is that of the branch of PR 196 at 45363d9, before the corrections that follow this sitting.
+
+h10d3 (38264b6a-3d54-4068-8138-cdd30e30ba2c): image-generation loaded: yes
+yes  SKILL.md, rule 5: the typed-path rule: "or one whose full path the user typed in this task, wherever it lies"
+yes  SKILL.md, step 5: a pointer to the template, not its keys: "(`image-creation/assets/provenance-template.json`), with the estimate from `providers` as its cost"
+no   SKILL.md, step 5: the keys of the template listed: "exactly the keys of"
+yes  SKILL.md, edge case: a missing key, offer the placeholder: "offer the placeholder; the failed call counts"
+yes  SKILL.md, edge case: an outside file not typed in full, ask for its licence: "and for its licence; offer the placeholder"
+no   SKILL.md, edge case: say that you have not seen it: "say you have not seen it"
+yes  her role text: the typed-path rule: "wherever it lies (look at each file with `Read` first"
+yes  her role text: the placeholder with an image brief meanwhile (a name or a URL): "offer the placeholder with an image brief meanwhile"
+no   her role text: the placeholder after a missing key: "if the server says one is not set"
+no   her role text: the keys of the template: "with every key of"
+
+h10d4 (34328a6e-659c-4b08-b81d-17e01feddd88): image-generation loaded: yes
+yes  SKILL.md, rule 5: the typed-path rule: "or one whose full path the user typed in this task, wherever it lies"
+yes  SKILL.md, step 5: a pointer to the template, not its keys: "(`image-creation/assets/provenance-template.json`), with the estimate from `providers` as its cost"
+no   SKILL.md, step 5: the keys of the template listed: "exactly the keys of"
+yes  SKILL.md, edge case: a missing key, offer the placeholder: "offer the placeholder; the failed call counts"
+yes  SKILL.md, edge case: an outside file not typed in full, ask for its licence: "and for its licence; offer the placeholder"
+no   SKILL.md, edge case: say that you have not seen it: "say you have not seen it"
+yes  her role text: the typed-path rule: "wherever it lies (look at each file with `Read` first"
+yes  her role text: the placeholder with an image brief meanwhile (a name or a URL): "offer the placeholder with an image brief meanwhile"
+no   her role text: the placeholder after a missing key: "if the server says one is not set"
+no   her role text: the keys of the template: "with every key of"
+
+h10d6 (9f674eeb-51fa-4061-be58-73d123ede087): image-generation loaded: yes
+yes  SKILL.md, rule 5: the typed-path rule: "or one whose full path the user typed in this task, wherever it lies"
+yes  SKILL.md, step 5: a pointer to the template, not its keys: "(`image-creation/assets/provenance-template.json`), with the estimate from `providers` as its cost"
+no   SKILL.md, step 5: the keys of the template listed: "exactly the keys of"
+yes  SKILL.md, edge case: a missing key, offer the placeholder: "offer the placeholder; the failed call counts"
+yes  SKILL.md, edge case: an outside file not typed in full, ask for its licence: "and for its licence; offer the placeholder"
+no   SKILL.md, edge case: say that you have not seen it: "say you have not seen it"
+yes  her role text: the typed-path rule: "wherever it lies (look at each file with `Read` first"
+yes  her role text: the placeholder with an image brief meanwhile (a name or a URL): "offer the placeholder with an image brief meanwhile"
+no   her role text: the placeholder after a missing key: "if the server says one is not set"
+no   her role text: the keys of the template: "with every key of"
+
+h10d8 (e0b069da-05e6-4062-868f-8f38df169a04): image-generation loaded: yes
+yes  SKILL.md, rule 5: the typed-path rule: "or one whose full path the user typed in this task, wherever it lies"
+yes  SKILL.md, step 5: a pointer to the template, not its keys: "(`image-creation/assets/provenance-template.json`), with the estimate from `providers` as its cost"
+no   SKILL.md, step 5: the keys of the template listed: "exactly the keys of"
+yes  SKILL.md, edge case: a missing key, offer the placeholder: "offer the placeholder; the failed call counts"
+yes  SKILL.md, edge case: an outside file not typed in full, ask for its licence: "and for its licence; offer the placeholder"
+no   SKILL.md, edge case: say that you have not seen it: "say you have not seen it"
+yes  her role text: the typed-path rule: "wherever it lies (look at each file with `Read` first"
+yes  her role text: the placeholder with an image brief meanwhile (a name or a URL): "offer the placeholder with an image brief meanwhile"
+no   her role text: the placeholder after a missing key: "if the server says one is not set"
+no   her role text: the keys of the template: "with every key of"

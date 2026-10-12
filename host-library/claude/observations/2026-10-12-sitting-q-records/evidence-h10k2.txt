@@ -1,0 +1,103 @@
+H10k evidence: h10k2 (h10k2-gemini)
+2 session records in the folder: using the latest (314be482-934b-49af-b942-f0117f35fd7c.jsonl); the others: ccb31540-7603-470f-a6da-42768e0d7aec.jsonl
+
+== The session
+file 314be482-934b-49af-b942-f0117f35fd7c.jsonl (96 records), session 314be482-934b-49af-b942-f0117f35fd7c
+Claude Code 2.1.296
+from 2026-10-12T09:09:39.576Z to 2026-10-12T09:10:10.818Z (31 s; a long gap means the session sat idle)
+tokens, once for each API message: lead 6 messages, 2801 out, 75978 written to the cache, 351841 read from the cache; about 0.40 USD
+the session's own cost record (Claude Code 2.1.296): 0.3787 USD (claude-haiku-5-5 0.0001, claude-sonnet-5-5 0.3785); 33 s of API time, 151 s from the start of the process to the last record.
+teammates: 0 transcript(s), estimated 0.00 USD from their tokens; whether the record's figure includes them is not established.
+for comparison, the estimate from the lead's tokens at fitted prices (10.01 output, 4 cache write, 0.2 cache read per million): 0.40 USD (lead 0.40, teammates 0.00). The record's own figure is the one to quote.
+
+== What you typed (1 message(s) of yours, in order; 0 teammate notice(s) are left out)
+1 +   0s  Scratch exercise, no real client. Plan the PetPal paid-social set from `docs/pilot`: a 4:5 feed ad, a 9:16 story and a 1.91:1 link ad, each with a warm, natural photograph of a sitter and a dog on a sofa as its hero. No photography is supplied. Do not start any teammate until I have chosen how the pictures are made.
+
+== Everything the lead did and said before the choice was asked (its figures should be here, or in the options of the question)
+calls held by the mode-line hook in the whole session: 6 (an expected hold, but it can push the lead into a text-only turn)
++   4s  tool ToolSearch {"query":"github","max_results":3}
++   4s  tool ToolSearch {"query":"firecrawl","max_results":3}
++   4s  tool ToolSearch {"query":"context7","max_results":3}
++   4s  tool ToolSearch {"query":"playwright","max_results":3}
++   5s  tool ToolSearch {"query":"chrome-devtools","max_results":3}
++   5s  tool ToolSearch {"query":"figma","max_results":3}
++   5s  tool ToolSearch {"query":"markitdown","max_results":3}
++   6s  tool ToolSearch {"query":"select:TaskCreate,TaskList,TaskUpdate,SendMessage","max_results":4}
++  13s  tool Glob {"pattern":"docs/pilot/**/*"}
++  13s  tool Skill {"skill":"image-generation"}
++  17s  tool Glob {"pattern":"docs/pilot/**/*"}
++  17s  tool Skill {"skill":"image-generation"}
++  21s  tool Glob {"pattern":"docs/pilot/**/*"}
++  24s  the lead says:
+    Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+    
+    I'm trying once more, this time listing the folder with Bash.
++  24s  tool Bash {"command":"ls -la docs/pilot","description":"List pilot docs folder"}
++  31s  the lead says:
+    Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+    
+    I'm Chris, the lead of the AstrolabsAI agency team: Ava (growth), Kaan (conversion copy), Jamileh (creative), Yavuz (content), Jale (campaigns), Selin (SEO), Deniz (frontend), Emre (QA) and Defne (compliance).
+    
+    I've paused. The "Mode line first" hook has held every call except `ToolSearch` four times in a row, because the host hasn't saved the line to the transcript yet. That line is now the first thing in this finished message. I've started no teammate and changed no file.
+    
+    Here is what happens when you reply with anything, such as "continue":
+    1. **Read the brief.** I read `docs/pilot` myself, because reading it isn't a teammate action.
+    2. **Price the photographs.** I load the `image-generation` skill and take its per-image prices.
+    3. **Ask how the pictures are made.** I put that question to you before any teammate starts. The three formats (4:5, 9:16, 1.91:1) need three hero photographs of a sitter and a dog on a sofa, so I'd cost three images plus regenerations. The options are:
+       - **Jamileh's own route:** marked placeholder frames with a photographer-ready image brief. It costs nothing and needs no install.
+       - **Generate with Gemini, Seedream or OpenAI:** it uses your own API key. You run one command in your terminal, and then the session restarts.
+    4. **Consult and map.** Only after you choose do I consult a specialist read-only and present the delegation map. Nothing is created until you accept that map.
+
+== The mode-line gate in this session (what each hold was, and what the lead did next)
+6 call(s) held, in 4 message(s) of the lead
+  1. +  13s  held: Glob, Skill; the line in THIS message: NO (no text block opens with "Mode: ..."; reasoning is not text); the line in an EARLIER message: no
+  2. +  17s  held: Glob, Skill; the line in THIS message: NO (no text block opens with "Mode: ..."; reasoning is not text); the line in an EARLIER message: no
+  3. +  21s  held: Glob; the line in THIS message: NO (no text block opens with "Mode: ..."; reasoning is not text); the line in an EARLIER message: no
+  4. +  24s  held: Bash; the line in THIS message: yes (held anyway: the host had not saved it yet); the line in an EARLIER message: no
+after the last hold the lead made 0 more call(s) (0 not held) and wrote 1 text block(s); it made NO retry: it ended its turn
+its last message: Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch. I'm Chris, the lead of the AstrolabsAI agency team: Ava (growth), Kaan (conversion copy), Jamileh (creative), Yavuz (content), Jale (campaigns), Selin (SEO), Deniz (frontend), Emre (QA) and Defne (compliance). I've paused. The "Mode line first" hook has held every call except `ToolSearch` four times in a row, because the host hasn't saved the line to the transcript yet.  ...[+1055 characters]
+the first call other than ToolSearch that ran: none (the lead never got past the gate)
+
+== The question: 0 call(s) of AskUserQuestion (want exactly 1 offer, before any teammate)
+The lead asked no AskUserQuestion. If it asked in prose (above), that is a deviation: no selection list, and the user types a reply.
+
+== After the answer (the lead's messages and tool calls)
+(no answer was recorded)
+
+== Teammates and commands
+teammates started: 0; before the answer (none recorded): 0 (want 0)
+shell commands the lead tried: 1
+  +  24s  [HELD by the mode-line hook] ls -la docs/pilot
+all tool calls by name: ToolSearch 8, Glob 3, Skill 2, Bash 1
+
+== Read off mechanically (you judge the rest, against the pass line in docs/live-test-protocol.md, H10k)
+figures in the text before the question: none; in the options of the question: none  <- FAIL (figures missing)
+says three images / one for each placement: yes (read the sentence)
+states the size (1K, 2K or 4K): no
+says OpenAI publishes no price per image, or that its first image is a probe: no
+a range instead of a figure for this plan ("$x to $y an image"): no
+an option for her own route: no
+an option that names Gemini: no
+an option that names Seedream: no
+an option that names OpenAI: no
+generation offered as the default (first option, or "Recommended"): no
+the descriptions mention who pays / where the prompt goes / a restart / no free tier: pays: no, where the prompt goes: no, restart: no, no free tier: no
+after the answer it asks for the go-ahead naming images, provider and size: no; asks for your ceiling: no
+prints the install command with a placeholder where the key goes: no command printed
+says the team must restart: no; says it will check the server with ToolSearch: no
+a key requested from you: no (a sentence that says the lead never asks for it is not a request)
+the choice was put in prose as a numbered list: yes  <- FAIL of "one AskUserQuestion" (the user typed a reply to it)
+
+== The checker's figures for this plan (call-check.mjs --images 3, the copy installed in the folder)
+  1K gemini   gemini-nano-banana-2.1: $0.0336 each, $0.1008 for 3, $0.3024 at most
+  1K seedream dola-seedream-5-0-pro-260628: $0.045 each, $0.135 for 3, $0.405 at most
+  1K openai   gpt-image-2.5-flare: no published price each, no published price for 3, no published price at most
+  2K gemini   gemini-nano-banana-2.1: $0.0504 each, $0.1512 for 3, $0.4536 at most
+  2K seedream dola-seedream-5-0-pro-260628: $0.09 each, $0.27 for 3, $0.81 at most
+  2K openai   gpt-image-2.5-flare: no published price each, no published price for 3, no published price at most
+  Compare the lead's figures with the line of the size it chose. A figure that disagrees, or a price for OpenAI, is a FAIL.
+
+== A key-shaped string anywhere (the folder, the session record)
+none found
+files the lead wrote or edited: none
+.mcp.json exists in the folder: no

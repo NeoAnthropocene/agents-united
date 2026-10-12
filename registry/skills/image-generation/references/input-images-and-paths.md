@@ -30,7 +30,7 @@ When two rows apply, the stricter one decides.
 
 Say it once, plainly, and offer the way through. For a name or a URL:
 
-> I can't use "the photo in your Downloads folder", and I can't fetch `https://photos.example.com/dog-sofa.jpg`: the server reads files on disk and I can't download a picture. Please type the file's full path, or ask the lead to save it in `assets/source/`, and tell me where the picture comes from and under what licence.
+> I can't use "the photo in your Downloads folder", and I can't fetch `https://photos.example.com/dog-sofa.jpg`: the server reads files on disk and I can't download a picture, so I haven't seen either of them. Please type the file's full path, or ask the lead to save it in `assets/source/`, and tell me where the picture comes from and under what licence.
 
 You hold no shell, so you cannot make a copy or a download yourself: the user does, or the lead with its shell (`Read` shows a picture and `Write` writes text, so neither can copy a JPEG). While you wait, offer the placeholder with an image brief, so that nothing is blocked.
 

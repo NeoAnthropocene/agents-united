@@ -1,0 +1,21 @@
+{
+  "file": "petpal-hero-sofa-a1.jpg",
+  "asset": "petpal-hero-sofa",
+  "attempt": 1,
+  "createdAt": "2026-10-09T14:48:29Z",
+  "server": "image-gen (mcp-image 0.18.0)",
+  "model": "gemini-nano-banana-2.1",
+  "prompt": "A photograph of a person in an oatmeal knit sweater sitting at one end of a cream linen sofa in a calm city apartment, a relaxed mid-sized tan dog curled beside them with its head resting on the person's knee, the person's face out of frame, one hand resting gently on the dog's back. Soft window light from the left on a quiet morning, gentle shadows, a shallow depth of field with the focus on the dog's face. Shot on a 50mm lens at eye level. The sofa, the person and the dog sit in the lower two thirds of the frame; the upper third is an even, plain warm cream wall with nothing on it. Palette: cream, warm sand, soft oatmeal and one muted terracotta cushion. Natural, unposed and unfussy.",
+  "parameters": {
+    "provider": "gemini",
+    "aspectRatio": "4:5",
+    "imageSize": "2K",
+    "quality": "server default (fast)"
+  },
+  "approvedBy": "the user: \"Go: one image, Gemini, 2K, the feed's 4:5.\" No ceiling stated; the $0.80 session budget was treated as the ceiling.",
+  "estimatedCostUsd": 0.0504,
+  "disclosure": "Generated with Gemini (gemini-nano-banana-2.1); carries an invisible SynthID mark. Not a photograph of a real person, a real sitter or a PetPal customer. Platform label: label rule not checked.",
+  "inputImages": [],
+  "usedIn": [],
+  "notes": "Rung 3: no photography supplied, tool connected, go given. The art director's mood reference (shoot.jpg) was NOT sent: it lies outside the project and its path came from the brief, not from the user's message. Opened the file at display size (1611 x 2000 of 1856 x 2304): upper third is an even cream wall (copy zone clear, measure real headline contrast over it with color-theory); dog, hand (five fingers) and sweater plausible; no lettering; terracotta cushion matches the palette. A sliver of the person's head shows at the left edge near the window; crop or ignore. Fur and linen detail at full size not judged."
+}

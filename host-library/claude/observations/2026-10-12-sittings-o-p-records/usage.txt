@@ -1,0 +1,9 @@
+Tokens of the six sessions, once for each API message (a message split over several records repeats its usage), and the cost at the prices fitted below. The four headless sessions agree with their own total_cost_usd; the two interactive ones have no dollar figure in the record.
+
+38264b6a-3d54-4068-8138-cdd30e30ba2c.jsonl   messages    4  in      8  out   2528  cache-write   35659  cache-read   102172  ~0.1884 USD
+34328a6e-659c-4b08-b81d-17e01feddd88.jsonl   messages    7  in     14  out   4806  cache-write   48764  cache-read   277394  ~0.2986 USD
+9f674eeb-51fa-4061-be58-73d123ede087.jsonl   messages    4  in      8  out   2539  cache-write   40009  cache-read   125065  ~0.2105 USD
+e0b069da-05e6-4062-868f-8f38df169a04.jsonl   messages    2  in      4  out   1294  cache-write   25135  cache-read    39828  ~0.1215 USD
+7b21e8f5-4de9-447d-815a-f4f5d285c05d.jsonl   messages   21  in     54  out   9405  cache-write   98143  cache-read  1734521  ~0.8336 USD
+ccb31540-7603-470f-a6da-42768e0d7aec.jsonl   messages   32  in     84  out  13602  cache-write  169783  cache-read  2537890  ~1.3229 USD
+TOTAL                                        messages   70  in    172  out  34174  cache-write  417493  cache-read  4816870  ~2.9754 USD

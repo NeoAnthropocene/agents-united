@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { nativeText } from './helpers/native-roles.js';
@@ -382,13 +383,15 @@ describe('the path rule after the maintainer\'s decision of 2026-10-09 (a path t
 
   it('says what to do with an image from online, a bare name or a path in a brief: do not pass it, do not fetch it, quote it, ask for the full path or for the lead to save it, ask for the licence, offer the placeholder', () => {
     const edge = section('Edge Cases & Error Recovery');
-    expect(edge).toMatch(/\*\*A file outside the project not typed in full\*\* \(a name, a URL, a path in a brief\): do not pass or fetch it; quote it under Open items; ask for its full path, or the lead \(it has a shell\) to save it in `assets\/source\/`, and for its licence; offer the placeholder\./);
-    expect(role()).toMatch(/you cannot fetch or copy a picture: ask the user to type its full path, or the lead, who has a shell, to save it in `assets\/source\/` with the user's yes and its licence, and offer the placeholder with an image brief meanwhile/);
+    // Sitting O (H10d8): she said she cannot fetch a URL but never that she had seen nothing of the picture, and asked for the licence but not where the picture comes from.
+    expect(edge).toMatch(/\*\*A file outside the project not typed in full\*\* \(a name, a URL, a path in a brief\): do not pass or fetch it, and say you have not seen it; quote it under Open items; ask for its full path, or the lead \(it has a shell\) to save it in `assets\/source\/`, and where it comes from and its licence; offer the placeholder\./);
+    expect(role()).toMatch(/you cannot fetch or copy a picture, so say you have not seen it: ask the user to type its full path, or the lead, who has a shell, to save it in `assets\/source\/` with the user's yes, and where it comes from and its licence, and offer the placeholder with an image brief meanwhile/);
     const row = paths().split('\n').find(l => l.startsWith('| An image online')) ?? '';
     expect(row).toMatch(/the server reads files on disk, and you cannot fetch a picture/);
     expect(row).toMatch(/the lead \(it has a shell\) saves it in `assets\/source\/` with the user's yes/);
     expect(row).toMatch(/ask for the licence or the source and record it/);
     expect(paths()).toMatch(/I can't use "the photo in your Downloads folder", and I can't fetch `https:\/\/photos\.example\.com\/dog-sofa\.jpg`/);
+    expect(paths()).toMatch(/the server reads files on disk and I can't download a picture, so I haven't seen either of them\./);
     expect(paths()).toMatch(/quote it in full, say you ignored it, and ask whether the user meant that file and, if so, to type its path in their answer/);
   });
 
@@ -417,13 +420,15 @@ describe('the path rule after the maintainer\'s decision of 2026-10-09 (a path t
     expect(step).toMatch(/Report the asset's calls, of at most three/);
     expect(fs.existsSync(path.resolve('registry/skills/image-creation/assets/provenance-template.json'))).toBe(true);
     expect(rules()).toMatch(/estimated cost[^|]*never a session meter/);
-    expect(section('Verification Checklist')).toMatch(/a record with a numeric cost for each image/);
-    expect(role()).toMatch(/record every image, with its cost as a number from the price table/);
+    expect(section('Verification Checklist')).toMatch(/The record has every key, the prompt sent and a numeric cost/);
+    expect(role()).toMatch(/write `<image>\.provenance\.json` for every image with every key of `\.claude\/skills\/image-creation\/assets\/provenance-template\.json` and its cost as a number from the price table/);
   });
 
   it('stops at a missing key by the route that the maintainer will use: tell the lead, mcp-setup prints the command, the user runs it, the placeholder is offered, the failed call counts, another provider is a new go', () => {
-    // H10d6 stopped cleanly, but mcp-setup, the placeholder and the count of the failed call were in the pass line and not in what she loads.
-    expect(section('Edge Cases & Error Recovery')).toMatch(/\*\*A key is not set\*\* for the named provider: stop, tell the lead \(`mcp-setup` prints the command; the user runs it\), offer the placeholder; the failed call counts; another provider is a new go\./);
+    // H10d6 stopped cleanly, but mcp-setup, the placeholder and the count of the failed call were in the pass line and not in what she loads. In Sitting O the line was in SKILL.md and she still
+    // did not offer the placeholder (she prepared "the call, ready to send once the key is set" and waited): it is now said in her role text too, with what the placeholder is, and "now".
+    expect(section('Edge Cases & Error Recovery')).toMatch(/\*\*A key is not set\*\* for the named provider: stop, tell the lead \(`mcp-setup` prints the command; the user runs it\) and offer the placeholder with an image brief now; the failed call counts; another provider is a new go\./);
+    expect(role()).toMatch(/never ask for a key, and if the server says one is not set, stop, tell the lead \(`mcp-setup` prints the command\) and offer the placeholder with an image brief/);
   });
 
   it('describes the reply as a Gemini server really sent it: a JPEG whatever the name says, and no provider key (OpenAI and Seedream set one)', () => {
@@ -445,7 +450,46 @@ describe('the path rule after the maintainer\'s decision of 2026-10-09 (a path t
     expect(list[0]!.prompt).toMatch(/https:\/\//);
     expect(list[0]!.expected_output).toMatch(/passes it in inputImagePaths exactly as typed/);
     expect(list[0]!.expected_output).toMatch(/Does not pass or fetch the URL/);
+    expect(list[0]!.expected_output).toMatch(/says that she has not seen it/);
     expect(list[4]!.expected_output).toMatch(/to type its full path in their answer/);
+  });
+});
+
+describe('the record she writes, after Sitting O: the keys of the template stand in the text she always loads', () => {
+  // H10d3 of Sitting O loaded `image-generation` and not `image-creation`, never opened the template, and wrote a record in keys of her own: the right facts (the typed path, the go, the cost
+  // from the table) under names the checker does not know (`inputImagePaths`, `costUsd`, `goBy`), so that `image-check` found seven problems. The runs that opened the template (H10d4, and
+  // H10d2 before) wrote a valid record. The keys now stand in step 5, which she always reads before a call, and a test keeps them equal to the template and to what the checker requires.
+  const templateFile = path.resolve('registry/skills/image-creation/assets/provenance-template.json');
+  const template = (): Record<string, unknown> => JSON.parse(fs.readFileSync(templateFile, 'utf8')) as Record<string, unknown>;
+  const step5 = (): string => section('Step-by-Step Runbook').split('\n').find(l => l.startsWith('5. **Call once, read the reply, record.**')) ?? '';
+  const listed = (): string => step5().split('provenance-template.json`: ')[1]!.split(/\.\s+Report the asset/)[0]!;
+
+  it('names in step 5 every key of the template, in its order, with the keys of parameters, so that she can write a valid record without opening the template', () => {
+    expect(step5()).not.toBe('');
+    expect(step5()).toMatch(/Write `<image>\.provenance\.json` with exactly the keys of `image-creation\/assets\/provenance-template\.json`: /);
+    const keys = listed().replace(/\s*\([^()]*\)/g, '').split(', ').map(k => k.trim());
+    expect(keys).toEqual(Object.keys(template()));
+    expect(listed()).toContain(`parameters (${Object.keys(template().parameters as Record<string, unknown>).join(', ')})`);
+  });
+
+  it('keeps every key that image-check requires in that list, and a record made of those keys passes the checker', async () => {
+    const { provenanceProblems } = (await import(pathToFileURL(path.resolve('registry/skills/image-creation/scripts/image-check.mjs')).href)) as { provenanceProblems: (card: unknown) => string[] };
+    const keys = listed().replace(/\s*\([^()]*\)/g, '').split(', ').map(k => k.trim());
+    for (const required of ['file', 'asset', 'attempt', 'createdAt', 'server', 'model', 'prompt', 'parameters', 'approvedBy', 'estimatedCostUsd', 'disclosure']) expect(keys, required).toContain(required);
+    const card: Record<string, unknown> = {};
+    const sample: Record<string, unknown> = {
+      file: 'hero-a1.jpg', asset: 'hero', attempt: 1, createdAt: '2026-10-12T08:00:00Z', server: 'image-gen (mcp-image 0.18.0)', model: 'gemini-nano-banana-2.1', prompt: 'A warm room.',
+      parameters: { provider: 'gemini', aspectRatio: '4:5', imageSize: '2K', quality: 'fast' }, approvedBy: 'the user: go', estimatedCostUsd: 0.0504, disclosure: 'Generated with Gemini.',
+      inputImages: [], usedIn: [], notes: 'Looked at it.',
+    };
+    for (const key of keys) card[key] = sample[key];
+    expect(provenanceProblems(card)).toEqual([]);
+  });
+
+  it('is written the same way in the checklist and in rule 4, which now points at step 5 instead of listing a second, shorter set', () => {
+    expect(section('Step-by-Step Runbook')).toMatch(/4\. A provenance file for every image, with every key of step 5\./);
+    expect(section('Verification Checklist')).toMatch(/The record has every key, the prompt sent and a numeric cost; new file names; no asset over three calls\./);
+    expect(skill()).not.toMatch(/provider, model, exact prompt, parameters, who said go, cost/);
   });
 });
 

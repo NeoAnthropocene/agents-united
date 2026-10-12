@@ -86,6 +86,20 @@ describe('the mode-line gate script', () => {
     expect(stderr).not.toMatch(/if your last message/i);
   });
 
+  // Sitting Q (H10k2, 2026-10-12, Claude Code 2.1.296, session `314be482`): the gate held six calls in four messages. Three of the messages had no text block: the lead wrote the line only in its
+  // reasoning ("I'll now retry the two held calls using this message's line") and was held each time. The fourth had the line in a text block and was held anyway, because the host had not saved it yet.
+  // The lead then ended its turn: "I've paused ... the host hasn't saved the line to the transcript yet. That line is now the first thing in this finished message", and waited for the user to reply.
+  // The message said that the host cannot see the message the lead is writing, and only "make the call again" about what to do, so the lead read it as "finish the message". It has to say not to stop,
+  // that reasoning is not text, and to repeat the call in the next message, again if need be. (In Sitting P, h10k1, the third message was released: the line of the second had been saved by then.)
+  it('tells the lead that a hold is not a reason to stop, that its reasoning is not text, and to repeat the call in its next message, again if it is held again', () => {
+    const { stderr } = run(call());
+
+    expect(stderr).toContain('A hold is not a reason to stop: do not end your turn, do not ask the user and do not wait for a reply.');
+    expect(stderr).toContain('The line must be a text block of your reply: your reasoning is not text, and neither the hook nor the user sees it.');
+    expect(stderr).toContain('Repeat the call in your next message with the line written again, and if it is held again, repeat it again: the host saves a message a moment after it ends.');
+    expect(stderr.split('\n')[0]).toContain('not a failure');
+  });
+
   // N3 regression run (session `8e2c3d9e`): the host prints a held call to the user as "Error: PreToolUse:Agent hook error: [node ...]: <this message>", at the start of every
   // session, and the maintainer read the held spawn as a failure of the spawned agent (it was the lead's first call, held once by design; the spawned agent had no hook error).
   // The host's own prefix cannot be changed, so the first line of the message says in plain words that the hold is expected and happens once, and it keeps "Mode line first"
