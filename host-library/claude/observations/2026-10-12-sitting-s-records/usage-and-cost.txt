@@ -1,0 +1,20 @@
+Sitting S: what the runs cost, and what the plan's windows showed (2026-10-12).
+
+The model cost of the two sessions (both interactive, both on claude-sonnet-5-5 at medium effort for G1 and low effort for H10k2, Claude Code 2.1.296)
+  H10k2  0.5452 USD  17 API messages, 66 s of API time, 957 s from the first to the last record, three messages typed by the maintainer
+         (the session's own record, a "cost-state" entry: totalCostUSD 0.5451576, claude-sonnet-5-5 0.5448567, claude-haiku-5-5 0.0003009)
+  G1     0.4007 USD  14 API messages, 58 s of API time, 241 s from the first to the last record, one message typed
+         (the session's own record, a "cost-state" entry: totalCostUSD 0.4006535, claude-sonnet-5-5 0.4003860, claude-haiku-5-5 0.0002675)
+  Total  0.9458 USD in 2 prompts, against the ceiling of 3.0 USD and 2 prompts and the 0.9 USD expected (about 0.4 for H10k2 and about 0.5 for G1).
+  No teammate started in either session, so no teammate's tokens are in these figures.
+
+The estimate of an interactive session from its tokens
+  The estimate from the lead's tokens at the prices fitted on the headless runs of Sitting O was 0.62 USD for H10k2 (the record says 0.5452 USD: 14 percent high; 17 percent in Sitting R). The record's own figure is the one to quote.
+
+The images
+  None were made: no call to the image server was reached in either session.
+
+The plan's windows (Pro plan, read with get_usage by the executor)
+  before the runs   (10:42 UTC, read after Sitting R): 5-hour window 0 percent used, weekly 62 percent
+  after the runs    (11:57 UTC): 5-hour window 38 percent used (resets 15:40 UTC), weekly 67 percent (resets 2026-10-15 12:00 UTC)
+  The runs were made between 11:22 and 11:44 UTC, and the executor's own turns since the first reading (the reading of both sessions, the replay of the hook on them, the change of the hook and its tests, this record) drew on the same windows: no part of the rise is attributed to the runs.

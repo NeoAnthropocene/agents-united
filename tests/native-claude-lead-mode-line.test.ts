@@ -106,7 +106,7 @@ describe('the mode line of the Claude lead', () => {
     expect(adr).toMatch(/the hook counts the rounds of holds of a session/);
     expect(adr).toMatch(/The count changes the message and never the release/);
     expect(adr).toMatch(/Decision 3 is replaced/);
-    expect(adr).toMatch(/told the user that the hook was broken and that they could disable it/);
+    expect(adr).toMatch(/told the user that the hook "may be broken" and that they could disable it/);
     expect(fs.readFileSync(path.resolve('docs/adr/0044-release-the-mode-line-gate-only-on-recorded-evidence.md'), 'utf8')).toMatch(/Amended in part by ADR 0051/);
   });
 
