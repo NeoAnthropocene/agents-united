@@ -32,8 +32,14 @@ describe('the grant: one tool, one role', () => {
     expect(held.filter(t => t.includes('image-gen'))).toEqual([TOOL]);
   });
 
-  it('gives it to no other native role', () => {
-    const others = fs.readdirSync(NATIVE_AGENTS_DIR).filter(f => f.endsWith('.md')).map(f => f.replace(/\.md$/, '')).filter(r => r !== 'agency-creative-designer');
+  // Sitting T (2026-10-12): the lead's tool pool was missing the tool, so its ToolSearch could never list it and Jamileh, a teammate, never got it either: the host gives a
+  // subagent the MCP tools "available in the main conversation" (sub-agents, "Available tools"), and the main conversation of `--agent` is cut to its `tools`.
+  it('gives it to the lead too, the same one tool, so that a teammate can have it, and to no other native role', () => {
+    const lead = tools('orchestrator-digital-agency');
+    expect(lead).toContain(TOOL);
+    expect(lead).not.toContain('mcp__image-gen');
+    expect(lead.filter(t => t.includes('image-gen'))).toEqual([TOOL]);
+    const others = fs.readdirSync(NATIVE_AGENTS_DIR).filter(f => f.endsWith('.md')).map(f => f.replace(/\.md$/, '')).filter(r => r !== 'agency-creative-designer' && r !== 'orchestrator-digital-agency');
     expect(others.length).toBeGreaterThan(5);
     for (const role of others) expect(tools(role).filter(t => t.includes('image-gen')), role).toEqual([]);
   });
@@ -197,14 +203,23 @@ describe('the lead\'s offer', () => {
     expect(p).toMatch(/go-ahead that names how many images, which provider and at which size, with the ceiling they accept \(your estimate is the proposal\)/);
   });
 
-  it('follows mcp-setup without running the command itself, prints the placeholder of each provider named, and checks the server with ToolSearch', () => {
+  it('follows mcp-setup without running the command itself, prints the placeholder of each provider named, and checks the tool by its name with ToolSearch', () => {
     const p = paragraph();
     expect(p).toContain('`mcp-setup`');
     expect(p).toMatch(/never run it/);
     expect(p).toMatch(/placeholder of each provider/);
-    // The lead does not hold the tool, so it names the server and not the tool (a native role may not name a tool outside its grant).
-    expect(p).toMatch(/`ToolSearch` that the server `image-gen` shows its generate tool/);
-    expect(p).not.toContain(TOOL);
+    // The lead holds the tool (Sitting T), so it can name it and its own ToolSearch can list it.
+    expect(p).toMatch(/after the restart check with `ToolSearch` that `mcp__image-gen__generate_image` is listed/);
+  });
+
+  it('says why the lead holds the tool and that it never calls it, that a server added with --scope local needs no approval, and not to send Jamileh to find out (Sitting T)', () => {
+    const p = paragraph();
+    expect(p).toMatch(/You hold that one tool for one reason: a teammate gets the MCP tools that the main conversation holds, so Jamileh has the tool only if you do/);
+    expect(p).toMatch(/observed on 2\.1\.296, Sitting T/);
+    expect(p).toMatch(/You never call it yourself: she makes every image, with the rules of `image-generation`/);
+    expect(p).toMatch(/added with `--scope local` needs no approval/);
+    expect(p).toMatch(/do not tell the user to expect an approval prompt/);
+    expect(p).toMatch(/If `ToolSearch` still lists nothing after a restart[^.]*report what you saw and do not send Jamileh to find out/);
   });
 
   it('briefs Jamileh with the go in the user\'s words, the provider and the ceiling, tells her to load image-generation, and generates nothing without the server', () => {

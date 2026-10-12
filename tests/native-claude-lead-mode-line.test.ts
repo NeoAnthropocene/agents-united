@@ -95,7 +95,7 @@ describe('the mode line of the Claude lead', () => {
     expect(adr).toContain('yes, we should do that I think');
     for (const ref of ['ADR 0042', 'ADR 0044', 'Sitting Q', 'Sitting R', 'Sitting S', '314be482', '1269c24c', 'a7acda03', '7c3e1121']) expect(adr, ref).toContain(ref);
     expect(adr).toMatch(/repeat the call alone, with no text/);
-    expect(adr).toMatch(/unverified live \(Sitting T\)/);
+    expect(adr).toMatch(/Sitting T/);
   });
 
   // Sitting S (2026-10-12): decision 3 of ADR 0051 failed in both sessions; the amendment replaces it and says why.

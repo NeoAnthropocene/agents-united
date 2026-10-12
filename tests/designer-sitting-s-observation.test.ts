@@ -230,7 +230,7 @@ describe('the Sitting S observation: the grading', () => {
 });
 
 describe('the protocol, ADR 0049, ADR 0051 and the plan state Sitting S', () => {
-  it('records Sitting S as run, with its cost and what it found, and Sitting T as proposed', () => {
+  it('records Sitting S as run, with its cost and what it found, and has a row for Sitting T (its result is pinned in tests/designer-sitting-t-observation.test.ts)', () => {
     const s = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting S |')) ?? '';
     expect(s).toMatch(/H10k2 again/);
     expect(s).toMatch(/G1 of Plan 035 N3 again/);
@@ -243,8 +243,6 @@ describe('the protocol, ADR 0049, ADR 0051 and the plan state Sitting S', () => 
     expect(t).toMatch(/H10k2 again/);
     expect(t).toMatch(/G1 again/);
     expect(t).toMatch(/3\.0 USD and 2 prompts/);
-    expect(t).toMatch(/proposed 2026-10-12, not yet run/);
-    expect(t).not.toMatch(/\bused \d/);
   });
 
   it('amends the cost of H10k with the result of Sitting S, and the cost of G1 with its result', () => {
@@ -270,7 +268,7 @@ describe('the protocol, ADR 0049, ADR 0051 and the plan state Sitting S', () => 
     expect(ADR).toContain(NAME);
     expect(ADR).toMatch(/Sitting S \(`host-library\/claude\/observations\/2026-10-12-claude-2\.1\.296-designer-sitting-s\.md`\)/);
     expect(ADR).toMatch(/both sessions failed/);
-    expect(ADR).toMatch(/whether the lead, with the messages of the hook by round \(ADR 0051 as amended\), writes its line within three rounds of holds and reaches the offer \(Sitting T/);
+    // "whether the lead, with the messages of the hook by round, writes its line within three rounds" was answered by Sitting T (it did, in both sessions); the ADR's "Not established" now names what Sitting U checks.
   });
 
   it('cites the record of Sitting S in ADR 0051, where its decision 3 was replaced', () => {
