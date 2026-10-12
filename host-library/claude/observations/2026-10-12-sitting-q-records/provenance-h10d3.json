@@ -1,0 +1,21 @@
+{
+  "file": "feed-hero-variation-01.jpg",
+  "asset": "feed-hero",
+  "attempt": 1,
+  "createdAt": "2026-10-12T08:21:44Z",
+  "server": "image-gen (mcp-image, version not reported by the tool)",
+  "model": "gemini-nano-banana-2.1",
+  "prompt": "Create a variation of the reference image. Keep its warm beige palette, its fine repeating surface texture and its soft, even lighting. Expand it into a calm, premium full-frame background scene for a social feed ad: the same beige material fills the frame with gentle depth, a subtle diagonal sweep of soft light and shallow shadow, and a quiet, uncluttered composition. Leave the upper two thirds of the frame smooth and empty as a clear zone for an overlay headline. No text, no logos, no people.",
+  "parameters": {
+    "provider": "gemini",
+    "aspectRatio": "4:5",
+    "imageSize": "2K",
+    "quality": "fast"
+  },
+  "approvedBy": "the user: Go: one image, 2K, Gemini.",
+  "estimatedCostUsd": 0.0504,
+  "disclosure": "Generated with Gemini (gemini-nano-banana-2.1); the provider adds an invisible SynthID mark. Platform label: label rule not checked.",
+  "inputImages": ["C:\\github\\scratch-pilot\\h10d-local-test\\Downloads\\shoot.jpg"],
+  "usedIn": ["feed ad hero (4:5), design file not yet created"],
+  "notes": "Opened with Read (1856x2304). A smooth warm beige textured surface with a soft diagonal light sweep and shadow at the lower left; no text, logos, people or stray objects. The upper area is fairly even, so a headline fits there, but it carries a darker band across the top, so measure contrast and add a scrim before placing text. The source file looked like a plain beige texture tile, not a photograph of a scene, so the output is a texture background. It is a variation of the user's own file and is not a photograph of any real product or person."
+}

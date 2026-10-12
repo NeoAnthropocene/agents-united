@@ -1,0 +1,22 @@
+Sitting Q: what the runs cost, and what the plan's windows showed (2026-10-12).
+
+The model cost of the four prompts
+  H10d3  0.2275 USD  13 turns  47 s   (the result of the CLI: total_cost_usd 0.2274673)
+  H10d6  0.2154 USD  12 turns  24 s   (0.2153787)
+  H10d8  0.0861 USD   1 turn    9 s   (0.0860894)
+  H10k2  0.3787 USD   6 API messages, 33 s of API time, one message typed by the maintainer
+         (the session's own record, a "cost-state" entry that Claude Code 2.1.296 writes: totalCostUSD 0.3786635, claude-sonnet-5-5 0.3785239, claude-haiku-5-5 0.0001396)
+  Total  0.9076 USD in 4 prompts (0.5289 headless in 26 turns, 0.3787 interactive), against the ceiling of 4.4 USD and 4 prompts and the 0.6 + 2.0 expected.
+
+The estimate of an interactive session from its tokens
+  Sitting P's two interactive sessions (Claude Code 2.1.294) had no dollar figure in their records, so their cost was estimated from the tokens at prices fitted on the headless runs of Sitting O.
+  The record of H10k2 in Sitting Q has a figure, so the method can be compared with it once: the estimate from the lead's tokens was 0.40 USD, the record says 0.3787 USD (the estimate was 5.6 percent high).
+  The estimate of Sitting P (about 5.58 USD) was made on another version of Claude Code and with teammates, whose transcripts the record's figure may or may not include; it stays an estimate.
+
+The image
+  One image, at 2K on Gemini fast, about 0.0504 USD by the price table on the maintainer's Google bill (an estimate, not read from the bill).
+
+The plan's windows (Pro plan, read with get_usage by the executor)
+  before the maintainer ran Sitting Q   (07:54 UTC): 5-hour window 58 percent used, weekly 57 percent
+  after the runs and the executor's reading of their records and its fix (09:32 UTC): 5-hour window 82 percent used (resets 10:40 UTC), weekly 60 percent
+  The second reading includes the executor's own turns (about 250,000 more tokens of context read many times), which draw as much quota as a sitting: no part of the 24 points is attributed to the runs.

@@ -1,0 +1,12 @@
+{
+  "prompt": "Create a variation of the reference image. Keep its warm beige palette, its fine repeating surface texture and its soft, even lighting. Expand it into a calm, premium full-frame background scene for a social feed ad: the same beige material fills the frame with gentle depth, a subtle diagonal sweep of soft light and shallow shadow, and a quiet, uncluttered composition. Leave the upper two thirds of the frame smooth and empty as a clear zone for an overlay headline. No text, no logos, no people.",
+  "inputImagePaths": [
+    "C:\\github\\scratch-pilot\\h10d-local-test\\Downloads\\shoot.jpg"
+  ],
+  "provider": "gemini",
+  "imageSize": "2K",
+  "aspectRatio": "4:5",
+  "fileName": "feed-hero-variation-01",
+  "purpose": "Hero background for a 4:5 social feed ad; headline overlaid later",
+  "quality": "fast"
+}

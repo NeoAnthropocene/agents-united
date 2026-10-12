@@ -354,7 +354,7 @@ describe('the protocol, ADR 0049 and the plan state Sitting Q', () => {
     expect(cost).toContain(NAME);
     expect(cost).toMatch(/0\.3787 USD by the session's own cost record/);
     expect(cost).toMatch(/\*\*H10k2 again did not reach the Gemini branch\*\*/);
-    expect(cost).toMatch(/six calls held in four messages/);
+    expect(cost).toMatch(/the mode-line hook held six calls in four messages/);
     expect(cost).toMatch(/Sitting R repeats H10k2/);
     expect(cost).toMatch(/Ceiling for Sitting R/);
   });
