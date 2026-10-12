@@ -7,6 +7,7 @@ import { InstallEngine } from '../src/core/installer.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
 import { ClineProjector } from '../src/core/cline-projector.js';
 import type { BundleDefinition } from '../src/core/types.js';
+import { contributorCatalogFixture } from './helpers/contributor-catalog.js';
 
 /**
  * Plan 003 — Recommendation contract tests + installed-addon freshness (fixes F5).
@@ -98,6 +99,60 @@ function ruleAddonList(ruleContent: string): string[] {
   return match[1].split(',').map(s => s.trim().replace(/`/g, '')).filter(Boolean);
 }
 describe('Part 1 — Recommendation contract (Cross-Bundle Dynamic Recommendation Protocol)', () => {
+  it('rejects ordinary recommendations to a contributor bundle alias', async () => {
+    const fixture = await contributorCatalogFixture(manifest => {
+      manifest.bundles['fixture-engineering'].recommendedAddons = ['fixture-authoring'];
+    });
+    try {
+      await expect(fixture.resolver.loadBundles()).rejects.toThrow('cannot recommend contributor bundle "fixture-factory"');
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it('rejects ordinary recommendations to the contributor domain command', async () => {
+    const fixture = await contributorCatalogFixture(manifest => {
+      manifest.bundles['fixture-engineering'].recommendedAddons = ['domain:ConTRIbUtOr'];
+    });
+    try {
+      await expect(fixture.resolver.loadBundles()).rejects.toThrow('cannot recommend contributor department');
+    } finally {
+      await fixture.remove();
+    }
+  });
+
+  it('keeps literal contributor routes out of ordinary canonical and native leader guidance', async () => {
+    const bundles = await resolver.listBundles();
+    const leaderFiles = new Set<string>();
+    const hostsDir = path.resolve(process.cwd(), 'registry/hosts');
+    const hosts = (await fs.readdir(hostsDir, { withFileTypes: true })).filter(entry => entry.isDirectory());
+    for (const bundle of bundles.filter(candidate => candidate.domain?.toLowerCase() !== 'contributor')) {
+      if (!bundle.orchestrator) continue;
+      leaderFiles.add(path.join(REGISTRY_AGENTS_DIR, bundle.orchestrator));
+      const stem = bundle.orchestrator.replace(/\.md$/, '');
+      for (const host of hosts) {
+        for (const file of [
+          path.join(hostsDir, host.name, 'agents', bundle.orchestrator),
+          path.join(hostsDir, host.name, 'rules', `agents-united-${stem}.md`),
+          path.join(hostsDir, host.name, 'skills', stem, 'SKILL.md'),
+        ]) {
+          if (await fs.pathExists(file)) leaderFiles.add(file);
+        }
+      }
+    }
+    expect([...leaderFiles].some(file => file.startsWith(hostsDir))).toBe(true);
+    for (const file of leaderFiles) {
+      for (const identifier of extractAddCommands(await fs.readFile(file, 'utf8'))) {
+        if (identifier.startsWith('domain:')) {
+          expect(identifier.slice('domain:'.length).toLowerCase(), file).not.toBe('contributor');
+        } else {
+          const target = await resolver.getBundle(identifier);
+          expect(target?.domain?.toLowerCase(), `${file}: agents add ${identifier}`).not.toBe('contributor');
+        }
+      }
+    }
+  });
+
   describe('R1-R3 — software-engineering essentials orchestrator', () => {
     let content: string;
     let bundle: BundleDefinition;

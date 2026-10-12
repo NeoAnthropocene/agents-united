@@ -2,6 +2,18 @@
   "$schema": "https://agents-united.dev/schema/bundles.v1.json",
   "version": 1,
   "bundles": {
+    "agent-factory": {
+      "name": "agent-factory",
+      "tier": "domain",
+      "domain": "contributor",
+      "category": "Developers only: contribute to Agents United",
+      "status": "under-construction",
+      "description": "Unavailable empty shell for developing and contributing Agents United artifacts; contributor tooling is under construction.",
+      "agents": [],
+      "skills": [],
+      "workflows": [],
+      "rules": []
+    },
     "software-engineering": {
       "name": "software-engineering",
       "tier": "domain",
@@ -853,7 +865,7 @@
         "complete",
         "full-suite"
       ],
-      "description": "Complete suite with all 7 lead orchestrators, 38 subagents, and all skills and workflows",
+      "description": "Complete end-user suite of lead orchestrators, subagents, skills and workflows; contributor tooling is excluded",
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
         "orchestrator-business.md",

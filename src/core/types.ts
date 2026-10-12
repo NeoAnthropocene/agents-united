@@ -149,6 +149,16 @@ export interface BundlesManifest {
   bundles: Record<string, BundleDefinition>;
 }
 
+/** Plan 033 slice 2: an empty contributor shell is visible but never installable, regardless of its status. */
+export function isEmptyContributorBundle(bundle: BundleDefinition): boolean {
+  return bundle.domain?.toLowerCase() === 'contributor'
+    && !bundle.orchestrator
+    && !(bundle.agents?.length)
+    && !(bundle.skills?.length)
+    && !(bundle.workflows?.length)
+    && !(bundle.rules?.length);
+}
+
 export interface LockfileAsset {
   hash: string;
   bundle?: string;

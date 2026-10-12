@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import yaml from 'yaml';
 import { fileURLToPath } from 'node:url';
 import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults, PlanningLoopMode } from './types.js';
+import { isEmptyContributorBundle } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,9 +51,10 @@ export class RegistryResolver {
       throw new Error(`Registry bundles.json not found at ${manifestPath}`);
     }
 
-    this.bundlesManifest = await fs.readJson(manifestPath);
-    this.validateBundles(this.bundlesManifest!);
-    return this.bundlesManifest!;
+    const manifest: BundlesManifest = await fs.readJson(manifestPath);
+    this.validateBundles(manifest);
+    this.bundlesManifest = manifest;
+    return manifest;
   }
 
   public async getBundle(bundleName: string): Promise<BundleDefinition | null> {
@@ -81,6 +83,9 @@ export class RegistryResolver {
     // Check if identifier refers to an entire department domain (e.g. "domain:engineering")
     if (identifier.startsWith('domain:')) {
       const domainName = identifier.replace(/^domain:/, '').toLowerCase();
+      if (domainName === 'contributor') {
+        throw new Error('domain:contributor is not an end-user department; inspect and select a named contributor bundle explicitly.');
+      }
       const domainBundles = await this.getBundlesByDomain(domainName);
       if (domainBundles.length > 0) {
         const agents = new Set<string>();
@@ -109,6 +114,9 @@ export class RegistryResolver {
     const bundle = await this.getBundle(identifier);
 
     if (bundle) {
+      if (isEmptyContributorBundle(bundle)) {
+        throw new Error(`Bundle "${bundle.name}" is an unavailable empty contributor shell; contributor tooling is under construction.`);
+      }
       const agents = new Set<string>();
       const skills = new Set<string>(bundle.skills || []);
       const workflows = new Set<string>(bundle.workflows || []);
@@ -341,7 +349,46 @@ export class RegistryResolver {
   private validateBundles(manifest: BundlesManifest): void {
     const validModes: string[] = ['subagent-first', 'planner-orchestrator'];
 
+    // Plan 033: full is an explicit end-user inventory. A contributor declaration
+    // does not remove an asset also declared by an ordinary bundle.
+    const bundles = Object.values(manifest.bundles);
+    const contributors = bundles.filter(bundle => bundle.domain?.toLowerCase() === 'contributor');
+    const ordinary = bundles.filter(bundle => bundle.domain?.toLowerCase() !== 'contributor' && bundle.name !== 'full');
+    const full = manifest.bundles.full;
+    if (full) {
+      const assetKinds = ['agents', 'skills', 'workflows', 'rules'] as const;
+      for (const kind of assetKinds) {
+        const declared = (bundle: BundleDefinition): string[] => kind === 'agents'
+          ? [...(bundle.orchestrator ? [bundle.orchestrator] : []), ...(bundle.agents ?? [])]
+          : bundle[kind] ?? [];
+        const exclusive = new Set(contributors.flatMap(declared));
+        for (const asset of ordinary.flatMap(declared)) exclusive.delete(asset);
+        for (const asset of declared(full)) {
+          if (exclusive.has(asset)) {
+            throw new Error(`Registry validation error: full includes contributor-only ${kind} "${asset}".`);
+          }
+        }
+      }
+    }
+
     for (const [name, bundle] of Object.entries(manifest.bundles)) {
+      if (bundle.domain?.toLowerCase() !== 'contributor') {
+        const referencedBundle = (identifier: string): BundleDefinition | undefined => manifest.bundles[identifier]
+          ?? bundles.find(candidate => candidate.aliases?.includes(identifier));
+        const parent = bundle.parentBundle ? referencedBundle(bundle.parentBundle) : undefined;
+        if (parent?.domain?.toLowerCase() === 'contributor') {
+          throw new Error(`Registry validation error: ordinary bundle "${name}" cannot inherit contributor bundle "${parent.name}".`);
+        }
+        for (const identifier of bundle.recommendedAddons ?? []) {
+          if (identifier.startsWith('domain:') && identifier.slice('domain:'.length).toLowerCase() === 'contributor') {
+            throw new Error(`Registry validation error: ordinary bundle "${name}" cannot recommend contributor department "${identifier}".`);
+          }
+          const addon = referencedBundle(identifier);
+          if (addon?.domain?.toLowerCase() === 'contributor') {
+            throw new Error(`Registry validation error: ordinary bundle "${name}" cannot recommend contributor bundle "${addon.name}".`);
+          }
+        }
+      }
       // Plan 015 §0/D2 — declared rule bindings must resolve on disk.
       if (Array.isArray(bundle.rules)) {
         for (const rule of bundle.rules) {

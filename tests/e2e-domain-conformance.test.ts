@@ -70,6 +70,10 @@ describe('007 — Cross-domain generalization of the lifecycle conformance suite
     ]);
   });
 
+  it('keeps contributor bundles outside ordinary department lifecycles', () => {
+    expect(DOMAINS.every(domain => entry(domain.essentials).domain !== 'contributor')).toBe(true);
+  });
+
   it('derives exactly 23 addons total across all domains', () => {
     const total = DOMAINS.reduce((s, d) => s + d.addons.length, 0);
     expect(total).toBe(23);

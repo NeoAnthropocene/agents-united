@@ -1,0 +1,775 @@
+
+> agents-united@0.15.0 pretest
+> npm run build
+
+
+> agents-united@0.15.0 build
+> tsup
+
+CLI Building entry: src/cli.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\ozy\.codex\worktrees\ecb0\agents-united\tsup.config.ts
+CLI Target: node24
+CLI Cleaning output folder
+ESM Build start
+ESM dist\cli.js     474.49 KB
+ESM dist\cli.js.map 1016.61 KB
+ESM ⚡️ Build success in 43ms
+DTS Build start
+DTS ⚡️ Build success in 1101ms
+DTS dist\cli.d.ts 2.93 KB
+
+> agents-united@0.15.0 test
+> vitest run --testTimeout=30000 --hookTimeout=30000
+
+
+ RUN  v3.2.7 C:/Users/ozy/.codex/worktrees/ecb0/agents-united
+
+ ✓ tests/designer-p3-observation.test.ts (33 tests) 156ms
+ ✓ tests/e2e-evals/e2e-stream-evals.test.ts (12 tests) 6ms
+ ✓ tests/designer-sitting-k-observation.test.ts (31 tests) 221ms
+ ✓ tests/e2e-agents-prompts.test.ts (19 tests) 265ms
+ ✓ tests/cline-projector.test.ts (34 tests) 82ms
+ ✓ tests/image-creation-skill.test.ts (22 tests) 219ms
+ ✓ tests/registry.test.ts (40 tests) 221ms
+ ✓ tests/hostlib-session-report.test.ts (41 tests) 341ms
+ ✓ tests/host-dialect-codex.test.ts (31 tests) 141ms
+ ✓ tests/hostlib-github-releases.test.ts (36 tests) 305ms
+ ✓ tests/claude-projector.test.ts (40 tests) 272ms
+ ✓ tests/semantic-core.test.ts (13 tests) 37ms
+ ✓ tests/native-claude-tier2.test.ts (304 tests) 92ms
+ ✓ tests/host-profile.test.ts (43 tests) 155ms
+ ✓ tests/native-workflow-implement.test.ts (21 tests) 8ms
+ ✓ tests/hostlib-library.test.ts (30 tests) 284ms
+ ✓ tests/hostlib-restore.test.ts (54 tests) 555ms
+   ✓ the restored pilot bundle: system-architecture-data > 'postgres-best-practices': every upstream content file is restored byte-for-byte after its header  311ms
+ ✓ tests/hostlib-command-source.test.ts (38 tests) 1292ms
+   ✓ execCommand > gives up after the time limit instead of hanging, and does not wait on input  419ms
+ ✓ tests/designer-fixtures.test.ts (36 tests) 1801ms
+   ✓ designer fixtures: the kit > is never installed: the package ships dist and registry only, and nothing in src or registry points here  1458ms
+ ✓ tests/claude-capabilities.test.ts (12 tests) 18ms
+ ✓ tests/hostlib-licences.test.ts (29 tests) 105ms
+ ✓ tests/native-workflow-test.test.ts (18 tests) 13ms
+ ✓ tests/host-profile-antigravity.test.ts (13 tests) 54ms
+ ✓ tests/image-creation-scripts.test.ts (17 tests) 2701ms
+   ✓ --stamp writes what was measured into the provenance file, and nothing else > adds measured size and hash once, leaves the other fields alone, and later runs compare against it  447ms
+   ✓ the command line > exits 2 with a usage line for no folder, a folder that is not there, an unknown option and a bad cap  404ms
+stdout | tests/recommendation-contract.test.ts > Part 1 — Recommendation contract (Cross-Bundle Dynamic Recommendation Protocol) > R5 — generalization over every essentials orchestrator with a detection matrix > R3+equality: no dangling agents add names; strict equality enforced only where the matrix is a clean addon-routing matrix
+[recommendation-contract] skipped equality contract for: orchestrator-design.md (matrix is cross-domain; exact-set contract not applicable), orchestrator-system-architecture.md (matrix is cross-domain; exact-set contract not applicable)
+
+ ✓ tests/claude-mode-line-gate.test.ts (21 tests) 2981ms
+   ✓ the mode-line gate script > does not release a call on elapsed time alone; a saved mode line releases later calls  326ms
+   ✓ the mode-line gate script > lets everything through when it cannot keep its state: an unusable temp directory, no session id, a bad payload, another event  842ms
+ ✓ tests/native-claude-agents.test.ts (90 tests) 8288ms
+   ✓ native Claude 'code-reviewer' > carries its guard, exactly as generated, and the embedded guard really blocks  405ms
+   ✓ native Claude 'repo-index' > carries its guard, exactly as generated, and the embedded guard really blocks  425ms
+   ✓ native Claude 'backend-architect' > carries its guard, exactly as generated, and the embedded guard really blocks  464ms
+   ✓ native Claude 'frontend-architect' > carries its guard, exactly as generated, and the embedded guard really blocks  587ms
+   ✓ native Claude 'orchestrator-engineering' > carries its guard, exactly as generated, and the embedded guard really blocks  438ms
+   ✓ native Claude 'agency-growth-strategist' > carries its guard, exactly as generated, and the embedded guard really blocks  503ms
+   ✓ native Claude 'agency-creative-designer' > carries its guard, exactly as generated, and the embedded guard really blocks  657ms
+   ✓ native Claude 'agency-conversion-specialist' > carries its guard, exactly as generated, and the embedded guard really blocks  459ms
+   ✓ native Claude 'agency-content-strategist' > carries its guard, exactly as generated, and the embedded guard really blocks  652ms
+   ✓ native Claude 'agency-campaign-specialist' > carries its guard, exactly as generated, and the embedded guard really blocks  487ms
+   ✓ native Claude 'agency-seo-specialist' > carries its guard, exactly as generated, and the embedded guard really blocks  517ms
+   ✓ native Claude 'agency-qa-automation-lead' > carries its guard, exactly as generated, and the embedded guard really blocks  598ms
+   ✓ native Claude 'agency-compliance-grc-specialist' > carries its guard, exactly as generated, and the embedded guard really blocks  483ms
+   ✓ native Claude 'agency-frontend-architect' > carries its guard, exactly as generated, and the embedded guard really blocks  497ms
+   ✓ native Claude 'orchestrator-digital-agency' > carries its guard, exactly as generated, and the embedded guard really blocks  945ms
+ ✓ tests/recommendation-contract.test.ts (10 tests) 14858ms
+   ✓ Part 1 — Recommendation contract (Cross-Bundle Dynamic Recommendation Protocol) > R4 — projected cline artifacts mirror the registry recommendation list > installed coordinator rule + team manifest recommendedAddons equal the registry list  3390ms
+   ✓ Part 2 — installed-addon freshness (parent rule + manifest stop recommending installed addons) > F1: installing an addon drops it from the parent rule + manifest recommendedAddons  5533ms
+   ✓ Part 2 — installed-addon freshness (parent rule + manifest stop recommending installed addons) > F2: removing the addon restores it in the parent rule + manifest recommendedAddons  5671ms
+ ✓ tests/prerequisites.test.ts (18 tests) 1554ms
+ ✓ tests/m1-challenger-stress.test.ts (35 tests) 66ms
+ ✓ tests/plan-029-orchestrator-mcp-and-antigravity.test.ts (46 tests) 17206ms
+   ✓ Plan 029 Group 3 — Risk R4: no credentials in any projected artifact > the scan harness actually covers every lane and the pinned goldens  392ms
+   ✓ Plan 029 Group 3 — Risk R4: no credentials in any projected artifact > no credential-shaped string appears in any projected artifact or golden file  409ms
+   ✓ Plan 029 Group 3 — Risk R4: no credentials in any projected artifact > no projected artifact inlines a server definition (env/command/args/headers/url)  369ms
+   ✓ Plan 029 Group 4 — doctor declared-but-unconfigured MCP warnings (Objective A3) > warns for a declared-but-unconfigured server and prints the host add command (claude)  1732ms
+   ✓ Plan 029 Group 4 — doctor declared-but-unconfigured MCP warnings (Objective A3) > stays silent for a server the host has configured via the fixture MCP config  1402ms
+   ✓ Plan 029 Group 4 — doctor declared-but-unconfigured MCP warnings (Objective A3) > prints the antigravity add command when the antigravity host has no server configured  1026ms
+   ✓ Plan 029 Group 4 — doctor declared-but-unconfigured MCP warnings (Objective A3) > prints the Cline settings path when the Cline host has no server configured  3969ms
+   ✓ Plan 029 Group 4 — doctor declared-but-unconfigured MCP warnings (Objective A3) > prints the host add command through the CLI (`agents doctor --host claude`)  1655ms
+   ✓ Plan 029 Group 4 — doctor declared-but-unconfigured MCP warnings (Objective A3) > never installs or writes a server — doctor only prints  1423ms
+   ✓ Plan 029 Group 6c — `agents start` on the Antigravity lane (Objectives B6 / B7) > `--dry-run` prints the resolved agy argv (or the documented desktop route)  1328ms
+   ✓ Plan 029 Group 6c — `agents start` on the Antigravity lane (Objectives B6 / B7) > src/cli.ts no longer carries the silent Cline fallback for non-Cline hosts (Objective B7)  816ms
+   ✓ Plan 029 Group 6c — `agents start` on the Antigravity lane (Objectives B6 / B7) > without agy it prints the desktop route, exits 0 and never launches Cline  1056ms
+   ✓ Plan 029 Group 6c — `agents start` on the Antigravity lane (Objectives B6 / B7) > auto-detects the Antigravity lane when the lockfile hosts are only `.agents`  951ms
+ ✓ tests/hostlib-restore-reconcile.test.ts (29 tests) 774ms
+   ✓ the restored qa-automation bundle > restores all 58 upstream documents byte-for-byte behind their headers, in upstream layout  601ms
+ ✓ tests/m3-worker1-validation.test.ts (12 tests) 45ms
+ ✓ tests/mcp-setup-routes.test.ts (22 tests) 10ms
+ ✓ tests/native-antigravity-skill-copies.test.ts (21 tests) 15127ms
+   ✓ Antigravity native lane: skills are copies, not links > installs every skill as a real folder with the registry bytes, and records each file as a copy with its own hash  824ms
+   ✓ Antigravity native lane: skills are copies, not links > copies the sidecar files of a skill too (references, scripts), not only SKILL.md, and leaves the maintainer-only evals/ out (Plan 035)  493ms
+   ✓ Antigravity native lane: skills are copies, not links > leaves the registry untouched  605ms
+   ✓ Antigravity native lane: skills are copies, not links > honours an explicit --copy the same as before (copies, with or without the lane)  656ms
+   ✓ Antigravity native lane: skills are copies, not links > migrates an existing link install: turning the lane on replaces each link by a copy and never touches the registry  1109ms
+   ✓ Antigravity native lane: skills are copies, not links > migrates on `agents update` (the lane is sticky, the install is re-run without the flag and with force)  1497ms
+   ✓ Antigravity native lane: skills are copies, not links > is byte-stable: a second install keeps the copies and rewrites nothing that did not change  1829ms
+   ✓ Antigravity native lane: skills are copies, not links > refuses to overwrite a copy the user edited, without --force, on install  2047ms
+   ✓ Antigravity native lane: skills are copies, not links > `agents update` skips a bundle with an edited skill copy instead of overwriting it, even though the lockfile method is symlink  926ms
+   ✓ Antigravity native lane: skills are copies, not links > turning the lane off without --force never throws away an edited copy; with --force the links come back  1330ms
+   ✓ Antigravity native lane: skills are copies, not links > removing the bundle removes the copied skill files and leaves the registry alone  1097ms
+   ✓ Antigravity native lane: skills are copies, not links > doctor and the install note for links agy will not list > listLinkedSkills names the skill folders that are links, and only on Windows (the observation is for junctions; POSIX symlinks were not tried)  453ms
+   ✓ Antigravity native lane: skills are copies, not links > doctor and the install note for links agy will not list > lists nothing for a real-folder install  739ms
+   ✓ Antigravity native lane: skills are copies, not links > doctor and the install note for links agy will not list > the doctor warns about linked skills on Windows, and is quiet once the lane has made copies  1251ms
+ ✓ tests/color-theory-skill.test.ts (19 tests) 36ms
+ ✓ tests/host-profile-cline.test.ts (15 tests) 50ms
+ ✓ tests/claude-launcher.test.ts (18 tests) 5050ms
+   ✓ Plan 016 Step 6 — ClaudeLauncher > resolveInstallation > rejects an installed bundle that carries no Claude projection signal  643ms
+   ✓ Plan 016 Step 6 — ClaudeLauncher > resolveInstallation > resolves a bundle projected with --fanout claude  1444ms
+   ✓ Plan 016 Step 6 — ClaudeLauncher > resolveInstallation > resolves through the host-neutral team manifest when the cline lane emitted it  2930ms
+ ✓ tests/native-antigravity-mcp.test.ts (41 tests) 22705ms
+   ✓ MCP wiring in the native install lane (agents add --native) > is off with the lane: nothing is written, nothing recorded  1325ms
+   ✓ MCP wiring in the native install lane (agents add --native) > writes the servers the bundle declares that need no credential, and never a secret  821ms
+   ✓ MCP wiring in the native install lane (agents add --native) > merges into a file the user already has, keeps their servers through update, a lane switch and removal, and never claims a server of theirs  4643ms
+   ✓ MCP wiring in the native install lane (agents add --native) > is byte-stable and keeps what the user switched on  2836ms
+   ✓ MCP wiring in the native install lane (agents add --native) > turning the lane off removes our servers and deletes a file it created  1650ms
+   ✓ MCP wiring in the native install lane (agents add --native) > removing the bundle removes our servers and a file it created  1272ms
+   ✓ MCP wiring in the native install lane (agents add --native) > is shared by bundles: a server stays until the last bundle that declares it is removed  1638ms
+   ✓ MCP wiring in the native install lane (agents add --native) > leaves a file it cannot parse untouched, says so, and prints the entries to add by hand  751ms
+   ✓ MCP wiring in the native install lane (agents add --native) > doctor > finds a fresh install healthy  913ms
+   ✓ MCP wiring in the native install lane (agents add --native) > doctor > does not read the user's own servers, added or reformatted, as drift  822ms
+   ✓ MCP wiring in the native install lane (agents add --native) > doctor > warns when a server of ours is deleted  817ms
+   ✓ MCP wiring in the native install lane (agents add --native) > doctor > warns when the file is deleted  777ms
+   ✓ MCP wiring in the native install lane (agents add --native) > doctor > warns when a server of ours is switched off  925ms
+   ✓ MCP wiring in the native install lane (agents add --native) > doctor > warns when a server of ours is edited by hand  857ms
+   ✓ MCP wiring in the native install lane (agents add --native) > doctor > warns when the file stops being valid JSON  971ms
+   ✓ MCP wiring in the native install lane (agents add --native) > doctor > is silent when the lane is off  950ms
+ ✓ tests/e2e-skills-depth.test.ts (10 tests) 557ms
+ ✓ tests/native-antigravity-guard-install.test.ts (29 tests) 24044ms
+   ✓ the guard in the native install lane (agents add --native) > is off with the lane: nothing is written, nothing recorded  1358ms
+   ✓ the guard in the native install lane (agents add --native) > installs the script as a tracked projection and registers it in a new hooks.json  1317ms
+   ✓ the guard in the native install lane (agents add --native) > merges into a hooks.json the user already has, and keeps their hooks through update, a lane switch and removal  4647ms
+   ✓ the guard in the native install lane (agents add --native) > is byte-stable: a second install changes neither file  1987ms
+   ✓ the guard in the native install lane (agents add --native) > turning the lane off removes the key, the script and the folder, and deletes a hooks.json it created  1739ms
+   ✓ the guard in the native install lane (agents add --native) > removing the bundle removes the script, the key and a hooks.json it created, and nothing else of the user's  1215ms
+   ✓ the guard in the native install lane (agents add --native) > is shared by bundles: it stays until the last bundle that owns it is removed  1741ms
+   ✓ the guard in the native install lane (agents add --native) > leaves a hooks.json it cannot parse untouched, says so, and still installs the script  668ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > finds a fresh install healthy  973ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > does not read a hook the user added as drift, and does not mind a reformatted file  801ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > warns that the guard is not in effect when the script is gone  932ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > warns when hooks.json is deleted  766ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > warns when our key is removed from hooks.json  949ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > warns when our key is switched off  797ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > warns when our key is edited by hand  1015ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > warns when hooks.json stops being valid JSON  802ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > says nothing when no installed native role can run a command or edit a file, because there is nothing to guard  1051ms
+   ✓ the guard in the native install lane (agents add --native) > doctor > is silent when the lane is off  1111ms
+ ✓ tests/claude-agent-teams-posture.test.ts (40 tests) 1917ms
+   ✓ real install projects SendMessage into .claude/agents/*.md > all four specialists list SendMessage in the installed projection  1858ms
+ ✓ tests/hostlib-restore-final.test.ts (24 tests) 792ms
+   ✓ the finished catalog > react-best-practices: 70 upstream documents restored, behind headers where the format allows  496ms
+ ✓ tests/host-primitive-matrix.test.ts (21 tests) 8844ms
+   ✓ agents doctor --host <h> — declared-delta section (Plan 026 gate 3) > --host cline lists degraded/unsupported features for an installed bundle  5469ms
+   ✓ agents doctor --host <h> — declared-delta section (Plan 026 gate 3) > --host antigravity lists degraded/unsupported features for an installed bundle  534ms
+   ✓ agents doctor --host <h> — declared-delta section (Plan 026 gate 3) > --host claude keeps its existing output and adds only the declared-delta section  2790ms
+ ✓ tests/plan-030-licence-aware-skills.test.ts (90 tests) 167ms
+ ✓ tests/native-antigravity-agents.test.ts (46 tests) 59ms
+ ✓ tests/live-test-protocol.test.ts (31 tests) 7ms
+ ✓ tests/brand-consistency-audit-skill.test.ts (16 tests) 46ms
+ ✓ tests/session-guard.test.ts (16 tests) 26561ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > consent "project" wires .claude/settings.json and records ownership in the lockfile  2301ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > consent "local" wires .claude/settings.local.json instead  1884ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > declining writes nothing and the decision is sticky across re-installs  5285ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > an approved guard is re-merged on a plain re-install (sticky yes)  3906ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > without the Claude lane, no settings file is ever written  1971ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > global scope never writes user settings unless "user" is requested explicitly  2191ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > removing the last bundle removes only our groups; the user file survives byte-for-byte  3047ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > removing the last bundle deletes a settings file agents-united created  2864ms
+   ✓ Plan 023 A — session guard through install / doctor / uninstall (integration) > invalid user JSON: install proceeds, file untouched, doctor warns with the paste-in snippet hint  2933ms
+ ✓ tests/subagent-comms.test.ts (11 tests) 117ms
+ ✓ tests/designer-retests.test.ts (14 tests) 73ms
+ ✓ tests/hostlib-audit.test.ts (23 tests) 261ms
+ ✓ tests/permission-preset.test.ts (17 tests) 13906ms
+   ✓ Plan 024 S4 — installer/uninstaller integration > is off by default: no permissionPreset option writes nothing  1660ms
+   ✓ Plan 024 S4 — installer/uninstaller integration > "verify" writes only .claude/settings.local.json, never .claude/settings.json  1624ms
+   ✓ Plan 024 S4 — installer/uninstaller integration > permissions never land in settings.json even when sessionGuard: "project" is also requested  2334ms
+   ✓ Plan 024 S4 — installer/uninstaller integration > "build" tier is opt-in and never implied  2140ms
+   ✓ Plan 024 S4 — installer/uninstaller integration > uninstalling the last bundle removes only our recorded entries  2885ms
+   ✓ Plan 024 S4 — installer/uninstaller integration > a fan-out that includes a host with no verified renderer yet gets an honest "not supported" note, and no file is guessed for it  3134ms
+ ✓ tests/e2e-workflows-gates.test.ts (9 tests) 149ms
+ ✓ tests/color-theory-scripts.test.ts (17 tests) 919ms
+   ✓ the command line > exits 2 with a usage line for no seed, a bad seed, or an unknown scheme  348ms
+ ✓ tests/claude-lane-install.test.ts (13 tests) 35389ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > A1 deploys .claude/agents/orchestrator-engineering.md with matching frontmatter name  2837ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > A2 strips the subagent- prefix from projected agent filenames and frontmatter  2446ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > A3 projects skills as .claude/skills/<name>/SKILL.md and a non-empty .claude/rules  2046ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > A4 writes no non-goal artifacts (settings.json, workflows, CLAUDE.md, CLAUDE.local.md)  2176ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > A5 records the claude role projection in the lockfile with owners and a real sha256 hash  1975ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > A6 claude-only fanout leaves no Cline leakage anywhere  2157ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > A7 surfaces the claude projection in result.projections  1985ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > B8 de-duplicates owners for a projection shared with an inheriting bundle  4251ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > B9 uninstall leaves zero orphaned claude projections or projectedTo pointers  3057ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > B10 preserves a foreign unmanaged file in .claude/agents/ byte-identically  1849ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > C11 prunes pre-rename subagent-* leftovers and their lockfile records on re-install  4053ms
+   ✓ Plan 016 Step 4 — Claude lane installer, lockfile & migration > C12 re-install is idempotent (no projection or claude file churn)  6474ms
+ ✓ tests/native-antigravity-mcp-withheld.test.ts (16 tests) 13596ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > writes only the servers that need nothing, with no disabled switch anywhere, and records only those  911ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > prints, for each credentialed server the bundle declares, the variable it needs and the entry to add, never a value  493ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > never claims or touches a server of the same name the user has  1736ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > is byte-stable and keeps the switch the user flips on a server we do write  2259ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > migration of what an older release wrote > removes an untouched switched-off entry of ours on the next install, and its record  1603ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > migration of what an older release wrote > keeps a credentialed server the user switched on, untracked, and says it is theirs now  2047ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > migration of what an older release wrote > keeps an entry the user edited, and says so  1559ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > migration of what an older release wrote > the doctor calls a recorded credentialed entry an older release, names the command, and is quiet after the update  2009ms
+   ✓ MCP wiring does not write credentialed servers (agents add --native) > a fresh install is healthy for the doctor  869ms
+ ✓ tests/native-cline-orchestrator.test.ts (21 tests) 35ms
+ ✓ tests/mcp-setup-find-plugin.test.ts (19 tests) 1786ms
+ ✓ tests/projector.test.ts (16 tests) 26ms
+ ✓ tests/e2e-agents-schema.test.ts (11 tests) 268ms
+ ✓ tests/cli-contributor-wizards.test.ts (12 tests) 60ms
+ ✓ tests/design-artifact-publishing-skill.test.ts (15 tests) 20ms
+ ✓ tests/skill-evals-not-installed.test.ts (9 tests) 2023ms
+   ✓ evals/ is not installed: the whole catalog > no projection plan of any skill in the registry carries a file of its evals/ folder  1646ms
+ ✓ tests/projection-lifecycle.test.ts (12 tests) 38941ms
+   ✓ Projection lifecycle (plan 007 M5) > uninstall after fan-out removes every projection and empty projection dirs  6522ms
+   ✓ Projection lifecycle (plan 007 M5) > uninstall removes the codex AGENTS.md bridge projection  1360ms
+   ✓ Projection lifecycle (plan 007 M5) > uninstall refuses to remove a user-modified projection without --force  1982ms
+   ✓ Projection lifecycle (plan 007 M5) > uninstall with --force removes a user-modified projection  3097ms
+   ✓ Projection lifecycle (plan 007 M5) > update never clobbers a stale (marker-removed) projection without --force  2502ms
+   ✓ Projection lifecycle (plan 007 M5) > doctor reports a missing projection as a warning  2928ms
+   ✓ Projection lifecycle (plan 007 M5) > doctor reports a user-modified projection as a warning  2554ms
+   ✓ Projection lifecycle (plan 007 M5) > update regenerates projections and preserves projectedTo tracking  5666ms
+   ✓ Projection lifecycle (plan 007 M5) > update with fanout projects a bundle that was installed without fanout  3174ms
+   ✓ Projection lifecycle (plan 007 M5) > update --fanout after a symlink-mode install succeeds without -f (collision auto-resolved)  3989ms
+   ✓ Projection lifecycle (plan 007 M5) > manages shared artifact refcounting when multiple bundles project to cline  3158ms
+   ✓ Projection lifecycle (plan 007 M5) > migrates pre-ADR-0013 .cline/ markdown artifacts to the native discovery structure during update  2007ms
+ ✓ tests/optional-mcp-extras.test.ts (13 tests) 5499ms
+   ✓ the doctor warns for the required servers only > warns for each of the six required servers that is not configured, and for neither optional extra  2627ms
+   ✓ the doctor warns for the required servers only > has no MCP warning at all when the six required servers are configured and the extras are not  2826ms
+ ✓ tests/claude-skill-host-fit.test.ts (8 tests) 267ms
+ ✓ tests/native-antigravity-skills.test.ts (201 tests) 925ms
+   ✓ the native lane serves the skills of a bundle byte for byte > installs every skill of software-engineering unchanged with the lane on, native agents and rules beside them  796ms
+ ✓ tests/specialist-anatomy.test.ts (36 tests) 20ms
+ ✓ tests/native-antigravity-install-lane.test.ts (13 tests) 12762ms
+   ✓ native install lane for Antigravity (agents add --native) > is off by default: the store holds the legacy files (including the hidden prefixed agents), and nothing is recorded  629ms
+   ✓ native install lane for Antigravity (agents add --native) > installs the native agents and rules in place of the store copies they replace  591ms
+   ✓ native install lane for Antigravity (agents add --native) > records the lane per host, tracks every native file as a projection whose hash matches the disk, and leaves no stub for the skipped store assets  508ms
+   ✓ native install lane for Antigravity (agents add --native) > is byte-stable and sticky: a second install, and one without the flag (what `agents update` does), keep the native files  2153ms
+   ✓ native install lane for Antigravity (agents add --native) > can be turned off explicitly: the native projections go, the store copies come back, and the record is dropped  1642ms
+   ✓ native install lane for Antigravity (agents add --native) > is recorded per host beside Cline: one flag, both records  2397ms
+   ✓ native install lane for Antigravity (agents add --native) > refuses to replace a legacy store file the user has edited, and an unmanaged file at a native path, without --force  1507ms
+   ✓ native install lane for Antigravity (agents add --native) > removing the bundle removes every native file it installed  1105ms
+   ✓ native install lane for Antigravity (agents add --native) > doctor > finds a fresh native install healthy  1180ms
+   ✓ native install lane for Antigravity (agents add --native) > doctor > reports drift on a native file, and a native file that went missing  1016ms
+ ✓ tests/workflows-to-skills-migration.test.ts (6 tests) 128ms
+ ✓ tests/claude-design-tokens-format.test.ts (16 tests) 7ms
+ ✓ tests/native-workflow-review.test.ts (10 tests) 11ms
+ ✓ tests/doctor.test.ts (17 tests) 40892ms
+   ✓ DoctorEngine > should validate healthy installed workspace  541ms
+   ✓ DoctorEngine > reports a missing projection as a warning  3767ms
+   ✓ DoctorEngine > reports a user-modified projection as a warning  3068ms
+   ✓ DoctorEngine > reports no projection or ownership warnings after a bundle install (Plan 015)  2996ms
+   ✓ DoctorEngine > resolves agent-referenced rules into the canonical store (Plan 015 Step 1)  959ms
+   ✓ DoctorEngine > counts installed workflow skills instead of reporting the deprecated legacy field  833ms
+   ✓ DoctorEngine > stale vs missing projection classification (Plan 015 §5.9 item 3) > reports a renamed projection as stale when a superseding projection exists  2849ms
+   ✓ DoctorEngine > stale vs missing projection classification (Plan 015 §5.9 item 3) > omits the reconcile command when the superseding projection has no owners  2500ms
+   ✓ DoctorEngine > stale vs missing projection classification (Plan 015 §5.9 item 3) > still reports a deleted projection as missing, never as stale (regression)  2572ms
+   ✓ DoctorEngine > stale vs missing projection classification (Plan 015 §5.9 item 3) > classifies a legacy ADR 0016 workflow slug as stale (built-in cline lane)  2890ms
+   ✓ DoctorEngine > renderer-backed projection freshness (ADR 0017) > reports content drift when a managed projection was edited after installation  2768ms
+   ✓ DoctorEngine > renderer-backed projection freshness (ADR 0017) > reports an outdated projection when the recorded hash matches but the current render differs  2802ms
+   ✓ DoctorEngine > renderer-backed projection freshness (ADR 0017) > reports no freshness warnings for a freshly projected workspace (no false positives)  2967ms
+   ✓ DoctorEngine > renderer-backed projection freshness (ADR 0017) > skips the drift comparison for legacy projection records without a hash  3094ms
+   ✓ DoctorEngine > renderer-backed projection freshness (ADR 0017) > keeps compound-lane roles intact through a domain pseudo-bundle fanout (regression)  6242ms
+ ✓ tests/native-cline-workflows.test.ts (58 tests) 64ms
+ ✓ tests/plan-028-third-party-skills-batch2.test.ts (19 tests) 23ms
+ ✓ tests/native-cline-guard.test.ts (36 tests) 7ms
+ ✓ tests/skill-quality-ratchet.test.ts (14 tests) 63ms
+ ✓ tests/cli-e2e.test.ts (39 tests) 41837ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should search for bundles and skills with find command and support --json  525ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > keeps the contributor shell discoverable through JSON list and domain search  510ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > refuses the empty contributor shell 'with the construction override' before writing any files  314ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should add and remove bundles in non-interactive mode with -y flag  878ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should support copy mode flag --copy  572ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should print the projection plan for --fanout in dry-run mode  378ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should not print projection lines without --fanout  301ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > accepts --fanout when PowerShell has flattened the comma list to a space (owner field test, 2026-09-28)  446ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > refuses under-development --fanout hosts on update with a non-zero exit  971ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > update --fanout projects a bundle that was installed without fanout (fix scenario)  5367ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > reroutes -t cline to the main library + translated copies  1962ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > keeps the native lane opt-in: legacy files without the flag, the native package with --native, and the legacy files back with --no-native  7895ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > prints a plain-language sync tip when installing without fanout  1104ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > prints a sync tip after update when the bundle is not synced to other assistants  2038ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should run doctor health check  802ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > should handle update command with --all and --dry-run  2039ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > runs agents start in --dry-run mode reporting team name, strategy, and safe argv  5088ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > runs add with --dry-run and --start without launching processes  366ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > runs doctor --host cline reporting Cline runtime audit  5780ms
+   ✓ CLI End-to-End Suite (dist/cli.js) > agents add renders clean Installation Success note without line overflow  1144ms
+ ✓ tests/native-antigravity-guard.test.ts (31 tests) 3875ms
+   ✓ the answer contract > always answers with exactly one JSON object holding a decision of deny or ask, never allow, and exits 0  1421ms
+ ✓ tests/hostlib-guides.test.ts (26 tests) 216ms
+ ✓ tests/skill-layout.test.ts (42 tests) 430ms
+ ✓ tests/hostlib-provenance.test.ts (19 tests) 1323ms
+   ✓ the committed host-library/_upstream provenance > snapshots only folders that passed the audit gate, and they still pass it  1285ms
+ ✓ tests/native-cline-agents.test.ts (29 tests) 43ms
+ ✓ tests/cline-launcher.test.ts (11 tests) 2410ms
+   ✓ Milestone 4: ClineLauncher > Installation resolution and error reporting > throws actionable error when bundle is not projected to cline  630ms
+   ✓ Milestone 4: ClineLauncher > Installation resolution and error reporting > resolves valid installation when projected to cline  1752ms
+ ✓ tests/mcp-setup-claude-reference.test.ts (12 tests) 5ms
+ ✓ tests/native-roster.test.ts (10 tests) 14ms
+ ✓ tests/agency-operational-mode-counts.test.ts (13 tests) 5ms
+ ✓ tests/designer-retests-observation.test.ts (14 tests) 22ms
+ ✓ tests/claude-plugin-lane.test.ts (16 tests) 47608ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > a1 is flag-gated: no plugin lane without `pluginLane`, plugin lane with it  4490ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > a2 is byte-stable: a second flagged install regenerates identical bytes without --force  4962ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > b1 emits exactly the Claude plugin field set with a valid name and version  2217ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > b2 keeps the managed marker inside the JSON so install/doctor treat it as ours  2167ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > c1 mirrors the project projection byte-for-byte and drops the subagent- prefix  2199ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > d1 leaves Cline's plugin.json hard-stop discriminator byte-identical when the flag is on  6712ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > d2 still rejects a foreign .agents/plugins/<bundle>/plugin.json without --force, preserving it  1019ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > e1 records the plugin manifest as a tracked claude projection in the lockfile  2071ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > e2 records the plugin agents as claude projections without a projectedTo pointer  1846ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > e3 removes the plugin lane again when the flag is switched off  3941ms
+   ✓ Plan 016 Step 7 — opt-in Claude plugin lane (`agents add --plugin`) > f1 writes no non-goal artifacts anywhere in the workspace  2408ms
+   ✓ Plan 016 Step 7 — ephemeral `--teams` scaffold (no process spawned) > t2 never lets the variable leak into argv and names a projected agent type in the prompt  1861ms
+   ✓ Plan 016 Step 7 — the plugin-lane opt-in is recorded and survives an update > keeps the package when a later install omits the flag (the agents update path)  5504ms
+   ✓ Plan 016 Step 7 — the plugin-lane opt-in is recorded and survives an update > removes the package only when the flag is explicitly turned off  4168ms
+   ✓ Plan 016 Step 7 — the plugin-lane opt-in is recorded and survives an update > never enables the lane from the flag alone when the claude fanout is absent  2036ms
+ ✓ tests/store-less-install.test.ts (16 tests) 40087ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > (1) a Claude-only install leaves no .agents/ and writes the sidecar snapshot + lockfile  1650ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > the sidecar is a snapshot: symlink mode is downgraded to copy  1533ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > (2) doctor is warning-free on the sidecar shape  3103ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > doctor flags a hand-edited sidecar snapshot (machine-owned state)  2832ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > (2) inventory lists the sidecar install under host `agents`, and update re-installs into it  5575ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > (2) inventory discovers the sidecar with no targetDir (plain `agents list` / `update`)  1840ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > (2) removing the last bundle tears down the sidecar and every projection  2956ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > the Claude launcher resolves a sidecar install  2158ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > (3) a later store-requiring add moves the sidecar into .agents/ and reconciles the lockfile  7126ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > a half-finished move (sidecar content already in .agents/, shape not yet flipped) is completed  7615ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > (4) a store-backed install keeps the exact lockfile shape (no storeShape key)  1693ms
+   ✓ Plan 023 B — store-less Claude install lifecycle (ADR 0022 acceptance) > global scope: the sidecar lives under the home .claude dir and the root is the home dir  1973ms
+ ✓ tests/native-claude-lead-mode-line.test.ts (11 tests) 3ms
+ ✓ tests/claude-projection-residue.test.ts (7 tests) 118ms
+ ✓ tests/hosts.test.ts (21 tests) 5ms
+ ✓ tests/skill-rewrite-s4-design-qa.test.ts (21 tests) 15ms
+ ✓ tests/subagent-contract.test.ts (29 tests) 79ms
+ ✓ tests/domain-atlas-contract.test.ts (7 tests) 11ms
+ ✓ tests/generative-ui-rename.test.ts (7 tests) 3285ms
+   ✓ agents update migrates an install made before the rename > a fresh install never has the legacy skill (the migration leaves it alone)  463ms
+   ✓ agents update migrates an install made before the rename > replaces the unmodified legacy store copy, its record and its roster entry with the new skill  677ms
+   ✓ agents update migrates an install made before the rename > is idempotent: a second update changes nothing  1130ms
+   ✓ agents update migrates an install made before the rename > never deletes a legacy copy the user edited: without --force the update is skipped as for any edited file, and with --force the copy and its record stay while the new skill is installed beside it  909ms
+ ✓ tests/claude-privileges.test.ts (38 tests) 138ms
+ ✓ tests/claude-mcp-routes.test.ts (12 tests) 5ms
+ ✓ tests/designer-baseline-observation.test.ts (14 tests) 17ms
+ ✓ tests/updater.test.ts (6 tests) 12004ms
+   ✓ UpdateEngine (TDD) > Tier 1: should check updates and report up-to-date when version matches upstream  796ms
+   ✓ UpdateEngine (TDD) > Tier 2: should identify outdated bundle and execute batch update  1873ms
+   ✓ UpdateEngine (TDD) > Tier 2: should perform selective update for specific bundle  2115ms
+   ✓ UpdateEngine (TDD) > Tier 3: should guard against clobbering user-modified files in copy mode without --force  1532ms
+   ✓ UpdateEngine (TDD) > Tier 3: should support dry-run mode without modifying filesystem  678ms
+   ✓ UpdateEngine (TDD) > Tier 3: should return regenerated projections and report scanned locations in checkUpdates  5009ms
+ ✓ tests/brand-consistency-audit-scripts.test.ts (10 tests) 1323ms
+   ✓ the command line and the colour maths > exits 2 with a usage line for a missing argument, a folder that is not there, tokens that are not JSON and an unknown option  447ms
+ ✓ tests/native-claude-readonly-attempt.test.ts (89 tests) 9741ms
+   ✓ read-only role code-reviewer, as installed > refuses a mutating tool of a connected server, whichever server it belongs to  610ms
+   ✓ read-only role code-reviewer, as installed > is not guarded by a deleted script: node exits 1, which is not a block (the host lets the call through, which is why the doctor warns)  332ms
+   ✓ read-only role repo-index, as installed > refuses a mutating tool of a connected server, whichever server it belongs to  468ms
+   ✓ read-only role repo-index, as installed > is not guarded by a deleted script: node exits 1, which is not a block (the host lets the call through, which is why the doctor warns)  373ms
+ ✓ tests/native-antigravity-rules.test.ts (30 tests) 19ms
+ ✓ tests/native-claude-artifact-grant.test.ts (9 tests) 47ms
+ ✓ tests/skill-rewrite-s6-orchestration.test.ts (13 tests) 12ms
+ ✓ tests/claude-design-exploration.test.ts (10 tests) 6ms
+ ✓ tests/claude-probe-profile.test.ts (10 tests) 13ms
+ ✓ tests/native-cline-install-lane.test.ts (24 tests) 52475ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > is off by default: legacy projections, the orchestrator as an agent, no native-only file, nothing recorded  3089ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > writes the committed native files: four agents, three workflows, the orchestrator rule and skill, and the guard plugin  2426ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > replaces the orchestrator agent and the legacy coordinator rule by the native rule and skill (ADR 0028 decision 6)  2252ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > keeps the legacy projection for what has no native file: the other workflows, the domain rules and the Agent Plugin package  2347ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > records the lane per host and every projection hash matches the file on disk; native-only files have no canonical  2066ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > is byte-stable: a second install regenerates identical files without --force  4416ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > is sticky: an install without the flag (what `agents update` does) keeps the native files  4101ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > can be turned off explicitly: legacy projections return, the native-only files go, and the record is dropped  4483ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > is recorded per host: one flag covers every fanned-out host with a native package, and a host not fanned out is untouched  5285ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > refuses to overwrite an unmanaged file of the same name without --force  4482ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > removing the bundle removes every native file it installed  2762ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > doctor > finds a fresh native install healthy: no warning at all, in particular no shadow warning from the canonical skills  3837ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > doctor > reports drift on a native file and a stale render  2793ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > doctor > warns when a native writer role is installed but its guard plugin is gone, and says how to restore it  2479ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > doctor > warns when `.agents/skills` holds a skill of the same name as a native `.cline/skills` one, because that copy wins  2490ms
+   ✓ native install lane for Cline (agents add --fanout cline --native) > doctor > does not run the native checks on a legacy install  3026ms
+ ✓ tests/installer.test.ts (9 tests) 13586ms
+   ✓ InstallEngine > should install a bundle in copy mode  560ms
+   ✓ InstallEngine > should install a bundle in symlink mode  306ms
+   ✓ InstallEngine > should support multi-host target deployment  687ms
+   ✓ InstallEngine > should not record projectedTo when fanout is omitted (backward-compat guard)  797ms
+   ✓ InstallEngine > rule propagation (Plan 015 Step 1) > deploys every agent-referenced rule to .agents/rules/ and records an owner  953ms
+   ✓ InstallEngine > rule propagation (Plan 015 Step 1) > grants a second bundle co-ownership of a shared rule without duplicating it  1941ms
+   ✓ InstallEngine > projectedTo reconciliation (Plan 015c) > drops a stale renamed projection on re-projection while keeping current entries  3769ms
+   ✓ InstallEngine > projectedTo reconciliation (Plan 015c) > preserves another bundle's plugin-lane projections when re-projecting one bundle  4540ms
+ ✓ tests/claude-launcher-variadic-add-dir.test.ts (5 tests) 3ms
+ ✓ tests/cline-workflow-supporting-files.test.ts (18 tests) 52715ms
+   ✓ the workflow projections of the whole catalog > project scope: a skill with only SKILL.md projects exactly as before, a playbook names its example  337ms
+   ✓ the workflow projections of the whole catalog > global scope: a skill with only SKILL.md projects exactly as before, a playbook names its example  432ms
+   ✓ the workflow projections of the whole catalog > project scope: no projected workflow keeps a relative link, and every path it names is a file the install carries  352ms
+   ✓ the workflow projections of the whole catalog > global scope: no projected workflow keeps a relative link, and every path it names is a file the install carries  395ms
+   ✓ a Cline install of the agency playbooks, in both scopes > project scope: the workflow names an example that exists in the project, and doctor finds every projection fresh  9858ms
+   ✓ a Cline install of the agency playbooks, in both scopes > global scope: the workflow names the absolute path of an example that exists under the home directory, and doctor finds every projection fresh  8773ms
+   ✓ a Cline install of the agency playbooks, in both scopes > an install made before this change is reported outdated, and the next install brings the path of the example  17712ms
+   ✓ a Cline install of the agency playbooks, in both scopes > a second install changes nothing  14537ms
+ ✓ tests/skill-rewrite-s3-content.test.ts (16 tests) 15ms
+ ✓ tests/native-claude-shutdown-reply-examples.test.ts (31 tests) 6ms
+ ✓ tests/claude-catalog-conformance.test.ts (8 tests) 215ms
+ ✓ tests/claude-design-brief.test.ts (9 tests) 4ms
+ ✓ tests/claude-hooks.test.ts (15 tests) 1164ms
+ ✓ tests/native-invariant-coverage.test.ts (34 tests) 25ms
+ ✓ tests/mcp-setup-image-route.test.ts (9 tests) 5ms
+ ✓ tests/designer-h10j-protocol.test.ts (9 tests) 4ms
+ ✓ tests/gate-command-portability.test.ts (8 tests) 5ms
+ ✓ tests/adr-0047-artifact-decision.test.ts (9 tests) 10ms
+ ✓ tests/fanout.test.ts (7 tests) 12627ms
+   ✓ InstallEngine fan-out (plan 007 M3) > projects agents into selected runtimes with translated frontmatter  2723ms
+   ✓ InstallEngine fan-out (plan 007 M3) > without fanout, behavior is byte-identical to today (no projectedTo, no extra dirs)  727ms
+   ✓ InstallEngine fan-out (plan 007 M3) > throws on a pre-existing user file at the projection destination without --force  809ms
+   ✓ InstallEngine fan-out (plan 007 M3) > re-installing with fanout over our own managed projections does NOT require --force  4764ms
+   ✓ InstallEngine fan-out (plan 007 M3) > throws on a pre-existing foreign AGENTS.md without --force, but regenerates a managed one  2509ms
+   ✓ InstallEngine fan-out (plan 007 M3) > codex fan-out generates a root AGENTS.md bridge and records it in projectedTo  833ms
+ ✓ tests/skill-rewrite-s2-growth.test.ts (14 tests) 14ms
+ ✓ tests/plan-035-closure.test.ts (9 tests) 12ms
+ ✓ tests/issue-templates.test.ts (10 tests) 103ms
+ ✓ tests/skill-rewrite-contract.test.ts (7 tests) 41ms
+ ✓ tests/native-claude-inputs-first.test.ts (83 tests) 6ms
+ ✓ tests/skill-seo-audit-h8.test.ts (9 tests) 29ms
+ ✓ tests/native-floor.test.ts (9 tests) 4ms
+ ✓ tests/markdown-links.test.ts (24 tests) 4ms
+ ✓ tests/hostlib-candidates.test.ts (6 tests) 38ms
+ ✓ tests/native-workflow-lint.test.ts (22 tests) 39ms
+ ✓ tests/skill-rewrite-s5-seo.test.ts (11 tests) 14ms
+ ✓ tests/max-turns.test.ts (5 tests) 68ms
+ ✓ tests/ownership-refcount.test.ts (9 tests) 53128ms
+   ✓ Ownership refcount — unbundled installs, legacy records and shared assets > T1: an unbundled install owns every asset it deploys (no owners: [] records)  3025ms
+   ✓ Ownership refcount — unbundled installs, legacy records and shared assets > T2: shared assets refcount across installs — owners merge, never replace  8914ms
+   ✓ Ownership refcount — unbundled installs, legacy records and shared assets > T3: removing one owner keeps a shared asset for the other; removing the last deletes it  11553ms
+   ✓ Ownership refcount — unbundled installs, legacy records and shared assets > T4: full removal of an unbundled install leaves zero residue  4499ms
+   ✓ Ownership refcount — unbundled installs, legacy records and shared assets > T5: a legacy lockfile (owners: [], roster entry lost) is still removable — the reported error  4562ms
+   ✓ Ownership refcount — unbundled installs, legacy records and shared assets > T7: removing one bundle keeps projections of a shared canonical — the reported sequence  7768ms
+   ✓ Ownership refcount — unbundled installs, legacy records and shared assets > T8: the REVERSED order keeps shared projections too — the second reported sequence  6138ms
+   ✓ Ownership refcount — unbundled installs, legacy records and shared assets > T9: the subset-over-superset matrix — removing software-engineering under domain:engineering deletes NOTHING  6665ms
+ ✓ tests/skill-conversion-funnel-fixture.test.ts (9 tests) 24ms
+ ✓ tests/hostlib-changelog.test.ts (9 tests) 4ms
+ ✓ tests/plan-033-findings.test.ts (9 tests) 3ms
+ ✓ tests/native-claude-guard-file.test.ts (29 tests) 55426ms
+   ✓ the guard files in the native install lane (project scope) > writes no script with the lane off  3075ms
+   ✓ the guard files in the native install lane (project scope) > installs both scripts as tracked projections: unchanged code, the marker as a trailing comment, owners and a hash  2560ms
+   ✓ the guard files in the native install lane (project scope) > points every installed role at the script of its kind, and the roles are the committed files  2179ms
+   ✓ the guard files in the native install lane (project scope) > blocks through the installed script when the host calls it as documented, from any working directory  2860ms
+   ✓ the guard files in the native install lane (project scope) > keeps the host's block message short: the command line it prints and the reason are both small  2404ms
+   ✓ the guard files in the native install lane (project scope) > is byte-stable: a second install changes neither the roles nor the scripts  4034ms
+   ✓ the guard files in the native install lane (project scope) > turning the lane off removes the scripts, and the roles stop naming them  3886ms
+   ✓ the guard files in the native install lane (project scope) > removing the bundle removes the scripts and leaves a hook of the user's own where it is  3388ms
+   ✓ the guard files in the native install lane (project scope) > removes an emptied .claude/hooks folder it created  2895ms
+   ✓ the guard files in the native install lane (project scope) > is shared by bundles: a script stays while a bundle that owns a role needing it remains, and only that script  3525ms
+   ✓ the guard files in the native install lane (project scope) > upgrades an install made before this change (inline guards, recorded hashes) on the next update, without --force  4619ms
+   ✓ the guard files in the native install lane (project scope) > doctor > finds a fresh install healthy  4588ms
+   ✓ the guard files in the native install lane (project scope) > doctor > warns, naming the script and the roles, when the destructive-command script is gone, because the host then lets the call through  3684ms
+   ✓ the guard files in the native install lane (project scope) > doctor > warns the same way for the read-only script, which guards the reviewers  3106ms
+   ✓ the guard files in the native install lane (project scope) > doctor > reports a script edited by hand as content drift, like any managed file  2798ms
+   ✓ the guard files in the native install lane (project scope) > doctor > still reports a role that lost its hooks line  3233ms
+   ✓ a GLOBAL native Claude install keeps the inline guard (no portable way to name a script) > writes the roles with `node -e <script>` into the home directory and no script file  2572ms
+ ✓ tests/native-claude-lead-routes-loose-ends.test.ts (7 tests) 2ms
+ ✓ tests/native-conformance.test.ts (28 tests) 34ms
+ ✓ tests/skill-scripts-s5-technical-seo.test.ts (7 tests) 702ms
+ ✓ tests/claude-launcher-first-message.test.ts (4 tests) 3ms
+usage: node sample-size.mjs --baseline 0.04 (--lift 0.20 | --abs 0.008) [--daily 1500]
+ ✓ tests/skill-brief-and-premises-data-inventory.test.ts (7 tests) 3ms
+usage: node srm-check.mjs <arm A count> <arm B count> [--ratio 0.5]
+ ✓ tests/skill-scripts-s2-growth.test.ts (7 tests) 692ms
+ ✓ tests/skill-scripts-s5-seo.test.ts (7 tests) 708ms
+   ✓ seo-audit health-score.mjs > exits 2 with a usage message for no input, a negative or non-numeric count, or a missing file  507ms
+ ✓ tests/native-orchestrator.test.ts (7 tests) 28ms
+ ✓ tests/cline-compatibility.test.ts (4 tests) 7ms
+ ✓ tests/native-antigravity-gemini-md.test.ts (14 tests) 13322ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > is installed without the lane (unchanged), as a link recorded in the lockfile  316ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > is not installed with the lane, and nothing records it, while the six native rules are  653ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > is omitted for a copy install too  503ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > migrates an existing install: turning the lane on removes our link and never touches the registry  693ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > migrates on `agents update`: the lane is sticky, so the next update drops it  753ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > removes an unmodified copy we installed  1739ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > leaves a copy the user edited, drops our record of it, and says so  2471ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > with --force an edited copy is removed as every other native replacement is  1315ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > comes back when the lane is turned off, and stays out while any bundle keeps a native rule  1635ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > is byte-stable: a second install changes nothing  1981ms
+   ✓ Antigravity native lane: the legacy GEMINI.md is omitted > leaves the doctor with nothing to say about the missing GEMINI.md  1202ms
+ ✓ tests/native-claude-lead-preflight-loose-ends.test.ts (6 tests) 2ms
+ ✓ tests/cline-capabilities.test.ts (4 tests) 3ms
+ ✓ tests/inventory.test.ts (6 tests) 3364ms
+   ✓ InventoryScanner (TDD) > Tier 1: should discover installed bundle in project scope with location and version  639ms
+   ✓ InventoryScanner (TDD) > Tier 2: should detect outdated drift status when bundle version lags upstream  557ms
+   ✓ InventoryScanner (TDD) > Tier 3: should record fanout and scannedLocations in PackageInventory  2111ms
+ ✓ tests/cline-agent-teams-nonleak.test.ts (3 tests) 14ms
+ ✓ tests/core-safety-floor.test.ts (35 tests) 8ms
+ ✓ tests/skill-scripts-s4-design-qa.test.ts (6 tests) 805ms
+   ✓ accessibility-audit contrast.mjs > prints the ratio and the four verdicts, and exits 1 when the chosen level fails, 0 when it passes  327ms
+   ✓ accessibility-audit contrast.mjs > fails with a usage message and exit code 2 for missing or malformed arguments  457ms
+ ✓ tests/skill-tables-s4-design-qa.test.ts (4 tests) 7ms
+ ✓ tests/skills-cli-command.test.ts (4 tests) 34ms
+ ✓ tests/skill-conversion-funnel-report-shape.test.ts (5 tests) 3ms
+ ✓ tests/agents-md.test.ts (4 tests) 5ms
+ ✓ tests/native-claude-lead-handback.test.ts (5 tests) 2ms
+ ✓ tests/golden-render.test.ts (4 tests) 160ms
+ ✓ tests/skill-accessibility-audit-compliance-trigger.test.ts (5 tests) 2ms
+ ✓ tests/bundle-skill-refs.test.ts (2 tests) 159ms
+ ✓ tests/digital-agency-label.test.ts (5 tests) 4ms
+ ✓ tests/native-claude-tier1-open-items.test.ts (11 tests) 4ms
+ ✓ tests/workflows.test.ts (3 tests) 18ms
+ ✓ tests/skill-folder.test.ts (5 tests) 2ms
+ ✓ tests/native-flag.test.ts (4 tests) 2ms
+ ✓ tests/adapter.test.ts (4 tests) 2ms
+ ✓ tests/readonly-guard.test.ts (41 tests) 3654ms
+ ✓ tests/source-encoding.test.ts (1 test) 7ms
+ ✓ tests/native-install-lane.test.ts (32 tests) 59808ms
+   ✓ native install lane (agents add --native) > is off by default: the legacy projection is written for every role  2511ms
+   ✓ native install lane (agents add --native) > writes the committed native file for each native role  2365ms
+   ✓ native install lane (agents add --native) > keeps the legacy projection for a type that has no native agent, in the same workspace  4980ms
+   ✓ native install lane (agents add --native) > records the lane, and every projection hash matches the file on disk  1915ms
+   ✓ native install lane (agents add --native) > is byte-stable: a second install regenerates identical files without --force  4451ms
+   ✓ native install lane (agents add --native) > is sticky: an install without the flag (what `agents update` does) keeps the native files  4001ms
+   ✓ native install lane (agents add --native) > can be turned off explicitly: the legacy projection returns and the record is dropped  4295ms
+   ✓ native install lane (agents add --native) > refuses to overwrite an unmanaged file of the same name without --force  2677ms
+   ✓ native install lane (agents add --native) > doctor finds a fresh native install healthy, and reports drift and stale renders  3486ms
+   ✓ native install lane (agents add --native) > doctor reports a native install whose source moved on as outdated (hash freshness)  2441ms
+   ✓ native install lane (agents add --native) > removing the bundle removes the native files it installed  3022ms
+   ✓ native workflows (agents add --native installs the host workflow in place of the skill of the same name) > is off by default: the skill is projected and no workflow is written  1810ms
+   ✓ native workflows (agents add --native installs the host workflow in place of the skill of the same name) > installs the workflow instead of the skill of the same name, and keeps every other skill  2724ms
+   ✓ native workflows (agents add --native installs the host workflow in place of the skill of the same name) > records it as a workflow projection of the skill it replaces, with a matching hash and ownership  1999ms
+   ✓ native workflows (agents add --native installs the host workflow in place of the skill of the same name) > is byte-stable on a second install, and sticky across an install without the flag  5879ms
+   ✓ native workflows (agents add --native installs the host workflow in place of the skill of the same name) > turning the lane off removes the workflow and brings the skill back  3944ms
+   ✓ native workflows (agents add --native installs the host workflow in place of the skill of the same name) > doctor finds it healthy, and reports an edit as content drift  4646ms
+   ✓ native workflows (agents add --native installs the host workflow in place of the skill of the same name) > removing the bundle removes the workflow it installed  2354ms
+ ✓ tests/native-claude-only-install.test.ts (4 tests) 9115ms
+   ✓ --native on a Claude-only (store-less) install > installs the native Claude agents and no Antigravity file at the project root  1748ms
+   ✓ --native on a Claude-only (store-less) install > records the Claude lane only, not an Antigravity one  1620ms
+   ✓ --native on a Claude-only (store-less) install > a dry run plans no Antigravity artifact either  3955ms
+   ✓ --native on a Claude-only (store-less) install > still runs the Antigravity lane when the .agents/ library is the state dir  1790ms
+ ✓ tests/claude-doctor.test.ts (8 tests) 28445ms
+   ✓ Plan 016 Step 5 — doctor and the Claude projection lane > emits zero warnings for a freshly installed Claude lane (ADR 0017 false-positive doctrine)  2361ms
+   ✓ Plan 016 Step 5 — doctor and the Claude projection lane > reports a deleted managed projection once, as missing  2818ms
+   ✓ Plan 016 Step 5 — doctor and the Claude projection lane > reports edited projection content once, as content drift  2645ms
+   ✓ Plan 016 Step 5 — doctor and the Claude projection lane > reports a stale render once when the recorded hash matches a body the renderer no longer produces  2500ms
+   ✓ Plan 016 Step 5 — doctor and the Claude projection lane > classifies a pre-rename path as stale/superseded exactly once and never as missing  3013ms
+   ✓ Plan 016 Step 5 — doctor and the Claude projection lane > self-heals the seeded pre-rename path on re-install, leaving zero warnings and zero orphans  6574ms
+   ✓ Plan 016 Step 5 — doctor and the Claude projection lane > keeps a Cline-only install free of any Claude-lane warning  6157ms
+   ✓ Plan 016 Step 5 — doctor and the Claude projection lane > surfaces a Claude capability report for --host claude  2376ms
+ ✓ tests/skill-scripts.test.ts (1 test) 8866ms
+   ✓ skill helper scripts (Python) > unittest suites in tests/skill-scripts pass  8865ms
+ ✓ tests/uninstaller.test.ts (4 tests) 12624ms
+   ✓ UninstallEngine > should uninstall an installed bundle  1202ms
+   ✓ UninstallEngine > should handle dry-run uninstall  679ms
+   ✓ UninstallEngine > removes projectedTo files on bundle uninstall  8267ms
+   ✓ UninstallEngine > prunes a shared rule only after its last owner is removed (Plan 015 §4/3)  2475ms
+ ✓ tests/native-workflows-gate.test.ts (11 tests) 16828ms
+   ✓ doctor and a Claude native install with workflows > says nothing when no documented switch turns workflows off  2268ms
+   ✓ doctor and a Claude native install with workflows > warns when disableWorkflows is set in the user settings, and names the way back  3661ms
+   ✓ doctor and a Claude native install with workflows > warns when CLAUDE_CODE_DISABLE_WORKFLOWS is set  2897ms
+   ✓ doctor and a Claude native install with workflows > does not warn about workflows on a legacy install, which has the skills  7998ms
+ ✓ tests/native-ceiling.test.ts (11 tests) 17948ms
+   ✓ doctor guard check for installed native agents > shows users no translation report, and no warning after a clean install  2159ms
+   ✓ doctor guard check for installed native agents > warns when an installed native role that can run a shell or write files has lost its guard  3194ms
+   ✓ doctor guard check for installed native agents > warns when a read-only role lost its read-only guard  3705ms
+   ✓ doctor guard check for installed native agents > does not repeat the integrity story: a changed floor is the existing drift warning, not a second report  6521ms
+   ✓ doctor guard check for installed native agents > says nothing about guards when the native lane is off  2210ms
+ ✓ tests/release-config.test.ts (2 tests) 11ms
+ ✓ tests/claude-unbundled-fallback.test.ts (4 tests) 18057ms
+   ✓ Claude fallback for fanouts without a bundle definition > renders the Claude dialect for a domain:* fanout instead of the legacy tool map  2341ms
+   ✓ Claude fallback for fanouts without a bundle definition > gives the projected coordinator the coordinator posture and a Claude-native delegation section  2924ms
+   ✓ Claude fallback for fanouts without a bundle definition > never replaces a compound-owned role with the fallback rendering  8119ms
+   ✓ Claude fallback for fanouts without a bundle definition > re-renders a role this fallback previously degraded instead of freezing it  4671ms
+ ✓ tests/native-doctor-agent-count.test.ts (4 tests) 14645ms
+   ✓ doctor agent count on native installs > counts the four native Cline agents for --host cline  8266ms
+   ✓ doctor agent count on native installs > counts distinct role names across hosts when no host is asked about  1756ms
+   ✓ doctor agent count on native installs > counts the native Claude agents for --host claude  1471ms
+   ✓ doctor agent count on native installs > keeps the store count when the store lists agents (a legacy install is unchanged)  3151ms
+ ✓ tests/native-cline-store-gate.test.ts (11 tests) 34278ms
+   ✓ native Cline lane and the shared .agents/ store > with an implicit store runs no Antigravity lane: no hooks, MCP config, agents or rules of its own  1827ms
+   ✓ native Cline lane and the shared .agents/ store > leaves the three same-named generic skills out of the store, and keeps every other skill  1558ms
+   ✓ native Cline lane and the shared .agents/ store > with Antigravity as a target keeps the skills and the Antigravity lane, and doctor says the workflows are shadowed  5497ms
+   ✓ native Cline lane and the shared .agents/ store > gives doctor nothing to say about shadowing when the store is implicit  6037ms
+   ✓ native Cline lane and the shared .agents/ store > is sticky: an install without the option (what `agents update` does) keeps the same behaviour  8090ms
+   ✓ native Cline lane and the shared .agents/ store > an explicit Antigravity target later clears it, and the skills come back  3400ms
+   ✓ native Cline lane and the shared .agents/ store > does not turn an Antigravity lane that is already recorded into an implicit store  2127ms
+   ✓ native Cline lane and the shared .agents/ store > removes unmodified skill copies an earlier install left, when the native lane is turned on  1903ms
+   ✓ native Cline lane and the shared .agents/ store > leaves an edited copy in place, stops tracking it and says so  1741ms
+   ✓ native Cline lane and the shared .agents/ store > brings the skills back with --no-native  2045ms
+ ✓ tests/native-tier2-teammate-guard.test.ts (11 tests) 27748ms
+   ✓ doctor on a native Tier-2 install > warns that the team is unguarded without the settings-level guard, names the bundle and the command  12226ms
+   ✓ doctor on a native Tier-2 install > is silent once the settings-level guard is installed  5691ms
+   ✓ doctor on a native Tier-2 install > warns again when the settings-level guard is removed by hand  4279ms
+   ✓ doctor on a native Tier-2 install > says nothing for a Tier-1 bundle, which has no teammates  1581ms
+   ✓ doctor on a native Tier-2 install > says nothing when the native lane is off  3968ms
+ ✓ tests/claude-unsupported-skills.test.ts (19 tests) 57167ms
+   ✓ a digital-agency install on Claude (native lane, project scope) > has no generative-ui under .claude/skills, keeps the other skills, and records no projection of it  5882ms
+   ✓ a digital-agency install on Claude (native lane, project scope) > keeps the canonical store copy, which is host-neutral, and the doctor finds nothing missing  8677ms
+   ✓ a digital-agency install on Claude (native lane, project scope) > agents update on an install that an earlier release made > removes the old copy, its projection record and its pointer, and leaves the other skills alone  17044ms
+   ✓ a digital-agency install on Claude (native lane, project scope) > agents update on an install that an earlier release made > is idempotent: a second update changes no projection  18604ms
+   ✓ a digital-agency install on Claude (native lane, project scope) > agents update on an install that an earlier release made > never clobbers a copy the user took over: without --force it is skipped and kept, with --force it goes  6818ms
+ ✓ tests/native-role-names.test.ts (16 tests) 56238ms
+   ✓ the native install of digital-agency (Claude only, project scope) > installs the agency-only native roles and the lead, and no legacy copy of any shared role  6086ms
+   ✓ the native install of digital-agency (Claude only, project scope) > leaves no legacy projection beside the native roles: every role of the bundle is native  7123ms
+   ✓ the native install of digital-agency (Claude only, project scope) > records the native file as owned by the bundle alone, with no canonical pointer; the file's own marker names the canonical agent  6306ms
+   ✓ the native install of digital-agency (Claude only, project scope) > leaves the Tier-1 marketing bundle on its legacy roles, whatever the lane says  1887ms
+   ✓ the native install of digital-agency (Claude only, project scope) > turning the lane off brings the legacy names back and removes the agency-only files  16396ms
+   ✓ the native install of digital-agency (Claude only, project scope) > lets the agency live beside the Tier-1 frontend role of software-engineering, each with its own file  5039ms
+   ✓ the native install of digital-agency (Claude only, project scope) > lets both bundles live side by side, and removing the agency removes only its own files  6144ms
+   ✓ the native install of digital-agency (Claude only, project scope) > is byte-stable on a second install and healthy under the doctor  7250ms
+ ✓ tests/e2e-sed-bundle-lifecycle.test.ts (50 tests) 155302ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > A. Provenance & ownership after both installs > A1: essentials-only canonical records are owned exactly by software-engineering  5606ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > A. Provenance & ownership after both installs > A2: shared canonical records are owned by exactly both bundles  5450ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > A. Provenance & ownership after both installs > A3: addon-only canonical records are owned exactly by the addon  4674ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > A. Provenance & ownership after both installs > A4: lockfile.projections owners mirror the canonical ownership split  4659ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > A. Provenance & ownership after both installs > A5: first-install timestamps on shared records survive the second install  5245ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > A. Provenance & ownership after both installs > A6: ownership contract holds with install order reversed (addon first)  4881ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B1: mobile-development — removing essentials first leaves addon-declared assets alive  5698ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B1: frontend-engineering — removing essentials first leaves addon-declared assets alive  6674ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B1: backend-distributed-systems — removing essentials first leaves addon-declared assets alive  6313ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B1: qa-automation — removing essentials first leaves addon-declared assets alive  8747ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B1: devops-engineering — removing essentials first leaves addon-declared assets alive  8710ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B1: ai-ml-engineering — removing essentials first leaves addon-declared assets alive  2747ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B2: mobile-development — essentials then addon removal leaves zero managed files  2806ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B2: frontend-engineering — essentials then addon removal leaves zero managed files  2863ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B2: backend-distributed-systems — essentials then addon removal leaves zero managed files  2693ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B2: qa-automation — essentials then addon removal leaves zero managed files  3775ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B2: devops-engineering — essentials then addon removal leaves zero managed files  2614ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B2: ai-ml-engineering — essentials then addon removal leaves zero managed files  2208ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B3: mobile-development — addon first then essentials removal reaches the same end state  2493ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B3: frontend-engineering — addon first then essentials removal reaches the same end state  2082ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B3: backend-distributed-systems — addon first then essentials removal reaches the same end state  2314ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B3: qa-automation — addon first then essentials removal reaches the same end state  3821ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B3: devops-engineering — addon first then essentials removal reaches the same end state  2308ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B3: ai-ml-engineering — addon first then essentials removal reaches the same end state  2298ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B4: mobile-development — uninstall of a zero-ownership bundle rejects and never mutates the lockfile  1879ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B4: frontend-engineering — uninstall of a zero-ownership bundle rejects and never mutates the lockfile  1807ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B4: backend-distributed-systems — uninstall of a zero-ownership bundle rejects and never mutates the lockfile  1785ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B4: qa-automation — uninstall of a zero-ownership bundle rejects and never mutates the lockfile  2954ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B4: devops-engineering — uninstall of a zero-ownership bundle rejects and never mutates the lockfile  1820ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B4: ai-ml-engineering — uninstall of a zero-ownership bundle rejects and never mutates the lockfile  1679ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B5: mobile-development — shared orchestrator stays on the roster after essentials removal  1988ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B5: frontend-engineering — shared orchestrator stays on the roster after essentials removal  1932ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B5: backend-distributed-systems — shared orchestrator stays on the roster after essentials removal  2261ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B5: qa-automation — shared orchestrator stays on the roster after essentials removal  3338ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B5: devops-engineering — shared orchestrator stays on the roster after essentials removal  2116ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > B. Removal matrix (per addon) > B5: ai-ml-engineering — shared orchestrator stays on the roster after essentials removal  2151ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C1: mobile-development — both bundles resolve and produce a dry activation plan  1871ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C1: frontend-engineering — both bundles resolve and produce a dry activation plan  1662ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C1: backend-distributed-systems — both bundles resolve and produce a dry activation plan  1874ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C1: qa-automation — both bundles resolve and produce a dry activation plan  2917ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C1: devops-engineering — both bundles resolve and produce a dry activation plan  1692ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C1: ai-ml-engineering — both bundles resolve and produce a dry activation plan  1688ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C2: mobile-development — addon start resolves after essentials removal; essentials start rejects  1927ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C2: frontend-engineering — addon start resolves after essentials removal; essentials start rejects  1775ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C2: backend-distributed-systems — addon start resolves after essentials removal; essentials start rejects  2135ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C2: qa-automation — addon start resolves after essentials removal; essentials start rejects  3211ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C2: devops-engineering — addon start resolves after essentials removal; essentials start rejects  1988ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > C. Start resolution (per addon) > C2: ai-ml-engineering — addon start resolves after essentials removal; essentials start rejects  1954ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > D. Lockfile hygiene > D1: every files and projections key is POSIX  1659ms
+   ✓ 002 — SE&D Essentials+addon lifecycle conformance (red baseline at 7e2032c) > D. Lockfile hygiene > D2: double-install of essentials is idempotent (file set, owners, installedAt unchanged)  1557ms
+ ✓ tests/e2e-domain-conformance.test.ts (317 tests | 208 skipped) 177399ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A1: essentials-only canonical records owned by essentials  6516ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A2: shared canonical records owned by exactly both  5822ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A3: addon-only canonical records owned by addon  5133ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A4: projections owners mirror canonical split  5395ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A5: first-install timestamps survive second install  5041ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > A6: ownership holds with reversed install order  5123ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B1: removing essentials first leaves addon assets alive  6218ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B2: essentials then addon — zero managed files  7210ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B3: addon then essentials — same end state  7069ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B4: zero-ownership removal rejects, lockfile unchanged  5690ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > B5: shared orchestrator stays on roster after essentials removal  8568ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > C1: both bundles resolve and produce a dry activation plan  2545ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > software-engineering (6 addons) > mobile-development > C2: addon resolves after essentials removal; essentials rejects  2414ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A1: essentials-only canonical records owned by essentials  739ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A2: shared canonical records owned by exactly both  682ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A3: addon-only canonical records owned by addon  820ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A4: projections owners mirror canonical split  811ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A5: first-install timestamps survive second install  646ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > A6: ownership holds with reversed install order  631ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B1: removing essentials first leaves addon assets alive  739ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B2: essentials then addon — zero managed files  839ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B3: addon then essentials — same end state  888ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B4: zero-ownership removal rejects, lockfile unchanged  686ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > B5: shared orchestrator stays on roster after essentials removal  674ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > C1: both bundles resolve and produce a dry activation plan  574ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > system-architecture (4 addons) > sysops-sre > C2: addon resolves after essentials removal; essentials rejects  614ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A1: essentials-only canonical records owned by essentials  1101ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A2: shared canonical records owned by exactly both  910ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A3: addon-only canonical records owned by addon  984ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A4: projections owners mirror canonical split  811ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A5: first-install timestamps survive second install  852ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > A6: ownership holds with reversed install order  815ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B1: removing essentials first leaves addon assets alive  1013ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B2: essentials then addon — zero managed files  1173ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B3: addon then essentials — same end state  1038ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B4: zero-ownership removal rejects, lockfile unchanged  812ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > B5: shared orchestrator stays on roster after essentials removal  866ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > C1: both bundles resolve and produce a dry activation plan  797ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > product-design (2 addons) > design-systems-ops > C2: addon resolves after essentials removal; essentials rejects  891ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A1: essentials-only canonical records owned by essentials  1823ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A2: shared canonical records owned by exactly both  1545ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A3: addon-only canonical records owned by addon  1522ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A4: projections owners mirror canonical split  1662ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A5: first-install timestamps survive second install  1605ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > A6: ownership holds with reversed install order  1545ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B1: removing essentials first leaves addon assets alive  1811ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B2: essentials then addon — zero managed files  2067ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B3: addon then essentials — same end state  1928ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B4: zero-ownership removal rejects, lockfile unchanged  1536ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > B5: shared orchestrator stays on roster after essentials removal  1873ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > C1: both bundles resolve and produce a dry activation plan  1561ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > growth-marketing (4 addons) > seo-content-marketing > C2: addon resolves after essentials removal; essentials rejects  1826ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A1: essentials-only canonical records owned by essentials  3030ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A2: shared canonical records owned by exactly both  2794ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A3: addon-only canonical records owned by addon  2805ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A4: projections owners mirror canonical split  2785ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A5: first-install timestamps survive second install  2888ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > A6: ownership holds with reversed install order  2724ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B1: removing essentials first leaves addon assets alive  2773ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B2: essentials then addon — zero managed files  3005ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B3: addon then essentials — same end state  3055ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B4: zero-ownership removal rejects, lockfile unchanged  2638ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > B5: shared orchestrator stays on roster after essentials removal  2832ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > C1: both bundles resolve and produce a dry activation plan  2578ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > security-operations (3 addons) > secops-cloud-security > C2: addon resolves after essentials removal; essentials rejects  2685ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A1: essentials-only canonical records owned by essentials  435ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A2: shared canonical records owned by exactly both  367ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A3: addon-only canonical records owned by addon  361ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A4: projections owners mirror canonical split  352ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A5: first-install timestamps survive second install  373ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > A6: ownership holds with reversed install order  387ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B1: removing essentials first leaves addon assets alive  388ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B2: essentials then addon — zero managed files  482ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B3: addon then essentials — same end state  615ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B4: zero-ownership removal rejects, lockfile unchanged  381ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > B5: shared orchestrator stays on roster after essentials removal  380ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > C1: both bundles resolve and produce a dry activation plan  368ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > deep-research (1 addons) > deep-research-analytics > C2: addon resolves after essentials removal; essentials rejects  392ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > A1: essentials-only canonical records owned by essentials  382ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > A2: shared canonical records owned by exactly both  308ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > A3: addon-only canonical records owned by addon  315ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > A5: first-install timestamps survive second install  302ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > A6: ownership holds with reversed install order  304ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > B1: removing essentials first leaves addon assets alive  307ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > B2: essentials then addon — zero managed files  401ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > B3: addon then essentials — same end state  412ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > B4: zero-ownership removal rejects, lockfile unchanged  318ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > business-strategy (3 addons) > business-financial-modeling > C1: both bundles resolve and produce a dry activation plan  315ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.software-engineering: every files and projections key is POSIX  1669ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.software-engineering: double-install of essentials is idempotent  1418ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.system-architecture: every files and projections key is POSIX  558ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.system-architecture: double-install of essentials is idempotent  431ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.product-design: every files and projections key is POSIX  862ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.product-design: double-install of essentials is idempotent  680ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.growth-marketing: every files and projections key is POSIX  1568ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.growth-marketing: double-install of essentials is idempotent  1280ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.security-operations: every files and projections key is POSIX  2737ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D2.security-operations: double-install of essentials is idempotent  2409ms
+   ✓ 007 — Cross-domain generalization of the lifecycle conformance suite > D. Lockfile hygiene per domain > D1.deep-research: every files and projections key is POSIX  343ms
+
+ Test Files  188 passed (188)
+      Tests  4032 passed | 208 skipped (4240)
+   Start at  15:41:57
+   Duration  179.04s (transform 5.69s, setup 0ms, collect 34.80s, tests 1454.10s, environment 23ms, prepare 12.31s)
+

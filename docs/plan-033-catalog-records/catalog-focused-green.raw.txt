@@ -1,0 +1,23 @@
+
+ RUN  v3.2.7 C:/Users/ozy/.codex/worktrees/ecb0/agents-united
+
+ ✓ tests/domain-atlas-contract.test.ts (7 tests) 7ms
+ ✓ tests/color-theory-skill.test.ts (19 tests) 92ms
+ ✓ tests/brand-consistency-audit-skill.test.ts (16 tests) 102ms
+ ✓ tests/image-creation-skill.test.ts (22 tests) 228ms
+ ✓ tests/registry.test.ts (40 tests) 189ms
+ ✓ tests/e2e-skills-depth.test.ts (10 tests) 600ms
+   ✓ E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4) > Tier 1: Feature Coverage (Skill Frontmatter & Runbook Structure) > should parse progressive frontmatter (name, description) for all existing SKILL.md playbooks  447ms
+stdout | tests/recommendation-contract.test.ts > Part 1 — Recommendation contract (Cross-Bundle Dynamic Recommendation Protocol) > R5 — generalization over every essentials orchestrator with a detection matrix > R3+equality: no dangling agents add names; strict equality enforced only where the matrix is a clean addon-routing matrix
+[recommendation-contract] skipped equality contract for: orchestrator-design.md (matrix is cross-domain; exact-set contract not applicable), orchestrator-system-architecture.md (matrix is cross-domain; exact-set contract not applicable)
+
+ ✓ tests/recommendation-contract.test.ts (10 tests) 4239ms
+   ✓ Part 1 — Recommendation contract (Cross-Bundle Dynamic Recommendation Protocol) > R4 — projected cline artifacts mirror the registry recommendation list > installed coordinator rule + team manifest recommendedAddons equal the registry list  763ms
+   ✓ Part 2 — installed-addon freshness (parent rule + manifest stop recommending installed addons) > F1: installing an addon drops it from the parent rule + manifest recommendedAddons  1549ms
+   ✓ Part 2 — installed-addon freshness (parent rule + manifest stop recommending installed addons) > F2: removing the addon restores it in the parent rule + manifest recommendedAddons  1744ms
+
+ Test Files  7 passed (7)
+      Tests  124 passed (124)
+   Start at  15:39:03
+   Duration  5.14s (transform 474ms, setup 0ms, collect 1.26s, tests 5.46s, environment 1ms, prepare 419ms)
+

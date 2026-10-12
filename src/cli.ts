@@ -27,13 +27,24 @@ import { nativeWorkflowNote } from './core/native-workflows.js';
 import { nativeTeamNote, sessionGuardPrompt } from './core/native-teams.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, PrerequisiteItemCheck, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
+import { isEmptyContributorBundle } from './core/types.js';
 
-const cli = cac('agents-united');
+export const cli = cac('agents-united');
 const registry = new RegistryResolver();
 const installer = new InstallEngine(registry);
 const uninstaller = new UninstallEngine(registry);
 const scanner = new InventoryScanner(registry);
 const updater = new UpdateEngine(registry, scanner, installer);
+const CONTRIBUTOR_LABEL = 'Developers only: contribute to Agents United';
+const CONTRIBUTOR_GUIDANCE = 'Author Agents United artifacts for local drafts or a reviewed PR to dev.';
+
+function unavailableBundleBadge(bundle: BundleDefinition): string {
+  return isEmptyContributorBundle(bundle) ? pc.yellow(' [Unavailable]') : '';
+}
+
+export function canInstallEntireDomain(domain: string, bundleCount: number): boolean {
+  return bundleCount > 1 && !['organization', 'universal', 'contributor'].includes(domain.toLowerCase());
+}
 
 export function detectWorkspaceHosts(cwd: string = process.cwd()): AgentHost[] {
   const detected: AgentHost[] = [];
@@ -305,7 +316,7 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
   },
   'full': {
     title: 'All-in-One Autonomous Department',
-    summary: 'Complete suite with all 7 team leads, 38 agents, and all 160 modular skills & workflows',
+    summary: 'End-user suite of department teams, skills and workflow playbooks',
   },
 };
 
@@ -554,6 +565,7 @@ cli
         research: { label: 'Deep Technical Research', icon: '🔬 ' },
         business: { label: 'Business Strategy & Economics', icon: '💼 ' },
         organization: { label: 'Organization Bundles (Cross-Functional)', icon: '🏢 ' },
+        contributor: { label: CONTRIBUTOR_LABEL, icon: '🧰 ' },
       };
 
       let selectedBundle: string | undefined;
@@ -565,7 +577,7 @@ cli
           return {
             value: domainKey,
             label: `${meta.icon} ${meta.label}`,
-            hint: domainKey === 'universal' ? 'meta-skills baseline + full suite' : domainKey === 'organization' ? 'cross-functional teams with prerequisites' : `${count} specialized team${count > 1 ? 's' : ''}`,
+            hint: domainKey === 'contributor' ? CONTRIBUTOR_GUIDANCE : domainKey === 'universal' ? 'meta-skills baseline + full suite' : domainKey === 'organization' ? 'cross-functional teams with prerequisites' : `${count} specialized team${count > 1 ? 's' : ''}`,
           };
         });
 
@@ -599,7 +611,7 @@ cli
           const matchOptions: Array<{ value: string; label: string; hint?: string }> = [
             ...searchResults.bundles.map((b: BundleDefinition) => ({
               value: b.name,
-              label: `[Bundle] ${BUNDLE_DISPLAY_NAMES[b.name]?.title || b.name} (${b.name})`,
+              label: `[Bundle] ${BUNDLE_DISPLAY_NAMES[b.name]?.title || b.name} (${b.name})${unavailableBundleBadge(b)}`,
               hint: b.description,
             })),
             ...searchResults.agents.map((a: string) => ({
@@ -646,8 +658,8 @@ cli
         // Stage 4b: Sub-Team Selection inside Selected Domain
         const subTeamOptions: Array<{ value: string; label: string; hint?: string }> = [];
 
-        // Option to install entire department if multiple bundles exist (exclude organization and universal)
-        if (domainBundles.length > 1 && selectedDomain !== 'organization' && selectedDomain !== 'universal') {
+        // Only ordinary department domains offer a batch install.
+        if (canInstallEntireDomain(selectedDomain, domainBundles.length)) {
           subTeamOptions.push({
             value: `__all_domain__:${selectedDomain}`,
             label: `🌟 Install Entire ${domainMeta[selectedDomain]?.label || selectedDomain} (${domainBundles.length} Bundles)`,
@@ -670,7 +682,7 @@ cli
           const isLast = idx === sortedBundles.length - 1;
           const branch = sortedBundles.length > 1 ? (isLast ? '└── ' : '├── ') : '';
           const meta = BUNDLE_DISPLAY_NAMES[b.name];
-          const isEssentials = !b.parentBundle && b.name !== 'full' && b.tier !== 'organization' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration';
+          const isEssentials = b.domain?.toLowerCase() !== 'contributor' && !b.parentBundle && b.name !== 'full' && b.tier !== 'organization' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration';
           const title = meta ? meta.title : b.name;
 
           let statusBadge = '';
@@ -679,6 +691,7 @@ cli
           else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
           else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
           else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
+          if (isEmptyContributorBundle(b)) statusBadge += pc.yellow(' [Unavailable]');
 
           const labelText = isEssentials ? `Essentials: ${title}${statusBadge}` : `${title}${statusBadge}`;
           const summary = meta ? meta.summary : b.description;
@@ -738,6 +751,12 @@ cli
     }
 
     const targetBundleDef = await registry.getBundle(identifier);
+
+    if (targetBundleDef && isEmptyContributorBundle(targetBundleDef)) {
+      outro(pc.red(`Unavailable: "${targetBundleDef.name}" is an empty contributor shell under construction, with no authoring entry points. --allow-under-construction and --force cannot make it installable.`));
+      if (!isInteractive) process.exit(1);
+      return;
+    }
 
     // 1. Under Construction Gate Evaluation
     if (targetBundleDef && targetBundleDef.status === 'under-construction') {
@@ -1411,28 +1430,31 @@ function prerequisiteLine(item: PrerequisiteItemCheck): string {
 function renderBundleDetailTree(bundle: BundleDefinition): string {
   // Special-case full universal suite for clean, structured high-level breakdown
   if (bundle.name === 'full') {
+    const agents = Array.from(new Set([...(bundle.orchestrator ? [bundle.orchestrator] : []), ...(bundle.agents || [])]));
+    const leads = agents.filter(agent => agent.startsWith('orchestrator-'));
+    const workers = agents.filter(agent => !agent.startsWith('orchestrator-'));
+    const skills = Array.from(new Set(bundle.skills || []));
+    const domainSkills = skills.filter(skill => !skill.startsWith('workflow-'));
+    const workflows = Array.from(new Set([...skills.filter(skill => skill.startsWith('workflow-')), ...(bundle.workflows || [])]));
     const lines: string[] = [];
     lines.push(`📦 ${pc.bold(pc.green('full'))} ${pc.cyan('(Universal Autonomous Department)')} ${pc.green('⭐ [Recommended]')}`);
-    lines.push(`│   ${pc.white('Complete suite with all 7 lead orchestrators, 38 subagents, and 160 modular skills (91 domain skills + 69 workflow playbooks).')}`);
+    lines.push(`│   End-user suite: ${leads.length} lead orchestrators, ${workers.length} subagents, ${domainSkills.length} skills and ${workflows.length} workflow playbooks.`);
     lines.push(`│`);
-    lines.push(`├── 🤖 Lead Orchestrators (7 department domains):`);
-    lines.push(`│   ├── 🛠️  ${pc.blue('orchestrator-engineering')} ${pc.dim('(Software Engineering & Delivery)')}`);
-    lines.push(`│   ├── 🏛️  ${pc.blue('orchestrator-system-architecture')} ${pc.dim('(System Architecture & SRE)')}`);
-    lines.push(`│   ├── 🎨  ${pc.blue('orchestrator-design')} ${pc.dim('(Product Design & UI/UX)')}`);
-    lines.push(`│   ├── 📈  ${pc.blue('orchestrator-marketing')} ${pc.dim('(Growth & Marketing Operations)')}`);
-    lines.push(`│   ├── 🔒  ${pc.blue('orchestrator-security')} ${pc.dim('(Security Operations)')}`);
-    lines.push(`│   ├── 🔬  ${pc.blue('orchestrator-research')} ${pc.dim('(Deep Technical Research)')}`);
-    lines.push(`│   └── 💼  ${pc.blue('orchestrator-business')} ${pc.dim('(Business Strategy & Economics)')}`);
-    lines.push(`├── 🤖 Specialized Sub-Agents: ${pc.blue('38 worker agents across all 8 departments')}`);
-    lines.push(`├── ⚡ Skills: ${pc.yellow('91 modular domain skills & runbooks')}`);
-    lines.push(`├── 🔄 Workflows: ${pc.magenta('69 guided multi-step workflow playbooks')}`);
+    lines.push(`├── 🤖 Lead Orchestrators (${leads.length}):`);
+    lines.push(...formatWrappedList(leads.map(agent => agent.replace(/\.md$/, '')), '│   ').map(line => pc.blue(line)));
+    lines.push(`├── 🤖 Specialized Sub-Agents (${workers.length}):`);
+    lines.push(...formatWrappedList(workers.map(agent => agent.replace(/\.md$/, '')), '│   ').map(line => pc.blue(line)));
+    lines.push(`├── ⚡ Skills (${domainSkills.length}):`);
+    lines.push(...formatWrappedList(domainSkills, '│   ').map(line => pc.yellow(line)));
+    lines.push(`├── 🔄 Workflows (${workflows.length}):`);
+    lines.push(...formatWrappedList(workflows.map(workflow => workflow.replace(/\.md$/, '')), '│   ').map(line => pc.magenta(line)));
     lines.push(`├── 🔌 Prerequisites: ${pc.dim('None (Self-contained universal suite)')}`);
     lines.push(`└── 💡 Execution Modes: ${pc.green('Operational')}`);
     return lines.join('\n');
   }
 
   const meta = BUNDLE_DISPLAY_NAMES[bundle.name];
-  const isEssentials = !bundle.parentBundle && bundle.name !== 'full' && bundle.name !== 'universal-skills' && bundle.name !== 'universal-orchestration' && bundle.tier !== 'organization';
+  const isEssentials = bundle.domain?.toLowerCase() !== 'contributor' && !bundle.parentBundle && bundle.name !== 'full' && bundle.name !== 'universal-skills' && bundle.name !== 'universal-orchestration' && bundle.tier !== 'organization';
   const titleSuffix = isEssentials ? pc.cyan(' (Essentials Base)') : '';
   const parentTag = bundle.parentBundle ? pc.gray(` [inherits: ${bundle.parentBundle}]`) : '';
   const aliasesTag = bundle.aliases && bundle.aliases.length > 0 ? pc.gray(` [alias: ${bundle.aliases.join(', ')}]`) : '';
@@ -1444,11 +1466,21 @@ function renderBundleDetailTree(bundle: BundleDefinition): string {
   else if (bundle.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
   else if (bundle.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
   else statusBadge = pc.green(' [Stable]');
+  if (isEmptyContributorBundle(bundle)) statusBadge += pc.yellow(' [Unavailable]');
 
   const lines: string[] = [];
   lines.push(`📦 ${pc.bold(pc.green(bundle.name))}${titleSuffix}${statusBadge}${parentTag}${aliasesTag}`);
   lines.push(`│   ${pc.white(bundle.description || meta?.summary || '')}`);
+  if (bundle.domain?.toLowerCase() === 'contributor') {
+    lines.push(`│   ${CONTRIBUTOR_LABEL}`);
+    lines.push(...wrapText(CONTRIBUTOR_GUIDANCE, undefined, '│   '));
+  }
   lines.push(`│`);
+
+  if (isEmptyContributorBundle(bundle)) {
+    lines.push(`└── 🚧 Unavailable: empty contributor shell; no authoring entry points are available yet.`);
+    return lines.join('\n');
+  }
 
   // Lead / Orchestrator
   if (bundle.orchestrator) {
@@ -1555,6 +1587,7 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
     research: '🔬  Deep Technical Research',
     business: '💼  Business Strategy & Economics',
     universal: '🌐  Universal Autonomous Department',
+    contributor: `🧰  ${CONTRIBUTOR_LABEL}`,
   };
 
   const domainOrder = [
@@ -1566,6 +1599,7 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
     'security',
     'research',
     'business',
+    'contributor',
   ];
 
   const grouped: Record<string, typeof bundles> = {};
@@ -1587,6 +1621,7 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
 
     const header = domainTitles[domainKey] || `📁  ${domainKey.toUpperCase()}`;
     console.log(`\n${pc.bold(pc.magenta(header))} ${pc.dim(`(${items.length} bundle${items.length > 1 ? 's' : ''})`)}`);
+    if (domainKey === 'contributor') console.log(pc.dim(`   ${CONTRIBUTOR_GUIDANCE}`));
 
     items.forEach((b: BundleDefinition, bIdx: number) => {
       const isLastBundle = bIdx === items.length - 1;
@@ -1594,7 +1629,7 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
       const subIndent = isLastBundle ? '    ' : '│   ';
 
       const meta = BUNDLE_DISPLAY_NAMES[b.name];
-      const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration';
+      const isEssentials = b.domain?.toLowerCase() !== 'contributor' && !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration';
       const titleSuffix = isEssentials ? pc.cyan(' (Essentials)') : '';
       const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
       const aliasesTag = b.aliases && b.aliases.length > 0 ? pc.gray(` [alias: ${b.aliases.join(', ')}]`) : '';
@@ -1605,6 +1640,7 @@ function renderFullCatalogTree(bundles: BundleDefinition[]): void {
       else if (b.status === 'needs-audit') statusBadge = pc.magenta(' ⚠️ [Needs Audit]');
       else if (b.status === 'experimental') statusBadge = pc.cyan(' [Experimental]');
       else if (b.status === 'deprecated') statusBadge = pc.red(' [Deprecated]');
+      if (isEmptyContributorBundle(b)) statusBadge += pc.yellow(' [Unavailable]');
 
       console.log(`${bBranch} 📦 ${pc.bold(pc.green(b.name))}${titleSuffix}${statusBadge}${parentTag}${aliasesTag}`);
       console.log(`${subIndent}│   ${pc.white(b.description)}`);
@@ -1747,11 +1783,11 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
   console.log(`${pc.bold(pc.cyan('└' + '─'.repeat(60)))}\n`);
 
   const actionOptions = [
-    {
+    ...(!isEmptyContributorBundle(bundle) ? [{
       value: 'install',
       label: `🚀 Install "${bundle.name}" bundle`,
       hint: `run installer for ${bundle.name}`,
-    },
+    }] : []),
     {
       value: 'back_bundle',
       label: `🔙 Back to ${bundle.domain || 'Department'} bundle list`,
@@ -1975,6 +2011,7 @@ cli
       research: { label: 'Deep Technical Research', icon: '🔬 ' },
       business: { label: 'Business Strategy & Economics', icon: '💼 ' },
       organization: { label: 'Organization Bundles (Cross-Functional)', icon: '🏢 ' },
+      contributor: { label: CONTRIBUTOR_LABEL, icon: '🧰 ' },
     };
 
     let activeDomain: string | undefined;
@@ -1987,7 +2024,7 @@ cli
           return {
             value: domainKey,
             label: `${meta.icon} ${meta.label}`,
-            hint: domainKey === 'universal' ? 'meta-skills baseline + full suite' : domainKey === 'organization' ? 'cross-functional teams with prerequisites' : `${count} specialized bundle${count > 1 ? 's' : ''}`,
+            hint: domainKey === 'contributor' ? CONTRIBUTOR_GUIDANCE : domainKey === 'universal' ? 'meta-skills baseline + full suite' : domainKey === 'organization' ? 'cross-functional teams with prerequisites' : `${count} specialized bundle${count > 1 ? 's' : ''}`,
           };
         });
 
@@ -2037,7 +2074,7 @@ cli
           const searchOptions: Array<{ value: string; label: string; hint?: string }> = [
             ...results.bundles.map((b: BundleDefinition) => ({
               value: `bundle:${b.name}`,
-              label: `📦 [Bundle] ${BUNDLE_DISPLAY_NAMES[b.name]?.title || b.name} (${b.name})`,
+              label: `📦 [Bundle] ${BUNDLE_DISPLAY_NAMES[b.name]?.title || b.name} (${b.name})${unavailableBundleBadge(b)}`,
               hint: b.description,
             })),
             {
@@ -2092,7 +2129,7 @@ cli
         const isLast = idx === sortedBundles.length - 1;
         const branch = sortedBundles.length > 1 ? (isLast ? '└── ' : '├── ') : '';
         const meta = BUNDLE_DISPLAY_NAMES[b.name];
-        const isEssentials = !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration' && b.tier !== 'organization';
+        const isEssentials = b.domain?.toLowerCase() !== 'contributor' && !b.parentBundle && b.name !== 'full' && b.name !== 'universal-skills' && b.name !== 'universal-orchestration' && b.tier !== 'organization';
         const titleSuffix = isEssentials ? pc.cyan(' (Essentials Base)') : '';
         const parentTag = b.parentBundle ? pc.gray(` [inherits: ${b.parentBundle}]`) : '';
 
@@ -2102,6 +2139,7 @@ cli
         else if (b.status === 'needs-audit') badge = pc.magenta(' ⚠️ [Needs Audit]');
         else if (b.status === 'experimental') badge = pc.cyan(' [Experimental]');
         else if (b.status === 'deprecated') badge = pc.red(' [Deprecated]');
+        if (isEmptyContributorBundle(b)) badge += pc.yellow(' [Unavailable]');
 
         return {
           value: b.name,
@@ -2173,9 +2211,13 @@ cli
 
     if (results.bundles.length > 0) {
       console.log(pc.bold(`\n📦 Bundles (${results.bundles.length}):`));
+      if (results.bundles.some(bundle => bundle.domain?.toLowerCase() === 'contributor')) {
+        console.log(`${CONTRIBUTOR_LABEL}\n${CONTRIBUTOR_GUIDANCE}`);
+      }
       results.bundles.forEach((b: BundleDefinition) => {
         const meta = BUNDLE_DISPLAY_NAMES[b.name];
-        console.log(`  - ${pc.green(pc.bold(b.name))}: ${pc.white(meta?.title || b.name)} — ${pc.dim(b.description)}`);
+        const constructionBadge = b.status === 'under-construction' ? pc.yellow(' [Under Construction]') : '';
+        console.log(`  - ${pc.green(pc.bold(b.name))}${constructionBadge}${unavailableBundleBadge(b)}: ${pc.white(meta?.title || b.name)} — ${pc.dim(b.description)}`);
       });
     }
 
@@ -2206,7 +2248,7 @@ cli
 
     if (options.interactive && totalCount > 0) {
       const items: Array<{ value: string; label: string }> = [
-        ...results.bundles.map((b: BundleDefinition) => ({ value: b.name, label: `[Bundle] ${b.name} — ${b.description}` })),
+        ...results.bundles.map((b: BundleDefinition) => ({ value: b.name, label: `[Bundle] ${b.name}${unavailableBundleBadge(b)} — ${b.description}` })),
         ...results.agents.map((a: string) => ({ value: a.replace(/\.md$/, ''), label: `[Agent] ${a}` })),
         ...results.skills.map((s: string) => ({ value: s, label: `[Skill] ${s}` })),
         ...results.workflows.map((w: string) => ({ value: w.replace(/\.md$/, ''), label: `[Workflow] ${w}` })),

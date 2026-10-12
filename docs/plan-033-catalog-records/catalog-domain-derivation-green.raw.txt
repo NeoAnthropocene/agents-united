@@ -1,0 +1,10 @@
+
+ RUN  v3.2.7 C:/Users/ozy/.codex/worktrees/ecb0/agents-united
+
+ ✓ tests/e2e-domain-conformance.test.ts (317 tests | 314 skipped) 6ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed | 314 skipped (317)
+   Start at  15:39:39
+   Duration  861ms (transform 165ms, setup 0ms, collect 526ms, tests 6ms, environment 0ms, prepare 52ms)
+

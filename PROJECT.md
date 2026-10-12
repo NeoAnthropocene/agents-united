@@ -190,7 +190,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **194 modular skills & runbooks** (125 domain skills + 69 workflow playbooks) structured into **35 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles and 2 organization bundles, one of which, `mock-organization-under-construction`, is a placeholder and is not counted in the README's 34) across **8 department domains plus the Universal group** (the README's "Bundles by department" table has those 9 rows; the `domain` field in `bundles.json` holds 9 distinct values, with the Organization bundles under `organization`):
+The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **194 modular skills & runbooks** (125 domain skills + 69 workflow playbooks) structured into **36 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles, 2 organization bundles and the empty `agent-factory` contributor shell). The README counts **34 end-user bundles**, excluding the shell and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. Counts derive from the current registry:
 
 ```
 🌐 Agents United Registry Catalog Tree

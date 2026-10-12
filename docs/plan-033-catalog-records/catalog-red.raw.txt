@@ -1,0 +1,96 @@
+
+> agents-united@0.15.0 pretest
+> npm run build
+
+
+> agents-united@0.15.0 build
+> tsup
+
+CLI Building entry: src/cli.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\ozy\.codex\worktrees\ecb0\agents-united\tsup.config.ts
+CLI Target: node24
+CLI Cleaning output folder
+ESM Build start
+ESM dist\cli.js     469.32 KB
+ESM dist\cli.js.map 1007.52 KB
+ESM ⚡️ Build success in 42ms
+DTS Build start
+DTS ⚡️ Build success in 1038ms
+DTS dist\cli.d.ts 2.76 KB
+
+> agents-united@0.15.0 test
+> vitest run --testTimeout=30000 --hookTimeout=30000 tests/registry.test.ts -t declares the empty contributor Domain Bundle shell as under construction
+
+
+ RUN  v3.2.7 C:/Users/ozy/.codex/worktrees/ecb0/agents-united
+
+ ❯ tests/registry.test.ts (29 tests | 1 failed | 28 skipped) 9ms
+   ↓ RegistryResolver > should load bundles from registry
+   × RegistryResolver > declares the empty contributor Domain Bundle shell as under construction 8ms
+     → expected null to match object { name: 'agent-factory', …(7) }
+   ↓ RegistryResolver > should resolve software-engineering bundle assets
+   ↓ RegistryResolver > should resolve single agent item
+   ↓ RegistryResolver > should throw error for non-existent item
+   ↓ RegistryResolver > should find items matching search query
+   ↓ RegistryResolver > should resolve bundle aliases like software-engineering-essentials
+   ↓ RegistryResolver > should resolve parentBundle composition properly
+   ↓ RegistryResolver > should filter search results by domain and type
+   ↓ RegistryResolver > should resolve entire department domain with domain:<name>
+   ↓ RegistryResolver > should resolve domain:marketing with all marketing addons and agents
+   ↓ RegistryResolver > should resolve ai-ml-engineering bundle assets and inherit parent software-engineering
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > should declare planningLoop enabled on digital-agency with the approved Consultation Budget defaults
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > should map every AstrolabsAI persona to a role present in the digital-agency roster
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > should keep planningLoop opt-in: 30 Tier-1 bundles declare planner-orchestrator, digital-agency declares subagent-first
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > should reject planner-orchestrator bundle with budget
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > should reject planner-orchestrator bundle with sidekicks
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > should reject unknown planningLoop mode
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > should accept planner-orchestrator without budget/sidekicks
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > resolves baseline + agent-declared rules for a bundle
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > deduplicates rules and returns them in a deterministic sorted order
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > collects rules from inherited parent-bundle agents (ADR child bundles)
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > unions member-bundle rules in the domain: resolution branch
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > returns every rule referenced by agent frontmatter and no unknown rule
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > does not attach rules to standalone single-item resolutions
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > reads the rules block sequence only (never an inline array)
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > fails fast when a bundle declares a rule file that does not exist (§0/D2)
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > accepts a bundle whose declared rules all exist
+   ↓ digital-agency planning loop registry contract (Plan 012 / ADR 0014) > dynamic rule resolution (Plan 015) > confirms no bundle in the real manifest declares a `rules` key yet (inert branch)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/registry.test.ts > RegistryResolver > declares the empty contributor Domain Bundle shell as under construction
+AssertionError: expected null to match object { name: 'agent-factory', …(7) }
+
+- Expected: 
+{
+  "agents": [],
+  "domain": "contributor",
+  "name": "agent-factory",
+  "rules": [],
+  "skills": [],
+  "status": "under-construction",
+  "tier": "domain",
+  "workflows": [],
+}
+
++ Received: 
+null
+
+ ❯ tests/registry.test.ts:22:20
+     20|   it('declares the empty contributor Domain Bundle shell as under cons…
+     21|     const bundle = await resolver.getBundle('agent-factory');
+     22|     expect(bundle).toMatchObject({
+       |                    ^
+     23|       name: 'agent-factory',
+     24|       domain: 'contributor',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 skipped (29)
+   Start at  15:28:16
+   Duration  1.27s (transform 35ms, setup 0ms, collect 927ms, tests 9ms, environment 0ms, prepare 94ms)
+

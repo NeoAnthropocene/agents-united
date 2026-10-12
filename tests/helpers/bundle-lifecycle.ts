@@ -247,7 +247,7 @@ export function deriveAddons(essentialsName: string): string[] {
   const listed = e.recommendedAddons ?? [];
   if (listed.length > 0) return [...listed];
   return Object.entries(bundlesJson.bundles)
-    .filter(([, b]) => b.parentBundle === essentialsName)
+    .filter(([, b]) => b.parentBundle === essentialsName && b.domain?.toLowerCase() !== 'contributor')
     .map(([n]) => n);
 }
 
@@ -255,7 +255,7 @@ export function validateDomainAddonConsistency(essentialsName: string): void {
   const e = entry(essentialsName);
   const listed = [...(e.recommendedAddons ?? [])].sort();
   const children = Object.entries(bundlesJson.bundles)
-    .filter(([, b]) => b.parentBundle === essentialsName)
+    .filter(([, b]) => b.parentBundle === essentialsName && b.domain?.toLowerCase() !== 'contributor')
     .map(([n]) => n)
     .sort();
   if (JSON.stringify(listed) !== JSON.stringify(children)) {
@@ -271,6 +271,7 @@ export function validateDomainAddonConsistency(essentialsName: string): void {
 export function deriveDomains(): DomainSpec[] {
   const specs: DomainSpec[] = [];
   for (const [name, b] of Object.entries(bundlesJson.bundles)) {
+    if (b.domain?.toLowerCase() === 'contributor') continue;
     if (b.parentBundle) continue;
     if (b.tier === 'organization') continue;
     if (NON_ESSENTIALS.has(name)) continue;
