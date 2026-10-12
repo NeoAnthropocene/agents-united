@@ -372,7 +372,7 @@ describe('the Sittings O and P observation: the grading', () => {
 });
 
 describe('the protocol, ADR 0049 and the plan state the sittings', () => {
-  it('records Sittings O and P as run, with their costs, and Sitting Q as proposed', () => {
+  it('records Sittings O and P as run, with their costs, and has a row for Sitting Q (its result is pinned in tests/designer-sitting-q-observation.test.ts)', () => {
     const total = RUNS.map(run => result(run)).reduce((s, r) => s + r.total_cost_usd, 0).toFixed(4);
     const o = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting O |')) ?? '';
     expect(o).toContain(`used ${total} USD`);
@@ -386,8 +386,6 @@ describe('the protocol, ADR 0049 and the plan state the sittings', () => {
     expect(q).toMatch(/H10d3, H10d6 and H10d8 again on the lines added after Sitting O/);
     expect(q).toMatch(/H10k2 again/);
     expect(q).toMatch(/4\.4 USD and 4 prompts/);
-    expect(q).toMatch(/proposed 2026-10-12, not yet run/);
-    expect(q).not.toMatch(/\bused \d/);
   });
 
   it('amends the cost of H10d with the results of Sitting O, and the cost of H10k with the results of Sitting P', () => {
