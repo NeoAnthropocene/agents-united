@@ -1,0 +1,5 @@
+p1 (a task whose first call is gated):
+Scratch exercise, no real client. Read docs/pilot/hero.ts and tell me what its first line is, in one sentence. Do nothing else.
+
+p2 (a bare greeting):
+Hi

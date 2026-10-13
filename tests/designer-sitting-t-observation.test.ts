@@ -238,8 +238,8 @@ describe('the protocol, ADRs 0049 and 0051 and the plan state Sitting T', () => 
     const u = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting U |')) ?? '';
     expect(u).toMatch(/H10m/);
     expect(u).toMatch(/1\.5 USD and 1 prompt/);
-    expect(u).toMatch(/proposed 2026-10-12, not yet run/);
-    expect(u).not.toMatch(/\bused \d/);
+    // Sitting U has run since (2026-10-12): its row says so, and tests/designer-sitting-u-observation.test.ts pins what it found.
+    expect(u).toMatch(/proposed 2026-10-12/);
   });
 
   it('defines H10m: the image tool reaches the team (the lead and Jamileh each list it, nothing is generated), with its prompt, evidence, pass and fail', () => {
@@ -278,7 +278,8 @@ describe('the protocol, ADRs 0049 and 0051 and the plan state Sitting T', () => 
     expect(ADR).toMatch(/\*\*One tool, two roles\.\*\*/);
     expect(ADR).toMatch(/a subagent inherits the MCP tools of the main conversation/);
     expect(ADR).toMatch(/the lead holds it so that her pool has it, and never calls it/);
-    expect(ADR).toMatch(/whether the lead and Jamileh then find the tool \(Sitting U, H10m\)/);
+    // Sitting U answered it (the lead and Jamileh found the tool): ADR 0049 now says "established in Sitting U, H10m".
+    expect(ADR).toMatch(/Sitting U, H10m/);
   });
 
   it('records in ADR 0051 that the amended hook released both leads within three rounds in Sitting T', () => {

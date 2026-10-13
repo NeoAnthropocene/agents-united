@@ -73,13 +73,17 @@ describe('the mode line of the Claude lead', () => {
   // Sitting R (H10k2, 2026-10-12, session `1269c24c`): after the corrections of Sitting Q the lead held two calls, repeated the call each time with the line written again, and so wrote the line twice
   // before its first call, and a third time in its last message; the user saw the hook's error twice and the mode three times. The fix is to avoid the hold (the line goes with an allowed call, one
   // message before the first other call) and to write the line once.
-  it('says in which order the first messages go: the searches, then the line with the introduction and the ToolSearch that loads the task tools, then the first other call', () => {
+  // Changed on 2026-10-13 (ADR 0053), at the maintainer's request: the second message is the Operation Mode information and nothing else of the lead's, so "then the introduction" is gone, and the third message no
+  // longer relies on the host having saved the line "by then" (it had not, in Sittings T and U: the save lags by 3 to 9 s): the hook waits for the file before it holds anything.
+  it('says in which order the first messages go: the searches, then the Operation Mode information with the ToolSearch that loads the task tools, then the first other call', () => {
     expect(SECTION).toContain('**In order.** Your first message holds `ToolSearch` calls and nothing else: one for each of the six integrations, MarkItDown and Stitch.');
-    expect(SECTION).toContain('Your second message opens with the mode line, as a text block, then the introduction, and holds one `ToolSearch` that checks for and loads the task tools and `SendMessage` (`select:TaskCreate,TaskList,TaskUpdate,SendMessage`, see "The shared task list") and no other call.');
-    expect(SECTION).toContain('Your first other call is in the third message: the host has saved the line by then, so the hook holds nothing and the user sees no error (ADR 0051).');
+    expect(SECTION).toContain('Your second message is the Operation Mode information: the mode line, as a text block, and no other words of yours to the user; it also holds one `ToolSearch` that checks for and loads the task tools and `SendMessage` (`select:TaskCreate,TaskList,TaskUpdate,SendMessage`, see "The shared task list") and no other call.');
+    expect(SECTION).toContain('Your first other call is in the third message: the hook looks for the line in the saved transcript, which the host writes a few seconds late, and it waits for the file before it holds anything, so the user sees no error (ADR 0053).');
     expect(SECTION.indexOf('**In order.**')).toBeLessThan(SECTION.indexOf('Your first answer in a session reports the operating mode'));
+    expect(SECTION).not.toContain('then the introduction');
+    expect(SECTION).not.toContain('the host has saved the line by then');
     // Sitting S: in both sessions the second message held the ToolSearch and the line only in the reasoning ("As Chris, lead of the digital agency team, I'll load the task and messaging tools ...").
-    expect(SECTION).toContain('A message with a `ToolSearch` and no text block is a mistake: the line is a text block of that message and not a thought');
+    expect(SECTION).toContain('A second message with a `ToolSearch` and no text block is a mistake: the line is a text block of that message and not a thought');
     expect(SECTION).toMatch(/observed on 2\.1\.296 in two sessions: the second message held the `ToolSearch` and the line only in the lead's reasoning, and its first other call was then held 11 and 13 times/);
   });
 
@@ -123,8 +127,20 @@ describe('the mode line of the Claude lead', () => {
     expect(SECTION).toMatch(/seven of seven runs/);
   });
 
-  it('still introduces Chris and names the team, under the line (Sitting R: the lead never did, the line having come with a call that was being repeated)', () => {
-    expect(SECTION).toMatch(/Under the line, introduce yourself as Chris and name your team/);
+  // 2026-10-13 (ADR 0053): "Under the line, introduce yourself as Chris and name your team" is removed. The maintainer: the welcome message "cause more damage than the harm it brings to us", and the first message
+  // is to be the Operation Mode information. The lead did not follow the rule in any session of Sittings R to U (it never introduced itself), and where it did (a bare "Hi" in the trials of 2026-10-13) it
+  // answered with the line, "I'm Chris", the roster of nine and a question. The wording names what is left out, because "no introduction" alone was not obeyed after a "Hi" ("Hi, I'm Chris, the lead for this digital agency team").
+  it('has no welcome: the line is the whole of the opening, nothing is said about who the lead is or who is in the team, and a bare hello gets the line and one short question', () => {
+    expect(SECTION).toContain('**No welcome.** The line is the whole of your opening.');
+    expect(SECTION).toContain('Do not greet the user, do not welcome them, do not say who you are (no "I\'m Chris", no "your digital agency lead"), and do not list the team or what you can do, unless they ask.');
+    expect(SECTION).toContain('If the user only says hello, follow the line with one short question about what they want to work on, and nothing else.');
+    expect(SECTION).not.toMatch(/introduce yourself/i);
+    expect(SECTION).not.toMatch(/name your team/i);
+  });
+
+  it('keeps the persona in the definition (the Identity of the floor names Chris and the roster stays), so that nothing is lost but the greeting', () => {
+    expect(LEAD).toContain('(Chris)');
+    expect(LEAD).toContain('The personas of the AstrolabsAI team, and the type that plays each:');
   });
 
   // Slice (e): a PreToolUse gate holds the first call once (registry/hosts/claude/hooks/agents-united-mode-line-gate.js). The lead has to know that it will meet it and

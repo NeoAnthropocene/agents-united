@@ -1,0 +1,27 @@
++  0.0s user text: Hi
++  2.5s lead nmu8SJ reasoning summary: (empty in the record)
++  2.6s lead nmu8SJ call ToolSearch {"query":"github","max_results":3}
++  2.7s user result: [tool: Monitor] [tool: RemoteTrigger] [tool: WebFetch]
++  3.0s lead nmu8SJ call ToolSearch {"query":"firecrawl","max_results":3}
++  3.1s user result: [tool: mcp__claude_ai_Firecrawl__firecrawl_scrape] [tool: mcp__claude_ai_Firecrawl__firecrawl_developer_search] [tool: mcp__claude_ai_Firecrawl__firecrawl_find_tools]
++  3.3s lead nmu8SJ call ToolSearch {"query":"context7","max_results":3}
++  3.4s user result: [tool: mcp__context7__query-docs] [tool: mcp__context7__resolve-library-id]
++  3.7s lead nmu8SJ call ToolSearch {"query":"playwright","max_results":3}
++  3.8s lead nmu8SJ call ToolSearch {"query":"chrome-devtools","max_results":3}
++  3.8s user result: No matching deferred tools found
++  3.9s user result: No matching deferred tools found
++  4.1s lead nmu8SJ call ToolSearch {"query":"figma","max_results":3}
++  4.2s user result: No matching deferred tools found
++  4.5s lead nmu8SJ call ToolSearch {"query":"markitdown","max_results":3}
++  4.6s user result: No matching deferred tools found
++  4.9s lead nmu8SJ call ToolSearch {"query":"stitch","max_results":3}
++  5.0s user result: [tool: mcp__stitch__create_design_system_from_design_md] [tool: mcp__stitch__create_project] [tool: mcp__stitch__delete_project]
++  7.2s lead gTNNZP reasoning summary: (empty in the record)
++  7.2s lead gTNNZP text: Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
++  7.5s lead gTNNZP call ToolSearch {"query":"select:TaskCreate,TaskList,TaskUpdate,SendMessage","max_results":4}
++  7.6s user result: [tool: TaskCreate] [tool: TaskList] [tool: TaskUpdate] [tool: SendMessage]
++  8.8s lead N5W9cp text: What would you like to work on?
+
+23 conversation block(s)
+
+(no gate log for this session: the hook never waited, held or released a call)

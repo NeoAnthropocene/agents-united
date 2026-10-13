@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { spawn, spawnSync } from 'node:child_process';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import yaml from 'yaml';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { NATIVE_GUARD_FILES } from '../src/core/guard.js';
@@ -41,13 +41,27 @@ beforeEach(() => {
 const markerOf = (session: string): string => path.join(tmp, 'agents-united', `mode-line-${session}`);
 
 interface Run { status: number | null; stderr: string; stdout: string }
+// The tests below judge the message and the release of a hold, so the hook does not wait for the transcript in them (the wait has a describe block of its own, with its own cap).
+const NO_WAIT = { AGENTS_UNITED_MODE_LINE_WAIT_MS: '0' };
 const run = (payload: object | string, env: Record<string, string> = {}): Run => {
   const result = spawnSync('node', [SCRIPT], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
     encoding: 'utf8',
-    env: { ...process.env, TEMP: tmp, TMP: tmp, TMPDIR: tmp, ...env },
+    env: { ...process.env, TEMP: tmp, TMP: tmp, TMPDIR: tmp, ...NO_WAIT, ...env },
   });
   return { status: result.status, stderr: result.stderr, stdout: result.stdout };
+};
+// The same hook, started and left running, so that a test can write the transcript while it waits.
+const start = (payload: object, env: Record<string, string> = {}): Promise<Run & { ms: number }> => {
+  const began = Date.now();
+  const child = spawn('node', [SCRIPT], { env: { ...process.env, TEMP: tmp, TMP: tmp, TMPDIR: tmp, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', chunk => { stdout += chunk; });
+  child.stderr.on('data', chunk => { stderr += chunk; });
+  const done = new Promise<Run & { ms: number }>(resolve => child.on('close', status => resolve({ status, stdout, stderr, ms: Date.now() - began })));
+  child.stdin.end(JSON.stringify(payload));
+  return done;
 };
 
 const call = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
@@ -174,6 +188,153 @@ describe('the mode-line gate script', () => {
     });
   });
 
+  // Sittings P, T and U (Claude Code 2.1.294 and 2.1.296, interactive): the host saves its transcript late, and the hook has no other source for the text of the message that is being written (its hooks guide says so
+  // of `transcript_path`: "may lag the in-memory conversation"; `PreToolUse` input carries no text). A lead that did what the hold told it (wrote the line as a text block and repeated the call) was held
+  // again and again because the file did not hold its line yet: in Sitting U the line was written at +18.7 s, the hook still saw no text block at +23.8 s, and the maintainer read three red errors, the second and
+  // third of them false. Across five sessions the line was missing from the file 2.7, 5.0, 5.7 and 6.0 s after it was written and present by 9 to 10 s. So the hook looks at the FILE for a bounded time before it
+  // holds. It waits for evidence and not for the clock: the line releases the call, the end of the wait releases nothing (ADR 0044, which refused a sleep or a polling loop in its first fix, and ADR 0053,
+  // which adds one for this reason only).
+  describe('the wait for the saved transcript (Sittings P, T and U, ADR 0053)', () => {
+    const waits = (ms: number): Record<string, string> => ({ AGENTS_UNITED_MODE_LINE_WAIT_MS: String(ms) });
+    const logOf = (): Array<Record<string, unknown>> => {
+      const file = `${markerOf('sess-1')}.log`;
+      return fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map(row => JSON.parse(row) as Record<string, unknown>) : [];
+    };
+
+    it('releases a call whose line reaches the file while the hook waits, and keeps the session done', async () => {
+      const hook = start(call({ tool_use_id: 'a' }), waits(20_000));
+      await vi.waitFor(() => expect(logOf().filter(entry => entry.event === 'waiting')).toHaveLength(1), { timeout: 10_000, interval: 25 });
+      writeTranscript(assistantText(`${LINE}\nOn it.`));
+      const result = await hook;
+
+      expect(result.status).toBe(0);
+      expect(result.ms).toBeLessThan(15_000);
+      expect(logOf().at(-1)).toMatchObject({ event: 'released', by: 'line-after-wait' });
+      expect(Number(logOf().at(-1)!.waitedMs)).toBeGreaterThan(0);
+      expect(JSON.parse(fs.readFileSync(markerOf('sess-1'), 'utf8'))).toEqual({ done: true, version: 2 });
+      expect((await start(call({ tool_use_id: 'b', tool_name: 'Bash' }), waits(20_000))).status).toBe(0);
+    });
+
+    it('holds at the end of the wait with the message of its round, and the end of the wait releases nothing', async () => {
+      const result = await start(call(), waits(700));
+
+      expect(result.status).toBe(2);
+      expect(result.stderr.split('\n')[0]).toContain('not a failure');
+      expect(logOf().map(entry => entry.event)).toEqual(['waiting', 'held']);
+      expect(logOf().at(-1)).toMatchObject({ event: 'held', round: 1, by: 'cap' });
+      expect(Number(logOf().at(-1)!.waitedMs)).toBeGreaterThanOrEqual(600);
+      expect(JSON.parse(fs.readFileSync(markerOf('sess-1'), 'utf8')).round).toBe(1);
+    });
+
+    it('does not wait when the line is already saved: the call is released at once', async () => {
+      writeTranscript(assistantText(`${LINE}\nHello.`));
+      const result = await start(call(), waits(20_000));
+
+      expect(result.status).toBe(0);
+      expect(result.ms).toBeLessThan(5_000);
+      expect(logOf().map(entry => `${entry.event}:${entry.by}`)).toEqual(['released:line']);
+    });
+
+    it('does not wait for a transcript it cannot read: the call passes at once, as before', async () => {
+      const result = await start(call({ transcript_path: path.join(tmp, 'missing.jsonl') }), waits(20_000));
+
+      expect(result.status).toBe(0);
+      expect(result.ms).toBeLessThan(5_000);
+      expect(logOf()).toEqual([]);
+    });
+
+    it('does not wait for a call that is not its business: ToolSearch and a teammate pass at once', async () => {
+      expect((await start(call({ tool_name: 'ToolSearch' }), waits(20_000))).status).toBe(0);
+      expect((await start(call({ agent_id: 'aava-1' }), waits(20_000))).status).toBe(0);
+      expect(logOf()).toEqual([]);
+    });
+
+    it('can be turned off with a cap of 0: the hold is at once and says so in the log', async () => {
+      const result = await start(call(), waits(0));
+
+      expect(result.status).toBe(2);
+      expect(result.ms).toBeLessThan(5_000);
+      expect(logOf().map(entry => `${entry.event}:${entry.by}`)).toEqual(['held:no-wait']);
+    });
+
+    it('lets the calls of one message wait together and releases them together when the line arrives', async () => {
+      const first = start(call({ tool_use_id: 'a', tool_name: 'Glob' }), waits(20_000));
+      const second = start(call({ tool_use_id: 'b', tool_name: 'Skill' }), waits(20_000));
+      await vi.waitFor(() => expect(logOf().filter(entry => entry.event === 'waiting')).toHaveLength(2), { timeout: 10_000, interval: 25 });
+      writeTranscript(assistantText(`${LINE}\nOn it.`));
+
+      expect((await first).status).toBe(0);
+      expect((await second).status).toBe(0);
+      expect(logOf().filter(entry => entry.event === 'released')).toHaveLength(2);
+    });
+
+    it('counts the round when it holds: a second message that is held at the end of its wait is round 2', async () => {
+      const env = { ...waits(300), AGENTS_UNITED_MODE_LINE_ROUND_MS: '0' };
+      expect((await start(call({ tool_use_id: 'a' }), env)).status).toBe(2);
+      const second = await start(call({ tool_use_id: 'b' }), env);
+
+      expect(second.status).toBe(2);
+      expect(second.stderr.split('\n')[0]).toBe('Mode line first. This is an expected hold, not a failure (hold 2).');
+      expect(logOf().filter(entry => entry.event === 'held').map(entry => entry.round)).toEqual([1, 2]);
+      expect(logOf().map(entry => entry.event)).toEqual(['waiting', 'held', 'waiting', 'held']);
+    });
+
+    // A lead that never writes the line (Sitting S: 11 and 13 holds) must not pay the cap at each of them: the first two rounds wait, and by the third the lead has been told twice, the file has had two
+    // rounds to catch up, and the message of round 3 says what the file holds.
+    it('waits in the first two rounds only: from the third round the hold is at once, and the count it gives is the file\'s', async () => {
+      fs.mkdirSync(path.dirname(markerOf('sess-1')), { recursive: true });
+      fs.writeFileSync(markerOf('sess-1'), JSON.stringify({ pending: true, version: 2, round: 2, at: Date.now() - 60_000 }));
+      writeTranscript(assistantText('Still no line.'));
+      const result = await start(call({ tool_use_id: 'third' }), waits(20_000));
+
+      expect(result.status).toBe(2);
+      expect(result.ms).toBeLessThan(5_000);
+      expect(result.stderr.split('\n')[0]).toBe('Mode line first. This is an expected hold, not a failure (hold 3).');
+      expect(result.stderr).toContain('The saved transcript has 1 text block(s) of yours');
+      expect(logOf().map(entry => `${entry.event}:${entry.by}`)).toEqual(['held:no-wait']);
+    });
+
+    it('still releases at the third round and later when the line is there', async () => {
+      fs.mkdirSync(path.dirname(markerOf('sess-1')), { recursive: true });
+      fs.writeFileSync(markerOf('sess-1'), JSON.stringify({ pending: true, version: 2, round: 5, at: Date.now() - 60_000 }));
+      writeTranscript(assistantText(`${LINE}\nHere.`));
+
+      expect((await start(call(), waits(20_000))).status).toBe(0);
+    });
+
+    it('writes one line per decision to a log beside the marker, with names and counts only', async () => {
+      writeTranscript(assistantText('A first text block.'));
+      await start(call({ tool_use_id: 'secret-id', tool_input: { command: 'rm -rf ./the-user-file' } }), waits(300));
+
+      const [waited, held] = logOf();
+      expect(Object.keys(waited!).sort()).toEqual(['at', 'event', 'tool']);
+      expect(Object.keys(held!).sort()).toEqual(['at', 'by', 'event', 'round', 'texts', 'tool', 'waitedMs']);
+      expect(held).toMatchObject({ tool: 'Agent', texts: 1, round: 1 });
+      const text = fs.readFileSync(`${markerOf('sess-1')}.log`, 'utf8');
+      expect(text).not.toContain('the-user-file');
+      expect(text).not.toContain('secret-id');
+    });
+
+    // The maintainer chose 8 s on 2026-10-13 (ADR 0053), after being told that the saves seen so far were still missing at 2.7, 5.0, 5.7 and 6.0 s and present by 9 to 10 s: 8 s covers every reading of "still missing"
+    // and not a save between 8 and 10 s, which is held as before and shows in the log as `held` with `by: cap`.
+    it('has a default cap of 8 seconds: longer than the slowest save seen to be missing in Sittings P, T and U (6.0 s) and short enough that a session does not feel it', () => {
+      const script = fs.readFileSync(SCRIPT, 'utf8');
+
+      expect(script).toMatch(/AGENTS_UNITED_MODE_LINE_WAIT_MS \|\| 8000/);
+      expect(script).not.toMatch(/AGENTS_UNITED_MODE_LINE_WAIT_MS \|\| 10000/);
+      expect(script).toMatch(/const POLL_MS = 150;/);
+    });
+
+    it('counts calls that reach the hook close together as one round even when each of them waited for the file first', async () => {
+      const env = { ...waits(250), AGENTS_UNITED_MODE_LINE_ROUND_MS: '60000' };
+      const first = await start(call({ tool_use_id: 'a', tool_name: 'Glob' }), env);
+      const parallel = await start(call({ tool_use_id: 'b', tool_name: 'Skill' }), env);
+
+      expect(parallel.stderr).toBe(first.stderr);
+      expect(logOf().filter(entry => entry.event === 'held').map(entry => entry.round)).toEqual([1, 1]);
+    });
+  });
+
   // N3 regression run (session `8e2c3d9e`): the host prints a held call to the user as "Error: PreToolUse:Agent hook error: [node ...]: <this message>", at the start of every
   // session, and the maintainer read the held spawn as a failure of the spawned agent (it was the lead's first call, held once by design; the spawned agent had no hook error).
   // The host's own prefix cannot be changed, so the first line of the message says in plain words that the hold is expected and happens once, and it keeps "Mode line first"
@@ -263,7 +424,7 @@ describe('the mode-line gate script', () => {
       const result = spawnSync('node', [path.join(dir, 'gate.js')], {
         input: JSON.stringify(call({ session_id: `scope-${scope}` })),
         encoding: 'utf8',
-        env: { ...process.env, TEMP: tmp, TMP: tmp, TMPDIR: tmp },
+        env: { ...process.env, TEMP: tmp, TMP: tmp, TMPDIR: tmp, ...NO_WAIT },
       });
 
       expect([scope, result.status, result.stderr.includes('Mode line first')]).toEqual([scope, 2, true]);

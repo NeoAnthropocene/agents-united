@@ -222,7 +222,7 @@ export class ClaudeLauncher {
 
     const taskText = prompt && prompt.trim().length > 0
       ? `User task: ${prompt.trim()}`
-      : 'Please introduce your coordinator role to the user and ask for their first task.';
+      : 'Please ask the user for their first task.';
 
     // ADR 0018 decision 6 keeps ONE host-neutral team manifest, emitted under the organization
     // package and never duplicated into `.claude/`. That package is written by the Cline half of
@@ -237,12 +237,13 @@ export class ClaudeLauncher {
         `\`--fanout cline\` install).`
       : `Read the Team Manifest at "${manifestRel}" and your coordinator role definition at "${coordinatorRel}" before acting.`;
 
-    // Observed on 2.1.292 (Plan 035 N2, live test 1): a lead that was asked to "introduce your coordinator role" followed that user-turn
-    // instruction over the first-message section of its own definition and never wrote the mode line. The launcher knows no bundle, so the
+    // Observed on 2.1.292 (Plan 035 N2, live test 1): a lead that was asked to introduce its coordinator role followed that user-turn
+    // instruction over the first-message section of its own definition and never wrote the mode line. The default task text no longer asks for an
+    // introduction at all (ADR 0053: the opening of a Tier-2 orchestrator is its Operation Mode information, not a welcome). The launcher knows no bundle, so the
     // sentence names the section; a definition without it has nothing to follow.
     const firstMessageText =
       'If your coordinator definition has a section named "The first message", follow it in your first message, ' +
-      'before the introduction and before anything else.';
+      'before anything else.';
 
     const bootstrapLines = [
       `You are coordinating the "${bundleName}" team in Agents United.`,
