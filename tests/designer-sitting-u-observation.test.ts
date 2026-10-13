@@ -145,7 +145,7 @@ describe('the Sitting U observation: the record', () => {
 });
 
 describe('the protocol, ADRs 0049 and 0053 and the plan state Sitting U', () => {
-  it('records Sitting U as run, with its cost record and what it found, and Sitting V as proposed', () => {
+  it('records Sitting U as run, with its cost record and what it found, and has the Sitting V row', () => {
     const u = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting U |')) ?? '';
     expect(u).toMatch(/H10m/);
     expect(u).toMatch(/1\.5 USD and 1 prompt/);
@@ -157,8 +157,8 @@ describe('the protocol, ADRs 0049 and 0053 and the plan state Sitting U', () => 
     expect(v).toMatch(/G1 again/);
     expect(v).toMatch(/H11/);
     expect(v).toMatch(/1\.5 USD and 2 prompts/);
-    expect(v).toMatch(/proposed 2026-10-13, not yet run/);
-    expect(v).not.toMatch(/\bused \d/);
+    // Sitting V has run since (2026-10-13): tests/designer-sitting-v-observation.test.ts pins what it found.
+    expect(v).toMatch(/proposed 2026-10-13/);
   });
 
   it('defines H11: the opening, with its setup, prompt, evidence, pass, fail and cost', () => {

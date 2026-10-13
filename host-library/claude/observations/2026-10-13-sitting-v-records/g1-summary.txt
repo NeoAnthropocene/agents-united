@@ -1,0 +1,8 @@
+msg  1 +  2.9s  (no text)  ToolSearch x8 
+msg  2 +  8.1s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+msg  3 + 12.4s  (no text)  Agent:PASS
+msg  4 + 39.7s  text "Emre has been briefed as a read-only consultant. I'm waiting for his three-lin"  
+msg  5 + 46.2s  text "Emre's plan covers three things. First, the CTA must be visible, at least 44x4"  SendMessage:PASS
+msg  6 + 50.1s  text "I've sent Emre the structured shutdown request (ID `shutdown-1791878264229@emr"  
+msg  7 + 54.7s  text "Emre approved the shutdown request, so he is now shut down. The consultation i"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +8.1s | first gated call: message 3 at +12.4s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
