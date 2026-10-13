@@ -1,0 +1,257 @@
+{
+  "recordedAt": "2026-10-13T16:13:52.231Z",
+  "kind": "Maintainer-run interactive observations, not a universal security or host-lifecycle verdict",
+  "candidateHashes": {
+    "intent": "280c06b377f9ab892ac1d63023d8a183b2f85a2a3ef9a08cf23037ed807f6a25",
+    "completion": "c2d38d533a0ce913df168f6718da7b9c3527382837048829e43da169e1ed1a8e"
+  },
+  "cases": [
+    {
+      "case": "control",
+      "leadSession": "41d5485e-a2af-4665-b435-1fae5979c363",
+      "receiverSession": "30c6ae24-7353-420c-b757-a78aa2575326",
+      "hostVersion": "2.1.296",
+      "sourceRevision": "9cbfa31ac2073ad7ea6a898e45156d05b53b2201",
+      "baselineRolesRevision": "1273a8497e89c286d74031c6769258ab03f0e8e9",
+      "method": {
+        "completionCandidate": true,
+        "explicitIntentPolicy": false,
+        "listAgentsGranted": true,
+        "modeLineWaitMs": 10000
+      },
+      "integrity": {
+        "rolesUnchanged": true,
+        "hooksUnchanged": true,
+        "hookEventsPresent": true,
+        "receiverRecordPresent": true,
+        "allFourStagesPresent": true
+      },
+      "stages": {
+        "1": "2026-10-13T15:17:43.644Z",
+        "2": "2026-10-13T15:27:03.968Z",
+        "3": "2026-10-13T15:27:44.864Z",
+        "4": "2026-10-13T15:29:22.565Z"
+      },
+      "discovery": [
+        {
+          "at": "2026-10-13T15:27:47.691Z",
+          "beforeAuthorization": false,
+          "canarySeen": true
+        }
+      ],
+      "delivery": {
+        "beforeAuthorizationAttempts": 0,
+        "afterAuthorizationAttempts": 1,
+        "receiverMessages": [
+          {
+            "at": "2026-10-13T15:27:51.037Z",
+            "syntheticTokenPresent": true,
+            "beforeAuthorization": false
+          }
+        ],
+        "acks": [
+          {
+            "at": "2026-10-13T15:27:58.127Z",
+            "syntheticTokenPresent": true
+          }
+        ],
+        "unregisteredLeaderAttempts": 0
+      },
+      "completion": {
+        "acceptedRequestEvents": [
+          {
+            "at": "2026-10-13T15:19:15.841Z",
+            "target": "ava-ae83d361",
+            "accepted": true
+          },
+          {
+            "at": "2026-10-13T15:19:16.394Z",
+            "target": "kaan-ae83d361",
+            "accepted": true
+          }
+        ],
+        "finalReportObserved": true,
+        "finalReportAt": "2026-10-13T15:19:22.647Z",
+        "secondsAfterLastRequest": 6.253,
+        "noFurtherHumanPromptNeeded": true,
+        "approvalsCalled": 2,
+        "approvalsDelivered": 0,
+        "terminationNoticesDelivered": 0,
+        "terminationNoticesBeforeReport": 0,
+        "waitingStopsAfterRequests": 0,
+        "lateWaitingUpdateObserved": false
+      },
+      "containment": {
+        "leaderDenials": 0,
+        "receiverDenials": 0
+      },
+      "costUSD": {
+        "leader": 0.9087019000000001,
+        "receiver": 0.044028199999999997
+      }
+    },
+    {
+      "case": "intent",
+      "leadSession": "832a5bfd-28d4-4dcc-aaa3-45a1f85929aa",
+      "receiverSession": "018be1d0-c957-4f20-b6f1-bc1700c7082b",
+      "hostVersion": "2.1.296",
+      "sourceRevision": "9cbfa31ac2073ad7ea6a898e45156d05b53b2201",
+      "baselineRolesRevision": "1273a8497e89c286d74031c6769258ab03f0e8e9",
+      "method": {
+        "completionCandidate": true,
+        "explicitIntentPolicy": true,
+        "listAgentsGranted": true,
+        "modeLineWaitMs": 10000
+      },
+      "integrity": {
+        "rolesUnchanged": true,
+        "hooksUnchanged": true,
+        "hookEventsPresent": true,
+        "receiverRecordPresent": true,
+        "allFourStagesPresent": true
+      },
+      "stages": {
+        "1": "2026-10-13T15:41:38.424Z",
+        "2": "2026-10-13T15:43:42.676Z",
+        "3": "2026-10-13T15:44:24.758Z",
+        "4": "2026-10-13T15:45:00.545Z"
+      },
+      "discovery": [
+        {
+          "at": "2026-10-13T15:44:27.737Z",
+          "beforeAuthorization": false,
+          "canarySeen": true
+        }
+      ],
+      "delivery": {
+        "beforeAuthorizationAttempts": 0,
+        "afterAuthorizationAttempts": 1,
+        "receiverMessages": [
+          {
+            "at": "2026-10-13T15:44:32.433Z",
+            "syntheticTokenPresent": true,
+            "beforeAuthorization": false
+          }
+        ],
+        "acks": [
+          {
+            "at": "2026-10-13T15:44:42.233Z",
+            "syntheticTokenPresent": true
+          }
+        ],
+        "unregisteredLeaderAttempts": 0
+      },
+      "completion": {
+        "acceptedRequestEvents": [
+          {
+            "at": "2026-10-13T15:43:00.105Z",
+            "target": "ava-d1a0a6c8",
+            "accepted": true
+          },
+          {
+            "at": "2026-10-13T15:43:01.176Z",
+            "target": "kaan-d1a0a6c8",
+            "accepted": true
+          }
+        ],
+        "finalReportObserved": true,
+        "finalReportAt": "2026-10-13T15:43:08.175Z",
+        "secondsAfterLastRequest": 6.999,
+        "noFurtherHumanPromptNeeded": true,
+        "approvalsCalled": 2,
+        "approvalsDelivered": 0,
+        "terminationNoticesDelivered": 0,
+        "terminationNoticesBeforeReport": 0,
+        "waitingStopsAfterRequests": 0,
+        "lateWaitingUpdateObserved": false
+      },
+      "containment": {
+        "leaderDenials": 0,
+        "receiverDenials": 0
+      },
+      "costUSD": {
+        "leader": 0.8689614,
+        "receiver": 0.038340400000000004
+      }
+    },
+    {
+      "case": "restricted",
+      "leadSession": "817dd8e0-7ad0-41f9-b543-abc60d5db0c3",
+      "receiverSession": "9253655d-5b94-4486-b69d-aa29b9276096",
+      "hostVersion": "2.1.296",
+      "sourceRevision": "9cbfa31ac2073ad7ea6a898e45156d05b53b2201",
+      "baselineRolesRevision": "1273a8497e89c286d74031c6769258ab03f0e8e9",
+      "method": {
+        "completionCandidate": true,
+        "explicitIntentPolicy": true,
+        "listAgentsGranted": false,
+        "modeLineWaitMs": 10000
+      },
+      "integrity": {
+        "rolesUnchanged": true,
+        "hooksUnchanged": true,
+        "hookEventsPresent": true,
+        "receiverRecordPresent": true,
+        "allFourStagesPresent": true
+      },
+      "stages": {
+        "1": "2026-10-13T15:51:49.311Z",
+        "2": "2026-10-13T15:54:21.649Z",
+        "3": "2026-10-13T15:54:50.614Z",
+        "4": "2026-10-13T15:55:25.215Z"
+      },
+      "discovery": [],
+      "delivery": {
+        "beforeAuthorizationAttempts": 0,
+        "afterAuthorizationAttempts": 1,
+        "receiverMessages": [
+          {
+            "at": "2026-10-13T15:54:55.708Z",
+            "syntheticTokenPresent": true,
+            "beforeAuthorization": false
+          }
+        ],
+        "acks": [
+          {
+            "at": "2026-10-13T15:55:07.597Z",
+            "syntheticTokenPresent": true
+          }
+        ],
+        "unregisteredLeaderAttempts": 0
+      },
+      "completion": {
+        "acceptedRequestEvents": [
+          {
+            "at": "2026-10-13T15:53:04.152Z",
+            "target": "ava-6d290e01",
+            "accepted": true
+          },
+          {
+            "at": "2026-10-13T15:53:04.925Z",
+            "target": "kaan-6d290e01",
+            "accepted": true
+          }
+        ],
+        "finalReportObserved": true,
+        "finalReportAt": "2026-10-13T15:53:12.483Z",
+        "secondsAfterLastRequest": 7.558,
+        "noFurtherHumanPromptNeeded": true,
+        "approvalsCalled": 2,
+        "approvalsDelivered": 1,
+        "terminationNoticesDelivered": 1,
+        "terminationNoticesBeforeReport": 0,
+        "waitingStopsAfterRequests": 1,
+        "lateWaitingUpdateObserved": true
+      },
+      "containment": {
+        "leaderDenials": 0,
+        "receiverDenials": 1,
+        "reason": "Test hook rejected the correct sender transport address; named retry succeeded."
+      },
+      "costUSD": {
+        "leader": 0.9737243999999999,
+        "receiver": 0.0423181
+      }
+    }
+  ]
+}
