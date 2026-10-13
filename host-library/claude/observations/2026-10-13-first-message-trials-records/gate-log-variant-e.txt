@@ -1,0 +1,17 @@
+Decision log of the gate of variant e (the spike of the waiting gate), one block per run. The other variants ran the gate of the clone, which writes no log.
+
+--- fm-e-p1-1 (d8c906f3)
+{"at":"2026-10-13T07:12:51.100Z","tool":"Read","event":"released","by":"line","waitedMs":1,"firstOwn":false,"firstTexts":1}
+
+--- fm-e-p1-2 (2cad9d4f)
+{"at":"2026-10-13T07:13:09.262Z","tool":"Read","event":"released","by":"line","waitedMs":1,"firstOwn":false,"firstTexts":1}
+
+--- fm-e-p1-3 (6f80570e)
+{"at":"2026-10-13T07:13:26.580Z","tool":"Read","event":"released","by":"line","waitedMs":1,"firstOwn":false,"firstTexts":1}
+
+--- fm-e-p1-4 (582de574)
+{"at":"2026-10-13T07:13:42.710Z","tool":"Read","event":"released","by":"line","waitedMs":1,"firstOwn":false,"firstTexts":1}
+
+--- fm-e-p2-1 (feb801c3)
+(no log)
+

@@ -184,7 +184,7 @@ export class ClineLauncher {
 
     const taskText = prompt && prompt.trim().length > 0
       ? `User task: ${prompt.trim()}`
-      : 'Please introduce your coordinator role to the user and ask for their first task.';
+      : 'Please ask the user for their first task.';
 
     const bootstrapPrompt = [
       `You are coordinating the "${bundleName}" team in Agents United.`,

@@ -1,0 +1,20 @@
+The two session records of Sitting V, the last cost-state entry of each:
+
+G1 (8bec7cdc-1432-4439-bc89-604d082b37bf)
+first record 2026-10-13T07:56:55.608Z, last record 2026-10-13T07:57:50.289Z, lead messages 7
+totalCostUSD 0.5142538000000001
+totalAPIDuration 58656 ms
+totalDuration 77790 ms
+modelUsage:
+  claude-haiku-5-5: input 2787, output 417, cache read 0, cache write 0, cost 0.0005 USD
+  claude-sonnet-5-5: input 26, output 2379, cache read 524251, cache write 126329, cost 0.5138 USD
+
+Hello (976a6079-01ef-4de1-ad97-84053a1af794)
+first record 2026-10-13T07:58:38.674Z, last record 2026-10-13T07:58:47.481Z, lead messages 3
+totalCostUSD 0.2092757
+totalAPIDuration 8337 ms
+totalDuration 118443 ms
+modelUsage:
+  claude-sonnet-5-5: input 6, output 880, cache read 154077, cache write 46264, cost 0.2093 USD
+
+The maintainer said on 2026-10-13 that they are no longer interested in cost calculations; the figures are the records' own and are kept only for the ledger of the protocol. No image was made and no image server was configured.

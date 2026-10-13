@@ -1,0 +1,1 @@
+Scratch exercise, no real client. Consult emre read-only first: ask him, as a teammate, for a three-line test plan for the call-to-action button of a fictional pet-sitting landing page (he writes no files and runs no commands). Relay his answer to me in two sentences, then ask him to shut down with a structured shutdown_request. Do nothing else.

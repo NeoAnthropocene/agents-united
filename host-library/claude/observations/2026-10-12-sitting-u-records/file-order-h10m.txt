@@ -1,0 +1,23 @@
+line  55  + 12.1s  attachment         
+line  56  + 12.1s  assistant  3ubXu7  thinking
+line  57  + 12.1s  assistant  3ubXu7  thinking
+line  58  + 12.1s  assistant  3ubXu7  tool_use:ToolSearch
+line  59  + 12.1s  user               tool_result
+line  60  + 12.2s  attachment         
+line  67  + 12.2s  attachment         
+line  68  + 15.4s  attachment         
+line  69  + 15.4s  assistant  WfoA6T  tool_use:Agent
+line  70  + 15.4s  user               tool_result(ERROR PreToolUse:Agent hook error: [node ${CLAUDE_PROJECT_DIR}/.claude/hooks)
+line  71  + 16.6s  attachment         
+line  72  + 18.7s  assistant  7cqsLw  text(MODE LINE)
+line  73  + 20.1s  assistant  7cqsLw  tool_use:Agent
+line  74  + 20.2s  user               tool_result(ERROR PreToolUse:Agent hook error: [node ${CLAUDE_PROJECT_DIR}/.claude/hooks)
+line  75  + 21.0s  attachment         
+line  76  + 23.7s  assistant  1PBg9n  tool_use:Agent
+line  77  + 23.8s  user               tool_result(ERROR PreToolUse:Agent hook error: [node ${CLAUDE_PROJECT_DIR}/.claude/hooks)
+line  78  + 24.6s  attachment         
+line  85  + 26.4s  assistant  dcdwUs  text(MODE LINE)
+line  86  + 27.8s  assistant  dcdwUs  tool_use:Agent
+line  87  + 28.7s  user               tool_result
+line  88  + 28.7s  attachment         
+line  89  + 30.2s  assistant  cQEr5v  text

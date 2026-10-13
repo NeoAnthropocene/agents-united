@@ -1,0 +1,7 @@
+Decision log of the mode-line gate for the G1 session 8bec7cdc-1432-4439-bc89-604d082b37bf (one line per decision; names, times and counts, no text):
+{"at":"2026-10-13T07:57:08.061Z","tool":"Agent","event":"released","by":"line","waitedMs":1}
+
+State file at the end of the session:
+{"done":true,"version":2}
+
+The hello session (976a6079-01ef-4de1-ad97-84053a1af794) has no log: the lead made no call that the gate judges, so the hook never waited, held or released one.

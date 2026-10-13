@@ -1,0 +1,4 @@
+msg  1 +  2.5s  (no text)  ToolSearch x8 
+msg  2 +  7.2s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+msg  3 +  8.8s  text "What would you like to work on?"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +7.2s | first gated call: none | line written before the first gated call: n/a | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none

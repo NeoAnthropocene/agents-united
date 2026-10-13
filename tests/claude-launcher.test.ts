@@ -174,9 +174,10 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
       );
       expect(activation.bootstrapPrompt).toContain('.claude/agents/orchestrator-engineering.md');
       expect(activation.bootstrapPrompt).toContain('--agent orchestrator-engineering');
-      // No prompt supplied ⇒ the documented opener is used instead of a task line.
+      // No prompt supplied ⇒ the documented opener is used instead of a task line. It asks for the user's first task and for nothing else: no introduction of the coordinator (ADR 0053).
       expect(activation.bootstrapPrompt).not.toContain('User task:');
-      expect(activation.bootstrapPrompt).toContain('ask for their first task');
+      expect(activation.bootstrapPrompt).toContain('Please ask the user for their first task.');
+      expect(activation.bootstrapPrompt).not.toMatch(/introduce/i);
     });
 
     it('prefixes the global-scope manifest and coordinator references with ~/', () => {

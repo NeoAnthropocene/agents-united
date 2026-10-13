@@ -1,0 +1,21 @@
+h10d-local-test-g1-consult/8370a0ca  holds 3, lines 2
+   line@13:18:48  holds after it (s after the line): [1.6, 6.0]  first passed call after it: 10.4s Agent
+   line@13:18:56  holds after it (s after the line): []  first passed call after it: 1.7s Agent
+h10d-local-test-h10k2-gemini/1269c24c  holds 2, lines 2
+   line@09:58:04  holds after it (s after the line): [0.7]  first passed call after it: 3.3s Bash
+   line@09:58:07  holds after it (s after the line): []  first passed call after it: 0.7s Bash
+h10d-local-test-h10k2-gemini/314be482  holds 6, lines 2
+   line@09:10:03  holds after it (s after the line): [0.3]  first passed call after it: none
+   line@09:10:10  holds after it (s after the line): []  first passed call after it: none
+h10d-local-test-h10k2-gemini/ccb31540  holds 5, lines 3
+   line@15:29:29  holds after it (s after the line): [0.3, 0.4, 5.7]  first passed call after it: 47.2s Glob
+   line@15:29:44  holds after it (s after the line): []  first passed call after it: 31.9s Glob
+   line@15:30:16  holds after it (s after the line): []  first passed call after it: 0.0s Glob
+h10d-local-test-h10k2-gemini/d8b12589  holds 5, lines 1
+   line@12:54:40  holds after it (s after the line): [0.4, 0.4, 2.7]  first passed call after it: 2.8s Skill
+h10d-local-test-h10m-pool/cbb4adf8  holds 3, lines 2
+   line@14:44:18  holds after it (s after the line): [1.5, 5.0]  first passed call after it: 9.2s Agent
+   line@14:44:26  holds after it (s after the line): []  first passed call after it: 1.5s Agent
+h10d-local-test-h10k1-own/7b21e8f5  holds 4, lines 2
+   line@15:04:12  holds after it (s after the line): [0.3, 0.4]  first passed call after it: 2.9s Glob
+   line@15:04:14  holds after it (s after the line): []  first passed call after it: 0.1s Glob
