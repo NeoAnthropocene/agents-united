@@ -835,9 +835,8 @@ export interface HostDialectSpec {
  * Plan 032 Phase 5 / ADR 0025 decision 8 — host-neutral capability classes. A role in
  * `registry/core/` declares classes, never tool names; each host's `tool-policy.json` maps a
  * class to that host's native tools. The first fifteen are the ADR's list (`schedule` is spelled
- * `scheduling` because core files may not contain the forbidden token `schedule`); the last eight
- * cover native tools the ADR list leaves unclassified. `peer-sessions` (ADR 0054) is the one that finds
- * sessions outside the role's own team, and no role declares it.
+ * `scheduling` because core files may not contain the forbidden token `schedule`); the last seven
+ * cover native tools the ADR list leaves unclassified.
  */
 export type CapabilityClass =
   | 'read'
@@ -858,7 +857,6 @@ export type CapabilityClass =
   | 'artifacts'
   | 'skill'
   | 'messaging'
-  | 'peer-sessions'
   | 'task-tracking'
   | 'plan'
   | 'mcp-discovery'

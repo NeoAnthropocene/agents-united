@@ -311,3 +311,6 @@ Alt text:       <what it shows and why>
   "approved_by": "lead | user"
 }
 ```
+
+
+**Amended 2026-10-13 (PR #202 Round 2 review).** Discovery removal from every native Claude role is superseded by ADR 0054's user-intended session reach amendment. H10n observes discovery availability and forbids unauthorized outside-team contact; the historical Sitting X observation of missing ListAgents is unchanged. The Sitting X ledger row lost in the dev merge into #202 is restored verbatim, fixing the three existing CI regressions without weakening their tests. Shutdown completion is a separate change; the Round 2 record includes a late waiting update and does not establish reliable host termination.

@@ -205,7 +205,7 @@
     },
     {
       "name": "ListAgents",
-      "class": "peer-sessions",
+      "class": "messaging",
       "subagents": "conditional",
       "backgroundSubagent": false,
       "mutating": false,
