@@ -1,0 +1,7 @@
+call-check.mjs run after the sitting, on Jamileh's one call (jamileh-call.json), with --project the test folder, --output-dir its assets/generated and --images 1. She holds no shell, so she could not run it before the call (the skill says "with a shell, check first").
+
+error  overwrite  fileName  petpal-sitter-sofa-4x5.jpg already exists in <the folder>\assets\generated; the server overwrites a file of the same name, and its record with it. Use a new name.
+estimate: gemini gemini-nano-banana-2.1, 1 image: $0.0504 each, $0.0504 in all, $0.1512 at most (3 calls per asset).
+exit 1
+
+The only error is the file's own existence, which is what the check is for when the image is already there; it is the expected result after the call, and no other finding was raised (provider, quality, size, ratio and file name without extension were accepted).

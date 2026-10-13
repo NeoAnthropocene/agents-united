@@ -1,0 +1,27 @@
+{
+  "claudeCodeVersions": [
+    "2.1.296"
+  ],
+  "totalCostUSD": 1.0677176000000002,
+  "totalAPIDurationSeconds": 135.4,
+  "totalDurationSeconds": 838,
+  "hasUnknownModelCost": false,
+  "models": [
+    {
+      "model": "claude-haiku-5-5",
+      "costUSD": 0.0002907,
+      "inputTokens": 2722,
+      "outputTokens": 37,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "costUSD": 1.0674269000000003,
+      "inputTokens": 82,
+      "outputTokens": 14242,
+      "cacheReadInputTokens": 2668334,
+      "cacheCreationInputTokens": 187506
+    }
+  ]
+}

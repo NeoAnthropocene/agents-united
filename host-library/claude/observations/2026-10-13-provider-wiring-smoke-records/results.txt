@@ -1,0 +1,305 @@
+=== list
+{
+  "label": "list",
+  "server": {
+    "name": "mcp-image-server",
+    "version": "0.18.0"
+  },
+  "protocolVersion": "2024-11-05",
+  "tools": {
+    "tools": [
+      {
+        "name": "generate_image",
+        "description": "Generate a new image from a text prompt or edit and combine reference images using inputImagePaths. Saves the result and returns a file resource.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Describe the image to generate or the edit to apply. Include the subject, context, and visual style; English is recommended for prompt enhancement."
+            },
+            "fileName": {
+              "type": "string",
+              "description": "Use .png, .jpg, or .jpeg to request that output format from OpenAI or Seedream. Other or absent suffixes use the provider default; the saved filename is corrected to the actual image extension."
+            },
+            "inputImagePaths": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "maxItems": 16,
+              "description": "Absolute paths to reference images in prompt order. Use a one-element array for one image. Limits: Gemini 14, OpenAI 16, Seedream 10. Omit for text-only generation."
+            },
+            "blendImages": {
+              "type": "boolean",
+              "description": "Enable when the prompt combines multiple visual elements that need coherent spatial relationships, lighting, or composition."
+            },
+            "maintainCharacterConsistency": {
+              "type": "boolean",
+              "description": "Enable when the same character must retain a recognizable appearance across poses or scenes."
+            },
+            "useWorldKnowledge": {
+              "type": "boolean",
+              "description": "Enable when accurate real-world details matter, such as historical figures, landmarks, cultures, or factual settings."
+            },
+            "useGoogleSearch": {
+              "type": "boolean",
+              "description": "Enable when using Gemini and the image requires current or time-sensitive web information. With OpenAI or Seedream, omit this option or set it to false."
+            },
+            "aspectRatio": {
+              "type": "string",
+              "description": "Set the requested output aspect ratio. Omit to use the provider default. OpenAI does not support 1:4, 1:8, 4:1, or 8:1.",
+              "enum": [
+                "1:1",
+                "1:4",
+                "1:8",
+                "2:3",
+                "3:2",
+                "3:4",
+                "4:1",
+                "4:3",
+                "4:5",
+                "5:4",
+                "8:1",
+                "9:16",
+                "16:9",
+                "21:9"
+              ]
+            },
+            "imageSize": {
+              "type": "string",
+              "description": "Set the requested output size to 1K, 2K, or 4K. Omit to use the selected provider and quality preset's default. With Seedream, use 1K or 2K.",
+              "enum": [
+                "1K",
+                "2K",
+                "4K"
+              ]
+            },
+            "purpose": {
+              "type": "string",
+              "description": "Describe the image's intended use, such as a cookbook cover, social media post, or presentation slide, so prompt enhancement can adapt composition and detail."
+            },
+            "quality": {
+              "type": "string",
+              "description": "Set only when the user requests a quality level; otherwise omit to use the server default. fast prioritizes speed, balanced trades speed for detail, and quality prioritizes fidelity.",
+              "enum": [
+                "fast",
+                "balanced",
+                "quality"
+              ]
+            },
+            "provider": {
+              "type": "string",
+              "description": "Set only when the user requests a specific image provider; otherwise omit to use the server default. The provider must have its API key configured on the server.",
+              "enum": [
+                "gemini",
+                "openai",
+                "seedream"
+              ]
+            }
+          },
+          "required": [
+            "prompt"
+          ]
+        }
+      }
+    ]
+  },
+  "stderr": [
+    "{\"timestamp\":\"2026-10-13T10:26:30.757Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Starting MCP Image Generator initialization\",\"metadata\":{\"nodeVersion\":\"v24.19.0\",\"platform\":\"win32\",\"env\":\"development\"},\"traceId\":\"a6993188\",\"sessionId\":\"69063e1f\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:30.762Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Image Generator MCP Server started successfully\",\"traceId\":\"a6993188\",\"sessionId\":\"69063e1f\"}"
+  ]
+}
+=== openai-nokey
+{
+  "label": "openai-nokey",
+  "server": {
+    "name": "mcp-image-server",
+    "version": "0.18.0"
+  },
+  "protocolVersion": "2024-11-05",
+  "call": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:32.317Z\",\"code\":\"CONFIG_ERROR\",\"message\":\"The selected image provider \\\"openai\\\" is not configured on this server.\",\"suggestion\":\"Ask the user to configure OPENAI_API_KEY and restart the MCP server. After the server restarts, retry generate_image with provider \\\"openai\\\".\"}}"
+      }
+    ],
+    "isError": true
+  },
+  "stderr": [
+    "{\"timestamp\":\"2026-10-13T10:26:32.307Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Starting MCP Image Generator initialization\",\"metadata\":{\"nodeVersion\":\"v24.19.0\",\"platform\":\"win32\",\"env\":\"development\"},\"traceId\":\"3694c286\",\"sessionId\":\"3206b104\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:32.311Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Image Generator MCP Server started successfully\",\"traceId\":\"3694c286\",\"sessionId\":\"3206b104\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:32.317Z\",\"level\":\"error\",\"context\":\"image-generation\",\"message\":\"Operation failed\",\"metadata\":{\"errorName\":\"ConfigError\",\"errorMessage\":\"The selected image provider \\\"openai\\\" is not configured on this server.\",\"errorStack\":\"ConfigError: The selected image provider \\\"o"
+  ]
+}
+=== seedream-nokey
+{
+  "label": "seedream-nokey",
+  "server": {
+    "name": "mcp-image-server",
+    "version": "0.18.0"
+  },
+  "protocolVersion": "2024-11-05",
+  "call": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:33.929Z\",\"code\":\"CONFIG_ERROR\",\"message\":\"The selected image provider \\\"seedream\\\" is not configured on this server.\",\"suggestion\":\"Ask the user to configure ARK_API_KEY and restart the MCP server. After the server restarts, retry generate_image with provider \\\"seedream\\\".\"}}"
+      }
+    ],
+    "isError": true
+  },
+  "stderr": [
+    "{\"timestamp\":\"2026-10-13T10:26:33.919Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Starting MCP Image Generator initialization\",\"metadata\":{\"nodeVersion\":\"v24.19.0\",\"platform\":\"win32\",\"env\":\"development\"},\"traceId\":\"78abd441\",\"sessionId\":\"2d5f81f8\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:33.923Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Image Generator MCP Server started successfully\",\"traceId\":\"78abd441\",\"sessionId\":\"2d5f81f8\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:33.929Z\",\"level\":\"error\",\"context\":\"image-generation\",\"message\":\"Operation failed\",\"metadata\":{\"errorName\":\"ConfigError\",\"errorMessage\":\"The selected image provider \\\"seedream\\\" is not configured on this server.\",\"errorStack\":\"ConfigError: The selected image provider \\"
+  ]
+}
+=== openai-fake
+{
+  "label": "openai-fake",
+  "server": {
+    "name": "mcp-image-server",
+    "version": "0.18.0"
+  },
+  "protocolVersion": "2024-11-05",
+  "call": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:35.803Z\",\"code\":\"IMAGE_API_ERROR\",\"message\":\"Failed to generate image with OpenAI\",\"suggestion\":\"Check that your OPENAI_API_KEY is valid and has image generation permissions\",\"details\":{\"provider\":\"openai\",\"statusCode\":401,\"upstreamMessage\":\"401 Incorrect API key provided: FAKE_OPE*********************TEST. You can find your API key at [URL_REDACTED]\"}}}"
+      }
+    ],
+    "isError": true
+  },
+  "stderr": [
+    "{\"timestamp\":\"2026-10-13T10:26:35.475Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Starting MCP Image Generator initialization\",\"metadata\":{\"nodeVersion\":\"v24.19.0\",\"platform\":\"win32\",\"env\":\"development\"},\"traceId\":\"95cb4403\",\"sessionId\":\"fa879cc3\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:35.479Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Image Generator MCP Server started successfully\",\"traceId\":\"95cb4403\",\"sessionId\":\"fa879cc3\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:35.486Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Image provider clients initialized\",\"metadata\":{\"provider\":\"openai\",\"promptEnhancement\":false},\"traceId\":\"7f8415e7\",\"sessionId\":\"1326960d\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:35.486Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Prompt enhancement skipped (SKIP_PROMPT_ENHANCEMENT=true)\",\"traceId\":\"7f8415e7\",\"sessionId\":\"1326960d\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:35.803Z\",\"level\":\"error\",\"context\":\"image-generation\",\"message\":\"Operation failed\",\"metadata\":{\"errorName\":\"ImageAPIError\",\"errorMessage\":\"Failed to generate image with OpenAI\",\"errorStack\":\"ImageAPIError: Failed to generate image with OpenAI\\n    at [REDACTED].handleE"
+  ]
+}
+=== seedream-fake
+{
+  "label": "seedream-fake",
+  "server": {
+    "name": "mcp-image-server",
+    "version": "0.18.0"
+  },
+  "protocolVersion": "2024-11-05",
+  "call": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:38.075Z\",\"code\":\"IMAGE_API_ERROR\",\"message\":\"Seedream image request was rejected\",\"suggestion\":\"Check that ARK_API_KEY can access the pinned Seedream image model\",\"details\":{\"provider\":\"seedream\",\"stage\":\"image_request\",\"statusCode\":401}}}"
+      }
+    ],
+    "isError": true
+  },
+  "stderr": [
+    "{\"timestamp\":\"2026-10-13T10:26:37.353Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Starting MCP Image Generator initialization\",\"metadata\":{\"nodeVersion\":\"v24.19.0\",\"platform\":\"win32\",\"env\":\"development\"},\"traceId\":\"df7fa3e0\",\"sessionId\":\"94b42669\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:37.357Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Image Generator MCP Server started successfully\",\"traceId\":\"df7fa3e0\",\"sessionId\":\"94b42669\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:37.364Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Image provider clients initialized\",\"metadata\":{\"provider\":\"seedream\",\"promptEnhancement\":false},\"traceId\":\"70488dc1\",\"sessionId\":\"3545e824\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:37.364Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Prompt enhancement skipped (SKIP_PROMPT_ENHANCEMENT=true)\",\"traceId\":\"70488dc1\",\"sessionId\":\"3545e824\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:38.075Z\",\"level\":\"error\",\"context\":\"image-generation\",\"message\":\"Operation failed\",\"metadata\":{\"errorName\":\"ImageAPIError\",\"errorMessage\":\"Seedream image request was rejected\",\"errorStack\":\"ImageAPIError: Seedream image request was rejected\\n    at [REDACTED].normalize"
+  ]
+}
+=== gemini-fake
+{
+  "label": "gemini-fake",
+  "server": {
+    "name": "mcp-image-server",
+    "version": "0.18.0"
+  },
+  "protocolVersion": "2024-11-05",
+  "call": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:39.791Z\",\"code\":\"GEMINI_API_ERROR\",\"message\":\"Failed to generate image with Gemini\",\"suggestion\":\"Check that your GEMINI_API_KEY is valid and has the necessary permissions\",\"details\":{\"provider\":\"gemini\",\"statusCode\":400,\"upstreamMessage\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"API key not valid. Please pass a valid API key.\\\",\\\"status\\\":\\\"INVALID_ARGUMENT\\\",\\\"details\\\":[{\\\"@type\\\":\\\"type.googleapis.com/google.rpc.ErrorInfo\\\",\\\"reason\\\":\\\"[REDACTED]_KEY_INVALID\\\",\\\"domain\\\":\\\"googleapis.com\\\",\\\"metadata\\\":{\\\"service\\\":\\\"generativelanguage.googleapis.com\\\"}},{\\\"@type\\\":\\\"type.googleapis.com/google.rpc.LocalizedMessage\\\",\\\"locale\\\":\\\"en-US\\\",\\\"message\\\":\\\"API key not valid. Please pass a valid API key.\\\"}]}}\"}}}"
+      }
+    ],
+    "isError": true
+  },
+  "stderr": [
+    "{\"timestamp\":\"2026-10-13T10:26:39.599Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Starting MCP Image Generator initialization\",\"metadata\":{\"nodeVersion\":\"v24.19.0\",\"platform\":\"win32\",\"env\":\"development\"},\"traceId\":\"ac92c85e\",\"sessionId\":\"85ddc9e9\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:39.603Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Image Generator MCP Server started successfully\",\"traceId\":\"ac92c85e\",\"sessionId\":\"85ddc9e9\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:39.609Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Image provider clients initialized\",\"metadata\":{\"provider\":\"gemini\",\"promptEnhancement\":false},\"traceId\":\"d6bfb471\",\"sessionId\":\"62a5dba6\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:39.609Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Prompt enhancement skipped (SKIP_PROMPT_ENHANCEMENT=true)\",\"traceId\":\"d6bfb471\",\"sessionId\":\"62a5dba6\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:39.791Z\",\"level\":\"error\",\"context\":\"image-generation\",\"message\":\"Operation failed\",\"metadata\":{\"errorName\":\"GeminiAPIError\",\"errorMessage\":\"Failed to generate image with Gemini\",\"errorStack\":\"GeminiAPIError: Failed to generate image with Gemini\\n    at GeminiClientImpl"
+  ]
+}
+=== default-openai
+{
+  "label": "default-openai",
+  "server": {
+    "name": "mcp-image-server",
+    "version": "0.18.0"
+  },
+  "protocolVersion": "2024-11-05",
+  "call": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:41.640Z\",\"code\":\"IMAGE_API_ERROR\",\"message\":\"Failed to generate image with OpenAI\",\"suggestion\":\"Check that your OPENAI_API_KEY is valid and has image generation permissions\",\"details\":{\"provider\":\"openai\",\"statusCode\":401,\"upstreamMessage\":\"401 Incorrect API key provided: FAKE_OPE*********************TEST. You can find your API key at [URL_REDACTED]\"}}}"
+      }
+    ],
+    "isError": true
+  },
+  "stderr": [
+    "{\"timestamp\":\"2026-10-13T10:26:41.356Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Starting MCP Image Generator initialization\",\"metadata\":{\"nodeVersion\":\"v24.19.0\",\"platform\":\"win32\",\"env\":\"development\"},\"traceId\":\"e7b53774\",\"sessionId\":\"82daae09\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:41.360Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Image Generator MCP Server started successfully\",\"traceId\":\"e7b53774\",\"sessionId\":\"82daae09\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:41.367Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Image provider clients initialized\",\"metadata\":{\"provider\":\"openai\",\"promptEnhancement\":false},\"traceId\":\"b7aaad39\",\"sessionId\":\"6fd8315f\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:41.367Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Prompt enhancement skipped (SKIP_PROMPT_ENHANCEMENT=true)\",\"traceId\":\"b7aaad39\",\"sessionId\":\"6fd8315f\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:41.640Z\",\"level\":\"error\",\"context\":\"image-generation\",\"message\":\"Operation failed\",\"metadata\":{\"errorName\":\"ImageAPIError\",\"errorMessage\":\"Failed to generate image with OpenAI\",\"errorStack\":\"ImageAPIError: Failed to generate image with OpenAI\\n    at [REDACTED].handleE"
+  ]
+}
+=== multi-keys
+{
+  "label": "multi-keys",
+  "server": {
+    "name": "mcp-image-server",
+    "version": "0.18.0"
+  },
+  "protocolVersion": "2024-11-05",
+  "call-openai": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:43.485Z\",\"code\":\"IMAGE_API_ERROR\",\"message\":\"Failed to generate image with OpenAI\",\"suggestion\":\"Check that your OPENAI_API_KEY is valid and has image generation permissions\",\"details\":{\"provider\":\"openai\",\"statusCode\":401,\"upstreamMessage\":\"401 Incorrect API key provided: FAKE_OPE*********************TEST. You can find your API key at [URL_REDACTED]\"}}}"
+      }
+    ],
+    "isError": true
+  },
+  "call-seedream": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:44.057Z\",\"code\":\"IMAGE_API_ERROR\",\"message\":\"Seedream image request was rejected\",\"suggestion\":\"Check that ARK_API_KEY can access the pinned Seedream image model\",\"details\":{\"provider\":\"seedream\",\"stage\":\"image_request\",\"statusCode\":401}}}"
+      }
+    ],
+    "isError": true
+  },
+  "call-default": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"timestamp\":\"2026-10-13T10:26:44.189Z\",\"code\":\"GEMINI_API_ERROR\",\"message\":\"Failed to generate image with Gemini\",\"suggestion\":\"Check that your GEMINI_API_KEY is valid and has the necessary permissions\",\"details\":{\"provider\":\"gemini\",\"statusCode\":400,\"upstreamMessage\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"API key not valid. Please pass a valid API key.\\\",\\\"status\\\":\\\"INVALID_ARGUMENT\\\",\\\"details\\\":[{\\\"@type\\\":\\\"type.googleapis.com/google.rpc.ErrorInfo\\\",\\\"reason\\\":\\\"[REDACTED]_KEY_INVALID\\\",\\\"domain\\\":\\\"googleapis.com\\\",\\\"metadata\\\":{\\\"service\\\":\\\"generativelanguage.googleapis.com\\\"}},{\\\"@type\\\":\\\"type.googleapis.com/google.rpc.LocalizedMessage\\\",\\\"locale\\\":\\\"en-US\\\",\\\"message\\\":\\\"API key not valid. Please pass a valid API key.\\\"}]}}\"}}}"
+      }
+    ],
+    "isError": true
+  },
+  "stderr": [
+    "{\"timestamp\":\"2026-10-13T10:26:43.157Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Starting MCP Image Generator initialization\",\"metadata\":{\"nodeVersion\":\"v24.19.0\",\"platform\":\"win32\",\"env\":\"development\"},\"traceId\":\"ffdcf195\",\"sessionId\":\"8f4edabf\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:43.161Z\",\"level\":\"info\",\"context\":\"mcp-startup\",\"message\":\"Image Generator MCP Server started successfully\",\"traceId\":\"ffdcf195\",\"sessionId\":\"8f4edabf\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:43.168Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Image provider clients initialized\",\"metadata\":{\"provider\":\"openai\",\"promptEnhancement\":false},\"traceId\":\"6fe825fa\",\"sessionId\":\"ab4f42f6\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:43.168Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Prompt enhancement skipped (SKIP_PROMPT_ENHANCEMENT=true)\",\"traceId\":\"6fe825fa\",\"sessionId\":\"ab4f42f6\"}",
+    "{\"timestamp\":\"2026-10-13T10:26:43.485Z\",\"level\":\"error\",\"context\":\"image-generation\",\"message\":\"Operation failed\",\"metadata\":{\"errorName\":\"ImageAPIError\",\"errorMessage\":\"Failed to generate image with OpenAI\",\"errorStack\":\"ImageAPIError: Failed to generate image with OpenAI\\n    at [REDACTED].handleE",
+    "{\"timestamp\":\"2026-10-13T10:26:43.487Z\",\"level\":\"info\",\"context\":\"mcp-server\",\"message\":\"Image provider clients initialized\",\"metadata\":{\"provider\":\"seedream\",\"promptEnhancement\":false},\"traceId\":\"6fe825fa\",\"sessionId\":\"ab4f42f6\"}"
+  ]
+}
+=== images written: 0
