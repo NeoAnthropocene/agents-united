@@ -46,6 +46,27 @@ describe('mcp-setup: the optional image server', () => {
     expect(s).toMatch(/billing/i);
   });
 
+  // The maintainer, 2026-10-13: Gemini is the only provider whose key they hold, and the user must be able to choose the others. A user with one key of another provider needs a command to print, not a
+  // rule to apply to the Gemini one. The wiring of both commands was checked with the server itself on 2026-10-13 (made-up keys, no image): see the observation of the same day.
+  it('prints a command for a user who has the key of one other provider only (OpenAI, or Seedream): its own key pair, its own IMAGE_PROVIDER, the key of no other provider', () => {
+    const s = section();
+    const PAIR = { gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY', seedream: 'ARK_API_KEY' } as const;
+    const commands = [...s.matchAll(/```bash\n([^`]*?)```/g)].map(m => m[1]!.trim()).filter(c => c.startsWith('claude mcp add'));
+
+    expect(commands.map(c => /--env IMAGE_PROVIDER=(\w+)/.exec(c)?.[1])).toEqual(['gemini', 'openai', 'seedream']);
+    for (const command of commands) {
+      const provider = /--env IMAGE_PROVIDER=(\w+)/.exec(command)![1] as keyof typeof PAIR;
+      const keys = Object.values(PAIR).filter(key => command.includes(`--env ${key}=<`));
+      expect(keys, command).toEqual([PAIR[provider]]);
+      expect(command, command).toMatch(/^claude mcp add --scope local image-gen --env \w+=<[a-z -]+> --env IMAGE_PROVIDER=\w+ --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>\/assets\/generated -- npx -y mcp-image@0\.18\.0$/);
+    }
+    expect(commands[1]).toContain('--env OPENAI_API_KEY=<your-openai-key>');
+    expect(commands[2]).toContain('--env ARK_API_KEY=<your-byteplus-ark-key>');
+    expect(s).toMatch(/started and called on 2026-10-13 with a made-up key/);
+    expect(s).toContain('2026-10-13-mcp-image-0.18.0-provider-wiring-smoke.md');
+    expect(s).toMatch(/No image was made with OpenAI or Seedream/);
+  });
+
   it('holds no key, no key shape and no value for any key variable', () => {
     for (const text of [read('references/claude-code.md'), read('SKILL.md')]) {
       expect(text).not.toMatch(/AIza[0-9A-Za-z_-]{20,}/);

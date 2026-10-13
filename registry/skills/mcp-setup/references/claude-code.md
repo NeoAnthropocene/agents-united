@@ -105,6 +105,18 @@ To wire another provider, add one `--env` pair for each other provider the user 
 
 Set `IMAGE_PROVIDER` to the provider used when a call names none: `gemini` (stated in the base command), `openai` or `seedream`. A user with no Gemini key leaves out the Gemini pair and sets `IMAGE_PROVIDER` to the provider they have. A call that names a provider without its key fails with a message that asks for that key and a restart: that is the lead's to fix with this section, never the designer's.
 
+**One other provider only.** A user who has the key of one other provider and none of Gemini prints one of these two commands instead of the Gemini one (that provider's key pair, its own `IMAGE_PROVIDER`, and nothing of another provider):
+
+```bash
+claude mcp add --scope local image-gen --env OPENAI_API_KEY=<your-openai-key> --env IMAGE_PROVIDER=openai --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.18.0
+```
+
+```bash
+claude mcp add --scope local image-gen --env ARK_API_KEY=<your-byteplus-ark-key> --env IMAGE_PROVIDER=seedream --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.18.0
+```
+
+Both shapes were started and called on 2026-10-13 with a made-up key: the server reached the provider and the provider answered 401; a call that names a provider whose key is not set is refused with "not configured", a request for that key and a restart; with the three keys on one server the provider named in a call answers, and a call that names none goes to `IMAGE_PROVIDER`. So the key variable and `IMAGE_PROVIDER` are read as written. **No image was made with OpenAI or Seedream**, because nobody on the project holds their keys: the first image is the real test, and it is on the ROADMAP (`host-library/claude/observations/2026-10-13-mcp-image-0.18.0-provider-wiring-smoke.md`).
+
 `--scope local` keeps the keys in the user's own file and the server out of the `.mcp.json` that is shared with the team. Write the path in the form of the user's shell (`C:\work\petpal\assets\generated` in PowerShell, `C:/work/petpal/assets/generated` in Git Bash).
 
 | Setting | Why |
