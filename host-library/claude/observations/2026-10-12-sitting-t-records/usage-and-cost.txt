@@ -1,0 +1,17 @@
+Sitting T: what the runs cost, and what the plan's windows showed (2026-10-12).
+
+The model cost of the two sessions (both interactive, Claude Code 2.1.296)
+  H10k2  2.2254 USD  35 API messages of the lead (32 on claude-sonnet-5-5, 3 on claude-opus-5-5), 230 s of API time, 1342 s from the first to the last record, eight messages typed by the maintainer and one /mcp command, two Jamileh teammates
+         (the session's own record, a "cost-state" entry: totalCostUSD 2.2254199, claude-sonnet-5-5 1.3523222, claude-opus-5-5 0.8724474, claude-haiku-5-5 0.0006503; it covers the whole session across the restarts, and whether it includes the two teammates is not established)
+  G1     0.4240 USD  10 API messages, 63 s of API time, 109 s from the start of the process to the last record, one message typed, one teammate (Emre)
+         (the session's own record, a "cost-state" entry: totalCostUSD 0.4240102, claude-sonnet-5-5 0.4234963, claude-haiku-5-5 0.0005139)
+  Total  2.6494 USD in 2 prompts, against the ceiling of 3.0 USD and 2 prompts and the 1.0 USD expected (about 0.5 USD for each).
+  H10k2 was meant to stop at the lead's first report (2.0 USD ceiling for the session); the maintainer went on, accepted the delegation map, ran the command the lead printed and restarted three times, and the session cost 2.2254 USD. The restart commands did not carry --model sonnet, so one restart ran the lead on its pinned model (claude-opus-5-5, 3 messages, 0.8724 USD of the total).
+
+The images
+  None were made: the lead never saw the image tool, so no call to the image server was made.
+
+The plan's windows (Pro plan, read with get_usage by the executor)
+  before the runs   (11:57 UTC, read after Sitting S): 5-hour window 38 percent used, weekly 67 percent
+  after the runs    (13:29 UTC): 5-hour window 75 percent used (resets 15:40 UTC), weekly 72 percent
+  The runs were made between 12:54 and 13:20 UTC, and the executor's own turns since the first reading (the record of Sitting S, the push, the reading of both new sessions) drew on the same windows: no part of the rise is attributed to the runs.

@@ -1,0 +1,299 @@
+H10k evidence: h10k2 (h10k2-gemini)
+5 session records in the folder: using the latest (d8b12589-ddfc-4dcd-8da1-42b2844787d8.jsonl); the others: a7acda03-49c4-41cc-aa21-21a82975425a.jsonl, 1269c24c-b5ed-4c51-a8df-ff4ad23202d1.jsonl, 314be482-934b-49af-b942-f0117f35fd7c.jsonl, ccb31540-7603-470f-a6da-42768e0d7aec.jsonl
+
+== The session
+file d8b12589-ddfc-4dcd-8da1-42b2844787d8.jsonl (307 records), session d8b12589-ddfc-4dcd-8da1-42b2844787d8
+Claude Code 2.1.296
+from 2026-10-12T12:54:25.728Z to 2026-10-12T13:16:47.777Z (1342 s; a long gap means the session sat idle)
+tokens, once for each API message: lead 35 messages, 12516 out, 220692 written to the cache, 3305150 read from the cache; about 1.67 USD
+  teammate jamileh  Jamileh tool check                          408 out   39707 cache-write   142137 cache-read  about 0.19 USD
+  teammate jamileh  Jamileh consultation on hero set            878 out   42257 cache-write   185018 cache-read  about 0.21 USD
+the session's own cost record (Claude Code 2.1.296): 2.2254 USD (claude-haiku-5-5 0.0007, claude-sonnet-5-5 1.3523, claude-opus-5-5 0.8724); 230 s of API time, 1171 s from the start of the process to the last record.
+teammates: 2 transcript(s), estimated 0.41 USD from their tokens; whether the record's figure includes them is not established.
+for comparison, the estimate from the lead's tokens at fitted prices (10.01 output, 4 cache write, 0.2 cache read per million): 2.08 USD (lead 1.67, teammates 0.41). The record's own figure is the one to quote.
+
+== What you typed (10 message(s) of yours, in order; 4 teammate notice(s) are left out)
+1 +   0s  Scratch exercise, no real client. Plan the PetPal paid-social set from `docs/pilot`: a 4:5 feed ad, a 9:16 story and a 1.91:1 link ad, each with a warm, natural photograph of a sitter and a dog on a sofa as its hero. No photography is supplied. Do not start any teammate until I have chosen how the pictures are made.
+2 + 271s  yes, I accept
+3 + 929s   <pasted_content id="7aad"> Resume the PetPal paid-social plan (scratch exercise, fictional client). Accepted map: 1. Jamileh (agency-creative-designer): brief.md with prompts, size and safe-zone table, per-ratio image briefs (assets/ads/brief.md). 2. Jamileh: 3 Gemini photos (fast, 2K) for 4:5, 9:16 and 1.91:1, a sitter and a dog on a sofa, warm and natural, a text-safe area (top 14% and bottom 2 ...[+959 characters]
+4 +1100s   <pasted_content id="7aad"> Resume the PetPal paid-social plan (scratch exercise, fictional client). Accepted map: 1. Jamileh (agency-creative-designer): brief.md with prompts, size and safe-zone table, per-ratio image briefs (assets/ads/brief.md). 2. Jamileh: 3 Gemini photos (fast, 2K) for 4:5, 9:16 and 1.91:1, a sitter and a dog on a sofa, warm and natural, a text-safe area (top 14% and bottom 2 ...[+957 characters]
+5 +1163s  Resume the PetPal paid-social plan (scratch exercise, fictional client). Accepted map: 1. Jamileh (agency-creative-designer): brief.md with prompts, size and safe-zone table, per-ratio image briefs (assets/ads/brief.md). 2. Jamileh: 3 Gemini photos (fast, 2K) for 4:5, 9:16 and 1.91:1, a sitter and a dog on a sofa, warm and natural, a text-safe area (top 14% and bottom 20% clear on 9:16), no text,  ...[+900 characters]
+6 +1200s  <command-name>/mcp</command-name> <command-message>mcp</command-message> <command-args></command-args>
+7 +1200s  <local-command-stdout>Reconnected to image-gen.</local-command-stdout>
+8 +1208s  try again now
+9 +1275s  yes, image-gen is listed there with tools.
+10 +1309s  test with Jamileh
+
+== Everything the lead did and said before the choice was asked (its figures should be here, or in the options of the question)
+calls held by the mode-line hook in the whole session: 5 (an expected hold, but it can push the lead into a text-only turn)
++   3s  tool ToolSearch {"query":"github","max_results":3}
++   3s  tool ToolSearch {"query":"firecrawl","max_results":3}
++   4s  tool ToolSearch {"query":"context7","max_results":3}
++   4s  tool ToolSearch {"query":"playwright","max_results":3}
++   4s  tool ToolSearch {"query":"chrome-devtools","max_results":3}
++   4s  tool ToolSearch {"query":"figma","max_results":3}
++   5s  tool ToolSearch {"query":"markitdown","max_results":3}
++   5s  tool ToolSearch {"query":"stitch","max_results":3}
++  10s  tool ToolSearch {"query":"select:TaskCreate,TaskList,TaskUpdate,SendMessage","max_results":4}
++  12s  tool Glob {"pattern":"docs/pilot/**"}
++  12s  tool Skill {"skill":"image-generation"}
++  15s  the lead says:
+    Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
++  15s  tool Glob {"pattern":"docs/pilot/**"}
++  15s  tool Skill {"skill":"image-generation"}
++  18s  tool Glob {"pattern":"docs/pilot/**"}
++  18s  tool Skill {"skill":"image-generation"}
++  21s  tool Glob {"pattern":"docs/pilot/**"}
++  21s  tool Read {"file_path":"C:\\github\\scratch-pilot\\h10d-local-test\\h10k2-gemini\\.claude\\skills\\image-generation\\references\\providers.md"}
++  23s  tool Read {"file_path":"C:\\github\\scratch-pilot\\h10d-local-test\\h10k2-gemini\\docs\\pilot\\hero.ts"}
+
+== The mode-line gate in this session (what each hold was, and what the lead did next)
+5 call(s) held, in 3 message(s) of the lead
+  1. +  12s  held: Glob, Skill; the line in THIS message: NO (no text block opens with "Mode: ..."; reasoning is not text); the line in an EARLIER message: no
+  2. +  15s  held: Glob, Skill; the line in THIS message: yes (held anyway: the host had not saved it yet); the line in an EARLIER message: no
+  3. +  18s  held: Glob; the line in THIS message: NO (no text block opens with "Mode: ..."; reasoning is not text); the line in an EARLIER message: yes (a hold now is only the transcript lag; a retry is released)
+after the last hold the lead made 31 more call(s) (31 not held) and wrote 12 text block(s)
+the first call other than ToolSearch that ran: +  18s  Skill
+
+== The question: 1 call(s) of AskUserQuestion (want exactly 1 offer, before any teammate)
++  28s  header "Photos"  multiSelect false
+    How should the three hero photographs (sitter and dog on a sofa: 4:5, 9:16, 1.91:1) be made? Nobody has started yet.
+    option 1: Her own route (Recommended)
+        Jamileh draws what code can draw and leaves a marked placeholder frame plus an image brief (subject, framing, light, mood, exclusions, rights) for each photograph. A photographer, stock licence or image tool fills them later. Nothing to install, nothing to pay, no restart.
+    option 2: Generate with Gemini
+        3 images at 2K, $0.0504 each, about $0.15; worst case 9 calls (two regenerations each), at most $0.45. Your own API key; Google bills your account and every prompt goes to Google. You run one command in your terminal with your key (I never see it), then the team restarts.
+    option 3: Generate with Seedream
+        3 images at 2K, $0.09 each, about $0.27; worst case 9 calls, at most $0.81. Your own BytePlus key; prompts go to BytePlus (Singapore region) and are optimised on their side. You run one command with your key, then the team restarts.
+    option 4: Generate with OpenAI
+        3 images at 2K. OpenAI publishes no price per image (it bills by token), so the first image is a probe and you set the ceiling after reading its charge. Your own key; prompts go to OpenAI. You run one command, then the team restarts.
+  the answer: Your questions have been answered: "How should the three hero photographs (sitter and dog on a sofa: 4:5, 9:16, 1.91:1) be made? Nobody has started yet."="Generate with Gemini". You can now continue with these answers in mind.
+
+== After the answer (the lead's messages and tool calls)
++  50s  tool ToolSearch {"query":"select:mcp__image-gen__generate_image","max_results":1}
++  53s  tool Agent {"description":"Jamileh consultation on hero set","name":"jamileh","subagent_type":"agency-creative-designer","prompt":"CONSULTATION ONLY: write no files, claim no task, generate no images. You are the teammate \"jamileh ...[+968 characters]
++  56s  the lead says:
+    I've asked Jamileh for a read-only scope statement. She writes no files and generates no images. The `image-gen` server is not connected in this session, so nothing can be generated yet. I'm waiting for her answer.
++  69s  tool SendMessage {"to":"jamileh","message":{"type":"shutdown_request","reason":"Consultation delivered, thank you. First run ToolSearch with select:SendMessage, then reply with one SendMessage to team-lead whose message is an object, not ...[+267 characters]
++  78s  the lead says:
+    Jamileh has answered the consultation, and I've asked her to shut down. Nobody is working now and no files exist yet.
+    
+    ## Delegation map (for your acceptance)
+    
+    | # | Slice | Specialist | Owns | Acceptance evidence | Depends on |
+    |---|---|---|---|---|---|
+    | 1 | Photo prompts, size and safe-zone table, image briefs | Jamileh (`agency-creative-designer`) | `assets/ads/brief.md` | One prompt per ratio with a text-safe area (top 14% and bottom 20% clear on 9:16) | none |
+    | 2 | Three Gemini photos, 2K, `fast` | Jamileh | `assets/ads/photo-*.png` and a `.provenance.json` for each | Each file is read back and its ratio is measured. Each asset takes at most 3 calls | Slice 1, the key and the restart |
+    | 3 | Three SVG ads (4:5 1080×1350, 9:16 1080×1920, 1.91:1 1200×628) with tokens, the "Book now" CTA and a contrast table | Jamileh | `assets/ads/*.svg` | Contrast table at 4.5:1 or better, `hero-primary-cta` kept | Slice 2 |
+    | 4 | Claims and disclosure review | Defne (`agency-compliance-grc-specialist`) | `docs/compliance/review.md` | The fictional $1M, 4.9 and 12,000 claims are cleared or flagged, and the "AI-generated image, illustrative" label is checked | Slice 3 |
+    
+    - **Not mapped:** Emre needs Playwright and Chrome DevTools, and neither is connected. There is no page to test anyway, so there is no QA slice.
+    - **Photo approach:** Jamileh recommends three separate generations, one per ratio, because a single crop can't serve 4:5, 9:16 and 1.91:1. The photos are labelled as generated and never presented as a real sitter or customer. Text is overlaid in the SVG, never put in the image.
+    - **Cost:** 3 images at about $0.0504 each is roughly $0.15. The worst case is 9 calls, at most $0.45. I'm treating your Gemini choice as the go for exactly that.
+    - **Gemini aspect ratios:** Jamileh couldn't confirm that Gemini supports all three ratios, so slice 2 includes a ratio check.
+    
+    ## What happens next if you accept
+    1. I load the `mcp-setup` Claude Code reference and print the `image-gen` command for you to run in your own terminal. It uses `--scope local` and a placeholder for your Gemini key. I never ask for, see or write the key.
+    2. I give you the restart command and a starting prompt to paste. After the restart I check that `image-gen` is callable, recreate the task list and spawn Jamileh, then Defne.
+    
+    Do you accept this map?
++ 271s  you typed: yes, I accept
++ 272s  tool Skill {"skill":"mcp-setup"}
++ 275s  tool Grep {"pattern":"image-gen|Photographic images","path":"C:\\github\\scratch-pilot\\h10d-local-test\\h10k2-gemini\\.claude\\skills\\mcp-setup\\references\\claude-code.md","output_mode":"content","-n":true,"-C":3}
++ 286s  the lead says:
+    The PetPal plan is accepted. I've started nobody; the next step is yours: run the command below in your own terminal.
+    
+    **1. Add the image server (Gemini)**
+    
+    ```bash
+    claude mcp add --scope local image-gen --env GEMINI_API_KEY=<your-ai-studio-key> --env IMAGE_PROVIDER=gemini --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=C:/github/scratch-pilot/h10d-local-test/h10k2-gemini/assets/generated -- npx -y mcp-image@0.18.0
+    ```
+    
+    - **Your key:** get it from aistudio.google.com/apikey, in a Google project that has billing. Replace `<your-ai-studio-key>` yourself. Never paste the key into this chat; I never see or use it.
+    - **Where it runs:** the server runs `mcp-image@0.18.0` through `npx`, which downloads the package on first use.
+    - **Where the files go:** generated images go into `assets/generated` inside the project.
+    - **Cost:** Gemini has no free tier, so your account is billed, about $0.15 for the plan and at most $0.45. A budget alert on the account is a good idea.
+    - **Privacy:** every prompt goes to Google.
+    
+    **2. Restart**
+    
+    Run `/exit`, then in a fresh terminal run the line below. A running session never loads a server added after it started, and the restart doesn't bring back teammates. Jamileh's consultation is finished and she was asked to shut down. A restart through `agents start digital-agency --host claude` also sets the two team variables for you.
+    
+    ```bash
+    claude --continue --agent orchestrator-digital-agency
+    ```
+    
+    Use the same `--model` and `--effort` as this session, and set both team variables (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`).
+    
+    **3. What to expect**
+    
+    After the restart, Claude Code offers "New MCP server found in this project". Choose "Use this MCP server".
+    
+    **4. Starting prompt to paste after the restart**
+    
+    ```text
+    Resume the PetPal paid-social plan (scratch exercise, fictional client). Accepted map:
+    1. Jamileh (agency-creative-designer): brief.md with prompts, size and safe-zone table, per-ratio image briefs (assets/ads/brief.md).
+    2. Jamileh: 3 Gemini photos (fast, 2K) for 4:5, 9:16 and 1.91:1, a sitter and a dog on a sofa, warm and natural, a text-safe area (top 14% and bottom 20% clear on 9:16), no text, logo or real person. Go: 3 images, Gemini, 2K, ceiling $0.45 (at most 2 regenerations each). Load the image-generation skill before the first call and write a provenance.json beside each image. Files: assets/ads/photo-*.png.
+    3. Jamileh: 3 SVG ads (4:5 1080x1350, 9:16 1080x1920, 1.91:1 1200x628) from docs/pilot/design-tokens.json and hero.ts, with a contrast table. Ads carry the caption "AI-generated image, illustrative". The CTA keeps the test id hero-primary-cta.
+    4. Defne (agency-compliance-grc-specialist): review the fictional claims ($1M, 4.9, 12,000) and the label, in docs/compliance/review.md, after slice 3.
+    No QA slice: Playwright and Chrome DevTools are not connected.
+    First: ToolSearch for mcp__image-gen__generate_image and say whether it is ready. If it is not, stop and report what `claude mcp list` shows. Then recreate the task list and spawn Jamileh, and Defne once the ads exist.
+    ```
++ 929s  you typed:  <pasted_content id="7aad"> Resume the PetPal paid-social plan (scratch exercise, fictional client). Accepted map: 1. Jamileh (agency-creative-designer): brief.md with prompts, size and safe-zone table, per-ratio image briefs (assets/ads/brief.md). 2. Jamileh: 3 Gemini photos (fast, 2K) for 4:5, 9:1 ...[+1059 characters]
++ 932s  tool ToolSearch {"query":"select:mcp__image-gen__generate_image","max_results":1}
++ 934s  tool Bash {"command":"claude mcp list 2>&1; echo ---; claude mcp get image-gen 2>&1 | sed -E 's/(GEMINI_API_KEY=)[^ ]+/\\1<redacted>/'","description":"List MCP servers and check image-gen"}
++ 949s  the lead says:
+    The image server isn't ready, so I've stopped: no teammate is running and no file has been created.
+    
+    `ToolSearch` can't find `mcp__image-gen__generate_image`. `claude mcp list` shows only claude.ai Claude Docs, Supabase, Vercel, Firecrawl, Gmail, Google Calendar, plus context7 and stitch, all connected. `claude mcp get image-gen` replies "No MCP server named image-gen". So the `claude mcp add` command was never run, or it was run from a different folder. It is local scope, so it only applies to the project folder it was run in.
+    
+    To fix it:
+    1. Run `/exit`, then go to `C:\github\scratch-pilot\h10d-local-test\h10k2-gemini` in your own terminal.
+    2. Run the `claude mcp add --scope local image-gen …` command from my previous message, with your Gemini key in place of `<your-ai-studio-key>`. Don't paste the key here.
+    3. Run `claude mcp get image-gen` and check that it shows the server.
+    4. Restart with `agents start digital-agency --host claude`. It also turns the shared task list back on, which is missing from this session. Paste the same starting prompt again.
+    
+    If you'd rather not set up a key, there's another way. Jamileh can build the three ads now with marked placeholder frames and an image brief for each photograph, and Defne reviews afterwards. That needs no restart and costs nothing.
++1100s  you typed:  <pasted_content id="7aad"> Resume the PetPal paid-social plan (scratch exercise, fictional client). Accepted map: 1. Jamileh (agency-creative-designer): brief.md with prompts, size and safe-zone table, per-ratio image briefs (assets/ads/brief.md). 2. Jamileh: 3 Gemini photos (fast, 2K) for 4:5, 9:1 ...[+1057 characters]
++1104s  tool ToolSearch {"query":"select:mcp__image-gen__generate_image","max_results":1}
++1104s  tool Bash {"command":"claude mcp list 2>&1; echo ---; claude mcp get image-gen 2>&1 | sed -E 's/(API_KEY=)[^ ]+/\\1<redacted>/'","description":"List MCP servers and check image-gen"}
++1118s  the lead says:
+    The image server is added and connected, but this session can't call it, so I've stopped. I haven't started any teammate or created any file.
+    
+    - **Configuration:** `claude mcp list` and `claude mcp get image-gen` show `image-gen` (`npx -y mcp-image@0.18.0`) as connected. The provider is Gemini, the output folder is `assets/generated`, and a key is set. I redacted the key and never saw it.
+    - **This session:** `ToolSearch` still finds no `mcp__image-gen__generate_image`. A server added after a session starts isn't loaded into it, and teammates only see servers connected to the session, so Jamileh couldn't generate anything from here.
+    
+    To fix it:
+    1. Run `/exit` and restart with `claude --continue --agent orchestrator-digital-agency`, or `agents start digital-agency --host claude`. The second sets the team and task-list variables, which this session is missing.
+    2. Choose "Use this MCP server" at the approval prompt. If you don't see a prompt, `claude mcp list` will show it as pending approval.
+    3. Paste the same starting prompt. I'll check `ToolSearch` first, then recreate the task list and spawn Jamileh, with Defne after the ads exist.
++1163s  you typed: Resume the PetPal paid-social plan (scratch exercise, fictional client). Accepted map: 1. Jamileh (agency-creative-designer): brief.md with prompts, size and safe-zone table, per-ratio image briefs (assets/ads/brief.md). 2. Jamileh: 3 Gemini photos (fast, 2K) for 4:5, 9:16 and 1.91:1, a sitter and a ...[+1000 characters]
++1166s  tool ToolSearch {"query":"select:mcp__image-gen__generate_image","max_results":1}
++1166s  tool ToolSearch {"query":"github","max_results":3}
++1166s  tool ToolSearch {"query":"firecrawl","max_results":3}
++1166s  tool ToolSearch {"query":"context7","max_results":3}
++1167s  tool ToolSearch {"query":"playwright","max_results":3}
++1167s  tool ToolSearch {"query":"chrome-devtools","max_results":3}
++1167s  tool ToolSearch {"query":"figma","max_results":3}
++1168s  tool ToolSearch {"query":"markitdown","max_results":3}
++1168s  tool ToolSearch {"query":"stitch","max_results":3}
++1173s  tool ToolSearch {"query":"select:TaskCreate,TaskList,TaskUpdate,SendMessage","max_results":4}
++1175s  tool Bash {"command":"claude mcp list 2>&1; echo ---; claude mcp get image-gen 2>&1 | sed -E 's/(API_KEY=)[^ ]+/\\1<redacted>/'; echo ---; echo \"teams=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS todo=$CLAUDE_CODE_ENABLE_TODO_TOOLS\""," ...[+52 characters]
++1189s  the lead says:
+    The image server still isn't ready in this session, so I've stopped and spawned nobody.
+    
+    - **Config:** `claude mcp list` and `claude mcp get image-gen` show `image-gen` (`npx -y mcp-image@0.18.0`) as connected. It is on Gemini, output goes to `assets/generated`, and a key is set (I redacted it).
+    - **This session:** `ToolSearch` finds no `mcp__image-gen__generate_image`. A teammate would only see the servers connected to this session, so Jamileh couldn't generate the photos.
+    - **Likely cause:** the server is added and healthy, but this session isn't loading it. After the restart, Claude Code should have shown "New MCP server found in this project". If that prompt was skipped or declined, the session starts without the server. `claude mcp list` doesn't show an approval state for it.
+    - **Task list:** the task tools didn't load either, because `CLAUDE_CODE_ENABLE_TODO_TOOLS` is unset here. Teams are on (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). I can run the line through the briefs instead, but starting with `agents start digital-agency --host claude` sets both variables.
+    
+    To fix it:
+    1. Run `/exit`, then start a fresh session with `agents start digital-agency --host claude`.
+    2. If you see "New MCP server found in this project", choose "Use this MCP server". If no prompt appears, run `/mcp` and look for `image-gen`.
+    3. Paste the same starting prompt.
+    
+    Or skip the server. Jamileh can build the three ads now with marked placeholder frames and an image brief for each photograph, then Defne reviews. It costs nothing and needs no restart. Tell me if you want that.
++1200s  you typed: <command-name>/mcp</command-name> <command-message>mcp</command-message> <command-args></command-args>
++1200s  you typed: <local-command-stdout>Reconnected to image-gen.</local-command-stdout>
++1208s  you typed: try again now
++1211s  tool ToolSearch {"query":"select:mcp__image-gen__generate_image","max_results":1}
++1213s  tool ToolSearch {"query":"image-gen generate image","max_results":5}
++1219s  the lead says:
+    `image-gen` is still not callable in this session, even after your `/mcp` reconnect. I've stopped and spawned nobody.
+    
+    - **Exact name:** `ToolSearch` with `select:mcp__image-gen__generate_image` finds nothing.
+    - **Keyword search:** searching "image-gen generate image" returns only Stitch screen-generation tools and the file-sending tool, not the image server.
+    - **What the reconnect did:** it may have restarted the server process, but it didn't add its tool to this session's tool list.
+    
+    I haven't checked `/mcp` for any approval state, so I can't say why. Both likely causes involve how the session loads project servers:
+    - The server was added with `--scope local`, which belongs to the project folder. If this session's working directory differs from the folder where the command was run, the session won't see it. `claude mcp get image-gen` finds it from my shell, so the folder looks right.
+    - The session may not offer a server that arrived after it started until a full restart and approval.
+    
+    Next steps:
+    1. **Look at `/mcp` yourself.** If `image-gen` is listed there with tools, tell me and I'll search again. If it's listed with no tools or an error, send me what it says.
+    2. **Otherwise restart fully.** Run `/exit`, start fresh with `agents start digital-agency --host claude` from `C:\github\scratch-pilot\h10d-local-test\h10k2-gemini`, and choose "Use this MCP server" if prompted.
+    3. **Or go placeholder-only.** Jamileh builds the three ads now with marked placeholder frames and an image brief per photograph, then Defne reviews. It's free and needs no restart. Say "placeholders" and I'll start.
++1275s  you typed: yes, image-gen is listed there with tools.
++1277s  tool ToolSearch {"query":"select:mcp__image-gen__generate_image","max_results":1}
++1277s  tool ToolSearch {"query":"image-gen","max_results":5}
++1283s  the lead says:
+    I can't see the tool, so I haven't spawned anyone. `ToolSearch` finds no `mcp__image-gen__generate_image`, either by exact name or by searching "image-gen", even though `/mcp` shows the server with tools.
+    
+    I won't send Jamileh to generate photos on the assumption that she can see a tool I can't. If she can't, she would fall back to placeholders and you'd have spent a spawn for nothing.
+    
+    Options:
+    1. **Full restart (Recommended).** Run `/exit`, start fresh from the project folder with `agents start digital-agency --host claude`, and paste the same starting prompt. A new session loads the server from the start.
+    2. **Placeholders now.** Jamileh builds the three ads with marked placeholder frames and an image brief per photograph, then Defne reviews. It's free and needs no restart. You can generate the photos later.
+    3. **Test with Jamileh.** I spawn her with one instruction: run `ToolSearch` for `mcp__image-gen__generate_image` first, generate nothing, and report whether she can call it. If she can, she carries on. If not, you've lost nothing but the spawn. Tell me if you want this.
++1309s  you typed: test with Jamileh
++1314s  tool Agent {"description":"Jamileh tool check","name":"jamileh","subagent_type":"agency-creative-designer","prompt":"You are the teammate \"jamileh\" (Jamileh), type agency-creative-designer. Relay mode: no peers. This is a TOOL CH ...[+549 characters]
++1319s  the lead says:
+    I've spawned Jamileh for a tool check only. She is to look for `mcp__image-gen__generate_image` and report what she sees, and to generate and write nothing. I'm waiting for her reply and haven't done any other work.
++1327s  tool SendMessage {"to":"jamileh","message":{"type":"shutdown_request","reason":"Tool check delivered, thank you. First run ToolSearch with select:SendMessage, then reply with one SendMessage to team-lead whose message is an object, not a ...[+271 characters]
++1332s  the lead says:
+    Jamileh can't call `image-gen` either. `ToolSearch` for `mcp__image-gen__generate_image` and for "image-gen" both returned nothing for her. She generated and wrote nothing, and I've asked her to shut down.
+    
+    So neither of us can use the server in this session, even though `/mcp` lists it with tools. Starting the photo slices now would only produce placeholders.
+    
+    Options:
+    1. **Full restart (Recommended).** Run `/exit`, start fresh from `C:\github\scratch-pilot\h10d-local-test\h10k2-gemini` with `agents start digital-agency --host claude`, and paste the same starting prompt. If it still can't see the tool, check that the folder is the one where you ran `claude mcp add`.
+    2. **Placeholders now.** Jamileh builds the three ads with marked placeholder frames and an image brief per photograph, then Defne reviews. It's free and needs no restart, and the photos can be generated later.
+    
+    Tell me which one.
++1337s  the lead says:
+    Jamileh's idle notice only repeats her earlier report: `image-gen` isn't callable for her, and she generated and wrote nothing. Her shutdown request is still open, since she hasn't answered it. Nothing has changed since my last message.
+    
+    I'm waiting on your choice:
+    1. **Full restart (Recommended).** Run `/exit`, start fresh from `C:\github\scratch-pilot\h10d-local-test\h10k2-gemini` with `agents start digital-agency --host claude`, and paste the same starting prompt.
+    2. **Placeholders now.** Jamileh builds the three ads with marked placeholder frames and an image brief per photograph, then Defne reviews. It's free and needs no restart.
++1342s  the lead says:
+    Jamileh has approved the shutdown, so no teammate is running now. It's safe to restart.
+    
+    I'm still waiting on your choice:
+    1. **Full restart (Recommended).** Run `/exit`, start fresh from `C:\github\scratch-pilot\h10d-local-test\h10k2-gemini` with `agents start digital-agency --host claude`, and paste the same starting prompt.
+    2. **Placeholders now.** Jamileh builds the three ads with marked placeholder frames and an image brief per photograph, then Defne reviews. It's free and needs no restart.
+
+== Teammates and commands
+teammates started: 2; before the answer (+  45s): 0 (want 0)
+  +  53s  Agent {"description":"Jamileh consultation on hero set","name":"jamileh","subagent_type":"agency-creative-designer","prompt":"CONSULTATION ONLY: write no files, claim no task, generate no images. You are th ...[+988 characters]
+  +1314s  Agent {"description":"Jamileh tool check","name":"jamileh","subagent_type":"agency-creative-designer","prompt":"You are the teammate \"jamileh\" (Jamileh), type agency-creative-designer. Relay mode: no peer ...[+569 characters]
+shell commands the lead tried: 3
+  + 934s  [RAN] claude mcp list 2>&1; echo ---; claude mcp get image-gen 2>&1 | sed -E 's/(GEMINI_API_KEY=)[^ ]+/\1<redacted>/'
+  +1104s  [RAN] claude mcp list 2>&1; echo ---; claude mcp get image-gen 2>&1 | sed -E 's/(API_KEY=)[^ ]+/\1<redacted>/'
+  +1175s  [RAN] claude mcp list 2>&1; echo ---; claude mcp get image-gen 2>&1 | sed -E 's/(API_KEY=)[^ ]+/\1<redacted>/'; echo ---; echo "teams=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS todo=$CLAUDE_CODE_ENABLE_TODO_TOOLS"
+all tool calls by name: ToolSearch 26, Glob 4, Skill 4, Read 2, AskUserQuestion 1, Agent 2, SendMessage 2, Grep 1, Bash 3
+
+== Read off mechanically (you judge the rest, against the pass line in docs/live-test-protocol.md, H10k)
+figures in the text before the question: none; in the options of the question: $0.0504, $0.15, $0.45, $0.09, $0.27, $0.81
+says three images / one for each placement: yes (read the sentence)
+states the size (1K, 2K or 4K): yes
+says OpenAI publishes no price per image, or that its first image is a probe: yes
+a range instead of a figure for this plan ("$x to $y an image"): no
+an option for her own route: yes
+an option that names Gemini: yes
+an option that names Seedream: yes
+an option that names OpenAI: yes
+generation offered as the default (first option, or "Recommended"): a label says Recommended: Her own route (Recommended)
+the descriptions mention who pays / where the prompt goes / a restart / no free tier: pays: yes, where the prompt goes: yes, restart: yes, no free tier: no (per option below)
+  "Her own route (Recommended)": pays yes, prompt goes yes, restart yes, no free tier no
+  "Generate with Gemini": pays yes, prompt goes yes, restart yes, no free tier no
+  "Generate with Seedream": pays no, prompt goes no, restart yes, no free tier no
+  "Generate with OpenAI": pays yes, prompt goes no, restart yes, no free tier no
+after the answer it asks for the go-ahead naming images, provider and size: something like it (read it); asks for your ceiling: yes
+prints the install command with a placeholder where the key goes: yes
+says the team must restart: yes; says it will check the server with ToolSearch: yes
+a key requested from you: no (a sentence that says the lead never asks for it is not a request)
+
+== The checker's figures for this plan (call-check.mjs --images 3, the copy installed in the folder)
+  1K gemini   gemini-nano-banana-2.1: $0.0336 each, $0.1008 for 3, $0.3024 at most
+  1K seedream dola-seedream-5-0-pro-260628: $0.045 each, $0.135 for 3, $0.405 at most
+  1K openai   gpt-image-2.5-flare: no published price each, no published price for 3, no published price at most
+  2K gemini   gemini-nano-banana-2.1: $0.0504 each, $0.1512 for 3, $0.4536 at most
+  2K seedream dola-seedream-5-0-pro-260628: $0.09 each, $0.27 for 3, $0.81 at most
+  2K openai   gpt-image-2.5-flare: no published price each, no published price for 3, no published price at most
+  Compare the lead's figures with the line of the size it chose. A figure that disagrees, or a price for OpenAI, is a FAIL.
+
+== A key-shaped string anywhere (the folder, the session record)
+none found
+files the lead wrote or edited: none
+.mcp.json exists in the folder: no

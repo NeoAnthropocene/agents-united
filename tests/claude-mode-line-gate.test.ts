@@ -75,15 +75,21 @@ describe('the mode-line gate script', () => {
   // so I'm running the check again as the hook says". It had written no text at all before that call. The first version of the message ended "If your last message
   // already began with that line, repeat the call now", and the lead took that way out falsely. The gate cannot see the message that is being written (the transcript
   // never holds the current call), so it says so, holds the call once whatever the lead believes, and asks for the line to be written again if need be.
-  it('holds the call whatever the lead believes it wrote, and says why, so that there is no way out to claim', () => {
+  // Changed after Sitting R (2026-10-12, ADR 0051) and changed back, in part, after Sitting S. After Sitting R the message dropped "Do this even if you believe you wrote it already" and told a lead
+  // that had written the line as a text block to repeat the call alone. In Sitting S (H10k2 `a7acda03`, G1 `7c3e1121`) both leads had the line only in their reasoning ("Running in Limited Operational
+  // mode ... As Chris, lead of the digital agency team ...") and believed that they had written it: one repeated the call alone 11 times and stopped ("Writing the line again would go against my own rule"),
+  // the other was held 13 times, told the user that the hook was broken and that they could disable it, and asked the choice in prose. A way out that depends on what the lead says it wrote cannot
+  // work for a lead whose failure is a false report. So the FIRST hold asks for the line whatever the lead believes, and the message depends on the round of holds, not on the lead's report.
+  it('holds the call whatever the lead believes it wrote, and asks for the line at the first hold even if the lead believes it wrote it: a lead that never wrote it believes that it did', () => {
     const { stderr } = run(call());
 
-    expect(stderr).toContain('Do this even if you believe you wrote it already');
     expect(stderr).toContain('the host cannot see the message you are writing');
     expect(stderr).toContain('until the mode line is visible in the saved transcript');
-    expect(stderr).toContain('write the line in the same message as the call you repeat');
+    expect(stderr).toContain('Write the line as the first line of a text block in the same message as the call you repeat, even if you believe you wrote it already.');
     expect(stderr).not.toMatch(/already began with that line, repeat the call/);
     expect(stderr).not.toMatch(/if your last message/i);
+    expect(stderr).not.toContain('If you have, the host has not saved it yet');
+    expect(stderr).not.toContain('(hold ');
   });
 
   // Sitting Q (H10k2, 2026-10-12, Claude Code 2.1.296, session `314be482`): the gate held six calls in four messages. Three of the messages had no text block: the lead wrote the line only in its
@@ -91,13 +97,81 @@ describe('the mode-line gate script', () => {
   // The lead then ended its turn: "I've paused ... the host hasn't saved the line to the transcript yet. That line is now the first thing in this finished message", and waited for the user to reply.
   // The message said that the host cannot see the message the lead is writing, and only "make the call again" about what to do, so the lead read it as "finish the message". It has to say not to stop,
   // that reasoning is not text, and to repeat the call in the next message, again if need be. (In Sitting P, h10k1, the third message was released: the line of the second had been saved by then.)
-  it('tells the lead that a hold is not a reason to stop, that its reasoning is not text, and to repeat the call in its next message, again if it is held again', () => {
+  it('tells the lead that a hold is not a reason to stop and that its reasoning is not text', () => {
     const { stderr } = run(call());
 
     expect(stderr).toContain('A hold is not a reason to stop: do not end your turn, do not ask the user and do not wait for a reply.');
     expect(stderr).toContain('The line must be a text block of your reply: your reasoning is not text, and neither the hook nor the user sees it.');
-    expect(stderr).toContain('Repeat the call in your next message with the line written again, and if it is held again, repeat it again: the host saves a message a moment after it ends.');
     expect(stderr.split('\n')[0]).toContain('not a failure');
+  });
+
+  // Sitting S: the message of a hold depends on the ROUND of holds of the session, which the hook counts (the calls of one message reach it within milliseconds of each other, and a new message needs a model
+  // round trip), and never on what the lead says it wrote. Round 1 asks for the line; round 2 lets a lead that wrote a text block repeat the call alone (the usual case of the host's save lagging, with no
+  // second line for the user to read); round 3 and later ask for the line again and say what the hook sees in the saved transcript. The count changes the message and never the release (ADR 0044).
+  describe('the message of a hold by the round of holds (Sitting S)', () => {
+    const newRound = { AGENTS_UNITED_MODE_LINE_ROUND_MS: '0' };
+    const sameRound = { AGENTS_UNITED_MODE_LINE_ROUND_MS: '600000' };
+
+    it('round 2: repeat the call alone, with no text, if the last message opened a text block with the line; write the line if it did not', () => {
+      expect(run(call(), newRound).status).toBe(2);
+      const second = run(call({ tool_use_id: 'toolu_2' }), newRound);
+
+      expect(second.status).toBe(2);
+      expect(second.stderr.split('\n')[0]).toBe('Mode line first. This is an expected hold, not a failure (hold 2).');
+      expect(second.stderr).toContain('If your last message opened a text block with the mode line, the host has not saved it yet: repeat the call alone, with no text.');
+      expect(second.stderr).toContain('If it did not (your reasoning is not text), write the line as the first line of a text block in the same message as the call you repeat, filled in:');
+      expect(second.stderr).toContain('Mode: <Fully Operational or Limited Operational>. Callable:');
+      expect(second.stderr).toContain('Do not stop, do not ask the user and do not wait for a reply.');
+    });
+
+    it('round 3 and later: the saved transcript has no text block of the lead that opens with the line, and the line is asked for again, even if the lead believes it wrote it', () => {
+      writeTranscript(assistantText('Still waiting on the host to save my mode line.'), assistantText('I am retrying the call.'));
+      for (let round = 1; round <= 2; round += 1) expect(run(call({ tool_use_id: `t${round}` }), newRound).status).toBe(2);
+      const third = run(call({ tool_use_id: 't3' }), newRound);
+
+      expect(third.status).toBe(2);
+      expect(third.stderr.split('\n')[0]).toBe('Mode line first. This is an expected hold, not a failure (hold 3).');
+      expect(third.stderr).toContain('The saved transcript has 2 text block(s) of yours and none opens with the mode line; your reasoning is not text.');
+      expect(third.stderr).toContain('Write the line now as the first line of a text block in the same message as the call you repeat, even if you believe you wrote it already, filled in:');
+      expect(third.stderr).toContain('Mode: <Fully Operational or Limited Operational>. Callable:');
+      const later = run(call({ tool_use_id: 't4' }), newRound);
+      expect(later.stderr.split('\n')[0]).toBe('Mode line first. This is an expected hold, not a failure (hold 4).');
+      expect(later.stderr).toContain('even if you believe you wrote it already');
+    });
+
+    it('does not tell the user that the hook is broken, and asks the lead not to: the hook reads text blocks only', () => {
+      for (let round = 1; round <= 3; round += 1) run(call({ tool_use_id: `t${round}` }), newRound);
+      const { stderr } = run(call({ tool_use_id: 't4' }), newRound);
+
+      expect(stderr).toContain('do not tell the user that the hook is broken: it reads text blocks only.');
+      expect(stderr).not.toMatch(/disable/i);
+    });
+
+    it('counts the calls of one message as one round, and the next message as the next round', () => {
+      const first = run(call({ tool_use_id: 'a', tool_name: 'Glob' }), sameRound);
+      const parallel = run(call({ tool_use_id: 'b', tool_name: 'Skill' }), sameRound);
+
+      expect(parallel.stderr).toBe(first.stderr);
+      expect(JSON.parse(fs.readFileSync(markerOf('sess-1'), 'utf8')).round).toBe(1);
+      const next = run(call({ tool_use_id: 'c', tool_name: 'Glob' }), newRound);
+      expect(next.stderr.split('\n')[0]).toContain('(hold 2)');
+      expect(JSON.parse(fs.readFileSync(markerOf('sess-1'), 'utf8')).round).toBe(2);
+    });
+
+    it('never releases a call on the count of rounds, whatever it is; a saved line releases it', () => {
+      for (let round = 1; round <= 14; round += 1) expect(run(call({ tool_use_id: `t${round}` }), newRound).status, `round ${round}`).toBe(2);
+      writeTranscript(assistantText(`${LINE}\nI am Chris.`));
+
+      expect(run(call({ tool_use_id: 'saved' }), newRound).status).toBe(0);
+    });
+
+    it('starts at round 1 from a marker of an earlier build, which holds no round', () => {
+      fs.mkdirSync(path.dirname(markerOf('sess-1')), { recursive: true });
+      fs.writeFileSync(markerOf('sess-1'), JSON.stringify({ pending: true, version: 2 }));
+
+      expect(run(call(), newRound).stderr.split('\n')[0]).toMatch(/^Mode line first\. This is an expected hold, not a failure\. Before this call, write the mode line/);
+      expect(JSON.parse(fs.readFileSync(markerOf('sess-1'), 'utf8')).round).toBe(1);
+    });
   });
 
   // N3 regression run (session `8e2c3d9e`): the host prints a held call to the user as "Error: PreToolUse:Agent hook error: [node ...]: <this message>", at the start of every

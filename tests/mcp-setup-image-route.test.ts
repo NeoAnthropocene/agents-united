@@ -117,11 +117,16 @@ describe('mcp-setup: the optional image server', () => {
     expect(s).toContain('references/providers.md');
   });
 
-  it('checks the install with ToolSearch, says the restart applies, and gives the undo with the revoke', () => {
+  it('checks the install with ToolSearch for a role that holds the tool, says the restart applies and that a local-scope server needs no approval, and gives the undo with the revoke', () => {
     const s = section();
     expect(s).toContain('claude mcp get image-gen');
     expect(s).toContain('ToolSearch');
     expect(s).toMatch(/restart/i);
+    // Sitting T: the lead's allowlist hid the tool, so its search found nothing and the restarts were in vain; and no approval prompt belongs to a local server.
+    expect(s).toMatch(/`ToolSearch` lists `mcp__image-gen__generate_image` for a role whose `tools` names it/);
+    expect(s).toMatch(/the lead holds it so that the designer's pool has it/);
+    expect(s).toMatch(/A role that does not hold it never lists it, whatever `claude mcp list` says/);
+    expect(s).toMatch(/A `--scope local` server needs no approval/);
     expect(s).toContain('claude mcp remove image-gen --scope local');
     expect(s).toMatch(/revoke the key/i);
   });

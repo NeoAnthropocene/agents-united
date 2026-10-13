@@ -1,0 +1,11 @@
+{
+  "prompt": "A variation of the reference image: keep its warm beige, sand-coloured palette and its fine, evenly repeating surface texture, but reimagine it as a soft, premium editorial backdrop for a social feed ad. Gentle raking daylight from the upper left casts subtle shadows that give the texture depth and a slight natural gradient from lighter at the top to a deeper sand tone at the bottom. Shallow depth of field, matte finish, calm and minimal. The lower third is a clean, quiet, uncluttered area left empty for a headline and a button overlay. No people, no objects, no text, no logos.",
+  "inputImagePaths": [
+    "C:\\github\\scratch-pilot\\h10d-local-test\\Downloads\\shoot.jpg"
+  ],
+  "provider": "gemini",
+  "imageSize": "2K",
+  "aspectRatio": "4:5",
+  "fileName": "feed-hero-shoot-variation-01",
+  "purpose": "Hero background for a 4:5 social feed ad, with headline and CTA overlaid later"
+}

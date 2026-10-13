@@ -118,19 +118,19 @@ Set `IMAGE_PROVIDER` to the provider used when a call names none: `gemini` (stat
 
 **Cost.** Image models have no free tier at any of the three providers: each account needs billing, and each call is charged. Gemini costs about $0.03 to $0.24 an image depending on the model and the size, Seedream $0.045 or $0.09, and OpenAI is billed by token with no published price per image (its first image is a probe). The dated table and the arithmetic are in the `image-generation` skill (`references/providers.md`). Suggest a budget alert on each account.
 
-**Check.** After the restart below, `claude mcp get image-gen` shows it, and `ToolSearch` must list `mcp__image-gen__generate_image`: a server that is not listed is not usable. Report what was seen. A running session does not load a server added after it started.
+**Check.** After the restart below, `claude mcp get image-gen` shows it, and `ToolSearch` lists `mcp__image-gen__generate_image` for a role whose `tools` names it: the lead holds it so that the designer's pool has it (a teammate gets the MCP tools of the main conversation, `host-library/claude/pages/agent/sub-agents.md`, "Available tools"; observed on 2.1.296, Sitting T: a lead that did not hold it listed nothing however often the user restarted, and the designer found nothing either). A role that does not hold it never lists it, whatever `claude mcp list` says. A `--scope local` server needs no approval: `claude mcp list` showed it Connected right after the command (Sitting T), unlike a project-scoped server, which waits for approval (below). Report what was seen. A running session does not load a server added after it started.
 
 **Undo.** `claude mcp remove image-gen --scope local`, and revoke the keys at their providers when they are no longer wanted.
 
 ## Check an install
 
 - `claude mcp get <name>` shows one server; `claude mcp list` shows all, with a status: Connected, Failed, or **Pending approval** (a project-scoped server the user has not approved yet; it is the normal status right after an install).
-- In the session, `ToolSearch` lists a server's tools as `mcp__<name>__<tool>`. A server whose tools do not appear is not usable, whatever `claude mcp list` says.
+- In the session, `ToolSearch` lists a server's tools as `mcp__<name>__<tool>`, for a role whose `tools` names the server or the tool (a role never lists tools outside its own `tools`, and a teammate gets only what the lead holds). A server whose tools do not appear is not usable by that role, whatever `claude mcp list` says.
 - The lead reports what it saw, not what it expects.
 
 ## What a running session sees (observed on 2.1.291)
 
-A session that is already running does not list a server that `claude mcp add` added after it started (a plugin's server is the exception: see the plugin route above): `/mcp` does not list it, and `/mcp reconnect playwright` answers `MCP server "playwright" not found`. `claude mcp list` from another terminal shows it as Pending approval. The way in is a restart: after `/exit` and `claude --continue`, Claude Code asks **New MCP server found in this project: playwright** with three choices, "Use this MCP server", "Use this and all future MCP servers in this project" and "Continue without using this MCP server"; after the first, `/mcp` shows the server under Project MCPs. `/mcp reconnect <name>` is for a server that is loaded and failed.
+This section is about a project-scoped server (`.mcp.json`); a `--scope local` server, such as the image server, has no approval step. A session that is already running does not list a server that `claude mcp add` added after it started (a plugin's server is the exception: see the plugin route above): `/mcp` does not list it, and `/mcp reconnect playwright` answers `MCP server "playwright" not found`. `claude mcp list` from another terminal shows it as Pending approval. The way in is a restart: after `/exit` and `claude --continue`, Claude Code asks **New MCP server found in this project: playwright** with three choices, "Use this MCP server", "Use this and all future MCP servers in this project" and "Continue without using this MCP server"; after the first, `/mcp` shows the server under Project MCPs. `/mcp reconnect <name>` is for a server that is loaded and failed.
 
 A resume does not restore in-process teammates, so the team starts only after the restart.
 

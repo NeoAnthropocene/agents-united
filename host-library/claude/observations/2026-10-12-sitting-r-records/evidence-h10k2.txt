@@ -1,0 +1,154 @@
+H10k evidence: h10k2 (h10k2-gemini)
+3 session records in the folder: using the latest (1269c24c-b5ed-4c51-a8df-ff4ad23202d1.jsonl); the others: 314be482-934b-49af-b942-f0117f35fd7c.jsonl, ccb31540-7603-470f-a6da-42768e0d7aec.jsonl
+
+== The session
+file 1269c24c-b5ed-4c51-a8df-ff4ad23202d1.jsonl (120 records), session 1269c24c-b5ed-4c51-a8df-ff4ad23202d1
+Claude Code 2.1.296
+from 2026-10-12T09:57:51.521Z to 2026-10-12T09:59:09.444Z (78 s; a long gap means the session sat idle)
+tokens, once for each API message: lead 11 messages, 4713 out, 59204 written to the cache, 649520 read from the cache; about 0.41 USD
+the session's own cost record (Claude Code 2.1.296): 0.3491 USD (claude-haiku-5-5 0.0001, claude-sonnet-5-5 0.3489); 56 s of API time, 358 s from the start of the process to the last record.
+teammates: 0 transcript(s), estimated 0.00 USD from their tokens; whether the record's figure includes them is not established.
+for comparison, the estimate from the lead's tokens at fitted prices (10.01 output, 4 cache write, 0.2 cache read per million): 0.41 USD (lead 0.41, teammates 0.00). The record's own figure is the one to quote.
+
+== What you typed (1 message(s) of yours, in order; 0 teammate notice(s) are left out)
+1 +   0s  Scratch exercise, no real client. Plan the PetPal paid-social set from `docs/pilot`: a 4:5 feed ad, a 9:16 story and a 1.91:1 link ad, each with a warm, natural photograph of a sitter and a dog on a sofa as its hero. No photography is supplied. Do not start any teammate until I have chosen how the pictures are made.
+
+== Everything the lead did and said before the choice was asked (its figures should be here, or in the options of the question)
+calls held by the mode-line hook in the whole session: 2 (an expected hold, but it can push the lead into a text-only turn)
++   4s  tool ToolSearch {"query":"select:mcp__github__search_code,mcp__plugin_github_github__search_code","max_results":5}
++   4s  tool ToolSearch {"query":"playwright browser","max_results":5}
++   4s  tool ToolSearch {"query":"chrome devtools","max_results":5}
++   5s  tool ToolSearch {"query":"figma","max_results":5}
++   5s  tool ToolSearch {"query":"markitdown image-gen generate_image","max_results":5}
++  11s  tool Bash {"command":"ls -R docs/pilot | head -50; ls .claude/agents 2>/dev/null; cat .claude/.agents-united/agents-united.json 2>/dev/null | head -40; echo TEAMS=$CLAUDE ...[+32 characters]
++  13s  the lead says:
+    Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+    
+    I'm repeating the read of the pilot brief and the install record.
++  14s  tool Bash {"command":"ls -R docs/pilot | head -50; ls .claude/agents 2>/dev/null; cat .claude/.agents-united/agents-united.json 2>/dev/null | head -40; echo TEAMS=$CLAUDE ...[+32 characters]
++  16s  the lead says:
+    Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+    
+    The hold is expected, so I'm repeating the read.
++  16s  tool Bash {"command":"ls -R docs/pilot | head -50; ls .claude/agents 2>/dev/null; cat .claude/.agents-united/agents-united.json 2>/dev/null | head -40; echo TEAMS=$CLAUDE ...[+32 characters]
++  19s  tool Bash {"command":"cd /c/github/scratch-pilot/h10d-local-test/h10k2-gemini/docs/pilot && cat hero.ts; head -c 2500 design-tokens.json"}
++  22s  tool Skill {"skill":"image-generation"}
++  34s  tool Bash {"command":"cd /c/github/scratch-pilot/h10d-local-test/h10k2-gemini/.claude/skills/image-generation && cat references/providers.md | head -80"}
+
+== The mode-line gate in this session (what each hold was, and what the lead did next)
+2 call(s) held, in 2 message(s) of the lead
+  1. +  11s  held: Bash; the line in THIS message: NO (no text block opens with "Mode: ..."; reasoning is not text); the line in an EARLIER message: no
+  2. +  14s  held: Bash; the line in THIS message: yes (held anyway: the host had not saved it yet); the line in an EARLIER message: no
+after the last hold the lead made 7 more call(s) (7 not held) and wrote 2 text block(s)
+the first call other than ToolSearch that ran: +  16s  Bash
+
+== The question: 2 call(s) of AskUserQuestion (want exactly 1 offer, before any teammate)
++  40s  header "Photos"  multiSelect false
+    How should the three hero photographs (sitter and dog on a sofa) be made? The plan needs 3 images at 2K, one each for 4:5, 9:16 and 1.91:1. The 1.91:1 image is made at the nearest native ratio and cropped.
+    option 1: Her own route
+        Jamileh draws what code can draw (SVG, HTML and CSS art). For each photograph she leaves a marked placeholder frame with an image brief (subject, framing, light, mood, what it must not contain, rights) that a photographer, a stock licence or an image tool fills later. Nothing to install, nothing to pay.
+    option 2: Generate with Gemini
+        Jamileh makes the photographs through your own Gemini API key. For this plan: 3 images at 2K, about $0.15, at most $0.45 if each needs two regenerations. Google bills your account (no free tier), and every prompt goes to Google. You run one command in your own terminal with your key; I never ask for it or see it. Then the team restarts.
+    option 3: Generate with Seedream
+        Jamileh makes the photographs through your own BytePlus key. For this plan: 3 images at 2K, about $0.27, at most $0.81. BytePlus bills your account (no free tier), and every prompt goes to BytePlus, which also rewrites the prompt on its side. You run one command in your own terminal with your key; I never ask for it or see it. Then the team restarts.
+    option 4: Generate with OpenAI
+        Jamileh makes the photographs through your own OpenAI key. OpenAI bills by token and publishes no price per image, so the first image is a probe and you read its charge on the usage page before the rest. Every prompt goes to OpenAI. You run one command in your own terminal with your key; I never ask for it or see it. Then the team restarts.
+  the answer: Your questions have been answered: "How should the three hero photographs (sitter and dog on a sofa) be made? The plan needs 3 images at 2K, one each for 4:5, 9:16 and 1.91:1. The 1.91:1 image is made at the nearest native ratio and cropped."="Generate with Gemini". You can now continue with these answers in mind.
++  58s  header "Ceiling"  multiSelect false
+    Go-ahead for the Gemini photographs: 3 images (4:5, 9:16 and 1.91:1 cropped from a wider frame), Gemini fast, 2K, about $0.15. Worst case is $0.45 (each image regenerated twice). Which ceiling do you accept?
+    option 1: Up to $0.45 (Recommended)
+        Covers the first call and two regenerations for each of the 3 images. Prompts go to Google under your key.
+    option 2: Up to $0.15
+        No regenerations: the first image of each ratio is kept, whatever it looks like.
+    option 3: Do not generate
+        Go back to Jamileh's own route: marked placeholders with image briefs.
+  the answer: Your questions have been answered: "Go-ahead for the Gemini photographs: 3 images (4:5, 9:16 and 1.91:1 cropped from a wider frame), Gemini fast, 2K, about $0.15. Worst case is $0.45 (each image regenerated twice). Which ceiling do you accept?"="Up to $0.45 (Recommended)". You can now continue with these answers in mind.
+
+== After the answer (the lead's messages and tool calls)
++  53s  tool Bash {"command":"cd /c/github/scratch-pilot/h10d-local-test/h10k2-gemini/.claude/skills/mcp-setup && ls -R . | head -30; grep -n -i -A40 \"Photographic images\" references/*claude* | head -120"}
++  58s  tool AskUserQuestion {"questions":[{"question":"Go-ahead for the Gemini photographs: 3 images (4:5, 9:16 and 1.91:1 cropped from a wider frame), Gemini fast, 2K, about $0.15. Worst case is $0.45 (each image regenerated twice). Which ceiling  ...[+466 characters]
++  78s  the lead says:
+    Your choice is recorded: Gemini fast, 3 images at 2K, about $0.15, ceiling $0.45. No teammate has been started, and nothing has been written to the project.
+    
+    Gemini needs your own API key, so the next step is yours. Run this in your own terminal. Don't paste the key here. I never need to see it.
+    
+    ```powershell
+    claude mcp add --scope local image-gen --env GEMINI_API_KEY=<your-ai-studio-key> --env IMAGE_PROVIDER=gemini --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=C:\github\scratch-pilot\h10d-local-test\h10k2-gemini\assets\generated -- npx -y mcp-image@0.18.0
+    ```
+    
+    - **Key:** get it at aistudio.google.com/apikey, in a Google project with billing on. Gemini image models have no free tier. A budget alert on the account is a good idea.
+    - **Scope:** `--scope local` keeps the key in your own file, not in the shared `.mcp.json`.
+    - **Pin:** the version is pinned to 0.18.0 so a later release can't run with your key unreviewed.
+    - **Undo:** `claude mcp remove image-gen --scope local`, then revoke the key.
+    
+    **Restart:** a running session never loads a server added after it started. After the command, run `/exit`, then in a fresh terminal:
+    
+    `claude --continue --agent orchestrator-digital-agency`
+    
+    Both team variables need to be set, which `agents start digital-agency --host claude` does. Approve the new server at the prompt ("Use this MCP server").
+    
+    **Starting prompt to paste after the restart:**
+    
+    ```text
+    Scratch exercise, no real client. PetPal paid-social set from docs/pilot (hero.ts, design-tokens.json).
+    Deliverables: 4:5 feed ad, 9:16 story, 1.91:1 link ad. Each has a warm, natural photograph of a sitter and a dog on a sofa as its hero.
+    Photos: generated with Gemini fast at 2K, 3 images, about $0.15, ceiling $0.45 (two regenerations per image at most). The user has approved this go-ahead. The 1.91:1 image is made at a nearer native ratio and cropped.
+    Server just installed: image-gen (mcp-image@0.18.0, local scope).
+    First: write the mode line, then run ToolSearch for each integration the plan needs, including mcp__image-gen__generate_image, and say which are ready. A missing server means stop, not spawn.
+    Then: run the read-only consultation (at least Jamileh, plus Ava or Kaan), present the delegation map, and wait for my acceptance before any teammate writes a file.
+    Line: Ava, then Kaan and Jamileh, then Emre and Defne. Jamileh loads image-generation before the first call.
+    Open: the copy and figures in hero.ts are fictional, so the ads carry no invented testimonials, and the images show no real person or customer.
+    ```
+    
+    **Still to come after the restart:**
+    - the specialist consultation, which I held back because you asked for no teammate before this choice
+    - the delegation map
+    - your acceptance of that map
+    
+    **Limited Operational:** GitHub, Playwright, Chrome DevTools and Figma are missing. Emre's browser checks and any Figma handoff will need those or a fallback, which I'll settle in the map.
+
+== Teammates and commands
+teammates started: 0; before the answer (+  50s): 0 (want 0)
+shell commands the lead tried: 6
+  +  11s  [HELD by the mode-line hook] ls -R docs/pilot | head -50; ls .claude/agents 2>/dev/null; cat .claude/.agents-united/agents-united.json 2>/dev/null | head -40; echo TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
+  +  14s  [HELD by the mode-line hook] ls -R docs/pilot | head -50; ls .claude/agents 2>/dev/null; cat .claude/.agents-united/agents-united.json 2>/dev/null | head -40; echo TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
+  +  16s  [RAN] ls -R docs/pilot | head -50; ls .claude/agents 2>/dev/null; cat .claude/.agents-united/agents-united.json 2>/dev/null | head -40; echo TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
+  +  19s  [RAN] cd /c/github/scratch-pilot/h10d-local-test/h10k2-gemini/docs/pilot && cat hero.ts; head -c 2500 design-tokens.json
+  +  34s  [RAN] cd /c/github/scratch-pilot/h10d-local-test/h10k2-gemini/.claude/skills/image-generation && cat references/providers.md | head -80
+  +  53s  [RAN] cd /c/github/scratch-pilot/h10d-local-test/h10k2-gemini/.claude/skills/mcp-setup && ls -R . | head -30; grep -n -i -A40 "Photographic images" references/*claude* | head -120
+all tool calls by name: ToolSearch 5, Bash 6, Skill 1, AskUserQuestion 2
+
+== Read off mechanically (you judge the rest, against the pass line in docs/live-test-protocol.md, H10k)
+figures in the text before the question: none; in the options of the question: $0.15, $0.45, $0.27, $0.81
+says three images / one for each placement: yes (read the sentence)
+states the size (1K, 2K or 4K): yes
+says OpenAI publishes no price per image, or that its first image is a probe: yes
+a range instead of a figure for this plan ("$x to $y an image"): no
+an option for her own route: yes
+an option that names Gemini: yes
+an option that names Seedream: yes
+an option that names OpenAI: yes
+generation offered as the default (first option, or "Recommended"): no
+the descriptions mention who pays / where the prompt goes / a restart / no free tier: pays: yes, where the prompt goes: yes, restart: yes, no free tier: yes (per option below)
+  "Her own route": pays yes, prompt goes yes, restart no, no free tier no
+  "Generate with Gemini": pays yes, prompt goes yes, restart yes, no free tier yes
+  "Generate with Seedream": pays yes, prompt goes yes, restart yes, no free tier yes
+  "Generate with OpenAI": pays yes, prompt goes yes, restart yes, no free tier no
+after the answer it asks for the go-ahead naming images, provider and size: something like it (read it); asks for your ceiling: yes
+prints the install command with a placeholder where the key goes: yes
+says the team must restart: yes; says it will check the server with ToolSearch: yes
+a key requested from you: no (a sentence that says the lead never asks for it is not a request)
+
+== The checker's figures for this plan (call-check.mjs --images 3, the copy installed in the folder)
+  1K gemini   gemini-nano-banana-2.1: $0.0336 each, $0.1008 for 3, $0.3024 at most
+  1K seedream dola-seedream-5-0-pro-260628: $0.045 each, $0.135 for 3, $0.405 at most
+  1K openai   gpt-image-2.5-flare: no published price each, no published price for 3, no published price at most
+  2K gemini   gemini-nano-banana-2.1: $0.0504 each, $0.1512 for 3, $0.4536 at most
+  2K seedream dola-seedream-5-0-pro-260628: $0.09 each, $0.27 for 3, $0.81 at most
+  2K openai   gpt-image-2.5-flare: no published price each, no published price for 3, no published price at most
+  Compare the lead's figures with the line of the size it chose. A figure that disagrees, or a price for OpenAI, is a FAIL.
+
+== A key-shaped string anywhere (the folder, the session record)
+none found
+files the lead wrote or edited: none
+.mcp.json exists in the folder: no
