@@ -790,3 +790,12 @@ Degradation in practice: `hooks:` / `permissionMode:` / `commandExecutionPolicy:
 `mainAgent:` / `subagent:` / `type:` are Antigravity-only and do **not** execute in projected
 (orchestrator) files — projected agents degrade to "system prompt + tool list" subagents, and
 `invoke_subagent` orchestration is dropped with a warning outside Antigravity.
+
+
+**Completion report**:
+The native Claude digital-agency lead's final delivery of verified work after every teammate has been asked to shut down. Accepted dispatch, observed approval and host-observed termination are separate evidence states; a failed request is reported as unresolved. Missing lifecycle evidence does not delay delivery or establish that a teammate is still running. Late events update evidence while delivery remains complete (ADR 0055).
+_Avoid_: Waiting for every termination notice before reporting, dispatch as proof of exit
+
+**Shutdown evidence**:
+A per-teammate record of request status, approval observed and host termination observed. A missing event is not observed; a maintainer's UI observation is user-reported and stays separate from the host record. This record is not an independent process-liveness check (ADR 0055).
+_Avoid_: Missing notice as running status, peer approval as host termination
