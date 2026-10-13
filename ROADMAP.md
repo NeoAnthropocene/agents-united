@@ -164,6 +164,39 @@ agents add digital-agency --allow-under-construction --mode brainstorming --dry-
 
 ---
 
+## Milestone 4 — Image Route: Real Generation Tests for the Providers Without a Tested Key
+
+**Status**: `🔲 Planned` (the wiring is checked; no image was made with OpenAI or Seedream)
+**Priority**: Medium
+**Effort**: Small (S) for each provider, once a key is at hand
+**Domain**: Creative Designer + MCP Integration (Plan 036 S19, ADR 0049)
+
+### Problem Statement
+
+The optional image server (`image-gen`, package `mcp-image@0.18.0`) makes images with three providers: Google Gemini, OpenAI and BytePlus Seedream. Every live test so far (Plan 036, Sittings L to W) used the maintainer's own Gemini key, because Gemini is the only provider whose key anyone on the project holds. OpenAI and Seedream are wired in the `mcp-setup` reference, offered by the digital-agency lead and priced in the `image-generation` skill, but no image has been made with either: their prices, size limits, reference-image limits and failure messages come from documentation and from the package, not from a run.
+
+What is checked already, without a key of either provider (2026-10-13, `host-library/claude/observations/2026-10-13-mcp-image-0.18.0-provider-wiring-smoke.md`): the server starts and lists one tool whose `provider` field takes `gemini`, `openai` or `seedream`; a call that names a provider without its key is refused with `CONFIG_ERROR`, a request for that key and a restart; a call with a made-up key reaches the provider and gets its 401; `IMAGE_PROVIDER` picks the default and the provider named in a call wins. That shows the calls are wired. It shows nothing about an image.
+
+### Tasks
+
+- [x] Wiring smoke test of the pinned server for the three providers with made-up keys: the tool list, the missing-key refusal, the provider's refusal, the default and the named provider (2026-10-13; no image, no real key).
+- [ ] **OpenAI**: one real image, from the lead's printed command for an OpenAI-only user through to Jamileh's call and her record, on an account with billing. Read the first image's price from the bill (OpenAI publishes no price per image), check the size and aspect-ratio limits, whether a GPT Image model needs organization verification, and what the refusal looks like when the account lacks it.
+- [ ] **Seedream**: one real image with a BytePlus ModelArk key made in the AP region, through the same chain. Check the price table of `image-generation` ($0.045 and $0.09), the `1K` and `2K` limits, and the prompt optimisation that Seedream still does on BytePlus's side.
+- [ ] A reference-image edit (`inputImagePaths`) with each of the three providers, under the path rules of `image-generation`.
+- [x] Gemini end to end in one session (H10n of `docs/live-test-protocol.md`, Sitting X, run 2026-10-13, `host-library/claude/observations/2026-10-13-claude-2.1.296-gemini-end-to-end.md`): the lead's offer, the command run by the user with their own key, the restart, the tool listed by the lead and by Jamileh, one image and her record, all seen. The printed block lacked a `cd` into the project folder, which cost a second run: fixed and pinned, not yet run live. Her record had the long file name (open).
+- [ ] Record each run as a sitting of `docs/live-test-protocol.md` (H10d with the provider switched), with the cost of the images read from the provider's bill and not from the price table.
+- [ ] Decide what the designer's report does with OpenAI's refusal, which echoes the first characters and the last characters of the key.
+
+#### Verification
+```bash
+node host-library/claude/observations/2026-10-13-provider-wiring-smoke-records/mcp-smoke.mjs <an empty folder>   # the wiring check: needs no key and makes no image
+npm run build && npm test
+```
+
+**Blocked by**: someone with an OpenAI API key (billing on) and a BytePlus ModelArk key. The maintainer has a Gemini key only; until a key is at hand the OpenAI and Seedream parts of the skills stay "not seen".
+
+---
+
 ## Future Ideas (Unscoped)
 
 | Idea | Domain | Signal |
@@ -181,4 +214,4 @@ agents add digital-agency --allow-under-construction --mode brainstorming --dry-
 
 ---
 
-*Last updated: 2026-09-22 | Maintained by: NeoAnthropocene*
+*Last updated: 2026-10-13 | Maintained by: NeoAnthropocene*

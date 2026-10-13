@@ -1,0 +1,22 @@
+exit: 0
+{
+  "checked": 1,
+  "images": [
+    {
+      "file": "petpal-sitter-sofa-4x5.jpg",
+      "format": "jpeg",
+      "width": 1856,
+      "height": 2304,
+      "nearestRatio": "4:5",
+      "offPercent": 0.69,
+      "bytes": 3069023,
+      "sha256": "8c71809fd3be96159ec519e715e7004ca779e3dca2d8c6cf15e91860b92ffffc",
+      "sidecar": "ok"
+    }
+  ],
+  "findings": [],
+  "calls": 1,
+  "costUsd": 0.0504,
+  "stamped": 0
+}
+
