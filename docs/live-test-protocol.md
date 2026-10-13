@@ -80,6 +80,7 @@ Cheapest ceiling first: H5, H4, H3, H6, H1, H8, then H2 and H7. H9 (added 2026-1
 | Sitting U | H10m, the image tool reaches the team: the lead and Jamileh each list `mcp__image-gen__generate_image` with the server connected (one interactive session, no image); Plan 036 S19 and ADR 0049 as amended | 1.5 USD and 1 prompt (proposed 2026-10-12; run 2026-10-12; used 0.5428 USD of model cost by the session's own cost record, which the maintainer did not read; the lead's `ToolSearch` listed the tool and so did Jamileh's, nobody called it and no image was made; the mode-line hook held the lead's first `Agent` call 3 times in 3 messages, although the lead wrote its line as a text block after the first hold, because the host had not saved the text 5 s later) |
 | Sitting V | The opening of ADR 0053 on the lead of the clone: G1 again, a prompt that orders a consultation, and H11, a bare "Hi" (two short interactive sessions, no image server, no key); Plan 036 S19 and ADR 0053 | 1.5 USD and 2 prompts (proposed 2026-10-13; run 2026-10-13; used 0.7235 USD of model cost in 2 prompts: 0.5143 USD for G1 and 0.2093 USD for Hello, both by the session's own cost record; no red hook error in either session, the line was the lead's second message in both and the opening of "Hi" was the line and one question; the waiting gate did not have to wait: the log of G1 says released, by line, 1 ms) |
 | Sitting W | R4, the full-roster regression of Plan 035 N3: the H1 brief plus "Consult ava read-only first." on the lead of the clone at 867eaa9 (one interactive session, the lead and the nine specialists, no image server, no key); Plan 036 S19 and ADR 0053 | no ceiling was set (the maintainer asked for the run, and it is not added to the total below; R3 cost 3.7228 USD for the same brief); 1 prompt and the acceptance of the delegation map; proposed 2026-10-13; run 2026-10-13; used 2.6287 USD of model cost by the session's own cost record; no red hook error and no hold (the line was the lead's second message and the log says released, by line, 1 ms); seven of the eight expectations of R3 were seen again and the nine files were written in four tiers; the last two shutdown confirmations (Emre, Defne) did not reach the lead before the session was closed; five of nine briefs again omitted a value that the brief fixes in every brief |
+| Sitting X | H10n, the Gemini route end to end: the lead's offer, the command it prints run by the maintainer in their own terminal with their own key, the restart, the tool in both pools and one image by Jamileh (one interactive session; ROADMAP Milestone 4); Plan 036 S19 and ADR 0049 as amended | no ceiling was set (the maintainer asked for the run, and it is not added to the total below); 1 prompt, 2 or 3 choices and the restart; proposed 2026-10-13; one image on the maintainer's Google bill (no free tier); not yet run |
 
 Total of all ceilings: 55.0 USD, and 65.0 USD with Sitting F.
 
@@ -719,6 +720,31 @@ Any red hook error; a greeting, a welcome, an introduction of the lead or a list
 
 ### H11 Cost
 Estimate 0.4 USD for G1 and less for Hello. Ceiling for Sitting V: 1.5 USD and 2 prompts (run: 0.7235 USD).
+
+## H10n The Gemini route end to end: the lead's printed command, the restart and one image (added 2026-10-13, Plan 036 S19, ROADMAP Milestone 4)
+
+**Question.** Does the whole route work as the skills describe it, in one session, with the user's own key and nothing but the command that the lead prints to install the server? The pieces were seen in different sittings: the lead's offer (Sittings R and T), the printed command run by the user (T), the tool in the pool of the lead and of Jamileh (U), the images (L to N, with the server added by a script of the test folder). **The chain has not been run since the fixes** (ADR 0049 as amended, ADR 0051, ADR 0053, ADR 0054). The maintainer holds a Gemini key only, so this is the one provider whose route can be run for real.
+
+### H10n Setup
+A fresh folder `e2e-gemini`, built from the clone under test with `scripts\new-run.ps1 -Scenario e2e` (the digital-agency native install, `doctor` healthy, the PetPal kit in `docs\pilot`, **no image server**). The maintainer starts it with `scripts\start-h10k.ps1 -Scenario e2e` (`claude --model sonnet --effort low --agent orchestrator-digital-agency`, the two team variables set for the process, every API key variable removed from it). The key is the maintainer's own Google AI Studio key, in a project with billing. It is typed only into the maintainer's own terminal, in the printed command: never into the session, never into a file, never shown to the executor, who never runs a call with it.
+
+### H10n Prompt
+```text
+Scratch exercise, no real client. I need one photograph for the PetPal feed ad (4:5): a warm, natural photo of a sitter and a dog on a sofa. No photography is supplied. Do not start any teammate until I have chosen how the picture is made.
+```
+The maintainer's answers are part of the protocol: choose **Generate with Gemini** in the question; if the lead asks whether there is a key, answer "I have a Gemini key" (never the key); to the go-ahead and the ceiling type `go: one image, Gemini, 2K, no more than your estimate`. Then, in a second terminal opened in the project folder `e2e-gemini` (the local scope is keyed by the folder), run the command that the lead printed with your key and your path in place of the two placeholders, and check that `claude mcp list` shows `image-gen` as Connected (paste that one line to the executor, never the output of `claude mcp get`, which can show the key). Type `/exit`, run `scripts\resume-h10k.ps1 -Scenario e2e` (the same flags, `claude --continue`), paste the starting prompt that the lead printed, and answer nothing else. Stop when Jamileh's report and the structured shutdown are done; then `/cost` and `/exit`.
+
+### H10n Evidence
+The lead's record (`scripts\gate-timeline.mjs`) and the hook's log: the opening, the question with its options and figures, the printed command, the restart; the `ToolSearch` results of the lead and of Jamileh for the image tool, and the pools of both (`scripts\pool-evidence.mjs`); Jamileh's call of the tool (its arguments and its result), the file in `assets/generated` and her record checked with `image-check.mjs`; a scan of every record of the session for a key shape (counts only, never the match); the session's cost record.
+
+### H10n Pass
+The opening is the line alone and nothing is held (ADR 0053); one `AskUserQuestion` with the four options and the figures for one image, agreeing with `call-check.mjs --images 1`; no teammate before the answer; the printed command carries `<your-ai-studio-key>` and the project path, is not run by the lead, and needs no approval prompt for a local server; after the restart the lead's `ToolSearch` lists `mcp__image-gen__generate_image` and so does Jamileh's, and neither pool lists `ListAgents` (ADR 0054); Jamileh loads `image-generation`, makes **one** call that `call-check.mjs` accepts, saves one image in `assets/generated` and a record that `image-check.mjs` accepts; the structured shutdown is answered with an object; no key anywhere in the records.
+
+### H10n Fail
+A key asked for, written or printed by the lead or by Jamileh; the printed command run by the lead; an approval prompt promised for a local server; the tool not listed after the restart; more than one image, or a call outside the guard; a welcome, a hold or a red hook error; a pool that lists `ListAgents`.
+
+### H10n Cost
+One interactive session of the lead and Jamileh, and one image on the maintainer's Google bill (no free tier, so the lead states the figure in its question). No ceiling was set: the maintainer asked for the run.
 
 ## H2 and H7 `agents start` with the lead on its pinned Opus
 
