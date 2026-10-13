@@ -1,9 +1,11 @@
-# ADR 0051: Slice-3 attribution, first skill and delivery gates
+# ADR 0052: Slice-3 attribution, first skill and delivery gates
 
 - **Status**: Accepted decision scope, 2026-10-12. The maintainer authorized slice 3's attribution rule, first skill and loading/quality gates, then selected `author-skill`. Implementation follows catalog PR #195's review/merge in its own scoped PR; this decision does not merge #195 or ship content.
-- **Ground**: #195's conflict repair is published at `945935d153aa72cfab3af3b2a3536001b61c8fbf`, integrating fresh `origin/dev` `39da247283ad6aecbee5b673d85d3d68706bcdf0` (#194 and #196). This separate local decision branch, `codex/plan-033-slice-3-decisions`, explicitly depends on that open PR and starts at its repaired head. Original slice-2 planned-at SHA and verification remain historical. ADR 0049 is occupied and ADR 0050 belongs to #195; all PR states and the `author-skill`/ADR 0051 searches were checked before reserving this number.
+- **Ground**: #195's conflict repair is published at `945935d153aa72cfab3af3b2a3536001b61c8fbf`, integrating fresh `origin/dev` `39da247283ad6aecbee5b673d85d3d68706bcdf0` (#194 and #196). This separate local decision branch, `codex/plan-033-slice-3-decisions`, explicitly depends on that open PR and starts at its repaired head. Original slice-2 planned-at SHA and verification remain historical. ADR 0049 is occupied and ADR 0050 belongs to #195; all PR states and the `author-skill`/ADR 0052 searches were checked before reserving this number.
 
 ## Context and alternatives
+
+**Publication numbering amendment, 2026-10-12:** this decision was originally recorded locally as ADR 0051. Before publication, the maintainer requested a PR for the implementation approved in the Codex chat “Implement Plan 033 slice 3” (`01a12fbf-d105-74a2-903d-2c2ec3538bba`). The open-PR check found #198 reserving 0051 for Plan 036's mode-line decision. This record and its cross-references therefore publish as **ADR 0052**; approved scope and historical implementation evidence are unchanged. All open PRs were checked before using the new number.
 
 Plan 033's first-skill choice was unresolved. Its Plan 035 findings recommend a skill that teaches fit-for-purpose skill authoring, rather than repeating intake prose. The maintainer selected `author-skill` over the shared-contract helper and contribution-packaging alternatives. Those capabilities remain separate accepted requirements under ADR 0048.
 
@@ -24,3 +26,12 @@ Prior art read: Plan 033's dated amendments and slice gates; ADRs 0040, 0045, 00
 The next implementation starts only after #195 merges, from then-fresh `origin/dev`, on a new `codex/` branch, and records its actual planned-at SHA. Its handoff names `registry/rules/skill-attribution.md`, `registry/skills/author-skill/`, contributor-only bundle placement, any required loading/binding paths and the exact public test seams before edits. The rule, skill content and their checks are authorized; a missing native loader or distribution prerequisite must be designed and reviewed explicitly before delivery claims. This decision record is prepared on a separate local planning branch, leaving #195 catalog-only.
 
 Option A, the four-field contract and Claude → Codex → Antigravity → Cline are unchanged. No paid host run, R3 rerun/resume, root AGENTS.md change, Plan 034 hold/baseline change, deferred Plan 035 repair, or Plan 036 change is authorized. R3 remains seven expectations seen, Defne completion unverified and five fixed-value brief violations; Claude Pro, extra usage off, $3.7228101 aggregate, $46.2771899 remaining; headless 0/16, interactive 2/16 conservatively. Plan 036's ledger remains separate.
+
+
+## Loading prerequisite approval and implementation — 2026-10-12
+
+The maintainer explicitly approved [the concrete loading design](../../plans/033-slice-3-claude-loading-design.md): Claude’s built-in `general-purpose` role through `context: fork`, `agent: general-purpose`, `background: false`; the attribution rule projected as a tracked on-demand reference under the skill; and optional `hostAvailability` restricted to Claude workspace/native delivery. This resolves the prerequisite review required in decision 3.
+
+`InstallEngine.install()` checks all required delivery choices from existing state before migrations or writes; `UpdateEngine` preflights the whole request before legacy migrations. Missing native loader/rule/support blocks delivery. Existing bundles without availability metadata retain their lanes. The first skill’s direct-item request is the complete declared factory toolkit, so it retains the same native loading/ownership path; a partial restricted item must select its required bundle. The shared skill helper applies user-scoped draft text and stages repairs with baseline checks; it checks prerequisite file presence, while actual checkout validators remain separate and explicitly unverified until run. Maintainer-only eval fixtures do not install.
+
+The accepted authorization does not include commits/push, merge or paid host/evaluation runs. Local deterministic checks and prepared fixtures establish source and installation integrity; runtime invocation/behavior and a published PR’s CI remain unverified. Existing R3 evidence and adjacent-plan boundaries are preserved.

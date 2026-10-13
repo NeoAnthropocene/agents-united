@@ -2,6 +2,52 @@
 
 This is an authoring contract, not an installed bundle. The nine maintainer decisions in Plan 033 remain binding. The foundation adds no catalog section, bundle shell, install flag or factory role.
 
+## Working method — maintainer clarification, 2026-10-12
+
+The maintainer confirmed this interpretation of ADR 0025 and Plan 033 after reviewing the registry responsibilities, host independence, migration and skill-loading questions. This clarification records the agreed method; it does not deliver native factory content or expand the implementation scope.
+
+### Sources and native implementations
+
+| Location | Responsibility |
+| --- | --- |
+| `registry/core/` | Shared, host-neutral role identity, mission, boundaries, output contracts and safety invariants. |
+| `registry/hosts/<host>/` | Authoritative committed native implementations: agents, rules, skills, hooks and orchestration, with their host profile and tool policy. |
+| `registry/agents/` | Older Antigravity-shaped agent sources still required by the migration and legacy fallback. These files are not the new shared Contract Floor. |
+| `registry/rules/` | Shared policy sources, with native activation and enforcement bindings where delivered. |
+| `registry/skills/` | Shared skill sources, reusable unchanged when their format and behavior are portable. |
+| `host-library/<host>/` | Reviewed authoring inputs: guides, cited snapshots and dated observations for the target host. |
+
+The Plan 032 `software-engineering` and `digital-agency` pilots established the shared floor and native implementation method. Their cores are shared contracts, not separate host-native floors. Each host can develop its own tools, orchestration and extensions above that floor. A host-specific change must preserve the floor and explicitly record and review deviations above it; changing the floor is a shared decision.
+
+Independent development does not require synchronized feature sets. Native package revisions must be distinguished from supported/tested host versions. Current `profile.version` values describe host baselines, and the existing npm release and bundle version fields do not establish an independent host-package release policy. Concrete version identifiers, compatibility rules and release automation remain a separate design task; one npm release can still distribute independently evolving host artifacts.
+
+### Factory operation and migration
+
+The authoring method is **shared contract + reviewed target-host inputs → native draft → checks and review → committed delivery**. The host running the factory and the target host being authored for are separate inputs. A Claude session may author a Codex realization, including a realization of the factory itself, using reviewed Codex inputs; Claude mechanics are prior art, not a substitute for those inputs. Installation copies committed artifacts deterministically and does not invoke an LLM to convert them.
+
+The accepted factory sequence remains **Claude → Codex → Antigravity → Cline**, reviewing each stage separately. OpenCode is a future additional stage requiring reviewed inputs, native prerequisites and conformance work. The factory is not the first native bundle: the Plan 032 pilots precede it. Its current catalog shell and accepted decisions do not establish a working native authoring journey.
+
+Completing the factory on every host does not retire `registry/agents/`. Retirement requires migration of the remaining relevant bundles and supported hosts, acceptable parity, and removal of resolver, manifest, ownership and fallback dependencies on the old sources. Retire legacy paths deliberately as their replacements are verified. The shared core, reusable policy sources and portable skill sources remain useful afterward.
+
+### Rules and skills
+
+Keep policy meaning shared while implementing loading, invocation and enforcement for the native surface. A prose rule does not establish a script guard or a first-action guarantee.
+
+| Shared rule | Native treatment to review |
+| --- | --- |
+| `domain-modeling-and-adr` | Loading, invocation and applicable repository references. |
+| `git-guardrails` | Permissions, hook bindings and verified enforcement. |
+| `multi-agent-coordination` | Delegation, teams, messaging, workflows and checked hand-back. |
+| `quality-aesthetics-accessibility` | Inspection tools, evaluator invocation and available evidence. |
+| `skill-attribution` | Contributor-only placement and an actual on-demand loading binding. |
+| `test-driven-development` | Invocation and the available test execution mechanisms. |
+
+Use portable skills unchanged where the host permits. Put host-specific examples, references and scripts in supporting files when the job stays the same; author native variants when tool calls, delegation, permissions or execution behavior differ substantially. This preserves ADR 0025's native-per-host policy without requiring independent rewrites of portable content.
+
+Progressive disclosure limits context cost: discovery uses metadata, activation loads `SKILL.md`, and supporting references are read when needed. Adding files does not automatically load every file. The entry must identify the target host and direct the agent to the matching reference. Read references and script outputs still consume context; scripts may also be read for inspection. Native preloading can load full skill bodies at startup, so verify the actual loading role instead of assuming every skill is loaded on demand. See the reviewed [Claude skill guide](../host-library/claude/guide/skill.md) and [Cline skill guide](../host-library/cline/guide/skill.md).
+
+For the selected `author-skill`, [ADR 0052](adr/0052-slice-3-attribution-first-skill-and-delivery-gates.md) governs the compact entry, supporting-file checks, provenance, eval fixtures and actual loading-role gate. A catalog listing alone does not complete delivery.
+
 ## Shared declaration
 
 Future contributor subagents keep their existing Semantic Core in `registry/core/<role>.core.md` and add a companion `registry/core/<role>.contract.json`:

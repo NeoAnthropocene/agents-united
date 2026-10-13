@@ -7,7 +7,10 @@ failing quietly the first time someone installs it on the host you didn't test. 
 document; every future skill addition should follow it too.
 
 Run these steps **in order**. A skill that fails an early step (licence, host check) should not
-be adapted or wired before the failure is resolved.
+be adapted or wired before the failure is resolved. Contributor-only content follows the same
+licence, provenance, quality and portability gates, with the explicit placement and native
+loading exceptions below ([ADR 0050](adr/0050-contributor-catalog-boundary.md),
+[ADR 0052](adr/0052-slice-3-attribution-first-skill-and-delivery-gates.md)).
 
 ## 1. Licence check
 
@@ -56,8 +59,9 @@ The scan is read-only. It opens the repository (blobless, depth 1), audits every
 
 ## 3. Attribution
 
-- Add the skill's author/project to **README.md §5 (Credits & Acknowledgments)**, with a link
+- For copied/adapted work, add the skill's author/project to **README.md §5 (Credits & Acknowledgments)**, with a link
   to the upstream project.
+- Original work identifies the actual author, version and supported licence; omit invented upstream source/adaptation metadata. Credit a reviewed external inspiration truthfully, without claiming its text was copied.
 - If the skill was adapted substantially (not a byte-for-byte vendor), say so in the credit line
   ("adapted from X by Y") rather than implying a straight copy.
 
@@ -88,8 +92,15 @@ The scan is read-only. It opens the repository (blobless, depth 1), audits every
 
 ## 5. Host check (docs/host-primitive-matrix.md)
 
-Before the skill is wired to any specialist, verify it against **every** active host's limits
-(`docs/host-primitive-matrix.md` §1 Skills):
+Before the skill is wired to any specialist, verify its shared source against **every** active
+host's portable limits (`docs/host-primitive-matrix.md` §1 Skills). Claim native availability
+only for the host, surface, lane and scope whose loading/binding and installed-file gates pass.
+A contributor bundle's explicit `hostAvailability` allowlist rejects unfinished hosts and
+unsupported lanes/scopes; construction/force overrides do not expand it. The first
+`author-skill` delivery is Claude Code CLI in a workspace with the native lane enabled;
+live invocation and behavior remain unverified until separately evidenced.
+
+Apply these portable checks:
 
 - **Name**: ≤64 chars, lowercase ASCII letters/digits/hyphens only, no "claude"/"anthropic"
   substring (Claude Code rule) — **and** the frontmatter `name` must equal the skill's own
@@ -99,6 +110,7 @@ Before the skill is wired to any specialist, verify it against **every** active 
 - **Size**: SKILL.md body under ~500 lines (Claude Code guidance) **and** under an estimated
   ~5k tokens (Cline guidance, ~4 chars/token here). Either limit being exceeded means splitting
   content into `references/` is overdue, not optional.
+- **Repository compact layout** (ADR 0040): the shared `SKILL.md` is at most 90 lines and 6000 characters, with a trigger-first description of at most 1024 characters. Longer material belongs in linked support files; the host limits above do not relax this stricter repository gate.
 - **Scripts runnable on Windows and POSIX**: a bundled script must not assume a bash-like shell
   is present. A `.sh` script with a bash-only shebang (`#!/bin/bash`) or bash-only syntax
   (`[[ ... ]]`, process substitution, `local -a` arrays) needs either a cross-platform rewrite
@@ -111,6 +123,10 @@ Before the skill is wired to any specialist, verify it against **every** active 
 
 ## 6. Bundle placement
 
+- A **contributor-only** authoring or maintenance skill belongs in an explicitly selected
+  `contributor` Domain Bundle, such as `agent-factory`. Keep its exclusive assets out of
+  ordinary bundles, department installs, recommendations and `full`. A shared skill already
+  owned by an end-user bundle keeps that ownership and remains in its existing inventories.
 - A **vendor or niche** skill (useful to a minority of users, or specific to one third-party
   tool/service) goes into an **addon bundle**, never into an Essentials bundle
   (`software-engineering`, `digital-agency`, …) — see README.md "Essentials-First Philosophy —
@@ -122,13 +138,24 @@ Before the skill is wired to any specialist, verify it against **every** active 
 ## 7. Specialist wiring
 
 - Add a row to the **Skill Consultation Map** (Plan 025) for every specialist that should
-  consult this skill during planning or execution. A skill nobody's prompt points to is dead
-  weight in the catalog — wire it to at least one specialist before merging.
+  consult an end-user skill during planning or execution.
+- For contributor-only task skills, a reviewed native loading role/binding may supply the
+  entry point. Name its source/installed paths, invocation, consultation trigger and surface;
+  test its rule/support-file edges in a fresh workspace. `author-skill` uses Claude's built-in
+  `general-purpose` role through its native `context: fork` entry, rather than an end-user
+  specialist. Keep attribution on demand and describe consultation separately from enforcement.
+- An intended runnable skill requires a real tested loading entry point before delivery;
+  a catalog listing alone does not satisfy this gate.
 
 ## 8. Catalog bookkeeping
 
-- Add the skill to the **`full`** bundle listing (the catalog-wide index) and to any bundle it
-  was placed in per Step 6.
+- Add an **end-user** skill to the explicit `full` inventory and to its Step 6 bundle(s).
+  Add a **contributor-only** skill to its named contributor bundle and keep it out of `full`.
+  Shared end-user assets remain in `full` when also reused by contributor tooling.
+- For `author-skill`, the validator commands require a declared reviewed source checkout and
+  Node.js 24+. Keep draft roots outside managed outputs, retain `assets/` support and exclude
+  maintainer `evals/` from every installed lane. Do not advertise checkout-only tools as
+  installed commands.
 - Update the pinned skill count(s) in **README.md** and **PROJECT.md** wherever this repo
   states "N skills" for the bundle(s) touched — a stale count is a common review-miss, not a
   formality.

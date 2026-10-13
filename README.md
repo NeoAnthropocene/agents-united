@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 34 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor shell and `mock-organization-under-construction` placeholder · 59 agents (9 orchestrators + 50 sub-agents) · 194 skills (125 domain skills + 69 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
+**In numbers:** 34 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 59 agents (9 orchestrators + 50 sub-agents) · 195 skills (126 domain skills + 69 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
 
 ---
 
@@ -272,7 +272,7 @@ agents add full                        # end-user suite; excludes contributor-on
 
 ### Skills
 
-The 194 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 125 are **domain skills** (best practices, runbooks, platform guides) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 195 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 126 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
@@ -543,7 +543,15 @@ Run `agents doctor` at any time to audit schemas, hooks, and lockfile state.
 
 **Developers only: contribute to Agents United** is a separate catalog section for authoring and maintaining Agents United artifacts. Local drafts do not require an upstream contribution; the upstream route is a reviewed PR to `dev` using [the artifact contribution guide](./docs/artifact-contribution.md).
 
-The `agent-factory` Domain Bundle is currently an **empty, under-construction shell and unavailable for installation**. Explore it with `agents list`, `agents list --json` or `agents find agent-factory`; the list explorer opens its details. No authoring tools or native factory support ship yet. Neither `--allow-under-construction` nor `--force` installs the empty shell. Direct `agents add domain:contributor` is refused; contributor tools are selected by name when available. They stay out of `full`, ordinary department installs and ordinary recommendations ([ADR 0050](./docs/adr/0050-contributor-catalog-boundary.md)).
+The under-construction `agent-factory` Domain Bundle contains `author-skill`, which creates or repairs one complete skill folder in a selected draft directory. Its first delivery is **Claude Code CLI, workspace scope, native lane**:
+
+```bash
+agents add agent-factory -t claude --native --allow-under-construction --copy -y
+```
+
+Invoke `/author-skill` with the complete task record: intended user/role, target host/surface, local or upstream intent, absolute source/output roots, references, constraints and evidence budget. The native entry forks Claude's built-in `general-purpose` role and explicitly reads its installed attribution rule before inspecting external sources or writing a draft. The rule is loaded on demand from the skill's references. Validator commands require an explicitly selected reviewed source checkout and Node.js 24+; those checkout tools are not installed with the skill. Local intent ends with a reviewable draft; upstream intent prepares contribution evidence for `dev`.
+
+Other hosts, global scope and the non-native lane are unavailable for this bundle; `--force` and `--allow-under-construction` do not bypass those delivery gates. Loading and file integrity are checked offline; actual Claude invocation and behavior remain **unverified** pending a separately authorized host session. Explore the toolkit with `agents list`, `agents list --json` or `agents find agent-factory`. Direct `agents add domain:contributor` is refused. Contributor tools stay out of `full`, ordinary department installs and ordinary recommendations ([ADR 0050](./docs/adr/0050-contributor-catalog-boundary.md), [ADR 0052](./docs/adr/0052-slice-3-attribution-first-skill-and-delivery-gates.md)).
 
 Contributions are welcome. The short version:
 

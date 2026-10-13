@@ -2,8 +2,10 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'fs-extra';
 import { RegistryResolver } from './registry.js';
+import { assertBundleHostAvailability, normalizeAvailabilityHost } from './bundle-host-availability.js';
+import { assertClaudeSkillBindings } from './claude-skill-binding.js';
 import { AgentHostAdapter } from './adapter.js';
-import { isKnownHost, HOST_REGISTRY, resolveHostProjectDir } from './hosts.js';
+import { isKnownHost, HOST_REGISTRY, resolveHostProjectDir, splitHostList } from './hosts.js';
 import { HostProjector } from './projector.js';
 import type { IndexableAsset } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
@@ -1291,12 +1293,107 @@ private toPosix(p: string): string {
     }
   }
 
+  /** Read the state a pending sidecar-to-store move will carry, without performing it. */
+  private async readDeliveryLockfile(targetDir: string): Promise<LockfileManifest> {
+    const lockPath = path.join(targetDir, 'agents-united.json');
+    if (!isSidecarDir(targetDir) && !await fs.pathExists(lockPath)) {
+      const prior = stateDirFor(workspaceRootOf(targetDir), 'sidecar');
+      if (await fs.pathExists(path.join(prior, 'agents-united.json'))) return this.readLockfile(path.join(prior, 'agents-united.json'));
+    }
+    return this.readLockfile(lockPath);
+  }
+
+  private async assertDeliveryAvailable(
+    identifier: string, resolved: ResolvedAssets, options: InstallOptions, scope: InstallScope,
+    hosts: AgentHost[], stateDir: string, targetDirs: string[], fanoutHosts: string[],
+  ): Promise<void> {
+    const manifest = await this.registry.loadBundles();
+    const definitions = Object.values(manifest.bundles);
+    const required = new Map<string, BundleDefinition>();
+    const add = (bundle: BundleDefinition): void => {
+      if (required.has(bundle.name)) return;
+      required.set(bundle.name, bundle);
+      const parent = definitions.find(candidate => candidate.name === bundle.parentBundle || candidate.aliases?.includes(bundle.parentBundle ?? ''));
+      if (parent) add(parent);
+    };
+    const selected = await this.registry.getBundle(resolved.targetBundle ?? identifier);
+    if (selected) add(selected);
+    else if (resolved.targetBundle?.startsWith('domain:')) {
+      definitions.filter(bundle => bundle.domain?.toLowerCase() === resolved.targetBundle!.slice(7)).forEach(add);
+    } else {
+      // A direct item cannot bypass its exclusive owner's delivery requirements. Shared
+      // ordinary assets remain available independently of a contributor declaration.
+      const declares = (bundle: BundleDefinition): boolean => resolved.skills.some(skill => bundle.skills?.includes(skill))
+        || resolved.agents.some(agent => bundle.orchestrator === agent || bundle.agents?.includes(agent))
+        || resolved.workflows.some(workflow => bundle.workflows?.includes(workflow));
+      const owners = definitions.filter(declares);
+      if (owners.length > 0 && owners.every(bundle => bundle.hostAvailability !== undefined)) {
+        owners.forEach(add);
+        // A single-item request that is the complete declared bundle can retain its
+        // real loading and ownership path. Partial restricted bundles need named selection.
+        const owner = owners.length === 1 ? owners[0] : undefined;
+        if (owner && !owner.parentBundle && !owner.orchestrator
+          && (owner.agents?.length ?? 0) === 0 && (owner.workflows?.length ?? 0) === 0
+          && (owner.skills?.length ?? 0) === resolved.skills.length
+          && resolved.skills.every(skill => owner.skills?.includes(skill))) {
+          resolved.targetBundle = owner.name;
+        } else {
+          throw new Error(`Bundle ${owners.map(bundle => bundle.name).join(', ')} is unavailable as a partial direct item; select the required bundle by name.`);
+        }
+        for (const bundle of owners) {
+          for (const rule of bundle.rules ?? []) if (!resolved.rules.includes(rule)) resolved.rules.push(rule);
+        }
+      }
+    }
+    const restricted = [...required.values()].filter(bundle => bundle.hostAvailability !== undefined);
+    const needsBinding = required.has('agent-factory') || resolved.skills.includes('author-skill');
+    if (resolved.skills.includes('author-skill') && !required.has('agent-factory')) {
+      throw new Error('author-skill requires its owning contributor bundle declaration agent-factory before delivery.');
+    }
+    if (restricted.length === 0 && !needsBinding) return;
+    for (const targetDir of new Set([stateDir, ...targetDirs])) {
+      const lock = await this.readDeliveryLockfile(targetDir);
+      const effectiveFanout = (options.fanout !== undefined ? fanoutHosts : lock.fanout ?? [])
+        .filter(host => isKnownHost(host) && HOST_REGISTRY[host]?.projectionCapable);
+      const targets = [...hosts.filter(host => host !== 'agents'), ...effectiveFanout];
+      if (hosts.includes('agents') && !isSidecarDir(stateDir) && !InstallEngine.effectiveImplicitStore(options, lock)) targets.push('agents');
+      // A raw requested alias is still a user-facing target even when it has no projector.
+      if (options.fanout !== undefined) targets.push(...options.fanout);
+      if (options.target !== undefined) {
+        const raw = Array.isArray(options.target) ? options.target.join(',') : options.target;
+        targets.push(...splitHostList(raw).map(host => host.trim().toLowerCase()));
+      }
+      const native = (host: string): boolean => {
+        const normalized = normalizeAvailabilityHost(host);
+        return (normalized === 'claude' || normalized === 'cline' || normalized === 'antigravity')
+          && InstallEngine.effectiveNativeLane(options, lock, normalized);
+      };
+      for (const bundle of restricted) assertBundleHostAvailability(bundle, [...new Set(targets)], scope, native);
+      if (targets.includes('claude')) {
+        for (const bundle of required.values()) {
+          if (assertClaudeSkillBindings(bundle, resolved, this.registry.getRegistryDir(), scope, native('claude'))) {
+            await ClaudeProjector.planCompoundProjection(bundle, scope, resolved, this.registry.getRegistryDir(), undefined, native('claude'));
+          }
+        }
+      }
+    }
+  }
+
   public async install(identifier: string, options: InstallOptions = {}): Promise<{ installed: ResolvedAssets; targetDirs: string[]; dryRun: boolean; method: InstallMethod; projections: ProjectionInfo[] }> {
     const scope = this.parseScope(options);
     const method = this.parseMethod(options);
-    const hosts = this.parseHosts(options);
+    let hosts = this.parseHosts(options);
 
     const resolved = await this.registry.resolve(identifier);
+    // Contributor task skills use the same state/projection route the CLI selects for
+    // Claude-only installs, including callers of the public installer API.
+    if (resolved.skills.includes('author-skill') && hosts.includes('claude')) {
+      const override = options.targetDir && path.basename(path.resolve(options.targetDir)) === '.claude'
+        ? path.join(path.resolve(options.targetDir), '.agents-united') : options.targetDir;
+      const explicitStateHost = hosts.includes('agents');
+      hosts = [...new Set(['agents' as const, ...hosts.filter(host => host !== 'claude')])];
+      options = { ...options, hosts, targetDir: override, storeShape: options.storeShape ?? (explicitStateHost ? undefined : 'sidecar'), implicitStore: options.implicitStore ?? !explicitStateHost, fanout: [...new Set(['claude', ...(options.fanout ?? [])])] };
+    }
     const registryDir = this.registry.getRegistryDir();
 
     // Fan-out only from the canonical state dir, and only to projection-capable hosts.
@@ -1312,6 +1409,10 @@ private toPosix(p: string): string {
         : h === 'agents' ? stateDir
         : AgentHostAdapter.resolveHostDir(scope, h, options.targetDir));
 
+    // Resolve all required delivery choices from state without changing it. This must precede
+    // sidecar upgrades, migrations, directory creation and lockfile writes, including dry-run.
+    await this.assertDeliveryAvailable(identifier, resolved, options, scope, hosts, stateDir, targetDirs, fanoutHosts);
+
     if (options.dryRun) {
       let effectiveDryFanout = fanoutHosts;
       let effectiveDryPluginLane = options.pluginLane === true;
@@ -1319,9 +1420,8 @@ private toPosix(p: string): string {
       let effectiveDryNativeClineLane = options.nativeLane === true;
       let effectiveDryNativeAntigravityLane = options.nativeLane === true;
       let dryLockfile: LockfileManifest | null = null;
-      const lockfilePath = path.join(stateDir, 'agents-united.json');
-      if (await fs.pathExists(lockfilePath)) {
-        const lockfile = await fs.readJson(lockfilePath).catch(() => null);
+      {
+        const lockfile = await this.readDeliveryLockfile(stateDir);
         dryLockfile = lockfile;
         if (options.fanout === undefined && hasCanonicalAgents && lockfile?.fanout) {
           effectiveDryFanout = (lockfile.fanout as string[])
@@ -1505,7 +1605,7 @@ private toPosix(p: string): string {
 
         await this.assertSkillCopyUnmodified(targetDir, dest, lockfile, options.force);
         // Plan 035 — a skill's `evals/` is for the maintainers: a copy leaves it out, and the records below skip it (a link still shows the whole folder).
-        const actualMethod = await this.deployFile(src, dest, skillMethod, options.force, from => !isMaintainerOnlySkillPath(path.relative(src, from)));
+        const actualMethod = await this.deployFile(src, dest, skillName === 'author-skill' ? 'copy' : skillMethod, options.force, from => !isMaintainerOnlySkillPath(path.relative(src, from)));
         const skillFile = path.join(src, 'SKILL.md');
         if (await fs.pathExists(skillFile)) {
           const hash = await this.calculateHash(skillFile);

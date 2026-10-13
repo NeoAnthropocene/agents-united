@@ -6,7 +6,7 @@ import { ClineProjector } from '../src/core/cline-projector.js';
 import { unsupportedSkillNames } from '../src/core/host-profile.js';
 import { InstallEngine } from '../src/core/installer.js';
 import { RegistryResolver } from '../src/core/registry.js';
-import type { BundleDefinition, ResolvedAssets } from '../src/core/types.js';
+import type { BundleDefinition, BundlesManifest, ResolvedAssets } from '../src/core/types.js';
 
 /**
  * Plan 035: a skill folder may hold `evals/` (the prompts a skill is tried with). It is for the maintainers, so no install lane
@@ -141,14 +141,19 @@ describe('evals/ is not installed: the canonical store', () => {
 describe('evals/ is not installed: the whole catalog', () => {
   const realRegistry = path.resolve('registry');
   const everySkill = fs.readdirSync(path.join(realRegistry, 'skills'), { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name).sort();
-  const catalogBundle: BundleDefinition = { name: 'catalog-bundle', description: 'Every skill of the registry', orchestrator: 'none.md', agents: [], skills: everySkill };
-  const catalogResolved: ResolvedAssets = { targetBundle: 'catalog-bundle', agents: [], skills: everySkill, workflows: [], rules: [] };
+  const manifest = fs.readJsonSync(path.join(realRegistry, 'bundles.json')) as BundlesManifest;
+  const bundles = Object.values(manifest.bundles);
+  const ordinaryOwners = new Set(bundles.filter(b => b.domain?.toLowerCase() !== 'contributor' && b.name !== 'full').flatMap(b => b.skills ?? []));
+  const contributorOnly = new Set(bundles.filter(b => b.domain?.toLowerCase() === 'contributor').flatMap(b => b.skills ?? []).filter(skill => !ordinaryOwners.has(skill)));
+  const consumerSkills = everySkill.filter(skill => !contributorOnly.has(skill));
+  const catalogBundle: BundleDefinition = { name: 'catalog-bundle', description: 'End-user skills of the registry', orchestrator: 'none.md', agents: [], skills: consumerSkills };
+  const catalogResolved: ResolvedAssets = { targetBundle: 'catalog-bundle', agents: [], skills: consumerSkills, workflows: [], rules: [] };
   const evalsOf = (skill: string): string => `skills/${skill}/evals/`;
 
-  it('no projection plan of any skill in the registry carries a file of its evals/ folder', async () => {
+  it('no end-user projection plan carries a file of a skill evals/ folder, preserving shared contributor assets', async () => {
     const claude = await ClaudeProjector.planCompoundProjection(catalogBundle, 'project', catalogResolved, realRegistry);
     const cline = await ClineProjector.planCompoundProjection(catalogBundle, 'project', catalogResolved, realRegistry);
-    const withEvals = everySkill.filter(skill => fs.existsSync(path.join(realRegistry, 'skills', skill, 'evals')));
+    const withEvals = consumerSkills.filter(skill => fs.existsSync(path.join(realRegistry, 'skills', skill, 'evals')));
     for (const skill of withEvals) {
       for (const artifact of [...claude, ...cline]) {
         expect(artifact.canonical ?? '', `${skill}: ${artifact.relPath}`).not.toContain(evalsOf(skill));
@@ -156,7 +161,29 @@ describe('evals/ is not installed: the whole catalog', () => {
       }
     }
     // The plans still carry the skills themselves: a filter that dropped everything would pass the loop above. Claude leaves out the skills its profile lists as unsupported (Plan 036 S1b).
-    expect(claude.filter(a => a.kind === 'skill' && a.relPath.endsWith('/SKILL.md')).length).toBe(everySkill.length - unsupportedSkillNames(realRegistry, 'claude').size);
-    expect(cline.filter(a => a.kind === 'skill' && a.relPath.endsWith('/SKILL.md')).length).toBe(everySkill.length);
+    expect(claude.filter(a => a.kind === 'skill' && a.relPath.endsWith('/SKILL.md')).length).toBe(consumerSkills.filter(skill => !unsupportedSkillNames(realRegistry, 'claude').has(skill)).length);
+    expect(cline.filter(a => a.kind === 'skill' && a.relPath.endsWith('/SKILL.md')).length).toBe(consumerSkills.length);
+    const shared = bundles.filter(b => b.domain?.toLowerCase() === 'contributor').flatMap(b => b.skills ?? []).filter(skill => ordinaryOwners.has(skill));
+    for (const skill of shared) expect(consumerSkills).toContain(skill);
+  });
+
+  it('the actual native factory binding retains authoring assets and excludes its maintainer evals', async () => {
+    const resolver = new RegistryResolver(realRegistry);
+    const factory = await resolver.getBundle('agent-factory');
+    expect(factory).not.toBeNull();
+    const factoryResolved = await resolver.resolve('agent-factory');
+    const artifacts = await ClaudeProjector.planCompoundProjection(factory!, 'project', factoryResolved, realRegistry, undefined, true);
+    const planned = artifacts.map(a => a.relPath);
+    expect(planned).toContain('.claude/skills/author-skill/SKILL.md');
+    expect(planned).toContain('.claude/skills/author-skill/references/skill-attribution.md');
+    expect(planned).toContain('.claude/skills/author-skill/assets/report.md');
+    expect(planned).toContain('.claude/skills/author-skill/scripts/draft.mjs');
+    for (const artifact of artifacts) {
+      expect(artifact.relPath).not.toContain('/evals/');
+      expect(artifact.canonical ?? '').not.toContain('/evals/');
+    }
+    // Both fixtures together still cover every directory; contributor-only skills are
+    // tested through their actual supported lane rather than hidden from the audit.
+    expect([...new Set([...consumerSkills, ...(factoryResolved.skills ?? [])])].sort()).toEqual(everySkill);
   });
 });

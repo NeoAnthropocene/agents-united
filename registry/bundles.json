@@ -8,11 +8,12 @@
       "domain": "contributor",
       "category": "Developers only: contribute to Agents United",
       "status": "under-construction",
-      "description": "Unavailable empty shell for developing and contributing Agents United artifacts; contributor tooling is under construction.",
+      "description": "Contributor skill authoring drafts and evidence preparation; first delivery supports Claude Code CLI workspace native installs. Live invocation remains unverified.",
       "agents": [],
-      "skills": [],
+      "skills": ["author-skill"],
       "workflows": [],
-      "rules": []
+      "rules": ["skill-attribution.md"],
+      "hostAvailability": { "claude": { "lane": "native", "scopes": ["workspace"] } }
     },
     "software-engineering": {
       "name": "software-engineering",

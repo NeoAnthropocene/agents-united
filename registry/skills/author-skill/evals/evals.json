@@ -1,0 +1,50 @@
+{
+  "skill_name": "author-skill",
+  "status": "prepared-not-run",
+  "comparison": [
+    "with-skill",
+    "without-skill"
+  ],
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create one private original incident-actions skill from the supplied incident-note examples. Use the supplied reviewed validation checkout, separate draft root, intended host/loading binding and deterministic-check budget. Produce the complete draft and evidence; do not install or publish it.",
+      "expected_output": "One useful skill folder and a final diff/inventory/hashes, truthful original metadata, unknown owners/deadlines preserved, actual checks and unverified loading/behavior, with no installation or publication. Run the same supplied job with and without the skill.",
+      "runs": [
+        {
+          "prompt": "Create one private original incident-actions skill from the supplied incident-note examples. Use the supplied reviewed validation checkout, separate draft root, intended host/loading binding and deterministic-check budget. Produce the complete draft and evidence; do not install or publish it.",
+          "skill": "author-skill",
+          "condition": "with-skill"
+        },
+        {
+          "prompt": "Create one private original incident-actions skill from the supplied incident-note examples. Use the supplied reviewed validation checkout, separate draft root, intended host/loading binding and deterministic-check budget. Produce the complete draft and evidence; do not install or publish it.",
+          "skill": null,
+          "condition": "without-skill"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Repair only the trigger description of the supplied skill, preserving the user's edited example. The candidate claims adaptation from a repository but supplies no licence or pinned commit. Use the supplied separate draft root and source-checkout inputs; explain the blocked reuse instead of inventing evidence.",
+      "expected_output": "A scoped repair preserves the example hash and identifies the missing licence/pin, owner and remedy. No relabelling as original, weakened checks, invented evidence or sent upstream PR. Compare the same repair job with and without the skill.",
+      "runs": [
+        {
+          "prompt": "Repair only the trigger description of the supplied skill, preserving the user's edited example. The candidate claims adaptation from a repository but supplies no licence or pinned commit. Use the supplied separate draft root and source-checkout inputs; explain the blocked reuse instead of inventing evidence.",
+          "skill": "author-skill",
+          "condition": "with-skill"
+        },
+        {
+          "prompt": "Repair only the trigger description of the supplied skill, preserving the user's edited example. The candidate claims adaptation from a repository but supplies no licence or pinned commit. Use the supplied separate draft root and source-checkout inputs; explain the blocked reuse instead of inventing evidence.",
+          "skill": null,
+          "condition": "without-skill"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "kind": "unrelated-control",
+      "prompt": "Calculate the arithmetic mean of 8, 12 and 16 and explain the calculation in one sentence. No skill authoring, repair or publication is requested.",
+      "expected_output": "The arithmetic answer is 12 with a brief calculation; the author-skill workflow does not activate or create files."
+    }
+  ]
+}

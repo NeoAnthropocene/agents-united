@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "bundle": "agent-factory",
+  "skill": "author-skill",
+  "source": "hosts/claude/skills/author-skill/SKILL.md",
+  "installed": ".claude/skills/author-skill/SKILL.md",
+  "loadingRole": {
+    "kind": "built-in",
+    "name": "general-purpose",
+    "context": "fork",
+    "background": false
+  },
+  "invocation": "/author-skill",
+  "surface": {
+    "host": "claude",
+    "product": "Claude Code CLI",
+    "scope": "workspace",
+    "lane": "native"
+  },
+  "requiredSupport": [
+    "references/job.md",
+    "references/provenance.md",
+    "references/quality.md",
+    "examples/one-draft.md",
+    "assets/report.md",
+    "scripts/draft.mjs"
+  ],
+  "rule": {
+    "source": "rules/skill-attribution.md",
+    "installed": ".claude/skills/author-skill/references/skill-attribution.md",
+    "consultation": "before-source-or-draft"
+  },
+  "reviewedInputs": [
+    "host-library/claude/guide/skill.md",
+    "host-library/claude/pages/skill/skills.md#run-skills-in-a-subagent",
+    "host-library/claude/pages/agent/sub-agents.md#built-in-subagents"
+  ]
+}

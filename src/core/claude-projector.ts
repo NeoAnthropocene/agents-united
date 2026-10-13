@@ -18,8 +18,9 @@ import type {
 import type { ClaudeDialect } from './types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { CLAUDE_FIELD_POLICY, validateProjectionOverlays } from './overlays.js';
-import { nativeHookSource, nativeRoleSource, nativeWorkflowSource, renderNativeHook, renderNativeRole, renderNativeWorkflow } from './native-package.js';
+import { nativeHookSource, nativeRoleSource, nativeSkillSource, nativeWorkflowSource, renderNativeHook, renderNativeRole, renderNativeSkill, renderNativeWorkflow } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
+import { assertClaudeSkillBindings } from './claude-skill-binding.js';
 import { unsupportedSkillNames } from './host-profile.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
@@ -848,6 +849,7 @@ export class ClaudeProjector {
     _excludeAddons?: string[],
     nativeLane = false
   ): Promise<PlannedClaudeArtifact[]> {
+    const skillBinding = assertClaudeSkillBindings(bundle, resolved, registryDir, scope, nativeLane);
     // A global install writes its roles into `~/.claude/agents`, where `${CLAUDE_PROJECT_DIR}` cannot name a script, so the native
     // roles keep the inline guard there and no script file is planned (see `nativeRoleContent`).
     const guardForm = scope === 'global' ? 'inline' : 'file';
@@ -916,11 +918,14 @@ export class ClaudeProjector {
         });
         continue;
       }
+      const nativeSkill = nativeLane ? nativeSkillSource(registryDir, 'claude', skillName) : undefined;
       artifacts.push({
         kind: 'skill',
         canonical: canonicalRel,
         relPath: `.claude/skills/${normalized}/SKILL.md`,
-        content: ClaudeProjector.renderSkill(await fs.readFile(skillFile, 'utf8'), canonicalRel).content,
+        content: nativeSkill
+          ? renderNativeSkill(await fs.readFile(nativeSkill, 'utf8'), canonicalRel, 'claude')
+          : ClaudeProjector.renderSkill(await fs.readFile(skillFile, 'utf8'), canonicalRel).content,
         managedMarker: true,
       });
       // Recursive: `references/`, `scripts/` (and deeper, e.g. `scripts/lib/`) must reach Claude
@@ -945,11 +950,13 @@ export class ClaudeProjector {
       if (!(await fs.pathExists(src))) continue;
       const canonicalRel = `rules/${ruleFile}`;
       const content = await fs.readFile(src, 'utf8');
-      if (content.split(/\r?\n/).length > ClaudeProjector.CLAUDE_DIALECT.maxRuleLines) continue;
+      const boundRule = skillBinding?.rule.source === canonicalRel;
+      // The required on-demand rule must never disappear behind the ordinary rule budget.
+      if (!boundRule && content.split(/\r?\n/).length > ClaudeProjector.CLAUDE_DIALECT.maxRuleLines) continue;
       artifacts.push({
         kind: 'rule',
         canonical: canonicalRel,
-        relPath: `.claude/rules/${ruleFile}`,
+        relPath: boundRule ? skillBinding.rule.installed : `.claude/rules/${ruleFile}`,
         content: ClaudeProjector.renderRule(content, canonicalRel).content,
         managedMarker: true,
       });
@@ -1089,6 +1096,3 @@ export class ClaudeProjector {
   }
 
 }
-
-
-

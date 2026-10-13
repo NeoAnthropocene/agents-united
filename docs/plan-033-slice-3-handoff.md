@@ -1,0 +1,27 @@
+# New-session prompt: Plan 033 after slice 3
+
+Copy the following prompt into a new session. This handoff preserves the accepted scope; it does not authorize a merge, paid evaluation or implementation of an unseen next-slice design.
+
+---
+
+Resume Plan 033 in `NeoAnthropocene/agents-united`. Slice 3's Claude loading/availability prerequisites were explicitly approved in Codex chat `01a12fbf-d105-74a2-903d-2c2ec3538bba` (“Implement Plan 033 slice 3”) and implemented on `codex/plan-033-author-skill`. Find its PR with the explicit repository and that head branch; inspect its current state, head, CI and review before doing anything else. Do not restart the foundation or catalog slices.
+
+Start with `docs/session-start.md`'s goal statement and reading order. Read applicable AGENTS.md/CLAUDE.md and standing rules, PROJECT.md, CONTEXT.md, workflow/contribution guides, the latest Plan 033 amendments/log, `plans/033-slice-3-claude-loading-design.md`, ADRs 0045, 0046, 0048, 0050 and **0052**, and `docs/agent-factory-foundation.md`. ADR 0052 is the slice-3 decision originally numbered 0051 locally; #198 reserves 0051 for Plan 036. Check all open/closed PRs and ADR reservations before adding records.
+
+Expected existing worktree: `C:\Users\ozy\.codex\worktrees\ecb0\agents-united`. Verify the actual checkout, remote, status and branch; preserve all local changes, drafts and ignored evidence. Use Node >=24. Original slice-3 planned-at SHA is `06f54cfd8ea18115e374a10be3fbb063eee3ad15`; fetch again rather than assuming it is current.
+
+If the slice-3 PR is open, review its final diff and actual CI. Fix only scoped review/integration defects with meaningful tests and preserve unrelated upstream work. Never merge it. If it is merged, do not push to its old branch: fetch fresh `origin/dev`, create a new `codex/` branch, and record the then-current planned-at SHA before new implementation. Reuse a suitable managed worktree or preserve this checkout explicitly.
+
+Slice 3 delivers contributor-only `author-skill` and attribution with a Claude `general-purpose` task-skill fork, an on-demand tracked rule, required support-file bindings and a Claude-only workspace/native availability gate. The bounded draft helper applies already-authored changes, returns hashes/diffs and preserves repair scope; validator presence is not validator execution. The bundle remains under construction. Local deterministic checks and copied-workspace loading are distinct from actual Claude invocation and behavioral evaluation, which remain **unverified** unless new authorized host records establish them. Eval pair/control fixtures are prepared, not run.
+
+After slice-3 review/merge, prepare the concrete design/handoff for the next Claude factory realization slice: **realize an artifact for a host before host-update sync**, one scoped PR per capability. Reuse `.claude/skills/realize-for-host` and `host-update-sync` as maintainer entry points/prior art. Read target-host guides, cited snapshots, observations, profile and tool policy before proposing native files; the host running authoring and target host remain separate inputs.
+
+Name exact shared core/contract, native source/installed, loading/invocation and test paths; required skills/rules/hooks/support edges; capability-class grants; input/output and checked hand-back; local/upstream boundaries; enforcement kind; unavailable prerequisites; and meaningful expected red cases. The Subagent Contract keeps exactly `definition`, `workflows`, `skills`, `hooks`, with host mechanics in native bindings. Present a reviewable next-slice design before adding a new role or prerequisite outside the approved slice-3 scope. Shared-contract helper, Domain/Organization templates, evaluator and existing session-helper distribution remain accepted requirements with their own concrete delivery reviews; do not silently package them all into one change.
+
+Keep Option A's workspace source model and **Claude → Codex → Antigravity → Cline** order. Finish/review Claude separately before the next host; OpenCode is a future additional stage. Host-package release/version policy and broader legacy-agent retirement remain separate design/migration work. Never copy Claude mechanics into another target or describe an incomplete host stage as supported.
+
+Before code edits, announce the public test seam, exact paths and expected red failure. Before every commit inspect `git diff --cached`. Before every push check all PR states with `--repo NeoAnthropocene/agents-united`; never force-push or push to a merged PR branch. Run/read complete raw hostlib verification, typecheck/test outputs and actual exits; use the full addon lifecycle matrix for shared resolution/installation/ownership changes. Target `dev` and attach every created PR.
+
+Do not change root AGENTS.md, Plan 034's security hold/baseline, deferred Plan 035 work or Plan 036/#198. Preserve the image/brand assets and native guard behavior already merged. No paid host run, R3 rerun/resume, automatic publication or merge is authorized. Carry R3 forward: seven expectations seen, Defne completion unverified, five fixed-value brief violations; Claude Pro, extra usage off; aggregate $3.7228101, remaining $46.2771899; headless 0/16, interactive 2/16 conservatively. Plan 036's ledger remains separate.
+
+Finish with the current PR/review state, exact verification evidence, remaining limitations and the next bounded design/decision. Do not ask again for slice 3's first-skill choice or its already-approved loading/availability prerequisites.

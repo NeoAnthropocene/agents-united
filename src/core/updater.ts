@@ -275,6 +275,18 @@ export class UpdateEngine {
       };
     }
 
+    // Preflight the entire requested update before any legacy migration can remove files
+    // or write state. Reinstall uses exactly these sticky host/native choices.
+    if (!options.dryRun) {
+      for (const record of recordsToUpdate) {
+        if (!await fs.pathExists(path.join(record.targetDir, 'agents-united.json'))) continue;
+        await this.installer.install(record.name, {
+          scope: record.scope, method: record.method, hosts: [record.host],
+          targetDir: record.targetDir, fanout: options.fanout, dryRun: true,
+        });
+      }
+    }
+
     if (options.dryRun) {
       const dryProjections: ProjectionInfo[] = [];
       for (const record of recordsToUpdate) {
