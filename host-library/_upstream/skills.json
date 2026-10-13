@@ -63,6 +63,12 @@
       "recoveredAt": "2026-09-30",
       "skill": "architecture-design"
     },
+    "author-skill": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-12",
+      "skill": "author-skill"
+    },
     "azure-infrastructure-bicep": {
       "declaredLicence": "MIT",
       "provenance": "in-house",

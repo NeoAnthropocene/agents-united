@@ -18,7 +18,7 @@ describe('RegistryResolver', () => {
     expect(manifest.bundles['product-design']).toBeDefined();
   });
 
-  it('declares the empty contributor Domain Bundle shell as under construction', async () => {
+  it('declares the Claude workspace native contributor authoring toolkit as under construction', async () => {
     const bundle = await resolver.getBundle('agent-factory');
     expect(bundle).toMatchObject({
       name: 'agent-factory',
@@ -26,16 +26,24 @@ describe('RegistryResolver', () => {
       tier: 'domain',
       status: 'under-construction',
       agents: [],
-      skills: [],
+      skills: ['author-skill'],
       workflows: [],
-      rules: [],
+      rules: ['skill-attribution.md'],
+      hostAvailability: { claude: { lane: 'native', scopes: ['workspace'] } },
     });
     expect(bundle?.orchestrator).toBeUndefined();
     expect(bundle?.parentBundle).toBeUndefined();
   });
 
-  it('refuses resolving the unavailable empty contributor shell', async () => {
-    await expect(resolver.resolve('agent-factory')).rejects.toThrow('unavailable empty contributor shell');
+  it('resolves the explicit contributor toolkit without adding it to end-user inventories', async () => {
+    const authoring = await resolver.resolve('agent-factory');
+    expect(authoring.skills).toEqual(['author-skill']);
+    expect(authoring.rules).toContain('skill-attribution.md');
+    for (const identifier of ['full', 'domain:engineering', 'digital-agency']) {
+      const ordinary = await resolver.resolve(identifier);
+      expect(ordinary.skills).not.toContain('author-skill');
+      expect(ordinary.rules).not.toContain('skill-attribution.md');
+    }
   });
 
   it('should resolve software-engineering bundle assets', async () => {
@@ -345,7 +353,7 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
       expect(b.planningLoop?.sidekicks).toBeUndefined();
     }
 
-    // The contributor shell has no planning or runtime entry points.
+    // The contributor task toolkit has no end-user planning loop.
     const excluded = Object.values(manifest.bundles).filter((b) => b.planningLoop?.enabled !== true);
     expect(excluded.map(b => b.name).sort()).toEqual([
       'agent-factory',
@@ -523,12 +531,14 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
       expect(() => (r as any).validateBundles(good)).not.toThrow();
     });
 
-    it('confirms the real manifest declares no nonempty bundle-level rules yet (inert branch)', async () => {
+    it('declares attribution at bundle level only for the contributor toolkit', async () => {
       const manifest = await resolver.loadBundles();
       const declaring = Object.values(manifest.bundles).filter(
         (b) => Array.isArray(b.rules) && b.rules.length > 0
       );
-      expect(declaring).toEqual([]);
+      expect(declaring.map(bundle => ({ name: bundle.name, rules: bundle.rules }))).toEqual([
+        { name: 'agent-factory', rules: ['skill-attribution.md'] },
+      ]);
     });
   });
 });

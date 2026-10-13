@@ -13,6 +13,7 @@ const prompts = vi.hoisted(() => ({
 vi.mock('@clack/prompts', () => prompts);
 
 import { cli, canInstallEntireDomain } from '../src/cli.js';
+import { RegistryResolver } from '../src/core/registry.js';
 import type { BundleDefinition, BundlesManifest } from '../src/core/types.js';
 
 interface SelectPrompt {
@@ -28,6 +29,16 @@ let terminalLines: string[];
 async function runCommand(...args: string[]): Promise<void> {
   cli.parse([process.execPath, 'agents', ...args], { run: false });
   await cli.runMatchedCommand();
+}
+
+/** Isolated public registry fixture: the production factory is now populated. */
+async function useEmptyFactoryFixture(): Promise<void> {
+  const manifest = await fs.readJson(path.join(originalCwd, 'registry/bundles.json')) as BundlesManifest;
+  manifest.bundles['agent-factory'] = {
+    name: 'agent-factory', domain: 'contributor', tier: 'domain', status: 'under-construction',
+    description: 'Empty contributor fixture', agents: [], skills: [], workflows: [], rules: [],
+  };
+  vi.spyOn(RegistryResolver.prototype, 'loadBundles').mockResolvedValue(manifest);
 }
 
 describe('Contributor CLI wizards', () => {
@@ -76,6 +87,7 @@ describe('Contributor CLI wizards', () => {
   });
 
   it('list inspection marks the empty shell unavailable and offers no installation action', async () => {
+    await useEmptyFactoryFixture();
     prompts.select.mockResolvedValueOnce('contributor').mockResolvedValueOnce('agent-factory').mockResolvedValueOnce('exit');
 
     await runCommand('list');
@@ -96,6 +108,7 @@ describe('Contributor CLI wizards', () => {
   });
 
   it('add wizard identifies the empty shell and stops before the construction override prompt', async () => {
+    await useEmptyFactoryFixture();
     prompts.select.mockResolvedValueOnce('contributor').mockResolvedValueOnce('agent-factory');
 
     await runCommand('add', '--copy');
@@ -109,6 +122,39 @@ describe('Contributor CLI wizards', () => {
     expect(await fs.readdir(workspace)).toEqual([]);
   });
 
+  it('list inspection exposes the authoring skill and offers installation for the populated toolkit', async () => {
+    prompts.select.mockResolvedValueOnce('contributor').mockResolvedValueOnce('agent-factory').mockResolvedValueOnce('exit');
+    await runCommand('list');
+    const bundlePrompt = prompts.select.mock.calls[1]?.[0] as SelectPrompt;
+    const factory = bundlePrompt.options.find(option => option.value === 'agent-factory');
+    expect(factory?.label).toContain('[Under Construction]');
+    expect(factory?.label).not.toContain('[Unavailable]');
+    const actionPrompt = prompts.select.mock.calls[2]?.[0] as SelectPrompt;
+    expect(actionPrompt.options.map(option => option.value)).toContain('install');
+    expect(terminalLines.join('\n')).toContain('author-skill');
+    expect(await fs.readdir(workspace)).toEqual([]);
+  });
+
+  it('add wizard retains the construction confirmation for the populated authoring toolkit', async () => {
+    prompts.select.mockResolvedValueOnce('contributor').mockResolvedValueOnce('agent-factory').mockResolvedValueOnce('abort');
+    await runCommand('add', '--copy');
+    const bundlePrompt = prompts.select.mock.calls[1]?.[0] as SelectPrompt;
+    const factory = bundlePrompt.options.find(option => option.value === 'agent-factory');
+    expect(factory?.label).not.toContain('[Unavailable]');
+    const constructionPrompt = prompts.select.mock.calls[2]?.[0] as SelectPrompt;
+    expect(constructionPrompt.message).toContain('under construction');
+    expect(constructionPrompt.options.map(option => option.value)).toEqual(['abort', 'allow']);
+    const constructionNote = prompts.note.mock.calls.find(call => String(call[1]).includes('Under Construction Gate'))?.[0] as string;
+    expect(constructionNote).toContain('author-skill');
+    expect(constructionNote).toContain('Claude');
+    expect(constructionNote).toContain('--native');
+    expect(constructionNote).toContain('source checkout');
+    expect(constructionNote).toContain('Node.js 24');
+    expect(constructionNote).not.toMatch(/Firecrawl|Full-stack web|Dual Execution Modes/);
+    expect(prompts.outro.mock.calls.flat().join(' ')).toContain('Installation cancelled');
+    expect(await fs.readdir(workspace)).toEqual([]);
+  });
+
   it.each(['--tree', '--all'])('static catalog %s shows the contributor section without a department recommendation', async flag => {
     await runCommand('list', flag);
 
@@ -117,21 +163,22 @@ describe('Contributor CLI wizards', () => {
     expect(catalog).toMatch(/Author Agents United artifacts.*local drafts.*PR to dev/);
     const shellLine = terminalLines.find(line => line.includes('📦') && line.includes('agent-factory'));
     expect(shellLine).toContain('[Under Construction]');
-    expect(shellLine).toContain('[Unavailable]');
+    expect(shellLine).not.toContain('[Unavailable]');
     expect(shellLine).not.toContain('Essentials');
   });
 
-  it('keyword search marks the shell unavailable before offering installation', async () => {
+  it('keyword search exposes the populated contributor toolkit with its construction status', async () => {
     await runCommand('find', 'agent-factory');
 
     const match = terminalLines.find(line => line.includes('agent-factory'));
-    expect(match).toContain('[Unavailable]');
+    expect(match).not.toContain('[Unavailable]');
     expect(match).toContain('[Under Construction]');
     expect(terminalLines.join('\n')).toContain('Developers only: contribute to Agents United');
     expect(terminalLines.join('\n')).toContain('local drafts or a reviewed PR to dev');
   });
 
-  it.each(['add', 'list'])('%s search wizard labels unavailable matches and leaves the workspace empty', async command => {
+  it.each(['add', 'list'])('%s search wizard labels empty fixture matches unavailable and leaves the workspace empty', async command => {
+    await useEmptyFactoryFixture();
     prompts.select.mockResolvedValueOnce('__search__')
       .mockResolvedValueOnce(command === 'list' ? 'bundle:agent-factory' : 'agent-factory')
       .mockResolvedValueOnce('exit');
@@ -175,6 +222,7 @@ describe('Contributor CLI wizards', () => {
   });
 
   it('interactive find labels the shell unavailable and cannot create an empty installation', async () => {
+    await useEmptyFactoryFixture();
     prompts.select.mockResolvedValueOnce('agent-factory');
 
     await runCommand('find', 'agent-factory', '--interactive');

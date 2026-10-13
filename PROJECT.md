@@ -22,6 +22,9 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 ## 1. Executive Overview & Core Philosophy
 
 ### 1.1 The "One Library, Every Assistant" Architecture
+
+**Native-authoring clarification, 2026-10-12:** the projection/store description below remains the legacy installation model during migration. Under ADR 0025, `registry/core/` is the shared host-neutral Contract Floor and `registry/hosts/<host>/` contains the committed native implementations. Host-native artifacts evolve independently above that floor; authoring drafts stay outside managed install outputs. See [the confirmed working method](./docs/agent-factory-foundation.md#working-method--maintainer-clarification-2026-10-12) for source responsibilities, native rule/skill treatment, pending host-package versioning and legacy retirement conditions.
+
 AI assistants read different folder structures and frontmatter dialects:
 - **Google Antigravity**: Reads `./.agents/` natively in interactive sessions (CLI TUI panel + Antigravity 2.0 desktop). Headless CLI mode (`-p` / `agy agents`) reads only the user-global store (agy 1.1.15, reconfirmed 1.1.27) — see [ADR 0009](./docs/adr/0009-host-conformance-targets.md).
 - **Anthropic Claude Code**: Reads `./.claude/agents/` with `tools: [...]` frontmatter.
@@ -190,7 +193,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **194 modular skills & runbooks** (125 domain skills + 69 workflow playbooks) structured into **36 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles, 2 organization bundles and the empty `agent-factory` contributor shell). The README counts **34 end-user bundles**, excluding the shell and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. Counts derive from the current registry:
+The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **195 modular skills & runbooks** (126 domain skills + 69 workflow playbooks) structured into **36 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles, 2 organization bundles and the under-construction `agent-factory` contributor authoring toolkit). The README counts **34 end-user bundles**, excluding the contributor toolkit and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. Counts derive from the current registry:
 
 ```
 🌐 Agents United Registry Catalog Tree

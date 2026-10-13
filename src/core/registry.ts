@@ -4,6 +4,7 @@ import yaml from 'yaml';
 import { fileURLToPath } from 'node:url';
 import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults, PlanningLoopMode } from './types.js';
 import { isEmptyContributorBundle } from './types.js';
+import { validateBundleHostAvailability } from './bundle-host-availability.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -122,8 +123,8 @@ export class RegistryResolver {
       const workflows = new Set<string>(bundle.workflows || []);
       const rules = new Set<string>(RegistryResolver.BASELINE_RULES);
 
-      // Forward-compatible only: no bundle in registry/bundles.json declares
-      // `rules` today (verified: 0 occurrences); the type allows it (types.ts:369).
+      // Bundle rules complement agent-frontmatter bindings. The contributor factory
+      // declares its on-demand attribution rule at bundle level.
       (bundle.rules || []).forEach(r => rules.add(r));
 
       if (bundle.parentBundle) {
@@ -372,6 +373,10 @@ export class RegistryResolver {
     }
 
     for (const [name, bundle] of Object.entries(manifest.bundles)) {
+      validateBundleHostAvailability(bundle);
+      if (bundle.name === 'agent-factory' && !isEmptyContributorBundle(bundle) && bundle.hostAvailability === undefined) {
+        throw new Error('Registry validation error: populated agent-factory requires hostAvailability for its reviewed delivery.');
+      }
       if (bundle.domain?.toLowerCase() !== 'contributor') {
         const referencedBundle = (identifier: string): BundleDefinition | undefined => manifest.bundles[identifier]
           ?? bundles.find(candidate => candidate.aliases?.includes(identifier));

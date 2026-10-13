@@ -77,3 +77,11 @@
   - Migration: strangler per ADR 0021 decision 4 — the legacy projection lane keeps running until
     each host proves parity; `claude-projector.ts`, `cline-projector.ts`, `FEATURE_LEDGER` and
     `creation/claude.ts` retire per host at parity.
+
+## Clarification — accepted by the maintainer, 2026-10-12
+
+The [factory working method](../agent-factory-foundation.md#working-method--maintainer-clarification-2026-10-12) records the confirmed interpretation: the Contract Floor is shared and host-neutral in `registry/core/`; `registry/hosts/<host>/` holds the native implementations. Host-specific tools, orchestration and extensions may evolve independently above that floor. Shared policy and portable skills remain reusable, with native activation/enforcement or skill variants where behavior requires them.
+
+The host executing authoring and the target host are separate inputs. Realizations are authored from the target's reviewed inputs and checked/reviewed before deterministic installation. Delivering `agent-factory` on all hosts does not retire the legacy `registry/agents/` tree: the remaining library migration, parity and code dependencies must be resolved first.
+
+Native package revisions and host runtime baselines are different facts. Independent host-package versioning is an agreed design direction, but its concrete release/compatibility policy remains unimplemented; current host profile versions are not native package release versions. This clarification neither restores the retired Creation Engine nor expands Plan 033's accepted host sequence or implementation scope.

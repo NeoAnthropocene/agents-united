@@ -57,12 +57,12 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(stdout).toContain('universal-skills');
   });
 
-  it('keeps the contributor shell discoverable through JSON list and domain search', () => {
+  it('keeps the populated contributor toolkit discoverable through JSON list and domain search', () => {
     const list = JSON.parse(execSync(`node "${cliPath}" list --json`, { encoding: 'utf8' })) as Array<{
       name: string; domain?: string; tier?: string; status?: string; agents?: string[]; skills?: string[];
     }>;
-    const shell = list.find(bundle => bundle.name === 'agent-factory');
-    expect(shell).toMatchObject({ domain: 'contributor', tier: 'domain', status: 'under-construction', agents: [], skills: [] });
+    const factory = list.find(bundle => bundle.name === 'agent-factory');
+    expect(factory).toMatchObject({ domain: 'contributor', tier: 'domain', status: 'under-construction', agents: [], skills: ['author-skill'] });
     const search = JSON.parse(execSync(`node "${cliPath}" find --category contributor --type bundle --json`, { encoding: 'utf8' })) as {
       bundles: Array<{ name: string }>;
     };
@@ -70,21 +70,52 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
   });
 
   it.each([
-    { label: 'without overrides', flags: [] },
-    { label: 'with the construction override', flags: ['--allow-under-construction'] },
-    { label: 'with force', flags: ['--force'] },
-    { label: 'with both overrides', flags: ['--allow-under-construction', '--force'] },
-    { label: 'in dry-run mode', flags: ['--dry-run', '--allow-under-construction', '--force'] },
-  ])('refuses the empty contributor shell $label before writing any files', async ({ flags }) => {
+    { label: 'default Antigravity target with the construction override', flags: ['--allow-under-construction'] },
+    { label: 'default target with force', flags: ['--force'] },
+    { label: 'default target with both overrides', flags: ['--allow-under-construction', '--force'] },
+    { label: 'default target in dry-run mode', flags: ['--dry-run', '--allow-under-construction', '--force'] },
+    { label: 'Claude without the native lane', flags: ['-t', 'claude', '--allow-under-construction', '--force'] },
+    { label: 'Claude global scope', flags: ['-t', 'claude', '--native', '--global', '--allow-under-construction', '--force'] },
+    { label: 'Cline native target', flags: ['-t', 'cline', '--native', '--allow-under-construction', '--force'] },
+    { label: 'mixed Claude and Cline targets', flags: ['-t', 'claude,cline', '--native', '--allow-under-construction', '--force'] },
+  ])('refuses factory installation for $label before writing any files', async ({ flags }) => {
     const result = spawnSync(process.execPath, [cliPath, 'add', 'agent-factory', '-y', '--copy', ...flags], {
       cwd: e2eDir, encoding: 'utf8',
     });
-    expect(result.status).toBe(1);
+    expect(result.status, result.stdout + result.stderr).toBe(1);
     const output = result.stdout + result.stderr;
-    expect(output).toMatch(/unavailable.*empty contributor shell/i);
-    expect(output).toContain('--allow-under-construction and --force cannot make it installable');
+    expect(output).toMatch(/unavailable|requires.*native|availability/i);
     expect(output).not.toContain('successfully');
     expect(await fs.readdir(e2eDir)).toEqual([]);
+  });
+
+  it('keeps the factory construction gate before native Claude installation', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'agent-factory', '-t', 'claude', '--native', '-y', '--copy'], {
+      cwd: e2eDir, encoding: 'utf8',
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout + result.stderr).toContain('currently under construction');
+    expect(await fs.readdir(e2eDir)).toEqual([]);
+  });
+
+  it('installs the factory in a fresh Claude workspace with its native loading and attribution files', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'agent-factory', '-t', 'claude', '--native', '--allow-under-construction', '-y', '--copy'], {
+      cwd: e2eDir, encoding: 'utf8',
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const entry = await fs.readFile(path.join(e2eDir, '.claude/skills/author-skill/SKILL.md'), 'utf8');
+    expect(entry).toMatch(/context: fork/);
+    expect(entry).toMatch(/agent: general-purpose/);
+    expect(entry).toMatch(/background: false/);
+    const rule = '.claude/skills/author-skill/references/skill-attribution.md';
+    expect(await fs.pathExists(path.join(e2eDir, rule))).toBe(true);
+    expect(await fs.pathExists(path.join(e2eDir, '.claude/rules/skill-attribution.md'))).toBe(false);
+    expect(await fs.pathExists(path.join(e2eDir, '.claude/skills/author-skill/evals'))).toBe(false);
+    expect(await fs.pathExists(path.join(e2eDir, '.agents'))).toBe(false);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toEqual(['agent-factory']);
+    expect(lock.projections[rule]).toMatchObject({ host: 'claude', kind: 'rule', canonical: 'rules/skill-attribution.md', owners: ['agent-factory'] });
   });
 
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {

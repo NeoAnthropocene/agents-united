@@ -306,6 +306,10 @@ _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanat
 
 ### Agent-factory foundation terms (ADR 0045)
 
+**Bundle Host Availability** (`hostAvailability`, Plan 033 slice 3): an optional explicit Bundle delivery allowlist by Host, native lane and workspace/global Scope. Absence preserves existing delivery behavior; a present allowlist rejects omitted hosts before writes, independently of live behavioral evidence. Installation aliases `agents`/`gemini` resolve to Antigravity; an implicit state store is not another requested Host.
+
+**Native Skill Binding** (Plan 033 slice 3): a Host-owned loading record naming the native entry, loading role, invocation/surface and required rule/support-file edges. The Claude factory binding selects the built-in `general-purpose` task role and places attribution under the skill for an explicit read. It is a prose consultation contract, not an enforced script guard.
+
 - **Subagent Contract**: a Semantic Core stem (`definition`) and explicit permitted `workflows`, `skills`, `hooks` identifier lists. It carries no host mechanics and grants no runtime permissions.
 - **Host Authoring Input**: host, surface, observed version, artifact types, workspace/output root, create/update operation, local/upstream intent and evidence budget supplied before authoring.
 - **Affordance Binding**: the host realization's record of a permitted identifier's native source, loading/invocation, prerequisites, enforcement, declared delta and evidence. The shared core does not hold this record.
@@ -322,8 +326,9 @@ _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanat
   boundaries, structured output contract, safety rules, and tool-neutral behavioural invariants.
   Authored in `registry/core/**`, shipped in the package, edited via PR only. Contains zero host
   tool names, command names, or host mechanics.
-- **Contract Floor**: the subset of the Core (identity, scope boundaries, output contract, safety)
+- **Contract Floor**: the subset of the Core (identity, mission, scope boundaries, output contract, safety)
   every host realization must honor verbatim. Host-native specialization may never cross it.
+  _Clarified 2026-10-12_: the floor is shared and host-neutral; each host has its own native implementation above it.
 - **Realization Layer**: one host's native rendering of a core agent — invariant → tool bindings,
   host-native choreography, and declared deltas. Six realizations may read differently; they may
   not *mean* differently below the floor. _Claude: the committed native file is the realization; `registry/realizations/` was retired (ADR 0037)._

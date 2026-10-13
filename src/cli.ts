@@ -42,6 +42,23 @@ function unavailableBundleBadge(bundle: BundleDefinition): string {
   return isEmptyContributorBundle(bundle) ? pc.yellow(' [Unavailable]') : '';
 }
 
+function underConstructionNotice(bundle: BundleDefinition): string {
+  const heading = `The bundle "${bundle.name}" is currently under active construction (status: under-construction).\n`;
+  if (bundle.name === 'agent-factory') {
+    return heading
+      + '`author-skill` creates or repairs one skill folder and prepares draft evidence.\n'
+      + 'First delivery: Claude Code CLI in a workspace with --native. Use:\n'
+      + 'agents add agent-factory -t claude --native --allow-under-construction --copy -y\n'
+      + 'Validation requires a reviewed source checkout and Node.js 24+. Local work ends with a draft; live invocation remains unverified.';
+  }
+  return heading
+    + 'Its orchestrators, workflows, and specialized skills are being authored and are not ready for production use.\n\n'
+    + 'Planned Capabilities:\n'
+    + '• Lead Orchestrator with Firecrawl & GitHub MCP tool calling\n'
+    + '• Full-stack web, design & SEO delivery workflows\n'
+    + '• Dual Execution Modes (Operational / Brainstorming)';
+}
+
 export function canInstallEntireDomain(domain: string, bundleCount: number): boolean {
   return bundleCount > 1 && !['organization', 'universal', 'contributor'].includes(domain.toLowerCase());
 }
@@ -762,12 +779,7 @@ cli
     if (targetBundleDef && targetBundleDef.status === 'under-construction') {
       if (isInteractive) {
         note(
-          `The bundle "${targetBundleDef.name}" is currently under active construction (status: under-construction).\n` +
-          `Its orchestrators, workflows, and specialized skills are being authored and are not ready for production use.\n\n` +
-          `Planned Capabilities:\n` +
-          `• Lead Orchestrator with Firecrawl & GitHub MCP tool calling\n` +
-          `• Full-stack web, design & SEO delivery workflows\n` +
-          `• Dual Execution Modes (Operational / Brainstorming)`,
+          underConstructionNotice(targetBundleDef),
           '🚧 Under Construction Gate'
         );
 
@@ -1814,12 +1826,7 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
     // 1. Under Construction Gate Evaluation
     if (bundle.status === 'under-construction') {
       note(
-        `The bundle "${bundle.name}" is currently under active construction (status: under-construction).\n` +
-        `Its orchestrators, workflows, and specialized skills are being authored and are not ready for production use.\n\n` +
-        `Planned Capabilities:\n` +
-        `• Lead Orchestrator with Firecrawl & GitHub MCP tool calling\n` +
-        `• Full-stack web, design & SEO delivery workflows\n` +
-        `• Dual Execution Modes (Operational / Brainstorming)`,
+        underConstructionNotice(bundle),
         '🚧 Under Construction Gate'
       );
 

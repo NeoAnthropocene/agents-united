@@ -105,6 +105,27 @@ export interface PlanningLoopConfig {
   sidekicks?: { max: number };
 }
 
+/** An explicit delivery allowlist; absence preserves existing bundle behavior. */
+export type BundleHostAvailability = Partial<Record<'antigravity' | 'claude' | 'cline' | 'codex' | 'cursor' | 'opencode', {
+  lane: 'native';
+  scopes: Array<'workspace' | 'global'>;
+}>>;
+
+/** Plan 033 slice 3: the reviewed built-in Claude task role and its required file edges. */
+export interface ClaudeSkillBinding {
+  version: 1;
+  bundle: string;
+  skill: string;
+  source: string;
+  installed: string;
+  loadingRole: { kind: 'built-in'; name: 'general-purpose'; context: 'fork'; background: false };
+  invocation: string;
+  surface: { host: 'claude'; product: 'Claude Code CLI'; scope: 'workspace'; lane: 'native' };
+  requiredSupport: string[];
+  rule: { source: string; installed: string; consultation: 'before-source-or-draft' };
+  reviewedInputs: string[];
+}
+
 export interface BundleDefinition {
   name: string;
   version?: string;
@@ -133,12 +154,12 @@ export interface BundleDefinition {
    * team-mode copy of a role it shares with a Tier-1 bundle. Absent for every other bundle; ignored when the lane is off.
    */
   nativeRoles?: Record<string, string>;
+  /** Plan 033: optional host/lane/scope delivery allowlist, checked before writes. */
+  hostAvailability?: BundleHostAvailability;
   /**
-   * Plan 015 §0/C6d — optional bundle-level rule bindings. Forward-compatible:
-   * no bundle in `registry/bundles.json` declares this today (agent frontmatter
-   * `rules:` is the single source of truth). Adding it here keeps
-   * `RegistryResolver.resolve()` ready for a future catalog-level declaration
-   * without another schema change.
+   * Optional bundle-level rule bindings, combined with agent frontmatter `rules:`.
+   * Plan 033 declares the contributor attribution rule here; its host binding
+   * controls on-demand placement independently of ownership.
    */
   rules?: string[];
 }
