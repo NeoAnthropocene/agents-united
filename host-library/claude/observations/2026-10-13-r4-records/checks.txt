@@ -1,0 +1,61 @@
+=== lead: Agent briefs (the fixed contract in every brief)
+09:09:56.053 ava      agency-growth-strategist           colour-token:yes testId:yes peers-listed:yes consultation-only:yes chars:1008
+09:10:59.285 ava      agency-growth-strategist           colour-token:yes testId:yes peers-listed:yes consultation-only:no chars:1702
+09:11:35.965 kaan     agency-conversion-specialist       colour-token:yes testId:yes peers-listed:yes consultation-only:no chars:1560
+09:11:40.065 jamileh  agency-creative-designer           colour-token:yes testId:NO  peers-listed:yes consultation-only:no chars:1591
+09:11:43.433 yavuz    agency-content-strategist          colour-token:NO  testId:yes peers-listed:yes consultation-only:no chars:1380
+09:12:30.648 deniz    agency-frontend-architect          colour-token:yes testId:yes peers-listed:yes consultation-only:no chars:1660
+09:12:34.616 selin    agency-seo-specialist              colour-token:NO  testId:yes peers-listed:yes consultation-only:no chars:1503
+09:12:38.351 jale     agency-campaign-specialist         colour-token:NO  testId:yes peers-listed:yes consultation-only:no chars:1525
+09:13:30.861 emre     agency-qa-automation-lead          colour-token:yes testId:yes peers-listed:yes consultation-only:no chars:1792
+09:13:35.524 defne    agency-compliance-grc-specialist   colour-token:NO  testId:NO  peers-listed:yes consultation-only:no chars:1788
+briefs with both values: 5 of 10
+
+=== lead: AskUserQuestion, its answer, and the owner of task 1
+ask 09:10:19.124  answered 09:10:40.535  task 1 owner set 09:10:51.306
+
+=== lead: Bash commands (first 160 chars)
+09:10:13.143 echo "teams=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS todo=$CLAUDE_CODE_ENABLE_TODO_TOOLS"; ls .claude/agents 2>/dev/null | head -20; ls .claude/.agents-united .age
+09:11:28.482 wc -l docs/pilot/strategy.md; cat docs/pilot/strategy.md
+09:13:14.526 cd docs/pilot && wc -l *; cat design-tokens.json
+09:14:17.879 cd /c/github/scratch-pilot/h10d-local-test/r4-fullteam && wc -l docs/pilot/* && node -e "JSON.parse(require('fs').readFileSync('docs/pilot/design-tokens.json','
+
+=== hook errors in any record (strings: "hook error", "Mode line first", "PreToolUse")
+06bd962d-3cad-4fa6-988f-2b0e3c0a85f8.jsonl     hook error:0 Mode line first:2 PreToolUse:2
+agent-aava-540caf3d662d29a3.jsonl              hook error:0 Mode line first:0 PreToolUse:2
+agent-aava-c16947af0052c53b.jsonl              hook error:0 Mode line first:0 PreToolUse:2
+agent-adefne-96004844fee145ee.jsonl            hook error:0 Mode line first:0 PreToolUse:2
+agent-adeniz-147959a32d2a8186.jsonl            hook error:0 Mode line first:0 PreToolUse:2
+agent-aemre-bb69a16926b18745.jsonl             hook error:0 Mode line first:0 PreToolUse:2
+agent-ajale-c1671728cbc03258.jsonl             hook error:0 Mode line first:0 PreToolUse:2
+agent-ajamileh-54334a9c4b00d98c.jsonl          hook error:0 Mode line first:0 PreToolUse:2
+agent-akaan-9bafa25deeb8c9bf.jsonl             hook error:0 Mode line first:0 PreToolUse:2
+agent-aselin-7f94a35ed473439a.jsonl            hook error:0 Mode line first:0 PreToolUse:2
+agent-ayavuz-e37c56b83618a4ac.jsonl            hook error:0 Mode line first:0 PreToolUse:2
+
+=== teammates: first and last record, first Write/Edit, shutdown responses sent (tool_use SendMessage with a shutdown_response)
+agent-aava-540caf3d662d29a3.jsonl    ava                                first 09:09:56.632 last 09:10:15.779 firstWrite  responses: 09:10:15.779 approve:true object:true
+agent-aava-c16947af0052c53b.jsonl    ava                                first 09:10:59.961 last 09:11:32.461 firstWrite 09:11:15.080 responses: 09:11:32.461 approve:true object:true
+agent-adefne-96004844fee145ee.json   defne                              first 09:13:36.195 last 09:14:20.953 firstWrite 09:14:01.188 responses: 09:14:20.953 approve:true object:true
+agent-adeniz-147959a32d2a8186.json   deniz                              first 09:12:39.257 last 09:13:17.422 firstWrite 09:12:52.868 responses: 09:13:17.422 approve:true object:true
+agent-aemre-bb69a16926b18745.jsonl   emre                               first 09:13:36.106 last 09:14:14.480 firstWrite 09:13:51.472 responses: 09:14:14.480 approve:true object:true
+agent-ajale-c1671728cbc03258.jsonl   jale                               first 09:12:39.361 last 09:13:28.845 firstWrite 09:13:01.159 responses: 09:13:28.845 approve:true object:true
+agent-ajamileh-54334a9c4b00d98c.js   jamileh                            first 09:11:44.431 last 09:12:47.930 firstWrite 09:12:05.702 responses: 09:12:47.930 approve:true object:true
+agent-akaan-9bafa25deeb8c9bf.jsonl   kaan                               first 09:11:44.377 last 09:12:21.626 firstWrite 09:12:02.182 responses: 09:12:21.626 approve:true object:true
+agent-aselin-7f94a35ed473439a.json   selin                              first 09:12:39.481 last 09:13:07.485 firstWrite 09:12:52.305 responses: 09:13:07.485 approve:true object:true
+agent-ayavuz-e37c56b83618a4ac.json   yavuz                              first 09:11:44.513 last 09:12:26.568 firstWrite 09:12:07.654 responses: 09:12:26.568 approve:true object:true
+
+=== lead: shutdown_approved / teammate_terminated received (by name)
+approved: ava@09:10:16.315, ava@09:11:32.930, kaan@09:12:22.119, yavuz@09:12:27.204, jamileh@09:12:48.333, selin@09:13:07.967, deniz@09:13:17.783, jale@09:13:29.377
+terminated: ava, ava, kaan, yavuz, jamileh, selin, deniz, jale
+
+=== files: contract tokens and lines
+HeroSection.tsx        lines: 35 color.cta.primary:no  hero-primary-cta:no 
+compliance-review.md   lines: 25 color.cta.primary:no  hero-primary-cta:no 
+content-plan.md        lines: 40 color.cta.primary:no  hero-primary-cta:yes
+design-tokens.json     lines: 23 color.cta.primary:no  hero-primary-cta:no 
+hero.spec.ts           lines: 32 color.cta.primary:no  hero-primary-cta:yes
+hero.ts                lines: 27 color.cta.primary:yes hero-primary-cta:yes
+launch-kit.md          lines: 33 color.cta.primary:no  hero-primary-cta:yes
+seo-audit.md           lines: 37 color.cta.primary:no  hero-primary-cta:yes
+strategy.md            lines: 31 color.cta.primary:yes hero-primary-cta:yes
