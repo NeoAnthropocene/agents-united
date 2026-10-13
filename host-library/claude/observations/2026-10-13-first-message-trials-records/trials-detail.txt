@@ -1,0 +1,282 @@
+run                 session   gate  holds  line         before-1st-gated  line-accurate  searches returned (callable)   welcome words
+fm-base-p1-1        a61b7ed3  off   0      NEVER        NO                n/a            Context7|Firecrawl             none
+fm-base-p1-2        2f1b936c  on    2      message 3    NO                yes            Context7|Firecrawl             none
+fm-base-p1-3        fb48f12d  on    2      message 3    NO                yes            Context7|Firecrawl             none
+fm-base-p2-1        2d1586e0  on    0      message 2    n/a               yes            Context7|Firecrawl             msg 2: "I'm Chris"
+fm-a-p1-1           9c695c33  off   0      message 2    yes               yes            Context7|Firecrawl             none
+fm-a-p1-2           fddb9041  on    0      message 2    yes               yes            Context7|Firecrawl             none
+fm-a-p1-3           2a1d0bb3  on    1      message 3    same message      yes            Context7|Firecrawl             none
+fm-a-p1-4           254ec5e8  on    0      message 2    yes               yes            Context7|Firecrawl             none
+fm-a-p2-1           1d95b1ab  on    0      message 2    n/a               yes            Context7|Firecrawl             msg 2: "I'm Chris"
+fm-b-p1-1           9ccc360b  off   0      message 1    yes               yes            Firecrawl (unsearched: Context7)   none
+fm-b-p1-2           e61838a8  on    0      message 1    yes               yes            Context7|Firecrawl             none
+fm-b-p1-3           59c03ac7  on    0      message 1    yes               yes            Context7|Firecrawl             none
+fm-b-p1-4           ad543e4b  on    0      message 1    yes               yes            Context7|Firecrawl             none
+fm-b-p2-1           7137736d  on    0      message 1    n/a               yes            Context7|Firecrawl             msg 2: "I'm Chris"
+fm-c-p1-1           471ee702  on    0      message 1    yes               yes            Context7|Firecrawl             none
+fm-c-p1-2           c95d6274  on    0      message 1    yes               NO             Context7|Firecrawl             none
+fm-c-p1-3           c35e5690  on    0      message 1    yes               NO             Context7|Firecrawl             none
+fm-c-p2-1           add58220  on    0      message 1    n/a               yes            Context7|Firecrawl             none
+fm-c-p2-2           7e266493  on    0      message 1    n/a               NO             Context7|Firecrawl             none
+fm-d-p1-1           8d14663b  on    0      message 1    yes               yes            Context7|Firecrawl             none
+fm-d-p1-2           fada1861  on    0      message 1    yes               NO             Context7|Firecrawl             none
+fm-d-p1-3           c42d23a2  on    0      message 1    yes               yes            Context7                       none
+fm-d-p2-1           8f585e62  on    0      message 1    n/a               yes            Context7|Firecrawl             none
+fm-d-p2-2           4644ce34  on    0      message 1    n/a               yes            Context7|Firecrawl             none
+fm-e-p1-1           d8c906f3  on    0      message 2    yes               yes            Context7                       none
+fm-e-p1-2           2cad9d4f  on    0      message 2    yes               yes            Context7|Firecrawl             none
+fm-e-p1-3           6f80570e  on    0      message 2    yes               yes            Context7|Firecrawl             none
+fm-e-p1-4           582de574  on    0      message 2    yes               yes            Context7|Firecrawl             none
+fm-e-p2-1           feb801c3  on    0      message 2    n/a               yes            Context7|Firecrawl             none
+
+runs: 29; gate on: 26; gate off: 3
+line first from the start list (variants b, c, d): 15 runs, line in message 1 in 15, line NOT in agreement with the lead's own searches in 4
+line after the searches (variant e): 5 runs, line in message 2 in 5, in agreement with the lead's own searches in 5
+variant base: gated runs 3 (gate on 2), holds with the gate on 2,2, line in an EARLIER message than the first gated call in 0, in the same message in 0
+variant a: gated runs 4 (gate on 3), holds with the gate on 0,1,0, line in an EARLIER message than the first gated call in 3, in the same message in 1
+variant b: gated runs 4 (gate on 3), holds with the gate on 0,0,0, line in an EARLIER message than the first gated call in 4, in the same message in 0
+variant c: gated runs 3 (gate on 3), holds with the gate on 0,0,0, line in an EARLIER message than the first gated call in 3, in the same message in 0
+variant d: gated runs 3 (gate on 3), holds with the gate on 0,0,0, line in an EARLIER message than the first gated call in 3, in the same message in 0
+variant e: gated runs 4 (gate on 4), holds with the gate on 0,0,0,0, line in an EARLIER message than the first gated call in 4, in the same message in 0
+
+=========== detail
+
+--- fm-base-p1-1 (a61b7ed3)
+msg  1 +  4.9s  (no text)  ToolSearch x8 
+msg  2 +  9.8s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, the opening of a JSDoc-style block comment.
+msg  3 + 11.6s  text "The first line of `docs/pilot/hero.ts` is `/**`, the opening of a JSDoc-style "  
+SUMMARY holds=0 in 0 message(s) | line: NEVER | first gated call: message 2 at +9.8s | line written before the first gated call: NO | line accurate: n/a (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-base-p1-2 (2f1b936c)
+msg  1 +  5.2s  (no text)  ToolSearch x8 
+msg  2 +  9.8s  (no text)  Read:HOLD
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  3 + 11.6s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  Read:HOLD
+msg  4 + 13.6s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment that describes the PetPal hero copy for the scratch exercise.
+msg  5 + 14.9s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment tha"  
+SUMMARY holds=2 in 2 message(s) | line: message 3 at +11.6s | first gated call: message 2 at +9.8s | line written before the first gated call: NO | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-base-p1-3 (fb48f12d)
+msg  1 +  5.1s  (no text)  ToolSearch x8 
+msg  2 + 10.3s  (no text)  Read:HOLD
+      | Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  3 + 12.6s  LINE "Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Pla"  Read:HOLD
+msg  4 + 14.9s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment.
+msg  5 + 16.4s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment."  
+SUMMARY holds=2 in 2 message(s) | line: message 3 at +12.6s | first gated call: message 2 at +10.3s | line written before the first gated call: NO | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-base-p2-1 (2d1586e0)
+msg  1 +  4.2s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch. Hi, I'm Chris, lead orchestrator of the AstrolabsAI digital agency. My team is: - Ava (growth strategy) - Kaan (conversion copy) - Jamileh (creative design) - Yavuz (content) - Jale (campaigns) - Selin (SEO) - Deniz (frontend) - Emre (QA automation) - Defne (compliance) What campaign or client brief would you like to start with? Give me the goal, the audience and any deadline, and I'll consult the team and put a delegation map in front of you before any work begins.
+msg  2 +  9.2s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +9.2s | first gated call: none | line written before the first gated call: n/a | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: msg 2: "I'm Chris"
+
+--- fm-a-p1-1 (9c695c33)
+msg  1 +  4.2s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  2 +  8.7s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+msg  3 + 10.6s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment describing the PetPal hero copy for the plan 036 scratch exercise.
+msg  4 + 11.9s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment d"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +8.7s | first gated call: message 3 at +10.6s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-a-p1-2 (fddb9041)
+msg  1 +  5.2s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  2 +  9.4s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+      | Trivial one-line read: do it directly.
+msg  3 + 11.1s  text "Trivial one-line read: do it directly."  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment.
+msg  4 + 12.8s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment."  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +9.4s | first gated call: message 3 at +11.1s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-a-p1-3 (2a1d0bb3)
+msg  1 +  4.0s  (no text)  ToolSearch x8 
+msg  2 +  7.8s  (no text)  ToolSearch x1 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  3 +  9.9s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  Read:HOLD
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  4 + 11.7s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment.
+msg  5 + 13.3s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment."  
+SUMMARY holds=1 in 1 message(s) | line: message 3 at +9.9s | first gated call: message 3 at +9.9s | line written before the first gated call: same message | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-a-p1-4 (254ec5e8)
+msg  1 +  4.8s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  2 + 10.0s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+msg  3 + 12.2s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment that begins "PetPal hero copy for the scratch exercise of plan 036 (H10)."
+msg  4 + 13.9s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment tha"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +10.0s | first gated call: message 3 at +12.2s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-a-p2-1 (1d95b1ab)
+msg  1 +  4.1s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch. Hi, I'm Chris, the lead for this digital agency team. Tell me what you want to achieve. A client brief, a campaign, a funnel to fix or a site to audit all work as a starting point. I'll plan it with you and confirm the plan before any specialist starts work.
+msg  2 +  8.6s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +8.6s | first gated call: none | line written before the first gated call: n/a | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: msg 2: "I'm Chris"
+
+--- fm-b-p1-1 (9ccc360b)
+      | Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  6.0s  LINE "Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Pla"  ToolSearch x6 
+msg  2 + 10.2s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment.
+msg  3 + 11.5s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment."  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +6.0s | first gated call: message 2 at +10.2s | line written before the first gated call: yes | line accurate: yes (its searches returned: Firecrawl; never searched for: Context7) | welcome words: none
+
+--- fm-b-p1-2 (e61838a8)
+      | Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  5.5s  LINE "Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Pla"  ToolSearch x3 
+msg  2 +  9.0s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, the opening of a doc comment. The comment starts on line 2 with "PetPal hero copy for the scratch exercise of plan 036 (H10)."
+msg  3 + 10.5s  text "The first line of `docs/pilot/hero.ts` is `/**`, the opening of a doc comment."  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +5.5s | first gated call: message 2 at +9.0s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-b-p1-3 (59c03ac7)
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  5.2s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x9 
+msg  2 + 10.1s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment.
+msg  3 + 11.3s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment."  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +5.2s | first gated call: message 2 at +10.1s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-b-p1-4 (ad543e4b)
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  5.9s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x9 
+msg  2 + 10.8s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment about PetPal hero copy for the scratch exercise.
+msg  3 + 12.1s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment abo"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +5.9s | first gated call: message 2 at +10.8s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-b-p2-1 (7137736d)
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  5.2s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x9 
+      | Hi! I'm Chris, the lead for your digital agency team. The searches confirmed the mode line: Context7 and Firecrawl are connected, and so is Stitch as an extra. GitHub, Playwright, Chrome DevTools and Figma are not connected. I couldn't find MarkItDown either. What would you like to work on? A short brief is enough to start. It helps to know: - **Goal:** what you want to achieve (signups, sales, launch, traffic). - **Audience and offer:** who it's for and what you're selling. - **Existing assets:** a site, deck or brand guide I should look at. I'll then consult a specialist and bring you a delegation map to approve. I won't create or change any files until you accept it.
+msg  2 + 11.6s  text "Hi! I'm Chris, the lead for your digital agency team. The searches confirmed t"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +5.2s | first gated call: none | line written before the first gated call: n/a | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: msg 2: "I'm Chris"
+
+--- fm-c-p1-1 (471ee702)
+      | Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  5.3s  LINE "Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Pla"  ToolSearch x8 
+msg  2 +  9.8s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment.
+msg  3 + 11.1s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment."  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +5.3s | first gated call: message 2 at +9.8s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-c-p1-2 (c95d6274)
+      | Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  6.9s  LINE "Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Pla"  ToolSearch x8 
+      | Correction: Firecrawl turned out to be callable, so the mode line should have listed it as Callable. That leaves four integrations missing: GitHub, Playwright, Chrome DevTools and Figma.
+msg  2 + 14.2s  text "Correction: Firecrawl turned out to be callable, so the mode line should have "  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment about the PetPal hero copy for the scratch exercise of plan 036 (H10).
+msg  3 + 18.0s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment abo"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +6.9s | first gated call: message 2 at +14.2s | line written before the first gated call: yes | line accurate: NO (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-c-p1-3 (c35e5690)
+      | Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  4.4s  LINE "Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Pla"  ToolSearch x8 
+      | Correction to my mode line: Firecrawl and Context7 are both callable, so Firecrawl isn't missing. I'll read the file now.
+msg  2 + 10.4s  text "Correction to my mode line: Firecrawl and Context7 are both callable, so Firec"  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a comment block that begins "PetPal hero copy for the scratch exercise of plan 036 (H10)."
+msg  3 + 12.2s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a comment block t"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +4.4s | first gated call: message 2 at +10.4s | line written before the first gated call: yes | line accurate: NO (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-c-p2-1 (add58220)
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  4.3s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x8 
+      | Hi! What would you like to work on? A campaign, a landing page or funnel audit, SEO or content, or something else?
+msg  2 +  8.5s  text "Hi! What would you like to work on? A campaign, a landing page or funnel audit"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +4.3s | first gated call: none | line written before the first gated call: n/a | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-c-p2-2 (7e266493)
+      | Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  4.3s  LINE "Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Pla"  ToolSearch x8 
+      | Correction: Firecrawl is callable after all, so the mode is still Limited Operational with Callable: Context7, Firecrawl and Missing: GitHub, Playwright, Chrome DevTools, Figma. What do you want to work on?
+msg  2 + 10.2s  text "Correction: Firecrawl is callable after all, so the mode is still Limited Oper"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +4.3s | first gated call: none | line written before the first gated call: n/a | line accurate: NO (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-d-p1-1 (8d14663b)
+      | Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  6.2s  LINE "Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Pla"  ToolSearch x8 
+msg  2 + 10.4s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment.
+msg  3 + 11.7s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a block comment."  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +6.2s | first gated call: message 2 at +10.4s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-d-p1-2 (fada1861)
+      | Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  5.9s  LINE "Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Pla"  ToolSearch x8 
+      | Correction to the mode line: Firecrawl connected after I wrote it, so it is callable and the missing list is GitHub, Playwright, Chrome DevTools and Figma.
+msg  2 + 12.5s  text "Correction to the mode line: Firecrawl connected after I wrote it, so it is ca"  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment. That comment begins "PetPal hero copy for the scratch exercise of plan 036 (H10)."
+msg  3 + 14.3s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment. Th"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +5.9s | first gated call: message 2 at +12.5s | line written before the first gated call: yes | line accurate: NO (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-d-p1-3 (c42d23a2)
+      | Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  6.8s  LINE "Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Pla"  ToolSearch x8 
+msg  2 + 11.3s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment titled "PetPal hero copy for the scratch exercise of plan 036 (H10)."
+msg  3 + 14.1s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment tit"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +6.8s | first gated call: message 2 at +11.3s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7; never searched for: none) | welcome words: none
+
+--- fm-d-p2-1 (8f585e62)
+      | Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  5.3s  LINE "Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Pla"  ToolSearch x8 
+      | Hi! What would you like to work on? Tell me the client or campaign, or the goal, such as a launch, a funnel fix, SEO or an ad creative set. I'll plan it with you before anything gets built.
+msg  2 +  9.6s  text "Hi! What would you like to work on? Tell me the client or campaign, or the goa"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +5.3s | first gated call: none | line written before the first gated call: n/a | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-d-p2-2 (4644ce34)
+      | Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  1 +  4.4s  LINE "Mode: Limited Operational. Callable: Firecrawl, Context7. Missing: GitHub, Pla"  ToolSearch x8 
+      | Hi! What would you like to work on?
+msg  2 +  8.7s  text "Hi! What would you like to work on?"  
+SUMMARY holds=0 in 0 message(s) | line: message 1 at +4.4s | first gated call: none | line written before the first gated call: n/a | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-e-p1-1 (d8c906f3)
+msg  1 +  4.3s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  2 +  8.9s  LINE "Mode: Limited Operational. Callable: Context7. Missing: GitHub, Firecrawl, Pla"  ToolSearch x1 
+msg  3 + 11.0s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment about the PetPal hero copy for the scratch exercise.
+msg  4 + 12.5s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment abo"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +8.9s | first gated call: message 3 at +11.0s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7; never searched for: none) | welcome words: none
+
+--- fm-e-p1-2 (2cad9d4f)
+msg  1 +  4.3s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  2 + 10.6s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+msg  3 + 13.5s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, the opening of a doc comment that begins describing the file as PetPal hero copy for the scratch exercise of plan 036.
+msg  4 + 15.1s  text "The first line of `docs/pilot/hero.ts` is `/**`, the opening of a doc comment "  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +10.6s | first gated call: message 3 at +13.5s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-e-p1-3 (6f80570e)
+msg  1 +  4.6s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  2 +  9.6s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+msg  3 + 11.9s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment about the fictional PetPal hero copy for the scratch exercise of plan 036 (H10).
+msg  4 + 13.5s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment abo"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +9.6s | first gated call: message 3 at +11.9s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-e-p1-4 (582de574)
+msg  1 +  4.3s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  2 +  9.0s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+msg  3 + 11.0s  (no text)  Read:PASS
+      | The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment about PetPal hero copy for the scratch exercise.
+msg  4 + 12.2s  text "The first line of `docs/pilot/hero.ts` is `/**`, which opens a doc comment abo"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +9.0s | first gated call: message 3 at +11.0s | line written before the first gated call: yes | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none
+
+--- fm-e-p2-1 (feb801c3)
+msg  1 +  3.9s  (no text)  ToolSearch x8 
+      | Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Playwright, Chrome DevTools, Figma. Extras: Stitch.
+msg  2 +  8.6s  LINE "Mode: Limited Operational. Callable: Context7, Firecrawl. Missing: GitHub, Pla"  ToolSearch x1 
+      | Hi. What would you like to work on?
+msg  3 + 10.1s  text "Hi. What would you like to work on?"  
+SUMMARY holds=0 in 0 message(s) | line: message 2 at +8.6s | first gated call: none | line written before the first gated call: n/a | line accurate: yes (its searches returned: Context7|Firecrawl; never searched for: none) | welcome words: none

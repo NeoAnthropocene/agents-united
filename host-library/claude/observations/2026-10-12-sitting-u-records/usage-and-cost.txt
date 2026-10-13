@@ -1,0 +1,11 @@
+The session record of Sitting U, H10m (cbb4adf8-346d-44d2-943b-39033b25a50f), its last cost-state entry:
+
+totalCostUSD 0.5428427000000001
+totalAPIDuration 48758 ms
+totalDuration 124886 ms (first to last record)
+modelUsage:
+  claude-haiku-5-5: input 2778, output 182, cache read 0, cache write 0, cost 0.0004 USD
+  claude-sonnet-5-5: input 34, output 3950, cache read 788909, cache write 121276, cost 0.5425 USD
+
+The maintainer did not read the cost at the end of the session (they said so on 2026-10-13: not interested in cost calculations any more); the figure is the record's own.
+The record does not say whether the figure includes the teammate. No image was made, so there is no Google charge.
