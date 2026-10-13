@@ -13,7 +13,9 @@ import type { ClaudeCapabilityReport } from '../src/core/types.js';
  * The launcher knows no bundle: the sentence names the section, and a definition without that section has nothing to follow.
  */
 
-const SENTENCE = 'If your coordinator definition has a section named "The first message", follow it in your first message, before the introduction and before anything else.';
+// Changed on 2026-10-13 (ADR 0053): "before the introduction" is gone with the introduction. The kickoff used to END with "Please introduce your coordinator role to the user and ask for their first task."
+// (live test 1, below); it now asks for the first task and nothing else, and the sentence below still sends the lead to its first-message section.
+const SENTENCE = 'If your coordinator definition has a section named "The first message", follow it in your first message, before anything else.';
 
 describe('Plan 035 N2 slice (b): the kickoff prompt points the lead at its first-message rule', () => {
   const workspace = path.resolve(process.cwd(), 'scratch/test-claude-launcher-first-message');
@@ -37,11 +39,13 @@ describe('Plan 035 N2 slice (b): the kickoff prompt points the lead at its first
       ...options,
     });
 
-  it('carries the sentence once, before the request to introduce the role', () => {
+  it('carries the sentence once, before the request for the first task, and asks for no introduction of the role', () => {
     const prompt = plan().bootstrapPrompt;
 
     expect(prompt.split(SENTENCE)).toHaveLength(2);
-    expect(prompt.indexOf(SENTENCE)).toBeLessThan(prompt.indexOf('Please introduce your coordinator role to the user and ask for their first task.'));
+    expect(prompt.indexOf(SENTENCE)).toBeLessThan(prompt.indexOf('Please ask the user for their first task.'));
+    expect(prompt).not.toMatch(/introduce/i);
+    expect(prompt).not.toMatch(/welcome|greet/i);
   });
 
   it('carries it before a task the user gave, too', () => {
