@@ -132,6 +132,22 @@ describe('the opening of a Tier-2 orchestrator is its Operation Mode information
       expect(read('docs/adr/0051-the-lead-writes-its-mode-line-before-its-first-gated-call.md')).toMatch(/ADR 0053/);
     });
 
+    // The cap was 10 s in the first version and the maintainer chose 8 s on 2026-10-13: every place that names it must say what the hook's default is.
+    it('names the cap of the wait that the hook has, in the ADR, in the pointer of ADR 0044 and in the failure line of H11', () => {
+      const hook = read('registry/hosts/claude/hooks/agents-united-mode-line-gate.js');
+      const ms = Number(/AGENTS_UNITED_MODE_LINE_WAIT_MS \|\| (\d+)/.exec(hook)?.[1]);
+      const seconds = ms / 1000;
+      const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'][seconds];
+
+      expect(Number.isInteger(seconds) && words !== undefined).toBe(true);
+      expect(adr).toContain(`for up to ${seconds} s (`);
+      expect(adr).toContain(`The cap is ${seconds} s, the maintainer's choice on 2026-10-13`);
+      expect(adr).toContain(`within ${words} seconds`);
+      expect(adr).toContain(`up to ${words} seconds at each of its first two holds`);
+      expect(read('docs/adr/0044-release-the-mode-line-gate-only-on-recorded-evidence.md')).toContain(`for up to ${words} seconds (the maintainer's choice)`);
+      expect(read('docs/live-test-protocol.md')).toContain(`after a wait of ${words} seconds`);
+    });
+
     it('is in the domain dictionary: the Operation Mode information is the opening of a Tier-2 orchestrator', () => {
       expect(read('CONTEXT.md')).toMatch(/\*\*Operation Mode information\*\*/);
     });

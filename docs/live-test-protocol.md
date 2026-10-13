@@ -712,7 +712,7 @@ The lead's record (`scripts\gate-timeline.mjs`) and the hook's log: the lead's m
 G1: the line is the lead's second message, as a text block with no other words; no red hook error (the log shows `released`, by `line` or by `line-after-wait`, and no `held`); the consultation runs as in G1. Hello: the lead's words are the line and at most one short question about what the user wants to work on; none of "welcome", "I'm Chris", "your digital agency", the roster, a list of what it can do.
 
 ### H11 Fail
-Any red hook error; a greeting, a welcome, an introduction of the lead or a list of the team; the line missing, or written after the first gated call; the log showing `held` with `by: cap` after a wait of ten seconds (then the host does not save while the hook polls: keep the log and stop; `AGENTS_UNITED_MODE_LINE_WAIT_MS=0` returns the behaviour of ADR 0051).
+Any red hook error; a greeting, a welcome, an introduction of the lead or a list of the team; the line missing, or written after the first gated call; the log showing `held` with `by: cap` after a wait of eight seconds (then the host does not save while the hook polls, or a save takes longer than the cap: keep the log and stop; `AGENTS_UNITED_MODE_LINE_WAIT_MS=0` returns the behaviour of ADR 0051).
 
 ### H11 Cost
 Estimate 0.4 USD for G1 and less for Hello. Ceiling for Sitting V: 1.5 USD and 2 prompts (run: 0.7235 USD).

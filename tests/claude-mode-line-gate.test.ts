@@ -315,10 +315,13 @@ describe('the mode-line gate script', () => {
       expect(text).not.toContain('secret-id');
     });
 
-    it('has a default cap of 10 seconds: longer than the saves seen in Sittings P, T and U (the line was present 9 to 10 s after it was written) and short enough that a session does not feel it', () => {
+    // The maintainer chose 8 s on 2026-10-13 (ADR 0053), after being told that the saves seen so far were still missing at 2.7, 5.0, 5.7 and 6.0 s and present by 9 to 10 s: 8 s covers every reading of "still missing"
+    // and not a save between 8 and 10 s, which is held as before and shows in the log as `held` with `by: cap`.
+    it('has a default cap of 8 seconds: longer than the slowest save seen to be missing in Sittings P, T and U (6.0 s) and short enough that a session does not feel it', () => {
       const script = fs.readFileSync(SCRIPT, 'utf8');
 
-      expect(script).toMatch(/AGENTS_UNITED_MODE_LINE_WAIT_MS \|\| 10000/);
+      expect(script).toMatch(/AGENTS_UNITED_MODE_LINE_WAIT_MS \|\| 8000/);
+      expect(script).not.toMatch(/AGENTS_UNITED_MODE_LINE_WAIT_MS \|\| 10000/);
       expect(script).toMatch(/const POLL_MS = 150;/);
     });
 

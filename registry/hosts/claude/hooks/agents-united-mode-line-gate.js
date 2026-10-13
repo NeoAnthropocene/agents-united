@@ -9,7 +9,8 @@ const TEMPLATE = "Mode: <Fully Operational or Limited Operational>. Callable: <t
 const ROUND_MS = Number(process.env.AGENTS_UNITED_MODE_LINE_ROUND_MS || 800);
 // The host writes its transcript late (the line was missing from the file 2.7 to 6.0 s after it was written, and present by 9 to 10 s, in Sittings P, T and U), so a line the lead has just written may not be in the file yet.
 // Before it holds a call the hook looks at the file for up to this long, every POLL_MS. 0 turns the wait off. The variable is for the tests and for a maintainer who finds the wait in the way.
-const WAIT_MS = Number(process.env.AGENTS_UNITED_MODE_LINE_WAIT_MS || 10000);
+// The default, 8 s, is the maintainer's choice (ADR 0053): above the slowest save seen missing (6.0 s) and below the latest seen present (9 to 10 s).
+const WAIT_MS = Number(process.env.AGENTS_UNITED_MODE_LINE_WAIT_MS || 8000);
 const POLL_MS = 150;
 // The rounds of holds in which the hook waits (the first two); from the third round the message says what the file holds, and that count is then accurate.
 const WAIT_ROUNDS = 2;

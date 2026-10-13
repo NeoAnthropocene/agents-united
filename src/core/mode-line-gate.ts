@@ -21,9 +21,10 @@
  * The host's transcript lags, and the hook has no other source for the text of the message that is being written (the hooks guide says of `transcript_path` that it "may lag the in-memory conversation", and
  * `PreToolUse` input carries no text). In Sittings P, T and U a lead that did what the hold said (wrote the line as a text block and repeated the call) was held again because its line was not in the file yet:
  * the line was missing 2.7, 5.0, 5.7 and 6.0 s after it was written and present by 9 to 10 s, and the maintainer read three red errors, the second and third of them false. So before it holds a call the hook
- * looks at the FILE for up to ten seconds, every 150 ms (ADR 0053). It waits for the evidence and not for the clock: the line releases the call, and the end of the wait releases nothing. The cap exists for a
- * host that never saves the line; `AGENTS_UNITED_MODE_LINE_WAIT_MS=0` turns the wait off. Each decision is one line of a log beside the marker (names and counts, no text), so that the next sitting can say
- * how long the save took.
+ * looks at the FILE for up to eight seconds, every 150 ms (ADR 0053). It waits for the evidence and not for the clock: the line releases the call, and the end of the wait releases nothing. The cap exists for a
+ * host that never saves the line; `AGENTS_UNITED_MODE_LINE_WAIT_MS=0` turns the wait off. The eight seconds are the maintainer's choice (2026-10-13): above every reading of "still missing" (6.0 s at most) and
+ * below the latest readings of "present" (9 to 10 s), so a save that takes 8 to 10 s is held as before. Each decision is one line of a log beside the marker (names and counts, no text), so that the next sitting
+ * can say how long the save took.
  * * The script is written out as a file under `registry/hosts/claude/hooks/` by the regeneration of the native agents
  * (`UPDATE_NATIVE=1`), and a test ties the file to this constant. It has no inline form: the file is the gate, and a GLOBAL
  * install, which cannot name a project script, carries the lead without it.
@@ -41,7 +42,8 @@ const TEMPLATE = "Mode: <Fully Operational or Limited Operational>. Callable: <t
 const ROUND_MS = Number(process.env.AGENTS_UNITED_MODE_LINE_ROUND_MS || 800);
 // The host writes its transcript late (the line was missing from the file 2.7 to 6.0 s after it was written, and present by 9 to 10 s, in Sittings P, T and U), so a line the lead has just written may not be in the file yet.
 // Before it holds a call the hook looks at the file for up to this long, every POLL_MS. 0 turns the wait off. The variable is for the tests and for a maintainer who finds the wait in the way.
-const WAIT_MS = Number(process.env.AGENTS_UNITED_MODE_LINE_WAIT_MS || 10000);
+// The default, 8 s, is the maintainer's choice (ADR 0053): above the slowest save seen missing (6.0 s) and below the latest seen present (9 to 10 s).
+const WAIT_MS = Number(process.env.AGENTS_UNITED_MODE_LINE_WAIT_MS || 8000);
 const POLL_MS = 150;
 // The rounds of holds in which the hook waits (the first two); from the third round the message says what the file holds, and that count is then accurate.
 const WAIT_ROUNDS = 2;
