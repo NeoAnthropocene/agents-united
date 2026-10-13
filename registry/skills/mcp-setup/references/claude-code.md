@@ -90,9 +90,10 @@ claude mcp add --scope local figma --env FIGMA_ACCESS_TOKEN=<your-token> -- npx 
 
 An optional extra for the creative designer, never part of the required list: the doctor, the install gate and the Antigravity sync do not know it. It gives her one tool, `mcp__image-gen__generate_image`, which makes an image with the models of Google (Gemini, the default), OpenAI or BytePlus (Seedream), from the user's own keys, and saves it in the project. Offer it only when a plan holds photograph-like assets that nobody supplied and the user wants them generated. Once it is connected, the designer follows two skills: `image-creation` (whether to generate, the look, the record) and `image-generation` (the rules, the provider, the call).
 
-The server must be named `image-gen`: the role's grant names it, and any other name leaves her without the tool. The lead never runs it and never asks for a key in the chat. It asks which provider keys the user has, prints this command with the placeholders of those providers, and the user runs it in their own terminal. The base command is for Gemini, with a key from `aistudio.google.com/apikey` in a Google project that has billing:
+The server must be named `image-gen`: the role's grant names it, and any other name leaves her without the tool. The lead never runs it and never asks for a key in the chat. It asks which provider keys the user has, prints this command, after a `cd` into the project folder, with the placeholders of those providers, and the user runs it in their own terminal. The base command is for Gemini, with a key from `aistudio.google.com/apikey` in a Google project that has billing:
 
 ```bash
+cd <absolute path of the project>
 claude mcp add --scope local image-gen --env GEMINI_API_KEY=<your-ai-studio-key> --env IMAGE_PROVIDER=gemini --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.18.0
 ```
 
@@ -108,16 +109,20 @@ Set `IMAGE_PROVIDER` to the provider used when a call names none: `gemini` (stat
 **One other provider only.** A user who has the key of one other provider and none of Gemini prints one of these two commands instead of the Gemini one (that provider's key pair, its own `IMAGE_PROVIDER`, and nothing of another provider):
 
 ```bash
+cd <absolute path of the project>
 claude mcp add --scope local image-gen --env OPENAI_API_KEY=<your-openai-key> --env IMAGE_PROVIDER=openai --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.18.0
 ```
 
 ```bash
+cd <absolute path of the project>
 claude mcp add --scope local image-gen --env ARK_API_KEY=<your-byteplus-ark-key> --env IMAGE_PROVIDER=seedream --env SKIP_PROMPT_ENHANCEMENT=true --env IMAGE_OUTPUT_DIR=<absolute path of the project>/assets/generated -- npx -y mcp-image@0.18.0
 ```
 
 Both shapes were started and called on 2026-10-13 with a made-up key: the server reached the provider and the provider answered 401; a call that names a provider whose key is not set is refused with "not configured", a request for that key and a restart; with the three keys on one server the provider named in a call answers, and a call that names none goes to `IMAGE_PROVIDER`. So the key variable and `IMAGE_PROVIDER` are read as written. **No image was made with OpenAI or Seedream**, because nobody on the project holds their keys: the first image is the real test, and it is on the ROADMAP (`host-library/claude/observations/2026-10-13-mcp-image-0.18.0-provider-wiring-smoke.md`).
 
 `--scope local` keeps the keys in the user's own file and the server out of the `.mcp.json` that is shared with the team. Write the path in the form of the user's shell (`C:\work\petpal\assets\generated` in PowerShell, `C:/work/petpal/assets/generated` in Git Bash).
+
+**Run it in the project folder.** A `--scope local` server belongs to the folder it is added from: Claude Code keeps it in the user's own `~/.claude.json`, under that folder's entry, and a session loads the servers of the folder it was started in. A terminal opens in the home folder, so every printed block starts with `cd <absolute path of the project>`, the folder the team is started in (observed on 2.1.296, Sitting X, 2026-10-13: the command was first run in the home folder, and the session started in the project had no `image-gen`; after a `cd` into the project and a second run, `claude mcp list` showed `image-gen` Connected there). The lead tells the user to run `claude mcp list` from that folder and to expect `image-gen` Connected. A command run in the wrong folder leaves the key in that folder's entry until the user removes it there with `claude mcp remove image-gen --scope local`. In `cmd.exe` the `cd` needs `/d` to change drive; PowerShell and Git Bash do not.
 
 | Setting | Why |
 |---|---|

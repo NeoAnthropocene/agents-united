@@ -212,6 +212,16 @@ describe('the lead\'s offer', () => {
     expect(p).toMatch(/after the restart check with `ToolSearch` that `mcp__image-gen__generate_image` is listed/);
   });
 
+  // Sitting X, 2026-10-13: the printed command had no folder, and the maintainer ran it in their home folder; the server was stored there and the project's session did not list it.
+  it('prints the command after a cd into the project folder, because a --scope local server belongs to the folder it is added from, and has the user check with claude mcp list in that folder (Sitting X)', () => {
+    const p = paragraph();
+    expect(p).toMatch(/starts with a `cd` into the project folder/);
+    expect(p).toMatch(/`--scope local` server belongs to the folder it is added from/);
+    expect(p).toMatch(/home folder/);
+    expect(p).toMatch(/`claude mcp list` from that folder/);
+    expect(p).toMatch(/observed on 2\.1\.296, Sitting X/);
+  });
+
   it('says why the lead holds the tool and that it never calls it, that a server added with --scope local needs no approval, and not to send Jamileh to find out (Sitting T)', () => {
     const p = paragraph();
     expect(p).toMatch(/You hold that one tool for one reason: a teammate gets the MCP tools that the main conversation holds, so Jamileh has the tool only if you do/);

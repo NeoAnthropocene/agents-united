@@ -145,7 +145,7 @@ describe('the observation and the roadmap say what was checked and what is left'
     expect(section).toMatch(/- \[x\] Wiring smoke test/);
     expect(section).toMatch(/- \[ \] \*\*OpenAI\*\*: one real image/);
     expect(section).toMatch(/- \[ \] \*\*Seedream\*\*: one real image/);
-    expect(section).toMatch(/- \[ \] Gemini end to end/);
+    expect(section).toMatch(/- \[x\] Gemini end to end/); // ticked after Sitting X (2026-10-13)
     expect(section).toMatch(/\*\*Blocked by\*\*/);
     expect(roadmap).toMatch(/\*Last updated: 2026-10-13 \| Maintained by: NeoAnthropocene\*/);
   });

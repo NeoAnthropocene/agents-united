@@ -51,7 +51,7 @@ describe('mcp-setup: the optional image server', () => {
   it('prints a command for a user who has the key of one other provider only (OpenAI, or Seedream): its own key pair, its own IMAGE_PROVIDER, the key of no other provider', () => {
     const s = section();
     const PAIR = { gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY', seedream: 'ARK_API_KEY' } as const;
-    const commands = [...s.matchAll(/```bash\n([^`]*?)```/g)].map(m => m[1]!.trim()).filter(c => c.startsWith('claude mcp add'));
+    const commands = [...s.matchAll(/```bash\n([^`]*?)```/g)].flatMap(m => m[1]!.trim().split('\n').filter(l => l.startsWith('claude mcp add')));
 
     expect(commands.map(c => /--env IMAGE_PROVIDER=(\w+)/.exec(c)?.[1])).toEqual(['gemini', 'openai', 'seedream']);
     for (const command of commands) {
@@ -65,6 +65,22 @@ describe('mcp-setup: the optional image server', () => {
     expect(s).toMatch(/started and called on 2026-10-13 with a made-up key/);
     expect(s).toContain('2026-10-13-mcp-image-0.18.0-provider-wiring-smoke.md');
     expect(s).toMatch(/No image was made with OpenAI or Seedream/);
+  });
+
+  // Sitting X, 2026-10-13: the lead printed the command with no folder. The maintainer ran it in the folder a terminal opens in (their home folder), where Claude Code stored the server under that
+  // folder's entry, so the session started in the project listed nothing; only the second run, after a cd into the project folder, showed `image-gen` Connected there.
+  it('starts every printed command with a cd into the project folder and says why: a --scope local server belongs to the folder it is added from, and a terminal opens in the home folder (Sitting X)', () => {
+    const s = section();
+    const blocks = [...s.matchAll(/```bash\n([^`]*?)```/g)].map(m => m[1]!.trim()).filter(b => b.includes('claude mcp add'));
+    expect(blocks).toHaveLength(3);
+    for (const block of blocks) expect(block.split('\n')[0], block).toBe('cd <absolute path of the project>');
+    expect(s).toMatch(/\*\*Run it in the project folder\.\*\*/);
+    expect(s).toMatch(/belongs to the folder it is added from/);
+    expect(s).toMatch(/home folder/);
+    expect(s).toMatch(/the folder the team is started in/);
+    expect(s).toMatch(/`claude mcp list` from that folder/);
+    expect(s).toMatch(/wrong folder[^.]*`claude mcp remove image-gen --scope local`/);
+    expect(s).toMatch(/Sitting X/);
   });
 
   it('holds no key, no key shape and no value for any key variable', () => {

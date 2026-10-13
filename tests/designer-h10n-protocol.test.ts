@@ -69,14 +69,14 @@ describe('H10n: the Gemini route end to end (protocol)', () => {
     for (const item of ['A key asked for, written or printed', 'the printed command run by the lead', 'an approval prompt promised for a local server', 'the tool not listed after the restart', 'more than one image', 'a red hook error', 'a pool that lists `ListAgents`']) expect(fail, item).toContain(item);
   });
 
-  it('has the sitting in the ledger as proposed, without a ceiling (the total of ceilings does not move), and the ROADMAP task points to it', () => {
+  it('has the sitting in the ledger as proposed and then run, without a ceiling (the total of ceilings does not move), and the ROADMAP task points to it (run 2026-10-13: see the observation of the same day)', () => {
     const x = PROTOCOL.split('\n').find(l => l.startsWith('| Sitting X |')) ?? '';
     expect(x).toMatch(/H10n, the Gemini route end to end/);
     expect(x).toMatch(/one interactive session/);
     expect(x).toMatch(/no ceiling was set/);
     expect(x).toMatch(/proposed 2026-10-13/);
-    expect(x).not.toMatch(/\brun 2026/);
+    expect(x).toMatch(/; run 2026-10-13;/);
     expect(PROTOCOL).toMatch(/Total of all ceilings: 55\.0 USD, and 65\.0 USD with Sitting F\./);
-    expect(ROADMAP).toMatch(/- \[ \] Gemini end to end in one session[^\n]*H10n/);
+    expect(ROADMAP).toMatch(/- \[x\] Gemini end to end in one session[^\n]*H10n/);
   });
 });
