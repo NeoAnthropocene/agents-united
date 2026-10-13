@@ -31,7 +31,9 @@ export const CLASS_DEFINITIONS: Record<CapabilityClass, ClassDefinition> = {
   handback: { description: "Deliver a subagent's final report to whoever spawned it", grantable: true, readOnly: true },
   artifacts: { description: 'Publish shareable pages', grantable: true, readOnly: false },
   skill: { description: 'Load a skill into the conversation', grantable: true, readOnly: true },
-  messaging: { description: 'Message other agents and sessions', grantable: true, readOnly: true },
+  messaging: { description: 'Message the agents of the role\'s own team, by name', grantable: true, readOnly: true },
+  // ADR 0054: finding the user's other sessions is not part of messaging a team. No Semantic Core declares this class, so no role holds the tool; a deliberate cross-session mesh declares it in the core.
+  'peer-sessions': { description: "Find the user's other sessions, local and cloud, so as to message them", grantable: true, readOnly: true },
   'task-tracking': { description: 'Keep a task checklist', grantable: true, readOnly: true },
   plan: { description: 'Enter and leave plan mode', grantable: true, readOnly: true },
   'mcp-discovery': { description: 'Discover and wait for connected-server tools', grantable: true, readOnly: true },

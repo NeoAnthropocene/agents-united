@@ -4,7 +4,7 @@ description: Read-only code review and static analysis. Use proactively after co
 model: sonnet
 effort: medium
 permissionMode: plan
-tools: Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Read, ReadMcpResourceTool, ReportFindings, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
+tools: Glob, Grep, LSP, ListMcpResourcesTool, Read, ReadMcpResourceTool, ReportFindings, SendMessage, Skill, SubagentHandback, ToolSearch, WebFetch, WebSearch, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
 skills:
   - security-audit
 hooks:
