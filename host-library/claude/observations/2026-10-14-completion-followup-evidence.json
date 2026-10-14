@@ -1,0 +1,67 @@
+{
+  "session": "4a3dd50f-75c2-4ab5-9b45-6fe043423b21",
+  "version": "2.1.296",
+  "candidateRevision": "b108f32ae34b5663962fdb0dcd3d292f9b7d3847",
+  "rolesUnchanged": true,
+  "hookUnchanged": true,
+  "humanPrompts": 2,
+  "acceptedRequests": [
+    {
+      "at": "2026-10-14T05:54:54.520Z",
+      "to": "ava-348ec6a0",
+      "accepted": true
+    },
+    {
+      "at": "2026-10-14T05:54:55.238Z",
+      "to": "kaan-348ec6a0",
+      "accepted": true
+    }
+  ],
+  "peerApprovalCalls": [
+    {
+      "from": "ava-348ec6a0",
+      "at": "2026-10-14T05:54:57.449Z",
+      "approve": true,
+      "toolResultObserved": false
+    },
+    {
+      "from": "kaan-348ec6a0",
+      "at": "2026-10-14T05:54:58.113Z",
+      "approve": true,
+      "toolResultObserved": false
+    }
+  ],
+  "leadLifecycleNotices": [],
+  "firstReportAt": "2026-10-14T05:55:01.901Z",
+  "completionStopAt": "2026-10-14T05:55:01.970Z",
+  "secondsAfterLastRequest": 6.663,
+  "reportBeforeStage2": true,
+  "stage1CompletionStatement": "Delivery remains complete whatever the shutdown evidence shows.",
+  "stage2At": "2026-10-14T05:57:06.308Z",
+  "stage2ReportAt": "2026-10-14T05:57:09.810Z",
+  "stage2CompletionStatement": "Delivery remains complete either way.",
+  "stage2ToolCalls": 0,
+  "peerMessagesAfterFirstReport": 0,
+  "waitingStopsAfterLastRequest": 0,
+  "lateNoticePathExercised": false,
+  "lateNoticeVerdict": "unverified: no late lifecycle notice arrived",
+  "uiObservation": {
+    "source": "maintainer report in Codex, 2026-10-14; not part of the Claude Stage 2 prompt",
+    "beforeStage2": "no active subagents in the TUI",
+    "afterStage2": "no active teammates in the TUI",
+    "classification": "user-reported"
+  },
+  "containment": {
+    "denials": 1,
+    "tool": "Bash",
+    "at": "2026-10-14T05:54:50.288Z",
+    "purpose": "word-count check; shell disabled for this exercise; lead read back both deliverables and disclosed estimated counts"
+  },
+  "costUSD": 1.0141757999999998,
+  "limitations": [
+    "No naturally late lifecycle notice in this run",
+    "No independent process-liveness measurement",
+    "Host cause of missing notices unverified",
+    "Declined/failed shutdown requests and nine-specialist flow unverified live"
+  ]
+}

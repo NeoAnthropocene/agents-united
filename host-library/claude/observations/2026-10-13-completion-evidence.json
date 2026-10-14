@@ -1,0 +1,99 @@
+{
+  "method": "Maintainer-run Round 2; first report observed at Stop, not proof of teammate termination",
+  "additionalLateEventRuleVerifiedLive": false,
+  "cases": [
+    {
+      "case": "control",
+      "leadSession": "41d5485e-a2af-4665-b435-1fae5979c363",
+      "hostVersion": "2.1.296",
+      "rolesUnchanged": true,
+      "hooksUnchanged": true,
+      "listAgentsGranted": true,
+      "stage2At": "2026-10-13T15:27:03.968Z",
+      "acceptedRequestEvents": [
+        {
+          "at": "2026-10-13T15:19:15.841Z",
+          "target": "ava-ae83d361",
+          "accepted": true
+        },
+        {
+          "at": "2026-10-13T15:19:16.394Z",
+          "target": "kaan-ae83d361",
+          "accepted": true
+        }
+      ],
+      "finalReportObserved": true,
+      "finalReportAt": "2026-10-13T15:19:22.647Z",
+      "secondsAfterLastRequest": 6.253,
+      "noFurtherHumanPromptNeeded": true,
+      "approvalsCalled": 2,
+      "approvalsDelivered": 0,
+      "terminationNoticesDelivered": 0,
+      "terminationNoticesBeforeReport": 0,
+      "waitingStopsAfterRequests": 0,
+      "lateWaitingUpdateObserved": false
+    },
+    {
+      "case": "intent",
+      "leadSession": "832a5bfd-28d4-4dcc-aaa3-45a1f85929aa",
+      "hostVersion": "2.1.296",
+      "rolesUnchanged": true,
+      "hooksUnchanged": true,
+      "listAgentsGranted": true,
+      "stage2At": "2026-10-13T15:43:42.676Z",
+      "acceptedRequestEvents": [
+        {
+          "at": "2026-10-13T15:43:00.105Z",
+          "target": "ava-d1a0a6c8",
+          "accepted": true
+        },
+        {
+          "at": "2026-10-13T15:43:01.176Z",
+          "target": "kaan-d1a0a6c8",
+          "accepted": true
+        }
+      ],
+      "finalReportObserved": true,
+      "finalReportAt": "2026-10-13T15:43:08.175Z",
+      "secondsAfterLastRequest": 6.999,
+      "noFurtherHumanPromptNeeded": true,
+      "approvalsCalled": 2,
+      "approvalsDelivered": 0,
+      "terminationNoticesDelivered": 0,
+      "terminationNoticesBeforeReport": 0,
+      "waitingStopsAfterRequests": 0,
+      "lateWaitingUpdateObserved": false
+    },
+    {
+      "case": "restricted",
+      "leadSession": "817dd8e0-7ad0-41f9-b543-abc60d5db0c3",
+      "hostVersion": "2.1.296",
+      "rolesUnchanged": true,
+      "hooksUnchanged": true,
+      "listAgentsGranted": false,
+      "stage2At": "2026-10-13T15:54:21.649Z",
+      "acceptedRequestEvents": [
+        {
+          "at": "2026-10-13T15:53:04.152Z",
+          "target": "ava-6d290e01",
+          "accepted": true
+        },
+        {
+          "at": "2026-10-13T15:53:04.925Z",
+          "target": "kaan-6d290e01",
+          "accepted": true
+        }
+      ],
+      "finalReportObserved": true,
+      "finalReportAt": "2026-10-13T15:53:12.483Z",
+      "secondsAfterLastRequest": 7.558,
+      "noFurtherHumanPromptNeeded": true,
+      "approvalsCalled": 2,
+      "approvalsDelivered": 1,
+      "terminationNoticesDelivered": 1,
+      "terminationNoticesBeforeReport": 0,
+      "waitingStopsAfterRequests": 1,
+      "lateWaitingUpdateObserved": true
+    }
+  ]
+}
