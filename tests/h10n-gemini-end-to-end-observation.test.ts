@@ -167,7 +167,7 @@ describe('the Sitting X observation: the printed block and its fix (F1)', () => 
     expect(o).toMatch(/home folder/);
   });
 
-  it('names the other findings as findings with proposals and changes none of them: the record\'s name (F2), the lead\'s report on the task (F3), the shutdown (F4), `claude mcp get` (F5)', () => {
+  it('preserves the historical F2 to F5 findings and distinguishes the later F2/F5 corrections', () => {
     const o = observation();
     for (const f of ['F2', 'F3', 'F4', 'F5']) expect(o, f).toContain(`**${f},`);
     expect(o).toMatch(/Write `<image>\.provenance\.json`/);
@@ -176,9 +176,11 @@ describe('the Sitting X observation: the printed block and its fix (F1)', () => 
     expect(record('timeline.txt')).toContain('the shared task list never recorded it as done');
     expect(record('timeline.txt')).toContain('Task not found');
     expect(o).toMatch(/claude mcp get image-gen/);
-    // F5 is not changed: the lead's paragraph still says what it said
-    expect(LEAD).toMatch(/run `claude mcp list` and `claude mcp get image-gen` \(its output can show a key/);
-    expect(fs.readFileSync(path.resolve('registry/skills/image-generation/SKILL.md'), 'utf8')).toContain('Write `<image>.provenance.json`');
+    // The dated observation stays intact; the current candidate corrects its two instruction flaws.
+    expect(LEAD).not.toContain('claude mcp get image-gen');
+    expect(LEAD).toContain('redaction afterwards cannot remove a key');
+    expect(fs.readFileSync(path.resolve('registry/skills/image-generation/SKILL.md'), 'utf8')).toContain('file name without its final image extension');
+    expect(fs.readFileSync(path.resolve('docs/adr/0049-the-creative-designer-may-generate-photographs.md'), 'utf8')).toContain('Sitting X correction amendment, 2026-10-14');
   });
 });
 

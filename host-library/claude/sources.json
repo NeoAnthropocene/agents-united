@@ -44,6 +44,14 @@
       {
         "url": "https://code.claude.com/docs/en/mcp.md",
         "slug": "mcp"
+      },
+      {
+        "url": "https://code.claude.com/docs/en/desktop.md",
+        "slug": "desktop"
+      },
+      {
+        "url": "https://code.claude.com/docs/en/vs-code.md",
+        "slug": "vs-code"
       }
     ],
     "plugin": [

@@ -48,11 +48,23 @@
       "url": "https://code.claude.com/docs/en/hooks.md",
       "via": "http"
     },
+    "pages/mcp/desktop.md": {
+      "fetchedAt": "2026-10-14T10:57:12.928Z",
+      "sha256": "sha256:2992347cf78babd816a1767ed307783f9b89e2bf01e891682ca215c92c4f0417",
+      "url": "https://code.claude.com/docs/en/desktop.md",
+      "via": "vendor-docs"
+    },
     "pages/mcp/mcp.md": {
       "fetchedAt": "2026-09-30T08:09:20.121Z",
       "sha256": "sha256:743ddae4ed693e5386f9651e9bde7689d9f35cb00d9a51e74e4cca298cc4d79f",
       "url": "https://code.claude.com/docs/en/mcp.md",
       "via": "http"
+    },
+    "pages/mcp/vs-code.md": {
+      "fetchedAt": "2026-10-14T10:57:13.066Z",
+      "sha256": "sha256:707d0adea02c6e267f532eb893d683164e4f9193fdac6d03463443abf92b73b6",
+      "url": "https://code.claude.com/docs/en/vs-code.md",
+      "via": "vendor-docs"
     },
     "pages/orchestration/agent-teams.md": {
       "fetchedAt": "2026-10-04T18:33:04.260Z",
