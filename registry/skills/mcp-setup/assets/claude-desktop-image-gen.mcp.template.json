@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "image-gen": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mcp-image@0.18.0"],
+      "env": {
+        "GEMINI_API_KEY": "${AGENTS_UNITED_GEMINI_API_KEY}",
+        "OPENAI_API_KEY": "${AGENTS_UNITED_OPENAI_API_KEY}",
+        "ARK_API_KEY": "${AGENTS_UNITED_ARK_API_KEY}",
+        "IMAGE_PROVIDER": "gemini",
+        "SKIP_PROMPT_ENHANCEMENT": "true",
+        "IMAGE_OUTPUT_DIR": "<absolute-project-assets-generated>"
+      }
+    }
+  }
+}

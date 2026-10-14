@@ -90,7 +90,7 @@ claude mcp add --scope local figma --env FIGMA_ACCESS_TOKEN=<your-token> -- npx 
 
 An optional extra for the creative designer, never part of the required list: the doctor, the install gate and the Antigravity sync do not know it. It gives her one tool, `mcp__image-gen__generate_image`, which makes an image with the models of Google (Gemini, the default), OpenAI or BytePlus (Seedream), from the user's own keys, and saves it in the project. Offer it only when a plan holds photograph-like assets that nobody supplied and the user wants them generated. Once it is connected, the designer follows two skills: `image-creation` (whether to generate, the look, the record) and `image-generation` (the rules, the provider, the call).
 
-The server must be named `image-gen`: the role's grant names it, and any other name leaves her without the tool. The lead never runs it and never asks for a key in the chat. It asks which provider keys the user has, prints this command, after a `cd` into the project folder, with the placeholders of those providers, and the user runs it in their own terminal. The base command is for Gemini, with a key from `aistudio.google.com/apikey` in a Google project that has billing:
+The server must be named `image-gen`: the role's grant names it, and any other name leaves her without the tool. The lead never runs it and never asks for a key in the chat. In CLI and VS Code, it asks which provider keys the user has, prints this command, after a `cd` into the project folder, with the placeholders of those providers, and the user runs it in their own terminal. For Desktop Code image setup, use the dedicated subsection below. The base command is for Gemini, with a key from `aistudio.google.com/apikey` in a Google project that has billing:
 
 ```bash
 cd <absolute path of the project>
@@ -138,6 +138,28 @@ Both shapes were started and called on 2026-10-13 with a made-up key: the server
 **Check.** Have the user check image-gen in this client's `/mcp` UI or run `claude mcp list` themselves from the actual project folder and report only the connection status, not raw configuration output. Never run `claude mcp get`, read credential-bearing MCP configuration or dump environment variables for this server; redacting afterwards still leaves the key in your context and the transcript. After the restart below, `ToolSearch` lists `mcp__image-gen__generate_image` for a role whose `tools` names it: the lead holds it so that the designer's pool has it (a teammate gets the MCP tools of the main conversation, `host-library/claude/pages/agent/sub-agents.md`, "Available tools"; observed on 2.1.296, Sitting T: a lead that did not hold it listed nothing however often the user restarted, and the designer found nothing either). A role that does not hold it never lists it, whatever `claude mcp list` says. A `--scope local` server needs no approval: `claude mcp list` showed it Connected right after the command (Sitting T), unlike a project-scoped server, which waits for approval (below). Report what was seen. A running session does not load a server added after it started.
 
 **Undo.** `claude mcp remove image-gen --scope local`, and revoke the keys at their providers when they are no longer wanted.
+
+### Desktop Code image setup
+
+Accepted by the maintainer on 2026-10-14, including the shared Local environment scope. Live verification of this new route is pending; the completed Desktop test used terminal registration. This route prepares a **credential-free project definition** through `/mcp-setup`; the user enters keys directly in Desktop's UI. It is an image-server exception to the terminal credential route above, not permission to read or write secret values.
+
+1. Confirm **Desktop Code**, Local mode, the actual folder and selected providers (`gemini`, `openai`, `seedream`). If already supplied, use those choices without asking again. Ask only for missing choices. Explain that the Local environment editor stores variables encrypted on this machine and supplies **all local sessions and preview servers**; honor an acceptance already given in the conversation.
+2. Read the bundled `assets/claude-desktop-image-gen.mcp.template.json`. It holds references for all three providers. **Remove every key mapping for an unselected provider** and set `IMAGE_PROVIDER` to the user's default among the selected providers. Do not keep an unset reference as an optional key: Claude Code may pass the literal `${VAR}` string to the server. Keep `image-gen`, `npx -y mcp-image@0.18.0` and `SKIP_PROMPT_ENHANCEMENT=true`. Replace the output placeholder with this project's absolute `assets/generated` path, escaping JSON backslashes or using forward slashes.
+3. With the user's setup request, write `.mcp.json` only when absent or known credential-free, preserving existing entries. If an existing configuration may hold credentials, **provide a separate template for the user to merge privately**; do not read or overwrite it. Do not change `~/.claude.json`, Chat configuration or any environment value. A same-name Chat or user-scope definition can win in Desktop: have the user confirm the selected definition/output folder; stop on a collision.
+4. Tell the user to open the environment dropdown, hover over **Local**, click its gear, and add only the selected rows below. The user types the values in that editor, never in chat or in a shared MCP file. Do not request screenshots, raw configuration or environment output containing keys.
+
+| Provider | Holder in Desktop's Local editor | Reference mapped to the server |
+| --- | --- | --- |
+| Gemini | `AGENTS_UNITED_GEMINI_API_KEY` | `GEMINI_API_KEY` |
+| OpenAI | `AGENTS_UNITED_OPENAI_API_KEY` | `OPENAI_API_KEY` |
+| BytePlus Seedream | `AGENTS_UNITED_ARK_API_KEY` | `ARK_API_KEY` |
+
+The pinned image server calls the third provider **Seedream** (`seedream`), not Seedance. Holders are variable names, never credential values. A user with OpenAI alone gets only its key mapping and `IMAGE_PROVIDER=openai`; likewise for Seedream. With all three selected, retain all three mappings and the chosen default.
+
+5. Start a fresh **Code conversation in the same folder** with the intended native agent; explain that this project-scoped definition may need server approval. Do not send the user to a terminal to restart this GUI flow. Check `mcp__image-gen__generate_image` with `ToolSearch` and the user's selected-server status. Setup makes no provider call and does not establish valid billing or credentials; generation needs its separate go-ahead. Coordinated-team support is not established by this setup.
+6. To undo, remove only the project entry this flow added (or provide a private removal patch if the file's safety is unknown), preserving other servers. Removing its definition does not delete the shared Local-editor holders; the user removes those in the UI when they no longer want them available to local sessions.
+
+Sources: [Desktop skills](https://code.claude.com/docs/en/desktop#use-skills), [Local environment editor](https://code.claude.com/docs/en/desktop#local-sessions), [Desktop precedence](https://code.claude.com/docs/en/desktop#shared-configuration), [project variable expansion](https://code.claude.com/docs/en/mcp#environment-variable-expansion-in-mcpjson); pinned snapshots are in `host-library/claude/pages/mcp/`. OpenAI and Seedream image generation remain unverified with real credentials; the existing made-up-key wiring observation above is unchanged.
 
 ## Check an install
 
