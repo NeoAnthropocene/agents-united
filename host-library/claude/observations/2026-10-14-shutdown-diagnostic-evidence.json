@@ -1,0 +1,243 @@
+{
+  "observedDate": "2026-10-14",
+  "sourceRevision": "46cb8d2928d0ad4cc4887fd82679f449724b9806",
+  "platform": "Windows; in-process teammates; Sonnet/low",
+  "cases": [
+    {
+      "case": "built-in-control",
+      "session": "63beb1a6-eb23-4d20-b6dd-85168207afda",
+      "version": "2.1.299",
+      "forcedSessionId": true,
+      "acceptedRequests": 2,
+      "successfulApprovals": 2,
+      "leadLifecycleNotices": 0,
+      "finalRevisionsDelivered": 1,
+      "secondsAfterLastAcceptedRequest": 6.483,
+      "toolsAfterStage2": 0,
+      "notionalModelCostUSD": 0.4444502,
+      "mailboxCaptureVerdict": "inconclusive: wrong assumed team directory"
+    },
+    {
+      "case": "native-agency",
+      "session": "91ffdd00-af26-40a5-b910-8342abad8940",
+      "version": "2.1.299",
+      "forcedSessionId": true,
+      "acceptedRequests": 2,
+      "successfulApprovals": 2,
+      "leadLifecycleNotices": 0,
+      "finalRevisionsDelivered": 2,
+      "secondsAfterLastAcceptedRequest": 7.181,
+      "toolsAfterStage2": 0,
+      "notionalModelCostUSD": 0.9057149999999999,
+      "mailboxCaptureVerdict": "inconclusive: wrong assumed team directory"
+    },
+    {
+      "case": "default-agency",
+      "session": "b054f69a-cbc6-4f36-a242-e4052aff3088",
+      "version": "2.1.299",
+      "forcedSessionId": false,
+      "acceptedRequests": 2,
+      "successfulApprovals": 2,
+      "leadLifecycleNotices": 0,
+      "finalRevisionsDelivered": 2,
+      "secondsAfterLastAcceptedRequest": 6.135,
+      "toolsAfterStage2": 0,
+      "notionalModelCostUSD": 0.7106503999999999,
+      "mailboxCaptureVerdict": "matching team captured"
+    }
+  ],
+  "defaultLaunch": {
+    "session": "b054f69a-cbc6-4f36-a242-e4052aff3088",
+    "runtimeTeams": [
+      "session-b054f69a"
+    ],
+    "runtimeCapture": {
+      "unresolvedHooks": 29,
+      "resolvedHooks": 101,
+      "configPresentSnapshots": 138,
+      "leadInboxPresentSnapshots": 88,
+      "configLeadSessionIdMatches": [
+        true
+      ]
+    },
+    "installedFilesUnchanged": true,
+    "observerHelpersUnchanged": true,
+    "acceptedRequests": [
+      {
+        "at": "2026-10-14T09:54:59.842Z",
+        "to": "ava-3e31b4ea"
+      },
+      {
+        "at": "2026-10-14T09:55:00.451Z",
+        "to": "kaan-3e31b4ea"
+      }
+    ],
+    "peerApprovals": [
+      {
+        "peer": "ava-3e31b4ea",
+        "at": "2026-10-14T09:55:04.067Z",
+        "approve": true,
+        "transcriptResultObserved": false,
+        "successfulHookObserved": true,
+        "correlation": "tool-use-id"
+      },
+      {
+        "peer": "kaan-3e31b4ea",
+        "at": "2026-10-14T09:55:05.575Z",
+        "approve": true,
+        "transcriptResultObserved": false,
+        "successfulHookObserved": true,
+        "correlation": "tool-use-id"
+      }
+    ],
+    "finalHandoffs": [
+      {
+        "peer": "ava-3e31b4ea",
+        "reportInPeerRecord": true,
+        "deliveredToLead": true
+      },
+      {
+        "peer": "kaan-3e31b4ea",
+        "reportInPeerRecord": true,
+        "deliveredToLead": true
+      }
+    ],
+    "mailboxAndMembershipTimeline": [
+      {
+        "at": "2026-10-14T09:54:59.769Z",
+        "source": "hook",
+        "config": "present",
+        "members": [
+          "team-lead",
+          "ava-3e31b4ea",
+          "kaan-3e31b4ea"
+        ],
+        "leadInbox": "present",
+        "leadEntries": []
+      },
+      {
+        "at": "2026-10-14T09:55:04.146Z",
+        "source": "watcher",
+        "config": "present",
+        "members": [
+          "team-lead",
+          "ava-3e31b4ea",
+          "kaan-3e31b4ea"
+        ],
+        "leadInbox": "present",
+        "leadEntries": [
+          {
+            "from": "ava-3e31b4ea",
+            "kind": "shutdown_approved",
+            "read": false
+          }
+        ]
+      },
+      {
+        "at": "2026-10-14T09:55:05.141Z",
+        "source": "watcher",
+        "config": "present",
+        "members": [
+          "team-lead",
+          "kaan-3e31b4ea"
+        ],
+        "leadInbox": "present",
+        "leadEntries": []
+      },
+      {
+        "at": "2026-10-14T09:55:05.651Z",
+        "source": "watcher",
+        "config": "present",
+        "members": [
+          "team-lead",
+          "kaan-3e31b4ea"
+        ],
+        "leadInbox": "present",
+        "leadEntries": [
+          {
+            "from": "kaan-3e31b4ea",
+            "kind": "shutdown_approved",
+            "read": false
+          }
+        ]
+      },
+      {
+        "at": "2026-10-14T09:55:06.137Z",
+        "source": "watcher",
+        "config": "present",
+        "members": [
+          "team-lead"
+        ],
+        "leadInbox": "present",
+        "leadEntries": [
+          {
+            "from": "kaan-3e31b4ea",
+            "kind": "shutdown_approved",
+            "read": false
+          }
+        ]
+      },
+      {
+        "at": "2026-10-14T09:55:06.141Z",
+        "source": "watcher",
+        "config": "present",
+        "members": [
+          "team-lead"
+        ],
+        "leadInbox": "present",
+        "leadEntries": []
+      },
+      {
+        "at": "2026-10-14T10:00:58.091Z",
+        "source": "watcher",
+        "config": "missing",
+        "leadInbox": "missing"
+      }
+    ],
+    "rawLeadRecordAudit": {
+      "recordTypes": {
+        "custom-title": 6,
+        "agent-name": 6,
+        "agent-setting": 6,
+        "mode": 6,
+        "permission-mode": 6,
+        "file-history-snapshot": 4,
+        "atis-latch": 6,
+        "user": 30,
+        "attachment": 27,
+        "last-prompt": 6,
+        "bridge-session": 6,
+        "assistant": 33,
+        "system": 11,
+        "cost-state": 2
+      },
+      "typedLifecycleObjects": 0,
+      "runtimeMetadataLifecycleHits": 0,
+      "definitionAttachmentTypesExcludedFromRuntimeTextAudit": [
+        "prompt_snapshot",
+        "deferred_tools_record"
+      ]
+    },
+    "userObservation": {
+      "source": "maintainer report in Codex, 2026-10-14",
+      "classification": "user-reported",
+      "stage1": "Both peers disappeared from working/idle rows after shutdown dispatch; no teammate_terminated notice appeared in the TUI.",
+      "stage2": "Delivery stayed complete; no further tools or peer messages.",
+      "physicalExitIndependentlyEstablished": false
+    },
+    "leadErrors": [],
+    "containmentDenials": [],
+    "observerErrors": false,
+    "firstCompletionReportAt": "2026-10-14T09:55:06.586Z",
+    "stage2At": "2026-10-14T09:58:01.926Z"
+  },
+  "totalNotionalModelCostUSD": 2.0608156,
+  "additionalModelSessionsLaunched": 0,
+  "limitations": [
+    "Mailbox disappearance and membership removal are observed host state, not independently measured physical exit.",
+    "File observation can miss transient states; absence alone is not proof a write never happened.",
+    "The raw lead record audit found no typed lifecycle object or runtime metadata notice, but does not identify the host implementation responsible.",
+    "No naturally late notice, failed or declined request, or nine-specialist flow was exercised.",
+    "One control final revision was absent from the lead; native agency final revisions arrived in both runs, which does not prove universal delivery reliability."
+  ]
+}
