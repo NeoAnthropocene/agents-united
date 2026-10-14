@@ -129,6 +129,16 @@ export function parseTeammateMessages(content: string): Array<{ from: string; ki
   return out;
 }
 
+/** Peer input is recorded as a user message too; it is task data, not a human prompt or a team lifecycle event. */
+export function parseSessionMessages(content: string): Array<{ from: string; kind: string; text: string }> {
+  const out: Array<{ from: string; kind: string; text: string }> = [];
+  for (const match of content.matchAll(/<(teammate-message|cross-session-message)\b([^>]*)>([\s\S]*?)<\/\1>/g)) {
+    if (match[1] === 'teammate-message') out.push(...parseTeammateMessages(match[0]));
+    else out.push({ from: /\bfrom-name="([^"]*)"/.exec(match[2] ?? '')?.[1] ?? 'unknown', kind: 'cross-session', text: (match[3] ?? '').trim() });
+  }
+  return out;
+}
+
 function buildAgent(records: Json[], name: string, isLead: boolean, meta: Json): AgentRecord {
   const agent: AgentRecord = {
     name,
@@ -164,7 +174,7 @@ function buildAgent(records: Json[], name: string, isLead: boolean, meta: Json):
     } else if (rec.type === 'user') {
       const content = message.content;
       if (typeof content === 'string') {
-        const parsed = parseTeammateMessages(content);
+        const parsed = parseSessionMessages(content);
         if (parsed.length > 0) for (const p of parsed) agent.received.push({ from: p.from, at, kind: p.kind, text: p.text });
         else if (agent.firstPrompt === '' && !isLead) agent.firstPrompt = content;
       } else {
@@ -176,6 +186,8 @@ function buildAgent(records: Json[], name: string, isLead: boolean, meta: Json):
               call.result = resultText(block.content);
               call.isError = block.is_error === true;
             }
+          } else if (block.type === 'text') {
+            for (const p of parseSessionMessages(str(block.text))) agent.received.push({ ...p, at });
           }
         }
       }
@@ -203,10 +215,10 @@ export function loadSession(leadFile: string): Session {
     session.version ??= str(rec.version) || undefined;
     if (rec.type === 'agent-setting') session.agentSetting = str(rec.agentSetting);
     if (rec.type === 'permission-mode') session.permissionMode = str(rec.permissionMode);
-    if (rec.type === 'user' && rec.isSidechain !== true && typeof obj(rec.message).content === 'string' && str(rec.promptId) !== '') {
-      const text = str(obj(rec.message).content);
+    if (rec.type === 'user' && rec.isSidechain !== true && str(rec.promptId) !== '') {
+      const text = resultText(obj(rec.message).content);
       if (/^<local-command-(caveat|stdout)>/.test(text)) localCommandIds.add(str(rec.promptId));
-      else if (!text.startsWith('<teammate-message')) promptIds.add(str(rec.promptId));
+      else if (text !== '' && parseSessionMessages(text).length === 0) promptIds.add(str(rec.promptId));
     }
     if (rec.type === 'cost-state') {
       const byModel: NonNullable<Session['cost']>['byModel'] = {};
@@ -552,6 +564,17 @@ function trimTeammateText(text: string): string {
   });
 }
 
+function trimReceivedText(text: string, max: number): string {
+  if (text.includes('<cross-session-message')) {
+    // Keep sender names for flow analysis, but omit pipe/socket addresses and any other transport attributes.
+    return clean(trimTeammateText(text).replace(/<cross-session-message\b([^>]*)>([\s\S]*?)<\/cross-session-message>/g, (_all, attributes: string, body: string) => {
+      const from = /\bfrom-name="([^"]*)"/.exec(attributes)?.[1] ?? 'unknown';
+      return `<cross-session-message from-name="${clean(from, 120)}">${clean(body.trim(), 400)}</cross-session-message>`;
+    }), 2000);
+  }
+  return text.includes('<teammate-message') ? trimTeammateText(text) : clean(text, max);
+}
+
 /** One trimmed record, or null when the record type carries nothing the report reads. */
 export function trimRecord(rec: Json): Json | null {
   const keep: Json = { type: rec.type, timestamp: rec.timestamp, isSidechain: rec.isSidechain, sessionId: rec.sessionId };
@@ -562,14 +585,14 @@ export function trimRecord(rec: Json): Json | null {
       keep.promptId = rec.promptId;
       keep.agentId = rec.agentId;
       if (typeof content === 'string') {
-        keep.message = { role: 'user', content: content.includes('<teammate-message') ? trimTeammateText(content) : clean(content, 400) };
+        keep.message = { role: 'user', content: trimReceivedText(content, 400) };
       } else {
         keep.message = {
           role: 'user',
           content: arr(content).map(raw => {
             const b = obj(raw);
             if (b.type === 'tool_result') return { type: 'tool_result', tool_use_id: b.tool_use_id, is_error: b.is_error, content: clean(resultText(b.content), 300) };
-            return { type: 'text', text: clean(str(b.text), 300) };
+            return { type: 'text', text: trimReceivedText(str(b.text), 300) };
           }),
         };
       }

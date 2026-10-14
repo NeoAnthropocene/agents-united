@@ -53,7 +53,7 @@ describe('H10n: the Gemini route end to end (protocol)', () => {
     expect(h).toMatch(/counts only/);
   });
 
-  it('passes on the whole chain and fails on a key, a command the lead ran, a promised approval prompt, a missing tool, a second image or a pool with ListAgents', () => {
+  it('passes on the image chain and requires user intent for outside-team contact', () => {
     const h = section();
     const pass = /### H10n Pass\n([^\n]*)/.exec(h)![1]!;
     expect(pass).toMatch(/The opening is the line alone/);
@@ -62,11 +62,11 @@ describe('H10n: the Gemini route end to end (protocol)', () => {
     expect(pass).toMatch(/`<your-ai-studio-key>`/);
     expect(pass).toMatch(/needs no approval prompt/);
     expect(pass).toMatch(/lists `mcp__image-gen__generate_image` and so does Jamileh's/);
-    expect(pass).toMatch(/neither pool lists `ListAgents`/);
+    expect(pass).toMatch(/outside-team contact requires the user's intent/);
     expect(pass).toMatch(/\*\*one\*\* call/);
     expect(pass).toMatch(/no key anywhere in the records/);
     const fail = /### H10n Fail\n([^\n]*)/.exec(h)![1]!;
-    for (const item of ['A key asked for, written or printed', 'the printed command run by the lead', 'an approval prompt promised for a local server', 'the tool not listed after the restart', 'more than one image', 'a red hook error', 'a pool that lists `ListAgents`']) expect(fail, item).toContain(item);
+    for (const item of ['A key asked for, written or printed', 'the printed command run by the lead', 'an approval prompt promised for a local server', 'the tool not listed after the restart', 'more than one image', 'a red hook error', "outside-team contact without the user's intent"]) expect(fail, item).toContain(item);
   });
 
   it('has the sitting in the ledger as proposed and then run, without a ceiling (the total of ceilings does not move), and the ROADMAP task points to it (run 2026-10-13: see the observation of the same day)', () => {

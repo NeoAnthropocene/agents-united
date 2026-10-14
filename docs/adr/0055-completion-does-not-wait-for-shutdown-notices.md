@@ -15,3 +15,13 @@
   - The user receives verified work without having to announce that a missing-notice teammate already terminated. Cleanup uncertainty remains visible and does not masquerade as unfinished delivery.
   - This change is independent of discovery grants and PR #202's session-intent decision. It changes only the Claude digital-agency lead's native text; tool grants, structured protocol, other roles, other hosts and the mode-line wait remain as on dev.
   - Live evidence proves the initial reporting improvement for these runs, not the cause of missing host notices or universal adherence to the new late-event sentence. A disposable follow-up kit is prepared locally for maintainer feedback; it does not start a model session automatically.
+
+## Follow-up amendment, 2026-10-14
+
+The maintainer ran the candidate at `b108f32` in session `4a3dd50f-75c2-4ab5-9b45-6fe043423b21`. [The reviewed follow-up](../../host-library/claude/observations/2026-10-14-claude-2.1.296-completion-followup.md) confirms accepted dispatch to both peers, both approval calls issued, and no approval or termination notices in the lead record. Its first report arrived **6.663 seconds** after the last accepted request, before Stage 2 or any human shutdown reminder. It kept delivery complete in Stage 2 and made no further tool calls or peer messages. Role and hook hashes matched preparation.
+
+The maintainer saw no active teammates at the start or end of Stage 2. This is **user-reported** UI evidence supplied later in Codex; it does not become a host termination notice in the Claude record. The one containment denial was the intentionally blocked Bash word-count check, not a shutdown failure. No additional host session was launched by the executor.
+
+**Current verification:** initial delivery with missing notices is observed in four two-specialist runs; stable completion on a subsequent human turn is observed on the current candidate. **Not established:** behavior on a naturally late lifecycle notice, because none arrived in the follow-up. That path remains **unverified live**, together with failed/declined requests, the nine-specialist flow and the host's underlying notification failure. The earlier proposal-time statements above are preserved; this amendment distinguishes the newly observed report wording from the unexercised event path.
+
+**Review readiness:** the reported missing-notice hang scenario passes, so PR #203 is ready for review with those limits explicit. This is not a claim that the host notification pipeline or every cleanup path has been fixed. The native implementation is unchanged; merging the current dev brings in the already-reviewed session-intent guidance from PR #202.

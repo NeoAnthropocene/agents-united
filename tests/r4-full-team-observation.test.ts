@@ -161,14 +161,16 @@ describe('the R4 observation: the record', () => {
     expect(opening).not.toMatch(/Not met/);
     const expectations = tableOf(o, '| # | Expectation | Verdict | Evidence and limit |');
     expect(expectations.split('\n').filter(l => /^\| [1-8] \|/.test(l))).toHaveLength(8);
-    expect(expectations).toMatch(/\| 3 \| Structured shutdowns, none refused \| \*\*Seen for the responses; completion confirmed for 8 of 10, unverified for the last 2\*\* \|/);
+    expect(expectations).toMatch(/\| 3 \| Structured shutdowns, none refused \| \*\*Seen: 10 of 10 approvals sent; 8 confirmed in the lead's record, the last 2 on the maintainer's report\*\* \|/);
     expect(expectations).toMatch(/\*\*not for Emre and Defne\*\*/);
+    expect(expectations).toMatch(/\*\*The maintainer reports that both Emre and Defne shut down on screen\*\*/);
+    expect(expectations).toMatch(/So the teammates did send their approvals and did shut down; what is missing is the host's confirmation in the lead's record/);
     expect(expectations).toMatch(/\*\*the wait did not act\*\*, as in Sitting V/);
   });
 
   it('says what R4 found: the opening held, the contract was left out of five of nine briefs, the end races with the confirmations, ListAgents showed the other sessions', () => {
     const o = observation();
-    expect(o).toMatch(/\*\*The opening was as ADR 0053 says and the hook held nothing; the artifact and runtime expectations of R3 were seen again; the completion of the last two shutdowns was not/);
+    expect(o).toMatch(/\*\*The opening was as ADR 0053 says and the hook held nothing; the artifact and runtime expectations of R3 were seen again; the confirmation of the last two shutdowns is missing from the lead's record[^\n]*although the maintainer saw both teammates shut down on screen/);
     expect(o).toMatch(/\*\*Violated, in five of nine delivery briefs, as in R3\.\*\*/);
     expect(o).toMatch(/"Every teammate was told the CTA colour token is `color\.cta\.primary` and the CTA test id is `hero-primary-cta`", which the briefs do not show/);
     expect(o).toMatch(/\*\*The end of the run races with the last shutdown confirmations, again\*\*/);
@@ -202,6 +204,7 @@ describe('the protocol, ADR 0053 and the plan state Sitting W', () => {
     expect(w).toMatch(/used 2\.6287 USD of model cost/);
     expect(w).toMatch(/no hold/);
     expect(w).toMatch(/last two shutdown confirmations \(Emre, Defne\) did not reach the lead/);
+    expect(w).toMatch(/although the maintainer saw both shut down on screen/);
     expect(w).toMatch(/five of nine briefs/);
     expect(PROTOCOL).toMatch(/Total of all ceilings: 55\.0 USD, and 65\.0 USD with Sitting F\./);
   });
@@ -213,6 +216,7 @@ describe('the protocol, ADR 0053 and the plan state Sitting W', () => {
     expect(h1).toMatch(/\*\*The opening held\*\*/);
     expect(h1).toMatch(/seven of the eight expectations were seen/);
     expect(h1).toMatch(/10 structured requests[^\n]*10 structured approvals sent, 8 delivered to the lead/);
+    expect(h1).toMatch(/the maintainer saw both shut down on screen/);
     expect(h1).toMatch(/\*\*The instruction "fixed in every brief" was violated in five of nine briefs again\*\*/);
     expect(h1).toMatch(/wait for the lead's next short message/);
   });
@@ -221,10 +225,12 @@ describe('the protocol, ADR 0053 and the plan state Sitting W', () => {
     expect(ADR).toMatch(/The full team \(R4, 2026-10-13\) opened the same way with no hold\./);
     expect(ADR).toMatch(/R4 \(2026-10-13\) ran the lead and all nine specialists on this build/);
     expect(ADR).toMatch(/the wait again did not act/);
+    expect(ADR).toMatch(/the maintainer saw both teammates shut down on screen/);
     expect(ADR).toMatch(/so no slow save was there to test/);
   });
 
   it('says in the plan what R4 found, in the one paragraph about H10k', () => {
     expect(PLAN).toMatch(/\*\*H10k \(added 2026-10-09, S19\)\.\*\*[^\n]*Sitting V \(run on 2026-10-13[^\n]*so a slow save is still untested\. The full team \(R4, Sitting W, `host-library\/claude\/observations\/2026-10-13-claude-2\.1\.296-r4-full-team\.md`\)/);
+    expect(PLAN).toMatch(/both teammates were seen shutting down on screen/);
   });
 });
