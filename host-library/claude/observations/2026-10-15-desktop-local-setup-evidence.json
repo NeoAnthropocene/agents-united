@@ -1,0 +1,118 @@
+{
+  "kind": "reviewed host-record evidence; not vendor documentation",
+  "date": "2026-10-15",
+  "candidateRevision": "9544341693ae57a12f16ab8c3523c264f1b5825b",
+  "project": "agents-united-image-desktop-setup-70804325",
+  "client": {
+    "desktop": "2.37337.1",
+    "code": "2.1.295",
+    "os": "Windows 10.0.26200 x64",
+    "model": "claude-sonnet-5-5",
+    "effort": "Low",
+    "accountPlan": "Pro"
+  },
+  "suppliedEvidenceSHA256": "aebd7d92e08c5348fa2b29ece42652c9ea679c5edaf832c6b2ee819397cdff8e",
+  "suppliedSummarySHA256": "a5033f87e3c624c57665663f8c81f73472086404de215612e2b592bceee94586",
+  "transcripts": [
+    {
+      "sessionId": "399389f6-2768-4778-844a-ddac15262c32",
+      "sha256": "84db40cb21972efdb1329646b767c3f6879c10680af13647d75b4cd655b5be4f",
+      "nativeAgent": "orchestrator-digital-agency",
+      "humanPrompts": 1,
+      "notionalModelCostUSD": null
+    },
+    {
+      "sessionId": "84de5b96-8bbc-4054-8e70-c7159db22035",
+      "sha256": "c824baf2990bab7addd21dad4ea2512245741d724368b67c0f57b08d98e2568a",
+      "nativeAgent": "agency-creative-designer",
+      "humanPrompts": 5,
+      "notionalModelCostUSD": null
+    }
+  ],
+  "setup": {
+    "credentialFreeProjectWrite": {
+      "at": "2026-10-15T06:59:27.580Z",
+      "toolUseId": "toolu_01VV9GwFcEMdMsW9zX5GnzPi",
+      "expectedSelectedDefinitionMatched": true,
+      "server": "image-gen",
+      "declaredPackage": "mcp-image@0.18.0",
+      "selectedProviders": [
+        "gemini"
+      ],
+      "defaultProvider": "gemini",
+      "holder": "AGENTS_UNITED_GEMINI_API_KEY",
+      "serverKeyName": "GEMINI_API_KEY",
+      "promptEnhancementSkipped": true,
+      "actualAbsoluteOutputMatched": true
+    },
+    "terminalRegistrationCalls": 0,
+    "imageToolInvocations": 0,
+    "skill": "mcp-setup",
+    "freshDesignerImageToolVisible": true,
+    "designerSkills": [
+      "image-generation",
+      "image-creation"
+    ]
+  },
+  "imageToolInvocations": [
+    {
+      "toolUseId": "toolu_015ayk28rxSHfyEAUpVQ4pbb",
+      "at": "2026-10-15T07:29:57.022Z",
+      "fileName": "gui-dog-scene-a1",
+      "harnessDecision": "denied",
+      "reason": "not armed",
+      "providerReceiptObserved": false
+    },
+    {
+      "toolUseId": "toolu_0154RMMyzJmkpSkZuAwQsoMt",
+      "at": "2026-10-15T07:32:38.290Z",
+      "fileName": "gui-desktop-70804325",
+      "harnessDecision": "allowed",
+      "provider": "gemini",
+      "quality": "fast",
+      "imageSize": "2K",
+      "aspectRatio": "4:5",
+      "inputImages": 0,
+      "grounding": false,
+      "result": {
+        "code": "GEMINI_API_ERROR",
+        "reportedProviderHTTPStatus": 400,
+        "credentialRejection": true
+      },
+      "postToolUseFailureAt": "2026-10-15T07:32:43.663Z"
+    }
+  ],
+  "harness": {
+    "automaticBindings": 2,
+    "collectionComplete": true,
+    "missingTranscripts": 0,
+    "unparsedRecordLines": 0,
+    "protectedFileCount": 753,
+    "protectedFilesUnchanged": true,
+    "allowedImageInvocations": 1,
+    "deniedImageInvocations": 1,
+    "imageAttemptFlagUsed": true,
+    "attemptFlagToolUseId": "toolu_0154RMMyzJmkpSkZuAwQsoMt",
+    "failedAttemptRetryObserved": false
+  },
+  "artifacts": {
+    "generatedDirectoryEmpty": true,
+    "images": 0,
+    "provenanceFiles": 0
+  },
+  "humanPromptLedger": {
+    "observed": 6,
+    "proposedCeiling": 4,
+    "proposalMet": false
+  },
+  "unverified": [
+    "Human Local-editor key entry and environment expansion into the selected MCP process",
+    "Actual loaded package version and configuration precedence",
+    "Cause of the rejected credential",
+    "Model cost, provider bill and quota headroom",
+    "Successful image generation through the new Local-editor route",
+    "Real OpenAI/Seedream generation and unknown-configuration private merge"
+  ],
+  "reviewerStartedHostSessions": 0,
+  "reviewerStartedProviderCalls": 0
+}

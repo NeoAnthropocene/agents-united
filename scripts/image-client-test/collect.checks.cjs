@@ -17,7 +17,7 @@ for (const relative of ['scripts/image-client-test/collect.mjs', 'scripts/image-
 }
 const availableId = '11111111-1111-4111-8111-111111111111';
 const missingId = '22222222-2222-4222-8222-222222222222';
-function fixture(name, { available = true, missing = true, partial = false, unrelated = false, wrapped = false, caseMismatch = false, injectedSkill = false } = {}) {
+function fixture(name, { available = true, missing = true, partial = false, unrelated = false, wrapped = false, caseMismatch = false, injectedSkill = false, imageInvocations = false } = {}) {
   const workspace = path.join(temp, name);
   fs.mkdirSync(path.join(workspace, '.probe/sessions'), { recursive: true });
   fs.mkdirSync(path.join(workspace, 'assets/generated'), { recursive: true });
@@ -31,6 +31,14 @@ function fixture(name, { available = true, missing = true, partial = false, unre
       { type: 'user', cwd: unrelated ? temp : caseMismatch ? workspace.toLowerCase() : workspace, version: 'fixture', promptId: 'prompt-1', message: { content: wrapped ? '\n<pasted_content id="fixture">\n[GUI fixture] Check only.\n</pasted_content>' : '[GUI fixture] Check only.' } },
       { type: 'assistant', message: { model: 'fixture-sonnet', content: [{ type: 'text', text: 'Fixture complete.' }] } },
     ];
+    if (imageInvocations) {
+      for (const id of ['blocked-image','allowed-image']) {
+        records.push({type:'assistant',message:{model:'fixture-sonnet',content:[{type:'tool_use',id,name:'mcp__image-gen__generate_image',input:{provider:'gemini',quality:'fast',imageSize:'2K',aspectRatio:'4:5',fileName:'fixture',prompt:'Synthetic fixture'}}]}});
+        records.push({type:'user',message:{content:[{type:'tool_result',tool_use_id:id,is_error:true,content:id==='blocked-image'?'Synthetic hook denial':'Synthetic provider failure'}]}});
+      }
+      fs.mkdirSync(path.join(workspace,'.probe/events'),{recursive:true});
+      for (const [id,allowed] of [['blocked-image',false],['allowed-image',true]]) fs.writeFileSync(path.join(workspace,'.probe/events',id+'.json'),JSON.stringify({kind:'PreToolUse',sessionId:availableId,toolUseId:id,allowed}));
+    }
     if (injectedSkill) records.push({type:'user',promptId:'prompt-1',message:{content:[{type:'text',text:'Base directory for this skill: /project/.claude/skills/mcp-setup\n# MCP Server Setup & Auto-Provisioning'}]}});
     if (wrapped) records.push({ type: 'user', promptId: 'prompt-1', message: { content: '\n<pasted_content id="fixture">\n[GUI fixture] repeated data under the same prompt id.\n</pasted_content>' } });
     fs.writeFileSync(transcriptPath, records.map(JSON.stringify).join('\n') + '\n' + (partial ? '{"type":"assistant"' : ''));
@@ -122,6 +130,34 @@ test('UUID fallback works without SessionStart bindings and discloses uncollecte
   assert.deepEqual(evidence.uncollectedEventSessionIds,[missingId]);
   assert.equal(evidence.totalNotionalModelCostUSD,null);
 });
+test('image-tool invocation counts distinguish a hook denial from an allowed failed call', () => {
+  const {fixtureProfile}=fixture('image-decisions',{missing:false,imageInvocations:true});
+  const run=collect(fixtureProfile);assert.equal(run.status,0,run.stderr);
+  const evidence=JSON.parse(fs.readFileSync(path.join(kit,'results/desktop/evidence.json'),'utf8'));
+  assert.equal(evidence.imageToolInvocations,2);
+  assert.equal(evidence.imageInvocationsDeniedByHarness,1);
+  assert.equal(evidence.imageInvocationsAllowedByHarness,1);
+  assert.equal(evidence.imageInvocationsWithoutClearHarnessDecision,0);
+  assert.deepEqual(evidence.sessions[0].imageCalls.map(c=>c.harnessDecision),['denied','allowed']);
+  const summary=fs.readFileSync(path.join(kit,'results/desktop/summary.md'),'utf8');
+  assert.match(summary,/Image-tool invocations: 2/);
+  assert.match(summary,/harness-denied: 1/);
+  assert.match(summary,/harness-allowed: 1/);
+  assert.doesNotMatch(summary,/Image attempts recorded: 2/);
+});
+
+test('a failed image invocation without a hook decision stays unclassified', () => {
+  const {workspace,fixtureProfile}=fixture('missing-image-decision',{missing:false,imageInvocations:true});
+  fs.unlinkSync(path.join(workspace,'.probe/events/allowed-image.json'));
+  const run=collect(fixtureProfile);assert.equal(run.status,0,run.stderr);
+  const evidence=JSON.parse(fs.readFileSync(path.join(kit,'results/desktop/evidence.json'),'utf8'));
+  assert.equal(evidence.imageInvocationsAllowedByHarness,0);
+  assert.equal(evidence.imageInvocationsDeniedByHarness,1);
+  assert.equal(evidence.imageInvocationsWithoutClearHarnessDecision,1);
+  assert.equal(evidence.sessions[0].imageCalls[1].harnessDecision,'not-observed');
+  assert.equal(evidence.totalNotionalModelCostUSD,null);
+});
+
 test('collector respects platform case sensitivity', {skip:process.platform==='win32'}, () => {
   const {fixtureProfile}=fixture('CaseSensitive',{missing:false,caseMismatch:true});
   const run=collect(fixtureProfile);
