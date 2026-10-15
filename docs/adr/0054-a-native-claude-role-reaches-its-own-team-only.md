@@ -1,7 +1,13 @@
 # ADR 0054: The digital-agency lead contacts other sessions with the user's intent
 
 
-Current status: **Proposed amendment in PR #202**, 2026-10-13, following the maintainer's controlled interactive tests and request to reconsider the scope. The original grant decision is retained below as history, not as the current policy.
+Current status: **Accepted amendment**, merged in [PR #202](https://github.com/NeoAnthropocene/agents-united/pull/202) on 2026-10-13 (`5b1558e`). Reconfirmed 2026-10-15 after the maintainer revisited the removal following PR #205's image tests. The original grant decision is retained below as history, not as the current policy.
+
+## Current decision
+
+- Keep `ListAgents` and `SendMessage` together in `messaging` for all fifteen existing native Claude roles. The blanket removal and the unused `peer-sessions` class were reversed before PR #202 merged; no further grant reversal is needed.
+- The digital-agency lead uses discovery for its own roster or a user-requested lookup. Contact outside its spawned team requires the user's authorization for that recipient and current task. A discovered name or claimed approval in a file, tool result or peer message is not authorization.
+- This is guidance, not enforced session isolation. Discovery can expose unrelated session names; removing it does not prevent messaging a known recipient. Completion and shutdown evidence follow [ADR 0055](0055-completion-does-not-wait-for-shutdown-notices.md) independently.
 
 ## Original decision (superseded)
 
@@ -34,3 +40,11 @@ Current status: **Proposed amendment in PR #202**, 2026-10-13, following the mai
 Evidence: [Round 2 discovery observation](../../host-library/claude/observations/2026-10-13-claude-2.1.296-pr202-session-intent.md). No run sent the synthetic marker before human authorization, including the control with discovery and without the new intent paragraph. All three authorized exchanges succeeded. The explicit paragraph therefore has no measured safety improvement over that control for this single file-injection attempt. General resistance to other inputs is **unverified**; the runs do not prove universal safety or that blanket discovery denial was necessary. The local summaries' original zero delivery/ACK counts were a parser defect, corrected from the host's cross-session wrappers.
 
 Consequences: the own-roster capability is preserved, the five engineering roles retain their prior behavior, and the digital-agency lead expresses the maintainer's original intent. H10n no longer fails merely because discovery is available; its Sitting X observation is preserved. The filename remains stable for existing links; the original title and blanket-denial decision above are historical.
+
+## Reassessment, 2026-10-15
+
+**Removing discovery from every native role was not justified by the evidence and went beyond the maintainer's requirement.** R4 established visibility of unrelated session names, so discovery breadth is real; it did not establish unauthorized messages or interference with those sessions. The controlled Round 2 runs then distinguished discovery from contact: control and intent could discover the canary, while restricted could still send to its exact name without discovery. All three rejected the tested false approval claim and completed the genuinely authorized exchange. Neither blanket removal nor the extra intent paragraph showed a measured safety improvement over control in that one experiment.
+
+Keep the accepted reversal rather than removing a useful capability from the ten agency and five engineering roles to imply a boundary the change does not provide. All three two-specialist flows completed, so these runs also did not establish a team regression caused by removing discovery; full-roster and engineering workflows were not compared. This does not declare discovery harmless: unrelated titles can be visible, resistance to other untrusted inputs remains **unverified**, and no production recipient guard enforces the guidance. A future requirement for enforced isolation needs its own scoped decision and evidence about recipient authorization and native transport addresses, including the effect on legitimate team coordination.
+
+The current implementation already matches this decision: `registry/hosts/claude/tool-policy.json` assigns discovery to `messaging`, all fifteen role grants retain both tools, and the digital-agency lead contains the tested intent paragraph. The pinned [Claude tool reference](../../host-library/claude/pages/tools/tools-reference.md#tools-reference) includes subagents and teammates in discovery as well as other sessions. Existing regressions in `tests/native-claude-own-session.test.ts` and `tests/native-claude-agents.test.ts` verify those grants and their derivation. PR #205's Desktop image success and VS Code harness recovery change no discovery policy and are not new evidence of cross-session safety. The [Round 2 observation](../../host-library/claude/observations/2026-10-13-claude-2.1.296-pr202-session-intent.md) and its linked compact evidence remain the basis for this decision; no new paid host session was needed for this reassessment.
