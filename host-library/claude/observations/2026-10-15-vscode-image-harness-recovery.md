@@ -1,0 +1,30 @@
+# VS Code image test recovery, reviewed 2026-10-15
+
+The maintainer ran these sessions on 2026-10-14. Review used existing host JSONL records, the supplied status files and surviving synthetic hook events. No host, provider call or replacement session was started. Original live records and credential configurations are not committed.
+
+The comparison project retains all **752 protected hashes** from candidate `75db2e11c65b9fd326ab975c221f25aed8d89cb6`, originally prepared from dev `46cb8d2`. This does not test the later accepted Desktop setup route at `0bbc2d1`. Its original hooks/configuration, attempt flags and events were preserved; no binding was fabricated. There is no `.probe/sessions` directory, no image-attempt flag and no generated image.
+
+| Existing transcript | Native host setting | Human prompts | Tool calls/results | Notional model cost USD |
+| --- | --- | ---: | --- | ---: |
+| `f5856f07-d6c4-46e0-b577-795e3fa89702` | Chris (`orchestrator-digital-agency`) | 2 | Human slash mcp-setup body loaded; 8 ToolSearch, 1 Read all denied | 0.3169528 |
+| `f8149496-91bf-4187-a3c0-da5b830afe79` | Chris | 1 | 8 ToolSearch, 1 Read; all denied | 0.2666571 |
+| `c0358033-c5be-4edd-9cee-7524010200a1` (supplied setup UUID) | Jamileh (`agency-creative-designer`) | 1 | Read and Skill(mcp-setup); both denied | unverified |
+| `39f9ecb9-4f38-4788-9796-98ce24451049` | Jamileh | 2 | 3 Read, 2 Skill(image-generation), 2 ToolSearch; all denied | unverified |
+
+Native activation is established by `agent-setting` records, not self-description. The supplied setup UUID is a native designer conversation; it cannot establish Chris setup. The supplied statuses report Code **2.1.299**, Sonnet 5.5, a **Claude Pro account**, and seven connected MCP servers/two needing authentication. Those aggregate server counts establish neither image-gen visibility nor which definition won. The earlier Chris cost records identify Sonnet 5 and Sonnet 5.5 respectively.
+
+All **27 tool calls** were refused with the synthetic harness's folder-mismatch reason. The earlier Chris record `f5856f07` contains the host-injected `mcp-setup` body at `14:33:39.625Z` (a user record with the installed skill directory header), establishing human slash invocation separately from Skill tool calls. The supplied setup UUID's Skill(mcp-setup) call and both Skill(image-generation) calls were denied. Successful image-generation skill loading remains **unverified**. Both designer image-tool lookups were denied; the image tool's presence/absence in the actual host pool is **unverified**. There was no image-tool invocation in any of these four records and no image artifact. Zero checked files/zero findings is not a successful image test.
+
+## Cause and evidence limits
+
+Every recorded cwd starts with lowercase `c:`; preparation used uppercase `C:`. The original hook and guard compared `path.resolve` strings with case-sensitive equality. On Windows those strings can name the same folder. Consequently SessionStart had `folderMatches=false` and wrote no binding, and PreToolUse denied reads, skills and ToolSearch before they ran. The surviving 41 non-verification events include 27 denials. Offline tests reproduce the mismatch and missing binding before correction, then pass with platform-aware comparison. This is a harness failure; it does not demonstrate a VS Code inability to load skills or MCP tools.
+
+The existing explicit-UUID interface recovered both supplied records, then the two earlier surviving Chris records. A fifth session, `6da3656c-b9ad-4231-ae9d-d1722bcf7653`, has SessionStart/SessionEnd hooks but no transcript. Its activity, prompt count and cost remain **unverified**. No replacement was created. The collector now reports event-only sessions and refuses to call the collection complete or calculate a total from this partial evidence. Six known human prompts already exceed the original four-prompt proposal. **0.5836099 USD** is only the subtotal of two recorded cost states; total model cost, quota headroom and provider bill remain **unverified**. A Google-key-shape scan found no match in the four transcripts; it is a heuristic, not proof that every secret format is absent.
+
+## Future cases
+
+The corrected tracked harness is in `scripts/image-client-test/`; [the runbook](../../../docs/gui-image-test.md) prepares a separate Desktop Local case from a committed revision. No corrections are injected into the launched comparison projects. Windows identity uses the platform's path comparison; POSIX case sensitivity is retained. Containment additionally checks real paths, rejecting unrelated folders, traversal and linked escapes. The control helper and collector share the same comparison. Image call-check's containment uses `path.relative`, and its explicit typed-path case fallback is Windows-only; neither required a production change.
+
+A fresh Desktop case permits only the exact credential-free selected-provider definition at project `.mcp.json`, with the pinned alias/package, holder references and actual absolute output. Unknown existing configuration stays unread and unchanged and receives a separate private-merge template. Human image-gen approval can change its one documented local setting; native files, hooks and all other settings remain protected. Literal keys, duplicate fields, extra servers, unused mappings, changed pins, environment reads and unrelated writes are refused. Setup/visibility authorize no provider call. The accepted Local-editor route, real OpenAI/Seedream generation and the new harness in Desktop remain **unverified live** pending maintainer records. Shutdown and ListAgents behavior are outside this slice.
+
+Validation: typecheck and host-library verification exited 0; the full serial candidate suite passed (219 files, 4,574 tests passed, 209 skipped). Its harness wrapper runs 28 offline cases: 26 pass on Windows and two POSIX-only cases are skipped here. POSIX execution remains for Linux CI. The initial unscoped gate was stopped because it discovered archived ignored scratch tests; those are now excluded. No timeout or assertion was weakened.
