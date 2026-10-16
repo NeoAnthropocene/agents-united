@@ -7,6 +7,14 @@ const source = fs.readFileSync(path.resolve('registry/hosts/claude/agents/orches
 const installed = renderNativeRole(source, 'agents/orchestrator-digital-agency.md');
 
 describe('completion report independent of shutdown notifications (ADR 0055)', () => {
+  // Advisor Plan 003: the shutdown table and structured request belong to coordinated teammates; an ordinary subagent that reported gets
+  // the same immediate, stable delivery without them.
+  it('binds the shutdown table to coordinated teammates and gives ordinary subagents the same immediate delivery', () => {
+    expect(installed).toContain('send every coordinated teammate the structured shutdown request described above');
+    expect(installed).toContain('deliver the final **Completion report** at once and write that no team shutdown applies');
+    expect(installed).toContain('Delivery stays complete after a late notice in both mechanisms.');
+  });
+
   it('ships the verified-work and accepted-dispatch report rule in the installed native lead', () => {
     expect(installed).toContain('**Completion report and shutdown evidence.**');
     expect(installed).toContain('When the deliverables and specialist reports are verified');

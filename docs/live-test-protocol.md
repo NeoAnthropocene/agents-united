@@ -748,6 +748,50 @@ One interactive session of the lead and Jamileh, and one image on the maintainer
 
 **Amended 2026-10-13 (Plan 036 S19, Sitting X, `host-library/claude/observations/2026-10-13-claude-2.1.296-gemini-end-to-end.md`).** Run by the maintainer with their own Gemini key, in one session of Claude Code 2.1.296 (the lead and Jamileh on `claude-sonnet-5-5`). **Every pass line was seen**: the opening was the line alone (released by the line at the first look, 2 ms), one question with four options, no teammate before the answer, the command printed with the placeholder and not run by the lead, the tool in the pool of the lead (found by `ToolSearch` at the restart) and of Jamileh, no pool listing `ListAgents` (the host cut the `--agent` lead's pool as its `tools` line says), one call, one 1856 x 2304 JPEG at 4:5 and her record, the structured shutdown answered by Jamileh (not in the lead's record, as in R4), and no key in the 756 records of the session. **Two defects.** **The printed block had no `cd` into the project folder** (F1): the maintainer's terminal opens in their home folder, `claude mcp add --scope local` stored the server under that folder's entry, the project's session did not list it, and a second run after a `cd` showed it Connected. The reference of `mcp-setup` and the lead's paragraph now start every block with the `cd` (fixed and pinned, **not yet run live**: the next run of the route is its test); the setup above already said "a second terminal opened in the project folder", but the user reads the block, not the protocol. **Her record had the long name** (F2): `<image>.provenance.json` was read as `<file>.jpg.provenance.json`, which `image-check.mjs` called missing until the lead renamed it; the wording is open. Also open: the lead's wrong statement about the task list (F3), its report ahead of the last shutdown confirmation (F4), and `claude mcp get image-gen` in its guidance (F5).
 
+## H12 The worker mechanism decides the lifecycle: ordinary subagents finish without a team shutdown, a real team keeps it (added 2026-10-16, advisor Plan 003)
+
+**Question.** With `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in both, does the digital-agency lead take its lifecycle from the workers the host actually gives it? In the Claude Desktop Code tab the workers are ordinary subagents, so a worker's report ends that worker's turn: no `shutdown_request`, no wait for an approval or a `teammate_terminated` notice, no "idle" for a finished subagent, an immediate Completion report that says no team shutdown applies. In the interactive CLI the workers are a coordinated team, so the structured requests, the immediate Completion report after accepted dispatch and the separate dispatch, approval and termination evidence of ADR 0055 stay. The guided Desktop run of 2026-10-15 does not answer this: its Stage 2 told the lead how to treat ordinary workers (`host-library/claude/observations/2026-10-16-claude-2.1.299-desktop-full-agency.md`). The prompts below carry no lifecycle guidance. **The changed native text has not been run live.**
+
+### H12 Setup
+Two fresh folders as in "Common setup", **H12a** for the Desktop Code tab (Local, the exact folder, no worktree) and **H12b** for the interactive CLI. Each has the digital-agency native install (`doctor` healthy), ten native files with `ListAgents` and `SendMessage` in every grant, normal local tools, the production guard and a passive observer: it records hook metadata, returns no decision, never blocks a Stop and never reads tool output or shell commands. Both set the teams variable and the task-tool variable to `1` in the project's `settings.json` `env`, so the case is "flag on" whatever the machine holds. Sonnet at low effort, Accept edits, no bypass of permissions. H12b is started with the two variables set for the process and no forced session id. Run H12a first; the two cases are independent.
+
+### H12 Prompts
+One conversation per surface, four prompts typed in order. They name the work and carry no word about workers, teams, idle or shutdown.
+
+```text
+[STAGE 1]
+Scratch exercise, no real client. Read docs/pilot/brief.md. I want two small deliverables: Ava writes deliverables/hypothesis.md (one positioning hypothesis, at most 100 words) and Kaan writes deliverables/email.md (one subject line and at most 60 words, built on Ava's hypothesis). Consult Ava read-only first, then show me your delegation map and wait for my answer.
+```
+
+```text
+[STAGE 2]
+I accept the map. Go ahead with both deliverables, and tell me when they are done and what you have.
+```
+
+```text
+[STAGE 3]
+Revise both: the hypothesis should lead with trust rather than price, and the email should follow it. Then give me your final report.
+```
+
+```text
+[STAGE 4]
+Thanks. Where does the delivery stand? Answer once.
+```
+
+### H12 Evidence
+The host's own records, read with `npm run hostlib:session` and the kit's collector (sanitised counts, no raw transcript): the launch results of the `Agent` calls and the worker metadata (which mechanism ran); every `SendMessage` by the lead with its type and recipient; the lead's text after each worker report; the time and tool calls between the last worker report and the Completion report; the tool calls of every actor after the Stage 4 prompt; each specialist's report route (an accepted `SubagentHandback` or an ordinary final response) and whether the latest attempt carries `Peer messages received` and `Open items`; the corrected human prompt count; the two deliverables and their word counts; the unchanged protected files. The passive observer's events show the flag value each hook saw. A model's own account is not evidence.
+
+### H12 Pass
+**Precondition:** the observer saw the teams variable at `1`, and the launch results show the surface's own mechanism (H12a: "Async agent launched", no team metadata; H12b: "Spawned successfully" with mailbox delivery and in-process teammate metadata). Without it the case does not test the text; record it and stop.
+**H12a:** the lead sends no `shutdown_request` and no other team protocol frame; its text never calls a finished worker idle or still running and never waits for an approval or termination notice; the Completion report follows the last worker report without a lifecycle wait and says that no team shutdown applies; Stage 4 shows zero tool calls by every actor; `SendMessage` goes only to Ava and Kaan; both deliverables exist and are revised.
+**H12b:** a structured `shutdown_request` goes to each teammate, the consultant included; the Completion report follows the last accepted request with no polling and keeps dispatch, approval and termination apart (a missing event is "not observed"); Stage 4 shows zero tool calls; `SendMessage` stays inside the team; both deliverables exist and are revised.
+
+### H12 Fail
+H12a: any `shutdown_request` or protocol frame to a finished subagent, a wait for a lifecycle event, "idle" or "still running" said of a finished subagent, a Stage 4 tool call, a message to a session outside the team. H12b: a plain-text shutdown request, a missing request to a teammate, a wait for approvals or termination notices before the report, a Stage 4 tool call, contact outside the team without the user's intent. Either: the precondition missing is not a fail but a void case.
+
+### H12 Cost
+Four human prompts per surface, no provider or image call. No ceiling in figures: the maintainer does not want cost calculations. Stop a surface after a stage fails twice; nothing is retried in a loop.
+
 ## H2 and H7 `agents start` with the lead on its pinned Opus
 
 **Question.** Does `agents start digital-agency --host claude` launch the lead on its pinned posture (Opus, medium effort) with teams and the task tools on, and does that lead run a small team correctly?
