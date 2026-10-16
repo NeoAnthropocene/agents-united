@@ -1,0 +1,172 @@
+{
+  "kind": "sanitized reviewed host-record evidence; not vendor documentation",
+  "date": "2026-10-15",
+  "candidateRevision": "69b48699cd4b82b537925cbbb34086231e695889",
+  "project": "agents-united-image-desktop-setup-e8d2fd77",
+  "preparation": {
+    "mode": "separate designer-only credential-correction retry",
+    "nativeMainAgentPrepared": "agency-creative-designer",
+    "projectDefinitionPreparedOffline": true,
+    "freshChrisSetupClaimed": false,
+    "declaredPackage": "mcp-image@0.18.0",
+    "providers": [
+      "gemini"
+    ],
+    "holder": "AGENTS_UNITED_GEMINI_API_KEY",
+    "humanReportedKeyEntry": "Desktop Environment Variables before the successful fresh conversation",
+    "editorValueInspected": false,
+    "projectDefinitionMatchedValidatedCredentialFreeMergeTemplate": true,
+    "projectApprovalAndPrecedenceIndependentlyInspected": false
+  },
+  "client": {
+    "desktop": "2.37337.1",
+    "code": "2.1.295",
+    "os": "Windows 10.0.26200 x64",
+    "model": "claude-sonnet-5-5",
+    "effort": "Low",
+    "permissions": "Auto",
+    "accountPlan": "Pro",
+    "humanReportedConnectedServers": [
+      "context7",
+      "image-gen",
+      "stitch",
+      "Firecrawl"
+    ]
+  },
+  "transcripts": [
+    {
+      "sessionId": "3f6a6235-1413-4e1d-bee0-f3a700c37ce4",
+      "sha256": "af4b965d88c21806eb08bceacca712ae7f4bb4995838f94159c93572ac21e977",
+      "nativeAgent": "agency-creative-designer",
+      "humanPrompts": 3,
+      "notionalModelCostUSD": null
+    },
+    {
+      "sessionId": "570a502a-de41-4db6-bc5b-b95fab331759",
+      "sha256": "c867a98c917cc8dba516e14ac5f0b36a11e83e7260748e37250552b175178ff8",
+      "nativeAgent": "agency-creative-designer",
+      "humanPrompts": 1,
+      "notionalModelCostUSD": null
+    },
+    {
+      "sessionId": "749457d1-f29e-4c5f-bd50-b9abc0669d74",
+      "sha256": "ff51264f450088c7204e2399371740e9cc0a8e0b8210ca2cc2ad5655ce0ba6d5",
+      "nativeAgent": "agency-creative-designer",
+      "humanPrompts": 1,
+      "notionalModelCostUSD": 0.2833833
+    },
+    {
+      "sessionId": "9d16e8cb-720d-43b6-954a-eafbfec66d2b",
+      "sha256": "6c36d343806ec04cdbbdd7d9ee50b11260c1edb390598a522cbe2ed28de49bfe",
+      "nativeAgent": "agency-creative-designer",
+      "humanPrompts": 1,
+      "notionalModelCostUSD": 0.1176189
+    }
+  ],
+  "success": {
+    "sessionId": "3f6a6235-1413-4e1d-bee0-f3a700c37ce4",
+    "nativeAgent": "agency-creative-designer",
+    "imageGenerationSkillLoaded": true,
+    "imageToolReferenceObserved": true,
+    "deniedInvocation": {
+      "toolUseId": "toolu_01A6V9XCwWRZ4nTrSwviqRG4",
+      "at": "2026-10-15T11:46:45.828Z",
+      "reason": "unarmed",
+      "fileName": "gui-dog-scene",
+      "attemptFlagConsumed": false
+    },
+    "armedAt": "2026-10-15T11:48:48.256Z",
+    "humanAuthorizedBeforeAllowedCall": true,
+    "allowedInvocation": {
+      "toolUseId": "toolu_01SwpZeiALqTkmZm2ekxMUHw",
+      "at": "2026-10-15T11:49:45.799Z",
+      "provider": "gemini",
+      "quality": "fast",
+      "imageSize": "2K",
+      "aspectRatio": "4:5",
+      "fileName": "gui-desktop-e8d2fd77",
+      "inputImages": 0,
+      "grounding": false,
+      "isError": false,
+      "returnedModel": "gemini-nano-banana-2.1",
+      "returnedAt": "2026-10-15T11:50:05.733Z",
+      "returnedPathMatchesActualProjectOutput": true
+    },
+    "imageRead": {
+      "at": "2026-10-15T11:50:07.354Z",
+      "toolUseId": "toolu_015W1QgEgrsUPHir6cYiMzGB",
+      "success": true,
+      "critiqueObserved": true,
+      "viewLimitation": "downscaled; no 100 percent fine-artifact inspection"
+    },
+    "provenanceWrittenAt": "2026-10-15T11:50:15.658Z",
+    "provenanceRereadObserved": true,
+    "regenerationOrProviderRetryObserved": false
+  },
+  "artifacts": {
+    "image": {
+      "file": "gui-desktop-e8d2fd77.jpg",
+      "width": 1856,
+      "height": 2304,
+      "nearestRatio": "4:5",
+      "ratioOffsetPercent": 0.69,
+      "bytes": 2739352,
+      "sha256": "fac0bb96eeaf91133fec43b535e98d670b71c4e95528ba5b48adc45971b37c1d"
+    },
+    "provenance": {
+      "file": "gui-desktop-e8d2fd77.provenance.json",
+      "templateKeys": 14,
+      "sha256": "8d757a8d9efd697965f7fb773334644fe1444a7fd3795624c93167fd2f609759"
+    },
+    "checker": {
+      "files": 1,
+      "findings": 0,
+      "stamped": 0,
+      "estimatedProviderCostUSD": 0.0504,
+      "billVerified": false
+    }
+  },
+  "harness": {
+    "boundSessions": 4,
+    "collectionComplete": true,
+    "missingTranscripts": 0,
+    "unparsedRecordLines": 0,
+    "protectedFiles": 753,
+    "protectedFilesIntact": true,
+    "imageToolInvocations": 2,
+    "harnessDenied": 1,
+    "harnessAllowed": 1,
+    "attemptFlagUsed": true,
+    "attemptFlagToolUseId": "toolu_01SwpZeiALqTkmZm2ekxMUHw",
+    "flagReset": false,
+    "allCaseHookDenials": 9
+  },
+  "limits": {
+    "successfulConversationHumanPrompts": 3,
+    "allCaseHumanPrompts": 6,
+    "proposedCasePromptCeiling": 4,
+    "promptProposalMet": false,
+    "knownNotionalModelCostSubtotalUSD": 0.4010022,
+    "totalNotionalModelCostUSD": null,
+    "providerCeilingUSD": 0.25,
+    "providerBill": "unverified",
+    "quotaHeadroom": "unverified"
+  },
+  "unverified": [
+    "A fresh uninterrupted native Chris setup through successful image in the same case",
+    "Actual loaded mcp-image version and configuration precedence",
+    "The exact editor/process key value and expansion mechanism",
+    "The isolated causes of earlier credential rejection and missing-server status",
+    "Total model cost, provider bill, quota headroom and spending-ceiling compliance",
+    "Real OpenAI/Seedream image generation",
+    "CLI/VS Code revalidation and coordinated teams",
+    "Watermark, rights/platform labeling and fine artifacts at 100 percent"
+  ],
+  "preserved": {
+    "earlierFailedCases": true,
+    "rawRecordsAndPrivateConfigurationUncommitted": true,
+    "reviewerModifiedImageOrProvenance": false,
+    "reviewerStartedHostSessions": 0,
+    "reviewerStartedProviderCalls": 0
+  }
+}

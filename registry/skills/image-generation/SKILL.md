@@ -13,7 +13,7 @@ disable-slash-command: true
 The rules and the recipes for one tool.
 
 ## Overview & Purpose
-For whoever calls `mcp__image-gen__generate_image` or briefs a call. The nine rules stand in for a floor bullet and a path guard; prose is not enforcement, so your role text restates them and a script checks a call. Whether to generate and how it looks are `image-creation`; the server is the lead's (`mcp-setup`).
+For whoever calls or briefs `mcp__image-gen__generate_image`. The nine rules are prose, not enforcement; your role restates them. `image-creation` decides whether to generate; the lead owns setup (`mcp-setup`).
 
 ## Execution Triggers
 Load it when you plan a generation and again before every call. Skip it when `ToolSearch` does not list the tool, and for vector work.
@@ -35,7 +35,7 @@ Inputs: the go (images, provider, size, ceiling), the brief, any file the user n
 2. **Choose provider and quality** ([providers](references/providers.md)): Gemini `fast` unless the go names another. A missing key: tell the lead, never ask for it. OpenAI has no published price per image: its first image is a probe; the user sets the ceiling after reading its charge.
 3. **Write the prompt from a recipe** ([recipes](references/prompt-recipes.md)): English, under 4,000 characters, a scene in sentences, the positive form, no text, logo or real person.
 4. **Set the call** ([parameters](references/parameters.md)): `prompt`, `aspectRatio`, `imageSize`, a new `fileName` with no extension; `provider` and `quality` only when the go names them; `inputImagePaths` only under rule 5, each file looked at with `Read` first. With a shell, check first: `node ${CLAUDE_SKILL_DIR}/scripts/call-check.mjs call.json --project <root> --output-dir <folder>`.
-5. **Call once, read the reply, record.** `resource.uri` is the file. Write `<image>.provenance.json` with exactly the keys of `image-creation/assets/provenance-template.json`: file, asset, attempt, createdAt, server, model (`metadata.model`), prompt, parameters (provider, aspectRatio, imageSize, quality), approvedBy, estimatedCostUsd (from `providers`, Gemini `fast` 2K: $0.0504; never a session meter), disclosure, inputImages, usedIn, notes. Report the asset's calls, of at most three. Then `image-creation` steps 6 and 7. An error: see the parameters.
+5. **Call once, read the reply, record.** `resource.uri` is the file. For `<image>`, use the file name without its final image extension: `hero.jpg` becomes `hero.provenance.json`. Write `<image>.provenance.json` with exactly the keys of `image-creation/assets/provenance-template.json`: file, asset, attempt, createdAt, server, model (`metadata.model`), prompt, parameters (provider, aspectRatio, imageSize, quality), approvedBy, estimatedCostUsd (from `providers`, Gemini `fast` 2K: $0.0504; never a session meter), disclosure, inputImages, usedIn, notes. Report the asset's calls, of at most three. Then `image-creation` steps 6 and 7. An error: see the parameters.
 
 ## Code & Config Exemplars
 The [worked example](examples/worked-example.md) and the sixteen recipes show the calls.

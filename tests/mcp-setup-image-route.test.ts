@@ -156,7 +156,8 @@ describe('mcp-setup: the optional image server', () => {
 
   it('checks the install with ToolSearch for a role that holds the tool, says the restart applies and that a local-scope server needs no approval, and gives the undo with the revoke', () => {
     const s = section();
-    expect(s).toContain('claude mcp get image-gen');
+    expect(s).not.toContain('claude mcp get image-gen');
+    expect(s).toContain('Never run `claude mcp get`');
     expect(s).toContain('ToolSearch');
     expect(s).toMatch(/restart/i);
     // Sitting T: the lead's allowlist hid the tool, so its search found nothing and the restarts were in vain; and no approval prompt belongs to a local server.

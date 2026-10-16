@@ -29,8 +29,10 @@ It defines exact configuration patterns for:
 | **Antigravity CLI / App** | `~/.gemini/antigravity/mcp/<serverName>` or `.gemini/antigravity/mcp/` | `agy mcp add <name> --type stdio|http --command <cmd> --args <args> --env KEY=VAL` |
 | **Cursor** | `.cursor/mcp.json` (Workspace) or `~/.cursor/mcp.json` (Global) | Standard JSON `{ "mcpServers": { ... } }` |
 | **Cline (VS Code)** | `cline_mcp_settings.json` (Workspace) or `%APPDATA%/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` | JSON with `"disabled": false, "autoApprove": []` |
-| **Claude Desktop** | `%APPDATA%/Claude/claude_desktop_config.json` (Win) / `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac) | Standard JSON `{ "mcpServers": { ... } }` |
+| **Claude Desktop Chat** | `%APPDATA%/Claude/claude_desktop_config.json` (Win) / `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac) | Standard JSON `{ "mcpServers": { ... } }` |
 | **Claude Code (CLI)** | `.mcp.json` (project scope, in the working folder) or `~/.claude.json` (local and user scopes) | `claude mcp add --scope project <name> -- <command> [args...]`; the three routes (manual, plugin, connector), the exact commands of the eight servers, the checks and the restart are in `references/claude-code.md` |
+| **Claude Desktop Code tab** | `.mcp.json` (project) or `~/.claude.json` (local/user) | Claude Code configuration, distinct from Chat; follow `references/claude-code.md` |
+| **Claude Code VS Code extension** | `.mcp.json` (project) or `~/.claude.json` (local/user) | `anthropic.claude-code`; follow `references/claude-code.md` and start a new conversation after setup |
 | **OpenCode** | `opencode.json` or `.opencode/mcp.json` | `opencode mcp install <name>` |
 | **OpenAI Codex CLI** | `codex_config.json` (Workspace) | Injected via environment / stdio tool descriptors |
 
@@ -351,14 +353,14 @@ It defines exact configuration patterns for:
 ## Step-by-Step Orchestrator Execution Runbook
 
 ### Phase 1 — Host Discovery & Mode Detection
-1. Inspect the active environment and workspace configuration files (`.cursor/mcp.json`, `cline_mcp_settings.json`, `.gemini/antigravity/mcp/`, `claude_desktop_config.json`).
+1. On Claude Code (CLI, VS Code extension or Desktop Code tab), identify the client and actual project folder; use `ToolSearch` and the user's selected-server connection status. Do not read credential-bearing MCP configuration (`~/.claude.json` or a potentially credentialed `.mcp.json`), dump environment values or inspect auth tokens. Mark missing evidence unverified. On other hosts, inspect the active environment and workspace configuration files (`.cursor/mcp.json`, `cline_mcp_settings.json`, `.gemini/antigravity/mcp/`, `claude_desktop_config.json`).
 2. Classify the execution envelope:
    - **Fully Operational**: Target MCP servers present with valid auth tokens.
    - **Limited Operational**: MCP servers present without auth tokens.
    - **Brainstorming / Native Fallback**: Zero MCP servers configured.
 
 ### Phase 2 — Guided Setup & User Choice
-1. If prerequisites are missing or unauthenticated, the Orchestrator presents an interactive choice to the user:
+1. On Claude Code, ask which providers or accounts the user has, never for credential values. Print placeholders for the user to configure outside the chat; the generic Fully Operational option below means that private human step. If prerequisites are missing or unauthenticated, the Orchestrator presents an interactive choice to the user:
    ```markdown
    > [!NOTE]
    > **MCP Tooling Setup Options**:
@@ -369,7 +371,7 @@ It defines exact configuration patterns for:
 2. The user can switch modes anytime via `/mode operational`, `/mode limited-operational`, or `/mode brainstorming`.
 
 ### Phase 3 — Provisioning & Validation
-1. **On Claude Code, follow `references/claude-code.md`:** install only after the user's yes, in project scope with the `--` before the command; check with `claude mcp get` and `claude mcp list`; then restart, because a running session never loads a server added after it started. A credentialed server is printed with a placeholder for the user to run, never run for them. To look for a plugin that carries an integration, run `node ${CLAUDE_SKILL_DIR}/scripts/find-plugin.mjs <word>` (read-only: it prints the surfaces, the source and the install command from the catalogs on disk); a plugin install is followed by the user's `/reload-plugins --force`, not a restart, and a connector is a directory link that only the user can authorise. The optional `image-gen` server (generated photographs) has its own section in that reference: the user runs its command, with their own key or keys (one for each provider).
+1. **On Claude Code, follow `references/claude-code.md`:** install only after the user's yes, in project scope with the `--` before the command; use `ToolSearch` and the user's connection-status report for credentialed servers, reserving `claude mcp get` and `claude mcp list` for known credential-free configuration; then restart, because a running session never loads a server added after it started. A credentialed server is printed with a placeholder for the user to run, never run for them. To look for a plugin that carries an integration, run `node ${CLAUDE_SKILL_DIR}/scripts/find-plugin.mjs <word>` (read-only: it prints the surfaces, the source and the install command from the catalogs on disk); a plugin install is followed by the user's `/reload-plugins --force`, not a restart, and a connector is a directory link that only the user can authorise. For `image-gen`, use the reference's **Desktop Code image setup** in Desktop: a credential-free project template with Gemini, OpenAI and Seedream holders, human entry of keys in the Local editor and a fresh GUI conversation. CLI and VS Code retain the user's terminal command route.
 2. On the other hosts, if the user chooses to provision MCP servers, execute the corresponding client configuration or CLI commands:
    ```bash
    agy mcp add firecrawl --type stdio --command npx --args -y,firecrawl-mcp --env FIRECRAWL_API_KEY=fc_...
