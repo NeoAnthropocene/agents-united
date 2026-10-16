@@ -35,6 +35,16 @@ export interface Received {
   text: string;
 }
 
+/** One report attempt: a final assistant text, or a SubagentHandback call with the state of the host's matching result. Submission order is record order. */
+export interface ReportEvidence {
+  source: 'assistant-text' | 'subagent-handback';
+  text: string;
+  at: string;
+  toolUseId?: string;
+  /** Hand-back only: `pending` has no matching result, `accepted` a non-error result with boolean success true, `rejected` an error or success false, `unknown` anything else. */
+  state?: 'pending' | 'accepted' | 'rejected' | 'unknown';
+}
+
 export interface AgentRecord {
   name: string;
   isLead: boolean;
@@ -47,6 +57,8 @@ export interface AgentRecord {
   calls: ToolCall[];
   received: Received[];
   finalText: string;
+  /** Every report attempt in submission order. Absent on a record built by hand; `finalText` keeps its meaning of the latest assistant text. */
+  reports?: ReportEvidence[];
   firstPrompt: string;
 }
 
@@ -139,6 +151,29 @@ export function parseSessionMessages(content: string): Array<{ from: string; kin
   return out;
 }
 
+const HOST_ORIGIN_KINDS = new Set(['task-notification', 'task_notification', 'peer', 'system']);
+const HOST_TURN_ORIGINS = new Set(['task_notification', 'peer', 'system']);
+
+/**
+ * Whether a user record is a prompt a human typed. The host's own provenance fields decide, never the wording: injected meta text and tool
+ * companions, task notifications, peer turns and system-sourced turns are not requests. A record marked human stays human even when its text
+ * quotes a notification. `promptSource: 'sdk'` is the source of real Desktop prompts, so it says nothing. Unmarked legacy records fall back to
+ * the bare notification wrapper.
+ */
+function isHumanPrompt(rec: Json, text: string): boolean {
+  if (rec.isMeta === true || str(rec.sourceToolUseID) !== '') return false;
+  const kind = str(obj(rec.origin).kind);
+  if (kind === 'human' || str(rec.turnOrigin) === 'human') return true;
+  if (HOST_ORIGIN_KINDS.has(kind) || HOST_TURN_ORIGINS.has(str(rec.turnOrigin)) || str(rec.promptSource) === 'system') return false;
+  return !/^\s*<task-notification>/.test(text);
+}
+
+function handbackState(resultText: string, isError: boolean): NonNullable<ReportEvidence['state']> {
+  if (isError) return 'rejected';
+  const success = jsonOf(resultText)?.success;
+  return success === true ? 'accepted' : success === false ? 'rejected' : 'unknown';
+}
+
 function buildAgent(records: Json[], name: string, isLead: boolean, meta: Json): AgentRecord {
   const agent: AgentRecord = {
     name,
@@ -152,6 +187,7 @@ function buildAgent(records: Json[], name: string, isLead: boolean, meta: Json):
     calls: [],
     received: [],
     finalText: '',
+    reports: [],
     firstPrompt: '',
   };
   const byId = new Map<string, ToolCall>();
@@ -167,8 +203,10 @@ function buildAgent(records: Json[], name: string, isLead: boolean, meta: Json):
           const call: ToolCall = { id: str(block.id), name: str(block.name), input: obj(block.input), at, messageId: str(message.id) || undefined };
           agent.calls.push(call);
           byId.set(call.id, call);
+          if (call.name === 'SubagentHandback') agent.reports!.push({ source: 'subagent-handback', text: typeof call.input.message === 'string' ? call.input.message : JSON.stringify(call.input.message ?? ''), at, toolUseId: call.id, state: 'pending' });
         } else if (block.type === 'text' && str(block.text).trim() !== '') {
           agent.finalText = str(block.text);
+          agent.reports!.push({ source: 'assistant-text', text: str(block.text), at });
         }
       }
     } else if (rec.type === 'user') {
@@ -185,6 +223,8 @@ function buildAgent(records: Json[], name: string, isLead: boolean, meta: Json):
             if (call) {
               call.result = resultText(block.content);
               call.isError = block.is_error === true;
+              const report = agent.reports!.find(r => r.toolUseId === call.id);
+              if (report) report.state = handbackState(call.result, call.isError);
             }
           } else if (block.type === 'text') {
             for (const p of parseSessionMessages(str(block.text))) agent.received.push({ ...p, at });
@@ -218,7 +258,7 @@ export function loadSession(leadFile: string): Session {
     if (rec.type === 'user' && rec.isSidechain !== true && str(rec.promptId) !== '') {
       const text = resultText(obj(rec.message).content);
       if (/^<local-command-(caveat|stdout)>/.test(text)) localCommandIds.add(str(rec.promptId));
-      else if (text !== '' && parseSessionMessages(text).length === 0) promptIds.add(str(rec.promptId));
+      else if (text !== '' && parseSessionMessages(text).length === 0 && isHumanPrompt(rec, text)) promptIds.add(str(rec.promptId));
     }
     if (rec.type === 'cost-state') {
       const byModel: NonNullable<Session['cost']>['byModel'] = {};
@@ -526,8 +566,19 @@ export function renderReport(analysis: Analysis): string {
     out.push(`- ${a.name}${a.customAgentType ? ` (${a.customAgentType})` : ''}: ${counts(a.calls)}`);
     const errors = a.calls.filter(c => c.isError);
     for (const e of errors) out.push(`    error in ${e.name} at ${e.at}: ${short(e.result ?? '', 110)}`);
-    const reported = /peer messages received/i.test(a.finalText) && /open items/i.test(a.finalText);
-    if (!a.isLead) out.push(`    final report has Peer messages received and Open items: ${reported ? 'yes' : 'no'}`);
+    if (!a.isLead) {
+      // The latest attempt decides (never a union of attempts, never an earlier success hiding a later unresolved one); a hand-back counts only once the host accepted it.
+      const complete = (r: ReportEvidence): boolean => /peer messages received/i.test(r.text) && /open items/i.test(r.text) && (r.source !== 'subagent-handback' || r.state === 'accepted');
+      const attempts = a.reports ?? [];
+      const latest = attempts[attempts.length - 1];
+      const reported = latest ? complete(latest) : /peer messages received/i.test(a.finalText) && /open items/i.test(a.finalText);
+      out.push(`    final report has Peer messages received and Open items: ${reported ? 'yes' : 'no'}`);
+      if (latest?.source === 'subagent-handback') {
+        // A short accepted update after a full report reads "no" above; say whether an earlier attempt was complete, without merging attempts.
+        const earlier = attempts.length > 1 ? `; ${attempts.length} attempts, an earlier one with both sections: ${attempts.slice(0, -1).some(complete) ? 'yes' : 'no'}` : '';
+        out.push(`    report route: SubagentHandback, host result ${latest.state}${earlier} (lead receipt and process exit are not shown by this)`);
+      }
+    }
   }
   const lead = session.agents.find(a => a.isLead);
   if (lead) {
@@ -575,6 +626,26 @@ function trimReceivedText(text: string, max: number): string {
   return text.includes('<teammate-message') ? trimTeammateText(text) : clean(text, max);
 }
 
+const REPORT_HEADINGS = [/peer messages received/i, /open items/i];
+const REPORT_HEAD = 800;
+const REPORT_EXCERPT = 400;
+
+/** A hand-back report cut to a bound that keeps the required headings the analysis reads: the head, then an excerpt from each heading found beyond it. Nothing is invented. */
+function trimReport(message: string): string {
+  const text = clean(message, Number.MAX_SAFE_INTEGER);
+  if (text.length <= REPORT_HEAD + REPORT_EXCERPT) return text;
+  const parts = [text.slice(0, REPORT_HEAD)];
+  for (const heading of REPORT_HEADINGS) {
+    const at = text.search(heading);
+    if (at >= REPORT_HEAD) parts.push(text.slice(at, at + REPORT_EXCERPT));
+  }
+  return `${parts.join('\n[... omitted ...]\n')}\n[... omitted ...]`;
+}
+
+function trimHandbackInput(input: Json): unknown {
+  return Object.fromEntries(Object.entries(input).map(([k, v]) => [k, k === 'message' && typeof v === 'string' ? trimReport(v) : cutStrings(v, 240)]));
+}
+
 /** One trimmed record, or null when the record type carries nothing the report reads. */
 export function trimRecord(rec: Json): Json | null {
   const keep: Json = { type: rec.type, timestamp: rec.timestamp, isSidechain: rec.isSidechain, sessionId: rec.sessionId };
@@ -584,6 +655,12 @@ export function trimRecord(rec: Json): Json | null {
       const content = message.content;
       keep.promptId = rec.promptId;
       keep.agentId = rec.agentId;
+      // Only what the prompt count classifies on: scalar markers, and presence of a tool companion; no producer ids or transport fields.
+      if (str(obj(rec.origin).kind) !== '') keep.origin = { kind: clean(str(obj(rec.origin).kind), 40) };
+      if (str(rec.turnOrigin) !== '') keep.turnOrigin = clean(str(rec.turnOrigin), 40);
+      if (str(rec.promptSource) !== '') keep.promptSource = clean(str(rec.promptSource), 40);
+      if (rec.isMeta === true) keep.isMeta = true;
+      if (str(rec.sourceToolUseID) !== '') keep.sourceToolUseID = '[present]';
       if (typeof content === 'string') {
         keep.message = { role: 'user', content: trimReceivedText(content, 400) };
       } else {
@@ -608,7 +685,7 @@ export function trimRecord(rec: Json): Json | null {
         model: message.model,
         content: arr(message.content).flatMap((raw): Json[] => {
           const b = obj(raw);
-          if (b.type === 'tool_use') return [{ type: 'tool_use', id: b.id, name: b.name, input: cutStrings(b.input, 240) }];
+          if (b.type === 'tool_use') return [{ type: 'tool_use', id: b.id, name: b.name, input: b.name === 'SubagentHandback' ? trimHandbackInput(obj(b.input)) : cutStrings(b.input, 240) }];
           if (b.type === 'text') return [{ type: 'text', text: clean(str(b.text), 1500) }];
           return [];
         }),
