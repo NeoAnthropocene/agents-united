@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 34 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 59 agents (9 orchestrators + 50 sub-agents) · 195 skills (126 domain skills + 69 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
+**In numbers:** 34 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 59 agents (9 orchestrators + 50 sub-agents) · 196 skills (127 domain skills + 69 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
 
 ---
 
@@ -272,7 +272,7 @@ agents add full                        # end-user suite; excludes contributor-on
 
 ### Skills
 
-The 195 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 126 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 196 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 127 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 69 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 

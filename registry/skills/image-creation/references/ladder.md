@@ -3,7 +3,7 @@
 A photograph reaches a design by one of four rungs. Take them in order and stop at the first that works.
 
 1. **Supplied or owned**: the client's own product and brand photography, with its rights recorded. Best: a real product and a known licence.
-2. **Licensed stock the user chooses**, with the licence recorded. Never "found by image search, sort the licence out later".
+2. **Licensed stock the user chooses** (load `commercial-stock-sourcer` to fetch, visually inspect and record Pexels, Pixabay or Openverse CC0/PDM candidates), with the licence recorded. Never "found by image search, sort the licence out later".
 3. **Generated**, only when `ToolSearch` lists `mcp__image-gen__generate_image` **and** the user or the lead has said go. It spends money and sends the words out. At most two regenerations per asset. Any text is an SVG or HTML overlay. A provenance file beside the image. The label the placement requires.
 4. **Placeholder**: a labelled `PHOTO` frame in the design (its id and ratio) and an image brief ([../assets/image-brief-template.md](../assets/image-brief-template.md)) for whoever supplies the picture.
 

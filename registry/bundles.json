@@ -181,7 +181,8 @@
         "generative-ui",
         "grill-me",
         "stitch-design-taste",
-        "ux-writing"
+        "ux-writing",
+        "commercial-stock-sourcer"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -244,7 +245,8 @@
         "stitch-design-taste",
         "viral-referral-loops",
         "banner-design",
-        "brand-identity"
+        "brand-identity",
+        "commercial-stock-sourcer"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -343,7 +345,8 @@
         "product-launch-playbook",
         "seo-audit",
         "signup-flow-cro",
-        "stitch-design-taste"
+        "stitch-design-taste",
+        "commercial-stock-sourcer"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1121,7 +1124,8 @@
         "color-theory",
         "image-creation",
         "brand-consistency-audit",
-        "image-generation"
+        "image-generation",
+        "commercial-stock-sourcer"
       ],
       "version": "1.0.0"
     },
@@ -1317,7 +1321,8 @@
         "color-theory",
         "image-creation",
         "brand-consistency-audit",
-        "image-generation"
+        "image-generation",
+        "commercial-stock-sourcer"
       ],
       "version": "1.0.0"
     },
