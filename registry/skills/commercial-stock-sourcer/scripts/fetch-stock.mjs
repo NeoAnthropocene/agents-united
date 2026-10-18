@@ -39,9 +39,28 @@ export function parseCliArgs(argv) {
       limit: { type: 'string', short: 'l', default: '3' },
       output: { type: 'string', default: './assets/stock-candidates' },
       provider: { type: 'string', default: 'auto' },
+      promote: { type: 'string' },
+      to: { type: 'string' },
+      dest: { type: 'string' },
     },
     strict: false,
   });
+
+  const output = String(values.output ?? './assets/stock-candidates');
+  const promote = typeof values.promote === 'string' ? values.promote.trim() : '';
+  if (promote) {
+    const toTarget = typeof values.to === 'string' ? values.to.trim() : typeof values.dest === 'string' ? values.dest.trim() : '';
+    if (!toTarget) {
+      throw new Error(
+        'Missing required argument: --to "<target-path>" when using --promote. Usage: node fetch-stock.mjs --promote cand_1.jpg --to ./assets/stock/hero-coffee.jpg [--output ./assets/stock-candidates]',
+      );
+    }
+    return {
+      promote,
+      to: toTarget,
+      output,
+    };
+  }
 
   const query = typeof values.query === 'string' ? values.query.trim() : '';
   if (!query) {
@@ -69,8 +88,6 @@ export function parseCliArgs(argv) {
   if (!VALID_PROVIDERS.has(provider)) {
     throw new Error(`Invalid --provider "${provider}". Allowed values: auto, pexels, pixabay, openverse.`);
   }
-
-  const output = String(values.output ?? './assets/stock-candidates');
 
   return {
     query,
@@ -384,23 +401,26 @@ export function scoreCandidate(cand, opts) {
   }
 
   const title = String(cand.title || '');
+  const metaBlob = `${title} ${cand.creatorUrl || ''} ${cand.metaHint || ''}`;
   if (/\b(camera app|project indigo|test photo)\b/i.test(title) || /^\d{4}-\d{2}-\d{2}\b/.test(title)) {
     score -= 45;
   }
-  if (/\b(unsplash|pixabay)\b/i.test(`${title} ${cand.creatorUrl || ''}`)) {
-    score += 10;
+  if (/\b(instant|packaging|packet|supermarket|product)\b/i.test(metaBlob)) {
+    score -= 35;
+  }
+  if (/\b(unsplash|pixabay|pexels)\b/i.test(metaBlob)) {
+    score += 25;
   }
   return score;
 }
 
-async function fetchWikimediaCommons(opts) {
+async function queryCommonsPages(gsrsearch, limit) {
   const url = new URL('https://commons.wikimedia.org/w/api.php');
-  const filetypeFilter = opts.type === 'vector' ? 'filetype:drawing' : 'filetype:bitmap';
   url.searchParams.set('action', 'query');
   url.searchParams.set('generator', 'search');
-  url.searchParams.set('gsrsearch', `${filetypeFilter} ${opts.query}`);
+  url.searchParams.set('gsrsearch', gsrsearch);
   url.searchParams.set('gsrnamespace', '6');
-  url.searchParams.set('gsrlimit', String(Math.max(30, opts.limit * 15)));
+  url.searchParams.set('gsrlimit', String(limit));
   url.searchParams.set('prop', 'imageinfo');
   url.searchParams.set('iiprop', 'url|dimensions|extmetadata');
   url.searchParams.set('iiurlwidth', '1280');
@@ -417,8 +437,54 @@ async function fetchWikimediaCommons(opts) {
   );
   if (!res.ok) throw new Error(`Wikimedia Commons HTTP ${res.status}`);
   const data = await res.json();
-  const allPages = Object.values(data.query?.pages || {});
+  return Object.values(data.query?.pages || {});
+}
 
+async function fetchWikimediaCommons(opts) {
+  const filetypeFilter = opts.type === 'vector' ? 'filetype:drawing' : 'filetype:bitmap';
+  const words = opts.query.trim().split(/\s+/).filter(Boolean);
+  const byPageId = new Map();
+
+  const addPages = pages => {
+    for (const p of pages) {
+      if (p && p.pageid && !byPageId.has(p.pageid)) {
+        byPageId.set(p.pageid, p);
+      }
+    }
+  };
+
+  addPages(await queryCommonsPages(`${filetypeFilter} ${opts.query}`, Math.max(30, opts.limit * 15)));
+  if (opts.type === 'photo') {
+    try {
+      addPages(await queryCommonsPages(`${filetypeFilter} ${opts.query} Unsplash`, 15));
+    } catch {
+      // Optional Unsplash boost query on Commons
+    }
+  }
+
+  if (byPageId.size < opts.limit && words.length >= 3) {
+    const core3 = words.slice(0, 3).join(' ');
+    if (core3 !== opts.query) {
+      try {
+        addPages(await queryCommonsPages(`${filetypeFilter} ${core3}`, Math.max(45, opts.limit * 15)));
+        if (opts.type === 'photo') {
+          addPages(await queryCommonsPages(`${filetypeFilter} ${core3} Unsplash`, 15));
+        }
+      } catch {
+        // Broadened 3-word fallback
+      }
+    }
+    if (byPageId.size < opts.limit) {
+      const core2 = words.slice(0, 2).join(' ');
+      try {
+        addPages(await queryCommonsPages(`${filetypeFilter} ${core2}`, Math.max(45, opts.limit * 15)));
+      } catch {
+        // Broadened 2-word fallback
+      }
+    }
+  }
+
+  const allPages = [...byPageId.values()];
   const mapped = [];
   for (let idx = 0; idx < allPages.length; idx++) {
     const p = allPages[idx];
@@ -438,6 +504,7 @@ async function fetchWikimediaCommons(opts) {
     const rawArtist = ii.extmetadata?.Artist?.value || 'Wikimedia Commons Contributor';
     const creator = String(rawArtist).replace(/<[^>]+>/g, '').trim() || 'Wikimedia Commons Contributor';
     const licShort = ii.extmetadata?.LicenseShortName?.value || 'CC0 / Public Domain';
+    const metaHint = `${rawArtist} ${ii.extmetadata?.Categories?.value || ''} ${ii.extmetadata?.Credit?.value || ''}`;
     const cand = {
       id: `cand_${idx + 1}`,
       ext,
@@ -453,17 +520,19 @@ async function fetchWikimediaCommons(opts) {
       width: ii.thumbwidth || ii.width || null,
       height: ii.thumbheight || ii.height || null,
       origWidth: ii.width || ii.thumbwidth || null,
+      metaHint,
       duration: null,
     };
     mapped.push(cand);
   }
 
   mapped.sort((a, b) => scoreCandidate(b, opts) - scoreCandidate(a, opts));
-  const diverse = dedupeByCreator(mapped, opts.limit, c => c.creator, {
+  const poolLimit = Math.max(opts.limit * 2, 6);
+  const diverse = dedupeByCreator(mapped, poolLimit, c => c.creator, {
     getTitle: c => c.title,
     allowBackfill: false,
   });
-  return diverse.slice(0, opts.limit).map((c, idx) => ({ ...c, id: `cand_${idx + 1}` }));
+  return diverse.slice(0, poolLimit).map((c, idx) => ({ ...c, id: `cand_${idx + 1}` }));
 }
 
 async function fetchOpenverseOnly(opts, env) {
@@ -500,9 +569,10 @@ async function fetchOpenverseOnly(opts, env) {
   if (rawResults.length === 0 && !isMock) {
     throw new Error('Openverse returned 0 results');
   }
+  const poolLimit = isMock ? opts.limit : Math.max(opts.limit * 2, 6);
   const results = isMock
     ? rawResults.slice(0, opts.limit)
-    : dedupeByCreator(rawResults, opts.limit, r => r.creator || r.id, {
+    : dedupeByCreator(rawResults, poolLimit, r => r.creator || r.id, {
         getTitle: r => r.title,
         allowBackfill: false,
       });
@@ -553,17 +623,18 @@ async function fetchOpenverse(opts, env) {
   const wmCandidates = wmSettled.status === 'fulfilled' ? wmSettled.value : [];
 
   if (ovCandidates.length === 0 && wmCandidates.length === 0) {
-    const err = ovSettled.status === 'rejected' ? ovSettled.reason : wmSettled.reason;
+    const err = wmSettled.status === 'rejected' ? wmSettled.reason : ovSettled.reason;
     throw err || new Error('Openverse and Wikimedia Commons returned 0 results');
   }
 
   const combined = [...ovCandidates, ...wmCandidates];
   combined.sort((a, b) => scoreCandidate(b, opts) - scoreCandidate(a, opts));
-  const diverse = dedupeByCreator(combined, opts.limit, c => c.creator, {
+  const poolLimit = Math.max(opts.limit * 2, 6);
+  const diverse = dedupeByCreator(combined, poolLimit, c => c.creator, {
     getTitle: c => c.title,
     allowBackfill: true,
   });
-  return diverse.slice(0, opts.limit).map((c, idx) => ({ ...c, id: `cand_${idx + 1}` }));
+  return diverse.slice(0, poolLimit).map((c, idx) => ({ ...c, id: `cand_${idx + 1}` }));
 }
 
 async function downloadFile(url, destPath, fallbackUrl = null, isMock = false) {
@@ -602,6 +673,50 @@ async function downloadFile(url, destPath, fallbackUrl = null, isMock = false) {
   }
 }
 
+export function promoteStockCandidate(opts) {
+  const outDir = path.resolve(opts.output || './assets/stock-candidates');
+  const destPath = path.resolve(opts.to);
+  const rawPromote = String(opts.promote || '').trim();
+
+  const searchPaths = [
+    path.resolve(rawPromote),
+    path.join(outDir, rawPromote),
+  ];
+  for (const ext of ['.jpg', '.png', '.svg', '.mp4', '.webp']) {
+    searchPaths.push(path.join(outDir, `${rawPromote}${ext}`));
+  }
+
+  let srcPath = searchPaths.find(p => fs.existsSync(p) && fs.statSync(p).isFile());
+  if (!srcPath && fs.existsSync(outDir)) {
+    const baseName = path.basename(rawPromote);
+    const subDirs = fs
+      .readdirSync(outDir, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => path.join(outDir, d.name));
+    for (const sub of subDirs) {
+      for (const candidateName of [baseName, `${baseName}.jpg`, `${baseName}.png`, `${baseName}.svg`, `${baseName}.mp4`]) {
+        const p = path.join(sub, candidateName);
+        if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+          srcPath = p;
+          break;
+        }
+      }
+      if (srcPath) break;
+    }
+  }
+
+  if (!srcPath) {
+    throw new Error(`Candidate file "${rawPromote}" not found in ${outDir}`);
+  }
+
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  fs.copyFileSync(srcPath, destPath);
+  if (fs.existsSync(outDir)) {
+    fs.rmSync(outDir, { recursive: true, force: true });
+  }
+  return { promotedFrom: srcPath, promotedTo: destPath, cleanedOutputDir: outDir };
+}
+
 export async function fetchStockCandidates(opts, env = process.env) {
   const chain = resolveProviderChain(opts.type, opts.provider, env);
   if (chain.length === 0) {
@@ -624,17 +739,24 @@ export async function fetchStockCandidates(opts, env = process.env) {
       }
 
       const outDir = path.resolve(opts.output);
+      const isMock = Boolean(env.STOCK_API_BASE_URL);
+      if (!isMock && fs.existsSync(outDir)) {
+        fs.rmSync(outDir, { recursive: true, force: true });
+      }
       fs.mkdirSync(outDir, { recursive: true });
 
-      const isMock = Boolean(env.STOCK_API_BASE_URL);
-      let savedCandidates = [];
-      try {
-        for (const cand of rawCandidates) {
-          const localFile = `${cand.id}.${cand.ext}`;
-          const destPath = path.join(outDir, localFile);
+      const savedCandidates = [];
+      let lastDlErr = null;
+      for (const cand of rawCandidates) {
+        if (savedCandidates.length >= opts.limit) break;
+        const nextIdx = savedCandidates.length + 1;
+        const candId = `cand_${nextIdx}`;
+        const localFile = `${candId}.${cand.ext}`;
+        const destPath = path.join(outDir, localFile);
+        try {
           await downloadFile(cand.downloadUrl, destPath, cand.fallbackDownloadUrl || null, isMock);
           savedCandidates.push({
-            id: cand.id,
+            id: candId,
             localFile,
             provider: cand.provider,
             sourceId: cand.sourceId,
@@ -647,33 +769,14 @@ export async function fetchStockCandidates(opts, env = process.env) {
             height: cand.height,
             duration: cand.duration,
           });
+        } catch (dlErr) {
+          lastDlErr = dlErr;
+          if (isMock) throw dlErr;
         }
-      } catch (dlErr) {
-        if (prov === 'openverse' && !isMock) {
-          const commonsCandidates = await fetchWikimediaCommons(opts);
-          savedCandidates = [];
-          for (const cand of commonsCandidates) {
-            const localFile = `${cand.id}.${cand.ext}`;
-            const destPath = path.join(outDir, localFile);
-            await downloadFile(cand.downloadUrl, destPath, cand.fallbackDownloadUrl || null, isMock);
-            savedCandidates.push({
-              id: cand.id,
-              localFile,
-              provider: cand.provider,
-              sourceId: cand.sourceId,
-              title: cand.title,
-              creator: cand.creator,
-              creatorUrl: cand.creatorUrl,
-              sourceUrl: cand.sourceUrl,
-              license: cand.license,
-              width: cand.width,
-              height: cand.height,
-              duration: cand.duration,
-            });
-          }
-        } else {
-          throw dlErr;
-        }
+      }
+
+      if (savedCandidates.length === 0) {
+        throw lastDlErr || new Error('Failed to download any candidate files');
       }
 
       const manifest = {
@@ -700,6 +803,11 @@ export async function fetchStockCandidates(opts, env = process.env) {
 async function main() {
   try {
     const opts = parseCliArgs(process.argv.slice(2));
+    if (opts.promote) {
+      const { promotedTo, cleanedOutputDir } = promoteStockCandidate(opts);
+      process.stdout.write(`Promoted candidate to ${promotedTo} and removed ${cleanedOutputDir}\n`);
+      return;
+    }
     const { manifestPath, manifest } = await fetchStockCandidates(opts, process.env);
     process.stdout.write(
       `Downloaded ${manifest.candidates.length} ${manifest.mediaType} candidate(s) from ${manifest.provider} to ${path.dirname(manifestPath)}\nManifest: ${manifestPath}\n`,

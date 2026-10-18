@@ -22,9 +22,9 @@ Our specialty coffee brand **Hearth Roasters** needs commercial-safe stock asset
 
 ## Task Requirements
 Load and follow the \`commercial-stock-sourcer\` skill:
-1. **Step 1 (Fetch Candidates):** Run \`scripts/fetch-stock.mjs\` to download 3 landscape photo candidates for \`"pour over coffee"\` into \`./assets/stock-candidates\`.
-2. **Step 2 (Vision-in-the-Loop Inspection):** Read \`./assets/stock-candidates/manifest.json\` and inspect each downloaded candidate image visually with your multimodal file-reading tool (\`Read\`). Evaluate warm lighting, absence of third-party trademarks, and a clean copy zone for \`#FAF6F0\` headline text.
-3. **Step 3 (Select, Promote & Clean Up):** Promote the single best photo to \`assets/stock/hero-coffee.jpg\` and delete \`./assets/stock-candidates/\`.
+1. **Step 1 (Fetch Candidates):** Run \`node scripts/fetch-stock.mjs --query "pour over coffee" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\` to download 3 landscape photo candidates into \`./assets/stock-candidates\`.
+2. **Step 2 (Vision-in-the-Loop Inspection):** Read \`./assets/stock-candidates/manifest.json\` and inspect each downloaded candidate image visually with your multimodal file-reading tool (\`Read\`). Evaluate warm lighting, absence of third-party trademarks, and a clean copy zone for \`#FAF6F0\` headline text (with or without a \`#231F1D\` dark espresso overlay).
+3. **Step 3 (Select, Promote & Clean Up):** Run \`node scripts/fetch-stock.mjs --promote <cand_file> --to ./assets/stock/hero-coffee.jpg --output ./assets/stock-candidates\` to promote the single best photo to \`assets/stock/hero-coffee.jpg\` and delete \`./assets/stock-candidates/\`.
 4. **Step 4 (Provenance & Attribution):** Write \`assets/stock/hero-coffee.jpg.provenance.json\` (including \`provider\`, \`creator\`, \`license\`, \`sourceUrl\`, \`inspectedByVision: true\`, and \`visionNotes\`) and write \`attribution.md\` in the workspace root.
 `;
 

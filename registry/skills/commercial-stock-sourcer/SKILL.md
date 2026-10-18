@@ -26,13 +26,13 @@ Sourcing commercial-safe photos, vectors, and B-roll video is Rung 2 of the visu
 ## Step-by-Step Runbook
 1. **Step 1 — Fetch Candidates:** Run `${CLAUDE_SKILL_DIR}/scripts/fetch-stock.mjs` (or ask the lead if without a shell) to download 3–5 candidates and `manifest.json` into `./assets/stock-candidates`.
 2. **Step 2 — Vision-in-the-Loop Inspection & Hard Pass/Fail Gate:** Read `./assets/stock-candidates/manifest.json`. For `photo`, `vector`, and `illustration`, inspect each candidate with `Read` on 5 mandatory criteria (never ship a stock asset unseen):
-   - **Subject Recognizability & Focus:** Primary subject and ritual clearly recognizable and sharp (reject macro blobs, camera tests, motion blur, or cropped fragments).
+   - **Subject Recognizability & Focus:** Primary subject clearly recognizable and sharp (reject macro blobs, camera tests, blur, or fragments).
    - **Composition & Aspect Framing:** Framing matches `--orientation` without letterbox bars or cutoffs.
    - **Lighting & Palette Harmony:** Lighting warmth and surface colors harmonize with the brief's tokens.
-   - **Clean Copy Zone:** Uncluttered negative space where headline/overlay text achieves readable contrast.
-   - **Zero Third-Party Trademarks / Unreleased Faces:** No commercial logos, device wordmarks, or close-up portraits used as customer/team endorsements.
-   - **Mandatory Batch Rejection Gate:** Never promote the "least bad" candidate just to reach Step 3. If all candidates fail any criterion—or come from one unusable shoot—reject the batch and re-run Step 1 with refined terms (up to 2 retries, adding action/equipment nouns). For `video` (`.mp4`), check `manifest.json` (`duration`, `width`, `height`, tags) for aspect ratio and duration.
-3. **Step 3 — Select, Promote & Clean Up:** Move the winner that passed Step 2 to `assets/stock/<descriptive-name>.<ext>` and delete `./assets/stock-candidates`.
+   - **Clean Copy Zone:** Uncluttered space where headline text achieves readable contrast (with or without the brief's dark/light overlay).
+   - **Zero Third-Party Trademarks / Unreleased Faces:** No readable commercial logos, wordmarks, or close-up portraits used as customer/team endorsements.
+   - **Mandatory Batch Rejection Gate:** Never promote the "least bad" candidate just to reach Step 3. If all candidates fail any criterion—or come from one unusable shoot—reject the batch and re-run Step 1 with refined terms (up to 2 retries). For `video` (`.mp4`), check `manifest.json` (`duration`, `width`, `height`, tags).
+3. **Step 3 — Select, Promote & Clean Up:** Run `node ${CLAUDE_SKILL_DIR}/scripts/fetch-stock.mjs --promote <cand_file> --to assets/stock/<descriptive-name>.<ext> --output ./assets/stock-candidates` to copy the winner and delete `./assets/stock-candidates`.
 4. **Step 4 — Provenance Sidecar & Attribution:** Write `assets/stock/<descriptive-name>.<ext>.provenance.json` and append creator and license credit to `attribution.md` for Deniz or the lead.
 
 ## Code & Config Exemplars
@@ -50,9 +50,9 @@ See [examples/worked-example.md](examples/worked-example.md) for a worked exampl
 
 ### Anti-patterns
 - **Blind selection without vision inspection:** Picking `cand_1.jpg` without `Read` risks watermarks, awkward crops, or busy copy zones.
-- **Promoting the "least-bad" candidate from a failed batch:** Rationalizing a blurry macro shot or off-brief photo because its colors loosely match the palette violates Step 2; reject the batch and re-query.
+- **Promoting the "least-bad" candidate:** Rationalizing a blurry or off-brief photo because its colors loosely match violates Step 2; reject the batch and re-query.
 - **Hotlinking remote CDN URLs:** Linking to provider CDNs breaks offline builds and omits local provenance.
-- **Leaving `./assets/stock-candidates/` in the workspace:** Unused files pollute the asset folder.
+- **Leaving `./assets/stock-candidates/` in the workspace:** Always clean up with `--promote` so unused files never pollute the repo.
 - **Presenting stock people as real customers or staff:** Never use a stock portrait on a testimonial or bio card (`image-creation` Rung 2).
 
 ## Edge Cases & Error Recovery
@@ -62,6 +62,6 @@ See [examples/worked-example.md](examples/worked-example.md) for a worked exampl
 
 ## Verification Checklist
 - [ ] Every image candidate was inspected with `Read` (or metadata-checked for `.mp4`) before selection.
-- [ ] Winner passed Subject Recognizability & Focus, Palette Harmony, Clean Copy Zone, and Trademark/Privacy checks (no "least-bad" compromise).
+- [ ] Winner passed Subject, Palette, Copy Zone, and Trademark checks (no "least-bad" compromise).
 - [ ] Winning asset is promoted to `assets/stock/<descriptive-name>.<ext>` and `./assets/stock-candidates/` is removed.
 - [ ] `assets/stock/<descriptive-name>.<ext>.provenance.json` and `attribution.md` list provider, creator, license, and URL.

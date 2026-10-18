@@ -359,7 +359,40 @@ describe('Tier 1 — Unit: CLI argument parsing & provider routing', () => {
       },
       { type: 'photo', orientation: 'landscape' },
     );
+    const retailPackaging = mod.scoreCandidate(
+      {
+        license: 'CC0 / Public Domain (Commercial Safe)',
+        width: 4000,
+        height: 3000,
+        origWidth: 4000,
+        title: 'File:Cafex anında hazır filtre kahve - drip filter coffee instant product 01.jpg',
+      },
+      { type: 'photo', orientation: 'landscape' },
+    );
     expect(cc0Hero).toBeGreaterThan(cameraDump + 100);
+    expect(cc0Hero).toBeGreaterThan(retailPackaging + 40);
+  });
+
+  it('promotes the winning candidate via --promote --to and deletes the stock-candidates folder cleanly', async () => {
+    const tmpWs = fs.mkdtempSync(path.join(os.tmpdir(), 'stock-promote-'));
+    try {
+      const candDir = path.join(tmpWs, 'assets', 'stock-candidates');
+      const destFile = path.join(tmpWs, 'assets', 'stock', 'hero-coffee.jpg');
+      fs.mkdirSync(candDir, { recursive: true });
+      fs.writeFileSync(path.join(candDir, 'cand_2.jpg'), 'fake-jpeg-bytes');
+      fs.writeFileSync(
+        path.join(candDir, 'manifest.json'),
+        JSON.stringify({ candidates: [{ id: 'cand_2', localFile: 'cand_2.jpg', title: 'Manual drip' }] }),
+      );
+
+      const res = await runScript(['--promote', 'cand_2.jpg', '--to', destFile, '--output', candDir]);
+      expect(res.status, res.stderr).toBe(0);
+      expect(fs.existsSync(destFile)).toBe(true);
+      expect(fs.readFileSync(destFile, 'utf8')).toBe('fake-jpeg-bytes');
+      expect(fs.existsSync(candDir)).toBe(false);
+    } finally {
+      fs.rmSync(tmpWs, { recursive: true, force: true });
+    }
   });
 });
 
