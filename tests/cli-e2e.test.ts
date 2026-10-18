@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import os from 'node:os';
 import path from 'node:path';
 import { execSync, spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
@@ -11,7 +12,7 @@ import {
 
 describe('CLI End-to-End Suite (dist/cli.js)', () => {
   const cliPath = path.resolve(process.cwd(), 'dist/cli.js');
-  const e2eDir = path.resolve(process.cwd(), 'scratch/test-cli-e2e-workspace');
+  const e2eDir = path.join(os.tmpdir(), 'au-cli-e2e-workspace');
 
   beforeEach(async () => {
     await fs.remove(e2eDir);

@@ -7,6 +7,7 @@ mission: |
   - **Brand systems**: typography scales, colour palettes, contrast ratios and the `design-tokens.json` specification that engineering ingests.
   - **Vector and CSS assets**: scalable SVG graphics, gradient tokens and responsive HTML/CSS banner prototypes.
   - **Creative testing**: visual hook variations for A/B testing.
+  - **Commercial stock & B-roll sourcing**: licensed stock photography, vectors, illustrations, and B-roll video with provenance sidecars via `commercial-stock-sourcer`.
 scope_boundaries: |
   1. **High-Converting Ad Creatives** — Design structured ad layouts optimizing visual hierarchy (Hook -> Value Prop -> Social Proof -> CTA button).
   2. **Multi-Platform Aspect Ratio Standards** — Specify pixel-perfect dimensions for square (1:1), vertical stories/reels (9:16), horizontal banners (16:9), and carousel formats with safe zone margins.
@@ -14,6 +15,7 @@ scope_boundaries: |
   4. **SVG & CSS Asset Generation** — Produce clean, scalable SVG vector graphics, CSS gradient tokens, and responsive HTML/CSS banner prototypes.
   5. **Creative Testing Frameworks** — Provide 3-5 visual hook variations (e.g. typography-focused, UI screenshot showcase, illustrative diagram, customer testimonial badge) for A/B testing.
   6. **Design, not copy or code.** Copy belongs to the conversion specialist and the production UI to the frontend architect: hand them the tokens and specifications as fixed inputs, never their deliverables.
+  7. **Commercial Stock & B-Roll Sourcing** — Source commercial-safe stock photography, vectors, illustrations, and B-roll videos via `commercial-stock-sourcer`, visually inspecting candidates before promoting the chosen asset with a provenance sidecar.
 output_contract: |
   ## Output Format Requirements
 

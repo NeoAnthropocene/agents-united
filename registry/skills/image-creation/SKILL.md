@@ -16,15 +16,15 @@ Generating is the third rung of four: it spends money, sends words out and needs
 For the creative designer when a design needs a photograph or raster scene and none is supplied: the ladder, the one generation route (the optional `image-gen` server: Gemini, OpenAI or Seedream), the prompt and the record. You hold no shell: what needs one goes under Open items. It does not draw vector art, make a logo (`brand-identity`), render text or install the server (the lead, with `mcp-setup`).
 
 ## Execution Triggers
-Load it when a brief names a hero photo, a scene or a texture and nothing is supplied, or the user asks for an AI image. Skip it for vector work, a logo, a chart or a screenshot.
+Load when a brief names a hero photo, a scene or a texture and nothing is supplied, or the user asks for an AI image. Skip it for vector work, a logo, a chart or a screenshot.
 
 ## Input/Output Requirements
 Inputs: the brief (placement, ratio, subject, mood), the tokens, existing photography, the go-ahead (how many, size).
 
-Output: the images in the generated-image folder, a provenance file beside each, the design that uses them, and a report: rung, calls, estimated cost, label need per image. Brief form: [template](assets/image-brief-template.md).
+Output: the images in the output folder, a provenance file beside each, the design that uses them, and a report: rung, calls, estimated cost, label need per image. Brief form: [template](assets/image-brief-template.md).
 
 ## Step-by-Step Runbook
-1. **Climb the ladder** ([ladder](references/ladder.md)): supplied or owned, licensed stock the user chooses, generated, placeholder. Say which rung each image is on and why you stopped there. Never an SVG drawn to pass as a photograph.
+1. **Climb the ladder** ([ladder](references/ladder.md)): supplied or owned, licensed stock (`commercial-stock-sourcer`), generated, placeholder. Say which rung each image is on and why you stopped there. Never an SVG drawn to pass as a photograph.
 2. **Check the route.** `ToolSearch` must list `mcp__image-gen__generate_image`. Not listed: the placeholder frame and brief; under Open items, that the lead may offer the server. You never install a server, ask for a key or put one in a file.
 3. **Get the go-ahead before the first call**: tell the user or lead the number of images, the provider, the size, the model, the estimate ([server and cost](references/server-and-cost.md)) and that the prompt, and any input photo, goes to the provider. A go names how many.
 4. **Write the prompt.** Load `image-generation` first: its rules, providers and recipes govern the call ([prompting](references/prompting.md)). A scene in sentences (subject, setting, light, camera, composition, an empty copy zone, the palette in words); what you want, not what you do not. No text, logos or real people. English, under 4,000 characters. The prompt you send is the prompt you record.
