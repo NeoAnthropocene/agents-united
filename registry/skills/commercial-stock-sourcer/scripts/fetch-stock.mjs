@@ -7,6 +7,12 @@ import { parseArgs } from 'node:util';
 
 dns.setDefaultResultOrder('ipv4first');
 
+try {
+  process.loadEnvFile?.();
+} catch {
+  // Ignore missing or unreadable .env file
+}
+
 const VALID_TYPES = new Set(['photo', 'vector', 'illustration', 'video']);
 const VALID_ORIENTATIONS = new Set(['landscape', 'portrait', 'square']);
 const VALID_PROVIDERS = new Set(['auto', 'unsplash', 'pexels', 'pixabay', 'openverse']);
