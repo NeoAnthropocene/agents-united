@@ -54,17 +54,31 @@ function evaluateHostWorkspace(rootDir, host) {
     issues.push('Missing or empty attribution.md');
   }
 
-  const EXPECTED_STEMS = ['unicorn-mascot', 'playground-children', 'arguing-couple'];
+  let expectedStems = [];
+  const briefPath = path.join(ws, 'BRIEF.md');
+  if (fs.existsSync(briefPath)) {
+    try {
+      const briefContent = fs.readFileSync(briefPath, 'utf8');
+      const matches = [...briefContent.matchAll(/assets\/stock\/([a-zA-Z0-9_-]+)\.(?:jpg|jpeg|png|svg|webp|mp4)/gi)];
+      if (matches.length > 0) {
+        expectedStems = [...new Set(matches.map(m => m[1]))];
+      }
+    } catch {}
+  }
+  if (expectedStems.length === 0) {
+    expectedStems = ['unicorn-mascot', 'playground-children', 'arguing-couple'];
+  }
+
   const isLegacySingleTest = mediaFiles.some(f => f.startsWith('hero-coffee'));
 
   if (!isLegacySingleTest) {
     const stemsFound = mediaFiles.map(f => path.basename(f, path.extname(f)));
-    const missingStems = EXPECTED_STEMS.filter(stem => !stemsFound.includes(stem));
+    const missingStems = expectedStems.filter(stem => !stemsFound.includes(stem));
     if (missingStems.length > 0) {
       return {
         host,
         status: 'PARTIAL',
-        details: `Promoted ${mediaFiles.length}/${EXPECTED_STEMS.length} (${mediaFiles.join(', ')}); missing: ${missingStems.join(', ')}${issues.length > 0 ? `; issues: ${issues.join('; ')}` : ''}`,
+        details: `Promoted ${mediaFiles.length}/${expectedStems.length} (${mediaFiles.join(', ')}); missing: ${missingStems.join(', ')}${issues.length > 0 ? `; issues: ${issues.join('; ')}` : ''}`,
       };
     }
   }

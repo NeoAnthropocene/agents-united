@@ -10,7 +10,7 @@ const DEFAULT_ROOT = path.join(os.tmpdir(), 'agents-united-stock-sourcer-test');
 const HOSTS = ['claude', 'cline', 'antigravity', 'codex'];
 const SKILLS_TO_COPY = ['commercial-stock-sourcer', 'image-creation', 'color-theory'];
 
-const BRIEF_MD = `# Creative Brief — Hearth Roasters Multi-Asset Stock Sourcing
+const SHARED_BRIEF_HEADER = `# Creative Brief — Hearth Roasters Stock Sourcing
 
 You are **Jamileh** (\`agency-creative-designer\` / \`subagent-marketing-creative-designer\`).
 Our brand **Hearth Roasters** needs commercial-safe stock assets for our upcoming marketing campaigns and landing page sections.
@@ -25,10 +25,10 @@ Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env
 
 ### Sourcing Workflow:
 1. **Step 1 (Fetch Candidates):**
-   - For API Sourcing (Assets 1 & 2): Run \`node scripts/fetch-stock.mjs --query "<query>" --type <type> --orientation <orientation> --limit 5 --output ./assets/stock-candidates\`.
-   - For Web Search Fallback (Asset 3): Use your native web search tool (e.g. \`site:commons.wikimedia.org "couple arguing" filetype:bitmap\` or searching Wikimedia Commons for human dispute photos) to find 1 to 3 candidate image/file URLs. Then run:
+   - For API Sourcing: Run \`node scripts/fetch-stock.mjs --query "<query>" --type <type> --orientation <orientation> --limit 5 --output ./assets/stock-candidates\`.
+   - For Web Search Fallback: Use your native web search tool (e.g. searching Wikimedia Commons or public domain for the subject) to find 1 to 3 candidate image/file URLs. Then run:
      \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
-     *(Fallback: If your host environment does not have a web_search tool, or if discovered URLs 404/fail to download, fall back to: \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`.)*
+     *(Fallback: If your host environment does not have a web_search tool, or if discovered URLs 404/fail to download, fall back to: \`node scripts/fetch-stock.mjs --query "<query>" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`.)*
 2. **Step 2 (Vision-in-the-Loop Inspection & Hard Pass/Fail Gate):**
    - Read \`./assets/stock-candidates/manifest.json\`.
    - Inspect each candidate image with \`Read\` (or view tool) against the 5 mandatory criteria: Subject Recognizability & Focus, Composition & Aspect Framing, Lighting & Palette Harmony, Clean Copy Zone, Zero Third-Party Trademarks.
@@ -41,35 +41,93 @@ Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env
 4. **Step 4 (Provenance & Attribution):**
    - Write \`assets/stock/<filename>.<ext>.provenance.json\` with provider, creator, license, source URL, and inspection notes.
    - If \`attribution.md\` does not yet exist, create it directly (or append to it). Append creator attribution and license credit (including UTM source parameters for Unsplash).
+`;
 
-### Campaign Assets to Source (Complete All 3):
+const HOST_BRIEFS = {
+  claude: `${SHARED_BRIEF_HEADER}
+### Campaign Assets to Source (Complete Both 2):
 
-1. **Unicorn Mascot Illustration (API Sourcing - Vector/Illustration):**
-   - Query: \`"unicorn illustration"\`
-   - Type: \`illustration\`
-   - Orientation: \`square\`
-   - Command: \`node scripts/fetch-stock.mjs --query "unicorn illustration" --type illustration --orientation square --limit 5 --output ./assets/stock-candidates\`
-   - Target Output: \`assets/stock/unicorn-mascot.webp\` (or \`.png\` / \`.jpg\` / \`.svg\`) + sidecar \`assets/stock/unicorn-mascot.<ext>.provenance.json\`
-   - Format Note: WebP format is modern, web-ready, and fully accepted; do not attempt to convert WebP to JPG.
-
-2. **Playground Children Photo (API Sourcing - Multi-Provider / Unsplash Blend):**
-   - Query: \`"children playground with happy asian children"\`
+1. **Artisanal Morning Pastry (API Sourcing - Food & Bakery):**
+   - Query: \`"cinnamon roll fresh bakery pastry"\`
    - Type: \`photo\`
    - Orientation: \`landscape\`
-   - Demographic & Subject Requirement: Must feature joyful, smiling Asian child or children having fun outdoors on playground equipment. If retrying after a batch rejection, NEVER drop the "asian" demographic requirement.
-   - Command: \`node scripts/fetch-stock.mjs --query "children playground with happy asian children" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`
-   - Target Output: \`assets/stock/playground-children.jpg\` + sidecar \`assets/stock/playground-children.jpg.provenance.json\`
+   - Subject Guidance: Freshly baked artisanal pastry or cinnamon roll with warm golden tones harmonizing with \`--accent-copper\` (\`#C86D3B\`) and clean space for copy.
+   - Command: \`node scripts/fetch-stock.mjs --query "cinnamon roll fresh bakery pastry" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/bakery-pastry.jpg\` + sidecar \`assets/stock/bakery-pastry.jpg.provenance.json\`
 
-3. **Editorial Discussion Photo (Web Search Fallback Test):**
-   - Subject: \`"woman and man arguing"\`
+2. **Ceramic Pour Over Dripper (Web Search Fallback / Craft Coffee):**
+   - Subject: \`"ceramic coffee dripper kettle cafe"\`
    - Type: \`photo\`
    - Orientation: \`landscape\`
    - Sourcing Method: **Test the Web Search Fallback Tool or use API query fallback!**
-     - Step 1a: Use your host's web search tool to find 1 to 3 Wikimedia Commons public domain / CC0 image URLs for an adult man and woman arguing / having a heated discussion (e.g. \`site:commons.wikimedia.org "couple arguing" filetype:bitmap\`). Avoid non-human metaphors (such as birds or political maps).
+     - Step 1a: Use your host's web search tool to find 1 to 3 Wikimedia Commons public domain / CC0 image URLs for a pour-over ceramic dripper or kettle setup (e.g. \`site:commons.wikimedia.org "coffee" "dripper" filetype:bitmap\`).
      - Step 1b: Pass the discovered URL(s) to fetch-stock: \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
-     - *(Fallback if web search is not enabled or discovered URLs 404: run \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`)*
-   - Target Output: \`assets/stock/arguing-couple.jpg\` + sidecar \`assets/stock/arguing-couple.jpg.provenance.json\`
-`;
+     - *(Fallback if web search is not enabled or discovered URLs 404: run \`node scripts/fetch-stock.mjs --query "ceramic coffee dripper kettle cafe" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`)*
+   - Target Output: \`assets/stock/coffee-dripper.jpg\` + sidecar \`assets/stock/coffee-dripper.jpg.provenance.json\`
+`,
+
+  cline: `${SHARED_BRIEF_HEADER}
+### Campaign Assets to Source (Complete Both 2):
+
+1. **Coffee Cup Mascot Icon (API Sourcing - Vector/Illustration):**
+   - Query: \`"coffee cup vector icon minimal"\`
+   - Type: \`illustration\`
+   - Orientation: \`square\`
+   - Command: \`node scripts/fetch-stock.mjs --query "coffee cup vector icon minimal" --type illustration --orientation square --limit 5 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/coffee-mascot.webp\` (or \`.png\` / \`.jpg\` / \`.svg\`) + sidecar \`assets/stock/coffee-mascot.<ext>.provenance.json\`
+   - Format Note: WebP format is modern, web-ready, and fully accepted; do not attempt to convert WebP to JPG.
+
+2. **Barista Crafting Latte Art (API Sourcing - Action Photo):**
+   - Query: \`"barista pouring latte art espresso"\`
+   - Type: \`photo\`
+   - Orientation: \`landscape\`
+   - Subject Guidance: Action shot of steamed milk pouring into rich espresso crema forming latte art. Rich warm espresso tones (\`#231F1D\`) and clean negative space. Zero commercial logos.
+   - Command: \`node scripts/fetch-stock.mjs --query "barista pouring latte art espresso" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/barista-latte.jpg\` + sidecar \`assets/stock/barista-latte.jpg.provenance.json\`
+`,
+
+  antigravity: `${SHARED_BRIEF_HEADER}
+### Campaign Assets to Source (Complete Both 2):
+
+1. **Drum Coffee Roasting (API Sourcing - Roastery Equipment):**
+   - Query: \`"coffee beans roasting machine roastery"\`
+   - Type: \`photo\`
+   - Orientation: \`landscape\`
+   - Subject Guidance: Golden to deep-brown coffee beans tumbling in a roaster drum or cooling tray with copper/metallic highlights.
+   - Command: \`node scripts/fetch-stock.mjs --query "coffee beans roasting machine roastery" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/roasting-beans.jpg\` + sidecar \`assets/stock/roasting-beans.jpg.provenance.json\`
+
+2. **Friends Enjoying Coffee at Cafe (Web Search Fallback / Lifestyle):**
+   - Subject: \`"friends talking at cafe table"\`
+   - Type: \`photo\`
+   - Orientation: \`landscape\`
+   - Sourcing Method: **Test the Web Search Fallback Tool or use API query fallback!**
+     - Step 1a: Use your host's web search tool to find 1 to 3 Wikimedia Commons public domain / CC0 image URLs of friends talking and drinking coffee at a cafe table (e.g. \`site:commons.wikimedia.org "friends" "cafe" filetype:bitmap\`). Avoid non-human metaphors or empty rooms.
+     - Step 1b: Pass the discovered URL(s) to fetch-stock: \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
+     - *(Fallback if web search is not enabled or discovered URLs 404: run \`node scripts/fetch-stock.mjs --query "friends talking at cafe table" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`)*
+   - Target Output: \`assets/stock/cafe-friends.jpg\` + sidecar \`assets/stock/cafe-friends.jpg.provenance.json\`
+`,
+
+  codex: `${SHARED_BRIEF_HEADER}
+### Campaign Assets to Source (Complete Both 2):
+
+1. **Modern Cafe Interior (API Sourcing - Architecture & Copy Space):**
+   - Query: \`"modern cafe interior wooden counter empty"\`
+   - Type: \`photo\`
+   - Orientation: \`landscape\`
+   - Subject Guidance: Warm natural lighting on clean wooden counters with seating, warm dark roast accents (\`#231F1D\`), and ample clean negative space on the left or top for headline overlays.
+   - Command: \`node scripts/fetch-stock.mjs --query "modern cafe interior wooden counter empty" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/cafe-interior.jpg\` + sidecar \`assets/stock/cafe-interior.jpg.provenance.json\`
+
+2. **Asian Barista Crafting Pour Over (API Sourcing - Demographic Focus):**
+   - Query: \`"asian woman barista brewing coffee"\`
+   - Type: \`photo\`
+   - Orientation: \`landscape\`
+   - Demographic & Subject Requirement: Must feature an Asian barista brewing or preparing coffee in an artisanal coffee shop setting. If retrying after a batch rejection, NEVER drop the "asian" demographic requirement.
+   - Command: \`node scripts/fetch-stock.mjs --query "asian woman barista brewing coffee" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/asian-barista.jpg\` + sidecar \`assets/stock/asian-barista.jpg.provenance.json\`
+`,
+};
 
 const DESIGN_TOKENS = {
   color: {
@@ -130,7 +188,8 @@ function scaffoldHostWorkspace(rootDir, host, clean = false) {
     }
   }
 
-  fs.writeFileSync(path.join(ws, 'BRIEF.md'), BRIEF_MD, 'utf8');
+  const briefContent = HOST_BRIEFS[host] ?? HOST_BRIEFS.claude;
+  fs.writeFileSync(path.join(ws, 'BRIEF.md'), briefContent, 'utf8');
   fs.writeFileSync(path.join(ws, 'design-tokens.json'), `${JSON.stringify(DESIGN_TOKENS, null, 2)}\n`, 'utf8');
 
   if (preservedEnv && !preservedEnv.includes('your_unsplash_access_key_here')) {
