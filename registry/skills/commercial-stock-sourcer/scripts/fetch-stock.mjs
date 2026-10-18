@@ -1136,7 +1136,12 @@ export async function fetchStockCandidates(opts, env = process.env) {
   }
 
   if (poolByProvider.length === 0) {
-    throw new Error(`All configured stock providers failed (${errors.join('; ')})`);
+    const isNetworkBlocked =
+      errors.length > 0 && errors.every(e => /fetch failed|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/i.test(e));
+    const extraHint = isNetworkBlocked
+      ? ' Network access appears restricted in this host environment (e.g. Codex default workspace-write sandbox). If running Codex, start with "-s danger-full-access". If network cannot be enabled, fall back to an in-house SVG placeholder (image-creation Rung 4).'
+      : '';
+    throw new Error(`All configured stock providers failed (${errors.join('; ')}).${extraHint}`);
   }
 
   // Blending candidates across providers:

@@ -40,7 +40,12 @@ Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env
    - (This copies the winner to \`assets/stock/\`, triggers the Unsplash download endpoint if applicable, and automatically cleans up \`./assets/stock-candidates/\`).
 4. **Step 4 (Provenance & Attribution):**
    - Write \`assets/stock/<filename>.<ext>.provenance.json\` with provider, creator, license, source URL, and inspection notes.
+   - For in-house SVG placeholders: set \`"sourceUrl": "in-house placeholder (image-creation Rung 4)"\`, \`"inspectedByVision": false\`, and \`"visionNotes": "unverified visually (in-house SVG placeholder)"\`.
    - If \`attribution.md\` does not yet exist, create it directly (or append to it). Append creator attribution and license credit (including UTM source parameters for Unsplash).
+5. **Fallback to In-House SVG Placeholder (Rung 4):**
+   - If candidates fail visual inspection in all retries, or if network access is blocked by the host sandbox, do not leave the asset unsourced.
+   - Draw an in-house SVG placeholder adhering to brand palette tokens (\`#231F1D\`, \`#FAF6F0\`, \`#C86D3B\`) and aspect ratio at \`assets/stock/<filename>.svg\`.
+   - Write \`assets/stock/<filename>.svg.provenance.json\` with \`"placeholder": true\` per Step 4.
 `;
 
 const HOST_BRIEFS = {
@@ -109,6 +114,9 @@ const HOST_BRIEFS = {
 `,
 
   codex: `${SHARED_BRIEF_HEADER}
+> [!NOTE] Host Environment Note:
+> If running under Codex, start with \`codex -s danger-full-access\` to permit shell network requests. If running in a restricted-network sandbox where fetch-stock cannot connect, fall back to an in-house SVG placeholder per Step 5.
+
 ### Campaign Assets to Source (Complete Both 2):
 
 1. **Modern Cafe Interior (API Sourcing - Architecture & Copy Space):**
@@ -264,6 +272,7 @@ function main() {
       root: { type: 'string', default: DEFAULT_ROOT },
       'skip-preflight-network': { type: 'boolean', default: false },
       clean: { type: 'boolean', default: false },
+      host: { type: 'string' },
     },
     strict: false,
   });
@@ -271,7 +280,8 @@ function main() {
   const rootDir = path.resolve(String(values.root ?? DEFAULT_ROOT));
   fs.mkdirSync(rootDir, { recursive: true });
 
-  for (const host of HOSTS) {
+  const targetHosts = values.host ? [String(values.host)] : HOSTS;
+  for (const host of targetHosts) {
     scaffoldHostWorkspace(rootDir, host, Boolean(values.clean));
   }
 

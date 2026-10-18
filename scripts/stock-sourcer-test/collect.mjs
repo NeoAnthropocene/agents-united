@@ -37,12 +37,20 @@ function evaluateHostWorkspace(rootDir, host) {
       try {
         const data = JSON.parse(fs.readFileSync(path.join(stockDir, pf), 'utf8'));
         for (const reqField of ['provider', 'creator', 'license', 'sourceUrl']) {
-          if (!data[reqField]) issues.push(`${pf} missing ${reqField}`);
+          if (!data[reqField] && !(data.placeholder === true && reqField === 'sourceUrl')) {
+            issues.push(`${pf} missing ${reqField}`);
+          }
         }
         if (typeof data.inspectedByVision !== 'boolean') {
           issues.push(`${pf} inspectedByVision must be a boolean`);
-        } else if (data.inspectedByVision === false && (!data.visionNotes || !/unverified/i.test(data.visionNotes))) {
-          issues.push(`${pf} inspectedByVision is false but visionNotes does not explain why (expected 'unverified')`);
+        } else if (
+          data.inspectedByVision === false &&
+          (!data.visionNotes ||
+            (!/unverified/i.test(data.visionNotes) &&
+              !/placeholder/i.test(data.visionNotes) &&
+              !/not a photo/i.test(data.visionNotes)))
+        ) {
+          issues.push(`${pf} inspectedByVision is false but visionNotes does not explain why (expected 'unverified' or 'placeholder')`);
         }
       } catch (err) {
         issues.push(`${pf} invalid JSON: ${err instanceof Error ? err.message : String(err)}`);
