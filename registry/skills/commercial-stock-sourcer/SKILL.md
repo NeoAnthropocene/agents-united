@@ -10,7 +10,7 @@ metadata:
 # Commercial Stock & B-Roll Sourcer
 
 ## Overview & Purpose
-Sourcing commercial-safe photos, vectors, and B-roll video is Rung 2 of the visual ladder in `image-creation`. This skill downloads candidates to disk, inspects them with `Read`, promotes the best match, deletes unused files, and writes a provenance sidecar. See [references/providers-and-licensing.md](references/providers-and-licensing.md) for Unsplash guidelines, provider routing, and licensing rules.
+Sourcing commercial-safe photos, vectors, and B-roll video is Rung 2 of `image-creation`. This skill downloads candidates to disk, inspects them with `Read`, promotes the best match, deletes unused files, and writes a provenance sidecar. See [references/providers-and-licensing.md](references/providers-and-licensing.md) for Unsplash guidelines, provider routing, and licensing rules.
 
 ## Execution Triggers
 - **Load when:** A brief needs a real photograph, vector, illustration, or B-roll `.mp4` clip from Unsplash, Pexels, Pixabay, or Openverse (CC0 / Public Domain fallback).
@@ -27,10 +27,10 @@ Sourcing commercial-safe photos, vectors, and B-roll video is Rung 2 of the visu
 1. **Step 1 — Fetch Candidates:** Run `${CLAUDE_SKILL_DIR}/scripts/fetch-stock.mjs` (or ask the lead if without a shell) to download candidates and `manifest.json` into `./assets/stock-candidates`.
 2. **Step 2 — Vision-in-the-Loop Inspection & Hard Pass/Fail Gate:** Read `./assets/stock-candidates/manifest.json`. For `photo`, `vector`, and `illustration`, inspect each candidate with `Read` on 5 mandatory criteria (never ship a stock asset unseen):
    - **5 Criteria:** Subject Recognizability & Focus (sharp, on-brief), Composition (matches `--orientation`), Lighting & Palette Harmony, Clean Copy Zone, and Zero Third-Party Trademarks.
-   - **Mandatory Batch Rejection Gate:** Never promote the "least bad" candidate. If all fail, reject the batch and re-query (up to 2 retries). For `video` (`.mp4`), inspect `manifest.json` metadata.
+   - **Mandatory Batch Rejection Gate:** Never promote the "least bad" candidate. If all fail, reject the batch and re-query (up to 2 retries) without dropping core demographic constraints. For `video` (`.mp4`), inspect `manifest.json` metadata.
    - **Non-Vision Model Fallback:** If `Read` fails on images (text-only model), never fake `inspectedByVision: true`. Evaluate `manifest.json` (`score`, `description`, `color`, `tags`, `license`), set `"inspectedByVision": false`, and write `"visionNotes": "unverified visually (non-vision model); selected via manifest metadata: <reason>"`.
 3. **Step 3 — Select, Promote & Clean Up:** Run `node ${CLAUDE_SKILL_DIR}/scripts/fetch-stock.mjs --promote <cand_file> --to assets/stock/<descriptive-name>.<ext> --output ./assets/stock-candidates` to copy the winner, ping Unsplash download location if applicable, and delete `./assets/stock-candidates`.
-4. **Step 4 — Provenance Sidecar & Attribution:** Write `assets/stock/<descriptive-name>.<ext>.provenance.json` and append creator and license credit to `attribution.md` for Deniz or the lead (including UTM links for Unsplash).
+4. **Step 4 — Provenance Sidecar & Attribution:** Write `assets/stock/<descriptive-name>.<ext>.provenance.json` and append creator and license credit to `attribution.md` (create file if absent; include UTM links for Unsplash).
 
 ## Code & Config Exemplars
 ```bash
@@ -43,7 +43,7 @@ node ${CLAUDE_SKILL_DIR}/scripts/fetch-stock.mjs \
 ```
 
 ### Worked example
-See [examples/worked-example.md](examples/worked-example.md) for a worked example sourcing a hero photo via Openverse CC0, inspecting 3 candidates, promoting the winner, and writing the provenance sidecar.
+See [examples/worked-example.md](examples/worked-example.md) for a worked example inspecting Openverse candidates, promoting the winner, and generating provenance.
 
 ### Anti-patterns
 - **Blind selection without vision inspection:** Picking `cand_1.jpg` without `Read` risks watermarks, bad crops, or busy copy zones.

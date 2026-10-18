@@ -103,9 +103,14 @@ export function parseCliArgs(argv) {
       promote: { type: 'string' },
       to: { type: 'string' },
       dest: { type: 'string' },
+      help: { type: 'boolean', short: 'h' },
     },
     strict: false,
   });
+
+  if (values.help || argv.includes('--help') || argv.includes('-h')) {
+    return { help: true };
+  }
 
   const output = String(values.output ?? './assets/stock-candidates');
   const promote = typeof values.promote === 'string' ? values.promote.trim() : '';
@@ -1250,6 +1255,28 @@ export async function fetchStockCandidates(opts, env = process.env) {
 async function main() {
   try {
     const opts = parseCliArgs(process.argv.slice(2));
+    if (opts.help) {
+      process.stdout.write(`Commercial Stock Sourcer CLI
+
+Usage:
+  node fetch-stock.mjs --query "<search terms>" [options]
+  node fetch-stock.mjs --url "<discovered-url>" [options]
+  node fetch-stock.mjs --promote <cand_file> --to <target-path> [--output <dir>]
+
+Options:
+  --query, -q        Search keywords
+  --url, -u          Direct image URL or Wikimedia Commons File: URL
+  --type, -t         photo (default) | vector | illustration | video
+  --orientation, -o  landscape (default) | portrait | square
+  --limit, -l        Number of candidates to download (1-10, default: 3)
+  --output           Output directory (default: ./assets/stock-candidates)
+  --provider         auto (default) | unsplash | pexels | pixabay | openverse
+  --promote          Promote winning candidate
+  --to               Destination path for promoted candidate
+  --help, -h         Show this help message
+`);
+      return;
+    }
     if (opts.promote) {
       const { promotedTo, cleanedOutputDir } = await promoteStockCandidate(opts, process.env);
       process.stdout.write(`Promoted candidate to ${promotedTo} and removed ${cleanedOutputDir}\n`);

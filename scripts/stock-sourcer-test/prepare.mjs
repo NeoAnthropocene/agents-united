@@ -25,21 +25,22 @@ Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env
 
 ### Sourcing Workflow:
 1. **Step 1 (Fetch Candidates):**
-   - For API Sourcing (Assets 1 & 2): Run \`node scripts/fetch-stock.mjs --query "<query>" --type <type> --orientation <orientation> --limit 3 --output ./assets/stock-candidates\`.
-   - For Web Search Fallback (Asset 3): Use your native web search tool (e.g. \`site:commons.wikimedia.org "CC0" woman man arguing\` or searching Wikimedia Commons / public domain for arguing couple photos) to find 1 to 3 candidate image/file URLs (e.g. \`https://commons.wikimedia.org/wiki/File:...<Title>.jpg\` or direct image URLs). Then run:
+   - For API Sourcing (Assets 1 & 2): Run \`node scripts/fetch-stock.mjs --query "<query>" --type <type> --orientation <orientation> --limit 5 --output ./assets/stock-candidates\`.
+   - For Web Search Fallback (Asset 3): Use your native web search tool (e.g. \`site:commons.wikimedia.org "couple arguing" filetype:bitmap\` or searching Wikimedia Commons for human dispute photos) to find 1 to 3 candidate image/file URLs. Then run:
      \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
-     *(Fallback: If your host environment does not have a web_search tool, or if discovered URLs 404/fail to download, fall back to: \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`.)*
+     *(Fallback: If your host environment does not have a web_search tool, or if discovered URLs 404/fail to download, fall back to: \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`.)*
 2. **Step 2 (Vision-in-the-Loop Inspection & Hard Pass/Fail Gate):**
    - Read \`./assets/stock-candidates/manifest.json\`.
    - Inspect each candidate image with \`Read\` (or view tool) against the 5 mandatory criteria: Subject Recognizability & Focus, Composition & Aspect Framing, Lighting & Palette Harmony, Clean Copy Zone, Zero Third-Party Trademarks.
    - Non-vision fallback: If you are running on a text-only model without image vision capabilities, evaluate \`manifest.json\` (\`score\`, \`description\`, \`color\`, \`tags\`, \`license\`), set \`"inspectedByVision": false\`, and write \`"visionNotes": "unverified visually (non-vision model); selected via manifest metadata: <reason>"\`.
    - Reject any batch where all candidates fail; do not select a "least-bad" candidate.
+   - **Query Refinement Constraint:** If retrying after a batch rejection, never drop core demographic, subject, or brand constraints specified in the brief.
 3. **Step 3 (Select, Promote & Clean Up):**
    - Run \`node scripts/fetch-stock.mjs --promote <cand_file> --to ./assets/stock/<filename>.<ext> --output ./assets/stock-candidates\`.
    - (This copies the winner to \`assets/stock/\`, triggers the Unsplash download endpoint if applicable, and automatically cleans up \`./assets/stock-candidates/\`).
 4. **Step 4 (Provenance & Attribution):**
    - Write \`assets/stock/<filename>.<ext>.provenance.json\` with provider, creator, license, source URL, and inspection notes.
-   - Append creator attribution and license credit to \`attribution.md\` (including UTM source parameters for Unsplash).
+   - If \`attribution.md\` does not yet exist, create it directly (or append to it). Append creator attribution and license credit (including UTM source parameters for Unsplash).
 
 ### Campaign Assets to Source (Complete All 3):
 
@@ -47,25 +48,26 @@ Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env
    - Query: \`"unicorn illustration"\`
    - Type: \`illustration\`
    - Orientation: \`square\`
-   - Command: \`node scripts/fetch-stock.mjs --query "unicorn illustration" --type illustration --orientation square --limit 3 --output ./assets/stock-candidates\`
-   - Target Output: \`assets/stock/unicorn-mascot.jpg\` (or \`.png\` / \`.svg\`) + sidecar \`assets/stock/unicorn-mascot.<ext>.provenance.json\`
+   - Command: \`node scripts/fetch-stock.mjs --query "unicorn illustration" --type illustration --orientation square --limit 5 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/unicorn-mascot.webp\` (or \`.png\` / \`.jpg\` / \`.svg\`) + sidecar \`assets/stock/unicorn-mascot.<ext>.provenance.json\`
+   - Format Note: WebP format is modern, web-ready, and fully accepted; do not attempt to convert WebP to JPG.
 
 2. **Playground Children Photo (API Sourcing - Multi-Provider / Unsplash Blend):**
    - Query: \`"children playground with happy asian children"\`
    - Type: \`photo\`
    - Orientation: \`landscape\`
-   - Subject Guidance: A joyful single child playing on playground equipment or a group of children having fun on a playground both meet the brief.
-   - Command: \`node scripts/fetch-stock.mjs --query "children playground with happy asian children" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`
+   - Demographic & Subject Requirement: Must feature joyful, smiling Asian child or children having fun outdoors on playground equipment. If retrying after a batch rejection, NEVER drop the "asian" demographic requirement.
+   - Command: \`node scripts/fetch-stock.mjs --query "children playground with happy asian children" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`
    - Target Output: \`assets/stock/playground-children.jpg\` + sidecar \`assets/stock/playground-children.jpg.provenance.json\`
 
 3. **Editorial Discussion Photo (Web Search Fallback Test):**
    - Subject: \`"woman and man arguing"\`
    - Type: \`photo\`
    - Orientation: \`landscape\`
-   - Sourcing Method: **Test the Web Search Fallback Tool!**
-     - Step 1a: Use your host's web search tool to find 1 to 3 Wikimedia Commons public domain / CC0 image URLs for a man and woman arguing / having a heated discussion (e.g. search query: \`site:commons.wikimedia.org "CC0" woman man arguing\` or searching Wikimedia Commons for dispute / couple arguing photos).
+   - Sourcing Method: **Test the Web Search Fallback Tool or use API query fallback!**
+     - Step 1a: Use your host's web search tool to find 1 to 3 Wikimedia Commons public domain / CC0 image URLs for an adult man and woman arguing / having a heated discussion (e.g. \`site:commons.wikimedia.org "couple arguing" filetype:bitmap\`). Avoid non-human metaphors (such as birds or political maps).
      - Step 1b: Pass the discovered URL(s) to fetch-stock: \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
-     - *(Fallback if web search is not enabled or discovered URLs 404: run \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`)*
+     - *(Fallback if web search is not enabled or discovered URLs 404: run \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 5 --output ./assets/stock-candidates\`)*
    - Target Output: \`assets/stock/arguing-couple.jpg\` + sidecar \`assets/stock/arguing-couple.jpg.provenance.json\`
 `;
 
