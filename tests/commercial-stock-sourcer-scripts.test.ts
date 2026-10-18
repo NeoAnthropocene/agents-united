@@ -201,6 +201,49 @@ beforeAll(async () => {
       return;
     }
 
+    if (reqUrl.startsWith('/unsplash/search/photos')) {
+      if (state.failProvider === 'unsplash') {
+        res.writeHead(state.failStatus, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ errors: ['Unsplash rate limit'] }));
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          results: [
+            {
+              id: 'u-707',
+              width: 3000,
+              height: 2000,
+              color: '#60544D',
+              alt_description: 'Pour over coffee dripping into ceramic mug',
+              urls: {
+                regular: `${baseUrl}/media/photo.jpg?id=u-707`,
+                full: `${baseUrl}/media/photo.jpg?id=u-707`,
+                raw: `${baseUrl}/media/photo.jpg?id=u-707`,
+              },
+              links: {
+                html: 'https://unsplash.com/photos/u-707',
+                download_location: `${baseUrl}/unsplash/photos/u-707/download?ixid=test123`,
+              },
+              user: {
+                name: 'Annie Spratt',
+                username: 'anniespratt',
+              },
+              tags: [{ title: 'coffee' }, { title: 'pour over' }],
+            },
+          ],
+        }),
+      );
+      return;
+    }
+
+    if (reqUrl.startsWith('/unsplash/photos/u-707/download')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ url: `${baseUrl}/media/photo.jpg?id=u-707` }));
+      return;
+    }
+
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found', url: reqUrl }));
   });
@@ -229,6 +272,7 @@ function runScript(
     ...process.env,
     STOCK_API_BASE_URL: baseUrl,
   };
+  delete env.UNSPLASH_ACCESS_KEY;
   delete env.PEXELS_API_KEY;
   delete env.PIXABAY_API_KEY;
   for (const [k, v] of Object.entries(envOverrides)) {
@@ -277,6 +321,14 @@ describe('Tier 1 — Unit: CLI argument parsing & provider routing', () => {
       'pixabay',
       'openverse',
     ]);
+    expect(
+      mod.resolveProviderChain('photo', 'auto', {
+        UNSPLASH_ACCESS_KEY: 'un',
+        PEXELS_API_KEY: 'px',
+        PIXABAY_API_KEY: 'pb',
+      }),
+    ).toEqual(['unsplash', 'pexels', 'pixabay', 'openverse']);
+    expect(mod.resolveProviderChain('photo', 'unsplash', { UNSPLASH_ACCESS_KEY: 'un' })).toEqual(['unsplash']);
     expect(mod.resolveProviderChain('photo', 'auto', {})).toEqual(['openverse']);
     expect(mod.resolveProviderChain('vector', 'auto', { PIXABAY_API_KEY: 'pb' })).toEqual(['pixabay', 'openverse']);
     expect(mod.resolveProviderChain('illustration', 'auto', {})).toEqual(['openverse']);
@@ -567,6 +619,114 @@ describe('Tier 2 — Integration (Mock HTTP): photo, vector, illustration, video
       expect(manifestText).not.toContain(secretPixabay);
     } finally {
       state.failProvider = null;
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('9. type=photo with UNSPLASH_ACCESS_KEY downloads cand_1.jpg, preserves hotlinkUrl, and sets UTM attribution', async () => {
+    state.requests = [];
+    state.failProvider = null;
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'stock-unsplash-'));
+    try {
+      const res = await runScript(['--query', 'coffee', '--type', 'photo', '--limit', '1', '--output', tmp], {
+        UNSPLASH_ACCESS_KEY: 'test_unsplash_key',
+      });
+      expect(res.status, res.stderr).toBe(0);
+      expect(fs.existsSync(path.join(tmp, 'cand_1.jpg'))).toBe(true);
+      const manifest = JSON.parse(fs.readFileSync(path.join(tmp, 'manifest.json'), 'utf8'));
+      expect(manifest.provider).toBe('unsplash');
+      expect(manifest.candidates[0]).toMatchObject({
+        id: 'cand_1',
+        localFile: 'cand_1.jpg',
+        provider: 'unsplash',
+        creator: 'Annie Spratt',
+        color: '#60544D',
+      });
+      expect(manifest.candidates[0].hotlinkUrl).toContain('/media/photo.jpg?id=u-707');
+      expect(manifest.candidates[0].creatorUrl).toContain('utm_source=agents_united');
+      expect(manifest.candidates[0].attributionMarkdown).toContain('utm_source=agents_united');
+      expect(manifest.candidates[0].attributionHtml).toContain('utm_source=agents_united');
+      const unReq = state.requests.find(r => r.url.startsWith('/unsplash/search/photos'));
+      expect(unReq).toBeDefined();
+      expect(unReq!.headers.authorization).toBe('Client-ID test_unsplash_key');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('10. Concurrent multi-provider querying blends candidates across all responding providers', async () => {
+    state.requests = [];
+    state.failProvider = null;
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'stock-blend-'));
+    try {
+      const res = await runScript(['--query', 'coffee', '--type', 'photo', '--limit', '3', '--output', tmp], {
+        UNSPLASH_ACCESS_KEY: 'test_unsplash_key',
+        PEXELS_API_KEY: 'test_pexels_key',
+        PIXABAY_API_KEY: 'test_pixabay_key',
+      });
+      expect(res.status, res.stderr).toBe(0);
+      const manifest = JSON.parse(fs.readFileSync(path.join(tmp, 'manifest.json'), 'utf8'));
+      expect(manifest.candidates.length).toBeGreaterThanOrEqual(2);
+      expect(Array.isArray(manifest.providersUsed)).toBe(true);
+      expect(manifest.providersUsed.length).toBeGreaterThan(1);
+      expect(state.requests.some(r => r.url.startsWith('/unsplash/search/photos'))).toBe(true);
+      expect(state.requests.some(r => r.url.startsWith('/pexels/v1/search'))).toBe(true);
+      expect(state.requests.some(r => r.url.startsWith('/pixabay/api/'))).toBe(true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('11. Promoting an Unsplash candidate via --promote triggers its download_location event', async () => {
+    state.requests = [];
+    const tmpWs = fs.mkdtempSync(path.join(os.tmpdir(), 'stock-un-promote-'));
+    try {
+      const candDir = path.join(tmpWs, 'assets', 'stock-candidates');
+      const destFile = path.join(tmpWs, 'assets', 'stock', 'hero-coffee.jpg');
+      fs.mkdirSync(candDir, { recursive: true });
+      fs.writeFileSync(path.join(candDir, 'cand_1.jpg'), 'fake-unsplash-image');
+      fs.writeFileSync(
+        path.join(candDir, 'manifest.json'),
+        JSON.stringify({
+          provider: 'unsplash',
+          candidates: [
+            {
+              id: 'cand_1',
+              localFile: 'cand_1.jpg',
+              provider: 'unsplash',
+              downloadLocation: `${baseUrl}/unsplash/photos/u-707/download?ixid=test123`,
+            },
+          ],
+        }),
+      );
+
+      const res = await runScript(
+        ['--promote', 'cand_1.jpg', '--to', destFile, '--output', candDir],
+        { UNSPLASH_ACCESS_KEY: 'test_unsplash_key' },
+      );
+      expect(res.status, res.stderr).toBe(0);
+      expect(fs.existsSync(destFile)).toBe(true);
+      expect(fs.existsSync(candDir)).toBe(false);
+      const dlHit = state.requests.find(r => r.url.startsWith('/unsplash/photos/u-707/download'));
+      expect(dlHit).toBeDefined();
+      expect(dlHit!.headers.authorization).toBe('Client-ID test_unsplash_key');
+    } finally {
+      fs.rmSync(tmpWs, { recursive: true, force: true });
+    }
+  });
+
+  it('12. Web-search fallback with --url downloads candidate into candidates folder and writes manifest.json', async () => {
+    state.requests = [];
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'stock-url-fallback-'));
+    try {
+      const directUrl = `${baseUrl}/media/photo.jpg?id=url-discovered`;
+      const res = await runScript(['--url', directUrl, '--output', tmp]);
+      expect(res.status, res.stderr).toBe(0);
+      expect(fs.existsSync(path.join(tmp, 'cand_1.jpg'))).toBe(true);
+      const manifest = JSON.parse(fs.readFileSync(path.join(tmp, 'manifest.json'), 'utf8'));
+      expect(manifest.candidates[0].downloadUrl).toBe(directUrl);
+      expect(manifest.candidates[0].sourceUrl).toBe(directUrl);
+    } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });

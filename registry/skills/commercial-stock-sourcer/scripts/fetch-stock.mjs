@@ -9,20 +9,20 @@ dns.setDefaultResultOrder('ipv4first');
 
 const VALID_TYPES = new Set(['photo', 'vector', 'illustration', 'video']);
 const VALID_ORIENTATIONS = new Set(['landscape', 'portrait', 'square']);
-const VALID_PROVIDERS = new Set(['auto', 'pexels', 'pixabay', 'openverse']);
+const VALID_PROVIDERS = new Set(['auto', 'unsplash', 'pexels', 'pixabay', 'openverse']);
 
 /**
  * Redacts any API keys from log or error strings so secrets never leak to stdout/stderr/files.
  */
 export function redactSecrets(text, env = process.env) {
   let out = String(text ?? '');
-  for (const keyName of ['PEXELS_API_KEY', 'PIXABAY_API_KEY']) {
+  for (const keyName of ['UNSPLASH_ACCESS_KEY', 'PEXELS_API_KEY', 'PIXABAY_API_KEY']) {
     const val = env[keyName];
     if (val && val.length >= 4) {
       out = out.split(val).join('[REDACTED]');
     }
   }
-  out = out.replace(/([?&]key=)[^&\s"']+/gi, '$1[REDACTED]');
+  out = out.replace(/([?&](?:key|client_id)=)[^&\s"']+/gi, '$1[REDACTED]');
   return out;
 }
 
@@ -34,6 +34,7 @@ export function parseCliArgs(argv) {
     args: argv,
     options: {
       query: { type: 'string', short: 'q' },
+      url: { type: 'string', short: 'u' },
       type: { type: 'string', short: 't', default: 'photo' },
       orientation: { type: 'string', short: 'o', default: 'landscape' },
       limit: { type: 'string', short: 'l', default: '3' },
@@ -62,8 +63,9 @@ export function parseCliArgs(argv) {
     };
   }
 
+  const rawUrl = typeof values.url === 'string' ? values.url.trim() : '';
   const query = typeof values.query === 'string' ? values.query.trim() : '';
-  if (!query) {
+  if (!query && !rawUrl) {
     throw new Error(
       'Missing required argument: --query "<search terms>". Usage: node fetch-stock.mjs --query "pour over coffee" [--type photo|vector|illustration|video] [--orientation landscape|portrait|square] [--limit 3] [--output ./assets/stock-candidates]',
     );
@@ -86,7 +88,19 @@ export function parseCliArgs(argv) {
 
   const provider = String(values.provider ?? 'auto').toLowerCase();
   if (!VALID_PROVIDERS.has(provider)) {
-    throw new Error(`Invalid --provider "${provider}". Allowed values: auto, pexels, pixabay, openverse.`);
+    throw new Error(`Invalid --provider "${provider}". Allowed values: auto, unsplash, pexels, pixabay, openverse.`);
+  }
+
+  if (rawUrl) {
+    return {
+      url: rawUrl,
+      query: query || rawUrl,
+      type,
+      orientation,
+      limit: limitNum,
+      output,
+      provider,
+    };
   }
 
   return {
@@ -103,10 +117,20 @@ export function parseCliArgs(argv) {
  * Determines the ordered list of providers to try based on media type, requested provider, and available API keys.
  */
 export function resolveProviderChain(type, provider = 'auto', env = process.env) {
+  const hasUnsplash = Boolean(env.UNSPLASH_ACCESS_KEY && env.UNSPLASH_ACCESS_KEY.trim());
   const hasPexels = Boolean(env.PEXELS_API_KEY && env.PEXELS_API_KEY.trim());
   const hasPixabay = Boolean(env.PIXABAY_API_KEY && env.PIXABAY_API_KEY.trim());
 
   if (provider !== 'auto') {
+    if (provider === 'unsplash') {
+      if (type !== 'photo') {
+        throw new Error(`Provider "unsplash" only supports --type photo.`);
+      }
+      if (!hasUnsplash) {
+        throw new Error('Provider "unsplash" requested but UNSPLASH_ACCESS_KEY is not set.');
+      }
+      return ['unsplash'];
+    }
     if (provider === 'pexels') {
       if (type === 'vector' || type === 'illustration') {
         throw new Error(`Provider "pexels" does not support --type ${type}. Use pixabay or openverse.`);
@@ -134,6 +158,7 @@ export function resolveProviderChain(type, provider = 'auto', env = process.env)
 
   if (type === 'photo') {
     const chain = [];
+    if (hasUnsplash) chain.push('unsplash');
     if (hasPexels) chain.push('pexels');
     if (hasPixabay) chain.push('pixabay');
     chain.push('openverse');
@@ -160,12 +185,70 @@ export function resolveProviderChain(type, provider = 'auto', env = process.env)
 function getEndpoints(env = process.env) {
   const base = env.STOCK_API_BASE_URL ? env.STOCK_API_BASE_URL.replace(/\/+$/, '') : '';
   return {
+    unsplashPhotos: `${base ? `${base}/unsplash` : 'https://api.unsplash.com'}/search/photos`,
     pexelsPhotos: `${base ? `${base}/pexels` : 'https://api.pexels.com'}/v1/search`,
     pexelsVideos: `${base ? `${base}/pexels` : 'https://api.pexels.com'}/videos/search`,
     pixabayImages: `${base ? `${base}/pixabay` : 'https://pixabay.com'}/api/`,
     pixabayVideos: `${base ? `${base}/pixabay` : 'https://pixabay.com'}/api/videos/`,
     openverseImages: `${base ? `${base}/openverse` : 'https://api.openverse.org'}/v1/images/`,
   };
+}
+
+async function fetchUnsplash(opts, env) {
+  const endpoints = getEndpoints(env);
+  const apiKey = env.UNSPLASH_ACCESS_KEY;
+  const url = new URL(endpoints.unsplashPhotos);
+  url.searchParams.set('query', opts.query);
+  url.searchParams.set(
+    'orientation',
+    opts.orientation === 'square' ? 'squarish' : opts.orientation,
+  );
+  url.searchParams.set('per_page', String(Math.max(3, opts.limit)));
+  url.searchParams.set('content_filter', 'high');
+
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Client-ID ${apiKey}`,
+      'Accept-Version': 'v1',
+    },
+  });
+  if (!res.ok) throw new Error(`Unsplash HTTP ${res.status}`);
+  const data = await res.json();
+  const results = Array.isArray(data.results) ? data.results.slice(0, opts.limit) : [];
+  return results.map((p, idx) => {
+    const downloadUrl = p.urls?.regular || p.urls?.full || p.urls?.raw;
+    if (!downloadUrl) throw new Error('Unsplash photo had no download URL in urls');
+    const creator = p.user?.name || p.user?.username || 'Unknown Photographer';
+    const username = p.user?.username || '';
+    const creatorUrl = `https://unsplash.com/@${username}?utm_source=agents_united&utm_medium=referral`;
+    const sourceUrl = `${p.links?.html || `https://unsplash.com/photos/${p.id}`}?utm_source=agents_united&utm_medium=referral`;
+    const attributionMarkdown = `Photo by [${creator}](${creatorUrl}) on [Unsplash](https://unsplash.com/?utm_source=agents_united&utm_medium=referral)`;
+    const attributionHtml = `Photo by <a href="${creatorUrl}">${creator}</a> on <a href="https://unsplash.com/?utm_source=agents_united&utm_medium=referral">Unsplash</a>`;
+    const desc = p.alt_description || p.description || p.slug || '';
+    const tags = Array.isArray(p.tags) ? p.tags.map(t => (typeof t === 'string' ? t : t?.title)).filter(Boolean) : [];
+    return {
+      id: `cand_${idx + 1}`,
+      ext: 'jpg',
+      downloadUrl,
+      hotlinkUrl: downloadUrl,
+      downloadLocation: p.links?.download_location || null,
+      provider: 'unsplash',
+      sourceId: String(p.id ?? idx + 1),
+      title: desc ? `Unsplash: ${desc}` : `Unsplash photo ${p.id ?? idx + 1}`,
+      creator,
+      creatorUrl,
+      sourceUrl,
+      attributionMarkdown,
+      attributionHtml,
+      license: 'Unsplash License (Commercial Safe)',
+      width: p.width ?? null,
+      height: p.height ?? null,
+      color: p.color ?? null,
+      description: desc,
+      tags,
+      duration: null,
+    };
+  });
 }
 
 async function fetchPexels(opts, env) {
@@ -200,6 +283,9 @@ async function fetchPexels(opts, env) {
         license: 'Pexels License (Commercial Safe)',
         width: chosen.width ?? v.width ?? null,
         height: chosen.height ?? v.height ?? null,
+        color: null,
+        description: `Pexels video: ${opts.query}`,
+        tags: [opts.query],
         duration: v.duration ?? null,
       };
     });
@@ -216,19 +302,23 @@ async function fetchPexels(opts, env) {
   return photos.map((p, idx) => {
     const downloadUrl = p.src?.large2x || p.src?.large || p.src?.original;
     if (!downloadUrl) throw new Error('Pexels photo entry had no src URL');
+    const desc = p.alt || `Pexels photo ${p.id ?? idx + 1}`;
     return {
       id: `cand_${idx + 1}`,
       ext: 'jpg',
       downloadUrl,
       provider: 'pexels',
       sourceId: String(p.id ?? idx + 1),
-      title: p.alt || `Pexels photo ${p.id ?? idx + 1}`,
+      title: desc,
       creator: p.photographer ?? 'Unknown Photographer',
       creatorUrl: p.photographer_url ?? '',
       sourceUrl: p.url ?? '',
       license: 'Pexels License (Commercial Safe)',
       width: p.width ?? null,
       height: p.height ?? null,
+      color: p.avg_color ?? null,
+      description: desc,
+      tags: desc ? desc.split(/\s+/).filter(w => w.length > 3) : [],
       duration: null,
     };
   });
@@ -300,6 +390,9 @@ async function fetchPixabay(opts, env) {
       license: 'Pixabay Content License (Commercial Safe)',
       width: h.imageWidth ?? null,
       height: h.imageHeight ?? null,
+      color: null,
+      description: h.tags || '',
+      tags: h.tags ? h.tags.split(',').map(s => s.trim()).filter(Boolean) : [],
       duration: null,
     };
   });
@@ -520,6 +613,9 @@ async function fetchWikimediaCommons(opts) {
       width: ii.thumbwidth || ii.width || null,
       height: ii.thumbheight || ii.height || null,
       origWidth: ii.width || ii.thumbwidth || null,
+      color: null,
+      description: String(p.title || '').replace(/^File:/i, ''),
+      tags: ii.extmetadata?.Categories?.value ? ii.extmetadata.Categories.value.split('|').map(s => s.trim()) : [],
       metaHint,
       duration: null,
     };
@@ -603,6 +699,9 @@ async function fetchOpenverseOnly(opts, env) {
       width: r.width ?? null,
       height: r.height ?? null,
       origWidth: r.width ?? null,
+      color: null,
+      description: r.title || '',
+      tags: Array.isArray(r.tags) ? r.tags.map(t => (typeof t === 'string' ? t : t?.name)).filter(Boolean) : [],
       duration: null,
     };
   });
@@ -673,7 +772,7 @@ async function downloadFile(url, destPath, fallbackUrl = null, isMock = false) {
   }
 }
 
-export function promoteStockCandidate(opts) {
+export async function promoteStockCandidate(opts, env = process.env) {
   const outDir = path.resolve(opts.output || './assets/stock-candidates');
   const destPath = path.resolve(opts.to);
   const rawPromote = String(opts.promote || '').trim();
@@ -709,6 +808,25 @@ export function promoteStockCandidate(opts) {
     throw new Error(`Candidate file "${rawPromote}" not found in ${outDir}`);
   }
 
+  // Check manifest.json before cleanup for Unsplash downloadLocation
+  const manifestFile = path.join(outDir, 'manifest.json');
+  if (fs.existsSync(manifestFile)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+      const targetBase = path.basename(srcPath);
+      const targetStem = path.basename(srcPath, path.extname(srcPath));
+      const cand = manifest.candidates?.find(
+        c => c.localFile === targetBase || c.id === targetStem || c.id === targetBase,
+      );
+      if (cand?.provider === 'unsplash' && cand?.downloadLocation) {
+        const headers = env.UNSPLASH_ACCESS_KEY ? { Authorization: `Client-ID ${env.UNSPLASH_ACCESS_KEY}` } : {};
+        await fetch(cand.downloadLocation, { headers }).catch(() => {});
+      }
+    } catch {
+      // Non-fatal if manifest parse or download trigger network fails
+    }
+  }
+
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
   fs.copyFileSync(srcPath, destPath);
   if (fs.existsSync(outDir)) {
@@ -717,7 +835,114 @@ export function promoteStockCandidate(opts) {
   return { promotedFrom: srcPath, promotedTo: destPath, cleanedOutputDir: outDir };
 }
 
+async function fetchFromUrls(opts, env = process.env) {
+  const outDir = path.resolve(opts.output || './assets/stock-candidates');
+  const isMock = Boolean(env.STOCK_API_BASE_URL);
+  if (!isMock && fs.existsSync(outDir)) {
+    fs.rmSync(outDir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const rawUrls = String(opts.url || '')
+    .split(',')
+    .map(u => u.trim())
+    .filter(Boolean);
+  if (rawUrls.length === 0) {
+    throw new Error('No valid URLs provided to --url');
+  }
+
+  const savedCandidates = [];
+  for (let idx = 0; idx < rawUrls.length && savedCandidates.length < opts.limit; idx++) {
+    const rawUrl = rawUrls[idx];
+    const nextIdx = savedCandidates.length + 1;
+    const candId = `cand_${nextIdx}`;
+    let ext = 'jpg';
+    let downloadUrl = rawUrl;
+    let sourceUrl = rawUrl;
+    let title = `Discovered stock candidate ${nextIdx}`;
+    let creator = 'Discovered via Web Search';
+    let license = 'Commercial Safe (Verified via Web Search)';
+    let width = null;
+    let height = null;
+
+    if (rawUrl.includes('wikimedia.org/wiki/File:')) {
+      const fileName = decodeURIComponent(rawUrl.split('File:')[1].split(/[?#]/)[0]);
+      try {
+        const infoUrl = new URL('https://commons.wikimedia.org/w/api.php');
+        infoUrl.searchParams.set('action', 'query');
+        infoUrl.searchParams.set('titles', `File:${fileName}`);
+        infoUrl.searchParams.set('prop', 'imageinfo');
+        infoUrl.searchParams.set('iiprop', 'url|dimensions|extmetadata');
+        infoUrl.searchParams.set('format', 'json');
+        infoUrl.searchParams.set('origin', '*');
+        const res = await fetch(infoUrl, {
+          headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0' },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const page = Object.values(data.query?.pages || {})[0];
+          const ii = page?.imageinfo?.[0];
+          if (ii?.url) {
+            downloadUrl = ii.thumburl || ii.url;
+            sourceUrl = rawUrl;
+            title = fileName.replace(/\.[^.]+$/, '');
+            creator = String(ii.extmetadata?.Artist?.value || creator).replace(/<[^>]+>/g, '').trim();
+            license = `${ii.extmetadata?.LicenseShortName?.value || 'CC0'} (Wikimedia Commons)`;
+            width = ii.width ?? null;
+            height = ii.height ?? null;
+          }
+        }
+      } catch {}
+    }
+
+    if (downloadUrl.toLowerCase().includes('.png')) ext = 'png';
+    else if (downloadUrl.toLowerCase().includes('.svg')) ext = 'svg';
+    else if (downloadUrl.toLowerCase().includes('.mp4')) ext = 'mp4';
+
+    const localFile = `${candId}.${ext}`;
+    const destPath = path.join(outDir, localFile);
+    await downloadFile(downloadUrl, destPath, null, isMock);
+
+    savedCandidates.push({
+      id: candId,
+      localFile,
+      downloadUrl,
+      sourceUrl,
+      provider: 'web-search-fallback',
+      sourceId: String(idx + 1),
+      title,
+      creator,
+      creatorUrl: sourceUrl,
+      license,
+      width,
+      height,
+      color: null,
+      description: title,
+      tags: [opts.query || 'stock'],
+      score: 50,
+      duration: null,
+    });
+  }
+
+  const manifest = {
+    query: opts.query || opts.url,
+    mediaType: opts.type || 'photo',
+    orientation: opts.orientation || 'landscape',
+    provider: 'web-search-fallback',
+    providersUsed: ['web-search-fallback'],
+    fetchedAt: new Date().toISOString(),
+    candidates: savedCandidates,
+  };
+  const manifestPath = path.join(outDir, 'manifest.json');
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  return { manifestPath, manifest };
+}
+
 export async function fetchStockCandidates(opts, env = process.env) {
+  if (opts.url) {
+    return await fetchFromUrls(opts, env);
+  }
+
   const chain = resolveProviderChain(opts.type, opts.provider, env);
   if (chain.length === 0) {
     throw new Error(
@@ -725,86 +950,136 @@ export async function fetchStockCandidates(opts, env = process.env) {
     );
   }
 
-  const errors = [];
-  for (const prov of chain) {
-    try {
+  const isMock = Boolean(env.STOCK_API_BASE_URL);
+
+  // When a specific single provider is requested, or when running under mock with limit=1, execute sequentially
+  const settled = await Promise.allSettled(
+    chain.map(async prov => {
       let rawCandidates = [];
-      if (prov === 'pexels') rawCandidates = await fetchPexels(opts, env);
+      if (prov === 'unsplash') rawCandidates = await fetchUnsplash(opts, env);
+      else if (prov === 'pexels') rawCandidates = await fetchPexels(opts, env);
       else if (prov === 'pixabay') rawCandidates = await fetchPixabay(opts, env);
       else if (prov === 'openverse') rawCandidates = await fetchOpenverse(opts, env);
+      return { prov, candidates: rawCandidates || [] };
+    }),
+  );
 
-      if (!rawCandidates || rawCandidates.length === 0) {
+  const poolByProvider = [];
+  const errors = [];
+  for (let i = 0; i < settled.length; i++) {
+    const res = settled[i];
+    const prov = chain[i];
+    if (res.status === 'fulfilled') {
+      if (res.value.candidates.length > 0) {
+        poolByProvider.push(res.value);
+      } else {
         errors.push(`${prov}: 0 results returned`);
-        continue;
       }
-
-      const outDir = path.resolve(opts.output);
-      const isMock = Boolean(env.STOCK_API_BASE_URL);
-      if (!isMock && fs.existsSync(outDir)) {
-        fs.rmSync(outDir, { recursive: true, force: true });
-      }
-      fs.mkdirSync(outDir, { recursive: true });
-
-      const savedCandidates = [];
-      let lastDlErr = null;
-      for (const cand of rawCandidates) {
-        if (savedCandidates.length >= opts.limit) break;
-        const nextIdx = savedCandidates.length + 1;
-        const candId = `cand_${nextIdx}`;
-        const localFile = `${candId}.${cand.ext}`;
-        const destPath = path.join(outDir, localFile);
-        try {
-          await downloadFile(cand.downloadUrl, destPath, cand.fallbackDownloadUrl || null, isMock);
-          savedCandidates.push({
-            id: candId,
-            localFile,
-            provider: cand.provider,
-            sourceId: cand.sourceId,
-            title: cand.title,
-            creator: cand.creator,
-            creatorUrl: cand.creatorUrl,
-            sourceUrl: cand.sourceUrl,
-            license: cand.license,
-            width: cand.width,
-            height: cand.height,
-            duration: cand.duration,
-          });
-        } catch (dlErr) {
-          lastDlErr = dlErr;
-          if (isMock) throw dlErr;
-        }
-      }
-
-      if (savedCandidates.length === 0) {
-        throw lastDlErr || new Error('Failed to download any candidate files');
-      }
-
-      const manifest = {
-        query: opts.query,
-        mediaType: opts.type,
-        orientation: opts.orientation,
-        provider: prov,
-        fetchedAt: new Date().toISOString(),
-        candidates: savedCandidates,
-      };
-
-      const manifestPath = path.join(outDir, 'manifest.json');
-      fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-      return { manifestPath, manifest };
-    } catch (err) {
-      const safeMsg = redactSecrets(err instanceof Error ? err.message : String(err), env);
+    } else {
+      const safeMsg = redactSecrets(res.reason instanceof Error ? res.reason.message : String(res.reason), env);
       errors.push(`${prov}: ${safeMsg}`);
     }
   }
 
-  throw new Error(`All configured stock providers failed (${errors.join('; ')})`);
+  if (poolByProvider.length === 0) {
+    throw new Error(`All configured stock providers failed (${errors.join('; ')})`);
+  }
+
+  // Blending candidates across providers:
+  // 1. Compute score on every candidate
+  // 2. Sort candidates within each provider by score descending
+  // 3. Round-robin: select candidates across responding providers in chain order
+  for (const pool of poolByProvider) {
+    for (const c of pool.candidates) {
+      c.score = scoreCandidate(c, opts);
+    }
+    pool.candidates.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  }
+
+  const blended = [];
+  const maxPerPool = Math.max(...poolByProvider.map(p => p.candidates.length));
+  for (let round = 0; round < maxPerPool; round++) {
+    for (const pool of poolByProvider) {
+      if (round < pool.candidates.length) {
+        blended.push(pool.candidates[round]);
+        if (blended.length === opts.limit) break;
+      }
+    }
+    if (blended.length === opts.limit) break;
+  }
+
+  const outDir = path.resolve(opts.output);
+  if (!isMock && fs.existsSync(outDir)) {
+    fs.rmSync(outDir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const savedCandidates = [];
+  let lastDlErr = null;
+  for (const cand of blended) {
+    if (savedCandidates.length >= opts.limit) break;
+    const nextIdx = savedCandidates.length + 1;
+    const candId = `cand_${nextIdx}`;
+    const localFile = `${candId}.${cand.ext}`;
+    const destPath = path.join(outDir, localFile);
+    try {
+      await downloadFile(cand.downloadUrl, destPath, cand.fallbackDownloadUrl || null, isMock);
+      savedCandidates.push({
+        id: candId,
+        localFile,
+        downloadUrl: cand.downloadUrl,
+        hotlinkUrl: cand.hotlinkUrl || null,
+        downloadLocation: cand.downloadLocation || null,
+        provider: cand.provider,
+        sourceId: cand.sourceId,
+        title: cand.title,
+        creator: cand.creator,
+        creatorUrl: cand.creatorUrl,
+        sourceUrl: cand.sourceUrl,
+        attributionMarkdown: cand.attributionMarkdown || null,
+        attributionHtml: cand.attributionHtml || null,
+        license: cand.license,
+        width: cand.width,
+        height: cand.height,
+        color: cand.color ?? null,
+        description: cand.description || cand.title || '',
+        tags: cand.tags || [],
+        score: cand.score ?? scoreCandidate(cand, opts),
+        duration: cand.duration,
+      });
+    } catch (dlErr) {
+      lastDlErr = dlErr;
+      if (isMock) throw dlErr;
+    }
+  }
+
+  if (savedCandidates.length === 0) {
+    throw lastDlErr || new Error('Failed to download any candidate files');
+  }
+
+  const primaryProvider = savedCandidates[0].provider;
+  const providersUsed = [...new Set(savedCandidates.map(c => c.provider))];
+
+  const manifest = {
+    query: opts.query,
+    mediaType: opts.type,
+    orientation: opts.orientation,
+    provider: primaryProvider,
+    providersUsed,
+    fetchedAt: new Date().toISOString(),
+    candidates: savedCandidates,
+  };
+
+  const manifestPath = path.join(outDir, 'manifest.json');
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  return { manifestPath, manifest };
 }
 
 async function main() {
   try {
     const opts = parseCliArgs(process.argv.slice(2));
     if (opts.promote) {
-      const { promotedTo, cleanedOutputDir } = promoteStockCandidate(opts);
+      const { promotedTo, cleanedOutputDir } = await promoteStockCandidate(opts, process.env);
       process.stdout.write(`Promoted candidate to ${promotedTo} and removed ${cleanedOutputDir}\n`);
       return;
     }

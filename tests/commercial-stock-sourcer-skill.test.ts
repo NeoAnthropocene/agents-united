@@ -103,6 +103,13 @@ describe('Tier 3 — Skill Layout, Contract & Host-Fit: commercial-stock-sourcer
     expect(b).toMatch(/Provenance Sidecar & Attribution/i);
     expect(b).toMatch(/\.provenance\.json/);
     expect(b).toMatch(/never ship a stock asset unseen/i);
+
+    const ref = read('references/providers-and-licensing.md');
+    expect(ref).toMatch(/UNSPLASH_ACCESS_KEY/);
+    expect(ref).toMatch(/download_location/);
+    expect(ref).toMatch(/utm_source=agents_united/);
+    expect(ref).toMatch(/inspectedByVision/);
+    expect(ref).toMatch(/--url/);
   });
 
   it('is registered in bundles.json (digital-agency, growth-marketing, product-design, full), host-library/_upstream/skills.json, and digital-agency-audit.md', () => {
