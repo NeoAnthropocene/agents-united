@@ -1,8 +1,11 @@
 #!/usr/bin/env node
+import dns from 'node:dns';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
+
+dns.setDefaultResultOrder('ipv4first');
 
 const VALID_TYPES = new Set(['photo', 'vector', 'illustration', 'video']);
 const VALID_ORIENTATIONS = new Set(['landscape', 'portrait', 'square']);
@@ -285,13 +288,192 @@ async function fetchPixabay(opts, env) {
   });
 }
 
-async function fetchOpenverse(opts, env) {
+async function fetchWithRetry(url, init = {}, retries = 2, baseDelayMs = 600) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, init);
+      if ((res.status === 429 || res.status >= 500) && attempt < retries) {
+        await new Promise(r => setTimeout(r, baseDelayMs * (attempt + 1)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, baseDelayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+export function normalizeShootTitle(title) {
+  return String(title || '')
+    .replace(/^File:/i, '')
+    .replace(/\.[a-z0-9]{2,4}$/i, '')
+    .replace(/^\d{4}[-_]\d{2}[-_]\d{2}\s*/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 4)
+    .join(' ');
+}
+
+export function dedupeByCreator(items, limit, getCreator, options = {}) {
+  const { getTitle = null, allowBackfill = true } = options;
+  if (items.length <= limit && allowBackfill) return items;
+  const chosen = [];
+  const usedCreators = new Set();
+  const usedTitles = new Set();
+  const remainder = [];
+  for (const item of items) {
+    const c = String(getCreator(item) || '').trim().toLowerCase();
+    const rawTitle = getTitle ? getTitle(item) : item?.title;
+    const tKey = rawTitle ? normalizeShootTitle(rawTitle) : '';
+    const creatorSeen = Boolean(c && usedCreators.has(c));
+    const titleSeen = Boolean(tKey && tKey.length >= 6 && usedTitles.has(tKey));
+    if (!creatorSeen && !titleSeen) {
+      if (c) usedCreators.add(c);
+      if (tKey && tKey.length >= 6) usedTitles.add(tKey);
+      chosen.push(item);
+      if (chosen.length === limit) return chosen;
+    } else {
+      remainder.push(item);
+    }
+  }
+  if (allowBackfill) {
+    for (const item of remainder) {
+      chosen.push(item);
+      if (chosen.length === limit) break;
+    }
+  }
+  return chosen;
+}
+
+export function matchesOrientation(width, height, orientation) {
+  if (!width || !height) return true;
+  if (orientation === 'landscape') return width > height * 1.05;
+  if (orientation === 'portrait') return height > width * 1.05;
+  if (orientation === 'square') return Math.abs(width - height) / Math.max(width, height) <= 0.18;
+  return true;
+}
+
+export function scoreCandidate(cand, opts) {
+  let score = 0;
+  const lic = String(cand.license || '');
+  if (/\b(cc0|public domain|pdm|pd\b)/i.test(lic)) {
+    score += 50;
+  } else if (/\bcc[- ]by(?!-sa|-nc|-nd)/i.test(lic)) {
+    score += 20;
+  } else if (/\b(nc|nd)\b/i.test(lic)) {
+    score -= 200;
+  }
+
+  if (opts.type !== 'vector') {
+    if (matchesOrientation(cand.width, cand.height, opts.orientation)) {
+      score += 35;
+    } else {
+      score -= 60;
+    }
+    const effectiveW = cand.origWidth || cand.width || 0;
+    if (effectiveW >= 2000) score += 20;
+    else if (effectiveW >= 1200) score += 12;
+    else if (effectiveW > 0 && effectiveW < 800) score -= 25;
+  }
+
+  const title = String(cand.title || '');
+  if (/\b(camera app|project indigo|test photo)\b/i.test(title) || /^\d{4}-\d{2}-\d{2}\b/.test(title)) {
+    score -= 45;
+  }
+  if (/\b(unsplash|pixabay)\b/i.test(`${title} ${cand.creatorUrl || ''}`)) {
+    score += 10;
+  }
+  return score;
+}
+
+async function fetchWikimediaCommons(opts) {
+  const url = new URL('https://commons.wikimedia.org/w/api.php');
+  const filetypeFilter = opts.type === 'vector' ? 'filetype:drawing' : 'filetype:bitmap';
+  url.searchParams.set('action', 'query');
+  url.searchParams.set('generator', 'search');
+  url.searchParams.set('gsrsearch', `${filetypeFilter} ${opts.query}`);
+  url.searchParams.set('gsrnamespace', '6');
+  url.searchParams.set('gsrlimit', String(Math.max(30, opts.limit * 15)));
+  url.searchParams.set('prop', 'imageinfo');
+  url.searchParams.set('iiprop', 'url|dimensions|extmetadata');
+  url.searchParams.set('iiurlwidth', '1280');
+  url.searchParams.set('format', 'json');
+  url.searchParams.set('origin', '*');
+
+  const res = await fetchWithRetry(
+    url,
+    {
+      headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0 (https://github.com/agents-united)' },
+      signal: AbortSignal.timeout(8000),
+    },
+    2,
+  );
+  if (!res.ok) throw new Error(`Wikimedia Commons HTTP ${res.status}`);
+  const data = await res.json();
+  const allPages = Object.values(data.query?.pages || {});
+
+  const mapped = [];
+  for (let idx = 0; idx < allPages.length; idx++) {
+    const p = allPages[idx];
+    const ii = p.imageinfo?.[0] || {};
+    const downloadUrl = opts.type === 'vector' ? ii.url : ii.thumburl || ii.url;
+    if (!downloadUrl) continue;
+    const lowerUrl = String(ii.url || downloadUrl).toLowerCase();
+    if (/\.(tif|tiff|pdf|djvu|webm|ogv|ogg)$/i.test(lowerUrl)) continue;
+    if (opts.type === 'photo' && lowerUrl.endsWith('.webp')) continue;
+
+    const ext =
+      opts.type === 'vector' || downloadUrl.toLowerCase().endsWith('.svg')
+        ? 'svg'
+        : downloadUrl.toLowerCase().endsWith('.png')
+          ? 'png'
+          : 'jpg';
+    const rawArtist = ii.extmetadata?.Artist?.value || 'Wikimedia Commons Contributor';
+    const creator = String(rawArtist).replace(/<[^>]+>/g, '').trim() || 'Wikimedia Commons Contributor';
+    const licShort = ii.extmetadata?.LicenseShortName?.value || 'CC0 / Public Domain';
+    const cand = {
+      id: `cand_${idx + 1}`,
+      ext,
+      downloadUrl,
+      fallbackDownloadUrl: ii.url || null,
+      provider: 'openverse',
+      sourceId: String(p.pageid ?? idx + 1),
+      title: String(p.title || `Commons ${opts.type} ${idx + 1}`).replace(/^File:/i, ''),
+      creator,
+      creatorUrl: ii.descriptionurl || '',
+      sourceUrl: ii.descriptionurl || downloadUrl,
+      license: `${licShort} (Commercial Safe — Wikimedia Commons)`,
+      width: ii.thumbwidth || ii.width || null,
+      height: ii.thumbheight || ii.height || null,
+      origWidth: ii.width || ii.thumbwidth || null,
+      duration: null,
+    };
+    mapped.push(cand);
+  }
+
+  mapped.sort((a, b) => scoreCandidate(b, opts) - scoreCandidate(a, opts));
+  const diverse = dedupeByCreator(mapped, opts.limit, c => c.creator, {
+    getTitle: c => c.title,
+    allowBackfill: false,
+  });
+  return diverse.slice(0, opts.limit).map((c, idx) => ({ ...c, id: `cand_${idx + 1}` }));
+}
+
+async function fetchOpenverseOnly(opts, env) {
   const endpoints = getEndpoints(env);
+  const isMock = Boolean(env.STOCK_API_BASE_URL);
   const url = new URL(endpoints.openverseImages);
   url.searchParams.set('q', opts.query);
   url.searchParams.set('license_type', 'commercial');
   url.searchParams.set('license', 'cc0,pdm');
-  url.searchParams.set('page_size', String(opts.limit));
+  url.searchParams.set('page_size', String(isMock ? opts.limit : Math.min(20, Math.max(opts.limit * 5, 20))));
   const aspect =
     opts.orientation === 'landscape' ? 'wide' : opts.orientation === 'portrait' ? 'tall' : 'square';
   url.searchParams.set('aspect_ratio', aspect);
@@ -304,12 +486,26 @@ async function fetchOpenverse(opts, env) {
     url.searchParams.set('category', 'photograph');
   }
 
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0' },
-  });
+  const res = await fetchWithRetry(
+    url,
+    {
+      headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0 (https://github.com/agents-united)' },
+      signal: AbortSignal.timeout(5000),
+    },
+    isMock ? 0 : 2,
+  );
   if (!res.ok) throw new Error(`Openverse Images HTTP ${res.status}`);
   const data = await res.json();
-  const results = Array.isArray(data.results) ? data.results.slice(0, opts.limit) : [];
+  const rawResults = Array.isArray(data.results) ? data.results : [];
+  if (rawResults.length === 0 && !isMock) {
+    throw new Error('Openverse returned 0 results');
+  }
+  const results = isMock
+    ? rawResults.slice(0, opts.limit)
+    : dedupeByCreator(rawResults, opts.limit, r => r.creator || r.id, {
+        getTitle: r => r.title,
+        allowBackfill: false,
+      });
   return results.map((r, idx) => {
     const downloadUrl = r.url || r.thumbnail;
     if (!downloadUrl) throw new Error('Openverse result had no image URL');
@@ -326,6 +522,7 @@ async function fetchOpenverse(opts, env) {
       id: `cand_${idx + 1}`,
       ext,
       downloadUrl,
+      fallbackDownloadUrl: r.thumbnail || null,
       provider: 'openverse',
       sourceId: String(r.id ?? idx + 1),
       title: r.title || `Openverse ${opts.type} ${idx + 1}`,
@@ -335,20 +532,74 @@ async function fetchOpenverse(opts, env) {
       license: `${lic}${ver} / Public Domain (Commercial Safe)`,
       width: r.width ?? null,
       height: r.height ?? null,
+      origWidth: r.width ?? null,
       duration: null,
     };
   });
 }
 
-async function downloadFile(url, destPath) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0' },
-  });
-  if (!res.ok) {
-    throw new Error(`Media download HTTP ${res.status}`);
+async function fetchOpenverse(opts, env) {
+  const isMock = Boolean(env.STOCK_API_BASE_URL);
+  if (isMock) {
+    return await fetchOpenverseOnly(opts, env);
   }
-  const buf = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync(destPath, buf);
+
+  const [ovSettled, wmSettled] = await Promise.allSettled([
+    fetchOpenverseOnly(opts, env),
+    fetchWikimediaCommons(opts),
+  ]);
+
+  const ovCandidates = ovSettled.status === 'fulfilled' ? ovSettled.value : [];
+  const wmCandidates = wmSettled.status === 'fulfilled' ? wmSettled.value : [];
+
+  if (ovCandidates.length === 0 && wmCandidates.length === 0) {
+    const err = ovSettled.status === 'rejected' ? ovSettled.reason : wmSettled.reason;
+    throw err || new Error('Openverse and Wikimedia Commons returned 0 results');
+  }
+
+  const combined = [...ovCandidates, ...wmCandidates];
+  combined.sort((a, b) => scoreCandidate(b, opts) - scoreCandidate(a, opts));
+  const diverse = dedupeByCreator(combined, opts.limit, c => c.creator, {
+    getTitle: c => c.title,
+    allowBackfill: true,
+  });
+  return diverse.slice(0, opts.limit).map((c, idx) => ({ ...c, id: `cand_${idx + 1}` }));
+}
+
+async function downloadFile(url, destPath, fallbackUrl = null, isMock = false) {
+  try {
+    const res = await fetchWithRetry(
+      url,
+      {
+        headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0 (https://github.com/agents-united)' },
+        signal: AbortSignal.timeout(8000),
+      },
+      isMock ? 0 : 1,
+    );
+    if (!res.ok) {
+      throw new Error(`Media download HTTP ${res.status}`);
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    fs.writeFileSync(destPath, buf);
+  } catch (primaryErr) {
+    if (fallbackUrl && fallbackUrl !== url) {
+      const res = await fetchWithRetry(
+        fallbackUrl,
+        {
+          headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0 (https://github.com/agents-united)' },
+          signal: AbortSignal.timeout(8000),
+        },
+        isMock ? 0 : 1,
+      );
+      if (!res.ok) {
+        throw new Error(`Media download HTTP ${res.status}`);
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      fs.writeFileSync(destPath, buf);
+      return;
+    }
+    throw primaryErr;
+  }
 }
 
 export async function fetchStockCandidates(opts, env = process.env) {
@@ -375,25 +626,54 @@ export async function fetchStockCandidates(opts, env = process.env) {
       const outDir = path.resolve(opts.output);
       fs.mkdirSync(outDir, { recursive: true });
 
-      const savedCandidates = [];
-      for (const cand of rawCandidates) {
-        const localFile = `${cand.id}.${cand.ext}`;
-        const destPath = path.join(outDir, localFile);
-        await downloadFile(cand.downloadUrl, destPath);
-        savedCandidates.push({
-          id: cand.id,
-          localFile,
-          provider: cand.provider,
-          sourceId: cand.sourceId,
-          title: cand.title,
-          creator: cand.creator,
-          creatorUrl: cand.creatorUrl,
-          sourceUrl: cand.sourceUrl,
-          license: cand.license,
-          width: cand.width,
-          height: cand.height,
-          duration: cand.duration,
-        });
+      const isMock = Boolean(env.STOCK_API_BASE_URL);
+      let savedCandidates = [];
+      try {
+        for (const cand of rawCandidates) {
+          const localFile = `${cand.id}.${cand.ext}`;
+          const destPath = path.join(outDir, localFile);
+          await downloadFile(cand.downloadUrl, destPath, cand.fallbackDownloadUrl || null, isMock);
+          savedCandidates.push({
+            id: cand.id,
+            localFile,
+            provider: cand.provider,
+            sourceId: cand.sourceId,
+            title: cand.title,
+            creator: cand.creator,
+            creatorUrl: cand.creatorUrl,
+            sourceUrl: cand.sourceUrl,
+            license: cand.license,
+            width: cand.width,
+            height: cand.height,
+            duration: cand.duration,
+          });
+        }
+      } catch (dlErr) {
+        if (prov === 'openverse' && !isMock) {
+          const commonsCandidates = await fetchWikimediaCommons(opts);
+          savedCandidates = [];
+          for (const cand of commonsCandidates) {
+            const localFile = `${cand.id}.${cand.ext}`;
+            const destPath = path.join(outDir, localFile);
+            await downloadFile(cand.downloadUrl, destPath, cand.fallbackDownloadUrl || null, isMock);
+            savedCandidates.push({
+              id: cand.id,
+              localFile,
+              provider: cand.provider,
+              sourceId: cand.sourceId,
+              title: cand.title,
+              creator: cand.creator,
+              creatorUrl: cand.creatorUrl,
+              sourceUrl: cand.sourceUrl,
+              license: cand.license,
+              width: cand.width,
+              height: cand.height,
+              duration: cand.duration,
+            });
+          }
+        } else {
+          throw dlErr;
+        }
       }
 
       const manifest = {
@@ -427,7 +707,7 @@ async function main() {
   } catch (err) {
     const safeMsg = redactSecrets(err instanceof Error ? err.message : String(err), process.env);
     process.stderr.write(`Error: ${safeMsg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
   }
 }
 

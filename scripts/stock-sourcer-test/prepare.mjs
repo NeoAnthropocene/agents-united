@@ -43,15 +43,38 @@ const DESIGN_TOKENS = {
 function copySkillDir(skillName, destSkillsRoot) {
   const src = path.join(REPO_ROOT, 'registry', 'skills', skillName);
   const dest = path.join(destSkillsRoot, skillName);
-  fs.cpSync(src, dest, { recursive: true });
+  fs.cpSync(src, dest, { recursive: true, force: true });
 }
 
-function scaffoldHostWorkspace(rootDir, host) {
+function scaffoldHostWorkspace(rootDir, host, clean = false) {
   const ws = path.join(rootDir, host);
-  fs.rmSync(ws, { recursive: true, force: true });
-  fs.mkdirSync(path.join(ws, 'assets', 'stock'), { recursive: true });
+  const stockDir = path.join(ws, 'assets', 'stock');
+  const hasCompletedRun =
+    !clean &&
+    fs.existsSync(path.join(ws, 'attribution.md')) &&
+    fs.existsSync(stockDir) &&
+    fs.readdirSync(stockDir).some(f => f.endsWith('.provenance.json'));
+
+  if (!hasCompletedRun) {
+    try {
+      fs.rmSync(ws, { recursive: true, force: true });
+    } catch {
+      fs.rmSync(path.join(ws, 'assets'), { recursive: true, force: true });
+      fs.rmSync(path.join(ws, 'attribution.md'), { force: true });
+    }
+  } else {
+    fs.rmSync(path.join(ws, 'assets', 'stock-candidates'), { recursive: true, force: true });
+  }
+  fs.mkdirSync(stockDir, { recursive: true });
   fs.writeFileSync(path.join(ws, 'BRIEF.md'), BRIEF_MD, 'utf8');
   fs.writeFileSync(path.join(ws, 'design-tokens.json'), `${JSON.stringify(DESIGN_TOKENS, null, 2)}\n`, 'utf8');
+
+  const wsScriptsDir = path.join(ws, 'scripts');
+  fs.mkdirSync(wsScriptsDir, { recursive: true });
+  fs.copyFileSync(
+    path.join(REPO_ROOT, 'registry', 'skills', 'commercial-stock-sourcer', 'scripts', 'fetch-stock.mjs'),
+    path.join(wsScriptsDir, 'fetch-stock.mjs'),
+  );
 
   if (host === 'claude') {
     const skillsDir = path.join(ws, '.claude', 'skills');
@@ -100,6 +123,7 @@ function main() {
     options: {
       root: { type: 'string', default: DEFAULT_ROOT },
       'skip-preflight-network': { type: 'boolean', default: false },
+      clean: { type: 'boolean', default: false },
     },
     strict: false,
   });
@@ -108,7 +132,7 @@ function main() {
   fs.mkdirSync(rootDir, { recursive: true });
 
   for (const host of HOSTS) {
-    scaffoldHostWorkspace(rootDir, host);
+    scaffoldHostWorkspace(rootDir, host, Boolean(values.clean));
   }
 
   if (!values['skip-preflight-network']) {
@@ -136,16 +160,16 @@ function main() {
   process.stdout.write(`\nPrepared 4 isolated host workspaces under: ${rootDir}\n\n`);
   process.stdout.write(`=== Maintainer Live-Host CLI Commands (docs/live-test-protocol.md) ===\n`);
   process.stdout.write(
-    `1. Claude Code:\n   cd "${path.join(rootDir, 'claude')}" && claude -p "Read BRIEF.md and execute the stock sourcing task using commercial-stock-sourcer." --agent agency-creative-designer --allowedTools "Bash,Read,Write,Edit,Glob,Grep,Skill"\n`,
+    `1. Claude Code:\n   cd "${path.join(rootDir, 'claude')}" ; claude -p "Read BRIEF.md and execute the stock sourcing task using commercial-stock-sourcer." --model sonnet --effort low --max-budget-usd 0.80 --allowedTools "Bash,Read,Write,Edit,Glob,Grep,Skill"\n`,
   );
   process.stdout.write(
-    `2. Cline CLI:\n   cd "${path.join(rootDir, 'cline')}" && cline -y "Read BRIEF.md and execute the stock sourcing task using commercial-stock-sourcer."\n`,
+    `2. Cline CLI:\n   cd "${path.join(rootDir, 'cline')}" ; cline -y "Read BRIEF.md and execute the stock sourcing task using commercial-stock-sourcer."\n`,
   );
   process.stdout.write(
-    `3. Antigravity CLI:\n   cd "${path.join(rootDir, 'antigravity')}" && agy chat -m "Read BRIEF.md and execute the stock sourcing task using commercial-stock-sourcer."\n`,
+    `3. Antigravity CLI:\n   cd "${path.join(rootDir, 'antigravity')}" ; agy chat -m "Read BRIEF.md and execute the stock sourcing task using commercial-stock-sourcer."\n`,
   );
   process.stdout.write(
-    `4. Codex CLI:\n   cd "${path.join(rootDir, 'codex')}" && codex exec --full-auto "Read BRIEF.md and execute the stock sourcing task using commercial-stock-sourcer."\n`,
+    `4. Codex CLI:\n   cd "${path.join(rootDir, 'codex')}" ; codex exec -s danger-full-access --skip-git-repo-check "Read BRIEF.md and execute the stock sourcing task using commercial-stock-sourcer."\n`,
   );
 }
 

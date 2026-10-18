@@ -296,6 +296,71 @@ describe('Tier 1 — Unit: CLI argument parsing & provider routing', () => {
     expect(badType.status).toBe(1);
     expect(badType.stderr).toMatch(/--type/i);
   });
+
+  it('deduplicates bulk shoots by creator and 4-word title prefix and scores CC0 landscape candidates above raw camera dumps', async () => {
+    const mod = (await import(pathToFileURL(SCRIPT_PATH).href)) as {
+      normalizeShootTitle: (t: string) => string;
+      dedupeByCreator: <T>(
+        items: T[],
+        limit: number,
+        getCreator: (item: T) => string,
+        options?: { getTitle?: (item: T) => string; allowBackfill?: boolean },
+      ) => T[];
+      matchesOrientation: (w: number, h: number, orientation: string) => boolean;
+      scoreCandidate: (
+        cand: {
+          license: string;
+          width: number;
+          height: number;
+          origWidth?: number;
+          title: string;
+          creatorUrl?: string;
+        },
+        opts: { type: string; orientation: string },
+      ) => number;
+    };
+
+    expect(
+      mod.normalizeShootTitle('File:2025-07-05 Pour over coffee shot on Project Indigo camera app 1.jpg'),
+    ).toBe('pour over coffee shot');
+
+    const rolandShoot = [
+      { creator: 'roland', title: '2025-07-05 Pour over coffee shot on Project Indigo camera app 1' },
+      { creator: 'roland', title: '2025-07-05 Pour over coffee shot on Project Indigo camera app 2' },
+      { creator: 'roland', title: '2025-07-05 Pour over coffee shot on Project Indigo camera app 3' },
+    ];
+    const dedupedStrict = mod.dedupeByCreator(rolandShoot, 3, x => x.creator, {
+      getTitle: x => x.title,
+      allowBackfill: false,
+    });
+    expect(dedupedStrict).toHaveLength(1);
+
+    expect(mod.matchesOrientation(3849, 2561, 'landscape')).toBe(true);
+    expect(mod.matchesOrientation(2561, 3849, 'landscape')).toBe(false);
+
+    const cc0Hero = mod.scoreCandidate(
+      {
+        license: 'CC0 / Public Domain (Commercial Safe)',
+        width: 3849,
+        height: 2561,
+        origWidth: 3849,
+        title: 'File:Manual drip (pour-over) coffee.jpg',
+        creatorUrl: 'https://unsplash.com/@kimsanso',
+      },
+      { type: 'photo', orientation: 'landscape' },
+    );
+    const cameraDump = mod.scoreCandidate(
+      {
+        license: 'CC BY 2.0 (Commercial Safe — Attribution Required)',
+        width: 3000,
+        height: 4000,
+        origWidth: 3000,
+        title: '2025-07-05 Pour over coffee shot on Project Indigo camera app',
+      },
+      { type: 'photo', orientation: 'landscape' },
+    );
+    expect(cc0Hero).toBeGreaterThan(cameraDump + 100);
+  });
 });
 
 describe('Tier 2 — Integration (Mock HTTP): photo, vector, illustration, video & fallback matrix', () => {
