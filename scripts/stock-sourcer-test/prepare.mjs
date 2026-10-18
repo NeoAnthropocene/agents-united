@@ -13,7 +13,7 @@ const SKILLS_TO_COPY = ['commercial-stock-sourcer', 'image-creation', 'color-the
 const BRIEF_MD = `# Creative Brief — Hearth Roasters Multi-Asset Stock Sourcing
 
 You are **Jamileh** (\`agency-creative-designer\` / \`subagent-marketing-creative-designer\`).
-Our brand **Hearth Roasters** needs commercial-safe stock assets for its landing page and marketing campaigns.
+Our brand **Hearth Roasters** needs commercial-safe stock assets for our upcoming marketing campaigns and landing page sections.
 
 ## Brand Palette (\`design-tokens.json\`)
 - \`--surface-paper\`: \`#FAF6F0\` (light cream headline & body text on dark overlays)
@@ -21,27 +21,51 @@ Our brand **Hearth Roasters** needs commercial-safe stock assets for its landing
 - \`--accent-copper\`: \`#C86D3B\` (primary CTA accent)
 
 ## Task Requirements
-Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env\` exists in the workspace root, \`scripts/fetch-stock.mjs\` will automatically load \`UNSPLASH_ACCESS_KEY\` and blend Unsplash candidates with Pexels, Pixabay, and Openverse.
+Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env\` exists in the workspace root, \`scripts/fetch-stock.mjs\` will automatically load \`UNSPLASH_ACCESS_KEY\` and blend Unsplash candidates with Pexels, Pixabay, and Openverse / Wikimedia Commons.
 
-### Sourcing Workflow (Repeat for each requested asset):
-1. **Step 1 (Fetch Candidates):** Run \`node scripts/fetch-stock.mjs --query "<query>" --type <type> --orientation <orientation> --limit 3 --output ./assets/stock-candidates\`.
-2. **Step 2 (Vision Inspection):** Read \`./assets/stock-candidates/manifest.json\` and inspect each candidate image with \`Read\` on the 5 mandatory criteria (or evaluate \`manifest.json\` metadata if running on a text-only model without image vision).
-3. **Step 3 (Select, Promote & Clean Up):** Run \`node scripts/fetch-stock.mjs --promote <cand_file> --to ./assets/stock/<name>.<ext> --output ./assets/stock-candidates\`.
-4. **Step 4 (Provenance & Attribution):** Write \`assets/stock/<name>.<ext>.provenance.json\` and append to \`attribution.md\`.
+### Sourcing Workflow:
+1. **Step 1 (Fetch Candidates):**
+   - For API Sourcing (Assets 1 & 2): Run \`node scripts/fetch-stock.mjs --query "<query>" --type <type> --orientation <orientation> --limit 3 --output ./assets/stock-candidates\`.
+   - For Web Search Fallback (Asset 3): Use your native web search tool (e.g. \`site:commons.wikimedia.org "CC0" woman man arguing\` or searching Wikimedia Commons / public domain for arguing couple photos) to find 1 to 3 candidate image/file URLs (e.g. \`https://commons.wikimedia.org/wiki/File:...<Title>.jpg\` or direct image URLs). Then run:
+     \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
+     *(Note: If your host environment does not have a web_search tool, fall back to \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`.)*
+2. **Step 2 (Vision-in-the-Loop Inspection & Hard Pass/Fail Gate):**
+   - Read \`./assets/stock-candidates/manifest.json\`.
+   - Inspect each candidate image with \`Read\` (or view tool) against the 5 mandatory criteria: Subject Recognizability & Focus, Composition & Aspect Framing, Lighting & Palette Harmony, Clean Copy Zone, Zero Third-Party Trademarks.
+   - Non-vision fallback: If you are running on a text-only model without image vision capabilities, evaluate \`manifest.json\` (\`score\`, \`description\`, \`color\`, \`tags\`, \`license\`), set \`"inspectedByVision": false\`, and write \`"visionNotes": "unverified visually (non-vision model); selected via manifest metadata: <reason>"\`.
+   - Reject any batch where all candidates fail; do not select a "least-bad" candidate.
+3. **Step 3 (Select, Promote & Clean Up):**
+   - Run \`node scripts/fetch-stock.mjs --promote <cand_file> --to ./assets/stock/<filename>.<ext> --output ./assets/stock-candidates\`.
+   - (This copies the winner to \`assets/stock/\`, triggers the Unsplash download endpoint if applicable, and automatically cleans up \`./assets/stock-candidates/\`).
+4. **Step 4 (Provenance & Attribution):**
+   - Write \`assets/stock/<filename>.<ext>.provenance.json\` with provider, creator, license, source URL, and inspection notes.
+   - Append creator attribution and license credit to \`attribution.md\` (including UTM source parameters for Unsplash).
 
-### Campaign Assets to Source:
-1. **Hero Coffee Photo:**
-   - Query: \`"pour over coffee"\`, Type: \`photo\`, Orientation: \`landscape\`
-   - Output: \`assets/stock/hero-coffee.jpg\` + sidecar
-2. **Unicorn Mascot Illustration:**
-   - Query: \`"unicorn illustration"\`, Type: \`illustration\`, Orientation: \`square\`
-   - Output: \`assets/stock/unicorn-mascot.jpg\` (or \`.png\`/\`.svg\`) + sidecar
-3. **Playground Children Photo:**
-   - Query: \`"children playground with happy asian children"\`, Type: \`photo\`, Orientation: \`landscape\`
-   - Output: \`assets/stock/playground-children.jpg\` + sidecar
-4. **Editorial Discussion Photo:**
-   - Query: \`"woman and man arguing"\`, Type: \`photo\`, Orientation: \`landscape\`
-   - Output: \`assets/stock/arguing-couple.jpg\` + sidecar
+### Campaign Assets to Source (Complete All 3):
+
+1. **Unicorn Mascot Illustration (API Sourcing - Vector/Illustration):**
+   - Query: \`"unicorn illustration"\`
+   - Type: \`illustration\`
+   - Orientation: \`square\`
+   - Command: \`node scripts/fetch-stock.mjs --query "unicorn illustration" --type illustration --orientation square --limit 3 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/unicorn-mascot.jpg\` (or \`.png\` / \`.svg\`) + sidecar \`assets/stock/unicorn-mascot.<ext>.provenance.json\`
+
+2. **Playground Children Photo (API Sourcing - Multi-Provider / Unsplash Blend):**
+   - Query: \`"children playground with happy asian children"\`
+   - Type: \`photo\`
+   - Orientation: \`landscape\`
+   - Command: \`node scripts/fetch-stock.mjs --query "children playground with happy asian children" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`
+   - Target Output: \`assets/stock/playground-children.jpg\` + sidecar \`assets/stock/playground-children.jpg.provenance.json\`
+
+3. **Editorial Discussion Photo (Web Search Fallback Test):**
+   - Subject: \`"woman and man arguing"\`
+   - Type: \`photo\`
+   - Orientation: \`landscape\`
+   - Sourcing Method: **Test the Web Search Fallback Tool!**
+     - Step 1a: Use your host's web search tool to find 1 to 3 Wikimedia Commons public domain / CC0 image URLs for a man and woman arguing / having a heated discussion (e.g. search query: \`site:commons.wikimedia.org "CC0" woman man arguing\` or searching Wikimedia Commons for dispute / couple arguing photos).
+     - Step 1b: Pass the discovered URL(s) to fetch-stock: \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
+     - *(Fallback if web search is not enabled in your host: run \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`)*
+   - Target Output: \`assets/stock/arguing-couple.jpg\` + sidecar \`assets/stock/arguing-couple.jpg.provenance.json\`
 `;
 
 const DESIGN_TOKENS = {
@@ -65,6 +89,16 @@ function copySkillDir(skillName, destSkillsRoot) {
 function scaffoldHostWorkspace(rootDir, host, clean = false) {
   const ws = path.join(rootDir, host);
   const stockDir = path.join(ws, 'assets', 'stock');
+  const envFile = path.join(ws, '.env');
+
+  // Preserve existing .env content if user already configured their API keys
+  let preservedEnv = null;
+  if (fs.existsSync(envFile)) {
+    try {
+      preservedEnv = fs.readFileSync(envFile, 'utf8');
+    } catch {}
+  }
+
   const hasCompletedRun =
     !clean &&
     fs.existsSync(path.join(ws, 'attribution.md')) &&
@@ -81,12 +115,24 @@ function scaffoldHostWorkspace(rootDir, host, clean = false) {
   } else {
     fs.rmSync(path.join(ws, 'assets', 'stock-candidates'), { recursive: true, force: true });
   }
+
   fs.mkdirSync(stockDir, { recursive: true });
+
+  // Actively remove any deprecated hero-coffee assets
+  if (fs.existsSync(stockDir)) {
+    for (const file of fs.readdirSync(stockDir)) {
+      if (file.startsWith('hero-coffee')) {
+        fs.rmSync(path.join(stockDir, file), { force: true });
+      }
+    }
+  }
+
   fs.writeFileSync(path.join(ws, 'BRIEF.md'), BRIEF_MD, 'utf8');
   fs.writeFileSync(path.join(ws, 'design-tokens.json'), `${JSON.stringify(DESIGN_TOKENS, null, 2)}\n`, 'utf8');
 
-  const envFile = path.join(ws, '.env');
-  if (!fs.existsSync(envFile)) {
+  if (preservedEnv && !preservedEnv.includes('your_unsplash_access_key_here')) {
+    fs.writeFileSync(envFile, preservedEnv, 'utf8');
+  } else if (!fs.existsSync(envFile)) {
     fs.writeFileSync(
       envFile,
       `# Unsplash API Access Key (Client ID)

@@ -850,7 +850,7 @@ async function fetchFromUrls(opts, env = process.env) {
   fs.mkdirSync(outDir, { recursive: true });
 
   const rawUrls = String(opts.url || '')
-    .split(',')
+    .split(/(?:\s*,\s*|\s+)(?=https?:\/\/)/i)
     .map(u => u.trim())
     .filter(Boolean);
   if (rawUrls.length === 0) {
@@ -864,6 +864,7 @@ async function fetchFromUrls(opts, env = process.env) {
     const candId = `cand_${nextIdx}`;
     let ext = 'jpg';
     let downloadUrl = rawUrl;
+    let fallbackDownloadUrl = null;
     let sourceUrl = rawUrl;
     let title = `Discovered stock candidate ${nextIdx}`;
     let creator = 'Discovered via Web Search';
@@ -879,10 +880,11 @@ async function fetchFromUrls(opts, env = process.env) {
         infoUrl.searchParams.set('titles', `File:${fileName}`);
         infoUrl.searchParams.set('prop', 'imageinfo');
         infoUrl.searchParams.set('iiprop', 'url|dimensions|extmetadata');
+        infoUrl.searchParams.set('iiurlwidth', '1280');
         infoUrl.searchParams.set('format', 'json');
         infoUrl.searchParams.set('origin', '*');
         const res = await fetch(infoUrl, {
-          headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0' },
+          headers: { 'User-Agent': 'agents-united-commercial-stock-sourcer/1.0 (https://github.com/agents-united)' },
         });
         if (res.ok) {
           const data = await res.json();
@@ -890,6 +892,7 @@ async function fetchFromUrls(opts, env = process.env) {
           const ii = page?.imageinfo?.[0];
           if (ii?.url) {
             downloadUrl = ii.thumburl || ii.url;
+            fallbackDownloadUrl = ii.url;
             sourceUrl = rawUrl;
             title = fileName.replace(/\.[^.]+$/, '');
             creator = String(ii.extmetadata?.Artist?.value || creator).replace(/<[^>]+>/g, '').trim();
@@ -907,7 +910,7 @@ async function fetchFromUrls(opts, env = process.env) {
 
     const localFile = `${candId}.${ext}`;
     const destPath = path.join(outDir, localFile);
-    await downloadFile(downloadUrl, destPath, null, isMock);
+    await downloadFile(downloadUrl, destPath, fallbackDownloadUrl, isMock);
 
     savedCandidates.push({
       id: candId,
