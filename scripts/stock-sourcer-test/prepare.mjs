@@ -20,15 +20,15 @@ Our brand **Hearth Roasters** needs commercial-safe stock assets for our upcomin
 - \`--surface-espresso\`: \`#231F1D\` (deep roast background)
 - \`--accent-copper\`: \`#C86D3B\` (primary CTA accent)
 
-## Task Requirements
-Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env\` exists in the workspace root, \`scripts/fetch-stock.mjs\` will automatically load \`UNSPLASH_ACCESS_KEY\` and blend Unsplash candidates with Pexels, Pixabay, and Openverse / Wikimedia Commons.
+### Task Requirements
+Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env\` exists in the workspace root, \`scripts/fetch-stock.mjs\` will automatically load \`UNSPLASH_ACCESS_KEY\` (and any other configured keys) and blend available candidates with Openverse / Wikimedia Commons. Unconfigured providers without API keys are safely skipped.
 
 ### Sourcing Workflow:
 1. **Step 1 (Fetch Candidates):**
    - For API Sourcing (Assets 1 & 2): Run \`node scripts/fetch-stock.mjs --query "<query>" --type <type> --orientation <orientation> --limit 3 --output ./assets/stock-candidates\`.
    - For Web Search Fallback (Asset 3): Use your native web search tool (e.g. \`site:commons.wikimedia.org "CC0" woman man arguing\` or searching Wikimedia Commons / public domain for arguing couple photos) to find 1 to 3 candidate image/file URLs (e.g. \`https://commons.wikimedia.org/wiki/File:...<Title>.jpg\` or direct image URLs). Then run:
      \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
-     *(Note: If your host environment does not have a web_search tool, fall back to \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`.)*
+     *(Fallback: If your host environment does not have a web_search tool, or if discovered URLs 404/fail to download, fall back to: \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`.)*
 2. **Step 2 (Vision-in-the-Loop Inspection & Hard Pass/Fail Gate):**
    - Read \`./assets/stock-candidates/manifest.json\`.
    - Inspect each candidate image with \`Read\` (or view tool) against the 5 mandatory criteria: Subject Recognizability & Focus, Composition & Aspect Framing, Lighting & Palette Harmony, Clean Copy Zone, Zero Third-Party Trademarks.
@@ -54,6 +54,7 @@ Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env
    - Query: \`"children playground with happy asian children"\`
    - Type: \`photo\`
    - Orientation: \`landscape\`
+   - Subject Guidance: A joyful single child playing on playground equipment or a group of children having fun on a playground both meet the brief.
    - Command: \`node scripts/fetch-stock.mjs --query "children playground with happy asian children" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`
    - Target Output: \`assets/stock/playground-children.jpg\` + sidecar \`assets/stock/playground-children.jpg.provenance.json\`
 
@@ -64,7 +65,7 @@ Load and follow the \`commercial-stock-sourcer\` skill for each asset. If \`.env
    - Sourcing Method: **Test the Web Search Fallback Tool!**
      - Step 1a: Use your host's web search tool to find 1 to 3 Wikimedia Commons public domain / CC0 image URLs for a man and woman arguing / having a heated discussion (e.g. search query: \`site:commons.wikimedia.org "CC0" woman man arguing\` or searching Wikimedia Commons for dispute / couple arguing photos).
      - Step 1b: Pass the discovered URL(s) to fetch-stock: \`node scripts/fetch-stock.mjs --url "<found_url>" --output ./assets/stock-candidates\`.
-     - *(Fallback if web search is not enabled in your host: run \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`)*
+     - *(Fallback if web search is not enabled or discovered URLs 404: run \`node scripts/fetch-stock.mjs --query "woman and man arguing" --type photo --orientation landscape --limit 3 --output ./assets/stock-candidates\`)*
    - Target Output: \`assets/stock/arguing-couple.jpg\` + sidecar \`assets/stock/arguing-couple.jpg.provenance.json\`
 `;
 

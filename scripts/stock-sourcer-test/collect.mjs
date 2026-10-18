@@ -18,7 +18,7 @@ function evaluateHostWorkspace(rootDir, host) {
   }
 
   const files = fs.readdirSync(stockDir);
-  const mediaFiles = files.filter(f => /\.(jpg|jpeg|png|svg|mp4)$/i.test(f));
+  const mediaFiles = files.filter(f => /\.(jpg|jpeg|png|svg|mp4|webp)$/i.test(f));
   const provenanceFiles = files.filter(f => f.endsWith('.provenance.json'));
 
   if (mediaFiles.length === 0) {
@@ -52,6 +52,21 @@ function evaluateHostWorkspace(rootDir, host) {
 
   if (!fs.existsSync(attributionFile) || fs.readFileSync(attributionFile, 'utf8').trim().length === 0) {
     issues.push('Missing or empty attribution.md');
+  }
+
+  const EXPECTED_STEMS = ['unicorn-mascot', 'playground-children', 'arguing-couple'];
+  const isLegacySingleTest = mediaFiles.some(f => f.startsWith('hero-coffee'));
+
+  if (!isLegacySingleTest) {
+    const stemsFound = mediaFiles.map(f => path.basename(f, path.extname(f)));
+    const missingStems = EXPECTED_STEMS.filter(stem => !stemsFound.includes(stem));
+    if (missingStems.length > 0) {
+      return {
+        host,
+        status: 'PARTIAL',
+        details: `Promoted ${mediaFiles.length}/${EXPECTED_STEMS.length} (${mediaFiles.join(', ')}); missing: ${missingStems.join(', ')}${issues.length > 0 ? `; issues: ${issues.join('; ')}` : ''}`,
+      };
+    }
   }
 
   if (issues.length > 0) {

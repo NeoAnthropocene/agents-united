@@ -7,11 +7,65 @@ import { parseArgs } from 'node:util';
 
 dns.setDefaultResultOrder('ipv4first');
 
-try {
-  process.loadEnvFile?.();
-} catch {
-  // Ignore missing or unreadable .env file
+/**
+ * Validates whether an API key is a genuine, non-placeholder credential.
+ */
+export function isValidApiKey(val) {
+  if (typeof val !== 'string') return false;
+  const s = val.trim();
+  if (s.length < 2) return false;
+  if (/^your_.*_here$/i.test(s)) return false;
+  if (/^your_unsplash_/i.test(s) || /^your_pexels_/i.test(s) || /^your_pixabay_/i.test(s)) return false;
+  if (s === 'your_api_key' || s === 'your_key' || s === 'placeholder') return false;
+  return true;
 }
+
+/**
+ * Loads .env safely: direct parsing overrides stale shell variables with valid keys from .env.
+ */
+export function loadAndApplyEnv(targetEnv = process.env) {
+  try {
+    process.loadEnvFile?.();
+  } catch {}
+
+  const candidatePaths = [
+    path.join(process.cwd(), '.env'),
+    path.join(process.cwd(), '..', '.env'),
+  ];
+  for (const envPath of candidatePaths) {
+    if (fs.existsSync(envPath)) {
+      try {
+        const content = fs.readFileSync(envPath, 'utf8');
+        for (const line of content.split(/\r?\n/)) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const match = trimmed.match(/^([\w.-]+)\s*=\s*(.*)$/);
+          if (match) {
+            const key = match[1];
+            let val = match[2].trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            if (isValidApiKey(val)) {
+              targetEnv[key] = val;
+            } else if (!isValidApiKey(targetEnv[key])) {
+              delete targetEnv[key];
+            }
+          }
+        }
+      } catch {}
+      break;
+    }
+  }
+
+  for (const k of ['UNSPLASH_ACCESS_KEY', 'PEXELS_API_KEY', 'PIXABAY_API_KEY']) {
+    if (targetEnv[k] && !isValidApiKey(targetEnv[k])) {
+      delete targetEnv[k];
+    }
+  }
+}
+
+loadAndApplyEnv(process.env);
 
 const VALID_TYPES = new Set(['photo', 'vector', 'illustration', 'video']);
 const VALID_ORIENTATIONS = new Set(['landscape', 'portrait', 'square']);
@@ -120,12 +174,38 @@ export function parseCliArgs(argv) {
 }
 
 /**
+ * Reports active configured providers and unconfigured skipped providers for user transparency.
+ */
+export function getProviderStatus(type, env = process.env) {
+  const hasUnsplash = isValidApiKey(env.UNSPLASH_ACCESS_KEY);
+  const hasPexels = isValidApiKey(env.PEXELS_API_KEY);
+  const hasPixabay = isValidApiKey(env.PIXABAY_API_KEY);
+
+  const activeProviders = [];
+  const skippedUnconfigured = [];
+
+  if (type === 'photo') {
+    if (hasUnsplash) activeProviders.push('unsplash'); else skippedUnconfigured.push('unsplash');
+    if (hasPexels) activeProviders.push('pexels'); else skippedUnconfigured.push('pexels');
+    if (hasPixabay) activeProviders.push('pixabay'); else skippedUnconfigured.push('pixabay');
+    activeProviders.push('openverse');
+  } else if (type === 'vector' || type === 'illustration') {
+    if (hasPixabay) activeProviders.push('pixabay'); else skippedUnconfigured.push('pixabay');
+    activeProviders.push('openverse');
+  } else if (type === 'video') {
+    if (hasPexels) activeProviders.push('pexels'); else skippedUnconfigured.push('pexels');
+    if (hasPixabay) activeProviders.push('pixabay'); else skippedUnconfigured.push('pixabay');
+  }
+  return { activeProviders, skippedUnconfigured };
+}
+
+/**
  * Determines the ordered list of providers to try based on media type, requested provider, and available API keys.
  */
 export function resolveProviderChain(type, provider = 'auto', env = process.env) {
-  const hasUnsplash = Boolean(env.UNSPLASH_ACCESS_KEY && env.UNSPLASH_ACCESS_KEY.trim());
-  const hasPexels = Boolean(env.PEXELS_API_KEY && env.PEXELS_API_KEY.trim());
-  const hasPixabay = Boolean(env.PIXABAY_API_KEY && env.PIXABAY_API_KEY.trim());
+  const hasUnsplash = isValidApiKey(env.UNSPLASH_ACCESS_KEY);
+  const hasPexels = isValidApiKey(env.PEXELS_API_KEY);
+  const hasPixabay = isValidApiKey(env.PIXABAY_API_KEY);
 
   if (provider !== 'auto') {
     if (provider === 'unsplash') {
@@ -476,11 +556,13 @@ export function matchesOrientation(width, height, orientation) {
   return true;
 }
 
-export function scoreCandidate(cand, opts) {
+export function scoreCandidate(cand, opts = {}) {
   let score = 0;
   const lic = String(cand.license || '');
   if (/\b(cc0|public domain|pdm|pd\b)/i.test(lic)) {
     score += 50;
+  } else if (/\b(commercial safe|unsplash license|pexels license|pixabay)/i.test(lic)) {
+    score += 45;
   } else if (/\bcc[- ]by(?!-sa|-nc|-nd)/i.test(lic)) {
     score += 20;
   } else if (/\b(nc|nd)\b/i.test(lic)) {
@@ -500,7 +582,7 @@ export function scoreCandidate(cand, opts) {
   }
 
   const title = String(cand.title || '');
-  const metaBlob = `${title} ${cand.creatorUrl || ''} ${cand.metaHint || ''}`;
+  const metaBlob = `${title} ${cand.creatorUrl || ''} ${cand.metaHint || ''} ${cand.description || ''}`;
   if (/\b(camera app|project indigo|test photo)\b/i.test(title) || /^\d{4}-\d{2}-\d{2}\b/.test(title)) {
     score -= 45;
   }
@@ -510,6 +592,24 @@ export function scoreCandidate(cand, opts) {
   if (/\b(unsplash|pixabay|pexels)\b/i.test(metaBlob)) {
     score += 25;
   }
+
+  if (opts.query) {
+    const terms = String(opts.query)
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !['with', 'and', 'the', 'for', 'from'].includes(w));
+    if (terms.length > 0) {
+      const searchBlob = `${title} ${cand.description || ''} ${cand.tags?.join(' ') || ''} ${cand.metaHint || ''}`.toLowerCase();
+      let matches = 0;
+      for (const term of terms) {
+        if (searchBlob.includes(term)) matches++;
+      }
+      if (matches >= 2) score += 25;
+      else if (matches === 1) score += 10;
+      else if (matches === 0) score -= 35;
+    }
+  }
+
   return score;
 }
 
@@ -562,23 +662,25 @@ async function fetchWikimediaCommons(opts) {
   }
 
   if (byPageId.size < opts.limit && words.length >= 3) {
-    const core3 = words.slice(0, 3).join(' ');
-    if (core3 !== opts.query) {
-      try {
-        addPages(await queryCommonsPages(`${filetypeFilter} ${core3}`, Math.max(45, opts.limit * 15)));
-        if (opts.type === 'photo') {
-          addPages(await queryCommonsPages(`${filetypeFilter} ${core3} Unsplash`, 15));
-        }
-      } catch {
-        // Broadened 3-word fallback
+    const stopwords = new Set(['with', 'and', 'or', 'in', 'on', 'at', 'a', 'an', 'the', 'of', 'for', 'to', 'by']);
+    const meaningful = words.filter(w => !stopwords.has(w.toLowerCase()));
+    if (meaningful.length >= 2) {
+      const coreKeywords = meaningful.slice(0, 3).join(' ');
+      if (coreKeywords !== opts.query) {
+        try {
+          addPages(await queryCommonsPages(`${filetypeFilter} ${coreKeywords}`, Math.max(45, opts.limit * 15)));
+          if (opts.type === 'photo') {
+            addPages(await queryCommonsPages(`${filetypeFilter} ${coreKeywords} Unsplash`, 15));
+          }
+        } catch {}
       }
-    }
-    if (byPageId.size < opts.limit) {
-      const core2 = words.slice(0, 2).join(' ');
-      try {
-        addPages(await queryCommonsPages(`${filetypeFilter} ${core2}`, Math.max(45, opts.limit * 15)));
-      } catch {
-        // Broadened 2-word fallback
+      if (byPageId.size < opts.limit && meaningful.length >= 2) {
+        const subjectAndNoun = `${meaningful[0]} ${meaningful[meaningful.length - 1]}`;
+        if (subjectAndNoun !== coreKeywords) {
+          try {
+            addPages(await queryCommonsPages(`${filetypeFilter} ${subjectAndNoun}`, Math.max(45, opts.limit * 15)));
+          } catch {}
+        }
       }
     }
   }
@@ -889,6 +991,10 @@ async function fetchFromUrls(opts, env = process.env) {
         if (res.ok) {
           const data = await res.json();
           const page = Object.values(data.query?.pages || {})[0];
+          if (!page || page.missing !== undefined || (page.pageid !== undefined && page.pageid < 0)) {
+            process.stderr.write(`Warning: Wikimedia Commons file "${fileName}" was not found (missing/deleted)\n`);
+            continue;
+          }
           const ii = page?.imageinfo?.[0];
           if (ii?.url) {
             downloadUrl = ii.thumburl || ii.url;
@@ -899,38 +1005,72 @@ async function fetchFromUrls(opts, env = process.env) {
             license = `${ii.extmetadata?.LicenseShortName?.value || 'CC0'} (Wikimedia Commons)`;
             width = ii.width ?? null;
             height = ii.height ?? null;
+          } else {
+            continue;
           }
         }
-      } catch {}
+      } catch (infoErr) {
+        process.stderr.write(`Warning: Could not fetch info for "${fileName}": ${infoErr.message}\n`);
+        continue;
+      }
     }
 
     if (downloadUrl.toLowerCase().includes('.png')) ext = 'png';
     else if (downloadUrl.toLowerCase().includes('.svg')) ext = 'svg';
     else if (downloadUrl.toLowerCase().includes('.mp4')) ext = 'mp4';
 
-    const localFile = `${candId}.${ext}`;
+    let localFile = `${candId}.${ext}`;
     const destPath = path.join(outDir, localFile);
-    await downloadFile(downloadUrl, destPath, fallbackDownloadUrl, isMock);
+    try {
+      await downloadFile(downloadUrl, destPath, fallbackDownloadUrl, isMock);
 
-    savedCandidates.push({
-      id: candId,
-      localFile,
-      downloadUrl,
-      sourceUrl,
-      provider: 'web-search-fallback',
-      sourceId: String(idx + 1),
-      title,
-      creator,
-      creatorUrl: sourceUrl,
-      license,
-      width,
-      height,
-      color: null,
-      description: title,
-      tags: [opts.query || 'stock'],
-      score: 50,
-      duration: null,
-    });
+      if (!isMock && fs.existsSync(destPath)) {
+        try {
+          const header = Buffer.alloc(12);
+          const fd = fs.openSync(destPath, 'r');
+          fs.readSync(fd, header, 0, 12, 0);
+          fs.closeSync(fd);
+          if (header.toString('ascii', 0, 4) === 'RIFF' && header.toString('ascii', 8, 12) === 'WEBP') {
+            if (ext === 'jpg' || ext === 'jpeg') {
+              const webpLocal = `${candId}.webp`;
+              const webpDest = path.join(outDir, webpLocal);
+              fs.renameSync(destPath, webpDest);
+              localFile = webpLocal;
+              ext = 'webp';
+            }
+          }
+        } catch {}
+      }
+
+      savedCandidates.push({
+        id: candId,
+        localFile,
+        downloadUrl,
+        sourceUrl,
+        provider: 'web-search-fallback',
+        sourceId: String(idx + 1),
+        title,
+        creator,
+        creatorUrl: sourceUrl,
+        license,
+        width,
+        height,
+        color: null,
+        description: title,
+        tags: [opts.query || 'stock'],
+        score: 50,
+        duration: null,
+      });
+    } catch (dlErr) {
+      process.stderr.write(`Warning: Download failed for ${downloadUrl}: ${dlErr.message}\n`);
+      if (rawUrls.length === 1 && !isMock) {
+        throw dlErr;
+      }
+    }
+  }
+
+  if (savedCandidates.length === 0) {
+    throw new Error(`Failed to download any candidate files from provided URLs (${rawUrls.join(', ')})`);
   }
 
   const manifest = {
@@ -1029,10 +1169,30 @@ export async function fetchStockCandidates(opts, env = process.env) {
     if (savedCandidates.length >= opts.limit) break;
     const nextIdx = savedCandidates.length + 1;
     const candId = `cand_${nextIdx}`;
-    const localFile = `${candId}.${cand.ext}`;
+    let ext = cand.ext;
+    let localFile = `${candId}.${ext}`;
     const destPath = path.join(outDir, localFile);
     try {
       await downloadFile(cand.downloadUrl, destPath, cand.fallbackDownloadUrl || null, isMock);
+
+      if (!isMock && fs.existsSync(destPath)) {
+        try {
+          const header = Buffer.alloc(12);
+          const fd = fs.openSync(destPath, 'r');
+          fs.readSync(fd, header, 0, 12, 0);
+          fs.closeSync(fd);
+          if (header.toString('ascii', 0, 4) === 'RIFF' && header.toString('ascii', 8, 12) === 'WEBP') {
+            if (ext === 'jpg' || ext === 'jpeg') {
+              const webpLocal = `${candId}.webp`;
+              const webpDest = path.join(outDir, webpLocal);
+              fs.renameSync(destPath, webpDest);
+              localFile = webpLocal;
+              ext = 'webp';
+            }
+          }
+        } catch {}
+      }
+
       savedCandidates.push({
         id: candId,
         localFile,
@@ -1068,6 +1228,7 @@ export async function fetchStockCandidates(opts, env = process.env) {
 
   const primaryProvider = savedCandidates[0].provider;
   const providersUsed = [...new Set(savedCandidates.map(c => c.provider))];
+  const providerStatus = getProviderStatus(opts.type, env);
 
   const manifest = {
     query: opts.query,
@@ -1075,6 +1236,8 @@ export async function fetchStockCandidates(opts, env = process.env) {
     orientation: opts.orientation,
     provider: primaryProvider,
     providersUsed,
+    activeProviders: providerStatus.activeProviders,
+    skippedUnconfigured: providerStatus.skippedUnconfigured,
     fetchedAt: new Date().toISOString(),
     candidates: savedCandidates,
   };
@@ -1091,6 +1254,12 @@ async function main() {
       const { promotedTo, cleanedOutputDir } = await promoteStockCandidate(opts, process.env);
       process.stdout.write(`Promoted candidate to ${promotedTo} and removed ${cleanedOutputDir}\n`);
       return;
+    }
+    const status = getProviderStatus(opts.type, process.env);
+    if (status.skippedUnconfigured.length > 0) {
+      process.stdout.write(
+        `Providers: active=[${status.activeProviders.join(', ')}] skipped(unconfigured)=[${status.skippedUnconfigured.join(', ')}]\n`,
+      );
     }
     const { manifestPath, manifest } = await fetchStockCandidates(opts, process.env);
     process.stdout.write(
