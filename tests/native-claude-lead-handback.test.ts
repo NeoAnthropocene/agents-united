@@ -26,6 +26,14 @@ describe('the lead reports its mode first', () => {
 });
 
 describe('the lead shuts a consultant down', () => {
+  // Advisor Plan 003: these rules are for the actual coordinated-team branch. An ordinary subagent that has reported is not shut down
+  // (tests/native-claude-worker-lifecycle.test.ts pins that branch).
+  it('applies the shutdown rules to coordinated teammates, in the paragraph that carries them', () => {
+    const paragraph = AFTER_FLOOR.split('\n').find(line => line.startsWith('**Team size, waiting and shutdown.**')) ?? '';
+    expect(paragraph).toMatch(/shutdown rules below[^.]*are for coordinated teammates/);
+    expect(paragraph).toMatch(/A consultant has delivered when it has answered/);
+  });
+
   it('treats an answer as a delivery and asks the consultant to shut down with the structured request', () => {
     expect(AFTER_FLOOR).toMatch(/A consultant has delivered when it has answered: shut it down by name with the same structured request/);
   });
