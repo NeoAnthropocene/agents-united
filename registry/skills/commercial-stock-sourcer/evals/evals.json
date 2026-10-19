@@ -1,0 +1,20 @@
+{
+  "skill_name": "commercial-stock-sourcer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Find a warm, editorial landscape hero stock photo of a pour-over coffee ritual for our landing page, with room on the left for light headline copy. Save the winning image under assets/stock/ and record its provenance.",
+      "expected_output": "Runs scripts/fetch-stock.mjs with --type photo --orientation landscape to download candidates into ./assets/stock-candidates, inspects every candidate visually with Read to verify lighting warmth and left-side copy zone, promotes the winning image to assets/stock/<name>.jpg, deletes ./assets/stock-candidates, and writes both assets/stock/<name>.jpg.provenance.json and attribution.md."
+    },
+    {
+      "id": 2,
+      "prompt": "We have no PEXELS_API_KEY or PIXABAY_API_KEY configured. Source a clean commercial-safe SVG vector icon or botanical illustration for our packaging card and document the license.",
+      "expected_output": "Runs scripts/fetch-stock.mjs with --type vector or --type illustration, which automatically falls back to Openverse (cc0,pdm commercial-safe filter) without asking the user to paste an API key. Visually inspects the downloaded candidates with Read, moves the best match to assets/stock/, cleans up ./assets/stock-candidates, and records CC0 / Public Domain provenance in the .provenance.json sidecar and attribution.md."
+    },
+    {
+      "id": 3,
+      "prompt": "Source a 10-to-15-second 1080p landscape B-roll stock video clip of espresso extraction for our ambient hero background.",
+      "expected_output": "Runs scripts/fetch-stock.mjs with --type video --orientation landscape. When PEXELS_API_KEY or PIXABAY_API_KEY is set, checks manifest.json metadata (duration, width, height, tags), promotes the matching .mp4 to assets/stock/, removes ./assets/stock-candidates, and writes the .provenance.json sidecar. If neither key is set, reports cleanly that Openverse does not host video, asks the lead or user to configure PEXELS_API_KEY or PIXABAY_API_KEY in their environment, and offers a static photo or animated SVG fallback."
+    }
+  ]
+}
