@@ -44,7 +44,9 @@ describe('the lead: the flag is an opt-in, the mechanism is what the host shows'
     expect(step0).toMatch(/Desktop app runs ordinary subagents even with the variable set/);
     expect(step0).toMatch(/whose result says the agent was spawned and will receive instructions by mailbox[^.]*coordinated teammate \(team mode\)/);
     expect(step0).toMatch(/whose result says an async agent was launched and gives an agent id to use with `SendMessage`[^.]*ordinary subagent \(relay mode\)/);
-    expect(step0).toMatch(/Both wordings were observed on Claude Code 2\.1\.299 and the host can change them, so read what your own launch returns/);
+    // Finding F1 of the live H12 run (2026-10-19): a foreground Desktop launch returns the report inline in a hand-back frame, not "Async agent launched".
+    expect(step0).toMatch(/or returns the worker's finished report inline in a "\[Subagent hand-back\]" frame with an agent-id footer to continue it with `SendMessage`[^.]*ordinary subagent \(relay mode\)/);
+    expect(step0).toMatch(/These three wordings were observed on Claude Code 2\.1\.299 \(the hand-back frame on a foreground Desktop launch\) and the host can change them, so read what your own launch returns/);
   });
 
   it('reports an unestablished mechanism instead of fabricating one, and proves nothing by a mailbox, a session list, polling or a peer', () => {
@@ -265,5 +267,35 @@ describe('the live H12 evidence of 2026-10-19', () => {
     expect(protocol).toContain('the report inline in a "[Subagent hand-back]" frame with an agent-id footer for a foreground launch');
     expect(text('host-library/claude/guide/orchestration.md')).toContain('A foreground Desktop launch returns the worker\'s report inline in a "[Subagent hand-back]" frame');
     for (const plan of ['plans/035-claude-digital-agency-hardening.md', 'plans/036-claude-creative-designer-improvement.md']) expect(text(plan)).toContain('every pass line of H12a and H12b was seen');
+  });
+});
+
+// Finding F1 of the live H12 run (2026-10-19): the lead's Step 0 names the foreground launch form. The re-run on this text is not yet recorded, so the documents must still say so.
+describe('the F1 follow-up: the foreground launch form in Step 0', () => {
+  const text = (file: string): string => fs.readFileSync(path.resolve(file), 'utf8').replace(/\r\n/g, '\n');
+
+  it('lists the hand-back frame as a third observed wording of an ordinary subagent, and keeps the other two', () => {
+    const lead = afterFloor(LEAD);
+    const step0 = lead.slice(lead.indexOf('## Step 0:'), lead.indexOf('## The team'));
+    expect(step0).toContain('"[Subagent hand-back]" frame with an agent-id footer');
+    expect(step0).toMatch(/the agent was spawned and will receive instructions by mailbox/);
+    expect(step0).toMatch(/an async agent was launched/);
+    expect(step0).toMatch(/These three wordings were observed/);
+  });
+
+  it('changes nothing else of the mechanism text: the unestablished case, the Desktop statement and the ban on proving a mode by a mailbox', () => {
+    const step0 = afterFloor(LEAD).slice(afterFloor(LEAD).indexOf('## Step 0:'), afterFloor(LEAD).indexOf('## The team'));
+    expect(step0).toMatch(/say that the mechanism is not established, stay in relay mode and report the uncertainty/);
+    expect(step0).toMatch(/Desktop app runs ordinary subagents even with the variable set/);
+    expect(step0).toMatch(/do not read host mailboxes, list unrelated sessions or poll metadata/);
+  });
+
+  it('is documented as unverified live until the Desktop case is run again, with the pass line of that re-run in the protocol', () => {
+    const adr = text('docs/adr/0055-completion-does-not-wait-for-shutdown-notices.md');
+    expect(adr).toContain('## Step 0 foreground form amendment, 2026-10-19');
+    expect(adr).toMatch(/\*\*Status: unverified live\.\*\*/);
+    const protocol = text('docs/live-test-protocol.md');
+    expect(protocol).toContain('**Re-run of H12a on the amended Step 0 (finding F1, 2026-10-19).**');
+    expect(protocol).toMatch(/does not claim words the result lacks/);
   });
 });
