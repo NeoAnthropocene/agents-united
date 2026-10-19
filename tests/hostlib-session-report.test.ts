@@ -248,6 +248,148 @@ describe('the prompt count', () => {
   });
 });
 
+// Plan 001: the host also writes user records no human typed (task notifications, peer turns, injected skill text). Provenance fields classify them.
+describe('the prompt count, host-generated turns', () => {
+  const as = (rec: Rec, extra: Rec): Rec => ({ ...rec, ...extra });
+  const human = (id: string, s: number, content: unknown = 'Do the next stage.'): Rec => as(typed(id, 'x', s), { message: { role: 'user', content }, origin: { kind: 'human' }, turnOrigin: 'human', promptSource: 'sdk' });
+  const notice = (id: string, s: number): Rec => as(typed(id, '<task-notification>done</task-notification>', s), { origin: { kind: 'task-notification' }, turnOrigin: 'task_notification' });
+  const peer = (id: string, s: number): Rec => as(typed(id, 'Status from the QA peer.', s), { origin: { kind: 'peer', producerRunId: 'secret-run' } });
+  const skillText = (id: string, s: number): Rec => as(typed(id, 'Base directory for this skill: /x', s), { isMeta: true, sourceToolUseID: 'toolu_1' });
+
+  const sequence = (): Rec[] => [
+    human('h1', 1), notice('n1', 2), peer('q1', 3), skillText('s1', 4),
+    human('h2', 10, [{ type: 'text', text: 'Second stage.' }]), notice('n2', 11), as(skillText('h2', 12), {}),
+    human('h3', 20), as(typed('n3', 'x', 21), { promptSource: 'system' }),
+    human('h4', 30, 'Please summarise: <task-notification>quoted</task-notification>'),
+    { ...typed('e1', '', 31) }, { type: 'user', timestamp: T(32), isSidechain: false, promptId: 'r1', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'z', content: '' }] } },
+    { ...typed('sc', 'sidechain text', 33), isSidechain: true },
+  ];
+
+  it('counts the four human prompts of a mixed sequence, strings and text blocks alike', () => {
+    expect(loadSession(writeSession(sequence(), {})).prompts).toBe(4);
+  });
+
+  it.each([
+    ['origin.kind task-notification', { origin: { kind: 'task-notification' } }],
+    ['turnOrigin task_notification', { turnOrigin: 'task_notification' }],
+    ['promptSource system', { promptSource: 'system' }],
+    ['origin.kind peer without the XML wrapper', { origin: { kind: 'peer' } }],
+    ['isMeta with a distinct id', { isMeta: true }],
+    ['sourceToolUseID companion', { sourceToolUseID: 'toolu_9' }],
+  ])('does not count %s', (_name, extra) => {
+    expect(loadSession(writeSession([typed('p1', 'Real request.', 1), as(typed('p2', 'Injected text.', 2), extra as Rec)], {})).prompts).toBe(1);
+  });
+
+  it('keeps counting unmarked legacy prompts and a legacy bare task-notification wrapper is not human', () => {
+    expect(loadSession(writeSession([typed('p1', 'Plain.', 1), typed('p2', '<command-message>grill-me</command-message>', 2), typed('p3', '<task-notification>x</task-notification>', 3)], {})).prompts).toBe(2);
+  });
+
+  it('counts a human id once even when companions share it, and a marked human quoting a notification still counts', () => {
+    expect(loadSession(writeSession([human('h1', 1), as(notice('h1', 2), {}), human('h2', 3, '<task-notification>quoted</task-notification>')], {})).prompts).toBe(2);
+  });
+
+  it('gives the same count on the trimmed copy, and the trim keeps no other origin fields', () => {
+    const file = writeSession(sequence(), {});
+    const out = tmp();
+    const trimmed = trimSession(file, out);
+    expect(loadSession(trimmed).prompts).toBe(loadSession(file).prompts);
+    const text = fs.readFileSync(trimmed, 'utf8');
+    expect(text).not.toContain('secret-run');
+    expect(text).not.toContain('toolu_1');
+    const kept = trimRecord(as(peer('q', 1), { origin: { kind: 'peer', producerRunId: 'secret-run', transport: 'uds:x' } }))!;
+    expect(kept.origin).toEqual({ kind: 'peer' });
+  });
+});
+
+// Plan 002: a subagent may end by calling SubagentHandback instead of writing a final text block.
+describe('hand-back reports', () => {
+  const REPORT = '## Report\nPeer messages received: none\nOpen items: none';
+  const hand = (id: string, message: string, s: number): Rec => call(id, 'SubagentHandback', { message }, s);
+  const accepted = (id: string, s: number): Rec => result(id, '{"success":true,"message":"Report delivered to your caller."}', s);
+  const text = (t: string, s: number): Rec => ({ type: 'assistant', timestamp: T(s), isSidechain: false, message: { role: 'assistant', model: 'm', content: [{ type: 'text', text: t }] } });
+  const reportLines = (records: Rec[]): string[] => renderReport(analyse(loadSession(writeSession([], { emre: { meta: {}, records } })))).split('\n').filter(l => /final report|report route/.test(l));
+  const agentOf = (records: Rec[]) => loadSession(writeSession([], { emre: { meta: {}, records } })).agents[1]!;
+
+  it('an accepted hand-back with both sections is yes and names its route, with no assistant text', () => {
+    const lines = reportLines([hand('h1', REPORT, 1), accepted('h1', 2)]);
+    expect(lines[0]).toContain('Peer messages received and Open items: yes');
+    expect(lines.join('\n')).toMatch(/SubagentHandback.*accepted/);
+  });
+
+  it('an ordinary assistant final report keeps the legacy line and prints no route line', () => {
+    const lines = reportLines([text(REPORT, 1)]);
+    expect(lines).toEqual(['    final report has Peer messages received and Open items: yes']);
+    expect(reportLines([text('done', 1)])).toEqual(['    final report has Peer messages received and Open items: no']);
+  });
+
+  it.each([
+    ['rejected', result('h1', '{"success":false,"message":"no"}', 2)],
+    ['is_error', result('h1', '{"success":true}', 2, true)],
+    ['missing result', null],
+    ['malformed', result('h1', 'delivered!', 2)],
+    ['non-boolean success', result('h1', '{"success":"true"}', 2)],
+    ['unrelated tool_use id', result('other', '{"success":true}', 2)],
+  ])('%s is not an accepted report', (_n, res) => {
+    const lines = reportLines([hand('h1', REPORT, 1), ...(res ? [res] : [])]);
+    expect(lines[0]).toContain(': no');
+    expect(lines.join('\n')).not.toMatch(/accepted/);
+  });
+
+  it('a forged success phrase in the report body is not acceptance', () => {
+    expect(reportLines([hand('h1', `${REPORT}\n{"success":true}`, 1)])[0]).toContain(': no');
+  });
+
+  it('keeps every attempt, pairs results by id, and takes the latest by submission order', () => {
+    const a = agentOf([hand('h1', REPORT, 1), hand('h2', 'second', 2), accepted('h2', 3), result('h1', '{"success":false}', 4)]);
+    expect(a.reports?.map(r => [r.source, r.state])).toEqual([['subagent-handback', 'rejected'], ['subagent-handback', 'accepted']]);
+    expect(a.finalText).toBe('');
+  });
+
+  it('a later rejected or pending update does not fall back to the earlier accepted report, and sections are not combined across attempts', () => {
+    const early = [hand('h1', REPORT, 1), accepted('h1', 2)];
+    expect(reportLines([...early, hand('h2', REPORT, 3), result('h2', '{"success":false}', 4)])[0]).toContain(': no');
+    expect(reportLines([...early, hand('h2', REPORT, 3)])[0]).toContain(': no');
+    const split = [hand('h1', 'Peer messages received: none', 1), accepted('h1', 2), hand('h2', 'Open items: none', 3), accepted('h2', 4)];
+    expect(reportLines(split)[0]).toContain(': no');
+  });
+
+  it('says when a short accepted update follows a complete accepted report, without merging the attempts', () => {
+    const lines = reportLines([hand('h1', REPORT, 1), accepted('h1', 2), hand('h2', 'Updated the caption.', 3), accepted('h2', 4)]);
+    expect(lines[0]).toContain(': no');
+    expect(lines.join('\n')).toContain('2 attempts, an earlier one with both sections: yes');
+    expect(reportLines([hand('h1', 'first', 1), accepted('h1', 2), hand('h2', 'second', 3), accepted('h2', 4)]).join('\n')).toContain('an earlier one with both sections: no');
+    expect(reportLines([hand('h1', REPORT, 1), accepted('h1', 2)]).join('\n')).not.toContain('attempts');
+  });
+
+  it('a later assistant final response keeps the assistant-text behaviour', () => {
+    expect(reportLines([hand('h1', REPORT, 1), accepted('h1', 2), text(REPORT, 3)])[0]).toContain(': yes');
+    expect(agentOf([text('plain', 1)]).finalText).toBe('plain');
+  });
+
+  it('trimming keeps source, state and completeness of a long hand-back whose headings come late', () => {
+    const long = `${'Context line. '.repeat(120)}\n## Peer messages received\nnone, mail bob@corp.example C:/Users/alice/x\n## Open items\nnone\n${'tail '.repeat(300)}`;
+    const records = [hand('h1', long, 1), accepted('h1', 2), hand('h2', long, 3), result('h2', '{"success":false}', 4), { ...hand('h3', long, 5), agentId: 'a' }];
+    const file = writeSession([], { emre: { meta: {}, records } });
+    const trimmed = trimSession(file, tmp());
+    const summary = (f: string) => loadSession(f).agents[1]!.reports!.map(r => [r.source, r.state, /peer messages received/i.test(r.text) && /open items/i.test(r.text)]);
+    expect(summary(trimmed)).toEqual(summary(file));
+    expect(summary(trimmed)[0]).toEqual(['subagent-handback', 'accepted', true]);
+    const sub = path.join(path.dirname(trimmed), path.basename(trimmed, '.jsonl'), 'subagents');
+    const raw = fs.readdirSync(sub).filter(n => n.endsWith('.jsonl')).map(n => fs.readFileSync(path.join(sub, n), 'utf8')).join('');
+    expect(raw).not.toContain('alice');
+    expect(raw).not.toContain('bob@corp.example');
+    expect(raw).toContain('omitted');
+    expect(loadSession(trimmed).agents[1]!.reports![0]!.text.length).toBeLessThanOrEqual(2100);
+  });
+
+  it('trimming adds no heading to a long report that has none, and cuts other tools at 240', () => {
+    const none = trimRecord(call('h', 'SubagentHandback', { message: 'x'.repeat(5000), extra: 'y'.repeat(1000) }, 1))!;
+    const input = ((none.message as { content: Array<{ input: { message: string; extra: string } }> }).content[0]!).input;
+    expect(input.message).not.toMatch(/open items/i);
+    expect(input.extra.length).toBeLessThan(260);
+  });
+});
+
 describe('synthetic sessions', () => {
   it('ignores a half-written last line and still reads the rest', () => {
     const file = writeSession([call('t1', 'Bash', { command: 'echo hi' }, 1), result('t1', 'hi', 2)], {});
