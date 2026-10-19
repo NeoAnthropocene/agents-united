@@ -143,3 +143,127 @@ describe.each(SPECIALISTS)('specialist %s: the report route follows the mechanis
     expect(body).toMatch(/`Open items`/);
   });
 });
+
+/**
+ * The live H12 runs of 2026-10-19 (host-library/claude/observations/2026-10-19-claude-2.1.301-worker-lifecycle-live.md). The compact evidence is
+ * the maintainer's two sessions read from the host's own records; these tests pin what the documents may claim from it, including the limits.
+ */
+describe('the live H12 evidence of 2026-10-19', () => {
+  interface Evidence {
+    candidate: { base: string; readerCommit: string; lifecycleCommit: string };
+    cases: {
+      desktop: {
+        humanPrompts: number;
+        mechanism: { observed: string; launchKinds: string[]; preconditionMet: boolean; teamMetadata: boolean };
+        observer: { teamsVariableSeen: string[]; hookErrors: number; cwdMismatches: number; eventsAfterTheStage4Prompt: string[] };
+        lead: { structuredShutdownRequests: number; teamProtocolFrames: number; plainTextShutdownRequests: number; messagesOutsideOwnWorkers: number; sentencesSayingIdleOrStillRunning: number; sentencesWaitingOnALifecycleEvent: number };
+        stageReports: Array<{ saysNoTeamShutdownApplies: boolean; secondsAfterLastWorkerActivity: number }>;
+        stage4: { toolCallsByAnyActor: number };
+        workers: Array<{ latestRoute: string; latestHasBothSections: boolean }>;
+        leadQuotedItsEvidenceAccurately: boolean;
+      };
+      cli: {
+        humanPrompts: number;
+        mechanism: { observed: string; launchKinds: string[]; preconditionMet: boolean; teamMetadata: boolean };
+        observer: { teamsVariableSeen: string[]; hookErrors: number; cwdMismatches: number };
+        lead: { structuredShutdownRequests: number; plainTextShutdownRequests: number; messagesOutsideOwnWorkers: number };
+        shutdownRounds: Array<{ structuredToEachTeammate: number; leadToolCallsBetween: number; reportSecondsAfterTheLastRequest: number }>;
+        teammateRepliesToRequests: { sentAsStructuredObjects: number; acceptedByTheHost: number; refusedByTheHost: number };
+        lateNotices: { count: number; kinds: string[] };
+        stageReports: Array<{ hasShutdownTable: boolean; marksMissingEventsNotObserved: boolean }>;
+        stage4: { toolCallsByAnyActor: number };
+      };
+    };
+    verdicts: Record<string, Record<string, boolean>>;
+    findings: Array<{ id: string }>;
+    unverified: string[];
+  }
+  const OBSERVATIONS = path.resolve('host-library/claude/observations');
+  const evidence = JSON.parse(fs.readFileSync(path.join(OBSERVATIONS, '2026-10-19-worker-lifecycle-live-evidence.json'), 'utf8')) as Evidence;
+  const text = (file: string): string => fs.readFileSync(path.resolve(file), 'utf8').replace(/\r\n/g, '\n');
+
+  it('ran both surfaces with the teams variable at 1, each with the mechanism of its own surface, and four human prompts', () => {
+    const { desktop, cli } = evidence.cases;
+    for (const run of [desktop, cli]) {
+      expect(run.humanPrompts).toBe(4);
+      expect(run.observer.teamsVariableSeen).toEqual(['1']);
+      expect(run.observer.hookErrors).toBe(0);
+      expect(run.observer.cwdMismatches).toBe(0);
+      expect(run.mechanism.preconditionMet).toBe(true);
+    }
+    expect(desktop.mechanism).toMatchObject({ observed: 'ordinary-subagents', launchKinds: ['foreground-subagent', 'foreground-subagent'], teamMetadata: false });
+    expect(cli.mechanism).toMatchObject({ observed: 'coordinated-team', launchKinds: ['team-spawn', 'team-spawn'], teamMetadata: true });
+  });
+
+  it('Desktop: no shutdown request or protocol frame to ordinary subagents, no idle or lifecycle wait said, every report says no team shutdown applies, Stage 4 quiet', () => {
+    const { lead, stageReports, stage4, observer, workers } = evidence.cases.desktop;
+    expect(lead.structuredShutdownRequests + lead.teamProtocolFrames + lead.plainTextShutdownRequests).toBe(0);
+    expect(lead.sentencesSayingIdleOrStillRunning + lead.sentencesWaitingOnALifecycleEvent).toBe(0);
+    expect(lead.messagesOutsideOwnWorkers).toBe(0);
+    expect(stageReports).toHaveLength(2);
+    for (const report of stageReports) {
+      expect(report.saysNoTeamShutdownApplies).toBe(true);
+      expect(report.secondsAfterLastWorkerActivity).toBeGreaterThan(0);
+      expect(report.secondsAfterLastWorkerActivity).toBeLessThan(30);
+    }
+    expect(stage4.toolCallsByAnyActor).toBe(0);
+    expect(observer.eventsAfterTheStage4Prompt).toEqual(['Stop']);
+    for (const worker of workers) expect(worker).toMatchObject({ latestRoute: 'assistant-text', latestHasBothSections: true });
+  });
+
+  it('CLI: a structured request to each teammate in two rounds, replies accepted, reports seconds after the last request with no tool call between, evidence kept apart, Stage 4 quiet', () => {
+    const { lead, shutdownRounds, teammateRepliesToRequests, lateNotices, stageReports, stage4 } = evidence.cases.cli;
+    expect(lead.structuredShutdownRequests).toBe(4);
+    expect(lead.plainTextShutdownRequests).toBe(0);
+    expect(lead.messagesOutsideOwnWorkers).toBe(0);
+    expect(shutdownRounds).toHaveLength(2);
+    for (const round of shutdownRounds) {
+      expect(round.structuredToEachTeammate).toBe(2);
+      expect(round.leadToolCallsBetween).toBe(0);
+      expect(round.reportSecondsAfterTheLastRequest).toBeGreaterThan(0);
+      expect(round.reportSecondsAfterTheLastRequest).toBeLessThan(30);
+    }
+    expect(teammateRepliesToRequests).toEqual({ sentAsStructuredObjects: 4, acceptedByTheHost: 4, refusedByTheHost: 0 });
+    expect(lateNotices.count).toBe(4);
+    expect([...lateNotices.kinds].sort()).toEqual(['shutdown_approved', 'shutdown_approved', 'teammate_terminated', 'teammate_terminated']);
+    for (const report of stageReports) expect(report).toMatchObject({ hasShutdownTable: true, marksMissingEventsNotObserved: true });
+    expect(stage4.toolCallsByAnyActor).toBe(0);
+  });
+
+  it('holds every pass line of H12a and H12b, and records the findings with the lead\'s misquote of its own evidence', () => {
+    for (const lines of Object.values(evidence.verdicts)) for (const [line, held] of Object.entries(lines)) expect(held, line).toBe(true);
+    expect(evidence.findings.map(finding => finding.id)).toEqual(['F1', 'F2', 'F3', 'F4', 'F5']);
+    expect(evidence.cases.desktop.leadQuotedItsEvidenceAccurately).toBe(false);
+  });
+
+  it('keeps its limits: what is still unverified is named, and the claim is verified once, not proven', () => {
+    const unverified = evidence.unverified.join('\n');
+    expect(unverified).toMatch(/failed or declined shutdown request/);
+    expect(unverified).toMatch(/nine-specialist/);
+    expect(unverified).toMatch(/SubagentHandback is actually provided/);
+    expect(unverified).toMatch(/physical process exit/);
+    expect(unverified).toMatch(/one session per surface/);
+    const observation = text('host-library/claude/observations/2026-10-19-claude-2.1.301-worker-lifecycle-live.md');
+    expect(observation).toMatch(/not a reliability claim/);
+    expect(observation).toMatch(/\*\*Not established:\*\*/);
+  });
+
+  it('publishes no transcript text, user path or address', () => {
+    const raw = JSON.stringify(evidence);
+    expect(raw).not.toMatch(/excerpt/i);
+    expect(raw).not.toMatch(/Users[\\/]/);
+    expect(raw).not.toMatch(/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[a-z]{2,}/);
+  });
+
+  it('is cited by the ADR amendment, the protocol, the guide and both plans, which keep the limits and the closed status', () => {
+    const adr = text('docs/adr/0055-completion-does-not-wait-for-shutdown-notices.md');
+    expect(adr).toContain('## Live verification amendment, 2026-10-19');
+    expect(adr).toMatch(/\*\*The naturally late notice is now observed\.\*\*/);
+    expect(adr).toMatch(/\*\*Still unverified:\*\* a failed or declined shutdown request, the nine-specialist flow/);
+    const protocol = text('docs/live-test-protocol.md');
+    expect(protocol).toContain('**Amended 2026-10-19 (advisor Plan 003');
+    expect(protocol).toContain('the report inline in a "[Subagent hand-back]" frame with an agent-id footer for a foreground launch');
+    expect(text('host-library/claude/guide/orchestration.md')).toContain('A foreground Desktop launch returns the worker\'s report inline in a "[Subagent hand-back]" frame');
+    for (const plan of ['plans/035-claude-digital-agency-hardening.md', 'plans/036-claude-creative-designer-improvement.md']) expect(text(plan)).toContain('every pass line of H12a and H12b was seen');
+  });
+});

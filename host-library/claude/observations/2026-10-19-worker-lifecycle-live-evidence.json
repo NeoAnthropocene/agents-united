@@ -1,0 +1,559 @@
+{
+  "recordedOn": "2026-10-19",
+  "what": "Compact evidence of the two live H12 runs (docs/live-test-protocol.md): the maintainer ran four unguided prompts on each surface, the executor read the host records and the passive observer's events offline. No raw transcript, discovery payload or lead sentence is published.",
+  "candidate": {
+    "base": "cfa4682915c23e6c9eb3510468a1b262d6f2689a",
+    "readerCommit": "10d27bce9ee9ecf1c3f4af0453b09a057a5dbbc6",
+    "lifecycleCommit": "b8609a8099f2cdd7f423a4ed2ed822c3e66a7ccf",
+    "installedFrom": "the working tree later committed as those two commits; the 21 committed paths were compared and are identical",
+    "rolesInstalled": 10,
+    "rolesEqualToTheMergedBranch": 9,
+    "roleDifferingFromTheMergedBranch": "agency-creative-designer (dev PR #207 wired a stock-sourcer runbook into it after the folders were built; the designer was not exercised)"
+  },
+  "collector": {
+    "firstVersionResultsPreserved": true,
+    "defectsFoundByTheLiveData": [
+      "the report was the first lead text containing \"final report\", so an earlier \"I will send the final report\" line was read instead of the report (negative latencies, report flags wrong)",
+      "a revision task saying \"ignore the earlier shutdown request\" was counted as a plain-text shutdown request",
+      "the Desktop foreground launch form (the report inline in a \"[Subagent hand-back]\" frame) was classified \"other\"",
+      "the observer writes a session binding only when the transcript folder already exists at SessionStart; in a fresh project it does not, so the CLI session has none and the Desktop session got one only at its resumed SessionStart; the exact UUID was supplied"
+    ],
+    "fixed": "the report is the last lead text of its stage; shutdown language inside a task is a mention; the foreground form is recognised; the binding gap is a kit note, the workspaces were not touched",
+    "smokeChecksAfterTheFix": "20 of 20, five of them red on the first version"
+  },
+  "cases": {
+    "desktop": {
+      "sessionId": "9e0449de-e238-441a-9688-4aac328e3fe1",
+      "host": {
+        "codeVersion": "2.1.299",
+        "desktopApp": "2.42304.0",
+        "modelEffort": "Sonnet 5.5, low",
+        "permissionModeRecorded": {
+          "acceptEdits": 7
+        },
+        "permissionModeSelectedByTheMaintainer": "Accept edits"
+      },
+      "humanPrompts": 4,
+      "stageSecondsFromStage1": {
+        "1": 0,
+        "2": 1750.3,
+        "3": 5878.5,
+        "4": 6615
+      },
+      "observer": {
+        "eventCount": 88,
+        "byKind": {
+          "SessionStart": 2,
+          "PreToolUse": 34,
+          "PostToolUse": 34,
+          "SubagentStart": 5,
+          "SubagentStop": 5,
+          "Stop": 7,
+          "SessionEnd": 1
+        },
+        "teamsVariableSeen": [
+          "1"
+        ],
+        "cwdMismatches": 0,
+        "hookErrors": 0,
+        "eventsAfterTheStage4Prompt": [
+          "Stop"
+        ],
+        "sessionBindingWritten": true,
+        "sessionBindingWrittenAtSecondsFromStage1": 5526.3,
+        "sessionStartAndEnd": [
+          {
+            "kind": "SessionStart",
+            "secondsFromStage1": -0.4
+          },
+          {
+            "kind": "SessionEnd",
+            "secondsFromStage1": 3781.7
+          },
+          {
+            "kind": "SessionStart",
+            "secondsFromStage1": 5526.3
+          }
+        ]
+      },
+      "mechanism": {
+        "observed": "ordinary-subagents",
+        "launchKinds": [
+          "foreground-subagent",
+          "foreground-subagent"
+        ],
+        "workerTaskKinds": [
+          "none"
+        ],
+        "teamMetadata": false,
+        "preconditionMet": true
+      },
+      "lead": {
+        "toolCalls": {
+          "ToolSearch": 9,
+          "Read": 1,
+          "Agent": 2,
+          "SendMessage": 3,
+          "Bash": 4
+        },
+        "listAgentsCalls": 0,
+        "structuredShutdownRequests": 0,
+        "teamProtocolFrames": 0,
+        "plainTextShutdownRequests": 0,
+        "taskMessagesMentioningShutdown": 0,
+        "messagesOutsideOwnWorkers": 0,
+        "messages": [
+          {
+            "stage": 2,
+            "to": "ava",
+            "type": "text",
+            "accepted": true
+          },
+          {
+            "stage": 3,
+            "to": "ava",
+            "type": "text",
+            "accepted": true
+          },
+          {
+            "stage": 3,
+            "to": "kaan",
+            "type": "text",
+            "accepted": true
+          }
+        ],
+        "continuationsOfFinishedWorkers": 3,
+        "hostTaskNotificationTurns": 3,
+        "sentencesSayingIdleOrStillRunning": 0,
+        "sentencesWaitingOnALifecycleEvent": 0
+      },
+      "stageReports": [
+        {
+          "stage": 2,
+          "chars": 2050,
+          "secondsAfterLastWorkerActivity": 6.3,
+          "leadToolCallsAfterLastWorkerActivity": 1,
+          "secondsAfterLastAcceptedShutdownRequest": null,
+          "leadToolCallsBetweenLastRequestAndReport": null,
+          "saysNoTeamShutdownApplies": true,
+          "hasShutdownTable": false,
+          "marksMissingEventsNotObserved": false
+        },
+        {
+          "stage": 3,
+          "chars": 2457,
+          "secondsAfterLastWorkerActivity": 7.8,
+          "leadToolCallsAfterLastWorkerActivity": 1,
+          "secondsAfterLastAcceptedShutdownRequest": null,
+          "leadToolCallsBetweenLastRequestAndReport": null,
+          "saysNoTeamShutdownApplies": true,
+          "hasShutdownTable": false,
+          "marksMissingEventsNotObserved": false
+        }
+      ],
+      "stage4": {
+        "answered": true,
+        "toolCallsByAnyActor": 0,
+        "byActor": {
+          "lead": 0,
+          "ava": 0,
+          "kaan": 0
+        }
+      },
+      "workers": [
+        {
+          "worker": "ava",
+          "type": "agency-growth-strategist",
+          "taskKind": null,
+          "reportAttempts": 3,
+          "handbackToolAccepted": 0,
+          "latestRoute": "assistant-text",
+          "latestHasBothSections": true,
+          "shutdownRepliesSent": 0,
+          "toolCalls": {
+            "Read": 3,
+            "Write": 2
+          }
+        },
+        {
+          "worker": "kaan",
+          "type": "agency-conversion-specialist",
+          "taskKind": null,
+          "reportAttempts": 2,
+          "handbackToolAccepted": 0,
+          "latestRoute": "assistant-text",
+          "latestHasBothSections": true,
+          "shutdownRepliesSent": 0,
+          "toolCalls": {
+            "ToolSearch": 1,
+            "Read": 6,
+            "Skill": 1,
+            "Write": 2
+          }
+        }
+      ],
+      "deliverables": [
+        {
+          "file": "deliverables/hypothesis.md",
+          "present": true,
+          "words": 94,
+          "mentionsTrust": true
+        },
+        {
+          "file": "deliverables/email.md",
+          "present": true,
+          "words": 70,
+          "mentionsTrust": true
+        }
+      ],
+      "protectedFiles": {
+        "total": 763,
+        "changed": 0
+      },
+      "automaticFailures": [],
+      "launchResultForm": {
+        "startsWithHandbackFrame": true,
+        "containsTheWordAsync": false,
+        "carriesAnAgentIdFooterWithSendMessageGuidance": true,
+        "runInBackground": false
+      },
+      "sessionEndedAndResumedBeforeStage3": {
+        "sessionEndSecondsFromStage1": 3781.7,
+        "resumedUnderTheSameId": true,
+        "leadKeptItsContext": true,
+        "finishedWorkersContinuedByIdAfterwards": true
+      },
+      "leadQuotedItsEvidenceAccurately": false,
+      "evidenceQuoteNote": "In Stage 1 the lead wrote that the launch result said \"async agent launched\"; the result held the hand-back frame and an agent-id footer, and no such words. Its conclusion (ordinary subagent, relay mode, no shutdown request) was right."
+    },
+    "cli": {
+      "sessionId": "b279f8e6-c01d-4fe8-bf1c-619da4526608",
+      "host": {
+        "codeVersion": "2.1.301",
+        "desktopApp": null,
+        "modelEffort": "sonnet (claude-sonnet-5-5), low",
+        "permissionModeRecorded": {
+          "acceptEdits": 17
+        },
+        "permissionModeSelectedByTheMaintainer": "Accept edits"
+      },
+      "humanPrompts": 4,
+      "stageSecondsFromStage1": {
+        "1": 0,
+        "2": 843.7,
+        "3": 1296,
+        "4": 1671
+      },
+      "observer": {
+        "eventCount": 165,
+        "byKind": {
+          "SessionStart": 1,
+          "PreToolUse": 61,
+          "PostToolUse": 60,
+          "SubagentStart": 10,
+          "Stop": 13,
+          "SubagentStop": 19,
+          "SessionEnd": 1
+        },
+        "teamsVariableSeen": [
+          "1"
+        ],
+        "cwdMismatches": 0,
+        "hookErrors": 0,
+        "eventsAfterTheStage4Prompt": [
+          "Stop",
+          "SessionEnd"
+        ],
+        "sessionBindingWritten": false,
+        "sessionBindingWrittenAtSecondsFromStage1": null,
+        "sessionStartAndEnd": [
+          {
+            "kind": "SessionStart",
+            "secondsFromStage1": -45.1
+          },
+          {
+            "kind": "SessionEnd",
+            "secondsFromStage1": 1736
+          }
+        ]
+      },
+      "mechanism": {
+        "observed": "coordinated-team",
+        "launchKinds": [
+          "team-spawn",
+          "team-spawn"
+        ],
+        "workerTaskKinds": [
+          "in_process_teammate"
+        ],
+        "teamMetadata": true,
+        "preconditionMet": true
+      },
+      "lead": {
+        "toolCalls": {
+          "ToolSearch": 9,
+          "Read": 1,
+          "Agent": 2,
+          "TaskCreate": 2,
+          "TaskUpdate": 3,
+          "SendMessage": 7,
+          "Bash": 4,
+          "TaskList": 1
+        },
+        "listAgentsCalls": 0,
+        "structuredShutdownRequests": 4,
+        "teamProtocolFrames": 4,
+        "plainTextShutdownRequests": 0,
+        "taskMessagesMentioningShutdown": 2,
+        "messagesOutsideOwnWorkers": 0,
+        "messages": [
+          {
+            "stage": 2,
+            "to": "ava",
+            "type": "text",
+            "accepted": true
+          },
+          {
+            "stage": 2,
+            "to": "ava",
+            "type": "shutdown_request",
+            "accepted": true
+          },
+          {
+            "stage": 2,
+            "to": "kaan",
+            "type": "shutdown_request",
+            "accepted": true
+          },
+          {
+            "stage": 3,
+            "to": "ava",
+            "type": "text",
+            "accepted": true
+          },
+          {
+            "stage": 3,
+            "to": "kaan",
+            "type": "text",
+            "accepted": true
+          },
+          {
+            "stage": 3,
+            "to": "ava",
+            "type": "shutdown_request",
+            "accepted": true
+          },
+          {
+            "stage": 3,
+            "to": "kaan",
+            "type": "shutdown_request",
+            "accepted": true
+          }
+        ],
+        "continuationsOfFinishedWorkers": 2,
+        "hostTaskNotificationTurns": 0,
+        "sentencesSayingIdleOrStillRunning": 2,
+        "sentencesWaitingOnALifecycleEvent": 0
+      },
+      "stageReports": [
+        {
+          "stage": 2,
+          "chars": 2147,
+          "secondsAfterLastWorkerActivity": 1.2,
+          "leadToolCallsAfterLastWorkerActivity": 0,
+          "secondsAfterLastAcceptedShutdownRequest": 6.8,
+          "leadToolCallsBetweenLastRequestAndReport": 0,
+          "saysNoTeamShutdownApplies": false,
+          "hasShutdownTable": true,
+          "marksMissingEventsNotObserved": true
+        },
+        {
+          "stage": 3,
+          "chars": 2554,
+          "secondsAfterLastWorkerActivity": 1,
+          "leadToolCallsAfterLastWorkerActivity": 0,
+          "secondsAfterLastAcceptedShutdownRequest": 5.9,
+          "leadToolCallsBetweenLastRequestAndReport": 0,
+          "saysNoTeamShutdownApplies": false,
+          "hasShutdownTable": true,
+          "marksMissingEventsNotObserved": true
+        }
+      ],
+      "stage4": {
+        "answered": true,
+        "toolCallsByAnyActor": 0,
+        "byActor": {
+          "lead": 0,
+          "ava": 0,
+          "kaan": 0
+        }
+      },
+      "workers": [
+        {
+          "worker": "ava",
+          "type": "agency-growth-strategist",
+          "taskKind": "in_process_teammate",
+          "reportAttempts": 4,
+          "handbackToolAccepted": 0,
+          "latestRoute": "assistant-text",
+          "latestHasBothSections": true,
+          "shutdownRepliesSent": 2,
+          "toolCalls": {
+            "Read": 3,
+            "SendMessage": 4,
+            "ToolSearch": 2,
+            "TaskGet": 1,
+            "TaskUpdate": 2,
+            "Write": 2
+          }
+        },
+        {
+          "worker": "kaan",
+          "type": "agency-conversion-specialist",
+          "taskKind": "in_process_teammate",
+          "reportAttempts": 2,
+          "handbackToolAccepted": 0,
+          "latestRoute": "assistant-text",
+          "latestHasBothSections": true,
+          "shutdownRepliesSent": 2,
+          "toolCalls": {
+            "ToolSearch": 2,
+            "Read": 5,
+            "Skill": 1,
+            "TaskGet": 2,
+            "TaskUpdate": 2,
+            "Write": 2,
+            "SendMessage": 2,
+            "TaskList": 1
+          }
+        }
+      ],
+      "deliverables": [
+        {
+          "file": "deliverables/hypothesis.md",
+          "present": true,
+          "words": 93,
+          "mentionsTrust": true
+        },
+        {
+          "file": "deliverables/email.md",
+          "present": true,
+          "words": 50,
+          "mentionsTrust": true
+        }
+      ],
+      "protectedFiles": {
+        "total": 764,
+        "changed": 0
+      },
+      "automaticFailures": [],
+      "shutdownRounds": [
+        {
+          "round": 1,
+          "requestsAcceptedByTheHost": 2,
+          "structuredToEachTeammate": 2,
+          "reportSecondsAfterTheLastRequest": 6.8,
+          "leadToolCallsBetween": 0,
+          "lastRequestAt": "2026-10-19T08:29:14.555Z"
+        },
+        {
+          "round": 2,
+          "requestsAcceptedByTheHost": 2,
+          "structuredToEachTeammate": 2,
+          "reportSecondsAfterTheLastRequest": 5.9,
+          "leadToolCallsBetween": 0,
+          "lastRequestAt": "2026-10-19T08:36:19.001Z"
+        }
+      ],
+      "teammateRepliesToRequests": {
+        "sentAsStructuredObjects": 4,
+        "acceptedByTheHost": 4,
+        "refusedByTheHost": 0
+      },
+      "lateNotices": {
+        "deliveredToTheLeadAtTheStartOfStage": 3,
+        "count": 4,
+        "kinds": [
+          "teammate_terminated",
+          "shutdown_approved",
+          "teammate_terminated",
+          "shutdown_approved"
+        ],
+        "deliveredSecondsAfterTheFirstRoundRequests": 377,
+        "forSecondRound": "none delivered before the end of Stage 4 (not observed)",
+        "leadHandledThemWithoutWaitingOrReopeningDelivery": true
+      },
+      "messageLevelResume": {
+        "sendMessageToAStoppedTeammateResumedIt": 2,
+        "priorMessagesCarried": [
+          75,
+          71
+        ]
+      },
+      "harness": {
+        "loginExpiredAtTheFirstPrompt": true,
+        "note": "the first answer to Stage 1 was \"Login expired\"; the maintainer signed in and the prompt ran; one human prompt is counted"
+      }
+    }
+  },
+  "verdicts": {
+    "H12a": {
+      "preconditionMet": true,
+      "noShutdownRequestAndNoProtocolFrame": true,
+      "noIdleOrLifecycleWaitSaid": true,
+      "everyReportSaysNoTeamShutdownApplies": true,
+      "stage4NoToolCall": true,
+      "messagesOnlyToAvaAndKaan": true,
+      "deliverablesPresentAndRevised": true
+    },
+    "H12b": {
+      "preconditionMet": true,
+      "structuredRequestToEachTeammateConsultantIncluded": true,
+      "noPlainTextShutdownRequest": true,
+      "reportRightAfterAcceptedDispatchWithNoPolling": true,
+      "dispatchApprovalTerminationKeptApart": true,
+      "stage4NoToolCall": true,
+      "messagesStayInsideTheTeam": true,
+      "deliverablesPresentAndRevised": true
+    }
+  },
+  "humanObservations": {
+    "desktop": "The subagent rows show in the Background tasks pane and as lines in the session output; no teammate row and no shutdown prompt appear. The maintainer could not tell from the UI that the orchestrator agent was acting (a Desktop display gap, not a lifecycle result). The session settings showed bypass permissions as available; every recorded permission mode is acceptEdits.",
+    "cli": "Teammate rows, a task list and idle states show as in a team. The maintainer saw late shutdown messages on screen at Stage 3, as the lead reported. The impression that Ava shut down by herself during Stage 1 is not supported by the record: no shutdown request, approval or termination exists before Stage 2, and a message to her was delivered at Stage 2."
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "summary": "Desktop foreground launches return the report inline in a \"[Subagent hand-back]\" frame with an agent-id footer, not \"Async agent launched\"; the lead's Step 0 text names only the background form, and the lead quoted words the result did not contain. The classification and the behaviour were right.",
+      "action": "documented; an optional one-sentence amendment of Step 0 would name the foreground form (it would need a short re-run to be called verified)"
+    },
+    {
+      "id": "F2",
+      "summary": "On 2.1.301 a SendMessage to a stopped in-process teammate resumes it with its earlier context (75 and 71 prior messages), so shutting teammates down after the first delivery and revising later loses no context in this scenario.",
+      "action": "documented; the lead text about /resume restoring no teammate concerns session resume and stays correct"
+    },
+    {
+      "id": "F3",
+      "summary": "The natural late-notice path occurred: four notices (two approvals, two terminations) reached the lead only at the start of its next turn, minutes after the requests; the lead recorded them as evidence and carried on. For the second round none arrived before the end of Stage 4 and the lead said it did not know whether the teammates were still running.",
+      "action": "recorded as observed once"
+    },
+    {
+      "id": "F4",
+      "summary": "Both lead texts were accurate about shutdown evidence: Desktop never claimed a termination event; CLI separated dispatch, approval and termination and wrote \"not observed\".",
+      "action": "none"
+    },
+    {
+      "id": "F5",
+      "summary": "The Desktop session ended (SessionEnd) between Stage 2 and Stage 3 and was resumed under the same id; the lead kept its context and continued both finished workers by id afterwards. A SessionEnd in the observer is therefore a session event, not the exit of a worker.",
+      "action": "recorded"
+    }
+  ],
+  "unverified": [
+    "behaviour over repeated runs: one session per surface, two workers, one scenario",
+    "a control with the previous text in this scenario (the 2026-10-15 run is an uncontrolled baseline with different prompts)",
+    "a failed or declined shutdown request, and the nine-specialist team flow",
+    "a Desktop run in which SubagentHandback is actually provided and used under the new wording",
+    "cost and quota; physical process exit (the CLI shows a SessionEnd after Stage 4, the Desktop session shows one mid-run; neither is a process exit)",
+    "Windows only; Desktop embedded Code 2.1.299 and CLI 2.1.301"
+  ]
+}
