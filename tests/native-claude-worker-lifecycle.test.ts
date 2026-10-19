@@ -293,9 +293,89 @@ describe('the F1 follow-up: the foreground launch form in Step 0', () => {
   it('is documented as unverified live until the Desktop case is run again, with the pass line of that re-run in the protocol', () => {
     const adr = text('docs/adr/0055-completion-does-not-wait-for-shutdown-notices.md');
     expect(adr).toContain('## Step 0 foreground form amendment, 2026-10-19');
-    expect(adr).toMatch(/\*\*Status: unverified live\.\*\*/);
+    expect(adr).toMatch(/\*\*unverified live for the form it names\*\*/);
     const protocol = text('docs/live-test-protocol.md');
     expect(protocol).toContain('**Re-run of H12a on the amended Step 0 (finding F1, 2026-10-19).**');
     expect(protocol).toMatch(/does not claim words the result lacks/);
+  });
+});
+
+/**
+ * The Desktop re-run on the amended Step 0 (host-library/claude/observations/2026-10-19-claude-2.1.299-step0-foreground-rerun.md). The foreground
+ * launch form the amendment names did not occur, so these tests pin the result and, as much, the limit of what it shows.
+ */
+describe('the F1 re-run of 2026-10-19 (Desktop 2.42304.2)', () => {
+  interface Rerun {
+    candidate: { commit: string; installedLeadHasTheForegroundWording: boolean; installedLeadHasTheThreeWordingsSentence: boolean };
+    mechanism: { observed: string; preconditionMet: boolean; teamMetadata: boolean; foregroundFormExercised: boolean; launches: Array<{ runInBackgroundParameter: string | boolean; resultForm: string }>; evidenceQuote: { misquote: boolean } };
+    session: { humanPrompts: number; observer: { teamsVariableSeen: string[]; hookErrors: number; cwdMismatches: number; eventsAfterTheStage4Prompt: string[] } };
+    lead: { structuredShutdownRequests: number; teamProtocolFrames: number; plainTextShutdownRequests: number; messagesOutsideOwnWorkers: number; sentencesSayingIdleOrStillRunning: number; sentencesWaitingOnALifecycleEvent: number; toolErrors: Array<{ tool: string }> };
+    stageReports: Array<{ saysNoTeamShutdownApplies: boolean; secondsAfterLastWorkerActivity: number }>;
+    stage4: { toolCallsByAnyActor: number };
+    verdicts: { H12a: Record<string, boolean>; F1: { leadDidNotClaimWordsTheResultLacks: boolean; foregroundFormExercised: boolean; amendedWordingVerifiedLiveForTheFormItNames: boolean } };
+    findings: Array<{ id: string }>;
+    unverified: string[];
+  }
+  const OBSERVATIONS = path.resolve('host-library/claude/observations');
+  const evidence = JSON.parse(fs.readFileSync(path.join(OBSERVATIONS, '2026-10-19-step0-rerun-evidence.json'), 'utf8')) as Rerun;
+  const text = (file: string): string => fs.readFileSync(path.resolve(file), 'utf8').replace(/\r\n/g, '\n');
+
+  it('ran a folder installed from the amended lead, with the teams variable at 1, an ordinary-subagent mechanism and four prompts', () => {
+    expect(evidence.candidate.installedLeadHasTheForegroundWording).toBe(true);
+    expect(evidence.candidate.installedLeadHasTheThreeWordingsSentence).toBe(true);
+    expect(evidence.session.humanPrompts).toBe(4);
+    expect(evidence.session.observer).toMatchObject({ teamsVariableSeen: ['1'], hookErrors: 0, cwdMismatches: 0 });
+    expect(evidence.mechanism).toMatchObject({ observed: 'ordinary-subagents', preconditionMet: true, teamMetadata: false });
+  });
+
+  it('held every H12a line on the async form: no shutdown request or frame, no idle or lifecycle wait said, every report says none applies, Stage 4 quiet', () => {
+    for (const [line, held] of Object.entries(evidence.verdicts.H12a)) expect(held, line).toBe(true);
+    expect(evidence.lead.structuredShutdownRequests + evidence.lead.teamProtocolFrames + evidence.lead.plainTextShutdownRequests).toBe(0);
+    expect(evidence.lead.sentencesSayingIdleOrStillRunning + evidence.lead.sentencesWaitingOnALifecycleEvent).toBe(0);
+    expect(evidence.lead.messagesOutsideOwnWorkers).toBe(0);
+    expect(evidence.stageReports).toHaveLength(2);
+    for (const report of evidence.stageReports) {
+      expect(report.saysNoTeamShutdownApplies).toBe(true);
+      expect(report.secondsAfterLastWorkerActivity).toBeGreaterThan(0);
+      expect(report.secondsAfterLastWorkerActivity).toBeLessThan(30);
+    }
+    expect(evidence.stage4.toolCallsByAnyActor).toBe(0);
+    expect(evidence.session.observer.eventsAfterTheStage4Prompt).toEqual(['Stop']);
+  });
+
+  it('did not exercise the foreground form: both launches omitted run_in_background and came back async, so the amended wording is not verified live for the form it names', () => {
+    expect(evidence.mechanism.launches).toEqual([
+      { worker: 'ava', runInBackgroundParameter: 'omitted', resultForm: 'async-subagent' },
+      { worker: 'kaan', runInBackgroundParameter: 'omitted', resultForm: 'async-subagent' },
+    ]);
+    expect(evidence.mechanism.foregroundFormExercised).toBe(false);
+    expect(evidence.verdicts.F1).toEqual({ leadDidNotClaimWordsTheResultLacks: true, foregroundFormExercised: false, amendedWordingVerifiedLiveForTheFormItNames: false });
+    expect(evidence.mechanism.evidenceQuote.misquote).toBe(false);
+    expect(evidence.unverified.join('\n')).toMatch(/the foreground launch form under the amended wording/);
+  });
+
+  it('records its findings and the one tool error of the Desktop plan tool', () => {
+    expect(evidence.findings.map(finding => finding.id)).toEqual(['R1', 'R2', 'R3', 'R4', 'R5']);
+    expect(evidence.lead.toolErrors.map(error => error.tool)).toEqual(['mcp__ccd_turn__update_plan']);
+  });
+
+  it('publishes no transcript text, user path or address', () => {
+    const raw = JSON.stringify(evidence);
+    expect(raw).not.toMatch(/excerpt/i);
+    expect(raw).not.toMatch(/Users[\\/]/);
+    expect(raw).not.toMatch(/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[a-z]{2,}/);
+  });
+
+  it('is cited by the observation, the ADR, the protocol, the guide and both plans, which keep the same limit', () => {
+    const observation = text('host-library/claude/observations/2026-10-19-claude-2.1.299-step0-foreground-rerun.md');
+    expect(observation).toMatch(/\*\*The foreground wording itself is unverified live\*\*/);
+    expect(observation).toMatch(/\*\*Not established:\*\*/);
+    const adr = text('docs/adr/0055-completion-does-not-wait-for-shutdown-notices.md');
+    expect(adr).toMatch(/\*\*unverified live for the form it names\*\*/);
+    expect(adr).toMatch(/It appears only when the lead passes `run_in_background: false`/);
+    expect(text('docs/live-test-protocol.md')).toMatch(/\*\*Result, 2026-10-19 \(`host-library\/claude\/observations\/2026-10-19-claude-2\.1\.299-step0-foreground-rerun\.md`\)\.\*\*/);
+    expect(text('host-library/claude/guide/orchestration.md')).toContain('the form follows the `run_in_background` parameter of the `Agent` call');
+    for (const plan of ['plans/035-claude-digital-agency-hardening.md', 'plans/036-claude-creative-designer-improvement.md']) expect(text(plan)).toContain('unverified live for the form it names');
+    expect(text('host-library/claude/observations/2026-10-19-claude-2.1.301-worker-lifecycle-live.md')).toContain('**Follow-up, 2026-10-19:** Step 0 was amended for finding F1');
   });
 });
