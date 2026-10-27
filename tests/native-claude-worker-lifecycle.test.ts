@@ -14,6 +14,8 @@ import { renderNativeRole } from '../src/core/native-package.js';
 const AGENTS = path.resolve('registry/hosts/claude/agents');
 const LEAD = 'orchestrator-digital-agency';
 const SPECIALISTS = [
+  'agency-motion-designer',
+  'agency-sound-designer',
   'agency-growth-strategist',
   'agency-conversion-specialist',
   'agency-creative-designer',

@@ -219,3 +219,10 @@ If you are spawned with a concrete execution task, switch to Execution Mode and 
 - **Your final report is your one hand-back.** Do not message the coordinator's main conversation mid-run; everything it needs goes into the report.
 - **Never hang on a missing peer.** If an expected peer input never arrives, proceed on a stated assumption and list the gap under Open items.
 - **Report sections (always present):** `Peer messages received` — the sender and gist of each message, or "none"; `Open items` — unanswered questions, missing peer input and blockers, or "none".
+
+
+## Conditional digital-agency media planning
+
+When working in the digital-agency Bundle, identify required or optional media: ads, social films and product explainers by funnel stage; assess channel fit, experiment success metrics, conversion purpose and media effort versus expected learning. Request feasibility/dependencies from Motion Designer and Sound Designer through Chris/the lead. Return a **Media Request** with destination/audience/purpose, required or optional status, placement/ratio/duration/language, approved or missing assets and rights, accessibility, dependencies, estimated effort/cost, proposed renderer/audio/footage route and acceptance evidence. Use the shared Media Request template and validator from `workflow-agency-motion-production`/`audiovisual-review` through the lead; do not invent fields or fill missing approvals.
+
+Consultation is a bounded scope-of-work statement: write no deliverable file until the lead confirms the accepted plan. Keep at most two planning rounds, at most two exchanges per pair and one directed question per peer per planning round. Relay mode is the default; direct peer messaging to Motion Designer or Sound Designer is permitted only in a genuine live team when the lead names those peers. Questions for the user go to Chris under `Open items`; the lead consolidates requests and asks the user. Missing peer input is an assumption/open item, never a reason to wait. Other domains keep their calling lead and domain workflow; this agency consultation does not change their scope or make Chris their coordinator.

@@ -1,0 +1,9 @@
+{
+  "fps": 60,
+  "totalFrames": 12,
+  "waveform": "triangle",
+  "frequency": 360,
+  "endFrequency": 720,
+  "gainDb": -24,
+  "seed": 7
+}

@@ -1,6 +1,6 @@
 ---
 name: workflow-agency-full-campaign
-description: "Use when a brief covers strategy through launch across four or more roles (a product launch, a rebrand with a campaign, a new market); trigger phrases: run the full campaign, launch this product end to end, coordinate the whole team on this brief. Produces the delegation map, each slice's artefacts, Emre's gate report, Defne's compliance review and the final report with evidence and open items. Skip it for one deliverable (ask the one specialist) and for one discipline (use the narrower workflow-agency playbook)."
+description: "Use when a brief covers strategy through launch across four or more roles; trigger phrases: run the full campaign, launch this product end to end, coordinate the whole team. Produces a delegation map, slice artefacts, QA and compliance gates and an evidenced final report. Skip for one deliverable (ask its specialist) or one discipline (use the narrower workflow-agency playbook)."
 metadata:
   author: agents-united
   version: 3.0.0
@@ -11,7 +11,7 @@ metadata:
 # Workflow: Agency Full Campaign
 
 ## Overview & Purpose
-Chris's playbook for the whole engagement: a client brief becomes strategy, creative, copy, a built and tracked page, a campaign kit and a verified, compliant result. Beside the lead's own steps (align, consult, map) it says how the campaign is sliced, which interfaces are fixed between roles and where the two gates sit.
+Chris coordinates strategy, creative, copy, a built and tracked page and a campaign kit. Fixed interfaces between slices and whole-result QA/compliance gates govern delivery.
 
 ## Execution Triggers
 Load it when the brief covers strategy through launch across four or more roles. For one discipline use the narrower `workflow-agency-*` playbook; for one deliverable, ask the one specialist.
@@ -24,16 +24,16 @@ Output: the delegation map (slice, owner, inputs, acceptance evidence); each sli
 ## Step-by-Step Runbook
 ```mermaid
 graph TD
-    Brief([Accepted brief]) --> P0[Phase 0: consult and delegation map]
-    P0 --> G0{User accepts the map?}
+    B[Accepted brief] --> P0[Phase 0: consult and map]
+    P0 --> G0{Client accepts map?}
     G0 -->|No| P0
     G0 -->|Yes| P1[Phase 1: Ava strategy]
-    P1 --> P2[Phase 2: Kaan, Jamileh, Yavuz in parallel]
-    P2 --> P3[Phase 3: Deniz, Selin, Jale in parallel]
-    P3 --> P4[Phase 4: Emre and Defne verify]
+    P1 --> P2[Phase 2: Kaan, Jamileh, Yavuz]
+    P2 --> P3[Phase 3: Deniz, Selin, Jale]
+    P3 --> P4[Phase 4: Emre and Defne]
     P4 --> G1{Both gates green?}
-    G1 -->|No| P3
-    G1 -->|Yes| Done([Deliver and hand off])
+    G1 -->|No: owner reworks| P3
+    G1 -->|Yes| D[Deliver and hand off]
 ```
 
 1. **Phase 0: consult, then map.** Consult a relevant specialist read-only (usually Ava, plus Kaan when the page is the problem) and record who; present the delegation map; create no deliverable file until the client accepts it.
@@ -50,7 +50,9 @@ graph TD
 | Phase 3 -> Phase 4 | Page built, kit drafted, structured data placed | Owners report their acceptance evidence | Tracking events and test ids are named |
 | Phase 4 -> Delivery | Emre green and Defne cleared | Both reports read in full | Failures were fixed by their owners and re-verified |
 
-Rollback protocol: if S4 is red for a defect in S3, only that owner reworks and the gate re-runs on the changed files; if the client withdraws a claim at any point, Defne and Kaan revise the affected assets and S4 re-runs.
+Rollback protocol: a Phase 4 defect returns to its Phase 3 owner, then the changed files are re-verified. A withdrawn claim goes to Defne and Kaan; revise affected assets and rerun Phase 4.
+
+**Optional media.** Chris records Media Requests and include/defer/decline during bounded consultation. If installed and included, load `workflow-agency-motion-production` under this Lead: approved brand/copy/assets, timing approval, production, Sound handoff, applicable render and review. Sound-only needs no Motion/video; static/defer/decline starts no production, install or provider.
 
 ## Code & Config Exemplars
 Load [examples/worked-example.md](examples/worked-example.md) for the nine-slice delegation map of a feature launch. The playbook works without it.

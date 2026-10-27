@@ -1,0 +1,10 @@
+{
+  "id": "studio-shot-r1",
+  "provider": "byteplus", "modality": "video", "route": "api",
+  "approved": true, "ceilingUsd": 2,
+  "payload": {
+    "model": "dreamina-seedance-2-5-260628",
+    "content": [{ "type": "text", "text": "A single unbranded ceramic object on a neutral studio table. Slow lateral camera move, soft daylight, no people, no text, no logos. This is a background plate for an editable product film." }]
+  },
+  "output": "media/assets/studio-shot-r1.mp4"
+}

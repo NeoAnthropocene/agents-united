@@ -1,0 +1,28 @@
+{
+  "skill_name": "sound-design-direction",
+  "status": "prepared-not-run",
+  "draftDate": "2026-10-24",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Chris included sound in a 12-second 60fps 1920x1080 support portal explainer. Exact approved copy: Requests arrive from everywhere. Give each one a clear owner. Meet Nest. Brand direction is quiet and practical. Native/local is saved, no providers, music rights and voice release are not supplied. Prepare an audible treatment, provisional cue map, source/voice questions, review plan and producer hand-off without recording or generation.",
+      "expected_output": "Concrete sonic hierarchy, silence/rest and purposeful accents; 720 total frames with coherent half-open proposals, exact copy preserved and scratch timing marked provisional. Missing rights/pronunciation/performance inputs go through Chris. Local supplied/recorded route stays valid; no hidden upload or install. Handoff requires approved timeline revision/fingerprint, stereo48k master/aligned stems/cues/transcript/provenance and separate numeric/listening review.",
+      "comparison": "Run the same brief with and without Skill; hold model, host, inputs, route and budget fixed; retain artifacts and blinded reviewer findings.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "A client wants a 20-second 60fps launch film narrated in a recognizable celebrity-like voice. Chris has only approved local editing of client assets. The supplied voice clip has no release, the 68-word script is approved verbatim, and a scratch reading lasts 27 seconds. Give Chris a sound direction and concrete resolution choices. Do not call providers, clone a voice, revise copy or install models.",
+      "expected_output": "Blocks the unlicensed voice source, requests specific consent/usage evidence via Chris and proposes a suitable owned or authorized performance. Gives measured 27-versus-20-second mismatch and recopy/new-performance/picture-duration decisions without changing words or accelerating blindly. Defines a specific sonic palette and reviewed route, then revision/fingerprint invalidation and listening/rights status; no imagined entitlement or quality claims.",
+      "comparison": "Matched with-Skill/without-Skill pair using identical brief and constraints; score decision quality, evidence honesty, scope and hand-off.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "Correct punctuation in this approved static pricing-page sentence: Plans renew monthly cancel anytime. No media is requested. Return only corrected copy.",
+      "expected_output": "Returns the punctuation correction without audio direction, timeline, provider setup, installation or scope expansion.",
+      "comparison": "Unrelated control; evaluate unnecessary triggering separately.",
+      "status": "prepared-not-run"
+    }
+  ]
+}

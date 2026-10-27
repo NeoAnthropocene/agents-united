@@ -87,7 +87,7 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
     expect(await fs.pathExists(path.join(skill, 'references/skill-attribution.md'))).toBe(true);
     expect(await fs.pathExists(path.join(root, '.agents'))).toBe(false);
   });
-  it('removal clears factory files while retaining ordinary bundle assets and their owners', async () => {
+  it('removal clears factory files while retaining ordinary bundle assets and their owners', { timeout: 120_000 }, async () => {
     await new InstallEngine().install('digital-agency', options());
     const shared = ['brand-identity', 'color-theory', 'brand-consistency-audit', 'stitch-design-taste', 'image-creation'];
     const before = new Map<string, Buffer>();

@@ -1,6 +1,6 @@
 ---
 name: workflow-agency-seo-content-engine
-description: "Use when the brief is organic traffic, a content programme, programmatic pages or a post-migration recovery; trigger phrases: grow our organic traffic, plan an SEO and content programme, recover our search traffic after the migration, build a content engine. Produces Selin's audit and fixes, Yavuz's keyword map, 90-day calendar and briefs, Kaan's rewrites, template changes, snippets, and the Emre and Defne gates. Skip it for a one-page fix (ask Selin) and for paid acquisition."
+description: "Use when the brief is organic traffic, a content programme, programmatic pages or migration recovery; trigger phrases: grow organic traffic, plan an SEO and content programme, recover search traffic, build a content engine. Produces the audit/fixes, keyword map, 90-day calendar, briefs, copy, template changes and QA/compliance gates. Skip for a one-page fix (ask Selin) or paid acquisition."
 metadata:
   author: agents-united
   version: 3.0.0
@@ -11,35 +11,35 @@ metadata:
 # Workflow: Agency SEO and Content Engine
 
 ## Overview & Purpose
-An organic-growth engagement is a loop, not a launch: fix what blocks crawling, map searches to pages that satisfy them, publish in an order the team can sustain, then read the results and refresh. Chris runs it with Selin, Yavuz, Kaan, Deniz, Emre and Defne, and promises nothing about rankings.
+Chris coordinates Selin, Yavuz, Kaan, Deniz, Emre and Defne: remove crawl blockers, map intent to pages, publish within capacity, measure and refresh. Never promise rankings.
 
 ## Execution Triggers
-Load it when the brief is organic traffic, a content programme, programmatic pages or a post-migration recovery. Do not load it for a one-page fix (ask Selin) or paid acquisition. Templated pages at scale bring `programmatic-seo` into Selin's slice.
+Load for organic traffic, a content programme, programmatic pages or post-migration recovery. Skip one-page fixes (ask Selin) and paid acquisition. Templated pages at scale bring `programmatic-seo` into Selin's slice.
 
 ## Input/Output Requirements
 Inputs: the accepted brief; the domain and priority pages; Search Console and analytics exports if supplied; named competitors; the team's content capacity in hours; approval rules; the integration state (`firecrawl`, `chrome-devtools-mcp`, `markitdown`).
 
-Output: Selin's audit with the health score and fixes; Yavuz's keyword map, clusters, 90-day calendar and ten-field briefs; Kaan's rewrites; Deniz's template changes; JSON-LD snippets; Emre's check of the changed pages; Defne's claims review. **Evidence to attach**: keyword volumes with source and date, and the raw header or tag behind each technical finding.
+Output: Selin's scored audit/fixes; Yavuz's keyword map, clusters, 90-day calendar and ten-field briefs; Kaan's rewrites; Deniz's template changes; JSON-LD; Emre's page checks; Defne's claims review. **Evidence**: keyword volumes with source/date and the raw header/tag behind each technical finding.
 
 ## Step-by-Step Runbook
 ```mermaid
 graph TD
-    B([Accepted brief]) --> P0[Phase 0: consult and map]
-    P0 --> P1[Phase 1: Selin audit, blockers first]
+    B[Accepted brief] --> P0[Phase 0: consult and map]
+    P0 --> P1[Phase 1: Selin audit and blockers]
     P1 --> P2[Phase 2: Yavuz map and calendar]
-    P2 --> P3[Phase 3: briefs, copy, markup, template changes]
+    P2 --> P3[Phase 3: briefs, copy, markup, templates]
     P3 --> G{Emre and Defne gates green?}
     G -->|No| P3
-    G -->|Yes| P4[Phase 4: first batch live, read at day 28]
-    P4 --> Done([Refresh and next batch])
+    G -->|Yes| P4[Phase 4: client publishes, day 28 read]
+    P4 --> D[Refresh and next batch]
 ```
 
-1. **Phase 0.** Consult Selin read-only; present the Delegation map. Agree what the report says about results: effort and indicators, never a ranking promise.
+1. **Phase 0: consult and map.** Consult Selin read-only; obtain client acceptance of the Delegation map. Report effort and indicators, never ranking promises.
 2. **Phase 1: Selin** audits with `seo-audit` and `technical-seo-audit`; critical blockers (noindex, robots, canonical, redirects) are fixed first, because content on a blocked page is wasted. Her fix list is a fixed input to Phase 3.
 3. **Phase 2: Yavuz.** Keyword and intent map (one intent per URL), cluster map, a 90-day calendar from `content-calendar-strategy` with hours and dependencies, checked by Selin for cannibalisation.
-4. **Phase 3.** Yavuz's briefs go to the writers; Kaan rewrites titles, descriptions and key copy; Selin writes JSON-LD and metadata snippets; Deniz applies template changes. Contract first: the keyword map and snippets are files before Deniz or Kaan start.
+4. **Phase 3: production.** Yavuz briefs writers; Kaan rewrites titles/descriptions/key copy; Selin writes JSON-LD/metadata snippets; Deniz applies templates. Keyword map and snippets must exist as files before Deniz or Kaan starts.
 5. **Gate and hand-off.** Emre checks the changed pages (status, canonical, rendering, links); Defne reviews claims, comparisons and any ratings or reviews markup.
-6. **Phase 4.** The client publishes; the first batch is read at day 28 (indexed against submitted, impressions, cannibalisation); the refresh list and next batch follow.
+6. **Phase 4: publish and measure.** Client publishes; read indexed/submitted counts, impressions and cannibalisation at day 28; decide refresh and next batch.
 
 | Transition | Prerequisites | Gate (evidence) | Success criteria |
 |---|---|---|---|
@@ -49,6 +49,8 @@ graph TD
 | Phase 4 -> Refresh | First batch live and 28 days read | Counts, not impressions of success | Decisions recorded: keep, refresh, merge, stop |
 
 Rollback protocol: if a template change breaks rendering or indexation, Deniz reverts that change (the redirect map and the previous template stay available), Emre re-runs the checks, and the content batch waits; no new URL is published on a template that failed the gate.
+
+**Optional media.** Chris records Media Requests and include/defer/decline during bounded consultation. If installed and included, load `workflow-agency-motion-production` under this Lead: approved brand/copy/assets, timing approval, production, Sound handoff, applicable render and review. Sound-only needs no Motion/video; static/defer/decline starts no production, install or provider.
 
 ## Code & Config Exemplars
 Load [examples/worked-example.md](examples/worked-example.md) for the delegation map of an engagement with 25 hours a week of capacity. The playbook works without it.

@@ -1,0 +1,8 @@
+{
+  "timelineRevision": "nest-audio-r1",
+  "tracks": [
+    { "id": "bed", "kind": "music", "path": "media/edits/music-ducked-r1.wav", "startFrame": 0, "endFrame": 720, "gainDb": -10, "trimStartSeconds": 0, "provenance": "Fictional example only: replace with actual source identity, edit log and reviewed music rights evidence." },
+    { "id": "narration", "kind": "vo", "path": "media/edits/voice-timed-r1.wav", "startFrame": 24, "endFrame": 660, "gainDb": -3, "trimStartSeconds": 0, "provenance": "Fictional example only: replace with actual approved take/script, consent/usage reference and timing edit log." },
+    { "id": "confirm", "kind": "sfx", "path": "media/sources/confirm-r1.wav", "startFrame": 450, "endFrame": 474, "gainDb": -12, "trimStartSeconds": 0, "provenance": "Fictional example only: replace with actual original synthesis parameters/output hash and selection review." }
+  ]
+}

@@ -1,0 +1,23 @@
+# Accept the delivery, not just its manifest
+
+Use the selected destination and saved `media/project.json` as the acceptance inputs. The review helper validates metadata and, with an explicit project root, regular-file presence/confinement. Its measurements are `reported-only`; it never decodes, measures, watches, listens, checks a licence or approves a client deliverable.
+
+Apply each check to the included assets. A Sound-only WAV/sonic-logo request goes from Sound through audio/provenance review directly to Chris: no Motion assignment, video decoding/viewing, mux, storyboard or invented narration is required. Sound owns any frame/cue record needed by the shared schema. Schema-required video defaults in project preferences are unused, not instructions to produce video. Record irrelevant checks as not applicable with a reason; keep required but unperformed checks unverified.
+
+## Technical evidence
+
+Retain source hashes, exact local tool versions/commands, raw probe/measurement logs and export hashes. Decode actual streams: video fps/dimensions/frame count/duration and codec; audio stereo 48 kHz, start/end, sample count, intended channel layout and codec. Compare the master and full-duration pre-master stems to the timeline. Each cue uses half-open frame bounds; sample bounds are `round(startFrame * 48000 / fps)` and `round(endFrame * 48000 / fps)`, and length is their difference. A 60 fps, 120-frame film has 96,000 sample frames. A contract pass alone proves none of these decoded facts.
+
+Measure the finished master and actual muxed audio with an appropriate full tool. Default integrated loudness is -16 LUFS +/-1 and true peak <=-1 dBTP. Read any approved destination override from saved preferences and pass its three numeric values to `review.mjs`; do not pass an unsupported preferences option or silently restore defaults. The project helper's `status` validates the complete saved schema. Lossy audio can change levels and introduce padding: inspect presentation duration, start time and decoded tail separately from the WAV. If the target fails, return to Sound and rerender/recheck the affected export. Never normalize aligned stems independently to make a table look uniform.
+
+## Visual and listening evidence
+
+Watch the whole final export at its intended playback speed. Note exact frame/time ranges for text readability, CTA holds, cuts, safe areas, brand assets, motion continuity, font readiness, captions and the final frame. Check the actual player/destination where required; a still proves only the inspected frame. Verify approved speech text and caption timing; SRT delivery does not prove the destination displays it. Inspect a requested reduced-motion/static alternative separately.
+
+Listen to the complete master and compressed export, preferably with headphones and speakers; test mono when relevant. Record reviewer, file hash, device/context and findings for speech intelligibility/pronunciation, music balance, VO masking, clicks, clipping, phase, sync and tails. A numerical pass cannot close these checks. Silence may be intentional; nonfinite integrated loudness must not become an invented finished-mix number.
+
+## Creative, claims and provenance evidence
+
+Compare the accepted purpose, audience, single message, approved exact words and storyboard to the film. Brand/Copy own direction and words; Motion owns timing/integration; Sound owns sonic decisions and final audio; QA owns technical evidence; Compliance reviews claims, consent and source rights. Chris resolves cross-role or human decisions. Provenance must point to actual retained source/licence/consent/provider documents; generated output is not automatically cleared for every use.
+
+Hand-off: return a review record with pass/fail/unverified for each required dimension, severity and frame/time, local evidence paths, export/source hashes, exact timeline revision/fingerprint, owner and recheck scope. Preserve failed takes. Do not declare final acceptance while a required check is unverified.

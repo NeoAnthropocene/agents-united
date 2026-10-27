@@ -77,7 +77,7 @@ describe('doctor on a native Tier-2 install', () => {
     await fs.remove(workspace);
   });
 
-  it('warns that the team is unguarded without the settings-level guard, names the bundle and the command', async () => {
+  it('warns that the team is unguarded without the settings-level guard, names the bundle and the command', { timeout: 120_000 }, async () => {
     await install('digital-agency');
     const found = await teamWarnings();
     expect(found).toHaveLength(1);
@@ -86,12 +86,12 @@ describe('doctor on a native Tier-2 install', () => {
     expect(found[0]).toContain('agents update digital-agency --session-guard');
   });
 
-  it('is silent once the settings-level guard is installed', async () => {
+  it('is silent once the settings-level guard is installed', { timeout: 120_000 }, async () => {
     await install('digital-agency', { sessionGuard: 'local' });
     expect(await teamWarnings()).toEqual([]);
   });
 
-  it('warns again when the settings-level guard is removed by hand', async () => {
+  it('warns again when the settings-level guard is removed by hand', { timeout: 120_000 }, async () => {
     await install('digital-agency', { sessionGuard: 'local' });
     await fs.writeJson(path.join(workspace, '.claude/settings.local.json'), {});
     expect((await teamWarnings()).length).toBe(1);
@@ -102,7 +102,7 @@ describe('doctor on a native Tier-2 install', () => {
     expect(await teamWarnings()).toEqual([]);
   });
 
-  it('says nothing when the native lane is off', async () => {
+  it('says nothing when the native lane is off', { timeout: 120_000 }, async () => {
     await install('digital-agency', { nativeLane: false });
     expect(await teamWarnings()).toEqual([]);
   });

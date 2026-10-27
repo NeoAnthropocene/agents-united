@@ -1,0 +1,61 @@
+# Parameterized composition, frame math and readiness
+
+Read this while authoring or replacing the starter. Preserve approved content and the
+canonical timeline; do not alter helper-owned data to make a render pass.
+
+## Reusable source and props
+
+`index.jsx` registers `RemotionRoot`. `Root.jsx` declares composition `AgencyMotion`
+and derives duration, fps and dimensions through `calculateMetadata` from the supplied
+timeline. `Composition.jsx` maps stable scene IDs to `Sequence` elements and scene copy;
+`frame-state.mjs` derives entrance opacity and translation from the local frame.
+Keep source/modules and approved public assets editable. Theme, `sceneText` and other
+custom props are authored content; timeline, fingerprint and owned `audioSrc` belong to
+the generated handoff. Refresh retains theme/custom props and copy for surviving IDs.
+New IDs receive editorial placeholders and need review.
+
+Use `useCurrentFrame()` inside a `Sequence` for its local frame and `useVideoConfig()`
+for composition settings. Reconstruct each pose directly from frame and props. Repeated
+evaluation of frame 15 should produce the same pixels; compare a different frame to ensure
+the test is not merely proving a static card. Do not use timers, random values, accumulated
+transforms, autoplay progress or CSS animation as the animation clock.
+
+## Arithmetic without a shell
+
+For integer fps F and N total frames, duration is N/F seconds. Export indices are
+0 through N-1; last sample time is (N-1)/F. A scene `[startFrame,endFrame)` lasts
+`endFrame-startFrame` frames and excludes its end frame. At global frame G its local frame
+is `G-startFrame`. Preserve scene/cue IDs across edits so Sound and copy can reconcile them.
+
+| Example at 60 fps | Result |
+| --- | --- |
+| N=120 | 2 seconds, export frames 0..119 |
+| Last exported time | 119/60 seconds |
+| Scene `[60,120)` | 60 frames, local indices 0..59 |
+| Two-second loop boundary | Pose at time 2 seconds compared to time 0; not an extra exported frame |
+
+Loop intent belongs in the approved brief or custom scene props, not as an unknown field
+in the strict timeline. The helper does not automatically verify loop closure. A repeated
+still is a determinism check; a smooth seam requires boundary inspection and playback.
+
+## Assets, fonts and preview
+
+Place only approved public media/fonts under `media/remotion/public/` and reference
+local assets via `staticFile`. Use Remotion's readiness-aware `Img` for images, and an
+explicit loading gate for asynchronous fonts/media. Settle success or reject failures
+before capture; do not add sleeps or accept fallback-font screenshots as final. Avoid
+unapproved remote dependencies and keep credentials/private source outside the public tree.
+The starter contains no remote image/font loading; newly added asynchronous resources
+require new runtime checks and are unverified by the existing smoke proof.
+
+For an optional interactive preview after authorized setup, resolve the installed
+project-local CLI in `media/remotion/` and use its `studio index.jsx` command with the
+same approved props. Do not use a package runner that silently downloads another version.
+Studio can help inspect layout, timing and the loop seam, but does not apply the helper's
+current handoff/licence/stale-snapshot gates. Run the helper for final export and inspect
+its encoded output. Interactive Studio behavior has not been verified by the scoped technical
+offline render proof.
+
+The current audio template uses one `Html5Audio` at frame zero for the full master. Do
+not replay already mixed cue files independently or shift it to fix an unapproved timing
+change. Send required cue/mix changes back through the Lead to Sound.

@@ -1,0 +1,28 @@
+{
+  "skill_name": "video-generation",
+  "status": "prepared-not-run",
+  "draftDate": "2026-10-25",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Chris approved optional BytePlus footage for one neutral studio plate in a Remotion film, with local Sound, exact editable copy and an acknowledged USD2 job within USD5. No live call should run in this evaluation. Prepare a concrete selected-preferences/job/create/status/local-review handoff. The installed helper and account entitlement have not been checked.",
+      "expected_output": "Resolves installed mcp-setup plus audiovisual-review siblings; uses full strict preferences and selected API model/content; separates provider/model/region/billing. Describes private ARK key entry, one acknowledged create, saved task and deliberate status with no blind retry. Requires local MIME/bytes/SHA and actual codec/duration/frame/playback/rights checks, preserves copy/brand/timeline and sends source trim/provenance to editable Motion and timing to Sound. Labels live/install/playback unverified.",
+      "comparison": "Matched with-Skill/without-Skill pair; identical model/host/brief/assets/route/budget, independent reviewer records plans and evidence honesty.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "A native 60fps film has optional generated footage approved, but its Kling connection is unavailable. Someone proposes a community Kie MCP, says all Volcengine servers are official, and asks to retry an earlier possibly charged generation with no task ID. Keep exact copy and timing. Prepare a recovery and source decision without connecting accounts or spending.",
+      "expected_output": "Reconciles the ambiguous original job before a new create; retains reservation and avoids duplicate billing. Does not invent official servers or silently switch providers. Chris offers supplied footage, licensed stock via commercial-stock-sourcer or native motion. Documents dated Kling Personal paid-credit constraint and actual tool/auth requirements; distinguishes registration/auth/tools/results. Keeps optional generation separate from native rendering and prepares local shot inspection/provenance handoff without fabricated playback.",
+      "comparison": "Matched with-Skill/without-Skill pair with fixed source facts and constraints; score recovery, boundaries, usable fallback and truthful verification.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "Return the uppercase form of these labels only: orchard, harbor, meadow. No imagery, animation or video is requested.",
+      "expected_output": "Returns ORCHARD, HARBOR, MEADOW without triggering footage, providers, media preferences or account setup.",
+      "comparison": "Unrelated control; inspect unnecessary triggering.",
+      "status": "prepared-not-run"
+    }
+  ]
+}

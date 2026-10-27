@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * The fifteen committed native Claude roles and the Semantic Core stem each one stands for (the eight agency-only roles stand for the
+ * The seventeen committed native Claude roles and the Semantic Core stem each one stands for (the agency-only roles stand for the
  * marketing, SEO, QA, compliance and frontend cores, ADR 0036 and ADR 0039). Used by the conformance suites that replaced the created lane (ADR 0037).
  */
 export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 | 2; coordinator: boolean }> = [
@@ -21,6 +21,8 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead', tier: 2, coordinator: false },
   { role: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', tier: 2, coordinator: false },
   { role: 'agency-frontend-architect', stem: 'subagent-frontend-architect', tier: 2, coordinator: false },
+  { role: 'agency-motion-designer', stem: 'subagent-motion-designer', tier: 2, coordinator: false },
+  { role: 'agency-sound-designer', stem: 'subagent-sound-designer', tier: 2, coordinator: false },
 ];
 
 export const NATIVE_AGENTS_DIR = path.resolve('registry/hosts/claude/agents');

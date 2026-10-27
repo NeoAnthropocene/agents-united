@@ -1,0 +1,28 @@
+# Coordinate an included media slice
+
+For motion, the sequence is consultation → accepted brief/assets → storyboard and scratch narration → timing approval → parallel animation/audio → final Sound handoff → integration/render → creative, technical and provenance review. Sound-only WAV or sonic-logo requests use Sound direction, approved cue/timing needs, local/API/hybrid generation or supplied sources, finishing and applicable audio review directly to Chris. They require no Motion assignment, storyboard, renderer installation or video export; silence or non-speech audio needs no invented narration/captions. Existing planning limits remain: at most two planning rounds and two peer exchanges per pair, relay through the Lead by default. Eleven installed specialist types are a menu, not a request to spawn all of them. Preserve each role's launch evidence, hand-back, shutdown request/reply and delivery semantics; completing this media checklist does not replace them.
+
+## Decisions and ownership
+
+Chris consolidates human questions and Media Requests and records include/defer/decline. A deferred, declined or static request stops the media branch without producing media, installing runtimes or connecting providers. Reuse the campaign's approved assets, design tokens, copy props, claims sources, placement and UTM/landing-page contract. Brand/Creative supplies visual identity/assets; Copy retains exact approved text. Motion and Sound can propose changes but do not change words, claims or the brief unilaterally.
+
+For included work, record the applicable Native or Remotion preference, local/API/hybrid audio, separate generated-footage choice, selected provider/model/modality/route, output and USD ceiling in the complete project preferences. Native is the recommended direct HTML/SVG/canvas route; Remotion is an independently usable React route when deliberately chosen. Each keeps runtime dependencies scoped to that project, outside product/root dependencies. Sound-only project records retain schema-required renderer/canvas/video fields as unused defaults, not production tasks; its Media Request renderer is null and format wav. Supplied or recorded audio is valid; local synthesis is not a general narration/music model. Actual local-model code/weight licences/hardware and provider capability/auth/billing need their own checks. A saved choice or ceiling never authorizes setup, uploads or a paid job.
+
+## Fixed inputs and gates
+
+| Gate | Owner and evidence | Dependent work |
+| --- | --- | --- |
+| Accepted brief/assets | Chris records included request, accepted map, local paths, rights/consent, exact copy and destination/accessibility | Applicable Motion storyboard and Sound scratch/direction |
+| Timing approval | Applicable Motion timeline or Sound-owned cue/timing record and computed fingerprint; scratch audio/timing feedback as needed; Chris's approval | Included animation and final audio may run in parallel |
+| Final Sound handoff | Sound's stereo48k WAV master, full-duration aligned pre-master cue stems, manifest/cue sheet, revision/fingerprint, captions/transcript, provenance and measurement/listening logs | Included Motion integration/render, or direct audio review |
+| Delivery review | Actual export/hash; Creative/Copy fit, QA decoded/master/mux/sync/accessibility evidence, Compliance claims/rights, unresolved checks explicitly unverified | Chris delivery with open items |
+
+Timeline ranges are half-open integer frames. Revision, fps, canvas, scene/cue IDs, bounds or VO text changes invalidate the computed fingerprint and dependent audio. The timing owner sends the changed contract through Chris/Sound; Sound reviews and reissues the handoff. An unchanged revision label cannot hide drift. Final stems are already aligned at zero: do not add cue delays again. Their relative gains are retained; their sum need not reproduce a nonlinear mastered file.
+
+## Installed resources and Hosts
+
+Both media roles consult Skills through their actual Situation | Skill | Load when tables. `digital-agency` and `full` declare the nine capabilities. The ordinary shared Skill source is used where the repository's portability policy accepts it; a catalog entry or portable-format check does not prove live Host behavior. Scripts resolve the sibling `audiovisual-review` folder and must retain the source-relative layout. Verify installed entries, scripts, references and assets before execution; maintainer `evals/` is excluded. A nonagency workflow may mention media conditionally without requiring or installing the agency capability. If absent, hand the request and prerequisite to its Lead; do not invent a dependency loader.
+
+Use [motion direction](../../motion-design-direction/SKILL.md), [Native](../../native-motion-production/SKILL.md) or [Remotion](../../remotion-production/SKILL.md), [sound direction](../../sound-design-direction/SKILL.md), [audio generation](../../audio-generation/SKILL.md), [audio finishing](../../audio-post-production/SKILL.md), optional [video generation](../../video-generation/SKILL.md) and [review](../../audiovisual-review/SKILL.md). The existing [MCP setup](../../mcp-setup/SKILL.md) flow is optional and separately authorized; neither renderer needs a media provider to compose local assets.
+
+Hand-off failures go to the owning specialist with exact evidence and changed-input scope. Chris resolves a new cost, route or client decision. Preserve useful work and prior revisions; no indefinite revision loop or unapproved fallback. Review acceptance means the required checks have actual evidence, not that a helper returned `ok`.

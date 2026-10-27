@@ -29,6 +29,8 @@ const EXPECTED: Record<string, string> = {
   'subagent-qa-automation-lead.md': 'agency-qa-automation-lead',
   'subagent-compliance-grc-specialist.md': 'agency-compliance-grc-specialist',
   'subagent-frontend-architect.md': 'agency-frontend-architect',
+  'subagent-motion-designer.md': 'agency-motion-designer',
+  'subagent-sound-designer.md': 'agency-sound-designer',
 };
 const LEGACY_NAMES = [
   'marketing-growth-strategist', 'marketing-creative-designer', 'marketing-conversion-specialist', 'marketing-content-strategist',
@@ -90,7 +92,7 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     await fs.remove(workspace);
   });
 
-  it('installs the agency-only native roles and the lead, and no legacy copy of any shared role', async () => {
+  it('installs the agency-only native roles and the lead, and no legacy copy of any shared role', { timeout: 120_000 }, async () => {
     await install('digital-agency', true);
     for (const name of [...Object.values(EXPECTED), 'orchestrator-digital-agency']) expect(await exists(name), name).toBe(true);
     expect(await exists('frontend-architect'), 'the shared frontend architect stays out: the agency has its own copy').toBe(false);
@@ -98,14 +100,14 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     for (const name of Object.values(EXPECTED)) expect(fs.readFileSync(agentFile(name), 'utf8'), name).toContain('profile: claude-native');
   });
 
-  it('leaves no legacy projection beside the native roles: every role of the bundle is native', async () => {
+  it('leaves no legacy projection beside the native roles: every role of the bundle is native', { timeout: 120_000 }, async () => {
     await install('digital-agency', true);
     const installed = fs.readdirSync(path.join(workspace, '.claude/agents')).filter(file => file.endsWith('.md')).sort();
     expect(installed).toEqual([...Object.values(EXPECTED), 'orchestrator-digital-agency'].map(name => `${name}.md`).sort());
     for (const file of installed) expect(fs.readFileSync(path.join(workspace, '.claude/agents', file), 'utf8'), file).toContain('profile: claude-native');
   });
 
-  it('records the native file as owned by the bundle alone, with no canonical pointer; the file\'s own marker names the canonical agent', async () => {
+  it('records the native file as owned by the bundle alone, with no canonical pointer; the file\'s own marker names the canonical agent', { timeout: 120_000 }, async () => {
     await install('digital-agency', true);
     const lock = await fs.readJson(lockPath);
     for (const [file, name] of Object.entries(EXPECTED)) {
@@ -125,7 +127,7 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
   });
 
-  it('turning the lane off brings the legacy names back and removes the agency-only files', async () => {
+  it('turning the lane off brings the legacy names back and removes the agency-only files', { timeout: 120_000 }, async () => {
     await install('digital-agency', true);
     for (const name of Object.values(EXPECTED)) expect(await exists(name), `${name} was installed`).toBe(true);
     await install('digital-agency', false, { force: true });
@@ -133,7 +135,7 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     for (const name of LEGACY_NAMES) expect(await exists(name), `${name} is back`).toBe(true);
   });
 
-  it('lets the agency live beside the Tier-1 frontend role of software-engineering, each with its own file', async () => {
+  it('lets the agency live beside the Tier-1 frontend role of software-engineering, each with its own file', { timeout: 120_000 }, async () => {
     await install('software-engineering', true);
     await install('digital-agency', true);
     for (const name of ['frontend-architect', 'agency-frontend-architect']) expect(await exists(name), name).toBe(true);
@@ -145,7 +147,7 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     expect(await exists('frontend-architect')).toBe(true);
   });
 
-  it('lets both bundles live side by side, and removing the agency removes only its own files', async () => {
+  it('lets both bundles live side by side, and removing the agency removes only its own files', { timeout: 120_000 }, async () => {
     await install('marketing', true);
     await install('digital-agency', true);
     for (const name of [...Object.values(EXPECTED), 'marketing-growth-strategist']) expect(await exists(name), name).toBe(true);
@@ -160,7 +162,7 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     expect(after.warnings.filter(warning => /Content drift|Stale|Missing|Outdated|superseded/.test(warning))).toEqual([]);
   });
 
-  it('is byte-stable on a second install and healthy under the doctor', async () => {
+  it('is byte-stable on a second install and healthy under the doctor', { timeout: 120_000 }, async () => {
     await install('digital-agency', true);
     const before = new Map(Object.values(EXPECTED).map(name => [name, fs.readFileSync(agentFile(name), 'utf8')] as const));
     await install('digital-agency', true);

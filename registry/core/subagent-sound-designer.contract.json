@@ -1,0 +1,13 @@
+{
+  "definition": "subagent-sound-designer",
+  "workflows": [],
+  "skills": [
+    "sound-design-direction",
+    "audio-generation",
+    "audio-post-production",
+    "audiovisual-review",
+    "workflow-agency-motion-production",
+    "mcp-setup"
+  ],
+  "hooks": []
+}

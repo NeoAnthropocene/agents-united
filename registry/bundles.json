@@ -928,7 +928,9 @@
         "subagent-sysops-sre-lead.md",
         "subagent-system-architect.md",
         "subagent-ui-designer.md",
-        "subagent-ux-strategist.md"
+        "subagent-ux-strategist.md",
+        "subagent-motion-designer.md",
+        "subagent-sound-designer.md"
       ],
       "skills": [
         "a11y-debugging",
@@ -1125,7 +1127,16 @@
         "image-creation",
         "brand-consistency-audit",
         "image-generation",
-        "commercial-stock-sourcer"
+        "commercial-stock-sourcer",
+        "motion-design-direction",
+        "native-motion-production",
+        "remotion-production",
+        "video-generation",
+        "sound-design-direction",
+        "audio-generation",
+        "audio-post-production",
+        "audiovisual-review",
+        "workflow-agency-motion-production"
       ],
       "version": "1.0.0"
     },
@@ -1237,7 +1248,9 @@
         "selin-seo": "subagent-seo-specialist",
         "deniz-frontend": "subagent-frontend-architect",
         "emre-qa": "subagent-qa-automation-lead",
-        "defne-grc": "subagent-compliance-grc-specialist"
+        "defne-grc": "subagent-compliance-grc-specialist",
+        "motion-designer": "subagent-motion-designer",
+        "sound-designer": "subagent-sound-designer"
       },
       "nativeRoles": {
         "subagent-marketing-growth-strategist.md": "agency-growth-strategist",
@@ -1248,7 +1261,9 @@
         "subagent-seo-specialist.md": "agency-seo-specialist",
         "subagent-qa-automation-lead.md": "agency-qa-automation-lead",
         "subagent-compliance-grc-specialist.md": "agency-compliance-grc-specialist",
-        "subagent-frontend-architect.md": "agency-frontend-architect"
+        "subagent-frontend-architect.md": "agency-frontend-architect",
+        "subagent-motion-designer.md": "agency-motion-designer",
+        "subagent-sound-designer.md": "agency-sound-designer"
       },
       "orchestrator": "orchestrator-digital-agency.md",
       "agents": [
@@ -1260,7 +1275,9 @@
         "subagent-seo-specialist.md",
         "subagent-frontend-architect.md",
         "subagent-qa-automation-lead.md",
-        "subagent-compliance-grc-specialist.md"
+        "subagent-compliance-grc-specialist.md",
+        "subagent-motion-designer.md",
+        "subagent-sound-designer.md"
       ],
       "skills": [
         "mcp-setup",
@@ -1322,7 +1339,16 @@
         "image-creation",
         "brand-consistency-audit",
         "image-generation",
-        "commercial-stock-sourcer"
+        "commercial-stock-sourcer",
+        "motion-design-direction",
+        "native-motion-production",
+        "remotion-production",
+        "video-generation",
+        "sound-design-direction",
+        "audio-generation",
+        "audio-post-production",
+        "audiovisual-review",
+        "workflow-agency-motion-production"
       ],
       "version": "1.0.0"
     },

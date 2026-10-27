@@ -134,7 +134,7 @@ describe('a digital-agency install on Claude (native lane, project scope)', () =
     await fs.remove(workspace);
   });
 
-  it('has no generative-ui under .claude/skills, keeps the other skills, and records no projection of it', async () => {
+  it('has no generative-ui under .claude/skills, keeps the other skills, and records no projection of it', { timeout: 120_000 }, async () => {
     await install();
     expect(await fs.pathExists(path.join(workspace, '.claude/skills', SKILL))).toBe(false);
     expect(await fs.pathExists(path.join(workspace, '.claude/skills/ad-creative-design/SKILL.md'))).toBe(true);
@@ -144,7 +144,8 @@ describe('a digital-agency install on Claude (native lane, project scope)', () =
     expect(l.files[canonical]?.projectedTo ?? []).not.toContain(projected);
   });
 
-  it('keeps the canonical store copy, which is host-neutral, and the doctor finds nothing missing', async () => {
+  // Full 69-Skill install + doctor measured 29.7s in Vitest; allow filesystem variance.
+  it('keeps the canonical store copy, which is host-neutral, and the doctor finds nothing missing', { timeout: 120_000 }, async () => {
     await install();
     expect(await fs.pathExists(path.join(sidecar, 'skills', SKILL, 'SKILL.md'))).toBe(true);
     expect((await lock()).installed.skills).toContain(SKILL);
@@ -167,7 +168,8 @@ describe('a digital-agency install on Claude (native lane, project scope)', () =
       return content;
     }
 
-    it('removes the old copy, its projection record and its pointer, and leaves the other skills alone', async () => {
+    // The complete install/update/doctor flow measured 37s before Vitest overhead.
+    it('removes the old copy, its projection record and its pointer, and leaves the other skills alone', { timeout: 120_000 }, async () => {
       await makeEarlierInstall();
       expect(await fs.pathExists(path.join(workspace, projected))).toBe(true);
       const run = await update();
@@ -182,7 +184,8 @@ describe('a digital-agency install on Claude (native lane, project scope)', () =
       expect(report.warnings.filter(w => /generative-ui|Missing projection|Content drift|Stale|Outdated/.test(w))).toEqual([]);
     });
 
-    it('is idempotent: a second update changes no projection', async () => {
+    // Full Bundle install + two updates measured 59s on Windows before Vitest overhead.
+    it('is idempotent: a second update changes no projection', { timeout: 120_000 }, async () => {
       await makeEarlierInstall();
       await update();
       const before = Object.keys((await lock()).projections ?? {}).sort();
@@ -191,7 +194,8 @@ describe('a digital-agency install on Claude (native lane, project scope)', () =
       expect(await fs.pathExists(path.join(workspace, '.claude/skills', SKILL))).toBe(false);
     });
 
-    it('never clobbers a copy the user took over: without --force it is skipped and kept, with --force it goes', async () => {
+    // Preservation followed by explicit-force cleanup measured 34s outside Vitest.
+    it('never clobbers a copy the user took over: without --force it is skipped and kept, with --force it goes', { timeout: 120_000 }, async () => {
       const content = await makeEarlierInstall();
       await fs.writeFile(path.join(workspace, projected), content.replace(/<!--[^>]*managed-by[^>]*-->\r?\n?/, '') + '\nMy own note.\n');
       const skippedRun = await update();

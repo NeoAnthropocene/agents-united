@@ -1,0 +1,24 @@
+{
+  "skill_name": "native-motion-production",
+  "status": "prepared-not-run",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The agency Lead has approved a two-second 1080p60 landing-page loop using supplied logo, palette and exact copy, but native versus Remotion is still open. Existing source must survive. Prepare the route decision and an editable native production plan if selected; no paid service or dependency setup is yet authorized.",
+      "expected_output": "Routes the choice and missing inputs through the Lead, records it once, preserves source, separates setup consent and external generation, specifies J1 preferences/timeline and 120 frame indices, deterministic ready/seek protocol, content/meta loop intent, editable deliverables and distinct numerical/playback/listening evidence.",
+      "comparison": "Run this same prompt and supplied context with the Skill loaded and without it; hold model, tools and source baseline constant. Compare artifacts and decision handling, not self-reported confidence."
+    },
+    {
+      "id": 2,
+      "prompt": "A native project has saved -18 LUFS output preferences and an audio manifest made before a timing edit. Its scene uses a readiness Promise that rejects before metadata exists, and its public font is a junction into a private directory. Diagnose and propose scoped repairs without weakening validation, silently rewriting the preset or calling a provider.",
+      "expected_output": "Keeps the selected preset, identifies stale fingerprint/cue handoff and startup rejection, sends unresolved timing/source decisions through the Lead, preserves private-root confinement, requires approved public font placement, prevents encoding on capture failure and requests affected evidence without claiming audio quality from metadata.",
+      "comparison": "Run the same failure brief with and without the Skill on separate identical disposable copies. Retain raw outputs, proposed diffs, commands/exits and artifact references; do not launch a host or paid test without separate authorization."
+    },
+    {
+      "id": 3,
+      "kind": "unrelated-control",
+      "prompt": "Rewrite this static meeting reminder for clarity: Please send the agenda by Tuesday so attendees can prepare. Keep the meaning and return one sentence. No visual or media work is requested.",
+      "expected_output": "Returns a concise sentence rewrite without invoking native-motion production, asking renderer questions, installing tools, inventing media deliverables or routing a simple writing request into an agency production workflow."
+    }
+  ]
+}

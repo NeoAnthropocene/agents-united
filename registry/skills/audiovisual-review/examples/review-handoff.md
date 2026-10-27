@@ -1,0 +1,9 @@
+# Worked example: a two-second metadata handoff
+
+A fictional local logo greeting has revision `r1`, 60 fps and 120 frames, two contiguous scenes and one VO cue [0,60) saying “Hello world.” Copy, animation and audible performance are not approved by this example. The supplied timeline, audio manifest and SRT are schema fixtures; `audio/master.wav` and `audio/voice.wav` do not exist in the Skill.
+
+Run `review.mjs timeline --timeline <absolute-skill>/assets/timeline.example.json`, then `review.mjs contract --timeline <absolute-skill>/assets/timeline.example.json --manifest <absolute-skill>/assets/audio-manifest.example.json --captions <absolute-skill>/assets/captions.example.srt`. Omit `--project` because this is a metadata-only worked example. Save the JSON and exit. The reported -16 LUFS / -1.2 dBTP satisfies the default numerical contract but is illustrative, not a measurement. File existence, decoding, full playback, listening, sync and rights remain **unverified**.
+
+For a real project, Sound supplies the WAVs and measurement logs; Motion supplies the export and exact current timing. Add `--project <absolute-project>` with project-relative input files to check confinement/presence. Validate the full saved preference record through the workflow project helper's `status`; for an approved -18 LUFS +/-0.5 and <=-2 dBTP delivery pass `--target-lufs -18 --tolerance-lu 0.5 --max-true-peak -2` to review. The helper does not read preferences itself.
+
+If Copy changes the speech to “Hello again,” recompute the timeline fingerprint and return it to Sound; relabeling the old manifest is an anti-pattern. Hand-off to Chris includes the new Sound handoff, actual technical and human review evidence, unresolved rights and acceptance states. An empty findings list from the structural helper is not creative approval.

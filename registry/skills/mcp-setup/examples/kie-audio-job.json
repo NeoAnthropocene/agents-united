@@ -1,0 +1,10 @@
+{
+  "id": "narration-r1",
+  "provider": "kie", "modality": "audio", "route": "api",
+  "approved": true, "ceilingUsd": 1,
+  "payload": {
+    "model": "elevenlabs/text-to-speech-multilingual-v2",
+    "input": { "text": "Your next step, clearly.", "voice": "EkK5I93UQWFDigLMpZcX", "stability": 0.5, "similarity_boost": 0.75, "style": 0, "speed": 1, "timestamps": false }
+  },
+  "output": "media/assets/narration-r1.mp3"
+}

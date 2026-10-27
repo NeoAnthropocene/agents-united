@@ -30,6 +30,7 @@ const WRONG = '  - Wrong, `message` is a string of JSON, and the host refuses it
 describe.each([
   'agency-growth-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-content-strategist', 'agency-campaign-specialist',
   'agency-frontend-architect', 'agency-seo-specialist', 'agency-qa-automation-lead', 'agency-compliance-grc-specialist',
+  'agency-motion-designer', 'agency-sound-designer',
 ])('teammate %s: the right and the wrong shutdown reply', name => {
   it('shows the object and the string of JSON on two lines under the rule, right first', () => {
     const lines = afterFloor(name).split('\n');

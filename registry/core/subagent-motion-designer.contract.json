@@ -1,0 +1,14 @@
+{
+  "definition": "subagent-motion-designer",
+  "workflows": [],
+  "skills": [
+    "motion-design-direction",
+    "native-motion-production",
+    "remotion-production",
+    "video-generation",
+    "audiovisual-review",
+    "workflow-agency-motion-production",
+    "mcp-setup"
+  ],
+  "hooks": []
+}

@@ -1,0 +1,24 @@
+{
+  "skill_name": "remotion-production",
+  "status": "prepared-not-run",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The agency Lead has approved a two-second 1080p60 brand panel with exact copy and local logo/palette, but native versus Remotion is open. Preserve an existing project's source. Prepare the decision and, if Remotion is selected, its editable production handoff. No dependency setup, external footage or paid provider is authorized. Explain how an internal evaluation differs from commercial delivery eligibility.",
+      "expected_output": "Relays renderer, include/defer/decline and missing human questions through Chris; persists the chosen route once; plans 120 frames with half-open scene bounds; preserves source; separates scoped setup and external generation; requires truthful purpose-specific licensing, shared preferences/timeline, frame-driven React/readiness, matching Sound/captions and actual export evidence. Does not claim entitlement or creative approval from allowed=true.",
+      "comparison": "Run the same prompt/context with and without this Skill on identical disposable baselines. Hold model/settings/tools constant; retain raw responses, source changes and evidence. Compare concrete decisions and deliverables; this fixture has not been run."
+    },
+    {
+      "id": 2,
+      "prompt": "A customized Remotion project has approved a timing revision from 60 to 90 frames and a new Sound master. It retains custom JSX, theme, scene copy, package-lock and previous outputs. The old snapshot is stale, the owner supplied no production eligibility facts, and actual metadata still says 60 frames. Propose the safe revision/export path without reinstalling, weakening gates or inventing a human review. Also explain why a requested yuv420p setting and 1.515-second AAC container are not complete delivery proof.",
+      "expected_output": "Preserves custom source/dependencies/artifacts; obtains matching canonical timeline/preferences/audio/captions and truthful purpose-specific license record; uses exact refresh --approved-revision acknowledgment with history/hash-named audio; reviews stable/new scene copy and fixes actual composition metadata before a new output directory render. Keeps strict stale/audio/pin checks, distinguishes caller acknowledgment from approval, probes actual range/count/duration/AAC tail, and marks full playback/listening/entitlement unverified.",
+      "comparison": "Run with-Skill and without-Skill conditions on separate equal project copies with the same tools and supplied records. Retain diffs, commands/exits, artifact hashes and unresolved questions; do not launch a host/provider or new actual render merely because this prompt exists."
+    },
+    {
+      "id": 3,
+      "kind": "unrelated-control",
+      "prompt": "Rewrite this static meeting reminder as one clear sentence: Please share the agenda before Tuesday so everyone can prepare. Preserve its meaning; no video, animation, audio or project setup is requested.",
+      "expected_output": "Returns only the concise sentence rewrite without invoking Remotion, asking renderer or licence questions, creating media contracts, installing dependencies or routing an ordinary writing task into agency production."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+# Prepared direction comparisons
+
+Status: **prepared-not-run**, drafting date 2026-10-24. No host/model session, rendered blueprint, measured benefit, independent playback/listening or creative approval is claimed. Keep this directory maintainer-only and excluded by the repository resource policy.
+
+`evals.json` contains two paired briefs and one unrelated control, plus ten individual blueprint statuses. For an authorized evaluation, run the same approved brief with and without this Skill in isolated projects, the same host/model/tools, assets, fps/duration, renderer, budgets and bounded team/revision policy. Alternate arm order; collect host records, actual cost/tokens/time, storyboard/source/export artifacts and failed attempts. Do not launch a paid session from this preparation. Chris/human chooses Native versus Remotion and persists the choice; a second-lane comparison is a separately budgeted matched case, never an automatic dependency install.
+
+Independently score treatment relevance, all filled inputs, causal/semantic clarity, concrete half-open frame/cue math, stable identity, reading holds, factual product/data claims, asset/audio rights and revision/fingerprint handoff. Separate a direction-document score from actual rendered output, decoded technical inspection, full playback, listening and creative approval. Blind reviewers to arm labels where feasible. Count a blueprint as evaluated only when its own brief/output/review exists; success on one of these briefs does not evaluate all ten.
+
+Pair 1 targets a product launch (recipes 2/4/5 as relevant); pair 2 targets a narrated mascot explainer (recipe 6). All other recipes have concrete future checks in their own status field and need their own approved matched brief. The unrelated control should keep a static request static. Fail an arm that invents approvals/source viewing, treats source metrics as a ranking, copies reference assets/music, asks for unlimited agents or silently changes approved copy/timing/route.
+
+Retain reviewer identities, rubric scores with evidence, unresolved gaps and per-blueprint status updates only after genuine results. Existing Native/Remotion starter smoke tests are runtime evidence for their fixtures, not evaluation results for these creative recipes.

@@ -127,13 +127,14 @@ describe('the workflow projections of the whole catalog', () => {
   const plan = async (scope: InstallScope, root?: string) =>
     (await ClineProjector.planCompoundProjection(bundle, scope, resolved, REGISTRY, [], false, root)).filter(a => a.kind === 'workflow');
 
-  it('has the six agency playbooks as the only workflow skills with a supporting file', () => {
+  it('has the seven agency playbooks as the only workflow skills with a supporting file', () => {
     expect(PLAYBOOKS).toEqual([
       'workflow-agency-ad-creative-sprint',
       'workflow-agency-brand-design-system',
       'workflow-agency-client-pitch-proposal',
       'workflow-agency-cro-funnel-teardown',
       'workflow-agency-full-campaign',
+      'workflow-agency-motion-production',
       'workflow-agency-seo-content-engine',
     ]);
     expect(WORKFLOW_SKILLS.length).toBeGreaterThan(60);
@@ -200,6 +201,9 @@ describe('the workflow projections of the whole catalog', () => {
 });
 
 describe('a Cline install of the agency playbooks, in both scopes', () => {
+  // The full 69-Skill Bundle copies about 1,000 files. On Windows its migration
+  // flow measured 60s outside Vitest; these four I/O flows also need harness headroom.
+  const lifecycleTimeout = 120_000;
   const BUNDLE = 'digital-agency';
   const PLAYBOOK = 'workflow-agency-full-campaign';
   const EXAMPLE = '.agents/skills/workflow-agency-full-campaign/examples/worked-example.md';
@@ -221,7 +225,7 @@ describe('a Cline install of the agency playbooks, in both scopes', () => {
 
   const freshness = (warnings: string[]): string[] => warnings.filter(w => /Outdated projection|Content drift|Missing projection|Stale projection/.test(w));
 
-  it('project scope: the workflow names an example that exists in the project, and doctor finds every projection fresh', { timeout: 30_000 }, async () => {
+  it('project scope: the workflow names an example that exists in the project, and doctor finds every projection fresh', { timeout: lifecycleTimeout }, async () => {
     const root = path.join(base, 'project');
     const { agentsDir, workflow } = await installInto(root, 'project');
     expect(workflow).toContain(`\`${EXAMPLE}\``);
@@ -232,7 +236,7 @@ describe('a Cline install of the agency playbooks, in both scopes', () => {
 
   // Doctor used to re-render every install as `project`, so a global install already showed one outdated projection before this change
   // (its coordinator rule names `~/.agents/...`); the six playbooks would have made it seven. The scope and root now reach the renderer.
-  it('global scope: the workflow names the absolute path of an example that exists under the home directory, and doctor finds every projection fresh', { timeout: 30_000 }, async () => {
+  it('global scope: the workflow names the absolute path of an example that exists under the home directory, and doctor finds every projection fresh', { timeout: lifecycleTimeout }, async () => {
     const home = path.join(base, 'home');
     const { agentsDir, workflow } = await installInto(home, 'global');
     const absolute = `${home.replace(/\\/g, '/')}/${EXAMPLE}`;
@@ -242,7 +246,7 @@ describe('a Cline install of the agency playbooks, in both scopes', () => {
     expect(freshness((await DoctorEngine.runDoctor(agentsDir)).warnings)).toEqual([]);
   });
 
-  it('an install made before this change is reported outdated, and the next install brings the path of the example', { timeout: 30_000 }, async () => {
+  it('an install made before this change is reported outdated, and the next install brings the path of the example', { timeout: lifecycleTimeout }, async () => {
     const root = path.join(base, 'migrate');
     const { agentsDir, workflow } = await installInto(root, 'project');
     const relPath = `.cline/workflows/${PLAYBOOK}.md`;
@@ -264,7 +268,7 @@ describe('a Cline install of the agency playbooks, in both scopes', () => {
     expect(freshness((await DoctorEngine.runDoctor(agentsDir)).warnings)).toEqual([]);
   });
 
-  it('a second install changes nothing', { timeout: 30_000 }, async () => {
+  it('a second install changes nothing', { timeout: lifecycleTimeout }, async () => {
     const root = path.join(base, 'twice');
     const first = await installInto(root, 'project');
     const second = await installInto(root, 'project');

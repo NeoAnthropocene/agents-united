@@ -54,3 +54,7 @@ graph TD
 | Phase 1 -> Phase 2 | Bundle analysis complete | Bundle size measurement | Main bundle under 150KB gzipped |
 | Phase 2 -> Phase 3 | Performance metrics gathered | Lighthouse / Web Vitals audit | Performance score >= 90 |
 | Phase 3 -> Completion | Accessibility verified | A11y axe-core scan | 0 critical/serious accessibility violations |
+
+## Included media, when present
+
+Audit included motion/audio for playback, applicable captions/transcript, player controls, reduced motion, loading/performance and consent/provenance. With the agency capability installed and media included, route production or timing/copy changes through its Lead and load `workflow-agency-motion-production`; Chris owns agency decisions. Apply accepted inputs, approved timing, production, handoff and review to included assets; Sound-only needs no Motion/video. Other audits keep their Lead; absent capability is a prerequisite to report, never a mandatory load or automatic install. Static/deferred/declined media starts no production, install or provider setup.
