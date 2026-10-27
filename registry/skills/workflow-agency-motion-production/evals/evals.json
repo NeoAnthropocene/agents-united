@@ -1,0 +1,28 @@
+{
+  "skill_name": "workflow-agency-motion-production",
+  "status": "prepared-not-run",
+  "date": "2026-10-25",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Chris has included a 15-second launch film on the product page, with owned logo, approved screenshots and exact Copy. Native versus Remotion and audio route are undecided. Prepare a coordinated scope/map, required decisions, complete saved-preference shape, timing and review handoffs. No installation, upload or paid provider job is authorized.",
+      "expected_output": "Chris consolidates choices; Native recommended and independent Remotion, local/API/hybrid audio and separate footage decision are explicit. Accepted assets/storyboard/scratch/timing approval precede parallel animation/audio, final Sound handoff, integration/render and review. Saved choice is not spend consent.",
+      "comparison": "same brief with and without Skill; structured brief and simple prose brief are paired separately",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "We need a short animated ad using existing design tokens and the approved script. Motion wants to start now, Sound has not tested scratch narration, and the client has not approved timing. What should the agency do next? Keep the existing bounded consultation and role ownership.",
+      "expected_output": "Preserves brand/copy and defers dependent final work until scratch narration and timing approval; produces concrete owners, prerequisites and acceptance evidence. No automatic renderer/provider setup, fabricated approval or lifecycle change.",
+      "comparison": "same brief with and without Skill; structured brief and simple prose brief are paired separately",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "The client declines the proposed launch video and asks for a static PNG ad with the approved headline. Update the agency handoff for the still image only; no motion or audio deliverable is included.",
+      "expected_output": "Records decline, stops the media branch, preserves the static creative/copy workflow and avoids media production, installation or provider calls.",
+      "comparison": "unrelated control; media Skill should not activate",
+      "status": "prepared-not-run"
+    }
+  ]
+}

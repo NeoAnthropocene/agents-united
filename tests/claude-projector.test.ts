@@ -168,7 +168,7 @@ describe('ClaudeProjector.renderRole — frontmatter translation', () => {
   });
 
   it('resolves model: inherit to the role posture and still maps pro/flash tiers', () => {
-    // The catalog declares `model: inherit` on all 59 agents, so `inherit` resolves to the role
+    // The catalog declares `model: inherit` on all 61 agents, so `inherit` resolves to the role
     // posture — specialists sonnet, coordinators opus (ADR 0018 decision 7 as amended 2026-09-22).
     expect(yamlOf(ClaudeProjector.renderRole(SAMPLE, CANONICAL_AGENT_PATH).content).model).toBe('sonnet');
 
@@ -561,7 +561,9 @@ describe('ClaudeProjector.rewriteBody — send_message prose rewrite', () => {
     const plan2 = await ClaudeProjector.planCompoundProjection(da, 'project', minimalResolved(daRoster), registryDir);
     const coord2 = plan2.find(a => a.kind === 'role' && a.relPath.endsWith('/orchestrator-digital-agency.md'));
     const allow2 = allowOf(coord2!.content ?? '');
-    expect(allow2.length).toBe(9);
+    expect(allow2.length).toBe(11);
+    expect(allow2).toContain('motion-designer');
+    expect(allow2).toContain('sound-designer');
 
     // The plugin mirror stays byte-identical to the project projection.
     const pluginPlan = await ClaudeProjector.planPluginLane(se, minimalResolved(seRoster), registryDir);

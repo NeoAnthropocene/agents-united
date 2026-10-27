@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editable native motion composition</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}body{font-family:Arial,sans-serif;background:var(--background);color:var(--foreground)}
+main{position:relative;width:100%;height:100%;padding:7%;display:flex;flex-direction:column;justify-content:center}
+#brand{position:absolute;top:7%;left:7%;font-size:clamp(20px,2.6vw,60px);font-weight:700;letter-spacing:-.04em}
+#eyebrow{font-size:clamp(16px,1.6vw,32px);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(32px,7vw,144px);line-height:1.02;letter-spacing:-.05em;max-width:78%;margin:.35em 0}#detail{font-size:clamp(20px,2.3vw,48px);max-width:65%;line-height:1.4}
+#motif{position:absolute;width:13vw;height:13vw;right:8%;bottom:11%;border:1.2vw solid var(--accent);border-radius:35%}#progress{position:absolute;bottom:6%;left:7%;height:4px;background:var(--accent);transform-origin:left;width:86%}
+</style>
+<main aria-label="Motion graphic"><div id="brand"></div><div id="copy"><div id="eyebrow"></div><h1 id="headline"></h1><div id="detail"></div></div><div id="motif" aria-hidden="true"></div><div id="progress" aria-hidden="true"></div></main>
+<script>
+// Original starter. Replace content.json and the scene treatment with approved assets/copy.
+// No Date.now, timers, autoplay, random values, CSS animation or network fonts.
+window.motion={meta:null,seek:null,ready:null};
+window.motion.ready=Promise.all([fetch('/timeline.json').then(r=>{if(!r.ok)throw Error('Missing timeline');return r.json();}),fetch('/content.json').then(r=>{if(!r.ok)throw Error('Missing approved content');return r.json();})]).then(([timeline,content])=>{
+  const get=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),loop=content.loop===true;
+  document.documentElement.style.setProperty('--background',content.background);
+  document.documentElement.style.setProperty('--foreground',content.foreground);
+  document.documentElement.style.setProperty('--accent',content.accent);
+  get('brand').textContent=content.brand;
+  window.motion.meta={timelineRevision:timeline.revision,fps:timeline.fps,totalFrames:timeline.totalFrames,width:timeline.width,height:timeline.height,loop};
+  window.motion.seek=async(seconds)=>{
+    const raw=Math.round(seconds*timeline.fps),frame=loop?((raw%timeline.totalFrames)+timeline.totalFrames)%timeline.totalFrames:clamp(raw,0,timeline.totalFrames-1);
+    const scene=timeline.scenes.find(s=>frame>=s.startFrame && frame<s.endFrame),copy=content.scenes[scene.id];
+    if(!copy)throw Error('No approved content for scene '+scene.id);
+    for(const id of ['eyebrow','headline','detail'])get(id).textContent=copy[id]??'';
+    const local=(frame-scene.startFrame)/Math.max(1,scene.endFrame-scene.startFrame-1),ease=loop?1:1-Math.pow(1-clamp(local*4,0,1),3);
+    get('copy').style.transform=`translateY(${(1-ease)*36}px)`;
+    get('copy').style.opacity=String(ease);
+    const phase=frame/timeline.totalFrames;
+    get('motif').style.transform=`rotate(${360*phase}deg) scale(${1+.1*Math.sin(phase*Math.PI*2)})`;
+    get('progress').style.transform=`scaleX(${loop?(.5+.5*Math.sin(phase*Math.PI*2)):phase})`;
+  };
+  return window.motion.seek(0);
+});
+</script>
+</html>

@@ -1,0 +1,28 @@
+{
+  "skill_name": "audiovisual-review",
+  "status": "prepared-not-run",
+  "date": "2026-10-25",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The included launch film is 15 seconds at 60fps, with approved exact narration and supplied logo/UI assets. Sound reports -16 LUFS and -1.1 dBTP; the JSON contract passes but nobody has decoded, watched or listened to the actual mux. Prepare a delivery review, owners and evidence requirements without claiming the output passes.",
+      "expected_output": "Separates structural/reported/file-presence evidence from decoded properties, actual master/mux measurement, full visual/listening/sync, caption/accessibility and rights checks. Uses saved destination targets; names owners and unverified acceptance dimensions.",
+      "comparison": "same brief with and without Skill; structured brief and simple prose brief are paired separately",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "Please check a two-second logo greeting. The manifest says r1 but Copy changed Hello world to Hello again in the current timeline. We have only the JSON and SRT; no audio is attached. Explain the next steps and a useful review handoff without pretending you heard it.",
+      "expected_output": "Computes or requests the canonical current fingerprint, rejects stale audio and routes reissue through Motion/Sound/Chris. Metadata-only checks omit file presence claims; no decoded/listening/rights approval is invented.",
+      "comparison": "same brief with and without Skill; structured brief and simple prose brief are paired separately",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "Revise the static homepage headline into three alternatives using this approved positioning. Do not add video, sound or animation; the deliverable is plain text for Copy review.",
+      "expected_output": "Keeps the unrelated control static and routes ordinary copy work without media production, runtime installation, providers or unnecessary audiovisual review.",
+      "comparison": "unrelated control; media Skill should not activate",
+      "status": "prepared-not-run"
+    }
+  ]
+}

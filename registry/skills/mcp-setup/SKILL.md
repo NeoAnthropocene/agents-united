@@ -7,6 +7,7 @@ description: Comprehensive setup, configuration, and hardening runbook for Model
 metadata:
   author: agents-united
   version: 2.0.0
+  license: MIT
   icon: 🔌
 ---
 
@@ -15,8 +16,10 @@ metadata:
 ## Overview & Purpose
 The `mcp-setup` skill provides deterministic instructions, configuration templates, and hardening procedures for installing and managing Model Context Protocol (MCP) servers across all supported AI developer clients and runtime environments.
 
+For opted-in audio or generated footage, open [media setup](references/media-setup.md), then the dated [provider/auth cards](references/media-providers.md). This branch includes a credential-free HTTP template and a bounded Kie/BytePlus API helper; accounts, keys, OAuth and paid jobs remain explicit project choices. Local/supplied media remains available. Read this media branch before applying the general modes below to a media service.
+
 It defines exact configuration patterns for:
-1. **Fully Operational Mode**: Authenticated with API keys/bearer tokens for unlimited cloud access, private repository mutations, and deep crawling.
+1. **Fully Operational Mode**: Authenticated with API keys/bearer tokens for the selected provider capabilities and account limits, authorized private repository mutations, and deep crawling.
 2. **Limited Operational Mode**: Unauthenticated, free-tier, local, or self-hosted configurations operating within public rate limits without external API keys.
 3. **Brainstorming / Native Fallback**: Seamless fallback to native workspace tools (`run_command` with git/curl, `grep_search`, `write_to_file`) when MCP servers are omitted.
 

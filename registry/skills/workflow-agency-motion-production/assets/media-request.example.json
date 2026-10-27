@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "launch-film",
+  "requester": "campaign",
+  "placement": "product page",
+  "audience": "trial users",
+  "purpose": "Show the approved product workflow",
+  "priority": "optional",
+  "assets": ["assets/ui.png"],
+  "copyRefs": ["brief/copy.md"],
+  "brandRefs": ["brief/brand.json"],
+  "durationSeconds": 15,
+  "ratio": "16:9",
+  "format": "mp4",
+  "accessibility": { "captions": true, "transcript": true, "reducedMotion": true },
+  "dependencies": ["approved-copy"],
+  "proposedRoute": { "renderer": "native", "audio": "local", "generatedFootage": false },
+  "costCeilingUsd": 0,
+  "acceptance": ["Readable final CTA held for at least two seconds", "Approved script matches captions"],
+  "decision": "pending"
+}

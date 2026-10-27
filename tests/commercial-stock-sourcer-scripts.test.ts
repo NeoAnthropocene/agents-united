@@ -1,9 +1,8 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const SCRIPT_PATH = path.resolve('registry/skills/commercial-stock-sourcer/scripts/fetch-stock.mjs');
@@ -287,56 +286,24 @@ function runScript(
   });
 }
 
+function assertNativeUnitCase(name: string): void {
+  const run = spawnSync(process.execPath, ['--test', '--test-reporter=tap', '--test-name-pattern', `^${name}$`, 'tests/skill-scripts/stock-sourcer.cases.mjs'], {
+    encoding: 'utf8', windowsHide: true, timeout: 20_000,
+  });
+  const diagnostics = [run.error?.message, run.stdout, run.stderr].filter(Boolean).join('\n');
+  expect(run.status, diagnostics).toBe(0);
+  // Node exits 0 for an empty selector too: require the receipt emitted after the assertions.
+  expect(run.stdout, `Native unit case did not complete: ${name}\n${diagnostics}`).toContain(`# STOCK_UNIT_CASE_PASSED: ${name}\n`);
+}
+
 describe('Tier 1 — Unit: CLI argument parsing & provider routing', () => {
+  it('rejects an empty native test selection even when Node exits successfully', () => {
+    expect(() => assertNativeUnitCase('no such stock unit case')).toThrow(/Native unit case did not complete/);
+  });
+
   it('exports parseCliArgs and resolveProviderChain with clean defaults and validation', async () => {
     expect(fs.existsSync(SCRIPT_PATH)).toBe(true);
-    const mod = (await import(pathToFileURL(SCRIPT_PATH).href)) as {
-      parseCliArgs: (argv: string[]) => {
-        query: string;
-        type: string;
-        orientation: string;
-        limit: number;
-        output: string;
-        provider: string;
-      };
-      resolveProviderChain: (
-        type: string,
-        provider: string,
-        env: Record<string, string | undefined>,
-      ) => string[];
-    };
-
-    const parsed = mod.parseCliArgs(['--query', 'pour over coffee']);
-    expect(parsed).toEqual({
-      query: 'pour over coffee',
-      type: 'photo',
-      orientation: 'landscape',
-      limit: 3,
-      output: './assets/stock-candidates',
-      provider: 'auto',
-    });
-
-    expect(mod.resolveProviderChain('photo', 'auto', { PEXELS_API_KEY: 'px', PIXABAY_API_KEY: 'pb' })).toEqual([
-      'pexels',
-      'pixabay',
-      'openverse',
-    ]);
-    expect(
-      mod.resolveProviderChain('photo', 'auto', {
-        UNSPLASH_ACCESS_KEY: 'un',
-        PEXELS_API_KEY: 'px',
-        PIXABAY_API_KEY: 'pb',
-      }),
-    ).toEqual(['unsplash', 'pexels', 'pixabay', 'openverse']);
-    expect(mod.resolveProviderChain('photo', 'unsplash', { UNSPLASH_ACCESS_KEY: 'un' })).toEqual(['unsplash']);
-    expect(mod.resolveProviderChain('photo', 'auto', {})).toEqual(['openverse']);
-    expect(mod.resolveProviderChain('vector', 'auto', { PIXABAY_API_KEY: 'pb' })).toEqual(['pixabay', 'openverse']);
-    expect(mod.resolveProviderChain('illustration', 'auto', {})).toEqual(['openverse']);
-    expect(mod.resolveProviderChain('video', 'auto', { PEXELS_API_KEY: 'px', PIXABAY_API_KEY: 'pb' })).toEqual([
-      'pexels',
-      'pixabay',
-    ]);
-    expect(mod.resolveProviderChain('video', 'auto', {})).toEqual([]);
+    assertNativeUnitCase('argument parsing and provider routing');
   });
 
   it('exits 1 with an actionable error when --query is missing or --type is invalid', async () => {
@@ -350,79 +317,7 @@ describe('Tier 1 — Unit: CLI argument parsing & provider routing', () => {
   });
 
   it('deduplicates bulk shoots by creator and 4-word title prefix and scores CC0 landscape candidates above raw camera dumps', async () => {
-    const mod = (await import(pathToFileURL(SCRIPT_PATH).href)) as {
-      normalizeShootTitle: (t: string) => string;
-      dedupeByCreator: <T>(
-        items: T[],
-        limit: number,
-        getCreator: (item: T) => string,
-        options?: { getTitle?: (item: T) => string; allowBackfill?: boolean },
-      ) => T[];
-      matchesOrientation: (w: number, h: number, orientation: string) => boolean;
-      scoreCandidate: (
-        cand: {
-          license: string;
-          width: number;
-          height: number;
-          origWidth?: number;
-          title: string;
-          creatorUrl?: string;
-        },
-        opts: { type: string; orientation: string },
-      ) => number;
-    };
-
-    expect(
-      mod.normalizeShootTitle('File:2025-07-05 Pour over coffee shot on Project Indigo camera app 1.jpg'),
-    ).toBe('pour over coffee shot');
-
-    const rolandShoot = [
-      { creator: 'roland', title: '2025-07-05 Pour over coffee shot on Project Indigo camera app 1' },
-      { creator: 'roland', title: '2025-07-05 Pour over coffee shot on Project Indigo camera app 2' },
-      { creator: 'roland', title: '2025-07-05 Pour over coffee shot on Project Indigo camera app 3' },
-    ];
-    const dedupedStrict = mod.dedupeByCreator(rolandShoot, 3, x => x.creator, {
-      getTitle: x => x.title,
-      allowBackfill: false,
-    });
-    expect(dedupedStrict).toHaveLength(1);
-
-    expect(mod.matchesOrientation(3849, 2561, 'landscape')).toBe(true);
-    expect(mod.matchesOrientation(2561, 3849, 'landscape')).toBe(false);
-
-    const cc0Hero = mod.scoreCandidate(
-      {
-        license: 'CC0 / Public Domain (Commercial Safe)',
-        width: 3849,
-        height: 2561,
-        origWidth: 3849,
-        title: 'File:Manual drip (pour-over) coffee.jpg',
-        creatorUrl: 'https://unsplash.com/@kimsanso',
-      },
-      { type: 'photo', orientation: 'landscape' },
-    );
-    const cameraDump = mod.scoreCandidate(
-      {
-        license: 'CC BY 2.0 (Commercial Safe — Attribution Required)',
-        width: 3000,
-        height: 4000,
-        origWidth: 3000,
-        title: '2025-07-05 Pour over coffee shot on Project Indigo camera app',
-      },
-      { type: 'photo', orientation: 'landscape' },
-    );
-    const retailPackaging = mod.scoreCandidate(
-      {
-        license: 'CC0 / Public Domain (Commercial Safe)',
-        width: 4000,
-        height: 3000,
-        origWidth: 4000,
-        title: 'File:Cafex anında hazır filtre kahve - drip filter coffee instant product 01.jpg',
-      },
-      { type: 'photo', orientation: 'landscape' },
-    );
-    expect(cc0Hero).toBeGreaterThan(cameraDump + 100);
-    expect(cc0Hero).toBeGreaterThan(retailPackaging + 40);
+    assertNativeUnitCase('shoot deduplication, orientation and candidate scoring');
   });
 
   it('promotes the winning candidate via --promote --to and deletes the stock-candidates folder cleanly', async () => {

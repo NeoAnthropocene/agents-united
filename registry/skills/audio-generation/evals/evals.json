@@ -1,0 +1,28 @@
+{
+  "skill_name": "audio-generation",
+  "status": "prepared-not-run",
+  "draftDate": "2026-10-24",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Chris approved local audio for a 12-second 60fps product film. Supplied VO and music have controlled release/licence references. A 12-frame completion effect is needed; no model installation, account connection or external upload is authorized. Explain and prepare the source production/selection hand-off. The VO recording has not yet been inspected. Do not claim a generated or listened result.",
+      "expected_output": "Preserves supplied originals/hashes and exact approved text; requests actual source inspection/listening/phrase marks. Uses deterministic technical synthesis only for the effect, 9600 stereo48k sample frames from 12/60 seconds, through an installed absolute Skill root. Records spec/seed/rights, new-output behavior and selection status. Sends originals/edits/cue revision/fingerprint/transcript/provenance to finishing without claiming narration/music quality or cloud access.",
+      "comparison": "Same brief with and without Skill; hold model/host/assets/route/budget constant and retain source plans and independent reviewer findings.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "Chris is choosing a local or hybrid route for a multilingual narrated ad. Someone proposes Kokoro for every language and voice cloning, and Stable Audio Small on Windows because the repository is MIT. No model has been installed, language coverage/hardware/storage have not been checked and external uploads are not approved. Give a concrete preflight and alternative without installing or calling anything.",
+      "expected_output": "Separates code MIT from Stable Audio model Community terms; identifies CPU Windows documentation as a lead, not local execution proof. Kokoro Apache weights and limited covered language/voice set do not imply all-language or general user-voice cloning. Checks exact release/licence/hardware/storage/runtime/language/consent through Chris before project-local install; proposes supplied/new authorized recording and no silent cloud fallback. Inference/listening/host availability remain unverified.",
+      "comparison": "Matched with-Skill/without-Skill pair with identical constraints and dated source material; score decision accuracy, scope and evidence honesty.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "Sort these three product names alphabetically: Willow, Cedar, Birch. Return the sorted names only; no media task is included.",
+      "expected_output": "Returns Birch, Cedar, Willow without audio production, generation, providers, timeline or installation.",
+      "comparison": "Unrelated control; inspect unnecessary triggering.",
+      "status": "prepared-not-run"
+    }
+  ]
+}

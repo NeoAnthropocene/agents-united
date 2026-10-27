@@ -1,6 +1,6 @@
 ---
 name: workflow-agency-ad-creative-sprint
-description: "Use when a request asks for new ads for a launch or a test of angles; trigger phrases: new ads for the launch, test three angles, run a creative sprint, ad variants for these placements, who reviews the ad claims. Produces the single message, a variant matrix, copy per variant, design specs per ratio, the set-up sheet with names and UTM tags, Defne's claims and disclosure review and Emre's link check. Skip it for brand identity (use workflow-agency-brand-design-system) and a full engagement (use workflow-agency-full-campaign); nothing here buys media or publishes an ad."
+description: "Use when a request asks for launch ads or angle tests; trigger phrases: new ads for the launch, test three angles, run a creative sprint, ad variants for these placements. Produces one message, a variant matrix, copy, ratio specs, tagged set-up sheet and QA/compliance reviews. Skip for brand identity (workflow-agency-brand-design-system) or a full engagement (workflow-agency-full-campaign). Nothing here buys or publishes ads."
 metadata:
   author: agents-united
   version: 3.0.0
@@ -11,7 +11,7 @@ metadata:
 # Workflow: Agency Ad Creative Sprint
 
 ## Overview & Purpose
-A creative sprint produces a tested set of ads in days: one message, three to six variants that differ on purpose, every claim reviewed, every link tagged. One cycle, with a client decision at the start and a measured result at the end; Chris slices it among Ava, Kaan, Jamileh, Jale, Defne and Emre.
+Chris coordinates Ava, Kaan, Jamileh, Jale, Defne and Emre for one message, three to six deliberate variants, reviewed claims and tagged links. The cycle starts with client acceptance and ends with a measured result.
 
 ## Execution Triggers
 Load it for "new ads for the launch" or "test three angles". Do not load it for brand identity (`workflow-agency-brand-design-system`) or a full engagement (`workflow-agency-full-campaign`). Nothing here buys media or publishes an ad: the client or the lead does that with their own account.
@@ -24,20 +24,21 @@ Output: the creative brief with the single message; the variant matrix; copy per
 ## Step-by-Step Runbook
 ```mermaid
 graph TD
-    B([Accepted brief]) --> P0[Phase 0: message and variant matrix]
-    P0 --> G0{Client accepts the map?}
-    G0 -->|Yes| P1[Phase 1: Kaan copy and Jamileh design in parallel]
+    B[Accepted brief] --> P0[Phase 0: message and matrix]
+    P0 --> G0{Client accepts map?}
+    G0 -->|No| P0
+    G0 -->|Yes| P1[Phase 1: Kaan copy and Jamileh design]
     P1 --> P2[Phase 2: Jale set-up sheet]
     P2 --> P3[Phase 3: Defne review and Emre checks]
     P3 --> G1{Claims cleared and links verified?}
     G1 -->|No| P1
-    G1 -->|Yes| Done([Hand to the client to launch])
+    G1 -->|Yes| D[Client launches and reads result]
 ```
 
-1. **Phase 0.** Ava states the audience, the single message and the metric (cost per qualified signup, not clicks); the lead presents the Delegation map. Variants change one dimension, the angle (outcome, proof, objection) or the format, never both at once.
-2. **Phase 1.** Kaan writes copy per variant, one claim each, with a source list; Jamileh designs per placement (sizes verified against the platform) with Kaan's headline as a fixed input.
-3. **Phase 2.** Jale writes the set-up sheet: ad names equal to `utm_content`, UTM tags on every link, the audiences and exclusions the client set. Jale creates no accounts or campaigns.
-4. **Phase 3.** Defne reviews claims, comparisons, "free" and price statements, endorsements and sponsored-placement disclosure; Emre checks that each link lands on the right page, tracking fires and the landing page matches the ad's promise.
+1. **Phase 0: message and map.** Ava states audience, single message and metric (cost per qualified signup, not clicks); Chris presents the Delegation map. Variants change angle (outcome, proof, objection) or format, never both.
+2. **Phase 1: copy and design.** Kaan writes one sourced claim per variant; Jamileh designs per placement (platform sizes verified), keeping Kaan's headline fixed.
+3. **Phase 2: set-up sheet.** Jale records ad names equal to `utm_content`, tagged links, client audiences and exclusions. Jale creates no accounts or campaigns.
+4. **Phase 3: review.** Defne reviews claims, comparisons, "free", prices, endorsements and sponsored disclosure; Emre verifies destinations, tracking and the landing page's agreement with the ad promise.
 5. **Hand to the client** to set up and launch; Ava defines the stop rule and the day the result is read.
 
 | Transition | Prerequisites | Gate (evidence) | Success criteria |
@@ -48,6 +49,8 @@ graph TD
 | Phase 3 -> Hand-off | Defne cleared and Emre green | Both reports read in full | No unsupported claim; links verified |
 
 Rollback protocol: if Defne rejects a claim, the variant is withdrawn or rewritten (Kaan, then Jamileh), the sheet is renamed v2 and Phase 3 re-runs on the changed assets only; if the landing page does not match the promise, Kaan revises the page copy, not the ad.
+
+**Optional media.** Chris records Media Requests and include/defer/decline during bounded consultation. If installed and included, load `workflow-agency-motion-production` under this Lead: approved brand/copy/assets, timing approval, production, Sound handoff, applicable render and review. Sound-only needs no Motion/video; static/defer/decline starts no production, install or provider.
 
 ## Code & Config Exemplars
 Load [examples/worked-example.md](examples/worked-example.md) for a three-angle sprint: the variants, names, stop rule and read-out. The playbook above works without it.

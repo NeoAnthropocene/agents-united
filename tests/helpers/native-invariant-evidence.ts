@@ -20,6 +20,8 @@ const COMMS = {
 
 /** Default evidence per invariant text, shared by every role whose core states it. */
 export const EVIDENCE: Record<string, RegExp> = {
+  'Approved brand, copy and timing remain fixed until the lead approves a revision.': /Keep approved brand, copy and timing fixed until the lead approves a revision/,
+  'An audio handoff must match the current timeline revision and canonical fingerprint before integration.': /require both the current timeline revision and canonical timeline fingerprint to match before integrating audio/,
   // ── The comms law (Plan 022), as bound by a Tier-2 teammate (and `frontend-architect`, which shares its wording) and by a Tier-1 specialist.
   [COMMS.handBack]: /A hand-off goes back to the agent that spawned you|Your final report is your one hand-?back/,
   [COMMS.boundedExchange]: /only when a peer'?s answer is genuinely required|if a peer'?s answer is genuinely needed, ask for it in your handoff/,

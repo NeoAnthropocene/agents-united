@@ -242,7 +242,7 @@ _Avoid_: The stateless generic fanout lane, Antigravity-dialect copies left in `
 
 **Claude Skills Lane**:
 The `.claude/skills/<name>/SKILL.md` surface through which canonical skills (including `workflow-*` skills) become native Claude slash commands. Frontmatter is translated to Claude semantics — crucially `disable-slash-command: true` becomes **`user-invocable: false`** (hidden from the `/` palette, still model-invocable) and **never** `disable-model-invocation`, whose polarity is inverted. Non-standard fields are stripped, auxiliary files copy byte-for-byte, and only installed-bundle skills project (listings cap each skill at 1,536 description characters).
-_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting all 194 skills regardless of installed bundles
+_Avoid_: Treating `disable-model-invocation` as the inverse of `disable-slash-command`, projecting the entire Skill catalog regardless of installed bundles
 
 **Claude Lean Rules Lane**:
 The `.claude/rules/<rule>.md` projection of the deduplicated, agent-referenced rule set only — each file capped at ~200 lines, with `paths:` frontmatter where a rule is file-type-scoped. Host entrypoint rules are skipped, and bundle coordination policy lives in the orchestrator agent body rather than in an always-on rule, because Claude loads unscoped rules unconditionally in every session.
@@ -486,13 +486,30 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Aggregates all 7 Lead Orchestrators + 38 Sub-Agents (45 agents total), and all 194 modular skills (125 domain skills + 69 workflow playbooks).
+   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 204 end-user Skills (134 domain + 70 workflow playbooks); the contributor-only `author-skill` is excluded. The physical registry totals 61 agents and 205 Skills.
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
-   - `digital-agency` (Cross-Functional Composite): `subagent-marketing-growth-strategist.md`, `subagent-marketing-campaign-specialist.md`, `subagent-marketing-content-strategist.md`, `subagent-marketing-creative-designer.md`, `subagent-marketing-conversion-specialist.md`, `subagent-seo-specialist.md`, `subagent-frontend-architect.md`, `subagent-qa-automation-lead.md`, `subagent-compliance-grc-specialist.md`
+   - `digital-agency` (Cross-Functional Composite): `subagent-marketing-growth-strategist.md`, `subagent-marketing-campaign-specialist.md`, `subagent-marketing-content-strategist.md`, `subagent-marketing-creative-designer.md`, `subagent-marketing-conversion-specialist.md`, `subagent-seo-specialist.md`, `subagent-frontend-architect.md`, `subagent-qa-automation-lead.md`, `subagent-compliance-grc-specialist.md`, `subagent-motion-designer.md`, `subagent-sound-designer.md` (eleven specialists plus Chris).
 
 ---
+
+### Agency Media (ADR 0056)
+
+**Media Request**:
+A specialist's structured proposal for motion or sound in an agency brief: placement, audience, purpose, priority, assets/copy/brand references, duration/ratio/format, accessibility, dependencies, proposed routes, cost ceiling and acceptance. Chris consolidates human questions and records include/defer/decline within the existing bounded consultation. Static/deferred/declined work triggers no production. Sound-only requests use WAV and a null renderer.
+
+**Media Project Preferences**:
+The complete nonsecret `media/project.json`: renderer, local/API/hybrid audio route, separate external-footage opt-in, selected provider/model/modality/route, output and per-job USD ceiling. The helper validates strictly and never overwrites an existing record. Defaults are 1920×1080/60fps H264/AAC, stereo48k, -16 LUFS +/-1 and <=-1 dBTP. For Sound-only work, required video fields are unused defaults. Preferences neither authorize setup nor prove actual tools/auth/billing or consent to spend.
+
+**Shared Media Timeline / Canonical Fingerprint**:
+The common integer-fps frame/cue contract consumed by both renderers and audio finishing. Ranges are half-open. A computed fingerprint covers revision, fps, canvas, scene/cue IDs and bounds, and speech text. Changed timing/copy invalidates dependent Sound handoffs; a revision label alone cannot establish currency. Motion owns coordinated film timing; Sound owns Lead-approved cue/timing records for standalone audio when shared validation needs them.
+
+**Final Sound Handoff**:
+Sound's exact current revision/fingerprint, stereo48k WAV master, full-duration aligned pre-master stems, cue sheet/manifest, applicable transcript/captions, source/provenance and measurement/listening evidence. Stems retain gain and are aligned at zero; a nonlinear master need not equal their sum. Motion validates/integrates included film audio; Sound-only audio goes through applicable review directly to Chris.
+
+**Media Ownership and Review Evidence**:
+Motion owns storyboard/animation/integration; Sound owns sonic direction/sources/final audio. Creative/Brand and Copy retain approved assets/exact words; QA checks technical/playback/accessibility evidence; Compliance checks claims/consent/rights; Chris resolves scope and human decisions. Structural/file-presence checks, reported measurements, actual decoded/master/mux measurements, full viewing/listening and provenance approval are distinct states. Mark missing required evidence **unverified** and irrelevant dimensions not applicable with a reason. A JSON pass, installed catalog entry or synthetic signal is not creative approval or live Host proof.
 
 ### Alignment & Domain Skills
 
@@ -544,7 +561,7 @@ A deterministic test verification hierarchy:
 - **Tier 1 (Feature Coverage)**: Happy path validation of exported functions, interfaces, frontmatter schemas, and expected return types.
 - **Tier 2 (Boundary & Corner Cases)**: Negative testing covering empty inputs, malformed files, invalid enums, and graceful error handling.
 - **Tier 3 (Cross-Feature Pairwise)**: Interoperability testing between Registry, Installer, Adapters, Lockfile Engine, and CLI.
-- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over all 26 bundles, 59 agents, and 194 skills.
+- **Tier 4 (Full Real-World Scenarios)**: End-to-end catalog audits over the current manifest (36 bundle entries, 61 agents and 205 Skills as of 2026-10-25); a count is not a passing audit.
 
 **Deterministic Verification**:
 Testing practices that eliminate arbitrary timeouts (`setTimeout`) in favor of auto-waiting assertions, isolated test workspaces, predictable mock factories, and clean teardowns.

@@ -104,10 +104,12 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
 
   // Tier 1: Feature Coverage (Happy Path)
   describe('Tier 1: Feature Coverage (Prompt & Hooks Evaluation)', () => {
-    it('should validate system prompt line count and structure for all 59 agent files', async () => {
+    it('should validate system prompt line count and structure for all 61 agent files', async () => {
       const files = await fs.readdir(agentsDir);
       const agentFiles = files.filter(f => f.endsWith('.md'));
-      expect(agentFiles.length).toBe(59);
+      expect(agentFiles.length).toBe(61);
+      expect(agentFiles).toContain('subagent-motion-designer.md');
+      expect(agentFiles).toContain('subagent-sound-designer.md');
 
       for (const file of agentFiles) {
         const filePath = path.join(agentsDir, file);
@@ -473,7 +475,7 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
 
   // Tier 4: Real-World Inventory Audit
   describe('Tier 4: Real-World Inventory Audit', () => {
-    it('should perform comprehensive prompt and lifecycle hooks audit across all 46 agents', async () => {
+    it('should perform comprehensive prompt and lifecycle hooks audit across all 61 agents', async () => {
       const files = await fs.readdir(agentsDir);
       const agentFiles = files.filter(f => f.endsWith('.md'));
 
@@ -496,9 +498,9 @@ describe('E2E Agent Prompt & Lifecycle Hooks Validation (Tier 1-4)', () => {
         if (result.hooksFound.length > 0) report.withLifecycleHooksCount++;
       }
 
-      expect(report.totalAgents).toBe(59);
+      expect(report.totalAgents).toBe(61);
       expect(report.orchestratorsCount).toBe(9);
-      expect(report.subagentsCount).toBe(50);
+      expect(report.subagentsCount).toBe(52);
       expect(report.expandedPromptsCount).toBeGreaterThan(0);
     });
   });

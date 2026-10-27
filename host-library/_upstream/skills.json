@@ -63,6 +63,21 @@
       "recoveredAt": "2026-09-30",
       "skill": "architecture-design"
     },
+    "audio-generation": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "audio-generation"
+    },
+    "audio-post-production": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "audio-post-production"
+    },
+    "audiovisual-review": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "audiovisual-review"
+    },
     "author-skill": {
       "declaredLicence": "MIT",
       "provenance": "in-house",
@@ -933,6 +948,11 @@
         "https://github.com/ChromeDevTools/chrome-devtools-mcp"
       ]
     },
+    "motion-design-direction": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "motion-design-direction"
+    },
     "mutation-testing": {
       "audit": {
         "findings": [
@@ -962,6 +982,11 @@
       ],
       "snapshot": true,
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/mutation-testing"
+    },
+    "native-motion-production": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "native-motion-production"
     },
     "onboarding-cro": {
       "provenance": "in-house",
@@ -1140,6 +1165,11 @@
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
       "skill": "receiving-code-review"
+    },
+    "remotion-production": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "remotion-production"
     },
     "replicate-model-inference": {
       "declaredLicence": "MIT",
@@ -1355,6 +1385,11 @@
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
       "skill": "social-media-campaign"
+    },
+    "sound-design-direction": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "sound-design-direction"
     },
     "state-driven-ui-animation": {
       "provenance": "in-house",
@@ -1747,6 +1782,11 @@
       "recoveredAt": "2026-09-30",
       "skill": "vercel-deploy-best-practices"
     },
+    "video-generation": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "video-generation"
+    },
     "viral-referral-loops": {
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
@@ -1786,6 +1826,11 @@
       "recoveredAt": "2026-09-30",
       "skill": "workflow-agency-full-campaign",
       "source": "https://github.com/NeoAnthropocene/agents-united"
+    },
+    "workflow-agency-motion-production": {
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-25",
+      "skill": "workflow-agency-motion-production"
     },
     "workflow-agency-seo-content-engine": {
       "declaredLicence": "MIT",

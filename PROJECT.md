@@ -193,7 +193,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organization Orchestrators + 50 Sub-Agents), and **196 modular skills & runbooks** (127 domain skills + 69 workflow playbooks) structured into **36 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles, 2 organization bundles and the under-construction `agent-factory` contributor authoring toolkit). The README counts **34 end-user bundles**, excluding the contributor toolkit and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. Counts derive from the current registry:
+The ecosystem catalog maintains **61 specialized agents** (9 Lead/Prime/Organization Orchestrators + 52 Sub-Agents), and **205 modular skills & runbooks** (135 domain skills + 70 workflow playbooks) structured into **36 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles, 2 organization bundles and the under-construction `agent-factory` contributor authoring toolkit). The README counts **34 end-user bundles**, excluding the contributor toolkit and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. Counts derive from the current registry:
 
 ```
 🌐 Agents United Registry Catalog Tree
@@ -270,7 +270,7 @@ The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organiza
 ├── 🏢  Organization Bundles (Cross-Functional) (1 bundle)
 │   └── 📦 digital-agency ⚡ [Tri-Tier Execution Framework] [Planning Dialogue Loop (ADR 0014)]
 │       ├── 🤖 Lead: orchestrator-digital-agency (Campaign Director / Chris)
-│       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Kaan), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), seo-specialist, frontend-architect, qa-automation-lead, compliance-grc-specialist
+│       ├── 🤖 Sub-agents: growth-strategist (Ava), conversion-specialist (Kaan), content-strategist (Yavuz), creative-designer (Jamileh), campaign-specialist (Jale), seo-specialist, frontend-architect, qa-automation-lead, compliance-grc-specialist, motion-designer, sound-designer
 │       ├── 🔌 Prerequisites: github (MCP), firecrawl (MCP), context7 (MCP), playwright (MCP), markitdown (MCP), chrome-devtools (MCP), stitch (MCP), figma (MCP)
 │       ├── 💡 Execution Tiers: Fully Operational (API Keys) / Limited Operational (Free/Public MCP) / Brainstorming (Native Fallback)
 │       └── 🔁 Planning Dialogue Loop: grill → sidekicks (≤2) → Specialist Council → Delegation Map (Budget: 2 rounds / 2 peer exchanges per pair / 150 words / maxIterations 8)
@@ -279,7 +279,7 @@ The ecosystem catalog maintains **59 specialized agents** (9 Lead/Prime/Organiza
 │       ├── 🤖 Lead: orchestrator-universal (Domain Atlas Dispatcher)
 │       └── ⚡ Skills: grill-me, grill-with-docs, domain-modeling, to-spec, to-tickets, handoff
 └── 🌟  Complete Suite
-    └── 📦 full (Universal Suite — all 58 agents, 91 skills, 69 workflows)
+    └── 📦 full (Universal Suite — 59 listed agents, 204 end-user Skills: 134 domain + 70 workflows)
 ```
 
 ---
@@ -511,6 +511,18 @@ export interface PlanningLoopConfig {
   - `PlannerOrchestratorGatekeeper`: Asserts `solo_planning` (no pre-map spawns), `planning_aid_boundary_respected` (no pre-map write/edit tools), `delegation_map_before_execution`, and `execution_delegation_first`.
 
 ---
+
+### 7.5 Agency media contracts (ADR 0056)
+
+The `digital-agency` and `full` Bundles declare nine original media Skills; other Bundles do not inherit them. This approved placement keeps commonly coordinated direction, local production, audio finishing and review together while every optional runtime/provider remains scoped and separately authorized. The registry holds 61 agents and 205 Skills; `full` lists 59 agents and 204 end-user Skills, excluding `author-skill`. Native Claude source has 17 agents: five engineering roles and Chris plus eleven agency specialists. These are physical source counts, not evidence of live loading.
+
+A **Media Request** records placement, audience, purpose, required/optional priority, approved assets/copy/brand references, duration/ratio/format, accessibility, dependencies, proposed renderer/audio/footage routes, cost ceiling, acceptance and include/defer/decline. Chris consolidates decisions within the existing consultation budget. Included motion follows accepted inputs → storyboard/scratch audio → timing approval → parallel animation/audio → final Sound handoff → integration/render → review. Sound-only WAV work uses Sound-owned cue/timing needs and applicable post-production/review directly to Chris, without a Motion assignment or video export.
+
+Native HTML/SVG/canvas is the recommended direct route; Remotion React is independently usable. Neither depends on the other. Runtime dependencies stay in the selected project. Audio supports supplied/recorded, local/API/hybrid choices; generated footage is a separate opt-in. The complete nonsecret `media/project.json` persists renderer, audio route, footage opt-in, provider/model/modality/route, output and per-job USD ceiling. Its strict helper preserves existing files. Defaults are 1920×1080/60fps H264/AAC, stereo48k, -16 LUFS +/-1 and true peak <=-1 dBTP. Sound-only work retains schema-required video defaults as unused preferences; no installation or video work follows from them. Choices and ceilings never authorize uploads, setup or spend.
+
+The **Shared Media Timeline** uses integer fps and half-open frame ranges. Its computed canonical fingerprint covers revision, fps, canvas, scenes, cue identity/bounds and speech. A change invalidates dependent audio even when the revision label is unchanged. The **Final Sound Handoff** has the exact revision/fingerprint, stereo48k WAV master, full-duration aligned pre-master cue stems, cue sheet/manifest, applicable captions/transcript, source/provenance and actual measurement/listening evidence. Preserve gain and zero alignment; nonlinear master processing need not equal the stem sum. Sound owns audio; Motion owns coordinated timing/integration; Brand/Copy retain assets/exact words; QA measures and reviews playback/accessibility; Compliance reviews claims/rights; Chris resolves decisions.
+
+Helpers import the installed sibling `audiovisual-review` resources and require the source-relative layout. Maintainer `evals/` is excluded from installation. A nonagency frontend audit consults media only for included assets when that capability is available, through its own Lead. Structural acceptance, file confinement/presence, reported numbers, actual decoded/master/mux measurements, full viewing/listening and rights approval remain distinct. Authored/static and bounded local technical proofs do not establish live Host behavior, provider capability/auth/billing or creative approval; those checks are **unverified** until actually performed. See [the media workflow](registry/skills/workflow-agency-motion-production/SKILL.md) for resources and [Plan 037](plans/037-agency-motion-sound.md) for dated evidence.
 
 ## 8. CLI Commands & Lifecycle Guide
 

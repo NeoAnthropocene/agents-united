@@ -25,7 +25,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 /** Every committed native Claude role: those five and the Tier-2 digital-agency lead and its eight agency-only teammates (ADR 0036, ADR 0039). */
 const COMMITTED_NATIVE_ROLES = [
   'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
-  'agency-frontend-architect', 'agency-growth-strategist', 'agency-qa-automation-lead', 'agency-seo-specialist', 'backend-architect', 'code-reviewer',
+  'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer',
   'frontend-architect', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
 ];
 const COORDINATORS = ['orchestrator-engineering'];

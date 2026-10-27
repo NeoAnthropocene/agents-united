@@ -1,0 +1,41 @@
+{
+  "skill_name": "motion-design-direction",
+  "status": "prepared-not-run",
+  "draftDate": "2026-10-24",
+  "researchSnapshotDate": "2026-10-22",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Chris has included a 15-second, 1920x1080 60fps launch film for an approvals app. The client supplies an owned logo, three actual anonymized screenshots and approved copy: Reviews in one place / See what needs you / Keep decisions together / Meet Harbor. Sound can produce local music but has not proposed a track. Native versus Remotion is open; no installation, external footage or paid generation is authorized. Prepare a parameterized storyboard, concrete frame/cue handoff and review plan. Identify missing human decisions through Chris and keep the final claim evidence honest.",
+      "expected_output": "Chooses and explains a suitable original product/real-asset launch treatment, fills parameters, preserves actual screenshots/copy and rights gaps, routes missing questions and Native-recommended versus Remotion choice through Chris and persists the confirmed choice. Uses 900 total frames, contiguous half-open scenes, readable holds and Sound-confirmed music marks, current revision/fingerprint/master/caption contract, concrete chosen-lane application and separate creative/technical/listening evidence. No assets, entitlement, source playback or approvals are invented; no provider/setup is launched.",
+      "comparison": "same approved brief with and without Skill; collect direction artifacts before separately authorized rendering",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "Chris has included a 30-second 60fps support-portal explainer with an original client-owned paper-bird mascot, approved model sheet and exact script: Requests arrive from everywhere. Put them in one shared inbox. Give each request an owner. Keep the next step visible. Meet Nest, and make room for clearer work. Sound has no final narration performance yet. Prepare direction for the selected Native lane, frame and cue reservations, an honest narration/caption handoff, concrete equivalent Remotion guidance for planning and a bounded revision/review plan. No voice cloning, provider call or dependency installation is authorized.",
+      "expected_output": "Uses recipe 6 parameters and model-sheet constraints, 1800-frame provisional contiguous structure, restrained explicit gestures and caption-safe framing. Marks narration timing provisional, routes duration/performance approval through Chris, obtains actual Sound performance/word marks before freeze, and requires new revision/fingerprint for timing or text changes. Gives deterministic seek/frame and React local-frame application, measured stereo48k master/stems/cues/provenance and speech captions, with actual listening/creative quality unverified. Rejects unapproved character/voice imitation and unlimited revisions; does not claim the unrendered blueprint is proven.",
+      "comparison": "same approved brief with and without Skill; hold host/model/assets/timebase/route/budget constant",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "Rewrite the static homepage paragraph for a small stationery shop using the supplied approved brand voice. The page will contain a single supplied still photograph and no requested video, animation, narration, music or audio. Return concise copy and state any missing product facts. Do not expand the production scope.",
+      "expected_output": "Keeps the task static and returns copy with factual gaps routed to the Lead. Does not invoke a motion recipe, create a timeline, install a renderer, propose compulsory audio/video, connect a provider or claim a media deliverable is required.",
+      "comparison": "unrelated control; Skill should not expand static scope",
+      "status": "prepared-not-run"
+    }
+  ],
+  "blueprintStatuses": [
+    { "id": 1, "file": "references/blueprints-01-03.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 2, "file": "references/blueprints-01-03.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 3, "file": "references/blueprints-01-03.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 4, "file": "references/blueprints-04-06.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 5, "file": "references/blueprints-04-06.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 6, "file": "references/blueprints-04-06.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 7, "file": "references/blueprints-07-08.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 8, "file": "references/blueprints-07-08.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 9, "file": "references/blueprints-09-10.md", "status": "prepared-not-run", "independentMediaReview": false },
+    { "id": 10, "file": "references/blueprints-09-10.md", "status": "prepared-not-run", "independentMediaReview": false }
+  ]
+}

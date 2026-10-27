@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "renderer": "native",
+  "audioRoute": "hybrid",
+  "generatedFootage": false,
+  "providers": [{ "provider": "kie", "model": "elevenlabs/text-to-speech-multilingual-v2", "modality": "audio", "route": "api" }],
+  "output": {
+    "fps": 60, "width": 1920, "height": 1080,
+    "videoCodec": "h264", "audioCodec": "aac", "audioSampleRate": 48000, "audioChannels": 2,
+    "loudness": { "integratedLufs": -16, "toleranceLu": 1, "truePeakDbtp": -1 }
+  },
+  "spend": { "currency": "USD", "ceilingUsd": 5, "approval": "per-job" }
+}

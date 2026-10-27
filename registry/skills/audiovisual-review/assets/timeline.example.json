@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "revision": "r1",
+  "fps": 60,
+  "totalFrames": 120,
+  "width": 1920,
+  "height": 1080,
+  "scenes": [
+    { "id": "intro", "startFrame": 0, "endFrame": 60 },
+    { "id": "logo", "startFrame": 60, "endFrame": 120 }
+  ],
+  "cues": [{ "id": "voice", "startFrame": 0, "endFrame": 60, "kind": "vo", "text": "Hello world." }]
+}

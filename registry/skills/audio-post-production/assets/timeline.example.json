@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "revision": "nest-audio-r1",
+  "fps": 60,
+  "totalFrames": 720,
+  "width": 1920,
+  "height": 1080,
+  "scenes": [
+    { "id": "requests-scene", "startFrame": 0, "endFrame": 240 },
+    { "id": "owner-scene", "startFrame": 240, "endFrame": 480 },
+    { "id": "brand-scene", "startFrame": 480, "endFrame": 720 }
+  ],
+  "cues": [
+    { "id": "bed", "kind": "music", "startFrame": 0, "endFrame": 720 },
+    { "id": "narration", "kind": "vo", "startFrame": 24, "endFrame": 660, "text": "Requests arrive from everywhere. Give each one a clear owner. Meet Nest." },
+    { "id": "confirm", "kind": "sfx", "startFrame": 450, "endFrame": 474 }
+  ]
+}

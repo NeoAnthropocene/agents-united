@@ -52,7 +52,7 @@ describe('Ownership refcount — unbundled installs, legacy records and shared a
     }
   });
 
-  it('T2: shared assets refcount across installs — owners merge, never replace', async () => {
+  it('T2: shared assets refcount across installs — owners merge, never replace', { timeout: 120_000 }, async () => {
     const installer = new InstallEngine();
     await installer.install('software-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     await installer.install('digital-agency', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
@@ -66,7 +66,7 @@ describe('Ownership refcount — unbundled installs, legacy records and shared a
     expect(assetOwners(sharedProj).sort()).toEqual(['digital-agency', 'software-engineering']);
   });
 
-  it('T3: removing one owner keeps a shared asset for the other; removing the last deletes it', async () => {
+  it('T3: removing one owner keeps a shared asset for the other; removing the last deletes it', { timeout: 120_000 }, async () => {
     const installer = new InstallEngine();
     await installer.install('software-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     await installer.install('digital-agency', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });

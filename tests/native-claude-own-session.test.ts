@@ -14,8 +14,8 @@ const toolsOf = (file: string): string[] => {
 };
 
 describe('user-intended session reach (ADR 0054 amended after controlled tests)', () => {
-  it('preserves roster discovery and messaging in all fifteen existing native roles', () => {
-    expect(files).toHaveLength(15);
+  it('preserves roster discovery and messaging in all seventeen native roles', () => {
+    expect(files).toHaveLength(17);
     for (const file of files) {
       expect(toolsOf(file), file).toContain('ListAgents');
       expect(toolsOf(file), file).toContain('SendMessage');

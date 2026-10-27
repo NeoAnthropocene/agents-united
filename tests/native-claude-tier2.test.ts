@@ -28,6 +28,8 @@ const TEAMMATES: Array<{ name: string; stem: string }> = [
   { name: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead' },
   { name: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist' },
   { name: 'agency-frontend-architect', stem: 'subagent-frontend-architect' },
+  { name: 'agency-motion-designer', stem: 'subagent-motion-designer' },
+  { name: 'agency-sound-designer', stem: 'subagent-sound-designer' },
   // The Tier-1 specialist the agency no longer uses (it has its own copy, ADR 0039) still runs as a teammate for a user who spawns it: its
   // wording is two-mode too (maintainer decision, ADR 0036), and Tier-1 behaviour is unchanged.
   { name: 'frontend-architect', stem: 'subagent-frontend-architect' },
@@ -127,6 +129,7 @@ describe.each(['agency-growth-strategist', 'agency-conversion-specialist', 'agen
 describe.each([
   'agency-growth-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-content-strategist', 'agency-campaign-specialist',
   'agency-frontend-architect', 'agency-seo-specialist', 'agency-qa-automation-lead', 'agency-compliance-grc-specialist',
+  'agency-motion-designer', 'agency-sound-designer',
 ])('teammate %s: the shutdown reply', name => {
   it('shows the structured shape of the reply and says that a string of JSON is refused', () => {
     const body = afterFloor(name);
@@ -146,7 +149,7 @@ describe('the lead', () => {
     expect(declared).toEqual(roster);
     expect(roster).toEqual([
       'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
-      'agency-frontend-architect', 'agency-growth-strategist', 'agency-qa-automation-lead', 'agency-seo-specialist',
+      'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer',
     ]);
     for (const shared of ['marketing-growth-strategist', 'frontend-architect', 'seo-specialist']) expect(roster).not.toContain(shared);
   });

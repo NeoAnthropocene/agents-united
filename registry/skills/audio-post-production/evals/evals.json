@@ -1,0 +1,28 @@
+{
+  "skill_name": "audio-post-production",
+  "status": "prepared-not-run",
+  "draftDate": "2026-10-24",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Finish a local 12-second 60fps 1920x1080 film from approved VO/music/SFX. The complete timeline has scenes [0,240),[240,480),[480,720), bed [0,720), VO [24,660), effect [450,474). Saved strict preferences specify -16 LUFS +/-1 and <=-1 dBTP. Sources and rights records are supplied but no run has occurred. Explain source-preserving edits, required tool checks, mixer invocation and an inspectable hand-off/QC plan without claiming processing or listening results.",
+      "expected_output": "Preserves originals/hashes/preferences and uses a fresh revision; prepares fades/ducking in approved edits because helper does not provide them. Requires sibling reviewer plus full FFmpeg PCMfloat/PCM24, amix normalize and loudnorm. Computes 576000 full-duration stereo48k sample frames and accurate cue boundaries. Preserves gains in pre-master cue stems, separates nonlinear master, validates current revision/fingerprint/preset, requires actual master/mux measurements and named listening/content/rights review.",
+      "comparison": "Matched with-Skill/without-Skill pair; hold model, host, inputs, tools, timebase and budget fixed and retain artifacts plus reviewer findings.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "A valid saved project asks for true peak <=-12 dBTP. The proposed local mixer uses loudnorm TP -9..0, an old FFmpeg lacks amix normalize, audio-final-r1 already contains partial files and Motion has changed a VO cue and text since the supplied manifest. Someone suggests clamping TP to -9, overwriting r1 and editing only the old fingerprint. Resolve this without modifying approved choices or running anything.",
+      "expected_output": "Keeps shared -12 preset valid while declaring local processor incapable; seeks another approved processor or explicit preset revision via Chris. Requires capable amix/encoders and new output revision; preserves failed logs/files. Rejects relabeling old audio after cue/text drift, requires new approved timeline/fingerprint, reissued audio/captions and both renderer exports. Separates schema, actual measurement and listening, with unperformed work unverified.",
+      "comparison": "Same constrained brief with and without Skill; score failure diagnosis, source/revision preservation and honest hand-off.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "Explain in one sentence what a CSV file is. No audio or media production is requested.",
+      "expected_output": "Gives a one-sentence CSV explanation without mixing, mastering, media timeline or tool setup.",
+      "comparison": "Unrelated control; inspect unnecessary triggering.",
+      "status": "prepared-not-run"
+    }
+  ]
+}

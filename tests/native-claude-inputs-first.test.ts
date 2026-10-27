@@ -14,6 +14,8 @@ import { describe, expect, it } from 'vitest';
 
 const AGENTS = path.resolve('registry/hosts/claude/agents');
 const SPECIALISTS = [
+  'agency-motion-designer',
+  'agency-sound-designer',
   'agency-campaign-specialist',
   'agency-compliance-grc-specialist',
   'agency-content-strategist',
@@ -86,7 +88,7 @@ describe('every specialist body opens "How to work" with an inputs-first rule', 
     expect(body('orchestrator-digital-agency')).not.toContain('**Inputs first.**');
   });
 
-  it('is the same rule in all nine bodies', () => {
+  it('is the same rule in all eleven bodies', () => {
     const rules = SPECIALISTS.map((n) => howToWork(n).split('\n').find((l) => l.startsWith('**Inputs first.**')));
     expect(rules[0], 'the rule exists').toBeDefined();
     expect(new Set(rules).size).toBe(1);

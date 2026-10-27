@@ -56,6 +56,9 @@ const MCP_READ_TOOLS = [
 
 /** A role that does the work it is delegated needs the shells, editors, monitors, worktrees and task tools, and MCP discovery. */
 const WRITER_MUST_HOLD = ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'TodoWrite', 'ToolSearch'];
+// Official manual server names from mcp-setup's media provider cards; no unverified aliases.
+const MEDIA_VIDEO_SERVERS = ['mcp__higgsfield', 'mcp__klingai'];
+const MEDIA_AUDIO_SERVERS = ['mcp__elevenlabs', 'mcp__fish-audio'];
 
 const ROLES: RoleSpec[] = [
   { name: 'code-reviewer', stem: 'subagent-code-reviewer', guard: 'read-only', permissionMode: 'plan', skills: ['security-audit'], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ReportFindings', 'ToolSearch'], model: 'sonnet', effort: 'medium' },
@@ -138,13 +141,27 @@ const ROLES: RoleSpec[] = [
     })
   ),
   {
+    name: 'agency-motion-designer', stem: 'subagent-motion-designer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [],
+    serverTools: MEDIA_VIDEO_SERVERS, mutating: true,
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'Monitor', 'TaskGet', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'sonnet', effort: 'medium',
+  },
+  {
+    name: 'agency-sound-designer', stem: 'subagent-sound-designer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [],
+    serverTools: MEDIA_AUDIO_SERVERS, mutating: true,
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'Monitor', 'TaskGet', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'sonnet', effort: 'medium',
+  },
+  {
     name: 'orchestrator-digital-agency',
     stem: 'orchestrator-digital-agency',
     guard: 'destructive',
     permissionMode: 'acceptEdits',
     skills: [],
     // Sitting T (2026-10-12): the lead holds the one image tool too, so that Jamileh's pool has it. A teammate gets the MCP tools of the main conversation, and the main conversation of `--agent` is cut to this list; the lead never calls the tool (ADR 0049).
-    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch', 'mcp__image-gen__generate_image']),
+    serverTools: [...withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch', 'mcp__image-gen__generate_image']), ...MEDIA_VIDEO_SERVERS, ...MEDIA_AUDIO_SERVERS],
     mutating: true,
     // The lead of an Agent Team: the roster allowlist, the user, the shared task list, schedules and watchers; no workflows (the bundle has none).
     mustHold: ['Agent', 'AskUserQuestion', 'SendMessage', 'Skill', 'TaskCreate', 'TaskList', 'TaskUpdate', 'Bash', 'Edit', 'Write', 'CronCreate', 'Monitor', 'PushNotification', 'ToolSearch'],

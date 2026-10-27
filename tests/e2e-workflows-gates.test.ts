@@ -116,10 +116,11 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 1: Feature Coverage (Happy Path)
   describe('Tier 1: Feature Coverage (Workflow Parsing & Phase Gates)', () => {
-    it('should locate and parse all 69 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
+    it('should locate and parse all 70 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
       const workflowDirs = await getWorkflowSkillDirs();
 
-      expect(workflowDirs.length).toBe(69);
+      expect(workflowDirs.length).toBe(70);
+      expect(workflowDirs).toContain('workflow-agency-motion-production');
 
       for (const dirName of workflowDirs) {
         const filePath = path.join(skillsDir, dirName, 'SKILL.md');
@@ -132,6 +133,20 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
         expect(result.totalLines, `Workflow ${dirName} line count should be non-zero`).toBeGreaterThan(5);
         expect(result.phasesCount, `Workflow ${dirName} should contain phase sections`).toBeGreaterThan(0);
       }
+    });
+
+    it('keeps the media coordination phases, branch transitions, approval gates and rollback self-contained', async () => {
+      const content = await fs.readFile(path.join(skillsDir, 'workflow-agency-motion-production', 'SKILL.md'), 'utf8');
+      const result = validateWorkflowGates(content, 'workflow-agency-motion-production');
+      expect(content).toContain('```mermaid');
+      expect(result.phasesCount).toBeGreaterThanOrEqual(4);
+      expect(result.hasPhaseTransitions).toBe(true);
+      expect(result.hasPhaseGates).toBe(true);
+      expect(result.hasValidationCheckpoints).toBe(true);
+      expect(content.match(/^\| Phase/gm)?.length ?? 0).toBeGreaterThanOrEqual(4);
+      expect(content).toMatch(/^Rollback protocol:/m);
+      expect(content).toMatch(/Sound-only/);
+      expect(content).toMatch(/directly to Chris/);
     });
 
     it('should correctly parse frontmatter (name, description, bundle, estimatedDuration) when present', async () => {
@@ -185,11 +200,12 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 3: Cross-Feature Pairwise Audit
   describe('Tier 3: Cross-Feature Pairwise Audit', () => {
-    it('should cross-validate all 69 workflow skills referenced in bundles.json against registry/skills/ directory', async () => {
+    it('should cross-validate all 70 workflow skills referenced in bundles.json against registry/skills/ directory', async () => {
       const bundlesJson = await fs.readJson(bundlesPath);
       const fullBundleWorkflows: string[] = (bundlesJson.bundles.full.skills || []).filter((s: string) => s.startsWith('workflow-'));
 
-      expect(fullBundleWorkflows.length).toBe(69);
+      expect(fullBundleWorkflows.length).toBe(70);
+      expect(fullBundleWorkflows).toContain('workflow-agency-motion-production');
 
       for (const workflowName of fullBundleWorkflows) {
         const workflowSkillPath = path.join(skillsDir, workflowName, 'SKILL.md');
@@ -209,10 +225,10 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 4: Real-World Scenario Audit
   describe('Tier 4: Real-World Scenario Audit', () => {
-    it('should perform complete audit of all 69 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
+    it('should perform complete audit of all 70 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
       const workflowDirs = await getWorkflowSkillDirs();
 
-      expect(workflowDirs.length).toBe(69);
+      expect(workflowDirs.length).toBe(70);
 
       const report = {
         totalWorkflows: workflowDirs.length,
@@ -230,8 +246,8 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
         if (result.hasRollbackProtocols) report.withRollbackProtocols++;
       }
 
-      expect(report.totalWorkflows).toBe(69);
-      expect(report.withPhasesCount).toBe(69);
+      expect(report.totalWorkflows).toBe(70);
+      expect(report.withPhasesCount).toBe(70);
     });
   });
 });

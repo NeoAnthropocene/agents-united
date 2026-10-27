@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "timelineRevision": "r1",
+  "timelineFingerprint": "sha256:064c4ebf7dae3033a151e6d7f0a4fa282ff48c43c884f968b228524dc446e844",
+  "fps": 60,
+  "totalFrames": 120,
+  "sampleRate": 48000,
+  "channels": 2,
+  "master": "audio/master.wav",
+  "stems": [
+    {
+      "id": "voice",
+      "kind": "vo",
+      "path": "audio/voice.wav"
+    }
+  ],
+  "cues": [
+    {
+      "id": "voice",
+      "path": "audio/voice.wav",
+      "startFrame": 0,
+      "endFrame": 60
+    }
+  ],
+  "measurements": {
+    "scope": "master",
+    "integratedLufs": -16,
+    "truePeakDbtp": -1.2
+  },
+  "provenance": [
+    {
+      "cueId": "voice",
+      "source": "audio/voice.wav",
+      "evidence": "Illustrative fixture only; no WAV or measured evidence supplied."
+    }
+  ]
+}
