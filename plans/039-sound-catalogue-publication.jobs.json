@@ -78,7 +78,7 @@
         "git diff --cached secret scan; one commit on the branch; commit hash recorded"
       ],
       "evidence": [
-        "2026-10-28: final-report.md written; 038 J8 completed; plan-038 status updated to complete with the parallel-timeout caveat; commit recorded below after the staged scan"
+        "2026-10-28: final-report.md written; 038 J8 completed; plan-038 status updated to complete with the parallel-timeout caveat; local commit fce8f1a on codex/sound-model-catalogue (16 files, +350/-52), staged secret scan clean; branch 3 ahead of origin/dev, nothing pushed"
       ]
     },
     {
