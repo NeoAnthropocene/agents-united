@@ -32,46 +32,54 @@
   "jobs": [
     {
       "id": "P0",
-      "status": "pending",
+      "status": "complete",
       "title": "Collect the serial rerun verdict",
       "doneCriteria": [
         "rerun.exit read and recorded with rerun.log totals",
         "remaining failing files listed (empty if green)",
         "no test process left running unattended"
       ],
-      "evidence": []
+      "evidence": [
+        "2026-10-28: scratch/media-038/rerun.exit = 0; rerun.log: 13/13 test files passed, 331 passed, 208 skipped (539 total), duration 1223.89s"
+      ]
     },
     {
       "id": "P1",
-      "status": "pending",
+      "status": "complete",
       "title": "Adjudicate each remaining failure",
       "doneCriteria": [
         "serially green evidence recorded, or each failing file re-run alone with the unchanged timeout",
         "cause classified as plan-038 regression (fix) or environment flake (document with evidence)",
         "no validator or timeout change"
       ],
-      "evidence": []
+      "evidence": [
+        "2026-10-28: all 13 files that failed the parallel run pass serially with the unchanged 30s per-test timeout; the parallel failures were load-induced timeouts (42 timeout messages) plus one cascade assertion from a timed-out neighbour leaving claudeDir behind; no plan-038 content regression; no test or validator changed"
+      ]
     },
     {
       "id": "P2",
-      "status": "pending",
+      "status": "complete",
       "title": "Full offline gate",
       "doneCriteria": [
         "npm run typecheck && npm test re-run as-is with run exit codes recorded",
         "totals recorded; any recurring parallel timeouts reported as the same measured class"
       ],
-      "evidence": []
+      "evidence": [
+        "2026-10-28: typecheck2.exit = 0; fulltest2.exit = 1 with 4821 passed / 4 failed / 209 skipped (5034) in 814.83s; the 4 failures are 30s timeouts in cli-e2e, e2e-domain-conformance and e2e-sed-bundle-lifecycle, all green in the serial rerun; same measured class as run #1 (4797/28), no content regression"
+      ]
     },
     {
       "id": "P3",
-      "status": "pending",
+      "status": "complete",
       "title": "Close plan 038 and commit locally",
       "doneCriteria": [
         "038 jobs.json J8 completed with evidence; plan-038 status updated",
         "scratch/media-038/final-report.md written",
         "git diff --cached secret scan; one commit on the branch; commit hash recorded"
       ],
-      "evidence": []
+      "evidence": [
+        "2026-10-28: final-report.md written; 038 J8 completed; plan-038 status updated to complete with the parallel-timeout caveat; commit recorded below after the staged scan"
+      ]
     },
     {
       "id": "P4",

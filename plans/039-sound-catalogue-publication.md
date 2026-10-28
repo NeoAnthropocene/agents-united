@@ -1,6 +1,9 @@
 # Plan 039: Sound catalogue gate close-out and publication
 
-Status: **AWAITING SIGNAL — created on the branch; P0–P5 not started.**
+Status: **P0–P3 COMPLETE — P4–P5 await an explicit push signal.** The serial rerun passed (13/13
+files, 331 passed, exit 0) and the as-is full gate was re-run (typecheck 0; full suite exit 1 with 4
+load-induced timeouts, all serial-green). Plan 038 is closed and committed locally; nothing has been
+pushed and no PR exists.
 Date: 2026-10-28 (Europe/Berlin).
 Machine-readable state and job ledger: [039-sound-catalogue-publication.jobs.json](039-sound-catalogue-publication.jobs.json).
 Continuation of [038-sound-model-catalogue.md](038-sound-model-catalogue.md), whose J0–J7 are complete.

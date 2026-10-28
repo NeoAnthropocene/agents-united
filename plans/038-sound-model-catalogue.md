@@ -1,6 +1,14 @@
 # Plan 038: Local sound-model catalogue and sound/orchestrator skill improvements
 
-Status: **AWAITING SIGNAL — plan created on the branch; J0 done; J1–J8 not started.**
+Status: **COMPLETE (J0–J8), with one honest caveat.** `npm run typecheck` exit 0. The full parallel
+`npm test` is **not green on this machine**: run #1 exit 1 (4,797 passed / 28 failed / 209 skipped,
+42 timeouts in 13 install/lifecycle/e2e files), run #2 exit 1 (4,821 passed / 4 failed / 209 skipped,
+4 timeouts in `cli-e2e`, `e2e-domain-conformance`, `e2e-sed-bundle-lifecycle`). Every one of those
+files passes in the serial rerun with the unchanged 30 s timeout (13/13 files, 331 passed, exit 0),
+so the failures are load-induced timeouts, not content regressions. Targeted gates are green
+(layout 44/44, layout+ratchet 58/58, role/contract/floor 179/179). Evidence:
+`scratch/media-038/final-report.md`. Push and PR are **not** performed; they wait for an explicit
+maintainer signal and a green pre-push gate.
 Date: 2026-10-27 (Europe/Berlin).
 Machine-readable state and job ledger: [038-sound-model-catalogue.jobs.json](038-sound-model-catalogue.jobs.json).
 

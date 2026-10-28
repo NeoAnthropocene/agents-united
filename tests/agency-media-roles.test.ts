@@ -90,6 +90,24 @@ describe('digital agency media production roles', () => {
     expect(core.output_contract).toContain('transcript or caption timing when applicable');
   });
 
+  it('names lyric language and synthetic-singing copy rules for the Sound Designer and the lead', async () => {
+    const core = (await loadSemanticCore('registry')).get('subagent-sound-designer')!;
+    const canonical = fs.readFileSync('registry/agents/subagent-sound-designer.md', 'utf8');
+    const authored = native('agency-sound-designer').split('<!-- agents-united:floor:end -->')[1] ?? '';
+    for (const text of [canonical, authored]) {
+      expect(text).toMatch(/lyric language/i);
+      expect(text).toMatch(/synthetic singing/);
+      expect(text).toMatch(/named living performer/);
+      expect(text).toContain("Kaan's approved copy");
+    }
+    for (const file of ['registry/agents/orchestrator-digital-agency.md', 'registry/hosts/claude/agents/orchestrator-digital-agency.md']) {
+      const text = fs.readFileSync(file, 'utf8');
+      expect(text, file).toMatch(/non-commercial weight licence/);
+      expect(text, file).toContain("Lyrics remain Kaan's approved copy even when sung");
+    }
+    expect(checkFloor(native('agency-sound-designer'), core)).toEqual([]);
+  });
+
   it('grants official manual provider names to their specialists and the main-thread pool', () => {
     const lead = inspectNativeAgent(native('orchestrator-digital-agency')).tools;
     for (const [role, servers] of [
