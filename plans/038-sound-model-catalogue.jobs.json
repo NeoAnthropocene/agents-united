@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "plan": "038-sound-model-catalogue.md",
+  "updatedDate": "2026-10-27",
+  "timezone": "Europe/Berlin",
+  "worktree": "C:\\github\\agents-united",
+  "branch": "codex/sound-model-catalogue",
+  "baseRef": "origin/dev",
+  "baseCommit": "72e2cf4ddc92a6120313c5039f1bc39bc4b4f021",
+  "executionMode": "Await maintainer signal before J1; then sequential single-writer jobs with checkpoint after each meaningful patch or test",
+  "status": "awaiting-signal",
+  "currentJob": null,
+  "decisions": {
+    "D1": "Scope: full plan A-F including ADR 0057 (maintainer, 2026-10-27)",
+    "D2": "ASR section included with the binding usage contract in the plan (maintainer, 2026-10-27)",
+    "D3": "Non-commercial candidates kept with accurate flags; user decides per project; catalogue reports facts only (maintainer, 2026-10-27)"
+  },
+  "constraints": {
+    "awaitMaintainerSignalBeforeJob1": true,
+    "commitPushOrPullRequestAuthorized": false,
+    "pullRequestTarget": "dev",
+    "interactiveHostLaunchAuthorized": false,
+    "paidExternalMediaAuthorized": false,
+    "providerAccountConnectionAuthorized": false,
+    "modelInstallOrInferenceAuthorized": false,
+    "readCredentialsAuthorized": false,
+    "preserveRootAgentsMd": true,
+    "neverWeakenValidators": true,
+    "finalOfflineGate": "npm run typecheck && npm test (serial; read the run exit code)"
+  },
+  "environment": {
+    "nodeObserved": "v24.22.1",
+    "standingRules": "CLAUDE.md, AGENTS.md pointer, registry/rules (no .claude/rules at this checkout)",
+    "priorArt": "plan 037 / ADR 0056 / PR #211 merged at base commit; local-models.md exists with Stable Audio 3 and Kokoro-82M rows dated 2026-10-24",
+    "attachmentClaimsVerified2026-10-27": "antalia-mini, YuE2-3B, MiniMax-Music3, ACE-Step 1.5 family, DiffRhythm2, stable-audio-open-1.0, TangoFlux/tango2, musicgen-melody confirmed real via official pages; NC weight licences found on MusicGen, TangoFlux, YuE2-3B; several attachment-only figures (VRAM, benchmark ranks, parameter splits) remain unconfirmed claims pending J1"
+  },
+  "jobs": [
+    {
+      "id": "J0",
+      "status": "complete",
+      "title": "Plan and ledger checkpoint on the branch",
+      "doneCriteria": [
+        "plans/038-sound-model-catalogue.md and .jobs.json exist on codex/sound-model-catalogue",
+        "decisions D1-D3 recorded",
+        "status awaiting-signal recorded"
+      ],
+      "evidence": [
+        "2026-10-27: plan and this ledger created in worktree C:\\github\\agents-united on branch codex/sound-model-catalogue cut from fresh origin/dev 72e2cf4; job J0 closes with this checkpoint commit"
+      ]
+    },
+    {
+      "id": "J1",
+      "status": "pending",
+      "title": "Dated source verification of every candidate row",
+      "doneCriteria": [
+        "every candidate: official card/repo read; code vs weight licence separated; language coverage, output rate/length, gated status captured",
+        "DiffRhythm2 two-home provenance and espeak-ng dependency recorded",
+        "attachment-only claims confirmed or marked unconfirmed claims with owner",
+        "no downloads, installs or inference"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "J2",
+      "status": "pending",
+      "title": "local-models.md restructure into five sections with ASR usage contract",
+      "doneCriteria": [
+        "five sections: speech/TTS; SFX and soundscapes; instrumental music; music with vocals and lyric-to-song; transcription assistance",
+        "three-column evidence contract and six-step preflight kept",
+        "commercial triage note and ASR usage contract transcribed from the plan",
+        "new inspection date; every claim dated and sourced; link/layout checks pass"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "J3",
+      "status": "pending",
+      "title": "audio-generation SKILL.md touch-ups and one new eval",
+      "doneCriteria": [
+        "steps 4/6 name categories, language/lyric coverage, sung-copy rule and ASR boundary",
+        "caps held: <=90 lines, <=6000 chars, description <=1024 chars style unchanged",
+        "evals.json 2-5 valid schema including the new commercial lyric-song case",
+        "skill-layout green"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "J4",
+      "status": "pending",
+      "title": "narration-rights.md generated-singing subsection",
+      "doneCriteria": [
+        "lyrics = Kaan-approved copy; no named-performer imitation",
+        "synthetic vocalist is not a rights pass; weight/training diligence required",
+        "wordless instrumental marks speech/consent fields N/A with reason",
+        "existing narration-rights pins intact"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "J5",
+      "status": "pending",
+      "title": "finishing.md song-model source paragraph",
+      "doneCriteria": [
+        "song-model outputs (32/44.1/48 kHz stereo) enter as sources; resample-as-edit with retained original",
+        "dual-track/split outputs are aligned-stem candidates measured like any source",
+        "mixer contract unchanged"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "J6",
+      "status": "pending",
+      "title": "Role and orchestrator clauses (6 files), test-first",
+      "doneCriteria": [
+        "new assertions in tests/agency-media-roles.test.ts red first, then green",
+        "all pinned strings preserved (Media Request, local/API/hybrid, media/project.json, Static jobs do not, external-footage opt-in, eleven types are a menu, canonical timeline fingerprint, A revision label alone is insufficient, transcript or caption timing when applicable, Sound-only regexes)",
+        "core files unchanged by default; if touched, UPDATE_NATIVE regeneration and subagent-contract/core-safety-floor green with checkFloor []"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "J7",
+      "status": "pending",
+      "title": "ADR 0057 and audit row refresh",
+      "doneCriteria": [
+        "ADR 0057 dated: singing-copy ownership, commercial-licence triage, transcription boundary",
+        "docs/skill-quality/digital-agency-audit.md rows for touched skills carry measured counts"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "J8",
+      "status": "pending",
+      "title": "Full offline gates and hand-off",
+      "doneCriteria": [
+        "serial npm run typecheck && npm test with run exit codes read",
+        "targeted suites green during dev (skill-layout, skill-quality-ratchet, agency-media-roles, subagent-contract, core-safety-floor, media-audio, e2e-skills-depth)",
+        "git diff --cached before each commit",
+        "report states verified vs unverified; push + PR to dev only on maintainer request"
+      ],
+      "evidence": []
+    }
+  ]
+}
