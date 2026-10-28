@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "plan": "039-sound-catalogue-publication.md",
+  "updatedDate": "2026-10-28",
+  "timezone": "Europe/Berlin",
+  "worktree": "C:\\github\\agents-united",
+  "branch": "codex/sound-model-catalogue",
+  "baseRef": "origin/dev",
+  "baseCommit": "72e2cf4ddc92a6120313c5039f1bc39bc4b4f021",
+  "continuationOf": "038-sound-model-catalogue",
+  "executionMode": "Await maintainer signal before P0; then sequential single-writer jobs with ledger checkpoints",
+  "status": "awaiting-signal",
+  "currentJob": null,
+  "constraints": {
+    "awaitMaintainerSignalBeforeJob0": true,
+    "signalCoversJobsP0toP3Only": true,
+    "pushOrPullRequestAuthorized": false,
+    "pullRequestTarget": "dev",
+    "neverWeakenValidators": true,
+    "perTestTimeoutUnchangedMs": 30000,
+    "modelInstallOrInferenceAuthorized": false,
+    "providerAccountConnectionAuthorized": false,
+    "paidExternalMediaAuthorized": false,
+    "readCredentialsAuthorized": false,
+    "finalOfflineGate": "npm run typecheck && npm test (as-is; read the run exit code)"
+  },
+  "inputs": {
+    "typecheckExit": 0,
+    "fullParallelTest": "exit 1; 4797 passed / 28 failed / 209 skipped; 5034 total; 42 timeout messages and one cascade assertion in 13 install/lifecycle/e2e files",
+    "serialRerun": "launched with --no-file-parallelism on exactly those 13 files; verdict pending at scratch/media-038/rerun.exit"
+  },
+  "jobs": [
+    {
+      "id": "P0",
+      "status": "pending",
+      "title": "Collect the serial rerun verdict",
+      "doneCriteria": [
+        "rerun.exit read and recorded with rerun.log totals",
+        "remaining failing files listed (empty if green)",
+        "no test process left running unattended"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "P1",
+      "status": "pending",
+      "title": "Adjudicate each remaining failure",
+      "doneCriteria": [
+        "serially green evidence recorded, or each failing file re-run alone with the unchanged timeout",
+        "cause classified as plan-038 regression (fix) or environment flake (document with evidence)",
+        "no validator or timeout change"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "P2",
+      "status": "pending",
+      "title": "Full offline gate",
+      "doneCriteria": [
+        "npm run typecheck && npm test re-run as-is with run exit codes recorded",
+        "totals recorded; any recurring parallel timeouts reported as the same measured class"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "P3",
+      "status": "pending",
+      "title": "Close plan 038 and commit locally",
+      "doneCriteria": [
+        "038 jobs.json J8 completed with evidence; plan-038 status updated",
+        "scratch/media-038/final-report.md written",
+        "git diff --cached secret scan; one commit on the branch; commit hash recorded"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "P4",
+      "status": "pending",
+      "title": "Push and PR (only on explicit signal)",
+      "doneCriteria": [
+        "gh pr list --state all checked first",
+        "branch pushed; PR to dev opened with artifact-contribution template body",
+        "PR number and link recorded"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "P5",
+      "status": "pending",
+      "title": "CI watch and report",
+      "doneCriteria": [
+        "PR check test status observed and reported",
+        "no merge; verified vs unverified items stated"
+      ],
+      "evidence": []
+    }
+  ]
+}
