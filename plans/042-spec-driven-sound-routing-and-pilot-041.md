@@ -145,10 +145,15 @@ The actual project-local FFmpeg 6.1.1 answered the stricter verifier with no mis
 
 `npm run typecheck` and `npm test -- --no-file-parallelism` were launched for the pre-push gate.
 The final typecheck after the safety corrections exited **0**. The serial run passed the
-domain-conformance file (109 tests run, 208 conditional skips) and is still running with no final
-verdict at this entry. Exact complete-suite status must be reported in the PR; no targeted result
-substitutes for it. The PR stays draft while full-suite results and the Plan 041 redistribution
-review remain outstanding.
+domain-conformance file (109 tests run, 208 conditional skips). The remaining worker continued
+without another file verdict; the session-owned process tree was explicitly stopped after more
+than 22 minutes. This is an **aborted run, no full-suite verdict**, not a demonstrated assertion
+failure or a pass. Raw log: `scratch/pr-prepush-gates.log`; wrapper exits:
+`scratch/pr-prepush-gates.json`. Complete-suite acceptance remains **unverified**.
+
+Published as draft [PR #212](https://github.com/NeoAnthropocene/agents-united/pull/212), base `dev`.
+The PR stays draft while complete-suite acceptance and Plan 041 redistribution scope are open.
+No live Host session or model/provider spend was started for publication.
 
 ## Final maintainer review and publication amendment — 2026-10-29
 
