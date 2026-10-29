@@ -218,13 +218,22 @@ describe('E2E Skill Progressive Frontmatter & Depth Validation (Tier 1-4)', () =
       const contributorSkills = new Set(bundles
         .filter(bundle => bundle.domain?.toLowerCase() === 'contributor')
         .flatMap(bundle => bundle.skills ?? []));
-      const ordinarySkills = new Set(bundles
-        .filter(bundle => bundle.domain?.toLowerCase() !== 'contributor' && bundle.name !== 'full')
+      // Plan 041: the official Remotion Agent Skills are an opt-in add-on that is deliberately absent from `full`
+      // (source-available licence; installed only after the Remotion route is chosen). They are excluded from the
+      // inventory unless an ordinary bundle also carries them.
+      const OPTIONAL_ADDON_BUNDLES = new Set(['remotion-agent-skills']);
+      const optionalAddonSkills = new Set(bundles
+        .filter(bundle => OPTIONAL_ADDON_BUNDLES.has(bundle.name))
         .flatMap(bundle => bundle.skills ?? []));
-      const endUserSkillDirs = skillDirs.filter(skill => !contributorSkills.has(skill) || ordinarySkills.has(skill));
+      const ordinarySkills = new Set(bundles
+        .filter(bundle => bundle.domain?.toLowerCase() !== 'contributor' && bundle.name !== 'full' && !OPTIONAL_ADDON_BUNDLES.has(bundle.name))
+        .flatMap(bundle => bundle.skills ?? []));
+      const endUserSkillDirs = skillDirs.filter(skill => (!contributorSkills.has(skill) || ordinarySkills.has(skill))
+        && (!optionalAddonSkills.has(skill) || ordinarySkills.has(skill)));
 
       // Plan 033: exact end-user inventory; contributor-only directories are
       // excluded, while assets shared with ordinary bundles remain included.
+      expect(optionalAddonSkills.size, 'the optional add-on must still declare its skills').toBeGreaterThan(0);
       expect([...fullBundleSkills].sort()).toEqual(endUserSkillDirs.sort());
 
       for (const skillName of fullBundleSkills) {

@@ -1,7 +1,6 @@
 ---
 name: remotion-saas
 description: Build an app with Remotion
-version: 4.0.539
 metadata:
   author: Remotion
   version: 4.0.539

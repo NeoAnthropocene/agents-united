@@ -1,7 +1,9 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import YAML from 'yaml';
 import { describe, expect, it } from 'vitest';
+import { InstallEngine } from '../src/core/installer.js';
 import { lintSkillLicence } from '../src/core/skill-licence-lint.js';
 import { loadCorpus, measureAll, verdictOf } from '../scripts/skill-quality/measure.ts';
 
@@ -171,5 +173,41 @@ describe('the official Remotion skill add-on', () => {
       expect(text, file).toMatch(/agentic|final measured export|helper/i);
     }
   });
-});
 
+  it('installs cleanly across Antigravity, Claude, Cline, Cursor, Codex and OpenCode targets with LICENSE.md, NOTICE.md and SECURITY-REVIEW.md retained', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'remotion-addon-hosts-'));
+    try {
+      const engine = new InstallEngine();
+      await engine.install('remotion-agent-skills', {
+        scope: 'project',
+        method: 'copy',
+        targetDir: path.join(tmp, '.agents'),
+        implicitStore: true,
+        fanout: ['claude', 'cline', 'cursor', 'codex', 'opencode'],
+        nativeLane: true,
+      });
+      for (const skillRoot of [
+        path.join(tmp, '.agents', 'skills'),
+        path.join(tmp, '.claude', 'skills'),
+      ]) {
+        for (const name of OFFICIAL) {
+          expect(fs.existsSync(path.join(skillRoot, name, 'SKILL.md')), `${skillRoot}/${name}/SKILL.md`).toBe(true);
+          expect(fs.existsSync(path.join(skillRoot, name, 'LICENSE.md')), `${skillRoot}/${name}/LICENSE.md`).toBe(true);
+          expect(fs.existsSync(path.join(skillRoot, name, 'NOTICE.md')), `${skillRoot}/${name}/NOTICE.md`).toBe(true);
+        }
+        expect(fs.existsSync(path.join(skillRoot, 'remotion-maps', 'SECURITY-REVIEW.md')), `${skillRoot}/remotion-maps/SECURITY-REVIEW.md`).toBe(true);
+      }
+      for (const name of OFFICIAL) {
+        expect(
+          fs.existsSync(path.join(tmp, '.agents', 'plugins', 'remotion-agent-skills', 'skills', name, 'SKILL.md')),
+          `.agents/plugins/remotion-agent-skills/skills/${name}/SKILL.md`,
+        ).toBe(true);
+      }
+      expect(fs.existsSync(path.join(tmp, '.cursor', 'agents'))).toBe(true);
+      expect(fs.existsSync(path.join(tmp, 'AGENTS.md'))).toBe(true);
+      expect(fs.existsSync(path.join(tmp, '.opencode', 'agent'))).toBe(true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }, 60_000);
+});

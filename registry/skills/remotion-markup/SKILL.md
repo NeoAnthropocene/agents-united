@@ -1,7 +1,6 @@
 ---
 name: remotion-markup
 description: Content, animation and effects best practices
-version: 4.0.539
 metadata:
   author: Remotion
   version: 4.0.539

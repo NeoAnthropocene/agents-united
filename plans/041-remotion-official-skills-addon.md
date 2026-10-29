@@ -1,10 +1,9 @@
 # Plan 041: Remotion official skills add-on, version currency and optional Studio
 
-Status: **Implementation and recorded install checks complete; publication under review.**
+Status: **Implementation, multi-host install verification and full-suite CI fixes complete; publication under review.**
 Optional Studio served HTTP 200 in the recorded local smoke test; interactive editing is still
 unverified. The publication review reopened the official skills redistribution/licence scope
-question; the draft PR must not be merged or published until that question is resolved. Earlier
-timeout reports below are historical; the PR records a fresh serial gate result.
+question; the draft PR must not be merged or published until that question is resolved.
 
 Date: 2026-10-29 (Europe/Berlin). Branch: `codex/sound-model-catalogue`.
 
@@ -35,8 +34,8 @@ user an optional hands-on remotion Studio path without displacing agentic produc
 | R1 | Licence and add-on | `LicenseRef-Remotion` tier; 12 pinned skill folders with `LICENSE.md`/`NOTICE.md`; optional `remotion-agent-skills` child bundle, absent from `full` |
 | R2 | Version currency | 4.0.539 pin everywhere current; pure/CLI release checker; runtime docs |
 | R3 | Hosts and Studio | host matrix for Claude/Codex/Cursor/Antigravity/Cline/OpenCode/Copilot/Kimi; agent-only default and optional Studio choice in lead + Motion; Studio VERIFIED on the pinned pilot project — `remotion studio index.jsx --no-open --port 3459` served HTTP 200 after “Built in 12227ms” (the bare `studio` command failed with no entrypoint; the scaffold now ships `scripts.studio`) |
-| R4 | Install verification | PASS: disposable install exit 0 with 12 official skills (add-on also installs its parent digital-agency team: 12 agents, 80 skills, verified); Remotion pilot got them; Native pilot remains without them; dedupe protects projector size |
-| R5 | Final gates | targeted/add-on/security/registry/typecheck/hostlib gates green; `skill-evals-not-installed` whole-catalogue and `inventory` fanout cases exceed their 5-second budget after the optional-package additions; no commit/push without approval |
+| R4 | Install verification | PASS: disposable install exit 0 across Antigravity (`.agents/skills/`), Claude (`.claude/skills/`), Cline (`.agents/plugins/remotion-agent-skills/skills/`), Cursor (`.cursor/agents/`), Codex (`AGENTS.md`) and OpenCode (`.opencode/agent/`) with 12 official skills and `LICENSE.md`/`NOTICE.md`/`SECURITY-REVIEW.md` retained; Remotion Pilot 040 got them; Native pilot remains without them; dedupe protects projector size |
+| R5 | Final gates | PASS: all 4 add-on CI regressions fixed (`remotion-*/SKILL.md` top-level `version` key removed and recorded in `NOTICE.md`; 12 `third-party-pinned` provenance entries added to `host-library/_upstream/skills.json`; `OPTIONAL_ADDON_BUNDLES` excluded from `full` bundle comparison in `tests/e2e-skills-depth.test.ts`; public Algolia DocSearch key in `remotion-docs/SKILL.md` bound in `tests/plan-029-orchestrator-mcp-and-antigravity.test.ts`); `skill-evals-not-installed` (2.97s) and `inventory` (4.06s) pass within budget; full 231/231 test suite green |
 
 ## Boundaries
 
@@ -48,18 +47,23 @@ the final helper-export gate. Exact upstream terms, package and skill versions r
 
 | Check | Result |
 |---|---|
-| `tests/remotion-agent-skills.test.ts` (add-on, licence, links, audit note, version, Studio choice, roles) | 8 passed |
+| `tests/remotion-agent-skills.test.ts` (add-on, licence, links, rendering-modes, audit note, quality measure, host/Studio docs, version, role choice, multi-host disposable install) | 10 passed |
+| `tests/native-antigravity-skills.test.ts` (Antigravity frontmatter compliance across all 226 skills incl. `remotion-*`) | 228 passed |
+| `tests/hostlib-provenance.test.ts` (provenance lockfile coverage for all 226 skills incl. 12 `remotion-*`) | 4 passed |
+| `tests/e2e-skills-depth.test.ts` (depth, bundle reachability and optional add-on exclusion from `full`) | 10 passed |
+| `tests/plan-029-orchestrator-mcp-and-antigravity.test.ts` (R4 secret scan with bound public DocSearch search key for `remotion-docs`) | 37 passed |
 | `tests/plan-030-licence-aware-skills.test.ts` (licence tiers incl. `source-available`) | 91 passed |
 | `tests/media-remotion.test.ts` (helper contracts and release-drift comparison) | 3 passed |
+| `tests/skill-evals-not-installed.test.ts` and `tests/inventory.test.ts` | 2 files / 16 tests passed (5.86s total; 2.97s and 4.06s individually) |
 | `tests/registry.test.ts`, `tests/prerequisites.test.ts`, `tests/bundle-skill-refs.test.ts`, `tests/skill-quality-ratchet.test.ts`, `tests/skill-layout.test.ts`, `tests/agency-media-roles.test.ts`, `tests/native-claude-agents.test.ts`, `tests/hostlib-licences.test.ts`, `tests/hostlib-restore*.test.ts` | passed |
 | `npm run typecheck` | exit 0 |
 | `npm run hostlib:verify` | pass |
 | `npm run skills:remotion-release` | pinned 4.0.539 = latest, exit 0 |
-| `hostlib:audit` over the 12 official skills | 11 `pass`; `remotion-maps` `needs-review` (7 low/medium findings), manually inspected and recorded in `SECURITY-REVIEW.md` |
-| Add-on install into a disposable Claude project | exit 0; 12 official skills + parent team; `LICENSE.md`/`NOTICE.md`/`SECURITY-REVIEW.md` retained |
+| `hostlib:audit` over the 12 official skills | 11 `pass`; `remotion-maps` `needs-review` (7 low/medium findings), manually inspected and recorded in `SECURITY-REVIEW.md` and `host-library/_upstream/skills.json` |
+| Add-on install into a disposable multi-host project (Antigravity, Claude, Cline, Cursor, Codex, OpenCode) | exit 0; 12 official skills + parent team projected cleanly; `LICENSE.md`/`NOTICE.md`/`SECURITY-REVIEW.md` retained |
 | Add-on install into `scratch/pilot-040/remotion` | exit 0; Native pilot untouched (0 official skills) |
 | Studio smoke | `remotion studio index.jsx --no-open --port 3459` → HTTP 200, “Built in 12227ms” |
-| Known red | `skill-evals-not-installed` whole-catalogue plan and `inventory` fanout case exceed their 5 s per-test budget on this machine; assertions are unrelated to the add-on and the failures are timeouts/cleanup races |
+| Full repository test suite (`tests/*.test.ts`) | 231/231 test files passed (0 failures) |
 
 ## 2026-10-29 publication review amendment
 
@@ -79,5 +83,5 @@ choice under its actual terms. The PR is draft while this review remains open.
 Installation correction: Pilot 040 received the 12 official skills; Pilot 041's harness installed
 `digital-agency` alone. Do not describe Pilot 041 as proof of official-skills use or effectiveness.
 
-Not verified: official host plugins, Codex/Cursor/Antigravity/Cline installs of this add-on,
-interactive Studio editing/write-back, rendered output of the official guidance, entitlement
+Not verified: official host plugins (`npx skills add`), interactive Studio editing/write-back,
+rendered output of the official guidance, entitlement or redistribution clearance.

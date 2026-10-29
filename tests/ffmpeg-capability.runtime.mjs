@@ -116,7 +116,8 @@ test('the plan recommends the project-local install and prints the system altern
 
 test('install refuses without consent, and a system install needs both flags', () => {
   assert.throws(() => ffmpeg.installFfmpeg('project-local', { project: 'C:/p' }), /consent/i);
-  assert.throws(() => ffmpeg.installFfmpeg('user-wide-winget', { project: 'C:/p', consent: true }), /allow-system-install/i);
+  // winget exists only in the win32 plan: pin the platform so this case does not depend on the host OS (it failed on Linux CI).
+  assert.throws(() => ffmpeg.installFfmpeg('user-wide-winget', { project: 'C:/p', consent: true, platform: 'win32' }), /allow-system-install/i);
   let ran = null;
   const result = ffmpeg.installFfmpeg('project-local', {
     project: 'C:/p', consent: true, run: (command, args, cwd) => { ran = { command, args, cwd }; return { status: 0, stdout: 'ok', stderr: '' }; },

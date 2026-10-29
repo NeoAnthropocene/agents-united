@@ -1,7 +1,6 @@
 ---
 name: remotion-interactivity
 description: Structure Remotion markup for interactivity
-version: 4.0.539
 metadata:
   author: Remotion
   version: 4.0.539

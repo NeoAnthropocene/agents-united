@@ -1,7 +1,6 @@
 ---
 name: remotion-create
 description: Create a new Remotion video
-version: 4.0.539
 metadata:
   author: Remotion
   version: 4.0.539

@@ -1166,10 +1166,402 @@
       "recoveredAt": "2026-09-30",
       "skill": "receiving-code-review"
     },
+    "remotion-best-practices": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-best-practices",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-best-practices",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-best-practices"
+    },
+    "remotion-captions": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-captions",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-captions",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-captions"
+    },
+    "remotion-create": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-create",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-create",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-create"
+    },
+    "remotion-docs": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-docs",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-docs",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-docs"
+    },
+    "remotion-interactivity": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-interactivity",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-interactivity",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-interactivity"
+    },
+    "remotion-maps": {
+      "audit": {
+        "findings": [
+          {
+            "file": "techniques/cesium/assets/CesiumFlythrough.tsx",
+            "line": 0,
+            "rule": "hygiene/unknown-file-type",
+            "severity": "low"
+          },
+          {
+            "file": "techniques/cesium/assets/example-Root.tsx",
+            "line": 0,
+            "rule": "hygiene/unknown-file-type",
+            "severity": "low"
+          },
+          {
+            "file": "techniques/cesium/assets/sample-river.geojson",
+            "line": 0,
+            "rule": "hygiene/unknown-file-type",
+            "severity": "low"
+          },
+          {
+            "file": "techniques/maptiler/assets/CountryLabel.tsx",
+            "line": 0,
+            "rule": "hygiene/unknown-file-type",
+            "severity": "low"
+          },
+          {
+            "file": "techniques/maptiler/assets/example-Root.tsx",
+            "line": 0,
+            "rule": "hygiene/unknown-file-type",
+            "severity": "low"
+          },
+          {
+            "file": "techniques/maptiler/assets/MapTilerVectorElement.ts",
+            "line": 63,
+            "rule": "script/credential-access",
+            "severity": "medium"
+          },
+          {
+            "file": "techniques/maptiler/assets/RiverReveal.tsx",
+            "line": 0,
+            "rule": "hygiene/unknown-file-type",
+            "severity": "low"
+          }
+        ],
+        "verdict": "needs-review"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md.",
+        "security audit needs-review: inspected manually, see SECURITY-REVIEW.md; not snapshotted."
+      ],
+      "path": "skills/remotion-maps",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-maps",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-maps"
+    },
+    "remotion-markup": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-markup",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-markup",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-markup"
+    },
+    "remotion-multimedia": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-multimedia",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-multimedia",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-multimedia"
+    },
     "remotion-production": {
       "provenance": "in-house",
       "recoveredAt": "2026-10-25",
       "skill": "remotion-production"
+    },
+    "remotion-render": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-render",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-render",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-render"
+    },
+    "remotion-saas": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-saas",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-saas",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-saas"
+    },
+    "remotion-studio": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-studio",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-studio",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-studio"
+    },
+    "remotion-upgrade": {
+      "audit": {
+        "findings": [],
+        "verdict": "pass"
+      },
+      "declaredLicence": "LicenseRef-Remotion",
+      "droppedExtras": [],
+      "notes": [
+        "Optional remotion-agent-skills add-on, absent from the full bundle. Source-available Remotion License, not MIT.",
+        "Redistribution scope of this standalone snapshot is a recorded merge/release hold (ADR 0059 and Plan 041 amendment); not snapshotted here on purpose.",
+        "Top-level frontmatter key `version` removed (equal to metadata.version); see NOTICE.md."
+      ],
+      "path": "skills/remotion-upgrade",
+      "pinKind": "declared",
+      "provenance": "third-party-pinned",
+      "recoveredAt": "2026-10-29",
+      "repo": "remotion-dev/skills",
+      "resolvedLicence": {
+        "evidence": "licence-file",
+        "file": "LICENSE.md",
+        "resolvedAt": "2026-10-29",
+        "restorable": false,
+        "spdx": "LicenseRef-Remotion",
+        "tier": "source-available"
+      },
+      "sha": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+      "skill": "remotion-upgrade",
+      "source": "https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-upgrade"
     },
     "replicate-model-inference": {
       "declaredLicence": "MIT",

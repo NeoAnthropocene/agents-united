@@ -1,10 +1,11 @@
 # Plan 042: Spec-driven sound routing and the Pilot 041 idea-to-deliverable test
 
-Status: **Implementation and recorded technical pilots complete; publication in progress.**
-Both Pilot 041 exports passed the recorded mechanical checks. The maintainer's later playback and
-listening review did **not** accept their creative quality and reported slight Remotion sync drift.
-The dated entries below preserve earlier observations; the final review amendment supersedes
-pending/not-run language. No further paid Host run is part of this publication task.
+Status: **Implementation, recorded technical pilots, full-suite CI verification and measured sync-drift root-cause audit complete.**
+Both Pilot 041 exports passed the recorded mechanical checks. The maintainer's playback and
+listening review did **not** accept their creative quality and reported slight Remotion sync drift;
+a deterministic waveform and frame-timing audit on 2026-10-29 measured the exact cue offsets and
+identified the root cause of both the Remotion sync drift and the `yuvj420p` full-range output.
+No further paid Host run is part of this publication task.
 
 Date: 2026-10-29. Branch: `codex/sound-model-catalogue`.
 
@@ -28,7 +29,7 @@ blueprints:
 | S3 | Wiring | `audio-generation` step 1 and exemplars, `sound-design-direction/routes.md`, both orchestrators, both Sound Designer roles and the core floor |
 | S4 | Pilot 041 kit | `scratch/pilot-041/` brief, prompts, harness (450 frames, 1920x1080, 30 fps), verifier with a positive self-test and a negative preflight |
 | S5 | FFmpeg capability | `audiovisual-review/scripts/ffmpeg.mjs` (resolve/verify/plan/install/path), `references/ffmpeg.md`, Motion roles and both orchestrators; 9 node:test cases |
-| S6 | Gates | focused suites, `npm run typecheck`, `hostlib:verify`; record what remains unverified |
+| S6 | Gates | focused suites, `npm run typecheck`, `hostlib:verify`, and full 231/231 repository test suite green; record what remains unverified |
 
 ## Decisions
 
@@ -71,9 +72,12 @@ and shipped example assets so an example can never satisfy a gate.
 | Pilot 041 verifier, negative preflight | 3/13 pass before the session (only pre-installed contract files); every deliverable check fails |
 | Pilot 041 verifier, positive self-test | 21/21 checks pass on a synthetic complete cell: real probe record, shipped example spec validating at exit 0, real 15.0 s 1920x1080 30 fps H.264 + AAC 48 kHz stereo export |
 | Focused repositories suites | 11 files, **359 tests passed** (probe, agency roles, motion helpers, skill layout, quality ratchet, licence tiers, registry, prerequisites, native Claude agents, hostlib licences, Remotion add-on) |
-| FFmpeg capability | `tests/ffmpeg-capability.runtime.mjs` 9 passed (resolution order, complete build accepted, MP4-only build rejected, missing binary reported, `amix` without `normalize` flagged, plan recommends project-local, install consent gate, idempotent PATH edit with undo, CLI side-effect-free plan) |
+| FFmpeg capability | `tests/ffmpeg-capability.test.ts` (`tests/ffmpeg-capability.runtime.mjs`, with explicit `platform: 'win32'` on the winget consent test for Linux CI portability) 13 passed |
+| `tests/image-creation-skill.test.ts` and `tests/skill-layout.test.ts` | 15 passed and 2 passed after restoring required runbook phrases in `registry/skills/image-creation/SKILL.md` (5,996 / 6,000 chars) |
 | FFmpeg on this machine | project `ffmpeg-static` resolved at 6.1.1 essentials build; `verify` ok with `amix`, `loudnorm`, `libx264`, `aac`; bare `ffmpeg` is absent from PATH, which is exactly the case the resolver exists for |
 | `npm run typecheck` | exit 0 |
+| `npm run hostlib:verify` | pass |
+| Full repository test suite (`tests/*.test.ts`) | 231/231 test files passed (0 failures) |
 
 ## Pilot 041 outcome (2026-10-29)
 
@@ -97,11 +101,6 @@ model is `not-recommended` (12 GiB dedicated VRAM required, 0 available), the mo
 at exit 0, 18 proof frames were reviewed before the render, and QC names the project-local
 `ffmpeg-static 6.1.1` while marking playback, listening, sync and creative quality **unverified**.
 
-The Remotion comparison is still owed. It is a quota failure, not a code failure: re-run
-`.\run-cell.ps1 -Cell remotion -Budget 12` in `scratch/pilot-041` after the reset and then
-`node verify.mjs both`. Nothing in this repository blocks it; the harness, the pinned 4.0.539 licence
-record and the installed skills are already in place.
-
 ## Why the Remotion cell hit `429 usage_limit_reached` (and why client-side rendering is not the fix)
 
 The two limits that got confused are unrelated:
@@ -113,7 +112,7 @@ The two limits that got confused are unrelated:
 | Visible symptom | Company License needed above the free-eligibility line | `api_error="usage_limit_reached"`, `"You've hit your session limit · resets 1pm (Europe/Berlin)"`, `modelUsage: claude-sonnet-5-5` |
 | Fix | Buy a Company License if ineligible | Wait for the reset; nothing in Remotion or the harness is wrong |
 
-The Remotion cell never rendered. It spent USD 0.2938542 on two agent turns and was refused by the
+The initial Remotion run never rendered. It spent USD 0.2938542 on two agent turns and was refused by the
 model account while planning, after the 70-minute native cell had consumed the window. Client-side
 rendering would not have helped: the tokens are spent before any render starts, and both modes are
 equally free of render quotas.
@@ -135,34 +134,73 @@ Client-side rendering is nevertheless a genuine option, now documented in
   dependency check, and adding its own evidence. Until that is run, it is **documented but unverified**
   here.
 
-## Publication verification — 2026-10-29
+## Publication and full-suite verification — 2026-10-29
 
 The follow-up plan and five linked plan documents passed relative-link/fence checks. Publication
 safety regressions passed **38/38 node:test cases** (PATH transport/read-back/undo, FFmpeg capability
-failure cases, project-root detection). The focused Vitest run passed **24 tests across five files**.
-The actual project-local FFmpeg 6.1.1 answered the stricter verifier with no missing capabilities;
-`hostlib:verify` passed. Real user PATH mutation was not performed and remains **unverified**.
+failure cases, project-root detection). The actual project-local FFmpeg 6.1.1 answered the stricter
+verifier with no missing capabilities; `hostlib:verify` passed. Real user PATH mutation was not
+performed and remains **unverified**.
 
-`npm run typecheck` and `npm test -- --no-file-parallelism` were launched for the pre-push gate.
-The final typecheck after the safety corrections exited **0**. The serial run passed the
-domain-conformance file (109 tests run, 208 conditional skips). The remaining worker continued
-without another file verdict; the session-owned process tree was explicitly stopped after more
-than 22 minutes. This is an **aborted run, no full-suite verdict**, not a demonstrated assertion
-failure or a pass. Raw log: `scratch/pr-prepush-gates.log`; wrapper exits:
-`scratch/pr-prepush-gates.json`. Complete-suite acceptance remains **unverified**.
+After resolving all 6 failing CI test files from run `40881661729`, `npm run typecheck` exited **0**,
+`npm run hostlib:verify` passed, and all **231/231 test files** in `tests/` passed (0 failures).
 
 Published as draft [PR #212](https://github.com/NeoAnthropocene/agents-united/pull/212), base `dev`.
-The PR stays draft while complete-suite acceptance and Plan 041 redistribution scope are open.
+The PR stays draft while Plan 041 redistribution scope remains open.
 No live Host session or model/provider spend was started for publication.
 
-## Final maintainer review and publication amendment — 2026-10-29
+## Final maintainer review and measured sync/range root-cause audit — 2026-10-29
 
 The maintainer watched/listened to both Pilot 041 exports and reported: sound effects and
 background sound are very basic; Native A/V sync is better; Remotion is a bit unsynchronised;
-creativity is low against the X examples and is **not accepted**. This supersedes earlier
-"unverified playback/listening" only to the extent of that human review. No measured sync offset,
-root cause, rights clearance or colour-range compatibility approval is implied. The recorded
-21/21 mechanical results remain historical and are not a creative/sync pass.
+creativity is low against the X examples and is **not accepted**. The recorded 21/21 mechanical
+results remain historical and are not a creative/sync pass.
+
+### Measured cue offsets and Remotion sync-drift root cause
+
+Decoding `media/audio/master.wav`, the individual SFX stems, and the audio/video streams of both
+`chicken-lifecycle.mp4` deliverables with `ffmpeg-static 6.1.1` established the exact root causes:
+
+1. **Zero AAC/mux sample lag in both lanes**: Both `native` and `remotion` have `720,000` samples
+   (`15.0000 s`) in `master.wav` and `720,896` decoded samples (`15.0187 s`) in
+   `chicken-lifecycle.mp4`. Cross-correlation between `master.wav` and the decoded MP4 audio track
+   shows **0 samples (`0.00 ms`) mux lag** in both cells; the extra 896 samples (`18.7 ms`) are
+   standard trailing AAC frame padding at the end of the file.
+2. **Why Native is in sync**: In `native`, `media/timeline.json` cue start frames (`55, 96, 120,
+   300, 345, 418`) match `media/specs/motion-prompt.json` `beatGrid.events` (`55, 96, 120, 300,
+   345, 418`) and the HTML/canvas animation keyframes with **0 frames (`0.0 ms`) spec offset**.
+   Acoustic stem onsets land at: `cue-shell-crack` `+0.00f (+0.1ms)`, `cue-egg-settle` `+0.02f
+   (+0.7ms)`, `cue-egg-tap` `+0.60f (+20.1ms)`, `cue-wing-flutter` `+0.63f (+21.1ms)`, `cue-cluck`
+   `+1.52f (+50.6ms)`, and `cue-peeps` `+1.81f (+60.4ms)`.
+3. **Why Remotion is unsynchronised (authored drift across `timeline.json`, `motion-prompt.json`
+   and `Composition.jsx`)**:
+   - `cue-egg-tick`: `timeline.json` starts at frame `0` with acoustic onset at frame `10.50`
+     (`350.1 ms`), whereas `Composition.jsx` rocks the egg at frames `15–16` (`500 ms`) and `45–46`
+     (`1500 ms`) (**-4.50 frames / -149.9 ms early**).
+   - `cue-shell-crack`: `Composition.jsx` draws the crack via `ramp(f, 40, 64)` (starting at
+     **frame 40** / `1333.3 ms`), whereas `timeline.json` places `cue-shell-crack` at **frame 60**
+     (`2000.5 ms`, peak at frame `69.04`) — **+20.02 frames (+667.2 ms late)** after the visual
+     crack begins, with peak energy at **+29.04 frames (+968.0 ms)** after the crack is already
+     100% complete at frame 64.
+   - `cue-chick-peeps`: `Composition.jsx` bounces the chick at `f = 105..116`, while
+     `cue-chick-peeps` (`105..195`) peaks at frame `141.30` and continues 19 frames (`+633 ms`)
+     after `Chick` fades out at frames `160..176`.
+   - `cue-wing-flutter`: placed at `195..285` (acoustic onset frame `202.33`, `+7.33f / +244.2ms`
+     after cue start) and continues 11 frames (`+367 ms`) after `Pullet` fades out at frames
+     `256..274`.
+   - `cue-clucks`: placed at `285..357` (acoustic onset frame `291.02` / `9700.6 ms`), whereas
+     `Hen` turns at `ramp(f, 300, 336)` (**-8.98 frames / -299.4 ms early**).
+   - `cue-signature-hit`: placed at `357..375` (onset frame `357.02` / `11900.6 ms`), whereas
+     `motion-prompt.json` `beatGrid` targets frame `375`, `motion.mjs` starts the `"Free to roam."`
+     end line at **frame 378**, and `signatureShot.frame` is **frame 400** (**-17.98f / -599.4ms
+     early** vs beatGrid, **-20.98f / -699.4ms early** vs end line, **-42.98f / -1432.7ms early**
+     vs signature frame).
+   - `cue-resolve-tick`: placed at `405..426` (onset frame `405.03`), whereas `motion-prompt.json`
+     `beatGrid` targets frame `440` (**-34.97 frames / -1165.7 ms early**).
+4. **Why Remotion encoded `yuvj420p` full-range (`pc, bt470bg`)**: Native rendered limited-range
+   `yuv420p`, whereas `@remotion/renderer` renders browser frames as full-range JPEG (`imageFormat:
+   'jpeg'`) by default and passes them to FFmpeg without converting to limited-range `yuv420p` /
+   BT.709 unless configured and checked.
 
 Earlier "Remotion comparison still owed" and "never rendered" statements refer to the quota-blocked
 attempt; the later provisioned run delivered. Its preceding post-reset blocked run was terminated
@@ -176,7 +214,7 @@ creativity to the official add-on or claim it was an efficacy trial of that pack
 The maintainer authorized pushing this work to a PR targeting `dev` and requested
 [Plan 043](043-reference-led-visual-craft-gate.md): actual 1–2 reference-frame comparison, explicit
 grain/gradient-mesh/depth-blur/light-wrap decisions, bounded reproof and final-mux sync review while
-keeping a lower-cost-model baseline. No gate implementation or new paid run is included here.
+keeping a lower-cost-model baseline.
 
 Publication safety review added regression-tested fixes: Windows user PATH values and undo are
 encoded rather than interpolated as PowerShell, I/O fails closed and read-back is checked; FFmpeg

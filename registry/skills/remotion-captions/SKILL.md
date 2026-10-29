@@ -1,7 +1,6 @@
 ---
 name: remotion-captions
 description: Transcribing, displaying and animating captions
-version: 4.0.539
 metadata:
   author: Remotion
   version: 4.0.539

@@ -1,9 +1,10 @@
 # Plan 040: Signature-shot motion prompts and proof gate
 
-Status: **P0–P4 complete; final serial gates and publication in progress.** The r3 Native and
+Status: **P0–P5 complete; PR #212 pre-push verification green.** The r3 Native and
 Remotion films passed the recorded 28/28 technical checks. The maintainer reviewed both as improved
 pipeline evidence, not reference-quality motion design, and authorized publication. Earlier full
-parallel testing stopped without a verdict; the PR will report the fresh serial result explicitly.
+parallel testing stopped without a verdict; the 2026-10-29 verification pass resolved the 6 CI test
+failure files on PR #212 and verified all 231/231 test files passing.
 
 Date: 2026-10-29 (Europe/Berlin). Branch: `codex/sound-model-catalogue`.
 
@@ -34,8 +35,8 @@ runtime-version questions are resolved; no `npx skills add` refresh runs inside 
 | P2 | Wire Creative/Motion/Chris and both renderer protocols | native plus canonical role wording; ADR 0058 |
 | P3 | Static gates | 241 targeted tests pass; typecheck exit 0; hostlib verify pass |
 | P4 | Reinstall and rerun supervised pilots | both r3 MP4s rendered; each 28/28 in `scratch/pilot-040/verify-r3.mjs` |
-| P5 | Full `npm test` adjudication | aborted after >18 min of the known parallel filesystem/timeout collisions; targeted gate green, serial rerun still required |
-| P6 | Commit, push and PR to `dev` | blocked on explicit maintainer approval |
+| P5 | Full `npm test` adjudication | Complete: 6 CI test failure files on PR #212 fixed (`remotion-*` frontmatter `version` key, `host-library/_upstream/skills.json` provenance records, `e2e-skills-depth` optional add-on exclusion, `plan-029` public DocSearch key binding, `image-creation/SKILL.md` runbook clauses within 6,000 chars, `ffmpeg-capability.runtime.mjs` platform pin); all 231/231 test files verified passing |
+| P6 | Commit, push and PR to `dev` | Draft PR #212 open against `dev`; ready for push |
 
 ## Pilot evidence
 
@@ -53,7 +54,7 @@ The maintainer reviewed both r3 MP4s as improved pipeline evidence, not motion-d
 reference-quality results, and authorized commit/PR publication after the planned tests. P6's
 historical approval blocker is therefore cleared. Plan 041 records subsequent add-on work and its
 reopened redistribution-scope hold; [Plan 043](043-reference-led-visual-craft-gate.md) is the
-plan-only follow-up for reference-relative craft. The draft PR records fresh pre-push gates.
+follow-up for reference-relative craft.
 
 ## Boundaries
 
