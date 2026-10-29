@@ -115,6 +115,28 @@ test('the CLI writes a record once and refuses to overwrite it silently', () => 
   }
 });
 
+test('reports FFmpeg on PATH and in the project separately', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'probe-ffmpeg-'));
+  try {
+    fs.mkdirSync(path.join(dir, 'node_modules', 'ffmpeg-static'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'node_modules', 'ffmpeg-static', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'), '');
+    const report = await probeModule.probe({
+      platform: process.platform,
+      project: dir,
+      spawnText: () => null,
+      statfs: () => ({ bsize: 4096, bavail: 1024 }),
+    });
+    assert.equal(report.tools.ffmpegOnPath, false);
+    assert.equal(report.tools.ffmpegProjectLocal, true);
+    const text = fs.readFileSync(path.resolve('registry/skills/audio-generation/references/system-capability.md'), 'utf8');
+    assert.match(text, /ffmpegOnPath/);
+    assert.match(text, /ffmpegProjectLocal/);
+    assert.match(text, /not a missing FFmpeg/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('the documented floor table matches the script', () => {
   const doc = fs.readFileSync(path.resolve('registry/skills/audio-generation/references/system-capability.md'), 'utf8');
   for (const [route, floor] of Object.entries(probeModule.FLOORS)) {

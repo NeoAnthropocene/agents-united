@@ -27,7 +27,7 @@ dated record. Exit 0 is a measurement; exit 2 is a usage error.
 | `disk.freeGiB` | `fs.statfs` on the project volume | Room for weights, caches and renders |
 | `gpu.devices[]` | `nvidia-smi`, else Windows WMI, else `system_profiler` | Name, driver, VRAM when reliably reported |
 | `gpu.dedicatedVramGiB` | Derived | Largest **dedicated, reliable** VRAM figure |
-| `tools` | PATH lookups | `ffmpeg`, `python`/`python3`, `uv`, `nvidia-smi` presence |
+| `tools` | PATH lookups, project check | `ffmpegOnPath`, `ffmpegProjectLocal`, `python`/`python3`, `uv`, `nvidia-smi` presence |
 
 Two measurement traps are handled explicitly:
 
@@ -39,6 +39,9 @@ Two measurement traps are handled explicitly:
   15.7 GiB. Floors are compared with `RAM_TOLERANCE_GIB = 0.5` added to the measured value; the
   measured number is still reported unchanged and the tolerance is shown in
   `memory.toleranceGiB`.
+- **A missing `ffmpegOnPath` is not a missing FFmpeg.** Projects in this repository normally ship
+  their own `ffmpeg-static`; `ffmpegProjectLocal` reports that. Resolve the actual binary with
+  `audiovisual-review/scripts/ffmpeg.mjs` before concluding anything is missing.
 
 ## Planning floors
 

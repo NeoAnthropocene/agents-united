@@ -187,7 +187,11 @@ export async function probe(options = {}) {
     [];
 
   const tools = {
-    ffmpeg: runText('ffmpeg', ['-version']) !== null,
+    ffmpegOnPath: runText('ffmpeg', ['-version']) !== null,
+    // A project can ship its own FFmpeg (ffmpeg-static) without any PATH entry; report both.
+    ffmpegProjectLocal: Boolean(options.project) && fs.existsSync(path.join(
+      options.project, 'node_modules', 'ffmpeg-static', platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg',
+    )),
     python: runText('python', ['--version']) !== null || runText('python3', ['--version']) !== null,
     uv: runText('uv', ['--version']) !== null,
     nvidiaSmi: gpuDevices.some(device => device.source === 'nvidia-smi'),
@@ -254,7 +258,7 @@ async function main(args) {
     }
   }
 
-  const report = await probe();
+  const report = await probe({ project: out ? path.resolve(path.dirname(out), '..') : process.cwd() });
   const json = `${JSON.stringify(report, null, 2)}\n`;
   if (out) {
     const target = path.resolve(out);
