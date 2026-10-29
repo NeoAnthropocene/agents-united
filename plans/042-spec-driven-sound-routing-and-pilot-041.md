@@ -77,10 +77,17 @@ and shipped example assets so an example can never satisfy a gate.
 
 | Cell | Result | Verifier |
 |---|---|---|
-| native | **complete deliverable**; one sentence became a concept ("Full Circle"), a named signature shot, a causal five-beat shot list, a geometry-level visual handoff, a claim-checked copy set and a measured 15.0 s export | **21/21 PASS** (session record `is_error` on the final hand-back, after the deliverable) |
-| remotion | **not run**: the account's session limit answered `429 usage_limit_reached` ("resets 1pm Europe/Berlin") at turn 2; USD 0.2938542 | not run |
+| native | **complete deliverable**; one sentence became a concept ("Full Circle"), a named signature shot, a causal five-beat shot list, a geometry-level visual handoff, a claim-checked copy set and a measured 15.0 s export | **21/21 PASS**; USD 4.8455483 |
+| remotion | **complete deliverable** on the second attempt (first attempt was quota-blocked, second refused the un-provisioned renderer); "Egg to Hen" with proof stills, two fix rounds and a measured export | **21/21 PASS**; USD 1.0657866 (+0.2938542 blocked attempt) |
 
-Costs: native USD 4.8455483, Remotion USD 0.2938542 — USD 5.14 of the 24 approved.
+Both exports verified: 15.0 s / 15.02 s, 1920x1080, 30 fps, H.264, AAC 48 kHz stereo, -16.0 / -16.14
+LUFS, -2.19 / -1.5 dBTP. Visual comparison of both signature frames is in the pilot's `findings.md`:
+native wins on concept and type, Remotion on palette and glow, and **neither reaches the reference
+bar** — a creative ceiling, not a pipeline gap.
+
+Two harness defects were found by the runs and fixed: the brief forbade the renderer's own pinned
+install (so the Remotion agent correctly stopped and documented it), and the system probe reported
+`ffmpeg: false` from a PATH-only check on a machine whose project ships `ffmpeg-static`.
 
 Native proves the new behaviour end to end: the probe was written at 10:50:15 with this machine's
 measured facts, the chosen sound route was the bundled local one *because* the probe says a music
