@@ -91,6 +91,24 @@ describe('the official Remotion skill add-on', () => {
     expect(broken).toEqual([]);
   });
 
+  it('documents that neither rendering mode has a licence quota', () => {
+    const modes = fs.readFileSync('registry/skills/remotion-production/references/rendering-modes.md', 'utf8');
+    expect(modes).toMatch(/neither mode has a render quota/i);
+    expect(modes).toMatch(/governs \*\*who may use Remotion for free\*\*/i);
+    expect(modes).toContain('@remotion/web-renderer');
+    expect(modes).toContain('4.0.491');
+    expect(modes).toMatch(/z-index/);
+    expect(modes).toMatch(/backdrop-filter/);
+    expect(modes).toMatch(/linear-gradient/);
+    expect(modes).toMatch(/not\*\* in the scaffold's pinned dependency set|not\*\* in\s+the scaffold's pinned dependency set/i);
+    expect(modes).toMatch(/usage_limit_reached/);
+    expect(modes).toMatch(/always one event per render|always sends/i);
+    const runtime = fs.readFileSync('registry/skills/remotion-production/references/runtime.md', 'utf8');
+    expect(runtime).toContain('rendering-modes.md');
+    const skill = fs.readFileSync('registry/skills/remotion-production/SKILL.md', 'utf8');
+    expect(skill).toContain('references/rendering-modes.md');
+  });
+
   it('records the manual review of the one audit finding', () => {
     const review = fs.readFileSync(path.join(SKILLS, 'remotion-maps', 'SECURITY-REVIEW.md'), 'utf8');
     expect(review).toContain(SHA);

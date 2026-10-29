@@ -91,5 +91,37 @@ The Remotion comparison is still owed. It is a quota failure, not a code failure
 `node verify.mjs both`. Nothing in this repository blocks it; the harness, the pinned 4.0.539 licence
 record and the installed skills are already in place.
 
-Not verified: the Remotion cell, playback, listening, A/V sync, browser reproducibility and the
-creative quality of either film.
+## Why the Remotion cell hit `429 usage_limit_reached` (and why client-side rendering is not the fix)
+
+The two limits that got confused are unrelated:
+
+| | Remotion licence | The `429` |
+|---|---|---|
+| What limits it | **Who** may use Remotion for free: individuals, non-profits, for-profit organisations with up to three employees, noncommercial evaluation | The **Claude Code account's session quota**, i.e. tokens spent by the agent running the cell |
+| Does it count renders? | No. Neither CLI/SSR nor client-side rendering has a render quota | n/a |
+| Visible symptom | Company License needed above the free-eligibility line | `api_error="usage_limit_reached"`, `"You've hit your session limit · resets 1pm (Europe/Berlin)"`, `modelUsage: claude-sonnet-5-5` |
+| Fix | Buy a Company License if ineligible | Wait for the reset; nothing in Remotion or the harness is wrong |
+
+The Remotion cell never rendered. It spent USD 0.2938542 on two agent turns and was refused by the
+model account while planning, after the 70-minute native cell had consumed the window. Client-side
+rendering would not have helped: the tokens are spent before any render starts, and both modes are
+equally free of render quotas.
+
+Client-side rendering is nevertheless a genuine option, now documented in
+`remotion-production/references/rendering-modes.md`, and deliberately **not** the default:
+
+- It renders in the browser (`@remotion/web-renderer`, stable from 4.0.491), encodes with WebCodecs via
+  Mediabunny and needs no Node renderer, no FFmpeg and no bundling step — attractive for the hands-on
+  Studio route and for browser-only hosts.
+- It **emulates CSS onto a canvas** instead of screenshotting: `z-index`, `backdrop-filter`,
+  `background-blend-mode`, `object-position`, `perspective`, `transform-style` and non-linear-gradient
+  backgrounds are unsupported. Those are exactly the effects these films use for depth, glow and
+  layer order, so the CLI render stays the delivery gate.
+- Optional HTML-in-canvas capture lifts the CSS limits but is a separate route with its own review.
+- It always sends one telemetry event per render (CLI/SSR only when a licence key is set), runs single
+  concurrency, and is throttled in a background tab.
+- Adopting it means pinning `@remotion/web-renderer` with the other packages, extending the helper's
+  dependency check, and adding its own evidence. Until that is run, it is **documented but unverified**
+  here.
+
+Not verified: any client-side render in this repository.

@@ -77,8 +77,16 @@ licence does not grant Remotion production entitlement or relicense runtime depe
 The reviewed versioned licence links v4 terms; prospective v5 documentation is not the
 licence basis for this pin. Review again before changing versions or actual production use.
 
-## Release drift
+## Rendering mode
 
+The helper renders through `@remotion/bundler` + `@remotion/renderer` (CLI/server-side), which takes
+a real screenshot and therefore honours every CSS effect the proof frames were reviewed with.
+Client-side rendering (`@remotion/web-renderer`) has no render quota either and is worth it for a
+hands-on Studio render or a browser-only host, but it emulates layout onto a canvas and does not
+support `z-index`, `backdrop-filter`, `perspective` or non-linear-gradient backgrounds. It is not in
+these pins; see [rendering modes](rendering-modes.md) before proposing it.
+
+## Release drift
 The runtime pin is one constant in [project.mjs](../scripts/project.mjs): `REMOTION_VERSION`.
 Before a version change or a release review, check all four packages in the public registry:
 
