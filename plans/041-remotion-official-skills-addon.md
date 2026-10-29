@@ -1,9 +1,10 @@
 # Plan 041: Remotion official skills add-on, version currency and optional Studio
 
-Status: **R0–R4 complete; R5 green for the targeted/security gates, with two 5-second
-whole-catalogue projector tests still timing out under the larger catalogue. Optional Studio was
-started and served HTTP 200 on the pinned pilot project.** No paid pilot, commit or push is part of
-this slice.
+Status: **Implementation and recorded install checks complete; publication under review.**
+Optional Studio served HTTP 200 in the recorded local smoke test; interactive editing is still
+unverified. The publication review reopened the official skills redistribution/licence scope
+question; the draft PR must not be merged or published until that question is resolved. Earlier
+timeout reports below are historical; the PR records a fresh serial gate result.
 
 Date: 2026-10-29 (Europe/Berlin). Branch: `codex/sound-model-catalogue`.
 
@@ -59,6 +60,24 @@ the final helper-export gate. Exact upstream terms, package and skill versions r
 | Add-on install into `scratch/pilot-040/remotion` | exit 0; Native pilot untouched (0 official skills) |
 | Studio smoke | `remotion studio index.jsx --no-open --port 3459` → HTTP 200, “Built in 12227ms” |
 | Known red | `skill-evals-not-installed` whole-catalogue plan and `inventory` fanout case exceed their 5 s per-test budget on this machine; assertions are unrelated to the add-on and the failures are timeouts/cleanup races |
+
+## 2026-10-29 publication review amendment
+
+This amendment supersedes earlier statements that licence ambiguity was fully resolved. The
+maintainer supplied the Remotion runtime licence; upstream package metadata points to
+`remotion-dev/remotion/packages/skills`, supporting common lineage. However, carrying another
+repository's licence is not itself proof that this standalone snapshot is covered or that our
+redistribution in an npm package is authorized. Optional installation does not remove that
+question: the package's `files: ["dist", "registry"]` includes the vendored content.
+
+**Merge/release hold:** obtain pinned upstream scope and redistribution evidence or explicit
+upstream clarification before merging/publishing this add-on. The current `LicenseRef-Remotion`
+classification and copies of `LICENSE.md` are recorded implementation choices, not an entitlement
+or redistribution ruling. Direct installation of the official repository/plugin remains a user
+choice under its actual terms. The PR is draft while this review remains open.
+
+Installation correction: Pilot 040 received the 12 official skills; Pilot 041's harness installed
+`digital-agency` alone. Do not describe Pilot 041 as proof of official-skills use or effectiveness.
 
 Not verified: official host plugins, Codex/Cursor/Antigravity/Cline installs of this add-on,
 interactive Studio editing/write-back, rendered output of the official guidance, entitlement

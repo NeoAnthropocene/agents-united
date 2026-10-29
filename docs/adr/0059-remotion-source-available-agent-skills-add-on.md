@@ -22,6 +22,18 @@ The official pack at commit `30d4553ecd46fbc5212fd0ff006ae43af522158b` contains 
 6. **Studio is optional, agentic production is the default.** Chris asks once whether the user wants agent-only production or a hands-on Studio preview. If chosen, Motion may start the pinned project-local Studio and treat user edits as source changes requiring proof and final measured helper export. Studio never replaces the proof, audio, licence or encoded-QC gates.
 7. **Keep agent skills primary.** The official best-practices/markup/render/docs skills inform authoring. This repository's preflight, canonical timeline/fingerprint, deterministic composition, audio manifest, proof review, helper render and QC remain authoritative.
 
+## Publication review amendment — 2026-10-29
+
+The earlier accepted classification records the implementation intent, not a legal determination.
+Pinned package metadata identifies `remotion-dev/remotion/packages/skills` as the source, but the
+standalone snapshot has no licence file. Copying the runtime repository's licence does not by
+itself prove its scope or our permission to redistribute this content through npm.
+
+**Merge/release hold:** obtain pinned scope/redistribution evidence or explicit upstream
+clarification before merging or publishing the vendored add-on. Optional runtime installation does
+not exclude it from the npm tarball (`registry` is packaged). This draft PR preserves the review
+history and must not be treated as a new sublicence grant. See Plan 041's publication amendment.
+
 ## Consequences
 
 The catalogue gains 12 source-available third-party skills, one optional bundle and one new licence class. The add-on is larger than a pointer but preserves exact terms and provenance; it stays out of essentials and `full`, so users who do not choose Remotion carry none of it. Licence eligibility, runtime entitlement and Studio behaviour remain user/host responsibilities. Static tests prove packaging and declarations, not creative output, host-wide invocation or legal entitlement. Other hosts remain unverified until their packages are tested.

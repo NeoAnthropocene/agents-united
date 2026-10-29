@@ -16,7 +16,10 @@ node "<skill-root>/scripts/probe-system.mjs" --out media/specs/system-capability
 
 The JSON report is also printed to stdout. `--out` creates the file exclusively and refuses to
 replace an earlier probe unless `--force` is passed, so a route decision always points at one
-dated record. Exit 0 is a measurement; exit 2 is a usage error.
+dated record. Exit 0 is a measurement; exit 2 is a usage error. The project defaults to the current
+working directory, independently of `--out`. When running elsewhere, pass `--project <directory>`
+explicitly; `--out` still resolves from the working directory. Disk space is measured on the project
+directory's filesystem (reported as `disk.path`), not on the output directory or cwd's volume root.
 
 ## What it measures
 

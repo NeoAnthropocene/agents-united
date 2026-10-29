@@ -1,10 +1,9 @@
 # Plan 040: Signature-shot motion prompts and proof gate
 
-Status: **P0–P4 complete; P5 partial; P6 PR awaits the maintainer's approval.** The r3 native and
-Remotion pilots both rendered and passed 28/28 independent acceptance checks. The targeted gate,
-typecheck and host-library verification are green. The full parallel suite was stopped after more
-than 18 minutes in the documented install/projection timeout and `EEXIST`/`ENOTEMPTY` collision
-class, with no verdict; a serial adjudication remains. No commit or push has been made.
+Status: **P0–P4 complete; final serial gates and publication in progress.** The r3 Native and
+Remotion films passed the recorded 28/28 technical checks. The maintainer reviewed both as improved
+pipeline evidence, not reference-quality motion design, and authorized publication. Earlier full
+parallel testing stopped without a verdict; the PR will report the fresh serial result explicitly.
 
 Date: 2026-10-29 (Europe/Berlin). Branch: `codex/sound-model-catalogue`.
 
@@ -47,6 +46,14 @@ runtime-version questions are resolved; no `npx skills add` refresh runs inside 
 - Both use a downloaded CC0 stock plate with provenance, a full-length `cue-bed`, validated prompt,
   two correction rounds before render, fresh QC and complete proof coverage.
 - Visual review remains human work. Full playback and listening were not performed.
+
+## 2026-10-29 maintainer review amendment
+
+The maintainer reviewed both r3 MP4s as improved pipeline evidence, not motion-design-contest or
+reference-quality results, and authorized commit/PR publication after the planned tests. P6's
+historical approval blocker is therefore cleared. Plan 041 records subsequent add-on work and its
+reopened redistribution-scope hold; [Plan 043](043-reference-led-visual-craft-gate.md) is the
+plan-only follow-up for reference-relative craft. The draft PR records fresh pre-push gates.
 
 ## Boundaries
 

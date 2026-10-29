@@ -137,6 +137,55 @@ test('reports FFmpeg on PATH and in the project separately', async () => {
   }
 });
 
+test('disk measurement targets the project filesystem rather than the cwd volume root', async () => {
+  const project = path.resolve('project-volume');
+  let measured;
+  const report = await probeModule.probe({
+    project, spawnText: () => null,
+    statfs: target => { measured = target; return { bsize: 4096, bavail: 1024 }; },
+  });
+  assert.equal(measured, project);
+  assert.equal(report.disk.path, project);
+});
+
+test('CLI --out uses cwd as project, supports --project, and measurement is read-only', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'probe-project-cli-'));
+  try {
+    const bin = path.join(dir, 'node_modules', 'ffmpeg-static', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
+    fs.mkdirSync(path.dirname(bin), { recursive: true });
+    fs.writeFileSync(bin, 'detection only; do not execute');
+    const before = fs.readdirSync(dir, { recursive: true }).sort();
+    const run = args => spawnSync(process.execPath, [SCRIPT, ...args], {
+      cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: '' },
+    });
+    const measured = run([]);
+    assert.equal(measured.status, 0, measured.stderr);
+    const report = JSON.parse(measured.stdout);
+    assert.equal(report.tools.ffmpegProjectLocal, true);
+    assert.deepEqual(fs.readdirSync(dir, { recursive: true }).sort(), before);
+    assert.equal(fs.readFileSync(bin, 'utf8'), 'detection only; do not execute');
+
+    const recorded = run(['--out', 'media/specs/system-capability.json']);
+    assert.equal(recorded.status, 0, recorded.stderr);
+    const written = JSON.parse(fs.readFileSync(path.join(dir, 'media/specs/system-capability.json'), 'utf8'));
+    assert.equal(written.tools.ffmpegProjectLocal, true);
+    assert.equal(written.disk.path, dir);
+    assert.deepEqual(fs.readdirSync(dir, { recursive: true }).sort(),
+      [...before, 'media', path.join('media', 'specs'), path.join('media', 'specs', 'system-capability.json')].sort());
+
+    const other = path.join(dir, 'elsewhere');
+    fs.mkdirSync(other);
+    const explicit = run(['--project', other]);
+    assert.equal(explicit.status, 0, explicit.stderr);
+    assert.equal(JSON.parse(explicit.stdout).disk.path, other);
+    assert.equal(JSON.parse(explicit.stdout).tools.ffmpegProjectLocal, false);
+    assert.deepEqual(fs.readdirSync(other), []);
+    const invalid = run(['--project']);
+    assert.equal(invalid.status, 2);
+    assert.match(invalid.stderr, /--project needs/);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('the documented floor table matches the script', () => {
   const doc = fs.readFileSync(path.resolve('registry/skills/audio-generation/references/system-capability.md'), 'utf8');
   for (const [route, floor] of Object.entries(probeModule.FLOORS)) {

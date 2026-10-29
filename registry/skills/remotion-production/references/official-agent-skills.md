@@ -8,6 +8,15 @@ Use this only after `media/project.json` selects `remotion`; never load it for a
 
 The official standalone repo has no licence file of its own; the parent Remotion `LICENSE.md` supplies the terms. This packaging records that resolution and does not relicense the official content as MIT.
 
+## Publication review notice
+
+The runtime licence describes eligibility for Remotion use, but copying it from the monorepo does
+not by itself prove standalone-skills licence scope or permission to redistribute the snapshot.
+The add-on is under a **merge/release hold**, pending pinned upstream evidence or clarification
+(ADR 0059 amendment). The commands below document the proposed setup, not redistribution approval.
+An optional install does not remove bundled files from the npm package. Do not claim that Pilot 041
+used these 12 skills: its harness installed `digital-agency` only; Pilot 040 supplied install proof.
+
 ## Install through this repository
 
 The add-on exists only when the user opts in after choosing Remotion:

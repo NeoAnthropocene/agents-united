@@ -16,14 +16,17 @@ node "<audiovisual-review skill root>/scripts/ffmpeg.mjs" verify  --project "<pr
 
 Resolution order: an explicit `--ffmpeg`, `FFMPEG_PATH`, the project's own
 `node_modules/ffmpeg-static`, the native scaffold's static build, then `ffmpeg` on `PATH`. The
-report names which source won and its absolute path; use that path for `--ffmpeg` and for the
-finisher's binary argument instead of hoping PATH is right.
+report names which source won and gives an absolute path for on-disk candidates; use that path
+for `--ffmpeg` and for the finisher's binary argument instead of hoping PATH is right. The final
+`path: "ffmpeg"` fallback is only a command to try, not evidence of an installed binary:
+`resolved: false`, `exists: false`, and `resolve` exits 2. Run `verify` to check that PATH command.
 
 `verify` runs `-version`, `-h filter=amix`, `-h filter=loudnorm` and `-encoders`, and reports
-`ok`, `version` and `missing[]`. A build that plays MP4 can still be unusable — a stripped N-92722
-build lacks `amix normalize`, and an n7.1 compositor build can omit `pcm_f32le`. Exit 0 means the
-capabilities this repository needs are present; exit 1 names what is missing; exit 2 means no
-binary was found at all.
+`ok`, `version` and `missing[]`. Required capabilities are `amix normalize`, `loudnorm`, `libx264`,
+`aac`, `pcm_f32le` and `pcm_s24le`. A build that plays MP4 can still be unusable — a stripped
+N-92722 build lacks `amix normalize`, and an n7.1 compositor build can omit `pcm_f32le`.
+Exit 0 means the required capabilities are present; exit 1 names a missing capability, invalid
+version response or failed process (including a missing PATH binary).
 
 ## 2. Choose the install, then ask
 
@@ -60,7 +63,10 @@ node "<skill root>/scripts/ffmpeg.mjs" path --add "<absolute ffmpeg bin folder>"
 
 On Windows it appends to the **user** `Path` variable idempotently (a second run reports
 `changed: false`) and returns an `undo` field holding the exact PowerShell command that restores
-the previous value. On macOS and Linux it prints the `export PATH=...` line for the user's own
+the previous value without trimming or rebuilding its entries. The target must be a nonempty,
+absolute, existing directory. PowerShell reads/writes fail closed and success requires an exact
+read-back match; PATH values and the undo payload travel as base64 UTF8 data, never executable
+interpolation. On macOS and Linux it prints a shell-quoted `export PATH=...` line for the user's own
 shell profile instead of editing it. Never edit the machine `Path`, never prepend a directory ahead
 of system tools, and never do this silently.
 

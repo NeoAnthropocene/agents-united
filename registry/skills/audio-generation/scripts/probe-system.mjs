@@ -166,11 +166,12 @@ export async function probe(options = {}) {
   const runText = options.spawnText ?? spawnText;
   const statfs = options.statfs ?? (target => fs.statfsSync(target));
   const cpus = os.cpus();
-  const root = platform === 'win32' ? path.parse(process.cwd()).root || 'C:\\' : '/';
+  // statfs on the project directory measures its actual filesystem, including mount points.
+  const project = path.resolve(options.project ?? process.cwd());
 
   let freeGiB = null;
   try {
-    const stats = statfs(root);
+    const stats = statfs(project);
     freeGiB = Number(((stats.bsize * stats.bavail) / 2 ** 30).toFixed(1));
   } catch {
     freeGiB = null;
@@ -189,8 +190,8 @@ export async function probe(options = {}) {
   const tools = {
     ffmpegOnPath: runText('ffmpeg', ['-version']) !== null,
     // A project can ship its own FFmpeg (ffmpeg-static) without any PATH entry; report both.
-    ffmpegProjectLocal: Boolean(options.project) && fs.existsSync(path.join(
-      options.project, 'node_modules', 'ffmpeg-static', platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg',
+    ffmpegProjectLocal: fs.existsSync(path.join(
+      project, 'node_modules', 'ffmpeg-static', platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg',
     )),
     python: runText('python', ['--version']) !== null || runText('python3', ['--version']) !== null,
     uv: runText('uv', ['--version']) !== null,
@@ -211,7 +212,7 @@ export async function probe(options = {}) {
       toleranceGiB: RAM_TOLERANCE_GIB,
       note: 'totalGiB is the OS-reported usable figure; floors are compared with toleranceGiB added for firmware reservations',
     },
-    disk: { path: root, freeGiB },
+    disk: { path: project, freeGiB },
     gpu: {
       devices: gpuDevices,
       dedicatedVramGiB: dedicatedVramGiB({ gpu: { devices: gpuDevices } }),
@@ -241,24 +242,24 @@ function flag(args, name) {
 async function main(args) {
   const out = flag(args, '--out');
   const force = args.includes('--force');
-  const known = new Set(['--out', '--force']);
+  const known = new Set(['--out', '--force', '--project']);
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (!arg.startsWith('--')) continue;
     if (!known.has(arg)) {
-      console.error(`probe-system: unknown flag ${arg}. Use --out <path> and optionally --force.`);
+      console.error(`probe-system: unknown flag ${arg}. Use --out <path>, --project <dir> and optionally --force.`);
       return 2;
     }
-    if (arg === '--out') {
+    if (arg === '--out' || arg === '--project') {
       if (!args[index + 1] || args[index + 1].startsWith('--')) {
-        console.error('probe-system: --out needs a destination path.');
+        console.error(`probe-system: ${arg} needs a ${arg === '--out' ? 'destination path' : 'project directory'}.`);
         return 2;
       }
       index += 1;
     }
   }
 
-  const report = await probe({ project: out ? path.resolve(path.dirname(out), '..') : process.cwd() });
+  const report = await probe({ project: flag(args, '--project') ?? process.cwd() });
   const json = `${JSON.stringify(report, null, 2)}\n`;
   if (out) {
     const target = path.resolve(out);

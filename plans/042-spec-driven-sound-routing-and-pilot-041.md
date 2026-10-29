@@ -1,8 +1,10 @@
 # Plan 042: Spec-driven sound routing and the Pilot 041 idea-to-deliverable test
 
-Status: **P1–P3 implemented and verified; the two Pilot 041 live cells are prepared but not run**
-(a host session spends the maintainer's account, so the maintainer starts them). No commit is part
-of this slice.
+Status: **Implementation and recorded technical pilots complete; publication in progress.**
+Both Pilot 041 exports passed the recorded mechanical checks. The maintainer's later playback and
+listening review did **not** accept their creative quality and reported slight Remotion sync drift.
+The dated entries below preserve earlier observations; the final review amendment supersedes
+pending/not-run language. No further paid Host run is part of this publication task.
 
 Date: 2026-10-29. Branch: `codex/sound-model-catalogue`.
 
@@ -133,4 +135,48 @@ Client-side rendering is nevertheless a genuine option, now documented in
   dependency check, and adding its own evidence. Until that is run, it is **documented but unverified**
   here.
 
-Not verified: any client-side render in this repository.
+## Publication verification — 2026-10-29
+
+The follow-up plan and five linked plan documents passed relative-link/fence checks. Publication
+safety regressions passed **38/38 node:test cases** (PATH transport/read-back/undo, FFmpeg capability
+failure cases, project-root detection). The focused Vitest run passed **24 tests across five files**.
+The actual project-local FFmpeg 6.1.1 answered the stricter verifier with no missing capabilities;
+`hostlib:verify` passed. Real user PATH mutation was not performed and remains **unverified**.
+
+`npm run typecheck` and `npm test -- --no-file-parallelism` were launched for the pre-push gate.
+The final typecheck after the safety corrections exited **0**. The serial run passed the
+domain-conformance file (109 tests run, 208 conditional skips) and is still running with no final
+verdict at this entry. Exact complete-suite status must be reported in the PR; no targeted result
+substitutes for it. The PR stays draft while full-suite results and the Plan 041 redistribution
+review remain outstanding.
+
+## Final maintainer review and publication amendment — 2026-10-29
+
+The maintainer watched/listened to both Pilot 041 exports and reported: sound effects and
+background sound are very basic; Native A/V sync is better; Remotion is a bit unsynchronised;
+creativity is low against the X examples and is **not accepted**. This supersedes earlier
+"unverified playback/listening" only to the extent of that human review. No measured sync offset,
+root cause, rights clearance or colour-range compatibility approval is implied. The recorded
+21/21 mechanical results remain historical and are not a creative/sync pass.
+
+Earlier "Remotion comparison still owed" and "never rendered" statements refer to the quota-blocked
+attempt; the later provisioned run delivered. Its preceding post-reset blocked run was terminated
+before a final cost record was captured: its cost is **unverified**, so USD 4.8455483 + 0.2938542 +
+1.0657866 is only the known recorded subtotal, not a complete spend total.
+
+Installation audit correction: Pilot 041 installed `digital-agency` alone, not the 12 official
+skills. Their Pilot 040 install proof does not establish Pilot 041 use. Do not attribute the film's
+creativity to the official add-on or claim it was an efficacy trial of that pack.
+
+The maintainer authorized pushing this work to a PR targeting `dev` and requested
+[Plan 043](043-reference-led-visual-craft-gate.md): actual 1–2 reference-frame comparison, explicit
+grain/gradient-mesh/depth-blur/light-wrap decisions, bounded reproof and final-mux sync review while
+keeping a lower-cost-model baseline. No gate implementation or new paid run is included here.
+
+Publication safety review added regression-tested fixes: Windows user PATH values and undo are
+encoded rather than interpolated as PowerShell, I/O fails closed and read-back is checked; FFmpeg
+verification rejects absent `amix normalize` and required PCM encoders; probe CLI roots itself in
+cwd or explicit `--project`, not the output file's directory. Real PATH mutation remains unverified.
+
+Not verified: any client-side render in this repository. The official add-on's redistribution
+scope remains a draft-PR merge/release hold (Plan 041 amendment).
