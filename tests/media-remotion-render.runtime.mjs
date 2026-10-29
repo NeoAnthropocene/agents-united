@@ -19,7 +19,7 @@ async function fixture(audio = true) {
   await put(root,'media/project.json',defaultPreferences('remotion','local',false,0));
   await put(root,'media/timeline.json',timeline);
   // Truthful scope for isolated tests only; no human, commercial or entitlement claim.
-  await put(root,'media/remotion-license.json',{schemaVersion:1,remotionVersion:'4.0.538',status:'evaluation',
+  await put(root,'media/remotion-license.json',{schemaVersion:1,remotionVersion:'4.0.539',status:'evaluation',
     purpose:'evaluation',reviewedOn:'2026-10-24',reviewedBy:'Automated Node unit-test harness',
     reviewerRole:'automated-evaluation',entity:'Isolated temporary unit-test fixture',
     evaluationScope:'internal-suitability-test',basis:'Internal noncommercial suitability test with fake IO/runtime.',

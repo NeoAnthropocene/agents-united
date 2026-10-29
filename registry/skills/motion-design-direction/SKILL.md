@@ -20,14 +20,14 @@ Require placement/audience/purpose, duration/ratio/fps, loop intent, approved co
 Return the selected treatment, filled parameters, storyboard/frame and cue table, asset/provenance list, renderer choice, acceptance checks and Motion/Sound handoffs. Default planning is 1920x1080 at 60 fps unless the destination overrides it.
 
 ## Step-by-Step Runbook
-1. Load [direction and shared contracts](references/direction.md). Reuse approved assets and saved preferences. Chris offers Native (recommended starting choice) or Remotion, confirms the choice and persists it in `media/project.json`; never silently switch lanes.
-2. Ask Jamileh for brand tokens/asset specs and Kaan for approved copy. Jamileh remains shell-less. Motion owns timing/storyboard/video integration; Sound owns the final measured master, stems, cues and provenance.
-3. Choose only the relevant recipe group: [1-3 UI/launch/beat-drop](references/blueprints-01-03.md), [4-6 conversation/SaaS/mascot](references/blueprints-04-06.md), [7-8 campaign/showreel](references/blueprints-07-08.md), or [9-10 kinetic type/sting](references/blueprints-09-10.md). Fill every input; adapt the duration by the stated frame math.
-4. Read [source dispositions](references/sources.md) before using a reference. The 2026-10-22 supplied metrics are dated research snapshots, not a current ranking, independently viewed playback or rights clearance. These recipes are original writing, not copied prompts or source code.
-5. Present the storyboard, sound intention and reading holds through Chris. Freeze one canonical timeline/revision before animation and final sound; timing or speech edits require a new fingerprint and dependent handoffs.
-6. Apply the recipe to the chosen [Native Skill](../native-motion-production/SKILL.md) or [Remotion Skill](../remotion-production/SKILL.md). Both applications describe deterministic poses; neither authorizes dependency setup, runtime licence eligibility or paid generation.
-7. Hand Sound stable cue IDs/frame spans and approved narration. Integrate only the matching measured master and current captions. Review motion intent, actual encoded properties, playback/listening and rights separately; record unperformed checks as unverified.
-8. Give Chris the editable direction/source, exports when separately produced, evidence and named open items. Verify installed Bundle/host bindings and resources before claiming invocation; source and resource packing alone do not prove it.
+1. Load [direction and contracts](references/direction.md). Reuse approved assets/preferences. Chris confirms Native (recommended start) or Remotion in `media/project.json`; never switch lanes silently.
+2. Require Jamileh's `media/specs/visual-handoff.md` (concept, signature frame, negative space, material and light), tokens/assets and Kaan's exact copy. Jamileh stays shell-less; Motion owns timing/storyboard/video; Sound owns the measured master/stems/cues/provenance.
+3. Choose one recipe group: [1-3 UI/launch](references/blueprints-01-03.md), [4-6 conversation/SaaS/mascot](references/blueprints-04-06.md), [7-8 campaign/showreel](references/blueprints-07-08.md), or [9-10 type/sting](references/blueprints-09-10.md). Read its [quick facts](references/quick-facts.md), then apply the mandatory [signature-shot prompt blueprint](references/prompt-blueprint.md).
+4. Fill [the worked spec](assets/motion-prompt.example.json) as `media/specs/motion-prompt.json`. Run `node ${CLAUDE_SKILL_DIR}/scripts/check-prompt-spec.mjs --spec media/specs/motion-prompt.json`; **no storyboard or animation code until exit 0**. The spec needs a signature shot, contiguous causal shots, one named camera move per shot, 3+ depth layers, material/light, negative space, beat grid and proof plan.
+5. Present the storyboard, sound intention and reading holds through Chris. Freeze one canonical timeline/revision before animation/final sound; timing or speech changes need a new fingerprint and dependent handoffs.
+6. Apply the spec through the chosen [Native](../native-motion-production/SKILL.md) or [Remotion](../remotion-production/SKILL.md) Skill. Neither authorizes setup, runtime entitlement or paid generation.
+7. Capture and inspect the proof frames **before the full render**; reject flat/default materials, placeholder rectangles, clipping, collisions and illegible type, then revise/reproof within budget. Integrate only Sound's matching measured master/captions. Keep technical, playback, listening and creative checks separate; say unverified when not performed.
+8. Return editable direction/source, exports when produced, proof images/review, validation output and open items. Installed files alone do not prove invocation or quality.
 
 ## Code & Config Exemplars
 At F fps and duration D, approve integer N frames; export i=0..N-1 at t=i/F. Each scene uses `[startFrame,endFrame)`. For a 15 s, 60 fps treatment, N=900; an opening `[0,120)` lasts 2 s. Local progress is `clamp((i-a)/(b-a),0,1)`; the end pose can be probed separately.
@@ -39,9 +39,10 @@ Anti-patterns: decorative cursor clicks without cause; discontinuous loop identi
 External generated footage is a separate opt-in. Reuse `commercial-stock-sourcer` for visuals when needed; it supplies no audio. Without a renderer or shell, deliver the storyboard and handoff; render quality stays unverified.
 
 ## Verification Checklist
-- Every parameter, scene/beat, build decision and reading hold is filled, with approved inputs and provenance or an explicit gap.
-- Selected renderer and budget are recorded through Chris; Native/Remotion share one revision, fingerprint, fps and half-open timeline.
-- Sound receives cue timing, narration, sync tolerance and final master/stem/caption requirements; downstream timing changes invalidate the handoff.
-- Source metrics retain their supplied date/limits; reference media is separately rights-cleared before reuse.
-- Technical export, full playback, listening and creative acceptance have separate evidence or say unverified; none of these ten recipes is independently quality-proven.
-- Maintainer `evals/` holds prepared paired briefs/control only, excluded from installed resources. Preserve bounded team/revision policy and spending limits.
+- `motion-prompt.json` validates; storyboard, beats, holds and assets match approved inputs or name gaps.
+- Signature shot, causal transitions, named cameras, depth/material/light and treated type are present; no placeholder panels.
+- Renderer/budget are approved; both lanes share revision, fingerprint, fps and half-open timing.
+- Sound has cue timing, narration, sync tolerance and master/stem/caption requirements; timing changes invalidate handoffs.
+- Source metrics keep their dates/limits; reference media is rights-cleared separately.
+- Proof review, export, playback, listening and creative acceptance have separate evidence or say unverified. Prepared recipes are not quality proof.
+- Maintainer `evals/` stays outside installed resources; preserve team/revision/spend limits.

@@ -71,6 +71,37 @@ describe('digital agency media production roles', () => {
     expect(agency.planningLoop?.budget?.maxPeerExchangesPerPair).toBe(2);
   });
 
+  it('requires a validated signature-shot prompt and reviewed proof frames across the handoff', () => {
+    const motion = native('agency-motion-designer');
+    const creative = native('agency-creative-designer');
+    const lead = native('orchestrator-digital-agency');
+    const skill = fs.readFileSync('registry/skills/motion-design-direction/SKILL.md', 'utf8');
+    const blueprintPath = 'registry/skills/motion-design-direction/references/prompt-blueprint.md';
+
+    expect(fs.existsSync(blueprintPath)).toBe(true);
+    expect(skill).toContain('references/prompt-blueprint.md');
+    expect(skill).toContain('check-prompt-spec.mjs');
+    expect(motion).toContain('media/specs/motion-prompt.json');
+    expect(motion).toContain('check-prompt-spec.mjs');
+    expect(motion).toMatch(/signature shot/i);
+    expect(motion).toMatch(/one named camera move/i);
+    expect(motion).toMatch(/proof frames/i);
+    expect(motion).toMatch(/before (?:the )?full render/i);
+    expect(creative).toContain('media/specs/visual-handoff.md');
+    expect(creative).toMatch(/signature frame/i);
+    expect(creative).toMatch(/negative space/i);
+    expect(creative).toMatch(/material and light/i);
+    expect(lead).toContain('media/specs/motion-prompt.json');
+    expect(lead).toMatch(/proof.frame review/i);
+    expect(lead).toMatch(/before (?:the )?full render/i);
+    for (const file of ['registry/agents/subagent-motion-designer.md', 'registry/agents/orchestrator-digital-agency.md']) {
+      const text = fs.readFileSync(file, 'utf8');
+      expect(text, file).toMatch(/signature shot/i);
+      expect(text, file).toContain('media/specs/motion-prompt.json');
+      expect(text, file).toMatch(/proof.frame review/i);
+    }
+  });
+
   it('Sound-only WAV ownership and applicable review agree across the floor, roles and lead', async () => {
     const core = (await loadSemanticCore('registry')).get('subagent-sound-designer')!;
     const canonical = fs.readFileSync('registry/agents/subagent-sound-designer.md', 'utf8');

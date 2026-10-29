@@ -359,6 +359,7 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
       'agent-factory',
       'full',
       'mock-organization-under-construction',
+      'remotion-agent-skills',
       'universal-orchestration',
       'universal-skills',
     ]);

@@ -1,6 +1,6 @@
 # Blueprints 9-10: recurring motif and sonic identity
 
-Read one recipe with [shared direction](direction.md) and [source limits](sources.md). These are original agency treatments based on supplied ideas. All examples are fictional; all spans are half-open at 60 fps.
+Read one recipe with [shared direction](direction.md) and [quick facts](quick-facts.md). These are original agency treatments based on supplied ideas. All examples are fictional; all spans are half-open at 60 fps.
 
 ## 9. Kinetic type with a recurring motif
 
@@ -37,8 +37,9 @@ Anti-patterns: unreadable rotating text, unlicensed fonts, false numerical compa
 ### Filled worked example
 Fictional brief: Folio planning tool motion study, Native confirmed by Chris, 15 s/900 frames, revision folio-type-r1. Approved illustrative copy: "From scattered ideas", "Find the pattern", "Make one plan", CTA "Meet Folio". Chart is explicitly "Demo: items by theme" with values 4/7/9 and zero baseline; no productivity claim. Motif is a client-approved orange line with round ends, width 180 px at first underline, chart axis width 680 px, then a ring aperture and final logo underline. Palette #152F3A/#F7F1E5/#C86834, licensed local sans, safe inset 96. Use the five spans above, data reveal [216,252), no VO, local Sound recurring two-hit texture and zero generated-footage spend. Actual brand/font/data evidence remains required for production.
 
-### Source/date/evidence
-Supplied type/data/shape/recurring-motif/endcard idea attributed to whrrari: <https://substack.com/@whrrari/note/c-353407785>. Research date 2026-10-22; no metric supplied. Agency adaptation of the idea with original writing, not a vendored prompt or source artwork. Not reverified during drafting (2026-10-24); [limits](sources.md) apply and reference media is not automatically rights-cleared.
+### Quick facts
+
+Per-word entrance, scale + tracking + mask reveal, depth shadow or extrusion, camera drift. No plain centered headline, fade-only text or glyphs off-canvas. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 9)**. No kinetic render, independent playback/listening, data approval or readability study. Future check: matched copy/font/motif/data in both lanes, inspect transform boundaries and final-size reading holds, then obtain independent muted comprehension/motion review. Starter rendering tests provide no quality evidence for this typography recipe.
@@ -77,8 +78,9 @@ Anti-patterns: revealing a distorted logo, cutting the sonic decay, clipping a t
 ### Filled worked example
 Fictional brief: Morrow studio sting, 8 s/480 frames, Remotion confirmed/persisted by Chris, revision morrow-sting-r1. Client-owned illustrative logo is a static wordmark with a separate ring motif; the wordmark cannot morph. Palette #162F38/#F7EEDF/#BD6B38, no tagline, safe clear-space 96 px. Ring center follows (400,540) to (960,540) over [90,240); reveal the exact wordmark [240,288), hold [300,480). Local Sound proposes intake at 60, rounded transient at 240 and a tonal decay ending before 420, with no famous-brand reference or external-generation request. Deliver the proposed cue/pose sheet first; actual measured audio, runtime eligibility and creative approval remain prerequisites.
 
-### Source/date/evidence
-Supplied anticipation/transform/reveal/readable-hold and sonic-signature idea attributed to whrrari: <https://substack.com/@whrrari/note/c-354195159>. Research date 2026-10-22; no metric supplied. Agency adaptation of the idea with original writing; no source logo, audio or prompt is copied. Not reverified during drafting (2026-10-24); [limits](sources.md) apply, including separate rights clearance for reference media.
+### Quick facts
+
+Brand parts assemble, a glow and a particle accent, the sound hit lands with the assembly, a short settle. No logo fade-in on flat colour alone, unaligned hit or borrowed mark. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 10)**. No sting render, independent listening/playback, sonic-identity clearance or creative approval. Future check: matched logo/motif/audio in both lanes, decoded frame/peak alignment and full tail inspection, then independent logo-recognition and device listening review. Existing renderer proofs do not evaluate this logo or sonic signature.

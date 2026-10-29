@@ -20,6 +20,47 @@ Remotion: use the [composition guide](../../remotion-production/references/compo
 
 Each recipe's numbers are a starting layout, not rigid automatic cuts. Preserve minimum reading holds based on actual approved copy, test at the final display size and ask Chris to simplify or extend when needed. Treat reduced-motion and captioned variants as separately approved edits with matching timing/handoffs. Avoid rapid flashing; review transitions and motion sensitivity with the intended audience/destination.
 
+## Signature-shot prompt gate
+
+Before storyboard or animation code, apply [the prompt blueprint](prompt-blueprint.md). Jamileh's
+`media/specs/visual-handoff.md` supplies concept, signature frame, composition/negative space,
+type/palette and material/light; Motion turns it into `media/specs/motion-prompt.json` and runs
+`check-prompt-spec.mjs`. A blueprint name, token file or effect checklist alone is not a handoff.
+
+Every shot has a state change, one named camera move with start/end/easing, a primary action and
+a secondary reaction. Its transition inherits a visual element from the previous shot; unrelated
+tween collections and crossfades used to conceal weak transitions are defects. Build toward one
+signature frame. Align actions to the approved beat grid without sacrificing reading holds.
+
+Solve copy contrast through reserved negative space, subject placement and tonal lighting. **Do
+not place a hard-edged or visibly blurred placeholder rectangle behind copy.** An integrated
+architectural panel is allowed only when the visual handoff makes it a deliberate designed object
+with its own material, edge and light behaviour.
+
+Capture the proof-plan frames and review them before the full render. Flat/default materials,
+placeholder rectangles, clipping/aliasing, illegible type, collisions and unclear cause/effect
+require correction and a new proof, not a note after the export. The JSON validator checks
+structure only; it cannot approve visual quality.
+
+## Composition quality floor (marketing-grade, not a flat plate)
+
+A film for a marketing placement needs composed depth, not a colour plate with centered
+type. Unless the brief explicitly forbids it and the storyboard records why, each scene
+carries: a background field with at least three distinguishable depth layers (sky/gradient,
+mid-ground silhouette, foreground accent or vignette); one light effect (glow, ray, bloom,
+light sweep or graded tint); one secondary motion (tail, sway, particle, blink, float,
+breathing scale) besides the primary move; one camera move (dolly, pan, push-in, parallax
+shift or handheld-style drift, all frame-derived); and text treated as a designed element
+(mask reveal, tracking, scale, per-word entrance, depth shadow or extrusion) rather than a
+static label. Grade colours as one palette across the film. Use graded licensed imagery when
+Jamileh supplies actual asset paths, otherwise original shapes with the same depth treatment.
+
+Write these parameters in the storyboard before authoring: per-layer opacity/blur/parallax
+factor, the light effect's frame span and intensity, the secondary motion's frequency and
+amplitude, the camera's start/end transform with its easing, and each text reveal's frame
+span. Review at the final display size: margins, legibility, no glyph clipping, no object
+crossing the copy, and the grade staying consistent through every transition.
+
 ## Sound handoff and acceptance
 
 Before Sound finalizes, send the approved revision/fingerprint, fps/N, scene IDs, cue IDs with frame spans, approved speech text/pronunciations and caption requirements, musical intention, sync points and tolerances. Align deliberate hits within one frame of their approved mark; preserve performance timing when narration determines the cut. Scratch narration is timing assistance, not final consent to alter copy or clone a voice.

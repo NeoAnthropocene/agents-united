@@ -22,7 +22,7 @@ async function fixture(){
   await fs.mkdir(path.join(root,'media'));await fs.mkdir(path.join(root,'audio'));
   const prefs=defaultPreferences('remotion','local',false,0);Object.assign(prefs.output,{width:640,height:360});
   await put(root,'media/project.json',prefs);
-  await put(root,'media/remotion-license.json',{schemaVersion:1,remotionVersion:'4.0.538',status:'evaluation',purpose:'evaluation',
+  await put(root,'media/remotion-license.json',{schemaVersion:1,remotionVersion:'4.0.539',status:'evaluation',purpose:'evaluation',
     reviewedOn:'2026-10-24',reviewedBy:'Automated Node test harness',reviewerRole:'automated-evaluation',
     evaluationScope:'internal-suitability-test',entity:'Isolated refresh contract fixture',
     basis:'Internal noncommercial suitability tests with illustrative audio bytes; no real render.',

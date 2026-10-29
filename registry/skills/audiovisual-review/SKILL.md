@@ -27,6 +27,7 @@ Require the accepted Media Request, applicable storyboard/copy, timeline or Soun
 
 ## Code & Config Exemplars
 `node "${CLAUDE_SKILL_DIR}/scripts/review.mjs" contract --project <absolute-project> --timeline media/timeline.json --manifest media/audio-manifest.json --captions media/captions.srt` checks structure and file presence. For a saved custom target append `--target-lufs <value> --tolerance-lu <value> --max-true-peak <value>`; this CLI has no `--preferences` flag. Other Hosts resolve this installed Skill's absolute root before appending `scripts/review.mjs`.
+Before any decoded inspection, resolve and capability-verify the tool that will do it: `node "${CLAUDE_SKILL_DIR}/scripts/ffmpeg.mjs" resolve --project <absolute-project>` then `verify --project <absolute-project>`. Use the absolute path it reports for `--ffmpeg` and for the finisher's binary argument. A missing or incapable build is a project-local `ffmpeg-static` request through Chris; a machine-wide install or PATH edit needs the user's explicit consent. See [FFmpeg provisioning](references/ffmpeg.md).
 Read [the worked example](examples/review-handoff.md) before adapting [timeline](assets/timeline.example.json), [manifest](assets/audio-manifest.example.json) and [captions](assets/captions.example.srt). Their numbers are illustrative and no WAV is shipped; omit `--project` for this metadata-only example. `timeline --timeline <file>` returns the canonical fingerprint; `request --request <file>` validates a Media Request.
 
 ## Edge Cases & Error Recovery

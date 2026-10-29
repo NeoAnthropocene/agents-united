@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 34 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 61 agents (9 orchestrators + 52 sub-agents) · 205 skills (135 domain skills + 70 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
+**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 61 agents (9 orchestrators + 52 sub-agents) · 217 skills (147 domain skills + 70 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
 
 ---
 
@@ -192,14 +192,17 @@ An **Essentials** bundle is the starting team for a department. **Addons** exten
 | **🔒 Security Operations** | `security-operations` | `secops-cloud-security`, `secops-application-security`, `secops-compliance-grc` | `orchestrator-security` |
 | **🔬 Deep Research** | `deep-research` | `deep-research-analytics` | `orchestrator-research` |
 | **💼 Business Strategy** | `business-strategy` | `business-financial-modeling`, `business-market-intelligence`, `business-operations-legal` | `orchestrator-business` |
-| **🏢 Organization** | `digital-agency` ⚡ | n/a (cross-functional team) | `orchestrator-digital-agency` |
+| **🏢 Organization** | `digital-agency` ⚡ | `remotion-agent-skills` (optional; only after Remotion is selected) | `orchestrator-digital-agency` |
 
 ```bash
 agents add software-engineering        # one bundle
 agents add domain:marketing            # a whole department, picked interactively
 agents add qa-automation               # an addon
 agents add full                        # end-user suite; excludes contributor-only content
+agents add remotion-agent-skills       # optional official Remotion skills; source-available licence
 ```
+
+> The Remotion add-on is **not** in `full` or an essentials bundle. Install it only after choosing Remotion and confirming eligibility for the [Remotion License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md). It is source-available, not MIT.
 
 > [!NOTE]
 > **Maturity.** `software-engineering`, `product-design`, and `universal-orchestration` are marked **stable**. `digital-agency` and the other bundles are usable but still being hardened. The CLI gates bundles marked under construction behind `--allow-under-construction`.
@@ -272,7 +275,7 @@ agents add full                        # end-user suite; excludes contributor-on
 
 ### Skills
 
-The 205 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 135 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 70 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 217 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 147 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 70 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
@@ -603,7 +606,7 @@ The `host-update-sync` maintainer skill (`.claude/skills/`) turns a new upstream
 
 Follow the checklist in [`docs/skill-intake.md`](./docs/skill-intake.md). In short:
 
-1. **Check the licence first.** Permissive licences (MIT, Apache-2.0, BSD, ISC, CC-BY) may be vendored with credit. MPL-2.0 and CC-BY-SA-4.0 skills may be vendored only if the skill folder keeps the upstream `LICENSE`, a `NOTICE.md` of what changed, and a SHA-pinned `metadata.source`, and stays under that licence. NonCommercial, NoDerivatives, and GPL-family content is never vendored ([ADR 0024](./docs/adr/0024-licence-tiered-skill-intake.md)). A test enforces this catalog-wide.
+1. **Check the licence first.** Permissive licences (MIT, Apache-2.0, BSD, ISC, CC-BY) may be vendored with credit. MPL-2.0 and CC-BY-SA-4.0 skills may be vendored only if the skill folder keeps the upstream `LICENSE`, a `NOTICE.md` of what changed, and a SHA-pinned `metadata.source`, and stays under that licence. A custom source-available `LicenseRef-*` skill may ship only in an explicit optional add-on with its exact licence, notice, eligibility terms and pinned source; it is never reclassified as MIT or placed in `full`. NonCommercial, NoDerivatives, and GPL-family content is never vendored ([ADR 0024](./docs/adr/0024-licence-tiered-skill-intake.md), [ADR 0059](./docs/adr/0059-remotion-source-available-agent-skills-add-on.md)). A test enforces this catalog-wide.
 2. **Declare metadata** in the `SKILL.md` frontmatter:
 
    ```yaml
@@ -667,11 +670,11 @@ Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releas
 
 ## 🤝 Credits & Acknowledgments
 
-- **Motion design direction:** original agents-united Skill and ten parameterized blueprints informed by the supplied 2026-10-22 idea snapshots credited in [the source ledger](registry/skills/motion-design-direction/references/sources.md) (twoclipping, tdinh_me, achxvi, RoundtableSpace, ajith_io and whrrari). No upstream prompts, code or reference media were copied; the dated metrics are not independently verified playback or quality results.
+- **Motion design direction:** original agents-united Skill and ten parameterized blueprints informed by the supplied 2026-10-22 idea snapshots credited in [the prompt blueprint](registry/skills/motion-design-direction/references/prompt-blueprint.md) (twoclipping, tdinh_me, achxvi, RoundtableSpace, ajith_io and whrrari). No upstream prompts, code or reference media were copied; the dated metrics are not independently verified playback or quality results.
 
 Agents United proudly builds upon, adapts, and integrates contributions from creators across the open AI agent, cloud platform, and developer tooling ecosystem:
 
-- **Remotion production:** original agents-united Skill, helper and React templates informed by the [Remotion API documentation](https://www.remotion.dev/docs/) and the reviewed [4.0.538 runtime licence](https://github.com/remotion-dev/remotion/blob/v4.0.538/LICENSE.md). No upstream Skill was copied; runtime licensing is separate from this repository's MIT source licence. [Plan 037](plans/037-agency-motion-sound.md) records accepted catalog/native authored contracts and isolated Windows project-scope Claude Native Lane copy evidence. Pre-headroom repository typecheck and full serial tests passed on 2026-10-26 (228 files; 4824 passed, 209 skipped). The 2026-10-27 headroom change has current typecheck, focused audio/shared/Native/Remotion and installed-helper mux proof; its fresh final full gate passed (228 files; 4824 passed, 209 unchanged skips), followed by the distinct narrated Claude regression. Original pilot outcomes remain4/6 and are not rescored.
+- **Remotion production:** original agents-united Skill, helper and React templates informed by the [Remotion API documentation](https://www.remotion.dev/docs/) and the reviewed [4.0.539 runtime licence](https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md). The optional `remotion-agent-skills` add-on separately vendors the official [Remotion Agent Skills](https://github.com/remotion-dev/skills) at commit `30d4553ecd46fbc5212fd0ff006ae43af522158b` under the source-available Remotion License, with its licence and notice retained in every skill folder; it is not MIT, not part of `full`, and grants no runtime entitlement. [Plan 037](plans/037-agency-motion-sound.md) records accepted catalog/native authored contracts and isolated Windows project-scope Claude Native Lane copy evidence. Pre-headroom repository typecheck and full serial tests passed on 2026-10-26 (228 files; 4824 passed, 209 skipped). The 2026-10-27 headroom change has current typecheck, focused audio/shared/Native/Remotion and installed-helper mux proof; its fresh final full gate passed (228 files; 4824 passed, 209 unchanged skips), followed by the distinct narrated Claude regression. Original pilot outcomes remain4/6 and are not rescored.
 
 <details>
 <summary><strong>Matt Pocock (<a href="https://github.com/mattpocock">@mattpocock</a> / <a href="https://github.com/mattpocock/skills">mattpocock/skills</a>)</strong></summary>

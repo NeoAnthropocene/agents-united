@@ -1,6 +1,6 @@
 # Blueprints 7-8: reference grammar and technique range
 
-Read one recipe with [direction](direction.md) and [source dispositions](sources.md). These are original parameterized treatments with fictional examples, not recreations of the linked posts. All frame ranges are half-open at 60 fps.
+Read one recipe with [direction](direction.md) and [quick facts](quick-facts.md). These are original parameterized treatments with fictional examples, not recreations of the linked posts. All frame ranges are half-open at 60 fps.
 
 ## 7. Reference-led campaign
 
@@ -37,8 +37,9 @@ Anti-patterns: treating reference access as asset rights, copying a distinctive 
 ### Filled worked example
 Fictional brief: Sora tea refill campaign, 15 s/900 frames, Native confirmed by Chris, revision sora-campaign-r1. Client supplies its own prior campaign as an authorized analysis reference; proposed reusable grammar is 2:3:5:2.5:2.5-second pacing, 3:1 headline/body scale, left-aligned proof and a horizontal wipe. New assets are client-owned refill pouch photography and logo; Kaan's copy is "Make room for another cup", "Refill your favorite", CTA "Explore refills", with no unevidenced waste claim. Jamileh's tokens are #263C2D/#F7EFD9/#BE733E, anchors .08W/.5W, safe inset 96. Use the five spans above and 24-frame wipes. Local Sound develops a new soft percussive bed; no reference audio/frames are imported. Chris sets two review rounds within the existing bounded process; no extra agents are requested.
 
-### Source/date/evidence
-Supplied authorized-reference grammar idea attributed to RoundtableSpace: <https://x.com/RoundtableSpace/status/2105212446122062051>, parent <https://x.com/RoundtableSpace/status/2105209785335373948>. Supplied research snapshot 2026-10-22: 2,238 likes; 211 reposts. Not reverified during drafting (2026-10-24); [limits](sources.md) apply. Unlimited subagents/iterations in that supplied source are expressly rejected. This example does not claim the actual source's pace/type/composition was viewed or reproduced.
+### Quick facts
+
+One big line per beat; image or gradient field behind; camera dolly; per-line reveal with mask and tracking. No paragraph on a flat plate, no small centered text only, no unapproved superlatives. Bounded team/revision limits stand: unlimited subagents or iterations are rejected. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 7)**. No authorized-reference analysis run, campaign render, independent playback or creative/rights approval. Future check: a bounded paired brief using one genuinely authorized reference, evidence-backed grammar sheet and new assets; review original identity/readability and permissions separately. A runtime starter or source popularity is no quality evidence for this campaign.
@@ -79,8 +80,9 @@ Anti-patterns: six variants of the same wipe advertised as six techniques, incon
 ### Filled worked example
 Fictional brief: Northline studio exercise reel, 12 s/720 frames, Remotion chosen via Chris, revision northline-reel-r1. Theme #172E3B/#F6EEDD/#B96033, one ring motif, owned abstract photograph, illustrative UI tile and demo chart 20/35/45 with zero baseline. Titles: "Words", "Forms", "Interfaces", "Signals", "Images"; final "Northline / Motion studies". All shots are labeled original studio exercises, not client work. Use the six spans above, common 36-frame arrivals, final lockup at 624, 96 px safe inset, local Sound with one percussive palette, no VO or external footage. Runtime review and asset evidence remain prerequisites.
 
-### Source/date/evidence
-Supplied distinct-technique/consistent-identity showreel idea attributed to ajith_io: <https://x.com/ajith_io/status/2103449416325890146>. Supplied 2026-10-22 snapshot: 4,169 likes; 194 reposts. Not reverified during drafting (2026-10-24); [source limits](sources.md) apply. Technique choices and this fictional identity are original, not source-video observations or copied artwork.
+### Quick facts
+
+4–6 shots with distinct framing; cut and zoom variety; one consistent grade across shots. No slideshow of stills, random zooms or mixed colour grades. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 8)**. No six-technique render, independent playback/listening or identity/portfolio approval. Future check: matched assets/theme in both lanes, audit each claimed technique, inspect frame-boundary continuity and obtain independent recognition/legibility feedback. Existing runtime smoke tests establish no showreel-quality result.

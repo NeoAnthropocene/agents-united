@@ -22,6 +22,7 @@ repository root; record which file decided it. Then place it in a tier (ADR 0024
 | Permissive | MIT, Apache-2.0, BSD, ISC, CC-BY, CC0 / public domain | Yes | README credit; upstream `LICENSE`/`NOTICE` copied into the skill folder when the licence asks for it (Apache `NOTICE`, MIT/BSD notice) |
 | Weak copyleft | MPL-2.0 | Yes | `LICENSE` in the skill folder; `metadata.license: MPL-2.0`; modified files stay MPL-2.0; `NOTICE.md`; README credit |
 | Share-alike | CC-BY-SA-4.0 | Yes | `LICENSE` in the skill folder; `metadata.license: CC-BY-SA-4.0`; the adapted skill is released under CC-BY-SA-4.0; `NOTICE.md`; README credit |
+| Source-available add-on | A custom `LicenseRef-*` licence that permits use but restricts commercial eligibility or relicensing | Only in an explicit optional add-on | Exact upstream licence in the skill folder; `metadata.license` set to the custom reference; preserved upstream version and 40-character `metadata.source`; `NOTICE.md`; README credit; eligibility acknowledgement; never in an essentials bundle or `full` |
 | Blocked | Any NonCommercial or NoDerivatives term, GPL/AGPL/LGPL, no licence | No | Link-only pointer at most; do not copy its instructions or scripts |
 
 - Each skill folder is a separate work: share-alike and copyleft terms reach that folder, not
@@ -29,9 +30,11 @@ repository root; record which file decided it. Then place it in a tier (ADR 0024
 - `NOTICE.md` (the changes note) states the upstream URL and pinned SHA, the licence, and a
   short summary of what was changed (new runbook, files moved to `references/`, scripts not
   shipped, and so on). Write one for every adapted skill that is not purely MIT.
-- Record the SPDX identifier in `metadata.license`. `src/core/skill-licence-lint.ts`
-  (`lintSkillLicence`) fails a blocked or unclassified identifier, and a weak-copyleft or
-  share-alike skill that lacks `LICENSE`, `NOTICE.md` or a SHA-pinned `metadata.source`.
+- Record the SPDX or `LicenseRef-*` identifier in `metadata.license`. `src/core/skill-licence-lint.ts`
+  (`lintSkillLicence`) fails a blocked or unclassified identifier, and a weak-copyleft,
+  share-alike or source-available add-on skill that lacks its licence file, `NOTICE.md` or a
+  SHA-pinned `metadata.source`. A source-available licence is not reclassified as MIT and its
+  add-on must state the eligibility and non-relicensing terms.
 - **A skill with no declared licence** is resolved, not assumed: `npm run hostlib:licences` reads the licence at the
   pinned commit (licence file nearest the skill first, then frontmatter, then README) and records it as
   `resolvedLicence`; `--apply` writes `LICENSE`, `NOTICE.md` and `metadata.license` for licence-file evidence. A

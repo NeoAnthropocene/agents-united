@@ -10,7 +10,7 @@ import {
   timelineFingerprint, validateAudioManifest, validateMediaFiles, validatePreferences, validateTimeline,
 } from '../../audiovisual-review/scripts/review.mjs';
 
-export const REMOTION_VERSION = '4.0.538';
+export const REMOTION_VERSION = '4.0.539';
 export const LICENSE_URL = `https://github.com/remotion-dev/remotion/blob/v${REMOTION_VERSION}/LICENSE.md`;
 export const DEPENDENCIES = Object.freeze({
   remotion: REMOTION_VERSION, '@remotion/bundler': REMOTION_VERSION,
@@ -147,7 +147,8 @@ export async function scaffold(directory, options = {}) {
   const files = {
     ...Object.fromEntries(templates.map((name, index) => [name, source[index]])),
     'package.json': `${JSON.stringify({ name: 'agency-motion-project', version: '0.1.0', private: true,
-      type: 'module', engines: { node: '>=24' }, dependencies: DEPENDENCIES }, null, 2)}\n`,
+      type: 'module', engines: { node: '>=24' }, scripts: { studio: 'remotion studio index.jsx' },
+      dependencies: DEPENDENCIES }, null, 2)}\n`,
     'input-props.json': `${JSON.stringify(data, null, 2)}\n`,
     '.gitignore': 'node_modules/\nout/\n',
   };

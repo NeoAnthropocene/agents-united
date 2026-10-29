@@ -1,6 +1,6 @@
 # Blueprints 1-3: identity, launch and musical contrast
 
-Read only the selected recipe, plus [shared direction](direction.md) and [evidence limits](sources.md). All examples are fictional and fully specified for planning, not rendered or client-approved assets. Frame spans are half-open at 60 fps.
+Read only the selected recipe, plus [shared direction](direction.md) and [quick facts](quick-facts.md). All examples are fictional and fully specified for planning, not rendered or client-approved assets. Frame spans are half-open at 60 fps.
 
 ## 1. Continuous UI morph loop
 
@@ -37,8 +37,9 @@ Anti-patterns: teleporting the cursor, morphing into an unrelated identity, clic
 ### Filled worked example
 Fictional brief: Luma task app, 1920x1080, safe inset 96 px, 8 s/480 frames, Native confirmed via Chris, no external footage. Jamileh's illustrative tokens are ink #132A32, cream #F6F1E8, teal #167A74; Kaan's copy is "One task", "See the detail", "Place it". Object task-01 has opening bounds (720,360,480,280), detail (480,210,960,660), tile (1160,330,320,210). Cursor contacts (1160,400) at 72, drag starts at panel center 192, return control at 312. Use the five spans above, revision luma-loop-r1, click IDs above, local Sound route, zero provider spend. Deliver storyboard/state table first; loop and audible quality remain unverified.
 
-### Source/date/evidence
-Inspired by the supplied persistent-object/causal-cursor/seamless-return idea attributed to twoclipping: <https://x.com/twoclipping/status/2103273003555402193>. Supplied research snapshot 2026-10-22: 12,684 likes; 760 reposts. Not reverified during drafting (2026-10-24); original parameters/example and full [source limits](sources.md) apply. No rights clearance for reference media is implied.
+### Quick facts
+
+8 s, 480 frames at 60 fps; one object ID across three approved states; cursor arrives before the response; smoothstep bounds; label swap inside a mask; end pose and velocity equal the start. No cursor teleports, identity change or whole-canvas crossfade. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 1)**. No rendered loop, paired host evaluation, independent playback/listening or creative approval. Future check: build both lanes from the same approved bounds/cues, seek out of order, compare seam position/velocity and collect blind loop/readability review. Existing starter tests are not evidence for this recipe.
@@ -77,8 +78,9 @@ Anti-patterns: crop jumps, stretching faces, unreadable screenshot text, unsuppo
 ### Filled worked example
 Fictional brief: Framebook photo organizer launch, 12 s/720 frames, 1920x1080, Remotion chosen/persisted by Chris subject to its separate runtime review. Five client-owned landscape photos; active photo lake-02 moves from (160,240,480,320) to screenshot viewport (620,290,680,420). Approved product is a flat desktop frame, not a newly invented device. Kaan's copy is "Your photos, together"; CTA "Meet Framebook". Jamileh's palette is #102A43/#F5F0E7/#E6A54B, safe inset 96. Use the four spans above, revision framebook-launch-r1, no narration, local Sound music/cues, no generated footage. Still-image rights and UI capture permission must be evidenced before production.
 
-### Source/date/evidence
-Supplied gallery/interface/product/brand shared-element idea attributed to twoclipping: <https://x.com/twoclipping/status/2103835273813496100>. Supplied 2026-10-22 snapshot: 2,183 likes; 161 reposts. Not reverified during drafting (2026-10-24); [source limits](sources.md) apply. The treatment and fictional example are original, with no reference-media licence implied.
+### Quick facts
+
+12 s, 720 frames; licensed photo set with crop permission and focal points; gallery → interface viewport → product → brand; one shared photo layer above both layouts; CTA holds from 570. No unlicensed image, invented product claim or double opacity at the transfer. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 2)**. No rendered shared-element transfer or independent playback/creative approval. Future check: compare both lanes at transfer frames and final ratio, review active-image recognition/crop continuity and CTA reading time with a blinded reviewer. Runtime starter proof does not evaluate these assets or transitions.
@@ -118,8 +120,9 @@ Anti-patterns: drop before the viewer reads the question, false chart magnitude,
 ### Filled worked example
 Fictional brief: Cedar analytics 15 s ad, Native confirmed, 1920x1080, F=60, revision cedar-beat-r1. Approved question "Where did time go?", response "See the work clearly", licensed team-work still, illustrative chart "Planned 40 / logged 32 hours" explicitly labeled demo data, CTA "Explore Cedar". Ink/cream/orange tokens #17324D/#F6F0E6/#C75D28; chart baseline zero. Sound proposes 100 BPM with one beat every 36 frames and drop at 180; later semantic cuts may land between beats when reading needs it. Use the five spans above, no VO, local audio, zero external-generation budget. This proposed grid waits for the approved track and timing sign-off.
 
-### Source/date/evidence
-Supplied question/response/media/chart/logo idea attributed to twoclipping: <https://x.com/twoclipping/status/2104674464868762046>. Supplied 2026-10-22 snapshot: 722 likes; 58 reposts. Not reverified during drafting (2026-10-24); [limits](sources.md) apply. The grid, copy and example are original; no source music rights or model-support claim is inferred.
+### Quick facts
+
+About 8 s; music-gated intro → build → drop → resolve; logo enters on the drop, never before; at least three depth layers; a light flash only at the hit. No early logo, flat background or ignoring the audio's cue map. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 3)**. No music-synced render, independent listening or chart/creative approval. Future check: matched Native/Remotion briefs with the same licensed track; inspect decoded frames/drop timing, cue offsets, mute comprehension and chart honesty. The earlier silent/synthetic starter proofs do not establish this treatment's sync or quality.

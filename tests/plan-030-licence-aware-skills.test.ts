@@ -70,6 +70,7 @@ describe('Plan 030 — licence tiers', () => {
     expect(classifyLicence('Apache-2.0')).toBe('permissive');
     expect(classifyLicence('MPL-2.0')).toBe('weak-copyleft');
     expect(classifyLicence('CC-BY-SA-4.0')).toBe('share-alike');
+    expect(classifyLicence('LicenseRef-Remotion')).toBe('source-available');
     expect(classifyLicence('CC-BY-NC-SA-4.0')).toBe('blocked');
     expect(classifyLicence('CC-BY-ND-4.0')).toBe('blocked');
     expect(classifyLicence('GPL-3.0-only')).toBe('blocked');
@@ -79,6 +80,13 @@ describe('Plan 030 — licence tiers', () => {
   it('flags a share-alike skill missing its licence file, notice and SHA pin', () => {
     const v = lintSkillLicence({ dirName: 'x', license: 'CC-BY-SA-4.0', source: 'https://example.com', files: ['SKILL.md'] });
     expect(v).toHaveLength(3);
+  });
+
+  it('treats a custom source-available add-on licence like a retained upstream licence', () => {
+    const files = ['SKILL.md', 'LICENSE.md', 'NOTICE.md'];
+    const source = 'https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b/skills/remotion-markup';
+    expect(lintSkillLicence({ dirName: 'remotion-markup', license: 'LicenseRef-Remotion', source, files })).toEqual([]);
+    expect(lintSkillLicence({ dirName: 'remotion-markup', license: 'LicenseRef-Remotion', files: ['SKILL.md'] })).toHaveLength(3);
   });
 
   it('every catalog skill passes the licence lint', () => {

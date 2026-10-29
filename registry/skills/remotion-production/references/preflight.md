@@ -53,7 +53,7 @@ records are never project review evidence.
 | Field | Required meaning |
 | --- | --- |
 | `schemaVersion` | Exactly `1`. |
-| `remotionVersion` | Exactly `4.0.538`; review again when changing packages. |
+| `remotionVersion` | Exactly `4.0.539`; review again when changing packages. |
 | `status` | `evaluation`, `free-license`, or `company-license`; agents may select only `evaluation`, owners/representatives supply production eligibility facts. |
 | `purpose` | `evaluation` or `production`, the scope actually reviewed. |
 | `reviewedOn` | Actual review date, a valid `YYYY-MM-DD`. |
@@ -63,7 +63,7 @@ records are never project review evidence.
 | `basis` | Specific eligibility explanation and applicable use; automated evaluation must describe isolated internal suitability tests without commercial use. |
 | `evidence` | Nonsecret supporting reference: pinned evaluation clause and test scope, owner-reviewed eligibility note, or company entitlement reference. Never store a license key, token or credential here. |
 | `commercialUse` | Explicit boolean; must be `false` for `evaluation`. |
-| `licenseUrl` | Exactly `https://github.com/remotion-dev/remotion/blob/v4.0.538/LICENSE.md`. |
+| `licenseUrl` | Exactly `https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md`. |
 | `evaluationScope` | Required as `internal-suitability-test` for `automated-evaluation`; optional for owner/representative records. No other value is accepted. |
 
 Unknown fields and missing/invalid required values fail. Evaluation records only pass
@@ -82,9 +82,9 @@ the declaration's completeness and scope; it does not check a purchase, reviewer
 headcount, entitlement validity or whether the owner's legal interpretation is correct.
 No automatic acceptance is inferred from the presence of a license field.
 
-## Version and source review, 2026-10-24
+## Version and source review, 2026-10-29
 
-The [versioned 4.0.538 license](https://github.com/remotion-dev/remotion/blob/v4.0.538/LICENSE.md)
+The [versioned 4.0.539 license](https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md)
 allows free use for individuals, for-profit organizations with up to three employees,
 nonprofits, and noncommercial suitability evaluation. Other entities require a Company
 License. Agency production work is not automatically free. The owner must assess the actual entity,
@@ -92,16 +92,16 @@ engagement and intended use. Evaluation is distinct from production/commercial e
 
 The linked [v4 terms](https://www.remotion.pro/terms-4-0) identify themselves as replaced
 when 5.0 launches; the [v5 terms](https://www.remotion.dev/docs/terms) state their future
-effective scope. This scaffold pins 4.0.538. Recheck terms before any later real use.
+effective scope. This scaffold pins 4.0.539. Recheck terms before any later real use.
 The evaluation clause does not require a human reviewer. Applying it to the authorized
 isolated internal smoke tests is a scoped interpretation, not a production-entitlement
 claim. Actual owner eligibility and live licensing entitlement remain **unverified**.
 
-Public npm publisher metadata confirmed exact `4.0.538` availability for
-[`remotion`](https://registry.npmjs.org/remotion/4.0.538),
-[`@remotion/bundler`](https://registry.npmjs.org/@remotion/bundler/4.0.538),
-[`@remotion/renderer`](https://registry.npmjs.org/@remotion/renderer/4.0.538), and
-[`@remotion/cli`](https://registry.npmjs.org/@remotion/cli/4.0.538). All four use exact
+Public npm publisher metadata confirmed exact `4.0.539` availability for
+[`remotion`](https://registry.npmjs.org/remotion/4.0.539),
+[`@remotion/bundler`](https://registry.npmjs.org/@remotion/bundler/4.0.539),
+[`@remotion/renderer`](https://registry.npmjs.org/@remotion/renderer/4.0.539), and
+[`@remotion/cli`](https://registry.npmjs.org/@remotion/cli/4.0.539). All four use exact
 matching pins as required by the
 [version guidance](https://www.remotion.dev/docs/version-mismatch). React and React DOM
 are both pinned to `19.0.0`, within their declared `>=16.8.0` peer ranges. Packages are
@@ -113,7 +113,9 @@ references: [registerRoot](https://www.remotion.dev/docs/register-root),
 [Composition](https://www.remotion.dev/docs/composition),
 [useCurrentFrame](https://www.remotion.dev/docs/use-current-frame), and
 [Html5Audio/staticFile](https://www.remotion.dev/docs/html5-audio). No upstream Skill text
-or source was vendored. `input-props.json` holds reusable timeline, scene copy, theme and
+or source was vendored into this Skill. The separate optional `remotion-agent-skills`
+add-on carries the official Remotion skills under their source-available Remotion License;
+that add-on does not relicense this MIT Skill or grant runtime entitlement. `input-props.json` holds reusable timeline, scene copy, theme and
 optional master-audio parameters. Sequence durations use the shared half-open frame ranges;
 animation derives from each sequence's local frame, without wall clocks or CSS animation.
 
