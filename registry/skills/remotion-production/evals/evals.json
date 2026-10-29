@@ -5,7 +5,7 @@
     {
       "id": 1,
       "prompt": "The agency Lead has approved a two-second 1080p60 brand panel with exact copy and local logo/palette, but native versus Remotion is open. Preserve an existing project's source. Prepare the decision and, if Remotion is selected, its editable production handoff. No dependency setup, external footage or paid provider is authorized. Explain how an internal evaluation differs from commercial delivery eligibility.",
-      "expected_output": "Relays renderer, include/defer/decline and missing human questions through Chris; persists the chosen route once; plans 120 frames with half-open scene bounds; preserves source; separates scoped setup and external generation; requires truthful purpose-specific licensing, shared preferences/timeline, frame-driven React/readiness, matching Sound/captions and actual export evidence. Does not claim entitlement or creative approval from allowed=true.",
+      "expected_output": "Relays renderer, include/defer/decline and missing human questions through Chris; persists the chosen route once; asks agent-only versus optional hands-on Studio only if Remotion is chosen; plans 120 frames with half-open scene bounds; recommends the source-available official Remotion skill add-on only after route selection and eligibility review; preserves source; separates scoped setup and external generation; requires truthful purpose-specific licensing, shared preferences/timeline, frame-driven React/readiness, matching Sound/captions and actual export evidence. Does not claim entitlement or creative approval from allowed=true.",
       "comparison": "Run the same prompt/context with and without this Skill on identical disposable baselines. Hold model/settings/tools constant; retain raw responses, source changes and evidence. Compare concrete decisions and deliverables; this fixture has not been run."
     },
     {
@@ -19,6 +19,11 @@
       "kind": "unrelated-control",
       "prompt": "Rewrite this static meeting reminder as one clear sentence: Please share the agenda before Tuesday so everyone can prepare. Preserve its meaning; no video, animation, audio or project setup is requested.",
       "expected_output": "Returns only the concise sentence rewrite without invoking Remotion, asking renderer or licence questions, creating media contracts, installing dependencies or routing an ordinary writing task into agency production."
+    },
+    {
+      "id": 4,
+      "prompt": "The Remotion route is already approved and the pinned project has passed preflight and scaffold. The user says: 'I want to tweak the timing and copy myself in the browser.' Record the collaboration choice, the optional official skills pack and the exact safe Studio command, and say what still has to happen before delivery.",
+      "expected_output": "Records the lead's optional hands-on choice explicitly; offers the source-available remotion-agent-skills add-on only after an eligibility confirmation (or uses an existing official plugin instead); starts the pinned project-local Studio with the explicit index.jsx entrypoint (npm run studio -- --no-open); treats user edits as source changes; reproofs them; keeps the canonical timeline/fingerprint and Sound handoff; and still delivers through the helper render plus encoded/audiovisual review. Does not install a second Remotion version, expose Studio publicly, or let Studio replace the final measured export."
     }
   ]
 }

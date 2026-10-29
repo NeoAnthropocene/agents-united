@@ -394,6 +394,20 @@ const CREDENTIAL_PATTERNS: ReadonlyArray<readonly [string, RegExp]> = [
 
 const PLACEHOLDER_VALUE = /(your|xxx|placeholder|example|sample|dummy|redact|\.\.\.)/i;
 
+/**
+ * Values that match a credential shape but are published verbatim in a vendored upstream skill. Each entry is bound to one
+ * exact value in one skill, so any other file carrying the same value, or any other key, still fails.
+ * remotion-docs: the Remotion documentation search request (Algolia application PLSDUOL1CA) ships verbatim in the
+ * official upstream skill, which is how that skill searches the docs. The key is the documentation site's
+ * search credential as published upstream; that it is search-only is the upstream's claim and has not been verified
+ * here, so it is recorded and bound, not waved through (Plan 041).
+ */
+const PUBLISHED_SEARCH_KEYS: ReadonlyArray<{ labelSuffix: string; value: string }> = [
+  { labelSuffix: '/skills/remotion-docs/SKILL.md', value: '3e42dbd4f895fe93ff5cf40d860c4a85' },
+];
+const isPublishedSearchKey = (label: string, match: string): boolean =>
+  PUBLISHED_SEARCH_KEYS.some(entry => label.endsWith(entry.labelSuffix) && match.endsWith(entry.value));
+
 interface ScannedArtifact {
   label: string;
   text: string;
@@ -488,6 +502,7 @@ describe('Plan 029 Group 3 — Risk R4: no credentials in any projected artifact
       for (const [kind, pattern] of CREDENTIAL_PATTERNS) {
         for (const match of artifact.text.match(pattern) ?? []) {
           if (PLACEHOLDER_VALUE.test(match)) continue;
+          if (isPublishedSearchKey(artifact.label, match)) continue;
           hits.push(`${artifact.label}: ${kind} -> ${match.slice(0, 24)}…`);
         }
       }

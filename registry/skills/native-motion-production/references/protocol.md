@@ -29,6 +29,38 @@ window.motion.ready = initializeApprovedScene().then(({ timeline, draw, loop }) 
 
 This is a protocol sketch; implement initialization and drawing from approved local content. The packaged HTML starter is runnable after scaffolding. Keep a real `document.fonts.ready` Promise and decodable images with nonzero natural dimensions. The helper waits for composition, fonts and image decoding, then checks every asynchronous seek before capture. Rejected readiness, metadata mismatch, decode/seek/screenshot errors abort before encoding; never mask them with a sleep.
 
+## Composition techniques for marketing-grade output
+
+Write these into the authored scene rather than a flat plate; every value comes from the
+frame index, never from accumulated state or wall clocks.
+
+| Element | Deterministic recipe |
+| --- | --- |
+| Depth layers | Sky gradient with 3+ stops, mid-ground silhouette, foreground accent or vignette; each layer has its own opacity and blur |
+| Parallax | Per-layer factor (far 0.1, mid 0.35, near 0.7, subject 1.0); `offset = (cameraX - 0.5) * factor * amplitude`; the camera factor changes over the film, never a static frame |
+| Material passes | Explicit implementation of `grain` (seeded SVG/canvas noise with bounded opacity/blendMode), `gradientMesh` (3+ stop atmospheric radial/conic mesh), `depthBlur` (focal layer separation with near/far blur), and `lightWrap` (backlight wrap on subject silhouette edge) |
+| Light | Radial-gradient glow, sun disc with bloom, an animated light ray, or a graded tint overlay; one effect with a frame span and intensity curve |
+| Secondary motion | Tail, sway, blink, particle float: `A * sin(2 * PI * f * t + phase)` with small A and f in the spec, not a random value |
+| Particles | Seeded positions from a fixed PRNG whose seed is in `content.json`, 12–40 low-opacity motes drifting slowly, never crossing the copy |
+| Text treatment | Mask reveal with a clip rect, animated `letter-spacing`, per-word stagger, depth shadow or extrusion |
+| Camera | One transform on the root group (dolly, push-in, pan) with a recorded start/end and easing |
+| Grade | One palette across scenes; optional warm/cool tint transition; contrast checked at the final display size |
+
+`seek(t)` derives `i = t * F` and rebuilds every layer, particle and camera from those
+parameters. Keep them in `content.json` so the composition is reviewable. Two flat plates
+with centered text fail the [quality floor](../../motion-design-direction/references/direction.md)
+unless the storyboard records why the brief forbids depth.
+
+This table is implementation vocabulary, not a complete prompt. First validate
+`media/specs/motion-prompt.json` with `motion-design-direction/scripts/check-prompt-spec.mjs --require-craft-gate --timeline media/timeline.json`.
+Implement its signature shot, causal shot transitions, `referenceFrames` grammar, four `materialPasses`, and one named camera move per shot. Give
+surfaces deliberate material/edge/contact-shadow behaviour; default primitives and hard-edged or
+blurred placeholder copy rectangles are failed proofs. Capture every proof-plan frame, build the
+side-by-side `proofComparison` board (`media/specs/proof-comparison.json`), and validate with
+`--proof-comparison` before the full render, then revise and reproof visible defects within the
+approved budget. After muxing the final MP4, verify colour range (`yuv420p` limited range `tv`)
+and discrete cue offsets within 1 frame via `audiovisual-review/scripts/review.mjs mux-sync`.
+
 ## Loops and public assets
 
 The starter records boolean loop intent in `media/native/content.json`. It publishes `window.motion.meta.loop`; custom scenes must do the same when a loop was requested. Native render compares the screenshot at seek(duration) to captured frame zero for a declared loop. A byte-identical endpoint is a technical check, not proof that velocity, copy transitions or the last-to-first motion looks smooth. Review those separately. The starter's one-scene looping treatment keeps text visible and uses periodic motif/progress poses.

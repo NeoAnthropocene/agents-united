@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "plan": "039-sound-catalogue-publication.md",
+  "updatedDate": "2026-10-28",
+  "timezone": "Europe/Berlin",
+  "worktree": "C:\\github\\agents-united",
+  "branch": "codex/sound-model-catalogue",
+  "baseRef": "origin/dev",
+  "baseCommit": "72e2cf4ddc92a6120313c5039f1bc39bc4b4f021",
+  "continuationOf": "038-sound-model-catalogue",
+  "executionMode": "Await maintainer signal before P0; then sequential single-writer jobs with ledger checkpoints",
+  "status": "awaiting-signal",
+  "currentJob": null,
+  "constraints": {
+    "awaitMaintainerSignalBeforeJob0": true,
+    "signalCoversJobsP0toP3Only": true,
+    "pushOrPullRequestAuthorized": false,
+    "pullRequestTarget": "dev",
+    "neverWeakenValidators": true,
+    "perTestTimeoutUnchangedMs": 30000,
+    "modelInstallOrInferenceAuthorized": false,
+    "providerAccountConnectionAuthorized": false,
+    "paidExternalMediaAuthorized": false,
+    "readCredentialsAuthorized": false,
+    "finalOfflineGate": "npm run typecheck && npm test (as-is; read the run exit code)"
+  },
+  "inputs": {
+    "typecheckExit": 0,
+    "fullParallelTest": "exit 1; 4797 passed / 28 failed / 209 skipped; 5034 total; 42 timeout messages and one cascade assertion in 13 install/lifecycle/e2e files",
+    "serialRerun": "launched with --no-file-parallelism on exactly those 13 files; verdict pending at scratch/media-038/rerun.exit"
+  },
+  "jobs": [
+    {
+      "id": "P0",
+      "status": "complete",
+      "title": "Collect the serial rerun verdict",
+      "doneCriteria": [
+        "rerun.exit read and recorded with rerun.log totals",
+        "remaining failing files listed (empty if green)",
+        "no test process left running unattended"
+      ],
+      "evidence": [
+        "2026-10-28: scratch/media-038/rerun.exit = 0; rerun.log: 13/13 test files passed, 331 passed, 208 skipped (539 total), duration 1223.89s"
+      ]
+    },
+    {
+      "id": "P1",
+      "status": "complete",
+      "title": "Adjudicate each remaining failure",
+      "doneCriteria": [
+        "serially green evidence recorded, or each failing file re-run alone with the unchanged timeout",
+        "cause classified as plan-038 regression (fix) or environment flake (document with evidence)",
+        "no validator or timeout change"
+      ],
+      "evidence": [
+        "2026-10-28: all 13 files that failed the parallel run pass serially with the unchanged 30s per-test timeout; the parallel failures were load-induced timeouts (42 timeout messages) plus one cascade assertion from a timed-out neighbour leaving claudeDir behind; no plan-038 content regression; no test or validator changed"
+      ]
+    },
+    {
+      "id": "P2",
+      "status": "complete",
+      "title": "Full offline gate",
+      "doneCriteria": [
+        "npm run typecheck && npm test re-run as-is with run exit codes recorded",
+        "totals recorded; any recurring parallel timeouts reported as the same measured class"
+      ],
+      "evidence": [
+        "2026-10-28: typecheck2.exit = 0; fulltest2.exit = 1 with 4821 passed / 4 failed / 209 skipped (5034) in 814.83s; the 4 failures are 30s timeouts in cli-e2e, e2e-domain-conformance and e2e-sed-bundle-lifecycle, all green in the serial rerun; same measured class as run #1 (4797/28), no content regression"
+      ]
+    },
+    {
+      "id": "P3",
+      "status": "complete",
+      "title": "Close plan 038 and commit locally",
+      "doneCriteria": [
+        "038 jobs.json J8 completed with evidence; plan-038 status updated",
+        "scratch/media-038/final-report.md written",
+        "git diff --cached secret scan; one commit on the branch; commit hash recorded"
+      ],
+      "evidence": [
+        "2026-10-28: final-report.md written; 038 J8 completed; plan-038 status updated to complete with the parallel-timeout caveat; local commit fce8f1a on codex/sound-model-catalogue (16 files, +350/-52), staged secret scan clean; branch 3 ahead of origin/dev, nothing pushed"
+      ]
+    },
+    {
+      "id": "P4",
+      "status": "pending",
+      "title": "Push and PR (only on explicit signal)",
+      "doneCriteria": [
+        "gh pr list --state all checked first",
+        "branch pushed; PR to dev opened with artifact-contribution template body",
+        "PR number and link recorded"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "P5",
+      "status": "pending",
+      "title": "CI watch and report",
+      "doneCriteria": [
+        "PR check test status observed and reported",
+        "no merge; verified vs unverified items stated"
+      ],
+      "evidence": []
+    }
+  ]
+}

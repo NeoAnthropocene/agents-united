@@ -1170,6 +1170,9 @@
         "agency"
       ],
       "description": "Full-service digital product agency powered by the AstrolabsAI persona team (Chris, Ava, Jamileh, Kaan). Features dynamic DAG orchestration and Tri-Tier Execution Modes with 6 required MCP servers and 2 optional extras.",
+      "recommendedAddons": [
+        "remotion-agent-skills"
+      ],
       "prerequisites": {
         "requiredMcps": [
           {
@@ -1349,6 +1352,30 @@
         "audio-post-production",
         "audiovisual-review",
         "workflow-agency-motion-production"
+      ],
+      "version": "1.0.0"
+    },
+    "remotion-agent-skills": {
+      "name": "remotion-agent-skills",
+      "tier": "domain",
+      "domain": "organization",
+      "parentBundle": "digital-agency",
+      "status": "stable",
+      "category": "Optional official Remotion Agent Skills (source-available)",
+      "description": "Pinned official Remotion Agent Skills for agentic Remotion authoring. Install only after the Remotion route is selected and the user confirms Remotion License eligibility; not part of full or any essentials bundle.",
+      "skills": [
+        "remotion-best-practices",
+        "remotion-captions",
+        "remotion-create",
+        "remotion-docs",
+        "remotion-interactivity",
+        "remotion-maps",
+        "remotion-markup",
+        "remotion-multimedia",
+        "remotion-render",
+        "remotion-saas",
+        "remotion-studio",
+        "remotion-upgrade"
       ],
       "version": "1.0.0"
     },

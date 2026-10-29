@@ -14,4 +14,6 @@ Ask Chris for one concrete decision when blocked: "Can the supplied voice record
 
 For optional models, the audio-generation Skill contains a dated source-based preflight. Select a project-scoped environment only after hardware, storage, licence, language and usage review. Installation and successful inference are separate evidence from source research. For API/hybrid, use the installed approved provider setup and its capability card; a Skill title alone does not prove configuration, credentials or account access.
 
+Before proposing any of these routes, [probe the machine](../audio-generation/references/system-capability.md): a measured CPU/RAM/disk/GPU report decides whether a local model is `recommended`, `viable-with-caveats` or `not-recommended`. The bundled local route needs no model and stays available on any supported machine. A probe verdict is a fit estimate, not proof that a model runs.
+
 Estimate separately: creative iterations, recording/generation, editing, sync, finishing and review. Include downloads, queue/poll costs and retry ceilings when relevant. A zero external-spend route still needs human review time. Present include/defer/decline for optional ambience, music or premium voice variants so the production scope stays deliberate.

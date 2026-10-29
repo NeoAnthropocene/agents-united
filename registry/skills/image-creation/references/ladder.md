@@ -9,6 +9,10 @@ A photograph reaches a design by one of four rungs. Take them in order and stop 
 
 Say in the report which rung each image is on and why you stopped there: "rung 4, no photography supplied and the tool is not listed".
 
+## Motion and film scenes: acquire the file, do not stop at links
+
+When a scene needs raster content, inspiration links are not a deliverable. On rung 2, find licensed candidates with `commercial-stock-sourcer`, then ask the lead (who has a shell) to download the approved files into `media/sources/images/` and return each path with its SHA-256, keeping the URL and licence note beside the file. Motion embeds the file with a crop, grade and mask. If the `image-gen` server is connected and the user approved it, generation (rung 3) replaces the download. When neither works, deliver the rung 4 placeholder and image brief and name the gap under Open items.
+
 ## What may be generated
 
 | Subject | Generate it? | Why |

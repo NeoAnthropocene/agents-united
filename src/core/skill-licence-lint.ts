@@ -3,18 +3,19 @@
  *
  * Enforces the tiered intake rule in `docs/skill-intake.md` §1 and ADR 0024:
  * - Permissive (MIT, Apache-2.0, BSD, ISC, CC-BY, public domain): may be vendored.
- * - Weak copyleft (MPL-2.0) and share-alike (CC-BY-SA-4.0): may be vendored only when the
- *   skill folder carries the licence file, a `NOTICE.md` changes note, and a
- *   `metadata.source` pinned to a 40-character commit SHA. The folder stays under that
- *   licence; the rest of the repository stays MIT.
+ * - Weak copyleft (MPL-2.0), share-alike (CC-BY-SA-4.0) and custom source-available licences
+ *   (represented as `LicenseRef-*`): may be vendored only when the skill folder carries the
+ *   licence file, a `NOTICE.md` changes note, and a `metadata.source` pinned to a 40-character
+ *   commit SHA. The folder stays under that licence; the rest of the repository stays MIT.
  * - Blocked (any NonCommercial or NoDerivatives term, GPL/AGPL/LGPL): never vendored.
  *
  * The lint reads only the `metadata.license` identifier, so an identifier it cannot place in
  * a tier is itself a violation: a new licence must be classified here before a skill using
- * it can ship.
+ * it can ship. A source-available tier is only for an explicitly optional add-on whose users
+ * receive and accept the upstream terms; it never reclassifies that content as MIT.
  */
 
-export type LicenceTier = 'permissive' | 'weak-copyleft' | 'share-alike' | 'blocked' | 'unknown';
+export type LicenceTier = 'permissive' | 'weak-copyleft' | 'share-alike' | 'source-available' | 'blocked' | 'unknown';
 
 const PERMISSIVE = new Set([
   'MIT',
@@ -28,6 +29,7 @@ const PERMISSIVE = new Set([
 ]);
 const WEAK_COPYLEFT = new Set(['MPL-2.0']);
 const SHARE_ALIKE = new Set(['CC-BY-SA-4.0']);
+const SOURCE_AVAILABLE = new Set(['LicenseRef-Remotion']);
 const BLOCKED_PATTERN = /(^|-)(NC|ND)(-|$)|^A?GPL|^LGPL/i;
 
 /** Classifies an SPDX licence identifier into its intake tier. */
@@ -37,6 +39,7 @@ export function classifyLicence(id: string): LicenceTier {
   if (PERMISSIVE.has(trimmed)) return 'permissive';
   if (WEAK_COPYLEFT.has(trimmed)) return 'weak-copyleft';
   if (SHARE_ALIKE.has(trimmed)) return 'share-alike';
+  if (SOURCE_AVAILABLE.has(trimmed)) return 'source-available';
   return 'unknown';
 }
 

@@ -190,7 +190,7 @@ export type Provenance = 'third-party-pinned' | 'in-house' | 'not-found';
 
 export interface ResolvedLicenceRecord {
   spdx?: string;
-  tier: 'permissive' | 'weak-copyleft' | 'share-alike' | 'blocked' | 'unknown';
+  tier: 'permissive' | 'weak-copyleft' | 'share-alike' | 'source-available' | 'blocked' | 'unknown';
   /** `licence-file` is the only evidence that makes a skill restorable. */
   evidence: 'licence-file' | 'frontmatter' | 'readme' | 'none';
   file?: string;

@@ -7,15 +7,16 @@ import { pathToFileURL } from 'node:url';
 import { defaultPreferences, timelineFingerprint } from '../registry/skills/audiovisual-review/scripts/review.mjs';
 
 const remotion = await import(pathToFileURL(path.resolve('registry/skills/remotion-production/scripts/project.mjs')));
+const release = await import(pathToFileURL(path.resolve('registry/skills/remotion-production/scripts/check-release.mjs')));
 const timeline = {schemaVersion:1, revision:'r1', fps:60, totalFrames:120, width:1920, height:1080,
   scenes:[{id:'intro',startFrame:0,endFrame:60},{id:'end',startFrame:60,endFrame:120}], cues:[]};
 const preferences = () => defaultPreferences('remotion', 'local', false, 0);
 // Illustrative test data only. This is not a real review, entitlement or authorization.
-const eligibility = () => ({schemaVersion:1,remotionVersion:'4.0.538',status:'evaluation',purpose:'evaluation',
+const eligibility = () => ({schemaVersion:1,remotionVersion:'4.0.539',status:'evaluation',purpose:'evaluation',
   reviewedOn:'2026-10-24',reviewedBy:'Illustrative test owner',reviewerRole:'project-owner',
   entity:'Fictional test organization',basis:'Testing suitability only; no commercial use.',
   evidence:'Synthetic unit-test record; no real license entitlement is represented.',commercialUse:false,
-  licenseUrl:'https://github.com/remotion-dev/remotion/blob/v4.0.538/LICENSE.md'});
+  licenseUrl:'https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md'});
 
 async function fixture(project, {prefs=preferences(),clock=timeline,license=eligibility()} = {}) {
   await fs.mkdir(path.join(project,'media'),{recursive:true});
@@ -61,7 +62,7 @@ test('automated internal suitability evaluation records never authorize producti
   const record={...eligibility(),reviewerRole:'automated-evaluation',reviewedBy:'Codex (/root)',
     entity:'agents-united isolated internal test project',evaluationScope:'internal-suitability-test',
     basis:'Isolated internal smoke tests to evaluate whether Remotion fits this integration; no commercial use.',
-    evidence:'Pinned 4.0.538 LICENSE.md, Free License / Eligibility, noncommercial suitability evaluation.'};
+    evidence:'Pinned 4.0.539 LICENSE.md, Free License / Eligibility, noncommercial suitability evaluation.'};
   const result=remotion.preflight(preferences(),record);
   assert.equal(result.allowed,true);
   assert.equal(result.entitlementVerified,false);
@@ -83,7 +84,8 @@ test('Remotion scaffold keeps dependencies scoped and refuses destructive replac
     assert.equal(pkg.dependencies.remotion,pkg.dependencies['@remotion/renderer']);
     assert.equal(pkg.dependencies.remotion,pkg.dependencies['@remotion/bundler']);
     assert.equal(pkg.dependencies.remotion,pkg.dependencies['@remotion/cli']);
-    assert.equal(pkg.dependencies.remotion,'4.0.538');
+    assert.equal(pkg.dependencies.remotion,'4.0.539');
+    assert.equal(pkg.scripts.studio,'remotion studio index.jsx');
     assert.match(pkg.dependencies.remotion,/^\d+\.\d+\.\d+$/);
     assert.ok(!pkg.dependencies.playwright);
     await assert.rejects(remotion.scaffold(project),/exists/i);
@@ -151,5 +153,62 @@ test('Remotion scaffold preserves existing directories and rejects escaping medi
   } finally {
     await fs.rm(project,{recursive:true,force:true});
     await fs.rm(outside,{recursive:true,force:true});
+  }
+});
+
+test('release drift checker compares every Remotion runtime package to the pinned release', () => {
+  const same = release.compareReleaseVersions('4.0.539', {
+    remotion: '4.0.539', '@remotion/bundler': '4.0.539', '@remotion/renderer': '4.0.539', '@remotion/cli': '4.0.539',
+  });
+  assert.equal(same.upToDate, true);
+  assert.deepEqual(same.mismatches, []);
+  const drift = release.compareReleaseVersions('4.0.539', {
+    remotion: '4.0.540', '@remotion/bundler': '4.0.540', '@remotion/renderer': '4.0.539', '@remotion/cli': '4.0.539',
+  });
+  assert.equal(drift.upToDate, false);
+  assert.deepEqual(drift.mismatches, ['@remotion/bundler', 'remotion']);
+});
+
+
+test('Remotion render passes imageFormat png and yuv420p pixelFormat to avoid default JPEG yuvj420p full-range output', async () => {
+  const project = await fs.mkdtemp(path.join(os.tmpdir(), 'remotion render range '));
+  try {
+    await fixture(project);
+    await remotion.scaffold(project);
+    const fakeBrowser = path.join(project, 'fake-chrome.exe');
+    await fs.writeFile(fakeBrowser, 'binary');
+    let capturedRenderOpts = null;
+    const report = await remotion.render(project, {
+      browserExecutable: fakeBrowser,
+      runtimeLoader: async () => ({
+        packages: [{ name: 'remotion', version: '4.0.539', entry: 'mock' }],
+        bundle: async ({ outDir }) => {
+          await fs.mkdir(outDir, { recursive: true });
+          return outDir;
+        },
+        openBrowser: async () => ({ close: async () => {} }),
+        selectComposition: async () => ({
+          id: 'AgencyMotion',
+          durationInFrames: timeline.totalFrames,
+          fps: timeline.fps,
+          width: timeline.width,
+          height: timeline.height,
+        }),
+        renderMedia: async opts => {
+          capturedRenderOpts = opts;
+          await fs.writeFile(opts.outputLocation, 'fake-mp4-bytes');
+        },
+        renderStill: async opts => {
+          await fs.writeFile(opts.output, 'fake-png-bytes');
+        },
+      }),
+    });
+    assert.ok(capturedRenderOpts, 'renderMedia must be called');
+    assert.equal(capturedRenderOpts.pixelFormat, 'yuv420p');
+    assert.equal(capturedRenderOpts.imageFormat, 'png');
+    assert.equal(report.requestedEncoding.pixelFormat, 'yuv420p');
+    assert.equal(report.requestedEncoding.imageFormat, 'png');
+  } finally {
+    await fs.rm(project, { recursive: true, force: true });
   }
 });

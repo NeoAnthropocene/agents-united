@@ -10,7 +10,7 @@ import {
   timelineFingerprint, validateAudioManifest, validateMediaFiles, validatePreferences, validateTimeline,
 } from '../../audiovisual-review/scripts/review.mjs';
 
-export const REMOTION_VERSION = '4.0.538';
+export const REMOTION_VERSION = '4.0.539';
 export const LICENSE_URL = `https://github.com/remotion-dev/remotion/blob/v${REMOTION_VERSION}/LICENSE.md`;
 export const DEPENDENCIES = Object.freeze({
   remotion: REMOTION_VERSION, '@remotion/bundler': REMOTION_VERSION,
@@ -147,7 +147,8 @@ export async function scaffold(directory, options = {}) {
   const files = {
     ...Object.fromEntries(templates.map((name, index) => [name, source[index]])),
     'package.json': `${JSON.stringify({ name: 'agency-motion-project', version: '0.1.0', private: true,
-      type: 'module', engines: { node: '>=24' }, dependencies: DEPENDENCIES }, null, 2)}\n`,
+      type: 'module', engines: { node: '>=24' }, scripts: { studio: 'remotion studio index.jsx' },
+      dependencies: DEPENDENCIES }, null, 2)}\n`,
     'input-props.json': `${JSON.stringify(data, null, 2)}\n`,
     '.gitignore': 'node_modules/\nout/\n',
   };
@@ -382,7 +383,7 @@ export async function render(directory, options = {}) {
     const video = path.join(output, 'video.mp4');
     await runtime.renderMedia({ ...common, composition, codec: preferences.output.videoCodec,
       audioCodec: preferences.output.audioCodec, sampleRate: preferences.output.audioSampleRate,
-      pixelFormat: 'yuv420p', enforceAudioTrack: true, overwrite: false, outputLocation: video });
+      imageFormat: 'png', pixelFormat: 'yuv420p', enforceAudioTrack: true, overwrite: false, outputLocation: video });
     stage = 'stills';
     await mkdir(path.join(output, 'stills'));
     const frames = [...new Set([0, Math.floor(timeline.totalFrames / 2), timeline.totalFrames - 1])];
@@ -396,7 +397,7 @@ export async function render(directory, options = {}) {
       timelineFingerprint: snapshot.fingerprint, inputPropsSha256: snapshot.propsSha256, audio: snapshot.provenance.audio,
       composition: { id: composition.id, durationInFrames: composition.durationInFrames, fps: composition.fps,
         width: composition.width, height: composition.height },
-      requestedEncoding: { ...preferences.output }, stillFrames: frames,
+      requestedEncoding: { ...preferences.output, pixelFormat: 'yuv420p', imageFormat: 'png' }, stillFrames: frames,
       packages: runtime.packages ?? [], artifacts: [], encodedInspection: 'unverified',
       visualReview: 'unverified', listeningReview: 'unverified', asyncFontMediaReadiness: 'unverified' };
     for (const file of artifacts) {

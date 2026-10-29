@@ -239,6 +239,38 @@ test('unsupported FFmpeg capabilities fail actionably before creating output rev
   assert.ok(process.calls.every(args => args.includes('-h')));
 });
 
+
+test('compose-bed emits a deterministic musical bed, not a constant tone', async () => {
+  const { composeBed } = await import('../../registry/skills/audio-generation/scripts/compose-bed.mjs');
+  const root = await mkdtemp(path.join(os.tmpdir(), 'media-bed-'));
+  try {
+    const spec = { fps: 30, totalFrames: 300, bpm: 96, rootHz: 220, style: 'uplift', seed: 7 };
+    await composeBed(spec, path.join(root, 'bed.wav'));
+    await composeBed(spec, path.join(root, 'repeat.wav'));
+    const wav = await readFile(path.join(root, 'bed.wav'));
+    assert.deepEqual(wav, await readFile(path.join(root, 'repeat.wav')));
+    assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(wav.readUInt16LE(22), 2);
+    assert.equal(wav.readUInt32LE(24), 48000);
+    assert.equal(wav.length, 44 + 480000 * 4);
+    let peak = 0, crossings = [];
+    for (let w = 0; w < 8; w++) {
+      let zc = 0, prev = 0;
+      for (let i = w * 60000; i < (w + 1) * 60000; i += 2) {
+        const v = wav.readInt16LE(44 + i * 4);
+        peak = Math.max(peak, Math.abs(v));
+        if ((v >= 0) !== (prev >= 0)) zc++;
+        prev = v;
+      }
+      crossings.push(zc);
+    }
+    assert.ok(peak > 1000 && peak < 32767, `musical bed must be audible and unclipped (peak=${peak})`);
+    assert.ok(new Set(crossings).size > 2, `bed must vary over time, not a constant tone (${crossings})`);
+    await assert.rejects(composeBed(spec, path.join(root, 'bed.wav')), /exist/);
+    await assert.rejects(composeBed({ fps: 0, totalFrames: 10 }, path.join(root, 'bad.wav')));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('measured results outside the selected preset are refused by shared manifest validation', async t => {
   const prefs = defaultPreferences('native', 'local', false, 0); prefs.output.loudness.toleranceLu = .1;
   const root = await fixture(t, prefs), process = fakeFFmpeg({ finalLufs: -16.5 });

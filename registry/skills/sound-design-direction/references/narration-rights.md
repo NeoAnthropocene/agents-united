@@ -15,6 +15,21 @@ Read the script naturally and record or obtain authorized scratch VO. Measure th
 
 After copy, pronunciation and performance approval, deliver a source-preserving final recording/take ID and exact transcript. Retain natural consonants and breath tails at edits. Do not time-stretch the final performance to a frozen picture unless intelligibility and the change are approved. If it does not fit, send Chris a measured choice: approved recopy with Kaan, a new performance, or revised timing with Motion for film or Sound for standalone audio, approved through Chris.
 
+## Generated singing and music with vocals
+
+Lyrics are copy. When a deliverable includes sung words, Kaan's approved exact lyrics are
+the script: preserve spelling, claims, brand names and line order in the transcript and the
+canonical cue, and treat a delivery markup (pauses, emphasis, phonetic hints) as a separate
+file that never replaces the sung words. A synthetic singing voice is not a person's voice,
+but the same no-imitation rule applies: a style prompt must not name or imitate a named
+living performer without specific authorization, and a licence for the model weights grants
+no lyric rights and no rights in a reference recording. A generated vocal take is a source:
+check word coverage and phrasing with a competent speaker of the lyric language, keep the
+take identity and model/parameter record, and send an unusable take back through Chris
+rather than editing the words to fit it. Wordless instrumental music keeps the speech,
+transcript/caption, pronunciation and voice-consent records not applicable with a reason;
+its library or model licence review still applies.
+
 ## Listening checks that numbers miss
 
 Check names, numbers, negation and qualifiers against approved copy word by word. Listen for clipped word starts, repeated/missing syllables, synthetic mispronunciation, unstable room tone and sibilance. Confirm that music/effects leave key words understandable at low comfortable volume. Review the language with a competent speaker; a model's language label does not establish pronunciation quality. Captions derive from the final approved words and actual timing, including meaningful non-speech cues when requested for accessibility.

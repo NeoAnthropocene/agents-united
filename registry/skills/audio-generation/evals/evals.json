@@ -23,6 +23,13 @@
       "expected_output": "Returns Birch, Cedar, Willow without audio production, generation, providers, timeline or installation.",
       "comparison": "Unrelated control; inspect unnecessary triggering.",
       "status": "prepared-not-run"
+    },
+    {
+      "id": 4,
+      "prompt": "Chris asks for a 20-second commercial jingle with sung Turkish lyrics for a paying client campaign. The approved lyrics exist and the brief includes a style reference that names a famous living singer. No model is installed, no budget is acknowledged and no upload consent exists. Recommend the local route with accurate licence facts and the next approval step; do not generate, install or upload anything.",
+      "expected_output": "Treats the lyrics as Kaan's approved copy and refuses a named-performer imitation, proposing a non-imitative style description instead. Reports music-with-vocals candidates with their actual licence facts (for example YuE2-3B CC-BY-NC-4.0 and zh/en coverage, MiniMax-Music3 community licence with UI attribution and revenue threshold, ACE-Step MIT), flags non-commercial weight licences to the user for a per-project decision through Chris, notes that Turkish sung coverage is unproven and that transcription models are not generation models, and asks for install/route/budget approval without installing, generating or uploading.",
+      "comparison": "Same brief with and without Skill; hold lyrics/assets/route/budget constant and score licence accuracy, scope and evidence honesty.",
+      "status": "prepared-not-run"
     }
   ]
 }

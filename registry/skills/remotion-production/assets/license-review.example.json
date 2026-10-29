@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "remotionVersion": "4.0.538",
+  "remotionVersion": "4.0.539",
   "status": "unreviewed",
   "purpose": "evaluation",
   "reviewedOn": null,
@@ -10,5 +10,5 @@
   "basis": null,
   "evidence": null,
   "commercialUse": false,
-  "licenseUrl": "https://github.com/remotion-dev/remotion/blob/v4.0.538/LICENSE.md"
+  "licenseUrl": "https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md"
 }

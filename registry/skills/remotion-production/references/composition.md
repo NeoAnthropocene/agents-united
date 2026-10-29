@@ -38,6 +38,37 @@ Loop intent belongs in the approved brief or custom scene props, not as an unkno
 in the strict timeline. The helper does not automatically verify loop closure. A repeated
 still is a determinism check; a smooth seam requires boundary inspection and playback.
 
+## Composition for marketing-grade output
+
+Apply the same quality floor as the native lane: three depth layers minimum, explicit `materialPasses` (`grain`, `gradientMesh`, `depthBlur`, `lightWrap`), one light
+effect, one secondary motion, one camera move, and text treated as a designed element.
+
+- Build the field from layered `div`/SVG groups (gradient sky, mid silhouette, foreground
+  vignette). Drive a root group's `transform` for the camera with `interpolate` and an
+  explicit easing; per-layer parallax uses `factor * (cameraX - 0.5) * amplitude`.
+- Use `useCurrentFrame()` everywhere; a `Sequence` reports a local frame, so map cues back
+  to the absolute frame before evaluating them. Particles come from a small seeded PRNG in
+  `frame-state.mjs`, never `Math.random()`, and never obscure the copy.
+- Light comes from a radial-gradient glow, a bloom on the sun, an animated ray or a graded
+  tint overlay, each with a frame span and an intensity curve.
+- Text gets a mask reveal via `clipPath`, animated `letterSpacing`, per-word stagger and an
+  optional depth shadow or extrusion; a static centered headline alone does not pass.
+- Keep one palette and grade across scenes; check contrast and margins at the final size.
+
+These techniques do not replace direction. Validate `media/specs/motion-prompt.json` with
+`motion-design-direction/scripts/check-prompt-spec.mjs --require-craft-gate --timeline media/timeline.json` before authoring so `referenceFrames`, `materialPasses` and beat-to-cue timing are locked before React components are written. Implement its signature
+shot, causal transitions and one named camera move per shot. Do not use default flat materials or
+hard-edged/blurred placeholder copy rectangles. Capture every proof-plan frame, assemble the side-by-side
+`proofComparison` board (`media/specs/proof-comparison.json`), and validate with `--proof-comparison`
+before the full render; revise and reproof clipping, collisions, flat materials,
+illegible type or unclear cause/effect within the approved budget.
+
+The Remotion helper passes `imageFormat: 'png'` and `pixelFormat: 'yuv420p'` to `renderMedia` so `@remotion/renderer` does not default to JPEG frames (`yuvj420p` full-range `pc`). After rendering, verify the final MP4 with `audiovisual-review/scripts/review.mjs mux-sync` to confirm `yuv420p` limited range (`tv`) and measured discrete cue offsets within 1 frame.
+
+`media/remotion/public/` still holds only approved local assets, and `staticFile` is the
+only approved way to reference them. When Jamileh supplies licensed images, use `Img` with
+an explicit crop and grade; readiness gates apply as before.
+
 ## Assets, fonts and preview
 
 Place only approved public media/fonts under `media/remotion/public/` and reference

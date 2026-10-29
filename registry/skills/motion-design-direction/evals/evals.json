@@ -1,20 +1,20 @@
 {
   "skill_name": "motion-design-direction",
   "status": "prepared-not-run",
-  "draftDate": "2026-10-24",
-  "researchSnapshotDate": "2026-10-22",
+  "draftDate": "2026-10-29",
+  "researchSnapshotDate": "2026-10-29",
   "evals": [
     {
       "id": 1,
       "prompt": "Chris has included a 15-second, 1920x1080 60fps launch film for an approvals app. The client supplies an owned logo, three actual anonymized screenshots and approved copy: Reviews in one place / See what needs you / Keep decisions together / Meet Harbor. Sound can produce local music but has not proposed a track. Native versus Remotion is open; no installation, external footage or paid generation is authorized. Prepare a parameterized storyboard, concrete frame/cue handoff and review plan. Identify missing human decisions through Chris and keep the final claim evidence honest.",
-      "expected_output": "Chooses and explains a suitable original product/real-asset launch treatment, fills parameters, preserves actual screenshots/copy and rights gaps, routes missing questions and Native-recommended versus Remotion choice through Chris and persists the confirmed choice. Uses 900 total frames, contiguous half-open scenes, readable holds and Sound-confirmed music marks, current revision/fingerprint/master/caption contract, concrete chosen-lane application and separate creative/technical/listening evidence. No assets, entitlement, source playback or approvals are invented; no provider/setup is launched.",
+      "expected_output": "Requires Jamileh's concept/signature-frame/referenceFrames/negative-space/material-light handoff, chooses a suitable launch recipe and writes a validated motion-prompt.json with one signature shot, contiguous causal shots, one named camera per shot, depth layers, referenceFrames, four materialPasses (grain, gradientMesh, depthBlur, lightWrap), beat grid and proof plan. Preserves actual screenshots/copy and rights gaps, routes Native-recommended versus Remotion through Chris and uses 900 contiguous half-open frames with readable holds and Sound-confirmed marks. Requires side-by-side proofComparison review before full render and separate creative/technical/listening evidence. No assets, entitlement, playback or approvals are invented; no provider/setup is launched.",
       "comparison": "same approved brief with and without Skill; collect direction artifacts before separately authorized rendering",
       "status": "prepared-not-run"
     },
     {
       "id": 2,
       "prompt": "Chris has included a 30-second 60fps support-portal explainer with an original client-owned paper-bird mascot, approved model sheet and exact script: Requests arrive from everywhere. Put them in one shared inbox. Give each request an owner. Keep the next step visible. Meet Nest, and make room for clearer work. Sound has no final narration performance yet. Prepare direction for the selected Native lane, frame and cue reservations, an honest narration/caption handoff, concrete equivalent Remotion guidance for planning and a bounded revision/review plan. No voice cloning, provider call or dependency installation is authorized.",
-      "expected_output": "Uses recipe 6 parameters and model-sheet constraints, 1800-frame provisional contiguous structure, restrained explicit gestures and caption-safe framing. Marks narration timing provisional, routes duration/performance approval through Chris, obtains actual Sound performance/word marks before freeze, and requires new revision/fingerprint for timing or text changes. Gives deterministic seek/frame and React local-frame application, measured stereo48k master/stems/cues/provenance and speech captions, with actual listening/creative quality unverified. Rejects unapproved character/voice imitation and unlimited revisions; does not claim the unrendered blueprint is proven.",
+      "expected_output": "Uses recipe 6 plus a validated signature-shot prompt with causal shots, named cameras, referenceFrames, materialPasses, material/light, negative space, beat grid and proof coverage. Keeps model-sheet constraints and an 1800-frame provisional contiguous structure with caption-safe framing. Routes duration/performance approval through Chris, obtains actual Sound word marks before freeze and requires a new revision/fingerprint for changes. Gives deterministic Native/React application, measured audio/caption handoffs and side-by-side proofComparison review before full render, with listening/creative quality unverified. Rejects unapproved imitation and unlimited revisions.",
       "comparison": "same approved brief with and without Skill; hold host/model/assets/timebase/route/budget constant",
       "status": "prepared-not-run"
     },
@@ -23,6 +23,13 @@
       "prompt": "Rewrite the static homepage paragraph for a small stationery shop using the supplied approved brand voice. The page will contain a single supplied still photograph and no requested video, animation, narration, music or audio. Return concise copy and state any missing product facts. Do not expand the production scope.",
       "expected_output": "Keeps the task static and returns copy with factual gaps routed to the Lead. Does not invoke a motion recipe, create a timeline, install a renderer, propose compulsory audio/video, connect a provider or claim a media deliverable is required.",
       "comparison": "unrelated control; Skill should not expand static scope",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 4,
+      "prompt": "Plan 043 Job V5 matched craft evaluation (Sonnet-class baseline): Produce the 10-second 30fps (300 frames, 1920x1080) chicken-life-cycle loop ('Crack -> Hatch -> Chick -> Hen -> Egg returns') with the same approved copy, 7 cues (bed, crack@37, hatch@62, chick@128, grow@178, hen@225, return@268) and capped revision budget. Compare gate-off (v1 structural check only) against gate-on (--require-craft-gate --timeline media/timeline.json --proof-comparison media/specs/proof-comparison.json plus review.mjs mux-sync).",
+      "expected_output": "Gate-on requires Jamileh's 1-2 viewed local referenceFrames (with SHA-256, permissionScope, 8-dimension analysis and shot mapping), explicit materialPasses for grain/gradientMesh/depthBlur/lightWrap (rejecting blanket uniform passes), beatGrid.events aligned within 1 frame of discrete timeline.json cues (catching Pilot 041 Remotion's -4.5f/+20.0f/-43.0f authored drift before render), side-by-side signature proof board with 5 detail crops and transition motionProofs (rejecting vague 'looks good' notes and unresolved severe defects), Remotion imageFormat: 'png' + yuv420p limited colour range, and final-mux sync verification (|offsetFrames| <= 1.0). Retains blind 6-dimension human craft scoring and Host-owned token/cost/round accounting.",
+      "comparison": "gate-off vs gate-on with identical lower-cost Sonnet-class model/settings, brief, assets, runtime, duration and equal budgets; no automatic Opus or provider escalation",
       "status": "prepared-not-run"
     }
   ],

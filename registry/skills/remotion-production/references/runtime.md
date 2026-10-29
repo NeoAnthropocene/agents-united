@@ -22,7 +22,7 @@ Scaffold writes a private package in `media/remotion/package.json` with these ex
 
 | Package | Version |
 | --- | --- |
-| `remotion`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/cli` | `4.0.538` each |
+| `remotion`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/cli` | `4.0.539` each |
 | `react`, `react-dom` | `19.0.0` each |
 
 After project setup is authorized, install within `media/remotion/` using the chosen
@@ -67,9 +67,37 @@ partial artifacts; do not erase a prior attempt to reuse its name.
 
 The Skill, helper and templates are original agents-united work under the accompanying
 MIT licence, copyright 2026 NeoAnthropocene. No upstream Skill or animation template was
-copied or vendored; original metadata has no invented `source` or `adaptedFrom`.
-The Remotion API and licence references already reviewed for the pinned `4.0.538` runtime
+copied or vendored into this Skill; original metadata has no invented `source` or
+`adaptedFrom`. The separate optional `remotion-agent-skills` add-on carries the official
+Remotion skills under the source-available Remotion License and remains independently
+licensed.
+The Remotion API and licence references already reviewed for the pinned `4.0.539` runtime
 are listed in [preflight](preflight.md). They informed the integration; this source MIT
 licence does not grant Remotion production entitlement or relicense runtime dependencies.
 The reviewed versioned licence links v4 terms; prospective v5 documentation is not the
 licence basis for this pin. Review again before changing versions or actual production use.
+
+## Rendering mode
+
+The helper renders through `@remotion/bundler` + `@remotion/renderer` (CLI/server-side), which takes
+a real screenshot and therefore honours every CSS effect the proof frames were reviewed with.
+Client-side rendering (`@remotion/web-renderer`) has no render quota either and is worth it for a
+hands-on Studio render or a browser-only host, but it emulates layout onto a canvas and does not
+support `z-index`, `backdrop-filter`, `perspective` or non-linear-gradient backgrounds. It is not in
+these pins; see [rendering modes](rendering-modes.md) before proposing it.
+
+## Release drift
+The runtime pin is one constant in [project.mjs](../scripts/project.mjs): `REMOTION_VERSION`.
+Before a version change or a release review, check all four packages in the public registry:
+
+```text
+node "${CLAUDE_SKILL_DIR}/scripts/check-release.mjs"
+npm run skills:remotion-release        # same check from this repository's root
+```
+
+Exit 0 means the pinned version equals `latest` for `remotion`, `@remotion/bundler`,
+`@remotion/renderer` and `@remotion/cli`. Exit 1 reports a version mismatch; exit 2 records a
+registry/network lookup failure. This checker only reads public package metadata. A version
+change still requires reviewing the matching `LICENSE.md`, release notes, installed browser
+and the official skills snapshot, then updating the pin, licence example, docs and tests in
+one reviewed change. Never update packages automatically during scaffold or render.

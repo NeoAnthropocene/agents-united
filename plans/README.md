@@ -8,6 +8,15 @@
 
 This directory contains self-contained implementation plans for building the **`agents-united`** ecosystem CLI, Antigravity 2.0 custom agent definitions, registry bundles, test suite (TDD), and automated CI/CD npm publishing pipeline.
 
+## Motion and sound follow-up — 2026-10-29
+
+| Plan | Scope | Current status |
+|---|---|---|
+| [040](040-signature-shot-motion-prompts.md) | Signature-shot prompts and pre-render proof | Implemented and full 231/231 test suite green; r3 technical pilot passes, not reference-quality creative acceptance |
+| [041](041-remotion-official-skills-addon.md) | Official Remotion add-on, version currency, optional Studio | Implemented, multi-host install and CI gates green; redistribution/licence scope reopened as a draft-PR merge/release hold |
+| [042](042-spec-driven-sound-routing-and-pilot-041.md) | Measured sound routing, FFmpeg and chicken-life-cycle pilots | Both technical exports delivered and full-suite CI green; measured sync-drift and yuvj420p root causes recorded |
+| [043](043-reference-led-visual-craft-gate.md) | Actual reference-frame proof comparison, material passes and final-mux sync | Jobs V0–V4 implemented and verified locally ([ADR 0060](../docs/adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md)); Job V5 (maintainer-started live eval) prepared, **unverified** |
+
 ## Execution Order & Status
 
 **Plan 035 R3 update, 2026-10-08:** nine outputs verified; seven expectations seen, shutdown completion unverified, additional brief instruction violated. The table retains Plan 035's historical close-out row; [Plan 033](./033-agent-factory-bundle.md) records the authorized foundation and [the R3 observation](../host-library/claude/observations/2026-10-08-claude-2.1.292-r3-foundation-regression.md) records the evidence.
@@ -141,4 +150,3 @@ assigned at execution (0019 is taken by the Universal Coverage Rule).
    - Skills: `writing-plans`, `confidence-check`
 
 8. **`full` / `all`**: Complete unified suite of all orchestrators, subagents, workflows, and skills.
-

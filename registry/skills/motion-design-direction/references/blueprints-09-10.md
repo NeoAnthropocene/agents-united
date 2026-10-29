@@ -1,6 +1,6 @@
 # Blueprints 9-10: recurring motif and sonic identity
 
-Read one recipe with [shared direction](direction.md) and [source limits](sources.md). These are original agency treatments based on supplied ideas. All examples are fictional; all spans are half-open at 60 fps.
+Read one recipe with [shared direction](direction.md) and [quick facts](quick-facts.md). Every blueprint below requires `referenceFrames` (1–2 viewed local reference frames with SHA-256 and 8-dimension craft analysis), explicit `materialPasses` (`grain`, `gradientMesh`, `depthBlur`, `lightWrap`), and a side-by-side `proofComparison` board validated before full render. These are original agency treatments based on supplied ideas. All examples are fictional; all spans are half-open at 60 fps.
 
 ## 9. Kinetic type with a recurring motif
 
@@ -20,7 +20,7 @@ Make language carry the argument, data support it and a recurring motif bind the
 | type-endcard | 720-900 | Motif anchors logo/CTA by 756; hold. |
 
 ### Build instructions
-Approve copy line breaks and type scale first; render sample frames at final size before elaborate animation. Define one motif state map and semantic role per scene. Keep chart baseline/units/labels visible and retain source evidence; never distort numbers merely for a nicer silhouette. Use an original compatible vector shape or a mask when point correspondence is unavailable. Limit simultaneous moving text to one reading target and preserve actual text content for captions/transcript where required.
+Approve copy line breaks and type scale first; render sample frames at final size before elaborate animation. Define one motif state map and semantic role per scene. Keep chart baseline/units/labels visible and retain source evidence; never distort numbers merely for a nicer silhouette. Use an original compatible vector shape or a mask when point correspondence is unavailable. Limit simultaneous moving text to one reading target and preserve actual text content for captions/transcript where required. Validate `referenceFrames`, `materialPasses` and side-by-side `proofComparison` before full render.
 
 ### Native application
 Use SVG text or ready local-font HTML and one logical motif ID. Compute i=60t; phrase reveal ends at 48. Interpolate motif underline bounds into axis bounds over [180,216], then grow data geometry [216,252] while labels remain fixed. For [360,420] derive a mask from the motif rather than replacing the canvas with unrelated imagery. Return motif [540,600], resolve endcard [720,756], and reconstruct all text/geometry on every seek(t). Test repeated/reverse seeks and letter clipping at extreme transforms.
@@ -37,8 +37,9 @@ Anti-patterns: unreadable rotating text, unlicensed fonts, false numerical compa
 ### Filled worked example
 Fictional brief: Folio planning tool motion study, Native confirmed by Chris, 15 s/900 frames, revision folio-type-r1. Approved illustrative copy: "From scattered ideas", "Find the pattern", "Make one plan", CTA "Meet Folio". Chart is explicitly "Demo: items by theme" with values 4/7/9 and zero baseline; no productivity claim. Motif is a client-approved orange line with round ends, width 180 px at first underline, chart axis width 680 px, then a ring aperture and final logo underline. Palette #152F3A/#F7F1E5/#C86834, licensed local sans, safe inset 96. Use the five spans above, data reveal [216,252), no VO, local Sound recurring two-hit texture and zero generated-footage spend. Actual brand/font/data evidence remains required for production.
 
-### Source/date/evidence
-Supplied type/data/shape/recurring-motif/endcard idea attributed to whrrari: <https://substack.com/@whrrari/note/c-353407785>. Research date 2026-10-22; no metric supplied. Agency adaptation of the idea with original writing, not a vendored prompt or source artwork. Not reverified during drafting (2026-10-24); [limits](sources.md) apply and reference media is not automatically rights-cleared.
+### Quick facts
+
+Per-word entrance, scale + tracking + mask reveal, depth shadow or extrusion, camera drift. No plain centered headline, fade-only text or glyphs off-canvas. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 9)**. No kinetic render, independent playback/listening, data approval or readability study. Future check: matched copy/font/motif/data in both lanes, inspect transform boundaries and final-size reading holds, then obtain independent muted comprehension/motion review. Starter rendering tests provide no quality evidence for this typography recipe.
@@ -60,7 +61,7 @@ Build anticipation, transform one brand-native element, reveal the actual logo a
 | sting-hold | 300-480 | Readable stable lockup; sonic tail completes with room to end. |
 
 ### Build instructions
-Get Jamileh's allowed transformations and Kaan's optional tagline. Separate an abstract motif from the protected logo geometry when the brand forbids morphing the mark itself. Design a short anticipation and an explicit final arrival; avoid uncontrolled physics overshoot. Ask Sound for an original/cleared short signature and proposed peak/decay marks. Approve a combined animatic/timing table before final sound; do not assume the social reference includes reusable audio.
+Get Jamileh's allowed transformations and Kaan's optional tagline. Separate an abstract motif from the protected logo geometry when the brand forbids morphing the mark itself. Design a short anticipation and an explicit final arrival; avoid uncontrolled physics overshoot. Ask Sound for an original/cleared short signature and proposed peak/decay marks. Approve a combined animatic/timing table before final sound; do not assume the social reference includes reusable audio. Validate `referenceFrames`, `materialPasses` and side-by-side `proofComparison` before full render.
 
 ### Native application
 Derive i=60t in seek(t). Anticipation scale uses a bounded easing from 1 to the approved .96 at [30,72], then holds to 90. Move the original motif along an authored cubic path over [90,240] with u clamped; reveal actual logo geometry over [240,288], settle position/opacity by 300. At every i>=300 set the exact final transform/opacity, not an asymptotic spring. Await vector/font/image readiness; probe 239/240/287/288/299/300 and the final 479. This is a finite sting, not a loop.
@@ -72,13 +73,14 @@ Use Motif and ApprovedLogo components with fixed original vectors and path/clear
 Send anticipation [60,90), transform [90,240), signature/reveal [240,288), decay [288,420) and whole master [0,480). These are proposed cue spans; Sound confirms actual peak/decay and provenance before freeze. Request an original three-part contour such as soft intake, rounded impact and light decay without imitating a named brand. Sound owns synthesis/recording/editing, final measured stereo48k master, aligned stems/cue files and provenance. Keep meaningful tail intact, use the saved loudness/peak preset and verify muxed tail/listening; a short signature's numerical loudness alone is no quality judgment. Optional spoken tagline requires exact text/captions and timing approval.
 
 ### Gotchas and review
-Anti-patterns: revealing a distorted logo, cutting the sonic decay, clipping a transient, treating a sting as a seamless loop or copying a recognizable audio trademark. Check minimum size/contrast/clear space, visual-hit/audio-peak alignment, final three-second reading hold and actual sound on intended playback devices. A reduced-motion version can use a brief opacity reveal with the same approved identity; reapprove its timing and handoff.
+Anti-patterns: revealing a distorted logo, cutting the sonic decay, clipping a transient, treating a sting as a seamless loop or copying a recognizable audio trademark. Check minimum size/contrast/clear space, visual-hit/audio-peak alignment (`review.mjs mux-sync`), final three-second reading hold and actual sound on intended playback devices. A reduced-motion version can use a brief opacity reveal with the same approved identity; reapprove its timing and handoff.
 
 ### Filled worked example
 Fictional brief: Morrow studio sting, 8 s/480 frames, Remotion confirmed/persisted by Chris, revision morrow-sting-r1. Client-owned illustrative logo is a static wordmark with a separate ring motif; the wordmark cannot morph. Palette #162F38/#F7EEDF/#BD6B38, no tagline, safe clear-space 96 px. Ring center follows (400,540) to (960,540) over [90,240); reveal the exact wordmark [240,288), hold [300,480). Local Sound proposes intake at 60, rounded transient at 240 and a tonal decay ending before 420, with no famous-brand reference or external-generation request. Deliver the proposed cue/pose sheet first; actual measured audio, runtime eligibility and creative approval remain prerequisites.
 
-### Source/date/evidence
-Supplied anticipation/transform/reveal/readable-hold and sonic-signature idea attributed to whrrari: <https://substack.com/@whrrari/note/c-354195159>. Research date 2026-10-22; no metric supplied. Agency adaptation of the idea with original writing; no source logo, audio or prompt is copied. Not reverified during drafting (2026-10-24); [limits](sources.md) apply, including separate rights clearance for reference media.
+### Quick facts
+
+Brand parts assemble, a glow and a particle accent, the sound hit lands with the assembly, a short settle. No logo fade-in on flat colour alone, unaligned hit or borrowed mark. Selector: [quick facts](quick-facts.md).
 
 ### Evaluation status
 **prepared-not-run (blueprint 10)**. No sting render, independent listening/playback, sonic-identity clearance or creative approval. Future check: matched logo/motif/audio in both lanes, decoded frame/peak alignment and full tail inspection, then independent logo-recognition and device listening review. Existing renderer proofs do not evaluate this logo or sonic signature.

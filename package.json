@@ -22,6 +22,7 @@
     "typecheck": "npm run build && tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc -p scripts/hostlib/tsconfig.json && tsc -p scripts/skill-quality/tsconfig.json",
     "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc -p scripts/hostlib/tsconfig.json && tsc -p scripts/skill-quality/tsconfig.json",
     "skills:quality": "node scripts/skill-quality/measure.ts report",
+    "skills:remotion-release": "node registry/skills/remotion-production/scripts/check-release.mjs",
     "hostlib:check": "node scripts/hostlib/cli.ts check",
     "hostlib:refresh": "node scripts/hostlib/cli.ts refresh",
     "hostlib:ingest": "node scripts/hostlib/cli.ts ingest",

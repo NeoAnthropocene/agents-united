@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 // Shared, dependency-free v1 contracts. These checks never decode or measure media.
 export const DEFAULT_PRESET = Object.freeze({ integratedLufs: -16, toleranceLu: 1, truePeakDbtp: -1 });
 const ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+const SHA256 = /^sha256:[a-f0-9]{64}$/;
 const KINDS = ['vo', 'music', 'sfx'];
 const PROVIDERS = ['higgsfield', 'kling', 'elevenlabs', 'fish-audio', 'kie', 'byteplus'];
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -168,6 +169,74 @@ export function validateAudioManifest(timeline, manifest, preset = DEFAULT_PRESE
   return errors;
 }
 
+export function validateMuxSyncReview(timeline, manifest, sync) {
+  const errors = [...validateTimeline(timeline), ...validateAudioManifest(timeline, manifest)];
+  if (errors.length) return errors;
+  const allowed = [
+    'schemaVersion', 'timelineRevision', 'timelineFingerprint', 'videoPath', 'videoSha256',
+    'masterPath', 'masterSha256', 'method', 'command', 'pixelFormat', 'colorRange', 'colorSpace',
+    'colorRangeApproval', 'muxLagMs', 'toleranceFrames', 'cueOffsets', 'listeningReview', 'perceivedSyncReview',
+  ];
+  if (!object(sync, allowed, 'sync', errors)) return errors;
+  version(sync, 'sync.schemaVersion', errors);
+  if (sync.timelineRevision !== timeline.revision) issue(errors, 'sync.revision', 'sync.timelineRevision', 'Sync review revision differs from the approved timeline.');
+  if (sync.timelineFingerprint !== timelineFingerprint(timeline)) issue(errors, 'sync.fingerprint', 'sync.timelineFingerprint', 'Sync review fingerprint is stale against the approved timeline.');
+  localPath(sync.videoPath, 'sync.videoPath', errors);
+  localPath(sync.masterPath, 'sync.masterPath', errors);
+  if (typeof sync.videoSha256 !== 'string' || !SHA256.test(sync.videoSha256)) issue(errors, 'sync.hash', 'sync.videoSha256', 'Require sha256:<64-hex> for the inspected MP4.');
+  if (typeof sync.masterSha256 !== 'string' || !SHA256.test(sync.masterSha256)) issue(errors, 'sync.hash', 'sync.masterSha256', 'Require sha256:<64-hex> for the reference master WAV.');
+  if (!nonempty(sync.method) || /^(?:timeline-arithmetic|manifest-frames|visual-guess|unmeasured|none|assumed)$/i.test(sync.method.trim())) {
+    issue(errors, 'sync.arithmeticOnly', 'sync.method', 'Sync cannot be claimed from timeline arithmetic alone; record a decoded waveform/correlation measurement method.');
+  }
+  if (!nonempty(sync.command)) issue(errors, 'sync.command', 'sync.command', 'Retain the exact decode/measurement command.');
+  const fullRangeOrNonStandard = sync.pixelFormat !== 'yuv420p' || (sync.colorRange !== undefined && !['tv', 'limited'].includes(sync.colorRange));
+  if (fullRangeOrNonStandard) {
+    const approval = sync.colorRangeApproval;
+    if (!isObject(approval) || !nonempty(approval.approvedBy) || !nonempty(approval.targetPlayerTested) || !nonempty(approval.reason)) {
+      issue(errors, 'video.colorRange', 'sync.pixelFormat', 'Encoded pixelFormat must be limited-range yuv420p unless colorRangeApproval records approvedBy, targetPlayerTested and reason.');
+    }
+  }
+  const defaultToleranceFrames = sync.toleranceFrames === undefined ? 1 : sync.toleranceFrames;
+  if (!finite(defaultToleranceFrames, 0.01, 10)) issue(errors, 'sync.tolerance', 'sync.toleranceFrames', 'Specify finite toleranceFrames.');
+  if (!finite(sync.muxLagMs, -5000, 5000)) issue(errors, 'sync.muxLag', 'sync.muxLagMs', 'Specify finite measured muxLagMs.');
+  else if (finite(defaultToleranceFrames, 0.01, 10) && Math.abs(sync.muxLagMs) > (defaultToleranceFrames * 1000) / timeline.fps + 0.5) {
+    issue(errors, 'sync.muxLag', 'sync.muxLagMs', 'Measured mux stream lag exceeds frame tolerance.');
+  }
+  const offsets = array(sync.cueOffsets, 'sync.cueOffsets', errors);
+  const seenCues = new Set();
+  offsets.forEach((row, index) => {
+    const field = `sync.cueOffsets[${index}]`;
+    if (!object(row, ['cueId', 'kind', 'targetFrame', 'measuredOnsetFrame', 'measuredOnsetMs', 'signedOffsetFrames', 'signedOffsetMs', 'toleranceFrames', 'ambient'], field, errors)) return;
+    const expected = timeline.cues.find(c => c.id === row.cueId);
+    if (!expected || seenCues.has(row.cueId)) issue(errors, 'sync.cueCoverage', `${field}.cueId`, 'Each measured cue offset must reference a unique approved timeline cue.');
+    seenCues.add(row.cueId);
+    if (!finite(row.targetFrame, 0, timeline.totalFrames) || !finite(row.measuredOnsetFrame, 0, timeline.totalFrames + 120) || !finite(row.signedOffsetFrames, -timeline.totalFrames, timeline.totalFrames)) {
+      issue(errors, 'sync.offsetBounds', field, 'Cue targetFrame, measuredOnsetFrame and signedOffsetFrames must be finite.');
+      return;
+    }
+    if (Math.abs(row.signedOffsetFrames - (row.measuredOnsetFrame - row.targetFrame)) > 0.05) {
+      issue(errors, 'sync.offsetMath', `${field}.signedOffsetFrames`, 'signedOffsetFrames must equal measuredOnsetFrame minus targetFrame.');
+    }
+    if (['sfx', 'vo'].includes(expected?.kind ?? row.kind) && row.ambient !== true) {
+      const tol = row.toleranceFrames ?? defaultToleranceFrames;
+      if (!finite(tol, 0.01, 1) || Math.abs(row.signedOffsetFrames) > tol) {
+        issue(errors, 'sync.cueDrift', `${field}.signedOffsetFrames`, `Discrete cue ${row.cueId} offset (${row.signedOffsetFrames} frames) exceeds the 1-frame sync tolerance.`);
+      }
+    }
+  });
+  if (timeline.cues.some(cue => ['sfx', 'vo'].includes(cue.kind) && !seenCues.has(cue.id))) {
+    issue(errors, 'sync.cueCoverage', 'sync.cueOffsets', 'Every discrete vo/sfx cue in the timeline requires a measured cue offset entry.');
+  }
+  for (const key of ['listeningReview', 'perceivedSyncReview']) {
+    if (!['unverified', 'accepted', 'rejected'].includes(sync[key])) {
+      issue(errors, 'sync.reviewState', `sync.${key}`, `${key} must be unverified, accepted or rejected.`);
+    } else if (sync[key] === 'rejected') {
+      issue(errors, 'sync.rejected', `sync.${key}`, `Human ${key} rejected the export.`);
+    }
+  }
+  return errors;
+}
+
 export function validateCaptions(timeline, srt = '') {
   const errors = validateTimeline(timeline);
   if (errors.length) return errors;
@@ -326,10 +395,10 @@ export function parseFlags(args, allowed, errors) {
 async function main(args) {
   const errors = [];
   const [command, ...rest] = args;
-  if (command === '--help') return resultReport([], { help: 'review.mjs timeline --timeline file.json | request --request file.json | contract --timeline file.json --manifest file.json [--captions file.srt] [--project absolute-root] [--target-lufs -16 --tolerance-lu 1 --max-true-peak -1]. No media decoding or measurement occurs.' });
-  const options = parseFlags(rest, ['--timeline', '--manifest', '--captions', '--request', '--project', '--target-lufs', '--tolerance-lu', '--max-true-peak'], errors);
-  const required = command === 'request' ? ['--request'] : command === 'timeline' ? ['--timeline'] : command === 'contract' ? ['--timeline', '--manifest'] : [];
-  if (!required.length || required.some(flag => !options[flag])) issue(errors, 'cli.arguments', 'arguments', 'Select timeline, request or contract and supply its required files.');
+  if (command === '--help') return resultReport([], { help: 'review.mjs timeline --timeline file.json | request --request file.json | contract --timeline file.json --manifest file.json [--captions file.srt] [--project absolute-root] [--target-lufs -16 --tolerance-lu 1 --max-true-peak -1] | mux-sync --timeline file.json --manifest file.json --sync file.json [--project absolute-root]. No media decoding or measurement occurs.' });
+  const options = parseFlags(rest, ['--timeline', '--manifest', '--captions', '--request', '--sync', '--project', '--target-lufs', '--tolerance-lu', '--max-true-peak'], errors);
+  const required = command === 'request' ? ['--request'] : command === 'timeline' ? ['--timeline'] : command === 'contract' ? ['--timeline', '--manifest'] : command === 'mux-sync' ? ['--timeline', '--manifest', '--sync'] : [];
+  if (!required.length || required.some(flag => !options[flag])) issue(errors, 'cli.arguments', 'arguments', 'Select timeline, request, contract or mux-sync and supply its required files.');
   if (errors.length) return resultReport(errors);
   const root = options['--project'] ? await projectRoot(options['--project'], errors) : undefined;
   if (errors.length) return resultReport(errors);
@@ -344,6 +413,21 @@ async function main(args) {
   const extra = { timelineFingerprint: timelineFingerprint(timeline), durationSeconds: timeline.totalFrames / timeline.fps };
   if (command === 'timeline') return resultReport(errors, extra);
   const manifest = await readInput(options['--manifest'], 'json', errors, 'audio', root);
+  if (command === 'mux-sync') {
+    const sync = await readInput(options['--sync'], 'json', errors, 'sync', root);
+    if (!errors.length) errors.push(...validateMuxSyncReview(timeline, manifest, sync));
+    return resultReport(errors, {
+      ...extra,
+      visualListeningReview: sync?.listeningReview === 'accepted' && sync?.perceivedSyncReview === 'accepted' ? 'accepted' : 'unverified',
+      verification: {
+        contract: errors.length ? 'failed' : 'valid',
+        muxedAudio: errors.length ? 'failed' : 'measured-within-tolerance',
+        colorRange: sync?.pixelFormat === 'yuv420p' && ['tv', 'limited', undefined].includes(sync?.colorRange) ? 'limited-yuv420p' : 'custom-approved',
+        listeningReview: sync?.listeningReview ?? 'unverified',
+        perceivedSyncReview: sync?.perceivedSyncReview ?? 'unverified',
+      },
+    });
+  }
   const preset = {
     integratedLufs: options['--target-lufs'] === undefined ? DEFAULT_PRESET.integratedLufs : Number(options['--target-lufs']),
     toleranceLu: options['--tolerance-lu'] === undefined ? DEFAULT_PRESET.toleranceLu : Number(options['--tolerance-lu']),
