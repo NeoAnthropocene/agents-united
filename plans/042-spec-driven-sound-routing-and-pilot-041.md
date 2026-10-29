@@ -73,5 +73,23 @@ and shipped example assets so an example can never satisfy a gate.
 | FFmpeg on this machine | project `ffmpeg-static` resolved at 6.1.1 essentials build; `verify` ok with `amix`, `loudnorm`, `libx264`, `aac`; bare `ffmpeg` is absent from PATH, which is exactly the case the resolver exists for |
 | `npm run typecheck` | exit 0 |
 
-Not verified: any local model actually running on this hardware, listening, provider routes, the two
-live Pilot 041 cells (not started), and the creative quality of any output.
+## Pilot 041 outcome (2026-10-29)
+
+| Cell | Result | Verifier |
+|---|---|---|
+| native | **complete deliverable**; one sentence became a concept ("Full Circle"), a named signature shot, a causal five-beat shot list, a geometry-level visual handoff, a claim-checked copy set and a measured 15.0 s export | **21/21 PASS** |
+| remotion | **not run**: the account's session limit answered `429 usage_limit_reached` ("resets 1pm Europe/Berlin") after the native cell; 2 turns, USD 0.2938542 | not run |
+
+Native proves the new behaviour end to end: the probe was written at 10:50:15 with this machine's
+measured facts, the chosen sound route was the bundled local one *because* the probe says a music
+model is `not-recommended` (12 GiB dedicated VRAM required, 0 available), the motion prompt validated
+at exit 0, 18 proof frames were reviewed before the render, and QC names the project-local
+`ffmpeg-static 6.1.1` while marking playback, listening, sync and creative quality **unverified**.
+
+The Remotion comparison is still owed. It is a quota failure, not a code failure: re-run
+`.\run-cell.ps1 -Cell remotion -Budget 12` in `scratch/pilot-041` after the reset and then
+`node verify.mjs both`. Nothing in this repository blocks it; the harness, the pinned 4.0.539 licence
+record and the installed skills are already in place.
+
+Not verified: the Remotion cell, playback, listening, A/V sync, browser reproducibility and the
+creative quality of either film.
