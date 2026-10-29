@@ -77,8 +77,10 @@ and shipped example assets so an example can never satisfy a gate.
 
 | Cell | Result | Verifier |
 |---|---|---|
-| native | **complete deliverable**; one sentence became a concept ("Full Circle"), a named signature shot, a causal five-beat shot list, a geometry-level visual handoff, a claim-checked copy set and a measured 15.0 s export | **21/21 PASS** |
-| remotion | **not run**: the account's session limit answered `429 usage_limit_reached` ("resets 1pm Europe/Berlin") after the native cell; 2 turns, USD 0.2938542 | not run |
+| native | **complete deliverable**; one sentence became a concept ("Full Circle"), a named signature shot, a causal five-beat shot list, a geometry-level visual handoff, a claim-checked copy set and a measured 15.0 s export | **21/21 PASS** (session record `is_error` on the final hand-back, after the deliverable) |
+| remotion | **not run**: the account's session limit answered `429 usage_limit_reached` ("resets 1pm Europe/Berlin") at turn 2; USD 0.2938542 | not run |
+
+Costs: native USD 4.8455483, Remotion USD 0.2938542 — USD 5.14 of the 24 approved.
 
 Native proves the new behaviour end to end: the probe was written at 10:50:15 with this machine's
 measured facts, the chosen sound route was the bundled local one *because* the probe says a music
