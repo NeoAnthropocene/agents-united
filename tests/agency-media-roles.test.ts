@@ -168,4 +168,58 @@ describe('digital agency media production roles', () => {
       }
     }
   });
+
+  it('wires the reference-led visual craft gate, four material pass decisions, side-by-side proof comparison and final-mux sync/range review across Creative, Motion, Sound, Chris and the blueprints', () => {
+    const creativeNative = native('agency-creative-designer');
+    const creativeCanonical = fs.readFileSync('registry/agents/subagent-marketing-creative-designer.md', 'utf8');
+    const motionNative = native('agency-motion-designer');
+    const motionCanonical = fs.readFileSync('registry/agents/subagent-motion-designer.md', 'utf8');
+    const soundNative = native('agency-sound-designer');
+    const soundCanonical = fs.readFileSync('registry/agents/subagent-sound-designer.md', 'utf8');
+    const leadNative = native('orchestrator-digital-agency');
+    const leadCanonical = fs.readFileSync('registry/agents/orchestrator-digital-agency.md', 'utf8');
+
+    for (const [label, text] of [['creativeNative', creativeNative], ['creativeCanonical', creativeCanonical]] as const) {
+      expect(text, label).toMatch(/1[–-]2.*reference frame/i);
+      expect(text, label).toMatch(/SHA-256/i);
+      expect(text, label).toMatch(/silhouette/i);
+    }
+    for (const [label, text] of [['motionNative', motionNative], ['motionCanonical', motionCanonical]] as const) {
+      expect(text, label).toMatch(/referenceFrames|reference frame/i);
+      expect(text, label).toMatch(/materialPasses|grain.*gradient.*depth.*light/i);
+      expect(text, label).toMatch(/proofComparison|side-by-side/i);
+      expect(text, label).toMatch(/mux-sync|yuv420p/i);
+    }
+    for (const [label, text] of [['soundNative', soundNative], ['soundCanonical', soundCanonical]] as const) {
+      expect(text, label).toMatch(/mux-sync|signed.*offset|cue offset/i);
+    }
+    for (const [label, text] of [['leadNative', leadNative], ['leadCanonical', leadCanonical]] as const) {
+      expect(text, label).toMatch(/1[–-]2.*reference frame/i);
+      expect(text, label).toMatch(/side-by-side|proofComparison/i);
+      expect(text, label).toMatch(/mux-sync|cue offset/i);
+    }
+
+    for (const file of [
+      'registry/skills/motion-design-direction/references/prompt-blueprint.md',
+      'registry/skills/motion-design-direction/references/quick-facts.md',
+      'registry/skills/motion-design-direction/references/blueprints-01-03.md',
+      'registry/skills/motion-design-direction/references/blueprints-04-06.md',
+      'registry/skills/motion-design-direction/references/blueprints-07-08.md',
+      'registry/skills/motion-design-direction/references/blueprints-09-10.md',
+    ]) {
+      const text = fs.readFileSync(file, 'utf8');
+      expect(text, file).toMatch(/grain/i);
+      expect(text, file).toMatch(/gradient.?mesh/i);
+      expect(text, file).toMatch(/depth.?blur/i);
+      expect(text, file).toMatch(/light.?wrap/i);
+    }
+    expect(fs.existsSync('docs/adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md')).toBe(true);
+    const motionEvals = JSON.parse(fs.readFileSync('registry/skills/motion-design-direction/evals/evals.json', 'utf8'));
+    expect(motionEvals.evals.some((e: { prompt: string }) => /gate-off.*gate-on/i.test(e.prompt))).toBe(true);
+    const reviewEvals = JSON.parse(fs.readFileSync('registry/skills/audiovisual-review/evals/evals.json', 'utf8'));
+    expect(reviewEvals.evals.some((e: { prompt: string }) => /yuvj420p/i.test(e.prompt))).toBe(true);
+    const reviewReport = fs.readFileSync('docs/skill-quality/2026-10-29-pilot-041-review-and-plan-043-eval-protocol.md', 'utf8');
+    expect(reviewReport).toMatch(/Dated Maintainer Human Review of Pilot 041/i);
+    expect(reviewReport).toMatch(/Plan 043 Job V5 Blind Evaluation Protocol/i);
+  });
 });

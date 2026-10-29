@@ -80,5 +80,80 @@
     "frames": [0, 45, 74, 75, 120, 149, 150, 210, 270, 299],
     "reviewBeforeFullRender": true,
     "rejectIf": ["flat or default materials", "placeholder rectangles", "clipping or aliasing", "illegible type"]
+  },
+  "referenceFrames": [
+    {
+      "id": "ref-paper-rim-01",
+      "sourceUrl": "https://x.com/northwind_archive/status/1900000000000000001",
+      "author": "Northwind Archive Study",
+      "sourceFrameOrTimestamp": "00:04.12 (frame 124)",
+      "capturedAt": "2026-10-29",
+      "localPath": "media/references/ref-paper-rim-01.png",
+      "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "permissionScope": "private-analysis-only",
+      "viewed": true,
+      "viewedBy": "Jamileh",
+      "analysis": {
+        "composition": "Asymmetric right-weighted hero with open upper-left sky reserve.",
+        "silhouetteAndProportions": "Tapered diamond kite with long 1:3 ribbon tail and crisp spar angles.",
+        "paletteAndContrast": "Deep navy #12324A against warm apricot #F2A981 and cream #FFF6E5 highlights.",
+        "materialAndSurface": "Translucent mulberry paper with directional fibre grain and crease shadows.",
+        "lightDirection": "Low-angle backlight from 220deg casting warm translucent rim and spar shadow.",
+        "edgeAndContact": "Soft 3px rim light wrap where the paper crosses the sun disc; crisp outer fold.",
+        "typeHierarchy": "Display headline at 68px tracking -0.02em above quiet 24px subhead.",
+        "memorableFeature": "The ribbon tail physically writes the baseline of the brand lockup."
+      },
+      "shotMapping": {
+        "shotId": "signature",
+        "transferablePrinciple": "Backlit translucent paper rim and continuous ribbon-to-wordmark gesture.",
+        "howOursDiffers": "Uses Northwind octagonal kite geometry and dawn hill parallax instead of studio cyclorama."
+      }
+    }
+  ],
+  "materialPasses": {
+    "grain": {
+      "enabled": true,
+      "layers": ["sky", "kite"],
+      "frameRange": [0, 300],
+      "visibleContribution": "Adds tactile paper fibre micro-contrast on the kite sail without crawling.",
+      "proofCrop": "media/proofs/crops/signature-grain-kite.png",
+      "parameters": {
+        "seed": 4043,
+        "scale": 1.25,
+        "opacity": 0.08,
+        "surfacePlacement": "paper-sail-and-sky-band"
+      }
+    },
+    "gradientMesh": {
+      "enabled": true,
+      "layers": ["sky", "far-hills"],
+      "frameRange": [0, 300],
+      "visibleContribution": "Builds volumetric dawn horizon falloff while keeping upper-left copy reserve dark.",
+      "proofCrop": "media/proofs/crops/signature-gradient-sky.png",
+      "parameters": {
+        "anchors": ["#12324A@0.15,0.20", "#F2A981@0.78,0.62", "#FFF6E5@0.82,0.70"],
+        "falloff": "radial-smoothstep-1.4",
+        "volumeIntent": "Separate far hills from backlit kite silhouette and preserve 7:1 headline contrast."
+      }
+    },
+    "depthBlur": {
+      "enabled": false,
+      "naReason": "Crisp vector paper craft direction keeps mid-ground silhouette sharp; foreground haze uses layer blur only.",
+      "reviewedBy": "Jamileh"
+    },
+    "lightWrap": {
+      "enabled": true,
+      "layers": ["kite"],
+      "frameRange": [150, 300],
+      "visibleContribution": "Wraps warm solar backlight around the kite inner edge and casts spar contact shadow.",
+      "proofCrop": "media/proofs/crops/signature-lightwrap-edge.png",
+      "parameters": {
+        "sourceDirection": "220deg solar disc behind kite",
+        "rimWidthPx": 3.5,
+        "rimColor": "#FFF6E5",
+        "intensity": 0.65,
+        "contactShadow": "2px warm-multiply crease shadow under cross-spar"
+      }
+    }
   }
 }

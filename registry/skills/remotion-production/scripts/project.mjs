@@ -383,7 +383,7 @@ export async function render(directory, options = {}) {
     const video = path.join(output, 'video.mp4');
     await runtime.renderMedia({ ...common, composition, codec: preferences.output.videoCodec,
       audioCodec: preferences.output.audioCodec, sampleRate: preferences.output.audioSampleRate,
-      pixelFormat: 'yuv420p', enforceAudioTrack: true, overwrite: false, outputLocation: video });
+      imageFormat: 'png', pixelFormat: 'yuv420p', enforceAudioTrack: true, overwrite: false, outputLocation: video });
     stage = 'stills';
     await mkdir(path.join(output, 'stills'));
     const frames = [...new Set([0, Math.floor(timeline.totalFrames / 2), timeline.totalFrames - 1])];
@@ -397,7 +397,7 @@ export async function render(directory, options = {}) {
       timelineFingerprint: snapshot.fingerprint, inputPropsSha256: snapshot.propsSha256, audio: snapshot.provenance.audio,
       composition: { id: composition.id, durationInFrames: composition.durationInFrames, fps: composition.fps,
         width: composition.width, height: composition.height },
-      requestedEncoding: { ...preferences.output }, stillFrames: frames,
+      requestedEncoding: { ...preferences.output, pixelFormat: 'yuv420p', imageFormat: 'png' }, stillFrames: frames,
       packages: runtime.packages ?? [], artifacts: [], encodedInspection: 'unverified',
       visualReview: 'unverified', listeningReview: 'unverified', asyncFontMediaReadiness: 'unverified' };
     for (const file of artifacts) {

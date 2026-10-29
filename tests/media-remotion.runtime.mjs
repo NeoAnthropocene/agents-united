@@ -168,3 +168,47 @@ test('release drift checker compares every Remotion runtime package to the pinne
   assert.equal(drift.upToDate, false);
   assert.deepEqual(drift.mismatches, ['@remotion/bundler', 'remotion']);
 });
+
+
+test('Remotion render passes imageFormat png and yuv420p pixelFormat to avoid default JPEG yuvj420p full-range output', async () => {
+  const project = await fs.mkdtemp(path.join(os.tmpdir(), 'remotion render range '));
+  try {
+    await fixture(project);
+    await remotion.scaffold(project);
+    const fakeBrowser = path.join(project, 'fake-chrome.exe');
+    await fs.writeFile(fakeBrowser, 'binary');
+    let capturedRenderOpts = null;
+    const report = await remotion.render(project, {
+      browserExecutable: fakeBrowser,
+      runtimeLoader: async () => ({
+        packages: [{ name: 'remotion', version: '4.0.539', entry: 'mock' }],
+        bundle: async ({ outDir }) => {
+          await fs.mkdir(outDir, { recursive: true });
+          return outDir;
+        },
+        openBrowser: async () => ({ close: async () => {} }),
+        selectComposition: async () => ({
+          id: 'AgencyMotion',
+          durationInFrames: timeline.totalFrames,
+          fps: timeline.fps,
+          width: timeline.width,
+          height: timeline.height,
+        }),
+        renderMedia: async opts => {
+          capturedRenderOpts = opts;
+          await fs.writeFile(opts.outputLocation, 'fake-mp4-bytes');
+        },
+        renderStill: async opts => {
+          await fs.writeFile(opts.output, 'fake-png-bytes');
+        },
+      }),
+    });
+    assert.ok(capturedRenderOpts, 'renderMedia must be called');
+    assert.equal(capturedRenderOpts.pixelFormat, 'yuv420p');
+    assert.equal(capturedRenderOpts.imageFormat, 'png');
+    assert.equal(report.requestedEncoding.pixelFormat, 'yuv420p');
+    assert.equal(report.requestedEncoding.imageFormat, 'png');
+  } finally {
+    await fs.rm(project, { recursive: true, force: true });
+  }
+});

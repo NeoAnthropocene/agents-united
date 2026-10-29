@@ -1,6 +1,6 @@
 # Blueprints 4-6: usefulness, brand evidence and narration
 
-Read the selected recipe with [shared direction](direction.md) and [quick facts](quick-facts.md). Fictional examples illustrate complete briefs; they are not executed projects or claims about source-post footage. All spans below are half-open at 60 fps.
+Read the selected recipe with [shared direction](direction.md) and [quick facts](quick-facts.md). Every blueprint below requires `referenceFrames` (1–2 viewed local reference frames with SHA-256 and 8-dimension craft analysis), explicit `materialPasses` (`grain`, `gradientMesh`, `depthBlur`, `lightWrap`), and a side-by-side `proofComparison` board validated before full render. Fictional examples illustrate complete briefs; they are not executed projects or claims about source-post footage. All spans below are half-open at 60 fps.
 
 ## 4. Conversational product demo
 
@@ -19,7 +19,7 @@ Make the query understandable before showing the work and useful outcome. The re
 | chat-cta | 660-900 | Result reduces to supporting card; CTA clear by 720. |
 
 ### Build instructions
-Get Kaan's full query/result/CTA approved first and verify the useful outcome with the product owner through Chris. Design the result as one primary answer plus at most two secondary details. Use discrete text-reveal indices based on frame count or approved whole-line reveals; no arbitrary typewriter pauses. Keep a visible demo/edit label when timing is compressed. Prefer an anonymized authorized capture or clearly labeled illustrative UI over fabricated screenshots.
+Get Kaan's full query/result/CTA approved first and verify the useful outcome with the product owner through Chris. Design the result as one primary answer plus at most two secondary details. Use discrete text-reveal indices based on frame count or approved whole-line reveals; no arbitrary typewriter pauses. Keep a visible demo/edit label when timing is compressed. Prefer an anonymized authorized capture or clearly labeled illustrative UI over fabricated screenshots. Validate `referenceFrames`, `materialPasses` and beat-to-cue alignment before authoring, and capture the side-by-side `proofComparison` board before full render.
 
 ### Native application
 Reconstruct UI state from i=60t in seek(t). Query characters/lines use a clamped count over [0,60); [60,156) is a stable reading hold. Processing uses a periodic vector dot pose on [180,300) driven by frame modulo, with no CSS wall clock. Result cards interpolate y/opacity over [300,390), then hold [390,660). CTA arrives [660,720) and holds to N=900. Set readable text content on every seek, including reverse seeks.
@@ -61,7 +61,7 @@ Make a specific brand feel coherent across real product evidence. Use one transi
 | saas-lockup | 720-900 | Logo and CTA settle by 756; final hold. |
 
 ### Build instructions
-Inventory source screenshot hashes, capture dates, approved crops and exact copy; strip private information through an approved asset workflow. Build an anchor/crop sheet and one transition system using brand geometry. Sound proposes a phrase map; approve the final cut grid and copy holds together. Keep screenshots as supplied images rather than silently redrawing interface states that could imply unreleased features. New captures or changed metrics require owner review.
+Inventory source screenshot hashes, capture dates, approved crops and exact copy; strip private information through an approved asset workflow. Build an anchor/crop sheet and one transition system using brand geometry. Sound proposes a phrase map; approve the final cut grid and copy holds together. Keep screenshots as supplied images rather than silently redrawing interface states that could imply unreleased features. New captures or changed metrics require owner review. Validate `referenceFrames`, `materialPasses` and side-by-side `proofComparison` before full render.
 
 ### Native application
 Use local predecoded screenshot images and font readiness. For frame i, derive screenshot transform from approved crop and [120,180], [330,390] arrival ranges; use a constant readable transform during each hold. Render masks as SVG/HTML clips from fixed brand geometry. Cut C at 540 and resolve lockup [720,756), with all type/logo poses stable [756,900). Drive music markers from the canonical cue table, never from requestAnimationFrame/audio currentTime.

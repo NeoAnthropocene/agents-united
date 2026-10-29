@@ -40,7 +40,7 @@ still is a determinism check; a smooth seam requires boundary inspection and pla
 
 ## Composition for marketing-grade output
 
-Apply the same quality floor as the native lane: three depth layers minimum, one light
+Apply the same quality floor as the native lane: three depth layers minimum, explicit `materialPasses` (`grain`, `gradientMesh`, `depthBlur`, `lightWrap`), one light
 effect, one secondary motion, one camera move, and text treated as a designed element.
 
 - Build the field from layered `div`/SVG groups (gradient sky, mid silhouette, foreground
@@ -56,11 +56,14 @@ effect, one secondary motion, one camera move, and text treated as a designed el
 - Keep one palette and grade across scenes; check contrast and margins at the final size.
 
 These techniques do not replace direction. Validate `media/specs/motion-prompt.json` with
-`motion-design-direction/scripts/check-prompt-spec.mjs` before authoring. Implement its signature
+`motion-design-direction/scripts/check-prompt-spec.mjs --require-craft-gate --timeline media/timeline.json` before authoring so `referenceFrames`, `materialPasses` and beat-to-cue timing are locked before React components are written. Implement its signature
 shot, causal transitions and one named camera move per shot. Do not use default flat materials or
-hard-edged/blurred placeholder copy rectangles. Capture every proof-plan frame and record the
-proof-frame review before the full render; revise and reproof clipping, collisions, flat materials,
+hard-edged/blurred placeholder copy rectangles. Capture every proof-plan frame, assemble the side-by-side
+`proofComparison` board (`media/specs/proof-comparison.json`), and validate with `--proof-comparison`
+before the full render; revise and reproof clipping, collisions, flat materials,
 illegible type or unclear cause/effect within the approved budget.
+
+The Remotion helper passes `imageFormat: 'png'` and `pixelFormat: 'yuv420p'` to `renderMedia` so `@remotion/renderer` does not default to JPEG frames (`yuvj420p` full-range `pc`). After rendering, verify the final MP4 with `audiovisual-review/scripts/review.mjs mux-sync` to confirm `yuv420p` limited range (`tv`) and measured discrete cue offsets within 1 frame.
 
 `media/remotion/public/` still holds only approved local assets, and `staticFile` is the
 only approved way to reference them. When Jamileh supplies licensed images, use `Img` with

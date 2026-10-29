@@ -10,10 +10,13 @@ source code, a popularity ranking or proof of creative quality. The detailed fil
 worked fictional examples. Source posts were idea leads only and are not reverified here.
 
 **Mandatory overlay:** a recipe choice is not a prompt. First require Jamileh's
-`media/specs/visual-handoff.md`, then apply the [signature-shot prompt blueprint](prompt-blueprint.md),
-write `media/specs/motion-prompt.json` and pass `check-prompt-spec.mjs`. The overlay owns the
-signature shot, causal shot transitions, named camera per shot, material/light, beat grid and
-pre-render proof review; the recipe below supplies only the subject-specific treatment.
+`media/specs/visual-handoff.md` (with 1–2 viewed local `referenceFrames`), then apply the
+[signature-shot prompt blueprint](prompt-blueprint.md), write `media/specs/motion-prompt.json`
+(including `referenceFrames` and explicit `materialPasses` for `grain`, `gradientMesh`,
+`depthBlur`, `lightWrap`), and pass `check-prompt-spec.mjs --require-craft-gate --timeline media/timeline.json`.
+Before full render, assemble the side-by-side `proofComparison` board and pass `--proof-comparison`.
+The overlay owns the signature shot, causal shot transitions, named camera per shot, material passes,
+beat grid and pre-render proof comparison; the recipe below supplies only the subject-specific treatment.
 
 | # | Blueprint and when to use it | Prompt facts to fill (the pill) | Quality bar / never |
 | --- | --- | --- | --- |
@@ -32,11 +35,11 @@ pre-render proof review; the recipe below supplies only the subject-specific tre
 
 1. Read the matching detailed blueprint file for the full beat table and its worked example.
 2. Fill the pill into a prompt spec: destination/duration/fps, **three layers minimum**
-   (background field, subject, foreground accents), one light effect, one secondary motion,
+   (background field, subject, foreground accents), `referenceFrames` (1–2 viewed frames with SHA-256 and 8-dimension analysis),
+   `materialPasses` (`grain`, `gradientMesh`, `depthBlur`, `lightWrap`), one light effect, one secondary motion,
    one camera move, the text treatment, and the cue table for Sound.
 3. If the recipe needs photography, ask Jamileh for the actual licensed asset paths and rights
    notes, not just inspiration links; otherwise author original shapes with graded light.
-4. Hand Sound the cue table with frame spans and the sync points, not only "add music".
-5. Never ship two flat plates with centered text. Depth, light, secondary motion and camera
-   movement are required unless the brief explicitly forbids them, and that exception is
-   recorded in the storyboard with the reason.
+4. Hand Sound the cue table with frame spans and the sync points, not only "add music", and cross-check `beatGrid.events` against `timeline.json` cues with `--timeline`.
+5. Never ship two flat plates with centered text. Depth, light, material passes, secondary motion, camera
+   movement and a side-by-side `proofComparison` board are required unless the brief explicitly forbids a pass and records a reviewed `naReason`.

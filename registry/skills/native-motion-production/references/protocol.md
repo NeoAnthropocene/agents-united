@@ -38,6 +38,7 @@ frame index, never from accumulated state or wall clocks.
 | --- | --- |
 | Depth layers | Sky gradient with 3+ stops, mid-ground silhouette, foreground accent or vignette; each layer has its own opacity and blur |
 | Parallax | Per-layer factor (far 0.1, mid 0.35, near 0.7, subject 1.0); `offset = (cameraX - 0.5) * factor * amplitude`; the camera factor changes over the film, never a static frame |
+| Material passes | Explicit implementation of `grain` (seeded SVG/canvas noise with bounded opacity/blendMode), `gradientMesh` (3+ stop atmospheric radial/conic mesh), `depthBlur` (focal layer separation with near/far blur), and `lightWrap` (backlight wrap on subject silhouette edge) |
 | Light | Radial-gradient glow, sun disc with bloom, an animated light ray, or a graded tint overlay; one effect with a frame span and intensity curve |
 | Secondary motion | Tail, sway, blink, particle float: `A * sin(2 * PI * f * t + phase)` with small A and f in the spec, not a random value |
 | Particles | Seeded positions from a fixed PRNG whose seed is in `content.json`, 12–40 low-opacity motes drifting slowly, never crossing the copy |
@@ -51,12 +52,14 @@ with centered text fail the [quality floor](../../motion-design-direction/refere
 unless the storyboard records why the brief forbids depth.
 
 This table is implementation vocabulary, not a complete prompt. First validate
-`media/specs/motion-prompt.json` with `motion-design-direction/scripts/check-prompt-spec.mjs`.
-Implement its signature shot, causal shot transitions and one named camera move per shot. Give
+`media/specs/motion-prompt.json` with `motion-design-direction/scripts/check-prompt-spec.mjs --require-craft-gate --timeline media/timeline.json`.
+Implement its signature shot, causal shot transitions, `referenceFrames` grammar, four `materialPasses`, and one named camera move per shot. Give
 surfaces deliberate material/edge/contact-shadow behaviour; default primitives and hard-edged or
-blurred placeholder copy rectangles are failed proofs. Capture every proof-plan frame and record
-the proof-frame review before the full render, then revise and reproof visible defects within the
-approved budget.
+blurred placeholder copy rectangles are failed proofs. Capture every proof-plan frame, build the
+side-by-side `proofComparison` board (`media/specs/proof-comparison.json`), and validate with
+`--proof-comparison` before the full render, then revise and reproof visible defects within the
+approved budget. After muxing the final MP4, verify colour range (`yuv420p` limited range `tv`)
+and discrete cue offsets within 1 frame via `audiovisual-review/scripts/review.mjs mux-sync`.
 
 ## Loops and public assets
 

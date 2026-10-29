@@ -78,6 +78,7 @@ Without it, path syntax is checked and file existence remains unverified.
 ```text
 node /absolute/path/to/review.mjs timeline --timeline /project/media/timeline.json
 node /absolute/path/to/review.mjs contract --project /project --timeline media/timeline.json --manifest media/audio-manifest.json --captions media/captions.srt
+node /absolute/path/to/review.mjs mux-sync --timeline /project/media/timeline.json --manifest /project/media/audio-manifest.json --sync /project/media/specs/mux-sync.json
 ```
 
 Exit 0 means structural acceptance; exit 2 means validation/input failure. Stdout is one
@@ -85,7 +86,11 @@ JSON object: schemaVersion, ok, errors (`code`, `path`, `message`), plus fingerp
 verification fields when applicable. Save the exact result beside the handoff. Contract
 reports always label measurements `reported-only`; audio decoding, muxed-audio checks,
 visual review and listening remain `unverified`. Existing file checks say only
-`present-within-project`. `audio.revision`/`audio.fingerprint` require a new Sound handoff;
+`present-within-project`. `mux-sync` validates measured final-mux video stream properties
+(`pixelFormat: "yuv420p"`, limited colour range `tv`/`limited`, and matching `fps`/`totalFrames`/`width`/`height`)
+and per-cue onset offsets (`|offsetFrames| <= 1.0`, rejecting `timeline-arithmetic` claims and
+unapproved `yuvj420p` full-range output) while keeping human `listening` explicitly `unverified`.
+`audio.revision`/`audio.fingerprint` require a new Sound handoff;
 `audio.cueAlignment` requires correcting cue placement; `captions.*` routes to approved
 copy/timing owners; `path.*`/`file.*` require safe local assets. Do not suppress a code.
 

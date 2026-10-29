@@ -15,7 +15,7 @@ This directory contains self-contained implementation plans for building the **`
 | [040](040-signature-shot-motion-prompts.md) | Signature-shot prompts and pre-render proof | Implemented and full 231/231 test suite green; r3 technical pilot passes, not reference-quality creative acceptance |
 | [041](041-remotion-official-skills-addon.md) | Official Remotion add-on, version currency, optional Studio | Implemented, multi-host install and CI gates green; redistribution/licence scope reopened as a draft-PR merge/release hold |
 | [042](042-spec-driven-sound-routing-and-pilot-041.md) | Measured sound routing, FFmpeg and chicken-life-cycle pilots | Both technical exports delivered and full-suite CI green; measured sync-drift and yuvj420p root causes recorded |
-| [043](043-reference-led-visual-craft-gate.md) | Actual reference-frame proof comparison, material passes and final-mux sync | Requested follow-up **plan only**; retain lower-cost-model baseline, no new paid runs or implementation in this PR |
+| [043](043-reference-led-visual-craft-gate.md) | Actual reference-frame proof comparison, material passes and final-mux sync | Jobs V0–V4 implemented and verified locally ([ADR 0060](../docs/adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md)); Job V5 (maintainer-started live eval) prepared, **unverified** |
 
 ## Execution Order & Status
 
@@ -150,4 +150,3 @@ assigned at execution (0019 is taken by the Universal Coverage Rule).
    - Skills: `writing-plans`, `confidence-check`
 
 8. **`full` / `all`**: Complete unified suite of all orchestrators, subagents, workflows, and skills.
-

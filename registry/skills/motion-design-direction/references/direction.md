@@ -6,7 +6,7 @@ Load for any recipe. Fill a treatment before Motion writes an animation. A sourc
 
 Chris consolidates Media Requests, consults Motion/Sound for feasibility and cost, and obtains human include/defer/decline, missing facts and approvals. Record the destination, duration, aspect ratio, fps, safe areas, captions/transcript need, quiet/muted viewing, loop intent, brand/asset rights, copy owner, render setup and revision ceiling. Offer **Native (recommended starting choice)** or Remotion; inspect an existing `media/project.json` and persist the confirmed choice through the [project contract](../../workflow-agency-motion-production/references/project-contract.md). A saved route/budget is not a spending or production authorization. No static task automatically produces media, connects a provider or installs packages.
 
-Jamileh supplies palette/type/spacing and approved visual assets/specs without shell work. Kaan supplies exact approved words, claim evidence and CTA. Motion selects treatment, authors storyboard/timing, animation and video integration. Sound selects sonic direction and local/API/hybrid audio route, makes narration/music/SFX and final measured deliverables. External video generation requires its own opt-in with either renderer. Use the existing commercial-stock-sourcer Skill for approved visual stock; never assume music or SFX rights from visual stock.
+Jamileh supplies palette/type/spacing, 1–2 viewed local reference frames with SHA-256 and 8-dimension craft analysis, and approved visual assets/specs without shell work. Kaan supplies exact approved words, claim evidence and CTA. Motion selects treatment, authors storyboard/timing, animation and video integration. Sound selects sonic direction and local/API/hybrid audio route, makes narration/music/SFX and final measured deliverables. External video generation requires its own opt-in with either renderer. Use the existing commercial-stock-sourcer Skill for approved visual stock; never assume music or SFX rights from visual stock.
 
 ## One timebase, two applications
 
@@ -20,24 +20,30 @@ Remotion: use the [composition guide](../../remotion-production/references/compo
 
 Each recipe's numbers are a starting layout, not rigid automatic cuts. Preserve minimum reading holds based on actual approved copy, test at the final display size and ask Chris to simplify or extend when needed. Treat reduced-motion and captioned variants as separately approved edits with matching timing/handoffs. Avoid rapid flashing; review transitions and motion sensitivity with the intended audience/destination.
 
-## Signature-shot prompt gate
+## Signature-shot and reference-led visual craft gate
 
 Before storyboard or animation code, apply [the prompt blueprint](prompt-blueprint.md). Jamileh's
-`media/specs/visual-handoff.md` supplies concept, signature frame, composition/negative space,
-type/palette and material/light; Motion turns it into `media/specs/motion-prompt.json` and runs
-`check-prompt-spec.mjs`. A blueprint name, token file or effect checklist alone is not a handoff.
+`media/specs/visual-handoff.md` supplies concept, signature frame, 1–2 viewed local reference
+frames (`referenceFrames` with SHA-256, permission scope, 8-dimension analysis and shot mapping),
+composition/negative space, type/palette and material/light; Motion turns it into
+`media/specs/motion-prompt.json` (including explicit `materialPasses` for `grain`, `gradientMesh`,
+`depthBlur`, `lightWrap`) and runs `check-prompt-spec.mjs --require-craft-gate --timeline media/timeline.json`.
+A blueprint name, token file, unviewed URL or effect checklist alone is not a handoff.
 
 Every shot has a state change, one named camera move with start/end/easing, a primary action and
 a secondary reaction. Its transition inherits a visual element from the previous shot; unrelated
 tween collections and crossfades used to conceal weak transitions are defects. Build toward one
-signature frame. Align actions to the approved beat grid without sacrificing reading holds.
+signature frame. Align actions to the approved beat grid and within 1 frame of discrete `timeline.json` cues without sacrificing reading holds.
 
 Solve copy contrast through reserved negative space, subject placement and tonal lighting. **Do
 not place a hard-edged or visibly blurred placeholder rectangle behind copy.** An integrated
 architectural panel is allowed only when the visual handoff makes it a deliberate designed object
 with its own material, edge and light behaviour.
 
-Capture the proof-plan frames and review them before the full render. Flat/default materials,
+Capture the proof-plan frames, assemble the side-by-side reference-vs-candidate signature board
+with 5 detail crops (`typographyEdge`, `materialGrain`, `shadowContact`, `lightFalloff`, `silhouetteSeparation`)
+and transition `motionProofs` in `media/specs/proof-comparison.json`, and validate with
+`check-prompt-spec.mjs --proof-comparison` before the full render. Flat/default materials,
 placeholder rectangles, clipping/aliasing, illegible type, collisions and unclear cause/effect
 require correction and a new proof, not a note after the export. The JSON validator checks
 structure only; it cannot approve visual quality.
@@ -47,7 +53,8 @@ structure only; it cannot approve visual quality.
 A film for a marketing placement needs composed depth, not a colour plate with centered
 type. Unless the brief explicitly forbids it and the storyboard records why, each scene
 carries: a background field with at least three distinguishable depth layers (sky/gradient,
-mid-ground silhouette, foreground accent or vignette); one light effect (glow, ray, bloom,
+mid-ground silhouette, foreground accent or vignette); explicit decisions for the four craft
+`materialPasses` (`grain`, `gradientMesh`, `depthBlur`, `lightWrap`); one light effect (glow, ray, bloom,
 light sweep or graded tint); one secondary motion (tail, sway, particle, blink, float,
 breathing scale) besides the primary move; one camera move (dolly, pan, push-in, parallax
 shift or handheld-style drift, all frame-derived); and text treated as a designed element
@@ -56,7 +63,7 @@ static label. Grade colours as one palette across the film. Use graded licensed 
 Jamileh supplies actual asset paths, otherwise original shapes with the same depth treatment.
 
 Write these parameters in the storyboard before authoring: per-layer opacity/blur/parallax
-factor, the light effect's frame span and intensity, the secondary motion's frequency and
+factor, the material pass parameters/layers/frame ranges, the light effect's frame span and intensity, the secondary motion's frequency and
 amplitude, the camera's start/end transform with its easing, and each text reveal's frame
 span. Review at the final display size: margins, legibility, no glyph clipping, no object
 crossing the copy, and the grade staying consistent through every transition.
@@ -67,4 +74,4 @@ Before Sound finalizes, send the approved revision/fingerprint, fps/N, scene IDs
 
 Sound returns stereo 48 kHz WAV master, aligned full-length VO/music/SFX stems when present, cue files/sheet, provenance/licences and captions for speech. Manifest fields: schemaVersion 1, timelineRevision, timelineFingerprint, fps, totalFrames, sampleRate 48000, channels 2, relative string master, stems, cues, measurements `{scope:'master',integratedLufs,truePeakDbtp}` and provenance per cue. Default full mix is -16 LUFS +/-1 and true peak <=-1 dBTP unless a saved platform preset overrides it. Do not invent measurements or normalize stems independently. Actual listening and measuring the muxed final audio remain separate gates; resampling does not create source fidelity.
 
-Motion integrates the approved full mix once from frame zero, validates cue coverage/revision/fingerprint and speech captions through audiovisual-review, and checks encoded fps/frame count/duration/codec plus audio alignment. Inspect moving footage, endpoint motion and reading time, not just contact sheets. Keep source/package locks/provenance and failed render evidence. A technical pass, source metric or unrelated starter smoke test cannot approve a creative blueprint. Prepared eval briefs remain unrun until an explicitly authorized, bounded host test with actual host records and independent media review.
+Motion integrates the approved full mix once from frame zero, validates cue coverage/revision/fingerprint and speech captions through audiovisual-review, and verifies the final encoded MP4 with `review.mjs mux-sync` (confirming `yuv420p` limited colour range `tv` and measured discrete cue offsets within `1.0` frame of `timeline.json`). Inspect moving footage, endpoint motion and reading time, not just contact sheets. Keep source/package locks/provenance and failed render evidence. A technical pass, source metric or unrelated starter smoke test cannot approve a creative blueprint. Prepared eval briefs remain unrun until an explicitly authorized, bounded host test with actual host records and independent media review.

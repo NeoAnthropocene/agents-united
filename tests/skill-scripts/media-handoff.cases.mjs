@@ -212,3 +212,74 @@ test('invalid project configuration and symlinked media directory are preserved 
     assert.equal(existsSync(path.join(outside, 'project.json')), false);
   }));
 }));
+
+
+test('final-mux sync and colour-range review rejects timeline-arithmetic claims, cue drift beyond one frame, and unapproved yuvj420p while accepting measured sub-frame sync', async () => {
+  const { validateMuxSyncReview, timelineFingerprint } = await import('../../registry/skills/audiovisual-review/scripts/review.mjs');
+  const t = timeline();
+  const fp = timelineFingerprint(t);
+  const m = manifest();
+  m.timelineFingerprint = fp;
+
+  const validSync = () => ({
+    schemaVersion: 1,
+    timelineRevision: 'r1',
+    timelineFingerprint: fp,
+    videoPath: 'media/out/film.mp4',
+    videoSha256: `sha256:${'1'.repeat(64)}`,
+    masterPath: 'audio/master.wav',
+    masterSha256: `sha256:${'2'.repeat(64)}`,
+    method: 'cross-correlation-and-stem-onset',
+    command: 'ffmpeg -i media/out/film.mp4 -f f32le -ac 1 -ar 48000 -',
+    pixelFormat: 'yuv420p',
+    colorRange: 'tv',
+    colorSpace: 'bt709',
+    muxLagMs: 0,
+    toleranceFrames: 1,
+    cueOffsets: [
+      {
+        cueId: 'voice',
+        kind: 'vo',
+        targetFrame: 0,
+        measuredOnsetFrame: 0.12,
+        measuredOnsetMs: 2.0,
+        signedOffsetFrames: 0.12,
+        signedOffsetMs: 2.0,
+        toleranceFrames: 1,
+      },
+    ],
+    listeningReview: 'unverified',
+    perceivedSyncReview: 'unverified',
+  });
+
+  assert.deepEqual(validateMuxSyncReview(t, m, validSync()), []);
+
+  const redCases = [
+    ['sync.arithmeticOnly', s => { s.method = 'timeline-arithmetic'; }],
+    ['video.colorRange', s => { s.pixelFormat = 'yuvj420p'; s.colorRange = 'pc'; }],
+    ['sync.cueDrift', s => {
+      s.cueOffsets[0].measuredOnsetFrame = 20.02;
+      s.cueOffsets[0].signedOffsetFrames = 20.02;
+      s.cueOffsets[0].signedOffsetMs = 333.7;
+    }],
+    ['sync.offsetMath', s => { s.cueOffsets[0].signedOffsetFrames = 0; s.cueOffsets[0].measuredOnsetFrame = 5; }],
+    ['sync.cueCoverage', s => { s.cueOffsets = []; }],
+    ['sync.fingerprint', s => { s.timelineFingerprint = `sha256:${'9'.repeat(64)}`; }],
+  ];
+  for (const [code, mutate] of redCases) {
+    const s = validSync();
+    mutate(s);
+    const errors = validateMuxSyncReview(t, m, s);
+    assert.ok(errors.some(e => e.code === code), `Expected ${code}, got: ${JSON.stringify(errors)}`);
+  }
+
+  fixture(dir => {
+    writeFileSync(path.join(dir, 'timeline.json'), JSON.stringify(t));
+    writeFileSync(path.join(dir, 'audio.json'), JSON.stringify(m));
+    writeFileSync(path.join(dir, 'sync.json'), JSON.stringify(validSync()));
+    const okRun = cli(review, ['mux-sync', '--timeline', path.join(dir, 'timeline.json'), '--manifest', path.join(dir, 'audio.json'), '--sync', path.join(dir, 'sync.json')]);
+    assert.equal(okRun.status, 0, JSON.stringify(okRun.report));
+    assert.equal(okRun.report.verification.muxedAudio, 'measured-within-tolerance');
+    assert.equal(okRun.report.verification.listeningReview, 'unverified');
+  });
+});
