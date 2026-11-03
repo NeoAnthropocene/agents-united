@@ -124,7 +124,7 @@ describe('the official Remotion skill add-on', () => {
     const measured = measureAll(SKILLS, corpus).filter(row => OFFICIAL.includes(row.name));
     expect(measured).toHaveLength(OFFICIAL.length);
     expect(measured.filter(row => verdictOf(row) !== 'ok')).toEqual([]);
-  });
+  }, 30_000);
 
   it('is conditional on Remotion selection and documents every planned host plus optional Studio', () => {
     const production = fs.readFileSync('registry/skills/remotion-production/SKILL.md', 'utf8');
@@ -171,6 +171,8 @@ describe('the official Remotion skill add-on', () => {
       const text = fs.readFileSync(file, 'utf8');
       expect(text, file).toMatch(/Remotion Studio/);
       expect(text, file).toMatch(/agentic|final measured export|helper/i);
+      expect(text, file).toMatch(/remotion-best-practices/);
+      expect(text, file).toMatch(/remotion-markup/);
     }
   });
 

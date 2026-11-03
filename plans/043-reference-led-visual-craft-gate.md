@@ -1,8 +1,8 @@
 # Plan 043: Reference-led visual craft and final-mux sync review
 
-Status: **JOBS V0–V4 IMPLEMENTED AND VERIFIED LOCALLY (2026-10-29); JOB V5 (MAINTAINER-STARTED LIVE EVALUATION) PREPARED, UNVERIFIED.**
+Status: **JOBS V0–V5 IMPLEMENTED AND HEADLESS-EVALUATED ON CLAUDE CLI (2026-10-29); HUMAN LISTENING/VIEWING SIGN-OFF ON `chicken-lifecycle-r4.mp4` REMAINS `unverified`.**
 Requested by the maintainer on 2026-10-29 after viewing/listening to both chicken-life-cycle exports.
-Jobs V0–V4 (schema/validators, four material-pass gates, side-by-side proof comparison, final-mux sync/colour-range review, Remotion `imageFormat: 'png'` + `yuv420p` fix, 10 blueprints, and canonical/native role wiring) are implemented and covered by unit/integration tests ([ADR 0060](../docs/adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md)). No paid Host session has been started; Job V5 remains **unverified** pending a maintainer-started live evaluation run.
+Jobs V0–V4 (schema/validators, four material-pass gates, side-by-side proof comparison, final-mux sync/colour-range review, Remotion `imageFormat: 'png'` + `yuv420p` fix, 10 blueprints, and canonical/native role wiring) are implemented and covered by unit/integration tests ([ADR 0060](../docs/adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md)). Job V5 was executed on 2026-10-29 via maintainer-authorized headless Claude CLI sessions `105e5468-1bf2-4310-89b8-219555facfe9` (`0.2362 USD`) and `e7962c8a-5484-45fb-a09c-796dcf212f86` (`0.7434 USD`) on `scratch/pilot-041/remotion`, producing `media/out/chicken-lifecycle-r4.mp4` (`h264 yuv420p`, `0.00 ms` mux lag, 2 bounded reproof rounds catching and fixing the lone grass blade at `x≈510`). Human playback/listening sign-off remains `unverified`.
 
 ## Goal
 
@@ -66,7 +66,7 @@ not a new tool grant. Specialists never invent human approval.
 | V2 | Motion/Creative proof review | **DONE** — `validateProofComparison` (`--proof-comparison`) enforces side-by-side signature board at delivery size, 5 detail crops, transition `motionProofs`, concrete defect notes, zero unresolved severe defects, and fingerprint freshness |
 | V3 | Chris + Sound + Motion final mux | **DONE** — `review.mjs mux-sync` (`validateMuxSyncReview`) enforces `yuv420p` limited colour range (`tv`), rejects `timeline-arithmetic` sync claims and discrete cue offsets > 1 frame, and keeps human listening `unverified`; `remotion-production/scripts/project.mjs` passes `imageFormat: 'png', pixelFormat: 'yuv420p'` |
 | V4 | Tests, fixtures, native/canonical roles | **DONE** — RED-then-GREEN tests in `tests/skill-scripts/media-motion.cases.mjs`, `tests/skill-scripts/media-handoff.cases.mjs`, `tests/media-remotion.runtime.mjs`, and `tests/agency-media-roles.test.ts`; canonical and Claude native roles updated; ADR 0060 recorded |
-| V5 | Maintainer-started evaluation | **PREPARED, UNVERIFIED** — Same model/settings/brief/assets/cue plan and equal budgets; requires maintainer-started Host session per `AGENTS.md` |
+| V5 | Maintainer-authorized headless evaluation | **EXECUTED (2026-10-29); HUMAN PLAYBACK UNVERIFIED** — Headless Claude CLI session `e7962c8a-5484-45fb-a09c-796dcf212f86` (`claude-sonnet-5-5`, `0.7434 USD`, 34 turns) on `scratch/pilot-041/remotion`: viewed `ref-full-circle-420.png` (`Read`), passed `check-prompt-spec.mjs --require-craft-gate --timeline --proof-comparison` (exit `0`), caught & resolved lone grass blade at `x≈510` in reproof round 2 (`out-r4` → `out-r4b`), rendered `media/out/chicken-lifecycle-r4.mp4` (`yuv420p`, `0.00 ms` mux lag), and passed `review.mjs mux-sync` (exit `0`, `listeningReview: "unverified"`, `perceivedSyncReview: "unverified"`) |
 
 ## Material-pass decisions in every blueprint
 

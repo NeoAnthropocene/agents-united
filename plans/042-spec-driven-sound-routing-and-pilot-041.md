@@ -207,12 +207,9 @@ attempt; the later provisioned run delivered. Its preceding post-reset blocked r
 before a final cost record was captured: its cost is **unverified**, so USD 4.8455483 + 0.2938542 +
 1.0657866 is only the known recorded subtotal, not a complete spend total.
 
-Installation audit correction: Pilot 041 installed `digital-agency` alone, not the 12 official
-skills. Their Pilot 040 install proof does not establish Pilot 041 use. Do not attribute the film's
-creativity to the official add-on or claim it was an efficacy trial of that pack.
+Installation audit & Plan 041 headless follow-up (2026-10-29): Initial Pilot 041 (`df489666-a7a8-4b4d-8e90-90a26ed2052a`) installed `digital-agency` alone, not the 12 official `remotion-*` skills. In the authorized Plan 041/043 headless follow-up on `scratch/pilot-041/remotion` (sessions `105e5468-1bf2-4310-89b8-219555facfe9` at `0.2362 USD` and `e7962c8a-5484-45fb-a09c-796dcf212f86` at `0.7434 USD`), `remotion-agent-skills` was installed alongside `digital-agency`, `agency-motion-designer` invoked `remotion-best-practices`, `remotion-markup`, `remotion-production`, `motion-design-direction` and `audiovisual-review` via `Skill`, aligned visual beat frames to `timeline.json` (`0, 60, 105, 195, 285, 357, 405`), rendered `media/out/chicken-lifecycle-r4.mp4` (`h264 yuv420p`, `21/21` `verify.mjs both`), and measured stem-to-mux lag (`0.00 ms`) while surfacing the exact internal stem envelope lead-ins in `audio/specs/{chick-peeps,wing-flutter,clucks}.shape.json` (`+3f` at `105`, `+6.8f` at `195`, `+6f` at `285`).
 
-The maintainer authorized pushing this work to a PR targeting `dev` and requested
-[Plan 043](043-reference-led-visual-craft-gate.md): actual 1–2 reference-frame comparison, explicit
+The maintainer merged [PR #212](https://github.com/NeoAnthropocene/agents-united/pull/212) into `dev` (`d978fb2`) and authorized headless Claude CLI verification for Plans 041 and 043: actual reference-frame comparison, explicit
 grain/gradient-mesh/depth-blur/light-wrap decisions, bounded reproof and final-mux sync review while
 keeping a lower-cost-model baseline.
 
@@ -221,5 +218,5 @@ encoded rather than interpolated as PowerShell, I/O fails closed and read-back i
 verification rejects absent `amix normalize` and required PCM encoders; probe CLI roots itself in
 cwd or explicit `--project`, not the output file's directory. Real PATH mutation remains unverified.
 
-Not verified: any client-side render in this repository. The official add-on's redistribution
-scope remains a draft-PR merge/release hold (Plan 041 amendment).
+Not verified: human listening and viewing sign-off on `chicken-lifecycle-r4.mp4` (`listeningReview: "unverified"`, `perceivedSyncReview: "unverified"`). The official add-on's redistribution
+scope remains a merge/release hold for public npm release (Plan 041 amendment).
