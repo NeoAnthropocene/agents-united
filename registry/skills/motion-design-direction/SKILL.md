@@ -3,7 +3,7 @@ name: motion-design-direction
 description: "Use when shaping an approved motion brief, storyboard or animation treatment; trigger phrases: motion direction, UI morph loop, product launch film, narrated explainer, kinetic type, logo sting. Skip static-only work, automatic media generation and claims that a recipe is an exported video."
 metadata:
   author: agents-united
-  version: "1.0.0"
+  version: "1.1.0"
   license: MIT
 ---
 
@@ -22,7 +22,7 @@ Return the selected treatment, filled parameters, storyboard/frame and cue table
 ## Step-by-Step Runbook
 1. Load [direction and contracts](references/direction.md). Reuse approved assets/preferences. Chris confirms Native (recommended start) or Remotion in `media/project.json`; never switch lanes silently.
 2. Require Jamileh's `media/specs/visual-handoff.md` (concept, signature frame, 1–2 viewed reference frames with SHA-256 and 8-dimension analysis, negative space, material and light), tokens/assets and Kaan's exact copy. Jamileh stays shell-less; Motion owns timing/storyboard/video; Sound owns the measured master/stems/cues/provenance.
-3. Choose one recipe group: [1-3 UI/launch](references/blueprints-01-03.md), [4-6 conversation/SaaS/mascot](references/blueprints-04-06.md), [7-8 campaign/showreel](references/blueprints-07-08.md), or [9-10 type/sting](references/blueprints-09-10.md). Read its [quick facts](references/quick-facts.md), then apply the mandatory [signature-shot prompt blueprint](references/prompt-blueprint.md).
+3. Choose one recipe group: [1-3 UI/launch](references/blueprints-01-03.md), [4-6 conversation/SaaS/mascot](references/blueprints-04-06.md), [7-8 campaign/showreel](references/blueprints-07-08.md), or [9-10 type/sting](references/blueprints-09-10.md). Read [quick facts](references/quick-facts.md), select one original [technique/prompt card](references/technique-library.md) for the approved Native or Remotion lane, then apply the mandatory [signature-shot blueprint](references/prompt-blueprint.md). Cards are inspiration, not viewed-reference evidence.
 4. Fill [the worked spec](assets/motion-prompt.example.json) as `media/specs/motion-prompt.json`. Run `node ${CLAUDE_SKILL_DIR}/scripts/check-prompt-spec.mjs --spec media/specs/motion-prompt.json --require-craft-gate --timeline media/timeline.json`; **no storyboard or animation code until exit 0**. The spec needs a signature shot, contiguous causal shots, one named camera move per shot, 3+ depth layers, `referenceFrames`, four `materialPasses` (`grain`, `gradientMesh`, `depthBlur`, `lightWrap`), negative space, beat grid aligned with timeline cues, and proof plan.
 5. Present the storyboard, sound intention and reading holds through Chris. Freeze one canonical timeline/revision before animation/final sound; timing or speech changes need a new fingerprint and dependent handoffs.
 6. Apply the spec through the chosen [Native](../native-motion-production/SKILL.md) or [Remotion](../remotion-production/SKILL.md) Skill. Neither authorizes setup, runtime entitlement or paid generation.

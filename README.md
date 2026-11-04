@@ -670,6 +670,8 @@ Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releas
 
 ## 🤝 Credits & Acknowledgments
 
+- **Motion technique library:** eight original agents-united prompt cards and Native/Remotion mappings informed by [lemomo-ai/lemo-opuscar](https://github.com/lemomo-ai/lemo-opuscar/tree/bebbbe1aa92a3cb4bb6f83500e61b23a17d1aa00), [JohnHeibel/ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase/tree/0ac8bf2b31942376cb6b8c4074715595d512acd2), [Vincentwei1021/mg-styles-15](https://github.com/Vincentwei1021/mg-styles-15/tree/49052d80bfaf9fa8412cc9710530e5e95a3b8d8c), and [athemeroy/awesome-claude-5-5-videos](https://github.com/athemeroy/awesome-claude-5-5-videos/tree/87e5cbfaa4bf1f6516a6c69be58c42a9b85a1041). No upstream code, prompts or media are copied. [The source audit](docs/research/2026-11-03-motion-technique-sources.md) records distinct code, writing, demo and third-party rights; links and source counts do not prove creative quality.
+
 - **Motion design direction:** original agents-united Skill and ten parameterized blueprints informed by the supplied 2026-10-22 idea snapshots credited in [the prompt blueprint](registry/skills/motion-design-direction/references/prompt-blueprint.md) (twoclipping, tdinh_me, achxvi, RoundtableSpace, ajith_io and whrrari). No upstream prompts, code or reference media were copied; the dated metrics are not independently verified playback or quality results.
 
 Agents United proudly builds upon, adapts, and integrates contributions from creators across the open AI agent, cloud platform, and developer tooling ecosystem:

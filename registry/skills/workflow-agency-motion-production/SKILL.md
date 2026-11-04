@@ -3,12 +3,12 @@ name: workflow-agency-motion-production
 description: 'Use when coordinating agency motion/sound; trigger phrases: launch film, animated ad, audio handoff. Skip static/deferred/declined media and isolated engineering.'
 metadata:
   author: agents-united
-  version: "1.0.0"
+  version: "1.1.0"
   license: MIT
 ---
 
 ## Overview & Purpose
-Chris coordinates; Motion owns visual timing/animation/integration; Sound owns sonic direction/sources/audio. Kaan owns exact words; Jamileh owns visuals. Saved choices authorize no production, install or paid job.
+Chris coordinates; Motion owns visual timing/animation/integration; Sound owns sonic direction/sources/audio. Kaan owns exact words; Jamileh owns visuals. Preference fields alone authorize no production, install or paid job; reuse the user's actual accepted scope and setup instructions.
 
 ## Execution Triggers
 Load for an included film/loop/soundtrack or Media Request in bounded planning. Static/defer/decline stops without production, install or provider setup. Outside digital-agency, its discipline's Lead retains coordination.
@@ -36,7 +36,7 @@ graph TD
 1. **Phase 0: consult.** Relevant specialists specify placement/audience/purpose, asset/copy/brand refs, duration/ratio/format, accessibility, dependencies, route, cost and acceptance. Chris consolidates questions/include/defer/decline within planning/peer limits; do not spawn all specialists.
 2. **Phase 1: accept and save.** Recommend Native HTML/SVG/canvas or offer independent Remotion React; choose local/API/hybrid audio and footage separately. Reuse supplied/licensed assets. Save/read back the complete [project contract](references/project-contract.md). Defaults: 1920x1080/60fps H264/AAC; stereo48k, -16 LUFS +/-1, <=-1 dBTP. Retain overrides; provider/model/USD preferences are not consent.
 3. **Phase 2: approve timing.** Motion storyboards/animatics and creates the canonical frame timeline; Sound supplies scratch as needed. Sound-only WAV/sonic-logo uses Sound-owned, lead-approved cue/timing; skip Motion/storyboard/renderer install/video. Schema-required video fields stay unused defaults. Chris approves timing/exact copy before final production.
-4. **Phase 3: produce.** Motion animates and Sound generates/edits/mixes in parallel when applicable, using installed direction and renderer/audio Skills. Optional video-generation/mcp-setup need opt-in, installed resources and actual account/tool/per-job authorization.
+4. **Phase 3: produce.** Motion animates and Sound generates/edits/mixes in parallel when applicable, using invoked direction and renderer/audio Skills. For Remotion, one setup owner loads `remotion-production` and its `references/setup-and-elements.md` from the resolved installed Skill root; Chris checks readiness and directs component selection before delegating production. Reuse existing local setup authorization, preserve locked projects, and distinguish installed/discovered/invoked/used. Nontrivial revisions return to their specialist owners. Optional video-generation/mcp-setup need opt-in, installed resources and actual account/tool/per-job authorization.
 5. **Phase 4: hand off.** Sound returns stereo48k WAV, aligned pre-master stems, cues, revision/fingerprint, manifest, applicable transcript/captions, provenance and measurement/listening evidence. Motion validates/integrates/renders if included; Sound-only goes through review directly to Chris. Never invent speech.
 6. **Phase 5: review and deliver.** Creative/Copy, QA and Compliance use audiovisual-review on the actual export: decode, measurements, viewing/listening/sync, accessibility, claims and rights. Chris reads evidence/open items; preserve normal launch, hand-back and shutdown protocol.
 

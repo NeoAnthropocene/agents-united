@@ -25,6 +25,41 @@ async function fixture(project, {prefs=preferences(),clock=timeline,license=elig
   if(license) await fs.writeFile(path.join(project,'media/remotion-license.json'),JSON.stringify(license));
 }
 
+test('new reviewed release scaffolds exact 540 while legacy 539 records retain their pins', async () => {
+  assert.equal(remotion.REMOTION_VERSION, '4.0.540');
+  for (const version of ['4.0.539', '4.0.540']) {
+    const project = await fs.mkdtemp(path.join(os.tmpdir(), 'remotion release '));
+    try {
+      const license = {...eligibility(), remotionVersion: version,
+        licenseUrl: `https://github.com/remotion-dev/remotion/blob/v${version}/LICENSE.md`};
+      await fixture(project, {license});
+      const report = await remotion.scaffold(project);
+      assert.equal(report.remotionVersion, version);
+      const pkg = JSON.parse(await fs.readFile(path.join(project, 'media/remotion/package.json'), 'utf8'));
+      for (const name of release.RELEASE_PACKAGES) assert.equal(pkg.dependencies[name], version);
+    } finally { await fs.rm(project, {recursive:true, force:true}); }
+  }
+  for (const version of ['4.0.541', '^4.0.540', 'latest']) {
+    assert.throws(() => remotion.preflight(preferences(), {...eligibility(), remotionVersion:version,
+      licenseUrl:`https://github.com/remotion-dev/remotion/blob/v${version}/LICENSE.md`}), /license/i);
+  }
+  assert.throws(() => remotion.preflight(preferences(), {...eligibility(), remotionVersion:'4.0.540'}), /license/i);
+});
+
+test('release metadata requests are bounded and reject moving tags or malformed versions', async () => {
+  let requests = 0;
+  const latest = await release.fetchLatestVersions({fetchImpl:async (_url, options) => {
+    requests++;
+    assert.ok(options.signal instanceof AbortSignal);
+    return {ok:true, json:async () => ({version:'4.0.540'})};
+  }});
+  assert.equal(requests, 4);
+  assert.equal(latest.remotion, '4.0.540');
+  for (const version of ['latest', '^4.0.540', '4.0.540-beta.1', '04.0.540']) {
+    await assert.rejects(release.fetchLatestVersions({fetchImpl:async () => ({ok:true, json:async () => ({version})})}), /version/i);
+  }
+});
+
 test('Remotion preflight requires recorded eligibility and pinned matching runtime packages', () => {
   assert.throws(()=>remotion.preflight({renderer:'remotion'}),/licen/i);
   assert.throws(()=>remotion.preflight(preferences(),{status:'assumed-free'}),/licen/i);

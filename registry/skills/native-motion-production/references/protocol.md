@@ -4,6 +4,8 @@ Use this when authoring or debugging HTML, SVG or canvas. The scene chooses its 
 
 ## Canonical time
 
+Choose an applicable technique from the shared [technique library](../../motion-design-direction/references/technique-library.md). Use its Native mapping as a prompt overlay, then implement every pose through `window.motion.seek`. Technique selection preserves approved copy, the canonical timeline and all reference/craft/proof gates; it supplies no reference images or playback approval.
+
 The canonical `media/timeline.json` supplies schemaVersion, revision, integer fps, totalFrames, even width/height, contiguous scene intervals and aligned cues. Its fingerprint includes timing and speech text. Do not add a `loop` field to that strict schema.
 
 For fps F and N frames, export integer indices i=0..N-1 at t=i/F. Duration is N/F, last sampled time is (N-1)/F, and t=N/F is an extra boundary probe only. For F=60 and N=120, those values are 2 seconds and 119/60 seconds. This math is also the planning fallback when a role has no shell; it does not verify a browser or encoded file.

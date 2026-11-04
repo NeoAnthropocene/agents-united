@@ -1,5 +1,7 @@
 # Agents United - Implementation Plan Index
 
+**2026-11-03 handoff continuation:** [Plan 044](044-motion-technique-library-and-hands-on.md) implements the shared Native/Remotion technique library, discrete-stem onset diagnostic and isolated interactive kit on top of open PR #213. [Plan 045](045-agency-3d-designer.md) re-evaluates the external draft labelled Plan 040; it is a proposal, with 3D implementation and live host behavior unverified. Existing Plan 040 and ADR 0058 retain their motion-prompt meaning.
+
 **Plan 033 slice-3 implementation, 2026-10-12:** [The approved loading design](./033-slice-3-claude-loading-design.md) is implemented locally: contributor `author-skill`, on-demand attribution, Claude workspace/native availability and deterministic authoring/loading/lifecycle gates. The bundle remains under construction; eval pair/control fixtures are prepared, live host behavior/evals and unpublished CI remain unverified. [Current evidence](./033-agent-factory-bundle.md#status) supersedes the historical checkpoints below.
 
 **Plan 033 post-merge start, 2026-10-12:** #195/#197 are merged; [the current handoff](./033-agent-factory-bundle.md#status) records fresh `dev` and the proposed native prerequisites. This supersedes the older open-PR next-action record below.
