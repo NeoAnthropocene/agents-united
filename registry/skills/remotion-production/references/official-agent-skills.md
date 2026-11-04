@@ -1,12 +1,12 @@
 # Official Remotion Agent Skills add-on
 
-Use this only after `media/project.json` selects `remotion`; never load it for a Native production. It is an optional add-on, not part of `full` or an essentials bundle.
+Use this for Remotion-selected production, or an explicit user request to research/install official Skills. A research install in a Native project does not switch its renderer. The vendored add-on is optional, not part of `full` or an essentials bundle. Follow [setup and Elements](setup-and-elements.md) for required project-local setup and actual loading evidence.
 
 ## Licence boundary
 
-`remotion-agent-skills` carries the official [Remotion Agent Skills](https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b) under the [Remotion License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md). This is **source-available, not MIT**: free for individuals, non-profits, for-profit organizations with up to three employees, and noncommercial suitability evaluation; other for-profit organizations need a Remotion Company License. Selling, renting, licensing or sublicensing a Remotion derivative is prohibited. Every vendored skill keeps `LICENSE.md` and `NOTICE.md`. Installing the add-on requires the user's eligibility acknowledgement; it grants no runtime entitlement.
+`remotion-agent-skills` carries the official [Remotion Agent Skills](https://github.com/remotion-dev/skills/tree/30d4553ecd46fbc5212fd0ff006ae43af522158b) with the [v4 Remotion License](https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md). This is **source-available, not MIT**: free for individuals, non-profits, for-profit organizations with up to three employees, and noncommercial suitability evaluation; other for-profit organizations need a Remotion Company License. Selling, renting, licensing or sublicensing a Remotion derivative is prohibited. Every vendored skill keeps `LICENSE.md` and `NOTICE.md`. Reuse an existing eligibility acknowledgement within its scope; installation grants no runtime entitlement.
 
-The official standalone repo has no licence file of its own; the parent Remotion `LICENSE.md` supplies the terms. This packaging records that resolution and does not relicense the official content as MIT.
+The pinned standalone snapshot has no licence file of its own. Packaging retained the parent Remotion `LICENSE.md`, but the applicability and redistribution scope remain unresolved below; it is not an established licence resolution and does not relicense official content as MIT.
 
 ## Publication review notice
 
@@ -19,7 +19,7 @@ used these 12 skills: its harness installed `digital-agency` only; Pilot 040 sup
 
 ## Install through this repository
 
-The add-on exists only when the user opts in after choosing Remotion:
+These commands describe the existing vendored option; do not choose it as a fresh distribution route while the hold is unresolved. Prefer an already installed compatible official plugin, or the direct upstream route below for authorized local setup:
 
 ```text
 agents add remotion-agent-skills -t claude --native
@@ -58,7 +58,7 @@ Direct upstream installation, after eligibility review:
 npx skills add remotion-dev/skills -a claude-code
 ```
 
-Replace the selector for the chosen host. This is an explicit user/install action, not something a render, hook or agent may run automatically.
+Run from the selected project root, replace the selector for the chosen host, and select only required Skills using the installer's documented options. Inspect existing managed directories before changing them; never overwrite edited files or install duplicate plugin and local triggers. Record the actual installer version, resolved upstream revision when available and installed hashes. Current official [Remotion CLI](https://www.remotion.dev/docs/cli/skills) also provides `remotion skills add`/`update`; check its output location before using it from the nested renderer package. Reuse project-local setup already authorized by the selected production route or explicit install request. Rendering and hooks never initiate installs. An explicit no-install brief remains binding.
 
 ## Official plugins
 
@@ -68,8 +68,10 @@ Remotion also ships host plugins that include Agent Skills: Claude Code, Codex (
 
 `remotion-best-practices` is the router. Load only the specific skill needed: `remotion-markup` for React/effects/layout, `remotion-studio` for the optional interactive preview, `remotion-render` for CLI rendering, `remotion-docs` for current API lookup, `remotion-captions` for caption work, `remotion-multimedia` for Mediabunny, `remotion-maps` for geographic work, `remotion-interactivity` for Studio-editable structure, `remotion-create` for new projects/compositions, `remotion-saas` for product integrations and `remotion-upgrade` for an approved version change.
 
-The official pack is subordinate to this repository's contracts: [preflight](preflight.md), licence eligibility, canonical timeline/fingerprint, deterministic composition, audio manifest, proof review, helper render and encoded QC remain authoritative. Never let the official pack override those gates or install/upgrade packages without approval.
+The official pack is subordinate to this repository's contracts: [preflight](preflight.md), licence eligibility, canonical timeline/fingerprint, deterministic composition, audio manifest, proof review, helper render and encoded QC remain authoritative. Invoke the discovered router and relevant Skills and verify the returned tool results; installed files alone are not loading evidence. Never let the official pack override those gates or the user's setup scope.
 
 ## Update discipline
 
 The add-on is pinned to skill version `4.0.539` at commit `30d4553ecd46fbc5212fd0ff006ae43af522158b`. Before changing the runtime pin, run the [release drift checker](runtime.md#release-drift) and review the new upstream commit, licence and skill layout. Use `remotion-upgrade` only for a reviewed upgrade. This 4.0.539 snapshot ships no separate licence skill; the terms come from the Remotion repository's `LICENSE.md`, reproduced in each folder.
+
+On 2026-11-04 the official Skills page lists 13 Skills, including `remotion-license` added with 4.0.540. The repository still vendors the historical 12; do not claim they are the latest or add new upstream content without the attribution/audit review. Runtime support for 4.0.540 does not upgrade this snapshot. A current upstream install may supply the licence Skill; its presence is still not proof of entitlement.

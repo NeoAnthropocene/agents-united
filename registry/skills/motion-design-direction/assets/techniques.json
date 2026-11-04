@@ -1,0 +1,362 @@
+{
+  "schemaVersion": 1,
+  "author": "agents-united",
+  "license": "MIT",
+  "disposition": "original",
+  "sources": [
+    {
+      "id": "lemo",
+      "repository": "lemomo-ai/lemo-opuscar",
+      "commit": "bebbbe1aa92a3cb4bb6f83500e61b23a17d1aa00",
+      "license": "MIT code/docs; CC-BY-4.0 demo media with exclusions",
+      "inspectedPaths": [
+        "LICENSE",
+        "README.md",
+        "TECHNIQUE.md",
+        "styles/paper-popup/STYLE.md",
+        "styles/one-line/STYLE.md",
+        "styles/paper-popup/demo/cutmesh.js"
+      ],
+      "url": "https://github.com/lemomo-ai/lemo-opuscar/tree/bebbbe1aa92a3cb4bb6f83500e61b23a17d1aa00",
+      "disposition": "inspiration-only",
+      "mediaViewed": false
+    },
+    {
+      "id": "character",
+      "repository": "JohnHeibel/ClaudeAnimationBase",
+      "commit": "0ac8bf2b31942376cb6b8c4074715595d512acd2",
+      "license": "MIT",
+      "inspectedPaths": [
+        "LICENSE",
+        "README.md",
+        "ANIMATION_GUIDE.md",
+        "src/clawd.js",
+        "src/core.js"
+      ],
+      "url": "https://github.com/JohnHeibel/ClaudeAnimationBase/tree/0ac8bf2b31942376cb6b8c4074715595d512acd2",
+      "disposition": "inspiration-only",
+      "mediaViewed": false
+    },
+    {
+      "id": "mg",
+      "repository": "Vincentwei1021/mg-styles-15",
+      "commit": "49052d80bfaf9fa8412cc9710530e5e95a3b8d8c",
+      "license": "MIT; third-party assets retain their terms",
+      "inspectedPaths": [
+        "LICENSE",
+        "README.md",
+        "prompts/08-morph.md",
+        "prompts/05-cel-boil.md",
+        "rubric.md",
+        "demos/08-morph/index.html"
+      ],
+      "url": "https://github.com/Vincentwei1021/mg-styles-15/tree/49052d80bfaf9fa8412cc9710530e5e95a3b8d8c",
+      "disposition": "inspiration-only",
+      "mediaViewed": false
+    },
+    {
+      "id": "curation",
+      "repository": "athemeroy/awesome-claude-5-5-videos",
+      "commit": "87e5cbfaa4bf1f6516a6c69be58c42a9b85a1041",
+      "license": "CC-BY-4.0 original writing only; linked works excluded",
+      "inspectedPaths": [
+        "LICENSE",
+        "README.md",
+        "THIRD_PARTY.md"
+      ],
+      "url": "https://github.com/athemeroy/awesome-claude-5-5-videos/tree/87e5cbfaa4bf1f6516a6c69be58c42a9b85a1041",
+      "disposition": "inspiration-only",
+      "mediaViewed": false
+    }
+  ],
+  "techniques": [
+    {
+      "id": "character-reaction",
+      "name": "Character reaction with a readable pose",
+      "tags": [
+        "character",
+        "acting",
+        "anticipation",
+        "mascot"
+      ],
+      "useWhen": "A character must notice a change, decide and act so an audience can follow the cause.",
+      "avoidWhen": "No approved character design or acting purpose exists; random face swaps would carry the scene.",
+      "parameters": {
+        "subject": "Approved original character and model-sheet path",
+        "trigger": "Visible event and canonical cue ID",
+        "pose": "Anticipation, action and recovery silhouettes",
+        "holdFrames": "Approved recognition/reading interval"
+      },
+      "composition": "Stage the character off the copy axis; reserve clear negative space ahead of its gaze. Separate hands, prop and face silhouettes at the signature frame.",
+      "motion": "Let attention shift before the torso commits. Plant the feet, move the centre of mass, then allow a smaller delayed prop or limb response. Use an expressive recovery pose rather than resetting instantly.",
+      "native": "Evaluate approved joint/shape poses from absolute frame numbers in the Native composition. Keep foot/prop contact anchors in the same world transform; use separate frame curves for eyes, torso and trailing parts. Capture anticipation/contact/recovery frames in arbitrary order to check determinism.",
+      "remotion": "Use the composition frame to derive local shot progress and independent pose curves in the approved React/SVG or Canvas composition. Keep stable character IDs across shot boundaries and preserve contact anchors. Do not substitute a CSS transition or mount-time state for frame-derived acting.",
+      "sound": {
+        "intention": "Ask Sound for a quiet attention cue followed by a brief physical contact accent; leave recovery and face reads uncluttered. Avoid constant comic punctuation.",
+        "cueRule": "Map trigger/contact to named timeline cues and visual target frames; Sound decides sources and onset shape. A delayed recovery is animation intent, not permission to drift a hit."
+      },
+      "promptTemplate": "For {subject}, stage {trigger} so the viewer sees attention, decision, action and consequence. Draw distinct silhouettes for {pose}. Preserve grounded contacts and hold the final expression for {holdFrames}. Describe the exact signature pose, a secondary reaction and the inherited prop for the next shot; keep approved copy unchanged.",
+      "proofChecks": [
+        "Compare face and hand crops at delivery size; reject ambiguous emotion or detached props.",
+        "Inspect motion strips around attention/contact/recovery; reject simultaneous rigid movement and foot slide.",
+        "Confirm recognition hold and breathing motion preserve the approved reading interval."
+      ],
+      "inspirations": [
+        "character",
+        "lemo"
+      ]
+    },
+    {
+      "id": "stepped-line-boil",
+      "name": "Stepped drawing texture with stable motion",
+      "tags": [
+        "handmade",
+        "cel",
+        "line",
+        "texture",
+        "stepped"
+      ],
+      "useWhen": "An approved illustrated treatment needs living linework while the camera and text remain readable.",
+      "avoidWhen": "Photoreal material or precision diagrams are required, or line crawl obscures important detail.",
+      "parameters": {
+        "subject": "Approved drawing layers",
+        "drawingHoldFrames": "Positive integer drawing cadence at project fps",
+        "seed": "Stable project and element seeds",
+        "amplitudePx": "Maximum displacement at delivery resolution"
+      },
+      "composition": "Keep a clean subject silhouette and calm copy zone; texture belongs to selected illustrated layers, with unaffected type and enough contrast for the finest required details.",
+      "motion": "Step texture changes separately from subject movement. Reuse a bounded set of seeded contour variants; ease the object's trajectory continuously unless its performance explicitly uses held poses.",
+      "native": "Calculate a drawing index from absolute frame divided by drawingHoldFrames; derive each element's contour variant from its stable seed and index. Draw the camera, lighting and protected type from the current frame so texture cadence cannot accidentally step the whole shot.",
+      "remotion": "Derive the drawing index from the composition frame, pass it as an explicit prop to outlined elements, and keep layout/camera transforms on their own continuous frame curves. Precompute or deterministically regenerate contour variants; never use component render order as the random stream.",
+      "sound": {
+        "intention": "Suggest a restrained tactile palette with sparse dry contact sounds. Do not add noise on every texture redraw; the surface cadence is visual rather than a metronome.",
+        "cueRule": "Keep physical strikes on timeline cue frames; annotate deliberate held visual poses for Sound without inventing a parallel beat grid."
+      },
+      "promptTemplate": "Treat {subject} as drawn material. Use {drawingHoldFrames}-frame texture holds with seed {seed} and displacement limited to {amplitudePx}; keep the camera and approved type stable. Name the layers that receive texture, the clean layers, and one proof crop that can reveal crawling or lost silhouette.",
+      "proofChecks": [
+        "Render the same frame twice and out of order; contour variants must match.",
+        "Compare adjacent frames within a drawing hold; stationary linework must remain stable.",
+        "Reject shimmer at delivery size and any texture that degrades copy contrast."
+      ],
+      "inspirations": [
+        "character",
+        "mg",
+        "lemo"
+      ]
+    },
+    {
+      "id": "paper-depth-stage",
+      "name": "Layered paper depth stage",
+      "tags": [
+        "paper",
+        "depth",
+        "diorama",
+        "hinge"
+      ],
+      "useWhen": "A small tactile scene can explain a reveal through cut silhouettes and ordered depth.",
+      "avoidWhen": "A complex free-moving camera or realistic rounded character would expose unsupported paper geometry.",
+      "parameters": {
+        "subject": "Approved paper artwork and silhouette paths",
+        "hinge": "Named edge and pivot location",
+        "layers": "Foreground, subject and backdrop IDs",
+        "light": "Named direction, softness and contact-shadow decision"
+      },
+      "composition": "Build an asymmetric paper stage with breathing room around the focal cutout. Separate the three depth layers by overlap and value; keep copy on a calm plane outside hinge sweeps.",
+      "motion": "Raise each cutout around its physical hinge; reveal the rear layer before the front occludes it. Let the page or prop carry continuity into the next shot, with a small settle tied to the material.",
+      "native": "Use frame-derived hinged transforms of original SVG/Canvas cutouts with explicit draw order, parallax and shadow geometry. A 2.5D approximation must be declared; keep the camera within views that the artwork supports and inspect silhouette/shadow overlap at the steepest angle.",
+      "remotion": "Build named paper-layer components with explicit transform origins and depth order; evaluate fold angle and camera progress from the composition frame. Use approved alpha silhouettes for contact shadows and retain safe text layout independently of the folding stage. Extra 3D dependencies need a separate approved choice.",
+      "sound": {
+        "intention": "Ask Sound for light fold friction and one soft settle, with a restrained bed that leaves room for narration. Material sound should identify paper, not a generic metallic impact.",
+        "cueRule": "Give Sound hinge-start and settle target frames from the timeline; document whether friction is continuous and whether the settle is a discrete intended hit."
+      },
+      "promptTemplate": "Arrange {subject} as a layered paper stage using {layers}. Reveal around {hinge}; motivate {light} with contact shadows rather than uniform glow. Specify the signature overlap, protected text space, one inherited paper element and a bounded camera move. Record which material passes are useful and why the others are disabled.",
+      "proofChecks": [
+        "Inspect hinge and cut edge crops; reject detached shadows and geometry intersections.",
+        "Check occlusion through the full fold and camera range.",
+        "Compare foreground/background separation and copy safety at signature and boundary frames."
+      ],
+      "inspirations": [
+        "lemo"
+      ]
+    },
+    {
+      "id": "continuous-morph",
+      "name": "Continuous contour transformation",
+      "tags": [
+        "morph",
+        "shape",
+        "continuity",
+        "identity"
+      ],
+      "useWhen": "Two approved symbols express a meaningful transformation and can share a readable contour path.",
+      "avoidWhen": "Topology or semantic meaning is incompatible; a masked reveal would communicate more honestly.",
+      "parameters": {
+        "subject": "Approved start and end symbols",
+        "correspondence": "Named matching contour landmarks",
+        "bridge": "Optional simple intermediate shape",
+        "landingFrame": "Canonical target cue frame"
+      },
+      "composition": "Keep the transforming silhouette on one focal axis; preserve a clear boundary against the background. Protect a stable copy region and avoid extra moving objects that hide the transformation.",
+      "motion": "Align contour orientation and landmarks before interpolation. Accelerate through the least readable intermediate, retain clear start/end recognition holds and inherit the same motif identity across the shot boundary.",
+      "native": "Prepare original paths with compatible point counts and orientation, interpolate matched points from absolute local frame progress, and separately derive rotation/scale. Inspect interior contour crossings; if the shapes cannot correspond, use a declared mask transition instead of calling it a morph.",
+      "remotion": "Pass approved corresponding path data to the frame-derived component and interpolate points with clamped shot progress. Keep all subparts synchronized to the canonical target frame while retaining separate recognition holds. A path interpolation package is optional, not implicitly installed by this card.",
+      "sound": {
+        "intention": "Suggest a short directional sweep ending in a subtle pitched landing; use one family of timbres across repeated transformations, with silence under important copy.",
+        "cueRule": "Land the sweep's intended audible onset/impact at the timeline landing cue; annotate anticipation separately and measure the final encoded hit."
+      },
+      "promptTemplate": "Transform {subject} using {correspondence}, through {bridge} only if necessary. Land the recognizable end symbol at {landingFrame}. Explain the semantic connection, contour continuity, secondary response and inherited motif. Reserve start/end recognition holds and inspect the least legible midpoint before full rendering.",
+      "proofChecks": [
+        "Inspect quarter/mid/three-quarter transformation frames; reject contour knots and popping holes.",
+        "Confirm stable motif identity and correct end shape at the cue.",
+        "Reject a hidden crossfade presented as geometric morphing."
+      ],
+      "inspirations": [
+        "mg"
+      ]
+    },
+    {
+      "id": "single-line-reveal",
+      "name": "Single line that becomes a scene",
+      "tags": [
+        "line",
+        "draw",
+        "reveal",
+        "continuity"
+      ],
+      "useWhen": "One path can guide attention from an approved symbol into the next idea.",
+      "avoidWhen": "The story requires many disjoint features or thin strokes cannot survive the destination format.",
+      "parameters": {
+        "subject": "Approved original line illustration",
+        "route": "Ordered path landmarks",
+        "strokePx": "Delivery-size stroke width",
+        "holdFrames": "Final recognition hold"
+      },
+      "composition": "Use one deliberate line weight and a quiet background. Place the path's destination away from the text baseline, with enough negative space that its emerging shape reads before copy appears.",
+      "motion": "Advance the visible length along the route; allow a line endpoint to become the next scene's anchor. Vary speed by narrative importance, holding at a recognizable intermediate rather than drawing every section at uniform speed.",
+      "native": "Compute cumulative path lengths from original points and reveal the prefix at each absolute frame. Use round caps or an authored endpoint to avoid gaps; draw the completed line unchanged during the recognition hold and carry its endpoint into the next shot's transform.",
+      "remotion": "Use frame-derived path-length progress on approved SVG paths or a Canvas path prefix; treat the visible endpoint as explicit scene data. Keep strokes at a readable screen-space size during camera changes and avoid clipping of round caps at mask boundaries.",
+      "sound": {
+        "intention": "Ask Sound for a gentle drawn gesture with sparse milestone accents; avoid constant scratch noise that competes with voice or turns an elegant line into a busy effect.",
+        "cueRule": "Only narrative milestones become discrete timeline cues; continuous drawing motion can be silent or a scoped texture bed."
+      },
+      "promptTemplate": "Reveal {subject} along {route} with stroke width {strokePx}. Make the endpoint cause the next composition and preserve the completed drawing for {holdFrames}. Name the recognizable intermediate, exact copy-safe region and the cue that matters; avoid decorative tracing without a story change.",
+      "proofChecks": [
+        "Inspect caps, joins and thin curves at final delivery size.",
+        "Check endpoint continuity at shot boundaries.",
+        "Verify the final read holds without line shimmer or incidental camera scaling."
+      ],
+      "inspirations": [
+        "lemo",
+        "mg"
+      ]
+    },
+    {
+      "id": "kinetic-type-hold",
+      "name": "Type hierarchy with a protected reading hold",
+      "tags": [
+        "type",
+        "kinetic",
+        "copy",
+        "grid"
+      ],
+      "useWhen": "Approved words are the main subject and movement can clarify their hierarchy.",
+      "avoidWhen": "Exact copy has not been approved, or proposed timing forces the viewer to chase moving words.",
+      "parameters": {
+        "subject": "Exact approved headline",
+        "hierarchy": "Primary word, supporting line and typeface",
+        "entryFrames": "Approved entry interval",
+        "holdFrames": "Protected reading interval"
+      },
+      "composition": "Use a deliberate baseline/grid and one contrast in scale or weight. Compose negative space into the background itself; choose a text-safe region rather than adding placeholder rectangles.",
+      "motion": "Move one typographic unit at a time, letting the primary word establish its place before supporting copy resolves. Keep glyph shape and spacing intact, then spend the remaining interval on a quiet readable hold.",
+      "native": "Lay out approved local font metrics before capture, animate explicit line/word transforms from absolute frames, and freeze final positions during the reading hold. Check fallback glyphs and preserve baseline/kerning at destination dimensions rather than relying on browser arrival timing.",
+      "remotion": "Preload approved fonts before rendering, derive word transforms from the composition frame, and keep layout dimensions stable as text enters. Separate decorative background motion from the held copy so composition duration, not a state timer, determines reading time.",
+      "sound": {
+        "intention": "Suggest one restrained accent on the primary word and a low-density bed; reserve clean space for narration instead of sounding every letter.",
+        "cueRule": "Use the approved timeline's word-emphasis cue; VO and captions retain approved duration, and the entry animation cannot shorten the reading hold."
+      },
+      "promptTemplate": "Stage the exact copy {subject} with hierarchy {hierarchy}. Finish the entry within {entryFrames} and protect {holdFrames} for reading. Name the signature word placement, contrast strategy and inherited typographic anchor; preserve approved spelling and avoid ornamental motion that competes with comprehension.",
+      "proofChecks": [
+        "Check exact spelling, glyph coverage, safe area and contrast at delivery size.",
+        "Inspect entry/hold boundary frames for clipping and spacing jumps.",
+        "Measure actual hold frames and reject decorative motion that distracts from reading."
+      ],
+      "inspirations": [
+        "mg",
+        "lemo"
+      ]
+    },
+    {
+      "id": "evidence-map-build",
+      "name": "Evidence-led map or diagram build",
+      "tags": [
+        "evidence",
+        "map",
+        "data",
+        "diagram"
+      ],
+      "useWhen": "Verified locations, measurements or relationships can be revealed as a small ordered argument.",
+      "avoidWhen": "Sources, units, date or geographic basis are missing; imagined data would be presented as fact.",
+      "parameters": {
+        "subject": "Approved sourced claim and date",
+        "data": "Local verified dataset and units",
+        "sequence": "Ordered evidence milestones",
+        "sources": "Visible source/credit treatment"
+      },
+      "composition": "Choose a legible map/diagram scale and an uncluttered evidence legend. Reserve steady space for dates and units; emphasize the current claim with value/colour rather than gratuitous camera travel.",
+      "motion": "Build only the relationships needed to explain the claim. Introduce a reference scale before growth, preserve earlier evidence when adding the next step and settle into a complete readable summary.",
+      "native": "Load approved local data before capture and map values through explicit fixed scales. Derive each milestone's reveal from absolute timeline frames, preserving labels and geometry deterministically; record interpolation as presentation, never as additional measured evidence.",
+      "remotion": "Pass verified data and fixed scales as composition input, deriving reveal progress from local frame numbers. Keep labels/legend in stable components while geometry grows and include the source/date in the held summary. Do not fetch live data during render or imply precision beyond the source.",
+      "sound": {
+        "intention": "Ask Sound for sparse confirmation accents at meaningful milestones, with a neutral bed that does not dramatize uncertain evidence as certainty.",
+        "cueRule": "Milestones map to canonical timeline cue IDs; narration follows verified wording and source qualifiers. Preserve time for the summary and source read."
+      },
+      "promptTemplate": "Explain {subject} using {data}. Reveal {sequence} so each new element supports the claim; keep {sources} readable. Define the signature evidence frame, units, scale and uncertainty. Link source facts in the provenance record and distinguish presentation interpolation from measured data.",
+      "proofChecks": [
+        "Compare displayed values/locations/dates with approved sources.",
+        "Reject truncated axes, misleading area scales and unlabeled synthetic data.",
+        "Check source and legend reading holds and milestone continuity."
+      ],
+      "inspirations": [
+        "lemo",
+        "curation"
+      ]
+    },
+    {
+      "id": "material-light-reveal",
+      "name": "Controlled material and light reveal",
+      "tags": [
+        "material",
+        "light",
+        "product",
+        "reveal"
+      ],
+      "useWhen": "An approved object needs a tactile signature shot built from silhouette, edge and light.",
+      "avoidWhen": "The source object lacks an approved design or a lighting effect would hide poor geometry.",
+      "parameters": {
+        "subject": "Approved object/artwork path",
+        "surface": "Specific roughness/texture and edge treatment",
+        "light": "One motivated source and falloff",
+        "camera": "One supported named camera move"
+      },
+      "composition": "Start with a readable silhouette and a deliberate bright/dark edge relationship. Keep the copy region calm; let one visible surface transition carry the reveal rather than filling every corner with particles.",
+      "motion": "Move the subject or light to disclose a material property, then settle at the strongest readable angle. Let a small edge reflection or contact-shadow response follow the principal action without overriding it.",
+      "native": "Use authored gradient/shadow layers or approved 3D geometry with frame-derived transforms and one consistent light direction. Scope texture, blur and edge integration to declared layer/frame ranges; a composited highlight is an approximation whose proof crops must show it holds through motion.",
+      "remotion": "Derive camera/object/light parameters from composition frames and share the approved palette and layer IDs with the prompt spec. Use existing composition primitives for masks/gradients/shadows or separately approved 3D assets; retain stable rendering and capture edge/material/light crops before export.",
+      "sound": {
+        "intention": "Request a restrained material-specific contact or tonal reveal, with a decay that supports the held signature frame. Avoid a generic cinematic boom for every product movement.",
+        "cueRule": "Use one timeline reveal/settle cue and state whether the sound targets motion start, contact or light peak; final-mux onset measurement remains separate from perceived fit."
+      },
+      "promptTemplate": "Reveal {subject} through {surface} under {light}, using {camera}. State the exact signature silhouette, contact shadow and protected copy space. Decide grain, gradientMesh, depthBlur and lightWrap separately with scoped parameters or N/A reasons; never enable all effects as a substitute for art direction.",
+      "proofChecks": [
+        "Inspect edge, contact-shadow and highlight crops for detached or inconsistent lighting.",
+        "Compare material readability at beginning, signature and final hold.",
+        "Reject global glow/noise that conceals weak surfaces or compromises type."
+      ],
+      "inspirations": [
+        "lemo",
+        "mg"
+      ]
+    }
+  ]
+}

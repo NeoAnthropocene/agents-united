@@ -5,6 +5,8 @@ canonical timeline; do not alter helper-owned data to make a render pass.
 
 ## Reusable source and props
 
+Choose an applicable technique from the shared [technique library](../../motion-design-direction/references/technique-library.md). Use its Remotion mapping as a prompt overlay and derive each pose from the composition frame. Keep the canonical timeline, approved copy, reference/craft/proof gates and `project.mjs` export authoritative; a card cannot approve a render or replace the optional official skills.
+
 `index.jsx` registers `RemotionRoot`. `Root.jsx` declares composition `AgencyMotion`
 and derives duration, fps and dimensions through `calculateMetadata` from the supplied
 timeline. `Composition.jsx` maps stable scene IDs to `Sequence` elements and scene copy;

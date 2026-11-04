@@ -19,7 +19,7 @@ async function fixture(audio = true) {
   await put(root,'media/project.json',defaultPreferences('remotion','local',false,0));
   await put(root,'media/timeline.json',timeline);
   // Truthful scope for isolated tests only; no human, commercial or entitlement claim.
-  await put(root,'media/remotion-license.json',{schemaVersion:1,remotionVersion:'4.0.539',status:'evaluation',
+  await put(root,'media/remotion-license.json',{schemaVersion:1,remotionVersion:remotion.REMOTION_VERSION,status:'evaluation',
     purpose:'evaluation',reviewedOn:'2026-10-24',reviewedBy:'Automated Node unit-test harness',
     reviewerRole:'automated-evaluation',entity:'Isolated temporary unit-test fixture',
     evaluationScope:'internal-suitability-test',basis:'Internal noncommercial suitability test with fake IO/runtime.',
@@ -92,6 +92,42 @@ test('missing/stale/conflicting canonical inputs and snapshots fail before runti
   }finally{await f.clean();}}
 });
 
+test('reviewed version or runtime declaration changes during setup reject encoding', async () => {
+  for (const target of ['license', 'package']) {
+    const f = await fixture(false); const fake = fakeRuntime();
+    try {
+      const loader = async (_directory, version) => {
+        assert.equal(version, '4.0.540');
+        if (target === 'license') {
+          const record = await read(f.root,'media/remotion-license.json');
+          record.remotionVersion = '4.0.539';
+          record.licenseUrl = 'https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md';
+          await put(f.root,'media/remotion-license.json',record);
+        } else {
+          const pkg = await read(f.root,'media/remotion/package.json');
+          pkg.dependencies.remotion = '4.0.539';
+          await put(f.root,'media/remotion/package.json',pkg);
+        }
+        return fake.loader();
+      };
+      await assert.rejects(remotion.render(f.root,{...f.options,runtimeLoader:loader}), /changed|pin|version/i);
+      assert.equal(fake.calls.media.length, 0);
+      assert.equal(fake.calls.close, 1);
+    } finally { await f.clean(); }
+  }
+});
+
+test('optional dev dependency Remotion packages must align with the reviewed version', async () => {
+  const f = await fixture(false); const directory = path.join(f.root,'media/remotion');
+  try {
+    const pkg = await read(f.root,'media/remotion/package.json');
+    pkg.devDependencies = {'@remotion/google-fonts':'4.0.539'};
+    await put(directory,'package.json',pkg);
+    await fakePackages(directory);
+    await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.540'), /pin/i);
+  } finally { await f.clean(); }
+});
+
 test('changed manifest/master/copied audio or omitted canonical handoff cannot silently render',async()=>{
   const mutations=[
     root=>fs.appendFile(path.join(root,'audio/manifest.json'),'\n'),
@@ -129,8 +165,8 @@ test('failed runtime keeps exclusive partial output intact and later attempts ca
   }finally{await f.clean();}
 });
 
-async function fakePackages(directory) {
-  for(const [name,version] of Object.entries(remotion.DEPENDENCIES)) {
+async function fakePackages(directory, selectedVersion = remotion.REMOTION_VERSION) {
+  for(const [name,version] of Object.entries(remotion.dependenciesForVersion(selectedVersion))) {
     const target=path.join(directory,'node_modules',name);await fs.mkdir(target,{recursive:true});
     await put(target,'package.json',{name,version,type:'module',exports:'./index.mjs'});
     await fs.writeFile(path.join(target,'index.mjs'),name==='@remotion/bundler'?'export const bundle=async()=>{};':
@@ -143,12 +179,25 @@ test('runtime loader verifies exact installed versions and direct project locati
     await fakePackages(directory);
     const runtime=await remotion.loadProjectRuntime(directory);
     assert.equal(typeof runtime.bundle,'function');assert.equal(typeof runtime.renderMedia,'function');
+    await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.539'), /pin/i);
+    await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.541'), /unsupported/i);
     await put(directory,'node_modules/@remotion/renderer/package.json',{name:'@remotion/renderer',version:'4.0.1',type:'module',exports:'./index.mjs'});
     await assert.rejects(remotion.loadProjectRuntime(directory),/version|pin/i);
     await fs.rm(path.join(directory,'node_modules/@remotion/renderer'),{recursive:true,force:true});
     await fakePackages(f.root); // A valid ancestor copy must not satisfy the missing local package.
     await assert.rejects(remotion.loadProjectRuntime(directory),/local|install|missing/i);
   }finally{await f.clean();}
+});
+
+test('legacy 539 runtime remains loadable only with its matching reviewed project version', async () => {
+  const f = await fixture(false); const directory = path.join(f.root,'media/remotion');
+  try {
+    await put(directory,'package.json',{dependencies:remotion.dependenciesForVersion('4.0.539')});
+    await fakePackages(directory, '4.0.539');
+    const runtime = await remotion.loadProjectRuntime(directory, '4.0.539');
+    assert.equal(runtime.packages.find(row => row.name === 'remotion').version, '4.0.539');
+    await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.540'), /pin/i);
+  } finally { await f.clean(); }
 });
 
 test('render CLI rejects a missing explicit existing browser without opening runtime or writing outputs',async()=>{

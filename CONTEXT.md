@@ -496,6 +496,9 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
 
 ### Agency Media (ADR 0056)
 
+**Motion Technique Card**:
+An original parameterized prompt and composition/motion guide within `motion-design-direction`, with Native and Remotion mappings, sound intentions and proof criteria. It is selected for the accepted brief and renderer; its pinned inspiration references establish provenance, not viewed-reference evidence, copied-media permission or creative acceptance. It feeds the existing motion prompt and Shared Media Timeline contracts rather than introducing another timeline.
+
 **Media Request**:
 A specialist's structured proposal for motion or sound in an agency brief: placement, audience, purpose, priority, assets/copy/brand references, duration/ratio/format, accessibility, dependencies, proposed routes, cost ceiling and acceptance. Chris consolidates human questions and records include/defer/decline within the existing bounded consultation. Static/deferred/declined work triggers no production. Sound-only requests use WAV and a null renderer.
 

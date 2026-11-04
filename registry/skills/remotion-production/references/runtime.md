@@ -1,7 +1,8 @@
 # Project-local runtime and resource boundary
 
-Read this for setup, missing packages or a missing browser. This reference does not
-authorize installation, account connections or provider spending.
+Read this for setup, missing packages or a missing browser. Selecting Remotion
+authorizes necessary project-local setup within the recorded scope. Account connections,
+provider spending and machine-wide changes need their own authorization.
 
 ## Resolve both Skill roots
 
@@ -18,17 +19,25 @@ Other hosts' execution remains unverified until separately demonstrated.
 
 ## Exact dependencies and setup
 
-Scaffold writes a private package in `media/remotion/package.json` with these exact pins:
+Scaffold writes a private package in `media/remotion/package.json` using the exact supported
+version in the project's reviewed `media/remotion-license.json`. New projects select the
+current reviewed release `4.0.540` after a fresh registry check. Existing `4.0.539` projects
+retain their matching licence record, dependencies and lockfile; both versions are supported.
+The defaults for a newly reviewed project are:
 
 | Package | Version |
 | --- | --- |
-| `remotion`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/cli` | `4.0.539` each |
+| `remotion`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/cli` | `4.0.540` each |
 | `react`, `react-dom` | `19.0.0` each |
 
-After project setup is authorized, install within `media/remotion/` using the chosen
+Within the selected Remotion setup scope, install within `media/remotion/` using the chosen
 package manager and retain the lockfile. Use `npm ci` for a compatible existing lockfile.
 The helper never installs, resolves from an ancestor dependency tree or downloads a
-browser. It checks direct installed package metadata and resolved entries against the pins.
+browser. It checks direct installed package metadata and resolved entries against the
+project's reviewed exact version, including optional `@remotion/*` packages in
+`dependencies` or `devDependencies`. Refresh and render reject changes to the reviewed
+licence or package declaration during their asynchronous setup before committing a handoff
+or starting encoding.
 Do not install globally or change the selected project's root dependencies to satisfy it.
 
 Pass an approved existing absolute Chrome-compatible executable with `--browser`.
@@ -71,8 +80,12 @@ copied or vendored into this Skill; original metadata has no invented `source` o
 `adaptedFrom`. The separate optional `remotion-agent-skills` add-on carries the official
 Remotion skills under the source-available Remotion License and remains independently
 licensed.
-The Remotion API and licence references already reviewed for the pinned `4.0.539` runtime
-are listed in [preflight](preflight.md). They informed the integration; this source MIT
+The Remotion API and licence references reviewed for the original `4.0.539` runtime
+are listed in [preflight](preflight.md). The tagged `4.0.540`
+[licence](https://github.com/remotion-dev/remotion/blob/v4.0.540/LICENSE.md) was compared
+with `4.0.539` on 2026-11-04 and is identical. The new release is a separate browser/render
+verification boundary; its end-to-end host workflow is unverified.
+These sources informed the integration; this source MIT
 licence does not grant Remotion production entitlement or relicense runtime dependencies.
 The reviewed versioned licence links v4 terms; prospective v5 documentation is not the
 licence basis for this pin. Review again before changing versions or actual production use.
@@ -87,7 +100,8 @@ support `z-index`, `backdrop-filter`, `perspective` or non-linear-gradient backg
 these pins; see [rendering modes](rendering-modes.md) before proposing it.
 
 ## Release drift
-The runtime pin is one constant in [project.mjs](../scripts/project.mjs): `REMOTION_VERSION`.
+The newest reviewed default is `REMOTION_VERSION` in [project.mjs](../scripts/project.mjs);
+`SUPPORTED_REMOTION_VERSIONS` also retains previously reviewed project versions.
 Before a version change or a release review, check all four packages in the public registry:
 
 ```text
@@ -97,7 +111,11 @@ npm run skills:remotion-release        # same check from this repository's root
 
 Exit 0 means the pinned version equals `latest` for `remotion`, `@remotion/bundler`,
 `@remotion/renderer` and `@remotion/cli`. Exit 1 reports a version mismatch; exit 2 records a
-registry/network lookup failure. This checker only reads public package metadata. A version
+registry/network lookup failure. This checker only reads public package metadata, bounds
+each lookup to 10 seconds and rejects malformed or non-stable versions. A newer unreviewed
+release is a review task; do not silently claim an older release is latest. A version
 change still requires reviewing the matching `LICENSE.md`, release notes, installed browser
 and the official skills snapshot, then updating the pin, licence example, docs and tests in
-one reviewed change. Never update packages automatically during scaffold or render.
+one reviewed change. Resolve latest only during selected setup/review, then retain the exact
+project version and lockfile. Never update an existing project automatically during scaffold,
+refresh or render. Add only dependencies required by the selected composition or Element.

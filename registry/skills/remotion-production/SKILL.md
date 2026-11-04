@@ -3,7 +3,7 @@ name: remotion-production
 description: "Use when producing or repairing approved Remotion projects with editable React compositions and measured exports; trigger phrases: Remotion video, frame-driven React animation, revise a Remotion handoff. Skip footage/audio generation and automatic entitlement claims."
 metadata:
   author: agents-united
-  version: "1.0.0"
+  version: "1.1.0"
   license: MIT
 ---
 
@@ -22,7 +22,7 @@ Return React source/assets, timeline/preferences, package/lockfile, MP4, stills,
 ## Step-by-Step Runbook
 1. Confirm scope with Motion, Brand/Copy and Sound using [handoffs](references/handoffs.md). Chris records **agent-only** or optional **hands-on Studio**. External footage is a separate opt-in. Resolve missing copy, rights and timing before rendering.
 2. Load [preflight](references/preflight.md) for contracts and separate `media/remotion-license.json`. The [unreviewed starter](assets/license-review.example.json) fails. Production needs actual owner facts; automated review covers only truthful internal noncommercial evaluation. `allowed` never verifies entitlement.
-3. Inspect files; preflight, then scaffold only an absent `media/remotion/`. Load [runtime setup](references/runtime.md) for pins, browser and sibling prerequisite. Only when Remotion is selected, load [official add-on guidance](references/official-agent-skills.md) and, if chosen, [optional Studio](references/studio.md). Retain lockfiles/source.
+3. Follow [setup and Element direction](references/setup-and-elements.md): reuse authorized project-local setup, check the latest supported release, install missing exact dependencies and verify official Skill invocation before production. Preserve existing locked projects; no silent upgrades. Preflight, then scaffold only an absent `media/remotion/`. Load [runtime setup](references/runtime.md) for pins, browser and sibling prerequisite. Only when Remotion is selected, load [official Skill guidance](references/official-agent-skills.md) and, if chosen, [optional Studio](references/studio.md). The director selects useful Elements or records why none fit; Motion adapts only selected rights-cleared source and dependencies. Retain lockfiles/source.
 4. Author approved props/JSX/modules. Use [composition guidance](references/composition.md) for frame math, readiness and preview. Preserve helper-owned timeline/fingerprint/audio routing; replace starter copy and inspect layouts.
 5. Freeze timing and obtain Sound's matching revision/fingerprint, cues, captions and actual measured master. Validate against the saved loudness preset. Rendering consumes the full approved mix once from frame zero; it does not synthesize, mix or measure audio.
 6. For an approved change, use [revisions](references/revisions.md): `refresh --approved-revision` preserves custom source, dependencies and outputs and archives old handoff JSON. Caller acknowledgment does not prove human approval. Review new scene copy and changed JSX meaning.

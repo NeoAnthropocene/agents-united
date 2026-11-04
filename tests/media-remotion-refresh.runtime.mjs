@@ -26,7 +26,8 @@ async function fixture(){
     reviewedOn:'2026-10-24',reviewedBy:'Automated Node test harness',reviewerRole:'automated-evaluation',
     evaluationScope:'internal-suitability-test',entity:'Isolated refresh contract fixture',
     basis:'Internal noncommercial suitability tests with illustrative audio bytes; no real render.',
-    evidence:'This automated test scope and pinned license evaluation clause.',commercialUse:false,licenseUrl:remotion.LICENSE_URL});
+    evidence:'This automated test scope and pinned license evaluation clause.',commercialUse:false,
+    licenseUrl:'https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md'});
   await handoff(root,oldTimeline);await remotion.scaffold(root,{audioManifest:'audio/manifest.json'});
   return {root,options:{audioManifest:'audio/manifest.json',approvedRevision:'r2'},clean:()=>fs.rm(root,{recursive:true,force:true})};
 }
@@ -53,6 +54,18 @@ test('explicit approved refresh preserves customized source/dependencies/outputs
     assert.deepEqual(await fs.readFile(path.join(f.root,'media/remotion/package.json')),packageBytes);
     assert.equal(result.productionAuthorized,false);
   }finally{await f.clean();}
+});
+
+test('refresh rejects optional Remotion packages that drift from the reviewed runtime version', async () => {
+  const f = await fixture();
+  try {
+    const pkg = await get(f.root,'media/remotion/package.json');
+    pkg.dependencies['@remotion/google-fonts'] = '4.0.540';
+    await put(f.root,'media/remotion/package.json',pkg);
+    await handoff(f.root,revised);
+    await assert.rejects(remotion.refresh(f.root,f.options), /pin/i);
+    await assert.rejects(fs.stat(path.join(f.root,'media/remotion/handoff-history')), /ENOENT/);
+  } finally { await f.clean(); }
 });
 test('refresh refuses missing/wrong approval, invalid current audio or purpose before writing handoff data',async()=>{
   for(const change of [{approvedRevision:undefined},{approvedRevision:'r1'},{purpose:'production'},{staleAudio:true}]){

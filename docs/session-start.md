@@ -4,7 +4,7 @@ This is the gate for any AI session on this repo, whatever harness runs it. Do t
 
 ## 1. Read, in this order
 
-1. `CLAUDE.md` and the rules in `.claude/rules/` (some harnesses load them for you; if yours does not, read them): environment, the pre-push gate, and the standing safety rules.
+1. `CLAUDE.md` and the rules in `.claude/rules/` (some harnesses load them for you; if yours does not, read them): environment, the pre-push gate, and the standing safety rules. In an uninstalled checkout without `.claude/rules/`, read the tracked sources in `registry/rules/` instead.
 2. `PROJECT.md`: the architecture, the interface contracts (§7), the codebase layout (§9), the verification matrix (§10), the branching model (§11).
 3. `CONTEXT.md`: the domain dictionary. Use its terms exactly (Bundle, Skill, Host, Native Lane, Configured Agent, ...); do not invent synonyms.
 4. `docs/workflow-guide.md`: branch, pull request and release flow.

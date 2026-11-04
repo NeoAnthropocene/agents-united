@@ -10,13 +10,27 @@ import {
   timelineFingerprint, validateAudioManifest, validateMediaFiles, validatePreferences, validateTimeline,
 } from '../../audiovisual-review/scripts/review.mjs';
 
-export const REMOTION_VERSION = '4.0.539';
+export const REMOTION_VERSION = '4.0.540';
+export const SUPPORTED_REMOTION_VERSIONS = Object.freeze(['4.0.539', REMOTION_VERSION]);
 export const LICENSE_URL = `https://github.com/remotion-dev/remotion/blob/v${REMOTION_VERSION}/LICENSE.md`;
-export const DEPENDENCIES = Object.freeze({
-  remotion: REMOTION_VERSION, '@remotion/bundler': REMOTION_VERSION,
-  '@remotion/renderer': REMOTION_VERSION, '@remotion/cli': REMOTION_VERSION,
-  react: '19.0.0', 'react-dom': '19.0.0',
-});
+export function dependenciesForVersion(version) {
+  if (!SUPPORTED_REMOTION_VERSIONS.includes(version)) throw new Error('Unsupported reviewed Remotion version.');
+  return {
+    remotion: version, '@remotion/bundler': version,
+    '@remotion/renderer': version, '@remotion/cli': version,
+    react: '19.0.0', 'react-dom': '19.0.0',
+  };
+}
+export const DEPENDENCIES = Object.freeze(dependenciesForVersion(REMOTION_VERSION));
+function declaredRuntimeDependencies(declared, version) {
+  const entries = [...Object.entries(declared.dependencies ?? {}), ...Object.entries(declared.devDependencies ?? {})];
+  requireValid(entries.some(([name, pin]) => (name === 'remotion' || name.startsWith('@remotion/')) && pin !== version)
+    ? [issue('runtime.pin', 'runtime.package', 'All declared Remotion dependencies must match the reviewed project version.')] : []);
+  return { ...dependenciesForVersion(version), ...Object.fromEntries(
+    entries.filter(([name]) => name.startsWith('@remotion/')).map(([name]) => [name, version]),
+  ) };
+}
+const declaredVersion = (declared, name) => declared.dependencies?.[name] ?? declared.devDependencies?.[name];
 const issue = (code, field, message) => ({ code, path: field, message });
 const text = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 10000;
 function requireValid(errors) {
@@ -34,7 +48,8 @@ export function preflight(preferences, license, { purpose = 'evaluation' } = {})
   requireValid(!object ? [issue('license.required', 'license', 'Record scoped evaluation or authorized owner eligibility in media/remotion-license.json before scaffolding.')] : []);
   const errors = [];
   if (Object.keys(license).some(key => !fields.includes(key)) || license.schemaVersion !== 1 ||
-      license.remotionVersion !== REMOTION_VERSION || license.licenseUrl !== LICENSE_URL ||
+      !SUPPORTED_REMOTION_VERSIONS.includes(license.remotionVersion) ||
+      license.licenseUrl !== `https://github.com/remotion-dev/remotion/blob/v${license.remotionVersion}/LICENSE.md` ||
       !['evaluation', 'free-license', 'company-license'].includes(license.status) ||
       !['evaluation', 'production'].includes(license.purpose) ||
       !['project-owner', 'authorized-representative', 'automated-evaluation'].includes(license.reviewerRole) ||
@@ -62,8 +77,8 @@ export function preflight(preferences, license, { purpose = 'evaluation' } = {})
   requireValid(errors);
   requireValid(validatePreferences(preferences));
   requireValid(preferences.renderer !== 'remotion' ? [issue('preferences.renderer', 'preferences.renderer', 'The selected project must explicitly choose remotion.')] : []);
-  return { allowed: true, purpose, licenseStatus: license.status, remotionVersion: REMOTION_VERSION,
-    entitlementVerified: false, productionAuthorized: false, dependencies: { ...DEPENDENCIES } };
+  return { allowed: true, purpose, licenseStatus: license.status, remotionVersion: license.remotionVersion,
+    entitlementVerified: false, productionAuthorized: false, dependencies: dependenciesForVersion(license.remotionVersion) };
 }
 
 async function input(root, relative, field) {
@@ -148,7 +163,7 @@ export async function scaffold(directory, options = {}) {
     ...Object.fromEntries(templates.map((name, index) => [name, source[index]])),
     'package.json': `${JSON.stringify({ name: 'agency-motion-project', version: '0.1.0', private: true,
       type: 'module', engines: { node: '>=24' }, scripts: { studio: 'remotion studio index.jsx' },
-      dependencies: DEPENDENCIES }, null, 2)}\n`,
+      dependencies: permission.dependencies }, null, 2)}\n`,
     'input-props.json': `${JSON.stringify(data, null, 2)}\n`,
     '.gitignore': 'node_modules/\nout/\n',
   };
@@ -218,8 +233,10 @@ export async function refresh(directory, options = {}) {
       ? [issue('refresh.audio', 'snapshot.audio', 'Previous copied audio was customized; refresh refuses to replace its handoff.')] : []);
   }
   const declared = await input(root, 'media/remotion/package.json', 'runtime.package');
-  requireValid(Object.entries(DEPENDENCIES).some(([name, version]) => declared.dependencies?.[name] !== version)
+  requireValid(Object.entries(declaredRuntimeDependencies(declared, permission.remotionVersion)).some(([name, version]) => declaredVersion(declared, name) !== version)
     ? [issue('refresh.pin', 'runtime.package', 'Keep the exact package pins; refresh never rewrites packages or dependencies.')] : []);
+  const packageSha256 = await fileHash(await localFile(root, 'media/remotion/package.json', 'runtime.package'));
+  const licenseSha256 = await fileHash(await localFile(root, 'media/remotion-license.json', 'license'));
   const historyParent = path.join(lane, 'handoff-history');
   await plainPath(root, 'media/remotion/handoff-history', true, true);
   const audio = await audioProvenance(root, manifest, options.audioManifest);
@@ -255,6 +272,9 @@ export async function refresh(directory, options = {}) {
     }
     const current = await inspectProject(directory, options);
     requireValid(timelineFingerprint(current.timeline) !== fingerprint ||
+        current.permission.remotionVersion !== permission.remotionVersion ||
+        await fileHash(await localFile(root, 'media/remotion/package.json', 'runtime.package')) !== packageSha256 ||
+        await fileHash(await localFile(root, 'media/remotion-license.json', 'license')) !== licenseSha256 ||
         JSON.stringify(await audioProvenance(root, current.manifest, options.audioManifest)) !== JSON.stringify(audio) ||
         !(await readFile(propsFile)).equals(oldPropsBytes) || !(await readFile(provenanceFile)).equals(oldProvenanceBytes)
       ? [issue('refresh.changed', 'refresh', 'Inputs changed during refresh; existing handoff data was not replaced.')] : []);
@@ -283,14 +303,16 @@ export async function refresh(directory, options = {}) {
 }
 
 /** Load only exact, directly installed project packages; never use an ancestor install. */
-export async function loadProjectRuntime(directory) {
+export async function loadProjectRuntime(directory, expectedVersion = REMOTION_VERSION) {
+  dependenciesForVersion(expectedVersion);
   const root = await realpath(directory);
   const declared = await input(root, 'package.json', 'runtime.package');
+  const dependencies = declaredRuntimeDependencies(declared, expectedVersion);
   const require = createRequire(path.join(root, 'package.json'));
   const packages = [];
   try {
-    for (const [name, version] of Object.entries(DEPENDENCIES)) {
-      requireValid(declared.dependencies?.[name] !== version
+    for (const [name, version] of Object.entries(dependencies)) {
+      requireValid(declaredVersion(declared, name) !== version
         ? [issue('runtime.pin', 'runtime.package', 'Project dependencies must retain the exact scaffold pins.')] : []);
       const metadata = await input(root, `node_modules/${name}/package.json`, 'runtime.installed');
       requireValid(metadata.name !== name || metadata.version !== version
@@ -335,6 +357,8 @@ async function renderSnapshot(directory, options) {
   const scaffoldRoot = await realpath(path.join(root, 'media/remotion'));
   requireValid(!contained(root, scaffoldRoot) ? [issue('file.local', 'snapshot', 'Scaffold resolves outside the selected project.')] : []);
   return { ...project, props, scaffoldRoot, fingerprint, provenance,
+    licenseSha256: await fileHash(await localFile(root, 'media/remotion-license.json', 'license')),
+    packageSha256: await fileHash(await localFile(root, 'media/remotion/package.json', 'runtime.package')),
     propsSha256: await fileHash(await localFile(root, 'media/remotion/input-props.json', 'snapshot')) };
 }
 
@@ -355,7 +379,7 @@ export async function render(directory, options = {}) {
     ? [issue('render.output', 'output', 'Output parent resolves outside the selected project.')] : []);
   const existing = await lstat(output).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
   requireValid(existing ? [issue('render.exists', 'output', 'Output directory already exists; existing/partial artifacts are preserved.')] : []);
-  const runtime = await (options.runtimeLoader ?? loadProjectRuntime)(scaffoldRoot);
+  const runtime = await (options.runtimeLoader ?? loadProjectRuntime)(scaffoldRoot, permission.remotionVersion);
   try { await mkdir(output); }
   catch { requireValid([issue('render.exists', 'output', 'Cannot exclusively reserve output; existing artifacts are preserved.')]); }
   let browser;
@@ -377,7 +401,9 @@ export async function render(directory, options = {}) {
       ? [issue('render.metadata', 'composition', 'Actual composition duration/fps/width/height must match the current canonical timeline before encoding.')] : []);
     // Catch edits made while the asynchronous bundle/metadata operations were running.
     const current = await renderSnapshot(directory, options);
-    requireValid(current.fingerprint !== snapshot.fingerprint || current.propsSha256 !== snapshot.propsSha256
+    requireValid(current.fingerprint !== snapshot.fingerprint || current.propsSha256 !== snapshot.propsSha256 ||
+        current.permission.remotionVersion !== permission.remotionVersion ||
+        current.licenseSha256 !== snapshot.licenseSha256 || current.packageSha256 !== snapshot.packageSha256
       ? [issue('snapshot.changed', 'snapshot', 'Inputs changed during runtime setup; encoding was not started.')] : []);
     stage = 'encode';
     const video = path.join(output, 'video.mp4');

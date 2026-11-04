@@ -152,8 +152,8 @@ describe('the official Remotion skill add-on', () => {
     const source = fs.readFileSync('registry/skills/remotion-production/scripts/project.mjs', 'utf8');
     const runtime = fs.readFileSync('registry/skills/remotion-production/references/runtime.md', 'utf8');
     const checker = fs.readFileSync('registry/skills/remotion-production/scripts/check-release.mjs', 'utf8');
-    expect(source).toContain("REMOTION_VERSION = '4.0.539'");
-    expect(runtime).toContain('4.0.539');
+    expect(source).toContain("REMOTION_VERSION = '4.0.540'");
+    expect(runtime).toContain('4.0.540');
     expect(runtime).not.toContain('4.0.538');
     expect(checker).toContain('registry.npmjs.org/remotion/latest');
     expect(checker).toMatch(/compareReleaseVersions/);

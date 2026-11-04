@@ -28,10 +28,14 @@ export function compareReleaseVersions(pinned, latest) {
 export async function fetchLatestVersions({ fetchImpl = globalThis.fetch } = {}) {
   const latest = {};
   await Promise.all(RELEASE_PACKAGES.map(async name => {
-    const response = await fetchImpl(RELEASE_URLS[name], { headers: { accept: 'application/json' } });
+    const response = await fetchImpl(RELEASE_URLS[name], {
+      headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10000),
+    });
     if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
     const body = await response.json();
-    if (typeof body.version !== 'string') throw new Error(`${name}: response has no version`);
+    if (typeof body.version !== 'string' || !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(body.version)) {
+      throw new Error(`${name}: response has no exact stable version`);
+    }
     latest[name] = body.version;
   }));
   return latest;
