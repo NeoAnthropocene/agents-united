@@ -13,9 +13,9 @@ This directory contains self-contained implementation plans for building the **`
 | Plan | Scope | Current status |
 |---|---|---|
 | [040](040-signature-shot-motion-prompts.md) | Signature-shot prompts and pre-render proof | Implemented and full 231/231 test suite green; r3 technical pilot passes, not reference-quality creative acceptance |
-| [041](041-remotion-official-skills-addon.md) | Official Remotion add-on, version currency, optional Studio | Implemented, multi-host install and CI gates green; redistribution/licence scope reopened as a draft-PR merge/release hold |
-| [042](042-spec-driven-sound-routing-and-pilot-041.md) | Measured sound routing, FFmpeg and chicken-life-cycle pilots | Both technical exports delivered and full-suite CI green; measured sync-drift and yuvj420p root causes recorded |
-| [043](043-reference-led-visual-craft-gate.md) | Actual reference-frame proof comparison, material passes and final-mux sync | Jobs V0–V4 implemented and verified locally ([ADR 0060](../docs/adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md)); Job V5 (maintainer-started live eval) prepared, **unverified** |
+| [041](041-remotion-official-skills-addon.md) | Official Remotion add-on, version currency, optional Studio | Implemented, multi-host install, CI gates, and headless Claude CLI skill-routing + r4 render verification (`0.9796 USD`) green; redistribution/licence scope remains a public-release hold |
+| [042](042-spec-driven-sound-routing-and-pilot-041.md) | Measured sound routing, FFmpeg and chicken-life-cycle pilots | Both technical exports delivered and full-suite CI green; measured sync-drift and yuvj420p root causes recorded and resolved in r4b (`21/21` `verify.mjs both`) |
+| [043](043-reference-led-visual-craft-gate.md) | Actual reference-frame proof comparison, material passes and final-mux sync | Jobs V0–V5 implemented and headless-evaluated on Claude CLI ([ADR 0060](../docs/adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md), session `e7962c8a-5484-45fb-a09c-796dcf212f86`); human playback/listening sign-off on `chicken-lifecycle-r4.mp4` remains `unverified` |
 
 ## Execution Order & Status
 

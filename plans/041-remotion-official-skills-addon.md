@@ -1,11 +1,11 @@
 # Plan 041: Remotion official skills add-on, version currency and optional Studio
 
-Status: **Implementation, multi-host install verification and full-suite CI fixes complete; publication under review.**
+Status: **Implementation, multi-host install verification, full-suite CI fixes, and headless Claude CLI skill-routing + r4 render verification complete; publication under review.**
 Optional Studio served HTTP 200 in the recorded local smoke test; interactive editing is still
-unverified. The publication review reopened the official skills redistribution/licence scope
+unverified. Headless Claude CLI probes (`105e5468-1bf2-4310-89b8-219555facfe9` and `e7962c8a-5484-45fb-a09c-796dcf212f86`, total `0.9796 USD`) verified that `agency-motion-designer` discovers, invokes (`Skill` tool) and applies `remotion-best-practices`, `remotion-markup` and `remotion-studio` while keeping `remotion-production` gates authoritative. The publication review reopened the official skills redistribution/licence scope
 question; the draft PR must not be merged or published until that question is resolved.
 
-Date: 2026-10-29 (Europe/Berlin). Branch: `codex/sound-model-catalogue`.
+Date: 2026-10-29 (Europe/Berlin). Branch: `feat/plan-041-headless-eval` (follows PR #212 merged into `dev` at `d978fb2`).
 
 ## Goal
 
@@ -64,6 +64,8 @@ the final helper-export gate. Exact upstream terms, package and skill versions r
 | Add-on install into `scratch/pilot-040/remotion` | exit 0; Native pilot untouched (0 official skills) |
 | Studio smoke | `remotion studio index.jsx --no-open --port 3459` → HTTP 200, “Built in 12227ms” |
 | Full repository test suite (`tests/*.test.ts`) | 231/231 test files passed (0 failures) |
+| Headless Claude CLI Probe A (`105e5468-1bf2-4310-89b8-219555facfe9`, `agency-motion-designer`, `claude-sonnet-5-5`, `0.2362 USD`) | Verified via `npm run hostlib:session`: `Skill` invocations for `remotion-production`, `remotion-best-practices`, `remotion-markup` and `remotion-studio`; subordinate routing (`project.mjs preflight/render` over bare `npx remotion render`, no Studio auto-open); `remotion-production/evals/evals.json` ID 4 answered with Chris's collaboration record, `LicenseRef-Remotion` hold, `npm run studio -- --no-open`, and edit write-back reproofing |
+| Headless Claude CLI Probe B (`e7962c8a-5484-45fb-a09c-796dcf212f86`, `agency-motion-designer`, `claude-sonnet-5-5`, `0.7434 USD`) | Verified via `npm run hostlib:session`: `Skill` invocations for `remotion-best-practices`, `remotion-markup`, `remotion-production`, `motion-design-direction` and `audiovisual-review`; viewed `ref-full-circle-420.png` (`Read`); `check-prompt-spec.mjs --require-craft-gate --timeline --proof-comparison` exit `0`; rendered `media/out/chicken-lifecycle-r4.mp4` (`h264 yuv420p`, `0.00 ms` mux lag); caught and fixed lone grass blade at `x≈510` in reproof round 2 (`out-r4b`); `review.mjs mux-sync` exit `0`; `verify.mjs both` `21/21` passed |
 
 ## 2026-10-29 publication review amendment
 
@@ -80,8 +82,8 @@ classification and copies of `LICENSE.md` are recorded implementation choices, n
 or redistribution ruling. Direct installation of the official repository/plugin remains a user
 choice under its actual terms. The PR is draft while this review remains open.
 
-Installation correction: Pilot 040 received the 12 official skills; Pilot 041's harness installed
-`digital-agency` alone. Do not describe Pilot 041 as proof of official-skills use or effectiveness.
+Installation & live-invocation audit (2026-10-29):
+1. Why historical Pilot 040 (`48090abd-d036-4661-aca5-1fe2d3dd35bc`) and Pilot 041 (`df489666-a7a8-4b4d-8e90-90a26ed2052a`) had `0` official `remotion-*` skill calls: Pilot 040's Remotion run finished at `07:30 UTC` before `remotion-agent-skills` was installed into `scratch/pilot-040/remotion` at `08:55 UTC`, and Pilot 041 installed `digital-agency` alone. In addition, `agency-motion-designer.md` and `subagent-motion-designer.md` originally mentioned `remotion-studio` in prose without listing `remotion-best-practices` or `remotion-markup` in their Skill Consultation Map.
+2. Wiring `remotion-best-practices`, `remotion-markup` and `remotion-render` into both motion-designer role files (`tests/remotion-agent-skills.test.ts` RED-then-GREEN) and installing `remotion-agent-skills` into `scratch/pilot-041/remotion` resolved the discovery gap: headless Claude CLI sessions `105e5468-1bf2-4310-89b8-219555facfe9` and `e7962c8a-5484-45fb-a09c-796dcf212f86` (`0.9796 USD` total) proved **installed → discovered → invoked (`Skill` tool) → used in `Composition.jsx`/`motion.mjs` and `chicken-lifecycle-r4.mp4`**.
 
-Not verified: official host plugins (`npx skills add`), interactive Studio editing/write-back,
-rendered output of the official guidance, entitlement or redistribution clearance.
+Not verified: official host plugins (`npx skills add`), interactive human Studio editing/write-back in a browser, human listening/viewing sign-off on `chicken-lifecycle-r4.mp4` (`listeningReview: "unverified"`, `perceivedSyncReview: "unverified"`), entitlement or redistribution clearance.
