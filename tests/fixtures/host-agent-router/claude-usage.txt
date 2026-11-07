@@ -1,0 +1,15 @@
+You are currently using your subscription to power your Claude Code usage
+
+Current session: 3% used · resets Nov 7, 3:50am (Europe/Berlin)
+Current week (all models): 13% used · resets Nov 12, 1pm (Europe/Berlin)
+
+What's contributing to your usage?
+Approximate · sessions on this machine only · shares overlap
+
+Last 24h · 14 requests · 1 session
+  58%  Turn off MCP servers you don't use · 22k tokens per request
+
+Last 7d · 1067 requests · 6 sessions
+  88%  Give "agency-motion-designer" subagents a cheaper model
+  73%  Start fresh when you switch tasks · run /clear
+  10%  Compact before you step away · run /compact

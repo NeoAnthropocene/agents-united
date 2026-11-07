@@ -717,6 +717,12 @@
         "https://github.com/huggingface/skills/tree/80f9fa530e46f4ae642fcb9e1725bad0e1979395"
       ]
     },
+    "host-agent-router": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-07",
+      "skill": "host-agent-router"
+    },
     "image-creation": {
       "provenance": "in-house",
       "recoveredAt": "2026-10-08",

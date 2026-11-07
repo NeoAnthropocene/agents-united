@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 61 agents (9 orchestrators + 52 sub-agents) · 217 skills (147 domain skills + 70 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
+**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 61 agents (9 orchestrators + 52 sub-agents) · 218 skills (148 domain skills + 70 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
 
 ---
 
@@ -214,7 +214,7 @@ agents add remotion-agent-skills       # optional official Remotion skills; sour
 
 #### 🌐 Universal
 - **`universal-skills`** ⭐: Socratic grilling, PRD generation, ADRs, session handoff, MCP setup. No agents, skills only.
-- **`universal-orchestration`**: `orchestrator-universal`, the Prime Orchestrator front door. It grills ambiguous requests, routes to the right department using its Domain Atlas, installs with consent, and hands off.
+- **`universal-orchestration`**: `orchestrator-universal`, the Prime Orchestrator front door. It grills ambiguous requests, routes to the right department using its Domain Atlas, installs with consent, and hands off. It also ships `host-agent-router`, which on request runs one task headlessly on another host CLI (Cline, Antigravity, Codex or Claude) on the side with the most 5-hour and weekly headroom. Every routed worker follows the same contract on every host (the `git-guardrails` rules and a `handoff` report), which also ships in the bundle.
 - **`full`**: the end-user suite; contributor-only content is excluded, while shared end-user skills remain included.
 
 #### 🛠️ Software Engineering
@@ -275,7 +275,7 @@ agents add remotion-agent-skills       # optional official Remotion skills; sour
 
 ### Skills
 
-The 217 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 147 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 70 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 218 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 148 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 70 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
@@ -676,6 +676,7 @@ Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releas
 
 Agents United proudly builds upon, adapts, and integrates contributions from creators across the open AI agent, cloud platform, and developer tooling ecosystem:
 
+- **Host agent router:** original agents-united Skill (1.0.0, MIT). Its limit readouts and command shapes were observed on Claude Code, Codex, Antigravity and Cline installs (see [ADR 0065](docs/adr/0065-host-agent-router-cross-host-dispatch.md)); no third-party text or code is vendored.
 - **Remotion production:** original agents-united Skill, helper and React templates informed by the [Remotion API documentation](https://www.remotion.dev/docs/) and the reviewed [4.0.539 runtime licence](https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md). The optional `remotion-agent-skills` add-on separately vendors the official [Remotion Agent Skills](https://github.com/remotion-dev/skills) at commit `30d4553ecd46fbc5212fd0ff006ae43af522158b` under the source-available Remotion License, with its licence and notice retained in every skill folder; it is not MIT, not part of `full`, and grants no runtime entitlement. [Plan 037](plans/037-agency-motion-sound.md) records accepted catalog/native authored contracts and isolated Windows project-scope Claude Native Lane copy evidence. Pre-headroom repository typecheck and full serial tests passed on 2026-10-26 (228 files; 4824 passed, 209 skipped). The 2026-10-27 headroom change has current typecheck, focused audio/shared/Native/Remotion and installed-helper mux proof; its fresh final full gate passed (228 files; 4824 passed, 209 unchanged skips), followed by the distinct narrated Claude regression. Original pilot outcomes remain4/6 and are not rescored.
 
 <details>

@@ -124,12 +124,16 @@ The generated, compact **Department Domain → Essentials Bundle** routing map e
 _Avoid_: Routing codex, capability table, registry mirror
 
 **Universal Orchestration Bundle (`universal-orchestration`)**:
-An optional guided-routing bundle in the Universal Autonomous Department containing the Prime Orchestrator (`orchestrator-universal.md`) plus the `handoff` and `grill-me` skills. It does not install or execute work itself — it triages, routes to the correct department Essentials bundle (with explicit consent), and hands off. Distinct from `universal-skills` (skills-only baseline) and `full` (aggregate suite). Aliases: `orchestration`, `router`.
+An optional guided-routing bundle in the Universal Autonomous Department containing the Prime Orchestrator (`orchestrator-universal.md`) plus the `handoff`, `git-guardrails`, `grill-me` and `host-agent-router` skills. It does not install or execute work itself — it triages, routes to the correct department Essentials bundle (with explicit consent), and hands off; only when the user explicitly asks does `host-agent-router` run one task on another Host CLI. Distinct from `universal-skills` (skills-only baseline) and `full` (aggregate suite). Aliases: `orchestration`, `router`.
 _Avoid_: Universal agent pack, super skills, router-only bot
 
 **Route & Instruct Contract**:
 The guaranteed cross-host activation contract enforced by the Prime Orchestrator: **triage → consented Essentials-bundle install → `/handoff` note → presentation of the exact `agents start <bundle> "<task>"` command** so the department Lead Orchestrator activates as the main agent of a fresh session. In-session persona-swap and sub-agent masking are prohibited.
 _Avoid_: Auto-launch promise, in-session takeover, silent reroute
+
+**Host Router (`host-agent-router`)**:
+A skill of `universal-orchestration` that runs one task headlessly on another Host CLI (Cline, Antigravity, Codex or Claude) when the user explicitly asks. Hosts are tried in a configured priority; for one Host it takes the side (the Windows or the WSL install) with the most headroom, meaning the smaller of the 5-hour and weekly remaining, and the task tier selects the model. Read-only by default, and it spends the user's other accounts, so the user says yes first. Every worker, on every Host, follows one contract (the `git-guardrails` rules and a `handoff` report), enforced with each Host's own controls where it has them and checked against the router's own record of what changed on disk. Distinct from the Route & Instruct Contract, which changes which agent leads a fresh session and runs nothing on another Host.
+_Avoid_: Auto-launch, persona-swap, sub-agent masking, load balancer
 
 **Inherited Sub-Team Bundle**:
 A specialized sub-team bundle that extends an Essentials bundle via `parentBundle` inheritance (e.g. `ai-ml-engineering`, `mobile-development`, `frontend-engineering`, `backend-distributed-systems`, `qa-automation`, `devops-engineering`, `sysops-sre`, `design-systems-ops`, `design-research-testing`, `seo-content-marketing`, `performance-paid-acquisition`, `product-led-growth`, `lifecycle-email-marketing`), inheriting base capabilities without duplicating asset definitions.
@@ -484,9 +488,9 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
    - `business-strategy` (Essentials Base): `subagent-business-panel-experts.md`
 
 8. **🌐 Universal Autonomous Department** (`universal`):
-   - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `grill-me`; routes to the correct department Essentials bundle and hands off.
+   - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `git-guardrails` + `grill-me` + `host-agent-router`; routes to the correct department Essentials bundle and hands off, and on request runs a slice on another host CLI.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 204 end-user Skills (134 domain + 70 workflow playbooks); the contributor-only `author-skill` is excluded. The physical registry totals 61 agents and 205 Skills.
+   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 205 end-user Skills (135 domain + 70 workflow playbooks); the contributor-only `author-skill` is excluded. The physical registry totals 61 agents and 218 Skills.
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)

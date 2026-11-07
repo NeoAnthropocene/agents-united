@@ -193,7 +193,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **61 specialized agents** (9 Lead/Prime/Organization Orchestrators + 52 Sub-Agents), and **217 modular skills & runbooks** (147 domain skills + 70 workflow playbooks) structured into **37 bundle entries in `registry/bundles.json`** (7 department Essentials, 24 Addons, the `full` suite, the two `universal-*` bundles, 2 organization bundles and the under-construction `agent-factory` contributor authoring toolkit). The README counts **35 end-user bundles**, excluding the contributor toolkit and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. Counts derive from the current registry:
+The ecosystem catalog maintains **61 specialized agents** (9 Lead/Prime/Organization Orchestrators + 52 Sub-Agents), and **218 modular skills & runbooks** (148 domain skills + 70 workflow playbooks) structured into **37 bundle entries in `registry/bundles.json`** (7 department Essentials, 24 Addons, the `full` suite, the two `universal-*` bundles, 2 organization bundles and the under-construction `agent-factory` contributor authoring toolkit). The README counts **35 end-user bundles**, excluding the contributor toolkit and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. Counts derive from the current registry:
 
 ```
 🌐 Agents United Registry Catalog Tree
@@ -279,7 +279,7 @@ The ecosystem catalog maintains **61 specialized agents** (9 Lead/Prime/Organiza
 │       ├── 🤖 Lead: orchestrator-universal (Domain Atlas Dispatcher)
 │       └── ⚡ Skills: grill-me, grill-with-docs, domain-modeling, to-spec, to-tickets, handoff
 └── 🌟  Complete Suite
-    └── 📦 full (Universal Suite — 59 listed agents, 204 end-user Skills: 134 domain + 70 workflows)
+    └── 📦 full (Universal Suite — 59 listed agents, 205 end-user Skills: 135 domain + 70 workflows)
 ```
 
 ---
@@ -514,7 +514,7 @@ export interface PlanningLoopConfig {
 
 ### 7.5 Agency media contracts (ADR 0056)
 
-The `digital-agency` and `full` Bundles declare nine original media Skills; other Bundles do not inherit them. This approved placement keeps commonly coordinated direction, local production, audio finishing and review together while every optional runtime/provider remains scoped and separately authorized. The registry holds 61 agents and 217 Skills; `full` lists 59 agents and 204 end-user Skills, excluding `author-skill`. Native Claude source has 17 agents: five engineering roles and Chris plus eleven agency specialists. These are physical source counts, not evidence of live loading.
+The `digital-agency` and `full` Bundles declare nine original media Skills; other Bundles do not inherit them. This approved placement keeps commonly coordinated direction, local production, audio finishing and review together while every optional runtime/provider remains scoped and separately authorized. The registry holds 61 agents and 218 Skills; `full` lists 59 agents and 205 end-user Skills, excluding `author-skill`. Native Claude source has 17 agents: five engineering roles and Chris plus eleven agency specialists. These are physical source counts, not evidence of live loading.
 
 A **Media Request** records placement, audience, purpose, required/optional priority, approved assets/copy/brand references, duration/ratio/format, accessibility, dependencies, proposed renderer/audio/footage routes, cost ceiling, acceptance and include/defer/decline. Chris consolidates decisions within the existing consultation budget. Included motion follows accepted inputs → storyboard/scratch audio → timing approval → parallel animation/audio → final Sound handoff → integration/render → review. Sound-only WAV work uses Sound-owned cue/timing needs and applicable post-production/review directly to Chris, without a Motion assignment or video export.
 

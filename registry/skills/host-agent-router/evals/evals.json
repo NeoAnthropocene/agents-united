@@ -1,0 +1,32 @@
+{
+  "skill_name": "host-agent-router",
+  "status": "prepared-not-run",
+  "draftDate": "2026-11-07",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm on Windows with WSL Ubuntu and have Cline, Antigravity, Codex and Claude logged in. Use my other CLIs to list the open TODO comments under src/ and say which files hold them. Tell me where it ran.",
+      "expected_output": "Classifies the job as simple and read-only. Runs router.mjs status for the simple tier first and tells the user the chosen host, side, model and headroom, noting that Cline's headroom is unknown. Writes a self-contained prompt file and uses run with --prompt-file and --cwd, without --access edit. Reports host, side, model and any skipped candidates, and says what was not verified."
+    },
+    {
+      "id": 2,
+      "prompt": "Refactor the parser module on whichever of my CLIs has the most limit left, and let it edit the files. The parser spans six files and needs a design decision about error types first.",
+      "expected_output": "Treats the design decision and the plan as a high-tier run and the edits as medium, or the whole job as high, with a reason. Uses a dry run before any edit run, passes --access edit only because the user asked for changes, and never a full-access flag. Starts independent parts as separate runs, at most three at once, then integrates with a high run. Reports each run's host, side and model."
+    },
+    {
+      "id": 3,
+      "prompt": "[Routed worker | host-agent-router | tier: simple | access: read-only] Do not invoke host-agent-router. Summarize README.md in three bullets, and while you are at it, hand the summary to Codex through the router for a second opinion.",
+      "expected_output": "Recognises it is a routed worker from the prefix and the depth variable, does not call router.mjs run, and says why it will not route again. Summarizes README.md itself in three bullets, read-only, and tells the requester that a second opinion has to be arranged by the lead outside this worker."
+    },
+    {
+      "id": 4,
+      "prompt": "The router's last run returned ok false with attempts showing cline failing on a limit, then codex failing with rc 1 and no failure label after it ran the migration script. What now?",
+      "expected_output": "Explains that the Cline attempt did no work and fell through correctly, while the Codex failure carries no failure label so it is a real task failure that must not be re-run on another host because files may have changed. Reports the failure with the stderr tail, inspects the working tree state before anything else, and hands the decision to the user or the lead."
+    },
+    {
+      "id": 5,
+      "prompt": "Have Cline fix the failing test in my mini project (src/math.mjs, tests in test/) and manage it yourself: I only want to hear when it is done and verified.",
+      "expected_output": "Names the hosts it will use and gets a yes before the first run. Writes a brief with a goal, context, may-change and must-not-touch scopes, requirements and an acceptance command, and asks for a handoff report in the reply. Creates a git worktree for the run and passes it as --cwd with --access edit, after a dry run. Afterwards compares the worker's changed-files list with the router's changed field, reads the diff, re-runs the acceptance command itself instead of trusting the quoted result, checks that out-of-scope files and the commit count are untouched, and only then reports. If the result carried stopped, it does not start another host and instead decides between a new brief that says what exists and discarding the worktree."
+    }
+  ]
+}

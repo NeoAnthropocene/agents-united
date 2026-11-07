@@ -1,0 +1,13 @@
+{
+  "ordinaryUsageAllowed": true,
+  "rateLimits": {
+    "limitId": "codex",
+    "limitName": null,
+    "primary": { "usedPercent": 0, "windowDurationMins": 300, "resetsAt": 1794021577 },
+    "secondary": { "usedPercent": 30, "windowDurationMins": 10080, "resetsAt": 1794562267 },
+    "credits": { "hasCredits": true, "unlimited": false, "balance": null },
+    "spendControlReached": false,
+    "planType": "team",
+    "rateLimitReachedType": null
+  }
+}

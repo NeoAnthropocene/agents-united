@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "priority": ["cline", "antigravity", "codex", "claude"],
+  "wslDistro": null,
+  "minHeadroomPct": 10,
+  "tiePct": 2,
+  "maxDepth": 1,
+  "defaultAccess": "read-only",
+  "timeoutSeconds": { "simple": 300, "medium": 900, "high": 1800 },
+  "workerCommands": {
+    "allow": ["npm test", "node --test", "git status", "git diff", "git log"],
+    "deny": ["git push", "git commit", "git reset --hard", "git clean", "git rebase", "git merge", "git cherry-pick", "sudo", "npm publish"]
+  },
+  "hosts": {
+    "cline": {
+      "provider": "cline-pass",
+      "tiers": {
+        "simple": { "label": "DeepSeek V4.1 Flash 1017", "model": "cline-pass/deepseek-v4.1-flash-1017", "effort": "medium" },
+        "medium": { "label": "GLM-5.3", "model": "cline-pass/glm-5.3", "effort": "medium" },
+        "high": { "label": "Kimi K3.1 Pro", "model": "cline-pass/kimi-k3.1-pro", "effort": "medium" }
+      }
+    },
+    "antigravity": {
+      "effortInModel": true,
+      "quotaGroups": {
+        "gemini-4-argon": "Gemini 4 Argon",
+        "gemini-": "Gemini Models",
+        "claude-": "Claude and GPT models",
+        "gpt-oss": "Claude and GPT models"
+      },
+      "tiers": {
+        "simple": { "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium" },
+        "medium": { "label": "Gemini 3.8 Flash (High)", "model": "gemini-3.8-flash-high", "effort": "high" },
+        "high": { "label": "Gemini 4 Argon (Medium)", "model": "gemini-4-argon-medium", "effort": "medium" }
+      }
+    },
+    "codex": {
+      "editSide": "wsl",
+      "tiers": {
+        "simple": { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium" },
+        "medium": { "label": "GPT-6.1-Sol", "model": "gpt-6.1-sol", "effort": "medium" },
+        "high": { "label": "GPT-6-Astra", "model": "gpt-6-astra", "effort": "medium" }
+      }
+    },
+    "claude": {
+      "tiers": {
+        "simple": { "label": "Haiku 5.5", "model": "claude-haiku-5-5", "effort": "medium" },
+        "medium": { "label": "Sonnet 5.5", "model": "claude-sonnet-5-5", "effort": "medium" },
+        "high": { "label": "Opus 5.5", "model": "claude-opus-5-5", "effort": "medium" }
+      }
+    }
+  }
+}

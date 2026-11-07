@@ -978,6 +978,7 @@
         "growth-experiment-design",
         "handoff",
         "hf-model-evaluation",
+        "host-agent-router",
         "interaction-pattern-library",
         "interactive-prototype-builder",
         "local-llm-inference",
@@ -1155,8 +1156,10 @@
       "orchestrator": "orchestrator-universal.md",
       "agents": [],
       "skills": [
+        "git-guardrails",
         "grill-me",
         "handoff",
+        "host-agent-router",
         "mcp-setup"
       ],
       "version": "1.0.0"
@@ -1394,7 +1397,9 @@
       "skills": [
         "mcp-setup",
         "handoff",
-        "grill-me"
+        "git-guardrails",
+        "grill-me",
+        "host-agent-router"
       ],
       "version": "1.0.0"
     },

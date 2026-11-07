@@ -1,0 +1,22 @@
+{"ts":"2026-11-07T09:38:59.619Z","type":"hook_event","hookEventName":"agent_start","agentId":"agent_ID","taskId":"conv_ID","parentAgentId":null}
+{"ts":"2026-11-07T09:38:59.624Z","type":"agent_event","event":{"type":"iteration_start","iteration":1}}
+{"ts":"2026-11-07T09:39:01.950Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":"The","redacted":false}}
+{"ts":"2026-11-07T09:39:01.951Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" user asks about ClinePass","redacted":false}}
+{"ts":"2026-11-07T09:39:01.953Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" quota. The system prompt","redacted":false}}
+{"ts":"2026-11-07T09:39:01.953Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" and","redacted":false}}
+{"ts":"2026-11-07T09:39:01.954Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" environment contain","redacted":false}}
+{"ts":"2026-11-07T09:39:01.955Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" no such","redacted":false}}
+{"ts":"2026-11-07T09:39:01.956Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" facts","redacted":false}}
+{"ts":"2026-11-07T09:39:01.957Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":". No","redacted":false}}
+{"ts":"2026-11-07T09:39:01.957Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" tool calls allowed","redacted":false}}
+{"ts":"2026-11-07T09:39:01.958Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":". So reply","redacted":false}}
+{"ts":"2026-11-07T09:39:01.958Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" exactly","redacted":false}}
+{"ts":"2026-11-07T09:39:01.958Z","type":"agent_event","event":{"type":"content_start","contentType":"reasoning","reasoning":" \"UNKNOWN\".","redacted":false}}
+{"ts":"2026-11-07T09:39:01.958Z","type":"agent_event","event":{"type":"content_start","contentType":"text","text":"UNKNOWN","accumulated":"UNKNOWN"}}
+{"ts":"2026-11-07T09:39:02.330Z","type":"agent_event","event":{"type":"usage","inputTokens":9483,"outputTokens":4,"reasoningTokenCount":31,"totalInputTokens":9483,"totalOutputTokens":4,"totalCost":0}}
+{"ts":"2026-11-07T09:39:02.332Z","type":"agent_event","event":{"type":"content_end","contentType":"text","text":"UNKNOWN"}}
+{"ts":"2026-11-07T09:39:02.333Z","type":"agent_event","event":{"type":"content_end","contentType":"reasoning","reasoning":"The user asks about ClinePass quota. The system prompt and environment contain no such facts. No tool calls allowed. So reply exactly \"UNKNOWN\"."}}
+{"ts":"2026-11-07T09:39:02.338Z","type":"agent_event","event":{"type":"iteration_end","iteration":1,"hadToolCalls":false,"toolCallCount":0}}
+{"ts":"2026-11-07T09:39:02.340Z","type":"hook_event","hookEventName":"agent_end","agentId":"agent_ID","taskId":"conv_ID","parentAgentId":null}
+{"ts":"2026-11-07T09:39:02.343Z","type":"agent_event","event":{"type":"done","reason":"completed","text":"UNKNOWN","iterations":1,"usage":{"inputTokens":9483,"outputTokens":4,"totalCost":0}}}
+{"ts":"2026-11-07T09:39:02.509Z","type":"run_result","finishReason":"completed","iterations":1,"usage":{"inputTokens":9483,"outputTokens":4,"cacheReadTokens":0,"cacheWriteTokens":0,"totalCost":0},"aggregateUsage":{"inputTokens":9483,"outputTokens":4,"cacheReadTokens":0,"cacheWriteTokens":0,"totalCost":0},"durationMs":2744,"text":"UNKNOWN","model":{"id":"cline-pass/deepseek-v4.1-flash-1017","provider":"cline-pass","info":{"name":"DeepSeek V4.1 Flash 1017","id":"cline-pass/deepseek-v4.1-flash-1017","contextWindow":1048576,"maxInputTokens":1048576,"maxTokens":393216,"capabilities":["images","tools","reasoning","structured_output","temperature","prompt-cache"],"reasoningOptions":[{"type":"effort","values":["none","low","high","max"]}],"pricing":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"releaseDate":"2026-10-17","family":"deepseek-flash","description":"","operation":"language"}}}
