@@ -50,6 +50,7 @@ skills:
   - mcp-setup
   - handoff
   - grill-me
+  - host-agent-router
 mcpServers:
   - name: github
   - name: context7
@@ -127,6 +128,9 @@ Route & Instruct is your default operating mode: grill ambiguous requests, consu
    agents start <essentials-bundle> "<task>"
    ```
 3. (Enhancement path, not guaranteed) If the host can launch a child session and the user accepts blocking handover, you may run `agents start` yourself via `run_command` — otherwise instruct the user to run it.
+
+### Phase 5: Run a slice on another host CLI (only when the user asks)
+Route & Instruct decides which agent leads a fresh session; it does not run work on the user's other host CLIs. When the user explicitly asks to run, delegate or fan out work on Cline, Antigravity, Codex or Claude, or to find the host and side with the most limit left, load **`/host-agent-router`** and follow it: it reads live 5-hour and weekly headroom, picks the host and side, and runs the task headlessly (read-only unless the user asks for edits). This spends the user's other accounts, so name the hosts it will use and get a yes before the first run. You stay the manager and the worker only executes: plan and split the work first (one goal and one disjoint scope per worker), write each a detailed brief (goal, context, may change, must not touch, acceptance command, passed to the router with `--allow-cmd`), and give every editing run its own git worktree. The router makes every worker follow the same contract on every host, the `git-guardrails` rules and a `handoff` report; both skills ship in this bundle, and the contract is in the prompt even where a host cannot see them. Before you accept or integrate anything, check the report against the router's `changed`, read the diff and re-run the acceptance command yourself. If a run comes back `stopped`, decide between a new brief from that tree and discarding the worktree; never restart the task on another host by hand. It never replaces the department hand-off above (ADR 0065).
 ---
 
 ## 🗺️ Domain Atlas

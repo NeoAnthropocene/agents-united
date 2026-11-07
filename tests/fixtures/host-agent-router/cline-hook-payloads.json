@@ -1,0 +1,22 @@
+{
+  "_comment": "PreToolUse payloads as Cline 3.0.74 hands them to a hook (captured 2026-11-07 on Windows; workspace path, ids and timestamps replaced). tool_call.input is the rich shape; preToolUse.parameters is the same data with values JSON-stringified.",
+  "read_files": {
+    "clineVersion": "", "taskId": "conv_ID", "hookName": "tool_call", "iteration": 1,
+    "workspaceRoots": ["C:/work/proj"],
+    "workspaceInfo": { "rootPath": "C:\\work\\proj", "hint": "proj", "latestGitBranchName": "master" },
+    "tool_call": { "id": "call-ID", "name": "read_files", "input": { "files": [{ "path": "C:/work/proj/README.md" }] } },
+    "preToolUse": { "toolName": "read_files", "parameters": { "files": "[{\"path\":\"C:/work/proj/README.md\"}]" } }
+  },
+  "editor": {
+    "clineVersion": "", "taskId": "conv_ID", "hookName": "tool_call", "iteration": 2,
+    "workspaceRoots": ["C:/work/proj"],
+    "tool_call": { "id": "call-ID", "name": "editor", "input": { "path": "C:/work/proj/notes/x.txt", "new_text": "x\n" } },
+    "preToolUse": { "toolName": "editor", "parameters": { "path": "C:/work/proj/notes/x.txt", "new_text": "x\n" } }
+  },
+  "run_commands": {
+    "clineVersion": "", "taskId": "conv_ID", "hookName": "tool_call", "iteration": 3,
+    "workspaceRoots": ["C:/work/proj"],
+    "tool_call": { "id": "call-ID", "name": "run_commands", "input": { "commands": ["git --no-pager status --short", "node --version"] } },
+    "preToolUse": { "toolName": "run_commands", "parameters": { "commands": ["git --no-pager status --short", "node --version"] } }
+  }
+}
