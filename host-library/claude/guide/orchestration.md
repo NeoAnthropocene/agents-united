@@ -63,10 +63,17 @@ Native orchestration output lands in `registry/hosts/claude/workflows/*.js` (ins
 - **Background work reports back on its own.** A background subagent's result arrives as a completion notification in a later turn, and Claude waits for it before reporting; a background Bash command notifies its owner when it ends. Do not loop on status checks. [Run subagents in foreground or background](../pages/agent/sub-agents.md#run-subagents-in-foreground-or-background), [Background commands](../pages/tools/tools-reference.md#background-commands)
 - **`Monitor` turns a log, a CI status or a WebSocket into events** delivered to the conversation; plugin `monitors/monitors.json` can start one at session start or on first use of a skill. [Monitor tool](../pages/tools/tools-reference.md#monitor-tool), [Monitors](../pages/plugin/plugins-components.md#monitors)
 
+**Observed foreground use, 2026-11-07:** a maintainer-run standalone 3D session
+on CLI 2.1.319 successfully invoked four Skills, created four tasks and updated
+their returned IDs. This is evidence for that main-session surface; it does
+not establish the background-worker or team cases below.
+[Standalone observation](../observations/2026-11-07-claude-2.1.319-3d-standalone.md).
+
 ### Agent teams (opt-in)
 
 - **Agent teams are experimental and off by default**: set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. Enabling them changes ordinary delegation, because a subagent Claude names launches as a teammate (unless it is a fork or passes `isolation`). Teams need an interactive session; `-p` and SDK runs spawn plain subagents. [Enable agent teams](../pages/orchestration/agent-teams.md#enable-agent-teams), [How Claude starts agent teams](../pages/orchestration/agent-teams.md#how-claude-starts-agent-teams)
 - **A teammate can reuse a subagent definition**: `tools` (plus `SendMessage` and, where available, the Task tools), `model` and the body apply; `skills` never apply, and `mcpServers` apply only to split-pane teammates. [Use subagent definitions for teammates](../pages/orchestration/agent-teams.md#use-subagent-definitions-for-teammates)
+- **Task tools are conditional on the session and teammate mode.** In-process teammates follow the lead's task-tool availability; split-pane teammates inherit `--tools` and deny rules but not `--allowedTools`, and a shell-exported todo opt-in does not propagate. If Task tools are absent, coordinate with messages rather than assuming a shared list. [Task tracking in subagents and agent teams](../pages/tools/tools-reference.md#task-tracking-tools-in-subagents-and-agent-teams), [Available tools](../pages/agent/sub-agents.md#available-tools)
 - **Teams have hard limits**: one team per session, no nested teams, the lead is fixed, no resumption of in-process teammates, split panes need tmux or iTerm2. Teammates start in the lead's permission mode (except `dontAsk`) and their permission prompts appear in the lead session. [Limitations](../pages/orchestration/agent-teams.md#limitations), [Permissions](../pages/orchestration/agent-teams.md#permissions)
 - **Gate team work with hooks** (`TeammateIdle`, `TaskCreated`, `TaskCompleted`, exit 2) and give teammates the context they need, since the lead's conversation history does not carry over. [Enforce quality gates with hooks](../pages/orchestration/agent-teams.md#enforce-quality-gates-with-hooks), [Context and communication](../pages/orchestration/agent-teams.md#context-and-communication)
 

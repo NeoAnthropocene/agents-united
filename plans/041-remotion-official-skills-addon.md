@@ -87,3 +87,8 @@ Installation & live-invocation audit (2026-10-29):
 2. Wiring `remotion-best-practices`, `remotion-markup` and `remotion-render` into both motion-designer role files (`tests/remotion-agent-skills.test.ts` RED-then-GREEN) and installing `remotion-agent-skills` into `scratch/pilot-041/remotion` resolved the discovery gap: headless Claude CLI sessions `105e5468-1bf2-4310-89b8-219555facfe9` and `e7962c8a-5484-45fb-a09c-796dcf212f86` (`0.9796 USD` total) proved **installed → discovered → invoked (`Skill` tool) → used in `Composition.jsx`/`motion.mjs` and `chicken-lifecycle-r4.mp4`**.
 
 Not verified: official host plugins (`npx skills add`), interactive human Studio editing/write-back in a browser, human listening/viewing sign-off on `chicken-lifecycle-r4.mp4` (`listeningReview: "unverified"`, `perceivedSyncReview: "unverified"`), entitlement or redistribution clearance.
+
+
+### 2026-11-04 — upstream-only distribution supersedes the add-on
+
+Following the merged #214 next-action plan, the official twelve-Skill snapshot and its catalog Bundle/recommendation are removed. The unresolved redistribution scope is not treated as permission; original Remotion production support remains. Obtain required official Skills directly from upstream or an existing compatible plugin. ADR 0059's upstream-only amendment and [Plan 046](046-post-pilot-motion-slices.md) record removal, safe migration and actual package/test evidence. Historical pins, checks and licence review above describe the former implementation, not current availability. Previously installed files are preserved until explicitly migrated; no user project is changed by deleting repository source.

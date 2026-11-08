@@ -1,0 +1,28 @@
+{
+  "skill_name": "workflow-agency-3d-production",
+  "status": "prepared-not-run",
+  "draftDate": "2026-11-06",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A complete brief asks for a 3D campaign shot with optional audio.",
+      "expected_output": "Consult first and offer narration, sound effects and music, then route accepted work and evidence through the relevant owners.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "A direct standalone request has no Chris and supplies a complete brief.",
+      "expected_output": "Use Arda directly and preserve the same provenance, validation and actual proof requirements.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "A static text-only revision is requested.",
+      "expected_output": "Do not start 3D runtime, production, downloads or paid jobs.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    }
+  ]
+}

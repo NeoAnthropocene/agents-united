@@ -46,6 +46,7 @@ invariants:
   - "The handoff report lists peer messages received and open items."
   - "Message a peer directly only in team mode, when the brief lists that peer."
 capabilities:
+  - task-tracking
   - read
   - search
   - web

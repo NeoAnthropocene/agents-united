@@ -1,16 +1,18 @@
 # Agent skills
 
+Available on: Antigravity App, Antigravity CLI, Antigravity IDE
+
 Skills are an [open standard](https://agentskills.io/home) for extending agent capabilities. A skill is a folder containing a `SKILL.md` file with instructions that the agent can follow when working on specific tasks.
 
 ## What are skills?
 
 Skills are reusable packages of knowledge that extend what the agent can do. Each skill contains:
 
-*   **Instructions**: explicit protocols for how to approach a specific task.
-*   **Best practices**: conventions, style guidelines, and checklists to follow.
-*   **Scripts and resources**: optional helper scripts and data schemas the agent can execute.
+*   **Instructions**: Explicit protocols for how to approach a specific task.
+*   **Best practices**: Conventions, style guidelines, and checklists to follow.
+*   **Scripts and resources**: Optional helper scripts and data schemas the agent can execute.
 
-When you start a conversation, the agent sees a list of available skills with their names and descriptions. If a skill looks relevant to your task, the agent reads the full instructions and follows them.
+On every turn, the agent sees a list of available skills with their names and descriptions. If a skill looks relevant to your task, the agent reads the full instructions and follows them.
 
 Note
 
@@ -20,7 +22,7 @@ Note
 
 Skills are organized as directory bundles containing a required `SKILL.md` file:
 
-```
+```text
 my-skill/
 ├── SKILL.md       # Required skill instructions and metadata
 ├── scripts/       # Optional executable scripts
@@ -32,7 +34,7 @@ my-skill/
 
 Every `SKILL.md` file begins with YAML frontmatter defining its name and triggering criteria:
 
-```
+```yaml
 ---
 name: code-review
 description: Reviews code changes for bugs, style issues, and best practices. Use when reviewing pull requests or checking code quality.
@@ -44,10 +46,10 @@ When reviewing code, follow these steps:
 
 ## Review checklist
 
-1. **Correctness**: verify that the code satisfies specifications.
-2. **Edge cases**: ensure error conditions and boundaries are handled.
-3. **Style**: follow project naming and architectural patterns.
-4. **Performance**: identify potential bottlenecks or inefficiencies.
+1. **Correctness**: Verify that the code satisfies specifications.
+2. **Edge cases**: Ensure error conditions and boundaries are handled.
+3. **Style**: Follow project naming and architectural patterns.
+4. **Performance**: Identify potential bottlenecks or inefficiencies.
 ```
 
 ### Frontmatter fields
@@ -67,9 +69,9 @@ Write your description in third person and include keywords that help the agent 
 
 Skills follow a **progressive disclosure** pattern:
 
-1.  **Discovery**: when a conversation starts, the agent sees a list of available skills with their names and descriptions.
-2.  **Activation**: if a skill looks relevant to your task, the agent reads the full `SKILL.md` content.
-3.  **Execution**: the agent follows the skill’s instructions while working on your task.
+1.  **Discovery**: On every turn, the agent sees a list of available skills with their names and descriptions.
+2.  **Activation**: If a skill looks relevant to your task, the agent reads the full `SKILL.md` content.
+3.  **Execution**: The agent follows the skill’s instructions while working on your task.
 
 You don’t need to explicitly tell the agent to use a skill—it decides based on context. However, you can mention a skill by name if you want to ensure it’s used.
 
@@ -95,56 +97,69 @@ For complex skills, add a section that helps the agent choose the right approach
 
 Explore how to create and manage skills on your preferred surface:
 
-*   [Antigravity 2.0](#tab-panel-36)
-*   [Antigravity CLI](#tab-panel-37)
-*   [Antigravity IDE](#tab-panel-38)
+### Antigravity App
 
-### Antigravity 2.0 skill locations
+#### Antigravity App skill locations
 
-Antigravity 2.0 loads skills from two primary locations:
+The Antigravity App loads skills from two primary locations:
 
 | Location | Scope |
 | :-- | :-- |
 | `<workspace-root>/.agents/skills/<skill-folder>/` | Workspace-specific |
 | `~/.gemini/config/skills/<skill-folder>/` | Global (all workspaces) |
 
-*   **Workspace skills**: scoped to a single project and committed to version control to share across your engineering team.
-*   **Global skills**: available across all projects on your workstation.
+Each scope serves a distinct purpose:
 
-### Invoking skills in Antigravity 2.0
+*   **Workspace skills**: Scoped to a single project and committed to version control to share across your engineering team. Antigravity also reads `.agents/skills/` in each parent folder up to the repository root.
+*   **Global skills**: Available across all projects on your workstation.
 
-*   **Autonomous invocation**: the agent automatically reads and follows relevant skills based on your prompt.
-*   **Manual slash command**: type `/<skill-name>` in the prompt panel to explicitly invoke a skill.
+#### Invoking skills in the Antigravity App
 
-### CLI skill locations
+You can invoke skills in the Antigravity App in two ways:
+
+*   **Autonomous invocation**: The agent automatically reads and follows relevant skills based on your prompt.
+*   **Manual slash command**: Type `/<skill-name>` in the message box to explicitly invoke a skill.
+
+### Antigravity CLI
+
+#### CLI skill locations
 
 The Antigravity CLI features full support for local and global agent skills:
 
 | Location | Scope |
 | :-- | :-- |
 | `<workspace-root>/.agents/skills/<skill-folder>/` | Workspace-specific |
-| `~/.gemini/antigravity-cli/skills/<skill-folder>/` | Global (all workspaces) |
-| `~/.gemini/antigravity-cli/plugins/<name>/skills/` | Plugin-provided skills |
+| `~/.gemini/config/skills/<skill-folder>/` | Global (all workspaces, shared with the Antigravity App) |
+| `~/.gemini/config/plugins/<plugin-folder>/skills/` | Plugin-provided skills ([Plugins](/docs/plugins)) |
 
-### Slash command conversion
+Antigravity also reads `.agents/skills/` in each parent folder up to the repository root. The Antigravity CLI also loads skills from `~/.gemini/antigravity-cli/skills/` and `~/.gemini/skills/`, which the Antigravity App doesn’t read. For details, see [Customization discovery](/docs/customization-discovery?tab=cli#check-what-antigravity-loaded).
 
-Whenever you define a skill, the CLI **automatically converts it into a slash command** inside the interactive TUI. For example, creating a skill named `deploy-staging` immediately makes `/deploy-staging` available in the prompt box.
+#### Slash command conversion
 
-### Managing skills with plugins
+Whenever you define a skill, the CLI **automatically converts it into a slash command** inside the interactive TUI. For example, creating a skill named `deploy-staging` makes `/deploy-staging` available in the prompt box. If you add a skill while the CLI is running, run `/skills reload` or start a new conversation to update the slash commands.
+
+#### Managing skills with plugins
 
 Skills can also be packaged inside plugins and managed with `agy plugin`:
 
-```
-# List all active plugins and their bundled skills
+```bash
+# List installed plugins (pass --json to include bundled skill names and paths)
 agy plugin list
+agy plugin list --json
 
-# Install a skill bundle via local plugin path
+# Install a plugin from the official marketplace (defaults to @antigravity-plugins-official)
+agy plugin install <plugin-name>
+
+# Install a skill bundle from a GitHub URL or local plugin path
+agy plugin install https://github.com/<owner>/<repo>
 agy plugin install ./my-skills-plugin
 ```
 
-### Antigravity IDE skill locations
+### Antigravity IDE
 
-In the standalone Antigravity IDE, skills are discovered from:
+#### Antigravity IDE skill locations
+
+In the standalone Antigravity IDE, skills are discovered from the following locations:
 
 | Location | Scope |
 | :-- | :-- |

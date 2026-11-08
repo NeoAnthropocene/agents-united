@@ -111,7 +111,7 @@
         {
           "kind": "surface",
           "detail": "The IDE extensions' built-in read-only research subagents per the docs; the string does not appear in the CLI 3.0.68 build, which has spawn_agent instead",
-          "source": "pages/agent/subagents.md#enabling-subagents"
+          "source": "observations/2026-10-02-cli-3.0.68.md#tool-names-real-session-and-the-builds-own-tables"
         }
       ]
     },

@@ -62,10 +62,10 @@ describe('domainTypes with a bundle-scoped native role name (ADR 0036)', () => {
     const raw = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')) as { bundles?: unknown };
     const types = domainTypes((raw.bundles ?? raw) as never, 'digital-agency');
     expect(types.map(t => t.name)).toEqual([
-      'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
+      'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
       'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer',
     ]);
-    for (const type of types) expect(type.bundles, type.name).toEqual(['digital-agency']);
+    for (const type of types) expect(type.bundles, type.name).toEqual(type.name === 'agency-3d-designer' ? ['agency-3d-production'] : ['digital-agency']);
   });
 });
 

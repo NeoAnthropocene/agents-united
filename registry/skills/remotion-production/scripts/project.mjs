@@ -10,8 +10,8 @@ import {
   timelineFingerprint, validateAudioManifest, validateMediaFiles, validatePreferences, validateTimeline,
 } from '../../audiovisual-review/scripts/review.mjs';
 
-export const REMOTION_VERSION = '4.0.540';
-export const SUPPORTED_REMOTION_VERSIONS = Object.freeze(['4.0.539', REMOTION_VERSION]);
+export const REMOTION_VERSION = '4.0.541';
+export const SUPPORTED_REMOTION_VERSIONS = Object.freeze(['4.0.539', '4.0.540', REMOTION_VERSION]);
 export const LICENSE_URL = `https://github.com/remotion-dev/remotion/blob/v${REMOTION_VERSION}/LICENSE.md`;
 export function dependenciesForVersion(version) {
   if (!SUPPORTED_REMOTION_VERSIONS.includes(version)) throw new Error('Unsupported reviewed Remotion version.');
@@ -26,6 +26,8 @@ function declaredRuntimeDependencies(declared, version) {
   const entries = [...Object.entries(declared.dependencies ?? {}), ...Object.entries(declared.devDependencies ?? {})];
   requireValid(entries.some(([name, pin]) => (name === 'remotion' || name.startsWith('@remotion/')) && pin !== version)
     ? [issue('runtime.pin', 'runtime.package', 'All declared Remotion dependencies must match the reviewed project version.')] : []);
+  requireValid(entries.some(([name]) => name.startsWith('@remotion/') && !/^@remotion\/[a-z0-9][a-z0-9._-]*$/.test(name))
+    ? [issue('runtime.package', 'runtime.package', 'Use valid direct Remotion package names.')] : []);
   return { ...dependenciesForVersion(version), ...Object.fromEntries(
     entries.filter(([name]) => name.startsWith('@remotion/')).map(([name]) => [name, version]),
   ) };
@@ -314,14 +316,25 @@ export async function loadProjectRuntime(directory, expectedVersion = REMOTION_V
     for (const [name, version] of Object.entries(dependencies)) {
       requireValid(declaredVersion(declared, name) !== version
         ? [issue('runtime.pin', 'runtime.package', 'Project dependencies must retain the exact scaffold pins.')] : []);
-      const metadata = await input(root, `node_modules/${name}/package.json`, 'runtime.installed');
+      const packageRoot = await realpath(path.join(root, 'node_modules', name));
+      const metadataFile = await realpath(path.join(packageRoot, 'package.json'));
+      requireValid(!contained(root, packageRoot) || !contained(packageRoot, metadataFile) || !(await stat(metadataFile)).isFile()
+        ? [issue('runtime.local', 'runtime.installed', 'Runtime must resolve to the direct project-local installation.')] : []);
+      const metadata = JSON.parse(await readFile(metadataFile, 'utf8'));
       requireValid(metadata.name !== name || metadata.version !== version
         ? [issue('runtime.version', 'runtime.installed', 'Installed project package version does not match the exact pin.')] : []);
-      const packageRoot = await realpath(path.join(root, 'node_modules', name));
-      const entry = await realpath(require.resolve(name));
-      requireValid(!contained(packageRoot, entry) || !contained(root, packageRoot)
+      let entry, resolution = 'entry';
+      try { entry = await realpath(require.resolve(name)); }
+      catch (error) {
+        const optional = name.startsWith('@remotion/') && !(name in dependenciesForVersion(expectedVersion));
+        if (!optional || error.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') throw error;
+        // Metadata validates the local pin only; a composition bundle must validate any optional import it uses.
+        entry = metadataFile;
+        resolution = 'metadata-only';
+      }
+      requireValid(!contained(packageRoot, entry) || !(await stat(entry)).isFile()
         ? [issue('runtime.local', 'runtime.installed', 'Runtime must resolve to the direct project-local installation.')] : []);
-      packages.push({ name, version, entry });
+      packages.push({ name, version, entry, resolution });
     }
     const bundler = await import(pathToFileURL(packages.find(row => row.name === '@remotion/bundler').entry));
     const renderer = await import(pathToFileURL(packages.find(row => row.name === '@remotion/renderer').entry));
@@ -366,6 +379,17 @@ async function renderSnapshot(directory, options) {
 export async function render(directory, options = {}) {
   const snapshot = await renderSnapshot(directory, options);
   const { root, scaffoldRoot, timeline, preferences, props, permission } = snapshot;
+  const frame = value => Number.isSafeInteger(value) && value >= 0 && value < timeline.totalFrames;
+  const range = options.frameRange;
+  const selected = options.stillFrames;
+  requireValid((options.stillsOnly !== undefined && typeof options.stillsOnly !== 'boolean') ||
+      (range !== undefined && (!Array.isArray(range) || range.length !== 2 || !range.every(frame) || range[0] > range[1])) ||
+      (selected !== undefined && (!Array.isArray(selected) || selected.length === 0 || selected.length > timeline.totalFrames ||
+        !selected.every(frame) || new Set(selected).size !== selected.length)) || (options.stillsOnly && range !== undefined)
+    ? [issue('render.scope', 'frames', 'Use an inclusive in-range frame pair or distinct in-range still frames; stills-only cannot include a video range.')] : []);
+  const frames = selected ?? [...new Set([0, Math.floor(timeline.totalFrames / 2), timeline.totalFrames - 1])];
+  const frameRange = options.stillsOnly ? null : range ?? [0, timeline.totalFrames - 1];
+  const expectedFrames = frameRange ? frameRange[1] - frameRange[0] + 1 : null;
   let browserExecutable;
   try {
     if (!path.isAbsolute(options.browserExecutable ?? '')) throw new Error('browser');
@@ -405,15 +429,18 @@ export async function render(directory, options = {}) {
         current.permission.remotionVersion !== permission.remotionVersion ||
         current.licenseSha256 !== snapshot.licenseSha256 || current.packageSha256 !== snapshot.packageSha256
       ? [issue('snapshot.changed', 'snapshot', 'Inputs changed during runtime setup; encoding was not started.')] : []);
-    stage = 'encode';
-    const video = path.join(output, 'video.mp4');
-    await runtime.renderMedia({ ...common, composition, codec: preferences.output.videoCodec,
-      audioCodec: preferences.output.audioCodec, sampleRate: preferences.output.audioSampleRate,
-      imageFormat: 'png', pixelFormat: 'yuv420p', enforceAudioTrack: true, overwrite: false, outputLocation: video });
+    const artifacts = [];
+    if (!options.stillsOnly) {
+      stage = 'encode';
+      const video = path.join(output, 'video.mp4');
+      await runtime.renderMedia({ ...common, composition, codec: preferences.output.videoCodec,
+        audioCodec: preferences.output.audioCodec, sampleRate: preferences.output.audioSampleRate,
+        imageFormat: 'png', pixelFormat: 'yuv420p', enforceAudioTrack: true, overwrite: false, outputLocation: video,
+        ...(range !== undefined ? { frameRange: range } : {}) });
+      artifacts.push(video);
+    }
     stage = 'stills';
     await mkdir(path.join(output, 'stills'));
-    const frames = [...new Set([0, Math.floor(timeline.totalFrames / 2), timeline.totalFrames - 1])];
-    const artifacts = [video];
     for (const frame of frames) {
       const file = path.join(output, 'stills', `frame-${String(frame).padStart(6, '0')}.png`);
       await runtime.renderStill({ ...common, composition, output: file, frame, imageFormat: 'png', overwrite: false });
@@ -423,9 +450,11 @@ export async function render(directory, options = {}) {
       timelineFingerprint: snapshot.fingerprint, inputPropsSha256: snapshot.propsSha256, audio: snapshot.provenance.audio,
       composition: { id: composition.id, durationInFrames: composition.durationInFrames, fps: composition.fps,
         width: composition.width, height: composition.height },
-      requestedEncoding: { ...preferences.output, pixelFormat: 'yuv420p', imageFormat: 'png' }, stillFrames: frames,
+      mode: options.stillsOnly || range !== undefined ? 'preview' : 'full-export', frameRange,
+      expectedFrames, expectedDurationSeconds: expectedFrames === null ? null : expectedFrames / timeline.fps,
+      requestedEncoding: options.stillsOnly ? null : { ...preferences.output, pixelFormat: 'yuv420p', imageFormat: 'png' }, stillFrames: frames,
       packages: runtime.packages ?? [], artifacts: [], encodedInspection: 'unverified',
-      visualReview: 'unverified', listeningReview: 'unverified', asyncFontMediaReadiness: 'unverified' };
+      visualReview: 'unverified', listeningReview: 'unverified', fullAudioQC: 'unverified', asyncFontMediaReadiness: 'unverified' };
     for (const file of artifacts) {
       const relative = path.relative(root, file).replaceAll('\\', '/');
       const resolved = await localFile(root, relative, 'artifact');
@@ -442,21 +471,31 @@ export async function render(directory, options = {}) {
 
 async function main(args) {
   const [command, ...rest] = args;
-  if (command === '--help') return resultReport([], { help: 'project.mjs preflight|scaffold|refresh|render --project absolute-root [--purpose evaluation|production] [--audio-manifest project-relative.json]. refresh requires --approved-revision matching the explicitly approved canonical handoff; preserves customized source/dependencies/outputs and archives previous handoff data. render requires --browser absolute-existing-executable and optionally --output project-relative-new-directory (default media/remotion/out). Uses exact project-local packages; never installs or downloads a browser. Approval/entitlement/encoded inspection remain unverified.' });
+  if (command === '--help') return resultReport([], { help: 'project.mjs preflight|scaffold|refresh|render --project absolute-root [--purpose evaluation|production] [--audio-manifest project-relative.json]. refresh requires --approved-revision matching the explicitly approved canonical handoff. render requires --browser absolute-existing-executable and optionally --output project-relative-new-directory, --frames start-end, --still-frames comma-separated-indices, or --stills-only true. Frames are inclusive; stills-only conflicts with --frames. Previews are not final exports. Uses exact project-local packages; never installs or downloads a browser. Approval/entitlement/encoded inspection remain unverified.' });
   const errors = [];
-  const flags = parseFlags(rest, ['--project', '--purpose', '--audio-manifest', ...(command === 'render' ? ['--browser', '--output'] : command === 'refresh' ? ['--approved-revision'] : [])], errors);
+  const flags = parseFlags(rest, ['--project', '--purpose', '--audio-manifest', ...(command === 'render' ? ['--browser', '--output', '--frames', '--still-frames', '--stills-only'] : command === 'refresh' ? ['--approved-revision'] : [])], errors);
   if (!['preflight', 'scaffold', 'refresh', 'render'].includes(command) || !flags['--project']) errors.push(issue('cli.arguments', 'arguments', 'Use preflight, scaffold, refresh or render with --project; see --help.'));
   requireValid(errors);
   const options = { purpose: flags['--purpose'] ?? 'evaluation', audioManifest: flags['--audio-manifest'] };
   if (command === 'scaffold') return resultReport([], await scaffold(flags['--project'], options));
   if (command === 'refresh') return resultReport([], await refresh(flags['--project'], { ...options, approvedRevision: flags['--approved-revision'] }));
-  if (command === 'render') return resultReport([], await render(flags['--project'], { ...options, browserExecutable: flags['--browser'], outputDir: flags['--output'] }));
+  if (command === 'render') {
+    const range = flags['--frames']; const stills = flags['--still-frames']; const stillsOnly = flags['--stills-only'];
+    requireValid((range !== undefined && !/^\d+-\d+$/.test(range)) ||
+        (stills !== undefined && !/^\d+(,\d+)*$/.test(stills)) ||
+        (stillsOnly !== undefined && stillsOnly !== 'true' && stillsOnly !== 'false')
+      ? [issue('render.scope', 'frames', 'Use --frames start-end, --still-frames comma-separated indices and --stills-only true or false.')] : []);
+    return resultReport([], await render(flags['--project'], { ...options, browserExecutable: flags['--browser'], outputDir: flags['--output'],
+      frameRange: range?.split('-').map(Number), stillFrames: stills?.split(',').map(Number),
+      stillsOnly: stillsOnly === undefined ? undefined : stillsOnly === 'true' }));
+  }
   const result = await inspectProject(flags['--project'], options);
   return resultReport([], { ...result.permission, timelineRevision: result.timeline.revision,
     timelineFingerprint: timelineFingerprint(result.timeline), mediaDecoded: false, renderVerified: false });
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+const invokedFile = process.argv[1] ? await realpath(path.resolve(process.argv[1])).catch(() => null) : null;
+if (invokedFile && import.meta.url === pathToFileURL(invokedFile).href) {
   try { console.log(JSON.stringify(await main(process.argv.slice(2)))); }
   catch (error) {
     console.log(JSON.stringify(resultReport(error.errors ?? [issue('project.internal', '$', 'Remotion planning failed; input contents were not echoed.')])));

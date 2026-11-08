@@ -1,5 +1,7 @@
 # Model Context Protocol (MCP)
 
+Available on: Antigravity App, Antigravity CLI, Antigravity IDE
+
 Antigravity supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), an open standard that lets AI agents and editors securely connect to local developer tools, databases, file parsers, and external remote APIs. This integration provides the AI model with real-time context and execution capabilities beyond your immediate workspace.
 
 In this guide, you’ll learn how to connect and configure MCP servers across Antigravity products.
@@ -8,73 +10,87 @@ In this guide, you’ll learn how to connect and configure MCP servers across An
 
 MCP acts as a universal bridge between Antigravity and your broader development environment. Instead of manually copying and pasting database schemas, logs, or API specifications into prompts or chat panels, MCP lets Antigravity fetch structured context directly or execute safe actions on your behalf when needed.
 
-### Add Context
+### Add context
 
 With MCP, Antigravity can use live data from connected MCP servers to inform its reasoning and suggestions:
 
 *   When writing a SQL query, Antigravity can inspect your live Neon, Supabase, or AlloyDB schema to suggest correct table and column names.
 *   When debugging deployment failures, Antigravity can pull recent build logs directly from Netlify or Heroku.
 
-### Add Custom Tools
+### Add custom tools
 
 With MCP, Antigravity can execute specific, safe actions defined by your connected servers:
 
-*   Create a Linear issue for this TODO.
+*   Create a Linear issue for a `TODO` item.
 *   Search Notion or GitHub for authentication patterns.
 
 ## Getting started by surface
 
-*   [Antigravity 2.0](#tab-panel-12)
-*   [Antigravity CLI](#tab-panel-13)
-*   [Antigravity IDE](#tab-panel-14)
+### Antigravity App
 
-In Antigravity 2.0, you can manage your MCP servers through the **Installed MCP Servers** section of your **Settings**.
+In the Antigravity App, you can manage your MCP servers in the **MCP Servers** section of the **Customizations** page.
 
 To view and update your MCP servers:
 
-1.  Click the **Settings** button found on the bottom left of your screen.
-2.  Select **Customizations** and review the **Installed MCP Servers** section.
+1.  Click **Customizations** in the sidebar.
+2.  Click **Installed** and scroll to the **MCP Servers** section.
 
-To install an MCP server from the **Installed MCP Servers** section:
+To install an MCP server from the **MCP Servers** section:
 
-1.  Click **Add MCP**. This will connect you to the MCP Store, a searchable list of available MCP servers.
-2.  Search or scroll down to an MCP server you’d like to install.
+1.  Click **Add MCP Server** (**+**). This opens a searchable list of available MCP servers.
+2.  Search or scroll to an MCP server you’d like to install.
 3.  Click **Add**.
 
-To manage your MCP servers from this screen:
+To manage an MCP server, click **More actions** (**⋮**) next to it, and then choose **Restart**, **Disable**, or **Delete**. To find your configuration file, click **Copy Config File Path** in the section header.
 
-*   **Uninstall**: Click the trash can icon next to the MCP server in the list.
-*   **Disable/enable**: Click the toggle switch next to the MCP server in the list.
-*   **Refresh**: Click the refresh button.
+### Antigravity CLI
 
 Antigravity CLI supports both local `stdio` processes and remote host MCP server configurations. The simplest path to installing an MCP server on Antigravity CLI is by using the **Interactive MCP Manager**. You can also manually edit your global server setup or workspace-level `mcp_config.json`.
 
-### Interactive MCP Manager
+#### Interactive MCP manager
 
-Type `/mcp` inside the prompt panel and press `Enter` to open the interactive **MCP Manager Overlay**. This panel lets you:
+Type `/mcp` inside the prompt panel and press Enter to open the interactive **MCP Manager Overlay**. This panel lets you perform the following actions:
 
 *   View live status rings for active, disconnected, or loading servers.
 *   Manually reload server configurations or inspect real-time connection logs.
 
-### Global and Workspace Server Configs
+#### Global and workspace server configs
 
-Unlike legacy setups, Antigravity CLI separates MCP definitions into dedicated, sparse configurations:
+Antigravity CLI loads MCP server definitions from two configuration files:
 
-*   **Global server setups:** Configured in `~/.gemini/config/mcp_config.json`.
-*   **Workspace local setups:** Configured in your active project under `.agents/mcp_config.json`.
+*   **Global configuration**: `~/.gemini/config/mcp_config.json`, which applies to all your projects.
+*   **Workspace configuration**: `<workspace>/.agents/mcp_config.json`, which applies only to that workspace.
 
-You can modify these files directly with your custom [MCP server configuration](/docs/mcp#mcp-configuration-structure).
+Enabled [plugins](/docs/plugins) can also add MCP servers (defined in a plugin’s `<plugin-root>/mcp_config.json` file; see [Build plugins](/docs/build-plugins#mcp-servers)).
 
-Note
+Edit either file directly using the standard [MCP server configuration structure](/docs/mcp#mcp-configuration-structure). For example, the following entry connects to a remote server and raises its [timeout](/docs/mcp#mcp-server-timeouts) to 600 seconds (10 minutes) for long-running tools:
 
-**Remote Connection Schema**: When declaring remote SSE, Streamable HTTP, or websocket-based MCP connections, you must define the `serverUrl` field. Legacy fields like `url` or `httpUrl` are not supported.
+```json
+{
+  "mcpServers": {
+    "my-remote-server": {
+      "serverUrl": "https://api.example.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_TOKEN"
+      },
+      "timeoutSeconds": 600
+    }
+  }
+}
+```
+
+Remote servers
+
+Remote MCP servers must use the Streamable HTTP transport. Set the server’s endpoint in `serverUrl` (`url` also works). The legacy HTTP+SSE transport and the `httpUrl` field aren’t supported.
+
+### Antigravity IDE
 
 In Antigravity IDE, the easiest way to manage MCP servers is through the built-in MCP Store. In the MCP Store, you can browse, discover, and install supported MCP servers. You can also install custom servers by updating your `mcp_config.json`.
 
 To use the MCP Store:
 
 1.  Click **…** at the top of the editor’s agent side panel and select **MCP Servers**.
-2.  Hover over any supported server and click **Install**. (Or, click a server to view details and then click **Install**.)
+2.  Hover over any supported server and click **Install** (or click a server to view details and then click **Install**).
 3.  Follow any on-screen prompts.
 
 Once installed, resources and tools from the server are automatically available to the editor.
@@ -90,13 +106,13 @@ The configuration file is located globally at `~/.gemini/config/mcp_config.json`
 
 Antigravity SDK
 
-In Python applications built using the [Antigravity SDK](/docs/sdk/overview), MCP servers (`stdio`, `SSE`, or `HTTP`) can be connected programmatically under a unified execution pipeline alongside built-in tools and custom Python functions. The SDK automatically discovers servers configured in your workspace’s `.agents/mcp_config.json` file. For dedicated documentation and examples, refer to the [Antigravity SDK MCP guide](/docs/sdk/mcp).
+In Python applications built using the [Antigravity SDK](/docs/sdk/overview), you can connect MCP servers (`stdio`, `SSE`, or `HTTP`) programmatically under a unified execution pipeline alongside built-in tools and custom Python functions. The SDK automatically discovers servers configured in your workspace’s `.agents/mcp_config.json` file. For dedicated documentation and examples, refer to the [Antigravity SDK MCP guide](/docs/sdk/mcp).
 
-## MCP Configuration Structure
+## MCP configuration structure
 
-Whether configuring custom servers for Antigravity 2.0, Antigravity IDE, or Antigravity CLI, the configuration file follows a standardized format. The file contains a single `mcpServers` object where you define each server you want to connect to:
+Whether configuring custom servers for the Antigravity App, Antigravity IDE, Antigravity CLI, or a [plugin](/docs/plugins) (`<plugin-root>/mcp_config.json`), `mcp_config.json` follows a standardized JSON schema. The root object contains an `mcpServers` map where each key is a unique server identifier:
 
-```
+```json
 {
   "mcpServers": {
     "sqlite-explorer": {
@@ -116,35 +132,64 @@ Whether configuring custom servers for Antigravity 2.0, Antigravity IDE, or Anti
 }
 ```
 
-### MCP Configuration Properties
+### MCP configuration properties
 
-Each server entry under `mcpServers` supports the following properties:
+Each server entry under `mcpServers` must specify **one transport property** (`command` for a local `stdio` server, or `serverUrl` for a remote Streamable HTTP server) and can include any of the optional properties below:
 
-**Transport (one required):**
+| Property | Type | Default | Description |
+| :-- | :-- | :-- | :-- |
+| **`command`** | `string` | _Required for `stdio`_ | Executable path or command name used to launch a local `stdio` MCP server process. |
+| **`serverUrl`** | `string` | _Required for remote_ | Endpoint URL of a remote MCP server that uses the Streamable HTTP transport. You can also use `url`. |
+| **`args`** | `string[]` | `[]` | Command-line arguments passed to the `command` executable (`stdio` transport only). |
+| **`env`** | `object` | `{}` | Key-value map of environment variables injected into the local `stdio` server process. |
+| **`cwd`** | `string` | — | Working directory used when spawning a local `stdio` server process. |
+| **`headers`** | `object` | `{}` | Custom HTTP request headers sent with remote `serverUrl` connections (for example, `Authorization` or API key headers). |
+| **`authProviderType`** | `string` | — | Built-in authentication provider. Set to `"google_credentials"` to attach Google Application Default Credentials (ADC). |
+| **`oauth`** | `object` | — | Manual OAuth 2.0 client credentials (`clientId` and optional `clientSecret`) for remote servers that do not support Client ID Metadata Documents (CIMD) or Dynamic Client Registration (DCR). |
+| **`disabled`** | `boolean` | `false` | When `true`, suspends the server connection without removing its configuration from `mcp_config.json`. |
+| **`enabledTools`** | `string[]` | — | Allowlist of tool names exposed to the agent from this server. When set, all other tools on the server are hidden. |
+| **`disabledTools`** | `string[]` | `[]` | Denylist of tool names withheld from the agent. |
+| **`timeoutSeconds`** | `integer` | `180` per tool call, `300` to connect | Timeout, in seconds, for connecting to the server and listing its tools, and for each tool call. A negative value, such as `-1`, turns both off. See [MCP server timeouts](/docs/mcp#mcp-server-timeouts). |
 
-*   **`command`** (string): Path to the executable for `stdio` transport.
-*   **`serverUrl`** (string): URL for remote `Streamable HTTP` or `SSE` servers.
+### MCP server timeouts
 
-**Optional:**
+By default, Antigravity waits up to 5 minutes for an MCP server to connect and list its tools, and up to 3 minutes for each tool call. A tool call that runs longer fails with an error that names the server and the limit, for example:
 
-*   **`args`** (string\[\]): Command-line arguments for `stdio` transport.
-*   **`env`** (object): Environment variables for the `stdio` server process.
-*   **`cwd`** (string): Working directory for `stdio` servers.
-*   **`headers`** (object): Custom HTTP headers for remote servers.
-*   **`authProviderType`** (string): Authentication provider. Supports `"google_credentials"` for Google Application Default Credentials (ADC).
-*   **`oauth`** (object): OAuth client credentials (`clientId`, `clientSecret`).
-*   **`disabled`** (boolean): Temporarily disable a server without removing its configuration.
-*   **`disabledTools`** (string\[\]): Tool names to withhold from the model.
+```text
+MCP tool call to server "sqlite-explorer" timed out after 3m0s
+```
 
-## MCP Authentication
+If a server’s tools need more time, set `timeoutSeconds` in that server’s entry:
+
+*   A positive value, in seconds, replaces both limits. For example, `600` lets each tool call run for up to 10 minutes.
+*   A negative value, such as `-1`, turns off both limits.
+*   `0`, or leaving `timeoutSeconds` unset, keeps the defaults.
+
+Because the same value limits how long the server has to connect, a small value can stop a slow-starting server from connecting.
+
+The following example lets each tool call on the `sqlite-explorer` server run for up to 10 minutes:
+
+```json
+{
+  "mcpServers": {
+    "sqlite-explorer": {
+      "command": "node",
+      "args": ["/usr/local/bin/sqlite-mcp-server.js"],
+      "timeoutSeconds": 600
+    }
+  }
+}
+```
+
+## MCP authentication
 
 Connected MCP servers can securely authenticate against external services using built-in Google credentials, automatic OAuth flows, or custom HTTP headers.
 
-### Google Credentials
+### Google credentials
 
-Set `authProviderType` to `"google_credentials"` to use Google Application Default Credentials (ADC).
+Set `authProviderType` to `"google_credentials"` to use Google Application Default Credentials (ADC):
 
-```
+```json
 {
   "mcpServers": {
     "my-gcp-service": {
@@ -157,21 +202,21 @@ Set `authProviderType` to `"google_credentials"` to use Google Application Defau
 
 This requires Application Default Credentials to be configured locally. To set them up, run:
 
-```
+```bash
 gcloud auth application-default login
 ```
 
 If you previously logged in, ensure your quota project is set by running:
 
-```
+```bash
 gcloud auth application-default set-quota-project {QUOTA_PROJECT}
 ```
 
 ### OAuth
 
-Antigravity can automatically handle OAuth for servers that support dynamic client registration (DCR). For these servers, no additional configuration is needed:
+Antigravity automatically handles OAuth 2.0 with Proof Key for Code Exchange (PKCE) for remote MCP servers that support [Client ID Metadata Documents (CIMD)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document) or [Dynamic Client Registration (DCR)](https://datatracker.ietf.org/doc/html/rfc7591). For these servers, no additional client configuration is needed:
 
-```
+```json
 {
   "mcpServers": {
     "oauth-server": {
@@ -181,9 +226,53 @@ Antigravity can automatically handle OAuth for servers that support dynamic clie
 }
 ```
 
-If the server does not support dynamic client registration, you can provide your client credentials manually:
+When connecting to an OAuth-protected MCP server, Antigravity discovers the server’s Protected Resource Metadata (`/.well-known/oauth-protected-resource`, whose `resource` value must match the MCP server URL) and the first entry in `authorization_servers` (`/.well-known/oauth-authorization-server` or `/.well-known/openid-configuration`), then resolves client credentials in the following order:
 
+1.  **Manual client credentials**: Uses `oauth.clientId` (and optional `oauth.clientSecret`) if specified in `mcp_config.json`.
+2.  **Client ID Metadata Document (CIMD)**: Uses Antigravity’s hosted metadata URL as the `client_id` if the authorization server metadata includes `"client_id_metadata_document_supported": true` (for a few built-in integrations, Antigravity uses its own pre-registered client before trying CIMD).
+3.  **Dynamic Client Registration (DCR)**: Registers a client dynamically if the authorization server metadata includes a `registration_endpoint`.
+
+#### Client ID Metadata Document (CIMD)
+
+Antigravity publishes its OAuth Client ID Metadata Document at the following URL. In the Antigravity IDE, CIMD support requires version 2.6.0 or later:
+
+```text
+https://antigravity.google/oauth/client-metadata.json
 ```
+
+MCP servers and OAuth authorization servers can use CIMD to authenticate Antigravity clients without requiring dynamic client registration or manual per-user `clientId` setup:
+
+1.  Advertise `"client_id_metadata_document_supported": true`, `"code_challenge_methods_supported": ["S256"]` (PKCE is required), and a non-empty `issuer` in your authorization server metadata (`/.well-known/oauth-authorization-server` or `/.well-known/openid-configuration`).
+2.  When initiating the OAuth flow, Antigravity sends `client_id=https://antigravity.google/oauth/client-metadata.json`, `redirect_uri=https://antigravity.google/oauth-callback`, an `S256` PKCE challenge, and the RFC 8707 `resource` parameter in the authorization and token requests.
+3.  Your authorization server can either fetch and validate the JSON document from `https://antigravity.google/oauth/client-metadata.json` dynamically, or pre-allowlist that URL as a public client ID with `https://antigravity.google/oauth-callback` as the redirect URI.
+
+For reference, `https://antigravity.google/oauth/client-metadata.json` serves the following metadata:
+
+```json
+{
+  "client_id": "https://antigravity.google/oauth/client-metadata.json",
+  "client_name": "Google Antigravity",
+  "client_uri": "https://antigravity.google",
+  "logo_uri": "https://antigravity.google/assets/image/brand/antigravity-icon__full-color.png",
+  "redirect_uris": [
+    "https://antigravity.google/oauth-callback"
+  ],
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none"
+}
+```
+
+#### Manual client credentials
+
+If the server supports neither CIMD nor dynamic client registration, you can provide your client credentials manually:
+
+```json
 {
   "mcpServers": {
     "oauth-server": {
@@ -197,40 +286,42 @@ If the server does not support dynamic client registration, you can provide your
 }
 ```
 
-If you provided client credentials manually, ensure the following is registered as a redirect URI in your OAuth provider:
+If you provide client credentials manually, ensure the following URL is registered as a redirect URI in your OAuth provider:
 
-```
+```text
 https://antigravity.google/oauth-callback
 ```
 
-When connecting to an OAuth-enabled server:
+#### Authenticate a server
 
-1.  Open [**Agent Settings**](/docs/settings) with `Cmd+,` (Mac) or `Ctrl+,` (Windows/Linux).
+To connect to an OAuth-enabled server:
 
-2.  Navigate to the **Customizations** tab and click the **Authenticate** button next to the server.
+1.  In the Antigravity App, click **Customizations** in the sidebar, and then click **Installed**.
 
-    ![Click Authenticate](/assets/image/docs/tools/mcp-oauth-authenticate.png)
+2.  Under **MCP Servers**, click **Authenticate** next to the server.
+
+    ![The MCP Servers section of the Customizations page with the bookmarks-docs server, a red status dot, an Authenticate button, and an Unauthorized error](/assets/image/docs/tools/mcp-oauth-authenticate.png)
 
 3.  Complete authentication in your browser and copy the authorization code.
 
     ![Copy authorization code](/assets/image/docs/tools/mcp-oauth-copy-code.png)
 
-4.  Paste the code back into the settings panel and click **Submit**.
+4.  Paste the code into the **Enter authorization code** field and click **Submit**.
 
-    ![Paste auth code](/assets/image/docs/tools/mcp-oauth-paste-code.png)
+    ![The bookmarks-docs server in the MCP Servers section with an Enter authorization code field and Submit and Cancel buttons](/assets/image/docs/tools/mcp-oauth-paste-code.png)
 
 
-Once authenticated, the server will reconnect automatically.
+Once authenticated, the server reconnects automatically.
 
-![Authenticated server](/assets/image/docs/tools/mcp-oauth-authenticated.png)
+![The bookmarks-docs server in the MCP Servers section with a green status dot, a Sign out button, and 2 tools enabled](/assets/image/docs/tools/mcp-oauth-authenticated.png)
 
 Access tokens are stored in `~/.gemini/antigravity/mcp_oauth_tokens.json`. Expired tokens are refreshed automatically, and invalid tokens are removed.
 
-### Custom Headers
+### Custom headers
 
-For remote servers that require custom HTTP headers (e.g. API keys or bearer tokens), add them to the `headers` object. For example:
+For remote servers that require custom HTTP headers (such as API keys or bearer tokens), add them to the `headers` object. For example:
 
-```
+```json
 {
   "mcpServers": {
     "my-remote-server": {
@@ -243,19 +334,19 @@ For remote servers that require custom HTTP headers (e.g. API keys or bearer tok
 }
 ```
 
-## MCP Permissions and Access Control
+## MCP permissions and access control
 
 Access to Model Context Protocol tools and resources is governed by Antigravity’s [permissions system](/docs/permissions). By default, unconfigured MCP tools run in **Ask** mode, requiring your approval before execution. You can allow specific tools or entire servers in your policy configuration:
 
-*   `mcp(server/tool)`: Matches a specific tool on a specific server.
-*   `mcp(server/*)`: Matches all tools on a specified server.
-*   `mcp(*)`: Global wildcard matching any MCP tool across all connected servers.
+*   **`mcp(server/tool)`**: Matches a specific tool on a specific server.
+*   **`mcp(server/*)`**: Matches all tools on a specified server.
+*   **`mcp(*)`**: Global wildcard matching any MCP tool across all connected servers.
 
-## Supported MCP Servers
+## Supported MCP servers
 
 The MCP Store features direct integrations for a wide variety of developer platforms, databases, and productivity services:
 
-**Databases & Storage (15 servers):**
+**Databases and storage (15 servers):**
 
 *   [AlloyDB for PostgreSQL](https://cloud.google.com/alloydb/docs/ai/use-alloydb-mcp)
 *   [BigQuery](https://cloud.google.com/bigquery/docs/use-bigquery-mcp)
@@ -273,7 +364,7 @@ The MCP Store features direct integrations for a wide variety of developer platf
 *   [Spanner](https://docs.cloud.google.com/spanner/docs/use-spanner-mcp)
 *   [Supabase](https://github.com/supabase-community/supabase-mcp)
 
-**Developer Tools & CI/CD (17 servers):**
+**Developer tools and CI/CD (17 servers):**
 
 *   [Apigee MCP](https://docs.cloud.google.com/apigee/docs/reference/apis/apihub/mcp)
 *   [Atlassian](https://support.atlassian.com/atlassian-rovo-mcp-server/docs/getting-started-with-the-atlassian-remote-mcp-server/)
@@ -293,7 +384,7 @@ The MCP Store features direct integrations for a wide variety of developer platf
 *   [SonarQube](https://github.com/SonarSource/sonarqube-mcp-server)
 *   [Vercel](https://vercel.com/docs/agent-resources/vercel-mcp)
 
-**Frontend & Design (8 servers):**
+**Frontend and design (8 servers):**
 
 *   [Canva](https://www.canva.dev/docs/mcp/)
 *   [Chrome DevTools](https://github.com/ChromeDevTools/chrome-devtools-mcp)
@@ -311,7 +402,7 @@ The MCP Store features direct integrations for a wide variety of developer platf
 *   [Splunk](https://splunkbase.splunk.com/app/7931)
 *   [Wiz](https://www.wiz.io/blog/introducing-wiz-mcp)
 
-**Analytics, AI & Cloud (32 servers):**
+**Analytics, AI, and cloud (33 servers):**
 
 *   [Airweave](https://github.com/airweave-ai/airweave)
 *   [Antimetal](https://docs.antimetal.com/connect)
@@ -326,6 +417,7 @@ The MCP Store features direct integrations for a wide variety of developer platf
 *   [Firebase](https://firebase.google.com/docs/ai-assistance/mcp-server)
 *   [Fiscal.ai](https://docs.fiscal.ai/docs/guides/mcp-integration)
 *   [Google Cloud Quotas](https://cloud.google.com/docs/quotas/overview)
+*   [Google Developer Knowledge](https://developers.google.com/knowledge/mcp)
 *   [Grafana Cloud](https://github.com/grafana/ai-marketplace/tree/main/plugins/grafana-cloud-mcp)
 *   [Guidepoint](https://github.com/guidepointglobal/mcp-skills-plugins)
 *   [Harvey](https://developers.harvey.ai/guides/harvey_mcp)
@@ -345,3 +437,19 @@ The MCP Store features direct integrations for a wide variety of developer platf
 *   [Sequential Thinking](https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking)
 *   [Stripe](https://github.com/stripe/agent-toolkit/tree/main/modelcontextprotocol)
 *   [Windsor AI](https://windsor.ai/documentation/windsor-mcp/)
+
+### Example: search Google developer docs
+
+The [Google Developer Knowledge MCP server](https://developers.google.com/knowledge/mcp) lets Antigravity search and read official, up-to-date Google developer documentation, including Android, Firebase, Google Cloud, Google Maps Platform, and the Antigravity docs on this site, so the agent can check the current API before it writes code rather than relying only on its training data. It exposes three tools: `search_documents`, `get_documents`, and `answer_query`.
+
+Install **Google Developer Knowledge** from the MCP Store as described in [Getting started by surface](#getting-started-by-surface). It connects with your Google credentials, so no API key is needed. For other setups, such as Antigravity CLI or a shared workspace config, follow the [Antigravity steps](https://developers.google.com/knowledge/mcp?tab=google-antigravity#configure-ide) in the Developer Knowledge documentation.
+
+Once connected, you can ask the agent to ground its work in the docs. For example:
+
+```prompt
+Look up the current Antigravity hooks documentation and add a PreToolUse hook that blocks shell commands which modify files outside this workspace.
+```
+
+Tip
+
+Pair the server with the [`retrieving-developer-knowledge`](https://developers.google.com/knowledge/mcp#agent-skill) agent skill, which tells the agent which tool to pick and how to fall back to the [Developer Knowledge API](https://developers.google.com/knowledge/api) if the MCP server isn’t available.

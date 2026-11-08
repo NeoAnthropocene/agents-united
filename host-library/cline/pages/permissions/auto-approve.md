@@ -10,9 +10,7 @@ Auto Approve lets you decide which actions Cline can take without prompting you 
 
 If you find yourself repeatedly clicking approve for the same safe operations, Auto Approve fixes that.
 
-<Frame>
-  <video style={{ width: "100%" }} src="https://storage.googleapis.com/cline_public_images/autoapprove.mp4" autoPlay controls playsInline />
-</Frame>
+<video src="https://storage.googleapis.com/cline_public_images/autoapprove.mp4" autoPlay controls playsInline />
 
 ## How It Works
 
@@ -38,9 +36,9 @@ A few details matter:
 | Use MCP servers | MCP tools and resources |
 | Enable notifications | Notifies you about long-running commands |
 
-<Warning>
-  "Read all files" and "Edit all files" only matter if their base toggle is enabled. They extend access outside your workspace.
-</Warning>
+> [!WARNING]
+>
+> "Read all files" and "Edit all files" only matter if their base toggle is enabled. They extend access outside your workspace.
 
 ## Safe vs Approval-Required Commands
 
@@ -65,7 +63,7 @@ A good default setup:
 * Enable **Read project files**
 * Leave edits, commands, browser, and MCP off until you have a specific reason
 
-If you enable edits, use [Checkpoints](/core-workflows/checkpoints) so you can roll back quickly.
+If you enable edits, use [Checkpoints](https://docs.cline.bot/core-workflows/checkpoints.md) so you can roll back quickly.
 
 ***
 
@@ -73,9 +71,9 @@ If you enable edits, use [Checkpoints](/core-workflows/checkpoints) so you can r
 
 YOLO mode is Auto Approve on steroids. Check the box and Cline auto-approves everything: file changes, terminal commands, browser actions, MCP tools, and mode transitions.
 
-<Note>
-  **Warning: This is dangerous.** YOLO mode disables all safety checks. Cline executes whatever it decides without asking permission.
-</Note>
+> [!NOTE]
+>
+> **Warning: This is dangerous.** YOLO mode disables all safety checks. Cline executes whatever it decides without asking permission.
 
 ### What Gets Auto-Approved
 
@@ -116,3 +114,6 @@ Cline could:
 ### Enabling YOLO Mode
 
 Navigate to Cline Settings, then Features, and check "YOLO Mode." No confirmation dialogs. Once enabled, Cline auto-approves all actions immediately. Uncheck to disable.
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

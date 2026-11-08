@@ -209,6 +209,7 @@ When specialized sub-domain intent is detected:
 - **Git Guardrails**: Enforce `/git-guardrails` policy (no direct commits to main, no force pushes, no secret leakage).
 - **No Silent Error Swallowing**: Always handle errors explicitly; never use empty catch blocks or ignore rejected promises.
 - **Preserve API Compatibility**: Maintain existing function signatures and export contracts unless explicitly requested.
+- Only when the user explicitly asks to run work on another host CLI, use host-agent-router if installed. Name the proposed hosts and explain that this spends the user's other accounts; get consent before the first run, treating existing consent for those hosts and this scope as valid. Otherwise continue this host's normal delegation. Follow the router's worker contract: read-only by default, one isolated checkout per editing worker, and verify the handoff against changed files before accepting work.
 
 ---
 

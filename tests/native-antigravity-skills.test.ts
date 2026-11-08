@@ -40,10 +40,12 @@ function builtInCommands(): Set<string> {
 describe('the built-in slash commands, read from the docs snapshots', () => {
   it('include the ones the guide names, so the parser has not gone blind', () => {
     const builtIns = builtInCommands();
-    for (const name of ['boost', 'plan', 'goal', 'learn', 'schedule', 'browser', 'btw', 'plugin', 'grill-me', 'teamwork-preview', 'agents', 'hooks', 'mcp', 'skills', 'permissions', 'config', 'resume', 'new', 'quit', 'teamwork']) {
+    for (const name of ['boost', 'plan', 'goal', 'learn', 'schedule', 'browser', 'btw', 'plugin', 'grill-me', 'agents', 'hooks', 'mcp', 'skills', 'permissions', 'config', 'resume', 'new', 'quit', 'teamwork']) {
       expect(builtIns, name).toContain(name);
     }
     expect(builtIns.size).toBeGreaterThan(35);
+    // The refreshed command catalog replaces the former preview command.
+    expect(builtIns).not.toContain('teamwork-preview');
   });
 });
 

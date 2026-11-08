@@ -67,6 +67,8 @@ test('public render pipeline preserves editable parameters, requests H264/AAC, w
     assert.equal(report.timelineFingerprint,timelineFingerprint(timeline));
     assert.equal(report.entitlementVerified,false);assert.equal(report.productionAuthorized,false);
     assert.equal(report.encodedInspection,'unverified');
+    assert.equal(report.mode,'full-export');assert.deepEqual(report.frameRange,[0,119]);
+    assert.equal(report.expectedFrames,120);assert.equal(report.expectedDurationSeconds,2);
     const saved=await read(f.root,'media/remotion/out/render-evidence.json');
     assert.equal(saved.composition.durationInFrames,120);assert.equal(saved.artifacts.length,4);
     assert.ok(saved.artifacts.every(row=>/^sha256:[a-f0-9]{64}$/.test(row.sha256)));
@@ -97,7 +99,7 @@ test('reviewed version or runtime declaration changes during setup reject encodi
     const f = await fixture(false); const fake = fakeRuntime();
     try {
       const loader = async (_directory, version) => {
-        assert.equal(version, '4.0.540');
+        assert.equal(version, '4.0.541');
         if (target === 'license') {
           const record = await read(f.root,'media/remotion-license.json');
           record.remotionVersion = '4.0.539';
@@ -180,7 +182,7 @@ test('runtime loader verifies exact installed versions and direct project locati
     const runtime=await remotion.loadProjectRuntime(directory);
     assert.equal(typeof runtime.bundle,'function');assert.equal(typeof runtime.renderMedia,'function');
     await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.539'), /pin/i);
-    await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.541'), /unsupported/i);
+    await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.542'), /unsupported/i);
     await put(directory,'node_modules/@remotion/renderer/package.json',{name:'@remotion/renderer',version:'4.0.1',type:'module',exports:'./index.mjs'});
     await assert.rejects(remotion.loadProjectRuntime(directory),/version|pin/i);
     await fs.rm(path.join(directory,'node_modules/@remotion/renderer'),{recursive:true,force:true});
@@ -189,15 +191,17 @@ test('runtime loader verifies exact installed versions and direct project locati
   }finally{await f.clean();}
 });
 
-test('legacy 539 runtime remains loadable only with its matching reviewed project version', async () => {
-  const f = await fixture(false); const directory = path.join(f.root,'media/remotion');
-  try {
-    await put(directory,'package.json',{dependencies:remotion.dependenciesForVersion('4.0.539')});
-    await fakePackages(directory, '4.0.539');
-    const runtime = await remotion.loadProjectRuntime(directory, '4.0.539');
-    assert.equal(runtime.packages.find(row => row.name === 'remotion').version, '4.0.539');
-    await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.540'), /pin/i);
-  } finally { await f.clean(); }
+test('legacy 539 and 540 runtimes load only with their matching reviewed project version', async () => {
+  for (const version of ['4.0.539', '4.0.540']) {
+    const f = await fixture(false); const directory = path.join(f.root,'media/remotion');
+    try {
+      await put(directory,'package.json',{dependencies:remotion.dependenciesForVersion(version)});
+      await fakePackages(directory, version);
+      const runtime = await remotion.loadProjectRuntime(directory, version);
+      assert.equal(runtime.packages.find(row => row.name === 'remotion').version, version);
+      await assert.rejects(remotion.loadProjectRuntime(directory, '4.0.541'), /pin/i);
+    } finally { await f.clean(); }
+  }
 });
 
 test('render CLI rejects a missing explicit existing browser without opening runtime or writing outputs',async()=>{
@@ -207,4 +211,155 @@ test('render CLI rejects a missing explicit existing browser without opening run
     assert.ok(report.errors.some(row=>/browser/.test(row.code)));
     await assert.rejects(fs.stat(path.join(f.root,'media/remotion/out')),/ENOENT/);
   }finally{await f.clean();}
+});
+
+test('runtime accepts an optional import-only or subpath-only Remotion package', async () => {
+  for (const exports of [{'.': {import: './index.mjs'}}, {'./feature': './index.mjs'}]) {
+    const f = await fixture(false); const directory = path.join(f.root, 'media/remotion');
+    try {
+      const pkg = await read(directory, 'package.json');
+      pkg.dependencies['@remotion/extra'] = remotion.REMOTION_VERSION;
+      await put(directory, 'package.json', pkg);
+      await fakePackages(directory);
+      const target = path.join(directory, 'node_modules/@remotion/extra');
+      await fs.mkdir(target, {recursive:true});
+      await put(target, 'package.json', {name:'@remotion/extra', version:remotion.REMOTION_VERSION, type:'module', exports});
+      await fs.writeFile(path.join(target, 'index.mjs'), 'throw new Error("optional package must not execute");');
+      const runtime = await remotion.loadProjectRuntime(directory);
+      assert.equal(runtime.packages.find(row => row.name === '@remotion/extra').version, remotion.REMOTION_VERSION);
+      assert.equal(runtime.packages.find(row => row.name === '@remotion/extra').resolution, 'metadata-only');
+      assert.equal(runtime.packages.find(row => row.name === '@remotion/bundler').resolution, 'entry');
+      assert.equal(typeof runtime.renderMedia, 'function');
+    } finally { await f.clean(); }
+  }
+});
+
+test('optional runtime metadata and resolved entries cannot escape the project package', async () => {
+  for (const mode of ['package-escape', 'metadata-escape', 'entry-escape', 'name', 'version', 'missing-api']) {
+    const f = await fixture(false); const directory = path.join(f.root, 'media/remotion');
+    const outside = await fs.mkdtemp(path.join(os.tmpdir(), 'remotion-outside-'));
+    try {
+      const pkg = await read(directory, 'package.json');
+      pkg.dependencies['@remotion/extra'] = remotion.REMOTION_VERSION;
+      await put(directory, 'package.json', pkg);
+      await fakePackages(directory);
+      const target = path.join(directory, 'node_modules/@remotion/extra');
+      await fs.mkdir(target, {recursive:true});
+      const meta = {name:'@remotion/extra', version:remotion.REMOTION_VERSION, type:'module', exports:{'./feature':'./index.mjs'}};
+      if (mode === 'name') meta.name = '@remotion/other';
+      if (mode === 'version') meta.version = '4.0.1';
+      await put(target, 'package.json', meta);
+      await fs.writeFile(path.join(target, 'index.mjs'), 'export const fixture=true;');
+      if (mode === 'package-escape') {
+        await put(outside, 'package.json', meta);
+        await fs.rm(target, {recursive:true});
+        await fs.symlink(outside, target, 'junction');
+      }
+      if (mode === 'metadata-escape') {
+        await put(outside, 'package.json', meta);
+        await fs.unlink(path.join(target, 'package.json'));
+        await fs.symlink(path.join(outside, 'package.json'), path.join(target, 'package.json'), 'file');
+      }
+      if (mode === 'entry-escape') {
+        meta.exports = './index.mjs'; await put(target, 'package.json', meta);
+        await fs.writeFile(path.join(outside, 'index.mjs'), 'export const fixture=true;');
+        await fs.unlink(path.join(target, 'index.mjs'));
+        await fs.symlink(path.join(outside, 'index.mjs'), path.join(target, 'index.mjs'), 'file');
+      }
+      if (mode === 'missing-api') await fs.writeFile(path.join(directory,'node_modules/@remotion/renderer/index.mjs'), 'export const renderMedia=async()=>{};');
+      const expected = mode === 'name' || mode === 'version' ? 'runtime.version' : mode === 'missing-api' ? 'runtime.api' : 'runtime.local';
+      await assert.rejects(remotion.loadProjectRuntime(directory), error => error.errors?.[0]?.code === expected, mode);
+    } finally { await f.clean(); await fs.rm(outside, {recursive:true,force:true}); }
+  }
+});
+
+test('runtime loads CommonJS core entries and rejects unavailable required exports', async () => {
+  for (const invalid of [false, true]) {
+    const f = await fixture(false); const directory = path.join(f.root, 'media/remotion');
+    try {
+      await fakePackages(directory);
+      const target = path.join(directory, 'node_modules/@remotion/bundler');
+      await put(target, 'package.json', {name:'@remotion/bundler', version:remotion.REMOTION_VERSION,
+        exports: invalid ? {'./feature':'./index.cjs'} : './index.cjs'});
+      await fs.writeFile(path.join(target, 'index.cjs'), 'exports.bundle=async()=>{};');
+      if (invalid) await assert.rejects(remotion.loadProjectRuntime(directory), e => e.errors?.[0]?.code === 'runtime.install');
+      else assert.equal(typeof (await remotion.loadProjectRuntime(directory)).bundle, 'function');
+    } finally { await f.clean(); }
+  }
+});
+
+test('runtime rejects invalid optional package names', async () => {
+  const f = await fixture(false); const directory = path.join(f.root, 'media/remotion');
+  try {
+    const pkg = await read(directory, 'package.json');
+    pkg.dependencies['@remotion/../../escape'] = remotion.REMOTION_VERSION;
+    await put(directory, 'package.json', pkg);
+    await assert.rejects(remotion.loadProjectRuntime(directory), e => e.errors?.[0]?.code === 'runtime.package');
+  } finally { await f.clean(); }
+});
+
+test('bounded previews record inclusive frame scope and selected canonical stills', async () => {
+  const f=await fixture(false); const fake=fakeRuntime();
+  try {
+    const report=await remotion.render(f.root,{...f.options,runtimeLoader:fake.loader,frameRange:[20,30],stillFrames:[2,119]});
+    assert.deepEqual(fake.calls.media[0].frameRange,[20,30]);
+    assert.deepEqual(fake.calls.stills.map(row=>row.frame),[2,119]);
+    assert.equal(report.mode,'preview'); assert.deepEqual(report.frameRange,[20,30]);
+    assert.equal(report.expectedFrames,11); assert.equal(report.expectedDurationSeconds,11/60);
+    assert.equal(report.encodedInspection,'unverified');
+    assert.deepEqual(report.artifacts.map(row=>path.basename(row.path)),['video.mp4','frame-000002.png','frame-000119.png']);
+    assert.ok(report.artifacts.every(row=>/^sha256:[a-f0-9]{64}$/.test(row.sha256)));
+  } finally { await f.clean(); }
+});
+
+test('stills-only preview skips encoding and records only selected artifacts', async () => {
+  const f=await fixture(false); const fake=fakeRuntime();
+  try {
+    const report=await remotion.render(f.root,{...f.options,runtimeLoader:fake.loader,stillsOnly:true,stillFrames:[5,90]});
+    assert.equal(fake.calls.media.length,0); assert.deepEqual(fake.calls.stills.map(row=>row.frame),[5,90]);
+    assert.equal(report.mode,'preview'); assert.equal(report.frameRange,null);
+    assert.equal(report.expectedFrames,null); assert.equal(report.expectedDurationSeconds,null);
+    assert.equal(report.artifacts.length,2); assert.equal(fake.calls.close,1);
+    assert.ok(report.artifacts.every(row=>row.path.endsWith('.png') && /^sha256:[a-f0-9]{64}$/.test(row.sha256)));
+  } finally { await f.clean(); }
+});
+
+test('invalid preview requests fail before runtime or output reservation', async () => {
+  const cases=[{frameRange:[-1,3]},{frameRange:[1.5,3]},{frameRange:[3,2]},{frameRange:[0,120]},
+    {frameRange:[NaN,3]},{frameRange:[]},{stillFrames:[]},{stillFrames:[-1]},{stillFrames:[1.5]},
+    {stillFrames:[NaN]},{stillFrames:[120]},{stillFrames:[2,2]},{stillsOnly:true,frameRange:[0,2]},
+    {stillsOnly:'true'}];
+  for(const options of cases){const f=await fixture(false);const fake=fakeRuntime();try{
+    await assert.rejects(remotion.render(f.root,{...f.options,...options,runtimeLoader:fake.loader}), /render\.scope/);
+    assert.equal(fake.calls.load,0);await assert.rejects(fs.stat(path.join(f.root,'media/remotion/out')),/ENOENT/);
+  }finally{await f.clean();}}
+});
+
+test('preview CLI parses its value flags and rejects malformed or conflicting scopes', async () => {
+  const f=await fixture(false);
+  try {
+    for (const flags of [['--frames','2-x'],['--still-frames','1,,2'],['--stills-only','yes'],
+      ['--frames','1-2','--stills-only','true'],['--still-frames','1,1']]) {
+      const result=spawnSync(process.execPath,['registry/skills/remotion-production/scripts/project.mjs','render','--project',f.root,...flags],{encoding:'utf8'});
+      assert.equal(result.status,2);assert.equal(JSON.parse(result.stdout).errors[0].code,'render.scope');
+      await assert.rejects(fs.stat(path.join(f.root,'media/remotion/out')),/ENOENT/);
+    }
+    const valid=spawnSync(process.execPath,['registry/skills/remotion-production/scripts/project.mjs','render','--project',f.root,
+      '--still-frames','1,2','--stills-only','true'],{encoding:'utf8'});
+    assert.equal(valid.status,2);assert.equal(JSON.parse(valid.stdout).errors[0].code,'render.browser');
+  } finally { await f.clean(); }
+});
+
+test('CLI runs through a skill directory junction and imports remain inert', async () => {
+  const f=await fixture(false);
+  try {
+    const link=path.join(f.root,'installed-skill');
+    const source=path.resolve('registry/skills/remotion-production');
+    await fs.symlink(source,link,'junction');
+    const cli=spawnSync(process.execPath,[path.join(link,'scripts/project.mjs'),'--help'],{cwd:f.root,encoding:'utf8'});
+    assert.equal(cli.status,0);const report=JSON.parse(cli.stdout);assert.equal(report.ok,true);assert.match(report.help,/preflight/);
+    const script=`process.argv[1]='not-a-file'; await import(${JSON.stringify(new URL('../registry/skills/remotion-production/scripts/project.mjs', import.meta.url).href)});`;
+    const imported=spawnSync(process.execPath,['--input-type=module','-e',script],{cwd:f.root,encoding:'utf8'});
+    assert.equal(imported.status,0);assert.equal(imported.stdout,'');
+  } finally { await f.clean(); }
 });

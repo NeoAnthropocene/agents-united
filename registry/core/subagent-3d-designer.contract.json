@@ -1,0 +1,13 @@
+{
+  "definition": "subagent-3d-designer",
+  "workflows": [],
+  "skills": [
+    "3d-design-direction",
+    "threejs-scene-production",
+    "3d-asset-review",
+    "workflow-agency-3d-production",
+    "audiovisual-review",
+    "handoff"
+  ],
+  "hooks": []
+}

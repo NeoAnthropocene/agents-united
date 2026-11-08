@@ -6,9 +6,9 @@
 
 > Install and manage plugins that extend Cline with custom tools, hooks, and capabilities.
 
-<Warning>
-  This feature currently only applies to Cline SDK, CLI, and Kanban. This feature is not applicable on VSCode and JetBrains Extension for now.
-</Warning>
+> [!WARNING]
+>
+> This feature currently only applies to Cline SDK, CLI, and Kanban. This feature is not applicable on VSCode and JetBrains Extension for now.
 
 Plugins extend Cline with custom tools, lifecycle hooks, slash commands, and more. They can be installed globally (available in all sessions) or per-project.
 
@@ -16,49 +16,47 @@ Plugins extend Cline with custom tools, lifecycle hooks, slash commands, and mor
 
 The `cline plugin install` command installs plugins from four source types:
 
-<Tabs>
-  <Tab title="File URL">
-    ```bash theme={"system"}
-    cline plugin install https://github.com/owner/repo/blob/main/plugins/my-plugin.ts
-    cline plugin install https://raw.githubusercontent.com/owner/repo/main/plugins/my-plugin.ts
-    ```
+> [tab] File URL
+>
+> ```bash theme={"system"}
+> cline plugin install https://github.com/owner/repo/blob/main/plugins/my-plugin.ts
+> cline plugin install https://raw.githubusercontent.com/owner/repo/main/plugins/my-plugin.ts
+> ```
+>
+> File URLs install a single `.ts` or `.js` plugin file directly. GitHub `blob` and raw URLs are supported, and remote plugin file URLs must use `https://`.
 
-    File URLs install a single `.ts` or `.js` plugin file directly. GitHub `blob` and raw URLs are supported, and remote plugin file URLs must use `https://`.
-  </Tab>
+> [tab] Git Repository
+>
+> ```bash theme={"system"}
+> cline plugin install https://github.com/owner/repo.git
+> cline plugin install git@github.com:owner/repo.git
+> ```
+>
+> The installer clones the repository, installs production dependencies, and registers the plugin entry files.
+>
+> To install a specific branch or tag, append `@ref`:
+>
+> ```bash theme={"system"}
+> cline plugin install https://github.com/owner/repo.git@v1.2.0
+> cline plugin install https://github.com/owner/repo.git@main
+> ```
 
-  <Tab title="Git Repository">
-    ```bash theme={"system"}
-    cline plugin install https://github.com/owner/repo.git
-    cline plugin install git@github.com:owner/repo.git
-    ```
+> [tab] npm Package
+>
+> ```bash theme={"system"}
+> cline plugin install npm:@scope/my-plugin
+> cline plugin install --npm my-plugin
+> ```
 
-    The installer clones the repository, installs production dependencies, and registers the plugin entry files.
-
-    To install a specific branch or tag, append `@ref`:
-
-    ```bash theme={"system"}
-    cline plugin install https://github.com/owner/repo.git@v1.2.0
-    cline plugin install https://github.com/owner/repo.git@main
-    ```
-  </Tab>
-
-  <Tab title="npm Package">
-    ```bash theme={"system"}
-    cline plugin install npm:@scope/my-plugin
-    cline plugin install --npm my-plugin
-    ```
-  </Tab>
-
-  <Tab title="Local Path">
-    ```bash theme={"system"}
-    cline plugin install ./my-plugin
-    cline plugin install ~/plugins/my-tool
-    cline plugin install /absolute/path/to/plugin.ts
-    ```
-
-    Local installs copy the file or directory into the plugin store. Both single `.ts`/`.js` files and directories with a `package.json` are supported.
-  </Tab>
-</Tabs>
+> [tab] Local Path
+>
+> ```bash theme={"system"}
+> cline plugin install ./my-plugin
+> cline plugin install ~/plugins/my-tool
+> cline plugin install /absolute/path/to/plugin.ts
+> ```
+>
+> Local installs copy the file or directory into the plugin store. Both single `.ts`/`.js` files and directories with a `package.json` are supported.
 
 Additional flags:
 
@@ -148,6 +146,25 @@ Plugins are stored in the `plugins` directory at two levels:
 
 Global plugins (`~/.cline/plugins/`) are available across all sessions. Project plugins (`.cline/plugins/` in your repo) are available only when working in that project.
 
+## Troubleshooting Plugins
+
+When a plugin fails to load, Cline tells you which plugin failed and why instead of quietly dropping its tools:
+
+* Starting a session prints a warning that names the plugin, the step that failed (import, setup, a hook, or a tool), and the error.
+* `cline config tools` lists failed plugins under "Failed plugins". With `--json`, each one is an entry with `"type": "plugin_failure"` and an `error` object holding its `phase` and `message`.
+* `cline hub plugins` shows the status of every plugin the hub loaded, its last error, and the sessions using it.
+
+After fixing a plugin, reload it without restarting the hub:
+
+```bash theme={"system"}
+cline hub plugins --reload my-plugin
+```
+
+A plugin that keeps failing in hooks or tools is turned off for the rest of the hub's life until you reload it or change its file. One broken plugin doesn't stop other plugins or sessions.
+
 ## Writing Plugins
 
-For a guide on building plugins with the SDK, see [Writing Plugins](/sdk/guides/writing-plugins). For the plugin API reference, see [SDK Plugins](/sdk/plugins).
+For a guide on building plugins with the SDK, see [Writing Plugins](https://docs.cline.bot/sdk/guides/writing-plugins.md). For the plugin API reference, see [SDK Plugins](https://docs.cline.bot/sdk/plugins.md).
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

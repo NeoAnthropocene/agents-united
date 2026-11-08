@@ -36,4 +36,14 @@ history and must not be treated as a new sublicence grant. See Plan 041's public
 
 ## Consequences
 
+The original consequences below are historical; the upstream-only amendment at the end supersedes vendored delivery.
+
 The catalogue gains 12 source-available third-party skills, one optional bundle and one new licence class. The add-on is larger than a pointer but preserves exact terms and provenance; it stays out of essentials and `full`, so users who do not choose Remotion carry none of it. Licence eligibility, runtime entitlement and Studio behaviour remain user/host responsibilities. Static tests prove packaging and declarations, not creative output, host-wide invocation or legal entitlement. Other hosts remain unverified until their packages are tested.
+
+## Upstream-only amendment — 2026-11-04
+
+The post-#214 implementation follows Plan 044 action 4's removal alternative. **Supersedes decisions 2 and 3's vendored delivery route:** remove the twelve copied official Skill folders, the `remotion-agent-skills` Bundle and its recommendation. Users obtain official Skills directly from upstream or reuse one compatible official plugin after the applicable source/terms review. The original MIT Remotion production Skill, reviewed runtime support, conditional loading, optional Studio and actual invocation requirements remain.
+
+This removes the disputed material from our package; it does not establish standalone licence scope, grant redistribution permission, or infer a user's eligibility. Keep the source-available classifier because truthful classification remains useful independent of this snapshot. Historical attribution, pins, audits and the publication hold above remain evidence of the former route. Any future redistribution needs a new scope review; an upstream installation is not a reason to restore these files.
+
+Previously installed copies are not silently deleted or overwritten. The [migration guide](../../registry/skills/remotion-production/references/official-agent-skills.md) requires inventory/backup, a dry run, safe removal through recorded ownership, preserved agency dependencies and then upstream installation into vacant paths. A retired Bundle must be removable even after its catalog definition disappears; tests cover recorded ownership rather than name/path guessing. Check actual npm package contents before claiming the snapshot is absent. Fixture, package and full-suite results are recorded in [Plan 046](../../plans/046-post-pilot-motion-slices.md); they do not prove every Host migration or live Skill loading.

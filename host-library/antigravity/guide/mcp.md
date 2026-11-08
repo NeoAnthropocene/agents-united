@@ -1,7 +1,7 @@
 ---
 host: antigravity
 artifact: mcp
-reviewedAgainst: "2.0 2.18.1, CLI 1.2.11, IDE 2.5.5, SDK 0.1.18"
+reviewedAgainst: "Documentation fetched 2026-11-06; runtime unverified"
 ---
 
 # Antigravity — authoring guide: MCP servers
@@ -28,7 +28,7 @@ Native output (Plan 032, Phase 8, ADR 0032) is a reviewed catalog of server entr
 ### Permissions and scoping
 
 - **Unconfigured MCP tools run in Ask mode; allow them with `mcp(server/tool)`, `mcp(server/*)` or `mcp(*)`.** [MCP Permissions and Access Control](../pages/mcp/mcp.md#mcp-permissions-and-access-control)
-- **A custom agent can carry its own `mcpServers` in frontmatter, and a plugin can bundle an `mcp_config.json`.** [Frontmatter Configuration (YAML)](../pages/agent/subagents.md#frontmatter-configuration-yaml), [Supported components](../pages/plugin/plugins.md#supported-components)
+- **A custom agent can carry its own `mcpServers` in frontmatter, and a plugin can bundle an `mcp_config.json`.** [Frontmatter Configuration (YAML)](../pages/agent/subagents.md#frontmatter-configuration-yaml), [Supported components](../pages/plugin/plugins.md#what-a-plugin-bundles)
 - **In the CLI, `/mcp` opens the manager (status, reload, connection logs); in 2.0 and the IDE the servers are managed in settings and the MCP Store.** [Interactive MCP Manager](../pages/mcp/mcp.md#interactive-mcp-manager), [Getting started by surface](../pages/mcp/mcp.md#getting-started-by-surface)
 
 ## Authoring notes (agents-united, not host behaviour)

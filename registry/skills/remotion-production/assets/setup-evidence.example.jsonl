@@ -1,0 +1,3 @@
+{"step":"runtime-version-check","actor":"<setup owner>","recordedAt":null,"status":"unverified","command":null,"exitCode":null,"evidence":{"path":null,"sha256":null,"toolReceipt":null}}
+{"step":"official-skill-invocation","actor":"<invoking specialist>","recordedAt":null,"status":"unverified","skill":null,"resolvedRoot":null,"evidence":{"path":null,"sha256":null,"toolReceipt":null}}
+{"step":"elements-catalog-consultation","actor":"<research owner>","recordedAt":null,"status":"unverified","source":null,"directorDecision":null,"evidence":{"path":null,"sha256":null,"toolReceipt":null}}

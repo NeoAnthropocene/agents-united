@@ -1,7 +1,7 @@
 ---
 host: antigravity
 artifact: tools
-reviewedAgainst: "2.0 2.18.1, CLI 1.2.11, IDE 2.5.5, SDK 0.1.18"
+reviewedAgainst: "Documentation fetched 2026-11-06; runtime unverified"
 ---
 
 # Antigravity — authoring guide: tools (the catalog a role's grants are drawn from)

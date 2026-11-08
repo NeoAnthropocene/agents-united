@@ -535,6 +535,46 @@ describe('synthetic sessions', () => {
     expect(finding(analyse(loadSession(ordered)), 'H4').verdict).toBe('not seen');
   });
 
+  it('H4: reads documented raw TaskUpdate aliases and keeps TaskCreate result IDs separate', () => {
+    for (const key of ['taskId', 'id', 'task_id']) {
+      const records = [
+        call('c1', 'TaskCreate', { subject: 'First' }, 1), result('c1', 'Task #8 created successfully: First', 1.1),
+        call('c2', 'TaskCreate', { subject: 'Second' }, 2), result('c2', 'Task #12 created successfully: Second', 2.1),
+        call('block', 'TaskUpdate', { [key]: '12', addBlockedBy: ['8'] }, 3),
+        call('start', 'TaskUpdate', { [key]: '12', status: 'in_progress' }, 4), result('start', 'Task #12 is blocked by #8', 4.1, true),
+      ];
+      const analysis = analyse(loadSession(writeSession(records, {})));
+      expect(finding(analysis, 'H4').verdict, key).toBe('seen');
+      expect(finding(analysis, 'H4').evidence.join('\n')).toContain('task 12 (Second)');
+      expect(renderReport(analysis)).toContain('TaskUpdate task 12');
+    }
+  });
+
+  it('H4: does not invent IDs for missing, failed or unrecognised task records', () => {
+    const records = [
+      call('missing', 'TaskCreate', { subject: 'No result' }, 1),
+      call('bad', 'TaskCreate', { subject: 'Failed' }, 2), result('bad', 'Task #9 refused', 2.1, true),
+      call('other', 'TaskCreate', { subject: 'Unknown' }, 3), result('other', 'Attempt 17 failed', 3.1),
+      call('unknown', 'TaskUpdate', { task_id: '1', status: 'in_progress' }, 4),
+      call('no-id', 'TaskUpdate', { status: 'completed' }, 5),
+    ];
+    const evidence = finding(analyse(loadSession(writeSession(records, {}))), 'H4').evidence.join('\n');
+    expect(evidence).toContain('0 task(s)');
+    expect(evidence).toContain('unresolved');
+  });
+
+  it('H4: uses canonical alias precedence and does not assume an unseen blocker is open', () => {
+    const records = [
+      call('create', 'TaskCreate', { subject: 'Known task' }, 1), result('create', 'Task #12 created successfully: Known task', 1.1),
+      call('block', 'TaskUpdate', { taskId: '12', id: '13', task_id: '14', addBlockedBy: ['99'] }, 2),
+      call('start', 'TaskUpdate', { taskId: '12', id: '13', status: 'in_progress' }, 3),
+    ];
+    const analysis = analyse(loadSession(writeSession(records, {})));
+    expect(finding(analysis, 'H4').verdict).toBe('not seen');
+    expect(finding(analysis, 'H4').evidence.join('\n')).toContain('unresolved');
+    expect(renderReport(analysis)).toContain('TaskUpdate task 12');
+  });
+
   it('H3: more than two exchanges between a pair is called out', () => {
     const send = (i: number, to: string): Rec => call(`m${i}`, 'SendMessage', { to, message: `m${i}` }, i);
     const file = writeSession([], { kaan: { meta: {}, records: [send(1, 'deniz'), send(3, 'deniz'), send(5, 'deniz')] }, deniz: { meta: {}, records: [send(2, 'kaan'), send(4, 'kaan')] } });

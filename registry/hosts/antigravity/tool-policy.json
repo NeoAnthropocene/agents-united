@@ -86,8 +86,8 @@
       "conditions": [
         {
           "kind": "platform",
-          "detail": "macOS and Linux use the unified permission engine and presets (the terminal sandbox is on under the Default preset); Windows still uses the earlier terminal-execution and sandbox-preview settings",
-          "source": "pages/permissions/permissions.md#macos--linux"
+          "detail": "Current App documentation describes updated and previous permission settings with Windows and other platform, version, account and sandbox availability conditions; runtime behavior on the pinned CLI is separately observed",
+          "source": "pages/permissions/permissions.md#updated-permission-settings"
         },
         {
           "kind": "setting",
@@ -128,7 +128,7 @@
         {
           "kind": "setting",
           "detail": "The read_url permission defaults to Ask: the agent asks before it fetches a page unless an allow rule covers the domain",
-          "source": "pages/permissions/permissions.md#default-system-behaviors--guardrails"
+          "source": "pages/permissions/permissions.md#default-system-behaviors-and-guardrails"
         }
       ]
     },
@@ -142,7 +142,7 @@
         {
           "kind": "setting",
           "detail": "The read_url permission defaults to Ask: the agent asks before it fetches a page unless an allow rule covers the domain",
-          "source": "pages/permissions/permissions.md#default-system-behaviors--guardrails"
+          "source": "pages/permissions/permissions.md#default-system-behaviors-and-guardrails"
         }
       ]
     },

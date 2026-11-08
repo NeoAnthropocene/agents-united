@@ -50,6 +50,9 @@ Native output lands in `registry/hosts/claude/` as an `.mcp.json` fragment (proj
 
 ## Authoring notes (agents-united, not host behaviour)
 
+- The MCP snapshot is held at its prior version by the 2026-11-06 audit. Its rule above about gateway tool-search defaults is version-bound: the locked [2.1.304 changelog](../changelog.md) reports a newer default. Do not author current gateway behavior from the held snapshot until the security hold is resolved and the current page reviewed.
+
+
 - Bundle wiring for a host is `install-time data only`: the lane may print a `claude mcp add` command or write a project `.mcp.json` entry, but the user's approval and any credentials remain theirs.
 - Check every committed entry against the rules above: has `type` for URL entries, no literal secrets, expanded variables use non-credential names, plugin-scoped tool names in permission rules and hook matchers.
 - Not snapshotted: `managed-mcp`, the settings reference and the environment-variable page. Add them to `sources.json` before authoring org-policy content.

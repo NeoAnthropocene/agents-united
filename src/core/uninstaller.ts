@@ -309,8 +309,12 @@ export class UninstallEngine {
       // its `installed.bundles` entry (older partial removals, pre-fix rosters) still has records
       // naming this owner, and those must be reachable — otherwise `agents remove` reports
       // "No installed assets found" for assets that are visibly right there in the lockfile.
-      if (resolved && resolved.targetBundle) {
-        const bundleName = resolved.targetBundle;
+      const recordedOwner = lockfile.installed.bundles.includes(identifier) ||
+        Object.values(lockfile.files).some(m => assetOwners(m).includes(identifier)) ||
+        Object.values(lockfile.projections || {}).some(p => (p.owners ?? []).includes(identifier));
+      const retiredBundle = !resolved && recordedOwner;
+      const bundleName = resolved?.targetBundle ?? (retiredBundle ? identifier : undefined);
+      if (bundleName) {
         const ownsSomething =
           Object.values(lockfile.files).some(m => assetOwners(m).includes(bundleName)) ||
           Object.values(lockfile.projections || {}).some(p => (p.owners ?? []).includes(bundleName));
@@ -327,6 +331,38 @@ export class UninstallEngine {
               : 0;
             if (ownedFiles.length === 0 && ownedProjections === 0) {
               throw new Error(`No installed assets found matching "${bundleName}".`);
+            }
+
+            // A retired definition cannot be re-resolved after a partial removal. Check every
+            // exclusively owned recorded artifact before touching any of them.
+            if (retiredBundle && !options.force) {
+              for (const [relPath, meta] of ownedFiles) {
+                if (assetOwners(meta).some(owner => owner !== bundleName)) continue;
+                const file = path.join(targetDir, relPath);
+                if (meta.method !== 'symlink' && await fs.pathExists(file) && await this.calculateHash(file) !== meta.hash) {
+                  throw new Error(`File ${relPath} has user modifications. Use --force to remove.`);
+                }
+                for (const projection of meta.projectedTo ?? []) {
+                  const projectedFile = path.join(workspaceRoot, projection);
+                  const hash = lockfile.projections?.[projection]?.hash;
+                  if (await fs.pathExists(projectedFile)) {
+                    const unchanged = hash ? await this.calculateHash(projectedFile) === hash : true;
+                    const managed = await this.isManagedProjection(projectedFile, projection === 'AGENTS.md', hash);
+                    if (!unchanged || !managed) throw new Error(`Projection ${projection} has user modifications. Use --force to remove.`);
+                  }
+                }
+              }
+              for (const [relPath, proj] of Object.entries(lockfile.projections ?? {})) {
+                const owners = projectionOwners(relPath, proj);
+                if (!owners.includes(bundleName) || owners.some(owner => owner !== bundleName)) continue;
+                const file = path.join(workspaceRoot, relPath);
+                if (!await fs.pathExists(file)) continue;
+                const managed = proj.managedMarker
+                  ? await this.isManagedProjection(file, relPath === 'AGENTS.md')
+                  : await this.calculateHash(file) === proj.hash;
+                const unchanged = proj.hash ? await this.calculateHash(file) === proj.hash : true;
+                if (!managed || !unchanged) throw new Error(`Projection ${relPath} has user modifications. Use --force to remove.`);
+              }
             }
 
             // Clean up compound projections using owner refcounting
@@ -557,7 +593,7 @@ export class UninstallEngine {
             }
           }
         }
-      } else {
+      } else if (resolved) {
         // Item removal mode
         const itemTargetRelPaths = Object.keys(lockfile.files).filter(p => p.includes(identifier));
 

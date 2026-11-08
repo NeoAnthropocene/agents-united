@@ -561,8 +561,9 @@ describe('ClaudeProjector.rewriteBody — send_message prose rewrite', () => {
     const plan2 = await ClaudeProjector.planCompoundProjection(da, 'project', minimalResolved(daRoster), registryDir);
     const coord2 = plan2.find(a => a.kind === 'role' && a.relPath.endsWith('/orchestrator-digital-agency.md'));
     const allow2 = allowOf(coord2!.content ?? '');
-    expect(allow2.length).toBe(11);
+    expect(allow2.length).toBe(12);
     expect(allow2).toContain('motion-designer');
+    expect(allow2).toContain('3d-designer');
     expect(allow2).toContain('sound-designer');
 
     // The plugin mirror stays byte-identical to the project projection.

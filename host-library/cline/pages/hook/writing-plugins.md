@@ -300,9 +300,9 @@ cline-github-plugin/
       SKILL.md
 ```
 
-Each bundled skill follows the same directory format as any other [Cline skill](/customization/skills). When the plugin is installed or loaded through `pluginPaths`, Cline discovers those skills automatically.
+Each bundled skill follows the same directory format as any other [Cline skill](https://docs.cline.bot/customization/skills.md). When the plugin is installed or loaded through `pluginPaths`, Cline discovers those skills automatically.
 
-See [Plugins](/customization/plugins) for the full manifest format, directory layout, and the [typescript-lsp-plugin](https://github.com/cline/typescript-lsp-plugin) for a complete working example.
+See [Plugins](https://docs.cline.bot/customization/plugins.md) for the full manifest format, directory layout, and the [typescript-lsp-plugin](https://github.com/cline/typescript-lsp-plugin) for a complete working example.
 
 ## Plugin Design Guidelines
 
@@ -315,3 +315,6 @@ See [Plugins](/customization/plugins) for the full manifest format, directory la
 4. Use lifecycle hooks for observation (logging, metrics, auditing), not for modifying agent behavior. If you need to modify behavior, consider using the `beforeRun` or `beforeModel` hooks to adjust the system prompt or context.
 
 5. Handle errors gracefully in hooks. A thrown error in `beforeTool` will count as a tool failure. If your hook is purely observational, catch errors internally.
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

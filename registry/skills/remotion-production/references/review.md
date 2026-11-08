@@ -6,10 +6,24 @@ not an encoded-media inspection or creative approval.
 
 ## Inspect the actual output
 
-The helper writes `video.mp4`, stills at distinct indices from 0, floor(N/2) and N-1,
+By default the helper writes `video.mp4`, stills at distinct indices from 0, floor(N/2) and N-1,
 and `render-evidence.json` into its exclusive output folder. It leaves encoded inspection,
 visual review, listening and added async-media readiness unverified. A failure retains
 partial output and `render-failure.json` with the stage; do not deliver partial files as final.
+
+For iteration, use `render --frames 20-30 --still-frames 20,30` for an inclusive
+video range, or `render --stills-only true --still-frames 20,30` for stills without
+encoding. Indices refer to the full canonical timeline; selected stills may lie outside
+the video range. The options reject duplicate, empty or out-of-range stills and
+`--stills-only true` cannot be combined with `--frames`. The same existing browser,
+snapshot, licence and audio-handoff gates apply. Each attempt needs a new output folder.
+
+Evidence labels these requests `preview`, records the inclusive range and expected
+frame count and duration (or null for stills-only), and hashes the artifacts actually
+written. These values are expectations, not measured encoded output. A preview is not
+a final export or full audio QC; full playback and listening remain unverified.
+Remotion documents [`renderMedia()` frame ranges](https://www.remotion.dev/docs/options/frames)
+and [inclusive ranges](https://www.remotion.dev/docs/cli/render).
 
 Use an available local probe, for example:
 
@@ -17,7 +31,10 @@ Use an available local probe, for example:
 ffprobe -v error -count_frames -show_entries stream=codec_name,pix_fmt,color_range,color_space,width,height,avg_frame_rate,nb_frames,nb_read_frames,sample_rate,channels,start_time,duration -of json "<output>/video.mp4"
 ```
 
-Require approved H.264 dimensions, integer timebase fps, N video frames and N/fps duration;
+For a final full export, require approved H.264 dimensions, integer timebase fps,
+N canonical video frames and N/fps duration. For a bounded preview, inspect the
+selected inclusive frame count and its expected duration; it cannot establish full
+audio QC. For either video, compare the actual decoded result to the request;
 record actual pixel format/color range/color space rather than copying requested settings.
 If the destination requires limited range or another format, make that an explicit export
 decision and verify actual output. This helper's requested `yuv420p` alone does not prove

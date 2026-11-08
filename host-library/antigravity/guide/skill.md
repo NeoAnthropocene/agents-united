@@ -1,7 +1,7 @@
 ---
 host: antigravity
 artifact: skill
-reviewedAgainst: "2.0 2.18.1, CLI 1.2.11, IDE 2.5.5, SDK 0.1.18"
+reviewedAgainst: "Documentation fetched 2026-11-06; runtime unverified"
 ---
 
 # Antigravity — authoring guide: skills (including folder anatomy)
@@ -21,19 +21,19 @@ Native output lands in `registry/hosts/antigravity/skills/<skill>/` (Plan 032, P
 
 ### Loading and invoking
 
-- **Loading is progressive: the agent sees names and descriptions at the start, reads the full `SKILL.md` when a skill looks relevant, and then follows it.** Mentioning a skill by name makes sure it is used. [How the agent uses skills](../pages/skill/skills.md#how-the-agent-uses-skills)
-- **In Antigravity 2.0, `/<skill-name>` invokes a skill explicitly; the CLI converts every skill into a slash command automatically.** [Invoking skills in Antigravity 2.0](../pages/skill/skills.md#invoking-skills-in-antigravity-20), [Slash command conversion](../pages/skill/skills.md#slash-command-conversion)
+- **Loading is progressive: the agent sees names and descriptions on every turn, reads the full `SKILL.md` when a skill looks relevant, and then follows it.** Mentioning a skill by name makes sure it is used. [How the agent uses skills](../pages/skill/skills.md#how-the-agent-uses-skills)
+- **In Antigravity 2.0, `/<skill-name>` invokes a skill explicitly; the CLI converts every skill into a slash command automatically.** [Invoking skills in Antigravity 2.0](../pages/skill/skills.md#invoking-skills-in-the-antigravity-app), [Slash command conversion](../pages/skill/skills.md#slash-command-conversion)
 
 ### Locations
 
 - **Workspace skills are in `<workspace-root>/.agents/skills/<skill-folder>/`; the older `.agent/skills` is still read.** [Agent skills](../pages/skill/skills.md#agent-skills)
-- **Global skills are in `~/.gemini/config/skills/` for Antigravity 2.0 and the IDE (the IDE also reads the legacy `~/.gemini/antigravity/skills/`) and in `~/.gemini/antigravity-cli/skills/` for the CLI.** [Antigravity 2.0 skill locations](../pages/skill/skills.md#antigravity-20-skill-locations), [CLI skill locations](../pages/skill/skills.md#cli-skill-locations), [Antigravity IDE skill locations](../pages/skill/skills.md#antigravity-ide-skill-locations)
-- **Plugins can carry skills (`skills/<name>/SKILL.md`, and `~/.gemini/antigravity-cli/plugins/<name>/skills/` for the CLI), managed with `agy plugin`.** [Managing skills with plugins](../pages/skill/skills.md#managing-skills-with-plugins), [Directory structure](../pages/plugin/plugins.md#directory-structure)
+- **Global skills are in `~/.gemini/config/skills/` for Antigravity 2.0 and the IDE (the IDE also reads the legacy `~/.gemini/antigravity/skills/`) and in `~/.gemini/antigravity-cli/skills/` for the CLI.** [Antigravity 2.0 skill locations](../pages/skill/skills.md#antigravity-app-skill-locations), [CLI skill locations](../pages/skill/skills.md#cli-skill-locations), [Antigravity IDE skill locations](../pages/skill/skills.md#antigravity-ide-skill-locations)
+- **Plugins can carry skills (`skills/<name>/SKILL.md`, and `~/.gemini/antigravity-cli/plugins/<name>/skills/` for the CLI), managed with `agy plugin`.** [Managing skills with plugins](../pages/skill/skills.md#managing-skills-with-plugins), [Directory structure](../pages/plugin/plugins.md#what-a-plugin-bundles)
 - **In the SDK, `skills_paths` takes a skill directory or a parent holding several.** [Agent skills](../pages/tools/sdk-tools.md#agent-skills)
 
 ## Authoring notes (agents-united, not host behaviour)
 
-- **The docs list no size limit and no description length limit for a skill.** `docs/host-primitive-matrix.md` records the same, and the portability lint (`skill-portability-lint.ts`) already holds every skill to the stricter Cline and Claude limits, which makes them safe here.
+- **Skill size and description limits require separate verification.** The current skill page does not establish a limit; the held web changelog reports a CLI plugin-validation warning for bodies over 24 KB, which has not been tested locally.
 - **Only `name` and `description` are documented.** The registry's skills also carry `metadata:` and, for some, the Claude-only `disable-slash-command`; neither has a documented meaning here, so a native package says which keys it relied on being ignored (unverified on the CLI).
 - **`.agents/skills/` is the canonical store of this repository and also a lane Cline reads** (and, observed, one that wins over `.cline/skills/`, ADR 0028), so a skill installed here is seen by both hosts; names must not collide across lanes.
 - **Two registry names are not clean for this host** (recorded in the profile as `skillNames`, unverified): `generative_ui` keeps its underscore in the `.agents/skills/` copy although the docs ask for lowercase with hyphens, and `grill-me` is also a built-in slash command. `tests/native-antigravity-skills.test.ts` pins both as the only exceptions and reads the built-in names from the snapshots.

@@ -2,7 +2,7 @@
 
 The SDK lets you extend your agent’s capabilities using [custom Python functions](#custom-python-functions), built-in web tools, built-in system tools, and agent skills.
 
-For Model Context Protocol (MCP) server configuration, see the [MCP Documentation](/docs/sdk/mcp).
+For Model Context Protocol (MCP) server configuration, check out the [MCP documentation](/docs/sdk/mcp).
 
 ## Built-in tools reference
 
@@ -30,7 +30,7 @@ In some cases you may want to restrict the tools that your agent can access. You
 
 For example, you can configure your agent to only have access to `read_only` built-in tools:
 
-```
+```python
 from google.antigravity import LocalAgentConfig, CapabilitiesConfig
 from google.antigravity.types import BuiltinTools
 
@@ -47,7 +47,7 @@ In some cases you may want to create custom Python functions that your agent can
 
 For example, you can configure your agent to leverage a custom `get_weather` function:
 
-```
+```python
 from google.antigravity import Agent, LocalAgentConfig
 
 def get_weather(city: str) -> str:
@@ -67,7 +67,7 @@ Web search (`SEARCH_WEB`) and URL fetching (`READ_URL_CONTENT`) tools are enable
 
 For example, you can ask your agent to perform Google searches or read web pages:
 
-```
+```python
 from google.antigravity import Agent, LocalAgentConfig
 
 config = LocalAgentConfig()
@@ -83,7 +83,7 @@ In `LocalAgentConfig`, `skills_paths` accepts paths to individual skill director
 
 For example, you can configure your agent to leverage a custom `code-review` skill:
 
-```
+```python
 from google.antigravity import Agent, LocalAgentConfig
 
 config = LocalAgentConfig(
@@ -97,7 +97,7 @@ async with Agent(config) as agent:
 
 ## Sample code
 
-For full working code examples, see the GitHub repository:
+For full working code examples, check out the GitHub repository:
 
 *   [`custom_tools.py`](https://github.com/google-antigravity/antigravity-sdk-python/blob/main/examples/getting_started/custom_tools.py)
 *   [`web_tools.py`](https://github.com/google-antigravity/antigravity-sdk-python/blob/main/examples/getting_started/web_tools.py)

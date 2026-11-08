@@ -9,7 +9,7 @@ Studio never becomes a dependency of the final pipeline. A hands-on choice adds 
 
 ## Starting Studio
 
-Complete licence preflight and scaffold first. If the official add-on is installed, use its `remotion-studio` skill; otherwise the project-local CLI is enough:
+Complete licence preflight and scaffold first. If the upstream Skill or compatible official plugin is installed, use its `remotion-studio` Skill; otherwise the project-local CLI is enough:
 
 ```text
 cd media/remotion

@@ -1,0 +1,8 @@
+{
+  "name": "Original jade ceramic bottle",
+  "units": "meters",
+  "source": "media/source/create-bottle.mjs",
+  "camera": "automatic bounding-box fit",
+  "route": "threejs-browser",
+  "purpose": "local technical fixture; human visual acceptance unverified"
+}

@@ -8,9 +8,9 @@
 
 Plan & Act modes separate thinking from doing. Plan mode lets you explore and strategize without changing files. Act mode executes against your plan.
 
-<Tip>
-  **New to Plan & Act?** Watch [Plan & Act Deep Dive](https://youtu.be/b7o6URFPp64) to see it in action.
-</Tip>
+> [!TIP]
+>
+> **New to Plan & Act?** Watch [Plan & Act Deep Dive](https://youtu.be/b7o6URFPp64) to see it in action.
 
 ## Plan Mode
 
@@ -32,9 +32,9 @@ Once you have a plan, switch to Act mode. Cline retains the full context from yo
 
 The conversation history carries over when you switch modes. Cline remembers everything you discussed in Plan mode, so you don't need to repeat yourself. This makes the transition seamless.
 
-<Note>
-  While you can start directly in Act mode, planning first is highly recommended. The planning phase intentionally builds context that Cline needs to implement changes effectively. Without it, Cline may lack the understanding required to make the right decisions.
-</Note>
+> [!NOTE]
+>
+> While you can start directly in Act mode, planning first is highly recommended. The planning phase intentionally builds context that Cline needs to implement changes effectively. Without it, Cline may lack the understanding required to make the right decisions.
 
 ## Typical Workflow
 
@@ -91,7 +91,7 @@ For complex tasks that need thorough analysis, use the `/deep-planning` slash co
 3. Creates a detailed implementation plan
 4. Asks clarifying questions before proceeding
 
-The deep planning prompt is optimized for each model family, so it adapts to the strengths of whatever model you're using. See [/deep-planning](/core-workflows/using-commands#deep-planning) for more details.
+The deep planning prompt is optimized for each model family, so it adapts to the strengths of whatever model you're using. See [/deep-planning](https://docs.cline.bot/core-workflows/using-commands.md#deep-planning) for more details.
 
 ## Choosing the Right Approach by Task Size
 
@@ -116,7 +116,10 @@ For complex features that span multiple files, require architectural decisions, 
 ## Tips
 
 * Have Cline write a markdown file summarizing the plan for future reference
-* Use [file mentions](/core-workflows/working-with-files) to point Cline at relevant files during planning
+* Use [file mentions](https://docs.cline.bot/core-workflows/working-with-files.md) to point Cline at relevant files during planning
 * Switch back to Plan mode when encountering unexpected complexity rather than pushing through
-* Enable [Checkpoints](/core-workflows/checkpoints) before Act mode so you can roll back if needed
+* Enable [Checkpoints](https://docs.cline.bot/core-workflows/checkpoints.md) before Act mode so you can roll back if needed
 * For large tasks, ask Cline to create a todo list during planning that you can track in Act mode
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

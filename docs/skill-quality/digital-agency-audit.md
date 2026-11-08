@@ -2,6 +2,32 @@
 
 Plan 035, slice S1. Written 2026-10-04. The measure is `scripts/skill-quality/measure.ts` (`npm run skills:quality -- --bundle digital-agency` prints the same numbers); the policy is ADR 0040; the gate is `tests/skill-quality-ratchet.test.ts`.
 
+The title and original table retain the 2026-10-04 snapshot. The current
+Bundle declares 71 Skills; later dated inventory entries below include two
+Plan 050 shared worker-support Skills. Historical findings are not current
+measurements unless a later entry says so.
+
+### Plan 050 shared worker support — 2026-11-07
+
+The current frozen-corpus measurement reports the following. “Available” is
+not an observed native Skill invocation: Chris's [core](../../registry/core/orchestrator-digital-agency.core.md)
+and [Claude role](../../registry/hosts/claude/agents/orchestrator-digital-agency.md)
+state the explicit-request routing contract without preloading the router.
+The router's [worker contract](../../registry/skills/host-agent-router/references/worker-contract.md)
+uses the guardrail and handoff instructions for routed work.
+
+| Skill | Loaded by | Provenance | Body lines / extra files | Templated share | Verdict | Priority | Inspiration | Slice |
+|---|---|---|---|---|---|---|---|---|
+| `host-agent-router` | Chris on an explicit cross-Host request; not preloaded | in-house, original MIT | 31 / 7 | 0.00 | keep; opt-in routing and consent | - | [ADR 0065](../adr/0065-host-agent-router-cross-host-dispatch.md), [Plan 050](../../plans/050-host-agent-router-in-every-bundle.md) | 050 |
+| `git-guardrails` | routed workers via router contract; available to agency | mattpocock/skills recovered-head d81f3a1, MIT; upstream path match requires confirmation before restoring deferred extras | 14 / 2 | 0.07 | keep; shared safety guidance | - | [provenance record](../../host-library/_upstream/skills.json) and router worker contract | 050 |
+
+`tests/host-agent-router-bundles.test.ts` checks the declarations and opt-in
+clause; `tests/host-agent-router-installation.test.ts` checks installed files,
+hashes and shared ownership. The sampled installation proof passed 14/14.
+These checks do not establish live model non-invocation, consent behavior, or
+enforcement of prose instructions. Those behaviors remain **unverified** for
+the amended agency workflow. The audit does not authorize a Host session.
+
 ## How the measure works
 
 A skill's body is reduced to its content lines (no headings, fences, code blocks, table rules, or lines under three words). Each line is lower-cased and stripped of punctuation, and the skill's own name is replaced by `@` in its kebab, spaced and joined forms, so "The Ab Test Setup skill provides..." and "The Signup Flow Cro skill provides..." become the same line. The **templated share** is the fraction of those lines found in a **frozen corpus**: the 93 normalised lines that three or more skills of the catalog carried when the audit ran (`tests/fixtures/skill-boilerplate-corpus.txt`). A skill at **0.30 or more** is templated. A hand-written in-house skill under 30 content lines with no `references/` or `scripts/` is a **stub**. Short `workflow-*` skills are phase scripts by design (ADR 0016) and are exempt from the stub rule, not from the templated one.

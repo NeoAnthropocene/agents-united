@@ -102,6 +102,9 @@ export const EVIDENCE: Record<string, RegExp> = {
 
 /** Per-role overrides: role name, then invariant text. */
 export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
+  'agency-3d-designer': {
+    'When delegated, route user questions through the calling lead; in direct standalone work, ask the user for missing brief inputs.': /When delegated, questions for the user go to the lead under `Open items`; you never ask the user directly\. In direct standalone use, ask the user for missing brief inputs\./,
+  },
   // The leads hand their result to the user, not to a spawner; each says where.
   'orchestrator-engineering': {
     [COMMS.handBack]: /You synthesise reports in the output contract above/,

@@ -90,7 +90,7 @@ export function planInstall(options = {}) {
       id: 'project-local',
       recommended: true,
       reason: 'no admin rights, reproducible per project, stays inside the project folder',
-      command: 'npm install --save-dev ffmpeg-static',
+      command: 'npm install --save-dev ffmpeg-static --global=false --prefix <project> --workspaces=false',
       cwd: project,
       verifies: ['binary exists at node_modules/ffmpeg-static', 'verify reports ok'],
     });
@@ -111,6 +111,40 @@ export function planInstall(options = {}) {
   return { platform, steps, verified: false };
 }
 
+function findNpmCli() {
+  const candidates = [process.env.npm_execpath];
+  for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
+    if (!dir) continue;
+    try {
+      const executable = path.join(dir, 'npm');
+      if (fs.lstatSync(executable).isSymbolicLink()) {
+        const target = fs.realpathSync(executable);
+        if (path.basename(target) === 'npm-cli.js' && fs.statSync(target).isFile()) candidates.push(target);
+      }
+    } catch { /* This PATH entry does not contain a usable npm symlink. */ }
+    candidates.push(path.join(dir, 'node_modules', 'npm', 'bin', 'npm-cli.js'));
+    candidates.push(path.resolve(dir, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'));
+  }
+  for (const candidate of candidates) {
+    if (!candidate || !path.isAbsolute(candidate)) continue;
+    try {
+      const target = fs.realpathSync(candidate);
+      if (path.basename(target) === 'npm-cli.js' && fs.statSync(target).isFile()) return target;
+    } catch { /* Continue to the next automatically discovered candidate. */ }
+  }
+  throw new Error('cannot locate npm-cli.js; install Node with npm on PATH');
+}
+
+function samePath(left, right) {
+  const normalize = value => process.platform === 'win32' ? path.normalize(value).toLowerCase() : path.normalize(value);
+  return normalize(left) === normalize(right);
+}
+
+function existingEntry(target) {
+  try { return fs.lstatSync(target); }
+  catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+}
+
 /** Runs an install step only with explicit consent. Never edits PATH here. */
 export function installFfmpeg(mode, options = {}) {
   if (options.consent !== true) {
@@ -121,6 +155,44 @@ export function installFfmpeg(mode, options = {}) {
   if (!step) throw new Error(`unknown install mode "${mode}"; use ${plan.steps.map(s => s.id).join(', ')}`);
   if (!step.recommended && options.allowSystemInstall !== true) {
     throw new Error(`${mode} changes the machine beyond this project; pass --allow-system-install as well.`);
+  }
+  if (mode === 'project-local') {
+    if (typeof options.project !== 'string' || !options.project.trim()) throw new Error('project-local install requires a project directory');
+    const project = path.resolve(options.project);
+    const manifest = path.join(project, 'package.json');
+    try {
+      if (!samePath(fs.realpathSync(project), project) || !fs.statSync(project).isDirectory()) throw new Error();
+    } catch { throw new Error('project-local install requires a real project directory'); }
+    const manifestEntry = existingEntry(manifest);
+    if (manifestEntry) {
+      try {
+        if (manifestEntry.isSymbolicLink() || !manifestEntry.isFile()) throw new Error();
+        const parsed = JSON.parse(fs.readFileSync(manifest, 'utf8'));
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
+      } catch { throw new Error('project-local install requires a valid regular package.json'); }
+    }
+    const modules = path.join(project, 'node_modules');
+    const pkg = path.join(modules, 'ffmpeg-static');
+    for (const target of [modules, pkg]) {
+      if (existingEntry(target) && !samePath(fs.realpathSync(target), target)) throw new Error('project-local install refuses symlinked node_modules or ffmpeg-static');
+    }
+    const npmCli = options.npmCli ?? findNpmCli();
+    if (!manifestEntry) fs.writeFileSync(manifest, '{"private":true}\n', { flag: 'wx' });
+    const args = [npmCli, 'install', '--save-dev', 'ffmpeg-static', '--global=false', '--prefix', project, '--workspaces=false'];
+    const run = options.run ?? ((command, argv, cwd) => spawnSync(command, argv, {
+      cwd, encoding: 'utf8', windowsHide: true, shell: false, stdio: 'pipe',
+    }));
+    const result = run(process.execPath, args, project);
+    if (result?.status === 0) {
+      const binary = path.join(pkg, process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
+      try {
+        if (!samePath(fs.realpathSync(modules), modules) || !samePath(fs.realpathSync(pkg), pkg)
+          || !fs.lstatSync(binary).isFile()) throw new Error();
+        const relative = path.relative(project, fs.realpathSync(binary));
+        if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error();
+      } catch { throw new Error('installed FFmpeg binary is missing or outside the project'); }
+    }
+    return { mode, command: step.command, exit: result?.status ?? null, stdout: result?.stdout ?? '', stderr: result?.stderr ?? '' };
   }
   const run = options.run ?? ((command, args, cwd) => spawnSync(command, args, {
     cwd, encoding: 'utf8', windowsHide: true, shell: true, stdio: 'pipe',
@@ -263,6 +335,9 @@ function main(args) {
   return 2;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+let isEntry = false;
+try { isEntry = Boolean(process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href); }
+catch { /* An import with no file entry point must not run the CLI. */ }
+if (isEntry) {
   process.exitCode = main(process.argv.slice(2));
 }

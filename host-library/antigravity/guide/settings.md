@@ -1,7 +1,7 @@
 ---
 host: antigravity
 artifact: settings
-reviewedAgainst: "2.0 2.18.1, CLI 1.2.11, IDE 2.5.5, SDK 0.1.18"
+reviewedAgainst: "Documentation fetched 2026-11-06; runtime unverified"
 ---
 
 # Antigravity — authoring guide: settings and configuration files
@@ -26,11 +26,11 @@ Distilled from the snapshots in `host-library/antigravity/pages/`. Primary sourc
 ### Per-surface data
 
 - **The application data directory differs per surface: `~/.gemini/antigravity` (2.0), `~/.gemini/antigravity-cli` and `~/.gemini/antigravity-ide`.** [Common Input Fields](../pages/hook/hooks.md#common-input-fields)
-- **The permission preset is a macOS and Linux setting; Windows has terminal-execution, file-access and sandbox toggles instead.** [Permission Settings](../pages/agent/agent-settings.md#permission-settings), [Windows](../pages/agent/agent-settings.md#windows)
+- **Current App documentation describes updated and previous permission settings; which applies on Windows is unverified.** [Permission settings](../pages/agent/agent-settings.md#permission-settings), [Previous permission settings](../pages/agent/agent-settings.md#previous-permission-settings)
 
 ## Authoring notes (agents-united, not host behaviour)
 
 - **A package writes no user settings.** `settings.json`, `keybindings.json` and the permission lists are the user's; changing them is a security-relevant act the package never performs, in line with the permission-preset rule for the other hosts (a preset is an explicit opt-in, never implied). The only host files a package writes are the ones the other guides describe: agents, skills, rules, hooks, an MCP fragment and a plugin.
 - **The settings file lives under `~/.gemini/`, outside the repository,** so no test may touch it; any check reads it through an injectable path.
 - **The two config directories are easy to confuse:** `~/.gemini/config/` holds customizations shared by 2.0 and the IDE (agents, skills, rules, hooks, MCP, plugins, sidecars), while `~/.gemini/antigravity-cli/` holds the CLI's own copy of skills, rules, plugins and `settings.json`. A global install has to say which it targets.
-- Docs and CLI differ in version: the snapshot baseline is CLI 1.2.11 and `agy --version` reports 1.2.14 with 1.2.15 in `agy changelog`. Re-run the library check against `agy changelog` as well (plan 031), because the docs changelog lags.
+- The locked web changelog baseline is CLI 1.2.11 and the separate command changelog baseline is 1.2.16. `agy` was absent from PATH on 2026-11-06, so the installed version and current command changelog are unverified.

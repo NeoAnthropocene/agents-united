@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 61 agents (9 orchestrators + 52 sub-agents) · 218 skills (148 domain skills + 70 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
+**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 62 agents (9 orchestrators + 53 sub-agents) · 210 skills (139 domain skills + 71 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories.
 
 ---
 
@@ -192,17 +192,16 @@ An **Essentials** bundle is the starting team for a department. **Addons** exten
 | **🔒 Security Operations** | `security-operations` | `secops-cloud-security`, `secops-application-security`, `secops-compliance-grc` | `orchestrator-security` |
 | **🔬 Deep Research** | `deep-research` | `deep-research-analytics` | `orchestrator-research` |
 | **💼 Business Strategy** | `business-strategy` | `business-financial-modeling`, `business-market-intelligence`, `business-operations-legal` | `orchestrator-business` |
-| **🏢 Organization** | `digital-agency` ⚡ | `remotion-agent-skills` (optional; only after Remotion is selected) | `orchestrator-digital-agency` |
+| **🏢 Organization** | `digital-agency` ⚡ | Official Remotion Skills obtained upstream when selected | `orchestrator-digital-agency` |
 
 ```bash
 agents add software-engineering        # one bundle
 agents add domain:marketing            # a whole department, picked interactively
 agents add qa-automation               # an addon
 agents add full                        # end-user suite; excludes contributor-only content
-agents add remotion-agent-skills       # optional official Remotion skills; source-available licence
 ```
 
-> The Remotion add-on is **not** in `full` or an essentials bundle. Install it only after choosing Remotion and confirming eligibility for the [Remotion License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md). It is source-available, not MIT.
+> Official Remotion Skills are obtained directly from upstream or a compatible plugin; Agents United does not redistribute them. The original Remotion production helpers remain included. Follow the [setup and migration guide](registry/skills/remotion-production/references/official-agent-skills.md), preserve existing managed edits, and verify the applicable upstream terms and runtime eligibility.
 
 > [!NOTE]
 > **Maturity.** `software-engineering`, `product-design`, and `universal-orchestration` are marked **stable**. `digital-agency` and the other bundles are usable but still being hardened. The CLI gates bundles marked under construction behind `--allow-under-construction`.
@@ -214,7 +213,7 @@ agents add remotion-agent-skills       # optional official Remotion skills; sour
 
 #### 🌐 Universal
 - **`universal-skills`** ⭐: Socratic grilling, PRD generation, ADRs, session handoff, MCP setup. No agents, skills only.
-- **`universal-orchestration`**: `orchestrator-universal`, the Prime Orchestrator front door. It grills ambiguous requests, routes to the right department using its Domain Atlas, installs with consent, and hands off. It also ships `host-agent-router`, which on request runs one task headlessly on another host CLI (Cline, Antigravity, Codex or Claude) on the side with the most 5-hour and weekly headroom. Every routed worker follows the same contract on every host (the `git-guardrails` rules and a `handoff` report), which also ships in the bundle.
+- **`universal-orchestration`**: `orchestrator-universal`, the Prime Orchestrator front door. It grills ambiguous requests, routes to the right department using its Domain Atlas, installs with consent, and hands off. Like every Bundle, it ships `host-agent-router`, `handoff` and `git-guardrails`. Only an explicit request to use another host CLI activates routing (Cline, Antigravity, Codex or Claude); the lead names the hosts and account spending, using existing consent for the same hosts and scope where given. Department leads do not preload the router. Installed availability and opt-in wording are checked offline; unprompted model behavior remains unverified ([ADR 0066](docs/adr/0066-dormant-router-contract-in-every-bundle.md)).
 - **`full`**: the end-user suite; contributor-only content is excluded, while shared end-user skills remain included.
 
 #### 🛠️ Software Engineering
@@ -275,7 +274,7 @@ agents add remotion-agent-skills       # optional official Remotion skills; sour
 
 ### Skills
 
-The 218 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 148 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 70 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 210 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 139 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skill) and 71 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
@@ -466,6 +465,8 @@ o Prerequisite Evaluation: digital-agency (Organization Bundle) ----------------
 ### Motion and sound in the agency
 
 The agency and `full` inventories include nine original media Skills: `motion-design-direction`, `native-motion-production`, `remotion-production`, `video-generation`, `sound-design-direction`, `audio-generation`, `audio-post-production`, `audiovisual-review` and `workflow-agency-motion-production`. Motion owns storyboard, animation, timing and integration; Sound owns sonic direction, sources and final audio. Creative/Brand and Copy keep their approved assets and words; QA and Compliance review evidence. Chris consolidates Media Requests and include/defer/decline during bounded consultation, then obtains input and timing approval. Eleven specialist types are a menu, not a request to launch every role.
+
+The optional standalone `agency-3d-production` Bundle supplies Arda and four original Skills for a Claude-native workspace, along with shared `audiovisual-review` and `handoff`. Direct complete briefs need no agency; Chris routes relevant work to Arda when installed. It is excluded from `full`. Supplied or procedural GLB, project-local Three.js viewer and PNG proof are the initial route; other Hosts and live invocation remain **unverified**.
 
 Native HTML/SVG/canvas is the recommended direct motion route; Remotion React production works independently when chosen. Runtime dependencies stay inside the selected media project. Audio can use supplied/recorded assets or an approved local/API/hybrid route; external footage is a separate opt-in. Installing Skills neither installs both renderers nor connects providers. Saved preferences and a USD ceiling authorize no paid job. Sound-only WAV/sonic-logo work passes from Sound through applicable review to Chris without Motion or video production. See [ADR 0056](docs/adr/0056-agency-motion-sound-production.md) and [the media workflow](registry/skills/workflow-agency-motion-production/SKILL.md).
 
@@ -670,6 +671,8 @@ Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releas
 
 ## 🤝 Credits & Acknowledgments
 
+- **3D production:** four original MIT agents-united Skills (`3d-design-direction`, `threejs-scene-production`, `3d-asset-review`, `workflow-agency-3d-production`) informed by the [3D source audit](docs/research/2026-11-03-3d-designer-source-audit.md); no upstream Skills are vendored. The selected project-local runtime pins Three.js 0.180.0, Playwright 1.62.1 and Khronos glTF Validator 2.0.0-dev.3.10; their own package licences apply. Actual visual acceptance and a live Host session remain **unverified**.
+
 - **Motion technique library:** eight original agents-united prompt cards and Native/Remotion mappings informed by [lemomo-ai/lemo-opuscar](https://github.com/lemomo-ai/lemo-opuscar/tree/bebbbe1aa92a3cb4bb6f83500e61b23a17d1aa00), [JohnHeibel/ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase/tree/0ac8bf2b31942376cb6b8c4074715595d512acd2), [Vincentwei1021/mg-styles-15](https://github.com/Vincentwei1021/mg-styles-15/tree/49052d80bfaf9fa8412cc9710530e5e95a3b8d8c), and [athemeroy/awesome-claude-5-5-videos](https://github.com/athemeroy/awesome-claude-5-5-videos/tree/87e5cbfaa4bf1f6516a6c69be58c42a9b85a1041). No upstream code, prompts or media are copied. [The source audit](docs/research/2026-11-03-motion-technique-sources.md) records distinct code, writing, demo and third-party rights; links and source counts do not prove creative quality.
 
 - **Motion design direction:** original agents-united Skill and ten parameterized blueprints informed by the supplied 2026-10-22 idea snapshots credited in [the prompt blueprint](registry/skills/motion-design-direction/references/prompt-blueprint.md) (twoclipping, tdinh_me, achxvi, RoundtableSpace, ajith_io and whrrari). No upstream prompts, code or reference media were copied; the dated metrics are not independently verified playback or quality results.
@@ -677,7 +680,7 @@ Commit messages follow **Conventional Commits**. `feat:` and `fix:` drive releas
 Agents United proudly builds upon, adapts, and integrates contributions from creators across the open AI agent, cloud platform, and developer tooling ecosystem:
 
 - **Host agent router:** original agents-united Skill (1.0.0, MIT). Its limit readouts and command shapes were observed on Claude Code, Codex, Antigravity and Cline installs (see [ADR 0065](docs/adr/0065-host-agent-router-cross-host-dispatch.md)); no third-party text or code is vendored.
-- **Remotion production:** original agents-united Skill, helper and React templates informed by the [Remotion API documentation](https://www.remotion.dev/docs/) and the reviewed [4.0.539 runtime licence](https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md). The optional `remotion-agent-skills` add-on separately vendors the official [Remotion Agent Skills](https://github.com/remotion-dev/skills) at commit `30d4553ecd46fbc5212fd0ff006ae43af522158b` under the source-available Remotion License, with its licence and notice retained in every skill folder; it is not MIT, not part of `full`, and grants no runtime entitlement. [Plan 037](plans/037-agency-motion-sound.md) records accepted catalog/native authored contracts and isolated Windows project-scope Claude Native Lane copy evidence. Pre-headroom repository typecheck and full serial tests passed on 2026-10-26 (228 files; 4824 passed, 209 skipped). The 2026-10-27 headroom change has current typecheck, focused audio/shared/Native/Remotion and installed-helper mux proof; its fresh final full gate passed (228 files; 4824 passed, 209 unchanged skips), followed by the distinct narrated Claude regression. Original pilot outcomes remain4/6 and are not rescored.
+- **Remotion production:** original agents-united Skill, helper and React templates informed by the [Remotion API documentation](https://www.remotion.dev/docs/) and the reviewed [4.0.539 runtime licence](https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md). Official Remotion Skills are obtained directly from [upstream](https://www.remotion.dev/docs/ai/skills) or an existing compatible plugin. The former twelve-Skill snapshot at `30d4553ecd46fbc5212fd0ff006ae43af522158b` was removed because its standalone redistribution scope remained unresolved; historical source credits and review evidence remain in ADR 0059 and Plan 041. This removal grants no upstream or runtime entitlement. [Plan 037](plans/037-agency-motion-sound.md) records accepted catalog/native authored contracts and isolated Windows project-scope Claude Native Lane copy evidence. Pre-headroom repository typecheck and full serial tests passed on 2026-10-26 (228 files; 4824 passed, 209 skipped). The 2026-10-27 headroom change has current typecheck, focused audio/shared/Native/Remotion and installed-helper mux proof; its fresh final full gate passed (228 files; 4824 passed, 209 unchanged skips), followed by the distinct narrated Claude regression. Original pilot outcomes remain4/6 and are not rescored.
 
 <details>
 <summary><strong>Matt Pocock (<a href="https://github.com/mattpocock">@mattpocock</a> / <a href="https://github.com/mattpocock/skills">mattpocock/skills</a>)</strong></summary>

@@ -1,5 +1,7 @@
 # Rules
 
+Available on: Antigravity App, Antigravity CLI, Antigravity IDE
+
 Rules are persistent instructions, coding standards, and architectural constraints that shape how Antigravity behaves in your codebase. Unlike chat prompts that apply to a single conversation, Antigravity automatically discovers rules from your filesystem and injects them into the agent’s context.
 
 Tip
@@ -8,15 +10,17 @@ Tip
 
 ## Where rules are stored
 
-Antigravity discovers rules across multiple scopes, listed below in order of precedence (highest to lowest). Rules are **cumulative** rather than replacement-based: Antigravity combines all discovered rules across global, workspace, and directory scopes into the prompt. When instructions conflict, more specific directory rules take priority.
+Antigravity discovers rules in two scopes: your workspace, including parent folders up to the repository root, and your global configuration. Rules are **cumulative** rather than replacement-based: Antigravity combines all the rules it finds into the prompt.
 
 ### Directory-scoped rules
 
-You can place an `AGENTS.md` or `GEMINI.md` file—or a `.agents/rules/` directory—in **any subdirectory** of your project. Whenever Antigravity reads or edits a file, it walks up the directory tree from that file’s folder to the workspace root, loading rules at each level:
+You can place an `AGENTS.md` or `GEMINI.md` file—or a `.agents/rules/` directory—in your workspace folder and in any parent folder up to the repository root. Antigravity loads rules at each of these levels:
 
 *   `<dir>/AGENTS.md` or `<dir>/GEMINI.md`
 *   `<dir>/.agents/AGENTS.md` or `<dir>/.agents/GEMINI.md`
 *   `<dir>/.agents/rules/*.md` _(and legacy `<dir>/.agent/rules/*.md`)_
+
+Antigravity doesn’t load rules from subfolders below the workspace folder, even when the agent reads or edits files there. For details, see [Customization discovery](/docs/customization-discovery#workspace-folders-and-parent-directories).
 
 ### Global rules
 
@@ -33,7 +37,7 @@ Caution
 
 Frontmatter requirements depend on the file type:
 
-1.  **`AGENTS.md` and `GEMINI.md` do not use frontmatter.** Antigravity treats its entire content as plain Markdown and keeps it continuously active (`always_on`) for its directory scope.
+1.  **`AGENTS.md` and `GEMINI.md` do not use frontmatter.** Antigravity treats its entire content as plain Markdown and keeps it continuously active (`always_on`).
 2.  **Every `.md` file inside `rules/` must start with YAML frontmatter** declaring a valid `trigger`.
 
 Caution
@@ -42,7 +46,9 @@ Caution
 
 ### Supported frontmatter keys
 
-```
+Rules in `.agents/rules/` support the following YAML frontmatter keys:
+
+```yaml
 ---
 trigger: model_decision       # Required: always_on | model_decision | glob | manual
 description: "..."            # Required for model_decision; recommended for all rules
@@ -58,9 +64,11 @@ globs: "*.ts, *.tsx"          # Required for glob (singular `glob:` is also acce
 
 ### Activation modes
 
+Configure the `trigger` key to control how and when a rule is loaded into context:
+
 *   **`model_decision`** _(best for detailed domain guides)_: Antigravity injects only the rule’s path and `description` upfront (progressive disclosure). The agent reads the full rule on demand when your task matches the description.
 
-    ```
+    ```markdown
     ---
     trigger: model_decision
     description: "Apply these guidelines whenever writing or reviewing database migrations or SQL schema changes."
@@ -76,7 +84,7 @@ globs: "*.ts, *.tsx"          # Required for glob (singular `glob:` is also acce
 
 *   **`glob`** _(file-pattern scoped)_: Automatically activates when the agent interacts with files matching any comma-separated pattern in `globs`:
 
-    ```
+    ```markdown
     ---
     trigger: glob
     globs: "*.proto, **/*.pb.go"
@@ -88,7 +96,7 @@ globs: "*.ts, *.tsx"          # Required for glob (singular `glob:` is also acce
     * Never reuse a deleted field number; always mark both the field number and name as `reserved`.
     ```
 
-*   **`manual`** _(explicit `@` mention only)_: Antigravity never loads these rules automatically. The agent injects the rule only when you explicitly `@`\-mention it in chat (ideal for release checklists or audit rubrics).
+*   **`manual`** _(explicit `@` mention only)_: Antigravity never loads these rules automatically. Antigravity adds the rule to your message only when you [`@`\-mention it](/docs/at-mentions) (ideal for release checklists or audit rubrics). The Antigravity CLI doesn’t support rule mentions.
 
 
 ## Advanced features and limits
@@ -102,7 +110,7 @@ Inside any rule file (`AGENTS.md`, `GEMINI.md`, or `.agents/rules/*.md`), Antigr
     *   **Frontmatter stripping**: If an included file contains YAML frontmatter, Antigravity strips the frontmatter and splices in only the Markdown body.
 *   **`@filename`**: Does **not** inline file contents. Instead, it resolves the path (relative to the rule file, or as a workspace-relative/absolute path) and rewrites it to a canonical absolute workspace path (`@/workspace/path`) so the agent has an unambiguous file reference.
 
-```
+```markdown
 Follow our shared API design standards:
 @[API Design Standards](../docs/api-standards.md)
 
@@ -113,14 +121,20 @@ When updating database models, check @src/db/schema.ts first.
 
 To share rules stored outside `.agents/rules/` or to include nested subdirectories of rules while preserving their YAML frontmatter and triggers, create `.agents/rules.json`:
 
-```
+```json
 {
   "inherits": [
     { "path": "../shared-config/.agents/rules.json" }
   ],
   "entries": [
-    { "path": "../shared-rules", "exclude": ["deprecated_rules.md", "legacy/"] },
-    { "path": "rules", "include_only": ["frontend/react.md"] }
+    {
+      "path": "../shared-rules",
+      "exclude": ["deprecated_rules.md", "draft_rules.md"]
+    },
+    {
+      "path": ".agents/rules",
+      "include_only": ["frontend/react.md"]
+    }
   ]
 }
 ```
@@ -136,36 +150,46 @@ To prevent rules from exhausting the context window, Antigravity enforces two li
 
 Select your surface below to configure global or workspace-specific rules:
 
-*   [Antigravity 2.0](#tab-panel-28)
-*   [Antigravity CLI](#tab-panel-29)
-*   [Antigravity IDE & Extensions](#tab-panel-30)
+### Antigravity App
 
-### Managing rules in Antigravity 2.0
+#### Managing rules in the Antigravity App
+
+Follow these steps to create or manage rules in the Antigravity App:
 
 1.  Open the **Customizations** panel from the application menu or project settings.
 2.  Select the **Rules** tab.
 3.  Click **\+ Global** to create global rules, or **\+ Workspace** to create rules scoped to the active project.
 
-### Antigravity 2.0 file locations
+#### Antigravity App file locations
 
-*   **Workspace rules**: `AGENTS.md`, `GEMINI.md`, or `.agents/rules/*.md` in your workspace root or any project subdirectory.
-*   **Global rules**: `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md`, or modular rules in `~/.gemini/config/rules/*.md`.
+The Antigravity App loads rules from the following locations:
 
-### Managing rules in Antigravity CLI
+*   **Workspace rules**: `AGENTS.md`, `GEMINI.md`, or `.agents/rules/*.md` in a project folder or any parent folder up to the repository root.
+*   **Global rules**: `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.gemini/config/AGENTS.md`, `~/.gemini/config/GEMINI.md`, or modular rules in `~/.gemini/config/rules/*.md`.
+
+### Antigravity CLI
+
+#### Managing rules in Antigravity CLI
 
 The Antigravity CLI evaluates workspace, directory-scoped, global, and plugin rules during prompt expansion:
 
-*   **Workspace and directory rules**: `AGENTS.md`, `GEMINI.md`, or `.agents/rules/*.md` at the repository root or in subdirectories.
-*   **Global rules**: `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.gemini/config/rules/*.md`, or `~/.gemini/antigravity-cli/rules/*.md`.
-*   **Plugin rules**: Antigravity automatically activates rules packaged inside installed plugins under `~/.gemini/antigravity-cli/plugins/<plugin_name>/rules/`.
+*   **Workspace and directory rules**: `AGENTS.md`, `GEMINI.md`, or `.agents/rules/*.md` in the folder where you start `agy` or any parent folder up to the repository root.
+*   **Global rules**: `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.gemini/config/AGENTS.md`, `~/.gemini/config/GEMINI.md`, or `~/.gemini/config/rules/*.md`.
+*   **Plugin rules**: Antigravity automatically activates rules packaged inside installed [plugins](/docs/plugins) under `~/.gemini/config/plugins/<plugin-folder>/rules/`.
 
-### Managing rules in Antigravity IDE & Extensions
+### Antigravity IDE & Extensions
+
+#### Managing rules in Antigravity IDE and extensions
+
+Follow these steps to create or manage rules in Antigravity IDE and extensions:
 
 1.  Click the **…** menu at the top of the agent side panel.
 2.  Select **Customizations**, then navigate to the **Rules** tab.
 3.  Click **\+ Global** to author workstation-wide rules, or **\+ Workspace** to create project-specific rules.
 
-### Antigravity IDE & Extensions file locations
+#### Antigravity IDE and extensions file locations
 
-*   **Workspace rules**: `AGENTS.md`, `GEMINI.md`, or `.agents/rules/*.md` within your project or subdirectories.
+Antigravity IDE and extensions load rules from the following locations:
+
+*   **Workspace rules**: `AGENTS.md`, `GEMINI.md`, or `.agents/rules/*.md` in your project folder or any parent folder up to the repository root.
 *   **Global rules**: `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md`, or `~/.gemini/config/rules/*.md`.

@@ -239,8 +239,11 @@ describe('the committed Claude host profile and tool policy', () => {
   });
 
   it('matches the agent, skill and hook-event vocabularies of the snapshots', () => {
-    const agentKeys = tableNames(page('agent/sub-agents.md'), /<h3 id="supported-frontmatter-fields">/, /^#### Subagent files Claude Code skips/m);
-    expect([...profile.artifacts.agent.allowedKeys].sort()).toEqual([...agentKeys].sort());
+    const agentKeys = tableNames(page('agent/sub-agents.md'), /^### Frontmatter reference/m, /^#### Subagent files Claude Code skips/m);
+    // The profile remains pinned to 2.1.285. This locked snapshot also documents
+    // autoCompactWindow, introduced in 2.1.296; keep the delta explicit until the profile is re-reviewed.
+    expect([...profile.artifacts.agent.allowedKeys, 'autoCompactWindow'].sort()).toEqual([...agentKeys].sort());
+    expect(page('agent/sub-agents.md')).toMatch(/`autoCompactWindow`[^\n]*v2\.1\.296/);
     const skillKeys = tableNames(page('skill/skills.md'), /^### Frontmatter reference/m, /^#### Using skill frontmatter outside/m);
     expect([...profile.artifacts.skill.allowedKeys].sort()).toEqual([...skillKeys].sort());
     const events = tableNames(page('hook/hooks.md'), /^\| Event \| When it fires/m, /^### How a hook resolves/m);

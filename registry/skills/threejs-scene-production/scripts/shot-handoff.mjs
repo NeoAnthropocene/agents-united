@@ -1,0 +1,61 @@
+import { readFile, realpath } from 'node:fs/promises';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { inspectProject, hashFile, localFile, writeExclusive } from '../../3d-design-direction/scripts/project-3d.mjs';
+import { rendererIdentity } from './shared-3d-runtime.mjs';
+import { inspectGlb } from '../../3d-asset-review/scripts/inspect-glb.mjs';
+import { readInput, resultReport, parseFlags, validateTimeline, timelineFingerprint, projectRoot, safeRelativePath } from '../../audiovisual-review/scripts/review.mjs';
+const issue=(errors,code,field,message)=>errors.push({code,path:field,message});
+const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+const canonical=x=>JSON.stringify(object(x)?Object.fromEntries(Object.keys(x).sort().map(k=>[k,JSON.parse(canonical(x[k]))])):Array.isArray(x)?x.map(v=>JSON.parse(canonical(v))):x);
+const equal=(a,b)=>canonical(a)===canonical(b);
+async function input(root,file,errors,field){if(!safeRelativePath(file)){issue(errors,'path.unsafe',field,'Select a project-relative JSON file.');return null;}return readInput(file,'json',errors,field,root);}
+async function pngDimensions(root,file,errors){const absolute=await localFile(root,file,errors,'frames');if(!absolute)return null;const bytes=await readFile(absolute);if(bytes.length<24||!bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))||bytes.toString('ascii',12,16)!=='IHDR'){issue(errors,'frame.png','frames','Expected a PNG frame.');return null;}return {width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20)};}
+function renderMetadata(receipt,errors){
+ const expected={colorSpace:'srgb',range:'full',alpha:false,background:'#ffffff',units:'meters',origin:'default-scene-bounds-center',sourceOrigin:'gltf-default-scene',axes:'right-handed-y-up-z-forward'};
+ if(!equal(receipt.conventions,expected))issue(errors,'shot.conventions','conventions','Require the supported explicit color/range/alpha/background and coordinate conventions.');
+ const camera=receipt.parameters.camera;const keys=['projection','fovDegrees','aspect','near','far','position','target','up','modelOffset'];
+ const vector=x=>Array.isArray(x)&&x.length===3&&x.every(v=>typeof v==='number'&&Number.isFinite(v));
+ if(!object(camera)||Object.keys(camera).some(k=>!keys.includes(k))||keys.some(k=>!Object.hasOwn(camera,k))||camera.projection!=='perspective'||!Number.isFinite(camera.fovDegrees)||camera.fovDegrees<=0||camera.fovDegrees>=180||!Number.isFinite(camera.aspect)||Math.abs(camera.aspect-receipt.parameters.width/receipt.parameters.height)>1e-12||!Number.isFinite(camera.near)||camera.near<=0||!Number.isFinite(camera.far)||camera.far<=camera.near||!['position','target','up','modelOffset'].every(k=>vector(camera[k]))||equal(camera.position,camera.target)||!equal(camera.up,[0,1,0]))issue(errors,'shot.camera','parameters.camera','Record a finite perspective camera, clip planes, aspect, position, target, up axis and source-centering offset.');
+}
+async function build(options){
+ const {project,file='media/3d.json',timeline:timelinePath,render:renderPath,sceneId}=options??{};
+ const inspected=await inspectProject({project,file,delivery:true});if(!inspected.ok)return inspected;
+ const {root,record}=inspected;const errors=[];
+ const timeline=await input(root,timelinePath,errors,'timeline'),receipt=await input(root,renderPath,errors,'render');if(errors.length)return resultReport(errors);
+ errors.push(...validateTimeline(timeline));if(errors.length)return resultReport(errors);
+ const scene=timeline.scenes.find(x=>x.id===sceneId);if(!scene)issue(errors,'shot.scene','sceneId','Scene ID must exist in the canonical timeline.');
+ if(!object(receipt)||receipt.schemaVersion!==1||receipt.ok!==true||!Array.isArray(receipt.errors)||receipt.errors.length||!object(receipt.parameters)||!object(receipt.runtime)||!Array.isArray(receipt.frames)||!receipt.frames.length||receipt.frames.length>2000||receipt.frames.some(x=>!object(x))){issue(errors,'render.receipt','render','Require a successful versioned capture receipt with valid frames and runtime.');return resultReport(errors);}
+ let rendererFiles;try{rendererFiles=await rendererIdentity();}catch{issue(errors,'shot.rendererMissing','rendererFiles','Installed renderer files are unavailable.');return resultReport(errors);}
+ if(!equal(receipt.rendererFiles,rendererFiles))issue(errors,'shot.rendererStale','rendererFiles','Renderer files changed or were not recorded since capture.');
+ renderMetadata(receipt,errors);
+ const p=receipt.parameters;const endFrame=p.startFrame+p.frameCount;
+ if(!Number.isSafeInteger(p.startFrame)||!Number.isSafeInteger(p.frameCount)||p.frameCount<1||p.frameCount!==receipt.frames.length||!scene||p.startFrame<scene.startFrame||endFrame>scene.endFrame||p.fps!==timeline.fps||p.width!==timeline.width||p.height!==timeline.height||p.width!==record.dimensions.width||p.height!==record.dimensions.height)issue(errors,'shot.timebase','render','Capture range, fps and dimensions must match the selected timeline scene and request.');
+ if(receipt.runtime.three!==record.renderer.three||receipt.runtime.playwright!==record.renderer.playwright||!receipt.runtime.browser||!object(receipt.runtime.backend))issue(errors,'shot.runtime','render','Capture runtime must match selected exact versions and record its browser/backend.');
+ const asset=inspected.sources.find(x=>x.path===record.asset.replaceAll('\\','/'));
+ if(!equal(receipt.source,asset))issue(errors,'shot.asset','render','Captured GLB fingerprint must match the selected source.');
+ if(receipt.viewer!==record.outputs.viewer||!receipt.frames.some(x=>x.path===record.outputs.proof))issue(errors,'shot.proof','render','Viewer and PNG proof must match the project record.');
+ const format=await input(root,record.outputs.formatReport,errors,'formatReport');if(!format||format.ok!==true||!equal(format.source,asset)||!equal(format.budgets,record.budgets)||format.validator?.version!==record.renderer.gltfValidator)issue(errors,'shot.format','formatReport','Require successful current asset/budget validation with the selected validator.');
+ // Editable success JSON is insufficient: rerun the pinned standards validator.
+ const currentFormat=await inspectGlb({project:root,asset:record.asset,budgets:record.budgets});
+ if(!currentFormat.ok)errors.push(...currentFormat.errors);
+ else if(!equal(format,currentFormat))issue(errors,'shot.format','formatReport','Saved validator report differs from current pinned validation.');
+ const viewerDir=path.posix.dirname(receipt.viewer??'');
+ const expectedViewerFiles=['viewer.html','asset.glb','three.js','three.core.js','addons/loaders/GLTFLoader.js','addons/utils/BufferGeometryUtils.js','THREE-LICENSE.txt'].map(name=>`${viewerDir}/${name}`);
+ if(!Array.isArray(receipt.viewerFiles)||receipt.viewerFiles.length!==expectedViewerFiles.length||expectedViewerFiles.some(file=>receipt.viewerFiles.filter(entry=>entry?.path===file).length!==1))issue(errors,'shot.viewerFiles','viewerFiles','Require hashes for every shipped viewer resource.');
+ else for(const entry of receipt.viewerFiles){const actual=await hashFile(root,entry.path,errors,'viewerFiles');if(actual&&actual.sha256!==entry.sha256)issue(errors,'shot.viewerStale','viewerFiles','Viewer resource changed after capture.');if(entry.path.endsWith('/asset.glb')&&entry.sha256!==asset?.sha256)issue(errors,'shot.viewerAsset','viewerFiles','The served GLB differs from the validated captured source.');}
+ const seen=new Set();for(const [index,frame]of receipt.frames.entries()){
+  if(!object(frame)||frame.frame!==p.startFrame+index||!safeRelativePath(frame.path)||seen.has(frame.path.toLowerCase())){issue(errors,'shot.frames','frames','Frame files must be unique and consecutive in the selected range.');continue;}seen.add(frame.path.toLowerCase());
+  const actual=await hashFile(root,frame.path,errors,'frames');if(actual&&actual.sha256!==frame.sha256)issue(errors,'shot.frameHash','frames','Captured frame changed.');const dimensions=await pngDimensions(root,frame.path,errors);if(dimensions&&(dimensions.width!==p.width||dimensions.height!==p.height))issue(errors,'shot.frameSize','frames','PNG dimensions differ from the receipt.');
+ }
+ const files=[file,...record.sources,record.outputs.provenance,record.outputs.assetLedger,record.outputs.formatReport,renderPath,receipt.viewer,...(Array.isArray(receipt.viewerFiles)?receipt.viewerFiles.filter(object).map(x=>x.path):[])];const sourceFiles=[];
+ for(const source of [...new Set(files)]){const fingerprint=await hashFile(root,source,errors,'sourceFiles');if(fingerprint)sourceFiles.push(fingerprint);}
+ if(errors.length)return resultReport(errors);
+ const artifact={schemaVersion:1,requestId:record.requestId,projectRecord:file,timeline:{path:timelinePath,revision:timeline.revision,fingerprint:timelineFingerprint(timeline)},renderReceipt:renderPath,sceneId,startFrame:p.startFrame,endFrame,fps:p.fps,width:p.width,height:p.height,frameCount:p.frameCount,conventions:receipt.conventions,renderer:record.renderer,rendererFiles,runtime:receipt.runtime,parameters:p,sourceFiles,frames:receipt.frames,proof:record.outputs.proof,provenance:record.outputs.provenance,formatReport:record.outputs.formatReport,visualReview:'unverified',soundSync:'unverified',defects:[],unverified:['Human visual/playback acceptance','Final audiovisual composition and sound sync']};
+ return resultReport([],{artifact,root,warnings:inspected.warnings});
+}
+export async function captureShot(options){const built=await build(options);if(!built.ok)return built;const errors=[];const record=await input(built.root,options.file??'media/3d.json',errors,'projectRecord');if(record?.outputs.motionHandoff&&options.out!==record.outputs.motionHandoff)issue(errors,'shot.output','out','Output must match the selected Motion handoff path.');if(!errors.length)await writeExclusive(built.root,options.out,JSON.stringify(built.artifact,null,2)+'\n',errors);return resultReport(errors,{warnings:built.warnings});}
+export async function validateShot(options){const {project,shot}=options??{};const errors=[];const root=await projectRoot(project,errors);if(!root)return resultReport(errors);const artifact=await input(root,shot,errors,'shot');if(errors.length)return resultReport(errors);if(!object(artifact)||artifact.schemaVersion!==1||!object(artifact.timeline)){issue(errors,'shot.schema','shot','Expected a version 1 Shot Handoff.');return resultReport(errors);}const built=await build({project,file:artifact.projectRecord,timeline:artifact.timeline.path,render:artifact.renderReceipt,sceneId:artifact.sceneId});if(!built.ok)return built;if(!equal(artifact,built.artifact))issue(errors,'shot.stale','shot','Timeline, scene/material sources, renderer evidence or outputs changed; recapture.');return resultReport(errors,{warnings:built.warnings});}
+async function main(args){const [command,...rest]=args;if(command==='--help')return resultReport([],{help:'capture --project ABS [--file media/3d.json] --timeline relative.json --render relative.json --scene ID --out new.json | validate --project ABS --shot relative.json'});const errors=[];const opts=parseFlags(rest,['--project','--file','--timeline','--render','--scene','--out','--shot'],errors);if(!['capture','validate'].includes(command)||!opts['--project']||(command==='capture'&&['--timeline','--render','--scene','--out'].some(k=>!opts[k]))||(command==='validate'&&!opts['--shot']))issue(errors,'cli.arguments','arguments','Supply the documented explicit project and input/output arguments.');if(errors.length)return resultReport(errors);return command==='validate'?validateShot({project:opts['--project'],shot:opts['--shot']}):captureShot({project:opts['--project'],file:opts['--file']??'media/3d.json',timeline:opts['--timeline'],render:opts['--render'],sceneId:opts['--scene'],out:opts['--out']});}
+const invoked=process.argv[1]?await realpath(path.resolve(process.argv[1])).catch(()=>null):null;
+if(invoked&&import.meta.url===pathToFileURL(invoked).href){try{const r=await main(process.argv.slice(2));console.log(JSON.stringify(r));process.exitCode=r.ok?0:2;}catch{console.log(JSON.stringify(resultReport([{code:'validation.internal',path:'$',message:'Unable to validate; input contents were not echoed.'}])));process.exitCode=2;}}

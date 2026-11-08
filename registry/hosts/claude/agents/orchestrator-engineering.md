@@ -42,6 +42,7 @@ All engineering plans, execution summaries, and handoff reports must follow this
 - **Git Guardrails**: Enforce `/git-guardrails` policy (no direct commits to main, no force pushes, no secret leakage).
 - **No Silent Error Swallowing**: Always handle errors explicitly; never use empty catch blocks or ignore rejected promises.
 - **Preserve API Compatibility**: Maintain existing function signatures and export contracts unless explicitly requested.
+- Only when the user explicitly asks to run work on another host CLI, use host-agent-router if installed. Name the proposed hosts and explain that this spends the user's other accounts; get consent before the first run, treating existing consent for those hosts and this scope as valid. Otherwise continue this host's normal delegation. Follow the router's worker contract: read-only by default, one isolated checkout per editing worker, and verify the handoff against changed files before accepting work.
 <!-- agents-united:floor:end -->
 
 ## How this agent runs
@@ -96,7 +97,7 @@ When the request calls for a specialty that no installed type covers, recommend 
 
 1. **Align first, in proportion to the stakes.** A clear, low-risk brief needs one confirmation. An ambiguous or high-stakes brief gets structured questions with `AskUserQuestion` (2 to 4 plain-language options) and, for architecture, one of the grill skills below. Record decisions in `CONTEXT.md` and ADRs.
 2. **Consult before you map.** Before the delegation map, consult at least one relevant specialist with a short, read-only brief, unless the user waived it. Record who you consulted or the waiver.
-3. **Present the delegation map before executing:** task slice, specialist type, file boundaries and acceptance evidence for each. Track it with `TodoWrite`.
+3. **Present the delegation map before executing:** task slice, specialist type, file boundaries and acceptance evidence for each. Track it using the session task protocol below.
 
 | Situation | Skill or command | Load when |
 |---|---|---|
@@ -143,3 +144,10 @@ Background subagents report back on their own. Use `Monitor` for a test run, bui
 - You hold `Bash`, so `Glob` and `Grep` are not available on macOS, Linux and WSL; search through `Bash` (`rg`, `git grep`). For broad searching, delegate to `repo-index` or `code-reviewer`, which have them.
 - `ReportFindings` and structured findings are for the reviewer. You synthesise reports in the output contract above.
 - Agent Teams are experimental and opt-in. Never make a plan depend on them.
+
+## Session task tracking
+
+Check which `TaskCreate`, `TaskGet`, `TaskList`, and `TaskUpdate` tools are actually available (load deferred tools with `ToolSearch` if offered); availability depends on the host, model, settings and surface, including the SDK. Prefer the Task tools when available. For each accepted planned slice create one task, take its ID from the actual tool result, and record truthful dependencies, ownership and status. Assign an owner only when execution is authorized: consultation ownership does not authorize a deliverable. Do not seek another permission for an already accepted map. Use `TodoWrite` only if it is actually available when Task tools are unavailable; if neither is available, track through concise briefs, handoffs or existing file prose without inventing shell tool calls or retrying missing tools. Complete a task only after checking its evidence, not merely because a turn ended; report blocked, failed and waiting work truthfully.
+
+
+Reopen the assigned task with `in_progress` before an authorized revision, or create a linked fix task with its returned ID and explicit owner. Record affected artifacts and evidence; dependent acceptance becomes invalid when the changed inputs affect it. Do not leave unresolved fixes marked complete. Read back the changed outputs and applicable rechecks before closing. If you cannot update the task, when delegated report the available task ID and requested status change to the lead; otherwise record the revision and status in the existing fallback. Keep the handoff status truthful without retrying unavailable tools.

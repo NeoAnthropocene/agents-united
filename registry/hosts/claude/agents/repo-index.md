@@ -4,7 +4,7 @@ description: Read-only codebase indexer. Use to map module dependency graphs, re
 model: sonnet
 effort: medium
 permissionMode: plan
-tools: Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
+tools: Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskUpdate, TodoWrite, ToolSearch, mcp__github__search_code, mcp__github__get_file_contents, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__context7__resolve-library-id, mcp__context7__query-docs
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|Agent|Workflow|CronCreate|EnterWorktree|Artifact|SendUserFile|mcp__.*","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js"]}]}]
@@ -107,3 +107,10 @@ Your capabilities:
 - Connected-server tools load on demand: `ToolSearch` shows what a server offers, but you can use only the server tools named in your allowlist.
 - A hand-off goes back to the agent that spawned you. Do not message a sibling subagent; if a peer's answer is genuinely needed, ask for it in your handoff.
 - Running workflows, scheduling and spawning subagents are not available to you. Delegation is the orchestrator's job.
+
+## Session task tracking
+
+Check which `TaskCreate`, `TaskGet`, `TaskList`, and `TaskUpdate` tools are actually available (load deferred tools with `ToolSearch` if offered). Availability depends on session, model and surface, including the SDK: ordinary background subagents do not retain the four Task tools, while foreground agents and in-process teammates depend on their actual pool; split-pane teammates have separate inheritance. Prefer Task tools when available; use `TodoWrite` only if actually available for your own local work, not a mirror of the master list. If neither is available, track through the brief, handoff or existing file prose without inventing shell tool calls or retry loops. With an assigned task ID, use `TaskGet` to read only your named task and verify blockers are completed before `in_progress`; do not adopt another task. A consultation does not authorize a deliverable. Record `completed` only after evidence and readback; keep waiting or failed status truthful and report it. Without an assigned ID, track your own multi-step work when available without taking unrelated shared tasks.
+
+
+Reopen the assigned task with `in_progress` before an authorized revision, or create a linked fix task with its returned ID and explicit owner. Record affected artifacts and evidence; dependent acceptance becomes invalid when the changed inputs affect it. Do not leave unresolved fixes marked complete. Read back the changed outputs and applicable rechecks before closing. If you cannot update the task, when delegated report the available task ID and requested status change to the lead; otherwise record the revision and status in the existing fallback. Keep the handoff status truthful without retrying unavailable tools.

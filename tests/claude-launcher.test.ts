@@ -137,10 +137,31 @@ describe('Plan 016 Step 6 — ClaudeLauncher', () => {
       expect(teams.argv.join('\u0000')).not.toContain('CLAUDE_CODE_EXPERIMENTAL');
     });
 
-    it('leaves env empty when teams is not requested', () => {
-      expect(Object.keys(plan().env)).toHaveLength(0);
+    it('offers session task tools without enabling experimental teams', () => {
+      expect(plan().env).toEqual({ [TODO_ENV]: '1' });
       expect(TEAMS_ENV in plan({ teams: false }).env).toBe(false);
-      expect(TODO_ENV in plan({ teams: false }).env).toBe(false);
+      expect(plan({ teams: false }).env[TODO_ENV]).toBe('1');
+      expect(plan().argv.join('\u0000')).not.toContain(TODO_ENV);
+      expect(plan().bootstrapPrompt).not.toContain(TODO_ENV);
+      expect(plan().bootstrapPrompt).toContain('TaskCreate');
+      expect(plan().bootstrapPrompt).toContain('TodoWrite');
+    });
+
+    it('supports an explicit tracking opt-out without changing the teams choice', () => {
+      expect(plan({ taskTracking: false }).env).toEqual({});
+      expect(plan({ teams: true, taskTracking: false }).env).toEqual({ [TEAMS_ENV]: '1' });
+    });
+
+    it('preserves an inherited tracking opt-out unless explicitly requested', () => {
+      const previous = process.env[TODO_ENV];
+      process.env[TODO_ENV] = '0';
+      try {
+        expect(plan().env).not.toHaveProperty(TODO_ENV);
+        expect(plan({ taskTracking: true }).env[TODO_ENV]).toBe('1');
+      } finally {
+        if (previous === undefined) delete process.env[TODO_ENV];
+        else process.env[TODO_ENV] = previous;
+      }
     });
 
     // Observed on Claude Code 2.1.289 (2026-10-04, claude-sonnet-5-5): the shared Task tools are absent from a session unless this variable

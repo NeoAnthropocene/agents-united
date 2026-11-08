@@ -17,6 +17,7 @@ const LIB = path.resolve('host-library/antigravity');
 const read = (rel: string): string => fs.readFileSync(path.join(LIB, rel), 'utf8').replace(/\r\n/g, '\n');
 const section = (markdown: string, heading: string): string => {
   const start = markdown.indexOf(`\n${heading}\n`);
+  expect(start, `Missing source heading: ${heading}`).toBeGreaterThanOrEqual(0);
   const rest = markdown.slice(start + heading.length + 2);
   const level = /^#+/.exec(heading)![0].length;
   const end = rest.search(new RegExp(`\\n#{1,${level}} `));
@@ -41,7 +42,7 @@ describe('the committed Antigravity host profile', () => {
   });
 
   it('declares the agent frontmatter of the docs table, and never `hooks:`, which hides an agent (plan 031)', () => {
-    const table = section(read('pages/agent/subagents.md'), '### Frontmatter Configuration (YAML)');
+    const table = section(read('pages/agent/subagents.md'), '#### Frontmatter configuration (YAML)');
     const documented = [...table.matchAll(/^\| `([A-Za-z]+)`(?: \/ `([A-Za-z]+)`)? \|/gm)].flatMap(match => [match[1], match[2]].filter(Boolean));
     const agent = profile.artifacts.agent;
     expect(agent.path).toBe('.agents/agents/<role>.md');
@@ -61,10 +62,12 @@ describe('the committed Antigravity host profile', () => {
   });
 
   it('declares the hook events of the docs table, the one handler type, and the hook files', () => {
-    const table = section(read('pages/hook/hooks.md'), '## Supported Events');
+    const table = section(read('pages/hook/hooks.md'), '## Supported events');
     const events = [...table.matchAll(/^\| `([A-Za-z]+)` \|/gm)].map(match => match[1]);
-    expect(events).toEqual(['PreToolUse', 'PostToolUse', 'PreInvocation', 'PostInvocation', 'Stop']);
-    expect(profile.artifacts.hook.events).toEqual(events);
+    expect(events).toEqual(['SessionStart', 'PreToolUse', 'PostToolUse', 'PreInvocation', 'PostInvocation', 'Stop']);
+    // The profile remains pinned to CLI 1.2.11; this documented addition is not a runtime grant.
+    expect(profile.artifacts.hook.events).toEqual(['PreToolUse', 'PostToolUse', 'PreInvocation', 'PostInvocation', 'Stop']);
+    expect(events.filter(event => !profile.artifacts.hook.events.includes(event))).toEqual(['SessionStart']);
     expect(profile.artifacts.hook.handlerTypes).toEqual(['command']);
     expect(profile.artifacts.hook.registerAt).toEqual(expect.arrayContaining(['.agents/hooks.json', '~/.gemini/config/hooks.json']));
   });
@@ -126,7 +129,7 @@ describe('the committed Antigravity tool policy', () => {
   const byName = Object.fromEntries(policy.catalog.map(entry => [entry.name, entry]));
 
   it('lists exactly the tools of the hooks page, the vocabulary an agent and a hook matcher see, and none of the SDK-only names', () => {
-    const tools = section(read('pages/hook/hooks.md'), '## Supported Tools');
+    const tools = section(read('pages/hook/hooks.md'), '## Supported tools');
     const documented = [...tools.matchAll(/^\*\s+\*\*`([a-z_]+)`\*\*/gm)].map(match => match[1]);
     expect(documented.length).toBe(20);
     expect(policy.catalog.map(entry => entry.name).sort()).toEqual([...documented].sort());

@@ -1,0 +1,28 @@
+{
+  "skill_name": "3d-design-direction",
+  "status": "prepared-not-run",
+  "draftDate": "2026-11-06",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A client asks whether an existing static page needs a supplied 3D bottle; discuss only and do not install.",
+      "expected_output": "Return include/defer/decline with target, rights, fallback, effort and evidence gaps; create nothing.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "An accepted personal-private brief includes an original bottle with unknown asset terms.",
+      "expected_output": "Record unresolved rights as unverified, preserve known restrictions and choose a bounded Three.js proof with explicit budgets.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "An ordinary copy edit has no 3D request.",
+      "expected_output": "Keep the task static; do not install or invoke 3D production.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    }
+  ]
+}

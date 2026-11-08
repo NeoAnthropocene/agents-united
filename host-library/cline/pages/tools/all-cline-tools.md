@@ -14,48 +14,54 @@ When running through `ClineCore`, these built-ins are available:
 
 | Tool | Description |
 | - | - |
-| `bash` | Execute shell commands |
-| `editor` | View and edit files |
-| `read_files` | Batch read multiple files |
-| `apply_patch` | Apply unified diffs to files |
-| `search` | Ripgrep-powered codebase search |
-| `fetch_web` | HTTP requests with HTML-to-markdown conversion |
+| `read_files` | Read one or more files |
+| `search_codebase` | Search the workspace |
+| `run_commands` | Execute shell commands |
+| `fetch_web_content` | Fetch web content |
+| `apply_patch` | Apply patch/diff edits |
+| `editor` | Edit files |
+| `skills` | Invoke configured skills |
 | `ask_question` | Ask the user for input |
+| `submit_and_exit` | Submit a final answer and stop |
 
-<Note>
-  `Agent` from `@cline/agents` does not include built-ins by default. You provide tools explicitly.
-</Note>
+A session offers `editor` or `apply_patch`, never both. By default, Act mode offers `apply_patch` to GPT and Codex models and to every model on the OpenAI (`openai-native`) provider, and `editor` to other models; Plan mode offers neither. SDK callers can replace these defaults with the `toolRoutingRules` session option.
+
+> [!NOTE]
+>
+> `Agent` from `@cline/agents` does not include built-ins by default. You provide tools explicitly.
 
 ## Tool Categories
 
-* **Codebase operations**: `editor`, `read_files`, `apply_patch`, `search`
-* **Execution**: `bash`
-* **External retrieval**: `fetch_web`
+* **Codebase operations**: `read_files`, `search_codebase`, `editor`, `apply_patch`
+* **Execution**: `run_commands`
+* **External retrieval**: `fetch_web_content`
+* **Skills**: `skills`
 * **Human-in-the-loop controls**: `ask_question`
+* **Completion**: `submit_and_exit`
 
 ## Approval and Policy Controls
 
 Cline can run tools with approval or auto-approval, depending on settings/policies. Typical patterns:
 
-* Require approval for risky tools (for example `bash`, write/edit operations)
+* Require approval for risky tools (for example `run_commands`, write/edit operations)
 * Auto-approve low-risk tools (for example read/search operations)
 * Disable specific tools entirely when needed
 
-For policy examples, see [SDK Tools](/sdk/tools) and [Permission Handling](/sdk/guides/permission-handling).
+For policy examples, see [SDK Tools](https://docs.cline.bot/sdk/tools.md) and [Permission Handling](https://docs.cline.bot/sdk/guides/permission-handling.md).
 
 ## MCP Tools
 
-Cline can also call tools discovered from MCP servers configured in `.cline/mcp.json`.
+Cline can also call tools discovered from MCP servers configured in `~/.cline/data/settings/cline_mcp_settings.json`.
 
 MCP tools are loaded alongside built-ins, so Cline can use both local tools and external integrations in one task.
 
-See [MCP Overview](/mcp/mcp-overview) and [SDK Tools → MCP Tools](/sdk/tools#mcp-tools).
+See [MCP Overview](https://docs.cline.bot/mcp/mcp-overview.md) and [SDK Tools → MCP Tools](https://docs.cline.bot/sdk/tools.md#mcp-tools).
 
 ## Custom Tools
 
-<Warning>
-  This feature currently only applies to Cline SDK, CLI, and Kanban. This feature is not applicable on VSCode and JetBrains Extension for now.
-</Warning>
+> [!WARNING]
+>
+> This feature currently only applies to Cline SDK, CLI, and Kanban. This feature is not applicable on VSCode and JetBrains Extension for now.
 
 Beyond built-ins and MCP, you can create custom tools and add them through plugins.
 
@@ -65,16 +71,19 @@ Beyond built-ins and MCP, you can create custom tools and add them through plugi
 
 See:
 
-* [SDK Plugins](/sdk/plugins)
-* [Writing Plugins (examples)](/sdk/guides/writing-plugins)
-* [SDK Tools: Creating Custom Tools](/sdk/tools#creating-custom-tools)
+* [SDK Plugins](https://docs.cline.bot/sdk/plugins.md)
+* [Writing Plugins (examples)](https://docs.cline.bot/sdk/guides/writing-plugins.md)
+* [SDK Tools: Creating Custom Tools](https://docs.cline.bot/sdk/tools.md#custom-tools-with-createtool)
 
 ## Legacy Tool Names vs Current Runtime Tools
 
-Some older docs/examples reference XML-style names like `read_file`, `replace_in_file`, or `execute_command`. Current SDK/ClineCore runtime uses the built-in tool names listed above (`read_files`, `apply_patch`, `bash`, etc.).
+Some older docs/examples reference XML-style names like `read_file`, `replace_in_file`, `execute_command`, or `use_skill`. Current SDK/ClineCore runtime uses the built-in tool names listed above (`read_files`, `apply_patch`, `run_commands`, `skills`, etc.).
 
 ## Related
 
-* [SDK Tools](/sdk/tools)
-* [Tools API Reference](/sdk/reference/tools-api)
-* [MCP Overview](/mcp/mcp-overview)
+* [SDK Tools](https://docs.cline.bot/sdk/tools.md)
+* [Tools API Reference](https://docs.cline.bot/sdk/reference/tools-api.md)
+* [MCP Overview](https://docs.cline.bot/mcp/mcp-overview.md)
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

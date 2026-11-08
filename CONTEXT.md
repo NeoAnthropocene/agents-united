@@ -6,6 +6,14 @@ The universal package manager for AI agents. Curated teams of orchestrators, sub
 
 ### Core Primitives
 
+**Motion event handoff**:
+A versioned sidecar from Motion to Sound that binds named picture-event frames
+to the canonical timeline revision, full fingerprint, timebase and motion-source
+hashes. It supports source and timing freshness checks before dependent SFX;
+structural validity does not certify visual-event accuracy, audible onset or
+human sync acceptance (ADR 0063). Standalone audio needs no Motion handoff.
+_Avoid_: A second canonical timeline, a replacement audio fingerprint, automatic event detection
+
 **Orchestrator Agent**:
 A primary agent (`orchestrator-<bundle>.md` or `orchestrator-<task>.md`) with `mainAgent: true` and `subagent: true` configured to coordinate high-level tasks, formulate implementation plans, delegate to specialized sub-agents, and execute multi-step workflows with phase gates.
 _Avoid_: Master agent, boss, coordinator bot
@@ -132,6 +140,8 @@ The guaranteed cross-host activation contract enforced by the Prime Orchestrator
 _Avoid_: Auto-launch promise, in-session takeover, silent reroute
 
 **Host Router (`host-agent-router`)**:
+
+Every Bundle explicitly declares `host-agent-router`, `handoff` and `git-guardrails`, including independently installed addons, the contributor factory and optional 3D Bundle. Availability does not activate routing or widen Bundle host support. Department leads do not preload it; routing requires an explicit cross-host request and consent for the named hosts and scope, with existing consent remaining valid. The universal lead retains its existing declaration. This is structural dormancy, not proof of unprompted model behavior (ADR 0066).
 A skill of `universal-orchestration` that runs one task headlessly on another Host CLI (Cline, Antigravity, Codex or Claude) when the user explicitly asks. Hosts are tried in a configured priority; for one Host it takes the side (the Windows or the WSL install) with the most headroom, meaning the smaller of the 5-hour and weekly remaining, and the task tier selects the model. Read-only by default, and it spends the user's other accounts, so the user says yes first. Every worker, on every Host, follows one contract (the `git-guardrails` rules and a `handoff` report), enforced with each Host's own controls where it has them and checked against the router's own record of what changed on disk. Distinct from the Route & Instruct Contract, which changes which agent leads a fresh session and runs nothing on another Host.
 _Avoid_: Auto-launch, persona-swap, sub-agent masking, load balancer
 
@@ -446,7 +456,7 @@ skill without reading its upstream original, snapshotting unaudited upstream con
 
 ### Agent Registry & Department Hierarchy
 
-The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators and 38 Sub-Agents) structured into **18 curated bundles** across **8 department domains**:
+The registry catalog maintains **62 agents** (9 orchestrators and 53 sub-agents) and **37 Bundle entries** across eight end-user department domains and the separate organization and contributor groups:
 
 1. **🛠️ Software Engineering & Delivery** (`engineering`):
    - **Lead Orchestrator**: `orchestrator-engineering.md`
@@ -490,10 +500,11 @@ The registry catalog maintains **45 specialized agents** (7 Lead Orchestrators a
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `git-guardrails` + `grill-me` + `host-agent-router`; routes to the correct department Essentials bundle and hands off, and on request runs a slice on another host CLI.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 205 end-user Skills (135 domain + 70 workflow playbooks); the contributor-only `author-skill` is excluded. The physical registry totals 61 agents and 218 Skills.
+   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 205 end-user Skills (135 domain + 70 workflow playbooks); the contributor-only `author-skill` is excluded. The physical registry totals 62 agents and 210 Skills; four optional 3D Skills are also excluded from `full`.
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
+   - `agency-3d-production` (Optional standalone): Arda, four original 3D Skills and shared `audiovisual-review` and `handoff`; direct complete briefs need no `digital-agency`. Claude-native workspace installation is the initial supported surface.
    - `digital-agency` (Cross-Functional Composite): `subagent-marketing-growth-strategist.md`, `subagent-marketing-campaign-specialist.md`, `subagent-marketing-content-strategist.md`, `subagent-marketing-creative-designer.md`, `subagent-marketing-conversion-specialist.md`, `subagent-seo-specialist.md`, `subagent-frontend-architect.md`, `subagent-qa-automation-lead.md`, `subagent-compliance-grc-specialist.md`, `subagent-motion-designer.md`, `subagent-sound-designer.md` (eleven specialists plus Chris).
 
 ---
@@ -517,6 +528,14 @@ Sound's exact current revision/fingerprint, stereo48k WAV master, full-duration 
 
 **Media Ownership and Review Evidence**:
 Motion owns storyboard/animation/integration; Sound owns sonic direction/sources/final audio. Creative/Brand and Copy retain approved assets/exact words; QA checks technical/playback/accessibility evidence; Compliance checks claims/consent/rights; Chris resolves scope and human decisions. Structural/file-presence checks, reported measurements, actual decoded/master/mux measurements, full viewing/listening and provenance approval are distinct states. Mark missing required evidence **unverified** and irrelevant dimensions not applicable with a reason. A JSON pass, installed catalog entry or synthetic signal is not creative approval or live Host proof.
+
+### 3D production contracts
+
+**3D Request**: the accepted scope, destination, input rights, budgets, renderer and acceptance for a 3D job. Project-local `media/3d.json` records the chosen route and artifact paths.
+
+**Asset Provenance Ledger**: source and dependency records with hashes, creator, terms, transformations and named reviewer usage attestation. Hashes and attestations do not prove legal clearance; personal-private unknowns remain unverified and known restrictions still apply.
+
+**3D Shot Handoff**: a Motion-bound record of the canonical timeline fingerprint, scene and frame range, source and output hashes and runtime versions. Changed inputs invalidate dependent evidence; human viewing, listening and approval are separate checks.
 
 ### Alignment & Domain Skills
 

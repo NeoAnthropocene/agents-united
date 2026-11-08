@@ -12,7 +12,7 @@ Your main agent can create subagents that inherit its permissions and toolsets.
 
 For example, you can enable dynamic subagent creation during execution so that your main agent can spawn subagents on demand:
 
-```
+```python
 from google.antigravity import Agent, LocalAgentConfig, types
 
 config = LocalAgentConfig(
@@ -30,7 +30,7 @@ You can leverage the SDK to define subagents that have dedicated tools or specif
 
 For example, you can configure a subagent that specializes in code reviews:
 
-```
+```python
 from google.antigravity import Agent, LocalAgentConfig, types
 
 def my_custom_reviewer_tool(file_path: str) -> str:
@@ -59,6 +59,6 @@ async with Agent(config) as agent:
 
 ## Sample code
 
-For full working code examples, see the GitHub repository:
+For full working code examples, check out the GitHub repository:
 
 *   [`subagents.py`](https://github.com/google-antigravity/antigravity-sdk-python/blob/main/examples/getting_started/subagents.py)

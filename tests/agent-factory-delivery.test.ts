@@ -103,6 +103,14 @@ describe('bundle host availability before writes', () => {
     await expect(new InstallEngine(resolver).install('draft-fixture', options({ fanout: ['cline'] }))).rejects.toThrow(/unavailable/i);
     expect(await fs.readdir(workspace)).toEqual([]);
   });
+  it('still rejects an arbitrary partial restricted bundle when shared companions are added', async () => {
+    const manifest = await fs.readJson(path.join(registry, 'bundles.json'));
+    manifest.bundles['restricted-tools'].skills.push('second-exclusive', 'legacy-fixture');
+    await fs.writeJson(path.join(registry, 'bundles.json'), manifest);
+    await fs.outputFile(path.join(registry, 'skills/second-exclusive/SKILL.md'), '---\nname: second-exclusive\ndescription: Another exclusive task.\n---\n');
+    await expect(new InstallEngine(new RegistryResolver(registry)).install('draft-fixture', options())).rejects.toThrow(/partial direct item/i);
+    expect(await fs.readdir(workspace)).toEqual([]);
+  });
   it('rejects a restricted parent required by a child bundle', async () => {
     const manifest = await fs.readJson(path.join(registry, 'bundles.json'));
     manifest.bundles.child = { name: 'child', domain: 'contributor', parentBundle: 'restricted-tools', skills: ['legacy-fixture'] };

@@ -157,6 +157,7 @@ describe('digital agency media production roles', () => {
   it('keeps media inventory scoped to agency/full and canonical planning conditional on the agency', () => {
     for (const [name, bundle] of Object.entries(manifest.bundles)) {
       if (name === 'digital-agency' || name === 'full') continue;
+      if (name === 'agency-3d-production') { expect((bundle.skills ?? []).filter(skill => mediaSkills.includes(skill))).toEqual(['audiovisual-review']); continue; }
       expect((bundle.skills ?? []).filter(skill => mediaSkills.includes(skill)), name).toEqual([]);
     }
     for (const file of agency.agents ?? []) {

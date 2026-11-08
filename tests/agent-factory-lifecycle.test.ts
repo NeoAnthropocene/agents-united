@@ -81,6 +81,39 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
     expect(lock.installed.bundles).toContain('agent-factory');
     expect(await fs.pathExists(path.join(root, '.agents'))).toBe(false);
   });
+  it('direct bound entry installs the complete factory companions with ownership and removes them together', async () => {
+    const result = await new InstallEngine().install('author-skill', options());
+    expect(result.installed.targetBundle).toBe('agent-factory');
+    expect(result.installed.skills).toEqual(expect.arrayContaining(['author-skill', 'host-agent-router', 'handoff', 'git-guardrails']));
+    const lock = await fs.readJson(path.join(state, 'agents-united.json')) as LockfileManifest;
+    for (const name of ['author-skill', 'host-agent-router', 'handoff', 'git-guardrails']) {
+      const rel = `.claude/skills/${name}/SKILL.md`;
+      expect(await fs.pathExists(path.join(root, rel)), name).toBe(true);
+      expect(lock.projections?.[rel]?.owners, name).toEqual(['agent-factory']);
+    }
+    await new UninstallEngine().uninstall('agent-factory', { targetDir: state });
+    for (const name of ['author-skill', 'host-agent-router', 'handoff', 'git-guardrails']) {
+      expect(await fs.pathExists(path.join(root, '.claude/skills', name, 'SKILL.md')), name).toBe(false);
+    }
+  });
+  it.each([
+    { fanout: ['cline'] }, { nativeLane: false }, { scope: 'global' as const },
+  ])('direct bound entry cannot bypass delivery restrictions %j or write partial state', async extra => {
+    await expect(new InstallEngine().install('author-skill', options(extra))).rejects.toThrow(/unavailable|native lane|workspace/i);
+    expect(await fs.readdir(root)).toEqual([]);
+  });
+  it.each(['author-skill.md', 'author--skill'])('preserves normalized direct entry %s and its complete factory ownership', async identifier => {
+    const result = await new InstallEngine().install(identifier, options());
+    expect(result.installed.targetBundle).toBe('agent-factory');
+    expect(result.installed.skills).toEqual(expect.arrayContaining(['author-skill', 'host-agent-router', 'handoff', 'git-guardrails']));
+    const lock = await fs.readJson(path.join(state, 'agents-united.json')) as LockfileManifest;
+    expect(lock.projections?.['.claude/skills/host-agent-router/SKILL.md']?.owners).toEqual(['agent-factory']);
+    expect(await fs.pathExists(path.join(skill, 'references/skill-attribution.md'))).toBe(true);
+  });
+  it.each(['author-skill.md', 'author--skill'])('rejects an unsupported target for normalized entry %s before writes', async identifier => {
+    await expect(new InstallEngine().install(identifier, options({ fanout: ['cline'] }))).rejects.toThrow(/agent-factory.*unavailable/i);
+    expect(await fs.readdir(root)).toEqual([]);
+  });
   it('projects a direct Claude target alongside an explicitly implicit state host', async () => {
     await new InstallEngine().install('agent-factory', { hosts: ['agents', 'claude'], targetDir: state, implicitStore: true, method: 'copy', nativeLane: true });
     expect(await fs.pathExists(path.join(skill, 'SKILL.md'))).toBe(true);

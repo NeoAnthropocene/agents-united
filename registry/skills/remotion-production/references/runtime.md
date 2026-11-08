@@ -21,13 +21,13 @@ Other hosts' execution remains unverified until separately demonstrated.
 
 Scaffold writes a private package in `media/remotion/package.json` using the exact supported
 version in the project's reviewed `media/remotion-license.json`. New projects select the
-current reviewed release `4.0.540` after a fresh registry check. Existing `4.0.539` projects
-retain their matching licence record, dependencies and lockfile; both versions are supported.
+current reviewed release `4.0.541` after a fresh registry check. Existing `4.0.539` and
+`4.0.540` projects retain their matching licence record, dependencies and lockfile; all three are supported.
 The defaults for a newly reviewed project are:
 
 | Package | Version |
 | --- | --- |
-| `remotion`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/cli` | `4.0.540` each |
+| `remotion`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/cli` | `4.0.541` each |
 | `react`, `react-dom` | `19.0.0` each |
 
 Within the selected Remotion setup scope, install within `media/remotion/` using the chosen
@@ -77,14 +77,16 @@ partial artifacts; do not erase a prior attempt to reuse its name.
 The Skill, helper and templates are original agents-united work under the accompanying
 MIT licence, copyright 2026 NeoAnthropocene. No upstream Skill or animation template was
 copied or vendored into this Skill; original metadata has no invented `source` or
-`adaptedFrom`. The separate optional `remotion-agent-skills` add-on carries the official
-Remotion skills under the source-available Remotion License and remains independently
-licensed.
+`adaptedFrom`. Official Remotion Skills are obtained directly from upstream or a compatible plugin;
+Agents United does not redistribute their contents. See [official Skills](official-agent-skills.md).
 The Remotion API and licence references reviewed for the original `4.0.539` runtime
 are listed in [preflight](preflight.md). The tagged `4.0.540`
 [licence](https://github.com/remotion-dev/remotion/blob/v4.0.540/LICENSE.md) was compared
-with `4.0.539` on 2026-11-04 and is identical. The new release is a separate browser/render
-verification boundary; its end-to-end host workflow is unverified.
+with `4.0.539` on 2026-11-04 and is identical. The tagged `4.0.541`
+[licence](https://github.com/remotion-dev/remotion/blob/v4.0.541/LICENSE.md) was compared
+with `4.0.540` on 2026-11-05 and is identical. The saved 4.0.541 host record includes
+successful renders with a project-local helper patch; the current preview and installed
+helper workflow at this version remains unverified in a real render.
 These sources informed the integration; this source MIT
 licence does not grant Remotion production entitlement or relicense runtime dependencies.
 The reviewed versioned licence links v4 terms; prospective v5 documentation is not the

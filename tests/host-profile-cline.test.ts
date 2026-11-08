@@ -131,15 +131,25 @@ describe('the committed Cline host profile and tool policy', () => {
     for (const key of agent.allowedKeys) expect(adr0013, `ADR 0013 names ${key}`).toContain(key);
   });
 
-  it('declares the skill keys the docs state, and the hook stages of the snapshot', () => {
+  it('preserves the historical hook-stage catalog and checks the current documented plugin hooks', () => {
     expect(profile.artifacts.skill.path).toBe('.cline/skills/<name>/SKILL.md');
     expect(profile.artifacts.skill.allowedKeys).toEqual(['name', 'description']);
     for (const key of profile.artifacts.skill.portableKeys) expect(profile.artifacts.skill.allowedKeys).toContain(key);
+
+    // The profile is pinned to CLI 3.0.68. The old docs listed runtime stages;
+    // the refreshed page instead lists plugin callback names, a different API.
+    const historicalStages = [
+      'input', 'runtime_event', 'session_start', 'run_start', 'iteration_start', 'turn_start',
+      'before_agent_start', 'tool_call_before', 'tool_call_after', 'turn_end', 'stop_error',
+      'iteration_end', 'run_end', 'session_shutdown', 'error',
+    ];
+    expect([...profile.artifacts.hook.events].sort()).toEqual([...historicalStages].sort());
     const page = read('pages/plugin/sdk-plugins.md');
-    const block = /## Hook stages[\s\S]*?```txt[^\n]*\r?\n([\s\S]*?)```/i.exec(page)![1];
-    const stages = block.split('\n').map(line => line.trim()).filter(Boolean);
-    expect([...profile.artifacts.hook.events].sort()).toEqual([...stages].sort());
-    expect(profile.artifacts.hook.events).toContain('tool_call_before');
+    const section = /## Hooks\r?\n([\s\S]*?)(?=\r?\n### |\r?\n## )/.exec(page);
+    expect(section, 'current plugin Hooks section').not.toBeNull();
+    const hooks = [...section![1].matchAll(/^\| \x60([A-Za-z]+)\x60 \|/gm)].map(match => match[1]);
+    expect(hooks).toEqual(['beforeRun', 'afterRun', 'beforeModel', 'afterModel', 'beforeTool', 'afterTool', 'onEvent']);
+    expect(section![1]).toMatch(/beforeTool[\s\S]*?skip[\s\S]*?reason/);
   });
 
   it('records the verified behaviours as features, including the ones that are not available', () => {
