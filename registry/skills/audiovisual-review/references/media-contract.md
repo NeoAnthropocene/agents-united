@@ -104,3 +104,9 @@ Both renderers and audio finishing consume these shared validators; do not fork 
 schema. Coordinated work also uses the [project contract](../../workflow-agency-motion-production/references/project-contract.md).
 Install required sibling Skill resources in their source-relative layout before execution.
 Read [acceptance](acceptance.md) for decoded-media, listening, visual and provenance review.
+
+
+For picture-dependent SFX, the [Motion event handoff](motion-events.md) is a
+separate versioned sidecar bound to this full canonical fingerprint and picture
+source hashes (ADR 0063). It does not add keys to the timeline or audio manifest,
+replace the fingerprint, detect events automatically, or establish audible onset.

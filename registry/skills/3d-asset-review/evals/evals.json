@@ -1,0 +1,28 @@
+{
+  "skill_name": "3d-asset-review",
+  "status": "prepared-not-run",
+  "draftDate": "2026-11-06",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "An approved project provides a GLB, provenance and bounded budgets.",
+      "expected_output": "Use actual inspector and ledger results; report source hashes, measured subset, diagnostics and unverified visual review.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "A GLB uses an unsupported extension and unknown rights for commercial delivery.",
+      "expected_output": "Reject or mark unsupported and block public delivery without scoped reviewer evidence; do not claim clearance.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "An unmodified unknown-rights asset is used only in a private prototype.",
+      "expected_output": "Record non-license and unresolved rights without claiming clearance; respect known restrictions.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    }
+  ]
+}

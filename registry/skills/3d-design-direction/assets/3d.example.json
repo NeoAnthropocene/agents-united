@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "requestId": "jade-bottle-reference",
+  "status": "produced",
+  "route": "threejs-browser",
+  "usage": "personal-private",
+  "renderer": {
+    "three": "0.180.0",
+    "playwright": "1.62.1",
+    "gltfValidator": "2.0.0-dev.3.10"
+  },
+  "dimensions": {
+    "width": 640,
+    "height": 480
+  },
+  "budgets": {
+    "maxBytes": 5242880,
+    "maxTriangles": 100000,
+    "maxTextureDimension": 2048,
+    "maxTextureBytes": 16777216
+  },
+  "asset": "media/bottle.glb",
+  "sources": [
+    "media/bottle.glb",
+    "media/scene.json",
+    "media/source/create-bottle.mjs"
+  ],
+  "outputs": {
+    "viewer": "output/proof/viewer.html",
+    "proof": "output/proof/frame-000000.png",
+    "formatReport": "media/format.json",
+    "provenance": "media/provenance.json",
+    "assetLedger": "media/used-assets.md",
+    "motionHandoff": "media/shot.json"
+  }
+}

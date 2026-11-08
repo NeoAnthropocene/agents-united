@@ -1,6 +1,6 @@
 {
   "changelog": {
-    "checkedAt": "2026-10-02T12:01:03.198Z",
+    "checkedAt": "2026-11-06T08:44:30.129Z",
     "lastSeen": {
       "": "4.1.22",
       "CLI": "3.0.68",
@@ -9,140 +9,140 @@
   },
   "files": {
     "changelog-cli.md": {
-      "fetchedAt": "2026-10-02T12:01:03.046Z",
-      "sha256": "sha256:80afb54375b151b6dc0899f2c5eba36e4c8c4d4a99fbc0b01e2038f51e654795",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:e65569a28b210aa1cc9715fdb84625afbfc1e72128b5ac86147ef9115942fe8f",
       "url": "https://api.github.com/repos/cline/cline/releases?per_page=100&page=1",
-      "via": "gh-api"
+      "via": "http"
     },
     "changelog-sdk.md": {
-      "fetchedAt": "2026-10-02T12:01:03.198Z",
-      "sha256": "sha256:cc69350261ec1dcb3dbb89b9eb6e1b6545f7aa8dae3c898735fe8fae0caa8d2c",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:83167b9cd5afe3cc59be915bd76add9af1ad2e47265326c4435759acb99ca5b0",
       "url": "https://api.github.com/repos/cline/cline/releases?per_page=100&page=1",
-      "via": "gh-api"
+      "via": "http"
     },
     "changelog.md": {
-      "fetchedAt": "2026-09-30T08:09:40.373Z",
-      "sha256": "sha256:fca6e16fb20ccea5f8a14f660337a479b7d80cdfa0063180e888bf7724d2c8db",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:6651ac6ceebe9986e297094631123f2994cf652d57752d28cbaa76b66893b88e",
       "url": "https://raw.githubusercontent.com/cline/cline/main/CHANGELOG.md",
       "via": "http"
     },
     "llms.txt": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:267e9fb1c70bce3c716c2a8d131506a97339a588eced7d95c749db77f38190ef",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:1c208964e953a350fbc26cadee4ae1244e7972155ffaa0e11c9d4d7437422b2e",
       "url": "https://docs.cline.bot/llms.txt",
       "via": "http"
     },
     "pages/agent/subagents.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:49450e329b587610b9abf91db51ad5db3a1bd1c56e0797bc098f77befba8283d",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:71272fb0174d89e4aa32f5803620c0695de6d06d8860cc730e3a693377d95782",
       "url": "https://docs.cline.bot/features/subagents.md",
       "via": "http"
     },
     "pages/command/using-commands.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:b6688987af89e0164135bc522b6e18685031b27b8d862979732ec18d893f177a",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:ef06d48c1513418222e0bedd38a37790781c65fc2f5380c78553554f9d6e1f4e",
       "url": "https://docs.cline.bot/core-workflows/using-commands.md",
       "via": "http"
     },
     "pages/hook/hooks.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:ef87561721f4cb80fe6d682b6866d638a4952dd416d36cd5ab398426ce64084b",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:39bb35bb3ca9699c247e1365c181ce9b7c191342a9bf50eebbb34b466084346f",
       "url": "https://docs.cline.bot/customization/hooks.md",
       "via": "http"
     },
     "pages/hook/writing-plugins.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:1488ea72f47d85319ba867c3adc0e41d63a9e2f8e75af40a82e0dba10ef113c1",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:212105194ae42cf4402d2dce92a56477fdcf85ea6a2f423a81ba22745084d6c6",
       "url": "https://docs.cline.bot/sdk/guides/writing-plugins.md",
       "via": "http"
     },
     "pages/mcp/mcp-overview.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:547000c8dc7762e41bcdd8a75d4983c6d0533a55bee36816ccb9d8ae23c5a30e",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:36d069562d7752ad49f7eeeb3b50a9ec1b8e0bb7ed7fead04bab072d2e76a7ee",
       "url": "https://docs.cline.bot/mcp/mcp-overview.md",
       "via": "http"
     },
     "pages/orchestration/agent-teams.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:348fa2f5400ae7329ba8e027c869eeb74d77249bde90751e20eceeebb0d05d52",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:d4df09a3fc9d328c317b2f465bf42533f2a81abee9a9cedd63fdae82203ca172",
       "url": "https://docs.cline.bot/cli/agent-teams.md",
       "via": "http"
     },
     "pages/orchestration/multi-agent-teams.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:77000e601827d9db0fa845fab957a8abf89245916acdd297bb19da18e0a32af8",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:17862c24e2c1c473f92a0ce12d688805cd3779f489495bc49ce1f4a6eef92d24",
       "url": "https://docs.cline.bot/sdk/guides/multi-agent-teams.md",
       "via": "http"
     },
     "pages/orchestration/plan-and-act.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:669c1c42504a37b70ed6e4f0bd44e7f744dfc118d6c745991244ddfa4f667660",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:d1bd448e858a93b67772a2c4faff295dcc8ef7669e2136b6c9e5b96201e6a3af",
       "url": "https://docs.cline.bot/core-workflows/plan-and-act.md",
       "via": "http"
     },
     "pages/orchestration/scheduling.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:84647a2f2b97411339d7c1989837b6a9e4b945d1b8401fc40ce7a5de180f6488",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:c73bda655466cd3714873e622791e842f930f9efb07ac6ce106258d7d05e93d1",
       "url": "https://docs.cline.bot/cli/scheduling.md",
       "via": "http"
     },
     "pages/permissions/auto-approve.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:e6cb840dea3f8eea8de9038276379c7e1460d85769e9a1efb6997434e159862f",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:53602cf805fb18e4253349baa99c25475e28517975640ed50dbe97541ee2b005",
       "url": "https://docs.cline.bot/features/auto-approve.md",
       "via": "http"
     },
     "pages/permissions/permission-handling.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:ed5b18f4fd58024061ebef9c85ede94b93f44694e692034a248244b93f10f76e",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:3c29f2dd83a554b7e5f413347304c2e1d10d8226d80143dfd3c25d9ac65fb76f",
       "url": "https://docs.cline.bot/sdk/guides/permission-handling.md",
       "via": "http"
     },
     "pages/plugin/plugin-install.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:2d3ec708f62901c6a7ed689ae259bc4ae03b79642b466bd31d1ca018621fb03b",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:219dc5c251043225e1d3643a703bbfe814a85e0fcfa2d352f3d3ff4856a7cd84",
       "url": "https://docs.cline.bot/sdk/plugin-install.md",
       "via": "http"
     },
     "pages/plugin/plugins.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:eae1f682689cb8f92926fe51f4b923e7e339763110ecef4c351c8c12188e494a",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:2abb3305eb2db6103a9e3712c4913782ccb5c6780aca486faba263a5a350214a",
       "url": "https://docs.cline.bot/customization/plugins.md",
       "via": "http"
     },
     "pages/plugin/sdk-plugins.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:6236082215e2783658a4ca6353cca230a6c5bc2a44f0a1f3d040bdab4f928b7d",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:a440d24a1e48c5effd0615c09dae129730685f4c115cc14f586678db64a46992",
       "url": "https://docs.cline.bot/sdk/plugins.md",
       "via": "http"
     },
     "pages/rule/cline-rules.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:c210e26b1424aed6db8119ea9a6a0c54bbb3ba5daf2712e360586e64f9fc73b5",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:a54e5ef989aeb4b1c0afd0d53fb43f6cda0e92dc6efac24eb503cf12350252b2",
       "url": "https://docs.cline.bot/customization/cline-rules.md",
       "via": "http"
     },
     "pages/settings/cli-reference.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:e28da5a6e875a01ab9bf4ed5923f7f7e41942893a1413e107c542d56bd77e174",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:413311d86782943fe6ef997e03703fabea838253510cd0d6b640d964cf84ae1f",
       "url": "https://docs.cline.bot/cli/cli-reference.md",
       "via": "http"
     },
     "pages/settings/config.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:13f098094c4ac523dbdeab60b258c3e5f90ad22d2c0d563446548eae44372d75",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:d74dc00187355c5d831b9e768d2ab7acafc538ef1fc32cb9676e8f64019b7671",
       "url": "https://docs.cline.bot/getting-started/config.md",
       "via": "http"
     },
     "pages/skill/skills.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:3ee27dba2e3e81a0eb077c02d8cf3ad4b0d74c6c61d83e6f879ecaa31b3f85e1",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:862f1494bb072c688bf328d3dcd8eb0cba8f69bdab3afcadbf15f324a8f242e4",
       "url": "https://docs.cline.bot/customization/skills.md",
       "via": "http"
     },
     "pages/tools/all-cline-tools.md": {
-      "fetchedAt": "2026-09-30T10:43:45.089Z",
-      "sha256": "sha256:9f959dd63805c0ac207af8521e401e25589e4b39c6dbbeebc9a0be9c5bbde459",
+      "fetchedAt": "2026-11-06T08:44:30.129Z",
+      "sha256": "sha256:547198c226a546d7d1edbb359e04a80c8563ec2e45b1bfd033ca2dc99a9ea54b",
       "url": "https://docs.cline.bot/tools-reference/all-cline-tools.md",
       "via": "http"
     }

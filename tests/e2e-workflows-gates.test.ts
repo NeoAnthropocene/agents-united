@@ -116,11 +116,12 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 1: Feature Coverage (Happy Path)
   describe('Tier 1: Feature Coverage (Workflow Parsing & Phase Gates)', () => {
-    it('should locate and parse all 70 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
+    it('should locate and parse all 71 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
       const workflowDirs = await getWorkflowSkillDirs();
 
-      expect(workflowDirs.length).toBe(70);
+      expect(workflowDirs.length).toBe(71);
       expect(workflowDirs).toContain('workflow-agency-motion-production');
+      expect(workflowDirs).toContain('workflow-agency-3d-production');
 
       for (const dirName of workflowDirs) {
         const filePath = path.join(skillsDir, dirName, 'SKILL.md');
@@ -225,10 +226,10 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
 
   // Tier 4: Real-World Scenario Audit
   describe('Tier 4: Real-World Scenario Audit', () => {
-    it('should perform complete audit of all 70 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
+    it('should perform complete audit of all 71 workflow skill playbooks in registry/skills/workflow-*/SKILL.md', async () => {
       const workflowDirs = await getWorkflowSkillDirs();
 
-      expect(workflowDirs.length).toBe(70);
+      expect(workflowDirs.length).toBe(71);
 
       const report = {
         totalWorkflows: workflowDirs.length,
@@ -246,8 +247,8 @@ describe('E2E Workflow Metadata & Phase Gates Validation (Tier 1-4)', () => {
         if (result.hasRollbackProtocols) report.withRollbackProtocols++;
       }
 
-      expect(report.totalWorkflows).toBe(70);
-      expect(report.withPhasesCount).toBe(70);
+      expect(report.totalWorkflows).toBe(71);
+      expect(report.withPhasesCount).toBe(71);
     });
   });
 });

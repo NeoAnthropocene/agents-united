@@ -1,5 +1,7 @@
 # Local hands-on motion exercise
 
+**2026-11-08 handoff:** The preserved previews were resumed and passed nine HTTP and seven automated browser checks. Current session-local links and the limits of that evidence are in the [local handoff](2026-11-07-final-local-handoff.md); there is no new human acceptance.
+
 The two projects in `scratch/motion-hands-on-2026-11-04/` are isolated copies of the 041 native and Remotion pilot media and audio. Their `digital-agency` Claude Native Lane installations come from this checkout; only Remotion receives the optional `remotion-agent-skills` Bundle. The copied Remotion 4.0.539 dependencies are project-local. No Claude session, paid service or generation is started by preparation. The pilot's licence record and proof records are historical evidence, not a fresh eligibility determination or human approval. The Plan 041 redistribution/publication hold remains in force.
 
 ## Historical preparation and reproduction
@@ -161,3 +163,47 @@ Project-local ffprobe exited 0 and decoded **60 frames**, H.264/yuv420p **320×1
 The final corrected tree passed `npm run typecheck` (exit **0**) followed by `npm test -- --maxWorkers=2` (exit **0**): **235 files passed; 4,888 tests passed, 209 skipped, 5,097 total**, in 1360.37 seconds. Skipped cases are not verified. The affected 12-file run separately passed 338 tests. Logs remain local at `scratch/verification/publish-typecheck.log`, `publish-full-test.log` and `publish-focused.log`. The earlier interrupted run exposed the cross-Skill workflow link defect; the corrected Cline projection tests pass in this full run. No test was weakened to obtain the result.
 
 A read-only preflight against the maintainer's actual Remotion project also exited 0 using the updated helper: it retained **4.0.539**, revision `pilot-041-r4` and fingerprint `sha256:bd475ecd0dc311caa9b1f43ea132ae57be4726aeabcb67f2a3f2337b6b78ee1b`. It did not rewrite source, dependencies, licence or audio. The staged diff and secret-pattern scan were reviewed; scratch media, dependencies and raw transcripts are excluded from the PR. The proposed 3D role is not implemented by this change.
+
+
+### Follow-up readiness sittings — 2026-11-05
+
+The maintainer ran the prepared cold-setup and locked-revision cases. [Eval 5](2026-11-05-remotion-readiness-eval5.md) confirms delegated current 4.0.540 setup and three official Skill invocations, with a concrete npm ancestor-install defect and missing catalog consultation. [Eval 6](2026-11-05-remotion-readiness-eval6.md) confirms constrained pose-only source, preserved 4.0.539 packages/lock/audio, and an honestly failed mux diagnostic. Its decoded audio and measurement outputs are identical to the original export under the compared method; target/listening review remains necessary. The [readiness handoff amendment](2026-11-04-remotion-readiness-handoff.md#maintainer-readiness-sittings--2026-11-05-audit) and [Plan 046](../../plans/046-post-pilot-motion-slices.md) record fixes, actual verification and remaining live boundaries. No new session was started by the executor.
+
+
+The final post-audit source passed fresh typecheck and the full suite (actual exits 0/0): 239 files, 4,888 passed tests, 209 skipped, 5,097 total. Watched source remained unchanged across the run; skipped checks and patched live behavior remain unverified. See Plan 046 for the bounded wrapper correction and complete logs.
+
+
+### Post-fix maintainer session and efficiency review — 2026-11-05
+
+Session `1134a73c-72ee-45e1-9ba7-d373c55b3b7e` extended the readiness exercise into a film at the maintainer's direction. The [saved-record audit](2026-11-05-postfix-session-audit.md) verifies actual Skill loading, project-local FFmpeg setup, render and mux receipts, and matching ancestor package sentinels. The proof timing was explicitly approved; full beat-map/audio-map acceptance was not established by route/tone choices. Final mux-sync exited 0 on its supplied measurements; the craft gate remained at exit 2 and listening remained unverified in the saved record. The user subsequently reported good animation with remaining flaws; this is scoped visual feedback, not blanket approval of every gate.
+
+The reported $24.30 is user-provided, not reconciled to a saved cost-state or invoice. [Plan 047](../../plans/047-motion-production-efficiency.md) proposes proactive VO/SFX/music/captions/Elements planning, honest approval evidence, proportionate rights review and a Markdown used-asset ledger, plus bounded helper and picture-event improvements. These proposals are not implemented by this documentation update. No completed project, Host session or provider job was modified or started.
+
+
+### Plan 047 implementation checkpoint — 2026-11-05
+
+The lessons-driven improvements are implemented locally in [Plan 047](../../plans/047-motion-production-efficiency.md): proactive complete-treatment recommendations, traceable approvals, bounded private rights checks and Markdown used-asset evidence, compact readiness receipts, offline diagnosis, ESM-only extra dependencies, short/stills-only previews, and a versioned Motion event sidecar for picture-dependent SFX. [ADR 0063](../adr/0063-motion-event-handoff.md) preserves the existing full fingerprint and separates declared event frames from semantic and human review.
+
+The actual isolated installation exited 0; doctor, installed helper help, event capture and validation each exited 0, with nine new/changed installed resources matching source hashes. Changing a synthetic picture source then made event validation exit 2 as expected. This starts no Host and produces no animation/audio. The completed maintainer project remains intact. All four registry latest endpoints and the actual release checker returned aligned 4.0.541; locked 539/540 remain supported. Final full-suite completion is pending, while focused tests and fresh typecheck passed in their recorded scopes.
+
+
+### Final Plan 047 validation — 2026-11-05
+
+Fresh typecheck and full test exits are both 0, with watched source unchanged:
+243 files passed, 4,905 tests passed and 209 skipped (5,114 total). The final
+plan047-verified gate ended 2026-11-05T19:30:03.4646706Z. The separate installed
+helper and actual 541 SDK preview checks passed; numerical/source results do
+not establish human listening, perceived sync, creative acceptance, current
+unknown asset rights or live compliance with the revised prompts. Full details
+and earlier failed runs are retained in [Plan 047](../../plans/047-motion-production-efficiency.md).
+
+### Subsequent prototype listening acceptance — 2026-11-05
+
+The maintainer explicitly confirmed reviewing the completed post-fix prototype's
+voice-over, music/SFX balance and perceived sync: **“Reviewed; acceptable for
+this prototype.”** This supersedes the listening-unverified status for that
+prototype and scope, with the chat reply as evidence. See the [audit
+amendment](2026-11-05-postfix-session-audit.md#subsequent-human-listening-feedback--2026-11-05).
+Earlier saved-session findings retain their historical meaning. Commercial
+rights, other films' listening reviews, broader visual acceptance and live
+compliance with the newly revised prompts are separate.

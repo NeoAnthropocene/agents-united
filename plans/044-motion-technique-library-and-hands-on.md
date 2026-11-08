@@ -1,5 +1,20 @@
 # Plan 044: Motion technique library, onset diagnostics and hands-on handoff
 
+**Latest status, 2026-11-08:** Original deliverables and scoped pilot reviews are complete; the integrated local gate passed with skips and separate matrix proof. See the [final verification receipt](../docs/skill-quality/2026-11-08-final-verification.md). Revised Host adherence remains **unverified live**. Earlier status entries are historical checkpoints.
+
+**Current status, 2026-11-07:** the original local library, diagnostics, test kit
+and scoped demo-review deliverables are delivered. The combined r4 gate passed
+typecheck and all 254 suites (4,971 passed tests, 210 skipped). That run predates
+the later instruction hardening. Its full gate encountered three lifecycle
+timeouts; isolated reproductions passed. The subsequent serial gate passed
+254 suites, 4,976 tests and 210 skips on the pre-integration tree. The newer
+integrated tree needs a fresh full gate; see the completion audit. Later live
+adherence to the revised orchestration/task guidance remains **unverified**;
+historical pixel discrepancies and creative limitations retain their recorded
+dispositions. Plan 045's maintainer pilot families have since been executed;
+the current regression and Host refresh boundaries are recorded in the
+[completion audit](../docs/skill-quality/2026-11-07-host-and-media-completion-audit.md).
+
 Goal: continue the supplied session handoff with reusable Native/Remotion techniques and a local interactive test kit. Done when the library, routing and diagnostics pass tests, the two isolated project installs and previews are ready, and the maintainer has launch instructions and review criteria. 3D implementation, real Host sessions, paid generation, public release and human creative/listening sign-off are outside this implementation slice.
 
 ## Ground and prior art — 2026-11-03
@@ -105,3 +120,34 @@ The first requested pre-push run then exposed three failures in `cline-workflow-
 `npm run typecheck` completed with actual exit **0**, followed by `npm test -- --maxWorkers=2` with actual exit **0**: **235 files passed; 4,888 tests passed, 209 skipped, 5,097 total**, duration 1360.37 seconds. This is the fresh full run on the corrected implementation, including the Cline workflow fix and linked-CLI regressions. Local logs: `scratch/verification/publish-typecheck.log`, `publish-full-test.log`, `publish-focused.log`; staged diff/secret-pattern review and whitespace checks passed. Skipped checks and revised live orchestration remain unverified.
 
 The updated helper's read-only preflight also passed against the maintainer's real Remotion r4 project, retaining 4.0.539 and its canonical fingerprint without writes. Plan 045 now includes a bounded resolver/native-roster audit and the exact parent-role mapping/lifecycle question to resolve before implementing Arda. The maintainer projects, exports, raw transcripts and installed runtime trees are excluded from the commit; the report preserves artifact identities and scoped acceptance.
+
+
+### 2026-11-04 — post-merge sliced execution
+
+PRs #213/#214 are merged in fresh origin/dev 0b9a382. The maintainer authorized a new branch and budget-conscious execution of the next-action plan, stopping before included-allowance exhaustion without workspace credits. [Plan 046](046-post-pilot-motion-slices.md) tracks independent implementation slices and the maintainer-run gate. The old vendored-Skills distribution hold is resolved by removing the copied material and using upstream installation, not by inferring licence clearance. Accepted demo projects remain untouched. See the new Native seek and audio handoff reports for actual bounded results; live revised orchestration and listening remain unverified.
+
+### 2026-11-06 — current disposition of the next-action table
+
+The named local library, diagnostics, preparation kit and hands-on report are
+delivered; the historical table above is not a new instruction to repeat paid
+sessions. Eval5, eval6 and the postfix sitting have actual maintainer records
+and audits. Later policy/readiness changes are locally tested, while adherence
+to newly changed Host task guidance still needs a new maintainer-run session.
+Native repeat-seek evidence and canonical audio binding are recorded in the
+follow-on reports; the historical two-pixel cause and baseline correlation
+diagnostics are not relabelled as fixed by unrelated changes. The maintainer
+accepted VO, music/SFX balance and perceived sync for the postfix prototype
+only. The original 4/6 comparison remains frozen.
+
+Copied official Remotion Skills were removed from distribution; upstream
+installation is the supported route. Plan 045 placement is accepted and its
+real optional package and bounded local GLB/viewer/PNG/Motion proof now exist;
+the combined r4 gate has since passed and its Phase E remains unverified. These
+are the current continuations of rows 1–5, not retroactive universal creative,
+licence or live-orchestration approval. See Plans 046–048 and the dated audits.
+
+**2026-11-07 supersession:** Phase E's earlier unverified status above is
+historical. All three pilot families were subsequently executed with scoped
+feedback; see [Plan 045](045-agency-3d-designer.md) and the
+[completion audit](../docs/skill-quality/2026-11-07-host-and-media-completion-audit.md).
+Adherence to the later hardened instructions remains **unverified live**.

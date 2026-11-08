@@ -1,0 +1,3 @@
+# Worked example: personal-private bottle proof
+
+A complete brief requests an original procedural bottle for a local viewer and still. Record destination, camera, budget and rights; consult without writing files. Once the route is accepted, create or inspect the project record and ledger, retain unresolved private rights warnings, and run the installed validator and browser helpers. Return the actual viewer, GLB, PNG, hashes and diagnostics. Human viewing, release rights and Motion acceptance are separate evidence. If runtime is absent and installation is excluded, report the prerequisite; do not invent output.

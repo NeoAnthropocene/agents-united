@@ -77,7 +77,7 @@ describe('the mode line of the Claude lead', () => {
   // longer relies on the host having saved the line "by then" (it had not, in Sittings T and U: the save lags by 3 to 9 s): the hook waits for the file before it holds anything.
   it('says in which order the first messages go: the searches, then the Operation Mode information with the ToolSearch that loads the task tools, then the first other call', () => {
     expect(SECTION).toContain('**In order.** Your first message holds `ToolSearch` calls and nothing else: one for each of the six integrations, MarkItDown and Stitch.');
-    expect(SECTION).toContain('Your second message is the Operation Mode information: the mode line, as a text block, and no other words of yours to the user; it also holds one `ToolSearch` that checks for and loads the task tools and `SendMessage` (`select:TaskCreate,TaskList,TaskUpdate,SendMessage`, see "The shared task list") and no other call.');
+    expect(SECTION).toContain('Your second message is the Operation Mode information: the mode line, as a text block, and no other words of yours to the user; it also holds one `ToolSearch` that checks for and loads the task tools and `SendMessage` (`select:TaskCreate,TaskGet,TaskList,TaskUpdate,SendMessage`, see "The shared task list") and no other call.');
     expect(SECTION).toContain('Your first other call is in the third message: the hook looks for the line in the saved transcript, which the host writes a few seconds late, and it waits for the file before it holds anything, so the user sees no error (ADR 0053).');
     expect(SECTION.indexOf('**In order.**')).toBeLessThan(SECTION.indexOf('Your first answer in a session reports the operating mode'));
     expect(SECTION).not.toContain('then the introduction');

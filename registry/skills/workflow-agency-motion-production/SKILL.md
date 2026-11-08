@@ -3,7 +3,7 @@ name: workflow-agency-motion-production
 description: 'Use when coordinating agency motion/sound; trigger phrases: launch film, animated ad, audio handoff. Skip static/deferred/declined media and isolated engineering.'
 metadata:
   author: agents-united
-  version: "1.1.0"
+  version: "1.2.0"
   license: MIT
 ---
 
@@ -16,6 +16,12 @@ Load for an included film/loop/soundtrack or Media Request in bounded planning. 
 ## Input/Output Requirements
 Require accepted brief/map/request, approved brand/assets/exact copy, rights, destination/accessibility, owners and cost/setup scope. Return choices, applicable storyboard/timeline, Sound handoff, export, captions/transcript, provenance and evidence. Helper needs Node >=24 and installed sibling `audiovisual-review/scripts/review.mjs`.
 
+## Treatment and approval
+
+Chris proactively recommends a coherent treatment covering voiceover, SFX, music, captions and Elements (for Remotion); the user need not request each. For each applicable option present include / defer / decline, recommendation, reason, dependencies and known effort or external cost. Silence, no VO and no Elements are valid. Native uses no automatic Elements or Remotion setup. Preserve already accepted choices and ask only unresolved questions. Ask intended use (personal private, noncommercial public or commercial); it is not proof of rights. Within at most two planning rounds, seek one consolidated actual user acceptance of the treatment plan and delegation map; carry forward existing explicit acceptance rather than ask twice. Then obtain explicit scoped timing approval for the relevant timeline or beat map before dependent production. A material change reopens only affected choices or timing.
+
+Every cross-role handoff records gate, status, approver, source/reference, revision and open items. A route or tone choice is not acceptance of the audio map or evidence of listening, perceived sync or creative acceptance. Distinguish actual user evidence from lead decisions, specialist reports, numerical passes and unknowns. If the user explicitly delegates approval authority, record its scope and the delegate decision; if the user waives a gate, record a scoped waiver as such, not human review. Neither delegation nor waiver invents listening or a numerical pass. Do not request permission again for an already authorized choice. See [treatment plan](assets/treatment-plan.example.md), [approval handoff](assets/approval-handoff.example.md), and, when rights review is needed for Native or Remotion, load the installed `remotion-production` Skill and resolve its root for `references/asset-rights.md` and `assets/used-assets.example.md`.
+
 ## Step-by-Step Runbook
 ```mermaid
 graph TD
@@ -25,7 +31,7 @@ graph TD
     P1 --> M{Motion included?}
     M -->|Yes| V[Phase 2: storyboard, timeline, scratch]
     M -->|No| A[Phase 2: Sound cue and timing]
-    V --> G{Chris approves timing and copy?}
+    V --> G{Scoped timing gate satisfied?}
     A --> G
     G -->|No: owning slice revises| M
     G -->|Yes| P3[Phase 3: applicable animation and audio]
@@ -35,7 +41,7 @@ graph TD
 ```
 1. **Phase 0: consult.** Relevant specialists specify placement/audience/purpose, asset/copy/brand refs, duration/ratio/format, accessibility, dependencies, route, cost and acceptance. Chris consolidates questions/include/defer/decline within planning/peer limits; do not spawn all specialists.
 2. **Phase 1: accept and save.** Recommend Native HTML/SVG/canvas or offer independent Remotion React; choose local/API/hybrid audio and footage separately. Reuse supplied/licensed assets. Save/read back the complete [project contract](references/project-contract.md). Defaults: 1920x1080/60fps H264/AAC; stereo48k, -16 LUFS +/-1, <=-1 dBTP. Retain overrides; provider/model/USD preferences are not consent.
-3. **Phase 2: approve timing.** Motion storyboards/animatics and creates the canonical frame timeline; Sound supplies scratch as needed. Sound-only WAV/sonic-logo uses Sound-owned, lead-approved cue/timing; skip Motion/storyboard/renderer install/video. Schema-required video fields stay unused defaults. Chris approves timing/exact copy before final production.
+3. **Phase 2: approve timing.** Motion storyboards/animatics and creates the canonical frame timeline; Sound supplies scratch as needed. Sound-only WAV/sonic-logo uses Sound-owned, lead-approved cue/timing; skip Motion/storyboard/renderer install/video. Schema-required video fields stay unused defaults. Chris records explicit scoped user timing approval or the user's scoped delegation/waiver before dependent final production; lead decisions remain distinct from user evidence.
 4. **Phase 3: produce.** Motion animates and Sound generates/edits/mixes in parallel when applicable, using invoked direction and renderer/audio Skills. For Remotion, one setup owner loads `remotion-production` and its `references/setup-and-elements.md` from the resolved installed Skill root; Chris checks readiness and directs component selection before delegating production. Reuse existing local setup authorization, preserve locked projects, and distinguish installed/discovered/invoked/used. Nontrivial revisions return to their specialist owners. Optional video-generation/mcp-setup need opt-in, installed resources and actual account/tool/per-job authorization.
 5. **Phase 4: hand off.** Sound returns stereo48k WAV, aligned pre-master stems, cues, revision/fingerprint, manifest, applicable transcript/captions, provenance and measurement/listening evidence. Motion validates/integrates/renders if included; Sound-only goes through review directly to Chris. Never invent speech.
 6. **Phase 5: review and deliver.** Creative/Copy, QA and Compliance use audiovisual-review on the actual export: decode, measurements, viewing/listening/sync, accessibility, claims and rights. Chris reads evidence/open items; preserve normal launch, hand-back and shutdown protocol.
@@ -43,7 +49,7 @@ graph TD
 | Transition | Gate evidence and success criteria |
 |---|---|
 | Phase 0 -> 1 | Included request and accepted map; owners, rights, exact copy/assets available |
-| Phase 2 -> 3 | Chris approves current timing/copy and computed fingerprint before production |
+| Phase 2 -> 3 | Explicit scoped timing approval or recorded delegation/waiver for current timing/copy and computed fingerprint before dependent production |
 | Phase 3 -> 4 | Final Sound handoff matches current revision/fingerprint; integration waits |
 | Phase 4 -> 5 -> acceptance | Required reviews must pass; report unresolved checks as unverified |
 
@@ -60,3 +66,7 @@ Preserve existing preferences (`project.exists`): inspect status/review edits; n
 - Provider and each paid job have evidence; Sound matches revision/fingerprint/source identities.
 - Separate structural checks, measurements, viewing/listening and provenance; missing checks say **unverified**.
 - Chris receives source/export/evidence paths, open decisions, bounded recheck scope and lifecycle evidence.
+
+## Picture event handoff
+
+For picture-dependent final SFX, Motion verifies action frames from actual animation math or viewed movement and loads the installed `audiovisual-review` Skill, resolves its root and follows `references/motion-events.md` to capture the versioned picture event sidecar; Sound validates the actual artifact against the current timeline and listed picture sources before final dependent SFX. Independent sound design can proceed in parallel. Timeline or picture-source changes require a rechecked, recaptured sidecar and affected Sound handoff. The helper does not prove frame accuracy, approval, viewing or listening. Sound-only work does not require Motion events.

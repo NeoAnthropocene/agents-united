@@ -49,7 +49,8 @@ describe('the registry entry', () => {
 
   it('no other bundle declares nativeRoles, so Tier-1 marketing keeps the legacy roles', () => {
     const others = Object.entries(manifest.bundles).filter(([name, bundle]) => name !== 'digital-agency' && (bundle as { nativeRoles?: unknown }).nativeRoles !== undefined);
-    expect(others.map(([name]) => name)).toEqual([]);
+    expect(others.map(([name]) => name)).toEqual(['agency-3d-production']);
+    expect((manifest.bundles['agency-3d-production'] as BundleDefinition & { nativeRoles: Record<string, string> }).nativeRoles).toEqual({ 'subagent-3d-designer.md': 'agency-3d-designer' });
   });
 });
 

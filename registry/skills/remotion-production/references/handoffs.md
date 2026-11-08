@@ -61,3 +61,10 @@ Exclude credentials, `.env`, Git internals, caches, browser profiles, runtime bi
 `node_modules` from the editable source archive. Name the next reviewer and concrete open
 items. Separate numerical proof, decoded-sample inspection, full playback, listening,
 creative approval and production entitlement; mark unperformed checks unverified.
+
+Include the current [used-asset ledger](../assets/used-assets.example.md), applying
+the [purpose-specific rights workflow](asset-rights.md). Identify actually used
+assets separately from tools, code, fonts, voices and model weights; retain their
+own evidence and unresolved items. For unknown terms include once in this
+handoff: **Check the commercial usage availability of the assets.** Reuse the
+recorded personal/private/public/commercial scope rather than asking again.

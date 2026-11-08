@@ -8,11 +8,11 @@
 
 Skills are modular instruction sets that extend Cline's capabilities for specific tasks. Each skill packages detailed guidance, processes, and optional resources that Cline loads only when relevant to your request.
 
-Install multiple skills and Cline only loads what it needs. A deployment skill stays dormant until you ask about deploying. Unlike [rules](/customization/cline-rules) (which are always active), skills load on-demand so they don't consume context when you're working on something unrelated.
+Install multiple skills and Cline only loads what it needs. A deployment skill stays dormant until you ask about deploying. Unlike [rules](https://docs.cline.bot/customization/cline-rules.md) (which are always active), skills load on-demand so they don't consume context when you're working on something unrelated.
 
-<Note>
-  Manage skills from the Skills menu: click the scale icon at the bottom of the Cline panel, to the left of the model selector, then switch to the **Skills** tab.
-</Note>
+> [!NOTE]
+>
+> Manage skills from the Skills menu: click the scale icon at the bottom of the Cline panel, to the left of the model selector, then switch to the **Skills** tab.
 
 ## How Skills Work
 
@@ -22,9 +22,9 @@ Skills use progressive loading to maximize efficiency:
 | - | - | - | - |
 | Metadata | Always (at startup) | \~100 tokens per skill | `name` and `description` from YAML frontmatter |
 | Instructions | When skill is triggered | Under 5k tokens | SKILL.md body with instructions and guidance |
-| Resources | As needed | Effectively unlimited | Bundled files accessed via `read_file` or executed scripts |
+| Resources | As needed | Effectively unlimited | Bundled files accessed via `read_files` or executed scripts |
 
-When you send a message, Cline sees a list of available skills with their descriptions. If your request matches a skill's description, Cline activates it using the `use_skill` tool, which loads the full instructions from SKILL.md.
+When you send a message, Cline sees a list of available skills with their descriptions. If your request matches a skill's description, Cline activates it using the `skills` tool, which loads the full instructions from SKILL.md.
 
 ## Triggering Skills with Slash Commands
 
@@ -74,23 +74,21 @@ Required fields:
 
 ## Creating a Skill
 
-<Steps>
-  <Step title="Open the Skills menu">
-    Click the scale icon at the bottom of the Cline panel, to the left of the model selector. Switch to the Skills tab.
-  </Step>
+**1. Open the Skills menu**
 
-  <Step title="Create a new skill">
-    Click "New skill..." and enter a name for your skill (e.g., `aws-deploy`). Cline creates a skill directory with a template `SKILL.md` file.
-  </Step>
+Click the scale icon at the bottom of the Cline panel, to the left of the model selector. Switch to the Skills tab.
 
-  <Step title="Write your skill instructions">
-    Edit the `SKILL.md` file:
+**2. Create a new skill**
 
-    * Update the `description` field to specify when this skill should trigger
-    * Add detailed instructions in the body
-    * Optionally add supporting files in `docs/`, `templates/`, or `scripts/` subdirectories
-  </Step>
-</Steps>
+Click "New skill..." and enter a name for your skill (e.g., `aws-deploy`). Cline creates a skill directory with a template `SKILL.md` file.
+
+**3. Write your skill instructions**
+
+Edit the `SKILL.md` file:
+
+* Update the `description` field to specify when this skill should trigger
+* Add detailed instructions in the body
+* Optionally add supporting files in `docs/`, `templates/`, or `scripts/` subdirectories
 
 You can also create skills manually by creating the directory structure in your file system. Place skill directories in `.cline/skills/` (workspace) or `~/.cline/skills/` (global) and Cline will detect them automatically.
 
@@ -156,7 +154,7 @@ Include real examples. Show what commands to run, what output to expect, and wha
 
 ## Where Skills Live
 
-Skills can be stored globally or in a project workspace. See [Storage Locations](/getting-started/config#storage-locations) for guidance on when to use each.
+Skills can be stored globally or in a project workspace. See [What Goes Where?](https://docs.cline.bot/getting-started/config.md#what-goes-where) for guidance on when to use each.
 
 Project skills:
 
@@ -282,3 +280,6 @@ For visualization, prefer matplotlib or seaborn depending on complexity.
 ```
 
 Skills transform Cline from a general-purpose assistant into a specialist that knows your domain. Start with one skill for a task you repeat often, test it, and iterate on the description until it triggers reliably.
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

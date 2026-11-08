@@ -118,6 +118,10 @@
       {
         "url": "https://code.claude.com/docs/en/features-overview.md",
         "slug": "features-overview"
+      },
+      {
+        "url": "https://code.claude.com/docs/en/agent-sdk/todo-tracking.md",
+        "slug": "agent-sdk-todo-tracking"
       }
     ]
   },

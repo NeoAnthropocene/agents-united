@@ -25,9 +25,9 @@ async function fixture(project, {prefs=preferences(),clock=timeline,license=elig
   if(license) await fs.writeFile(path.join(project,'media/remotion-license.json'),JSON.stringify(license));
 }
 
-test('new reviewed release scaffolds exact 540 while legacy 539 records retain their pins', async () => {
-  assert.equal(remotion.REMOTION_VERSION, '4.0.540');
-  for (const version of ['4.0.539', '4.0.540']) {
+test('new reviewed release scaffolds exact 541 while legacy records retain their pins', async () => {
+  assert.equal(remotion.REMOTION_VERSION, '4.0.541');
+  for (const version of ['4.0.539', '4.0.540', '4.0.541']) {
     const project = await fs.mkdtemp(path.join(os.tmpdir(), 'remotion release '));
     try {
       const license = {...eligibility(), remotionVersion: version,
@@ -39,7 +39,7 @@ test('new reviewed release scaffolds exact 540 while legacy 539 records retain t
       for (const name of release.RELEASE_PACKAGES) assert.equal(pkg.dependencies[name], version);
     } finally { await fs.rm(project, {recursive:true, force:true}); }
   }
-  for (const version of ['4.0.541', '^4.0.540', 'latest']) {
+  for (const version of ['4.0.542', '^4.0.540', 'latest']) {
     assert.throws(() => remotion.preflight(preferences(), {...eligibility(), remotionVersion:version,
       licenseUrl:`https://github.com/remotion-dev/remotion/blob/v${version}/LICENSE.md`}), /license/i);
   }
@@ -245,5 +245,16 @@ test('Remotion render passes imageFormat png and yuv420p pixelFormat to avoid de
     assert.equal(report.requestedEncoding.imageFormat, 'png');
   } finally {
     await fs.rm(project, { recursive: true, force: true });
+  }
+});
+
+test('new default pins 4.0.541 while retaining both reviewed legacy versions', async () => {
+  assert.equal(remotion.REMOTION_VERSION,'4.0.541');
+  assert.deepEqual(remotion.SUPPORTED_REMOTION_VERSIONS,['4.0.539','4.0.540','4.0.541']);
+  for (const version of remotion.SUPPORTED_REMOTION_VERSIONS) {
+    const license={...eligibility(),remotionVersion:version,licenseUrl:`https://github.com/remotion-dev/remotion/blob/v${version}/LICENSE.md`};
+    assert.equal(remotion.preflight(preferences(),license).remotionVersion,version);
+    for (const name of ['remotion','@remotion/bundler','@remotion/renderer','@remotion/cli'])
+      assert.equal(remotion.dependenciesForVersion(version)[name],version);
   }
 });

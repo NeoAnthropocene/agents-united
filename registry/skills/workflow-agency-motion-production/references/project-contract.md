@@ -80,3 +80,7 @@ Hand-off: give Motion/Sound the request decision, preferences, approved inputs a
 shared `audiovisual-review/references/media-contract.md`; return missing setup or scope
 questions to Chris. Follow [production gates](production-gates.md) for installed resources,
 sequence, ownership, timing approval and actual delivery review.
+
+## Treatment and approval records
+
+Keep the [treatment plan](../assets/treatment-plan.example.md) and [approval handoff](../assets/approval-handoff.example.md) separate from preferences: a saved route cannot establish plan acceptance, timing approval, listening or rights. Record actual source evidence, scoped delegations and waivers; preserve prior choices and revisit only material changes. For Native or Remotion, use [asset rights guidance](../../remotion-production/references/asset-rights.md) and the [used-asset ledger](../../remotion-production/assets/used-assets.example.md) when rights review is needed.

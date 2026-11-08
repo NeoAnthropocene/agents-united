@@ -3,7 +3,7 @@
 The three JSON files in `assets/` form a fictional schema example. No source files, permission, client approval, processing result or listening finding is provided. Copy them into the selected project only after adapting the brief; preserve any existing `media/project.json` rather than replacing it with the example. The timeline has full dimensions/scenes, 720 frames at 60fps and three cues. The VO source is a deliberately prepared continuous 10.6-second edit containing all approved phrases and intended gaps; it is placed at frame 24. The mix does not invent phrase-level edit behavior.
 
 1. Inspect supplied originals, actual text, rights and hashes. Prepare new music/VO edits in an approved tool; print the intended duck/fade edits and keep the edit log. Confirm that the VO and all tails fit the approved cue rather than relying on automatic truncation/padding.
-2. Ask Motion/Chris to approve the exact timeline. Calculate its canonical fingerprint with the installed sibling reviewer; optionally include that value in the mix as `timelineFingerprint`. Do not use a sample hash from another job. Saved preferences in the example specify Native/local, 60fps 1920x1080, no providers and -16 LUFS +/-1, <=-1 dBTP.
+2. Ask Motion/Chris to approve the exact timeline. Calculate its canonical fingerprint with the installed sibling reviewer and include that value in the reviewed mix as `timelineFingerprint`. Do not use a sample hash from another job. Saved preferences in the example specify Native/local, 60fps 1920x1080, no providers and -16 LUFS +/-1, <=-1 dBTP.
 3. Preflight the actual full project FFmpeg for amix normalize, loudnorm ranges and both PCM encoders. Then run the installed mixer:
 
 ```text

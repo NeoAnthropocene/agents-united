@@ -8,9 +8,9 @@
 
 Cline provides slash commands in chat that help you manage your conversation and plan complex implementations.
 
-<Tip>
-  **New to slash commands?** Watch our [quick video walkthrough](https://youtu.be/MxS5Jerpf-o) to see these commands in action.
-</Tip>
+> [!TIP]
+>
+> **New to slash commands?** Watch our [quick video walkthrough](https://youtu.be/MxS5Jerpf-o) to see these commands in action.
 
 ## Slash Commands
 
@@ -40,7 +40,7 @@ Use `/smol` when you're deep into a debugging session or brainstorming and need 
 
 `/newrule` creates a rule file that teaches Cline your preferences. Cline will guide you through setting up guidelines for communication style, coding standards, project context, and reusable practices. The rule is saved to your `.clinerules` directory and automatically loaded for future conversations.
 
-Use `/newrule` when you find yourself repeating the same instructions across tasks. For more about rules, see [Cline Rules](/customization/cline-rules).
+Use `/newrule` when you find yourself repeating the same instructions across tasks. For more about rules, see [Cline Rules](https://docs.cline.bot/customization/cline-rules.md).
 
 ### /deep-planning
 
@@ -69,4 +69,7 @@ In addition to built-in commands, you can trigger enabled skills directly from c
 
 Any enabled skill can be triggered this way, which gives you a fast path to skill-specific guidance without rewriting the same instructions each time.
 
-For setup and management details, see [Skills](/customization/skills#triggering-skills-with-slash-commands).
+For setup and management details, see [Skills](https://docs.cline.bot/customization/skills.md#triggering-skills-with-slash-commands).
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

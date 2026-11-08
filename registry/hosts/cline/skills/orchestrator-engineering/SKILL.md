@@ -50,3 +50,8 @@ Load a skill with the `skills` tool, and only if it is in the skill list; if it 
 ## 4. Synthesise and hand back
 
 One synthesis point: you. Report in the Output Contract above (executive summary, evidence log with file paths, verification results, next steps). Turn the specialists' reports into that report; do not paste them. List every unverified claim and every open item plainly.
+
+
+## Optional cross-host routing
+
+Only when the user explicitly asks to run work on another host CLI, use host-agent-router if installed. Name the proposed hosts and explain that this spends the user's other accounts; get consent before the first run, treating existing consent for those hosts and this scope as valid. Otherwise continue this host's normal delegation. Follow the router's worker contract: read-only by default, one isolated checkout per editing worker, and verify the handoff against changed files before accepting work.

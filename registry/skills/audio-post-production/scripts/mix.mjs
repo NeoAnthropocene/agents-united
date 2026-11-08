@@ -23,7 +23,7 @@ export function validateMix(timeline, mix) {
   if (!mix || typeof mix !== 'object' || Array.isArray(mix)) throw new Error('supply a mix object');
   if (Object.keys(mix).some(key => !['timelineRevision', 'timelineFingerprint', 'tracks', 'targetLufs', 'truePeakDbtp'].includes(key))) throw new Error('unexpected mix fields');
   if (mix.timelineRevision !== timeline.revision) throw new Error('timeline revision mismatch');
-  if (mix.timelineFingerprint !== undefined && mix.timelineFingerprint !== timelineFingerprint(timeline)) throw new Error('timeline fingerprint mismatch');
+  if (mix.timelineFingerprint !== timelineFingerprint(timeline)) throw new Error('timeline fingerprint missing or mismatch; review the approved timeline and bind the mix to its current canonical fingerprint');
   if (!Array.isArray(mix.tracks) || mix.tracks.length < 1 || mix.tracks.length > 64) throw new Error('supply 1 to 64 audio tracks');
   const ids = new Set();
   for (const track of mix.tracks) {

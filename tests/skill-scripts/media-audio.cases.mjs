@@ -12,7 +12,7 @@ import { defaultPreferences, timelineFingerprint, validateAudioManifest, validat
 const timeline = () => ({ schemaVersion: 1, revision: 'r2', fps: 60, totalFrames: 120, width: 1920, height: 1080,
   scenes: [{ id: 'scene', startFrame: 0, endFrame: 120 }],
   cues: [{ id: 'logo', startFrame: 30, endFrame: 90, kind: 'sfx' }] });
-const mix = () => ({ timelineRevision: 'r2', tracks: [{ id: 'logo', kind: 'sfx', path: 'audio/tone.wav', startFrame: 30, endFrame: 90, gainDb: -6, provenance: 'Original technical signal; no speech or music quality claim.' }] });
+const mix = () => ({ timelineRevision: 'r2', timelineFingerprint: timelineFingerprint(timeline()), tracks: [{ id: 'logo', kind: 'sfx', path: 'audio/tone.wav', startFrame: 30, endFrame: 90, gainDb: -6, provenance: 'Original technical signal; no speech or music quality claim.' }] });
 
 async function fixture(t, preferences) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'media-audio-contract-'));
@@ -113,13 +113,22 @@ test('mix requires the complete shared timeline and exact cue coverage/provenanc
   const { width: _width, scenes: _scenes, ...incomplete } = approved;
   assert.throws(() => validateMix(incomplete, valid), /timeline/);
   const twoCues = { ...approved, cues: [...approved.cues, { id: 'bed', kind: 'music', startFrame: 0, endFrame: 120 }] };
-  assert.throws(() => validateMix(twoCues, valid), /missing|every approved cue/);
+  assert.throws(() => validateMix(twoCues, { ...valid, timelineFingerprint: timelineFingerprint(twoCues) }), /missing|every approved cue/);
   for (const provenance of ['', '  ', {}, 9]) assert.throws(() => validateMix(approved, { ...valid, tracks: [{ ...valid.tracks[0], provenance }] }), /provenance/);
   assert.throws(() => validateMix(approved, { ...valid, timelineFingerprint: 'sha256:stale' }), /fingerprint/);
   assert.doesNotThrow(() => validateMix(approved, { ...valid, timelineFingerprint: timelineFingerprint(approved) }));
   for (const unsafe of ['audio/.env.wav', 'audio/tone.wav:private', 'audio/NUL.wav', 'https://example.test/a.wav']) {
     assert.throws(() => validateMix(approved, { ...valid, tracks: [{ ...valid.tracks[0], path: unsafe }] }), /relative/);
   }
+});
+
+test('mix must bind the complete approved timeline even when revision and cues are unchanged', () => {
+  const approved = timeline(), valid = mix();
+  const { timelineFingerprint: _fingerprint, ...unbound } = valid;
+  assert.throws(() => validateMix(approved, unbound), /fingerprint/);
+  const changed = { ...approved, width: 1280 };
+  assert.throws(() => validateMix(changed, valid), /fingerprint/);
+  assert.doesNotThrow(() => validateMix(changed, { ...valid, timelineFingerprint: timelineFingerprint(changed) }));
 });
 
 test('mastering supports modern local loudnorm limits and clearly rejects unsupported J1 peaks', () => {
@@ -135,6 +144,7 @@ test('mix emits a shared-valid handoff and preserves supplied audio and aligned 
   const approved = timeline(), settings = mix();
   // Stable J1 identifiers may include dots and need not be safe output basenames.
   approved.cues[0].id = 'master'; settings.tracks[0].id = 'master';
+  settings.timelineFingerprint = timelineFingerprint(approved);
   const result = await renderMix(root, approved, settings, 'media/audio-r2', 'fixture-ffmpeg', { run: process.run });
   assert.deepEqual(validateAudioManifest(approved, result), []);
   assert.deepEqual(await validateMediaFiles(root, result), []);

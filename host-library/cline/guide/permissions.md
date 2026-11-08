@@ -23,7 +23,7 @@ Cline has three separate approval mechanisms: the user's Auto Approve settings (
 ### The CLI
 
 - **The CLI auto-approves all tools by default (`--auto-approve`, default `true`; the default is `false` in ACP mode).** A headless `cline "prompt"` therefore runs without prompting, so anything that must be gated has to be enforced by a policy, not by approval. [Global options](../pages/settings/cli-reference.md#global-options)
-- **`CLINE_COMMAND_PERMISSIONS` restricts shell commands with JSON `allow` and `deny` glob lists and `allowRedirects`.** `deny` always wins over `allow`; once `allow` is set, any command not matching it is denied; `allowRedirects` (default `false`) controls `>`, `>>` and `<`. [CLINE_COMMAND_PERMISSIONS](../pages/settings/config.md#cline_command_permissions), [Environment variables](../pages/settings/cli-reference.md#environment-variables)
+- **The refreshed configuration and CLI reference no longer document `CLINE_COMMAND_PERMISSIONS`.** Its current support and enforcement are unverified; do not rely on it as a guard. [Config environment variables](../pages/settings/config.md#environment-variables), [CLI environment variables](../pages/settings/cli-reference.md#environment-variables)
 
 ### Tool policies (the SDK)
 
@@ -37,6 +37,6 @@ Cline has three separate approval mechanisms: the user's Auto Approve settings (
 
 ## Authoring notes (agents-united, not host behaviour)
 
-- The destructive-command guard has three possible homes on Cline, none a file the install lane copies except the plugin: the guard plugin (CLI only, enforced), `CLINE_COMMAND_PERMISSIONS` (CLI, an environment variable the package can only document), and the user's Auto Approve settings (IDE, user-owned). The package ships the plugin and documents the others in the doctor output.
+- The destructive-command guard has three possible homes on Cline, none a file the install lane copies except the plugin: the guard plugin (observed on CLI 3.0.68; current enforcement unverified), `CLINE_COMMAND_PERMISSIONS` (historical CLI documentation; current support unverified), and the user's Auto Approve settings (IDE, user-owned). The package ships the plugin and documents the others in the doctor output.
 - Because the CLI default is auto-approve, real-session runs of a Cline package must set `--auto-approve` deliberately and say so in the PR.
 - The permissions page for the IDE does not say whether a hook or plugin can read the Auto Approve settings; do not assume it.

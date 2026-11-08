@@ -118,12 +118,25 @@ test('install refuses without consent, and a system install needs both flags', (
   assert.throws(() => ffmpeg.installFfmpeg('project-local', { project: 'C:/p' }), /consent/i);
   // winget exists only in the win32 plan: pin the platform so this case does not depend on the host OS (it failed on Linux CI).
   assert.throws(() => ffmpeg.installFfmpeg('user-wide-winget', { project: 'C:/p', consent: true, platform: 'win32' }), /allow-system-install/i);
-  let ran = null;
-  const result = ffmpeg.installFfmpeg('project-local', {
-    project: 'C:/p', consent: true, run: (command, args, cwd) => { ran = { command, args, cwd }; return { status: 0, stdout: 'ok', stderr: '' }; },
-  });
-  assert.equal(result.exit, 0);
-  assert.equal(ran.command, 'npm');
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg & project-'));
+  try {
+    fs.writeFileSync(path.join(project, 'package.json'), '{}');
+    let ran = null;
+    const result = ffmpeg.installFfmpeg('project-local', {
+      project, consent: true, npmCli: 'npm-cli.js', run: (command, args, cwd) => {
+        ran = { command, args, cwd };
+        const pkg = path.join(project, 'node_modules', 'ffmpeg-static');
+        fs.mkdirSync(pkg, { recursive: true });
+        fs.writeFileSync(path.join(pkg, process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'), 'binary');
+        return { status: 0, stdout: 'ok', stderr: '' };
+      },
+    });
+    assert.equal(result.exit, 0);
+    assert.equal(ran.command, process.execPath);
+    assert.deepEqual(ran.args.slice(-3), ['--prefix', project, '--workspaces=false']);
+    assert.ok(ran.args.includes('--global=false'));
+    assert.equal(ran.cwd, project);
+  } finally { fs.rmSync(project, { recursive: true, force: true }); }
 });
 
 test('PATH editing preserves the exact previous value, verifies, and is idempotent', () => {
@@ -319,5 +332,205 @@ test('the CLI refuses an unconsented install and prints a plan without side effe
     assert.deepEqual(fs.readdirSync(dir), []);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('project install initializes an empty project without changing its ancestor', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg-boundary-'));
+  try {
+    fs.writeFileSync(path.join(root, 'package.json'), '{"name":"ancestor"}');
+    const child = path.join(root, 'empty'); fs.mkdirSync(child);
+    let called = false;
+    const result = ffmpeg.installFfmpeg('project-local', { project: child, consent: true, npmCli: 'npm-cli.js', run: () => {
+      called = true;
+      assert.deepEqual(JSON.parse(fs.readFileSync(path.join(child, 'package.json'), 'utf8')), { private: true });
+      const pkg = path.join(child, 'node_modules', 'ffmpeg-static');
+      fs.mkdirSync(pkg, { recursive: true });
+      fs.writeFileSync(path.join(pkg, process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'), 'binary');
+      return { status: 0 };
+    } });
+    assert.equal(result.exit, 0);
+    assert.equal(called, true);
+    assert.equal(fs.readFileSync(path.join(root, 'package.json'), 'utf8'), '{"name":"ancestor"}');
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('project install rejects a successful npm exit without a confined binary', () => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg-output-'));
+  try {
+    fs.writeFileSync(path.join(project, 'package.json'), '{}');
+    assert.throws(() => ffmpeg.installFfmpeg('project-local', {
+      project, consent: true, npmCli: 'npm-cli.js', run: () => ({ status: 0 }),
+    }), /binary is missing or outside/i);
+  } finally { fs.rmSync(project, { recursive: true, force: true }); }
+});
+
+test('project install preserves a malformed manifest and never calls npm', () => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg-malformed-'));
+  try {
+    const manifest = path.join(project, 'package.json');
+    fs.writeFileSync(manifest, '{broken');
+    let called = false;
+    assert.throws(() => ffmpeg.installFfmpeg('project-local', {
+      project, consent: true, npmCli: 'npm-cli.js', run: () => { called = true; },
+    }), /valid regular package\.json/i);
+    assert.equal(called, false);
+    assert.equal(fs.readFileSync(manifest, 'utf8'), '{broken');
+  } finally { fs.rmSync(project, { recursive: true, force: true }); }
+});
+
+test('project install refuses a linked node_modules before invoking npm', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg-linked-'));
+  try {
+    const project = path.join(root, 'project');
+    const outside = path.join(root, 'outside');
+    fs.mkdirSync(project); fs.mkdirSync(outside);
+    fs.symlinkSync(outside, path.join(project, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
+    let called = false;
+    assert.throws(() => ffmpeg.installFfmpeg('project-local', {
+      project, consent: true, npmCli: 'npm-cli.js', run: () => { called = true; },
+    }), /symlinked/i);
+    assert.equal(called, false);
+    assert.equal(fs.existsSync(path.join(project, 'package.json')), false);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('CLI executes through a linked skill directory from another cwd', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg-linked-skill-'));
+  try {
+    const link = path.join(root, 'skill');
+    fs.symlinkSync(path.resolve('registry/skills/audiovisual-review'), link, process.platform === 'win32' ? 'junction' : 'dir');
+    const result = spawnSync(process.execPath, [path.join(link, 'scripts', 'ffmpeg.mjs'), 'resolve', '--project', root], {
+      cwd: root, encoding: 'utf8', env: { ...process.env, FFMPEG_PATH: '', PATH: '' },
+    });
+    assert.equal(result.status, 2);
+    assert.equal(JSON.parse(result.stdout).source, 'path');
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('import with a non-file entry argument does not run the CLI', () => {
+  const code = `process.argv[1] = 'missing-entry'; await import(${JSON.stringify(pathToFileURL(SCRIPT).href)}); console.log('imported');`;
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e', code], { encoding: 'utf8' });
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout.trim(), 'imported');
+  assert.equal(result.stderr, '');
+});
+
+test('offline npm installs in an empty child despite ancestor workspace and global configuration', t => {
+  const candidates = [process.env.npm_execpath, path.resolve('node_modules/npm/bin/npm-cli.js')];
+  for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
+    if (!dir) continue;
+    candidates.push(path.join(dir, 'node_modules', 'npm', 'bin', 'npm-cli.js'));
+    candidates.push(path.resolve(dir, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'));
+  }
+  const npmCli = candidates.find(candidate => candidate && path.isAbsolute(candidate) && fs.existsSync(candidate));
+  if (!npmCli) return t.skip('npm-cli.js is unavailable');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg-offline-'));
+  try {
+    const project = path.join(root, 'project & $ safe');
+    const fixture = path.join(root, 'benign-package');
+    fs.mkdirSync(project); fs.mkdirSync(fixture);
+    const ancestor = '{"name":"ancestor","version":"1.0.0","workspaces":["project & $ safe"]}\n';
+    fs.writeFileSync(path.join(root, 'package.json'), ancestor);
+    fs.writeFileSync(path.join(root, 'package-lock.json'), 'sentinel lock');
+    fs.writeFileSync(path.join(project, 'existing.txt'), 'preserve me');
+    fs.writeFileSync(path.join(fixture, 'package.json'), '{"name":"ffmpeg-static","version":"1.0.0"}');
+    const exe = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+    fs.writeFileSync(path.join(fixture, exe), 'benign fixture');
+    const result = ffmpeg.installFfmpeg('project-local', {
+      project, consent: true, npmCli,
+      run: (command, args, cwd) => {
+        assert.equal(args[3], 'ffmpeg-static');
+        const fixtureArgs = [...args];
+        fixtureArgs[3] = fixture;
+        fixtureArgs.push('--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--update-notifier=false', '--install-links', '--cache', path.join(root, 'cache'));
+        const npmResult = spawnSync(command, fixtureArgs, {
+          cwd, encoding: 'utf8', shell: false, timeout: 90_000, env: { ...process.env, npm_config_global: 'true' },
+        });
+        assert.ifError(npmResult.error);
+        return npmResult;
+      },
+    });
+    assert.equal(result.exit, 0, result.stderr);
+    assert.equal(fs.readFileSync(path.join(root, 'package.json'), 'utf8'), ancestor);
+    assert.equal(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'), 'sentinel lock');
+    assert.equal(fs.existsSync(path.join(root, 'node_modules')), false);
+    assert.equal(fs.readFileSync(path.join(project, 'existing.txt'), 'utf8'), 'preserve me');
+    assert.equal(fs.existsSync(path.join(project, 'package-lock.json')), true);
+    assert.equal(fs.readFileSync(path.join(project, 'node_modules', 'ffmpeg-static', exe), 'utf8'), 'benign fixture');
+    // This proves npm confinement, not a real FFmpeg download or its capabilities.
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('project install finds npm-cli.js through a PATH executable symlink', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg-npm-link-'));
+  const oldPath = process.env.PATH;
+  const oldNpmExecPath = process.env.npm_execpath;
+  try {
+    const bin = path.join(root, 'bin');
+    const actual = path.join(root, 'custom', 'npm-cli.js');
+    const project = path.join(root, 'project');
+    fs.mkdirSync(bin); fs.mkdirSync(path.dirname(actual)); fs.mkdirSync(project);
+    fs.writeFileSync(actual, '');
+    fs.writeFileSync(path.join(project, 'package.json'), '{}');
+    try { fs.symlinkSync(actual, path.join(bin, 'npm'), 'file'); }
+    catch (error) {
+      if (['EPERM', 'EACCES'].includes(error.code)) return t.skip('file symlink creation is unavailable');
+      throw error;
+    }
+    process.env.PATH = bin;
+    delete process.env.npm_execpath;
+    let invoked = false;
+    const result = ffmpeg.installFfmpeg('project-local', {
+      project, consent: true, run: (command, args) => {
+        invoked = true;
+        assert.equal(command, process.execPath);
+        assert.equal(args[0], actual);
+        return { status: 1 };
+      },
+    });
+    assert.equal(result.exit, 1);
+    assert.equal(invoked, true);
+  } finally {
+    if (oldPath === undefined) delete process.env.PATH; else process.env.PATH = oldPath;
+    if (oldNpmExecPath === undefined) delete process.env.npm_execpath; else process.env.npm_execpath = oldNpmExecPath;
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('project install ignores a different package manager in npm_execpath', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ffmpeg-npm-manager-'));
+  const oldPath = process.env.PATH;
+  const oldNpmExecPath = process.env.npm_execpath;
+  try {
+    const bin = path.join(root, 'bin');
+    const actual = path.join(root, 'custom', 'npm-cli.js');
+    const other = path.join(root, 'other-manager.js');
+    const project = path.join(root, 'project');
+    fs.mkdirSync(bin); fs.mkdirSync(path.dirname(actual)); fs.mkdirSync(project);
+    fs.writeFileSync(actual, ''); fs.writeFileSync(other, '');
+    fs.writeFileSync(path.join(project, 'package.json'), '{}');
+    try { fs.symlinkSync(actual, path.join(bin, 'npm'), 'file'); }
+    catch (error) {
+      if (['EPERM', 'EACCES'].includes(error.code)) return t.skip('file symlink creation is unavailable');
+      throw error;
+    }
+    process.env.PATH = bin;
+    process.env.npm_execpath = other;
+    let invoked = false;
+    const result = ffmpeg.installFfmpeg('project-local', {
+      project, consent: true, run: (command, args) => {
+        invoked = true;
+        assert.equal(command, process.execPath);
+        assert.equal(args[0], actual);
+        return { status: 1 };
+      },
+    });
+    assert.equal(result.exit, 1);
+    assert.equal(invoked, true);
+  } finally {
+    if (oldPath === undefined) delete process.env.PATH; else process.env.PATH = oldPath;
+    if (oldNpmExecPath === undefined) delete process.env.npm_execpath; else process.env.npm_execpath = oldNpmExecPath;
+    fs.rmSync(root, { recursive: true, force: true });
   }
 });

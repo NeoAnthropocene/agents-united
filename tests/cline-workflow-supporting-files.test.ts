@@ -127,8 +127,9 @@ describe('the workflow projections of the whole catalog', () => {
   const plan = async (scope: InstallScope, root?: string) =>
     (await ClineProjector.planCompoundProjection(bundle, scope, resolved, REGISTRY, [], false, root)).filter(a => a.kind === 'workflow');
 
-  it('has the seven agency playbooks as the only workflow skills with a supporting file', () => {
+  it('has the eight agency playbooks as the only workflow skills with a supporting file', () => {
     expect(PLAYBOOKS).toEqual([
+      'workflow-agency-3d-production',
       'workflow-agency-ad-creative-sprint',
       'workflow-agency-brand-design-system',
       'workflow-agency-client-pitch-proposal',

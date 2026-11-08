@@ -15,9 +15,9 @@ Use rules when you want Cline to:
 * Apply consistent documentation or testing requirements
 * Remember constraints like "don't modify files in /legacy" or "always use TypeScript"
 
-<Tip>
-  **New to Rules?** Watch [Cline Rules Explained](https://youtu.be/xQwsy2vkK5M) to see them in action.
-</Tip>
+> [!TIP]
+>
+> **New to Rules?** Watch [Cline Rules Explained](https://youtu.be/xQwsy2vkK5M) to see them in action.
 
 ## Supported Rule Types
 
@@ -54,7 +54,7 @@ The example uses `.clinerules/`; you can put the same rule files in `.cline/rule
 
 Cline processes rule files inside either directory, combining them into a unified set of rules. Numeric prefixes (like `01-coding.md`) help organize files but are optional.
 
-When both workspace and global rules exist, Cline combines them. Workspace rules take precedence when they conflict with global rules. See [Storage Locations](/getting-started/config#storage-locations) for more guidance.
+When both workspace and global rules exist, Cline combines them. Workspace rules take precedence when they conflict with global rules. See [Configuration Directory Layout](https://docs.cline.bot/getting-started/config.md#configuration-directory-layout) for every location Cline reads.
 
 ### Global Rules Directory
 
@@ -64,27 +64,25 @@ When both workspace and global rules exist, Cline combines them. Workspace rules
 | macOS | `~/Documents/Cline/Rules` |
 | Linux/WSL | `~/Documents/Cline/Rules` |
 
-<Note>
-  Cline also searches `~/.cline/rules` and `~/Cline/Rules` for global rules. On Windows, it checks `Documents\Cline\Rules` under the OneDrive directories configured by `OneDrive`, `OneDriveConsumer`, and `OneDriveCommercial`.
-</Note>
+> [!NOTE]
+>
+> Cline also searches `~/.cline/rules` and `~/Cline/Rules` for global rules. On Windows, it checks `Documents\Cline\Rules` under the OneDrive directories configured by `OneDrive`, `OneDriveConsumer`, and `OneDriveCommercial`.
 
 ## Creating Rules
 
-<Steps>
-  <Step title="Open the Rules menu">
-    Click the scale icon at the bottom of the Cline panel, to the left of the model selector.
-  </Step>
+**1. Open the Rules menu**
 
-  <Step title="Create a new rule file">
-    Click "New rule file..." and enter a filename (e.g., `coding-standards`). The file will be created with a `.md` extension.
-  </Step>
+Click the scale icon at the bottom of the Cline panel, to the left of the model selector.
 
-  <Step title="Write your rule">
-    Add your instructions in markdown format. Keep each rule file focused on a single concern.
-  </Step>
-</Steps>
+**2. Create a new rule file**
 
-You can also use the [`/newrule` slash command](/core-workflows/using-commands#newrule) to have Cline create a rule interactively.
+Click "New rule file..." and enter a filename (e.g., `coding-standards`). The file will be created with a `.md` extension.
+
+**3. Write your rule**
+
+Add your instructions in markdown format. Keep each rule file focused on a single concern.
+
+You can also use the [`/newrule` slash command](https://docs.cline.bot/core-workflows/using-commands#newrule) to have Cline create a rule interactively.
 
 ### Toggling Rules
 
@@ -127,9 +125,9 @@ Cline reads rules as context, so formatting matters. Headers help Cline understa
 
 **One concern per file.** Split rules by topic: `coding.md` for style, `testing.md` for test requirements, `architecture.md` for structural decisions. This makes it easy to toggle specific rules on or off.
 
-<Warning>
-  Rules consume context tokens. Avoid lengthy explanations or pasting entire style guides. Keep rules concise and link to external documentation when detailed reference is needed.
-</Warning>
+> [!WARNING]
+>
+> Rules consume context tokens. Avoid lengthy explanations or pasting entire style guides. Keep rules concise and link to external documentation when detailed reference is needed.
 
 ## Example
 
@@ -167,9 +165,9 @@ As your rule library grows, loading every rule for every request wastes context 
 
 Conditional rules use YAML frontmatter at the top of your rule files. When Cline processes a request, it gathers context from your current work (open files, visible tabs, mentioned paths, edited files), evaluates each rule's conditions, and activates matching rules.
 
-<Note>
-  When a conditional rule activates, you'll see a notification: **"Conditional rules applied: workspace:frontend-rules.md"**
-</Note>
+> [!NOTE]
+>
+> When a conditional rule activates, you'll see a notification: **"Conditional rules applied: workspace:frontend-rules.md"**
 
 ### Writing Conditional Rules
 
@@ -252,9 +250,9 @@ Cline evaluates rules based on:
 
 Conditional rules can activate on your first message, when relevant files are open, or mid-task when Cline starts working with matching files.
 
-<Tip>
-  Be explicit about file paths in your prompts. "Update `src/services/user.ts`" reliably triggers path-based rules; "update the user service" may not.
-</Tip>
+> [!TIP]
+>
+> Be explicit about file paths in your prompts. "Update `src/services/user.ts`" reliably triggers path-based rules; "update the user service" may not.
 
 ### Practical Examples
 
@@ -400,3 +398,6 @@ Then work with a file in that path and check if you see the activation notificat
 
 * YAML couldn't be parsed
 * Check for syntax errors (unquoted special characters, improper indentation)
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

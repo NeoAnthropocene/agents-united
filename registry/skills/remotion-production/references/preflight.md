@@ -53,7 +53,7 @@ records are never project review evidence.
 | Field | Required meaning |
 | --- | --- |
 | `schemaVersion` | Exactly `1`. |
-| `remotionVersion` | Exactly `4.0.539`; review again when changing packages. |
+| `remotionVersion` | The reviewed project version: `4.0.541` for new setups, or retained `4.0.539` / `4.0.540` for existing projects. Review again when changing packages. |
 | `status` | `evaluation`, `free-license`, or `company-license`; agents may select only `evaluation`, owners/representatives supply production eligibility facts. |
 | `purpose` | `evaluation` or `production`, the scope actually reviewed. |
 | `reviewedOn` | Actual review date, a valid `YYYY-MM-DD`. |
@@ -63,7 +63,7 @@ records are never project review evidence.
 | `basis` | Specific eligibility explanation and applicable use; automated evaluation must describe isolated internal suitability tests without commercial use. |
 | `evidence` | Nonsecret supporting reference: pinned evaluation clause and test scope, owner-reviewed eligibility note, or company entitlement reference. Never store a license key, token or credential here. |
 | `commercialUse` | Explicit boolean; must be `false` for `evaluation`. |
-| `licenseUrl` | Exactly `https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md`. |
+| `licenseUrl` | Exactly the tagged licence URL matching `remotionVersion`, e.g. `https://github.com/remotion-dev/remotion/blob/v4.0.541/LICENSE.md`. |
 | `evaluationScope` | Required as `internal-suitability-test` for `automated-evaluation`; optional for owner/representative records. No other value is accepted. |
 
 Unknown fields and missing/invalid required values fail. Evaluation records only pass
@@ -92,7 +92,8 @@ engagement and intended use. Evaluation is distinct from production/commercial e
 
 The linked [v4 terms](https://www.remotion.pro/terms-4-0) identify themselves as replaced
 when 5.0 launches; the [v5 terms](https://www.remotion.dev/docs/terms) state their future
-effective scope. This scaffold pins 4.0.539. Recheck terms before any later real use.
+effective scope. The original reviewed scaffold pinned 4.0.539; see [runtime](runtime.md)
+for the current default and retained versions. Recheck terms before any later real use.
 The evaluation clause does not require a human reviewer. Applying it to the authorized
 isolated internal smoke tests is a scoped interpretation, not a production-entitlement
 claim. Actual owner eligibility and live licensing entitlement remain **unverified**.
@@ -113,9 +114,9 @@ references: [registerRoot](https://www.remotion.dev/docs/register-root),
 [Composition](https://www.remotion.dev/docs/composition),
 [useCurrentFrame](https://www.remotion.dev/docs/use-current-frame), and
 [Html5Audio/staticFile](https://www.remotion.dev/docs/html5-audio). No upstream Skill text
-or source was vendored into this Skill. The separate optional `remotion-agent-skills`
-add-on carries the official Remotion skills under their source-available Remotion License;
-that add-on does not relicense this MIT Skill or grant runtime entitlement. `input-props.json` holds reusable timeline, scene copy, theme and
+or source was vendored into this Skill. Official Remotion Skills are obtained directly from upstream or a compatible plugin;
+Agents United does not redistribute their contents. See [official Skills](official-agent-skills.md).
+Upstream terms do not relicense this MIT Skill or grant runtime entitlement. `input-props.json` holds reusable timeline, scene copy, theme and
 optional master-audio parameters. Sequence durations use the shared half-open frame ranges;
 animation derives from each sequence's local frame, without wall clocks or CSS animation.
 

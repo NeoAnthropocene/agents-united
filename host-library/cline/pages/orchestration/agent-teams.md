@@ -6,54 +6,45 @@
 
 > Coordinate multiple agents working together on complex tasks from the CLI.
 
-<Warning>
-  This feature currently only applies to Cline SDK, CLI, and Kanban. This feature is not applicable on VSCode and JetBrains Extension for now.
-</Warning>
+> [!WARNING]
+>
+> This feature currently only applies to Cline SDK, CLI, and Kanban. This feature is not applicable on VSCode and JetBrains Extension for now.
 
 Agent teams let you break complex work across multiple agents that coordinate through a shared task board. One agent acts as the coordinator, delegating subtasks to specialist agents.
 
 ## Starting a Team
 
+Start your prompt with `/team`, in an interactive session or on the command line:
+
 ```bash theme={"system"}
-cline --team-name auth-sprint "Plan and implement user authentication with tests"
+cline "/team Plan and implement user authentication with tests"
 ```
 
-The `--team-name` flag enables team mode. The coordinator agent gets additional tools for spawning teammates and delegating tasks.
+The coordinator gets tools to add teammates, hand them tasks and collect their results. Without `/team`, Cline can still form a team when it decides a task needs one.
 
 ## Resuming Team Work
 
-Team state persists across sessions. Resume where you left off:
+The team belongs to the session. To pick up where it left off, find the session's ID with `cline history`, then resume the session:
 
 ```bash theme={"system"}
-cline --team-name auth-sprint "Continue with incomplete tasks"
+cline --id <session-id>
 ```
 
-## Interactive Mode
-
-In interactive mode, use the `/team` slash command:
-
-```
-/team Plan and implement a REST API with tests
-```
+The session opens with its team, and you can tell the coordinator what to do next.
 
 ## Team State
 
-Team state is stored at `~/.cline/data/teams/[team-name]/` and includes:
+Each team has a task board, a mailbox for messages between agents, and a mission log. Cline keeps them in `~/.cline/data/db/teams.db`.
 
-* Task board with current tasks and status
-* Inter-agent mailbox
-* Mission log with activity history
+## Turning Teams Off
 
-## Disabling Teams
-
-Teams are enabled by default. Disable them with:
-
-```bash theme={"system"}
-cline --no-teams "your prompt"
-```
+Teams are available in Act and Plan modes, and not with `--yolo`. To turn them off, run `cline`, type `/settings`, and turn off the `teams` tool on the **Tools** tab. Turn off `spawn_agent` there to stop [sub-agents](https://docs.cline.bot/features/subagents.md) too.
 
 ## Sub-Agents
 
-For simpler delegation within a single session (no persistent state), use [sub-agents](/features/subagents). Sub-agents run in parallel for read-only research and return focused reports to the main agent.
+For simpler delegation within a single session (no persistent state), use [sub-agents](https://docs.cline.bot/features/subagents.md). Sub-agents run in parallel and return focused reports to the main agent.
 
-See the [SDK Multi-Agent Teams guide](/sdk/guides/multi-agent-teams) for the programmatic API.
+See the [SDK Multi-Agent Teams guide](https://docs.cline.bot/sdk/guides/multi-agent-teams.md) for the programmatic API.
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

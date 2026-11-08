@@ -26,23 +26,26 @@ describe('RegistryResolver', () => {
       tier: 'domain',
       status: 'under-construction',
       agents: [],
-      skills: ['author-skill'],
       workflows: [],
       rules: ['skill-attribution.md'],
       hostAvailability: { claude: { lane: 'native', scopes: ['workspace'] } },
     });
+    expect([...(bundle?.skills ?? [])].sort()).toEqual(['author-skill', 'git-guardrails', 'handoff', 'host-agent-router']);
     expect(bundle?.orchestrator).toBeUndefined();
     expect(bundle?.parentBundle).toBeUndefined();
   });
 
   it('resolves the explicit contributor toolkit without adding it to end-user inventories', async () => {
     const authoring = await resolver.resolve('agent-factory');
-    expect(authoring.skills).toEqual(['author-skill']);
-    expect(authoring.rules).toContain('skill-attribution.md');
+    expect([...authoring.skills].sort()).toEqual(['author-skill', 'git-guardrails', 'handoff', 'host-agent-router']);
+    expect(authoring.agents).toEqual([]);
+    expect(authoring.workflows).toEqual([]);
+    expect([...authoring.rules].sort()).toEqual(['GEMINI.md', 'skill-attribution.md']);
     for (const identifier of ['full', 'domain:engineering', 'digital-agency']) {
       const ordinary = await resolver.resolve(identifier);
       expect(ordinary.skills).not.toContain('author-skill');
       expect(ordinary.rules).not.toContain('skill-attribution.md');
+      expect(ordinary.skills).toEqual(expect.arrayContaining(['host-agent-router', 'handoff', 'git-guardrails']));
     }
   });
 
@@ -356,10 +359,10 @@ describe('digital-agency planning loop registry contract (Plan 012 / ADR 0014)',
     // The contributor task toolkit has no end-user planning loop.
     const excluded = Object.values(manifest.bundles).filter((b) => b.planningLoop?.enabled !== true);
     expect(excluded.map(b => b.name).sort()).toEqual([
+      'agency-3d-production',
       'agent-factory',
       'full',
       'mock-organization-under-construction',
-      'remotion-agent-skills',
       'universal-orchestration',
       'universal-skills',
     ]);

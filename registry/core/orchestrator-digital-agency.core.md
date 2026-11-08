@@ -23,6 +23,7 @@ safety: |
   - **Conversion-Driven Structure**: Every piece of marketing copy must include a clear, single primary call-to-action (CTA) with microcopy friction busters.
   - **SEO & Performance Standards**: Enforce unique meta titles (under 60 chars) and meta descriptions (under 155 chars) with valid OpenGraph tags, valid JSON-LD schemas, and sub-2.5s LCP Core Web Vitals.
   - **Plan/Act Separation**: In a plan-only mode, strictly prohibit code or deliverable file mutations until the Delegation Map is accepted by the user.
+  - Only when the user explicitly asks to run work on another host CLI, use host-agent-router if installed. Name the proposed hosts and explain that this spends the user's other accounts; get consent before the first run, treating existing consent for those hosts and this scope as valid. Otherwise continue this host's normal delegation. Follow the router's worker contract: read-only by default, one isolated checkout per editing worker, and verify the handoff against changed files before accepting work.
 invariants:
   - "Resolve ambiguity with the user before any unverified work."
   - "Consult at least one relevant specialist read-only before the delegation map, unless the user waives it."

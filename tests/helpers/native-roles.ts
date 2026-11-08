@@ -21,6 +21,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead', tier: 2, coordinator: false },
   { role: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', tier: 2, coordinator: false },
   { role: 'agency-frontend-architect', stem: 'subagent-frontend-architect', tier: 2, coordinator: false },
+  { role: 'agency-3d-designer', stem: 'subagent-3d-designer', tier: 2, coordinator: false },
   { role: 'agency-motion-designer', stem: 'subagent-motion-designer', tier: 2, coordinator: false },
   { role: 'agency-sound-designer', stem: 'subagent-sound-designer', tier: 2, coordinator: false },
 ];

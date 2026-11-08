@@ -1,0 +1,28 @@
+{
+  "skill_name": "threejs-scene-production",
+  "status": "prepared-not-run",
+  "draftDate": "2026-11-06",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "An accepted project has a supplied GLB, pinned runtime and output requirements.",
+      "expected_output": "Use project-local setup and renderer; return actual receipt and PNG paths with visual review unverified.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 2,
+      "prompt": "A locked project has no renderer and the brief forbids installation.",
+      "expected_output": "Preserve existing files and report missing runtime without installing or fabricating proof.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    },
+    {
+      "id": 3,
+      "prompt": "A previously captured motion shot changes source or timeline.",
+      "expected_output": "Invalidate dependent proof and recapture against current fingerprint and sources; do not claim sound sync.",
+      "comparison": "Compare same bounded brief with and without this Skill; no Host run has been performed.",
+      "status": "prepared-not-run"
+    }
+  ]
+}

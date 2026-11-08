@@ -1,0 +1,73 @@
+# Active host documentation delta — 2026-11-06
+
+## Scope and inventory
+
+The repository has three configured host-library source sets: `host-library/{claude,antigravity,cline}/sources.json` (found with `rg --files host-library | rg 'sources\.json$'`). Each also has a `registry/hosts/<host>/` tree. This is the bounded documentation-tracking set, not a claim that every product integration is equally mature. Claude and Antigravity are reviewed separately in this session.
+
+`src/core/hosts.ts` and `src/core/types.ts` enumerate seven installer IDs. `agents` is the Antigravity/master `.agents` store; `gemini` is the Antigravity legacy `.gemini` target, not a separate host-library baseline. Claude and Cline are supported projection targets. Cursor, OpenCode and Codex are explicitly **under-development** in the current host registry, despite having projection profiles and detection markers. Cursor uses `.cursor/agents`, OpenCode `.opencode/agent`, and Codex uses the `AGENTS.md` profile (whose registry label also groups Copilot, Aider and Zed). They have no checked-in host-library `sources.json` or `registry/hosts` tree here: **no documentation baseline or reliable vendor delta is established for them in this report**. Do not infer that a profile provides native feature parity or that the unsupported UI targets are production-ready. `docs/host-primitive-matrix.md` and `registry/translation-ledger.json` cover the three tracked native hosts, not those under-development targets.
+
+## Cline check and refresh
+
+On 2026-11-06, the Node 24 runtime executed `node scripts/hostlib/cli.ts check --host cline --out scratch/cline-check-2026-11-06.json`: exit 0 **but unreachable/partial** (EACCES for index, raw changelog and both release streams). Its “No changes” line is not evidence of no changes. A network-authorized `node scripts/hostlib/cli.ts refresh --host cline --all` exited 0: index, main changelog, both release snapshots and all 19 configured pages updated through the audit gate; no outcomes were blocked. No `--advance-changelog` was passed. A subsequent network-authorized `node scripts/hostlib/cli.ts check --host cline --out scratch/cline-check-current-2026-11-06.json` exited 0, reachable, and found 16 entries above the retained lock baselines: extension 4.1.23–4.1.26, CLI 3.0.69–3.0.74, SDK 0.0.91–0.0.95 and 0.2.0. Baselines remain 4.1.22, CLI 3.0.68, SDK 0.0.90. These are release-stream comparison results; the bounded guide and release review is recorded below.
+
+The refresh draws from the official [Cline documentation index](https://docs.cline.bot/llms.txt), [main changelog](https://raw.githubusercontent.com/cline/cline/main/CHANGELOG.md), GitHub releases at `api.github.com/repos/cline/cline/releases`, and the exact page URLs in `sources.json`. The lock records source URLs, fetch timestamps and hashes. After refresh, the index is the new snapshot; therefore the subsequent check cannot reconstruct the previous index comparison. No exhaustive index delta is claimed.
+
+The most consequential documented changes relative to the prior snapshots:
+
+- [Subagents](https://docs.cline.bot/features/subagents.md): `spawn_agent` is documented for CLI and Desktop, not VS Code or JetBrains; Act-mode subagents can edit and run commands, may nest, and lack MCP tools. Plan mode is not a write-proof sandbox. Approving the spawn approves subsequent subagent tool calls. The previous read-only and no-nesting guide claims were unsafe and have been corrected.
+- [SDK plugins](https://docs.cline.bot/sdk/plugins.md): `beforeTool` can return a skip and reason; hook errors default to `ignore`, while `throw` fails the run. Worker isolation is explicitly not a security boundary. The old stage/policy table disappeared. The existing guard's current-build failure behavior is **unverified**, and the snapshot must not be treated as proof that a package guard fails closed.
+- [Teams](https://docs.cline.bot/cli/agent-teams.md): `/team` and session resumption replace the old CLI guide examples using team-name flags; team storage is documented as `teams.db`. The SDK team guide remains a distinct surface. Runtime compatibility is unverified.
+- [Config](https://docs.cline.bot/getting-started/config.md) and [CLI reference](https://docs.cline.bot/cli/cli-reference.md) no longer document `CLINE_COMMAND_PERMISSIONS`; its current enforcement is unverified. The tool reference now lists current ClineCore names and a different MCP settings path. The refreshed MCP, tools, config and CLI-reference pages now agree on the global CLI settings path; project precedence and current-build behavior remain unverified, so no install-path decision follows.
+
+The refresh initially broke 14 guide citations; the relevant guides were corrected against the new headings and the safety changes above. `node scripts/hostlib/cli.ts verify --host cline` then exited 0 (hashes and guide anchors). This verifies links and locks, not the semantic correctness of every guide or a current Cline runtime. The 4.1.22 `reviewedAgainst` markers and last-seen baseline are deliberately retained because the native profile is still pinned to CLI 3.0.68 and its current-build behavior has not been reviewed or tested. Existing 3.0.68 observations describe that build only. The translation ledger, host primitive matrix, profile, tool policy, guard and role artifacts were not modified by this documentation refresh; their current-version conformance and especially guard failure handling need a separate bounded review before relying on them.
+
+No host session, model or provider call, upgrade, user-global configuration change, commit or push was performed. `gh pr list --state open` could not run because GitHub CLI configuration access was denied; open/closed PR prior art is unverified. The checkout already contained unrelated modifications when this inventory began.
+
+## Cline documentation review matrix
+
+On 2026-11-06, compared all 19 refreshed configured page snapshots with their prior Git versions, read the associated eleven guides and reviewed the 16 release entries above the lock baseline. “Reviewed” here means documentation comparison and guide correction, not runtime validation. Existing dated observations remain evidence only for the tested version. All pages refreshed successfully; no audit block or inaccessible configured page remains.
+
+| Guide | Page review and disposition |
+| --- | --- |
+| agent | `agent/subagents` now describes `spawn_agent`, Act-mode editing, nesting and spawn-level approval. Corrected guide and retained separately the CLI 3.0.68 configured-agent tool restriction observation; it does not prove current built-in subagents read-only. |
+| command | `command/using-commands` has link/format changes. Existing skill slash-command guidance retained; current config agrees with historical global workflow path. Historical invocation remains unverified. |
+| hook | `hook/hooks`, `hook/writing-plugins`, `plugin/sdk-plugins` reviewed. Replaced removed stage/failure-policy assertions with current hook returns, default error mode and worker boundary. Guard behavior on current builds unverified. |
+| mcp | `mcp/mcp-overview` now names global `cline_mcp_settings.json`, an override, scripted add/remove and OAuth; `tools`, `config`, `cli-reference` agree on global path. Updated guide; project precedence and configured-agent MCP access on current builds unverified. |
+| orchestration | `agent/subagents`, `orchestration/{agent-teams,multi-agent-teams,plan-and-act,scheduling}` reviewed. Corrected team tools/storage/resume, schedule history and self-approval/default mode; qualified contradictory Plan-mode safety claims. |
+| permissions | `permissions/{auto-approve,permission-handling}`, `settings/{config,cli-reference}` reviewed. Current references omit `CLINE_COMMAND_PERMISSIONS`; support is unverified. Kept IDE category and SDK policy distinctions; no current guard enforcement claim. |
+| plugin | `plugin/{plugins,sdk-plugins,plugin-install}`, `hook/writing-plugins`, `settings/config` reviewed. Current plugin worker, status/error handling and session policy are documented in hook guide; historical observed guard discovery remains versioned. |
+| rule | `rule/cline-rules`, `settings/config`, `command/using-commands` reviewed. Mostly formatting/link changes; config now explicitly lists `.agents/skills/`. Kept 3.0.68 conditional-rule observation scoped to that build. |
+| settings | `settings/{config,cli-reference}` reviewed. Corrected config layout, removed unsupported environment-variable claim and repaired headings; flags remain documentation, not a current-binary probe. |
+| skill | `skill/skills`, `command/using-commands`, `hook/writing-plugins` reviewed. Tool name changed to `skills`; CLI 3.0.71 and SDK 0.0.93 report `.claude/skills/` discovery. The earlier contrary 3.0.68 observation remains historical; same-name precedence is unverified on current builds. |
+| tools | `tools/all-cline-tools`, `agent/subagents`, `permissions/permission-handling`, `plugin/plugins` reviewed. Updated current ClineCore names and MCP path, retained historical 3.0.68 alias observations, and separated built-in subagents from configured-agent policy. |
+
+Release review, from the three locked changelog snapshots (versions are upstream claims, not local runtime tests):
+
+| Stream and version | Relevant disposition |
+| --- | --- |
+| Extension 4.1.23 | Rule-aware generated commits, paged MCP output and Focus Chain reopen fix; no role change inferred. |
+| Extension 4.1.24 | `.claude/skills` discovery, symlink rules, hook/MCP error fix; skill guide updated. |
+| Extension 4.1.25 | Cloud tasks, provider defaults and retry/attachment fixes; no native package adaptation inferred. |
+| Extension 4.1.26 | Cloud controls, disabled-rule fix, question/command and compaction fixes; no runtime claim. |
+| CLI 3.0.69 | Windows MCP startup timeout, JSON configuration and documented YOLO flag; version-scoped notes retained. |
+| CLI 3.0.70 | MCP header wizard, schedule flag removal and delivery validation, hook/MCP pipe fix; avoid scripting removed options. |
+| CLI 3.0.71 | Plugin lifecycle/status changes, `.claude/skills` discovery, symlink rules and schedule fixes; later worker release supersedes its in-process mode. |
+| CLI 3.0.72 | Worker plugin default, removal of in-process mode and missing-bootstrap reporting; guard compatibility remains unverified. |
+| CLI 3.0.73 | Provider/model compatibility and default catalog changes; no artifact-format delta identified. |
+| CLI 3.0.74 | Embedded plugin resources, active-session plugin slash commands, question and command behavior; current guard remains untested. |
+| SDK 0.0.91 | MCP timeout, rules ordering, hook discovery and provider fixes; no new role contract inferred. |
+| SDK 0.0.92 | MCP pipe and header fixes; no new role contract inferred. |
+| SDK 0.0.93 | Plugin status/policy, `.claude/skills` discovery and scheduler fixes; later 0.0.94 supersedes in-process plugin mode. |
+| SDK 0.0.94 | Worker/sandbox only, missing bootstrap fails plugin load; hooks can still default to ignore failures, so plugin bootstrap failure must not be conflated with fail-closed guard enforcement. |
+| SDK 0.0.95 | Provider compatibility, launcher telemetry and model catalog; no native artifact change inferred. |
+| SDK 0.2.0 | Session reattachment, active-session plugin commands and embedded resources, question/command changes; current-build behavior unverified. |
+
+**Baseline decision:** retain `lastSeen` and guide markers. `tests/host-profile-cline.test.ts` explicitly requires the native profile's version and `reviewedAgainst` to equal the CLI lock baseline. Advancing to 3.0.74 without reviewing and updating `registry/hosts/cline/profile.json` and native guard/tool policy would both break that invariant and misrepresent old runtime observations. That native adaptation is outside this documentation slice. No manual lock edits or baseline advancement were made.
+
+**Task tracking adaptation:** Cline's SDK team documentation describes a `team_task` board with create/list/claim/complete/block and session-restored team state; the 4.1.23 extension changelog mentions a Focus Chain checklist fix. Neither establishes equivalence with Claude's Task tools or a general-purpose standalone Focus Chain API. For a later Cline pilot, explicitly compare task creation, ownership, dependencies, status, persistence after resuming, and what configured agents versus built-in subagents can access; retain a plain written checklist fallback. No live behavior was tested. [Cline team guide](https://docs.cline.bot/sdk/guides/multi-agent-teams.md), [Cline changelog](https://raw.githubusercontent.com/cline/cline/main/CHANGELOG.md).
+
+After the semantic corrections, `node scripts/hostlib/cli.ts verify --host cline` again exited 0. This validates the snapshot hashes and guide citation anchors, not runtime behavior or full repository test results.
+
+**Focused test result:** `node node_modules/vitest/vitest.mjs run tests/host-profile-cline.test.ts tests/hostlib-guides.test.ts` first exited 1 at config startup because sandbox access to parent directories was denied. The network-independent rerun with workspace-parent access exited 1: guide suite 26/26 passed; Cline profile suite 13/15 passed. The refreshed subagent snapshot removed the `#enabling-subagents` heading still cited by `registry/hosts/cline/tool-policy.json`; the refreshed SDK plugin page removed the `Hook stages` fenced block that the profile test parses. These are two concrete native-profile/test adaptation items, not guide verification failures. Updating the profile, policy, and test requires a separate native review; the full test suite was not run.
+
+**Follow-up repair:** the two refresh-induced profile-test failures above were resolved without changing the pinned profile or runtime logic. The `use_subagents` policy citation now points to the 3.0.68 observation; its former IDE/read-only description is historical, and the agent guide explicitly warns that current documentation describes a different surface. The test retains an exact frozen historical stage catalog and independently checks all seven current documented plugin callbacks plus `beforeTool` skip/reason behavior; those callback names are not equated with old runtime stage names. The focused profile/guide and native conformance run passed seven suites (215 tests); the two filesystem-heavy installation suites hit six 5-second timeouts and cleanup errors in parallel, then passed serially with `--testTimeout 30000` (35/35, exit 0). `hostlib:verify --host cline` passed after the repair. No live Cline run was performed.

@@ -3,7 +3,7 @@ name: audio-post-production
 description: 'Use when approved supplied, recorded or generated audio needs editing, alignment, mixing, mastering and a versioned audio handoff. Trigger phrases: "finish audio", "mix narration and music", "aligned stems", "master soundtrack". Skip when the job only needs sound direction or new voice/music generation.'
 metadata:
   author: agents-united
-  version: "1.0.0"
+  version: "1.1.0"
   license: MIT
 ---
 

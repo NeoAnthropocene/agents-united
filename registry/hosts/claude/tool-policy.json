@@ -457,8 +457,13 @@
       "conditions": [
         {
           "kind": "model",
-          "detail": "On by default only for Claude 3.x, Opus 4 to 4.7, Sonnet 4 to 4.6 and Haiku 4.5; other models need CLAUDE_CODE_ENABLE_TODO_TOOLS=1, --allowedTools or --tools",
+          "detail": "Model, session, settings and surface gate task tools; opt in with CLAUDE_CODE_ENABLE_TODO_TOOLS=1 or explicit tools when supported. CLAUDE_CODE_ENABLE_TASKS=0 selects TodoWrite instead.",
           "source": "pages/tools/tools-reference.md#task-tool-availability"
+        },
+        {
+          "kind": "surface",
+          "detail": "Ordinary background subagents do not retain these tools; teammates can retain them when available in their session. Split-pane teammates inherit --tools and denies, not --allowedTools, and have separate environment inheritance.",
+          "source": "pages/agent/sub-agents.md#available-tools"
         }
       ]
     },
@@ -471,8 +476,13 @@
       "conditions": [
         {
           "kind": "model",
-          "detail": "Same model gate as TaskCreate",
+          "detail": "Model, session, settings and surface gate task tools; opt in with CLAUDE_CODE_ENABLE_TODO_TOOLS=1 or explicit tools when supported. CLAUDE_CODE_ENABLE_TASKS=0 selects TodoWrite instead.",
           "source": "pages/tools/tools-reference.md#task-tool-availability"
+        },
+        {
+          "kind": "surface",
+          "detail": "Ordinary background subagents do not retain these tools; teammates can retain them when available in their session. Split-pane teammates inherit --tools and denies, not --allowedTools, and have separate environment inheritance.",
+          "source": "pages/agent/sub-agents.md#available-tools"
         }
       ]
     },
@@ -485,8 +495,13 @@
       "conditions": [
         {
           "kind": "model",
-          "detail": "Same model gate as TaskCreate",
+          "detail": "Model, session, settings and surface gate task tools; opt in with CLAUDE_CODE_ENABLE_TODO_TOOLS=1 or explicit tools when supported. CLAUDE_CODE_ENABLE_TASKS=0 selects TodoWrite instead.",
           "source": "pages/tools/tools-reference.md#task-tool-availability"
+        },
+        {
+          "kind": "surface",
+          "detail": "Ordinary background subagents do not retain these tools; teammates can retain them when available in their session. Split-pane teammates inherit --tools and denies, not --allowedTools, and have separate environment inheritance.",
+          "source": "pages/agent/sub-agents.md#available-tools"
         }
       ]
     },
@@ -497,7 +512,13 @@
       "backgroundSubagent": false,
       "mutating": false,
       "deprecated": true,
-      "conditions": []
+      "conditions": [
+        {
+          "kind": "version",
+          "detail": "Removed in Claude Code v2.1.277; read background output files instead.",
+          "source": "pages/tools/tools-reference.md#tools-reference"
+        }
+      ]
     },
     {
       "name": "TaskStop",
@@ -516,8 +537,13 @@
       "conditions": [
         {
           "kind": "model",
-          "detail": "Same model gate as TaskCreate",
+          "detail": "Model, session, settings and surface gate task tools; opt in with CLAUDE_CODE_ENABLE_TODO_TOOLS=1 or explicit tools when supported. CLAUDE_CODE_ENABLE_TASKS=0 selects TodoWrite instead.",
           "source": "pages/tools/tools-reference.md#task-tool-availability"
+        },
+        {
+          "kind": "surface",
+          "detail": "Ordinary background subagents do not retain these tools; teammates can retain them when available in their session. Split-pane teammates inherit --tools and denies, not --allowedTools, and have separate environment inheritance.",
+          "source": "pages/agent/sub-agents.md#available-tools"
         }
       ]
     },
@@ -530,12 +556,7 @@
       "conditions": [
         {
           "kind": "setting",
-          "detail": "Disabled by default in favour of the Task tools; CLAUDE_CODE_ENABLE_TASKS=0 re-enables it",
-          "source": "pages/tools/tools-reference.md#tools-reference"
-        },
-        {
-          "kind": "model",
-          "detail": "Same model gate as TaskCreate",
+          "detail": "Available in eligible sessions instead of Task tools when CLAUDE_CODE_ENABLE_TASKS=0; ordinary background subagent filtering can retain it when provided.",
           "source": "pages/tools/tools-reference.md#task-tool-availability"
         }
       ]

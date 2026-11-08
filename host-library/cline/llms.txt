@@ -5,7 +5,7 @@
 - [Cline Overview](https://docs.cline.bot/cline-overview.md): Your AI-powered agent for complex work. Read files, write code, run commands, all with your approval.
 - [Installing Cline](https://docs.cline.bot/getting-started/installing-cline.md): Choose your installation path: IDE Extension, CLI, SDK, or Kanban
 - [Cline (usage-billing)](https://docs.cline.bot/getting-started/cline-provider.md): Use Cline (usage-billing) for pay-as-you-go model access with built-in authentication and Cline credits.
-- [ClinePass](https://docs.cline.bot/getting-started/clinepass.md): A low-cost monthly subscription that offers 2-5x the usage on popular open coding models compared to standard API rate.
+- [ClinePass](https://docs.cline.bot/getting-started/clinepass.md): Low-cost monthly subscription to access popular open coding models
 - [Cline Free Models](https://docs.cline.bot/getting-started/free-models.md): Limited-time free model promotions for users with a Cline account.
 - [Authorization](https://docs.cline.bot/getting-started/authorizing-with-cline.md): Authenticate with Cline and choose your first AI model
 - [Local models](https://docs.cline.bot/running-models-locally/overview.md): Run Cline with local models using Ollama, LM Studio or Atomic Chat.
@@ -26,6 +26,8 @@
 - [Config](https://docs.cline.bot/getting-started/config.md): Understand where Cline stores configuration and how global and project config work together.
 - [Cline Desktop](https://docs.cline.bot/usage/cline-desktop.md): An open source app for open weight models, with parallel sessions, scheduled tasks, flexible model choice, and imports from other coding agents.
 - [Remote Development over SSH](https://docs.cline.bot/usage/cline-desktop-ssh.md): Run Cline Desktop against a dev box, build server, or cloud VM over SSH. The app stays on your computer; the agent, its tools, and your code live on the remote machine.
+- [Local Models in Cline Desktop](https://docs.cline.bot/usage/cline-desktop-local-models.md): Set up Ollama or LM Studio, download, load, and switch between local models, check their memory use, and manage disk space from Cline Desktop.
+- [Cline Cloud Agents](https://docs.cline.bot/usage/cloud-agents.md): Use Cline straight from your browser. Give it a task on one of your GitHub repos and it works in its own secure cloud sandbox, with no IDE, CLI, or app to install.
 - [IDE](https://docs.cline.bot/usage/ide.md): Use Cline in your IDE to build a working todo app and learn the core workflow.
 - [TUI](https://docs.cline.bot/usage/tui.md): Use Cline's terminal UI (TUI) for interactive coding workflows in your terminal.
 - [CLI Overview](https://docs.cline.bot/usage/cli-overview.md): Use Cline CLI for interactive terminal sessions and automated headless workflows.
@@ -102,7 +104,7 @@
 - [YOLO Mode](https://docs.cline.bot/enterprise-solutions/configuration/infrastructure-configuration/control-other-cline-features/yolo-mode.md): Enterprise controls for YOLO Mode autonomous operation
 - [MCP Server Controls](https://docs.cline.bot/enterprise-solutions/configuration/infrastructure-configuration/control-other-cline-features/mcp-server-controls.md): Enterprise controls for MCP server allowlisting and remote MCP server management
 - [Enterprise Monitoring](https://docs.cline.bot/enterprise-solutions/monitoring/overview.md): Optional telemetry and observability for your Cline deployment
-- [Cline Telemetry](https://docs.cline.bot/enterprise-solutions/monitoring/telemetry.md): Configure usage analytics and event tracking
+- [Cline Telemetry](https://docs.cline.bot/enterprise-solutions/monitoring/telemetry.md): What Cline's usage telemetry collects and how to turn it off
 - [Prompt Storage](https://docs.cline.bot/enterprise-solutions/monitoring/prompt-storage.md): Backup conversation history to S3 or Cloudflare R2 for compliance, audit, and analysis
 - [OpenTelemetry Integration](https://docs.cline.bot/enterprise-solutions/monitoring/opentelemetry.md): Export Cline telemetry to your observability platform using OpenTelemetry Protocol (OTLP)
 - [OpenTelemetry Events Reference](https://docs.cline.bot/enterprise-solutions/monitoring/opentelemetry-events.md): Complete reference of OpenTelemetry log events emitted by Cline
@@ -115,3 +117,6 @@
 - [Models](https://docs.cline.bot/api/models.md): Available models, pricing tiers, free models, and how model IDs work in the Cline API.
 - [Errors](https://docs.cline.bot/api/errors.md): Error codes, error formats, mid-stream errors, and retry strategies for the Cline API.
 - [Code Examples](https://docs.cline.bot/api/sdk-examples.md): Use the Cline API from Python, Node.js, curl, the Cline CLI, and the VS Code extension.
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

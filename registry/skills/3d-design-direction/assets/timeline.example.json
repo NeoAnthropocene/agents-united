@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "revision": "fixture-r1",
+  "fps": 30,
+  "totalFrames": 30,
+  "width": 640,
+  "height": 480,
+  "scenes": [
+    {
+      "id": "bottle",
+      "startFrame": 0,
+      "endFrame": 30
+    }
+  ],
+  "cues": []
+}

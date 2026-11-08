@@ -38,7 +38,7 @@ node "<skill root>/scripts/ffmpeg.mjs" plan --project "<project>"
 
 | Mode | Command | When |
 | --- | --- | --- |
-| `project-local` (**recommended**) | `npm install --save-dev ffmpeg-static` in the project | Always first: no admin rights, reproducible, keeps the tool inside the project |
+| `project-local` (**recommended**) | `npm install --save-dev ffmpeg-static --global=false --prefix <project> --workspaces=false` | First: no admin rights, reproducible, keeps the tool inside the project |
 | `user-wide-winget` (Windows) | `winget install --id Gyan.FFmpeg --exact --accept-package-agreements --accept-source-agreements` | The user wants FFmpeg available to every project |
 | `user-wide-brew` (macOS) | `brew install ffmpeg` | Same, Homebrew |
 | `user-wide-apt` (Linux) | `sudo apt-get install -y ffmpeg` | Same; distribution builds vary, verify afterwards |
@@ -51,6 +51,12 @@ a machine-wide install needs the user's explicit go-ahead, relayed by Chris.
 ```text
 node "<skill root>/scripts/ffmpeg.mjs" install --mode project-local --project "<project>" --consent
 ```
+
+The project must be an existing real directory. If it has no `package.json`, the helper creates a
+minimal private manifest exclusively inside that directory; it refuses an invalid or symlinked
+manifest instead of replacing it. The helper refuses symlinked install
+directories and checks that the resulting binary resolves inside the project. It invokes npm's CLI
+without a shell and disables workspace selection. An install success still requires `verify`.
 
 ## 3. PATH is a separate, explicit decision
 

@@ -74,6 +74,12 @@ During consultation focus on sonic direction, narration and lyric languages, voi
 - **Team mode requires actual reachability.** Only a genuine live team, a brief naming each permitted peer and an available peer-messaging transport allow direct exchanges. A named role alone does not establish reachability. If a peer is unavailable, use the lead's relay and proceed from a stated assumption; do not wait for a reply or spawn workers.
 - Keep at most **two planning rounds**, **2 peer exchanges per specialist pair** and **1 directed question per peer per planning round**. An exchange is one message and its reply. When the budget is spent, state the assumption and proceed. Questions for the user go to Chris/the lead under `Open items`; never ask the user directly.
 
+## Treatment and approval evidence
+
+Every cross-role handoff records gate, status, approver, source/reference, revision and open items. A route or tone choice is not acceptance of the audio map or evidence of listening, perceived sync or creative acceptance. Distinguish actual user evidence from lead decisions, specialist reports, numerical passes and unknowns. If the user explicitly delegates approval authority, record its scope and the delegate decision; if the user waives a gate, record a scoped waiver as such, not human review. Neither delegation nor waiver invents listening or a numerical pass. Do not request permission again for an already authorized choice.
+
+Use the accepted treatment and relevant explicit scoped timing approval before dependent production; report missing evidence to Chris. A material change invalidates affected timing and dependent handoffs; request only affected reapproval.
+
 ## 📨 Inbox Discipline & Handoff Report
 
 - **Hub-and-spoke by default.** The coordinator that delegated your slice is the relay point: report to it, and route every question for a peer through it.
@@ -86,3 +92,7 @@ During consultation focus on sonic direction, narration and lyric languages, voi
 - **Your final report is your one hand-back.** Do not message the coordinator's main conversation mid-run; everything it needs goes into the report. If a late peer message is subsequently delivered, return an updated handoff to the calling lead.
 - **Never hang on a missing peer.** Proceed from a stated assumption and list missing input under `Open items`.
 - **Report sections (always present):** `Peer messages received` — sender and gist of each delivered message, or "none"; `Open items` — unanswered questions, missing peer input and blockers, or "none".
+
+## Picture event handoff
+
+Before final SFX dependent on picture, validate Motion’s actual versioned event sidecar against the current timeline and picture sources with `audiovisual-review/scripts/motion-events.mjs`; follow `audiovisual-review/references/motion-events.md`. Use event IDs and target frames, distinguish visual target from audio lead-in and detected onset, and reissue affected SFX when the artifact is stale. Successful validation is not proof of frame accuracy, listening or approval. Independent sound design can proceed in parallel; Sound-only work requires no Motion sidecar.

@@ -10,10 +10,24 @@
       "status": "under-construction",
       "description": "Contributor skill authoring drafts and evidence preparation; first delivery supports Claude Code CLI workspace native installs. Live invocation remains unverified.",
       "agents": [],
-      "skills": ["author-skill"],
+      "skills": [
+        "author-skill",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
       "workflows": [],
-      "rules": ["skill-attribution.md"],
-      "hostAvailability": { "claude": { "lane": "native", "scopes": ["workspace"] } }
+      "rules": [
+        "skill-attribution.md"
+      ],
+      "hostAvailability": {
+        "claude": {
+          "lane": "native",
+          "scopes": [
+            "workspace"
+          ]
+        }
+      }
     },
     "software-engineering": {
       "name": "software-engineering",
@@ -78,7 +92,8 @@
         "modern-web-guidance",
         "react-best-practices",
         "to-spec",
-        "to-tickets"
+        "to-tickets",
+        "host-agent-router"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -128,7 +143,10 @@
         "workflow-grill",
         "workflow-spec",
         "grill-me",
-        "performance-optimization"
+        "performance-optimization",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -182,7 +200,10 @@
         "grill-me",
         "stitch-design-taste",
         "ux-writing",
-        "commercial-stock-sourcer"
+        "commercial-stock-sourcer",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -246,7 +267,10 @@
         "viral-referral-loops",
         "banner-design",
         "brand-identity",
-        "commercial-stock-sourcer"
+        "commercial-stock-sourcer",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -287,7 +311,10 @@
         "debug-optimize-lcp",
         "domain-modeling",
         "grill-me",
-        "growth-experiment-design"
+        "growth-experiment-design",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -346,7 +373,10 @@
         "seo-audit",
         "signup-flow-cro",
         "stitch-design-taste",
-        "commercial-stock-sourcer"
+        "commercial-stock-sourcer",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -389,7 +419,10 @@
         "copywriting-frameworks",
         "grill-me",
         "product-launch-playbook",
-        "seo-audit"
+        "seo-audit",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -431,7 +464,10 @@
         "growth-experiment-design",
         "product-launch-playbook",
         "seo-audit",
-        "social-media-campaign"
+        "social-media-campaign",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -470,7 +506,9 @@
         "codeql-scanning",
         "sarif-triage",
         "supply-chain-risk-audit",
-        "security-diff-review"
+        "security-diff-review",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -509,7 +547,9 @@
         "workflow-research",
         "workflow-brainstorm",
         "workflow-explain",
-        "workflow-grill"
+        "workflow-grill",
+        "host-agent-router",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -544,7 +584,10 @@
         "workflow-recommend",
         "workflow-estimate",
         "domain-modeling",
-        "grill-me"
+        "grill-me",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "recommendedAddons": [
@@ -588,7 +631,9 @@
         "subagent-driven-development",
         "test-driven-development",
         "terraform-test-patterns",
-        "terraform-style-guide"
+        "terraform-style-guide",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -624,7 +669,10 @@
         "grill-me",
         "grill-with-docs",
         "microservices-architecture",
-        "sentry-incident-triage"
+        "sentry-incident-triage",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -668,7 +716,9 @@
         "grill-me",
         "grill-with-docs",
         "subagent-driven-development",
-        "expo-cicd-workflows"
+        "expo-cicd-workflows",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -716,7 +766,9 @@
         "grill-me",
         "grill-with-docs",
         "subagent-driven-development",
-        "test-driven-development"
+        "test-driven-development",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -760,7 +812,9 @@
         "grill-with-docs",
         "subagent-driven-development",
         "test-driven-development",
-        "postgres-best-practices"
+        "postgres-best-practices",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -803,7 +857,9 @@
         "grill-with-docs",
         "subagent-driven-development",
         "property-based-testing",
-        "mutation-testing"
+        "mutation-testing",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -851,7 +907,9 @@
         "subagent-driven-development",
         "test-driven-development",
         "hf-model-training",
-        "hf-managed-jobs"
+        "hf-managed-jobs",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1173,9 +1231,6 @@
         "agency"
       ],
       "description": "Full-service digital product agency powered by the AstrolabsAI persona team (Chris, Ava, Jamileh, Kaan). Features dynamic DAG orchestration and Tri-Tier Execution Modes with 6 required MCP servers and 2 optional extras.",
-      "recommendedAddons": [
-        "remotion-agent-skills"
-      ],
       "prerequisites": {
         "requiredMcps": [
           {
@@ -1354,31 +1409,9 @@
         "audio-generation",
         "audio-post-production",
         "audiovisual-review",
-        "workflow-agency-motion-production"
-      ],
-      "version": "1.0.0"
-    },
-    "remotion-agent-skills": {
-      "name": "remotion-agent-skills",
-      "tier": "domain",
-      "domain": "organization",
-      "parentBundle": "digital-agency",
-      "status": "stable",
-      "category": "Optional official Remotion Agent Skills (source-available)",
-      "description": "Pinned official Remotion Agent Skills for agentic Remotion authoring. Install only after the Remotion route is selected and the user confirms Remotion License eligibility; not part of full or any essentials bundle.",
-      "skills": [
-        "remotion-best-practices",
-        "remotion-captions",
-        "remotion-create",
-        "remotion-docs",
-        "remotion-interactivity",
-        "remotion-maps",
-        "remotion-markup",
-        "remotion-multimedia",
-        "remotion-render",
-        "remotion-saas",
-        "remotion-studio",
-        "remotion-upgrade"
+        "workflow-agency-motion-production",
+        "host-agent-router",
+        "git-guardrails"
       ],
       "version": "1.0.0"
     },
@@ -1421,7 +1454,9 @@
         "domain-modeling",
         "to-spec",
         "to-tickets",
-        "handoff"
+        "handoff",
+        "host-agent-router",
+        "git-guardrails"
       ],
       "version": "1.0.0"
     },
@@ -1461,7 +1496,10 @@
         "mobile-first-design",
         "stitch-design-taste",
         "ui-component-spec",
-        "user-flow-mapping"
+        "user-flow-mapping",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1508,7 +1546,10 @@
         "mobile-first-design",
         "stitch-design-taste",
         "ui-component-spec",
-        "user-flow-mapping"
+        "user-flow-mapping",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1551,7 +1592,9 @@
         "codeql-scanning",
         "sarif-triage",
         "supply-chain-risk-audit",
-        "security-diff-review"
+        "security-diff-review",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1595,7 +1638,9 @@
         "sarif-triage",
         "supply-chain-risk-audit",
         "variant-analysis",
-        "security-diff-review"
+        "security-diff-review",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1638,7 +1683,9 @@
         "codeql-scanning",
         "sarif-triage",
         "supply-chain-risk-audit",
-        "security-diff-review"
+        "security-diff-review",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1670,7 +1717,10 @@
         "workflow-estimate",
         "workflow-business-panel",
         "domain-modeling",
-        "grill-me"
+        "grill-me",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1704,7 +1754,10 @@
         "workflow-business-panel",
         "workflow-spec-panel",
         "grill-me",
-        "growth-experiment-design"
+        "growth-experiment-design",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1740,7 +1793,9 @@
         "workflow-spec-panel",
         "git-guardrails",
         "grill-me",
-        "to-tickets"
+        "to-tickets",
+        "host-agent-router",
+        "handoff"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1776,7 +1831,9 @@
         "workflow-explain",
         "grill-me",
         "growth-experiment-design",
-        "handoff"
+        "handoff",
+        "host-agent-router",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1815,7 +1872,10 @@
         "grill-me",
         "grill-with-docs",
         "telemetry-monitoring",
-        "terraform-style-guide"
+        "terraform-style-guide",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1855,7 +1915,10 @@
         "supabase-backend-architecture",
         "turso-distributed-sqlite",
         "postgres-best-practices",
-        "clickhouse-architecture-advisor"
+        "clickhouse-architecture-advisor",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
@@ -1892,12 +1955,41 @@
         "grill-with-docs",
         "microservices-architecture",
         "runpod-gpu-orchestration",
-        "telemetry-monitoring"
+        "telemetry-monitoring",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
       ],
       "version": "1.0.0",
       "planningLoop": {
         "enabled": true,
         "mode": "planner-orchestrator"
+      }
+    },
+    "agency-3d-production": {
+      "name": "agency-3d-production",
+      "tier": "organization",
+      "domain": "organization",
+      "description": "Optional standalone local 3D production specialist and Skills.",
+      "version": "1.0.0",
+      "agents": [
+        "subagent-3d-designer.md"
+      ],
+      "skills": [
+        "3d-design-direction",
+        "threejs-scene-production",
+        "3d-asset-review",
+        "workflow-agency-3d-production",
+        "audiovisual-review",
+        "handoff",
+        "host-agent-router",
+        "git-guardrails"
+      ],
+      "personaAliases": {
+        "arda-3d": "subagent-3d-designer"
+      },
+      "nativeRoles": {
+        "subagent-3d-designer.md": "agency-3d-designer"
       }
     }
   }

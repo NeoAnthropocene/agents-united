@@ -3,7 +3,7 @@ name: audiovisual-review
 description: 'Use when a motion or audio deliverable needs timeline, soundtrack, caption, creative and provenance acceptance before handoff. Trigger phrases: "review the film", "check audio sync", "validate the audio manifest", "delivery QC". Skip for a static-only brief or for producing animation, narration or a mix.'
 metadata:
   author: agents-united
-  version: "1.0.0"
+  version: "1.2.0"
   license: MIT
 ---
 
@@ -17,12 +17,12 @@ Use before Motion or Sound hands an export to Chris, after a changed timing/copy
 Require the accepted Media Request, applicable storyboard/copy, timeline or Sound cue record, saved preferences, actual exports, Sound manifest/master/stems, captions/transcript and source/rights records. Return severity, frame/time, evidence, owner and acceptance state in [the review record](assets/review-record.md). Node >=24 runs structural checks; decoding/listening require local tools and a reviewer.
 
 ## Step-by-Step Runbook
-1. Read [the media contract](references/media-contract.md). Confirm the exact revision, computed fingerprint, fps/frame bounds, dimensions and saved destination loudness. Reject stale audio or altered copy; ask Motion/Sound to reconcile and reissue rather than relabel old evidence.
+1. Read [the media contract](references/media-contract.md). Confirm the exact revision, computed fingerprint, fps/frame bounds, dimensions and saved destination loudness. For picture-dependent SFX, validate the source-bound [Motion event handoff](references/motion-events.md) before Sound uses its event frames; capture and validation do not certify event accuracy. Sound-only work needs no Motion handoff. Reject stale audio or altered copy; ask Motion/Sound to reconcile and reissue rather than relabel old evidence.
 2. Run the existing helper below on explicit inputs. With `--project`, referenced media must be present and resolve inside the selected root. Without it only path syntax is checked. Save stdout and the actual exit: 0 accepts structure, 2 reports validation/input failure.
 3. Read [the acceptance procedure](references/acceptance.md). Inspect applicable decoded video/audio duration, rate, channels, cues, codec (`yuv420p` limited range `tv`) and compressed tail; measure the master and any mux, and validate final-mux cue offsets with `mux-sync` (`|offsetFrames| <= 1.0`). Defaults are -16 LUFS +/-1, true peak <=-1 dBTP; apply saved overrides consistently.
 4. For included video, inspect the side-by-side `proofComparison` board, watch the complete export and inspect cuts, cue arrivals, text holds and endpoints. Check crop/safe areas, fonts/assets, legibility, continuity, claims, brand fit, captions and reduced-motion alternatives. Record what was viewed.
 5. Listen to the complete master and applicable mux for words/pronunciation, masking, edit clicks, balance, silence, mono/phase, sync and tails. A waveform, reported number or successful encode cannot close listening review.
-6. Inspect provenance and actual consent/licence documents for every source, voice/reference and generated asset. Route claims/rights to Compliance and Copy, sound defects to Sound, animation/integration defects to Motion. Chris consolidates scope or approval questions.
+6. Apply the recorded intended use and [purpose-specific rights workflow](../remotion-production/references/asset-rights.md) to actually used sources, voices/references and generated assets. Personal-private drafts get a bounded check and unresolved-asset record; public/commercial delivery needs its applicable review. Keep known restrictions and voice consent effective. Route claims/rights to Compliance and Copy, sound defects to Sound, animation/integration defects to Motion. Chris consolidates scope or approval questions; unknown facts stay identified in the used-asset ledger.
 7. Recheck affected outputs after correction and hand Chris the export/source paths, current revision/fingerprint, findings and evidence. Mark unperformed checks **unverified**; no publication, provider call or creative approval follows from a helper pass.
 
 ## Code & Config Exemplars

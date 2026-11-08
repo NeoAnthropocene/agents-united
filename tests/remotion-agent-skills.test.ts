@@ -1,98 +1,8 @@
 import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import YAML from 'yaml';
 import { describe, expect, it } from 'vitest';
-import { InstallEngine } from '../src/core/installer.js';
-import { lintSkillLicence } from '../src/core/skill-licence-lint.js';
-import { loadCorpus, measureAll, verdictOf } from '../scripts/skill-quality/measure.ts';
 
-const SHA = '30d4553ecd46fbc5212fd0ff006ae43af522158b';
-const OFFICIAL = [
-  'remotion-best-practices',
-  'remotion-captions',
-  'remotion-create',
-  'remotion-docs',
-  'remotion-interactivity',
-  'remotion-maps',
-  'remotion-markup',
-  'remotion-multimedia',
-  'remotion-render',
-  'remotion-saas',
-  'remotion-studio',
-  'remotion-upgrade',
-];
-const SKILLS = path.resolve('registry/skills');
-const manifest = JSON.parse(fs.readFileSync('registry/bundles.json', 'utf8')) as {
-  bundles: Record<string, { tier?: string; domain?: string; parentBundle?: string; skills?: string[]; recommendedAddons?: string[] }>;
-};
-const frontmatter = (dir: string): Record<string, any> => {
-  const raw = fs.readFileSync(path.join(SKILLS, dir, 'SKILL.md'), 'utf8');
-  return YAML.parse(/^---\r?\n([\s\S]*?)\r?\n---/.exec(raw)![1]);
-};
-const files = (dir: string): string[] => {
-  const out: string[] = [];
-  const walk = (current: string, prefix = '') => {
-    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
-      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) walk(path.join(current, entry.name), rel);
-      else out.push(rel);
-    }
-  };
-  walk(path.join(SKILLS, dir));
-  return out;
-};
-
-describe('the official Remotion skill add-on', () => {
-  it('is an optional child bundle, never part of full', () => {
-    const bundle = manifest.bundles['remotion-agent-skills'];
-    expect(bundle).toBeDefined();
-    expect(bundle.tier).toBe('domain');
-    expect(bundle.domain).toBe('organization');
-    expect(bundle.parentBundle).toBe('digital-agency');
-    expect(bundle.skills).toEqual(OFFICIAL);
-    expect(manifest.bundles['digital-agency'].recommendedAddons).toContain('remotion-agent-skills');
-    expect(manifest.bundles.full.skills).not.toEqual(expect.arrayContaining(OFFICIAL));
-  });
-
-  it('vendors the pinned official skill files with the source-available licence and notice', () => {
-    for (const name of OFFICIAL) {
-      const dir = path.join(SKILLS, name);
-      expect(fs.existsSync(path.join(dir, 'SKILL.md')), name).toBe(true);
-      expect(fs.readFileSync(path.join(dir, 'LICENSE.md'), 'utf8'), name).toContain('Remotion License');
-      const notice = fs.readFileSync(path.join(dir, 'NOTICE.md'), 'utf8');
-      expect(notice, name).toContain(SHA);
-      expect(notice, name).toMatch(/unchanged|no editorial/i);
-      const meta = frontmatter(name).metadata ?? {};
-      expect(meta.license, name).toBe('LicenseRef-Remotion');
-      expect(meta.source, name).toContain(`github.com/remotion-dev/skills/tree/${SHA}`);
-      expect(lintSkillLicence({ dirName: name, license: meta.license, source: meta.source, files: files(name) }), name).toEqual([]);
-    }
-  });
-
-  it('has no broken relative links after removing the duplicate nested copies', () => {
-    const broken: string[] = [];
-    for (const name of OFFICIAL) {
-      const base = path.join(SKILLS, name);
-      const walk = (dir: string): void => {
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-          const full = path.join(dir, entry.name);
-          if (entry.isDirectory()) {
-            walk(full);
-            continue;
-          }
-          if (!entry.name.endsWith('.md')) continue;
-          for (const [, target] of fs.readFileSync(full, 'utf8').matchAll(/\]\((\.[^)\s]+)\)/g)) {
-            const file = target.split('#')[0];
-            if (file && !fs.existsSync(path.resolve(path.dirname(full), file))) broken.push(`${path.relative(SKILLS, full)} -> ${target}`);
-          }
-        }
-      };
-      walk(base);
-    }
-    expect(broken).toEqual([]);
-  });
-
+// Upstream-only boundary/lifecycle is tested in remotion-upstream-distribution.test.ts.
+describe('Remotion production guidance', () => {
   it('documents that neither rendering mode has a licence quota', () => {
     const modes = fs.readFileSync('registry/skills/remotion-production/references/rendering-modes.md', 'utf8');
     expect(modes).toMatch(/neither mode has a render quota/i);
@@ -110,21 +20,6 @@ describe('the official Remotion skill add-on', () => {
     const skill = fs.readFileSync('registry/skills/remotion-production/SKILL.md', 'utf8');
     expect(skill).toContain('references/rendering-modes.md');
   });
-
-  it('records the manual review of the one audit finding', () => {
-    const review = fs.readFileSync(path.join(SKILLS, 'remotion-maps', 'SECURITY-REVIEW.md'), 'utf8');
-    expect(review).toContain(SHA);
-    expect(review).toContain('needs-review');
-    expect(review).toContain('REMOTION_MAPTILER_KEY');
-    expect(review).toMatch(/no credential value/i);
-  });
-
-  it('passes the catalog quality measure as third-party content', () => {
-    const corpus = loadCorpus(path.resolve('tests/fixtures/skill-boilerplate-corpus.txt'));
-    const measured = measureAll(SKILLS, corpus).filter(row => OFFICIAL.includes(row.name));
-    expect(measured).toHaveLength(OFFICIAL.length);
-    expect(measured.filter(row => verdictOf(row) !== 'ok')).toEqual([]);
-  }, 30_000);
 
   it('is conditional on Remotion selection and documents every planned host plus optional Studio', () => {
     const production = fs.readFileSync('registry/skills/remotion-production/SKILL.md', 'utf8');
@@ -152,8 +47,9 @@ describe('the official Remotion skill add-on', () => {
     const source = fs.readFileSync('registry/skills/remotion-production/scripts/project.mjs', 'utf8');
     const runtime = fs.readFileSync('registry/skills/remotion-production/references/runtime.md', 'utf8');
     const checker = fs.readFileSync('registry/skills/remotion-production/scripts/check-release.mjs', 'utf8');
-    expect(source).toContain("REMOTION_VERSION = '4.0.540'");
-    expect(runtime).toContain('4.0.540');
+    expect(source).toContain("REMOTION_VERSION = '4.0.541'");
+    expect(source).toContain("['4.0.539', '4.0.540', REMOTION_VERSION]");
+    for (const version of ['4.0.539', '4.0.540', '4.0.541']) expect(runtime).toContain(version);
     expect(runtime).not.toContain('4.0.538');
     expect(checker).toContain('registry.npmjs.org/remotion/latest');
     expect(checker).toMatch(/compareReleaseVersions/);
@@ -176,40 +72,4 @@ describe('the official Remotion skill add-on', () => {
     }
   });
 
-  it('installs cleanly across Antigravity, Claude, Cline, Cursor, Codex and OpenCode targets with LICENSE.md, NOTICE.md and SECURITY-REVIEW.md retained', async () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'remotion-addon-hosts-'));
-    try {
-      const engine = new InstallEngine();
-      await engine.install('remotion-agent-skills', {
-        scope: 'project',
-        method: 'copy',
-        targetDir: path.join(tmp, '.agents'),
-        implicitStore: true,
-        fanout: ['claude', 'cline', 'cursor', 'codex', 'opencode'],
-        nativeLane: true,
-      });
-      for (const skillRoot of [
-        path.join(tmp, '.agents', 'skills'),
-        path.join(tmp, '.claude', 'skills'),
-      ]) {
-        for (const name of OFFICIAL) {
-          expect(fs.existsSync(path.join(skillRoot, name, 'SKILL.md')), `${skillRoot}/${name}/SKILL.md`).toBe(true);
-          expect(fs.existsSync(path.join(skillRoot, name, 'LICENSE.md')), `${skillRoot}/${name}/LICENSE.md`).toBe(true);
-          expect(fs.existsSync(path.join(skillRoot, name, 'NOTICE.md')), `${skillRoot}/${name}/NOTICE.md`).toBe(true);
-        }
-        expect(fs.existsSync(path.join(skillRoot, 'remotion-maps', 'SECURITY-REVIEW.md')), `${skillRoot}/remotion-maps/SECURITY-REVIEW.md`).toBe(true);
-      }
-      for (const name of OFFICIAL) {
-        expect(
-          fs.existsSync(path.join(tmp, '.agents', 'plugins', 'remotion-agent-skills', 'skills', name, 'SKILL.md')),
-          `.agents/plugins/remotion-agent-skills/skills/${name}/SKILL.md`,
-        ).toBe(true);
-      }
-      expect(fs.existsSync(path.join(tmp, '.cursor', 'agents'))).toBe(true);
-      expect(fs.existsSync(path.join(tmp, 'AGENTS.md'))).toBe(true);
-      expect(fs.existsSync(path.join(tmp, '.opencode', 'agent'))).toBe(true);
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
-    }
-  }, 60_000);
 });

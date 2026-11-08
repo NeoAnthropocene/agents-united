@@ -23,6 +23,13 @@
       "expected_output": "Records decline, stops the media branch, preserves the static creative/copy workflow and avoids media production, installation or provider calls.",
       "comparison": "unrelated control; media Skill should not activate",
       "status": "prepared-not-run"
+    },
+    {
+      "id": 4,
+      "prompt": "Plan a personal-private original 15-second chicken loop. Remotion is already selected and ordinary project-local setup is authorized. I have not asked for sound or effects. Recommend the complete treatment before production, reuse these choices, and show the pending acceptance and picture-event handoffs. One candidate Element has no licence statement in the checked source. Do not install, generate, render or start a provider.",
+      "expected_output": "Chris proactively recommends voiceover, SFX, music, captions and relevant Elements with include/defer/decline and known costs/dependencies. It preserves the chosen renderer/setup scope, records one actual consolidated acceptance gate and later scoped timing evidence, and never infers listening from a route answer. A bounded personal-private source check and Markdown used-asset ledger record the unknown terms without claiming permission or stalling the whole private draft. Final picture-dependent SFX waits for a fresh source-bound Motion event handoff. No production is performed.",
+      "comparison": "paired structured and plain briefs with and without the Skill; authored-policy coverage is not a live result",
+      "status": "prepared-not-run"
     }
   ]
 }

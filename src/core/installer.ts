@@ -1332,7 +1332,14 @@ private toPosix(p: string): string {
         // A single-item request that is the complete declared bundle can retain its
         // real loading and ownership path. Partial restricted bundles need named selection.
         const owner = owners.length === 1 ? owners[0] : undefined;
-        if (owner && !owner.parentBundle && !owner.orchestrator
+        if (owner?.name === 'agent-factory'
+          && resolved.skills.length === 1 && resolved.skills[0] === 'author-skill'
+          && resolved.agents.length === 0 && resolved.workflows.length === 0) {
+          // The bound task entry selects its complete contributor package, including
+          // shared worker support. Availability and the native binding are still
+          // validated below before any state write; other partial bundles stay refused.
+          Object.assign(resolved, await this.registry.resolve(owner.name));
+        } else if (owner && !owner.parentBundle && !owner.orchestrator
           && (owner.agents?.length ?? 0) === 0 && (owner.workflows?.length ?? 0) === 0
           && (owner.skills?.length ?? 0) === resolved.skills.length
           && resolved.skills.every(skill => owner.skills?.includes(skill))) {

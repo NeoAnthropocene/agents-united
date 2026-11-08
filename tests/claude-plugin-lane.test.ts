@@ -249,7 +249,8 @@ describe('Plan 016 Step 7 — ephemeral `--teams` scaffold (no process spawned)'
   it('t1 injects the opt-in variable ephemerally when teams is true and omits it otherwise', () => {
     expect(plan(true).env[TEAMS_ENV]).toBe('1');
     expect(TEAMS_ENV in plan(false).env).toBe(false);
-    expect(Object.keys(plan(false).env)).toHaveLength(0);
+    // Session tracking is enabled independently of the optional teams flag.
+    expect(plan(false).env).toEqual({ CLAUDE_CODE_ENABLE_TODO_TOOLS: '1' });
   });
 
   it('t2 never lets the variable leak into argv and names a projected agent type in the prompt', async () => {

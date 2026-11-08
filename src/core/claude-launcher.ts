@@ -40,6 +40,8 @@ export interface PlanClaudeActivationOptions {
   allowAddons?: boolean;
   /** Experimental agent-teams scaffold — ephemeral env + prompt instruction only (Plan 016 decision 14). */
   teams?: boolean;
+  /** Offer structured task tools in this session without enabling experimental Agent Teams. */
+  taskTracking?: boolean;
   /** Plugin root for `--plugin-dir` (Step 7 emits the manifest inside it). */
   pluginDir?: string;
   /**
@@ -224,6 +226,12 @@ export class ClaudeLauncher {
       ? `User task: ${prompt.trim()}`
       : 'Please ask the user for their first task.';
 
+    const trackingNote = 'For multi-step work, discover the actual TaskCreate, TaskGet, TaskUpdate and TaskList tools. ' +
+      'Reuse task IDs from their returned results and keep the accepted slices, owners, blockers and evidence current. ' +
+      'Use TodoWrite only when that legacy tool is actually available; otherwise track progress through the briefs and handoffs. ' +
+      'An ordinary background subagent may not receive the Task tools: check each worker surface rather than assuming inheritance. ' +
+      'Do not duplicate an existing task list, start a blocked slice, or mark a task complete merely because a turn ended.';
+
     // ADR 0018 decision 6 keeps ONE host-neutral team manifest, emitted under the organization
     // package and never duplicated into `.claude/`. That package is written by the Cline half of
     // the compound lane, so a claude-only fanout legitimately has no manifest on disk: pointing a
@@ -271,20 +279,21 @@ export class ClaudeLauncher {
       );
     }
 
-    const bootstrapPrompt = bootstrapLines.join('\n\n');
+    const bootstrapPrompt = [...bootstrapLines, trackingNote].join('\n\n');
 
     // ADR 0018 decision 13 / Plan 016 decision 14: the opt-in is injected EPHEMERALLY into the spawned
     // process environment only. It is never written to `.claude/settings.json`, never recorded in a lockfile
     // or any other workspace file, nothing is written under `~/.claude/teams/`, and the variable name must
-    // never appear in argv. `env` is otherwise empty - the launcher merges it over `process.env` at spawn.
+    // never appear in argv. The launcher merges these session-only opt-ins over `process.env` at spawn.
     //
-    // A team plans, claims and finishes its work on the shared task list, and on a newer model (observed: claude-sonnet-5-5 on 2.1.289)
-    // the host leaves the Task tools out unless CLAUDE_CODE_ENABLE_TODO_TOOLS is set; with it they arrive as deferred tools the lead and
-    // each teammate load with ToolSearch. It rides with the teams variable under the same rules (maintainer decision, ADR 0038).
+    // Structured progress is useful in standalone and team sessions. Opt in ephemerally under
+    // current documented model defaults; do not change the user's Task-vs-TodoWrite selector,
+    // persist settings, or claim that an ordinary background worker inherits the Task tools.
     const env: Record<string, string> = {};
+    const taskTracking = options.taskTracking ?? process.env.CLAUDE_CODE_ENABLE_TODO_TOOLS !== '0';
+    if (taskTracking) env.CLAUDE_CODE_ENABLE_TODO_TOOLS = '1';
     if (teams === true) {
       env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = '1';
-      env.CLAUDE_CODE_ENABLE_TODO_TOOLS = '1';
     }
 
     const argv: string[] = [...command.prefixArgs];

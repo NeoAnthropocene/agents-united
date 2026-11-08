@@ -1,8 +1,33 @@
 # Plan 045: Agency 3D Designer — reevaluated proposal
 
+**Latest status, 2026-11-08:** Phases A–E have bounded implementation and scoped maintainer pilot evidence; phase F is deferred. The integrated local gate passed with skips and separate matrix proof; see the [final verification receipt](../docs/skill-quality/2026-11-08-final-verification.md). Revised Host adherence remains **unverified live**. Earlier status entries are historical.
+
+**Current status, 2026-11-07:** Phase A placement is accepted and the actual
+Phase B package is implemented. Bounded Phase C/D runtime and installation
+proofs now exist, including a validated original GLB, viewer, PNG sequence and
+current Shot Handoff. The fresh post-eval1 typecheck/full regression gate passed
+after the cap correction: **254 suites, 4,971 tests passed and 210 skipped**,
+with all 419 watched records unchanged. The explicit runtime/privacy matrix
+passed **57/57** without skips; the r4 evaluation kit is ready. Phase E's
+eval1 now has actual Claude 2.1.319 Skill/task use and scoped human functional
+acceptance, including the separately corrected cap accepted for this prototype.
+Eval2b now has accepted actual Arda-to-Motion production/playback and eval3 has
+passed behavioral routing controls. The pilot cases are executed; explicit
+role-instruction, tracking and reporting limitations remain recorded before a
+broader conformance claim. The older r4 full gate remains historical evidence.
+The later pilot-driven instruction hardening has 518 affected tests passing;
+its first full regression encountered three lifecycle timeouts (4,973 passed,
+210 skipped), with unchanged source. All three isolated cases passed under
+the original deadlines. A subsequent serial gate passed 254 suites, 4,976
+tests and 210 skips on the pre-integration tree; the newer integrated tree
+needs a fresh full gate. Live adherence to the amended
+instructions remains unverified; accepted prototype feedback is preserved.
+The opening proposal below preserves the original planning scope; the dated
+implementation entries and ADR 0062 record the later authorization and state.
+
 Goal for this session: **reevaluate the supplied 3D Designer plan and specify a staged, evidence-based native workflow**. Done when: **scope, source findings, ownership, implementation slices, failure cases and maintainer-run briefs are reviewable**. Out of scope: **implementing the role, installing tools, downloading assets, starting host sessions, paid jobs and publishing**.
 
-Status: **Proposed; implementation unverified**. This replaces the attachment's numbering only: repository Plan 040 and ADR 0058 already concern Motion prompts. Reserve proposed `docs/adr/0062-agency-3d-designer.md` for a future implementation decision, after review. [Source audit](../docs/research/2026-11-03-3d-designer-source-audit.md) records the current evidence and gaps. The attachment's historical “settled” choices are inputs for reevaluation, not current permission to clone, install, upload, execute Blender or spend money.
+Historical proposal status: **Proposed; implementation unverified at the original planning checkpoint**. This replaces the attachment's numbering only: repository Plan 040 and ADR 0058 already concern Motion prompts. The original proposal reserved `docs/adr/0062-agency-3d-designer.md`; the later accepted decision and implementation are recorded below. [Source audit](../docs/research/2026-11-03-3d-designer-source-audit.md) records the planning evidence and gaps. The attachment's historical “settled” choices are inputs for reevaluation, not current permission to clone, install, upload, execute Blender or spend money.
 
 ## Recommendation
 
@@ -116,3 +141,263 @@ Corrected the earlier speculative Contract Floor/install rationale: [validateSub
 One concrete caveat remains: parent resolution unions asset lists, but not the parent's `nativeRoles` or persona aliases. [Claude compound projection](../src/core/claude-projector.ts) uses the selected Bundle's mappings, and [native source lookup](../src/core/native-package.ts) matches the native filename exactly. The Remotion addon proves optional Skill delivery, not complete inherited-role parity. Phase A should compare two small fixture configurations: (1) a self-contained optional Bundle without `parentBundle`, installed atop an explicitly required existing agency, declaring/verifying shared helper dependencies; (2) a child Bundle with tested parent-role mappings. Accept one only when install/update/uninstall preserve existing agency names, aliases, ownership and user edits. Missing agency/shared prerequisites must produce a clear supported outcome rather than a falsely ready role.
 
 The implementation checklist must include Arda's core/contract/canonical/native artifacts and native role mapping, generated Chris roster and `Agent(...)` allowlist, the static native guarded-role fixture, and an explicit `full` exclusion test (the current optional-Skill inventory exception only names Remotion). Restrict delivered availability to the proven Claude-native workspace route. These are existing integration surfaces, not completed Arda implementation. No 3D fixture install or runtime was executed in this audit; Phase A's lifecycle choice remains **unverified**.
+
+### 2026-11-04 — Phase A fixture feasibility
+
+[`tests/agency-3d-placement.test.ts`](../tests/agency-3d-placement.test.ts) uses a temporary registry and isolated copy-mode Claude-native project with an existing code-reviewer as a synthetic role, not Arda. The focused Vitest run passed 4/4 (exit 0). Installing a standalone fixture on top of `digital-agency` retained the sampled agency Motion native role byte-for-byte, gave shared `handoff` Skill files both Bundle owners, and removing the fixture retained that role and the shared Skill while removing the fixture role. A modified tracked Skill caused update to report a conflict and preserve the edited bytes. These are sampled fixture outcomes, not proof of all files or of a 3D package.
+
+The standalone fixture also installed without `digital-agency`: the current installer did not enforce that prerequisite. Consequently this configuration does **not** yet meet the missing-prerequisite exit gate. Prefer the standalone shape only provisionally, contingent on an explicitly implemented and tested prerequisite outcome or a self-contained, independently useful design; do not claim that an unavailable prerequisite is detected. A parent-child fixture resolved parent assets but rejected parent `nativeRoles` mappings unless the child directly declared those agents. Without the mappings it planned `motion-designer` rather than `agency-motion-designer`; parent persona aliases were absent from the child definition. Redeclaring the roster brings the per-direct-Bundle Skill-shipping invariant and must be assessed before adopting that alternative.
+
+This test does not establish all aliases, coordinator roster/allowlist discovery, standalone prereq handling, child installation/removal, edited-file uninstall, all shared helper dependencies, 3D artifacts, runtime rendering or live host behavior; those remain **unverified**. No engine change, model session or paid job was performed. A future implementation decision and ADR must resolve the prerequisite gate before claiming Phase A's complete exit criteria.
+
+A concrete alternative to adding a core prerequisite feature is a self-contained optional Bundle: ship the role, all four declared Skills and its required shared helpers together, and make direct specialist use meaningful without Chris. Integrate Chris's discovery and delegation only when `digital-agency` is installed. This is a proposal, not the chosen placement: the synthetic code-reviewer fixture did not demonstrate a real independent 3D workflow. The smallest follow-on is a fixture-only contract and installation test for independent role discovery, all four Skills and helper resolution, plus an agency-present integration test for Chris's roster and allowlist; a missing-agency test must show the direct role is useful or clearly reports the unsupported integration. Then test update and removal with edited files before selecting this design or authoring an ADR. No Arda or runtime implementation is implied by these fixture tests.
+
+### 2026-11-04 — Phase A placement decision
+
+[ADR 0062](../docs/adr/0062-agency-3d-designer.md) accepts the self-contained standalone optional Bundle for the initial Claude-native workspace surface. The synthetic fixture now installs a native-mapped role first, with four synthetic Skills, their helper files and shared `handoff`, then installs the agency using a deliberately updated native Chris. `domainTypes`/`syncRoster` generate the supplying-Bundle roster row; the fixture separately authors Chris's `Agent(...)` entry, and checks the installed files and coexistence. The fixture also checks edited-Skill uninstall protection. It tests placement and metadata, not a host invocation or useful 3D execution. `personaAliases` is Bundle metadata; Claude alias invocation is **unverified**.
+
+The supported design is direct complete-brief use when Chris is absent, and Chris-owned routing when he is present; no agency prerequisite is implied. Phase B must author the real role and Skills, integrate native roster/allowlist and guard/floor surfaces, and test exact dependencies and absence/exclusion. Phase C–E runtime, real installed 3D lifecycle, maintainer host session and human visual acceptance remain **unverified**. The fixture did not produce GLB, a viewer or PNG; the ADR states those as the first implementation contract, not as delivered capabilities.
+
+
+### 2026-11-05 — setup containment lesson for Phases B and C
+
+The maintainer Remotion cold-project sitting exposed npm walking from an empty project into an ancestor repository despite a selected cwd. Phases B and C setup must reuse the explicit-root pattern: initialize only the selected absent manifest, preserve existing files, pass an absolute npm prefix with local/workspace controls, and test an ancestor package/workspace plus paths containing spaces and metacharacters. A project-local label or cwd alone is not containment proof. [The eval5 audit](../docs/skill-quality/2026-11-05-remotion-readiness-eval5.md) and the corrected audiovisual-review helper provide the source evidence. This adds a test requirement, not a 3D implementation or runtime claim.
+
+
+### 2026-11-05 — carry the measured Motion lessons into later 3D production
+
+[Plan 047](047-motion-production-efficiency.md) adds proactive treatment choices,
+traceable acceptance and a Motion event sidecar without replacing the canonical
+media fingerprint. Later 3D clips should reuse those contracts: bind picture
+events to relevant scene/animation code and GLB/assets, reissue dependent Sound
+handoffs after changes, and offer narration/SFX/music before production. Keep
+personal-private asset checks bounded and record actually used assets in the
+Markdown ledger; commercial release retains applicable clearance. Do not infer
+Arda output, runtime loading, renderer performance or rights from these plans.
+Phase A placement evidence remains the delivered boundary; no 3D production
+role or runtime was added by the Motion follow-up.
+
+
+### Host refresh first; recoverable Phase B draft
+
+[Plan 048](048-host-refresh-and-claude-session-tracking.md) records the requested
+Host-library refresh and Claude session-tracking pilot before further 3D work.
+An isolated draft is saved at scratch/3d-phase-b-draft-2026-11-06/README.md: real
+Arda core/contract/canonical/native candidates, four original Skill drafts, a
+standalone Bundle fragment, Chris integration proposal and shared contract.
+Six JSON files and seven YAML frontmatters parse; actual isolated core and
+four-field contract validators passed. These are draft authoring checks only.
+No draft is applied, registered, installed or runnable; the GLB validator,
+Three.js viewer, PNG capture, provenance/Motion helpers, real lifecycle proof
+and maintainer pilot remain required. Preserve the Host gate source snapshot
+until its actual result is inspected, then implement B–D with TDD.
+
+### 2026-11-06 — Phase B implementation and focused evidence
+
+The optional standalone `agency-3d-production` Bundle now declares Arda, four original MIT Skills and the shared `audiovisual-review` and `handoff` dependencies. The canonical role, Semantic Core and contract and Claude-native role are authored; Chris's native roster and Agent allowlist include the optional provider, with conditional routing. The resolved `full` Bundle excludes Arda and all four 3D Skills. Arda supports direct complete briefs and limits missing rights claims to the actual scope; a reviewer attestation and hash are not legal clearance.
+
+The focused native floor, tool-grant, guard, teammate, roster and Skill inventory suites passed 495/495 tests in four files (exit 0). The real Bundle integration and standalone install, agency coexistence, shared ownership and removal tests passed 5/5 in two files (exit 0), including installed helper paths. These tests establish the sampled registry and copy-mode lifecycle, not actual Claude invocation, visual acceptance or all Host surfaces. Phase C/D helper and runtime evidence is recorded separately; Phase E maintainer-run Host session, actual Skill invocation and human review remain **unverified**. No provider job or Host session was started.
+
+### 2026-11-06 — actual local production and handoff evidence
+
+The frozen implementation includes strict project/provenance initialization,
+Markdown asset ledger, current source/evidence hashing, supported GLB metrics
+around pinned Khronos validation, project-contained dependency setup, a
+keyboard/pointer viewer, deterministic browser capture and a Shot Handoff that
+reruns validation and binds every viewer resource as well as frames, source and
+the canonical audiovisual timeline fingerprint. A reused revision label does
+not conceal cue/copy/timing changes. Unknown private-prototype terms remain
+documented warnings; public delivery needs compatible terms and a named
+reviewer's usage-scoped attestation. Hashes do not establish legal clearance.
+
+The explicit current runtime run passed **47/47 cases, zero skipped, exit 0**
+(`scratch/3d-final-gate-2026-11-06/real-runtime.log`). This includes the actual
+pinned validator, indexed/nonindexed/transformed scenes, embedded PNG/JPEG,
+unsupported/corrupt/missing inputs, path and runtime confinement, actual Chrome
+captures and stale/fabricated report rejection. The ordinary suite intentionally
+skips runtime-dependent cases without explicit local runtime variables; its
+default result must not be presented as this runtime matrix.
+
+An actual copy-mode installed optional Bundle produced the original MIT jade
+bottle at `scratch/3d-hands-on-2026-11-06/reference-proof`: 20,972 GLB bytes, 960
+stored/rendered triangles, one scene instance and two materials. Chrome
+156.0.8078.80 on Intel Iris Xe/ANGLE D3D11 captured six 640x480 frames at 30 fps,
+range [0,6). The first PNG SHA-256 is
+`c60e370334f881a851a697199d5e6261c24b0c2749d5691b6660a867ba9d3a87`.
+The installed helper validated its Shot Handoff and the copied evaluation
+project's handoff. The three unreviewed private-prototype source records retain
+rights-check warnings. The first frame was inspected and shows the bottle;
+this is technical visibility, not maintainer visual acceptance.
+
+Actual copy and Windows symlink lifecycle tests cover standalone installation,
+agency coexistence, shared helper ownership, absence of all four eval folders,
+installed sibling execution from another cwd, edited-Skill update/removal
+protection and preservation of user scene files. The full gate is still pending
+at this checkpoint, so no full-suite pass is claimed. Its durable status is
+`scratch/3d-final-gate-2026-11-06/verified-gate-status.json`, unified session
+23200, runner PID 23148, start 2026-11-06T10:08:31.3718884Z.
+
+[The prepared maintainer protocol](../docs/skill-quality/2026-11-06-3d-hands-on.md)
+and `scratch/3d-hands-on-2026-11-06/evaluation-kit` contain standalone web,
+locked Motion and routing/rights exercises. No Host was launched. Phase E
+requires the maintainer's account/quota/spending ceiling, actual TUI sessions
+and native records, then separately scoped human review. Blender, AR, providers,
+software-GPU parity and other Host delivery remain **unverified**.
+
+Final contract review found one remaining C/D guard before declaring the local
+slice complete: viewer-resource hashes are present, but the render receipt
+does not yet bind the renderer helper source itself. Add renderer helper
+identities to the receipt and recheck them at handoff capture and validation;
+changed helper code with unchanged package versions must invalidate proof.
+The candidate is being prepared only in scratch while the current full gate
+finishes. Then apply it with its regression tests, issue a fresh reference and
+evaluation kit, and rerun the affected and full gates. Do not treat the earlier
+47-case run as coverage of this later guard.
+
+### 2026-11-06 — renderer identity resolved; final gate checkpoint
+
+The renderer receipt now hashes the physical shared renderer and CLI wrapper,
+rechecks them before publishing the receipt, and the Shot Handoff compares
+current installed helper identities during capture and validation. Missing,
+incomplete or changed bindings fail even when package versions are unchanged.
+Copied and linked helper execution is covered. These filesystem snapshots are
+freshness checks, not an atomic sandbox against adversarial file replacement.
+
+The latest explicit validator/browser run passed **51/51, zero skipped, exit
+0**: `scratch/3d-final-gate-2026-11-06/renderer-identity-runtime.log`. A fresh
+installed reference at `scratch/3d-hands-on-2026-11-06/reference-proof-r2`
+produced the same six frame hashes and validated its renderer-bound handoff.
+The earlier reference and kit are historical proof; use the r2 kit after its
+build and the final gate complete. No live Host was started.
+
+The preceding full run (session 23200) was intentionally stopped for this
+required change, actual runner exit -1; it is an incomplete run, not a pass.
+Its logs/status are retained. The new frozen run is **session 8414, runner PID
+8628**, start **2026-11-06T10:21:03.8484243Z**. Its fresh typecheck exited 0;
+full-suite exit and source equality are pending in
+`scratch/3d-final-gate-r2-2026-11-06/verified-gate-status.json`. Inspect this
+actual handle on resume; never start a duplicate from a running status alone.
+
+The r2 kit builder is also live as **session 52516**, targeting
+`scratch/3d-hands-on-2026-11-06/evaluation-kit-r2`; inspect its actual exit and
+then run eval2's installed `shot-handoff.mjs validate` before handoff. The
+maintainer supplied a local-only pilot funding/cap gate. Identity and limits
+are kept in ignored local scratch, not the documented repository; no session
+spending has occurred. Phase E and human review remain unverified.
+
+The r2 kit builder subsequently completed with actual exit **0** (session
+52516 closed). Eval2's installed `shot-handoff.mjs validate` also exited **0**,
+`ok:true`, retaining the three scoped rights warnings. Use `evaluation-kit-r2`
+for the next pilot. Remaining global verification is the live full gate 8414;
+its typecheck is 0, but no full test result is yet claimed. Model work paused
+under the maintainer's included-allowance stop instruction; exact account
+telemetry is retained privately. All model workers finished;
+the existing local CPU test run may complete while paused. No commit or push.
+
+### 2026-11-06 — final local verification and ready handoff
+
+The r4 gate completed at 2026-11-06T18:19:39Z: typecheck exit 0, test exit 0, **254 suites passed; 4,971 tests passed and 210 skipped**, with watched source unchanged. The later resume check independently matched all **418** watched path/hash records; 137 intentionally absent entries are recorded deletions, not new drift. No full rerun is needed for these documentation-only amendments. Skipped checks remain unverified.
+
+The explicit current 3D runtime/privacy matrix passed **56/56 with zero skips**. The installed reference is `scratch/3d-hands-on-2026-11-06/reference-proof-r4`; the three prepared projects are in `evaluation-kit-r4` beside it. Kit preparation exited 0. Eval2's installed Shot Handoff validator exited 0 with `ok:true`, retaining three personal-private rights warnings. These warnings do not become public or commercial clearance.
+
+The local handoff is ready; **Phase E remains unverified** until the maintainer supplies actual Claude session records and separately scoped visual/playback feedback. Actual Skill use and Motion-worker integration are not established by installed files or these local tests. Three Host-library source audit holds and the retained baseline pins remain unchanged. No commit or push was made.
+
+### 2026-11-07 — eval1 observed; supplied cap fixture corrected
+
+[Eval1 audit](../docs/skill-quality/2026-11-07-3d-eval1-web-r4.md) records the
+maintainer-run session, all four successful Skill invocations, real task IDs
+and updates, cold local setup, unchanged inputs and delivery hashes, repeated
+54/54 browser checks and actual invalid-GLB rejection. Human interaction and
+fallback feedback is accepted for that prototype, with the reported cap flaw.
+The flaw originates in our original fixture; a failing geometric regression
+preceded its minimal material assignment fix. The corrected fixture passes
+57/57 explicit runtime checks plus the focused installed/kit suites, and has a
+separate inspected PNG. Original r4 projects and their reference fingerprints
+remain preserved. Eval2/3 and remaining cross-agent/human acceptance are still
+unverified. A fresh full gate is required before publication; none was made.
+
+The maintainer subsequently reviewed the corrected cap PNG and accepted its
+brass sides/top **for this prototype** on 2026-11-07. That scoped visual issue
+is closed; eval2's signature-frame/playback and remaining cross-agent evidence
+stay open. The fresh post-eval1 full gate is running in the separately recorded
+checkpoint; no final result is inferred before its actual exit.
+
+### 2026-11-07 — fresh post-eval1 full gate passed
+
+The single frozen run completed at 09:55:18Z with native typecheck/test exits
+**0/0**: **254 suites passed; 4,971 tests passed, 210 skipped**, duration
+1881.50 seconds for tests. All **419** watched path/hash records match before
+and after; 137 intentionally absent records remain deletions. Saved evidence:
+`scratch/3d-post-eval1-gate-2026-11-07/verified-gate-status.json`, full log and
+source snapshots. This gate includes the cap fix and native observation.
+No code changed afterward. The cap has scoped maintainer acceptance; eval2/3,
+actual cross-agent Motion integration and the three source-review holds remain
+open. [Eval2's manual launch](../docs/skill-quality/2026-11-07-3d-eval2-launch.md)
+is prepared; no Claude session, commit or push was started by this continuation.
+
+### 2026-11-07 — eval2 record found; provisional gaps retained
+
+[The provisional audit](../docs/skill-quality/2026-11-07-3d-eval2-provisional-audit.md)
+records Chris's accepted map, actual ordinary Motion delegation and handbacks,
+lead-owned task updates, intact 27-file reference and correct six capture
+mappings. No native Skill call is recorded on either actor. The material
+control changed unused metadata and some exits were not captured correctly;
+do not label those stronger requirements passed. Maintainer session status,
+usage and signature-frame/playback feedback were requested and are pending.
+No code was changed and no new Host was started; the fresh code gate remains
+valid while actual workflow completion and eval3 remain unverified.
+
+### 2026-11-07 — completed eval2 feedback; combined visible-handoff exercise
+
+[The completed r4 audit](../docs/skill-quality/2026-11-07-3d-eval2-motion-r4.md)
+records 2.45 USD reported usage, revised-playback and signature-frame
+acceptance, and independently confirmed restoration of all 27 reference files.
+Zero Skill calls and the metadata-only material control remain readiness gaps.
+Chris's own small read-back was acceptable to the maintainer; larger work
+should propose proportional cheaper independent review.
+
+The original ready-made six-frame shot did not require fresh Arda production
+and was too visually symmetric for useful motion review. The separate
+[eval2b kit and launch](../docs/skill-quality/2026-11-07-3d-eval2b-visible-handoff.md)
+correct that test design: actual Arda source/GLB/30-frame production, visible
+geometric asymmetry, a fresh handoff to Motion, actor-specific Skill evidence,
+and real material/timeline controls with native exits and restoration. Runtime
+packages and approved Chrome are reused, with no prebuilt shot supplied.
+Terra/medium passed mechanical preflight; Sol/medium passed the bounded protocol
+review and its ownership/material-input clarifications were incorporated.
+Those reviews are preparation evidence, not a native pilot. No Host CLI was
+started. Current watched code is unchanged, so the fresh full gate remains
+applicable; eval2b/eval3 and source-review holds remain open.
+
+### 2026-11-07 — eval2b actual production and accepted playback
+
+[The completed audit](../docs/skill-quality/2026-11-07-3d-eval2b-session-audit.md)
+records actual Chris/Arda/Motion/Emre activity, nine successful Skill calls,
+30 distinct rendered frames and a fresh accepted handoff. The current installed
+validator exited 0; the recorded timeline/material controls exited 0/2/0 and
+all 48 baseline file hashes restore correctly. The maintainer accepted the
+signature, visible rotation, integration, controls and playback with no visible
+problems. Reported session usage was 3.99 USD.
+
+This clears the bounded visible-production/handoff exercise, not every role
+instruction: Motion omitted its mandatory direction-Skill call, task 4 was not
+reopened for the favicon revision, and the final rerun of Emre's script was
+performed by Motion. Preserve those limits instead of claiming a blanket pass.
+Shared helper imports do not require recursive Skill loading. Eval3 and the
+three upstream source holds remain open; no code/pin/hold changed in this audit.
+
+### 2026-11-07 — eval3 negative controls completed
+
+[The final negative-case audit](../docs/skill-quality/2026-11-07-3d-eval3-session-audit.md)
+confirms the intended Arda consultation for the 3D/AR comparison and Kaan-only
+consultation for the separate static-page request. No production, install,
+download, file write or provider invocation is recorded. The maintainer
+accepted the missing-evidence/NC discussion, AR-target question and preserved
+unverified AR status. All three pilot families now have actual records and
+scoped feedback; do not request another generation merely to repeat them.
+
+Preserve remaining conformance issues: Motion's direction-Skill omission,
+revision-state/independent-rerun attribution, unsupported broad rights wording,
+and the inference that missing settings means no native role guards. These
+need bounded workflow/reporting hardening, not permission expansion or a
+retroactive universal pass. The three upstream holds remain retained.

@@ -465,32 +465,36 @@ interface TaskState {
   blockedBy: string[];
 }
 
+// Claude's raw tool_use stream can retain these aliases even when the host repairs them before execution.
+const taskUpdateId = (input: Json): string => str(input.taskId ?? input.id ?? input.task_id);
+
 function blockedFinding(session: Session): Finding {
   const events: Array<{ at: string; agent: string; call: ToolCall }> = [];
   for (const a of session.agents) for (const c of a.calls) if (c.name === 'TaskCreate' || c.name === 'TaskUpdate') events.push({ at: c.at, agent: a.name, call: c });
   events.sort((x, y) => x.at.localeCompare(y.at));
   const tasks = new Map<string, TaskState>();
-  let nextId = 1;
   const evidence: string[] = [];
   let early = 0;
   let refused = 0;
   let accepted = 0;
+  let unresolved = 0;
   for (const e of events) {
     const input = e.call.input;
     if (e.call.name === 'TaskCreate') {
-      const idFromResult = /#?(\d+)/.exec(e.call.result ?? '')?.[1];
-      const id = idFromResult ?? String(nextId);
-      nextId = Number(id) + 1;
+      const id = e.call.isError ? undefined : /\bTask #(\d+) created successfully\b/.exec(e.call.result ?? '')?.[1];
+      if (!id) { unresolved += 1; continue; }
       tasks.set(id, { subject: str(input.subject), status: 'pending', blockedBy: [] });
       continue;
     }
-    const id = String(input.taskId ?? '');
-    const task = tasks.get(id) ?? { subject: `#${id}`, status: 'pending', blockedBy: [] };
-    tasks.set(id, task);
+    const id = taskUpdateId(input);
+    const task = tasks.get(id);
+    if (!id || !task) { unresolved += 1; continue; }
     for (const b of arr(input.addBlockedBy)) task.blockedBy.push(String(b));
     const status = str(input.status);
     if (status === 'in_progress') {
-      const open = task.blockedBy.filter(b => tasks.get(b)?.status !== 'completed');
+      const unknown = task.blockedBy.filter(b => !tasks.has(b));
+      if (unknown.length) evidence.push(`${e.agent}: task ${id} has unresolved blocker(s): ${unknown.join(', ')}`);
+      const open = task.blockedBy.filter(b => tasks.has(b) && tasks.get(b)?.status !== 'completed');
       if (open.length > 0) {
         early += 1;
         if (e.call.isError) refused += 1;
@@ -504,6 +508,7 @@ function blockedFinding(session: Session): Finding {
     }
   }
   evidence.unshift(`${events.length} task call(s), ${tasks.size} task(s); starts while blocked: ${early} (refused ${refused}, accepted ${accepted})`);
+  if (unresolved) evidence.push(`${unresolved} task call(s) unresolved: missing or unrecognised create result or task ID`);
   return { id: 'H4', title: 'The host refuses a blocked task started early', verdict: refused > 0 ? 'seen' : accepted > 0 ? 'violation' : 'not seen', evidence };
 }
 
@@ -585,7 +590,7 @@ export function renderReport(analysis: Analysis): string {
     out.push('', '## Lead: team flow');
     for (const c of lead.calls.filter(x => ['Agent', 'TaskCreate', 'TaskUpdate', 'SendMessage'].includes(x.name))) {
       const i = c.input;
-      const what = c.name === 'Agent' ? `spawn ${str(i.name)} as ${str(i.subagent_type)}` : c.name === 'TaskCreate' ? `task "${short(str(i.subject), 60)}"` : c.name === 'TaskUpdate' ? `task ${str(i.taskId)} ${[str(i.status), i.owner ? `owner ${str(i.owner)}` : '', arr(i.addBlockedBy).length ? `blockedBy ${arr(i.addBlockedBy).join(',')}` : ''].filter(Boolean).join(' ')}` : `message to ${str(i.to)}: ${short(typeof i.message === 'string' ? i.message : JSON.stringify(i.message), 70)}`;
+      const what = c.name === 'Agent' ? `spawn ${str(i.name)} as ${str(i.subagent_type)}` : c.name === 'TaskCreate' ? `task "${short(str(i.subject), 60)}"` : c.name === 'TaskUpdate' ? `task ${taskUpdateId(i)} ${[str(i.status), i.owner ? `owner ${str(i.owner)}` : '', arr(i.addBlockedBy).length ? `blockedBy ${arr(i.addBlockedBy).join(',')}` : ''].filter(Boolean).join(' ')}` : `message to ${str(i.to)}: ${short(typeof i.message === 'string' ? i.message : JSON.stringify(i.message), 70)}`;
       out.push(`  ${c.at.slice(11, 19)} ${c.name} ${what}${c.isError ? ' [error]' : ''}`);
     }
   }

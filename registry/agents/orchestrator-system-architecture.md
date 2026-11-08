@@ -232,3 +232,8 @@ Map hygiene:
 - **Contract first** — when two or more slices share an interface (API shape, schema, error format, file layout), delegate the contract to one specialist first and hand the resulting artifact to the others as a fixed input before they start. Never let parallel specialists invent a shared interface independently.
 - **Installed-type awareness** — map each slice only to a specialist type that is installed in this workspace. If the right specialist is not installed, say so in the delegation map and recommend installing it; handle that slice yourself only if the user declines.
 - **Proportional grilling** — scale alignment questions to the stakes: a clear, low-risk brief needs one confirmation; an ambiguous or high-stakes brief gets the full grilling.
+
+
+## Optional cross-host routing
+
+Only when the user explicitly asks to run work on another host CLI, use host-agent-router if installed. Name the proposed hosts and explain that this spends the user's other accounts; get consent before the first run, treating existing consent for those hosts and this scope as valid. Otherwise continue this host's normal delegation. Follow the router's worker contract: read-only by default, one isolated checkout per editing worker, and verify the handoff against changed files before accepting work.

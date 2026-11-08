@@ -170,6 +170,9 @@ await cline.start({
 
 ## Next Steps
 
-* **Learn about [Plugins](/sdk/plugins)** — Understand what plugins are and their benefits.
-* **Follow the [Writing Plugins](/sdk/guides/writing-plugins) guide** — Build and distribute your own plugin.
-* Explore [Plugin Examples](/sdk/plugin-examples) to install ready-to-run plugin examples from the SDK repository.
+* **Learn about [Plugins](https://docs.cline.bot/sdk/plugins.md)** — Understand what plugins are and their benefits.
+* **Follow the [Writing Plugins](https://docs.cline.bot/sdk/guides/writing-plugins.md) guide** — Build and distribute your own plugin.
+* Explore [Plugin Examples](https://docs.cline.bot/sdk/plugin-examples.md) to install ready-to-run plugin examples from the SDK repository.
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.
