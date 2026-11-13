@@ -36,7 +36,7 @@ describe('AGENTS.md', () => {
     }
   });
 
-  it('keeps the non-negotiables a reader must not miss, and says that live host sessions are the maintainer\'s to type', () => {
+  it('keeps the non-negotiables a reader must not miss, and says how a real host session may be run', () => {
     const agents = read('AGENTS.md');
     expect(agents).toMatch(/origin\/dev/);
     expect(agents).toMatch(/never `?main`?/i);
@@ -44,7 +44,14 @@ describe('AGENTS.md', () => {
     expect(agents).toMatch(/test first/i);
     expect(agents).toMatch(/npm run typecheck && npm test/);
     expect(agents).toMatch(/hostlib:session/);
-    expect(agents).toMatch(/maintainer types/i);
+    // 2026-11-13: the maintainer lifted "never start one". Headless runs on the host an artifact is built for are expected, routed
+    // workers go through the router skill, every run is bounded, and an interactive TUI test is still the maintainer's to type.
+    expect(agents).not.toMatch(/Never start one/);
+    expect(agents).toMatch(/purposeful and bounded, never open-ended/);
+    expect(agents).toMatch(/headless on that host's CLI[^.]*`claude -p`/);
+    expect(agents).toMatch(/`host-agent-router` skill, each edit run in its own worktree/);
+    expect(agents).toMatch(/interactive TUI test is still typed by the maintainer/);
+    expect(agents).toMatch(/Never trust the model's own account/);
   });
 
   it('uses no em or en dashes (the repository prose does not)', () => {

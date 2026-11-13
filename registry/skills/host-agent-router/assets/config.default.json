@@ -29,9 +29,28 @@
         "gpt-oss": "Claude and GPT models"
       },
       "tiers": {
-        "simple": { "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium" },
-        "medium": { "label": "Gemini 3.8 Flash (High)", "model": "gemini-3.8-flash-high", "effort": "high" },
-        "high": { "label": "Gemini 4 Argon (Medium)", "model": "gemini-4-argon-medium", "effort": "medium" }
+        "simple": {
+          "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium",
+          "efforts": {
+            "low": { "label": "Gemini 3.8 Flash (Low)", "model": "gemini-3.8-flash-low" },
+            "high": { "label": "Gemini 3.8 Flash (High)", "model": "gemini-3.8-flash-high" }
+          }
+        },
+        "medium": {
+          "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium", "effort": "medium",
+          "efforts": {
+            "low": { "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low" },
+            "high": { "label": "Gemini 4 Hydrogen (High)", "model": "gemini-4-hydrogen-high" },
+            "extra": { "label": "Gemini 4 Hydrogen (XHigh)", "model": "gemini-4-hydrogen-xhigh" }
+          }
+        },
+        "high": {
+          "label": "Gemini 4 Argon (Medium)", "model": "gemini-4-argon-medium", "effort": "medium",
+          "efforts": {
+            "low": { "label": "Gemini 4 Argon (Low)", "model": "gemini-4-argon-low" },
+            "high": { "label": "Gemini 4 Argon (High)", "model": "gemini-4-argon-high" }
+          }
+        }
       }
     },
     "codex": {
