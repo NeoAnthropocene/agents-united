@@ -59,21 +59,23 @@ type Lib = {
   extractClineCatalog: (text: string) => string[];
   checkClineModel: (model: string, ids: string[]) => string | null;
   guardDecision: (payload: Record<string, unknown>, policy: GuardPolicy) => { cancel: boolean; errorMessage?: string };
-  writeGuardHook: (dir: string) => string;
+  writeGuardHook: (dir: string, logFile?: string) => string;
   prepareClineGuard: (o: { cwd: string; dataDir: string; tmpBase?: string }) => { args: string[]; env: Record<string, string>; configDir: string; logFile: string; cleanup: () => void; readBlocked: () => Array<{ tool: string; reason: string }> } | null;
   snapshotTree: (dir: string, o?: { maxEntries?: number }) => Snap;
-  diffSnapshots: (a: Snap, b: Snap) => Change;
+  diffSnapshots: (a: Snap, b: Snap, ignoredOf?: ((paths: string[]) => Set<string> | null) | null) => Change;
+  gitIgnoredPaths: (dir: string, paths: string[]) => Set<string> | null;
   runAttempts: (a: {
     cands: Array<{ host: string; side: string; model: string }>;
     access: string;
     cwd: string;
     tryOne: (c: { host: string; side: string; model: string }) => Promise<Res | { skipped: string }>;
     snap?: (dir: string) => Snap;
+    ignoredOf?: (dir: string, paths: string[]) => Set<string> | null;
   }) => Promise<{ attempts: Array<Record<string, unknown>>; last: [{ host: string }, Res] | null; stopped: { reason: string } | null; changed: Change | null }>;
 };
 interface GuardPolicy { workspace: string; home: string; tmp: string[] }
 interface Snap { files: Record<string, string>; head: string | null; truncated: boolean }
-interface Change { created: string[]; modified: string[]; deleted: string[]; head_moved: boolean; unknown: boolean; count: number }
+interface Change { created: string[]; modified: string[]; deleted: string[]; head_moved: boolean; unknown: boolean; count: number; ignored?: { count: number; folders: Array<{ folder: string; count: number }> } }
 interface Res { rc: number; stdout: string; stderr: string; seconds: number }
 const lib = async (): Promise<Lib> => (await import(pathToFileURL(SCRIPT).href)) as Lib;
 const CFG = JSON.parse(fs.readFileSync(path.join(DIR, 'assets', 'config.default.json'), 'utf8')) as Cfg;
@@ -230,7 +232,7 @@ describe('the default config', () => {
     const m = (h: string): string[] => ['simple', 'medium', 'high'].map(t => CFG.hosts[h]!.tiers[t]!.model);
     expect(CFG.priority).toEqual(['cline', 'antigravity', 'codex', 'claude']);
     expect(m('cline')).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'cline-pass/glm-5.3', 'cline-pass/kimi-k3.1-pro']);
-    expect(m('antigravity')).toEqual(['gemini-3.8-flash-medium', 'gemini-3.8-flash-high', 'gemini-4-argon-medium']);
+    expect(m('antigravity')).toEqual(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'gemini-4-argon-medium']);
     expect(m('codex')).toEqual(['gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6-astra']);
     expect(m('claude')).toEqual(['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5']);
   });
@@ -277,7 +279,7 @@ describe('command building: the host CLI flags that carry model, effort and acce
 
   it('Antigravity: the model slug carries the effort, access maps to --mode, and no permission bypass is passed', async () => {
     const a = (await spec('antigravity')).args;
-    expect(after(a, '--model')).toBe('gemini-3.8-flash-high');
+    expect(after(a, '--model')).toBe('gemini-4-hydrogen-medium');
     expect(a).not.toContain('--effort');
     expect(after(a, '--mode')).toBe('plan');
     expect(a).not.toContain('--dangerously-skip-permissions');
@@ -476,6 +478,72 @@ describe('the working-tree guard for edit runs', () => {
     const r = await runAttempts({ cands, access: 'edit', cwd: d, tryOne: async () => (n++ === 0 ? { skipped: 'not reachable' } : ok) });
     expect(r.attempts[0]).toMatchObject({ host: 'cline', skipped: 'not reachable' });
     expect(r.last?.[0].host).toBe('antigravity');
+  });
+
+  // Seen live on 2026-11-13: after a build in a real repository `changed` listed 201 created paths (count 4,437) from git-ignored dist/, scratch/
+  // and node_modules-like folders, burying the one modified file. Ignored paths are now summarised apart; they still count.
+  describe('git-ignored paths are summarised apart, never dropped', () => {
+    const isIgnored = (paths: string[]): Set<string> => new Set(paths.filter(p => p.startsWith('dist/') || p.startsWith('scratch/') || p === 'run.log'));
+    const snapOf = (files: Record<string, string>): Snap => ({ files, head: null, truncated: false });
+
+    it('keeps ignored paths out of created, modified and deleted, and counts and names them in `ignored`', async () => {
+      const { diffSnapshots: diff } = await lib();
+      const a = snapOf({ 'src/a.ts': '1:1', 'dist/old.js': '1:1', 'scratch/gone.txt': '1:1' });
+      const b = snapOf({ 'src/a.ts': '2:2', 'src/new.ts': '1:1', 'dist/old.js': '9:9', 'dist/cli.js': '1:1', 'dist/cli.js.map': '1:1', 'scratch/x/y.md': '1:1', 'run.log': '1:1' });
+      const c = diff(a, b, isIgnored);
+      expect(c).toMatchObject({ created: ['src/new.ts'], modified: ['src/a.ts'], deleted: [], head_moved: false, unknown: false });
+      expect(c.ignored).toEqual({ count: 6, folders: [{ folder: 'dist', count: 3 }, { folder: 'scratch', count: 2 }, { folder: 'run.log', count: 1 }] });
+      expect(c.count).toBe(8); // everything the tree did, ignored paths included: the decision to stop reads this number
+    });
+
+    it('behaves exactly as before when the classifier is absent, fails (null) or finds nothing', async () => {
+      const { diffSnapshots: diff } = await lib();
+      const a = snapOf({ 'a.txt': '1:1' });
+      const b = snapOf({ 'a.txt': '1:1', 'dist/x.js': '1:1' });
+      for (const f of [undefined, null, () => null, () => new Set<string>()]) {
+        const c = diff(a, b, f);
+        expect(c, String(f)).toMatchObject({ created: ['dist/x.js'], count: 1 });
+        expect(c.ignored).toBeUndefined();
+      }
+    });
+
+    it('lists at most ten folders, the biggest first', async () => {
+      const { diffSnapshots: diff } = await lib();
+      const files: Record<string, string> = {};
+      for (let i = 0; i < 12; i++) for (let j = 0; j <= i; j++) files[`d${String(i).padStart(2, '0')}/f${j}`] = '1:1';
+      const c = diff(snapOf({}), snapOf(files), ps => new Set(ps));
+      expect(c.created).toEqual([]);
+      expect(c.ignored!.count).toBe(78);
+      expect(c.ignored!.folders).toHaveLength(10);
+      expect(c.ignored!.folders[0]).toEqual({ folder: 'd11', count: 12 });
+    });
+
+    it('still stops, and does not hand over to another host, when a failed attempt changed only ignored files', async () => {
+      const { runAttempts } = await lib();
+      const d = tmp(); put(d, 'a.txt', 'a');
+      const f = fake([{ res: limit, act: () => put(d, 'dist/out.js', 'built') }, { res: ok }]);
+      const r = await runAttempts({ cands, access: 'edit', cwd: d, tryOne: f.tryOne, ignoredOf: (_dir, ps) => new Set(ps.filter(p => p.startsWith('dist/'))) });
+      expect(f.calls).toEqual(['cline']); // the second host never started
+      expect(r.stopped?.reason).toMatch(/changed/i);
+      expect(r.changed).toMatchObject({ created: [], modified: [], count: 1, ignored: { count: 1, folders: [{ folder: 'dist', count: 1 }] } });
+      expect(r.attempts[0]).toMatchObject({ failure: 'limit', changed: { count: 1, ignored: { count: 1 } } });
+    });
+
+    it('classifies with the real git in a work tree that has a .gitignore, and falls back to the plain lists outside one', async () => {
+      const { runAttempts, gitIgnoredPaths } = await lib();
+      const git = (d: string, ...a: string[]) => spawnSync('git', ['-C', d, '-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { encoding: 'utf8' });
+      const d = tmp();
+      if (git(d, 'init', '-q').status !== 0) return; // no git on this machine: nothing to prove
+      put(d, '.gitignore', ['dist/', '*.log', 'scratch/', ''].join(String.fromCharCode(10))); put(d, 'src/a.ts', 'one'); put(d, 'dist/keep.js', 'x');
+      git(d, 'add', '.gitignore', 'src/a.ts'); git(d, 'commit', '-qm', 'base');
+      const f = fake([{ res: ok, act: () => { put(d, 'src/a.ts', 'two three'); put(d, 'src/b.ts', 'new'); put(d, 'dist/cli.js', 'b'); put(d, 'dist/deep/x.js', 'b'); put(d, 'build.log', 'l'); put(d, 'scratch/s.md', 's'); } }]);
+      const r = await runAttempts({ cands, access: 'edit', cwd: d, tryOne: f.tryOne });
+      expect(r.changed).toMatchObject({ created: ['src/b.ts'], modified: ['src/a.ts'], deleted: [], head_moved: false, count: 6 });
+      expect(r.changed!.ignored).toEqual({ count: 4, folders: [{ folder: 'dist', count: 2 }, { folder: 'build.log', count: 1 }, { folder: 'scratch', count: 1 }] });
+      expect(gitIgnoredPaths(d, ['dist/zzz.js', 'src/zzz.ts'])).toEqual(new Set(['dist/zzz.js']));
+      expect(gitIgnoredPaths(tmp(), ['dist/zzz.js'])).toBeNull(); // not a work tree: no classification, no guess
+      expect(gitIgnoredPaths(d, [])).toBeNull();
+    });
   });
 });
 
@@ -751,6 +819,57 @@ describe('the Cline guard as Cline runs it (a hook file in a throwaway config di
   });
 });
 
+// Seen live on 2026-11-13 (real-repository Cline run): the router reported `failure: "guard"` for correct work, with one blocked entry,
+// "no guard policy was provided". The worker had run the repository's own vitest inside its process tree; a test there starts a hook
+// with an empty policy, and that hook wrote into the routed run's block record because the record's location travelled in the environment
+// every descendant of the Cline process inherits (HOST_AGENT_ROUTER_GUARD_LOG). The location now lives only in the run's own hook file.
+describe('a hook started by the worker own commands cannot write into the routed run block record', () => {
+  const runHook = (hook: string, payload: unknown, env: Record<string, string>) =>
+    spawnSync(process.execPath, [hook], { input: JSON.stringify(payload), encoding: 'utf8', env: { ...process.env, ...env } });
+  const call = { workspaceRoots: ['C:/w'], tool_call: { name: 'run_commands', input: { commands: ['npm test'] } } };
+
+  it('reproduces the repository test: an empty-policy hook run with the environment the router gave Cline leaves the routed run record empty', async () => {
+    const { prepareClineGuard } = await lib();
+    const routed = prepareClineGuard({ cwd: tmp(), dataDir: tmp() })!; // the routed run's guard: what Cline's environment carries is routed.env
+    const other = prepareClineGuard({ cwd: tmp(), dataDir: tmp() })!; // the hook file a test inside the worker's repository creates for itself
+    const r = runHook(path.join(other.configDir, 'hooks', 'PreToolUse.mjs'), call, { ...routed.env, HOST_AGENT_ROUTER_GUARD: '' });
+    expect(JSON.parse(r.stdout)).toMatchObject({ cancel: true }); // that hook still fails closed
+    expect(routed.readBlocked()).toEqual([]); // and the routed run is not blamed for it
+    expect(other.readBlocked()).toEqual([{ tool: 'run_commands', reason: expect.stringContaining('no guard policy') }]);
+    routed.cleanup(); other.cleanup();
+  });
+
+  it('puts only the policy in the environment: the location of the record is not exported to the worker or its children', async () => {
+    const { prepareClineGuard } = await lib();
+    const g = prepareClineGuard({ cwd: tmp(), dataDir: tmp() })!;
+    expect(Object.keys(g.env)).toEqual(['HOST_AGENT_ROUTER_GUARD']);
+    expect(JSON.stringify(g.env)).not.toContain(path.basename(g.logFile));
+    g.cleanup();
+  });
+
+  it('still reports the routed run own hook when it has no policy: fail-closed and recorded', async () => {
+    const { prepareClineGuard } = await lib();
+    const g = prepareClineGuard({ cwd: tmp(), dataDir: tmp() })!;
+    const r = runHook(path.join(g.configDir, 'hooks', 'PreToolUse.mjs'), call, { HOST_AGENT_ROUTER_GUARD: '' });
+    expect(JSON.parse(r.stdout)).toMatchObject({ cancel: true });
+    expect(g.readBlocked()).toEqual([{ tool: 'run_commands', reason: expect.stringContaining('no guard policy') }]);
+    g.cleanup();
+  });
+
+  it('records a real block of the routed run even when a stray hook with an empty policy ran before and after it', async () => {
+    const { prepareClineGuard } = await lib();
+    const g = prepareClineGuard({ cwd: tmp(), dataDir: tmp() })!;
+    const other = prepareClineGuard({ cwd: tmp(), dataDir: tmp() })!;
+    const stray = () => runHook(path.join(other.configDir, 'hooks', 'PreToolUse.mjs'), call, { ...g.env, HOST_AGENT_ROUTER_GUARD: '' });
+    stray();
+    const ws = (JSON.parse(g.env.HOST_AGENT_ROUTER_GUARD!) as { workspace: string }).workspace;
+    runHook(path.join(g.configDir, 'hooks', 'PreToolUse.mjs'), { workspaceRoots: [ws], tool_call: { name: 'run_commands', input: { commands: ['git push origin main'] } } }, g.env);
+    stray();
+    expect(g.readBlocked()).toEqual([{ tool: 'run_commands', reason: expect.stringContaining('git push') }]);
+    g.cleanup(); other.cleanup();
+  });
+});
+
 describe('one worker contract for every host: the guardrails skill and the handoff skill', () => {
   it('tells an editing worker, on any host, the git-guardrails rules and the handoff report, naming both skills', async () => {
     const { buildSpec } = await lib();
@@ -1011,5 +1130,679 @@ describe('the skill folder meets the repository layout and contract', () => {
     expect(fm).toMatch(/author: agents-united/);
     expect(fm).not.toMatch(/source:/);
     expect(fm).not.toMatch(/disable-model-invocation/); // it would stop orchestrator-universal preloading the skill (ADR 0065)
+  });
+});
+
+describe('starting a host that npm installed on Windows', () => {
+  type Shim = (shim: string, pkg: string, bin: string, opts?: { platform?: string; execPath?: string }) => string[];
+  let root: string | undefined;
+  afterEach(() => { if (root) fs.rmSync(root, { recursive: true, force: true }); root = undefined; });
+
+  const npmPrefix = (pkg: string, bin: unknown): { shim: string; entry: string } => {
+    root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'har-npm-')));
+    const shim = path.join(root, 'codex.cmd');
+    fs.writeFileSync(shim, '@echo off\r\n');
+    fs.writeFileSync(path.join(root, 'codex'), '#!/bin/sh\n'); // the extensionless shell shim npm also writes
+    const pkgDir = path.join(root, 'node_modules', ...pkg.split('/'));
+    fs.mkdirSync(path.join(pkgDir, 'bin'), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: pkg, bin }));
+    const entry = path.join(pkgDir, 'bin', 'codex.js');
+    fs.writeFileSync(entry, '');
+    return { shim, entry };
+  };
+
+  it('runs the package entry with node, because neither npm shim can be spawned directly', async () => {
+    const { npmShimCommand } = (await lib()) as unknown as { npmShimCommand: Shim };
+    const { shim, entry } = npmPrefix('@openai/codex', { codex: 'bin/codex.js' });
+    expect(npmShimCommand(shim, '@openai/codex', 'codex', { platform: 'win32', execPath: 'C:\node\node.exe' })).toEqual(['C:\node\node.exe', entry]);
+    // the shell shim beside it resolves to the same entry
+    expect(npmShimCommand(path.join(root!, 'codex'), '@openai/codex', 'codex', { platform: 'win32', execPath: 'N' })).toEqual(['N', entry]);
+  });
+
+  it('accepts a package whose bin is one string, and prefers a node.exe beside the shim', async () => {
+    const { npmShimCommand } = (await lib()) as unknown as { npmShimCommand: Shim };
+    const { shim, entry } = npmPrefix('cline', 'bin/codex.js');
+    fs.writeFileSync(path.join(root!, 'node.exe'), '');
+    expect(npmShimCommand(shim, 'cline', 'cline', { platform: 'win32', execPath: 'N' })).toEqual([path.join(root!, 'node.exe'), entry]);
+  });
+
+  it('keeps the shim when it is not an npm install, the entry is missing, or the platform is not Windows', async () => {
+    const { npmShimCommand } = (await lib()) as unknown as { npmShimCommand: Shim };
+    const { shim, entry } = npmPrefix('@openai/codex', { codex: 'bin/codex.js' });
+    expect(npmShimCommand(shim, '@openai/codex', 'codex', { platform: 'linux', execPath: 'N' })).toEqual([shim]);
+    expect(npmShimCommand(shim, '@openai/other', 'codex', { platform: 'win32', execPath: 'N' })).toEqual([shim]);
+    expect(npmShimCommand(shim, '@openai/codex', 'absent', { platform: 'win32', execPath: 'N' })).toEqual([shim]);
+    fs.rmSync(entry);
+    expect(npmShimCommand(shim, '@openai/codex', 'codex', { platform: 'win32', execPath: 'N' })).toEqual([shim]);
+  });
+});
+
+// ----------------------------------------------------------------------------------------------------------------------------
+// Version 1.1.0 (2026-11-13): Antigravity tiers from `agy models`, an effort choice inside a tier, skills attached to the worker's
+// prompt, the `machine` command. Nothing here starts a model session.
+// ----------------------------------------------------------------------------------------------------------------------------
+
+interface TierE extends TierCfg { efforts?: Record<string, string | { label?: string; model?: string; effort?: string }> }
+interface CfgE extends Omit<Cfg, 'hosts'> { hosts: Record<string, { provider?: string; effortInModel?: boolean; quotaGroups?: Record<string, string>; tiers: Record<string, TierE> }> }
+interface Resolved { model: string; effort: string; label: string; note: string | null }
+interface CandE extends Candidate { effort_note?: string | null }
+interface PlanE { tier: string; selected: CandE | null; candidates: CandE[]; skipped: Array<{ host: string; side: string; reason: string }> }
+interface SkillText { name: string; chars: number; text: string }
+type Lib2 = {
+  agyGroupFor: (model: string, groups: Record<string, string>) => string | null;
+  resolveEffort: (cfg: CfgE, host: string, tier: string, effort?: string | null) => Resolved;
+  knownEfforts: (cfg: CfgE, tier: string, only?: string[]) => string[];
+  checkEffort: (cfg: CfgE, tier: string, effort: string, only?: string[]) => string | null;
+  configuredModels: (cfg: CfgE, host: string) => string[];
+  ranOf: (c: CandE) => Record<string, unknown>;
+  validateConfig: (cfg: unknown) => string[];
+  mergeConfig: (base: CfgE, over: Record<string, unknown>) => CfgE;
+  buildPlan: (cfg: CfgE, tier: string, statuses: Record<string, Record<string, Status>>, here: string, only?: string[], access?: string, effort?: string) => PlanE;
+  buildSpec: (cfg: CfgE, host: string, t: TierCfg, prompt: string, access: string, cwd: string | null, tier: string, extra?: { allowCmd?: string[]; skills?: Array<{ name: string; text: string }> }) => Spec;
+  resolveSkills: (names: unknown, root?: string) => SkillText[];
+  argvTooLong: (spec: Spec, side: string) => string | null;
+  startKind: (cmd: string[] | null, o?: { platform?: string; isScript?: (p: string) => boolean }) => string;
+  machineFileName: (hostname: string) => string;
+  machinesDir: (env: Record<string, string | undefined>, home: string) => string;
+  cleanNote: (s: unknown) => string;
+  viaBridge: (hosts: Record<string, { installed: boolean; version: string | null; kind: string }>) => Record<string, Record<string, unknown>>;
+  bridgeFailed: (message: string, hosts: string[]) => Record<string, Record<string, unknown>>;
+  machineRecord: (o: { hostname: string; platform: string; here: string; node: string; now: Date; sides: Record<string, unknown> }) => Record<string, unknown>;
+  saveMachineRecord: (record: Record<string, unknown>, dir: string) => string;
+};
+const lib2 = async (): Promise<Lib2> => (await import(pathToFileURL(SCRIPT).href)) as unknown as Lib2;
+const CFGE = CFG as unknown as CfgE;
+const AGY_LISTED = ['gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-4-argon-low', 'gemini-4-argon-medium', 'gemini-4-argon-high',
+  'gemini-3.8-flash-low', 'gemini-3.8-flash-medium', 'gemini-3.8-flash-high'];
+
+describe('Antigravity tiers (from `agy models` on 2026-11-13)', () => {
+  it('uses Flash Medium for simple, Hydrogen for medium and Argon Medium for high', () => {
+    const t = CFGE.hosts.antigravity!.tiers;
+    expect([t.simple!.model, t.simple!.effort]).toEqual(['gemini-3.8-flash-medium', 'medium']);
+    expect([t.medium!.model, t.medium!.effort, t.medium!.label]).toEqual(['gemini-4-hydrogen-medium', 'medium', 'Gemini 4 Hydrogen (Medium)']);
+    expect([t.high!.model, t.high!.effort]).toEqual(['gemini-4-argon-medium', 'medium']);
+  });
+
+  it('lets Hydrogen go up to high and extra by job complexity', () => {
+    const e = CFGE.hosts.antigravity!.tiers.medium!.efforts!;
+    expect(e.high).toMatchObject({ model: 'gemini-4-hydrogen-high' });
+    expect(e.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' });
+  });
+
+  it('names only models that `agy models` lists, in the tiers and in every effort', () => {
+    for (const [tier, t] of Object.entries(CFGE.hosts.antigravity!.tiers)) {
+      for (const m of [t.model, ...Object.values(t.efforts ?? {}).map(e => (typeof e === 'string' ? '' : e.model ?? ''))].filter(Boolean)) expect(AGY_LISTED, `${tier}: ${m}`).toContain(m);
+    }
+  });
+
+  // Status of this mapping: /usage names no group for Hydrogen (read on 2026-11-13); the maintainer stated on 2026-11-13 that Hydrogen counts in
+  // Gemini Models and only Argon has its own group. Confirmed by the maintainer in the Antigravity app after the Hydrogen runs. The `gemini-` prefix maps it.
+  it('maps Hydrogen to the Gemini Models quota group by the gemini- prefix (confirmed by the maintainer in the Antigravity app on 2026-11-13: the Gemini Models quotas went down after the Hydrogen runs)', async () => {
+    const { agyGroupFor } = await lib2();
+    const groups = CFGE.hosts.antigravity!.quotaGroups!;
+    expect(agyGroupFor('gemini-4-hydrogen-medium', groups)).toBe('Gemini Models');
+    expect(agyGroupFor('gemini-4-argon-medium', groups)).toBe('Gemini 4 Argon');
+  });
+
+  it('is a valid configuration', async () => {
+    const { validateConfig } = await lib2();
+    expect(validateConfig(CFGE)).toEqual([]);
+  });
+
+  it('lists the models to check, efforts included, once each', async () => {
+    const { configuredModels } = await lib2();
+    const m = configuredModels(CFGE, 'antigravity');
+    expect(m).toEqual(expect.arrayContaining(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-4-argon-medium']));
+    expect(new Set(m).size).toBe(m.length);
+    expect(configuredModels(CFGE, 'codex')).toEqual(['gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6-astra']);
+  });
+});
+
+describe('an effort choice inside a tier', () => {
+  const agyMedium = (): TierE => CFGE.hosts.antigravity!.tiers.medium!;
+
+  it('keeps the tier as it is when no effort is asked for', async () => {
+    const { resolveEffort } = await lib2();
+    expect(resolveEffort(CFGE, 'antigravity', 'medium', undefined)).toEqual({ model: 'gemini-4-hydrogen-medium', effort: 'medium', label: 'Gemini 4 Hydrogen (Medium)', note: null });
+  });
+
+  it('uses the model and label of an entry, and names the effort as asked', async () => {
+    const { resolveEffort } = await lib2();
+    const r = resolveEffort(CFGE, 'antigravity', 'medium', 'extra');
+    expect([r.model, r.effort, r.note]).toEqual(['gemini-4-hydrogen-xhigh', 'extra', null]);
+    expect(r.label).toBe(agyMedium().efforts!.extra && (agyMedium().efforts!.extra as { label: string }).label);
+  });
+
+  it('takes just an effort value from a host whose effort is a flag, and keeps its model', async () => {
+    const { resolveEffort, mergeConfig } = await lib2();
+    const cfg = mergeConfig(CFGE, { hosts: { codex: { tiers: { medium: { efforts: { extra: 'xhigh' } } } } } });
+    const r = resolveEffort(cfg, 'codex', 'medium', 'extra');
+    expect([r.model, r.effort, r.note]).toEqual(['gpt-6.1-sol', 'xhigh', null]);
+  });
+
+  it('keeps the default and says so, as a note and not an error, when a host has no such entry', async () => {
+    const { resolveEffort } = await lib2();
+    const r = resolveEffort(CFGE, 'codex', 'medium', 'extra');
+    expect([r.model, r.effort]).toEqual(['gpt-6.1-sol', 'medium']);
+    expect(r.note).toMatch(/codex/);
+    expect(r.note).toMatch(/extra/);
+    expect(r.note).toMatch(/gpt-6\.1-sol/);
+  });
+
+  it('treats the default effort of a tier as always known, with no note', async () => {
+    const { resolveEffort } = await lib2();
+    expect(resolveEffort(CFGE, 'codex', 'medium', 'medium').note).toBeNull();
+  });
+
+  it('puts the effort-adjusted model and a note into the plan, per candidate', async () => {
+    const { buildPlan } = await lib2();
+    const st = { cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } };
+    const plan = buildPlan(CFGE, 'medium', st, 'windows', undefined, 'read-only', 'extra');
+    const by = Object.fromEntries(plan.candidates.map(c => [c.host, c]));
+    expect([by.antigravity!.model, by.antigravity!.effort, by.antigravity!.effort_note ?? null]).toEqual(['gemini-4-hydrogen-xhigh', 'extra', null]);
+    expect([by.cline!.model, by.cline!.effort]).toEqual(['cline-pass/glm-5.3', 'medium']);
+    expect(by.cline!.effort_note).toMatch(/extra/);
+    expect(plan.selected?.host).toBe('cline'); // the effort never changes the order
+  });
+
+  it('shows the model and effort actually used in `ran`, and the note when the default was kept', async () => {
+    const { ranOf } = await lib2();
+    const c: CandE = { host: 'codex', side: 'wsl', model: 'gpt-6.1-sol', effort: 'medium', label: 'GPT-6.1-Sol', binding_pct: null, effort_note: 'codex: no extra effort in the medium tier; kept gpt-6.1-sol (medium)' };
+    expect(ranOf(c)).toEqual({ host: 'codex', side: 'wsl', model: 'gpt-6.1-sol', effort: 'medium', label: 'GPT-6.1-Sol', effort_note: c.effort_note });
+    expect(ranOf({ ...c, effort_note: null })).not.toHaveProperty('effort_note');
+  });
+
+  it('builds the host command from the effort-adjusted model and flag value', async () => {
+    const { buildPlan, buildSpec, mergeConfig } = await lib2();
+    const cfg = mergeConfig(CFGE, { hosts: { codex: { tiers: { medium: { efforts: { extra: 'xhigh' } } } } } });
+    const c = buildPlan(cfg, 'medium', { codex: { windows: status({ binding: 50 }) } }, 'windows', ['codex'], 'read-only', 'extra').selected!;
+    expect(buildSpec(cfg, 'codex', c, 'x', 'read-only', '/w', 'medium').args).toContain('model_reasoning_effort="xhigh"');
+    const a = buildPlan(CFGE, 'medium', { antigravity: { wsl: status({ binding: 50 }) } }, 'windows', ['antigravity'], 'read-only', 'high').selected!;
+    const args = buildSpec(CFGE, 'antigravity', a, 'x', 'read-only', '/w', 'medium').args;
+    expect(args[args.indexOf('--model') + 1]).toBe('gemini-4-hydrogen-high');
+    expect(args).not.toContain('--effort');
+  });
+
+  it('knows an effort when any candidate host has it, and refuses a name that none has', async () => {
+    const { knownEfforts, checkEffort } = await lib2();
+    expect(knownEfforts(CFGE, 'medium')).toEqual(expect.arrayContaining(['medium', 'high', 'extra']));
+    expect(checkEffort(CFGE, 'medium', 'extra')).toBeNull();
+    expect(checkEffort(CFGE, 'medium', 'medium', ['codex'])).toBeNull();
+    const bad = checkEffort(CFGE, 'medium', 'bogus') as string;
+    expect(bad).toMatch(/--effort/);
+    expect(bad).toMatch(/bogus/);
+    expect(bad).toMatch(/extra/);
+    expect(checkEffort(CFGE, 'medium', 'extra', ['codex'])).toMatch(/--effort/); // no candidate in scope knows it
+  });
+
+  it('accepts efforts in a user config key by key: change one model, add one, keep the rest', async () => {
+    const { mergeConfig, validateConfig, resolveEffort } = await lib2();
+    const cfg = mergeConfig(CFGE, { hosts: { antigravity: { tiers: { medium: { efforts: { extra: { model: 'gemini-4-hydrogen-high' }, max: { model: 'gemini-4-hydrogen-xhigh' } } } } } } });
+    expect(validateConfig(cfg)).toEqual([]);
+    expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').model).toBe('gemini-4-hydrogen-high');
+    expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').label).toBe((agyMedium().efforts!.extra as { label: string }).label); // the label was not restated
+    expect(resolveEffort(cfg, 'antigravity', 'medium', 'max').model).toBe('gemini-4-hydrogen-xhigh');
+    expect(resolveEffort(cfg, 'antigravity', 'medium', 'high').model).toBe('gemini-4-hydrogen-high');
+    expect(agyMedium().efforts!.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' }); // the base is not mutated
+  });
+
+  it('rejects an efforts map that cannot work', async () => {
+    const { mergeConfig, validateConfig } = await lib2();
+    const bad = (host: string, efforts: unknown): string => validateConfig(mergeConfig(CFGE, { hosts: { [host]: { tiers: { medium: { efforts } } } } })).join('\n');
+    expect(bad('codex', 'high')).toMatch(/codex\/medium.*efforts/);
+    expect(bad('codex', ['high'])).toMatch(/efforts/);
+    expect(bad('codex', { 'Not Valid': 'high' })).toMatch(/efforts/);
+    expect(bad('codex', { high: '' })).toMatch(/efforts/);
+    expect(bad('codex', { high: {} })).toMatch(/efforts/);
+    expect(bad('codex', { high: { model: '' } })).toMatch(/efforts/);
+    expect(bad('antigravity', { high: 'high' })).toMatch(/antigravity\/medium.*efforts.*model/); // its effort is part of the slug, a bare value does nothing
+    expect(bad('codex', { high: 'high', extra: { effort: 'xhigh' }, deep: { model: 'gpt-6-astra', effort: 'high' } })).toBe('');
+  });
+
+  describe('on the command line', () => {
+    const run = (args: string[]): { status: number | null; out: string; json: Record<string, unknown> | null } => {
+      const r = spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+      let json: Record<string, unknown> | null = null;
+      try { json = JSON.parse(r.stdout) as Record<string, unknown>; } catch { /* text */ }
+      return { status: r.status, out: `${r.stdout}${r.stderr}`, json };
+    };
+    const replay = (): string => {
+      const f = path.join(tmp(), 'statuses.json');
+      fs.writeFileSync(f, JSON.stringify({ cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } }));
+      return f;
+    };
+
+    it('plan --effort extra: Antigravity uses the xhigh slug, Cline keeps its default and says so', () => {
+      const r = run(['plan', '--tier', 'medium', '--effort', 'extra', '--here', 'windows', '--statuses-file', replay()]);
+      expect(r.status).toBe(0);
+      const by = Object.fromEntries((r.json as unknown as PlanE).candidates.map(c => [c.host, c]));
+      expect([by.antigravity!.model, by.antigravity!.effort]).toEqual(['gemini-4-hydrogen-xhigh', 'extra']);
+      expect([by.cline!.model, by.cline!.effort]).toEqual(['cline-pass/glm-5.3', 'medium']);
+      expect(by.cline!.effort_note).toMatch(/extra/);
+    });
+
+    it('status --effort extra: the table shows the adjusted model and prints the note', () => {
+      const r = run(['status', '--tier', 'medium', '--effort', 'extra', '--here', 'windows', '--statuses-file', replay()]);
+      expect(r.status).toBe(0);
+      expect(r.out).toContain('gemini-4-hydrogen-xhigh');
+      expect(r.out).toMatch(/note[^\n]*cline[^\n]*extra/);
+    });
+
+    it('run --dry-run --effort high passes the adjusted slug and reports the effort asked for', () => {
+      const r = run(['run', '--tier', 'medium', '--effort', 'high', '--prompt', 'x', '--access', 'edit', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      expect(r.status).toBe(0);
+      expect(r.json).toMatchObject({ effort_requested: 'high' });
+      const agy = (r.json as unknown as { would_try: Array<{ host: string; model: string; effort: string; args: string[] }> }).would_try.find(t => t.host === 'antigravity')!;
+      expect([agy.model, agy.effort]).toEqual(['gemini-4-hydrogen-high', 'high']);
+      expect(agy.args[agy.args.indexOf('--model') + 1]).toBe('gemini-4-hydrogen-high');
+    });
+
+    it('an effort name that no candidate knows is a usage error, on plan, status and run', () => {
+      const f = replay();
+      for (const args of [
+        ['plan', '--tier', 'medium', '--effort', 'bogus', '--here', 'windows', '--statuses-file', f],
+        ['status', '--tier', 'medium', '--effort', 'bogus', '--here', 'windows', '--statuses-file', f],
+        ['run', '--tier', 'medium', '--effort', 'bogus', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', f],
+        ['plan', '--tier', 'medium', '--effort', 'extra', '--host', 'codex', '--here', 'windows', '--statuses-file', f],
+        ['plan', '--tier', 'medium', '--effort', 'Bad Name', '--here', 'windows', '--statuses-file', f],
+      ]) {
+        const r = run(args);
+        expect(r.status, args.join(' ')).toBe(1);
+        expect(r.out, args.join(' ')).toMatch(/--effort[^\n]*known: /);
+        expect(r.out, args.join(' ')).not.toMatch(/TypeError|at .*router\.mjs/);
+      }
+    });
+  });
+});
+
+describe('skills for the worker (--skill)', () => {
+  const DEMO = '---\r\nname: demo\r\ndescription: Use when testing\r\nmetadata:\r\n  author: x\r\n---\r\n\r\n# Demo\r\nbody line\r\n';
+  const rootWith = (files: Record<string, string>): string => {
+    const root = tmp();
+    for (const [rel, text] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+      fs.writeFileSync(path.join(root, rel), text);
+    }
+    return root;
+  };
+  const promptOf = (s: Spec): string => s.stdin ?? (s.args.find(a => a.includes('TASK-BODY')) as string);
+
+  it('reads a sibling skill: front matter stripped, line endings made LF, only SKILL.md', async () => {
+    const { resolveSkills } = await lib2();
+    const root = rootWith({ 'demo/SKILL.md': DEMO, 'demo/references/secret.md': 'REFERENCE-ONLY', 'demo/scripts/run.mjs': 'SCRIPT-ONLY' });
+    const [s] = resolveSkills(['demo'], root);
+    expect(s).toEqual({ name: 'demo', chars: 16, text: '# Demo\nbody line' });
+    expect(s!.text).not.toMatch(/author|REFERENCE-ONLY|SCRIPT-ONLY|\r/);
+  });
+
+  it('finds the skills beside the router by default, so the registry and an installed skills folder work alike', async () => {
+    const { resolveSkills } = await lib2();
+    const [h, g] = resolveSkills(['handoff', 'git-guardrails']);
+    expect(h!.text).toContain('Session Handoff');
+    expect(g!.text).toContain('Never execute force pushes');
+    expect(h!.text).not.toContain('author: Matt');
+    expect(h!.chars).toBe(h!.text.length);
+  });
+
+  it('accepts three skills and exactly 20,000 characters', async () => {
+    const { resolveSkills } = await lib2();
+    const root = rootWith({ 'a/SKILL.md': `---\nname: a\n---\n${'x'.repeat(20_000)}`, 'b/SKILL.md': 'b', 'c/SKILL.md': 'c' });
+    expect(resolveSkills(['a', 'b', 'c'], root).map(s => s.chars)).toEqual([20_000, 1, 1]);
+  });
+
+  it('refuses, naming the problem, before anything starts: unknown, unsafe, missing file, too big, too many, twice', async () => {
+    const { resolveSkills } = await lib2();
+    const root = rootWith({ 'ok/SKILL.md': 'ok', 'empty/README.md': 'no skill file', 'big/SKILL.md': 'y'.repeat(20_001), 'a/SKILL.md': 'a', 'b/SKILL.md': 'b', 'c/SKILL.md': 'c' });
+    const msg = (names: unknown): string => { try { resolveSkills(names, root); return ''; } catch (e) { return (e as Error).message; } };
+    expect(msg(['nope'])).toMatch(/--skill.*nope.*not a skill folder/);
+    for (const bad of ['../ok', '..', 'ok/..', 'a/b', 'a\\b', '/etc', 'C:\\x', '.', '', 'ok ', 'Ok']) expect(msg([bad]), JSON.stringify(bad)).toMatch(/--skill.*plain skill name/);
+    expect(msg(['empty'])).toMatch(/--skill.*empty.*no SKILL\.md/);
+    expect(msg(['big'])).toMatch(/--skill.*big.*20,?001.*20,?000/);
+    expect(msg(['a', 'b', 'c', 'ok'])).toMatch(/at most 3/);
+    expect(msg(['ok', 'ok'])).toMatch(/--skill.*ok.*twice/);
+    expect(msg('ok')).toMatch(/--skill/); // not a list
+  });
+
+  it('puts the skills after the contract and before the task, for every host, access and with the contract text unchanged', async () => {
+    const { buildSpec } = await lib2();
+    const skills = [{ name: 'demo', text: '# Demo\nbody line' }, { name: 'other', text: 'second skill text' }];
+    for (const access of ['read-only', 'edit']) {
+      for (const host of ['cline', 'claude', 'codex', 'antigravity']) {
+        const plain = promptOf(buildSpec(CFGE, host, CFGE.hosts[host]!.tiers.medium!, 'TASK-BODY', access, '/w', 'medium'));
+        const withSkills = promptOf(buildSpec(CFGE, host, CFGE.hosts[host]!.tiers.medium!, 'TASK-BODY', access, '/w', 'medium', { skills }));
+        const head = plain.slice(0, plain.length - 'TASK-BODY'.length);
+        expect(withSkills.startsWith(head), `${host}/${access}: the contract stays first, word for word`).toBe(true);
+        expect(withSkills.endsWith('TASK-BODY'), `${host}/${access}: the task stays last`).toBe(true);
+        const a = withSkills.indexOf('=== Attached skill: demo ===');
+        const b = withSkills.indexOf('=== Attached skill: other ===');
+        expect(a, `${host}/${access}`).toBeGreaterThanOrEqual(head.length);
+        expect(b).toBeGreaterThan(a);
+        expect(withSkills).toContain('# Demo\nbody line\n=== End of skill: demo ===');
+        expect(withSkills).toMatch(/guidance only/i);
+        expect(plain).not.toContain('Attached skill');
+      }
+    }
+  });
+
+  it('adds the full text of git-guardrails or handoff when asked, without changing the contract', async () => {
+    const { buildSpec, resolveSkills } = await lib2();
+    const skills = resolveSkills(['git-guardrails', 'handoff']);
+    const text = promptOf(buildSpec(CFGE, 'claude', CFGE.hosts.claude!.tiers.medium!, 'TASK-BODY', 'edit', '/w', 'medium', { skills }));
+    expect(text.indexOf('never push and never force-push')).toBeLessThan(text.indexOf('=== Attached skill: git-guardrails ==='));
+    for (const s of skills) expect(text).toContain(s.text);
+  });
+
+  it('measures the command line of a host whose prompt travels in argv: Windows takes about 32,000 characters, Linux far more', async () => {
+    const { buildSpec, argvTooLong } = await lib2();
+    const big = 'z'.repeat(40_000);
+    const cline = buildSpec(CFGE, 'cline', CFGE.hosts.cline!.tiers.simple!, big, 'edit', 'C:/w', 'simple');
+    expect(argvTooLong(cline, 'windows')).toMatch(/too long/i);
+    expect(argvTooLong(cline, 'wsl')).toBeNull();
+    expect(argvTooLong(buildSpec(CFGE, 'cline', CFGE.hosts.cline!.tiers.simple!, 'z'.repeat(130_000), 'edit', '/w', 'simple'), 'wsl')).toMatch(/too long/i);
+    const claude = buildSpec(CFGE, 'claude', CFGE.hosts.claude!.tiers.simple!, big, 'edit', 'C:/w', 'simple');
+    expect(argvTooLong(claude, 'windows')).toBeNull(); // the prompt travels on stdin
+  });
+
+  describe('on the command line', () => {
+    const run = (args: string[]): { status: number | null; out: string; json: Record<string, unknown> | null } => {
+      const r = spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+      let json: Record<string, unknown> | null = null;
+      try { json = JSON.parse(r.stdout) as Record<string, unknown>; } catch { /* text */ }
+      return { status: r.status, out: `${r.stdout}${r.stderr}`, json };
+    };
+    const replay = (): string => {
+      const f = path.join(tmp(), 'statuses.json');
+      fs.writeFileSync(f, JSON.stringify({ cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } }));
+      return f;
+    };
+
+    it('--dry-run shows which skills were attached, how big each is, and the size of the prompt each host would get', async () => {
+      const { resolveSkills } = await lib2();
+      const sizes = resolveSkills(['handoff', 'git-guardrails']).map(s => ({ name: s.name, chars: s.chars }));
+      const none = run(['run', '--tier', 'simple', '--prompt', 'Say hi', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      const r = run(['run', '--tier', 'simple', '--prompt', 'Say hi', '--skill', 'handoff', '--skill', 'git-guardrails', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      expect(r.status).toBe(0);
+      expect(r.json).toMatchObject({ dry_run: true, skills: sizes });
+      expect(none.json).toMatchObject({ skills: [] });
+      const chars = (j: Record<string, unknown> | null): number[] => (j as unknown as { would_try: Array<{ prompt_chars: number }> }).would_try.map(t => t.prompt_chars);
+      const total = sizes.reduce((n, s) => n + s.chars, 0);
+      chars(r.json).forEach((n, i) => expect(n - chars(none.json)[i]!).toBeGreaterThan(total)); // the skills, their headings and the framing text
+    });
+
+    it('--dry-run marks a host whose command line cannot carry the prompt, and the others stay', () => {
+      const f = path.join(tmp(), 'brief.md');
+      fs.writeFileSync(f, 'q'.repeat(40_000));
+      const r = run(['run', '--tier', 'simple', '--prompt-file', f, '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      const t = (r.json as unknown as { would_try: Array<{ host: string; side: string; skip?: string }> }).would_try;
+      expect(t.find(x => x.host === 'cline' && x.side === 'windows')?.skip).toMatch(/too long/i);
+      expect(t.find(x => x.host === 'antigravity')?.skip).toBeUndefined();
+    });
+
+    it('refuses a bad --skill as a usage error before it reads any status or starts any host', () => {
+      const missing = path.join(tmp(), 'no-such-statuses.json'); // reading it would fail with a different error
+      for (const [flags, expected] of [
+        [['--skill', 'no-such-skill'], 'not a skill folder'],
+        [['--skill', '../x'], 'plain skill name'],
+        [['--skill', 'a/b'], 'plain skill name'],
+        [['--skill', 'handoff', '--skill', 'git-guardrails', '--skill', 'test-driven-development', '--skill', 'diagnosing-bugs'], 'at most 3'],
+        [['--skill', 'handoff', '--skill', 'handoff'], 'twice'],
+      ] as Array<[string[], string]>) {
+        const r = run(['run', '--tier', 'simple', '--prompt', 'x', ...flags, '--dry-run', '--here', 'windows', '--statuses-file', missing]);
+        expect(r.status, flags.join(' ')).toBe(1);
+        expect(r.out, flags.join(' ')).toContain(expected);
+        expect(r.out, flags.join(' ')).not.toMatch(/ENOENT|TypeError|at .*router\.mjs/);
+      }
+    });
+
+    it('--skill belongs to run, and --effort to run, plan and status: the other commands refuse them', () => {
+      for (const cmd of ['status', 'plan', 'models', 'machine']) {
+        const r = run([cmd, '--skill', 'handoff', '--here', 'windows', '--statuses-file', replay()]);
+        expect(r.status, cmd).toBe(1);
+        expect(r.out, cmd).toMatch(/--skill.*run/);
+      }
+      for (const cmd of ['models', 'machine']) {
+        const r = run([cmd, '--effort', 'high', '--here', 'windows']);
+        expect(r.status, cmd).toBe(1);
+        expect(r.out, cmd).toMatch(/--effort.*run, plan and status/);
+      }
+    });
+
+    it('prints the new options in --help', () => {
+      const r = run(['--help']);
+      for (const w of ['--effort', '--skill', 'machine [--save]']) expect(r.out, w).toContain(w);
+    });
+  });
+});
+
+describe('the machine command: what this machine has, per host and side', () => {
+  const KINDS = ['npm-entry', 'exe', 'shim', 'wsl-bridge', 'missing'];
+
+  it('tells how a host is started: node plus a package entry, an exe, a shim, or not at all', async () => {
+    const { startKind } = await lib2();
+    expect(startKind(null)).toBe('missing');
+    expect(startKind([])).toBe('missing');
+    expect(startKind(['C:\\n\\node.exe', 'C:\\n\\node_modules\\@openai\\codex\\bin\\codex.js'], { platform: 'win32' })).toBe('npm-entry');
+    expect(startKind(['C:\\a\\agy.exe'], { platform: 'win32' })).toBe('exe');
+    expect(startKind(['C:\\a\\codex.cmd'], { platform: 'win32' })).toBe('shim');
+    expect(startKind(['/usr/bin/claude'], { platform: 'linux', isScript: () => false })).toBe('exe');
+    expect(startKind(['/usr/bin/cline'], { platform: 'linux', isScript: () => true })).toBe('shim');
+  });
+
+  it('names the record file after the host, with nothing that could leave the folder', async () => {
+    const { machineFileName } = await lib2();
+    expect(machineFileName('DEVBOX')).toBe('DEVBOX.json');
+    expect(machineFileName('my pc/..\\x')).toBe('my_pc_.._x.json');
+    expect(machineFileName('')).toBe('machine.json');
+    expect(machineFileName('..')).toBe('machine.json');
+  });
+
+  it('keeps the records under the router folder of the user config, home by default', async () => {
+    const { machinesDir } = await lib2();
+    expect(machinesDir({}, path.join('h', 'u'))).toBe(path.join('h', 'u', '.agents', 'host-agent-router', 'machines'));
+    expect(machinesDir({ HOST_AGENT_ROUTER_CONFIG: path.join('x', 'y', 'config.json') }, 'ignored')).toBe(path.join('x', 'y', 'machines'));
+  });
+
+  it('shows a host on the other side as started through the bridge, and a failed bridge as missing, with a short clean note', async () => {
+    const { viaBridge, bridgeFailed, cleanNote } = await lib2();
+    const v = viaBridge({ claude: { installed: true, version: '2.1.319 (Claude Code)', kind: 'exe' }, codex: { installed: false, version: null, kind: 'missing' } });
+    expect(v.claude).toEqual({ installed: true, version: '2.1.319 (Claude Code)', kind: 'wsl-bridge', via: 'exe' });
+    expect(v.codex).toEqual({ installed: false, version: null, kind: 'missing' });
+    const f = bridgeFailed('wsl bridge returned no JSON (rc=127): bash: line 1: exec: node: not found\n\u0007' + 'x'.repeat(400), ['claude', 'cline']);
+    expect(Object.keys(f)).toEqual(['claude', 'cline']);
+    expect(f.claude).toMatchObject({ installed: false, version: null, kind: 'missing' });
+    expect(String(f.claude!.note)).toMatch(/node: not found/);
+    expect(String(f.claude!.note).length).toBeLessThanOrEqual(160);
+    expect(cleanNote('a\n\tb\u0000c')).toBe('a b c');
+    // seen on the second machine: the bridge error names the staged script, a path under the user's name
+    const p = cleanNote('wsl bridge returned no JSON (rc=127): /mnt/c/Users/dev/AppData/Local/Temp/har-84776f-lKeHDu/router.mjs: line 1: exec: node: not found');
+    expect(p).toBe('wsl bridge returned no JSON (rc=127): <path>: line 1: exec: node: not found');
+    expect(cleanNote('cannot open C:\\Users\\dev\\x.txt now')).toBe('cannot open <path> now');
+  });
+
+  it('builds a record of plain facts and writes it to its own file only, creating the folder', async () => {
+    const { machineRecord, saveMachineRecord } = await lib2();
+    const sides = { windows: { claude: { installed: true, version: '2.1.319', kind: 'exe' } } };
+    const rec = machineRecord({ hostname: 'DEVBOX', platform: 'win32', here: 'windows', node: 'v24.19.0', now: new Date('2026-11-13T10:00:00Z'), sides });
+    expect(Object.keys(rec).sort()).toEqual(['here', 'hostname', 'node', 'platform', 'recorded_at', 'schema', 'sides']);
+    expect(rec).toMatchObject({ schema: 1, hostname: 'DEVBOX', recorded_at: '2026-11-13T10:00:00.000Z', sides });
+    const dir = path.join(tmp(), 'deep', 'machines');
+    const file = saveMachineRecord(rec, dir);
+    expect(file).toBe(path.join(dir, 'DEVBOX.json'));
+    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toEqual(rec);
+    expect(fs.readdirSync(dir)).toEqual(['DEVBOX.json']);
+  });
+
+  // One run of the real command, without --save, in a temp home: it starts each host's `--version` and nothing else.
+  it('prints this machine as JSON of the right shape and writes nothing without --save', () => {
+    const home = tmp();
+    const r = spawnSync(process.execPath, [SCRIPT, 'machine'], {
+      encoding: 'utf8', timeout: 110_000,
+      env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '', HOST_AGENT_ROUTER_CONFIG: path.join(home, 'config.json'), HOME: home, USERPROFILE: home },
+    });
+    expect(r.status, r.stderr).toBe(0);
+    const rec = JSON.parse(r.stdout) as { schema: number; hostname: string; here: string; sides: Record<string, Record<string, { installed: boolean; version: string | null; kind: string }>> };
+    expect(rec.schema).toBe(1);
+    expect(rec.hostname).toBe(os.hostname());
+    expect(Object.keys(rec.sides)).toContain(rec.here);
+    for (const [side, hosts] of Object.entries(rec.sides)) {
+      expect(Object.keys(hosts).sort(), side).toEqual(['antigravity', 'claude', 'cline', 'codex']);
+      for (const [host, h] of Object.entries(hosts)) {
+        expect(KINDS, `${side}/${host}`).toContain(h.kind);
+        expect(typeof h.installed, `${side}/${host}`).toBe('boolean');
+        expect(h.installed === (h.kind !== 'missing'), `${side}/${host}: installed matches kind`).toBe(true);
+        expect(Object.keys(h).every(k => ['installed', 'version', 'kind', 'via', 'note'].includes(k)), `${side}/${host}: only plain facts`).toBe(true);
+      }
+    }
+    expect(JSON.stringify(rec)).not.toContain(home); // no path, argument or environment value
+    // Nothing of the router's was written: no ~/.agents, no machines folder. (Cline's own --version makes ~/.cline under HOME, which is the host's doing.)
+    expect(fs.existsSync(path.join(home, '.agents'))).toBe(false);
+    expect(fs.readdirSync(home).filter(n => n !== '.cline')).toEqual([]);
+  }, 120_000);
+});
+
+describe('the documents describe the new behaviour in one wording', () => {
+  const doc = (rel: string): string => fs.readFileSync(path.join(DIR, rel), 'utf8').replace(/\r\n/g, '\n');
+  const SENTENCES = {
+    cline: '`high` on Cline is for genuinely hard problems only: it uses a large share of the 5-hour quota.',
+    skills: "Only a skill's `SKILL.md` text is sent, never its `references/` or `scripts/`.",
+    edit: 'An edit run is a normal use: one specific task per worker, with the guardrails, in its own worktree.',
+  };
+
+  it('says the same sentence in SKILL.md and in the reference that carries the detail', () => {
+    for (const [s, file] of [[SENTENCES.cline, 'references/hosts.md'], [SENTENCES.skills, 'references/worker-contract.md'], [SENTENCES.edit, 'references/delegation-brief.md']] as const) {
+      expect(doc('SKILL.md'), s).toContain(s);
+      expect(doc(file), `${file}: ${s}`).toContain(s);
+    }
+  });
+
+  it('SKILL.md is version 1.1.0 and names the new options', () => {
+    const t = doc('SKILL.md');
+    expect(t).toMatch(/version: 1\.1\.0/);
+    for (const w of ['--effort', '--skill', 'router.mjs" machine', '--pin-host']) expect(t, w).toContain(w);
+  });
+
+  it('hosts.md separates what is true of the hosts from the machines seen, and keeps observations per machine', () => {
+    const t = doc('references/hosts.md');
+    expect(t).toMatch(/^## Machines seen$/m);
+    expect(t.indexOf('## Machines seen')).toBeGreaterThan(t.indexOf('## Known limits'));
+    expect(t).toMatch(/Observations are per machine/);
+    expect(t).toMatch(/Second machine[\s\S]*2026-11-13/);
+    expect(t).toMatch(/Edit runs on the second machine \(2026-11-13[\s\S]*`gemini-4-hydrogen-medium`[\s\S]*`EPERM`/);
+    expect(t).toContain('confirmed by the maintainer in the Antigravity app on 2026-11-13 (the Gemini Models quotas went down after the Hydrogen runs)');
+    expect(t).not.toContain('not shown by a before/after reading');
+    expect(t).not.toMatch(/quota group is unverified/);
+    expect(t).toMatch(/`router\.mjs machine`/);
+  });
+
+  it('hosts.md names each model that was run on 2026-11-13, and still claims no limit refusal, no WSL run and no Antigravity host-level denial', () => {
+    const t = doc('references/hosts.md');
+    const day = t.split('\n').filter(l => l.includes('2026-11-13')).join('\n');
+    const ran = ['gemini-3.8-flash-medium', 'gemini-3.8-flash-high', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-4-argon-medium',
+      'cline-pass/deepseek-v4.1-flash-1017', 'cline-pass/glm-5.3', 'cline-pass/kimi-k3.1-pro', 'gpt-6.1-terra'];
+    for (const w of ran) expect(day, w).toContain(w);
+    // Every full model name on a dated line is one that was run (a name that was not run would show here).
+    const named = new Set(day.match(/(?:gemini|cline-pass|gpt)[\w./-]*\d[\w.-]*/g) ?? []);
+    for (const n of named) expect(ran.some(r => r.startsWith(n)), n).toBe(true); // a bare stem such as the config key `gemini-4-hydrogen` is advice, not a run
+    // What is still not run is said as not run, and never as seen.
+    const notRun = day.split('\n').filter(l => l.startsWith('- Not run on this machine'));
+    expect(notRun).toHaveLength(1);
+    for (const w of ['limit refusal', 'WSL', 'Codex beyond the two simple-tier runs', 'a full-path rule for a path with spaces']) expect(notRun[0], w).toContain(w);
+    expect(notRun[0]).not.toContain('Antigravity host-level denial');
+    for (const l of day.split('\n').filter(l => /limit refusal|host-level denial/i.test(l) && !l.startsWith('- Not run on this machine'))) {
+      expect(l, l.slice(0, 60)).toMatch(/confirmed by a direct call|deliberately not run|was not run|not re-run/i);
+    }
+    expect(day).not.toMatch(/WSL[^.]{0,40}(was run|ran live|run live)/i);
+  });
+
+  it('records the live lessons of 2026-11-13 where they belong: the ignored summary, the private block record, the brief and the review', () => {
+    const hosts = doc('references/hosts.md');
+    const contract = doc('references/worker-contract.md');
+    const brief = doc('references/delegation-brief.md');
+    expect(hosts).toContain('`ignored`');
+    expect(hosts).toContain('a failed attempt that changed only ignored paths still stops the fall-through');
+    expect(hosts).toContain('The guard fix was re-run live the same day');
+    expect(hosts).toContain('The `ignored` summary was not re-run live.');
+    expect(contract).toContain('is not exported in the');
+    expect(contract).toContain('declined, on');
+    expect(brief).toContain('Do not run:');
+    expect(brief).toContain('run it yourself');
+    expect(doc('SKILL.md').replace(/\r/g, '').length).toBeLessThanOrEqual(6000);
+    expect(doc('SKILL.md').split('\n').length - 1).toBeLessThanOrEqual(90);
+  });
+
+  it('the worked example and the brief present editing as a first-class use, with read-only still the default', () => {
+    expect(doc('examples/worked-example.md')).toMatch(/lead delegates/i);
+    expect(doc('references/delegation-brief.md')).toMatch(/--access edit/);
+    expect(doc('SKILL.md')).toMatch(/`read-only` by default/);
+  });
+});
+
+describe('the Antigravity allow rules: a full-path rule for a bare program that resolves to a .exe (Windows, edit runs)', () => {
+  type RulesFn = (allow: string[], o?: { platform?: string; resolve?: (name: string) => string | null }) => { rules: string[]; notes: string[] };
+  type SpecN = { args: string[]; notes?: string[] };
+  const load = async (): Promise<{ antigravityAllowRules: RulesFn; buildSpec: (...a: unknown[]) => SpecN }> => (await import(pathToFileURL(SCRIPT).href)) as never;
+  const NODE = 'C:\\nvm4w\\nodejs\\node.exe';
+  const GIT = 'C:\\Git\\cmd\\git.exe';
+  const exe = (name: string): string | null => ({ node: NODE, git: GIT, npm: 'C:\\nvm4w\\nodejs\\npm.cmd', tool: 'C:\\Program Files\\Tool\\tool.exe' } as Record<string, string>)[name] ?? null;
+
+  it('gives `node --test` a second rule with the absolute path and the same arguments', async () => {
+    const { antigravityAllowRules } = await load();
+    const r = antigravityAllowRules(['node --test'], { platform: 'win32', resolve: exe });
+    expect(r.rules).toEqual(['command(node --test)', `command(${NODE} --test)`]);
+    expect(r.notes).toEqual([]);
+    expect(antigravityAllowRules(['node --test'], { platform: 'win32', resolve: () => 'C:/n/node.EXE' }).rules[1]).toBe('command(C:/n/node.exe --test)'); // PATHEXT spelling
+  });
+
+  it('leaves a .cmd shim alone: `npm test` keeps one rule', async () => {
+    const { antigravityAllowRules } = await load();
+    expect(antigravityAllowRules(['npm test'], { platform: 'win32', resolve: exe }).rules).toEqual(['command(npm test)']);
+  });
+
+  it('leaves an unresolved program alone', async () => {
+    const { antigravityAllowRules } = await load();
+    expect(antigravityAllowRules(['nothere --x'], { platform: 'win32', resolve: exe })).toMatchObject({ rules: ['command(nothere --x)'], notes: [] });
+  });
+
+  it('adds nothing for a path with spaces and says which program could not be given a full-path rule', async () => {
+    const { antigravityAllowRules } = await load();
+    const r = antigravityAllowRules(['tool run'], { platform: 'win32', resolve: exe });
+    expect(r.rules).toEqual(['command(tool run)']);
+    expect(r.notes).toHaveLength(1);
+    expect(r.notes[0]).toContain('tool');
+    expect(r.notes[0]).toMatch(/full-path rule/);
+  });
+
+  it('is unchanged off Windows, leaves a program that is already a path alone, and hands the resolver only the program name', async () => {
+    const { antigravityAllowRules } = await load();
+    const seen: string[] = [];
+    const spy = (n: string): string | null => { seen.push(n); return exe(n); };
+    expect(antigravityAllowRules(['node --test'], { platform: 'linux', resolve: spy }).rules).toEqual(['command(node --test)']);
+    expect(seen).toEqual([]);
+    expect(antigravityAllowRules(['./node --test', 'C:/x/node.exe -v'], { platform: 'win32', resolve: spy }).rules).toEqual(['command(./node --test)', 'command(C:/x/node.exe -v)']);
+    expect(seen).toEqual([]);
+    antigravityAllowRules(['node --test'], { platform: 'win32', resolve: spy });
+    expect(seen).toEqual(['node']);
+  });
+
+  it('buildSpec: rules and worker note carry the full-path form on Windows; read-only runs and the other hosts do not change', async () => {
+    const { buildSpec } = await load();
+    const t = CFG.hosts.antigravity.tiers.medium;
+    const edit = (host: string, extra: Record<string, unknown>): SpecN => buildSpec(CFG, host, CFG.hosts[host]!.tiers.medium, 'TASK', 'edit', 'C:/w', 'medium', extra);
+    const win = edit('antigravity', { platform: 'win32', resolve: exe, allowCmd: ['tool run'] });
+    const allow = (JSON.parse(win.args[win.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
+    expect(allow).toEqual(expect.arrayContaining(['command(node --test)', `command(${NODE} --test)`, 'command(git status)', `command(${GIT} status)`, 'command(npm test)', 'command(tool run)']));
+    expect(allow.join()).not.toMatch(/npm\.cmd|Program Files|git push|git commit/);
+    const prompt = win.args[win.args.indexOf('-p') + 1]!;
+    expect(prompt).toContain(`${NODE} --test`);
+    expect(prompt).toMatch(/not recognised/);
+    expect(win.notes?.join(' ')).toContain('tool');
+    const linux = edit('antigravity', { platform: 'linux', resolve: exe });
+    expect(linux.args[linux.args.indexOf('--settings') + 1]).not.toContain('nodejs');
+    expect(linux.args[linux.args.indexOf('-p') + 1]).not.toMatch(/not recognised/);
+    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', 'C:/w', 'medium', { platform: 'win32', resolve: exe });
+    expect(ro.args).not.toContain('--settings');
+    expect(edit('claude', { platform: 'win32', resolve: exe }).args.join(' ')).not.toMatch(/nodejs|\.exe/);
+    expect(edit('cline', { platform: 'win32', resolve: exe }).args.join(' ')).not.toContain(NODE);
+    expect(edit('codex', { platform: 'win32', resolve: exe }).args.join(' ')).not.toContain(NODE);
   });
 });
