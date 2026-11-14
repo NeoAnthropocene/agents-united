@@ -772,6 +772,87 @@ describe('the Cline guard: what a routed worker may do', () => {
   });
 });
 
+// RF7 (2026-11-14): `Add-Content $p 'Branch ..., worktree C:\...\p8b-checker-hardening. Not committed; lead in...'` was refused as a write
+// "outside the working directory": the command was cut at the `;` inside the single-quoted text, and the words of the sentence were judged as
+// write targets. Single quotes are literal in PowerShell and POSIX shells; the content of Set-Content/Add-Content/Out-File is not a target.
+describe('the Cline guard: single-quoted text and the content of Add-Content, Set-Content and Out-File', () => {
+  const POLICY: GuardPolicy = { workspace: 'C:/work/proj', home: 'C:/Users/u', tmp: ['C:/Temp'] };
+  const sh = (...cmds: string[]): Record<string, unknown> => ({ workspaceRoots: ['C:/work/proj'], tool_call: { name: 'run_commands', input: { commands: cmds } } });
+  const SENTENCE = "'Branch task/x, worktree C:\\work\\other\\p8b-checker-hardening. Not committed; lead integrates.'";
+
+  it('allows the sentence that was refused, when the target is inside the working directory (a path, -Path, -FilePath, or a variable as before)', async () => {
+    const { guardDecision: g } = await lib();
+    for (const c of [
+      `Add-Content C:\\work\\proj\\notes.txt ${SENTENCE}`,
+      `Add-Content notes.txt ${SENTENCE}`,
+      `Add-Content -Path C:\\work\\proj\\notes.txt -Value ${SENTENCE}`,
+      `Set-Content -Value ${SENTENCE} -Path notes.txt`,
+      `Set-Content -Value 'C:\\elsewhere\\x' -Path inside.txt`,
+      `Out-File -FilePath out.txt -InputObject ${SENTENCE}`,
+      `Add-Content $p ${SENTENCE}`,
+    ]) expect(g(sh(c), POLICY), c).toEqual({ cancel: false });
+  });
+
+  it('still refuses the same content when the write target is outside the working directory', async () => {
+    const { guardDecision: g } = await lib();
+    for (const c of [
+      `Add-Content C:\\elsewhere\\notes.txt ${SENTENCE}`,
+      `Add-Content ..\\notes.txt ${SENTENCE}`,
+      `Set-Content ..\\outside.txt 'text'`,
+      `Set-Content -Path ..\\outside.txt -Value 'text'`,
+      `Set-Content -LiteralPath C:\\elsewhere\\x -Value 'text'`,
+      `Out-File -FilePath C:\\elsewhere\\x`,
+      `Out-File C:\\elsewhere\\x -InputObject 'text'`,
+      `Set-Content -Encoding utf8 ..\\outside.txt 'text'`,
+      `Set-Content notes.txt ..\\outside.txt`, // unquoted later arguments are still judged
+      `Add-Content notes.txt ${SENTENCE} > C:\\elsewhere\\x`,
+      `Add-Content .git\\config 'x'`,
+    ]) expect(g(sh(c), POLICY).cancel, c).toBe(true);
+  });
+
+  it('splits on separators outside single quotes only: a second real command after a quoted `;` is still judged', async () => {
+    const { guardDecision: g } = await lib();
+    expect(g(sh("Add-Content a.txt 'x; y'; git push"), POLICY).cancel).toBe(true);
+    expect(g(sh("Add-Content a.txt 'x && git push'"), POLICY).cancel).toBe(false); // literal text
+    expect(g(sh("Add-Content a.txt 'x'  && git push"), POLICY).cancel).toBe(true);
+    expect(g(sh("echo 'a | b'; git commit -m x"), POLICY).cancel).toBe(true);
+    expect(g(sh("echo 'it''s; ok'; git push"), POLICY).cancel).toBe(true); // doubled quote inside a literal
+  });
+
+  it('does not make double quotes opaque, and falls back to the old splitting when a single quote is never closed', async () => {
+    const { guardDecision: g } = await lib();
+    expect(g(sh('echo "a; git push"'), POLICY).cancel).toBe(true); // double-quoted text can expand: judged as before
+    expect(g(sh("echo \"it's\"; git push"), POLICY).cancel).toBe(true); // an apostrophe inside double quotes opens nothing
+    expect(g(sh("echo 'unclosed; git push"), POLICY).cancel).toBe(true);
+    expect(g(sh("cmd /c \"echo 'a && taskkill /F /IM node.exe'\""), POLICY).cancel).toBe(true); // cmd.exe has no literal single quotes
+    const { splitCommand } = (await lib()) as unknown as { splitCommand: (c: string, literal?: boolean) => string[] };
+    expect(splitCommand("echo 'a; b'; ls")).toEqual(["echo 'a; b'", ' ls']);
+    expect(splitCommand("echo 'a; b'", false)).toHaveLength(2); // inside a cmd.exe wrapper a single quote is no quote
+    expect(splitCommand('echo "a; b"')).toHaveLength(2); // double quotes: as before
+  });
+
+  // Review of RF7: `iex 'x; git push'` became allowed, because the split at the quoted `;` had been what exposed `git push`. An evaluator runs its
+  // string as a command, so it is judged like a shell wrapper. `Invoke-Expression 'git push origin main'` and `eval 'git push'` were allowed even by the old guard.
+  it('judges what an evaluator or command runner runs, like a shell wrapper (iex, Invoke-Expression, eval, exec, env, xargs, & ...)', async () => {
+    const { guardDecision: g } = await lib();
+    for (const c of [
+      "iex 'x; git push'", "Invoke-Expression 'git push origin main'", "eval 'git push'", "iex 'git commit -m x'", "iex \"git push\"", "eval 'x && git commit -m y'",
+      "iex \"Set-Content C:\\elsewhere\\x 'y'\"", "iex 'rm -rf ..'", "echo ok; iex 'x; git push'", "iex 'x; git push'; echo ok",
+      "exec 'x; git push'", "env 'x; git push'", "xargs 'x; git push'", "& 'x; git push'", "start 'x; git push'", "invoke-command -scriptblock 'x; git push'",
+      "node -e 'x; git push'", "python -c 'x; git push'", "node --eval 'a && git commit -m y'",
+    ]) expect(g(sh(c), POLICY).cancel, c).toBe(true);
+    for (const c of ["iex 'Get-ChildItem'", "Invoke-Expression 'npm test'", "eval 'echo hi'", "env NODE_ENV=test npm test", "time npm test", "node -e \"console.log(1)\"", "python -c \"print(1)\"", "& 'npm' test"]) {
+      expect(g(sh(c), POLICY).cancel, c).toBe(false);
+    }
+  });
+
+  it('keeps the secret-path check on every argument, quoted content included', async () => {
+    const { guardDecision: g } = await lib();
+    expect(g(sh("Add-Content notes.txt 'C:\\Users\\u\\.ssh\\id_rsa'"), POLICY).cancel).toBe(true);
+    expect(g(sh('Set-Content .env x'), POLICY).cancel).toBe(true);
+  });
+});
+
 describe('the Cline guard as Cline runs it (a hook file in a throwaway config directory)', () => {
   const runHook = (hook: string, payload: unknown, env: Record<string, string>) =>
     spawnSync(process.execPath, [hook], { input: JSON.stringify(payload), encoding: 'utf8', env: { ...process.env, ...env } });
@@ -1042,6 +1123,7 @@ describe('what a routed worker is told', () => {
     const t = CFG.hosts.cline.tiers.medium;
     const prompt = buildSpec(CFG, 'cline', t, 'TASK-BODY', 'edit', null, 'medium').args.at(-1) as string;
     for (const w of ['handoff', 'Done', 'Changed files', 'Checks run', 'Not done', 'Next steps', 'do not commit', 'not in a file']) expect(prompt.toLowerCase(), w).toContain(w.toLowerCase());
+    expect(prompt).toContain('Your reply is the report: write no state, notes or hand-off file anywhere, not even docs/handoff/.'); // RF7: a worker wrote a state file to hand off; the handoff skill's Phase 3 offers docs/handoff/
     expect(prompt.endsWith('TASK-BODY')).toBe(true);
     expect(buildSpec(CFG, 'cline', t, 'TASK-BODY', 'edit', null, 'medium').args).not.toContain('--plan');
   });
@@ -1866,34 +1948,35 @@ describe('the documents describe the new behaviour in one wording', () => {
 });
 
 describe('the Antigravity allow rules: a full-path rule for a bare program that resolves to a .exe (Windows, edit runs)', () => {
-  type RulesFn = (allow: string[], o?: { platform?: string; resolve?: (name: string) => string | null }) => { rules: string[]; notes: string[] };
+  type RulesFn = (allow: string[], o?: { platform?: string; resolve?: (name: string) => string | null; realpath?: (p: string) => string; home?: string; cwd?: string }) => { rules: string[]; notes: string[] };
   type SpecN = { args: string[]; notes?: string[] };
   const load = async (): Promise<{ antigravityAllowRules: RulesFn; buildSpec: (...a: unknown[]) => SpecN }> => (await import(pathToFileURL(SCRIPT).href)) as never;
+  const NOHOME = 'C:\nowhere-home'; // keeps the real home and links of the test machine out of these made-up paths
   const NODE = 'C:\\nvm4w\\nodejs\\node.exe';
   const GIT = 'C:\\Git\\cmd\\git.exe';
   const exe = (name: string): string | null => ({ node: NODE, git: GIT, npm: 'C:\\nvm4w\\nodejs\\npm.cmd', tool: 'C:\\Program Files\\Tool\\tool.exe' } as Record<string, string>)[name] ?? null;
 
   it('gives `node --test` a second rule with the absolute path and the same arguments', async () => {
     const { antigravityAllowRules } = await load();
-    const r = antigravityAllowRules(['node --test'], { platform: 'win32', resolve: exe });
+    const r = antigravityAllowRules(['node --test'], { platform: 'win32', home: NOHOME, resolve: exe });
     expect(r.rules).toEqual(['command(node --test)', `command(${NODE} --test)`]);
     expect(r.notes).toEqual([]);
-    expect(antigravityAllowRules(['node --test'], { platform: 'win32', resolve: () => 'C:/n/node.EXE' }).rules[1]).toBe('command(C:/n/node.exe --test)'); // PATHEXT spelling
+    expect(antigravityAllowRules(['node --test'], { platform: 'win32', home: NOHOME, resolve: () => 'C:/n/node.EXE' }).rules[1]).toBe('command(C:/n/node.exe --test)'); // PATHEXT spelling
   });
 
   it('leaves a .cmd shim alone: `npm test` keeps one rule', async () => {
     const { antigravityAllowRules } = await load();
-    expect(antigravityAllowRules(['npm test'], { platform: 'win32', resolve: exe }).rules).toEqual(['command(npm test)']);
+    expect(antigravityAllowRules(['npm test'], { platform: 'win32', home: NOHOME, resolve: exe }).rules).toEqual(['command(npm test)']);
   });
 
   it('leaves an unresolved program alone', async () => {
     const { antigravityAllowRules } = await load();
-    expect(antigravityAllowRules(['nothere --x'], { platform: 'win32', resolve: exe })).toMatchObject({ rules: ['command(nothere --x)'], notes: [] });
+    expect(antigravityAllowRules(['nothere --x'], { platform: 'win32', home: NOHOME, resolve: exe })).toMatchObject({ rules: ['command(nothere --x)'], notes: [] });
   });
 
   it('adds nothing for a path with spaces and says which program could not be given a full-path rule', async () => {
     const { antigravityAllowRules } = await load();
-    const r = antigravityAllowRules(['tool run'], { platform: 'win32', resolve: exe });
+    const r = antigravityAllowRules(['tool run'], { platform: 'win32', home: NOHOME, resolve: exe });
     expect(r.rules).toEqual(['command(tool run)']);
     expect(r.notes).toHaveLength(1);
     expect(r.notes[0]).toContain('tool');
@@ -1904,11 +1987,12 @@ describe('the Antigravity allow rules: a full-path rule for a bare program that 
     const { antigravityAllowRules } = await load();
     const seen: string[] = [];
     const spy = (n: string): string | null => { seen.push(n); return exe(n); };
-    expect(antigravityAllowRules(['node --test'], { platform: 'linux', resolve: spy }).rules).toEqual(['command(node --test)']);
+    expect(antigravityAllowRules(['node --test'], { platform: 'linux', home: NOHOME, resolve: spy }).rules).toEqual(['command(node --test)']); // no full-path rule off Windows
+    expect(seen).toEqual(['node']); // the resolver is asked everywhere now: the read-only mount (RF8) applies on every platform
+    seen.length = 0;
+    expect(antigravityAllowRules(['./node --test', 'C:/x/node.exe -v'], { platform: 'win32', home: NOHOME, resolve: spy }).rules).toEqual(['command(./node --test)', 'command(C:/x/node.exe -v)']);
     expect(seen).toEqual([]);
-    expect(antigravityAllowRules(['./node --test', 'C:/x/node.exe -v'], { platform: 'win32', resolve: spy }).rules).toEqual(['command(./node --test)', 'command(C:/x/node.exe -v)']);
-    expect(seen).toEqual([]);
-    antigravityAllowRules(['node --test'], { platform: 'win32', resolve: spy });
+    antigravityAllowRules(['node --test'], { platform: 'win32', home: NOHOME, resolve: spy });
     expect(seen).toEqual(['node']);
   });
 
@@ -1916,7 +2000,7 @@ describe('the Antigravity allow rules: a full-path rule for a bare program that 
     const { buildSpec } = await load();
     const t = CFG.hosts.antigravity.tiers.medium;
     const edit = (host: string, extra: Record<string, unknown>): SpecN => buildSpec(CFG, host, CFG.hosts[host]!.tiers.medium, 'TASK', 'edit', 'C:/w', 'medium', extra);
-    const win = edit('antigravity', { platform: 'win32', resolve: exe, allowCmd: ['tool run'] });
+    const win = edit('antigravity', { platform: 'win32', home: NOHOME, resolve: exe, allowCmd: ['tool run'] });
     const allow = (JSON.parse(win.args[win.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
     expect(allow).toEqual(expect.arrayContaining(['command(node --test)', `command(${NODE} --test)`, 'command(git status)', `command(${GIT} status)`, 'command(npm test)', 'command(tool run)']));
     expect(allow.join()).not.toMatch(/npm\.cmd|Program Files|git push|git commit/);
@@ -1924,13 +2008,100 @@ describe('the Antigravity allow rules: a full-path rule for a bare program that 
     expect(prompt).toContain(`${NODE} --test`);
     expect(prompt).toMatch(/not recognised/);
     expect(win.notes?.join(' ')).toContain('tool');
-    const linux = edit('antigravity', { platform: 'linux', resolve: exe });
+    const linux = edit('antigravity', { platform: 'linux', home: NOHOME, resolve: exe });
     expect(linux.args[linux.args.indexOf('--settings') + 1]).not.toContain('nodejs');
     expect(linux.args[linux.args.indexOf('-p') + 1]).not.toMatch(/not recognised/);
-    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', 'C:/w', 'medium', { platform: 'win32', resolve: exe });
+    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', 'C:/w', 'medium', { platform: 'win32', home: NOHOME, resolve: exe });
     expect(ro.args).not.toContain('--settings');
-    expect(edit('claude', { platform: 'win32', resolve: exe }).args.join(' ')).not.toMatch(/nodejs|\.exe/);
-    expect(edit('cline', { platform: 'win32', resolve: exe }).args.join(' ')).not.toContain(NODE);
-    expect(edit('codex', { platform: 'win32', resolve: exe }).args.join(' ')).not.toContain(NODE);
+    expect(edit('claude', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toMatch(/nodejs|\.exe/);
+    expect(edit('cline', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toContain(NODE);
+    expect(edit('codex', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toContain(NODE);
+  });
+});
+
+// RF8 (2026-11-14): the Antigravity sandbox does not expose folders inside the user profile unless a read_file rule mounts them (host-library
+// antigravity permissions/sandbox.md). A Node installed by a version manager lives there; a probe with the rule printed v24.19.0, without it
+// "not recognized" / "Access is denied".
+describe('the Antigravity read-only mount of a program folder inside the user profile (edit runs, every platform)', () => {
+  type R = { rules: string[]; notes: string[]; full: string[] };
+  type Fn = (allow: string[], o: { platform: string; resolve: (n: string) => string | null; realpath: (p: string) => string; home: string; cwd?: string }) => R;
+  const load = async (): Promise<{ antigravityAllowRules: Fn; buildSpec: (...a: unknown[]) => { args: string[]; notes?: string[] } }> => (await import(pathToFileURL(SCRIPT).href)) as never;
+  const reads = (r: R): string[] => r.rules.filter(x => x.startsWith('read_file('));
+  const WH = 'C:\\Users\\u';
+  const REAL = 'C:\\Users\\u\\AppData\\Local\\nvm\\v24.19.0';
+  const win = (map: Record<string, string>, real: Record<string, string> = {}, home = WH, cwd = 'C:\\w\\proj') => ({
+    platform: 'win32', home, cwd, resolve: (n: string): string | null => map[n] ?? null, realpath: (p: string): string => real[p] ?? p,
+  });
+
+  it('an nvm-style link: the real folder, once, as read_file(<real folder>), next to the unchanged command rules', async () => {
+    const { antigravityAllowRules } = await load();
+    const link = 'C:\\nvm4w\\nodejs\\node.exe';
+    const r = antigravityAllowRules(['node --test'], win({ node: link }, { [link]: `${REAL}\\node.exe` }));
+    expect(reads(r)).toEqual([`read_file(${REAL})`]);
+    expect(r.rules).toEqual(expect.arrayContaining(['command(node --test)', `command(${link} --test)`]));
+    expect(r.notes.join(' ')).toMatch(/inside the user profile was mounted read-only/);
+    expect(r.notes.join(' ')).not.toContain('Users');
+  });
+
+  it('a program outside the home directory gets no mount and no note', async () => {
+    const { antigravityAllowRules } = await load();
+    const r = antigravityAllowRules(['git status'], win({ git: 'C:\\Program Files\\Git\\cmd\\git.exe' }));
+    expect(reads(r)).toEqual([]);
+    expect(r.notes.join(' ')).not.toMatch(/mounted|not mounted/);
+  });
+
+  it('a program directly in the home directory is skipped with a note, never mounting home', async () => {
+    const { antigravityAllowRules } = await load();
+    const r = antigravityAllowRules(['node --test'], win({ node: `${WH}\\node.exe` }));
+    expect(reads(r)).toEqual([]);
+    expect(r.notes.join(' ')).toMatch(/not mounted/);
+  });
+
+  it('a filesystem root and a folder that contains the working directory are skipped with a note', async () => {
+    const { antigravityAllowRules } = await load();
+    const root = antigravityAllowRules(['node --test'], win({ node: 'C:\\node.exe' }, {}, 'C:\\'));
+    expect(reads(root)).toEqual([]);
+    const anc = antigravityAllowRules(['node --test'], win({ node: `${WH}\\tools\\node.exe` }, {}, WH, `${WH}\\tools\\repo`));
+    expect(reads(anc)).toEqual([]);
+    expect(anc.notes.join(' ')).toMatch(/not mounted/);
+  });
+
+  it('two programs in one folder give one rule; two folders give two', async () => {
+    const { antigravityAllowRules } = await load();
+    const f = `${WH}\\tools\\bin`;
+    const one = antigravityAllowRules(['node --test', 'npm test'], win({ node: `${f}\\node.exe`, npm: `${f}\\npm.cmd` }));
+    expect(reads(one)).toEqual([`read_file(${f})`]);
+    const two = antigravityAllowRules(['node --test', 'git status'], win({ node: `${f}\\node.exe`, git: `${WH}\\other\\git.exe` }));
+    expect(reads(two)).toHaveLength(2);
+  });
+
+  it('compares case-insensitively on win32, and a folder with spaces is mounted with a note that it is untested', async () => {
+    const { antigravityAllowRules } = await load();
+    const r = antigravityAllowRules(['node --test'], win({ node: 'C:\\USERS\\U NAME\\bin\\node.exe' }, {}, 'c:\\users\\u name'));
+    expect(reads(r)).toEqual(['read_file(C:\\USERS\\U NAME\\bin)']);
+    expect(r.notes.join(' ')).toMatch(/spaces[^.]*untested/);
+  });
+
+  it('works with Linux paths and platform linux (no full-path rule there)', async () => {
+    const { antigravityAllowRules } = await load();
+    const bin = '/home/u/.nvm/versions/node/v24/bin';
+    const r = antigravityAllowRules(['node --test'], { platform: 'linux', home: '/home/u', cwd: '/work/repo', resolve: n => (n === 'node' ? `${bin}/node` : null), realpath: p => p });
+    expect(r.rules).toEqual(['command(node --test)', `read_file(${bin})`]);
+    const out = antigravityAllowRules(['git status'], { platform: 'linux', home: '/home/u', cwd: '/work/repo', resolve: () => '/usr/bin/git', realpath: p => p });
+    expect(reads(out)).toEqual([]);
+  });
+
+  it('buildSpec: the rule is in --settings and the dry-run notes, an edit run only, and the home path is not in the notes', async () => {
+    const { buildSpec } = await load();
+    const t = CFG.hosts.antigravity.tiers.medium;
+    const extra = { platform: 'linux', home: '/home/u', resolve: (n: string) => (n === 'node' ? '/home/u/.nvm/v24/bin/node' : null), realpath: (p: string) => p };
+    const edit = buildSpec(CFG, 'antigravity', t, 'TASK', 'edit', '/work/repo', 'medium', extra);
+    const allow = (JSON.parse(edit.args[edit.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
+    expect(allow).toContain('read_file(/home/u/.nvm/v24/bin)');
+    expect(edit.notes?.join(' ')).toMatch(/mounted read-only/);
+    expect(edit.notes?.join(' ')).not.toContain('/home/u');
+    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', '/work/repo', 'medium', extra);
+    expect(ro.args).not.toContain('--settings');
+    expect(ro.notes).toBeUndefined();
   });
 });

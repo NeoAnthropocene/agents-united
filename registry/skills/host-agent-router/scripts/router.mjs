@@ -407,6 +407,7 @@ function preamble(access, tier) {
     + 'Edit only inside the working directory; do not install packages globally or leave processes running. '
     + 'Finish with a handoff report as your whole reply, in the reply and not in a file (if a `handoff` skill is available to you, follow its state-capture and remaining-work steps), '
     + 'with exactly these headings: Done (what now works), Changed files (path and one line each), Checks run (command and result, or none), Not done or blocked, Next steps. '
+    + 'Your reply is the report: write no state, notes or hand-off file anywhere, not even docs/handoff/. '
     + 'Cite files as repository-relative path:line, never an absolute path or file:// link (the report may be pasted into a pull request).\n\n';
 }
 
@@ -417,17 +418,57 @@ export function skillsBlock(skills) {
   return framing + skills.map(k => `=== Attached skill: ${k.name} ===\n${k.text}\n=== End of skill: ${k.name} ===\n\n`).join('');
 }
 
+const defaultRealpath = p => { try { return fs.realpathSync.native(p); } catch { return p; } };
+
+/** The distinct program folders (real paths) inside `home` to mount read-only for the Antigravity sandbox. Pushes its notes. */
+function mountFolders(allow, { platform, resolve, realpath, home, cwd }, notes) {
+  const pm = platform === 'win32' ? path.win32 : path.posix;
+  const key = x => (platform === 'win32' ? pm.resolve(x).toLowerCase() : pm.resolve(x));
+  const inside = (x, root) => { const r = pm.relative(key(root), key(x)); return r !== '' && !r.startsWith('..') && !pm.isAbsolute(r); };
+  const homeKey = home ? key(home) : null;
+  const cwdReal = cwd ? (() => { try { return realpath(cwd); } catch { return cwd; } })() : null;
+  const folders = new Map(); // key -> folder as spelled
+  let skipped = false;
+  let spaced = false;
+  for (const c of allow) {
+    const prog = c.trim().split(/\s+/)[0];
+    if (!prog || /[\\/:]/.test(prog)) continue;
+    const abs = resolve(prog);
+    if (!abs) continue;
+    let real = abs;
+    try { real = realpath(abs); } catch { /* keep the spelling resolve gave */ }
+    const folder = pm.dirname(real);
+    if (!homeKey) continue;
+    if (key(folder) === homeKey) { skipped = true; continue; }
+    if (!inside(folder, home)) continue;
+    if (pm.parse(folder).root === folder || (cwdReal && (key(cwdReal) === key(folder) || inside(cwdReal, folder)))) { skipped = true; continue; }
+    folders.set(key(folder), folder);
+    if (/\s/.test(folder)) spaced = true;
+  }
+  if (folders.size) notes.push('a program folder inside the user profile was mounted read-only for the sandbox (read_file), so its programs are visible to Antigravity');
+  if (skipped) notes.push('a program folder was not mounted: it is the home directory, a filesystem root or holds the working directory, and the sandbox may not see that program');
+  if (spaced) notes.push('a mounted folder has spaces in its path; read_file with such a path is untested');
+  return [...folders.values()];
+}
+
 /**
  * The `command(...)` rules Antigravity gets for an edit run. On Windows its sandbox may lack the directory of the `node` the lead's shell finds
  * (seen live, 2026-11-13), so each allowed line whose first word is a bare program that the router's own lookup resolves to a real `.exe` also gets
  * the same line with that absolute path. The path comes only from `resolve` on this machine, never from the brief or `--allow-cmd`. A `.cmd` or
  * script shim is not rewritten, and neither is a path with whitespace (an exact-line match was only seen for a path without spaces): a note says so.
+ * Every platform: the sandbox does not expose folders inside the user profile unless a `read_file` rule mounts them read-only (host-library
+ * antigravity permissions/sandbox.md; a Node under nvm lives there: seen 2026-11-14, "not recognized" without the rule, v24.19.0 with it). So the
+ * REAL folder (links followed) of each resolved allowed program gets `read_file(<folder>)` when it is inside `home`: never home itself, a
+ * filesystem root, or a folder that contains the working directory (a note says so instead). Notes never carry a path.
  * Returns { rules, full (the added command lines, for the worker's note), notes }.
  */
-export function antigravityAllowRules(allow, { platform = process.platform, resolve = which } = {}) {
+export function antigravityAllowRules(allow, { platform = process.platform, resolve: lookupRaw = which, realpath = defaultRealpath, home = os.homedir(), cwd } = {}) {
+  const seen = new Map(); // one lookup per program name
+  const resolve = n => { if (!seen.has(n)) seen.set(n, lookupRaw(n)); return seen.get(n); };
   const rules = allow.map(c => `command(${c})`);
   const full = [];
   const notes = [];
+  const mounts = mountFolders(allow, { platform, resolve, realpath, home, cwd }, notes);
   if (platform === 'win32') {
     const spaced = new Set();
     for (const c of allow) {
@@ -443,7 +484,7 @@ export function antigravityAllowRules(allow, { platform = process.platform, reso
       full.push(abs.replace(/\.exe$/i, '.exe') + line.slice(prog.length)); // PATHEXT yields `.EXE`; the rule seen live used `.exe`
     }
   }
-  const all = [...new Set([...rules, ...full.map(c => `command(${c})`)])];
+  const all = [...new Set([...rules, ...full.map(c => `command(${c})`), ...mounts.map(f => `read_file(${f})`)])];
   return { rules: all, full: [...new Set(full)], notes };
 }
 
@@ -470,7 +511,7 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
     case 'antigravity': {
       // Headless Antigravity denies every command that is not allowed, and one denial ends the run with exit 0. Its rules match an exact
       // command line or a bare program name and ignore wildcards (checked live), so the allow list is exact and the worker is told so.
-      const rules = ro ? { rules: [], full: [], notes: [] } : antigravityAllowRules(allow, { platform: extra.platform, resolve: extra.resolve });
+      const rules = ro ? { rules: [], full: [], notes: [] } : antigravityAllowRules(allow, { platform: extra.platform, resolve: extra.resolve, realpath: extra.realpath, home: extra.home, cwd });
       const fullSentence = rules.full.length ? ` If a program name is not recognised, you may run the listed full-path form of the same command (${rules.full.join('; ')}) and nothing else.` : '';
       const note = ro ? '' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
       const text = preamble(access, tier) + note + attached + prompt;
@@ -1321,6 +1362,12 @@ const WRITE_VERBS = new Set(['rm', 'rmdir', 'rd', 'del', 'erase', 'remove-item',
 const PRIV_VERBS = new Set(['sudo', 'doas', 'su', 'runas', 'shutdown', 'reboot', 'mkfs', 'format-volume', 'diskpart', 'setx', 'schtasks', 'reg',
   'kill', 'pkill', 'killall', 'taskkill', 'stop-process', 'spps']); // killing: a worker cannot know which processes are its own; the rest run the harness
 const SHELLS = new Set(['sh', 'bash', 'zsh', 'dash', 'cmd', 'powershell', 'pwsh']);
+// Verbs whose string arguments are run as a command: judged like a shell wrapper (same recursion, same depth limit). Evaluators take a string;
+// runners take a command line. `source` and `.` take a file, not inline text, so they are not here.
+const EVALUATORS = new Set(['iex', 'invoke-expression', 'eval']);
+const RUNNERS = new Set(['exec', 'env', 'time', 'nohup', 'command', 'xargs', 'start', 'call', 'invoke-command', 'icm', '&']);
+// Interpreters with inline code: the code is not shell, but it may name a shell command, and the old guard refused such text by accident of its split.
+const INLINE_CODE = { node: ['-e', '-p', '--eval', '--print'], python: ['-c'], python3: ['-c'], ruby: ['-e'], perl: ['-e'] };
 const GIT_HISTORY = new Set(['push', 'commit', 'rebase', 'cherry-pick', 'merge', 'am', 'revert']);
 
 /** One decision for one hook payload. policy: { workspace, home, tmp: [writable roots besides the workspace] }. */
@@ -1379,19 +1426,87 @@ export function guardDecision(payload, policy) {
   return allow;
 }
 
-function commandProblem(cmd, ctx, depth = 0) {
+/**
+ * Split a command on && || ; | and newlines, but not inside a single-quoted literal (single quotes are literal in PowerShell and in POSIX shells).
+ * Double-quoted text can expand, so a separator inside it still splits, exactly as before. A single quote never closed means the quoting cannot be
+ * trusted: the whole command is then split everywhere, the old way. `literalSingle` false (the inside of a cmd.exe wrapper, where ' is no quote) does the same.
+ */
+export function splitCommand(cmd, literalSingle = true) {
+  const everywhere = () => cmd.split(/&&|\|\||;|\||\r?\n/);
+  if (!literalSingle) return everywhere();
+  const parts = [];
+  let cur = '';
+  let single = false;
+  let double = false;
+  for (let i = 0; i < cmd.length; i++) {
+    const ch = cmd[i];
+    if (!single && ch === '"') double = !double;
+    else if (!double && ch === "'") single = !single;
+    if (!single && !(ch === "'")) {
+      const two = cmd.slice(i, i + 2);
+      if (two === '&&' || two === '||') { parts.push(cur); cur = ''; i++; continue; }
+      if (ch === ';' || ch === '|' || ch === '\n') { parts.push(cur); cur = ''; continue; }
+      if (ch === '\r' && cmd[i + 1] === '\n') continue;
+    }
+    cur += ch;
+  }
+  parts.push(cur);
+  return single ? everywhere() : parts;
+}
+
+/** Verbs whose arguments are a write target plus content: the content is not a path to judge. Names of parameters that name the target, carry the content, or take another value. */
+const CONTENT_VERBS = new Set(['set-content', 'add-content', 'out-file']);
+const TARGET_PARAMS = ['path', 'literalpath', 'filepath', 'pspath'];
+const CONTENT_PARAMS = ['value', 'inputobject'];
+const VALUED_PARAMS = ['encoding', 'width', 'stream', 'delimiter', 'filter', 'include', 'exclude', 'credential', 'readcount', 'totalcount', 'tail'];
+const paramIs = (name, list, min) => list.some(p => name.length >= min && p.startsWith(name));
+
+/**
+ * The arguments of a content verb that are judged as write targets. A target is the value of -Path/-LiteralPath/-FilePath, else the first positional
+ * argument. Not judged: the value of -Value/-InputObject (and of other valued parameters such as -Encoding), and any positional after the target
+ * that was quoted (it is content). A later unquoted positional is still judged, as before. `args` and `quoted` run in parallel.
+ */
+function contentVerbArgs(args, quoted) {
+  const judged = [];
+  const positional = [];
+  let named = false;
+  for (let i = 0; i < args.length; i++) {
+    const m = !quoted[i] && /^-+([A-Za-z]+)(?::(.*))?$/.exec(args[i]);
+    if (!m) { positional.push(i); continue; }
+    const name = m[1].toLowerCase();
+    const isTarget = paramIs(name, TARGET_PARAMS, 1);
+    const valued = isTarget || paramIs(name, CONTENT_PARAMS, 3) || paramIs(name, VALUED_PARAMS, 3);
+    if (!valued) continue;
+    const val = m[2] !== undefined ? m[2] : i + 1 < args.length ? args[++i] : undefined;
+    if (isTarget && val !== undefined) { judged.push(val); named = true; }
+  }
+  positional.forEach((i, n) => { if ((n === 0 && !named) || !quoted[i]) judged.push(args[i]); });
+  return judged;
+}
+
+function commandProblem(cmd, ctx, depth = 0, literalSingle = true) {
   const { ws, abs, writable } = ctx;
   if (/\b(curl|wget|iwr|irm|invoke-webrequest|invoke-restmethod)\b[^|]*\|\s*(sh|bash|zsh|iex|invoke-expression|powershell|pwsh|node|python3?)\b/i.test(cmd)) return 'piping a download into a shell is not allowed';
   const pathLike = t => /[\\/]/.test(t) || t.startsWith('.') || t.startsWith('~') || /^[A-Za-z]:/.test(t);
-  for (const sub of cmd.split(/&&|\|\||;|\||\r?\n/)) {
-    const tokens = (sub.match(/"[^"]*"|'[^']*'|\S+/g) ?? []).map(t => t.replace(/^["']|["']$/g, ''));
+  for (const sub of splitCommand(cmd, literalSingle)) {
+    const raw = sub.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
+    const tokens = raw.map(t => t.replace(/^["']|["']$/g, ''));
+    const quoted = raw.slice(1).map(t => /^["']/.test(t));
     if (!tokens.length) continue;
     const verb = tokens[0].replace(/^.*[\\/]/, '').replace(/\.(exe|cmd|bat|ps1)$/i, '').toLowerCase();
     const args = tokens.slice(1);
     if (PRIV_VERBS.has(verb)) return `${verb} is not allowed for a routed worker`;
     if (SHELLS.has(verb) && depth < 2) { // judge what the wrapper runs, not the wrapper's name
       const i = args.findIndex(a => /^(-c|-command|\/c)$/i.test(a));
-      if (i >= 0) { const inner = commandProblem(args.slice(i + 1).join(' '), ctx, depth + 1); if (inner) return inner; }
+      if (i >= 0) { const inner = commandProblem(args.slice(i + 1).join(' '), ctx, depth + 1, verb !== 'cmd'); if (inner) return inner; }
+    }
+    if ((EVALUATORS.has(verb) || RUNNERS.has(verb)) && depth < 2 && args.length) {
+      const inner = commandProblem(args.join(' '), ctx, depth + 1);
+      if (inner) return inner;
+    }
+    if (INLINE_CODE[verb] && depth < 2) {
+      const i = args.findIndex(a => INLINE_CODE[verb].includes(a));
+      if (i >= 0 && args[i + 1]) { const inner = commandProblem(args.slice(i + 1).join(' '), ctx, depth + 1); if (inner) return inner; }
     }
     if (/^(npm|pnpm|yarn)$/.test(verb) && args.includes('publish')) return 'publishing is not allowed for a routed worker';
     if (/^(npm|pnpm|yarn)$/.test(verb) && /^(i|install|add|global)$/.test(args[0] ?? '') && args.some(a => a === '-g' || a === '--global' || a === 'global')) return 'global installs are not allowed for a routed worker';
@@ -1412,7 +1527,9 @@ function commandProblem(cmd, ctx, depth = 0) {
       if (isSecretPath(abs(t))) return `${t} looks like a secret or credential file (guardrail: never read, print or stage secrets)`;
     }
     if (WRITE_VERBS.has(verb) || (verb === 'sed' && args.includes('-i'))) {
-      for (const t of args) {
+      const cv = CONTENT_VERBS.has(verb) ? contentVerbArgs(args, quoted) : null;
+      // a content verb is judged on its write target only; every other write verb on all of its arguments, as before
+      for (const t of cv ?? args) {
         if (t.startsWith('-') || /^\/[A-Za-z]$/.test(t)) continue;
         if (!(pathLike(t) || t === '..' || t === '~')) continue;
         const a = abs(t);

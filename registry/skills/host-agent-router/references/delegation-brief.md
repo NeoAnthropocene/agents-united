@@ -10,7 +10,7 @@ with `--skill <name>` (up to three; a worktree does not inherit installed skills
 heavier or lighter setting inside the tier with `--effort` when the job calls for it; the worker contract is unchanged by either.
 
 A worker with room to explore will use it: a real-repository run (2026-11-13) was asked for one file and ran `npm ci`, the type check and two test files as well, 349 s in all. Say what not to run.
-On Windows, Antigravity's sandbox did not have `node` on its PATH (the router now also allows the full-path form of an allowed `.exe` program, not a `.cmd` such as `npm`), and Codex's Windows sandbox refused to spawn the test runner's child processes (`EPERM`). A worker's "not run" is therefore not a failure: run it yourself (the acceptance command), or pick one that starts no child process.
+Antigravity's sandbox cannot see a program that lives inside the user profile (a Node from nvm, volta or fnm) unless a `read_file` rule mounts its folder read-only (its sandbox docs); the router adds that rule for the folder of each allowed program and the dry run lists it, so `node` is found by its bare name (the full-path form of an allowed `.exe` is also allowed). Codex's Windows sandbox refused to spawn the test runner's child processes (`EPERM`). A worker's "not run" is therefore not a failure: run it yourself (the acceptance command), or pick one that starts no child process.
 
 Name the commands the worker needs with `--allow-cmd "<exact command line>"`, usually the acceptance command (`npm test` and `node --test` are
 allowed by default). Claude and Antigravity deny every command not on the list, and Antigravity matches the exact line and ends the whole run on
