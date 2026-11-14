@@ -7,7 +7,7 @@ import { ClaudeLauncher } from '../src/core/claude-launcher.js';
 import { InstallEngine } from '../src/core/installer.js';
 import { RegistryResolver } from '../src/core/registry.js';
 import type { ClaudeCapabilityReport, LockfileManifest } from '../src/core/types.js';
-import { coordinatorTree, prepareFactoryCoordinator } from './helpers/factory-coordinator.js';
+import { FACTORY_FORBIDDEN_ENV, cleanFactoryEnv, coordinatorTree, prepareFactoryCoordinator } from './helpers/factory-coordinator.js';
 
 describe('installed factory main selection through public resolve and plan', () => {
   let fixture: Awaited<ReturnType<typeof prepareFactoryCoordinator>>;
@@ -21,7 +21,10 @@ describe('installed factory main selection through public resolve and plan', () 
     diagnostics: [],
   };
 
-  beforeEach(async () => { fixture = await prepareFactoryCoordinator(); });
+  beforeEach(async () => {
+    vi.stubEnv(FACTORY_FORBIDDEN_ENV, undefined);
+    fixture = await prepareFactoryCoordinator();
+  });
   afterEach(async () => { vi.unstubAllEnvs(); await fs.remove(fixture.root); });
 
   const install = async () => new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options);
@@ -72,7 +75,7 @@ describe('installed factory main selection through public resolve and plan', () 
     await fs.remove(fixture.registry);
     const result = spawnSync(process.execPath, [path.join(runtime, 'dist/cli.js'), 'start', 'agent-factory', '--host', 'claude', '--dry-run'], {
       cwd: fixture.workspace, encoding: 'utf8', timeout: 15000,
-      env: { ...process.env, CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' },
+      env: cleanFactoryEnv({ CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' }),
     });
     expect(result.status, result.stdout + result.stderr).toBe(0);
     expect(result.stdout).toContain('orchestrator-agent-factory');
@@ -250,7 +253,7 @@ describe('installed factory main selection through public resolve and plan', () 
     const before = await coordinatorTree(fixture.workspace);
     const result = spawnSync(process.execPath, [path.resolve('dist/cli.js'), 'start', 'agent-factory', '--host', 'claude', '--bg', '--dry-run'], {
       cwd: fixture.workspace, encoding: 'utf8', timeout: 15000,
-      env: { ...process.env, CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' },
+      env: cleanFactoryEnv({ CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' }),
     });
     expect(result.status).toBe(1);
     expect(result.stdout + result.stderr).toMatch(/foreground.*--bg/i);

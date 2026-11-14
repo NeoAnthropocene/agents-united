@@ -4,6 +4,7 @@ import YAML from 'yaml';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
 import { factoryJobFixture, sha256, type FactoryJobFixture } from './helpers/factory-job.js';
+import { cleanFactoryEnv } from './helpers/factory-coordinator.js';
 import { prepareEvaluationJob, reviewPin, evaluationResult } from './helpers/factory-evaluation.js';
 import type { LockfileManifest } from '../src/core/types.js';
 import { validateCoreSchema } from '../src/core/semantic-core.js';
@@ -23,7 +24,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     execFileSync(process.execPath, [npmCli, 'install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', runtime, path.join(f.root, pack[0]!.filename)], { encoding: 'utf8' });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');
     const target = path.join(f.root, 'consumer'); await fs.ensureDir(target);
-    const installed = spawnSync(process.execPath, [path.join(packageRoot, 'dist/cli.js'), 'add', 'agent-factory', '-t', 'claude', '--native', '--copy', '--allow-under-construction', '-y'], { cwd: target, encoding: 'utf8', env: { ...process.env, CI: 'true' } });
+    const installed = spawnSync(process.execPath, [path.join(packageRoot, 'dist/cli.js'), 'add', 'agent-factory', '-t', 'claude', '--native', '--copy', '--allow-under-construction', '-y'], { cwd: target, encoding: 'utf8', env: cleanFactoryEnv({ CI: 'true' }) });
     expect(installed.status, installed.stdout + installed.stderr).toBe(0);
     const cli = path.join(packageRoot, 'dist/cli.js');
     const installedLock = await fs.readJson(path.join(target, '.claude/.agents-united/agents-united.json')) as LockfileManifest;
@@ -42,7 +43,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     const unavailableRegistry = path.join(packageRoot, 'registry-unavailable');
     await fs.move(path.join(packageRoot, 'registry'), unavailableRegistry);
     const preview = spawnSync(process.execPath, [cli, 'start', 'agent-factory', '--host', 'claude', '--dry-run'], {
-      cwd: target, encoding: 'utf8', env: { ...process.env, CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' }, timeout: 15000,
+      cwd: target, encoding: 'utf8', env: cleanFactoryEnv({ CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' }), timeout: 15000,
     });
     expect(preview.status, preview.stdout + preview.stderr).toBe(0);
     expect(preview.stdout).toContain('orchestrator-agent-factory');

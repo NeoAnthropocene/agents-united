@@ -23,7 +23,9 @@ const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(
   : value !== null && typeof value === 'object' ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`
     : JSON.stringify(value);
 const same = (a, b) => canonical(a) === canonical(b);
-const folded = file => path.resolve(file).toLowerCase();
+// Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
+const foldName = name => process.platform === 'win32' ? name.toLowerCase() : name;
+const folded = file => foldName(path.resolve(file));
 const within = (parent, child) => {
   const rel = path.relative(folded(parent), folded(child));
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
@@ -190,7 +192,7 @@ function watchDraft(root, budget, badCode, live) {
 function strays(draft) {
   const parent = path.dirname(draft);
   if (!fs.existsSync(parent)) return [];
-  return fs.readdirSync(parent).filter(name => name.toLowerCase() !== path.basename(draft).toLowerCase());
+  return fs.readdirSync(parent).filter(name => foldName(name) !== foldName(path.basename(draft)));
 }
 const stripKind = ({ path: file, bytes, sha256 }) => ({ path: file, bytes, sha256 });
 const pinOut = ({ path: file, bytes, sha256 }) => ({ path: file, bytes, sha256 });

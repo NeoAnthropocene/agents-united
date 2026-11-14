@@ -9,6 +9,7 @@ import { INVOICE_FILES } from './helpers/skill-candidate.js';
 import { candidateDigestOf, digest, inventoryOf, prepareSkillTask } from './helpers/skill-task.js';
 import type { Json, SkillTaskFixture } from './helpers/skill-task.js';
 import { prepareEvaluationJob, reviewPin } from './helpers/factory-evaluation.js';
+import { cleanFactoryEnv } from './helpers/factory-coordinator.js';
 
 /**
  * P8b stage 1, from the actual offline npm package: the installed checker, the installed `draft.mjs` as the producer
@@ -43,7 +44,7 @@ describe('one Skill draft, checked return and review records from the actual off
     cli = path.join(packageRoot, 'dist/cli.js');
     corpus = path.join(registry, 'quality/skill-boilerplate-corpus.txt');
     const installed = spawnSync(process.execPath, [cli, 'add', 'agent-factory', '-t', 'claude', '--native', '--copy', '--allow-under-construction', '-y'], {
-      cwd: consumer, encoding: 'utf8', env: { ...process.env, CI: 'true' }, timeout: 60_000,
+      cwd: consumer, encoding: 'utf8', env: cleanFactoryEnv({ CI: 'true' }), timeout: 60_000,
     });
     expect(installed.status, installed.stdout + installed.stderr).toBe(0);
     checker = path.join(consumer, '.claude/skills/coordinate-artifact/scripts/check-skill-return.mjs');
@@ -102,7 +103,7 @@ describe('one Skill draft, checked return and review records from the actual off
   it('keeps source-independent startup healthy with the complete package registry moved away, and refuses a missing new file', async () => {
     const away = path.join(packageRoot, 'registry-unavailable');
     const preview = (): SpawnSyncReturns<string> => spawnSync(process.execPath, [cli, 'start', 'agent-factory', '--host', 'claude', '--dry-run'], {
-      cwd: consumer, encoding: 'utf8', env: { ...process.env, CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' }, timeout: 20_000,
+      cwd: consumer, encoding: 'utf8', env: cleanFactoryEnv({ CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' }), timeout: 20_000,
     });
     await fs.move(registry, away);
     cleanups.push(async () => { if (!await fs.pathExists(registry)) await fs.move(away, registry); });
@@ -115,7 +116,7 @@ describe('one Skill draft, checked return and review records from the actual off
     await fs.remove(checker);
     const missing = preview();
     expect(missing.status, missing.stdout).not.toBe(0);
-    expect(missing.stdout + missing.stderr).toMatch(/check-skill-return|missing|required|ENOENT|not a regular/i);
+    expect(missing.stdout + missing.stderr).toContain('check-skill-return.mjs');
     await fs.writeFile(checker, bytes);
     const restored = preview();
     expect(restored.status, restored.stdout + restored.stderr).toBe(0);
@@ -269,6 +270,12 @@ describe('one Skill draft, checked return and review records from the actual off
       await fs.appendFile(draftScript, '\n// edited after the pin\n');
       failureOf(fx.pre(), 'CLOSURE_MISSING', 'preflight');
       await fs.writeFile(draftScript, original);
+      expect(fx.pre().status).toBe(0);
+      const checkerBytes = await fs.readFile(checker);
+      cleanups.push(async () => { await fs.writeFile(checker, checkerBytes); });
+      await fs.appendFile(checker, '\n// edited after the pin\n');
+      failureOf(fx.pre(), 'RUNTIME_MISMATCH', 'preflight');
+      await fs.writeFile(checker, checkerBytes);
       expect(fx.pre().status).toBe(0);
       const entry = fx.inst('SKILL.md'), entryBytes = await fs.readFile(entry);
       cleanups.push(async () => { await fs.writeFile(entry, entryBytes); });

@@ -5,6 +5,14 @@ import type { BundleDefinition, InstallOptions } from '../../src/core/types.js';
 import { bundleTemplateTree } from './factory-bundle-template.js';
 
 export const COORDINATOR_ROOT = '.claude/skills/coordinate-artifact';
+export const FACTORY_FORBIDDEN_ENV = 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS';
+
+/** Copy `process.env` without inherited teams opt-in so factory tests stay host-session independent. */
+export function cleanFactoryEnv(overrides: Record<string, string> = {}): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, ...overrides };
+  if (!Object.hasOwn(overrides, FACTORY_FORBIDDEN_ENV)) delete env[FACTORY_FORBIDDEN_ENV];
+  return env;
+}
 export const COORDINATOR_DECLARATION = 'hosts/claude/agent-factory-coordinate.binding.json';
 export const COORDINATOR_SUPPORT = ['references/job.md', 'references/dispatch.md', 'references/verification.md', 'references/repair.md', 'references/handback.md', 'examples/claude-agent-journey.md', 'assets/report.json',
   'references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json'] as const;

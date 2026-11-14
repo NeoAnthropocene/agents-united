@@ -26,10 +26,10 @@ export async function pinOf(file: string): Promise<Pin> {
   return { path: path.resolve(file), bytes: bytes.length, sha256: digest(bytes) };
 }
 
-export const CHECKER = path.resolve('registry/skills/coordinate-artifact/scripts/check-skill-return.mjs');
-export const VALIDATOR = path.resolve('dist/cli.js');
-export const CONTRIBUTION_TEMPLATE = path.resolve('.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md');
-const CORPUS_SOURCE = path.resolve('registry/quality/skill-boilerplate-corpus.txt');
+export const CHECKER = fs.realpathSync(path.resolve('registry/skills/coordinate-artifact/scripts/check-skill-return.mjs'));
+export const VALIDATOR = fs.realpathSync(path.resolve('dist/cli.js'));
+export const CONTRIBUTION_TEMPLATE = fs.realpathSync(path.resolve('.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md'));
+const CORPUS_SOURCE = fs.realpathSync(path.resolve('registry/quality/skill-boilerplate-corpus.txt'));
 
 /** The eight installed `author-skill` files: relative path under the installed root, and the registry source copied there. */
 export const INSTALLED_SOURCES: ReadonlyArray<readonly [string, string]> = [
@@ -157,7 +157,7 @@ export async function prepareSkillTask(options: PrepareSkillTaskOptions = {}): P
   }
   const installedPins: Pin[] = [];
   for (const [rel] of INSTALLED_SOURCES) installedPins.push(await pinOf(inst(rel)));
-  const checkout = process.cwd();
+  const checkout = fs.realpathSync(process.cwd());
   const head = execFileSync('git', ['-C', checkout, 'rev-parse', '--verify', 'HEAD'], { encoding: 'utf8' }).trim();
   const template: Json = {
     mode: operation, intent, sourceRoot: checkout, draftRoot: draft,

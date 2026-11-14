@@ -198,6 +198,12 @@ describe('preflight refusals: roots', () => {
     await fx.save();
     failure(await untouched(fx, () => fx.pre()), 'ROOT_CONFLICT', 'preflight');
   });
+
+  it.skipIf(process.platform === 'win32')('refuses a case-variant sibling of the draft folder in the draft parent with ROOT_CONFLICT, on a case-sensitive platform only (skipped on win32)', async () => {
+    const fx = await make();
+    await fs.ensureDir(path.join(path.dirname(fx.draft), 'Incident-Actions'));
+    failure(await untouched(fx, () => fx.pre()), 'ROOT_CONFLICT', 'preflight');
+  });
 });
 
 describe('preflight refusals: baseline and live draft state', () => {
@@ -512,6 +518,14 @@ describe('postflight refusals: return record and helper files', () => {
     failure(await untouched(fx, () => fx.post(other)), 'RESULT_PATH', 'postflight');
   });
 
+  it.skipIf(process.platform === 'win32')('refuses a return presented under a case-variant name with RESULT_PATH, on a case-sensitive platform only (skipped on win32)', async () => {
+    const fx = await make();
+    await fx.produce();
+    const variant = path.join(fx.producer, 'Skill-Return.json');
+    await fs.move(fx.returnFile, variant);
+    failure(await untouched(fx, () => fx.post(variant)), 'RESULT_PATH', 'postflight');
+  });
+
   it('refuses a missing return as unavailable', async () => {
     const fx = await make();
     failure(await untouched(fx, () => fx.post()), 'RESULT_INVALID', 'postflight', 'unavailable');
@@ -527,6 +541,7 @@ describe('postflight refusals: return record and helper files', () => {
     ['a malformed task digest', ret => { ret.taskDigest = 'not-a-digest'; }],
     ['a blocked status without open items', ret => { ret.status = 'blocked'; ret.openItems = []; }],
     ['runs 0 together with helper file pins', ret => { ret.helper.runs = 0; }],
+    ['a helper stderr pin claiming 65537 bytes', ret => { ret.helper.stderr.bytes = 65537; }],
   ];
   it.each(record)('refuses %s with RESULT_INVALID', async (_label, change) => {
     const fx = await make();
@@ -795,6 +810,15 @@ describe('postflight refusals: the claimed inventory, diff, provenance and exter
     const fx = await make();
     const produced = await fx.produce();
     produced.report!.inventory = produced.report!.inventory.slice(1);
+    await fs.writeFile(produced.stdoutFile, `${JSON.stringify(produced.report, null, 2)}\n`);
+    await produced.repin();
+    failure(await untouched(fx, () => fx.post()), 'INVENTORY_MISMATCH', 'postflight');
+  });
+
+  it('refuses a helper report inventory that adds a path', async () => {
+    const fx = await make();
+    const produced = await fx.produce();
+    produced.report!.inventory = [...produced.report!.inventory, { path: 'invented.md', sha256: hex('1') }];
     await fs.writeFile(produced.stdoutFile, `${JSON.stringify(produced.report, null, 2)}\n`);
     await produced.repin();
     failure(await untouched(fx, () => fx.post()), 'INVENTORY_MISMATCH', 'postflight');
