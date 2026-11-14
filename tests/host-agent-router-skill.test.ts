@@ -1046,6 +1046,18 @@ describe('what a routed worker is told', () => {
     expect(buildSpec(CFG, 'cline', t, 'TASK-BODY', 'edit', null, 'medium').args).not.toContain('--plan');
   });
 
+  // RF6: a worker's report cited file:///C:/Users/<name>/... links; reports get pasted into PRs.
+  it('asks every worker, read-only or editing, for repository-relative path:line and no absolute path or file link', async () => {
+    const { buildSpec } = await lib();
+    const t = CFG.hosts.cline.tiers.medium;
+    for (const access of ['read-only', 'edit']) {
+      const prompt = buildSpec(CFG, 'cline', t, 'TASK-BODY', access, null, 'medium').args.at(-1) as string;
+      expect(prompt, access).toContain('repository-relative path:line');
+      expect(prompt, access).toContain('never an absolute path or file:// link');
+    }
+    for (const f of ['worker-contract.md', 'delegation-brief.md']) expect(fs.readFileSync(path.join(DIR, 'references', f), 'utf8'), f).toContain('repository-relative path:line');
+  });
+
   it('keeps the short "result only" instruction for a read-only worker', async () => {
     const { buildSpec } = await lib();
     const prompt = buildSpec(CFG, 'cline', CFG.hosts.cline.tiers.simple, 'TASK-BODY', 'read-only', null, 'simple').args.at(-1) as string;
@@ -1101,10 +1113,126 @@ describe('the command line, on a replayed statuses file (no host is started)', (
       [['run', '--tier', 'simple', '--prompt', 'x', '--access', 'full', '--dry-run', '--here', 'windows', '--statuses-file', f], 'there is no full-access mode'],
     ] as Array<[string[], string]>) {
       const r = run(args);
-      expect(r.status, args.join(' ')).toBe(1);
+      expect(r.status, args.join(' ')).toBe(64);
       expect(r.out, args.join(' ')).toContain(expected);
       expect(r.out, args.join(' ')).not.toMatch(/TypeError|at .*router\.mjs/);
     }
+  });
+
+  // RF1 (2026-11-14): `run --host` was accepted and ignored, so a run meant for Cline then Antigravity could fall through to Codex or Claude.
+  it('run honours repeated --host like plan: only those hosts are candidates, in priority order', () => {
+    const f = path.join(tmp(), 'statuses.json');
+    fs.writeFileSync(f, JSON.stringify({
+      cline: { windows: status() }, antigravity: { windows: status({ binding: 60 }) },
+      codex: { windows: status() }, claude: { windows: status() },
+    }));
+    const hosts = (extra: string[]): string[] => {
+      const r = run(['run', '--tier', 'medium', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', f, '--cwd', tmp(), ...extra]);
+      expect(r.status, extra.join(' ')).toBe(0);
+      return (r.json as unknown as { would_try: Array<{ host: string }>; plan: Plan }).would_try.map(t => t.host);
+    };
+    expect(hosts([])).toEqual(['cline', 'antigravity', 'codex', 'claude']);
+    expect(hosts(['--host', 'antigravity', '--host', 'cline'])).toEqual(['cline', 'antigravity']);
+    expect(hosts(['--host', 'cline'])).toEqual(['cline']);
+    expect(hosts(['--host', 'codex', '--host', 'claude'])).toEqual(['codex', 'claude']);
+  });
+
+  it('run refuses --pin-host together with --host: one is a single host, the other a list', () => {
+    const r = run(['run', '--tier', 'medium', '--prompt', 'x', '--dry-run', '--pin-host', 'cline', '--host', 'antigravity', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+    expect(r.status).toBe(64);
+    expect(r.out).toContain('--pin-host and --host cannot be combined');
+    expect(r.out).not.toMatch(/TypeError|at .*router\.mjs/);
+  });
+
+  it('a flag that belongs to another command is a usage error, never silently ignored', () => {
+    const f = replay();
+    const common = ['--here', 'windows', '--statuses-file', f];
+    for (const [args, flag] of [
+      [['plan', '--pin-host', 'cline'], '--pin-host'],
+      [['plan', '--dry-run'], '--dry-run'],
+      [['plan', '--access', 'edit'], '--access'],
+      [['status', '--prompt', 'x'], '--prompt'],
+      [['status', '--cwd', '.'], '--cwd'],
+      [['models', '--host', 'cline'], '--host'],
+      [['models', '--tier', 'high'], '--tier'],
+      [['run', '--tier', 'simple', '--prompt', 'x', '--json'], '--json'],
+      [['run', '--tier', 'simple', '--prompt', 'x', '--save'], '--save'],
+      [['machine', '--tier', 'high'], '--tier'],
+    ] as Array<[string[], string]>) {
+      const r = run([...args, ...common]);
+      expect(r.status, args.join(' ')).toBe(64);
+      expect(r.out, args.join(' ')).toContain(`${flag} does not apply to ${args[0]}`);
+    }
+  });
+
+  // RF1b: every "typed it wrong, nothing ran" path exits 64 (the unknown-command code); 1 is kept for a failed run.
+  it('an unknown command, a missing tier and a bad access all exit 64 with nothing started (always --dry-run: a missing prompt is only caught on a terminal)', () => {
+    const f = replay();
+    const common = ['--here', 'windows', '--statuses-file', f];
+    for (const args of [['bogus'], ['run', '--prompt', 'x', '--dry-run', ...common], ['run', '--tier', 'simple', '--prompt', 'x', '--dry-run', '--access', 'full', ...common]]) {
+      expect(run(args).status, args.join(' ')).toBe(64);
+    }
+  });
+
+  // RF2: an empty prompt on a non-terminal stdin used to start a real run. Always --dry-run here, so no host can start even if the check is missing.
+  it('an empty or whitespace-only prompt, from any source, is a usage error (64) and nothing is probed or planned', () => {
+    const f = replay();
+    const dir = tmp();
+    const empty = path.join(dir, 'empty.md'); fs.writeFileSync(empty, '');
+    const blank = path.join(dir, 'blank.md'); fs.writeFileSync(blank, ' \n\t \r\n');
+    const base = ['run', '--tier', 'simple', '--dry-run', '--here', 'windows', '--statuses-file', f, '--cwd', dir];
+    const cases: Array<[string[], string]> = [
+      [['--prompt', ''], ''], [['--prompt', '   '], ''], [['--prompt-file', empty], ''], [['--prompt-file', blank], ''], [[], ''], [[], ' \n\t\n'],
+    ];
+    for (const [extra, input] of cases) {
+      const r = spawnSync(process.execPath, [SCRIPT, ...base, ...extra], { encoding: 'utf8', input, env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+      expect(r.status, `${extra.join(' ')} stdin=${JSON.stringify(input)}`).toBe(64);
+      expect(r.stderr).toContain('prompt is empty');
+      expect(r.stdout, 'nothing planned or printed').toBe('');
+    }
+    const ok = spawnSync(process.execPath, [SCRIPT, ...base, '--prompt', 'x'], { encoding: 'utf8', input: '', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+    expect(ok.status).toBe(0);
+  });
+
+  it('an option the script does not know at all is a usage error too', () => {
+    const r = run(['plan', '--tier', 'medium', '--hosts', 'cline', '--here', 'windows', '--statuses-file', replay()]);
+    expect(r.status).toBe(64);
+    expect(r.out).toMatch(/Unknown option '--hosts'/);
+  });
+
+  it('a skipped side names no file path, and a WSL without node says only that', () => {
+    // seen on a machine whose WSL has no node: every plan and run carried the staged script's temp path, under the user's name
+    const f = path.join(tmp(), 'statuses.json');
+    const noNode = 'Error: wsl bridge returned no JSON (rc=127): /mnt/c/Users/dev/AppData/Local/Temp/har-84776f-lKeHDu/router.mjs: line 1: exec: node: not found';
+    fs.writeFileSync(f, JSON.stringify({
+      cline: { windows: status(), wsl: status({ installed: false, error: noNode } as Partial<Status>) },
+      antigravity: { windows: status({ installed: false, error: 'cannot start C:\\Users\\dev\\AppData\\Local\\agy\\agy.exe now' } as Partial<Status>), wsl: status({ installed: false }) },
+    }));
+    for (const args of [['plan', '--tier', 'medium'], ['run', '--tier', 'medium', '--prompt', 'x', '--dry-run', '--cwd', tmp()]]) {
+      const r = run([...args, '--here', 'windows', '--statuses-file', f]);
+      expect(r.status).toBe(0);
+      const plan = (args[0] === 'plan' ? r.json : (r.json as { plan: unknown }).plan) as unknown as Plan;
+      const reason = (host: string, side: string): string | undefined => plan.skipped.find(s => s.host === host && s.side === side)?.reason;
+      expect(reason('cline', 'wsl')).toBe('not installed or not runnable (WSL has no node)');
+      expect(reason('antigravity', 'windows')).toBe('not installed or not runnable (cannot start <path> now)');
+      expect(reason('antigravity', 'wsl')).toBe('not installed or not runnable');
+      expect(JSON.stringify(plan.skipped)).not.toMatch(/Users|har-84776f/); // the dry run's own cwd is a path by design; the skip reasons are not
+    }
+  });
+
+  it('an invalid or unreadable config file is a usage error (64): the configuration is wrong and nothing ran', () => {
+    const bad = path.join(tmp(), 'config.json');
+    const plan = (): ReturnType<typeof run> => run(['plan', '--tier', 'medium', '--here', 'windows', '--statuses-file', replay()], { HOST_AGENT_ROUTER_CONFIG: bad });
+    fs.writeFileSync(bad, JSON.stringify({ priority: ['nope'] }));
+    const unknownHost = plan();
+    expect(unknownHost.status).toBe(64);
+    expect(unknownHost.out).toMatch(/invalid config[\s\S]*priority lists an unknown host: nope/);
+    expect(unknownHost.json).toBeNull();
+    fs.writeFileSync(bad, '{ "priority": [');
+    const notJson = plan();
+    expect(notJson.status).toBe(64);
+    expect(notJson.out).toMatch(/invalid config[\s\S]*not valid JSON/);
+    expect(notJson.json).toBeNull();
   });
 
   it('refuses to route from inside a routed worker', () => {
@@ -1407,7 +1535,7 @@ describe('an effort choice inside a tier', () => {
         ['plan', '--tier', 'medium', '--effort', 'Bad Name', '--here', 'windows', '--statuses-file', f],
       ]) {
         const r = run(args);
-        expect(r.status, args.join(' ')).toBe(1);
+        expect(r.status, args.join(' ')).toBe(64);
         expect(r.out, args.join(' ')).toMatch(/--effort[^\n]*known: /);
         expect(r.out, args.join(' ')).not.toMatch(/TypeError|at .*router\.mjs/);
       }
@@ -1548,7 +1676,7 @@ describe('skills for the worker (--skill)', () => {
         [['--skill', 'handoff', '--skill', 'handoff'], 'twice'],
       ] as Array<[string[], string]>) {
         const r = run(['run', '--tier', 'simple', '--prompt', 'x', ...flags, '--dry-run', '--here', 'windows', '--statuses-file', missing]);
-        expect(r.status, flags.join(' ')).toBe(1);
+        expect(r.status, flags.join(' ')).toBe(64);
         expect(r.out, flags.join(' ')).toContain(expected);
         expect(r.out, flags.join(' ')).not.toMatch(/ENOENT|TypeError|at .*router\.mjs/);
       }
@@ -1557,12 +1685,12 @@ describe('skills for the worker (--skill)', () => {
     it('--skill belongs to run, and --effort to run, plan and status: the other commands refuse them', () => {
       for (const cmd of ['status', 'plan', 'models', 'machine']) {
         const r = run([cmd, '--skill', 'handoff', '--here', 'windows', '--statuses-file', replay()]);
-        expect(r.status, cmd).toBe(1);
+        expect(r.status, cmd).toBe(64);
         expect(r.out, cmd).toMatch(/--skill.*run/);
       }
       for (const cmd of ['models', 'machine']) {
         const r = run([cmd, '--effort', 'high', '--here', 'windows']);
-        expect(r.status, cmd).toBe(1);
+        expect(r.status, cmd).toBe(64);
         expect(r.out, cmd).toMatch(/--effort.*run, plan and status/);
       }
     });
@@ -1675,9 +1803,9 @@ describe('the documents describe the new behaviour in one wording', () => {
     }
   });
 
-  it('SKILL.md is version 1.1.0 and names the new options', () => {
+  it('SKILL.md is version 1.1.1 and names the new options', () => {
     const t = doc('SKILL.md');
-    expect(t).toMatch(/version: 1\.1\.0/);
+    expect(t).toMatch(/version: 1\.1\.1/);
     for (const w of ['--effort', '--skill', 'router.mjs" machine', '--pin-host']) expect(t, w).toContain(w);
   });
 

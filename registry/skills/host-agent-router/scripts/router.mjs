@@ -18,6 +18,10 @@ import readline from 'node:readline';
 import { parseArgs } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+/** A usage error: the command line was wrong and nothing ran. Exit code 64 (EX_USAGE), the code an unknown command already had; 1 stays for a run that failed. */
+export class UsageError extends Error {}
+export const EXIT_USAGE = 64;
+
 const SELF = fileURLToPath(import.meta.url);
 export const HOSTS = ['cline', 'antigravity', 'codex', 'claude'];
 export const TIERS = ['simple', 'medium', 'high'];
@@ -325,10 +329,22 @@ export function loadConfig(env = process.env) {
   const base = JSON.parse(fs.readFileSync(path.join(path.dirname(SELF), '..', 'assets', 'config.default.json'), 'utf8'));
   const userFile = userConfigFile(env);
   let cfg = base;
-  if (fs.existsSync(userFile)) cfg = mergeConfig(base, JSON.parse(fs.readFileSync(userFile, 'utf8')));
+  if (fs.existsSync(userFile)) {
+    let user;
+    try { user = JSON.parse(fs.readFileSync(userFile, 'utf8')); } catch (e) { throw new UsageError(`invalid config (${userFile}): not valid JSON (${e?.message ?? e})`); }
+    cfg = mergeConfig(base, user);
+  }
   const errs = validateConfig(cfg);
-  if (errs.length) throw new Error(`invalid config (${fs.existsSync(userFile) ? userFile : 'defaults'}):\n- ${errs.join('\n- ')}`);
+  // A wrong config is the operator's to fix and nothing ran: a usage error (64), not a failed run (1).
+  if (errs.length) throw new UsageError(`invalid config (${fs.existsSync(userFile) ? userFile : 'defaults'}):\n- ${errs.join('\n- ')}`);
   return cfg;
+}
+
+/** Why a side was skipped, with no file path in it (a path names the user): a WSL that has no node says only that. */
+export function skipNote(error) {
+  const s = String(error?.message ?? error ?? '');
+  if (/wsl bridge returned no JSON/.test(s) && /node: (?:command )?not found/.test(s)) return 'WSL has no node';
+  return cleanNote(s);
 }
 
 // ----------------------------------------------------------------------------- selection
@@ -356,7 +372,7 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
     const t = resolveEffort(cfg, host, tier, effort);
     const usable = [];
     for (const [side, st] of Object.entries(sides)) {
-      if (!st.installed) skipped.push({ host, side, reason: `not installed or not runnable${st.error ? ` (${st.error})` : ''}` });
+      if (!st.installed) skipped.push({ host, side, reason: `not installed or not runnable${st.error ? ` (${skipNote(st.error)})` : ''}` });
       else if (st.logged_in === false) skipped.push({ host, side, reason: 'not logged in' });
       else {
         const b = st.usage?.binding_pct ?? null;
@@ -383,14 +399,15 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
 
 function preamble(access, tier) {
   const head = `[Routed worker | host-agent-router | tier: ${tier} | access: ${access}] Do not invoke host-agent-router and do not start further routed workers.`;
-  if (access === 'read-only') return `${head} Do not modify, create or delete any file and do not run state-changing commands. Reply with the result only.\n\n`;
+  if (access === 'read-only') return `${head} Do not modify, create or delete any file and do not run state-changing commands. Reply with the result only. Cite files as repository-relative path:line, never an absolute path or file:// link.\n\n`;
   // The worker contract, the same on every host (references/worker-contract.md): the `git-guardrails` rules, then the `handoff` report.
   // The orchestrator checks the report against what the router saw change (`changed` in the result), so it must be factual and complete.
   return `${head} Follow the \`git-guardrails\` skill if you have it, and in any case: never push and never force-push, do not commit (the lead integrates your work), `
     + 'never touch a protected branch (main, master, production, release/*), and never read, print or stage a secret (.env files, keys, tokens). '
     + 'Edit only inside the working directory; do not install packages globally or leave processes running. '
     + 'Finish with a handoff report as your whole reply, in the reply and not in a file (if a `handoff` skill is available to you, follow its state-capture and remaining-work steps), '
-    + 'with exactly these headings: Done (what now works), Changed files (path and one line each), Checks run (command and result, or none), Not done or blocked, Next steps.\n\n';
+    + 'with exactly these headings: Done (what now works), Changed files (path and one line each), Checks run (command and result, or none), Not done or blocked, Next steps. '
+    + 'Cite files as repository-relative path:line, never an absolute path or file:// link (the report may be pasted into a pull request).\n\n';
 }
 
 /** The lead's attached skills, after the contract and before the task. They are guidance: the contract above them stays in force. */
@@ -507,24 +524,24 @@ export function stripFrontMatter(raw) {
  */
 export function resolveSkills(names, root = skillsRoot()) {
   if (names === undefined) return [];
-  if (!Array.isArray(names)) throw new Error('--skill takes a skill name; repeat the flag for more than one');
-  if (names.length > MAX_SKILLS) throw new Error(`at most ${MAX_SKILLS} --skill flags are allowed (got ${names.length})`);
+  if (!Array.isArray(names)) throw new UsageError('--skill takes a skill name; repeat the flag for more than one');
+  if (names.length > MAX_SKILLS) throw new UsageError(`at most ${MAX_SKILLS} --skill flags are allowed (got ${names.length})`);
   const seen = new Set();
   return names.map(name => {
     if (typeof name !== 'string' || !/^[a-z0-9][a-z0-9_-]*$/.test(name)) {
-      throw new Error(`--skill ${JSON.stringify(name)} is not a plain skill name (lowercase letters, digits, - and _; no path)`);
+      throw new UsageError(`--skill ${JSON.stringify(name)} is not a plain skill name (lowercase letters, digits, - and _; no path)`);
     }
-    if (seen.has(name)) throw new Error(`--skill ${JSON.stringify(name)} is named twice`);
+    if (seen.has(name)) throw new UsageError(`--skill ${JSON.stringify(name)} is named twice`);
     seen.add(name);
     const dir = path.join(root, name);
     let isDir = false;
     try { isDir = fs.statSync(dir).isDirectory(); } catch { /* not there */ }
-    if (!isDir) throw new Error(`--skill ${JSON.stringify(name)} is not a skill folder next to host-agent-router (looked in ${root})`);
+    if (!isDir) throw new UsageError(`--skill ${JSON.stringify(name)} is not a skill folder next to host-agent-router (looked in ${root})`);
     const file = path.join(dir, 'SKILL.md');
-    if (!isFile(file)) throw new Error(`--skill ${JSON.stringify(name)}: the folder has no SKILL.md`);
+    if (!isFile(file)) throw new UsageError(`--skill ${JSON.stringify(name)}: the folder has no SKILL.md`);
     const text = stripFrontMatter(fs.readFileSync(file, 'utf8'));
     if (text.length > MAX_SKILL_CHARS) {
-      throw new Error(`--skill ${JSON.stringify(name)} is ${text.length.toLocaleString('en-US')} characters, over the ${MAX_SKILL_CHARS.toLocaleString('en-US')} limit`);
+      throw new UsageError(`--skill ${JSON.stringify(name)} is ${text.length.toLocaleString('en-US')} characters, over the ${MAX_SKILL_CHARS.toLocaleString('en-US')} limit`);
     }
     return { name, chars: text.length, text };
   });
@@ -1118,10 +1135,14 @@ async function cmdPlan(opts, cfg) {
 }
 
 function readPrompt(opts) {
-  if (opts['prompt-file']) return fs.readFileSync(opts['prompt-file'], 'utf8');
-  if (opts.prompt) return opts.prompt;
-  if (!process.stdin.isTTY) return fs.readFileSync(0, 'utf8');
-  throw new Error('no prompt: use --prompt, --prompt-file or pipe it on stdin');
+  let text;
+  if (opts['prompt-file'] !== undefined) text = fs.readFileSync(opts['prompt-file'], 'utf8');
+  else if (opts.prompt !== undefined) text = opts.prompt;
+  else if (!process.stdin.isTTY) text = fs.readFileSync(0, 'utf8');
+  else throw new UsageError('no prompt: use --prompt, --prompt-file or pipe it on stdin');
+  // An empty prompt is never a valid run (seen: an empty piped stdin started a real worker). Checked before any status is read, dry run included.
+  if (!text.trim()) throw new UsageError('the prompt is empty: give --prompt, --prompt-file or stdin some text');
+  return text;
 }
 
 // ----------------------------------------------------------------------------- working-tree guard (edit runs)
@@ -1488,16 +1509,16 @@ async function cmdRun(opts, cfg) {
     return 3;
   }
   const tier = opts.tier;
-  if (!TIERS.includes(tier)) throw new Error(`--tier must be one of ${TIERS.join(', ')}`);
+  if (!TIERS.includes(tier)) throw new UsageError(`--tier must be one of ${TIERS.join(', ')}`);
   const access = opts.access ?? cfg.defaultAccess ?? 'read-only';
-  if (!ACCESS.includes(access)) throw new Error(`--access must be one of ${ACCESS.join(', ')} (there is no full-access mode)`);
+  if (!ACCESS.includes(access)) throw new UsageError(`--access must be one of ${ACCESS.join(', ')} (there is no full-access mode)`);
   const skills = resolveSkills(opts.skill); // a usage error here means no status was read and no host started
   const prompt = readPrompt(opts);
   const cwd = path.resolve(opts.cwd ?? process.cwd());
-  const only = opts['pin-host'] ? [opts['pin-host']] : undefined;
+  const only = opts['pin-host'] ? [opts['pin-host']] : opts.host?.length ? opts.host : undefined; // --pin-host and --host never arrive together (main refuses it)
   const allowCmd = opts['allow-cmd'] ?? [];
   const badCmd = validateAllowCmd(allowCmd);
-  if (badCmd.length) throw new Error(badCmd.join('\n'));
+  if (badCmd.length) throw new UsageError(badCmd.join('\n'));
   const { here, statuses } = await gather(cfg, opts, tier, only, opts.effort);
   const plan = buildPlan(cfg, tier, statuses, here, only, access, opts.effort);
   const cands = plan.candidates.filter(c => !opts['pin-side'] || c.side === opts['pin-side']);
@@ -1608,7 +1629,9 @@ Commands:
   status [--tier T] [--effort E] [--host H...] [--json]   table of every host x side with 5-hour / weekly headroom
   plan   [--tier T] [--effort E] [--host H...]            the routing decision as JSON (starts no model)
   run    --tier T (--prompt S | --prompt-file F | stdin) [--access read-only|edit] [--cwd D] [--effort E]
-         [--skill NAME ...] [--timeout SEC] [--allow-cmd PREFIX ...] [--pin-host H] [--pin-side S] [--dry-run]
+         [--skill NAME ...] [--timeout SEC] [--allow-cmd PREFIX ...] [--host H...] [--pin-host H] [--pin-side S] [--dry-run]
+         --host H (repeat it) limits the candidates to those hosts, still in priority order, and a fall-through stays inside them; --pin-host H is one host
+         with no fall-through; the two cannot be combined. A flag that does not belong to the command given is a usage error.
          --timeout defaults per tier (config timeoutSeconds); --allow-cmd adds a command prefix the worker may run (its acceptance command).
          --effort E picks a setting inside the tier where a host has one (config tiers.<tier>.efforts); a host without it keeps its
          default and the result says so. An effort no candidate host knows is a usage error.
@@ -1620,7 +1643,7 @@ Commands:
 Tiers: simple, medium, high.   Hosts: cline, antigravity, codex, claude.   Access defaults to read-only.
 Replay aids: --here windows|wsl|local, --statuses-file FILE (use captured statuses instead of probing).
 Config: assets/config.default.json, overridden by ~/.agents/host-agent-router/config.json or $HOST_AGENT_ROUTER_CONFIG.
-Exit codes: 0 ok, 1 the run failed, 2 no usable host/side, 3 refused (inside a routed worker).
+Exit codes: 0 ok, 1 the run failed, 2 no usable host/side, 3 refused (inside a routed worker), 64 usage error or invalid config (nothing ran).
 `;
 
 const OPTIONS = {
@@ -1631,8 +1654,19 @@ const OPTIONS = {
   effort: { type: 'string' }, skill: { type: 'string', multiple: true }, save: { type: 'boolean' },
 };
 
+/** The options each command accepts (besides --help). Anything else is a usage error: a flag that does nothing is how a safe-looking run goes wrong. */
+const COMMAND_OPTIONS = {
+  status: ['tier', 'effort', 'host', 'json', 'here', 'statuses-file'],
+  plan: ['tier', 'effort', 'host', 'here', 'statuses-file'],
+  run: ['tier', 'effort', 'host', 'prompt', 'prompt-file', 'access', 'cwd', 'timeout', 'allow-cmd', 'pin-host', 'pin-side', 'skill', 'dry-run', 'here', 'statuses-file'],
+  models: ['here'],
+  machine: ['here', 'save'],
+};
+
 export async function main(argv) {
-  const { values: opts, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true });
+  let parsed;
+  try { parsed = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true }); } catch (e) { throw new UsageError(e.message); }
+  const { values: opts, positionals } = parsed;
   const cmd = positionals[0];
   if (!cmd || opts.help) { process.stdout.write(USAGE); return 0; }
   if (cmd in LOCAL) { // internal re-entry used for the other side: one JSON line, no pretty printing
@@ -1643,20 +1677,25 @@ export async function main(argv) {
   if (!handler) { process.stderr.write(`unknown command: ${cmd}\n\n${USAGE}`); return 64; }
   const SIDES = ['windows', 'wsl', 'local'];
   const oneOf = (flag, value, allowed, note = '') => {
-    if (value !== undefined && !allowed.includes(value)) throw new Error(`${flag} must be one of ${allowed.join(', ')}${note}`);
+    if (value !== undefined && !allowed.includes(value)) throw new UsageError(`${flag} must be one of ${allowed.join(', ')}${note}`);
   };
+  if (opts['pin-host'] && opts.host?.length) throw new UsageError('--pin-host and --host cannot be combined: --pin-host is one host with no fall-through, --host lists the hosts a fall-through may use');
   oneOf('--tier', opts.tier, TIERS);
   for (const h of opts.host ?? []) oneOf('--host', h, HOSTS);
   oneOf('--pin-host', opts['pin-host'], HOSTS);
   oneOf('--pin-side', opts['pin-side'], SIDES);
   oneOf('--here', opts.here, SIDES);
   oneOf('--access', opts.access, ACCESS, ' (there is no full-access mode)');
-  if (opts.skill && cmd !== 'run') throw new Error('--skill belongs to run');
-  if (opts.effort !== undefined && !['status', 'plan', 'run'].includes(cmd)) throw new Error('--effort belongs to run, plan and status');
+  if (opts.skill && cmd !== 'run') throw new UsageError('--skill belongs to run');
+  if (opts.effort !== undefined && !['status', 'plan', 'run'].includes(cmd)) throw new UsageError('--effort belongs to run, plan and status');
+  for (const flag of Object.keys(opts)) {
+    if (flag === 'help') continue;
+    if (!COMMAND_OPTIONS[cmd].includes(flag)) throw new UsageError(`--${flag} does not apply to ${cmd} (${cmd} takes: ${COMMAND_OPTIONS[cmd].map(f => `--${f}`).join(', ')})`);
+  }
   const cfg = loadConfig();
   if (opts.effort !== undefined) {
-    const bad = checkEffort(cfg, opts.tier ?? 'medium', opts.effort, cmd === 'run' ? (opts['pin-host'] ? [opts['pin-host']] : undefined) : opts.host);
-    if (bad) throw new Error(bad);
+    const bad = checkEffort(cfg, opts.tier ?? 'medium', opts.effort, cmd === 'run' && opts['pin-host'] ? [opts['pin-host']] : opts.host);
+    if (bad) throw new UsageError(bad);
   }
   return handler(opts, cfg);
 }
@@ -1666,6 +1705,6 @@ try { invokedDirectly = Boolean(process.argv[1]) && pathToFileURL(fs.realpathSyn
 if (invokedDirectly) {
   main(process.argv.slice(2)).then(
     code => { process.exitCode = code; },
-    e => { process.stderr.write(`${e?.message ?? e}\n`); process.exitCode = 1; },
+    e => { process.stderr.write(`${e?.message ?? e}\n`); process.exitCode = e instanceof UsageError ? EXIT_USAGE : 1; },
   );
 }

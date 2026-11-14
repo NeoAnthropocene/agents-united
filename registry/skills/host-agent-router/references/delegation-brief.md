@@ -26,7 +26,7 @@ Out of scope, must not touch: <files, folders, config, dependencies, and anythin
 Requirements: <behaviour, names, signatures, edge cases, one line each>
 Acceptance: <the exact command and the result that means done; ask for the summary line to be quoted>
 Do not run: <the repository's whole install, build or test suite, unless the acceptance needs it>
-Report: use the `handoff` skill if you have it; reply with the report, do not write a file.
+Report: use the `handoff` skill if you have it; reply with the report, do not write a file; cite files as repository-relative path:line, never an absolute path.
 ```
 
 Split work so each brief has one goal and a disjoint scope; two workers never share a file.

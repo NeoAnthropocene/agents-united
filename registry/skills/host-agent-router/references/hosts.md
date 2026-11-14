@@ -55,7 +55,9 @@ Antigravity's defaults follow `agy models`. On the second machine (2026-11-13) i
 
 Hydrogen's quota group: `/usage` (the 2026-11-06 capture in the repository, and again on the second machine on 2026-11-13, with no model started) names three groups, Gemini Models (described as Gemini Flash and Gemini Pro; weekly and 5-hour buckets), Claude and GPT models (weekly and 5-hour) and Gemini 4 Argon (a weekly bucket only), and none names Hydrogen. The `gemini-` prefix in `quotaGroups` therefore charges Hydrogen to Gemini Models and Argon to its own group. That Hydrogen counts in Gemini Models and that only Argon has its own group was confirmed by the maintainer in the Antigravity app on 2026-11-13 (the Gemini Models quotas went down after the Hydrogen runs). If `/usage` ever shows a group of its own for Hydrogen, add a `gemini-4-hydrogen` entry to `quotaGroups` in your config.
 
-`high` on Cline is for genuinely hard problems only: it uses a large share of the 5-hour quota. Keep other high-tier work off Cline with `--pin-host <host>` on `run`, `--host <host>` on `status` and `plan`, or by moving `cline` down `priority` in your config. (Cline's `high` is `cline-pass/kimi-k3.1-pro`; its share of the quota is the maintainer's report, not something the router can measure, because Cline has no usage readout.)
+`high` on Cline is for genuinely hard problems only: it uses a large share of the 5-hour quota. Keep other high-tier work off Cline with `--host <host>` (repeat it for a list; on `run` a fall-through stays inside the list) or `--pin-host <host>` (`run` only, one host, no fall-through; not together with `--host`), or by moving `cline` down `priority` in your config. (Cline's `high` is `cline-pass/kimi-k3.1-pro`; its share of the quota is the maintainer's report, not something the router can measure, because Cline has no usage readout.)
+
+Router exit codes: 0 ok, 1 the run failed, 2 no usable host or side, 3 refused inside a routed worker, 64 usage error (a wrong flag, a missing or empty prompt, `--pin-host` with `--host`, an invalid config file: nothing ran).
 
 An effort inside a tier is an optional `efforts` map on that tier in the config. The key is the name given to `--effort`; the value is either a plain effort value (a host whose effort is a flag, for example `"extra": "xhigh"` for Codex; the model stays) or `{ "label", "model", "effort" }` (any of them overrides the tier's; a host whose effort is part of the model name, Antigravity, needs a `model`). The tier's own default effort is always a valid name. The user config merges into it key by key, so one effort can be changed or added without restating the others. With `--effort`, a host whose tier has no such entry keeps its default and the result carries a note (`effort_note` on its candidate and in `ran`); a name that no host in scope knows is a usage error. `ran` always shows the model and effort that were used. Only Antigravity ships effort entries; the other hosts' effort values are not listed offline, so none is claimed here.
 
@@ -125,6 +127,17 @@ Spend, round 2. Cline: 8 sessions (four of them finding how hooks load, one fail
 
 Cost, from Cline's own session history (the only measure ClinePass gives; `totalCost` is always 0): a read-only one-shot used about 30k input tokens, and an edit run 150k to 300k (mostly cache reads, 148k to 258k) with 0.7k to 1.9k output, because every iteration resends the tool schemas and the skill list. The 11 sessions of this round used 1.72M input tokens (1.38M cache reads) and 9.8k output; the two killed runs report no usage. The flat subscription meters its 5-hour, weekly and monthly limits in a unit this does not convert to, so none of this says what fraction of a window was spent. A worker sees the globally installed `host-agent-router` skill in its list; the recursion guard held (it said it was told not to invoke it).
 
+### Round 3: two read-only reviews side by side (2026-11-14, reported by the lead)
+
+Two read-only reviews of about eight files each, both `--tier medium`, started together from one checkout. Raw results were kept by the lead.
+
+| Run | Time | Tokens | Report |
+|---|---|---|---|
+| Cline `cline-pass/glm-5.3`, `--timeout 1200` | 868.3 s | input 4,376,822 (3,968,384 read from cache), output 7,537 | good, four verified findings |
+| Antigravity `gemini-4-hydrogen-high`, `--effort high` | 165.2 s | input 124,270, output 41,961, cache read 209,007 | good, seven findings, four verified when written |
+
+A read-heavy review on Cline at the medium tier came within about 30 s of the default 900 s timeout and read 4.4 million input tokens, a real cost to a 5-hour window whose headroom the router cannot see. Prefer Antigravity for reviews, or pass `--timeout 1200` or more on Cline. The result's `usage` keeps each host's own key names (Cline `inputTokens`, Antigravity `input_tokens`).
+
 ## Known limits
 
 - Where the same account is signed in on both sides, the figures match and the side choice is a tie; the current side wins.
@@ -150,7 +163,7 @@ Windows 11 with WSL present but without Node. Install routes seen on that machin
 
 - Codex 0.169.0 installed through npm on Windows: `AppData\Roaming\npm\codex.cmd` beside `node_modules/@openai/codex`. The router starts it as `node <package entry>`, the way it starts Cline, because neither npm shim can be spawned directly (`npmShimCommand`); the Codex run listed below came after this lookup fix.
 - Antigravity as `agy.exe` on Windows (`AppData\Local\agy\bin`); Cline through npm on Windows.
-- Every WSL side reports "not runnable": the bridge answers `exec: node: not found`, so `status` skips those candidates and `models` shows an error for WSL. Codex is not installed in WSL there.
+- Every WSL side reports "not runnable": the bridge answers `exec: node: not found`, so `status` skips those candidates and `models` shows an error for WSL. In `plan` and `run` the reason reads `not installed or not runnable (WSL has no node)`; any other skip reason is shown with file paths replaced by `<path>`, because a path names the user. Codex is not installed in WSL there.
 - `router.mjs machine`, run on 2026-11-13 for this update, reported (the `--version` lines): Cline 3.0.74 (npm entry), Antigravity 1.5.8 (exe), Codex 0.169.0 (npm entry), Claude Code 2.1.323 (exe).
 - Read-only runs at the simple tier, seen live on 2026-11-13 (reported to this update by the lead, not run by it): Antigravity on Windows with `gemini-3.8-flash-medium`, Cline on Windows with `cline-pass/deepseek-v4.1-flash-1017`, and Codex on Windows with `gpt-6.1-terra` (after the npm lookup fix).
 - Codex edit runs: `editSide` is `wsl` and there is no usable WSL side, so the router uses the Windows side. That side's sandbox failed for edits on the first machine (started in `C:\` without `node`). On this machine it edited the file (see the edit runs below) but could not run the acceptance command.

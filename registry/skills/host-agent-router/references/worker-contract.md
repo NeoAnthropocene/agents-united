@@ -15,7 +15,7 @@ its own record of what changed. A rule in a prompt is a request; a control is en
 
 The worker's whole reply, in the reply and not in a file: **Done**, **Changed files**, **Checks run** (command and result), **Not done or
 blocked**, **Next steps**. A worker that can see the `handoff` skill follows its state-capture and remaining-work steps; one that cannot
-still gets the headings from the prompt. The lead compares **Changed files** with the router's `changed`.
+still gets the headings from the prompt. The lead compares **Changed files** with the router's `changed`. Files are cited as repository-relative path:line, never an absolute path or a `file://` link: a report may be pasted into a pull request, and an absolute path carries the local user name (seen on 2026-11-14). The router adds this sentence to every worker prompt, read-only runs too.
 
 ## What enforces it, per host (checked on 2026-11-07, Plan 049)
 
