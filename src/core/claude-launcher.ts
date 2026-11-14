@@ -1,12 +1,15 @@
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'fs-extra';
+import { isDeepStrictEqual } from 'node:util';
+import { assertClaudeFactorySelection, readClaudeFactoryMain } from './claude-factory-start.js';
 import { ClaudeCapabilityProbe } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { defaultProcessRunner } from './cline-capabilities.js';
 import { resolveStateDir } from './state-dir.js';
 import type {
   ClaudeCapabilityReport,
+  ClaudeFactoryMainSelection,
   InstallScope,
   LockfileManifest,
   ProcessRunner,
@@ -23,6 +26,7 @@ export interface ClaudeActivationPlan {
   argv: string[];
   bootstrapPrompt: string;
   env: Record<string, string>;
+  nativeFactoryMain?: ClaudeFactoryMainSelection;
 }
 
 export interface PlanClaudeActivationOptions {
@@ -30,6 +34,7 @@ export interface PlanClaudeActivationOptions {
   workspace: string;
   scope: InstallScope;
   report: ClaudeCapabilityReport;
+  nativeFactoryMain?: ClaudeFactoryMainSelection;
   prompt?: string;
   /** Optional coordinator agent filename (e.g. "orchestrator-universal.md"). Resolved from the bundle
    *  definition by the caller; defaults to orchestrator-engineering.md for backward compatibility. */
@@ -107,9 +112,11 @@ export class ClaudeLauncher {
   public async resolveInstallation(
     bundleName: string,
     options: ResolveClaudeInstallationOptions = {}
-  ): Promise<{ scope: InstallScope; workspace: string; lockfile: LockfileManifest; manifestPath: string }> {
-    const cwd = options.cwd || process.cwd();
+  ): Promise<{ scope: InstallScope; workspace: string; lockfile: LockfileManifest; manifestPath: string; nativeFactoryMain?: ClaudeFactoryMainSelection }> {
+    const cwd = bundleName === 'agent-factory' ? path.resolve(options.cwd || process.cwd()) : options.cwd || process.cwd();
     const isGlobal = !!options.global;
+    const factory = bundleName === 'agent-factory';
+    if (factory && (isGlobal || options.scope === 'global')) throw new Error('Claude factory startup requires a project native installation; global startup is unavailable.');
 
     let targetDir: string;
     let scope: InstallScope;
@@ -128,7 +135,7 @@ export class ClaudeLauncher {
 
     const lockfilePath = path.join(targetDir, 'agents-united.json');
     if (!await fs.pathExists(lockfilePath)) {
-      if (!isGlobal) {
+      if (!isGlobal && !factory) {
         // Check if global installation exists as fallback
         const globalTarget = resolveStateDir('global');
         const globalLockfile = path.join(globalTarget, 'agents-united.json');
@@ -158,7 +165,7 @@ export class ClaudeLauncher {
     const manifestRel = `.agents/plugins/${bundleName}/agents-united/teams/${bundleName}.yaml`;
     const manifestPath = path.join(workspace, manifestRel);
 
-    if (!hasClaudeFanout && !await fs.pathExists(manifestPath)) {
+    if (!factory && !hasClaudeFanout && !await fs.pathExists(manifestPath)) {
       throw new Error(
         `Bundle '${bundleName}' is not projected to Claude. Run 'agents update ${bundleName} --fanout claude' first.`
       );
@@ -169,6 +176,7 @@ export class ClaudeLauncher {
       workspace,
       lockfile,
       manifestPath,
+      ...(factory ? { nativeFactoryMain: readClaudeFactoryMain(workspace) } : {}),
     };
   }
 
@@ -197,7 +205,15 @@ export class ClaudeLauncher {
       source: 'path-executable' as const,
     };
 
-    const coordinatorName = ClaudeLauncher.resolveCoordinatorName(orchestrator);
+    const factory = bundleName === 'agent-factory';
+    if (factory) {
+      assertClaudeFactorySelection(options.nativeFactoryMain);
+      if (scope !== 'project' || !path.isAbsolute(workspace) || background || teams || process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === '1' || pluginDir || (orchestrator && ClaudeLauncher.resolveCoordinatorName(orchestrator) !== options.nativeFactoryMain.name)) {
+        throw new Error('Claude factory startup supports only foreground project native sessions without background, plugin or teams options.');
+      }
+      if (command.prefixArgs.some(arg => /^--(?:bg|plugin-dir|agent|add-dir)(?:=|$)/.test(arg))) throw new Error('Claude factory executable prefix must not override the checked foreground plan.');
+    } else if (options.nativeFactoryMain) throw new Error('Factory main selection does not match the requested bundle.');
+    const coordinatorName = factory ? options.nativeFactoryMain!.name : ClaudeLauncher.resolveCoordinatorName(orchestrator);
     const homePrefix = scope === 'global' ? '~/' : '';
     const manifestRel = `${homePrefix}.agents/plugins/${bundleName}/agents-united/teams/${bundleName}.yaml`;
     // The projected coordinator definition. Read-only reference: this launcher never writes under
@@ -253,7 +269,15 @@ export class ClaudeLauncher {
       'If your coordinator definition has a section named "The first message", follow it in your first message, ' +
       'before anything else.';
 
-    const bootstrapLines = [
+    const bootstrapLines = factory ? [
+      'You are the installed Agents United artifact factory coordinator.',
+      `Read your checked native main at ".claude/agents/${coordinatorName}.md" and its required "coordinate-artifact" preload before acting.`,
+      'The fixed ordinary foreground worker map is factory-realizer for bounded native draft creation/update and factory-evaluator for fresh independent read-only review. Inspect the actual Host result and refuse an unsupported fork, teammate, background or partial mechanism.',
+      'Use the supplied fixed job and caller-held digests. Keep draftRoot and evidenceRoot physically disjoint from each other, the selected source checkout and managed/protected paths. Verify final bytes and installed P2/P5 check results before reporting a candidate; repair defaults to zero and needs explicit bounded authorization.',
+      'Installed .claude/ files are managed runtime copies: do not edit them. In the selected authoritative source checkout, registry/core/ owns shared pairs, registry/hosts/claude/ owns native definitions and loaders, and registry/skills/ owns shared Skill support. The optional .agents/ store is not the authoritative native source registry. If those sources are unavailable, report the dependent authoring work unavailable.',
+      firstMessageText,
+      taskText,
+    ] : [
       `You are coordinating the "${bundleName}" team in Agents United.`,
       manifestInstruction,
       firstMessageText,
@@ -324,6 +348,7 @@ export class ClaudeLauncher {
       argv,
       bootstrapPrompt,
       env,
+      ...(factory ? { nativeFactoryMain: options.nativeFactoryMain } : {}),
     };
   }
 
@@ -332,6 +357,17 @@ export class ClaudeLauncher {
    * (never `shell: true`), `stdio: 'inherit'`, and the plan's ephemeral env merged over `process.env`.
    */
   public async launch(plan: ClaudeActivationPlan): Promise<void> {
+    if (plan.bundleName === 'agent-factory' || plan.nativeFactoryMain || plan.argv.some((arg, index) => arg === '--agent=orchestrator-agent-factory' || (arg === '--agent' && plan.argv[index + 1] === 'orchestrator-agent-factory'))) {
+      assertClaudeFactorySelection(plan.nativeFactoryMain);
+      const agent = plan.argv.indexOf('--agent');
+      if (plan.bundleName !== 'agent-factory' || plan.scope !== 'project' || !path.isAbsolute(plan.workspace) || agent < 0
+        || plan.argv.filter(arg => /^--agent(?:=|$)/.test(arg)).length !== 1 || plan.argv[agent + 1] !== plan.nativeFactoryMain.name
+        || plan.argv.filter(arg => arg.startsWith('--add-dir')).length !== 1 || !plan.argv.includes(`--add-dir=${plan.workspace}`)
+        || plan.argv.some(arg => /^--(?:bg|plugin-dir)(?:=|$)/.test(arg)) || plan.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS !== undefined || process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === '1') {
+        throw new Error('Claude factory launch requires its checked foreground project plan without background, plugin or teams options.');
+      }
+      if (!isDeepStrictEqual(readClaudeFactoryMain(plan.workspace), plan.nativeFactoryMain)) throw new Error('Claude factory installed closure changed after planning; resolve and plan again.');
+    }
     const { spawn } = await import('node:child_process');
     const child = spawn(plan.executable, plan.argv, {
       cwd: plan.workspace,

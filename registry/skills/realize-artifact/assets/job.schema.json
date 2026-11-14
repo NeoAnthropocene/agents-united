@@ -1,0 +1,584 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Factory job v1",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "operation": {
+      "enum": [
+        "create",
+        "update"
+      ]
+    },
+    "intent": {
+      "enum": [
+        "local",
+        "upstream"
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "agent"
+        },
+        "definition": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        },
+        "loading": {
+          "enum": [
+            "subagent",
+            "main"
+          ]
+        },
+        "requiredSkills": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "minItems": 0,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "type",
+        "definition",
+        "paths",
+        "loading",
+        "requiredSkills"
+      ],
+      "additionalProperties": false
+    },
+    "authoringHost": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "const": "claude"
+        },
+        "product": {
+          "const": "Claude Code CLI"
+        },
+        "scope": {
+          "const": "workspace"
+        },
+        "lane": {
+          "const": "native"
+        },
+        "observedVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "host",
+        "product",
+        "scope",
+        "lane",
+        "observedVersion",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "targetHost": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "const": "claude"
+        },
+        "product": {
+          "const": "Claude Code CLI"
+        },
+        "scope": {
+          "const": "workspace"
+        },
+        "lane": {
+          "const": "native"
+        },
+        "observedVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimum": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewedAgainst": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "host",
+        "product",
+        "scope",
+        "lane",
+        "observedVersion",
+        "reason",
+        "minimum",
+        "reviewedAgainst"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "checkout": {
+          "type": "string",
+          "minLength": 1
+        },
+        "head": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "registry": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "checkout",
+        "head",
+        "registry"
+      ],
+      "additionalProperties": false
+    },
+    "roots": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "draft": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "managed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        },
+        "protected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "workspace",
+        "draft",
+        "evidence",
+        "managed",
+        "protected"
+      ],
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "guide",
+              "snapshot",
+              "observation",
+              "profile",
+              "tool-policy",
+              "core",
+              "contract",
+              "loading",
+              "guard",
+              "support",
+              "validator",
+              "runtime",
+              "template"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 1000
+          },
+          "status": {
+            "enum": [
+              "clear",
+              "held"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "path",
+          "sha256",
+          "sections",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 1000
+    },
+    "baseline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "snapshot": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "bytes",
+          "snapshot"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 1000
+    },
+    "preserved": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 1000
+    },
+    "allowedChanges": {
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "maxItems": 1000
+        },
+        "update": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "maxItems": 1000
+        },
+        "delete": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "additionalProperties": false
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "maxFiles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "maxFileBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "maxTotalBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4194304
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        },
+        "fixedValues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "contains": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "path",
+              "contains"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 1000
+        },
+        "prohibitedActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "maxFiles",
+        "maxFileBytes",
+        "maxTotalBytes",
+        "formats",
+        "fixedValues",
+        "prohibitedActions"
+      ],
+      "additionalProperties": false
+    },
+    "acceptance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requiredChecks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "minItems": 1,
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "requiredChecks"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 1000
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "executable": {
+            "type": "string",
+            "minLength": 1
+          },
+          "argv": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0,
+            "maxItems": 1000
+          },
+          "cwd": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timeoutSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 600
+          }
+        },
+        "required": [
+          "id",
+          "required",
+          "executable",
+          "argv",
+          "cwd",
+          "timeoutSeconds"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 6
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "maxChecks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "maxSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "maxLogBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "hostSessions": {
+          "const": false
+        },
+        "modelCalls": {
+          "const": false
+        },
+        "providerCalls": {
+          "const": false
+        },
+        "maxUsd": {
+          "const": 0
+        },
+        "maxPrompts": {
+          "const": 0
+        }
+      },
+      "required": [
+        "maxChecks",
+        "maxSeconds",
+        "maxLogBytes",
+        "hostSessions",
+        "modelCalls",
+        "providerCalls",
+        "maxUsd",
+        "maxPrompts"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "version",
+    "id",
+    "operation",
+    "intent",
+    "artifact",
+    "authoringHost",
+    "targetHost",
+    "source",
+    "roots",
+    "inputs",
+    "baseline",
+    "preserved",
+    "allowedChanges",
+    "constraints",
+    "acceptance",
+    "checks",
+    "budget"
+  ],
+  "additionalProperties": false
+}

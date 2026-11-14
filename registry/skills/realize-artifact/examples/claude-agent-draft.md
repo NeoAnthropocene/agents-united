@@ -1,0 +1,11 @@
+# Worked example: original Claude agent draft
+
+The caller supplies original `subagent-example.core.md` and its companion contract, with a narrow read/search/report/handback capability set and empty permitted workflows/skills/custom hooks. It selects Claude agent target, CLI/workspace/native, supplied profile/tool policy, baseline native read-only guard and pinned guide/snapshots. Empty custom semantic hooks do not disable a native baseline guard. No host session runs.
+
+1. Caller fixes a create job with artifact path `hosts/claude/agents/example.md`, empty baseline, that one allowed create, draft/evidence separated from validation checkout and managed output. It pins actual inputs/runtime/CLI and retains the canonical job digest. The caller runs the pair-only validator before dispatch.
+2. The worker runs installed preflight, reads the fixed evidence, renders exact supplied floor bytes and a useful native review prompt. It derives native tools from the fixed classes, registers the reviewed read-only guard and does not add memory or a tool-expanded server. It declares optional absent affordances plainly.
+3. The caller's named native check runs against actual draft bytes. The worker saves the complete raw outputs/exit, fills inventory/diff/coverage/deltas/provenance and returns a schema-valid report with quality pending/live unverified. Installed postflight checks the record; caller independently reads and validates final files. This is a prepared draft, not invocation proof.
+
+For a description-only update, snapshot both the existing agent and `unrelated.md`, including immutable evidence bytes/hashes. Authorize update only for the agent. Preserve the note byte-for-byte. The complete final inventory still includes the note; a forged clean inventory cannot hide a real change. A stale baseline, changed core, missing guard or extra output blocks acceptance. Use blocked/partial status and an explicit remedy instead of broadening scope.
+
+Anti-patterns: replacing the caller's digest after editing the job, deleting notes during repair, treating successful `--help` as validator execution, copying agency team shutdown into an ordinary worker, or claiming an unavailable evaluator approved the draft.

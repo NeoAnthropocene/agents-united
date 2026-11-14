@@ -88,6 +88,18 @@
       "recoveredAt": "2026-10-25",
       "skill": "audiovisual-review"
     },
+    "author-bundle": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-10",
+      "skill": "author-bundle"
+    },
+    "author-contract": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-28",
+      "skill": "author-contract"
+    },
     "author-skill": {
       "declaredLicence": "MIT",
       "provenance": "in-house",
@@ -265,6 +277,12 @@
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
       "skill": "conversion-funnel-optimization"
+    },
+    "coordinate-artifact": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-12",
+      "skill": "coordinate-artifact"
     },
     "copywriting-frameworks": {
       "provenance": "in-house",
@@ -471,6 +489,12 @@
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
       "skill": "email-marketing-automation"
+    },
+    "evaluate-artifact": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-29",
+      "skill": "evaluate-artifact"
     },
     "expo-cicd-workflows": {
       "declaredLicence": "MIT",
@@ -1176,6 +1200,12 @@
       ],
       "snapshot": true,
       "source": "https://skills.sh/vercel-labs/agent-skills/react-best-practices"
+    },
+    "realize-artifact": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-28",
+      "skill": "realize-artifact"
     },
     "receiving-code-review": {
       "provenance": "in-house",

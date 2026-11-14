@@ -29,3 +29,7 @@ scripts/cloud-session-start.sh  text eol=lf
 # Host docs library (Plan 032): vendor doc snapshots and upstream skill folders are hashed data.
 # No line-ending conversion, so bytes (and lockfile hashes) match on every platform.
 host-library/** -text
+
+# Packaged frozen skill-quality corpus (Plan 033 P8a): skill-check pins its exact SHA-256, so the
+# bytes must be LF on every platform and in the npm package.
+registry/quality/skill-boilerplate-corpus.txt text eol=lf

@@ -283,6 +283,7 @@ export class UpdateEngine {
         await this.installer.install(record.name, {
           scope: record.scope, method: record.method, hosts: [record.host],
           targetDir: record.targetDir, fanout: options.fanout, dryRun: true,
+          force: options.force,
         });
       }
     }
@@ -299,6 +300,7 @@ export class UpdateEngine {
             targetDir: record.targetDir,
             fanout: options.fanout,
             dryRun: true,
+            force: options.force,
           });
           if (dryResult.projections) {
             dryProjections.push(...dryResult.projections);

@@ -6,7 +6,8 @@
  *
  * The records are the host's, not the model's answer. Nothing here calls a model or a network; a
  * transcript is read, never changed. `trimSession` writes a small, sanitised copy for use as a test
- * fixture (no account data, no system prompt, no instruction files, strings cut short).
+ * fixture (known account/system attachments omitted, text bounded and partly masked). Inspect derived copies before sharing;
+ * this is not comprehensive privacy or credential scrubbing.
  *
  *   npm run hostlib:session -- <lead.jsonl | session-id> [--project <dir>] [--json]
  *   npm run hostlib:session -- trim <lead.jsonl> --out <dir>
@@ -15,79 +16,20 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import type {
+  ClaudeSessionToolCall as ToolCall, ClaudeSessionReportEvidence as ReportEvidence,
+  ClaudeSessionAgentRecord as AgentRecord, ClaudeSession as Session,
+  ClaudeSessionVerdict as Verdict, ClaudeSessionFinding as Finding,
+  ClaudeSessionAnalysis as Analysis, ClaudeSessionAnalysisOptions,
+} from '../../src/core/types.ts';
+export type {
+  ClaudeSessionToolCall as ToolCall, ClaudeSessionReceived as Received,
+  ClaudeSessionReportEvidence as ReportEvidence, ClaudeSessionAgentRecord as AgentRecord,
+  ClaudeSession as Session, ClaudeSessionVerdict as Verdict,
+  ClaudeSessionFinding as Finding, ClaudeSessionAnalysis as Analysis,
+} from '../../src/core/types.ts';
+
 type Json = Record<string, unknown>;
-
-export interface ToolCall {
-  id: string;
-  name: string;
-  input: Json;
-  at: string;
-  isError?: boolean;
-  result?: string;
-  /** The id of the model response that issued the call: two calls with one id were issued together, before either result was read. */
-  messageId?: string;
-}
-
-export interface Received {
-  from: string;
-  at: string;
-  kind: string;
-  text: string;
-}
-
-/** One report attempt: a final assistant text, or a SubagentHandback call with the state of the host's matching result. Submission order is record order. */
-export interface ReportEvidence {
-  source: 'assistant-text' | 'subagent-handback';
-  text: string;
-  at: string;
-  toolUseId?: string;
-  /** Hand-back only: `pending` has no matching result, `accepted` a non-error result with boolean success true, `rejected` an error or success false, `unknown` anything else. */
-  state?: 'pending' | 'accepted' | 'rejected' | 'unknown';
-}
-
-export interface AgentRecord {
-  name: string;
-  isLead: boolean;
-  customAgentType?: string;
-  taskKind?: string;
-  teamName?: string;
-  permissionMode?: string;
-  metaModel?: string;
-  models: string[];
-  calls: ToolCall[];
-  received: Received[];
-  finalText: string;
-  /** Every report attempt in submission order. Absent on a record built by hand; `finalText` keeps its meaning of the latest assistant text. */
-  reports?: ReportEvidence[];
-  firstPrompt: string;
-}
-
-export interface Session {
-  sessionId: string;
-  cwd?: string;
-  version?: string;
-  agentSetting?: string;
-  permissionMode?: string;
-  startedAt?: string;
-  endedAt?: string;
-  prompts: number;
-  cost?: { totalCostUSD: number; totalAPIDurationMs?: number; totalDurationMs?: number; byModel: Record<string, { inputTokens: number; outputTokens: number; cacheReadInputTokens: number; costUSD: number }> };
-  agents: AgentRecord[];
-}
-
-export type Verdict = 'seen' | 'not seen' | 'violation' | 'not applicable';
-
-export interface Finding {
-  id: string;
-  title: string;
-  verdict: Verdict;
-  evidence: string[];
-}
-
-export interface Analysis {
-  session: Session;
-  findings: Finding[];
-}
 
 const GUARD_MARK = 'Blocked by agents-united guard';
 const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit']);
@@ -142,9 +84,11 @@ export function parseTeammateMessages(content: string): Array<{ from: string; ki
 }
 
 /** Peer input is recorded as a user message too; it is task data, not a human prompt or a team lifecycle event. */
+const SESSION_MESSAGES = /<(teammate-message|cross-session-message)\b([^>]*)>([\s\S]*?)<\/\1>/g;
+
 export function parseSessionMessages(content: string): Array<{ from: string; kind: string; text: string }> {
   const out: Array<{ from: string; kind: string; text: string }> = [];
-  for (const match of content.matchAll(/<(teammate-message|cross-session-message)\b([^>]*)>([\s\S]*?)<\/\1>/g)) {
+  for (const match of content.matchAll(SESSION_MESSAGES)) {
     if (match[1] === 'teammate-message') out.push(...parseTeammateMessages(match[0]));
     else out.push({ from: /\bfrom-name="([^"]*)"/.exec(match[2] ?? '')?.[1] ?? 'unknown', kind: 'cross-session', text: (match[3] ?? '').trim() });
   }
@@ -405,7 +349,11 @@ function shutdownFinding(session: Session): Finding {
   return { id: 'H1b', title: 'Shutdown is asked with a structured shutdown_request', verdict, evidence };
 }
 
-function rereadFinding(session: Session): Finding {
+function rereadFinding(session: Session, options?: ClaudeSessionAnalysisOptions): Finding {
+  if (options?.roleEvidence === 'unavailable') return {
+    id: 'H1c', title: 'Shell-less roles re-read their files before reporting', verdict: 'not seen',
+    evidence: ['Historical role manifest evidence is unavailable; this scoped reader does not inspect the recorded cwd or infer grants from missing calls.'],
+  };
   const evidence: string[] = [];
   let anyShellLess = false;
   let violation = false;
@@ -539,8 +487,30 @@ function modelFinding(session: Session): Finding {
   return { id: 'H2/H7', title: 'The lead runs on its pinned Opus', verdict: opus ? 'seen' : 'not seen', evidence };
 }
 
-export function analyse(session: Session): Analysis {
-  return { session, findings: [consultationFinding(session), shutdownFinding(session), rereadFinding(session), modelFinding(session), peerFinding(session), blockedFinding(session), guardFinding(session), mcpFinding(session)] };
+export function analyse(session: Session, options?: ClaudeSessionAnalysisOptions): Analysis {
+  return { session, findings: [consultationFinding(session), shutdownFinding(session), rereadFinding(session, options), modelFinding(session), peerFinding(session), blockedFinding(session), guardFinding(session), mcpFinding(session)] };
+}
+
+function isCompleteReport(report: ReportEvidence): boolean {
+  return /peer messages received/i.test(report.text) && /open items/i.test(report.text)
+    && (report.source !== 'subagent-handback' || report.state === 'accepted');
+}
+
+/** Compare the existing reader's supported classifications, never arbitrary masked prose. */
+export function sessionEvidenceFingerprint(session: Session): string {
+  const analysis = analyse(session, { roleEvidence: 'unavailable' });
+  return JSON.stringify({
+    prompts: session.prompts, version: session.version, agentSetting: session.agentSetting,
+    permissionMode: session.permissionMode, cost: session.cost,
+    findings: analysis.findings.map(finding => [finding.id, finding.verdict]),
+    agents: session.agents.map(agent => ({
+      isLead: agent.isLead, customAgentType: agent.customAgentType, taskKind: agent.taskKind,
+      models: agent.models, metaModel: agent.metaModel,
+      calls: agent.calls.map(call => [call.name, call.isError ?? null]),
+      received: agent.received.map(message => message.kind),
+      reports: (agent.reports ?? []).map(report => [report.source, report.state ?? null, isCompleteReport(report)]),
+    })),
+  });
 }
 
 function counts(calls: ToolCall[]): string {
@@ -573,7 +543,7 @@ export function renderReport(analysis: Analysis): string {
     for (const e of errors) out.push(`    error in ${e.name} at ${e.at}: ${short(e.result ?? '', 110)}`);
     if (!a.isLead) {
       // The latest attempt decides (never a union of attempts, never an earlier success hiding a later unresolved one); a hand-back counts only once the host accepted it.
-      const complete = (r: ReportEvidence): boolean => /peer messages received/i.test(r.text) && /open items/i.test(r.text) && (r.source !== 'subagent-handback' || r.state === 'accepted');
+      const complete = isCompleteReport;
       const attempts = a.reports ?? [];
       const latest = attempts[attempts.length - 1];
       const reported = latest ? complete(latest) : /peer messages received/i.test(a.finalText) && /open items/i.test(a.finalText);
@@ -621,14 +591,16 @@ function trimTeammateText(text: string): string {
 }
 
 function trimReceivedText(text: string, max: number): string {
-  if (text.includes('<cross-session-message')) {
-    // Keep sender names for flow analysis, but omit pipe/socket addresses and any other transport attributes.
-    return clean(trimTeammateText(text).replace(/<cross-session-message\b([^>]*)>([\s\S]*?)<\/cross-session-message>/g, (_all, attributes: string, body: string) => {
-      const from = /\bfrom-name="([^"]*)"/.exec(attributes)?.[1] ?? 'unknown';
-      return `<cross-session-message from-name="${clean(from, 120)}">${clean(body.trim(), 400)}</cross-session-message>`;
-    }), 2000);
+  const messages = [...text.matchAll(SESSION_MESSAGES)];
+  if (messages.length) {
+    return messages.map(match => {
+      if (match[1] === 'teammate-message') return trimTeammateText(match[0]);
+      // The parser consumes complete wrappers; unrelated prefixes must not displace them.
+      const from = /\bfrom-name="([^"]*)"/.exec(match[2] ?? '')?.[1] ?? 'unknown';
+      return `<cross-session-message from-name="${clean(from, 120)}">${clean((match[3] ?? '').trim(), 400)}</cross-session-message>`;
+    }).join('\n');
   }
-  return text.includes('<teammate-message') ? trimTeammateText(text) : clean(text, max);
+  return clean(text, max);
 }
 
 const REPORT_HEADINGS = [/peer messages received/i, /open items/i];
@@ -691,7 +663,7 @@ export function trimRecord(rec: Json): Json | null {
         content: arr(message.content).flatMap((raw): Json[] => {
           const b = obj(raw);
           if (b.type === 'tool_use') return [{ type: 'tool_use', id: b.id, name: b.name, input: b.name === 'SubagentHandback' ? trimHandbackInput(obj(b.input)) : cutStrings(b.input, 240) }];
-          if (b.type === 'text') return [{ type: 'text', text: clean(str(b.text), 1500) }];
+          if (b.type === 'text') return [{ type: 'text', text: trimReport(str(b.text)) }];
           return [];
         }),
       };

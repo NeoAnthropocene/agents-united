@@ -19,7 +19,7 @@ Produce one complete skill folder and a reviewable diff for its intended job. Th
 Create a new skill or repair an identified skill within the supplied scope. A repair preserves unrelated user edits, so capture the existing files before changing them.
 
 ## Input/Output Requirements
-Invoke `/author-skill` with a complete task/job record. This built-in general-purpose fork receives no prior conversation history; carry every required input in the invocation. Require the job, intended user/loading role, active host/surface, target format, local/upstream intent, absolute source-checkout and draft roots, sources, constraints and evidence budget. The host binding must supply the attribution rule and required support files; missing bindings block the task.
+The invocation text is the absolute path to the task; read it and write outputs only to the task's producer and draft roots. Save the exact `draft.mjs` job, stdout, stderr and exit code under the producer root, then write `skill-return.json` there. If no task is found, stop with a blocked note. This built-in general-purpose fork receives no prior conversation history; carry every required input in the task. Require the job, intended user/loading role, active host/surface, target format, local/upstream intent, absolute source-checkout and draft roots, sources, constraints and evidence budget. The host binding must supply the attribution rule and required support files; missing bindings block the task.
 Return the complete folder, before/after diff, final inventory/hashes, provenance disposition, commands/raw results/actual exits, quality findings, unverified items and next action using [the report](assets/report.md).
 
 ## Step-by-Step Runbook

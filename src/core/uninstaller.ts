@@ -13,6 +13,7 @@ import { removePermissionPreset } from './permission-preset.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
 import { assetOwners } from './types.js';
+import { assertClaudeFactoryRemoval } from './claude-factory-binding.js';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]+?)\r?\n---/;
 
@@ -364,6 +365,7 @@ export class UninstallEngine {
                 if (!managed || !unchanged) throw new Error(`Projection ${relPath} has user modifications. Use --force to remove.`);
               }
             }
+            if (bundleName === 'agent-factory') assertClaudeFactoryRemoval(workspaceRoot, targetDir, lockfile, options.force === true);
 
             // Clean up compound projections using owner refcounting
             if (lockfile.projections) {

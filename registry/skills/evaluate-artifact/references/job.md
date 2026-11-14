@@ -1,0 +1,11 @@
+# Fixed review job
+
+The caller prepares job.json under an absolute review root disjoint from the candidate, selected source registry/checkout, read roots and managed/protected inputs. It saves check logs/receipts under checks/<id>.{raw.txt,receipt.json}; the checker writes stdout/stderr only. Preserve all original task values and acceptance criteria, including explicitly unknown values.
+
+Select one kind: shared-pair (host neutral), skill (portable or declared Claude target), or claude-agent (explicit Claude CLI/workspace/native target). The Host running the evaluator is separate from the artifact's target. Record observed versions or explicit unverified reasons; the profile minimum/reviewed baseline is not an observed runtime.
+
+Use the closed job schema. Declare every candidate file, including unchanged notes, with path/length/SHA-256 and subject/support/preservation-only role. Give each selected input a unique ID, kind, exact pin, sections, disposition and required/optional meaning. Include installed entry/receipt, every required support/rule/role/guard edge, executable schemas/rubric, relevant guides/snapshots/observations, profile/policy/lock, provenance and caller-selected validator declarations. Missing reviewed tools are unavailable prerequisites, not permission to invent a replacement.
+
+The caller pins the physical Node>=24 binary and actual installed checker. Executable hashing has a separate <=128 MiB cap; binaries are not model-review text. Candidate bounds are <=32 files/1 MiB total/256 KiB each; ordinary evidence <=64 files/8 MiB total/1 MiB each. The result is <=256 KiB, <=32 findings and <=16 open items. At most six offline caller checks, 600 seconds and 512 KiB of complete raw logs are permitted per job. Smaller declared limits apply. Larger work needs explicit partitioning or a reviewed budget.
+
+Canonical JSON sorts object keys recursively and preserves array order; the candidate digest uses sorted actual path/kind/length/hash inventory. Digests neither authenticate a sender nor prove a model read the files. Byte checks observe drift without promising an atomic snapshot or excluding concurrent writers. No job, ledger remainder or receipt authorizes live spending, publication or repair.

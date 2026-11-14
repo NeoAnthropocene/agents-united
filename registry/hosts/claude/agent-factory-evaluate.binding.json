@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "bundle": "agent-factory",
+  "skill": "evaluate-artifact",
+  "source": "hosts/claude/skills/evaluate-artifact/SKILL.md",
+  "installed": ".claude/skills/evaluate-artifact/SKILL.md",
+  "surface": {
+    "host": "claude",
+    "product": "Claude Code CLI",
+    "scope": "workspace",
+    "lane": "native"
+  },
+  "invocation": "Agent({subagent_type: factory-evaluator, run_in_background: false, prompt: complete fixed review job and caller-held job/candidate digests}); omit teammate name; verify actual launch result",
+  "roles": [
+    {
+      "name": "factory-evaluator",
+      "definition": "subagent-factory-evaluator",
+      "contract": "core/subagent-factory-evaluator.contract.json",
+      "source": "hosts/claude/agents/factory-evaluator.md",
+      "installed": ".claude/agents/factory-evaluator.md",
+      "loading": "subagent",
+      "skills": [
+        "evaluate-artifact"
+      ],
+      "guard": "read-only"
+    }
+  ],
+  "hooks": [
+    {
+      "id": "reject-mutating-tools",
+      "kind": "read-only"
+    }
+  ],
+  "requiredSupport": [
+    "references/job.md",
+    "references/rubric.md",
+    "references/evidence.md",
+    "references/handback.md",
+    "examples/claude-agent-review.md",
+    "examples/shared-pair-review.md",
+    "examples/skill-review.md",
+    "assets/job.schema.json",
+    "assets/result.schema.json",
+    "assets/rubric.json",
+    "assets/report.json",
+    "scripts/check-review.mjs"
+  ],
+  "references": [
+    {
+      "source": "rules/skill-attribution.md",
+      "installed": ".claude/skills/evaluate-artifact/references/rules/skill-attribution.md"
+    },
+    {
+      "source": "rules/git-guardrails.md",
+      "installed": ".claude/skills/evaluate-artifact/references/rules/git-guardrails.md"
+    },
+    {
+      "source": "rules/test-driven-development.md",
+      "installed": ".claude/skills/evaluate-artifact/references/rules/test-driven-development.md"
+    },
+    {
+      "source": "rules/clean-code-and-architecture.md",
+      "installed": ".claude/skills/evaluate-artifact/references/rules/clean-code-and-architecture.md"
+    },
+    {
+      "source": "rules/domain-modeling-and-adr.md",
+      "installed": ".claude/skills/evaluate-artifact/references/rules/domain-modeling-and-adr.md"
+    },
+    {
+      "source": "rules/multi-agent-coordination.md",
+      "installed": ".claude/skills/evaluate-artifact/references/rules/multi-agent-coordination.md"
+    },
+    {
+      "source": "rules/quality-aesthetics-accessibility.md",
+      "installed": ".claude/skills/evaluate-artifact/references/rules/quality-aesthetics-accessibility.md"
+    }
+  ],
+  "requiredInstalled": [],
+  "reviewedInputs": [
+    "host-library/claude/guide/agent.md",
+    "host-library/claude/guide/skill.md",
+    "host-library/claude/guide/hook.md",
+    "host-library/claude/guide/tools.md",
+    "host-library/claude/guide/orchestration.md",
+    "host-library/claude/library.lock.json",
+    "registry/hosts/claude/profile.json",
+    "registry/hosts/claude/tool-policy.json",
+    "host-library/claude/observations/2026-10-04-claude-2.1.288-guard-file.md",
+    "host-library/claude/observations/2026-10-19-claude-2.1.301-worker-lifecycle-live.md",
+    "host-library/claude/observations/2026-10-19-claude-2.1.299-step0-foreground-rerun.md"
+  ]
+}

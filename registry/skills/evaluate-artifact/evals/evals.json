@@ -1,0 +1,29 @@
+{
+  "skill_name": "evaluate-artifact",
+  "status": "prepared-only; no invocation or spending authorization",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review one portable invoice Skill. Its fixed brief requires columns invoice_id,total,currency and no network. The candidate entry instead promises invoice_id,total only, links a missing scripts/extract.mjs and says the validator was run; the supplied receipt states not-run with no log or exit. A second notes.txt is preservation-only. The caller supplies a complete immutable candidate inventory/pins, original brief, source/licence/comparison evidence, all seven rubric criteria and an explicit portable target with no subagent. Return source-grounded findings, complete truthful coverage and required-check limits; do not edit or ask for the already-supplied columns. Before a future run the maintainer supplies concrete fresh paths/digests and actual quoted line ranges identically to both arms.",
+      "expected_output": "Flags the changed fixed columns, missing script and unsupported execution claim; retains preservation-only coverage and unverified live proof; emits no invented hash calculation, file write or acceptance.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Review one Claude CLI/workspace/native read-only agent. The complete fixed brief supplies core/contract, all target guides/snapshot/observation/profile/policy pins, final native bytes and support, caller check receipts, budget and original criteria. The candidate grants shell/edit beyond its declared read/search/report/handback classes, names a missing required preload and claims that a timeout proves worker termination. Concrete source lines and the unchanged baseline are supplied at run preparation. Return bounded rubric findings and precise unverified limits without installing, repairing, rerunning a Host or importing digital-agency team shutdown mechanics.",
+      "expected_output": "Identifies grant/preload/evidence defects from actual supplied lines; separates deterministic, quality and runtime claims and proposes bounded rework only.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Control: calculate the total of the explicitly supplied integers 12, 30 and 8 and return the integer only. No artifact review, source adoption, installation, account action or missing business value is involved. All information is present.",
+      "expected_output": "50; no review-job intake, invented artifact evaluation or extra question.",
+      "files": []
+    }
+  ],
+  "comparison": {
+    "pair": "Same complete immutable prepared job, final bytes, actual source citations, input pins, selected rubric and equal account/prompt/cost limits with and without this runbook.",
+    "control": "The unrelated data-rich calculation is identical in both arms; the Skill should not fire.",
+    "execution": "unverified; maintainer must separately agree account, prompt and cost limits and inspect the Host's own records. No historical ledger remainder authorizes a run."
+  }
+}

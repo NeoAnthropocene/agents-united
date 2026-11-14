@@ -23,6 +23,8 @@ export const HOSTS = ['cline', 'antigravity', 'codex', 'claude'];
 export const TIERS = ['simple', 'medium', 'high'];
 export const ACCESS = ['read-only', 'edit'];
 const MAX_OUTPUT = 200_000;
+const MAX_SKILLS = 3;
+const MAX_SKILL_CHARS = 20_000;
 
 // ----------------------------------------------------------------------------- pure helpers
 
@@ -199,6 +201,7 @@ export function validateConfig(cfg) {
     for (const tier of TIERS) {
       const t = cfg.hosts[host].tiers?.[tier];
       if (!t?.model || !/^[a-z]+$/.test(t.effort ?? '')) errs.push(`${host}/${tier}: needs a model and an effort`);
+      else if (t.efforts !== undefined) errs.push(...validateEfforts(`${host}/${tier}`, t.efforts, Boolean(cfg.hosts[host].effortInModel)));
     }
   }
   if (!Number.isFinite(Number(cfg.minHeadroomPct))) errs.push('minHeadroomPct must be a number');
@@ -213,6 +216,82 @@ export function validateConfig(cfg) {
     errs.push('timeoutSeconds must be a positive number, or an object of positive numbers per tier (simple, medium, high)');
   }
   return errs;
+}
+
+/**
+ * Problems with a tier's optional `efforts` map. An entry is either a plain effort value (for a host whose effort is a flag; the tier's
+ * model stays) or `{ label?, model?, effort? }` (for a host whose effort is part of the model name, `model` is required).
+ */
+export function validateEfforts(where, efforts, effortInModel = false) {
+  if (!isPlain(efforts)) return [`${where}: efforts must be an object of effort names`];
+  const word = v => typeof v === 'string' && /^[a-z]+$/.test(v);
+  const errs = [];
+  for (const [name, e] of Object.entries(efforts)) {
+    const at = `${where}: efforts.${name}`;
+    if (!word(name)) errs.push(`${at}: an effort name is lowercase letters only`);
+    if (typeof e === 'string') {
+      if (!word(e)) errs.push(`${at}: needs an effort value (lowercase letters)`);
+      else if (effortInModel) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
+    } else if (isPlain(e)) {
+      if (e.model === undefined && e.effort === undefined) errs.push(`${at}: needs a model or an effort`);
+      if (e.model !== undefined && (typeof e.model !== 'string' || !e.model.trim())) errs.push(`${at}: model must be a non-empty string`);
+      else if (effortInModel && e.model === undefined) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
+      if (e.effort !== undefined && !word(e.effort)) errs.push(`${at}: effort must be lowercase letters`);
+      if (e.label !== undefined && typeof e.label !== 'string') errs.push(`${at}: label must be a string`);
+    } else errs.push(`${at}: must be an effort value or an object with a model and/or an effort`);
+  }
+  return errs;
+}
+
+/**
+ * The model, effort and label a host/tier runs at when the lead asks for `effort`. No effort, or the tier's own default, keeps the tier.
+ * An entry of the tier's `efforts` map wins; a host with no entry keeps its default and says so in `note` (never an error).
+ */
+export function resolveEffort(cfg, host, tier, effort) {
+  const t = cfg.hosts[host].tiers[tier];
+  const base = { model: t.model, effort: t.effort, label: t.label ?? t.model, note: null };
+  if (!effort) return base;
+  const e = t.efforts?.[effort];
+  if (typeof e === 'string') return { ...base, effort: e };
+  if (isPlain(e)) return { model: e.model ?? t.model, effort: e.effort ?? effort, label: e.label ?? e.model ?? base.label, note: null };
+  if (effort === t.effort) return base;
+  return { ...base, note: `${host}: no "${effort}" effort in the ${tier} tier; kept ${t.model} (${t.effort})` };
+}
+
+/** Every effort name some host in scope offers for `tier`: its default effort plus the keys of its `efforts` map. */
+export function knownEfforts(cfg, tier, only) {
+  const names = new Set();
+  for (const host of cfg.priority) {
+    if (only?.length && !only.includes(host)) continue;
+    const t = cfg.hosts[host]?.tiers?.[tier];
+    if (!t) continue;
+    names.add(t.effort);
+    for (const n of Object.keys(t.efforts ?? {})) names.add(n);
+  }
+  return [...names].sort();
+}
+
+/** A usage-error message when no host in scope knows `effort` for `tier`, else null. */
+export function checkEffort(cfg, tier, effort, only) {
+  const known = knownEfforts(cfg, tier, only);
+  if (known.includes(effort)) return null;
+  const hosts = cfg.priority.filter(h => !only?.length || only.includes(h));
+  return `--effort ${JSON.stringify(effort)} is not an effort of the ${tier} tier on ${hosts.join(', ')}; known: ${known.join(', ')}`;
+}
+
+/** The model names a host is configured with, tiers and efforts, once each: what `models` checks against the host's own list. */
+export function configuredModels(cfg, host) {
+  const out = [];
+  for (const tier of TIERS) {
+    const t = cfg.hosts[host].tiers[tier];
+    for (const m of [t.model, ...Object.values(t.efforts ?? {}).map(e => (isPlain(e) ? e.model : null))]) if (m && !out.includes(m)) out.push(m);
+  }
+  return out;
+}
+
+/** The `ran` part of a run result: the host, side, model and effort actually used, and the note when a requested effort was not available. */
+export function ranOf(c) {
+  return { host: c.host, side: c.side, model: c.model, effort: c.effort, label: c.label, ...(c.effort_note ? { effort_note: c.effort_note } : {}) };
 }
 
 /** Problems with a list of command prefixes for --allow-cmd or `workerCommands`: plain words only, so a prefix cannot break out of a host's rule syntax. */
@@ -239,9 +318,12 @@ export function timeoutFor(cfg, tier, override) {
   return 1800;
 }
 
+/** The user's config file: `$HOST_AGENT_ROUTER_CONFIG`, else `~/.agents/host-agent-router/config.json`. */
+const userConfigFile = (env = process.env, home = os.homedir()) => env.HOST_AGENT_ROUTER_CONFIG || path.join(home, '.agents', 'host-agent-router', 'config.json');
+
 export function loadConfig(env = process.env) {
   const base = JSON.parse(fs.readFileSync(path.join(path.dirname(SELF), '..', 'assets', 'config.default.json'), 'utf8'));
-  const userFile = env.HOST_AGENT_ROUTER_CONFIG || path.join(os.homedir(), '.agents', 'host-agent-router', 'config.json');
+  const userFile = userConfigFile(env);
   let cfg = base;
   if (fs.existsSync(userFile)) cfg = mergeConfig(base, JSON.parse(fs.readFileSync(userFile, 'utf8')));
   const errs = validateConfig(cfg);
@@ -263,7 +345,7 @@ function orderSides(usable, here, tiePct) {
 }
 
 /** statuses: { host: { side: { installed, logged_in, usage } } }. Returns the ordered candidates and why others were skipped. */
-export function buildPlan(cfg, tier, statuses, here, onlyHosts, access) {
+export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) {
   const min = Number(cfg.minHeadroomPct ?? 10);
   const tie = Number(cfg.tiePct ?? 2);
   const candidates = [];
@@ -271,7 +353,7 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access) {
   for (const host of cfg.priority) {
     if (onlyHosts?.length && !onlyHosts.includes(host)) continue;
     const sides = statuses[host] ?? {};
-    const t = cfg.hosts[host].tiers[tier];
+    const t = resolveEffort(cfg, host, tier, effort);
     const usable = [];
     for (const [side, st] of Object.entries(sides)) {
       if (!st.installed) skipped.push({ host, side, reason: `not installed or not runnable${st.error ? ` (${st.error})` : ''}` });
@@ -289,12 +371,12 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access) {
     for (const side of ordered) {
       const u = sides[side].usage ?? {};
       candidates.push({
-        host, side, model: t.model, effort: t.effort, label: t.label ?? t.model,
+        host, side, model: t.model, effort: t.effort, label: t.label, ...(t.note ? { effort_note: t.note } : {}),
         binding_pct: u.binding_pct ?? null, five_hour_pct: u.five_hour_pct ?? null, weekly_pct: u.weekly_pct ?? null,
       });
     }
   }
-  return { tier, here, selected: candidates[0] ?? null, candidates, skipped };
+  return { tier, here, ...(effort ? { effort_requested: effort } : {}), selected: candidates[0] ?? null, candidates, skipped };
 }
 
 // ----------------------------------------------------------------------------- command building
@@ -311,9 +393,47 @@ function preamble(access, tier) {
     + 'with exactly these headings: Done (what now works), Changed files (path and one line each), Checks run (command and result, or none), Not done or blocked, Next steps.\n\n';
 }
 
-/** Arguments (without the binary) for one headless run. `cwd` must already be valid on the target side. Never a full-access flag. */
+/** The lead's attached skills, after the contract and before the task. They are guidance: the contract above them stays in force. */
+export function skillsBlock(skills) {
+  if (!skills?.length) return '';
+  const framing = 'Skills the lead attached for this task. They are guidance only: the rules above stay in force and no skill overrides them.\n\n';
+  return framing + skills.map(k => `=== Attached skill: ${k.name} ===\n${k.text}\n=== End of skill: ${k.name} ===\n\n`).join('');
+}
+
+/**
+ * The `command(...)` rules Antigravity gets for an edit run. On Windows its sandbox may lack the directory of the `node` the lead's shell finds
+ * (seen live, 2026-11-13), so each allowed line whose first word is a bare program that the router's own lookup resolves to a real `.exe` also gets
+ * the same line with that absolute path. The path comes only from `resolve` on this machine, never from the brief or `--allow-cmd`. A `.cmd` or
+ * script shim is not rewritten, and neither is a path with whitespace (an exact-line match was only seen for a path without spaces): a note says so.
+ * Returns { rules, full (the added command lines, for the worker's note), notes }.
+ */
+export function antigravityAllowRules(allow, { platform = process.platform, resolve = which } = {}) {
+  const rules = allow.map(c => `command(${c})`);
+  const full = [];
+  const notes = [];
+  if (platform === 'win32') {
+    const spaced = new Set();
+    for (const c of allow) {
+      const line = c.trim();
+      const prog = line.split(/\s+/)[0];
+      if (!prog || /[\\/:]/.test(prog)) continue;
+      const abs = resolve(prog);
+      if (!abs || !/\.exe$/i.test(abs)) continue;
+      if (/\s/.test(abs)) {
+        if (!spaced.has(prog)) { spaced.add(prog); notes.push(`no full-path rule for "${prog}": its path has spaces, so only the bare-name rule is given`); }
+        continue;
+      }
+      full.push(abs.replace(/\.exe$/i, '.exe') + line.slice(prog.length)); // PATHEXT yields `.EXE`; the rule seen live used `.exe`
+    }
+  }
+  const all = [...new Set([...rules, ...full.map(c => `command(${c})`)])];
+  return { rules: all, full: [...new Set(full)], notes };
+}
+
+/** Arguments (without the binary) for one headless run. `cwd` must already be valid on the target side. Never a full-access flag. `t` is { model, effort }. */
 export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
-  const full = preamble(access, tier) + prompt;
+  const attached = skillsBlock(extra.skills);
+  const full = preamble(access, tier) + attached + prompt;
   const ro = access === 'read-only';
   const env = { HOST_AGENT_ROUTER_DEPTH: '1' };
   // Commands a worker may run (the lead's --allow-cmd on top of the defaults) and the ones it never may. Claude and Antigravity deny every
@@ -323,32 +443,91 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
   switch (host) {
     case 'claude': {
       const guard = ro ? [] : ['--allowedTools', ...allow.map(c => `Bash(${c}:*)`), '--disallowedTools', ...deny.map(c => `Bash(${c}:*)`)];
-      return { args: ['-p', '--model', t.model, '--effort', t.effort, '--permission-mode', ro ? 'plan' : 'acceptEdits', ...guard, '--output-format', 'text'], stdin: full, env };
+      return { args: ['-p', '--model', t.model, '--effort', t.effort, '--permission-mode', ro ? 'plan' : 'acceptEdits', ...guard, '--output-format', 'text'], stdin: full, env, chars: full.length };
     }
     case 'codex': {
       const args = ['exec', '-m', t.model, '-c', `model_reasoning_effort="${t.effort}"`, '-s', ro ? 'read-only' : 'workspace-write', '--skip-git-repo-check', '--color', 'never'];
       if (cwd) args.push('-C', cwd);
-      return { args: [...args, '-'], stdin: full, env };
+      return { args: [...args, '-'], stdin: full, env, chars: full.length };
     }
     case 'antigravity': {
       // Headless Antigravity denies every command that is not allowed, and one denial ends the run with exit 0. Its rules match an exact
       // command line or a bare program name and ignore wildcards (checked live), so the allow list is exact and the worker is told so.
-      const note = ro ? '' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${allow.join('; ')}. Run them exactly as written, with no cd, flags or pipes added.\n\n`;
-      const args = ['-p', preamble(access, tier) + note + prompt, '--model', t.model, '--mode', ro ? 'plan' : 'accept-edits', '--output-format', 'json'];
-      if (!ro) args.push('--sandbox', '--settings', JSON.stringify({ permissions: { allow: allow.map(c => `command(${c})`) } }));
+      const rules = ro ? { rules: [], full: [], notes: [] } : antigravityAllowRules(allow, { platform: extra.platform, resolve: extra.resolve });
+      const fullSentence = rules.full.length ? ` If a program name is not recognised, you may run the listed full-path form of the same command (${rules.full.join('; ')}) and nothing else.` : '';
+      const note = ro ? '' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
+      const text = preamble(access, tier) + note + attached + prompt;
+      const args = ['-p', text, '--model', t.model, '--mode', ro ? 'plan' : 'accept-edits', '--output-format', 'json'];
+      if (!ro) args.push('--sandbox', '--settings', JSON.stringify({ permissions: { allow: rules.rules } }));
       if (!cfg.hosts.antigravity.effortInModel) args.push('--effort', t.effort);
-      return { args, stdin: null, env };
+      return { args, stdin: null, env, chars: text.length, ...(rules.notes.length ? { notes: rules.notes } : {}) };
     }
     case 'cline': {
       // --json: plain text mode prints the whole activity log before the answer; JSON ends in one run_result line (see parseClineJson).
       const args = ['-P', cfg.hosts.cline.provider, '-m', t.model, '--thinking', t.effort, '--json'];
       if (ro) args.push('--plan');
       if (cwd) args.push('-c', cwd);
-      return { args: [...args, '--', full], stdin: null, env };
+      return { args: [...args, '--', full], stdin: null, env, chars: full.length };
     }
     default:
       throw new Error(`unknown host ${host}`);
   }
+}
+
+/**
+ * The command line a Windows process may have is about 32,000 characters in all; Linux limits one argument to 128 KiB. The two hosts whose
+ * prompt travels as an argument (Antigravity, Cline) cannot take a longer one, so the router skips them rather than let the start fail.
+ * `spec.stdin` set means the prompt travels on stdin and the length does not matter. Returns a reason, or null.
+ */
+export function argvTooLong(spec, side) {
+  if (spec.stdin != null) return null;
+  const win = side === 'windows';
+  const size = win ? spec.args.reduce((n, a) => n + a.length + 1, 0) : Math.max(0, ...spec.args.map(a => a.length));
+  const limit = win ? 30_000 : 120_000;
+  return size > limit ? `the command line would be ${size} characters, too long for this host on ${side} (limit about ${limit}): attach fewer or smaller skills, or shorten the brief` : null;
+}
+
+// ----------------------------------------------------------------------------- skills for the worker (--skill)
+
+/** The skills folder the router sits in: `registry/skills/` in this repository, the installed skills folder elsewhere. */
+export function skillsRoot() {
+  return path.resolve(path.dirname(SELF), '..', '..');
+}
+
+/** A skill's text without its front matter, with LF line endings and no blank edges. */
+export function stripFrontMatter(raw) {
+  const lf = String(raw ?? '').replace(/\r\n?/g, '\n');
+  const m = /^---\n[\s\S]*?\n---[ \t]*(?:\n|$)/.exec(lf);
+  return (m ? lf.slice(m[0].length) : lf).replace(/^\s+/, '').trimEnd();
+}
+
+/**
+ * The SKILL.md text of each named skill folder beside the router. Only that file is read: a skill's references/ and scripts/ are never
+ * sent. Every problem is a usage error (it throws), so nothing has started when one is found.
+ */
+export function resolveSkills(names, root = skillsRoot()) {
+  if (names === undefined) return [];
+  if (!Array.isArray(names)) throw new Error('--skill takes a skill name; repeat the flag for more than one');
+  if (names.length > MAX_SKILLS) throw new Error(`at most ${MAX_SKILLS} --skill flags are allowed (got ${names.length})`);
+  const seen = new Set();
+  return names.map(name => {
+    if (typeof name !== 'string' || !/^[a-z0-9][a-z0-9_-]*$/.test(name)) {
+      throw new Error(`--skill ${JSON.stringify(name)} is not a plain skill name (lowercase letters, digits, - and _; no path)`);
+    }
+    if (seen.has(name)) throw new Error(`--skill ${JSON.stringify(name)} is named twice`);
+    seen.add(name);
+    const dir = path.join(root, name);
+    let isDir = false;
+    try { isDir = fs.statSync(dir).isDirectory(); } catch { /* not there */ }
+    if (!isDir) throw new Error(`--skill ${JSON.stringify(name)} is not a skill folder next to host-agent-router (looked in ${root})`);
+    const file = path.join(dir, 'SKILL.md');
+    if (!isFile(file)) throw new Error(`--skill ${JSON.stringify(name)}: the folder has no SKILL.md`);
+    const text = stripFrontMatter(fs.readFileSync(file, 'utf8'));
+    if (text.length > MAX_SKILL_CHARS) {
+      throw new Error(`--skill ${JSON.stringify(name)} is ${text.length.toLocaleString('en-US')} characters, over the ${MAX_SKILL_CHARS.toLocaleString('en-US')} limit`);
+    }
+    return { name, chars: text.length, text };
+  });
 }
 
 /** ClinePass model ids in a Cline `models.js` catalog (entries look like `"cline-pass/glm-5.3":{name:"GLM-5.3",id:"cline-pass/glm-5.3",...}`). */
@@ -513,19 +692,27 @@ export function which(name) {
 
 const firstFile = cands => cands.find(c => c && isFile(c)) ?? null;
 
+/**
+ * argv that starts a CLI npm installed. On Windows neither npm shim can be spawned directly (`.cmd` needs a shell, which would reparse
+ * prompt text; the extensionless one is a shell script), so the package entry is run with node. Elsewhere, or when the shim is not an
+ * npm install, the shim itself.
+ */
+export function npmShimCommand(shim, pkg, bin, { platform = process.platform, execPath = process.execPath } = {}) {
+  if (platform !== 'win32') return [shim];
+  try {
+    const dir = path.dirname(fs.realpathSync(shim));
+    const pkgDir = path.join(dir, 'node_modules', ...pkg.split('/'));
+    const meta = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8'));
+    const rel = typeof meta.bin === 'string' ? meta.bin : meta.bin?.[bin];
+    const entry = rel ? path.join(pkgDir, rel) : null;
+    if (entry && isFile(entry)) return [firstFile([path.join(dir, 'node.exe')]) ?? execPath, entry];
+  } catch { /* not an npm install: fall through to the shim */ }
+  return [shim];
+}
+
 function resolveCline() {
   const shim = which('cline');
-  if (!shim) return null;
-  if (process.platform !== 'win32') return [shim];
-  // Run the package entry with node directly so prompt text is never reparsed by cmd.exe.
-  const dir = path.dirname(fs.realpathSync(shim));
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'node_modules', 'cline', 'package.json'), 'utf8'));
-    const rel = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.cline;
-    const entry = rel ? path.join(dir, 'node_modules', 'cline', rel) : null;
-    if (entry && isFile(entry)) return [firstFile([path.join(dir, 'node.exe')]) ?? process.execPath, entry];
-  } catch { /* fall through to the shim */ }
-  return [shim];
+  return shim ? npmShimCommand(shim, 'cline', 'cline') : null;
 }
 
 /** argv prefix that starts `host` on this machine, or null. */
@@ -537,7 +724,10 @@ export function resolveCmd(host) {
   if (host === 'claude') p = firstFile([which('claude'), path.join(home, '.local', 'bin', `claude${ext}`)]);
   else if (host === 'antigravity') p = firstFile([which('agy'), path.join(home, '.local', 'bin', `agy${ext}`)]);
   else if (host === 'codex') {
-    const cands = [which('codex'), path.join(home, '.local', 'bin', `codex${ext}`)];
+    const onPath = which('codex');
+    // An npm install (codex.cmd beside node_modules/@openai/codex) starts through its package entry, like Cline.
+    if (win && onPath) { const viaNode = npmShimCommand(onPath, '@openai/codex', 'codex'); if (viaNode.length > 1) return viaNode; }
+    const cands = [onPath, path.join(home, '.local', 'bin', `codex${ext}`)];
     if (win) cands.push(path.join(process.env.LOCALAPPDATA ?? '', 'Programs', 'OpenAI', 'Codex', 'bin', 'codex.exe'));
     else {
       const rel = path.join(home, '.codex', 'packages', 'standalone', 'releases');
@@ -720,7 +910,79 @@ export async function modelsLocal(payload) {
   return out;
 }
 
-const LOCAL = { 'local-probe': probeLocal, 'local-exec': execLocal, 'local-models': modelsLocal };
+// ----------------------------------------------------------------------------- the machine record (`machine [--save]`)
+//
+// What this machine has, per host and side, and HOW each host is started. Plain facts only: no path, no argument, no environment value.
+// It runs `--version` on each host and nothing else, so it starts no model.
+
+const looksLikeScript = p => {
+  try {
+    const fd = fs.openSync(p, 'r');
+    try { const b = Buffer.alloc(2); fs.readSync(fd, b, 0, 2, 0); return b.toString('latin1') === '#!'; } finally { fs.closeSync(fd); }
+  } catch { return false; }
+};
+
+/** 'npm-entry' (node plus a package entry), 'exe', 'shim' (a .cmd or script launcher) or 'missing', from the argv resolveCmd found. */
+export function startKind(cmd, { platform = process.platform, isScript = looksLikeScript } = {}) {
+  if (!cmd?.length) return 'missing';
+  if (cmd.length > 1) return 'npm-entry';
+  if (platform === 'win32') return /\.exe$/i.test(cmd[0]) ? 'exe' : 'shim';
+  return isScript(cmd[0]) ? 'shim' : 'exe';
+}
+
+/** A short single-line note with no file path in it (a path names the user): control characters and runs of spaces collapsed, at most 160 characters. */
+export function cleanNote(s) {
+  return String(s ?? '').replace(/(?:[A-Za-z]:[\\/]|\/(?:mnt|home|Users|tmp|var|usr|root)\/)\S*?(?=:?(?:\s|$))/g, '<path>')
+    .replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+}
+
+export function machineFileName(hostname) {
+  const base = String(hostname ?? '').replace(/[^A-Za-z0-9._-]/g, '_').replace(/^\.+$/, '');
+  return `${base || 'machine'}.json`;
+}
+
+/** Where machine records live: beside the user config (`~/.agents/host-agent-router/`), in a `machines` folder. */
+export function machinesDir(env = process.env, home = os.homedir()) {
+  return path.join(path.dirname(userConfigFile(env, home)), 'machines');
+}
+
+/** A host on the other side of the Windows/WSL bridge: if it is there, the router starts it through the bridge. */
+export function viaBridge(hosts) {
+  return Object.fromEntries(Object.entries(hosts).map(([host, h]) => [host,
+    h.installed ? { installed: true, version: h.version, kind: 'wsl-bridge', via: h.kind } : { installed: false, version: null, kind: 'missing', ...(h.note ? { note: h.note } : {}) }]));
+}
+
+/** Every host on a side whose bridge could not be used (WSL without node, for example): missing, with why. */
+export function bridgeFailed(message, hosts) {
+  return Object.fromEntries(hosts.map(host => [host, { installed: false, version: null, kind: 'missing', note: cleanNote(message) }]));
+}
+
+export function machineRecord({ hostname, platform, here, node, now, sides }) {
+  return { schema: 1, hostname, platform, here, node, recorded_at: now.toISOString(), sides };
+}
+
+/** Writes the record to `<dir>/<hostname>.json` (creating the folder) and nowhere else. Returns the file. */
+export function saveMachineRecord(record, dir) {
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, machineFileName(record.hostname));
+  fs.writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
+  return file;
+}
+
+/** On this side: which hosts are installed, their version line, and how each is started. */
+export async function machineLocal() {
+  const found = {};
+  await Promise.all(HOSTS.map(async host => {
+    const cmd = resolveCmd(host);
+    if (!cmd) { found[host] = { installed: false, version: null, kind: 'missing' }; return; }
+    const v = await runCmd([...cmd, '--version'], { timeout: 40_000, cwd: os.homedir() });
+    const ver = `${v.stdout}\n${v.stderr}`.split(/\r?\n/).map(s => s.trim()).find(looksLikeVersion);
+    found[host] = v.rc === 0 && ver ? { installed: true, version: ver, kind: startKind(cmd) } : { installed: false, version: null, kind: 'missing', note: `found, but --version failed (rc=${v.rc})` };
+  }));
+  return { hosts: Object.fromEntries(HOSTS.map(h => [h, found[h]])) };
+}
+
+const LOCAL = { 'local-probe': probeLocal, 'local-exec': execLocal, 'local-models': modelsLocal, 'local-machine': machineLocal };
 
 // ----------------------------------------------------------------------------- sides and the Windows <-> WSL bridge
 
@@ -793,10 +1055,10 @@ async function crossCall(cfg, here, target, command, payload, timeoutMs) {
 const callSide = (cfg, here, side, command, payload, timeoutMs = 120_000) =>
   side === here || here === 'local' ? LOCAL[command](payload) : crossCall(cfg, here, side, command, payload, timeoutMs);
 
-async function probeAll(cfg, tier, here, sides, onlyHosts) {
+async function probeAll(cfg, tier, here, sides, onlyHosts, effort) {
   const jobs = cfg.priority.filter(h => !onlyHosts?.length || onlyHosts.includes(h)).flatMap(h => sides.map(s => [h, s]));
   const results = await Promise.all(jobs.map(async ([host, side]) => {
-    const payload = { host, side, model: cfg.hosts[host].tiers[tier].model, host_cfg: cfg.hosts[host] };
+    const payload = { host, side, model: resolveEffort(cfg, host, tier, effort).model, host_cfg: cfg.hosts[host] };
     try {
       return await callSide(cfg, here, side, 'local-probe', payload, 150_000);
     } catch (e) {
@@ -813,20 +1075,20 @@ async function probeAll(cfg, tier, here, sides, onlyHosts) {
 const print = obj => process.stdout.write(`${JSON.stringify(obj, null, 2)}\n`);
 const fmt = v => (v == null ? '?' : `${v}%`);
 
-async function gather(cfg, opts, tier, only) {
+async function gather(cfg, opts, tier, only, effort) {
   const here = opts.here ?? detectHere();
   if (opts['statuses-file']) {
     const statuses = JSON.parse(fs.readFileSync(opts['statuses-file'], 'utf8'));
     return { here, sides: [...new Set(Object.values(statuses).flatMap(s => Object.keys(s)))], statuses };
   }
   const sides = discoverSides(here, cfg);
-  return { here, sides, statuses: await probeAll(cfg, tier, here, sides, only) };
+  return { here, sides, statuses: await probeAll(cfg, tier, here, sides, only, effort) };
 }
 
 async function cmdStatus(opts, cfg) {
   const tier = opts.tier ?? 'medium';
-  const { here, statuses } = await gather(cfg, opts, tier, opts.host);
-  const plan = buildPlan(cfg, tier, statuses, here, opts.host);
+  const { here, statuses } = await gather(cfg, opts, tier, opts.host, opts.effort);
+  const plan = buildPlan(cfg, tier, statuses, here, opts.host, undefined, opts.effort);
   if (opts.json) { print({ plan, statuses }); return 0; }
   console.log(`tier=${tier}  here=${here}  floor=${cfg.minHeadroomPct}%  (binding = smaller of 5h / weekly remaining)`);
   console.log(`${'HOST'.padEnd(12)}${'SIDE'.padEnd(9)}${'STATE'.padEnd(22)}${'5H LEFT'.padEnd(9)}${'WEEK LEFT'.padEnd(11)}MODEL`);
@@ -834,20 +1096,22 @@ async function cmdStatus(opts, cfg) {
     for (const [side, st] of Object.entries(statuses[host] ?? {})) {
       const u = st.usage ?? {};
       const state = !st.installed ? 'not runnable' : st.logged_in === false ? 'logged out' : 'ready';
-      console.log(`${host.padEnd(12)}${side.padEnd(9)}${state.padEnd(22)}${fmt(u.five_hour_pct).padEnd(9)}${fmt(u.weekly_pct).padEnd(11)}${cfg.hosts[host].tiers[tier].model}`);
+      console.log(`${host.padEnd(12)}${side.padEnd(9)}${state.padEnd(22)}${fmt(u.five_hour_pct).padEnd(9)}${fmt(u.weekly_pct).padEnd(11)}${resolveEffort(cfg, host, tier, opts.effort).model}`);
     }
   }
   const sel = plan.selected;
   console.log(`\nselected: ${sel ? `${sel.host} on ${sel.side} -> ${sel.model} (${sel.effort})` : 'none'}`);
   for (const s of plan.skipped) console.log(`  skipped ${s.host}/${s.side}: ${s.reason}`);
+  const noted = new Set(); // one note per host, not one per side
+  for (const c of plan.candidates) if (c.effort_note && !noted.has(c.host)) { noted.add(c.host); console.log(`  note ${c.effort_note}`); }
   for (const [host, sides] of Object.entries(statuses)) for (const [side, st] of Object.entries(sides)) for (const n of st.notes ?? []) console.log(`  note ${host}/${side}: ${n}`);
   return 0;
 }
 
 async function cmdPlan(opts, cfg) {
   const tier = opts.tier ?? 'medium';
-  const { here, statuses } = await gather(cfg, opts, tier, opts.host);
-  const plan = buildPlan(cfg, tier, statuses, here, opts.host);
+  const { here, statuses } = await gather(cfg, opts, tier, opts.host, opts.effort);
+  const plan = buildPlan(cfg, tier, statuses, here, opts.host, undefined, opts.effort);
   plan.notes = Object.fromEntries(Object.entries(statuses).flatMap(([h, ss]) => Object.entries(ss).filter(([, st]) => st.notes?.length).map(([s, st]) => [`${h}/${s}`, st.notes])));
   print(plan);
   return plan.selected ? 0 : 2;
@@ -897,21 +1161,60 @@ export function snapshotTree(dir, { maxEntries = 50_000 } = {}) {
   return { files, head: gitHead(dir), truncated };
 }
 
-/** What differs between two snapshots. `unknown` when either was cut short: "cannot compare" is never reported as "unchanged". */
-export function diffSnapshots(a, b) {
-  const created = [];
-  const modified = [];
-  const deleted = [];
+/**
+ * Paths git ignores, out of `paths` (relative to `dir`), or null when that cannot be told: not a git work tree, no git, a failed or slow call,
+ * or too many paths. One `git check-ignore --stdin -z` call, no shell, bounded input and time. A tracked file is never reported as ignored.
+ */
+export function gitIgnoredPaths(dir, paths, { maxPaths = 60_000, maxBytes = 8_000_000, timeout = 20_000 } = {}) {
+  if (!paths.length || paths.length > maxPaths) return null;
+  const input = `${paths.join('\0')}\0`;
+  if (input.length > maxBytes) return null;
+  try {
+    const r = spawnSync('git', ['-C', dir, 'check-ignore', '--stdin', '-z'], { input, encoding: 'utf8', windowsHide: true, timeout, maxBuffer: 16_000_000 });
+    if (r.error || (r.status !== 0 && r.status !== 1)) return null; // 128: not a work tree, or git failed
+    return new Set(r.stdout.split('\0').filter(Boolean));
+  } catch { return null; }
+}
+
+/** The top-level folder (or file) of each ignored path, counted, biggest first, at most ten: the short summary that replaces thousands of lines. */
+function ignoredSummary(paths) {
+  const by = new Map();
+  for (const p of paths) { const top = p.split('/')[0]; by.set(top, (by.get(top) ?? 0) + 1); }
+  const folders = [...by].map(([folder, count]) => ({ folder, count })).sort((x, y) => y.count - x.count || (x.folder < y.folder ? -1 : 1));
+  return { count: paths.length, folders: folders.slice(0, 10) };
+}
+
+/**
+ * What differs between two snapshots. `unknown` when either was cut short: "cannot compare" is never reported as "unchanged".
+ * `ignoredOf(paths)` may return the subset git ignores: those paths leave the three lists and are summarised in `ignored` instead, but `count`
+ * still includes them, because the decision to stop a fall-through reads `count`: a failed attempt that changed anything, ignored or not, stops.
+ */
+export function diffSnapshots(a, b, ignoredOf = null) {
+  let created = [];
+  let modified = [];
+  let deleted = [];
   for (const [f, sig] of Object.entries(b.files)) {
     if (!(f in a.files)) created.push(f);
     else if (a.files[f] !== sig) modified.push(f);
   }
   for (const f of Object.keys(a.files)) if (!(f in b.files)) deleted.push(f);
   const head_moved = (a.head ?? null) !== (b.head ?? null);
+  const count = created.length + modified.length + deleted.length + (head_moved ? 1 : 0);
+  let ignored = null;
+  const every = [...created, ...modified, ...deleted];
+  const hidden = ignoredOf && every.length ? ignoredOf(every) : null;
+  if (hidden?.size) {
+    const gone = every.filter(p => hidden.has(p));
+    ignored = ignoredSummary(gone);
+    created = created.filter(p => !hidden.has(p));
+    modified = modified.filter(p => !hidden.has(p));
+    deleted = deleted.filter(p => !hidden.has(p));
+  }
   return {
     created: created.sort(), modified: modified.sort(), deleted: deleted.sort(), head_moved,
     unknown: Boolean(a.truncated || b.truncated),
-    count: created.length + modified.length + deleted.length + (head_moved ? 1 : 0),
+    count,
+    ...(ignored ? { ignored } : {}),
   };
 }
 
@@ -920,8 +1223,9 @@ export function diffSnapshots(a, b) {
  * Stops at the first success or genuine task failure. After a failure that did no work (limit, login, model, missing, timeout) it moves on,
  * except in an edit run where the attempt changed the tree (or the tree could not be compared): then it stops and says what changed.
  */
-export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotTree }) {
+export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotTree, ignoredOf = gitIgnoredPaths }) {
   const guard = access === 'edit';
+  const classify = paths => ignoredOf(cwd, paths);
   const attempts = [];
   let last = null;
   let stopped = null;
@@ -941,7 +1245,7 @@ export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotT
     if (guard) {
       end = snap(cwd);
       if (!verdict.ok) {
-        const ch = diffSnapshots(before, end);
+        const ch = diffSnapshots(before, end, classify);
         if (ch.count > 0 || ch.unknown) att.changed = ch;
       }
     }
@@ -958,7 +1262,7 @@ export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotT
     }
     before = end;
   }
-  return { attempts, last, stopped, changed: guard ? diffSnapshots(start, end) : null };
+  return { attempts, last, stopped, changed: guard ? diffSnapshots(start, end, classify) : null };
 }
 
 // ----------------------------------------------------------------------------- Cline guard (the worker contract, enforced)
@@ -1106,8 +1410,13 @@ function commandProblem(cmd, ctx, depth = 0) {
   return null;
 }
 
-/** Entry point of the hook file Cline runs: payload on stdin, policy and log path in the environment, answer on stdout. */
-export async function guardMain() {
+/**
+ * Entry point of the hook file Cline runs: payload on stdin, policy in the environment, answer on stdout. The block record is written
+ * to `logFile`, which the generated hook file passes in (writeGuardHook); it is never read from the environment. A worker's own commands
+ * inherit the environment, and a hook started by them (the repository's tests start one, with no policy) must not be able to write into
+ * the record of the run that is being routed: seen live on 2026-11-13, where it turned correct work into `failure: "guard"`.
+ */
+export async function guardMain({ logFile } = {}) {
   let text = '';
   for await (const chunk of process.stdin) text += chunk;
   let payload = {};
@@ -1121,35 +1430,36 @@ export async function guardMain() {
       ? { cancel: true, errorMessage: `Blocked ${tool}: no guard policy was provided, so this worker may not write or run commands` }
       : { cancel: false };
   } else decision = guardDecision(payload, policy);
-  if (decision.cancel && process.env.HOST_AGENT_ROUTER_GUARD_LOG) {
-    try { fs.appendFileSync(process.env.HOST_AGENT_ROUTER_GUARD_LOG, `${JSON.stringify({ tool, reason: decision.errorMessage?.replace(/^Blocked [a-z_]+: /, ''), at: new Date().toISOString() })}\n`); } catch { /* the answer matters more */ }
+  if (decision.cancel && logFile) {
+    try { fs.appendFileSync(logFile, `${JSON.stringify({ tool, reason: decision.errorMessage?.replace(/^Blocked [a-z_]+: /, ''), at: new Date().toISOString() })}\n`); } catch { /* the answer matters more */ }
   }
   process.stdout.write(`${JSON.stringify(decision)}\n`);
 }
 
-/** Write the hook file Cline discovers (`<dir>/PreToolUse.mjs`): it imports this script and runs guardMain. Returns its path. */
-export function writeGuardHook(dir) {
+/** Write the hook file Cline discovers (`<dir>/PreToolUse.mjs`): it imports this script and runs guardMain, with the block record's path inside the file. Returns its path. */
+export function writeGuardHook(dir, logFile = null) {
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, 'PreToolUse.mjs');
-  fs.writeFileSync(file, `import { guardMain } from ${JSON.stringify(pathToFileURL(SELF).href)};\nawait guardMain();\n`);
+  const arg = logFile ? `{ logFile: ${JSON.stringify(logFile)} }` : '';
+  fs.writeFileSync(file, `import { guardMain } from ${JSON.stringify(pathToFileURL(SELF).href)};\nawait guardMain(${arg});\n`);
   return file;
 }
 
 /**
  * Everything Cline needs to run with the guard: an isolated --config directory holding only the hook (Cline reads hooks from
- * <config>/hooks), the real --data-dir (the login lives there; with --config alone Cline answers "Unauthorized"), and the policy and
- * log path in the environment. null when there is no data directory to keep the login in. Call cleanup() when the run is over.
+ * <config>/hooks), the real --data-dir (the login lives there; with --config alone Cline answers "Unauthorized"), and the policy in the
+ * environment; the log path is inside the hook file. null when there is no data directory to keep the login in. Call cleanup() when the run is over.
  */
 export function prepareClineGuard({ cwd, dataDir, tmpBase = os.tmpdir() }) {
   try { if (!dataDir || !fs.statSync(dataDir).isDirectory()) return null; } catch { return null; }
   const configDir = fs.mkdtempSync(path.join(tmpBase, 'har-guard-'));
-  writeGuardHook(path.join(configDir, 'hooks'));
   const logFile = path.join(configDir, 'blocked.jsonl');
+  writeGuardHook(path.join(configDir, 'hooks'), logFile);
   const slash = p => String(p).replace(/\\/g, '/');
   const policy = { workspace: slash(cwd), home: slash(os.homedir()), tmp: [slash(os.tmpdir())] };
   return {
     args: ['--config', configDir, '--data-dir', dataDir],
-    env: { HOST_AGENT_ROUTER_GUARD: JSON.stringify(policy), HOST_AGENT_ROUTER_GUARD_LOG: logFile },
+    env: { HOST_AGENT_ROUTER_GUARD: JSON.stringify(policy) }, // the record's path is NOT exported: see guardMain
     configDir, logFile,
     cleanup: () => { try { fs.rmSync(configDir, { recursive: true, force: true }); } catch { /* best effort */ } },
     readBlocked: () => {
@@ -1168,6 +1478,9 @@ function clineDataDir(env = process.env) {
 const capList = l => (l.length > 200 ? [...l.slice(0, 200), `... and ${l.length - 200} more`] : l);
 const capChange = ch => (ch ? { ...ch, created: capList(ch.created), modified: capList(ch.modified), deleted: capList(ch.deleted) } : ch);
 
+/** The parsed `--settings` JSON of a spec (Antigravity edit runs), so a dry run can show the allow rules the 120-character argument cut hides. */
+const settingsOf = spec => { const i = spec.args.indexOf('--settings'); try { return i >= 0 ? JSON.parse(spec.args[i + 1]) : null; } catch { return null; } };
+
 async function cmdRun(opts, cfg) {
   const depth = Number(process.env.HOST_AGENT_ROUTER_DEPTH || 0);
   if (depth >= Number(cfg.maxDepth ?? 1)) {
@@ -1178,24 +1491,27 @@ async function cmdRun(opts, cfg) {
   if (!TIERS.includes(tier)) throw new Error(`--tier must be one of ${TIERS.join(', ')}`);
   const access = opts.access ?? cfg.defaultAccess ?? 'read-only';
   if (!ACCESS.includes(access)) throw new Error(`--access must be one of ${ACCESS.join(', ')} (there is no full-access mode)`);
+  const skills = resolveSkills(opts.skill); // a usage error here means no status was read and no host started
   const prompt = readPrompt(opts);
   const cwd = path.resolve(opts.cwd ?? process.cwd());
   const only = opts['pin-host'] ? [opts['pin-host']] : undefined;
   const allowCmd = opts['allow-cmd'] ?? [];
   const badCmd = validateAllowCmd(allowCmd);
   if (badCmd.length) throw new Error(badCmd.join('\n'));
-  const { here, statuses } = await gather(cfg, opts, tier, only);
-  const plan = buildPlan(cfg, tier, statuses, here, only, access);
+  const { here, statuses } = await gather(cfg, opts, tier, only, opts.effort);
+  const plan = buildPlan(cfg, tier, statuses, here, only, access, opts.effort);
   const cands = plan.candidates.filter(c => !opts['pin-side'] || c.side === opts['pin-side']);
-  const specFor = (c, text, tcwd) => buildSpec(cfg, c.host, cfg.hosts[c.host].tiers[tier], text, access, tcwd, tier, { allowCmd });
+  const attached = skills.map(({ name, chars }) => ({ name, chars }));
+  const specFor = (c, text, tcwd) => buildSpec(cfg, c.host, c, text, access, tcwd, tier, { allowCmd, skills });
 
   if (opts['dry-run']) {
     const would_try = cands.map(c => {
       const tcwd = translateCwd(cwd, here, c.side);
-      const spec = specFor(c, '<prompt>', tcwd);
-      return { ...c, cwd: tcwd, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv' };
+      const spec = specFor(c, prompt, tcwd);
+      const skip = argvTooLong(spec, c.side);
+      return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}) };
     });
-    print({ dry_run: true, access, plan, would_try });
+    print({ dry_run: true, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, plan, would_try });
     return cands.length ? 0 : 2;
   }
 
@@ -1203,6 +1519,8 @@ async function cmdRun(opts, cfg) {
     const tcwd = translateCwd(cwd, here, c.side);
     if (tcwd == null) return { skipped: `working directory ${cwd} is not reachable from ${c.side}` };
     const spec = specFor(c, prompt, tcwd);
+    const tooLong = argvTooLong(spec, c.side);
+    if (tooLong) return { skipped: tooLong };
     const payload = { host: c.host, args: spec.args, stdin: spec.stdin, env: spec.env, cwd: tcwd, timeout: timeoutFor(cfg, tier, opts.timeout) };
     try {
       return await callSide(cfg, here, c.side, 'local-exec', payload, payload.timeout * 1000 + 60_000);
@@ -1213,7 +1531,7 @@ async function cmdRun(opts, cfg) {
   const { attempts, last, stopped, changed } = await runAttempts({ cands, access, cwd, tryOne });
   const verdict = last ? judgeRun(last[0].host, last[1]) : { ok: false, problem: null };
   const ok = verdict.ok;
-  const env = { ok, tier, access, attempts, skipped: plan.skipped };
+  const env = { ok, tier, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, attempts, skipped: plan.skipped };
   // A run the guard stopped, or that Cline did not complete, exited 0 but is not a success; say why, and never hand it to another host.
   if (verdict.problem) env.failure = verdict.problem;
   if (verdict.finish_reason) env.finish_reason = verdict.finish_reason;
@@ -1224,7 +1542,9 @@ async function cmdRun(opts, cfg) {
   for (const a of attempts) if (a.changed) a.changed = capChange(a.changed);
   if (last) {
     const [c, res] = last;
-    env.ran = { host: c.host, side: c.side, model: c.model, effort: c.effort, label: c.label };
+    env.ran = ranOf(c);
+    const specNotes = specFor(c, prompt, translateCwd(cwd, here, c.side)).notes;
+    if (specNotes) env.notes = specNotes;
     const cl = c.host === 'cline' ? parseClineJson(res.stdout) : null;
     const ag = c.host === 'antigravity' ? parseAgyRun(res.stdout) : null;
     if (ag) {
@@ -1254,7 +1574,7 @@ async function cmdRun(opts, cfg) {
 
 async function cmdModels(opts, cfg) {
   const here = opts.here ?? detectHere();
-  const wanted = Object.fromEntries(cfg.priority.map(h => [h, TIERS.map(t => cfg.hosts[h].tiers[t].model)]));
+  const wanted = Object.fromEntries(cfg.priority.map(h => [h, configuredModels(cfg, h)]));
   const out = {};
   for (const side of discoverSides(here, cfg)) {
     try { out[side] = await callSide(cfg, here, side, 'local-models', { models: wanted }); } catch (e) { out[side] = { error: e.message }; }
@@ -1263,15 +1583,39 @@ async function cmdModels(opts, cfg) {
   return 0;
 }
 
+async function cmdMachine(opts, cfg) {
+  const here = opts.here ?? detectHere();
+  const sides = {};
+  for (const side of discoverSides(here, cfg)) {
+    try {
+      const { hosts } = await callSide(cfg, here, side, 'local-machine', {}, 120_000);
+      sides[side] = side === here || here === 'local' ? hosts : viaBridge(hosts);
+    } catch (e) {
+      sides[side] = bridgeFailed(e?.message ?? e, HOSTS);
+    }
+  }
+  const record = machineRecord({ hostname: os.hostname(), platform: process.platform, here, node: process.version, now: new Date(), sides });
+  if (opts.save) {
+    const file = saveMachineRecord(record, machinesDir());
+    print({ ...record, saved: file });
+  } else print(record);
+  return 0;
+}
+
 const USAGE = `host-agent-router: route a task to the best agent CLI and side, then run it headlessly.
 
 Commands:
-  status [--tier T] [--host H...] [--json]   table of every host x side with 5-hour / weekly headroom
-  plan   [--tier T] [--host H...]            the routing decision as JSON (starts no model)
-  run    --tier T (--prompt S | --prompt-file F | stdin) [--access read-only|edit] [--cwd D]
-         [--timeout SEC] [--allow-cmd PREFIX ...] [--pin-host H] [--pin-side S] [--dry-run]
+  status [--tier T] [--effort E] [--host H...] [--json]   table of every host x side with 5-hour / weekly headroom
+  plan   [--tier T] [--effort E] [--host H...]            the routing decision as JSON (starts no model)
+  run    --tier T (--prompt S | --prompt-file F | stdin) [--access read-only|edit] [--cwd D] [--effort E]
+         [--skill NAME ...] [--timeout SEC] [--allow-cmd PREFIX ...] [--pin-host H] [--pin-side S] [--dry-run]
          --timeout defaults per tier (config timeoutSeconds); --allow-cmd adds a command prefix the worker may run (its acceptance command).
-  models                                     check configured model names against each host's own list
+         --effort E picks a setting inside the tier where a host has one (config tiers.<tier>.efforts); a host without it keeps its
+         default and the result says so. An effort no candidate host knows is a usage error.
+         --skill NAME (up to 3) puts the SKILL.md text of a sibling skill into the worker's prompt, after the contract; --dry-run lists them.
+  models                                     check configured model names (tiers and efforts) against each host's own list
+  machine [--save]                           what this machine has per host and side and how each is started (starts no model);
+                                             --save writes it to ~/.agents/host-agent-router/machines/<hostname>.json
 
 Tiers: simple, medium, high.   Hosts: cline, antigravity, codex, claude.   Access defaults to read-only.
 Replay aids: --here windows|wsl|local, --statuses-file FILE (use captured statuses instead of probing).
@@ -1284,6 +1628,7 @@ const OPTIONS = {
   'statuses-file': { type: 'string' }, prompt: { type: 'string' }, 'prompt-file': { type: 'string' }, access: { type: 'string' },
   cwd: { type: 'string' }, timeout: { type: 'string' }, 'allow-cmd': { type: 'string', multiple: true }, 'pin-host': { type: 'string' }, 'pin-side': { type: 'string' },
   'dry-run': { type: 'boolean' }, payload: { type: 'string' }, help: { type: 'boolean', short: 'h' },
+  effort: { type: 'string' }, skill: { type: 'string', multiple: true }, save: { type: 'boolean' },
 };
 
 export async function main(argv) {
@@ -1294,7 +1639,7 @@ export async function main(argv) {
     process.stdout.write(`${JSON.stringify(await LOCAL[cmd](JSON.parse(fs.readFileSync(opts.payload, 'utf8'))))}\n`);
     return 0;
   }
-  const handler = { status: cmdStatus, plan: cmdPlan, run: cmdRun, models: cmdModels }[cmd];
+  const handler = { status: cmdStatus, plan: cmdPlan, run: cmdRun, models: cmdModels, machine: cmdMachine }[cmd];
   if (!handler) { process.stderr.write(`unknown command: ${cmd}\n\n${USAGE}`); return 64; }
   const SIDES = ['windows', 'wsl', 'local'];
   const oneOf = (flag, value, allowed, note = '') => {
@@ -1306,7 +1651,14 @@ export async function main(argv) {
   oneOf('--pin-side', opts['pin-side'], SIDES);
   oneOf('--here', opts.here, SIDES);
   oneOf('--access', opts.access, ACCESS, ' (there is no full-access mode)');
-  return handler(opts, loadConfig());
+  if (opts.skill && cmd !== 'run') throw new Error('--skill belongs to run');
+  if (opts.effort !== undefined && !['status', 'plan', 'run'].includes(cmd)) throw new Error('--effort belongs to run, plan and status');
+  const cfg = loadConfig();
+  if (opts.effort !== undefined) {
+    const bad = checkEffort(cfg, opts.tier ?? 'medium', opts.effort, cmd === 'run' ? (opts['pin-host'] ? [opts['pin-host']] : undefined) : opts.host);
+    if (bad) throw new Error(bad);
+  }
+  return handler(opts, cfg);
 }
 
 let invokedDirectly = false;

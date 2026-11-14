@@ -1,0 +1,22 @@
+{
+  "skill_name": "author-contract",
+  "status": "prepared-not-run",
+  "evals": [
+    {
+      "id": 1,
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete shared-pair job and already compatible source pair, prepare exact reuse for a local draft. Preserve the original CRLF notes, JSON formatting and Owner: unknown. A permitted review-checklist Skill has no source and is optional for this task. Return real inventory/diff, independent shared-validator evidence or the precise unavailable check, source/binding findings and unverified quality/live items. Do not install, publish or start a Host/model/provider session.",
+      "expected_output": "Reuses the existing pair byte-for-byte without fresh intake, preserves the unknown owner and formatting, distinguishes an optional unavailable source from required loading, and names actual checks or unavailable evidence without claiming quality/live proof.",
+      "runs": [
+        { "condition": "with-skill", "prompt": "Using the supplied complete shared-pair job and already compatible source pair, prepare exact reuse for a local draft. Preserve the original CRLF notes, JSON formatting and Owner: unknown. A permitted review-checklist Skill has no source and is optional for this task. Return real inventory/diff, independent shared-validator evidence or the precise unavailable check, source/binding findings and unverified quality/live items. Do not install, publish or start a Host/model/provider session." },
+        { "condition": "without-skill", "prompt": "Using the supplied complete shared-pair job and already compatible source pair, prepare exact reuse for a local draft. Preserve the original CRLF notes, JSON formatting and Owner: unknown. A permitted review-checklist Skill has no source and is optional for this task. Return real inventory/diff, independent shared-validator evidence or the precise unavailable check, source/binding findings and unverified quality/live items. Do not install, publish or start a Host/model/provider session." }
+      ]
+    },
+    {
+      "id": 2,
+      "kind": "unrelated-control",
+      "prompt": "Summarize this supplied note in one sentence: The meeting approved the revised checklist, kept the owner unknown, and postponed publication until review. Do not create files or ask intake questions; all information needed for this summary is present.",
+      "expected_output": "Returns the requested one-sentence summary using only the supplied facts, preserves the unknown owner and review condition, and does not start shared-pair authoring, file changes or unnecessary intake."
+    }
+  ]
+}

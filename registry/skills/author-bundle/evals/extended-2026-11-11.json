@@ -1,0 +1,84 @@
+{
+  "skill_name": "author-bundle",
+  "status": "prepared-not-run",
+  "plan": "extended 2026-11-11: remaining four matched pairs; use setup.md and fixtures.json. Complements primary evals.json; no scenarios are dropped.",
+  "preparation": "Unbound: follow setup.md and fixtures.json before any future authorized run. Preconditions, actual paths, HEAD, runtime and hashes are unavailable until bound; no behavior has been verified.",
+  "evals": [
+    {
+      "id": 5,
+      "name": "Existing authorization",
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete Organization job and the recorded same-scope setup authorization, prepare a local proposal without repeating that approval. The human retains credentials. Return the four files and remaining actual availability checks; do not provision or run a Host.",
+      "expected_output": "Reuses same-scope authorization, keeps secrets with the human and separates authorization from actual availability and provider spend.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Using the supplied complete Organization job and the recorded same-scope setup authorization, prepare a local proposal without repeating that approval. The human retains credentials. Return the four files and remaining actual availability checks; do not provision or run a Host."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Using the supplied complete Organization job and the recorded same-scope setup authorization, prepare a local proposal without repeating that approval. The human retains credentials. Return the four files and remaining actual availability checks; do not provision or run a Host."
+        }
+      ],
+      "fixture": "fixtures.json#case-5",
+      "binding": "Construct the complete bound job using setup.md, common fixture and this case; use identical bytes and task prompt in both conditions."
+    },
+    {
+      "id": 6,
+      "name": "Missing reload evidence",
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete Claude CLI Organization job, the plugin is listed but the user has not reported the reviewed reload and ToolSearch has not established availability. Draft four local proposal files and identify the missing evidence without setting up or starting anything.",
+      "expected_output": "Does not infer callable tools from installation and names the separate user reload and session check.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Using the supplied complete Claude CLI Organization job, the plugin is listed but the user has not reported the reviewed reload and ToolSearch has not established availability. Draft four local proposal files and identify the missing evidence without setting up or starting anything."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Using the supplied complete Claude CLI Organization job, the plugin is listed but the user has not reported the reviewed reload and ToolSearch has not established availability. Draft four local proposal files and identify the missing evidence without setting up or starting anything."
+        }
+      ],
+      "fixture": "fixtures.json#case-6",
+      "binding": "Construct the complete bound job using setup.md, common fixture and this case; use identical bytes and task prompt in both conditions."
+    },
+    {
+      "id": 7,
+      "name": "Scoped update and protected notes",
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete update job, the existing proposal is unchanged and the draft baseline includes protected notes. Preserve their exact bytes and return the four outputs, full inventory and independently checkable diff; no install or publication.",
+      "expected_output": "Preserves protected notes and reports exact scope and evidence without inventing a change.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Using the supplied complete update job, the existing proposal is unchanged and the draft baseline includes protected notes. Preserve their exact bytes and return the four outputs, full inventory and independently checkable diff; no install or publication."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Using the supplied complete update job, the existing proposal is unchanged and the draft baseline includes protected notes. Preserve their exact bytes and return the four outputs, full inventory and independently checkable diff; no install or publication."
+        }
+      ],
+      "fixture": "fixtures.json#case-7",
+      "binding": "Construct the complete bound job using setup.md, common fixture and this case; use identical bytes and task prompt in both conditions."
+    },
+    {
+      "id": 8,
+      "name": "Incomplete native leader",
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete job, prepare an Organization proposal whose proposed leader lacks a reviewed native realization. Return the four local files and explicitly identify missing shared/native edges; do not claim it is installable or start a Host.",
+      "expected_output": "Records unresolved core, contract and native delivery edges as applicable and leaves installation and live behavior unverified.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Using the supplied complete job, prepare an Organization proposal whose proposed leader lacks a reviewed native realization. Return the four local files and explicitly identify missing shared/native edges; do not claim it is installable or start a Host."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Using the supplied complete job, prepare an Organization proposal whose proposed leader lacks a reviewed native realization. Return the four local files and explicitly identify missing shared/native edges; do not claim it is installable or start a Host."
+        }
+      ],
+      "fixture": "fixtures.json#case-8",
+      "binding": "Construct the complete bound job using setup.md, common fixture and this case; use identical bytes and task prompt in both conditions."
+    }
+  ]
+}

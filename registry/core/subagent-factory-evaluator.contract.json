@@ -1,0 +1,6 @@
+{
+  "definition": "subagent-factory-evaluator",
+  "workflows": [],
+  "skills": ["evaluate-artifact"],
+  "hooks": ["reject-mutating-tools"]
+}

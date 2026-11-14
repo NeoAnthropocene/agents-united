@@ -1,0 +1,9 @@
+{
+  "skill_name": "realize-artifact",
+  "status": "prepared-only; not authorization to run",
+  "evals": [
+    { "id": 1, "prompt": "Using the fixed original supplied pair and zero-spend job, prepare one Claude agent draft. Return final hashes, complete diff, real offline receipts and separate quality/live limits.", "expected_output": "Only the allowed draft path changes, the floor and grants match, required bindings are present and independent quality/live proof remains unverified." },
+    { "id": 2, "prompt": "Repair only the description in the supplied native draft while retaining the complete pinned baseline, including unrelated.md. The target and constraints are fixed.", "expected_output": "The unchanged note appears with its original hash, all changed bytes fit update scope, stale evidence blocks acceptance and no live or publication action occurs." }
+  ],
+  "comparison": { "pair": "Same immutable job and input bytes with and without this Skill", "control": "Unrelated task with equal budget; Skill should not broaden scope", "execution": "unverified; maintainer must separately authorize account, prompts and cost limits" }
+}

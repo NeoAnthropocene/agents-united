@@ -1,0 +1,316 @@
+{
+  "common": {
+    "status": "prepared-unbound",
+    "operation": "create",
+    "intent": "local",
+    "version": "1.0.0",
+    "statusValue": "under-construction",
+    "category": "Prepared example",
+    "sourcePaths": [
+      "registry/bundles.json",
+      "src/core/types.ts",
+      "registry/agents/subagent-code-reviewer.md",
+      "registry/agents/orchestrator-digital-agency.md",
+      "registry/agents/subagent-marketing-creative-designer.md",
+      "registry/skills/host-agent-router/SKILL.md",
+      "registry/skills/handoff/SKILL.md",
+      "registry/skills/git-guardrails/SKILL.md",
+      "registry/skills/requesting-code-review/SKILL.md"
+    ],
+    "targetHost": "Claude Code CLI workspace, proposed only",
+    "sourceDisposition": "original proposal; inspect actual pinned sources and their licence/notice evidence; do not claim clearance from this fixture",
+    "inputTree": [
+      "job.json: complete bound job",
+      "inputs/requirements.md: exact case requirements",
+      "baseline/: files listed per case",
+      "evidence/: caller-only check outputs"
+    ],
+    "outputTree": [
+      "bundles.json",
+      "leader-responsibility.md",
+      "bindings.json",
+      "report.json"
+    ],
+    "rootConstraints": "fresh case-specific draft disjoint from pinned source checkout, baseline, evidence and managed/protected paths; no symlinks or links crossing these roots; never install",
+    "requiredBaseline": "empty unless case specifies protected file; compare every baseline byte before/after",
+    "budget": {
+      "authoredFiles": 4,
+      "bytesEach": 262144,
+      "authoredBytesTotal": 1048576,
+      "preservedFiles": 32,
+      "preservedBytesTotal": 2097152,
+      "pinnedTextInputs": 32,
+      "pinnedTextBytesTotal": 4194304,
+      "offlineChecks": 6,
+      "offlineCheckMinutes": 10,
+      "rawOutputBytesPerCheck": 524288,
+      "liveModelProviderRuns": 0
+    },
+    "constraints": [
+      "all three shared Skills declared once",
+      "no managed/global/source writes, provisioning, network, publication, credentials or live sessions",
+      "separate actual authorization, availability and paid invocation",
+      "record unresolved native delivery and rights/quality evidence truthfully"
+    ],
+    "acceptance": [
+      "AC-1 four scoped files and preserved baseline",
+      "AC-2 manifest uses actual BundleDefinition and BundlePrerequisites fields",
+      "AC-3 shared Skills once and dormant absent explicit request",
+      "AC-4 required/optional dependency status and leader responsibility accurate",
+      "AC-5 complete delivery/provenance/check gaps and independent handback"
+    ],
+    "checks": "caller chooses applicable existing offline checks and records actual commands, raw output and exits; unavailable checks remain open",
+    "bindingInputs": [
+      "absolute checkout and actual HEAD",
+      "absolute Node runtime and version",
+      "absolute isolated draft, baseline and evidence roots",
+      "input files and SHA-256 pins",
+      "canonical job bytes and caller-held SHA-256 digest",
+      "actual tool and source availability"
+    ]
+  },
+  "cases": {
+    "case-1": {
+      "title": "Data-rich Domain with no integrations",
+      "template": "domain",
+      "name": "fixture-review-domain",
+      "domain": "engineering",
+      "description": "Review supplied local changes and hand off findings.",
+      "roster": [
+        "subagent-code-reviewer.md"
+      ],
+      "leader": null,
+      "skills": [
+        "requesting-code-review",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
+      "prerequisites": {
+        "requiredMcps": [],
+        "requiredPackages": [],
+        "requiredEnvVars": []
+      },
+      "taskRequirements": "Review supplied architecture notes and change list for accessibility, test impact and unresolved decisions; no external integration is needed.",
+      "authorization": "Local draft authorized; no setup or external action authorized.",
+      "acceptanceExtra": [
+        "Preserve explicit empty prerequisites and no-leader finding."
+      ]
+    },
+    "case-2": {
+      "title": "Organization with empty prerequisites",
+      "template": "organization",
+      "name": "fixture-organization-empty",
+      "domain": "organization",
+      "description": "Coordinate supplied local engineering and creative review.",
+      "leader": "orchestrator-digital-agency.md",
+      "roster": [
+        "subagent-code-reviewer.md",
+        "subagent-marketing-creative-designer.md"
+      ],
+      "skills": [
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
+      "prerequisites": {
+        "requiredMcps": [],
+        "requiredPackages": [],
+        "requiredEnvVars": []
+      },
+      "taskRequirements": "Coordinate supplied local design and engineering notes; no current integrations.",
+      "authorization": "Local draft authorized; no provisioning authorized.",
+      "acceptanceExtra": [
+        "Organization leader retains provisioning responsibility despite empty list."
+      ]
+    },
+    "case-3": {
+      "title": "Required integration unavailable",
+      "template": "organization",
+      "name": "fixture-required-integration",
+      "domain": "organization",
+      "description": "Prepare a local release proposal with a repository-dependent action.",
+      "leader": "orchestrator-digital-agency.md",
+      "roster": [
+        "subagent-code-reviewer.md"
+      ],
+      "skills": [
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
+      "prerequisites": {
+        "requiredMcps": [
+          {
+            "name": "github",
+            "purpose": "Repository action",
+            "optional": false
+          }
+        ],
+        "requiredPackages": [],
+        "requiredEnvVars": []
+      },
+      "taskRequirements": "GitHub is unavailable in the hypothetical target session; a repository action depends on it. Prepare independent local proposal work only.",
+      "authorization": "Local draft authorized; no connection, repository action or publication authorized.",
+      "acceptanceExtra": [
+        "Block the dependent repository action without inventing availability."
+      ]
+    },
+    "case-4": {
+      "title": "Optional integration unavailable",
+      "template": "organization",
+      "name": "fixture-optional-integration",
+      "domain": "organization",
+      "description": "Review supplied local material with optional repository context.",
+      "leader": "orchestrator-digital-agency.md",
+      "roster": [
+        "subagent-code-reviewer.md",
+        "subagent-marketing-creative-designer.md"
+      ],
+      "skills": [
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
+      "prerequisites": {
+        "requiredMcps": [
+          {
+            "name": "github",
+            "purpose": "Optional repository context",
+            "optional": true
+          }
+        ],
+        "requiredPackages": [],
+        "requiredEnvVars": []
+      },
+      "taskRequirements": "GitHub is unavailable; reviewing the supplied local material does not depend on it.",
+      "authorization": "Local draft authorized; no connection or repository action authorized.",
+      "acceptanceExtra": [
+        "Disclose degraded local-only scope and do not call a mock integration output."
+      ]
+    },
+    "case-5": {
+      "title": "Already authorized setup",
+      "template": "organization",
+      "name": "fixture-existing-authorization",
+      "domain": "organization",
+      "description": "Plan a local proposal with an already authorized future setup.",
+      "leader": "orchestrator-digital-agency.md",
+      "roster": [
+        "subagent-code-reviewer.md"
+      ],
+      "skills": [
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
+      "prerequisites": {
+        "requiredMcps": [
+          {
+            "name": "github",
+            "purpose": "Future repository review"
+          }
+        ],
+        "requiredPackages": [],
+        "requiredEnvVars": []
+      },
+      "taskRequirements": "The hypothetical human already authorized project-scope setup of GitHub for this same task; target-session availability is not observed.",
+      "authorization": "Same-scope project setup authorization is supplied for future leader work; this authoring job performs no setup, sign-in, repository action or paid invocation.",
+      "acceptanceExtra": [
+        "Reuse supplied authorization without equating it with current availability or provider spending consent."
+      ]
+    },
+    "case-6": {
+      "title": "Missing Claude plugin reload evidence",
+      "template": "organization",
+      "name": "fixture-plugin-reload",
+      "domain": "organization",
+      "description": "Plan a local proposal with a selected plugin route.",
+      "leader": "orchestrator-digital-agency.md",
+      "roster": [
+        "subagent-code-reviewer.md"
+      ],
+      "skills": [
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
+      "prerequisites": {
+        "requiredMcps": [
+          {
+            "name": "github",
+            "purpose": "Future repository review"
+          }
+        ],
+        "requiredPackages": [],
+        "requiredEnvVars": []
+      },
+      "taskRequirements": "For this hypothetical Claude CLI session the plugin is listed; the user has not reported the reviewed reload and ToolSearch has not established callable tools.",
+      "authorization": "Local draft only; no setup, reload, tool invocation or repository action.",
+      "acceptanceExtra": [
+        "Report missing user reload and actual ToolSearch evidence without assuming availability."
+      ]
+    },
+    "case-7": {
+      "title": "Scoped update with protected note",
+      "template": "domain",
+      "name": "fixture-update-domain",
+      "domain": "engineering",
+      "description": "Review supplied local changes and hand off findings.",
+      "operation": "update",
+      "leader": null,
+      "roster": [
+        "subagent-code-reviewer.md"
+      ],
+      "skills": [
+        "requesting-code-review",
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
+      "prerequisites": {
+        "requiredMcps": [],
+        "requiredPackages": [],
+        "requiredEnvVars": []
+      },
+      "taskRequirements": "The existing proposal is already compatible; preserve it unchanged and retain the protected note byte-for-byte.",
+      "baselineFiles": {
+        "protected-notes.txt": "Owner: unknown\nDo not change this note.\n",
+        "bundles.json": "Build the case 1 concrete manifest using fixture-update-domain as key and name, then record exact bytes and hash.",
+        "leader-responsibility.md": "Existing compatible leader responsibility; no leader, no current prerequisites.\n",
+        "bindings.json": "Prepare a complete evidence record for the existing candidate; explicitly leave native delivery and quality unverified, bind actual source paths and retain exact bytes.",
+        "report.json": "Prepare a complete existing report for the baseline, including actual bound identity, other-file inventory and explicit deferred self-hash; retain exact bytes."
+      },
+      "authorization": "Only unchanged reuse/update of the four proposal paths; no modification to protected note or external action.",
+      "acceptanceExtra": [
+        "Complete inventory/diff identifies unchanged proposal and protected note."
+      ]
+    },
+    "case-8": {
+      "title": "Incomplete native leader",
+      "template": "organization",
+      "name": "fixture-unrealized-leader",
+      "domain": "organization",
+      "description": "Propose a cross-functional leader awaiting separate realization.",
+      "leader": "orchestrator-example-unrealized.md",
+      "roster": [
+        "subagent-code-reviewer.md"
+      ],
+      "skills": [
+        "host-agent-router",
+        "handoff",
+        "git-guardrails"
+      ],
+      "prerequisites": {
+        "requiredMcps": [],
+        "requiredPackages": [],
+        "requiredEnvVars": []
+      },
+      "taskRequirements": "The proposed leader has no inspected shared core, contract or target-native realization in this fixture; do not create these artifacts.",
+      "authorization": "Local proposal only; no realization, installation or Host run.",
+      "acceptanceExtra": [
+        "List required shared/native delivery edges and leave installation/loading and quality pending."
+      ]
+    }
+  }
+}

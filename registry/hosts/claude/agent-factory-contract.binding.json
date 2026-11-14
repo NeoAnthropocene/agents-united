@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "bundle": "agent-factory",
+  "skill": "author-contract",
+  "source": "hosts/claude/skills/author-contract/SKILL.md",
+  "installed": ".claude/skills/author-contract/SKILL.md",
+  "loadingRole": {
+    "kind": "built-in",
+    "name": "general-purpose",
+    "context": "fork",
+    "background": false
+  },
+  "invocation": "/author-contract",
+  "surface": {
+    "host": "claude",
+    "product": "Claude Code CLI",
+    "scope": "workspace",
+    "lane": "native"
+  },
+  "requiredSupport": [
+    "references/job.md",
+    "references/reuse.md",
+    "references/bindings.md",
+    "references/verification.md",
+    "examples/new-pair.md",
+    "examples/reused-pair.md",
+    "assets/job.schema.json",
+    "assets/report.json",
+    "scripts/draft-pair.mjs"
+  ],
+  "references": [
+    {
+      "source": "rules/skill-attribution.md",
+      "installed": ".claude/skills/author-contract/references/skill-attribution.md"
+    },
+    {
+      "source": "rules/git-guardrails.md",
+      "installed": ".claude/skills/author-contract/references/rules/git-guardrails.md"
+    },
+    {
+      "source": "rules/test-driven-development.md",
+      "installed": ".claude/skills/author-contract/references/rules/test-driven-development.md"
+    },
+    {
+      "source": "rules/clean-code-and-architecture.md",
+      "installed": ".claude/skills/author-contract/references/rules/clean-code-and-architecture.md"
+    },
+    {
+      "source": "rules/domain-modeling-and-adr.md",
+      "installed": ".claude/skills/author-contract/references/rules/domain-modeling-and-adr.md"
+    },
+    {
+      "source": "rules/multi-agent-coordination.md",
+      "installed": ".claude/skills/author-contract/references/rules/multi-agent-coordination.md"
+    },
+    {
+      "source": "rules/quality-aesthetics-accessibility.md",
+      "installed": ".claude/skills/author-contract/references/rules/quality-aesthetics-accessibility.md"
+    }
+  ],
+  "reviewedInputs": [
+    "host-library/claude/guide/skill.md",
+    "host-library/claude/guide/agent.md",
+    "host-library/claude/guide/orchestration.md",
+    "host-library/claude/pages/skill/skills.md#run-skills-in-a-subagent",
+    "host-library/claude/pages/agent/sub-agents.md#built-in-subagents",
+    "registry/hosts/claude/profile.json",
+    "registry/hosts/claude/tool-policy.json",
+    "host-library/claude/library.lock.json"
+  ]
+}

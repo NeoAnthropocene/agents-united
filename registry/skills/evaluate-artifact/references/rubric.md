@@ -1,0 +1,13 @@
+# Quality rubric
+
+Use the seven fixed criterion IDs in assets/rubric.json. Every applicable required criterion needs a rationale and pinned citation; unverified evidence prevents a complete-quality claim. Host-neutral shared pairs and portable Skills mark host-fit N/A with the job's reason. A Skill adding no subagent marks shared-semantics N/A; this does not waive task fit or dependency review.
+
+- task-fit: Compare the actual behavior/instructions with the original brief, fixed literals, constraints, scope and observable acceptance. Identify who supplies any unknown business fact.
+- shared-semantics: Check identity, mission, scope, output and safety against the shared floor; the companion has exactly definition/workflows/skills/hooks. Native preferences cannot rewrite shared meaning.
+- host-fit: Inspect applicable native files against selected guides, cited locked snapshots/observations, profile and complete class-derived policy. Distinguish discovery, loading, invocation, conditional tools and enforced mechanics.
+- dependency-usefulness: Follow every required loading/support/registration edge and identify the action that consumes it. Optional integrations need explicit degraded behavior; an installed validator is not an executed validator.
+- evidence-truthfulness: Compare final inventory/diff, coverage, pinned command/log/receipt scope, actual exits and every evidence claim. A worker-written record is not independent execution proof.
+- provenance-ownership: Inspect source/licence/comparison/notices and original/inspired/adapted disposition, retained notices, holds and unresolved ownership. Hash agreement is not legal clearance or originality proof.
+- clarity-maintainability: Prefer coherent, concise guidance, useful examples, progressive disclosure and bounded recovery. Deterministic size/ratchet checks are evidence rather than the entire quality judgment.
+
+Use satisfactory/needs-work/unverified/not-applicable per criterion. Overall no-blocking-findings, changes-requested or inconclusive is your opinion, never approval. A HIGH/CRITICAL finding, missing required criterion/evidence or partial review cannot accompany a no-blocking opinion. A completed static review may keep live behavior unverified; lack of live authorization alone does not invent a quality defect.

@@ -27,7 +27,7 @@ interface RoleSpec {
   name: string;
   stem: string;
   guard: 'read-only' | 'destructive';
-  permissionMode: 'plan' | 'acceptEdits';
+  permissionMode?: 'plan' | 'acceptEdits';
   skills: string[];
   /** Explicit server tools (read-only roles) or whole servers (roles that may write, as the legacy lane grants). */
   serverTools: string[];
@@ -61,6 +61,8 @@ const MEDIA_VIDEO_SERVERS = ['mcp__higgsfield', 'mcp__klingai'];
 const MEDIA_AUDIO_SERVERS = ['mcp__elevenlabs', 'mcp__fish-audio'];
 
 const ROLES: RoleSpec[] = [
+  { name: 'factory-evaluator', stem: 'subagent-factory-evaluator', guard: 'read-only', skills: ['evaluate-artifact'], serverTools: [], mutating: false, mustHold: ['Glob', 'Grep', 'Read', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'ReportFindings', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'inherit', effort: 'medium' },
+  { name: 'factory-realizer', stem: 'subagent-realize-for-host', guard: 'destructive', skills: ['realize-artifact'], serverTools: [], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'ReportFindings', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'inherit', effort: 'medium' },
   { name: 'code-reviewer', stem: 'subagent-code-reviewer', guard: 'read-only', permissionMode: 'plan', skills: ['security-audit'], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ReportFindings', 'ToolSearch'], model: 'sonnet', effort: 'medium' },
   { name: 'repo-index', stem: 'subagent-repo-index', guard: 'read-only', permissionMode: 'plan', skills: [], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ToolSearch'], model: 'sonnet', effort: 'medium' },
   { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },

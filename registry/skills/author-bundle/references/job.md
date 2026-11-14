@@ -1,0 +1,11 @@
+# Fixed job and scope
+
+The caller supplies a job ID and caller-held digest; operation (`create`, `update`, `reuse`); Domain or Organization template; literal name, version, status, domain, category and description; applicable parent, roster, leader and shared-core identities; local or upstream intent; and complete constraints and acceptance IDs. Explicitly record empty lists. Preserve fixed values and obtain missing required inputs from the caller without repeating answered questions.
+
+Pin source registry, validation checkout and actual HEAD, runtime and selected offline checks; reviewed target Host/surface separately from the Host running authoring; source, draft, evidence, managed and protected roots; allowed changes, full baseline and input hashes; provenance, prerequisite table, required inputs and budgets. A named target claim requires that target's reviewed guide, locked citations, observations, profile, tool policy and availability. A shared proposal can leave target realization pending.
+
+Use a new or explicitly authorized update directory disjoint from source, evidence, managed installs and protected roots. Preserve unrelated baseline files as preservation-only. Write only `bundles.json` (existing manifest envelope with proposed record), `leader-responsibility.md`, `bindings.json` and `report.json`. Do not write the source registry, `.claude/agents`, managed configuration, credentials or global files. Do not install the candidate or claim managed Option A.
+
+Limits: at most four authored files, 256 KiB each and 1 MiB total; 32 preserved files/2 MiB; 32 pinned text inputs/4 MiB; six caller-selected offline checks, ten minutes and 512 KiB raw output each. If a cap is exceeded, return the scoped open item without silently truncating. These are guidance and budgets, not an OS sandbox. Zero live/model/provider runs, private transcript reads or spend. Repository implementation gates have separate durations.
+
+For upstream intent identify the pinned existing dev contribution template and prepared evidence, with `sent: false`. Contribution and publication need separate authorization. The caller retains the original job outside returned text and independently checks scope, digest and output.

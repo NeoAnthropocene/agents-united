@@ -22,11 +22,11 @@ const REGISTRY = path.resolve('registry');
 const BUNDLE = 'software-engineering';
 /** The five native roles the Tier-1 `software-engineering` bundle installs. */
 const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'orchestrator-engineering', 'repo-index'];
-/** Every committed native Claude role: those five and the Tier-2 digital-agency lead and its eight agency-only teammates (ADR 0036, ADR 0039). */
+/** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer',
-  'frontend-architect', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
+  'factory-evaluator', 'factory-realizer', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
 ];
 const COORDINATORS = ['orchestrator-engineering'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */

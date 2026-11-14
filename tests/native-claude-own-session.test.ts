@@ -3,8 +3,9 @@ import path from 'node:path';
 import yaml from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { loadToolPolicy } from '../src/core/host-profile.js';
-import { NATIVE_ROLES } from './helpers/native-roles.js';
 import { splitTools } from '../src/core/native-guard.js';
+import { loadSemanticCore } from '../src/core/semantic-core.js';
+import { NATIVE_ROLES } from './helpers/native-roles.js';
 
 const read = (file: string): string => fs.readFileSync(path.resolve(file), 'utf8').replace(/\r\n/g, '\n');
 const directory = 'registry/hosts/claude/agents';
@@ -15,13 +16,18 @@ const toolsOf = (file: string): string[] => {
 };
 
 describe('user-intended session reach (ADR 0054 amended after controlled tests)', () => {
-  it('preserves roster discovery and messaging in all eighteen native roles', () => {
-    expect(files).toHaveLength(18);
-    expect(files.sort()).toEqual(NATIVE_ROLES.map(({ role }) => `${role}.md`).sort());
+  it('preserves discovery with messaging and grants neither to the bounded factory workers', async () => {
+    expect(files).toHaveLength(21);
     expect(files).toContain('agency-3d-designer.md');
+    expect(files.map(file => file.slice(0, -3)).sort()).toEqual(NATIVE_ROLES.map(role => role.role).sort());
+    const cores = await loadSemanticCore('registry');
     for (const file of files) {
-      expect(toolsOf(file), file).toContain('ListAgents');
-      expect(toolsOf(file), file).toContain('SendMessage');
+      const definition = NATIVE_ROLES.find(role => `${role.role}.md` === file)!;
+      const messaging = cores.get(definition.stem)!.capabilities?.includes('messaging') ?? false;
+      for (const tool of ['ListAgents', 'SendMessage']) {
+        if (messaging) expect(toolsOf(file), file).toContain(tool);
+        else expect(toolsOf(file), file).not.toContain(tool);
+      }
     }
     const policy = loadToolPolicy('registry', 'claude');
     expect(policy.catalog.find(tool => tool.name === 'ListAgents')?.class).toBe('messaging');

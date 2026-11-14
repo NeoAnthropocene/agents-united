@@ -1,22 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
+import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { NATIVE_ROLES, nativeText } from './helpers/native-roles.js';
 
 const TASKS = ['TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite'];
 
 describe('Claude session task protocol', () => {
-  it('derives the current tracking tools for every native role, without TaskOutput', async () => {
+  it('preserves tracking for end-user roles and the bounded factory workers without Task tools', async () => {
     const cores = await loadSemanticCore('registry');
     const policy = loadToolPolicy('registry', 'claude');
     for (const role of NATIVE_ROLES) {
       const core = cores.get(role.stem)!;
-      expect(core.capabilities, role.role).toContain('task-tracking');
       const tools = resolveGrant(policy, core.capabilities ?? [], { subagent: !role.coordinator, background: false }).tools;
+      const text = nativeText(role.role);
+      const nativeTools = inspectNativeAgent(text).tools;
+      if (role.role === 'factory-realizer' || role.role === 'factory-evaluator') {
+        // These fixed-job workers return progress to their caller; tracking belongs
+        // to the main factory coordinator, outside their reviewed grant ceilings.
+        expect(core.capabilities, role.role).not.toContain('task-tracking');
+        for (const task of [...TASKS, 'TaskOutput']) {
+          expect(tools, `${role.role}: ${task}`).not.toContain(task);
+          expect(nativeTools, role.role).not.toContain(task);
+        }
+        continue;
+      }
+      expect(core.capabilities, role.role).toContain('task-tracking');
       for (const task of TASKS) expect(tools, `${role.role}: ${task}`).toContain(task);
       expect(tools).not.toContain('TaskOutput');
-      const text = nativeText(role.role);
-      for (const task of TASKS) expect(text.split('\n').find(line => line.startsWith('tools: ')), role.role).toContain(task);
+      for (const task of TASKS) expect(nativeTools, role.role).toContain(task);
       expect(text).toContain('## Session task tracking');
       expect(text).toMatch(/actually available/i);
       expect(text).toContain('TodoWrite');

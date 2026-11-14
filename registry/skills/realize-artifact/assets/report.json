@@ -1,0 +1,11 @@
+{
+  "purpose": "Fill the strict handback.schema.json; this file is a field guide, not a valid completed result.",
+  "required": ["version", "jobId", "jobDigest", "status", "inventory", "diff", "coverage", "deltas", "provenance", "checks", "quality", "live", "openItems", "upstream"],
+  "status": "draft means prepared candidate; blocked/partial needs explicit openItems",
+  "inventory": "Every actual final draft file: path/kind=file/bytes/sha256, including untouched baseline files",
+  "diff": "Actual changed paths with complete before/after UTF-8 text or null",
+  "checks": "Exact fixed commands, job digest, actual exits/timestamps and full raw stdout/stderr pins; never proof from a worker claim alone",
+  "quality": "pending or explicit findings; independent evaluator remains unavailable",
+  "live": "unverified with concrete reason; no live session authorized",
+  "upstream": "null for local; otherwise pinned template, entire prepared body, base dev, sent false"
+}

@@ -8,10 +8,15 @@
       "domain": "contributor",
       "category": "Developers only: contribute to Agents United",
       "status": "under-construction",
-      "description": "Contributor skill authoring drafts and evidence preparation; first delivery supports Claude Code CLI workspace native installs. Live invocation remains unverified.",
+      "description": "Contributor Skill/shared-contract authoring, reviewable Bundle proposals, bounded Claude agent drafts and read-only evaluator opinions with caller-checked records. Claude Code CLI workspace native installs only; orchestration, actual invocation and evaluator usefulness remain unverified.",
       "agents": [],
       "skills": [
         "author-skill",
+        "realize-artifact",
+        "author-contract",
+        "evaluate-artifact",
+        "author-bundle",
+        "coordinate-artifact",
         "host-agent-router",
         "handoff",
         "git-guardrails"

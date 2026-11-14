@@ -1,0 +1,19 @@
+{
+  "purpose": "Caller-checked proposal handback guide; this is not a validator or proof of execution.",
+  "required": {
+    "job": "Original job ID, caller-held digest, operation, intent, selected template and proposed Bundle identity.",
+    "files": "Inventory the other three authored files and preservation-only baseline with actual lengths and SHA-256 hashes and their before/after diffs; list this report's path with its own length, hash and text diff deferred. After the final report write, the outer handback and caller evidence include the complete inventory and diff for all four actual files, including this report's actual length, hash and text diff. Do not rewrite the saved report to embed its own diff or hash; report unavailable hashing.",
+    "template": "Named template sections used, explicit required and optional prerequisite findings, and scoped decisions or missing inputs.",
+    "bindings": "Proposed source, installed path, loading, registration, ownership, enforcement, dependency and evidence edges; identify unavailable native edges.",
+    "checks": "Actual runtime, checkout HEAD, commands, complete raw output locations and actual exits, or the precise unavailable check.",
+    "provenance": "Original, inspired or adapted disposition; inspected sources, licences, pins, comparisons, retained notices and unresolved rights.",
+    "quality": "Author findings and separately executed evaluator judgment if available; whole-Bundle evaluation is not implied.",
+    "openItems": "Missing decision or evidence, blocked dependent action, responsible party and next action; keep quality and live behavior pending where unverified.",
+    "upstream": "For upstream intent, identify the pinned dev contribution template and prepared evidence with sent false."
+  },
+  "limits": [
+    "The caller independently checks final bytes, baseline, digest, scope and actual check outputs.",
+    "A proposal, manifest parse or declared integration is not installation, runtime availability or permission.",
+    "No Host/model/provider run, provisioning, publication or paid evaluation is authorized by this report."
+  ]
+}

@@ -126,6 +126,21 @@ export interface ClaudeSkillBinding {
   reviewedInputs: string[];
 }
 
+/** Additional contributor task: native mechanics stay outside the authored shared pair. */
+export interface ClaudeContractTaskBinding {
+  version: 1;
+  bundle: 'agent-factory';
+  skill: 'author-contract' | 'author-bundle';
+  source: string;
+  installed: string;
+  loadingRole: ClaudeSkillBinding['loadingRole'];
+  invocation: '/author-contract' | '/author-bundle';
+  surface: ClaudeSkillBinding['surface'];
+  requiredSupport: string[];
+  references: Array<{ source: string; installed: string }>;
+  reviewedInputs: string[];
+}
+
 export interface BundleDefinition {
   name: string;
   version?: string;
@@ -806,6 +821,83 @@ export interface SubagentContract {
   hooks: string[];
 }
 
+/** Read-only shared validation, independent of native profiles and delivery. */
+export interface SharedPairCheckInput {
+  registryDir: string;
+  definition: string;
+}
+
+export interface SharedPairCheckResult {
+  valid: boolean;
+  kind: 'deterministic';
+  definition: string;
+  files: Array<{ path: string; sha256: string }>;
+  findings: string[];
+  delivery: 'unverified';
+  quality: 'pending';
+  live: 'unverified';
+}
+
+/** Contributor validation inputs; host mechanics remain outside SubagentContract. */
+export interface FactoryCheckInput {
+  registryDir: string;
+  definition: string;
+  host: string;
+  artifactPath?: string;
+  loading?: 'subagent' | 'main';
+  requiredSkills?: string[];
+}
+
+export interface FactoryCheckResult {
+  ok: boolean;
+  kind: 'deterministic';
+  findings: string[];
+  quality: 'pending';
+  live: 'unverified';
+}
+
+/** Plan 033: host-owned delivery mechanics; never part of the four-field Subagent Contract. */
+export interface ClaudeFactoryRoleBinding {
+  name: string;
+  definition: string;
+  contract: string;
+  source: string;
+  installed: string;
+  loading: 'subagent' | 'main';
+  skills: string[];
+  guard: 'destructive' | 'read-only';
+}
+
+/** Installed receipt and complete checked closure for the one native factory main. */
+export interface ClaudeFactoryMainSelection {
+  kind: 'factory-native';
+  name: 'orchestrator-agent-factory';
+  installed: '.claude/agents/orchestrator-agent-factory.md';
+  receipt: '.claude/skills/coordinate-artifact/assets/claude-binding.json';
+  checked: Array<{ path: string; hash: string }>;
+}
+
+interface ClaudeFactoryBindingBase {
+  version: 1;
+  bundle: 'agent-factory';
+  source: string;
+  installed: string;
+  surface: { host: 'claude'; product: 'Claude Code CLI'; scope: 'workspace'; lane: 'native' };
+  invocation: string;
+  roles: ClaudeFactoryRoleBinding[];
+  hooks: Array<{ id: string; kind: 'destructive' | 'read-only' }>;
+  requiredSupport: string[];
+  references: Array<{ source: string; installed: string }>;
+  requiredInstalled: string[];
+  reviewedInputs: string[];
+}
+
+/** Only the coordinator declares the two fixed worker dependencies. */
+export type ClaudeFactoryBinding = ClaudeFactoryBindingBase & (
+  { skill: 'realize-artifact' | 'evaluate-artifact' }
+  | { skill: 'coordinate-artifact'; requiredRoles: ['factory-realizer', 'factory-evaluator'] }
+);
+
 /** Plan 021 gate 4 — conformance input: what the realization binds, adds, and declares. */
 export interface ValidateDeclaredDeltasInput {
   realization: { boundInvariants: string[]; aboveFloorScope: string[] };
@@ -943,4 +1035,187 @@ export interface UnsupportedSkill {
   since: string;
   /** Why the host cannot use it, naming what it relies on. */
   rationale: string;
+}
+
+/** Current Claude retrospective reader models; historical script aliases remain public. */
+export interface ClaudeSessionToolCall {
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+  at: string;
+  isError?: boolean;
+  result?: string;
+  /** The id of the model response that issued the call: two calls with one id were issued together, before either result was read. */
+  messageId?: string;
+}
+
+export interface ClaudeSessionReceived {
+  from: string;
+  at: string;
+  kind: string;
+  text: string;
+}
+
+/** One report attempt: a final assistant text, or a SubagentHandback call with the state of the host's matching result. Submission order is record order. */
+export interface ClaudeSessionReportEvidence {
+  source: 'assistant-text' | 'subagent-handback';
+  text: string;
+  at: string;
+  toolUseId?: string;
+  /** Hand-back only: `pending` has no matching result, `accepted` a non-error result with boolean success true, `rejected` an error or success false, `unknown` anything else. */
+  state?: 'pending' | 'accepted' | 'rejected' | 'unknown';
+}
+
+export interface ClaudeSessionAgentRecord {
+  name: string;
+  isLead: boolean;
+  customAgentType?: string;
+  taskKind?: string;
+  teamName?: string;
+  permissionMode?: string;
+  metaModel?: string;
+  models: string[];
+  calls: ClaudeSessionToolCall[];
+  received: ClaudeSessionReceived[];
+  finalText: string;
+  /** Every report attempt in submission order. Absent on a record built by hand; `finalText` keeps its meaning of the latest assistant text. */
+  reports?: ClaudeSessionReportEvidence[];
+  firstPrompt: string;
+}
+
+export interface ClaudeSession {
+  sessionId: string;
+  cwd?: string;
+  version?: string;
+  agentSetting?: string;
+  permissionMode?: string;
+  startedAt?: string;
+  endedAt?: string;
+  prompts: number;
+  cost?: { totalCostUSD: number; totalAPIDurationMs?: number; totalDurationMs?: number; byModel: Record<string, { inputTokens: number; outputTokens: number; cacheReadInputTokens: number; costUSD: number }> };
+  agents: ClaudeSessionAgentRecord[];
+}
+
+export type ClaudeSessionVerdict = 'seen' | 'not seen' | 'violation' | 'not applicable';
+
+export interface ClaudeSessionFinding {
+  id: string;
+  title: string;
+  verdict: ClaudeSessionVerdict;
+  evidence: string[];
+}
+
+export interface ClaudeSessionAnalysis {
+  session: ClaudeSession;
+  findings: ClaudeSessionFinding[];
+}
+
+export interface ClaudeSessionAnalysisOptions {
+  roleEvidence?: 'legacy' | 'unavailable';
+}
+
+export interface SessionReportFile {
+  path: string;
+  kind: 'lead' | 'subagent' | 'metadata';
+  bytes: number;
+  sha256: string;
+}
+
+export interface SessionReportDiagnostic {
+  path: string;
+  kind: 'partial-tail' | 'ignored-records' | 'unmatched-metadata' | 'missing-subagents';
+  line?: number;
+  count?: number;
+}
+
+export interface SessionReportInput {
+  lead: string;
+  files: SessionReportFile[];
+  completeness: 'complete' | 'partial';
+  diagnostics: SessionReportDiagnostic[];
+}
+
+export interface SessionReportResult {
+  version: 1;
+  host: 'claude';
+  input: SessionReportInput;
+  analysis: ClaudeSessionAnalysis;
+  limits: string[];
+}
+
+export interface SessionReportTrimResult {
+  version: 1;
+  host: 'claude';
+  operation: 'trim';
+  input: SessionReportInput;
+  output: SessionReportInput;
+  limits: string[];
+}
+
+/** Plan 033 P8a: the deterministic Skill QA command (`agents skill-check`); policy and corpus are pinned in skill-check.ts. */
+export type SkillCheckCheckId = 'metadata' | 'contract' | 'layout' | 'portability' | 'licence' | 'frozen-corpus';
+export type SkillCheckStatus = 'passed' | 'failed' | 'unavailable';
+export type SkillCheckGateStatus = SkillCheckStatus | 'not-run';
+export type SkillCheckCode =
+  | 'USAGE' | 'POLICY_UNSUPPORTED' | 'INPUT_UNAVAILABLE' | 'CORPUS_MISMATCH' | 'CANDIDATE_DRIFT' | 'OUTPUT_LIMIT'
+  | 'FRONTMATTER_INVALID' | 'ORIGINAL_POLICY' | 'CONTRACT' | 'LAYOUT' | 'PORTABILITY' | 'LICENCE'
+  | 'TEMPLATED' | 'STUB' | 'PATH_UNSAFE' | 'INPUT_LIMIT';
+
+export interface SkillCheckFinding {
+  code: SkillCheckCode;
+  path: string | null;
+  message: string;
+}
+
+export interface SkillCheckMeasure {
+  lines: number;
+  templatedLines: number;
+  share: number;
+  extraFiles: number;
+  thirdParty: boolean;
+  verdict: 'ok' | 'templated' | 'stub';
+}
+
+export interface SkillCheckGate {
+  id: SkillCheckCheckId;
+  status: SkillCheckGateStatus;
+  reason: string | null;
+  measure: SkillCheckMeasure | null;
+  findings: SkillCheckFinding[];
+}
+
+export interface SkillCheckInventoryItem {
+  path: string;
+  kind: 'file';
+  bytes: number;
+  sha256: string;
+}
+
+export interface SkillCheckInput {
+  /** Absolute path of the candidate Skill folder. */
+  artifact?: string;
+  /** Absolute path of the reviewed frozen boilerplate corpus (its bytes must hash to the pinned value). */
+  corpus?: string;
+  /** Only `agents-united-original` is supported. */
+  policy?: string;
+  /** Test seam: called once, after every gate ran and before the final byte readback. */
+  seam?: { beforeReadback?: () => void };
+}
+
+export interface SkillCheckResult {
+  version: 1;
+  kind: 'deterministic';
+  status: SkillCheckStatus;
+  policy: string | null;
+  artifact: string | null;
+  corpus: { path: string | null; sha256: string | null; expectedSha256: string };
+  candidateDigest: string | null;
+  inventoryComplete: boolean;
+  findingsComplete: boolean;
+  inventory: SkillCheckInventoryItem[];
+  checks: SkillCheckGate[];
+  findings: SkillCheckFinding[];
+  quality: 'pending';
+  live: 'unverified';
+  acceptedDraft: false;
 }

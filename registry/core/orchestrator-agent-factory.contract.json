@@ -1,0 +1,10 @@
+{
+  "definition": "orchestrator-agent-factory",
+  "workflows": [],
+  "skills": [
+    "coordinate-artifact"
+  ],
+  "hooks": [
+    "reject-destructive-operations"
+  ]
+}

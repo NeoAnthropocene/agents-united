@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "bundles": {
+    "<bundle-name>": {
+      "name": "<bundle-name>",
+      "version": "<version>",
+      "description": "<description>",
+      "category": "<category>",
+      "domain": "organization",
+      "tier": "organization",
+      "status": "under-construction",
+      "orchestrator": "<existing-or-proposed-leader.md>",
+      "agents": ["<existing-or-proposed-specialist.md>"],
+      "skills": ["host-agent-router", "handoff", "git-guardrails"],
+      "workflows": [],
+      "prerequisites": {"requiredMcps": [], "requiredPackages": [], "requiredEnvVars": []}
+    }
+  }
+}

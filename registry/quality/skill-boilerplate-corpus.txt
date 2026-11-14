@@ -1,0 +1,93 @@
+1 author primary specification document at docs @ spec md
+1 diagnosis required toolchain binary or library dependency is missing from the environment
+1 diagnosis specification or code asset fails validation rules in @
+1 diagnosis static analysis typechecking or unit tests fail validation rules during execution
+1 diagnosis target design token or configuration asset missing from workspace
+1 generate execution summary report at reports @ summary md
+1 inspect workspace repository to locate relevant ui components tokens or campaign assets
+1 run full project verification suite
+1 validate input parameters against technical feasibility and design system guidelines
+2 analyze domain requirements and classify core ui elements interaction flows or growth metrics
+2 clean up temporary build artifacts and scratch files
+2 generate code token or layout implementation files
+2 recovery protocol
+2 select implementation pattern matching component or campaign architecture
+2 verify zero lint errors type warnings or broken references
+3 apply automated formatting and linting tools
+3 commit generated files to git repository
+3 establish baseline quality metrics and target benchmarks
+3 establish verification rules and accessibility conversion thresholds
+3 execute cli health doctor check
+4 assert all acceptance criteria are satisfied
+4 execute unit or visual regression tests
+4 formulate atomic step by step execution sequence
+4 publish documentation for team review
+4 verify working tree status to ensure clean git workspace
+5 create temporary working directory if needed
+5 formulate initial execution plan
+5 refactor asset structure for optimal performance and maintainability
+active project repository workspace with version control configured
+addressing technical debt architectural reviews or production readiness gates
+all 7 mandatory sections present with explicit headers
+artifact path format description
+audit report reports @ summary json health check and audit metric results
+auditing existing product assets or workflows
+auditing implementing or standardizing @ procedures
+cc by sa 4 0 not the repository s mit licence see license notice md
+clean git working directory
+clean git working tree before beginning execution
+code exemplars provided with valid syntax fencing
+collect a scope of work statement 150 words from every relevant specialist peer exchanges capped at 2 per pair max 2 planning rounds
+component asset files src @ implemented design tokens components or campaign assets
+config object optional specific domain configurations thresholds and options
+config object optional specific parameters and threshold configurations
+direct request or workflow step invoking @
+direct request to execute @ tasks
+domain requirements architectural constraints or user stories defined
+execution report reports @ summary json verification metrics test results and audit summary
+following this skill ensures high quality zero regression execution rigorous testing gates and seamless cross functional team alignment
+following this skill ensures high usability visual consistency rapid iteration and complete cross functional team alignment
+frontmatter conforms strictly to author agents united and version 2 0 0
+frontmatter contains author attribution to matt pocock
+full upstream method text references upstream method md references upstream method md
+grill ambiguous briefs with the user grill me or grill with docs then spawn up to 2 planning sidekicks
+implementation files src @ production ready source code tests and configurations
+operational testing typechecking and build toolchains
+output dir directory path optional destination directory for generated artifacts
+output dir directory path optional destination directory for generated artifacts and reports
+parameter type required description
+phase 1 phase 2 tool inputs verified environment ready npx agents united doctor doctor health check succeeds with 0 errors
+preparing design handoffs or growth campaign launches
+preparing pull requests or automated release validations
+project build test suite and doctor check pass 100 cleanly
+project workspace configured with design system tokens or component libraries
+specification document docs @ spec md full specification and guidelines document
+specification document docs @ spec md full technical specification and architectural plan
+standardizing @ procedures across team projects
+step 1 generate baseline resource file from standard template
+step 1 inspect detailed error log output in test build terminal
+step 1 inspect error log at reports directory
+step 1 verify package json engine requirements and local environment versions
+step 2 correct non compliant syntax or structure
+step 2 formulate targeted hypothesis and isolate failing line or assertion
+step 2 install required peer dependencies cleanly with lockfile sync
+step 2 update configuration references
+step 3 implement surgical code fix and re run verification suite
+step 3 re run verification pipeline
+step 3 resume runbook execution
+step 3 resume runbook from phase 1
+step by step execution runbook body contains 50 lines
+strict mode boolean optional enforce strict zero warning validation
+strict mode boolean optional enforce strict zero warning validation and high test coverage
+synthesize the delegation map task specialist using the spawnable subagent tools declared in the team manifest and present it to the user before phase 1
+target scope string yes target module service component or file path
+target scope string yes target ui component page or campaign scope
+target ui design specification or growth experiment hypothesis
+testing and linting tools operational
+the @ skill provides a deterministic framework for executing @ processes in modern software products
+transition criteria delegation map approved by user deterministic phase gate specialist roster resolves against the team manifest agents plugins digital agency agents united teams digital agency yaml
+transition prerequisites verification command gate success criteria
+transition prerequisites verification gate success criteria
+trigger this skill whenever
+under cc by sa 4 0 not the repository s mit licence see license notice md
+zero dummy placeholder strings or unpopulated template markers present
