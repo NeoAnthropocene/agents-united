@@ -29,6 +29,8 @@ still gets the headings from the prompt. Your reply is the report: write no stat
 The commands a worker may run are `workerCommands.allow` in the config plus the lead's `--allow-cmd` or `--allow-cmd-file` (its acceptance command, as an exact
 line; a drive path such as `C:/work/x` is the only place a colon is accepted). `workerCommands.deny` feeds Claude's `--disallowedTools` and the Cline hook.
 
+An Antigravity edit worker gets its own temp folder outside the user profile when its default one is inside it (the sandbox hides the profile, so the worker could not resolve or walk the default path); the router makes and removes it, `workerTemp` in the config picks the place, and the result's `notes` say which.
+
 The prompt rule is the first line of defence and it held on both hosts it was tried on (2026-11-13): a worker told by the brief to commit declined, on
 Cline and on Antigravity, from the contract alone. The host-level control was reached only when the brief insisted, and only Cline's was seen to act.
 

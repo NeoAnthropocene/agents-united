@@ -2368,3 +2368,325 @@ describe('operator mistakes caught before a worker starts (2026-11-15)', () => {
     });
   });
 });
+
+describe('a temp folder the Antigravity sandbox can use (edit runs, 2026-11-15)', () => {
+  interface Plan2 { place: 'config' | 'beside' | 'inside'; dir: string; parent: string; vars: Record<string, string>; fallback?: { place: string; dir: string; parent: string } }
+  interface TempLib {
+    planWorkerTemp: (o: { cwd: string; configured?: string | null; platform?: string; env?: Record<string, string | undefined>; home?: string; name?: () => string }) => Plan2 | null;
+    workerTempEnv: (dir: string, platform: string) => Record<string, string>;
+    applyTempEnv: (env: Record<string, string | undefined>, vars: Record<string, string>, platform: string) => Record<string, string | undefined>;
+    withWorkerTemp: <T>(plan: Plan2 | null, fn: (vars: Record<string, string>) => Promise<T>) => Promise<{ value: T; note: string | null }>;
+    validateConfig: (cfg: unknown, o?: { home?: string; platform?: string }) => string[];
+    snapshotTree: (dir: string) => Snap;
+    runAttempts: Lib['runAttempts'];
+  }
+  const tl = async (): Promise<TempLib> => (await import(pathToFileURL(SCRIPT).href)) as never;
+  const TMPDIRNAME = '.host-agent-router-tmp';
+  const WIN = { platform: 'win32', home: 'C:\\Users\\u', env: { TEMP: 'C:\\Users\\u\\AppData\\Local\\Temp', TMP: 'C:\\Users\\u\\AppData\\Local\\Temp' } as Record<string, string | undefined>, name: () => 'abc123' };
+  const LIN = { platform: 'linux', home: '/home/u', env: { TMPDIR: '/home/u/tmp' } as Record<string, string | undefined>, name: () => 'abc123' };
+
+  describe('which folder', () => {
+    it('(a) workerTemp from the config comes first', async () => {
+      const { planWorkerTemp } = await tl();
+      const p = planWorkerTemp({ ...WIN, cwd: 'C:\\w\\proj', configured: 'D:\\scratch' });
+      expect(p?.place).toBe('config');
+      expect(p?.dir).toBe('D:\\scratch\\abc123');
+      expect(p?.parent).toBe('D:\\scratch');
+    });
+
+    it('(b) beside the working directory when that is outside the home folder', async () => {
+      const { planWorkerTemp } = await tl();
+      const p = planWorkerTemp({ ...WIN, cwd: 'C:\\w\\proj' });
+      expect(p?.place).toBe('beside');
+      expect(p?.dir).toBe(`C:\\w\\${TMPDIRNAME}\\abc123`);
+      expect(p?.fallback?.place).toBe('inside');
+      expect(p?.fallback?.dir).toBe(`C:\\w\\proj\\${TMPDIRNAME}\\abc123`);
+    });
+
+    it('(c) inside the working directory when that is inside the home folder, on Windows and elsewhere', async () => {
+      const { planWorkerTemp } = await tl();
+      const w = planWorkerTemp({ ...WIN, cwd: 'C:\\Users\\u\\code\\proj' });
+      expect(w?.place).toBe('inside');
+      expect(w?.dir).toBe(`C:\\Users\\u\\code\\proj\\${TMPDIRNAME}\\abc123`);
+      expect(w?.fallback).toBeUndefined();
+      const l = planWorkerTemp({ ...LIN, cwd: '/home/u/code/proj' });
+      expect(l?.place).toBe('inside');
+      expect(l?.dir).toBe(`/home/u/code/proj/${TMPDIRNAME}/abc123`);
+      expect(planWorkerTemp({ ...LIN, cwd: '/srv/proj' })?.dir).toBe(`/srv/${TMPDIRNAME}/abc123`);
+    });
+
+    it('no change when the default temp folder is already outside the home folder', async () => {
+      const { planWorkerTemp } = await tl();
+      expect(planWorkerTemp({ ...WIN, env: { TEMP: 'D:\\Temp' }, cwd: 'C:\\w\\proj', configured: 'D:\\scratch' })).toBeNull();
+      expect(planWorkerTemp({ ...LIN, env: {}, cwd: '/home/u/proj' })).toBeNull(); // /tmp
+      expect(planWorkerTemp({ ...LIN, env: { TMPDIR: '/home/user/tmp' }, cwd: '/home/u/proj' })).toBeNull(); // a sibling with the same prefix
+    });
+
+    it('the home folder is compared as the platform does: case-insensitive on Windows, exact elsewhere', async () => {
+      const { planWorkerTemp } = await tl();
+      expect(planWorkerTemp({ ...WIN, env: { TEMP: 'c:\\users\\U\\appdata\\local\\temp' }, cwd: 'C:\\w\\proj' })?.place).toBe('beside');
+      expect(planWorkerTemp({ ...LIN, env: { TMPDIR: '/HOME/u/tmp' }, cwd: '/srv/p' })).toBeNull();
+    });
+
+    it('the worker temp folder of the config may not be inside the home folder: a plan error and a config error', async () => {
+      const { planWorkerTemp, validateConfig } = await tl();
+      expect(() => planWorkerTemp({ ...WIN, cwd: 'C:\\w\\proj', configured: 'C:\\Users\\u\\scratch' })).toThrow(/workerTemp.*home/);
+      const o = { home: 'C:\\Users\\u', platform: 'win32' };
+      const errs = (v: unknown): string => validateConfig({ ...CFG, workerTemp: v }, o).join('\n');
+      expect(errs('C:\\Users\\u\\scratch')).toMatch(/workerTemp.*home/);
+      expect(errs('relative\\dir')).toMatch(/workerTemp.*absolute/);
+      expect(errs(5)).toMatch(/workerTemp/);
+      expect(errs('D:\\scratch')).toBe('');
+      expect(validateConfig({ ...CFG }, o)).toEqual([]);
+    });
+  });
+
+  describe('the variables', () => {
+    it('TEMP, TMP and TMPDIR on Windows; TMPDIR elsewhere', async () => {
+      const { workerTempEnv, planWorkerTemp } = await tl();
+      expect(workerTempEnv('D:\\t\\x', 'win32')).toEqual({ TEMP: 'D:\\t\\x', TMP: 'D:\\t\\x', TMPDIR: 'D:\\t\\x' });
+      expect(workerTempEnv('/t/x', 'linux')).toEqual({ TMPDIR: '/t/x' });
+      expect(workerTempEnv('/t/x', 'darwin')).toEqual({ TMPDIR: '/t/x' });
+      const d = `C:\\w\\${TMPDIRNAME}\\abc123`;
+      expect(planWorkerTemp({ ...WIN, cwd: 'C:\\w\\proj' })?.vars).toEqual({ TEMP: d, TMP: d, TMPDIR: d });
+      expect(Object.keys(planWorkerTemp({ ...LIN, cwd: '/srv/p' })?.vars ?? {})).toEqual(['TMPDIR']);
+    });
+
+    it('a variable already in the environment under another letter case is replaced, not duplicated, on Windows', async () => {
+      const { applyTempEnv } = await tl();
+      const out = applyTempEnv({ Temp: 'old', tmp: 'old', PATH: 'p' }, { TEMP: 'new', TMP: 'new', TMPDIR: 'new' }, 'win32');
+      expect(out).toEqual({ PATH: 'p', TEMP: 'new', TMP: 'new', TMPDIR: 'new' });
+      expect(applyTempEnv({ TMPDIR: 'old', Temp: 'keep' }, { TMPDIR: 'new' }, 'linux')).toEqual({ TMPDIR: 'new', Temp: 'keep' });
+    });
+  });
+
+  describe('creating and removing the folder around a run', () => {
+    // Real folders under the OS temp folder; the "home" is another folder there, so no real profile is touched.
+    const setup = (): { base: string; home: string; env: Record<string, string> } => {
+      const base = fs.realpathSync(tmp());
+      const home = path.join(base, 'home');
+      fs.mkdirSync(home);
+      return { base, home, env: { TEMP: path.join(home, 'T'), TMP: path.join(home, 'T'), TMPDIR: path.join(home, 'T') } };
+    };
+    const plan = async (cwd: string, s: { home: string; env: Record<string, string> }, configured?: string): Promise<Plan2> => {
+      const { planWorkerTemp } = await tl();
+      const p = planWorkerTemp({ cwd, configured, platform: process.platform, env: s.env, home: s.home, name: () => 'run1' });
+      expect(p).not.toBeNull();
+      return p!;
+    };
+
+    it('inside the working directory: the folder exists during the run, is gone after it, with its parent', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s);
+      expect(p.place).toBe('inside');
+      let during = false;
+      const r = await withWorkerTemp(p, async vars => {
+        during = fs.statSync(vars.TMPDIR!).isDirectory();
+        return 'done';
+      });
+      expect(during).toBe(true);
+      expect(r.value).toBe('done');
+      expect(r.note).toMatch(/inside the working directory/);
+      expect(fs.existsSync(p.dir)).toBe(false);
+      expect(fs.readdirSync(cwd)).toEqual([]);
+    });
+
+    it('beside the working directory: the same, and the folder the router did not create stays', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.base, 'work', 'proj');
+      fs.mkdirSync(cwd, { recursive: true });
+      const p = await plan(cwd, s);
+      expect(p.place).toBe('beside');
+      let during = false;
+      const r = await withWorkerTemp(p, async () => { during = fs.existsSync(p.dir); return 1; });
+      expect(during).toBe(true);
+      expect(r.note).toMatch(/beside the working directory/);
+      expect(fs.readdirSync(path.join(s.base, 'work'))).toEqual(['proj']);
+    });
+
+    it('from the config: the subfolder is removed, the configured folder stays', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cfgDir = path.join(s.base, 'cfgtmp');
+      fs.mkdirSync(cfgDir);
+      const cwd = path.join(s.base, 'work');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s, cfgDir);
+      expect(p.place).toBe('config');
+      const r = await withWorkerTemp(p, async () => fs.existsSync(p.dir));
+      expect(r.value).toBe(true);
+      expect(r.note).toMatch(/from the config/);
+      expect(fs.readdirSync(cfgDir)).toEqual([]);
+    });
+
+    it('the note names no path', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const r = await withWorkerTemp(await plan(cwd, s), async () => 0);
+      expect(r.note).not.toContain(s.base);
+      expect(r.note).not.toContain(TMPDIRNAME);
+    });
+
+    it('a failed run (a result with rc 1), a timeout (rc 124) and a thrown error all remove it', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s);
+      for (const rc of [1, 124]) {
+        const r = await withWorkerTemp(p, async () => ({ rc }));
+        expect(r.value.rc).toBe(rc);
+        expect(fs.readdirSync(cwd), `rc ${rc}`).toEqual([]);
+      }
+      await expect(withWorkerTemp(p, async () => { throw new Error('boom'); })).rejects.toThrow('boom');
+      expect(fs.readdirSync(cwd)).toEqual([]);
+    });
+
+    it('another run keeps its own folder: the shared parent goes only when empty', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s);
+      const other = path.join(p.parent, 'other');
+      await withWorkerTemp(p, async () => { fs.mkdirSync(other); });
+      expect(fs.existsSync(other)).toBe(true);
+      expect(fs.existsSync(p.dir)).toBe(false);
+    });
+
+    it('no plan: nothing is created, the run still happens, no note', async () => {
+      const { withWorkerTemp } = await tl();
+      const r = await withWorkerTemp(null, async vars => Object.keys(vars));
+      expect(r).toEqual({ value: [], note: null });
+    });
+
+    it('when the beside folder cannot be made the one inside the working directory is used', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.base, 'work', 'proj');
+      fs.mkdirSync(cwd, { recursive: true });
+      const p = await plan(cwd, s);
+      fs.writeFileSync(path.join(s.base, 'work', TMPDIRNAME), 'a file where the folder should go');
+      const r = await withWorkerTemp(p, async vars => fs.existsSync(vars.TMPDIR!));
+      expect(r.value).toBe(true);
+      expect(r.note).toMatch(/inside the working directory/);
+      expect(fs.readdirSync(cwd)).toEqual([]);
+    });
+
+    it('when no folder can be made the run goes on with the default and says so', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s);
+      fs.writeFileSync(path.join(cwd, TMPDIRNAME), 'a file where the folder should go');
+      const r = await withWorkerTemp(p, async vars => Object.keys(vars));
+      expect(r.value).toEqual([]);
+      expect(r.note).toMatch(/default temp folder/);
+    });
+  });
+
+  describe('the result and the working tree', () => {
+    it('nothing under the temp folder is in the snapshot or in changed', async () => {
+      const { snapshotTree, runAttempts } = await tl();
+      const cwd = tmp();
+      fs.writeFileSync(path.join(cwd, 'a.txt'), 'a');
+      const snap = snapshotTree(cwd);
+      const r = await runAttempts({
+        cands: [{ host: 'antigravity', side: 'windows', model: 'm' }], access: 'edit', cwd, ignoredOf: () => null,
+        tryOne: async () => {
+          fs.mkdirSync(path.join(cwd, TMPDIRNAME, 'run1'), { recursive: true });
+          fs.writeFileSync(path.join(cwd, TMPDIRNAME, 'run1', 'scratch.txt'), 'x');
+          fs.writeFileSync(path.join(cwd, 'b.txt'), 'b');
+          return { rc: 0, stdout: '{}', stderr: '', seconds: 1 };
+        },
+      });
+      expect(Object.keys(snapshotTree(cwd).files).sort()).toEqual(['a.txt', 'b.txt']);
+      expect(Object.keys(snap.files)).toEqual(['a.txt']);
+      expect(r.changed?.created).toEqual(['b.txt']);
+      expect(JSON.stringify(r.changed)).not.toContain(TMPDIRNAME);
+    });
+  });
+
+  describe('--dry-run shows the decision and creates nothing', () => {
+    type Out = { notes?: string[]; would_try: Array<{ host: string; notes?: string[] }> };
+    const dry = (o: { access?: string; host?: string; cwdIn?: 'home' | 'outside'; temp?: 'inside' | 'outside'; workerTemp?: string }): { out: Out; text: string; cwd: string; home: string; base: string } => {
+      const base = fs.realpathSync(tmp());
+      const home = path.join(base, 'home');
+      fs.mkdirSync(home);
+      const cwd = o.cwdIn === 'home' ? path.join(home, 'proj') : path.join(base, 'work', 'proj');
+      fs.mkdirSync(cwd, { recursive: true });
+      const t = o.temp === 'outside' ? path.join(base, 'T') : path.join(home, 'T');
+      const cfgFile = path.join(base, 'config.json');
+      fs.writeFileSync(cfgFile, JSON.stringify(o.workerTemp ? { workerTemp: o.workerTemp } : {}));
+      const statuses = path.join(base, 'statuses.json');
+      fs.writeFileSync(statuses, JSON.stringify({ antigravity: { windows: status({ binding: 60 }) }, cline: { windows: status() } }));
+      const r = spawnSync(process.execPath, [SCRIPT, 'run', '--tier', 'medium', '--prompt', 'Do it.', '--access', o.access ?? 'edit', '--dry-run', '--here', 'windows', '--statuses-file', statuses, '--cwd', cwd, '--host', o.host ?? 'antigravity'], {
+        encoding: 'utf8',
+        env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '', HOST_AGENT_ROUTER_CONFIG: cfgFile, USERPROFILE: home, HOME: home, TEMP: t, TMP: t, TMPDIR: t },
+      });
+      expect(r.status, r.stdout + r.stderr).toBe(0);
+      return { out: JSON.parse(r.stdout) as Out, text: r.stdout, cwd, home, base };
+    };
+    const noteOf = (o: Out): string => (o.would_try[0]?.notes ?? []).join(' | ');
+
+    it('beside the working directory, and nothing is created', () => {
+      const d = dry({});
+      expect(noteOf(d.out)).toMatch(/temp folder outside the user profile \(beside the working directory\)/);
+      expect(d.text).not.toContain(TMPDIRNAME);
+      expect(d.text).not.toContain(d.base);
+      expect(fs.readdirSync(path.join(d.base, 'work'))).toEqual(['proj']);
+      expect(fs.readdirSync(d.cwd)).toEqual([]);
+      expect(fs.readdirSync(d.home)).toEqual([]);
+    });
+
+    it('inside the working directory when that lies in the home folder, and nothing is created', () => {
+      const d = dry({ cwdIn: 'home' });
+      expect(noteOf(d.out)).toMatch(/\(inside the working directory\)/);
+      expect(fs.readdirSync(d.cwd)).toEqual([]);
+    });
+
+    it('from the config', () => {
+      const cfgTmp = path.join(fs.realpathSync(tmp()), 'cfgtmp');
+      const d = dry({ workerTemp: cfgTmp });
+      expect(noteOf(d.out)).toMatch(/\(from the config\)/);
+      expect(fs.existsSync(cfgTmp)).toBe(false);
+    });
+
+    it('no note when the default temp folder is outside the home folder', () => {
+      expect(noteOf(dry({ temp: 'outside' }).out)).not.toMatch(/temp folder/);
+    });
+
+    it('no note for a read-only run, and none for another host', () => {
+      expect(noteOf(dry({ access: 'read-only' }).out)).not.toMatch(/temp folder/);
+      expect(JSON.stringify(dry({ host: 'cline' }).out)).not.toMatch(/temp folder/);
+    });
+  });
+
+  describe('the documents', () => {
+    const doc = (f: string): string => fs.readFileSync(path.join(DIR, f), 'utf8').replace(/\r\n/g, '\n');
+    it('hosts.md has the dated entry with the live re-run and what was not run live', () => {
+      const t = doc('references/hosts.md');
+      const line = t.split('\n').find(l => l.includes('2026-11-15') && l.includes('workerTemp'));
+      expect(line, 'a 2026-11-15 line that names workerTemp').toBeDefined();
+      for (const w of ['EPERM', 'realpath', 'TEMP', 're-run live with the fix', 'Not run live']) expect(line, w).toContain(w);
+      expect(line).not.toMatch(/[A-Z]:\\Users|\/home\//);
+    });
+    it('the contract says an Antigravity edit worker gets its own temp folder', () => {
+      expect(doc('references/worker-contract.md')).toMatch(/Antigravity[^\n]*own temp folder/);
+      expect(doc('references/worker-contract.md')).toContain('workerTemp');
+    });
+    it('SKILL.md stays within its limits', () => {
+      const t = doc('SKILL.md');
+      expect(t.length).toBeLessThanOrEqual(6000);
+      expect(t.split('\n').length).toBeLessThanOrEqual(90);
+      expect(t).toMatch(/version: 1\.1\.1/);
+    });
+  });
+});

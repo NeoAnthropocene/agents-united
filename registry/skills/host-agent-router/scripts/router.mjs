@@ -193,7 +193,7 @@ export function mergeConfig(base, over) {
   return out;
 }
 
-export function validateConfig(cfg) {
+export function validateConfig(cfg, { home = os.homedir(), platform = process.platform } = {}) {
   const errs = [];
   if (!Array.isArray(cfg?.priority) || cfg.priority.length === 0) return ['priority must be a non-empty list of hosts'];
   for (const host of cfg.priority) {
@@ -218,6 +218,10 @@ export function validateConfig(cfg) {
   const positive = v => Number.isFinite(Number(v)) && Number(v) > 0;
   if (ts !== undefined && (isPlain(ts) ? Object.values(ts).some(v => !positive(v)) : !positive(ts))) {
     errs.push('timeoutSeconds must be a positive number, or an object of positive numbers per tier (simple, medium, high)');
+  }
+  if (cfg.workerTemp !== undefined && cfg.workerTemp !== null) {
+    const bad = configWorkerTempProblem(cfg.workerTemp, { home, platform });
+    if (bad) errs.push(bad);
   }
   return errs;
 }
@@ -996,6 +1000,114 @@ export async function probeLocal(payload) {
   return st;
 }
 
+// ----------------------------------------------------------------------------- a temp folder the Antigravity sandbox can use
+//
+// Seen live 2026-11-15: the Antigravity sandbox hides the user profile. A worker can write into its temp folder (inside the profile on
+// Windows) but cannot list or resolve its ancestors, so tests that call realpath on, or walk up from, the temp path fail on EPERM. The
+// environment of the process that starts the host reaches the commands the worker runs, so an edit run gets another temp folder through it.
+
+export const WORKER_TEMP_DIR = '.host-agent-router-tmp';
+const pathFor = platform => (platform === 'win32' ? path.win32 : path.posix);
+
+/** True when `p` is `base` or lies inside it, compared as the platform does (case-insensitive on Windows). */
+function insideOf(P, base, p) {
+  const rel = P.relative(P.resolve(base), P.resolve(p));
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${P.sep}`) && !P.isAbsolute(rel));
+}
+
+/** The variables that name the temp folder: TEMP and TMP on Windows (TMPDIR as well, harmless there), TMPDIR elsewhere. */
+export function workerTempEnv(dir, platform = process.platform) {
+  return platform === 'win32' ? { TEMP: dir, TMP: dir, TMPDIR: dir } : { TMPDIR: dir };
+}
+
+/** `env` with `vars` set. On Windows a variable is the same under any letter case, so a differently cased copy is dropped, not left beside it. */
+export function applyTempEnv(env, vars, platform = process.platform) {
+  const out = { ...env };
+  for (const [k, v] of Object.entries(vars)) {
+    if (platform === 'win32') for (const e of Object.keys(out)) if (e.toUpperCase() === k) delete out[e];
+    out[k] = v;
+  }
+  return out;
+}
+
+export function workerTempNote(place) {
+  const where = { config: 'from the config', beside: 'beside the working directory', inside: 'inside the working directory' }[place];
+  return `the worker got a temp folder outside the user profile (${where})`;
+}
+
+/** What is wrong with a configured workerTemp, or null. */
+function configWorkerTempProblem(value, { home, platform }) {
+  const P = pathFor(platform);
+  if (typeof value !== 'string' || !value) return 'workerTemp must be an absolute folder path (a string)';
+  if (!P.isAbsolute(value)) return 'workerTemp must be an absolute path';
+  if (insideOf(P, home, value)) return "workerTemp must not be inside the user's home folder: the Antigravity sandbox hides the home folder, which is what this setting works around";
+  return null;
+}
+
+/**
+ * Where an Antigravity edit worker's temp folder would go, or null when the temp folder it would get anyway (TEMP/TMP on Windows, TMPDIR
+ * or /tmp elsewhere) is outside the home folder. In this order: `configured` (the config's workerTemp), a new folder beside the working
+ * directory (when that is outside the home folder), a new folder inside the working directory. Returns { place, dir, parent, vars, fallback? }:
+ * `fallback` is the in-directory choice tried when the beside folder cannot be made. Pure: nothing is created. Throws on a configured
+ * folder that is not absolute or lies inside the home folder.
+ */
+export function planWorkerTemp({ cwd, configured = null, platform = process.platform, env = process.env, home = os.homedir(), name = () => crypto.randomBytes(4).toString('hex') }) {
+  const P = pathFor(platform);
+  const current = platform === 'win32' ? (env.TEMP || env.TMP || env.TMPDIR) : (env.TMPDIR || '/tmp');
+  if (!current || !insideOf(P, home, current)) return null;
+  const id = name();
+  const make = (place, parent) => {
+    const dir = P.join(parent, id);
+    return { place, dir, parent, vars: workerTempEnv(dir, platform) };
+  };
+  if (configured) {
+    const bad = configWorkerTempProblem(configured, { home, platform });
+    if (bad) throw new Error(bad);
+    return make('config', configured);
+  }
+  const inner = make('inside', P.join(cwd, WORKER_TEMP_DIR));
+  if (insideOf(P, home, cwd)) return inner;
+  return { ...make('beside', P.join(P.dirname(P.resolve(cwd)), WORKER_TEMP_DIR)), fallback: inner };
+}
+
+function acquireWorkerTemp(opt) {
+  const existed = fs.existsSync(opt.parent);
+  fs.mkdirSync(opt.parent, { recursive: true });
+  try {
+    fs.mkdirSync(opt.dir);
+  } catch (e) {
+    if (!existed && opt.place !== 'config') { try { fs.rmdirSync(opt.parent); } catch { /* not empty */ } }
+    throw e;
+  }
+  return opt;
+}
+
+function releaseWorkerTemp(opt) {
+  try { fs.rmSync(opt.dir, { recursive: true, force: true }); } catch { /* best effort */ }
+  // The shared parent goes when empty (rmdir fails on a folder another run still uses); a configured folder stays.
+  if (opt.place !== 'config') { try { fs.rmdirSync(opt.parent); } catch { /* in use, or already gone */ } }
+}
+
+/**
+ * Create the planned folder (or its fallback), run `fn(vars)` with the variables to set, and remove the folder whatever happens: a result,
+ * a timeout result or a thrown error. Resolves to { value, note }: `note` says what was done without naming a path, null for no plan.
+ * When no folder can be made the run still goes ahead with the default temp folder, and the note says so.
+ */
+export async function withWorkerTemp(plan, fn) {
+  if (!plan) return { value: await fn({}), note: null };
+  let got = null;
+  for (const opt of [plan, plan.fallback]) {
+    if (!opt) continue;
+    try { got = acquireWorkerTemp(opt); break; } catch { /* try the next place */ }
+  }
+  if (!got) return { value: await fn({}), note: 'could not make a temp folder outside the user profile; the worker kept the default temp folder' };
+  try {
+    return { value: await fn(got.vars), note: workerTempNote(got.place) };
+  } finally {
+    releaseWorkerTemp(got);
+  }
+}
+
 export async function execLocal(payload) {
   const cmd = resolveCmd(payload.host);
   if (!cmd) return { rc: 127, stdout: '', stderr: `${payload.host}: binary not found`, seconds: 0 };
@@ -1013,10 +1125,16 @@ export async function execLocal(payload) {
     guard = prepareClineGuard({ cwd: payload.cwd || process.cwd(), dataDir: clineDataDir(process.env) });
     if (guard) { args = [...guard.args, ...args]; env = { ...env, ...guard.env }; }
   }
+  // An Antigravity edit run gets a temp folder outside the user profile, through this process's environment, on the side where the host runs.
+  let tempPlan = null;
+  if (payload.host === 'antigravity' && payload.workerTemp) {
+    try { tempPlan = planWorkerTemp({ cwd: payload.cwd || process.cwd(), configured: payload.workerTemp.configured }); } catch (e) { return { rc: 126, stdout: '', stderr: e.message, seconds: 0 }; }
+  }
   const t0 = Date.now();
   try {
-    const r = await runCmd([...cmd, ...args], { timeout: (payload.timeout ?? 1800) * 1000, input: payload.stdin ?? '', cwd: payload.cwd || undefined, env });
+    const { value: r, note } = await withWorkerTemp(tempPlan, vars => runCmd([...cmd, ...args], { timeout: (payload.timeout ?? 1800) * 1000, input: payload.stdin ?? '', cwd: payload.cwd || undefined, env: applyTempEnv(env, vars) }));
     const out = { rc: r.rc, stdout: r.stdout, stderr: r.stderr, seconds: Math.round((Date.now() - t0) / 100) / 10 };
+    if (note) out.tempNote = note;
     if (guard) { out.guarded = true; out.blocked = guard.readBlocked(); }
     return out;
   } finally {
@@ -1267,7 +1385,7 @@ function readPrompt(opts) {
 // A host that stops on a limit or a timeout may already have changed files; the router only sees the error text. So for an edit run it
 // looks at the tree: a failed attempt hands over to the next host only if it left the directory exactly as it found it.
 
-const GUARD_SKIP = new Set(['.git', 'node_modules']);
+const GUARD_SKIP = new Set(['.git', 'node_modules', WORKER_TEMP_DIR]); // the router's own temp folder for a worker is never a change the worker made
 
 function gitHead(dir) {
   try {
@@ -1717,6 +1835,15 @@ async function cmdRun(opts, cfg) {
   const cands = plan.candidates.filter(c => !opts['pin-side'] || c.side === opts['pin-side']);
   const attached = skills.map(({ name, chars }) => ({ name, chars }));
   const specFor = (c, text, tcwd) => buildSpec(cfg, c.host, c, text, access, tcwd, tier, { allowCmd, skills });
+  // The temp folder decision, shown by a dry run without creating anything; only for a side this process runs on (the other side decides it
+  // with its own home folder and environment when the run starts).
+  const tempNoteFor = (c, tcwd) => {
+    if (access !== 'edit' || c.host !== 'antigravity' || !(c.side === here || here === 'local')) return null;
+    try {
+      const p = planWorkerTemp({ cwd: tcwd, configured: cfg.workerTemp ?? null });
+      return p ? workerTempNote(p.place) : null;
+    } catch (e) { return e.message; }
+  };
 
   // Antigravity edit runs match an allowed command as a whole line: a brief that tells the worker to run a longer line than the one allowed
   // would end the run at once with nothing done (seen live 2026-11-15). Only the lines the operator passed are checked, not the defaults.
@@ -1737,6 +1864,8 @@ async function cmdRun(opts, cfg) {
       const tcwd = translateCwd(cwd, here, c.side);
       const spec = specFor(c, prompt, tcwd);
       const skip = argvTooLong(spec, c.side);
+      const tempNote = tempNoteFor(c, tcwd);
+      if (tempNote) spec.notes = [...(spec.notes ?? []), tempNote];
       return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}) };
     });
     // A dry run is where the length is cheap to find out: each attempt carries `skip` (the reason the real run would skip it).
@@ -1752,7 +1881,7 @@ async function cmdRun(opts, cfg) {
     const spec = specFor(c, prompt, tcwd);
     const tooLong = argvTooLong(spec, c.side);
     if (tooLong) { lengthSkips += 1; return { skipped: tooLong }; }
-    const payload = { host: c.host, args: spec.args, stdin: spec.stdin, env: spec.env, cwd: tcwd, timeout: timeoutFor(cfg, tier, opts.timeout) };
+    const payload = { host: c.host, args: spec.args, stdin: spec.stdin, env: spec.env, cwd: tcwd, timeout: timeoutFor(cfg, tier, opts.timeout), ...(access === 'edit' && c.host === 'antigravity' ? { workerTemp: { configured: cfg.workerTemp ?? null } } : {}) };
     try {
       return await callSide(cfg, here, c.side, 'local-exec', payload, payload.timeout * 1000 + 60_000);
     } catch (e) {
@@ -1779,6 +1908,7 @@ async function cmdRun(opts, cfg) {
     env.ran = ranOf(c);
     const specNotes = specFor(c, prompt, translateCwd(cwd, here, c.side)).notes;
     if (specNotes) env.notes = [...(env.notes ?? []), ...specNotes];
+    if (res.tempNote) env.notes = [...(env.notes ?? []), res.tempNote];
     const cl = c.host === 'cline' ? parseClineJson(res.stdout) : null;
     const ag = c.host === 'antigravity' ? parseAgyRun(res.stdout) : null;
     if (ag) {
