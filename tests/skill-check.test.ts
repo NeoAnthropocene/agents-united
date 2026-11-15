@@ -192,16 +192,18 @@ function mutate(source: string, from: string, to: string): string {
   return changed;
 }
 
-/** Every file, directory and link name under root, links not followed: a byte-for-byte image of the tree. */
+/** Every file, directory and link name under root, links not followed: a byte-for-byte image of the tree (a special file is named, never read). */
 function treeImage(root: string): string[] {
   const out: string[] = [];
   const walk = (dir: string, prefix: string): void => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
       const rel = `${prefix}${entry.name}`;
       const full = path.join(dir, entry.name);
-      if (entry.isSymbolicLink() || fs.lstatSync(full).isSymbolicLink()) out.push(`l:${rel}`);
+      const stat = fs.lstatSync(full);
+      if (entry.isSymbolicLink() || stat.isSymbolicLink()) out.push(`l:${rel}`);
       else if (entry.isDirectory()) { out.push(`d:${rel}`); walk(full, `${rel}/`); }
-      else out.push(`f:${rel}:${sha(fs.readFileSync(full))}`);
+      else if (stat.isFile()) out.push(`f:${rel}:${sha(fs.readFileSync(full))}`);
+      else out.push(`s:${rel}`); // named pipe, socket or device: recorded, never opened (reading a FIFO blocks forever)
     }
   };
   walk(root, '');

@@ -10,6 +10,7 @@ import { candidateDigestOf, digest, inventoryOf, prepareSkillTask } from './help
 import type { Json, SkillTaskFixture } from './helpers/skill-task.js';
 import { prepareEvaluationJob, reviewPin } from './helpers/factory-evaluation.js';
 import { COORDINATOR_SUPPORT, cleanFactoryEnv } from './helpers/factory-coordinator.js';
+import { installPackedPackage } from './helpers/packed-package.js';
 
 /**
  * P8b stage 1, from the actual offline npm package: the installed checker, the installed `draft.mjs` as the producer
@@ -35,8 +36,7 @@ describe('one Skill draft, checked return and review records from the actual off
       cwd: process.cwd(), encoding: 'utf8',
     })) as Array<{ filename: string }>;
     const runtime = path.join(root, 'runtime');
-    execFileSync(process.execPath, [npmCli, 'install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', runtime,
-      path.join(root, packed[0]!.filename)], { encoding: 'utf8' });
+    installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(root, packed[0]!.filename) });
     packageRoot = path.join(runtime, 'node_modules/agents-united');
     registry = path.join(packageRoot, 'registry');
     consumer = path.join(root, 'consumer');

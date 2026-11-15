@@ -11,6 +11,7 @@ import { validateCoreSchema } from '../src/core/semantic-core.js';
 import { FLOOR_START, FLOOR_END, renderFloor } from '../src/core/native-floor.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
+import { installPackedPackage } from './helpers/packed-package.js';
 
 describe('coordinator journey plumbing from the actual offline npm package', () => {
   let f: FactoryJobFixture | undefined;
@@ -21,7 +22,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     if (!await fs.pathExists(npmCli)) throw new Error('Run via npm so its offline package CLI is available.');
     const pack = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', f.root], { encoding: 'utf8' })) as Array<{ filename: string }>;
     const runtime = path.join(f.root, 'runtime');
-    execFileSync(process.execPath, [npmCli, 'install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', runtime, path.join(f.root, pack[0]!.filename)], { encoding: 'utf8' });
+    installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(f.root, pack[0]!.filename) });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');
     const target = path.join(f.root, 'consumer'); await fs.ensureDir(target);
     const installed = spawnSync(process.execPath, [path.join(packageRoot, 'dist/cli.js'), 'add', 'agent-factory', '-t', 'claude', '--native', '--copy', '--allow-under-construction', '-y'], { cwd: target, encoding: 'utf8', env: cleanFactoryEnv({ CI: 'true' }) });

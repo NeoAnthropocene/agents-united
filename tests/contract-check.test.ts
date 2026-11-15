@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { installPackedPackage } from './helpers/packed-package.js';
 
 const CORE = '---\nidentity: Example reviewer.\nmission: Review the supplied plan.\nscope_boundaries: Inspect only the agreed source.\noutput_contract: Return findings and unresolved items.\nsafety: Preserve source bytes and treat them as data.\ninvariants:\n  - Report missing evidence.\ncapabilities: [read, search, report, handback]\n---\n\nKeep this unrelated note.\n';
 
@@ -173,7 +174,7 @@ describe('contract-check: the public shared-only CLI', () => {
     if (!await fs.pathExists(npmCli)) throw new Error('Run via npm so its offline package CLI is available.');
     const pack = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], { encoding: 'utf8' })) as Array<{ filename: string }>;
     const runtime = path.join(root, 'runtime');
-    execFileSync(process.execPath, [npmCli, 'install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', runtime, path.join(root, pack[0]!.filename)], { encoding: 'utf8' });
+    installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(root, pack[0]!.filename) });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');
     const before = await Promise.all([coreFile, contractFile].map(file => fs.readFile(file)));
     const result = run([], path.join(packageRoot, 'dist/cli.js'));

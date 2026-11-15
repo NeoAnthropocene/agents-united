@@ -6,6 +6,7 @@ import type { SpawnSyncReturns } from 'node:child_process';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { SessionReportFile, SessionReportResult, SessionReportTrimResult } from '../src/core/types.js';
+import { installPackedPackage } from './helpers/packed-package.js';
 
 describe('session reader from an actual offline npm installation', () => {
   let root: string | undefined;
@@ -27,7 +28,7 @@ describe('session reader from an actual offline npm installation', () => {
       'registry/skills/remotion-production/assets/setup-evidence.example.jsonl',
     ]);
     const runtime = path.join(taskRoot, 'runtime');
-    execFileSync(process.execPath, [npmCli, 'install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', runtime, path.join(taskRoot, packed[0]!.filename)], { encoding: 'utf8' });
+    installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(taskRoot, packed[0]!.filename) });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');
     const manifest = await fs.readJson(path.join(packageRoot, 'package.json')) as { bin: Record<string, string> };
     expect(manifest.bin['agents']).toBe('./dist/cli.js');

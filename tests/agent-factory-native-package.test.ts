@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import { execFileSync } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
 import { prepareFactoryNative } from './helpers/factory-native.js';
+import { installPackedPackage } from './helpers/packed-package.js';
 
 /** Real npm packaging/install, entirely offline and with lifecycle scripts disabled. */
 describe('factory native binding from an installed npm package', () => {
@@ -19,7 +20,7 @@ describe('factory native binding from an installed npm package', () => {
     const packed = JSON.parse(packOutput) as Array<{ filename: string }>;
     const archive = path.join(root, packed[0]!.filename);
     const runtime = path.join(root, 'runtime');
-    execFileSync(process.execPath, [npmCli, 'install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', runtime, archive], { encoding: 'utf8' });
+    installPackedPackage({ npmCli, prefix: runtime, tarball: archive });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');
     // P1 supplies no production worker yet: the approved temporary registry is an
     // explicit fixture for the packed installer's native-only public CLI seam.

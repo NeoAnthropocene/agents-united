@@ -4,6 +4,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import { prepareEvaluationKind, reviewPin } from './helpers/factory-evaluation.js';
+import { installPackedPackage } from './helpers/packed-package.js';
 
 describe('evaluator from the actual offline npm package', () => {
   let root: string | undefined;
@@ -17,8 +18,7 @@ describe('evaluator from the actual offline npm package', () => {
       cwd: process.cwd(), encoding: 'utf8',
     })) as Array<{ filename: string }>;
     const runtime = path.join(root, 'runtime');
-    execFileSync(process.execPath, [npmCli, 'install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', runtime,
-      path.join(root, packed[0]!.filename)], { encoding: 'utf8' });
+    installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(root, packed[0]!.filename) });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');
     const registry = path.join(packageRoot, 'registry'), consumer = path.join(root, 'consumer');
     await fs.ensureDir(consumer);
