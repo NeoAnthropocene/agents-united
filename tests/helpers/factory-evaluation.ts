@@ -18,7 +18,9 @@ export async function evaluationTree(root: string): Promise<Record<string, strin
       const rel = prefix + name, file = path.join(directory, name), stat = await fs.lstat(file);
       if (stat.isSymbolicLink()) tree[rel] = `link:${await fs.readlink(file)}`;
       else if (stat.isDirectory()) { tree[`${rel}/`] = 'directory'; await visit(file, `${rel}/`); }
-      else tree[rel] = digest(await fs.readFile(file));
+      else if (stat.isFile()) tree[rel] = digest(await fs.readFile(file));
+      // A named pipe, socket or device is recorded by name and never opened: reading a FIFO never returns.
+      else tree[rel] = 'special';
     }
   };
   await visit(root);
