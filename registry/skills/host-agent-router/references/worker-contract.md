@@ -15,7 +15,7 @@ its own record of what changed. A rule in a prompt is a request; a control is en
 
 The worker's whole reply, in the reply and not in a file: **Done**, **Changed files**, **Checks run** (command and result), **Not done or
 blocked**, **Next steps**. A worker that can see the `handoff` skill follows its state-capture and remaining-work steps; one that cannot
-still gets the headings from the prompt. The lead compares **Changed files** with the router's `changed`.
+still gets the headings from the prompt. Your reply is the report: write no state, notes or hand-off file anywhere, not even docs/handoff/. (The `handoff` skill's own Phase 3 offers to save a note under `docs/handoff/`; the contract takes only its state-capture and remaining-work steps and overrides that one.) The lead compares **Changed files** with the router's `changed`. Files are cited as repository-relative path:line, never an absolute path or a `file://` link: a report may be pasted into a pull request, and an absolute path carries the local user name (seen on 2026-11-14). The router adds this sentence to every worker prompt, read-only runs too.
 
 ## What enforces it, per host (checked on 2026-11-07, Plan 049)
 
@@ -26,8 +26,10 @@ still gets the headings from the prompt. The lead compares **Changed files** wit
 | Codex | `-s workspace-write`. On WSL `.git` and everything outside the workspace are read-only. | `git commit`: "Read-only file system" on `.git/index.lock`; outside write refused. The Windows sandbox started in `C:\`, without `node`, so edits go to WSL (`editSide`). |
 | Antigravity | `--mode accept-edits --sandbox` and `--settings` with exact `command(<line>)` allow rules. Anything not allowed is denied, and one denial ends the run with exit 0 and no output. | Rules match an exact command line or a program name; wildcards are ignored. The host-level denial was confirmed by a direct call on 2026-11-13 (called directly, outside the router: allow `command(node --test)`, a prompt to run `whoami`; exit 0, `status` `SUCCESS`, empty `response`, `denied_actions` `{"action":"command","display_name":"Bash"}`, and a stderr line that headless mode cannot prompt for the `command` permission). Through the router it was not reached in three attempts on the second machine (two `git commit` briefs, one `whoami` brief): each time the worker declined from the prompt contract, because the router's note lists the allowed commands. On Windows an allowed `.exe` program also gets a full-path rule (see hosts.md). |
 
-The commands a worker may run are `workerCommands.allow` in the config plus the lead's `--allow-cmd` (its acceptance command, as an exact
-line). `workerCommands.deny` feeds Claude's `--disallowedTools` and the Cline hook.
+The commands a worker may run are `workerCommands.allow` in the config plus the lead's `--allow-cmd` or `--allow-cmd-file` (its acceptance command, as an exact
+line; a drive path such as `C:/work/x` is the only place a colon is accepted). `workerCommands.deny` feeds Claude's `--disallowedTools` and the Cline hook.
+
+An Antigravity edit worker gets its own temp folder outside the user profile when its default one is inside it (the sandbox hides the profile, so the worker could not resolve or walk the default path); the router makes and removes it, `workerTemp` in the config picks the place, and the result's `notes` say which.
 
 The prompt rule is the first line of defence and it held on both hosts it was tried on (2026-11-13): a worker told by the brief to commit declined, on
 Cline and on Antigravity, from the contract alone. The host-level control was reached only when the brief insisted, and only Cline's was seen to act.
@@ -44,7 +46,8 @@ directory) does not depend on the record. That was true before this change; the 
 
 `changed` (created, modified, deleted, `head_moved`; in a git work tree the paths git ignores are summarised apart as `ignored`, counted in `count`) from its own look at the directory; `stopped` when an attempt changed files and then
 failed; `guard.blocked` when a tool call was cancelled; `failure` for `limit`, `auth`, `model`, `missing`, `timeout`, `empty`, `denied`,
-`guard` or `unfinished`. A run that exited 0 but was blocked, unfinished, denied or silent is not `ok`.
+`too_long` (every candidate skipped for the length of its command line), `guard` or `unfinished`. A run that exited 0 but was blocked, unfinished,
+denied or silent is not `ok`.
 
 ## Getting the two skills to the worker
 
@@ -73,4 +76,4 @@ characters on Windows).
 - The Cline hook is conservative token matching: a creative command can pass it. It is why editing belongs in a throwaway worktree, and why `changed` exists.
 - Not enforced anywhere: reading files outside the directory that are not secrets, network use by a command that is allowed.
 - Not seen live: a Claude or Antigravity denial of a forbidden command in a router run (the controls were checked directly; the Antigravity denial was confirmed by a direct call on 2026-11-13, and the router's workers declined first); Codex on Windows beyond two simple-tier runs; a real limit refusal on any host.
-- Antigravity's sandbox on Windows: observed directly on 2026-11-13 (called directly, outside the router), `node --version` was permitted but the sandbox's shell did not find `node`, because its PATH lacks the directory of the `node` the lead's shell finds (`C:\nvm4w\nodejs`); the same line with the absolute path, `C:\nvm4w\nodejs\node.exe --version`, ran and returned `v24.19.0`. The router therefore also allows the full-path form of an allowed `.exe` program (hosts.md). A `.cmd` shim such as `npm` is not rewritten: start the acceptance command with `node`, or run it yourself.
+- Antigravity's sandbox on Windows: observed directly on 2026-11-13 and explained on 2026-11-14 (called directly, outside the router), `node --version` was permitted but the shell did not find `node`. The cause is not PATH: the sandbox does not expose folders inside the user profile unless a `read_file` rule mounts them read-only (its sandbox docs), and the `node` here is an nvm install under the profile. The router now adds `read_file(<real folder>)` for each allowed program whose real folder is inside the home directory (never home itself, a root or a folder holding the working directory), and also allows the full-path form of an allowed `.exe` (hosts.md). `npm` is found once its folder is mounted; if a note says a folder was not mounted, run the acceptance command yourself.

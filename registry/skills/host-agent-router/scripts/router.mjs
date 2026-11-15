@@ -18,6 +18,10 @@ import readline from 'node:readline';
 import { parseArgs } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+/** A usage error: the command line was wrong and nothing ran. Exit code 64 (EX_USAGE), the code an unknown command already had; 1 stays for a run that failed. */
+export class UsageError extends Error {}
+export const EXIT_USAGE = 64;
+
 const SELF = fileURLToPath(import.meta.url);
 export const HOSTS = ['cline', 'antigravity', 'codex', 'claude'];
 export const TIERS = ['simple', 'medium', 'high'];
@@ -189,7 +193,7 @@ export function mergeConfig(base, over) {
   return out;
 }
 
-export function validateConfig(cfg) {
+export function validateConfig(cfg, { home = os.homedir(), platform = process.platform } = {}) {
   const errs = [];
   if (!Array.isArray(cfg?.priority) || cfg.priority.length === 0) return ['priority must be a non-empty list of hosts'];
   for (const host of cfg.priority) {
@@ -214,6 +218,10 @@ export function validateConfig(cfg) {
   const positive = v => Number.isFinite(Number(v)) && Number(v) > 0;
   if (ts !== undefined && (isPlain(ts) ? Object.values(ts).some(v => !positive(v)) : !positive(ts))) {
     errs.push('timeoutSeconds must be a positive number, or an object of positive numbers per tier (simple, medium, high)');
+  }
+  if (cfg.workerTemp !== undefined && cfg.workerTemp !== null) {
+    const bad = configWorkerTempProblem(cfg.workerTemp, { home, platform });
+    if (bad) errs.push(bad);
   }
   return errs;
 }
@@ -294,15 +302,64 @@ export function ranOf(c) {
   return { host: c.host, side: c.side, model: c.model, effort: c.effort, label: c.label, ...(c.effort_note ? { effort_note: c.effort_note } : {}) };
 }
 
-/** Problems with a list of command prefixes for --allow-cmd or `workerCommands`: plain words only, so a prefix cannot break out of a host's rule syntax. */
+const PLAIN_WORD = /^[\w@./=-]+$/;
+const DRIVE_WORD = /^[A-Za-z]:[\\/][\w@./=\\-]*$/; // a Windows drive path: one letter, a colon, then / or \ ; the colon appears nowhere else
+
+/**
+ * Problems with a list of command lines for --allow-cmd, --allow-cmd-file or `workerCommands`. Each is the exact line a worker may run:
+ * Antigravity matches an allowed command as a WHOLE line (seen live 2026-11-15: a shorter allowed line did not cover the longer one), so
+ * this is not a prefix. Plain words only, so a line cannot break out of a host's rule syntax: Antigravity `command(<line>)`, Claude
+ * `Bash(<line>:*)`. The one exception is a drive path (`C:/work/x`, `D:\work\y`) at the start of a word, the only place a colon or a
+ * backslash is accepted; `\\` (a UNC path) stays refused, since Claude's rule parser reads `\\` as one backslash. The Cline hook and Codex
+ * take no allowed lines, so nothing of this reaches them.
+ */
 export function validateAllowCmd(list) {
   const errs = [];
   for (const c of Array.isArray(list) ? list : [list]) {
-    if (typeof c !== 'string' || !/^[\w@./= -]+$/.test(c) || !c.trim()) {
-      errs.push(`--allow-cmd ${JSON.stringify(c)} is not a plain command prefix (letters, digits, spaces and _ @ . / = - only)`);
+    const words = typeof c === 'string' ? c.split(' ').filter(Boolean) : [];
+    if (typeof c !== 'string' || !c.trim() || c.includes('\\\\') || !words.every(w => PLAIN_WORD.test(w) || DRIVE_WORD.test(w))) {
+      errs.push(`--allow-cmd ${JSON.stringify(c)} is not a plain command line (letters, digits, spaces and _ @ . / = - only; a colon or backslash only in a drive path such as C:/work/x or D:\\work\\y at the start of a word). Antigravity matches the whole line, so give the exact line the worker will run`);
     }
   }
   return errs;
+}
+
+/** Command lines from a --allow-cmd-file: UTF-8, one per line; blank lines, lines starting with # and a BOM are ignored. Throws a UsageError for a file that cannot be read or a line that is not plain. */
+export function readAllowCmdFile(file) {
+  if (file === undefined) return [];
+  let text;
+  try { text = fs.readFileSync(file, 'utf8'); } catch (e) { throw new UsageError(`--allow-cmd-file ${JSON.stringify(file)} cannot be read (${e?.code ?? e?.message ?? e})`); }
+  const out = [];
+  text.replace(/^\uFEFF/, '').split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) return;
+    const bad = validateAllowCmd([line]);
+    if (bad.length) throw new UsageError(`${bad.join('')} (line ${i + 1} of ${file})`);
+    out.push(line);
+  });
+  return out;
+}
+
+/**
+ * Lines the brief gives the worker that extend an allowed line: [{ allowed, longer }] for each of `allowed` that some line of `brief` starts
+ * with, followed by a space and more text. A HEURISTIC, not a shell parser: a "line" here is the text inside a backtick span or the start of a
+ * line of the brief (after a list marker or "$ "). A longer line that is itself in `known` is fine. Antigravity matches whole lines, so the
+ * short allowed line would not cover the long one the brief tells the worker to run. A one-word value is a bare program name, which that host
+ * matches whatever follows it, so it is never reported.
+ */
+export function longerCommandLines(brief, allowed, known = allowed) {
+  const spans = [];
+  for (const raw of String(brief ?? '').split(/\r?\n/)) {
+    spans.push(raw.trim().replace(/^(?:[-*+]|\d+[.)])\s+/, '').replace(/^\$\s+/, ''));
+    for (const m of raw.matchAll(/`([^`]+)`/g)) spans.push(m[1].trim());
+  }
+  const out = [];
+  for (const a of allowed) {
+    const v = a.trim();
+    const longer = v.includes(' ') && spans.find(s => s.startsWith(`${v} `) && s.slice(v.length).trim() && !known.includes(s));
+    if (longer) out.push({ allowed: v, longer });
+  }
+  return out;
 }
 
 /**
@@ -325,10 +382,22 @@ export function loadConfig(env = process.env) {
   const base = JSON.parse(fs.readFileSync(path.join(path.dirname(SELF), '..', 'assets', 'config.default.json'), 'utf8'));
   const userFile = userConfigFile(env);
   let cfg = base;
-  if (fs.existsSync(userFile)) cfg = mergeConfig(base, JSON.parse(fs.readFileSync(userFile, 'utf8')));
+  if (fs.existsSync(userFile)) {
+    let user;
+    try { user = JSON.parse(fs.readFileSync(userFile, 'utf8')); } catch (e) { throw new UsageError(`invalid config (${userFile}): not valid JSON (${e?.message ?? e})`); }
+    cfg = mergeConfig(base, user);
+  }
   const errs = validateConfig(cfg);
-  if (errs.length) throw new Error(`invalid config (${fs.existsSync(userFile) ? userFile : 'defaults'}):\n- ${errs.join('\n- ')}`);
+  // A wrong config is the operator's to fix and nothing ran: a usage error (64), not a failed run (1).
+  if (errs.length) throw new UsageError(`invalid config (${fs.existsSync(userFile) ? userFile : 'defaults'}):\n- ${errs.join('\n- ')}`);
   return cfg;
+}
+
+/** Why a side was skipped, with no file path in it (a path names the user): a WSL that has no node says only that. */
+export function skipNote(error) {
+  const s = String(error?.message ?? error ?? '');
+  if (/wsl bridge returned no JSON/.test(s) && /node: (?:command )?not found/.test(s)) return 'WSL has no node';
+  return cleanNote(s);
 }
 
 // ----------------------------------------------------------------------------- selection
@@ -356,7 +425,7 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
     const t = resolveEffort(cfg, host, tier, effort);
     const usable = [];
     for (const [side, st] of Object.entries(sides)) {
-      if (!st.installed) skipped.push({ host, side, reason: `not installed or not runnable${st.error ? ` (${st.error})` : ''}` });
+      if (!st.installed) skipped.push({ host, side, reason: `not installed or not runnable${st.error ? ` (${skipNote(st.error)})` : ''}` });
       else if (st.logged_in === false) skipped.push({ host, side, reason: 'not logged in' });
       else {
         const b = st.usage?.binding_pct ?? null;
@@ -383,14 +452,16 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
 
 function preamble(access, tier) {
   const head = `[Routed worker | host-agent-router | tier: ${tier} | access: ${access}] Do not invoke host-agent-router and do not start further routed workers.`;
-  if (access === 'read-only') return `${head} Do not modify, create or delete any file and do not run state-changing commands. Reply with the result only.\n\n`;
+  if (access === 'read-only') return `${head} Do not modify, create or delete any file and do not run state-changing commands. Reply with the result only. Cite files as repository-relative path:line, never an absolute path or file:// link.\n\n`;
   // The worker contract, the same on every host (references/worker-contract.md): the `git-guardrails` rules, then the `handoff` report.
   // The orchestrator checks the report against what the router saw change (`changed` in the result), so it must be factual and complete.
   return `${head} Follow the \`git-guardrails\` skill if you have it, and in any case: never push and never force-push, do not commit (the lead integrates your work), `
     + 'never touch a protected branch (main, master, production, release/*), and never read, print or stage a secret (.env files, keys, tokens). '
     + 'Edit only inside the working directory; do not install packages globally or leave processes running. '
     + 'Finish with a handoff report as your whole reply, in the reply and not in a file (if a `handoff` skill is available to you, follow its state-capture and remaining-work steps), '
-    + 'with exactly these headings: Done (what now works), Changed files (path and one line each), Checks run (command and result, or none), Not done or blocked, Next steps.\n\n';
+    + 'with exactly these headings: Done (what now works), Changed files (path and one line each), Checks run (command and result, or none), Not done or blocked, Next steps. '
+    + 'Your reply is the report: write no state, notes or hand-off file anywhere, not even docs/handoff/. '
+    + 'Cite files as repository-relative path:line, never an absolute path or file:// link (the report may be pasted into a pull request).\n\n';
 }
 
 /** The lead's attached skills, after the contract and before the task. They are guidance: the contract above them stays in force. */
@@ -400,17 +471,59 @@ export function skillsBlock(skills) {
   return framing + skills.map(k => `=== Attached skill: ${k.name} ===\n${k.text}\n=== End of skill: ${k.name} ===\n\n`).join('');
 }
 
+const defaultRealpath = p => { try { return fs.realpathSync.native(p); } catch { return p; } };
+
+/** The distinct program folders (real paths) inside `home` to mount read-only for the Antigravity sandbox. Pushes its notes. */
+function mountFolders(allow, { platform, resolve, realpath, home, cwd }, notes) {
+  const pm = platform === 'win32' ? path.win32 : path.posix;
+  const key = x => (platform === 'win32' ? pm.resolve(x).toLowerCase() : pm.resolve(x));
+  const inside = (x, root) => { const r = pm.relative(key(root), key(x)); return r !== '' && !r.startsWith('..') && !pm.isAbsolute(r); };
+  const homeKey = home ? key(home) : null;
+  const cwdReal = cwd ? (() => { try { return realpath(cwd); } catch { return cwd; } })() : null;
+  const folders = new Map(); // key -> folder as spelled
+  let skipped = false;
+  let spaced = false;
+  for (const c of allow) {
+    const prog = c.trim().split(/\s+/)[0];
+    if (!prog || /[\\/:]/.test(prog)) continue;
+    const abs = resolve(prog);
+    if (!abs) continue;
+    let real = abs;
+    try { real = realpath(abs); } catch { /* keep the spelling resolve gave */ }
+    const folder = pm.dirname(real);
+    if (!homeKey) continue;
+    if (key(folder) === homeKey) { skipped = true; continue; }
+    if (!inside(folder, home)) continue;
+    if (pm.parse(folder).root === folder || (cwdReal && (key(cwdReal) === key(folder) || inside(cwdReal, folder)))) { skipped = true; continue; }
+    folders.set(key(folder), folder);
+    if (/\s/.test(folder)) spaced = true;
+  }
+  if (folders.size) notes.push('a program folder inside the user profile was mounted read-only for the sandbox (read_file), so its programs are visible to Antigravity');
+  if (skipped) notes.push('a program folder was not mounted: it is the home directory, a filesystem root or holds the working directory, and the sandbox may not see that program');
+  if (spaced) notes.push('a mounted folder has spaces in its path; read_file with such a path is untested');
+  return [...folders.values()];
+}
+
 /**
  * The `command(...)` rules Antigravity gets for an edit run. On Windows its sandbox may lack the directory of the `node` the lead's shell finds
  * (seen live, 2026-11-13), so each allowed line whose first word is a bare program that the router's own lookup resolves to a real `.exe` also gets
  * the same line with that absolute path. The path comes only from `resolve` on this machine, never from the brief or `--allow-cmd`. A `.cmd` or
  * script shim is not rewritten, and neither is a path with whitespace (an exact-line match was only seen for a path without spaces): a note says so.
- * Returns { rules, full (the added command lines, for the worker's note), notes }.
+ * Every platform: the sandbox does not expose folders inside the user profile unless a `read_file` rule mounts them read-only (host-library
+ * antigravity permissions/sandbox.md; a Node under nvm lives there: seen 2026-11-14, "not recognized" without the rule, v24.19.0 with it). So the
+ * REAL folder (links followed) of each resolved allowed program gets `read_file(<folder>)` when it is inside `home`: never home itself, a
+ * filesystem root, or a folder that contains the working directory (a note says so instead). Notes never carry a path.
+ * `omit` (a Set of allowed lines) are given no full-path rule: buildSpec uses it when the rules would make the command line too long.
+ * Returns { rules, full (the added command lines, for the worker's note), fullFor (allowed line -> its full-path line), notes }.
  */
-export function antigravityAllowRules(allow, { platform = process.platform, resolve = which } = {}) {
+export function antigravityAllowRules(allow, { platform = process.platform, resolve: lookupRaw = which, realpath = defaultRealpath, home = os.homedir(), cwd, omit = new Set() } = {}) {
+  const seen = new Map(); // one lookup per program name
+  const resolve = n => { if (!seen.has(n)) seen.set(n, lookupRaw(n)); return seen.get(n); };
   const rules = allow.map(c => `command(${c})`);
   const full = [];
+  const fullFor = new Map();
   const notes = [];
+  const mounts = mountFolders(allow, { platform, resolve, realpath, home, cwd }, notes);
   if (platform === 'win32') {
     const spaced = new Set();
     for (const c of allow) {
@@ -423,11 +536,13 @@ export function antigravityAllowRules(allow, { platform = process.platform, reso
         if (!spaced.has(prog)) { spaced.add(prog); notes.push(`no full-path rule for "${prog}": its path has spaces, so only the bare-name rule is given`); }
         continue;
       }
-      full.push(abs.replace(/\.exe$/i, '.exe') + line.slice(prog.length)); // PATHEXT yields `.EXE`; the rule seen live used `.exe`
+      const fullLine = abs.replace(/\.exe$/i, '.exe') + line.slice(prog.length); // PATHEXT yields `.EXE`; the rule seen live used `.exe`
+      fullFor.set(line, fullLine);
+      if (!omit.has(line)) full.push(fullLine);
     }
   }
-  const all = [...new Set([...rules, ...full.map(c => `command(${c})`)])];
-  return { rules: all, full: [...new Set(full)], notes };
+  const all = [...new Set([...rules, ...full.map(c => `command(${c})`), ...mounts.map(f => `read_file(${f})`)])];
+  return { rules: all, full: [...new Set(full)], fullFor, notes };
 }
 
 /** Arguments (without the binary) for one headless run. `cwd` must already be valid on the target side. Never a full-access flag. `t` is { model, effort }. */
@@ -453,14 +568,33 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
     case 'antigravity': {
       // Headless Antigravity denies every command that is not allowed, and one denial ends the run with exit 0. Its rules match an exact
       // command line or a bare program name and ignore wildcards (checked live), so the allow list is exact and the worker is told so.
-      const rules = ro ? { rules: [], full: [], notes: [] } : antigravityAllowRules(allow, { platform: extra.platform, resolve: extra.resolve });
-      const fullSentence = rules.full.length ? ` If a program name is not recognised, you may run the listed full-path form of the same command (${rules.full.join('; ')}) and nothing else.` : '';
-      const note = ro ? '' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
-      const text = preamble(access, tier) + note + attached + prompt;
-      const args = ['-p', text, '--model', t.model, '--mode', ro ? 'plan' : 'accept-edits', '--output-format', 'json'];
-      if (!ro) args.push('--sandbox', '--settings', JSON.stringify({ permissions: { allow: rules.rules } }));
-      if (!cfg.hosts.antigravity.effortInModel) args.push('--effort', t.effort);
-      return { args, stdin: null, env, chars: text.length, ...(rules.notes.length ? { notes: rules.notes } : {}) };
+      const make = omit => {
+        const rules = ro ? { rules: [], full: [], fullFor: new Map(), notes: [] } : antigravityAllowRules(allow, { platform: extra.platform, resolve: extra.resolve, realpath: extra.realpath, home: extra.home, cwd, omit });
+        const fullSentence = rules.full.length ? ` If a program name is not recognised, you may run the listed full-path form of the same command (${rules.full.join('; ')}) and nothing else.` : '';
+        const note = ro ? 'Shell commands: none are available in this read-only run, and any shell command at all stops the run with no result. You can read a file only by its path: there is no tool here to list a folder or to search file contents. Read the files the brief names; if you would need to find a file or a line you were not given, say what you could not look up instead of guessing.\n\n' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
+        const text = preamble(access, tier) + note + attached + prompt;
+        const args = ['-p', text, '--model', t.model, '--mode', ro ? 'plan' : 'accept-edits', '--output-format', 'json'];
+        if (!ro) args.push('--sandbox', '--settings', JSON.stringify({ permissions: { allow: rules.rules } }));
+        if (!cfg.hosts.antigravity.effortInModel) args.push('--effort', t.effort);
+        return { rules, spec: { args, stdin: null, env, chars: text.length, ...(rules.notes.length ? { notes: rules.notes } : {}) } };
+      };
+      let built = make(new Set());
+      // Each full-path duplicate of a long allowed line is carried three times (the rule, the list of lines, the full-path sentence). On
+      // Windows the whole command line may not pass ~30,000 characters, so the duplicates of the LONG lines (over 120 characters) go, longest
+      // first, only as far as needed; when even none of them would make it fit, nothing is left out (the length check reports it).
+      if (!ro && (extra.platform ?? process.platform) === 'win32') {
+        const longFirst = [...built.rules.fullFor.keys()].filter(l => l.length > 120).sort((a, b) => b.length - a.length);
+        if (longFirst.length && argvSize(built.spec.args, true) > ARGV_LIMIT_WINDOWS && argvSize(make(new Set(longFirst)).spec.args, true) <= ARGV_LIMIT_WINDOWS) {
+          const left = new Set();
+          for (const line of longFirst) {
+            if (argvSize(built.spec.args, true) <= ARGV_LIMIT_WINDOWS) break;
+            left.add(line);
+            built = make(left);
+          }
+          built.spec.notes = [...(built.spec.notes ?? []), `${left.size} full-path rule${left.size === 1 ? '' : 's'} left out for long allowed lines, so the command line stays under the Windows limit; if that program is not recognised in the sandbox, the bare line is all the worker has`];
+        }
+      }
+      return built.spec;
     }
     case 'cline': {
       // --json: plain text mode prints the whole activity log before the answer; JSON ends in one run_result line (see parseClineJson).
@@ -474,6 +608,10 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
   }
 }
 
+const ARGV_LIMIT_WINDOWS = 30_000;
+/** Windows counts every argument and its separator; Linux limits each argument alone. */
+const argvSize = (args, win) => (win ? args.reduce((n, a) => n + a.length + 1, 0) : Math.max(0, ...args.map(a => a.length)));
+
 /**
  * The command line a Windows process may have is about 32,000 characters in all; Linux limits one argument to 128 KiB. The two hosts whose
  * prompt travels as an argument (Antigravity, Cline) cannot take a longer one, so the router skips them rather than let the start fail.
@@ -482,8 +620,8 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
 export function argvTooLong(spec, side) {
   if (spec.stdin != null) return null;
   const win = side === 'windows';
-  const size = win ? spec.args.reduce((n, a) => n + a.length + 1, 0) : Math.max(0, ...spec.args.map(a => a.length));
-  const limit = win ? 30_000 : 120_000;
+  const size = argvSize(spec.args, win);
+  const limit = win ? ARGV_LIMIT_WINDOWS : 120_000;
   return size > limit ? `the command line would be ${size} characters, too long for this host on ${side} (limit about ${limit}): attach fewer or smaller skills, or shorten the brief` : null;
 }
 
@@ -507,24 +645,24 @@ export function stripFrontMatter(raw) {
  */
 export function resolveSkills(names, root = skillsRoot()) {
   if (names === undefined) return [];
-  if (!Array.isArray(names)) throw new Error('--skill takes a skill name; repeat the flag for more than one');
-  if (names.length > MAX_SKILLS) throw new Error(`at most ${MAX_SKILLS} --skill flags are allowed (got ${names.length})`);
+  if (!Array.isArray(names)) throw new UsageError('--skill takes a skill name; repeat the flag for more than one');
+  if (names.length > MAX_SKILLS) throw new UsageError(`at most ${MAX_SKILLS} --skill flags are allowed (got ${names.length})`);
   const seen = new Set();
   return names.map(name => {
     if (typeof name !== 'string' || !/^[a-z0-9][a-z0-9_-]*$/.test(name)) {
-      throw new Error(`--skill ${JSON.stringify(name)} is not a plain skill name (lowercase letters, digits, - and _; no path)`);
+      throw new UsageError(`--skill ${JSON.stringify(name)} is not a plain skill name (lowercase letters, digits, - and _; no path)`);
     }
-    if (seen.has(name)) throw new Error(`--skill ${JSON.stringify(name)} is named twice`);
+    if (seen.has(name)) throw new UsageError(`--skill ${JSON.stringify(name)} is named twice`);
     seen.add(name);
     const dir = path.join(root, name);
     let isDir = false;
     try { isDir = fs.statSync(dir).isDirectory(); } catch { /* not there */ }
-    if (!isDir) throw new Error(`--skill ${JSON.stringify(name)} is not a skill folder next to host-agent-router (looked in ${root})`);
+    if (!isDir) throw new UsageError(`--skill ${JSON.stringify(name)} is not a skill folder next to host-agent-router (looked in ${root})`);
     const file = path.join(dir, 'SKILL.md');
-    if (!isFile(file)) throw new Error(`--skill ${JSON.stringify(name)}: the folder has no SKILL.md`);
+    if (!isFile(file)) throw new UsageError(`--skill ${JSON.stringify(name)}: the folder has no SKILL.md`);
     const text = stripFrontMatter(fs.readFileSync(file, 'utf8'));
     if (text.length > MAX_SKILL_CHARS) {
-      throw new Error(`--skill ${JSON.stringify(name)} is ${text.length.toLocaleString('en-US')} characters, over the ${MAX_SKILL_CHARS.toLocaleString('en-US')} limit`);
+      throw new UsageError(`--skill ${JSON.stringify(name)} is ${text.length.toLocaleString('en-US')} characters, over the ${MAX_SKILL_CHARS.toLocaleString('en-US')} limit`);
     }
     return { name, chars: text.length, text };
   });
@@ -862,6 +1000,114 @@ export async function probeLocal(payload) {
   return st;
 }
 
+// ----------------------------------------------------------------------------- a temp folder the Antigravity sandbox can use
+//
+// Seen live 2026-11-15: the Antigravity sandbox hides the user profile. A worker can write into its temp folder (inside the profile on
+// Windows) but cannot list or resolve its ancestors, so tests that call realpath on, or walk up from, the temp path fail on EPERM. The
+// environment of the process that starts the host reaches the commands the worker runs, so an edit run gets another temp folder through it.
+
+export const WORKER_TEMP_DIR = '.host-agent-router-tmp';
+const pathFor = platform => (platform === 'win32' ? path.win32 : path.posix);
+
+/** True when `p` is `base` or lies inside it, compared as the platform does (case-insensitive on Windows). */
+function insideOf(P, base, p) {
+  const rel = P.relative(P.resolve(base), P.resolve(p));
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${P.sep}`) && !P.isAbsolute(rel));
+}
+
+/** The variables that name the temp folder: TEMP and TMP on Windows (TMPDIR as well, harmless there), TMPDIR elsewhere. */
+export function workerTempEnv(dir, platform = process.platform) {
+  return platform === 'win32' ? { TEMP: dir, TMP: dir, TMPDIR: dir } : { TMPDIR: dir };
+}
+
+/** `env` with `vars` set. On Windows a variable is the same under any letter case, so a differently cased copy is dropped, not left beside it. */
+export function applyTempEnv(env, vars, platform = process.platform) {
+  const out = { ...env };
+  for (const [k, v] of Object.entries(vars)) {
+    if (platform === 'win32') for (const e of Object.keys(out)) if (e.toUpperCase() === k) delete out[e];
+    out[k] = v;
+  }
+  return out;
+}
+
+export function workerTempNote(place) {
+  const where = { config: 'from the config', beside: 'beside the working directory', inside: 'inside the working directory' }[place];
+  return `the worker got a temp folder outside the user profile (${where})`;
+}
+
+/** What is wrong with a configured workerTemp, or null. */
+function configWorkerTempProblem(value, { home, platform }) {
+  const P = pathFor(platform);
+  if (typeof value !== 'string' || !value) return 'workerTemp must be an absolute folder path (a string)';
+  if (!P.isAbsolute(value)) return 'workerTemp must be an absolute path';
+  if (insideOf(P, home, value)) return "workerTemp must not be inside the user's home folder: the Antigravity sandbox hides the home folder, which is what this setting works around";
+  return null;
+}
+
+/**
+ * Where an Antigravity edit worker's temp folder would go, or null when the temp folder it would get anyway (TEMP/TMP on Windows, TMPDIR
+ * or /tmp elsewhere) is outside the home folder. In this order: `configured` (the config's workerTemp), a new folder beside the working
+ * directory (when that is outside the home folder), a new folder inside the working directory. Returns { place, dir, parent, vars, fallback? }:
+ * `fallback` is the in-directory choice tried when the beside folder cannot be made. Pure: nothing is created. Throws on a configured
+ * folder that is not absolute or lies inside the home folder.
+ */
+export function planWorkerTemp({ cwd, configured = null, platform = process.platform, env = process.env, home = os.homedir(), name = () => crypto.randomBytes(4).toString('hex') }) {
+  const P = pathFor(platform);
+  const current = platform === 'win32' ? (env.TEMP || env.TMP || env.TMPDIR) : (env.TMPDIR || '/tmp');
+  if (!current || !insideOf(P, home, current)) return null;
+  const id = name();
+  const make = (place, parent) => {
+    const dir = P.join(parent, id);
+    return { place, dir, parent, vars: workerTempEnv(dir, platform) };
+  };
+  if (configured) {
+    const bad = configWorkerTempProblem(configured, { home, platform });
+    if (bad) throw new Error(bad);
+    return make('config', configured);
+  }
+  const inner = make('inside', P.join(cwd, WORKER_TEMP_DIR));
+  if (insideOf(P, home, cwd)) return inner;
+  return { ...make('beside', P.join(P.dirname(P.resolve(cwd)), WORKER_TEMP_DIR)), fallback: inner };
+}
+
+function acquireWorkerTemp(opt) {
+  const existed = fs.existsSync(opt.parent);
+  fs.mkdirSync(opt.parent, { recursive: true });
+  try {
+    fs.mkdirSync(opt.dir);
+  } catch (e) {
+    if (!existed && opt.place !== 'config') { try { fs.rmdirSync(opt.parent); } catch { /* not empty */ } }
+    throw e;
+  }
+  return opt;
+}
+
+function releaseWorkerTemp(opt) {
+  try { fs.rmSync(opt.dir, { recursive: true, force: true }); } catch { /* best effort */ }
+  // The shared parent goes when empty (rmdir fails on a folder another run still uses); a configured folder stays.
+  if (opt.place !== 'config') { try { fs.rmdirSync(opt.parent); } catch { /* in use, or already gone */ } }
+}
+
+/**
+ * Create the planned folder (or its fallback), run `fn(vars)` with the variables to set, and remove the folder whatever happens: a result,
+ * a timeout result or a thrown error. Resolves to { value, note }: `note` says what was done without naming a path, null for no plan.
+ * When no folder can be made the run still goes ahead with the default temp folder, and the note says so.
+ */
+export async function withWorkerTemp(plan, fn) {
+  if (!plan) return { value: await fn({}), note: null };
+  let got = null;
+  for (const opt of [plan, plan.fallback]) {
+    if (!opt) continue;
+    try { got = acquireWorkerTemp(opt); break; } catch { /* try the next place */ }
+  }
+  if (!got) return { value: await fn({}), note: 'could not make a temp folder outside the user profile; the worker kept the default temp folder' };
+  try {
+    return { value: await fn(got.vars), note: workerTempNote(got.place) };
+  } finally {
+    releaseWorkerTemp(got);
+  }
+}
+
 export async function execLocal(payload) {
   const cmd = resolveCmd(payload.host);
   if (!cmd) return { rc: 127, stdout: '', stderr: `${payload.host}: binary not found`, seconds: 0 };
@@ -879,10 +1125,16 @@ export async function execLocal(payload) {
     guard = prepareClineGuard({ cwd: payload.cwd || process.cwd(), dataDir: clineDataDir(process.env) });
     if (guard) { args = [...guard.args, ...args]; env = { ...env, ...guard.env }; }
   }
+  // An Antigravity edit run gets a temp folder outside the user profile, through this process's environment, on the side where the host runs.
+  let tempPlan = null;
+  if (payload.host === 'antigravity' && payload.workerTemp) {
+    try { tempPlan = planWorkerTemp({ cwd: payload.cwd || process.cwd(), configured: payload.workerTemp.configured }); } catch (e) { return { rc: 126, stdout: '', stderr: e.message, seconds: 0 }; }
+  }
   const t0 = Date.now();
   try {
-    const r = await runCmd([...cmd, ...args], { timeout: (payload.timeout ?? 1800) * 1000, input: payload.stdin ?? '', cwd: payload.cwd || undefined, env });
+    const { value: r, note } = await withWorkerTemp(tempPlan, vars => runCmd([...cmd, ...args], { timeout: (payload.timeout ?? 1800) * 1000, input: payload.stdin ?? '', cwd: payload.cwd || undefined, env: applyTempEnv(env, vars) }));
     const out = { rc: r.rc, stdout: r.stdout, stderr: r.stderr, seconds: Math.round((Date.now() - t0) / 100) / 10 };
+    if (note) out.tempNote = note;
     if (guard) { out.guarded = true; out.blocked = guard.readBlocked(); }
     return out;
   } finally {
@@ -1118,10 +1370,14 @@ async function cmdPlan(opts, cfg) {
 }
 
 function readPrompt(opts) {
-  if (opts['prompt-file']) return fs.readFileSync(opts['prompt-file'], 'utf8');
-  if (opts.prompt) return opts.prompt;
-  if (!process.stdin.isTTY) return fs.readFileSync(0, 'utf8');
-  throw new Error('no prompt: use --prompt, --prompt-file or pipe it on stdin');
+  let text;
+  if (opts['prompt-file'] !== undefined) text = fs.readFileSync(opts['prompt-file'], 'utf8');
+  else if (opts.prompt !== undefined) text = opts.prompt;
+  else if (!process.stdin.isTTY) text = fs.readFileSync(0, 'utf8');
+  else throw new UsageError('no prompt: use --prompt, --prompt-file or pipe it on stdin');
+  // An empty prompt is never a valid run (seen: an empty piped stdin started a real worker). Checked before any status is read, dry run included.
+  if (!text.trim()) throw new UsageError('the prompt is empty: give --prompt, --prompt-file or stdin some text');
+  return text;
 }
 
 // ----------------------------------------------------------------------------- working-tree guard (edit runs)
@@ -1129,7 +1385,7 @@ function readPrompt(opts) {
 // A host that stops on a limit or a timeout may already have changed files; the router only sees the error text. So for an edit run it
 // looks at the tree: a failed attempt hands over to the next host only if it left the directory exactly as it found it.
 
-const GUARD_SKIP = new Set(['.git', 'node_modules']);
+const GUARD_SKIP = new Set(['.git', 'node_modules', WORKER_TEMP_DIR]); // the router's own temp folder for a worker is never a change the worker made
 
 function gitHead(dir) {
   try {
@@ -1300,6 +1556,12 @@ const WRITE_VERBS = new Set(['rm', 'rmdir', 'rd', 'del', 'erase', 'remove-item',
 const PRIV_VERBS = new Set(['sudo', 'doas', 'su', 'runas', 'shutdown', 'reboot', 'mkfs', 'format-volume', 'diskpart', 'setx', 'schtasks', 'reg',
   'kill', 'pkill', 'killall', 'taskkill', 'stop-process', 'spps']); // killing: a worker cannot know which processes are its own; the rest run the harness
 const SHELLS = new Set(['sh', 'bash', 'zsh', 'dash', 'cmd', 'powershell', 'pwsh']);
+// Verbs whose string arguments are run as a command: judged like a shell wrapper (same recursion, same depth limit). Evaluators take a string;
+// runners take a command line. `source` and `.` take a file, not inline text, so they are not here.
+const EVALUATORS = new Set(['iex', 'invoke-expression', 'eval']);
+const RUNNERS = new Set(['exec', 'env', 'time', 'nohup', 'command', 'xargs', 'start', 'call', 'invoke-command', 'icm', '&']);
+// Interpreters with inline code: the code is not shell, but it may name a shell command, and the old guard refused such text by accident of its split.
+const INLINE_CODE = { node: ['-e', '-p', '--eval', '--print'], python: ['-c'], python3: ['-c'], ruby: ['-e'], perl: ['-e'] };
 const GIT_HISTORY = new Set(['push', 'commit', 'rebase', 'cherry-pick', 'merge', 'am', 'revert']);
 
 /** One decision for one hook payload. policy: { workspace, home, tmp: [writable roots besides the workspace] }. */
@@ -1358,19 +1620,87 @@ export function guardDecision(payload, policy) {
   return allow;
 }
 
-function commandProblem(cmd, ctx, depth = 0) {
+/**
+ * Split a command on && || ; | and newlines, but not inside a single-quoted literal (single quotes are literal in PowerShell and in POSIX shells).
+ * Double-quoted text can expand, so a separator inside it still splits, exactly as before. A single quote never closed means the quoting cannot be
+ * trusted: the whole command is then split everywhere, the old way. `literalSingle` false (the inside of a cmd.exe wrapper, where ' is no quote) does the same.
+ */
+export function splitCommand(cmd, literalSingle = true) {
+  const everywhere = () => cmd.split(/&&|\|\||;|\||\r?\n/);
+  if (!literalSingle) return everywhere();
+  const parts = [];
+  let cur = '';
+  let single = false;
+  let double = false;
+  for (let i = 0; i < cmd.length; i++) {
+    const ch = cmd[i];
+    if (!single && ch === '"') double = !double;
+    else if (!double && ch === "'") single = !single;
+    if (!single && !(ch === "'")) {
+      const two = cmd.slice(i, i + 2);
+      if (two === '&&' || two === '||') { parts.push(cur); cur = ''; i++; continue; }
+      if (ch === ';' || ch === '|' || ch === '\n') { parts.push(cur); cur = ''; continue; }
+      if (ch === '\r' && cmd[i + 1] === '\n') continue;
+    }
+    cur += ch;
+  }
+  parts.push(cur);
+  return single ? everywhere() : parts;
+}
+
+/** Verbs whose arguments are a write target plus content: the content is not a path to judge. Names of parameters that name the target, carry the content, or take another value. */
+const CONTENT_VERBS = new Set(['set-content', 'add-content', 'out-file']);
+const TARGET_PARAMS = ['path', 'literalpath', 'filepath', 'pspath'];
+const CONTENT_PARAMS = ['value', 'inputobject'];
+const VALUED_PARAMS = ['encoding', 'width', 'stream', 'delimiter', 'filter', 'include', 'exclude', 'credential', 'readcount', 'totalcount', 'tail'];
+const paramIs = (name, list, min) => list.some(p => name.length >= min && p.startsWith(name));
+
+/**
+ * The arguments of a content verb that are judged as write targets. A target is the value of -Path/-LiteralPath/-FilePath, else the first positional
+ * argument. Not judged: the value of -Value/-InputObject (and of other valued parameters such as -Encoding), and any positional after the target
+ * that was quoted (it is content). A later unquoted positional is still judged, as before. `args` and `quoted` run in parallel.
+ */
+function contentVerbArgs(args, quoted) {
+  const judged = [];
+  const positional = [];
+  let named = false;
+  for (let i = 0; i < args.length; i++) {
+    const m = !quoted[i] && /^-+([A-Za-z]+)(?::(.*))?$/.exec(args[i]);
+    if (!m) { positional.push(i); continue; }
+    const name = m[1].toLowerCase();
+    const isTarget = paramIs(name, TARGET_PARAMS, 1);
+    const valued = isTarget || paramIs(name, CONTENT_PARAMS, 3) || paramIs(name, VALUED_PARAMS, 3);
+    if (!valued) continue;
+    const val = m[2] !== undefined ? m[2] : i + 1 < args.length ? args[++i] : undefined;
+    if (isTarget && val !== undefined) { judged.push(val); named = true; }
+  }
+  positional.forEach((i, n) => { if ((n === 0 && !named) || !quoted[i]) judged.push(args[i]); });
+  return judged;
+}
+
+function commandProblem(cmd, ctx, depth = 0, literalSingle = true) {
   const { ws, abs, writable } = ctx;
   if (/\b(curl|wget|iwr|irm|invoke-webrequest|invoke-restmethod)\b[^|]*\|\s*(sh|bash|zsh|iex|invoke-expression|powershell|pwsh|node|python3?)\b/i.test(cmd)) return 'piping a download into a shell is not allowed';
   const pathLike = t => /[\\/]/.test(t) || t.startsWith('.') || t.startsWith('~') || /^[A-Za-z]:/.test(t);
-  for (const sub of cmd.split(/&&|\|\||;|\||\r?\n/)) {
-    const tokens = (sub.match(/"[^"]*"|'[^']*'|\S+/g) ?? []).map(t => t.replace(/^["']|["']$/g, ''));
+  for (const sub of splitCommand(cmd, literalSingle)) {
+    const raw = sub.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
+    const tokens = raw.map(t => t.replace(/^["']|["']$/g, ''));
+    const quoted = raw.slice(1).map(t => /^["']/.test(t));
     if (!tokens.length) continue;
     const verb = tokens[0].replace(/^.*[\\/]/, '').replace(/\.(exe|cmd|bat|ps1)$/i, '').toLowerCase();
     const args = tokens.slice(1);
     if (PRIV_VERBS.has(verb)) return `${verb} is not allowed for a routed worker`;
     if (SHELLS.has(verb) && depth < 2) { // judge what the wrapper runs, not the wrapper's name
       const i = args.findIndex(a => /^(-c|-command|\/c)$/i.test(a));
-      if (i >= 0) { const inner = commandProblem(args.slice(i + 1).join(' '), ctx, depth + 1); if (inner) return inner; }
+      if (i >= 0) { const inner = commandProblem(args.slice(i + 1).join(' '), ctx, depth + 1, verb !== 'cmd'); if (inner) return inner; }
+    }
+    if ((EVALUATORS.has(verb) || RUNNERS.has(verb)) && depth < 2 && args.length) {
+      const inner = commandProblem(args.join(' '), ctx, depth + 1);
+      if (inner) return inner;
+    }
+    if (INLINE_CODE[verb] && depth < 2) {
+      const i = args.findIndex(a => INLINE_CODE[verb].includes(a));
+      if (i >= 0 && args[i + 1]) { const inner = commandProblem(args.slice(i + 1).join(' '), ctx, depth + 1); if (inner) return inner; }
     }
     if (/^(npm|pnpm|yarn)$/.test(verb) && args.includes('publish')) return 'publishing is not allowed for a routed worker';
     if (/^(npm|pnpm|yarn)$/.test(verb) && /^(i|install|add|global)$/.test(args[0] ?? '') && args.some(a => a === '-g' || a === '--global' || a === 'global')) return 'global installs are not allowed for a routed worker';
@@ -1391,7 +1721,9 @@ function commandProblem(cmd, ctx, depth = 0) {
       if (isSecretPath(abs(t))) return `${t} looks like a secret or credential file (guardrail: never read, print or stage secrets)`;
     }
     if (WRITE_VERBS.has(verb) || (verb === 'sed' && args.includes('-i'))) {
-      for (const t of args) {
+      const cv = CONTENT_VERBS.has(verb) ? contentVerbArgs(args, quoted) : null;
+      // a content verb is judged on its write target only; every other write verb on all of its arguments, as before
+      for (const t of cv ?? args) {
         if (t.startsWith('-') || /^\/[A-Za-z]$/.test(t)) continue;
         if (!(pathLike(t) || t === '..' || t === '~')) continue;
         const a = abs(t);
@@ -1488,40 +1820,68 @@ async function cmdRun(opts, cfg) {
     return 3;
   }
   const tier = opts.tier;
-  if (!TIERS.includes(tier)) throw new Error(`--tier must be one of ${TIERS.join(', ')}`);
+  if (!TIERS.includes(tier)) throw new UsageError(`--tier must be one of ${TIERS.join(', ')}`);
   const access = opts.access ?? cfg.defaultAccess ?? 'read-only';
-  if (!ACCESS.includes(access)) throw new Error(`--access must be one of ${ACCESS.join(', ')} (there is no full-access mode)`);
+  if (!ACCESS.includes(access)) throw new UsageError(`--access must be one of ${ACCESS.join(', ')} (there is no full-access mode)`);
   const skills = resolveSkills(opts.skill); // a usage error here means no status was read and no host started
   const prompt = readPrompt(opts);
   const cwd = path.resolve(opts.cwd ?? process.cwd());
-  const only = opts['pin-host'] ? [opts['pin-host']] : undefined;
-  const allowCmd = opts['allow-cmd'] ?? [];
-  const badCmd = validateAllowCmd(allowCmd);
-  if (badCmd.length) throw new Error(badCmd.join('\n'));
+  const only = opts['pin-host'] ? [opts['pin-host']] : opts.host?.length ? opts.host : undefined; // --pin-host and --host never arrive together (main refuses it)
+  const badCmd = validateAllowCmd(opts['allow-cmd'] ?? []);
+  if (badCmd.length) throw new UsageError(badCmd.join('\n'));
+  const allowCmd = [...new Set([...(opts['allow-cmd'] ?? []), ...readAllowCmdFile(opts['allow-cmd-file'])])];
   const { here, statuses } = await gather(cfg, opts, tier, only, opts.effort);
   const plan = buildPlan(cfg, tier, statuses, here, only, access, opts.effort);
   const cands = plan.candidates.filter(c => !opts['pin-side'] || c.side === opts['pin-side']);
   const attached = skills.map(({ name, chars }) => ({ name, chars }));
   const specFor = (c, text, tcwd) => buildSpec(cfg, c.host, c, text, access, tcwd, tier, { allowCmd, skills });
+  // The temp folder decision, shown by a dry run without creating anything; only for a side this process runs on (the other side decides it
+  // with its own home folder and environment when the run starts).
+  const tempNoteFor = (c, tcwd) => {
+    if (access !== 'edit' || c.host !== 'antigravity' || !(c.side === here || here === 'local')) return null;
+    try {
+      const p = planWorkerTemp({ cwd: tcwd, configured: cfg.workerTemp ?? null });
+      return p ? workerTempNote(p.place) : null;
+    } catch (e) { return e.message; }
+  };
+
+  // Antigravity edit runs match an allowed command as a whole line: a brief that tells the worker to run a longer line than the one allowed
+  // would end the run at once with nothing done (seen live 2026-11-15). Only the lines the operator passed are checked, not the defaults.
+  const routerNotes = [];
+  if (access === 'edit' && cands.some(c => c.host === 'antigravity')) {
+    const known = [...(cfg.workerCommands?.allow ?? []), ...allowCmd];
+    const found = longerCommandLines(prompt, allowCmd, known);
+    if (found.length) {
+      const shorten = s => (s.length > 200 ? `${s.slice(0, 197)}...` : s);
+      const lines = found.map(f => `--allow-cmd ${JSON.stringify(f.allowed)} is shorter than the line the brief tells the worker to run: ${JSON.stringify(shorten(f.longer))}. This host allows exact lines only, so the longer line would be denied and the run would end with nothing done`);
+      if (!opts['allow-prefix-ok']) throw new UsageError(`${lines.join('\n')}\nAllow the exact line the worker will run (--allow-cmd or --allow-cmd-file), or pass --allow-prefix-ok if the worker will run the short line.`);
+      routerNotes.push(...lines.map(l => `${l} (--allow-prefix-ok was given)`));
+    }
+  }
 
   if (opts['dry-run']) {
     const would_try = cands.map(c => {
       const tcwd = translateCwd(cwd, here, c.side);
       const spec = specFor(c, prompt, tcwd);
       const skip = argvTooLong(spec, c.side);
+      const tempNote = tempNoteFor(c, tcwd);
+      if (tempNote) spec.notes = [...(spec.notes ?? []), tempNote];
       return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}) };
     });
-    print({ dry_run: true, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, plan, would_try });
+    // A dry run is where the length is cheap to find out: each attempt carries `skip` (the reason the real run would skip it).
+    if (would_try.length && would_try.every(t => t.skip)) routerNotes.push('every listed attempt would be skipped: its command line is too long for the host (see skip on each); a real run would end with failure "too_long"');
+    print({ dry_run: true, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, plan, would_try, ...(routerNotes.length ? { notes: routerNotes } : {}) });
     return cands.length ? 0 : 2;
   }
 
+  let lengthSkips = 0;
   const tryOne = async c => {
     const tcwd = translateCwd(cwd, here, c.side);
     if (tcwd == null) return { skipped: `working directory ${cwd} is not reachable from ${c.side}` };
     const spec = specFor(c, prompt, tcwd);
     const tooLong = argvTooLong(spec, c.side);
-    if (tooLong) return { skipped: tooLong };
-    const payload = { host: c.host, args: spec.args, stdin: spec.stdin, env: spec.env, cwd: tcwd, timeout: timeoutFor(cfg, tier, opts.timeout) };
+    if (tooLong) { lengthSkips += 1; return { skipped: tooLong }; }
+    const payload = { host: c.host, args: spec.args, stdin: spec.stdin, env: spec.env, cwd: tcwd, timeout: timeoutFor(cfg, tier, opts.timeout), ...(access === 'edit' && c.host === 'antigravity' ? { workerTemp: { configured: cfg.workerTemp ?? null } } : {}) };
     try {
       return await callSide(cfg, here, c.side, 'local-exec', payload, payload.timeout * 1000 + 60_000);
     } catch (e) {
@@ -1534,6 +1894,9 @@ async function cmdRun(opts, cfg) {
   const env = { ok, tier, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, attempts, skipped: plan.skipped };
   // A run the guard stopped, or that Cline did not complete, exited 0 but is not a success; say why, and never hand it to another host.
   if (verdict.problem) env.failure = verdict.problem;
+  // Every candidate skipped because its command line was too long: nothing ran, and the cause has a code of its own.
+  if (!last && attempts.length > 0 && lengthSkips === attempts.length) env.failure = 'too_long';
+  if (routerNotes.length) env.notes = [...routerNotes];
   if (verdict.finish_reason) env.finish_reason = verdict.finish_reason;
   if (last?.[1].blocked?.length) env.guard = { blocked: last[1].blocked };
   // What the router saw change in the working directory, independent of what the worker's report claims.
@@ -1544,7 +1907,8 @@ async function cmdRun(opts, cfg) {
     const [c, res] = last;
     env.ran = ranOf(c);
     const specNotes = specFor(c, prompt, translateCwd(cwd, here, c.side)).notes;
-    if (specNotes) env.notes = specNotes;
+    if (specNotes) env.notes = [...(env.notes ?? []), ...specNotes];
+    if (res.tempNote) env.notes = [...(env.notes ?? []), res.tempNote];
     const cl = c.host === 'cline' ? parseClineJson(res.stdout) : null;
     const ag = c.host === 'antigravity' ? parseAgyRun(res.stdout) : null;
     if (ag) {
@@ -1608,8 +1972,15 @@ Commands:
   status [--tier T] [--effort E] [--host H...] [--json]   table of every host x side with 5-hour / weekly headroom
   plan   [--tier T] [--effort E] [--host H...]            the routing decision as JSON (starts no model)
   run    --tier T (--prompt S | --prompt-file F | stdin) [--access read-only|edit] [--cwd D] [--effort E]
-         [--skill NAME ...] [--timeout SEC] [--allow-cmd PREFIX ...] [--pin-host H] [--pin-side S] [--dry-run]
-         --timeout defaults per tier (config timeoutSeconds); --allow-cmd adds a command prefix the worker may run (its acceptance command).
+         [--skill NAME ...] [--timeout SEC] [--allow-cmd LINE ...] [--allow-cmd-file FILE] [--allow-prefix-ok] [--host H...] [--pin-host H] [--pin-side S] [--dry-run]
+         --host H (repeat it) limits the candidates to those hosts, still in priority order, and a fall-through stays inside them; --pin-host H is one host
+         with no fall-through; the two cannot be combined. A flag that does not belong to the command given is a usage error.
+         --timeout defaults per tier (config timeoutSeconds); --allow-cmd adds a command line the worker may run (its acceptance command).
+         Antigravity matches exact command lines only: give the whole line the brief tells the worker to run. A run is refused (exit 64) when the
+         brief holds a longer line that starts with an --allow-cmd value; --allow-prefix-ok turns that into a note. --allow-cmd-file FILE reads
+         one line per line (blank lines and # comments ignored). A colon or backslash is accepted only in a drive path such as C:/work/x.
+         --dry-run shows, for each attempt, whether its command line would be too long (skip), and a real run that skips every candidate for
+         length ends with failure "too_long".
          --effort E picks a setting inside the tier where a host has one (config tiers.<tier>.efforts); a host without it keeps its
          default and the result says so. An effort no candidate host knows is a usage error.
          --skill NAME (up to 3) puts the SKILL.md text of a sibling skill into the worker's prompt, after the contract; --dry-run lists them.
@@ -1620,19 +1991,31 @@ Commands:
 Tiers: simple, medium, high.   Hosts: cline, antigravity, codex, claude.   Access defaults to read-only.
 Replay aids: --here windows|wsl|local, --statuses-file FILE (use captured statuses instead of probing).
 Config: assets/config.default.json, overridden by ~/.agents/host-agent-router/config.json or $HOST_AGENT_ROUTER_CONFIG.
-Exit codes: 0 ok, 1 the run failed, 2 no usable host/side, 3 refused (inside a routed worker).
+Exit codes: 0 ok, 1 the run failed, 2 no usable host/side, 3 refused (inside a routed worker), 64 usage error or invalid config (nothing ran).
 `;
 
 const OPTIONS = {
   tier: { type: 'string' }, host: { type: 'string', multiple: true }, json: { type: 'boolean' }, here: { type: 'string' },
   'statuses-file': { type: 'string' }, prompt: { type: 'string' }, 'prompt-file': { type: 'string' }, access: { type: 'string' },
-  cwd: { type: 'string' }, timeout: { type: 'string' }, 'allow-cmd': { type: 'string', multiple: true }, 'pin-host': { type: 'string' }, 'pin-side': { type: 'string' },
+  cwd: { type: 'string' }, timeout: { type: 'string' }, 'allow-cmd': { type: 'string', multiple: true }, 'allow-cmd-file': { type: 'string' }, 'allow-prefix-ok': { type: 'boolean' },
+  'pin-host': { type: 'string' }, 'pin-side': { type: 'string' },
   'dry-run': { type: 'boolean' }, payload: { type: 'string' }, help: { type: 'boolean', short: 'h' },
   effort: { type: 'string' }, skill: { type: 'string', multiple: true }, save: { type: 'boolean' },
 };
 
+/** The options each command accepts (besides --help). Anything else is a usage error: a flag that does nothing is how a safe-looking run goes wrong. */
+const COMMAND_OPTIONS = {
+  status: ['tier', 'effort', 'host', 'json', 'here', 'statuses-file'],
+  plan: ['tier', 'effort', 'host', 'here', 'statuses-file'],
+  run: ['tier', 'effort', 'host', 'prompt', 'prompt-file', 'access', 'cwd', 'timeout', 'allow-cmd', 'allow-cmd-file', 'allow-prefix-ok', 'pin-host', 'pin-side', 'skill', 'dry-run', 'here', 'statuses-file'],
+  models: ['here'],
+  machine: ['here', 'save'],
+};
+
 export async function main(argv) {
-  const { values: opts, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true });
+  let parsed;
+  try { parsed = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true }); } catch (e) { throw new UsageError(e.message); }
+  const { values: opts, positionals } = parsed;
   const cmd = positionals[0];
   if (!cmd || opts.help) { process.stdout.write(USAGE); return 0; }
   if (cmd in LOCAL) { // internal re-entry used for the other side: one JSON line, no pretty printing
@@ -1643,20 +2026,25 @@ export async function main(argv) {
   if (!handler) { process.stderr.write(`unknown command: ${cmd}\n\n${USAGE}`); return 64; }
   const SIDES = ['windows', 'wsl', 'local'];
   const oneOf = (flag, value, allowed, note = '') => {
-    if (value !== undefined && !allowed.includes(value)) throw new Error(`${flag} must be one of ${allowed.join(', ')}${note}`);
+    if (value !== undefined && !allowed.includes(value)) throw new UsageError(`${flag} must be one of ${allowed.join(', ')}${note}`);
   };
+  if (opts['pin-host'] && opts.host?.length) throw new UsageError('--pin-host and --host cannot be combined: --pin-host is one host with no fall-through, --host lists the hosts a fall-through may use');
   oneOf('--tier', opts.tier, TIERS);
   for (const h of opts.host ?? []) oneOf('--host', h, HOSTS);
   oneOf('--pin-host', opts['pin-host'], HOSTS);
   oneOf('--pin-side', opts['pin-side'], SIDES);
   oneOf('--here', opts.here, SIDES);
   oneOf('--access', opts.access, ACCESS, ' (there is no full-access mode)');
-  if (opts.skill && cmd !== 'run') throw new Error('--skill belongs to run');
-  if (opts.effort !== undefined && !['status', 'plan', 'run'].includes(cmd)) throw new Error('--effort belongs to run, plan and status');
+  if (opts.skill && cmd !== 'run') throw new UsageError('--skill belongs to run');
+  if (opts.effort !== undefined && !['status', 'plan', 'run'].includes(cmd)) throw new UsageError('--effort belongs to run, plan and status');
+  for (const flag of Object.keys(opts)) {
+    if (flag === 'help') continue;
+    if (!COMMAND_OPTIONS[cmd].includes(flag)) throw new UsageError(`--${flag} does not apply to ${cmd} (${cmd} takes: ${COMMAND_OPTIONS[cmd].map(f => `--${f}`).join(', ')})`);
+  }
   const cfg = loadConfig();
   if (opts.effort !== undefined) {
-    const bad = checkEffort(cfg, opts.tier ?? 'medium', opts.effort, cmd === 'run' ? (opts['pin-host'] ? [opts['pin-host']] : undefined) : opts.host);
-    if (bad) throw new Error(bad);
+    const bad = checkEffort(cfg, opts.tier ?? 'medium', opts.effort, cmd === 'run' && opts['pin-host'] ? [opts['pin-host']] : opts.host);
+    if (bad) throw new UsageError(bad);
   }
   return handler(opts, cfg);
 }
@@ -1666,6 +2054,6 @@ try { invokedDirectly = Boolean(process.argv[1]) && pathToFileURL(fs.realpathSyn
 if (invokedDirectly) {
   main(process.argv.slice(2)).then(
     code => { process.exitCode = code; },
-    e => { process.stderr.write(`${e?.message ?? e}\n`); process.exitCode = 1; },
+    e => { process.stderr.write(`${e?.message ?? e}\n`); process.exitCode = e instanceof UsageError ? EXIT_USAGE : 1; },
   );
 }

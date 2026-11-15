@@ -772,6 +772,87 @@ describe('the Cline guard: what a routed worker may do', () => {
   });
 });
 
+// RF7 (2026-11-14): `Add-Content $p 'Branch ..., worktree C:\...\p8b-checker-hardening. Not committed; lead in...'` was refused as a write
+// "outside the working directory": the command was cut at the `;` inside the single-quoted text, and the words of the sentence were judged as
+// write targets. Single quotes are literal in PowerShell and POSIX shells; the content of Set-Content/Add-Content/Out-File is not a target.
+describe('the Cline guard: single-quoted text and the content of Add-Content, Set-Content and Out-File', () => {
+  const POLICY: GuardPolicy = { workspace: 'C:/work/proj', home: 'C:/Users/u', tmp: ['C:/Temp'] };
+  const sh = (...cmds: string[]): Record<string, unknown> => ({ workspaceRoots: ['C:/work/proj'], tool_call: { name: 'run_commands', input: { commands: cmds } } });
+  const SENTENCE = "'Branch task/x, worktree C:\\work\\other\\p8b-checker-hardening. Not committed; lead integrates.'";
+
+  it('allows the sentence that was refused, when the target is inside the working directory (a path, -Path, -FilePath, or a variable as before)', async () => {
+    const { guardDecision: g } = await lib();
+    for (const c of [
+      `Add-Content C:\\work\\proj\\notes.txt ${SENTENCE}`,
+      `Add-Content notes.txt ${SENTENCE}`,
+      `Add-Content -Path C:\\work\\proj\\notes.txt -Value ${SENTENCE}`,
+      `Set-Content -Value ${SENTENCE} -Path notes.txt`,
+      `Set-Content -Value 'C:\\elsewhere\\x' -Path inside.txt`,
+      `Out-File -FilePath out.txt -InputObject ${SENTENCE}`,
+      `Add-Content $p ${SENTENCE}`,
+    ]) expect(g(sh(c), POLICY), c).toEqual({ cancel: false });
+  });
+
+  it('still refuses the same content when the write target is outside the working directory', async () => {
+    const { guardDecision: g } = await lib();
+    for (const c of [
+      `Add-Content C:\\elsewhere\\notes.txt ${SENTENCE}`,
+      `Add-Content ..\\notes.txt ${SENTENCE}`,
+      `Set-Content ..\\outside.txt 'text'`,
+      `Set-Content -Path ..\\outside.txt -Value 'text'`,
+      `Set-Content -LiteralPath C:\\elsewhere\\x -Value 'text'`,
+      `Out-File -FilePath C:\\elsewhere\\x`,
+      `Out-File C:\\elsewhere\\x -InputObject 'text'`,
+      `Set-Content -Encoding utf8 ..\\outside.txt 'text'`,
+      `Set-Content notes.txt ..\\outside.txt`, // unquoted later arguments are still judged
+      `Add-Content notes.txt ${SENTENCE} > C:\\elsewhere\\x`,
+      `Add-Content .git\\config 'x'`,
+    ]) expect(g(sh(c), POLICY).cancel, c).toBe(true);
+  });
+
+  it('splits on separators outside single quotes only: a second real command after a quoted `;` is still judged', async () => {
+    const { guardDecision: g } = await lib();
+    expect(g(sh("Add-Content a.txt 'x; y'; git push"), POLICY).cancel).toBe(true);
+    expect(g(sh("Add-Content a.txt 'x && git push'"), POLICY).cancel).toBe(false); // literal text
+    expect(g(sh("Add-Content a.txt 'x'  && git push"), POLICY).cancel).toBe(true);
+    expect(g(sh("echo 'a | b'; git commit -m x"), POLICY).cancel).toBe(true);
+    expect(g(sh("echo 'it''s; ok'; git push"), POLICY).cancel).toBe(true); // doubled quote inside a literal
+  });
+
+  it('does not make double quotes opaque, and falls back to the old splitting when a single quote is never closed', async () => {
+    const { guardDecision: g } = await lib();
+    expect(g(sh('echo "a; git push"'), POLICY).cancel).toBe(true); // double-quoted text can expand: judged as before
+    expect(g(sh("echo \"it's\"; git push"), POLICY).cancel).toBe(true); // an apostrophe inside double quotes opens nothing
+    expect(g(sh("echo 'unclosed; git push"), POLICY).cancel).toBe(true);
+    expect(g(sh("cmd /c \"echo 'a && taskkill /F /IM node.exe'\""), POLICY).cancel).toBe(true); // cmd.exe has no literal single quotes
+    const { splitCommand } = (await lib()) as unknown as { splitCommand: (c: string, literal?: boolean) => string[] };
+    expect(splitCommand("echo 'a; b'; ls")).toEqual(["echo 'a; b'", ' ls']);
+    expect(splitCommand("echo 'a; b'", false)).toHaveLength(2); // inside a cmd.exe wrapper a single quote is no quote
+    expect(splitCommand('echo "a; b"')).toHaveLength(2); // double quotes: as before
+  });
+
+  // Review of RF7: `iex 'x; git push'` became allowed, because the split at the quoted `;` had been what exposed `git push`. An evaluator runs its
+  // string as a command, so it is judged like a shell wrapper. `Invoke-Expression 'git push origin main'` and `eval 'git push'` were allowed even by the old guard.
+  it('judges what an evaluator or command runner runs, like a shell wrapper (iex, Invoke-Expression, eval, exec, env, xargs, & ...)', async () => {
+    const { guardDecision: g } = await lib();
+    for (const c of [
+      "iex 'x; git push'", "Invoke-Expression 'git push origin main'", "eval 'git push'", "iex 'git commit -m x'", "iex \"git push\"", "eval 'x && git commit -m y'",
+      "iex \"Set-Content C:\\elsewhere\\x 'y'\"", "iex 'rm -rf ..'", "echo ok; iex 'x; git push'", "iex 'x; git push'; echo ok",
+      "exec 'x; git push'", "env 'x; git push'", "xargs 'x; git push'", "& 'x; git push'", "start 'x; git push'", "invoke-command -scriptblock 'x; git push'",
+      "node -e 'x; git push'", "python -c 'x; git push'", "node --eval 'a && git commit -m y'",
+    ]) expect(g(sh(c), POLICY).cancel, c).toBe(true);
+    for (const c of ["iex 'Get-ChildItem'", "Invoke-Expression 'npm test'", "eval 'echo hi'", "env NODE_ENV=test npm test", "time npm test", "node -e \"console.log(1)\"", "python -c \"print(1)\"", "& 'npm' test"]) {
+      expect(g(sh(c), POLICY).cancel, c).toBe(false);
+    }
+  });
+
+  it('keeps the secret-path check on every argument, quoted content included', async () => {
+    const { guardDecision: g } = await lib();
+    expect(g(sh("Add-Content notes.txt 'C:\\Users\\u\\.ssh\\id_rsa'"), POLICY).cancel).toBe(true);
+    expect(g(sh('Set-Content .env x'), POLICY).cancel).toBe(true);
+  });
+});
+
 describe('the Cline guard as Cline runs it (a hook file in a throwaway config directory)', () => {
   const runHook = (hook: string, payload: unknown, env: Record<string, string>) =>
     spawnSync(process.execPath, [hook], { input: JSON.stringify(payload), encoding: 'utf8', env: { ...process.env, ...env } });
@@ -936,6 +1017,31 @@ describe("the worker contract, enforced with each host's own controls", () => {
     expect(ro).not.toContain('--settings');
   });
 
+  it('Antigravity read-only: the prompt says no shell command is available and that any attempt ends the run', async () => {
+    const { buildSpec } = await lib();
+    const spec = buildSpec(CFG, 'antigravity', CFG.hosts.antigravity.tiers.medium, 'TASK', 'read-only', 'C:/w', 'medium', {});
+    const prompt = spec.args[spec.args.indexOf('-p') + 1]!;
+    expect(prompt).toContain('Shell commands: none are available in this read-only run, and any shell command at all stops the run with no result.');
+    expect(prompt).toContain('You can read a file only by its path: there is no tool here to list a folder or to search file contents.');
+    expect(prompt).toContain('Read the files the brief names; if you would need to find a file or a line you were not given, say what you could not look up instead of guessing.');
+    expect(prompt).not.toContain('file search tools');
+    expect(prompt).not.toContain('only these exact command lines');
+  });
+
+  it('Antigravity edit: the prompt keeps the edit note and does not carry the read-only note', async () => {
+    const { buildSpec } = await lib();
+    const spec = buildSpec(CFG, 'antigravity', CFG.hosts.antigravity.tiers.medium, 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: ['npm run build'] });
+    const prompt = spec.args[spec.args.indexOf('-p') + 1]!;
+    expect(prompt).toContain('only these exact command lines');
+    expect(prompt).not.toContain('none are available in this read-only run');
+  });
+
+  it('a read-only spec for another host does not carry the Antigravity read-only shell note', async () => {
+    const { buildSpec } = await lib();
+    const spec = buildSpec(CFG, 'cline', CFG.hosts.cline.tiers.medium, 'TASK', 'read-only', 'C:/w', 'medium', {});
+    expect(JSON.stringify(spec)).not.toContain('none are available in this read-only run');
+  });
+
   it('Codex and Cline carry no allow list: Codex has its sandbox, Cline has the hook guard', async () => {
     const c = await argsOf('codex', 'edit');
     expect(c).toContain('workspace-write');
@@ -1042,8 +1148,21 @@ describe('what a routed worker is told', () => {
     const t = CFG.hosts.cline.tiers.medium;
     const prompt = buildSpec(CFG, 'cline', t, 'TASK-BODY', 'edit', null, 'medium').args.at(-1) as string;
     for (const w of ['handoff', 'Done', 'Changed files', 'Checks run', 'Not done', 'Next steps', 'do not commit', 'not in a file']) expect(prompt.toLowerCase(), w).toContain(w.toLowerCase());
+    expect(prompt).toContain('Your reply is the report: write no state, notes or hand-off file anywhere, not even docs/handoff/.'); // RF7: a worker wrote a state file to hand off; the handoff skill's Phase 3 offers docs/handoff/
     expect(prompt.endsWith('TASK-BODY')).toBe(true);
     expect(buildSpec(CFG, 'cline', t, 'TASK-BODY', 'edit', null, 'medium').args).not.toContain('--plan');
+  });
+
+  // RF6: a worker's report cited file:///C:/Users/<name>/... links; reports get pasted into PRs.
+  it('asks every worker, read-only or editing, for repository-relative path:line and no absolute path or file link', async () => {
+    const { buildSpec } = await lib();
+    const t = CFG.hosts.cline.tiers.medium;
+    for (const access of ['read-only', 'edit']) {
+      const prompt = buildSpec(CFG, 'cline', t, 'TASK-BODY', access, null, 'medium').args.at(-1) as string;
+      expect(prompt, access).toContain('repository-relative path:line');
+      expect(prompt, access).toContain('never an absolute path or file:// link');
+    }
+    for (const f of ['worker-contract.md', 'delegation-brief.md']) expect(fs.readFileSync(path.join(DIR, 'references', f), 'utf8'), f).toContain('repository-relative path:line');
   });
 
   it('keeps the short "result only" instruction for a read-only worker', async () => {
@@ -1101,10 +1220,126 @@ describe('the command line, on a replayed statuses file (no host is started)', (
       [['run', '--tier', 'simple', '--prompt', 'x', '--access', 'full', '--dry-run', '--here', 'windows', '--statuses-file', f], 'there is no full-access mode'],
     ] as Array<[string[], string]>) {
       const r = run(args);
-      expect(r.status, args.join(' ')).toBe(1);
+      expect(r.status, args.join(' ')).toBe(64);
       expect(r.out, args.join(' ')).toContain(expected);
       expect(r.out, args.join(' ')).not.toMatch(/TypeError|at .*router\.mjs/);
     }
+  });
+
+  // RF1 (2026-11-14): `run --host` was accepted and ignored, so a run meant for Cline then Antigravity could fall through to Codex or Claude.
+  it('run honours repeated --host like plan: only those hosts are candidates, in priority order', () => {
+    const f = path.join(tmp(), 'statuses.json');
+    fs.writeFileSync(f, JSON.stringify({
+      cline: { windows: status() }, antigravity: { windows: status({ binding: 60 }) },
+      codex: { windows: status() }, claude: { windows: status() },
+    }));
+    const hosts = (extra: string[]): string[] => {
+      const r = run(['run', '--tier', 'medium', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', f, '--cwd', tmp(), ...extra]);
+      expect(r.status, extra.join(' ')).toBe(0);
+      return (r.json as unknown as { would_try: Array<{ host: string }>; plan: Plan }).would_try.map(t => t.host);
+    };
+    expect(hosts([])).toEqual(['cline', 'antigravity', 'codex', 'claude']);
+    expect(hosts(['--host', 'antigravity', '--host', 'cline'])).toEqual(['cline', 'antigravity']);
+    expect(hosts(['--host', 'cline'])).toEqual(['cline']);
+    expect(hosts(['--host', 'codex', '--host', 'claude'])).toEqual(['codex', 'claude']);
+  });
+
+  it('run refuses --pin-host together with --host: one is a single host, the other a list', () => {
+    const r = run(['run', '--tier', 'medium', '--prompt', 'x', '--dry-run', '--pin-host', 'cline', '--host', 'antigravity', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+    expect(r.status).toBe(64);
+    expect(r.out).toContain('--pin-host and --host cannot be combined');
+    expect(r.out).not.toMatch(/TypeError|at .*router\.mjs/);
+  });
+
+  it('a flag that belongs to another command is a usage error, never silently ignored', () => {
+    const f = replay();
+    const common = ['--here', 'windows', '--statuses-file', f];
+    for (const [args, flag] of [
+      [['plan', '--pin-host', 'cline'], '--pin-host'],
+      [['plan', '--dry-run'], '--dry-run'],
+      [['plan', '--access', 'edit'], '--access'],
+      [['status', '--prompt', 'x'], '--prompt'],
+      [['status', '--cwd', '.'], '--cwd'],
+      [['models', '--host', 'cline'], '--host'],
+      [['models', '--tier', 'high'], '--tier'],
+      [['run', '--tier', 'simple', '--prompt', 'x', '--json'], '--json'],
+      [['run', '--tier', 'simple', '--prompt', 'x', '--save'], '--save'],
+      [['machine', '--tier', 'high'], '--tier'],
+    ] as Array<[string[], string]>) {
+      const r = run([...args, ...common]);
+      expect(r.status, args.join(' ')).toBe(64);
+      expect(r.out, args.join(' ')).toContain(`${flag} does not apply to ${args[0]}`);
+    }
+  });
+
+  // RF1b: every "typed it wrong, nothing ran" path exits 64 (the unknown-command code); 1 is kept for a failed run.
+  it('an unknown command, a missing tier and a bad access all exit 64 with nothing started (always --dry-run: a missing prompt is only caught on a terminal)', () => {
+    const f = replay();
+    const common = ['--here', 'windows', '--statuses-file', f];
+    for (const args of [['bogus'], ['run', '--prompt', 'x', '--dry-run', ...common], ['run', '--tier', 'simple', '--prompt', 'x', '--dry-run', '--access', 'full', ...common]]) {
+      expect(run(args).status, args.join(' ')).toBe(64);
+    }
+  });
+
+  // RF2: an empty prompt on a non-terminal stdin used to start a real run. Always --dry-run here, so no host can start even if the check is missing.
+  it('an empty or whitespace-only prompt, from any source, is a usage error (64) and nothing is probed or planned', () => {
+    const f = replay();
+    const dir = tmp();
+    const empty = path.join(dir, 'empty.md'); fs.writeFileSync(empty, '');
+    const blank = path.join(dir, 'blank.md'); fs.writeFileSync(blank, ' \n\t \r\n');
+    const base = ['run', '--tier', 'simple', '--dry-run', '--here', 'windows', '--statuses-file', f, '--cwd', dir];
+    const cases: Array<[string[], string]> = [
+      [['--prompt', ''], ''], [['--prompt', '   '], ''], [['--prompt-file', empty], ''], [['--prompt-file', blank], ''], [[], ''], [[], ' \n\t\n'],
+    ];
+    for (const [extra, input] of cases) {
+      const r = spawnSync(process.execPath, [SCRIPT, ...base, ...extra], { encoding: 'utf8', input, env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+      expect(r.status, `${extra.join(' ')} stdin=${JSON.stringify(input)}`).toBe(64);
+      expect(r.stderr).toContain('prompt is empty');
+      expect(r.stdout, 'nothing planned or printed').toBe('');
+    }
+    const ok = spawnSync(process.execPath, [SCRIPT, ...base, '--prompt', 'x'], { encoding: 'utf8', input: '', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+    expect(ok.status).toBe(0);
+  });
+
+  it('an option the script does not know at all is a usage error too', () => {
+    const r = run(['plan', '--tier', 'medium', '--hosts', 'cline', '--here', 'windows', '--statuses-file', replay()]);
+    expect(r.status).toBe(64);
+    expect(r.out).toMatch(/Unknown option '--hosts'/);
+  });
+
+  it('a skipped side names no file path, and a WSL without node says only that', () => {
+    // seen on a machine whose WSL has no node: every plan and run carried the staged script's temp path, under the user's name
+    const f = path.join(tmp(), 'statuses.json');
+    const noNode = 'Error: wsl bridge returned no JSON (rc=127): /mnt/c/Users/dev/AppData/Local/Temp/har-84776f-lKeHDu/router.mjs: line 1: exec: node: not found';
+    fs.writeFileSync(f, JSON.stringify({
+      cline: { windows: status(), wsl: status({ installed: false, error: noNode } as Partial<Status>) },
+      antigravity: { windows: status({ installed: false, error: 'cannot start C:\\Users\\dev\\AppData\\Local\\agy\\agy.exe now' } as Partial<Status>), wsl: status({ installed: false }) },
+    }));
+    for (const args of [['plan', '--tier', 'medium'], ['run', '--tier', 'medium', '--prompt', 'x', '--dry-run', '--cwd', tmp()]]) {
+      const r = run([...args, '--here', 'windows', '--statuses-file', f]);
+      expect(r.status).toBe(0);
+      const plan = (args[0] === 'plan' ? r.json : (r.json as { plan: unknown }).plan) as unknown as Plan;
+      const reason = (host: string, side: string): string | undefined => plan.skipped.find(s => s.host === host && s.side === side)?.reason;
+      expect(reason('cline', 'wsl')).toBe('not installed or not runnable (WSL has no node)');
+      expect(reason('antigravity', 'windows')).toBe('not installed or not runnable (cannot start <path> now)');
+      expect(reason('antigravity', 'wsl')).toBe('not installed or not runnable');
+      expect(JSON.stringify(plan.skipped)).not.toMatch(/Users|har-84776f/); // the dry run's own cwd is a path by design; the skip reasons are not
+    }
+  });
+
+  it('an invalid or unreadable config file is a usage error (64): the configuration is wrong and nothing ran', () => {
+    const bad = path.join(tmp(), 'config.json');
+    const plan = (): ReturnType<typeof run> => run(['plan', '--tier', 'medium', '--here', 'windows', '--statuses-file', replay()], { HOST_AGENT_ROUTER_CONFIG: bad });
+    fs.writeFileSync(bad, JSON.stringify({ priority: ['nope'] }));
+    const unknownHost = plan();
+    expect(unknownHost.status).toBe(64);
+    expect(unknownHost.out).toMatch(/invalid config[\s\S]*priority lists an unknown host: nope/);
+    expect(unknownHost.json).toBeNull();
+    fs.writeFileSync(bad, '{ "priority": [');
+    const notJson = plan();
+    expect(notJson.status).toBe(64);
+    expect(notJson.out).toMatch(/invalid config[\s\S]*not valid JSON/);
+    expect(notJson.json).toBeNull();
   });
 
   it('refuses to route from inside a routed worker', () => {
@@ -1407,7 +1642,7 @@ describe('an effort choice inside a tier', () => {
         ['plan', '--tier', 'medium', '--effort', 'Bad Name', '--here', 'windows', '--statuses-file', f],
       ]) {
         const r = run(args);
-        expect(r.status, args.join(' ')).toBe(1);
+        expect(r.status, args.join(' ')).toBe(64);
         expect(r.out, args.join(' ')).toMatch(/--effort[^\n]*known: /);
         expect(r.out, args.join(' ')).not.toMatch(/TypeError|at .*router\.mjs/);
       }
@@ -1548,7 +1783,7 @@ describe('skills for the worker (--skill)', () => {
         [['--skill', 'handoff', '--skill', 'handoff'], 'twice'],
       ] as Array<[string[], string]>) {
         const r = run(['run', '--tier', 'simple', '--prompt', 'x', ...flags, '--dry-run', '--here', 'windows', '--statuses-file', missing]);
-        expect(r.status, flags.join(' ')).toBe(1);
+        expect(r.status, flags.join(' ')).toBe(64);
         expect(r.out, flags.join(' ')).toContain(expected);
         expect(r.out, flags.join(' ')).not.toMatch(/ENOENT|TypeError|at .*router\.mjs/);
       }
@@ -1557,12 +1792,12 @@ describe('skills for the worker (--skill)', () => {
     it('--skill belongs to run, and --effort to run, plan and status: the other commands refuse them', () => {
       for (const cmd of ['status', 'plan', 'models', 'machine']) {
         const r = run([cmd, '--skill', 'handoff', '--here', 'windows', '--statuses-file', replay()]);
-        expect(r.status, cmd).toBe(1);
+        expect(r.status, cmd).toBe(64);
         expect(r.out, cmd).toMatch(/--skill.*run/);
       }
       for (const cmd of ['models', 'machine']) {
         const r = run([cmd, '--effort', 'high', '--here', 'windows']);
-        expect(r.status, cmd).toBe(1);
+        expect(r.status, cmd).toBe(64);
         expect(r.out, cmd).toMatch(/--effort.*run, plan and status/);
       }
     });
@@ -1675,9 +1910,9 @@ describe('the documents describe the new behaviour in one wording', () => {
     }
   });
 
-  it('SKILL.md is version 1.1.0 and names the new options', () => {
+  it('SKILL.md is version 1.1.1 and names the new options', () => {
     const t = doc('SKILL.md');
-    expect(t).toMatch(/version: 1\.1\.0/);
+    expect(t).toMatch(/version: 1\.1\.1/);
     for (const w of ['--effort', '--skill', 'router.mjs" machine', '--pin-host']) expect(t, w).toContain(w);
   });
 
@@ -1735,37 +1970,42 @@ describe('the documents describe the new behaviour in one wording', () => {
     expect(doc('references/delegation-brief.md')).toMatch(/--access edit/);
     expect(doc('SKILL.md')).toMatch(/`read-only` by default/);
   });
+
+  it('the brief tells the lead that a read-only Antigravity worker can only read files by path, so every file must be named', () => {
+    expect(doc('references/delegation-brief.md')).toContain('A read-only Antigravity worker can only read files by path, with no listing or search tool, so name every file it should read; do not ask it to search.');
+  });
 });
 
 describe('the Antigravity allow rules: a full-path rule for a bare program that resolves to a .exe (Windows, edit runs)', () => {
-  type RulesFn = (allow: string[], o?: { platform?: string; resolve?: (name: string) => string | null }) => { rules: string[]; notes: string[] };
+  type RulesFn = (allow: string[], o?: { platform?: string; resolve?: (name: string) => string | null; realpath?: (p: string) => string; home?: string; cwd?: string }) => { rules: string[]; notes: string[] };
   type SpecN = { args: string[]; notes?: string[] };
   const load = async (): Promise<{ antigravityAllowRules: RulesFn; buildSpec: (...a: unknown[]) => SpecN }> => (await import(pathToFileURL(SCRIPT).href)) as never;
+  const NOHOME = 'C:\nowhere-home'; // keeps the real home and links of the test machine out of these made-up paths
   const NODE = 'C:\\nvm4w\\nodejs\\node.exe';
   const GIT = 'C:\\Git\\cmd\\git.exe';
   const exe = (name: string): string | null => ({ node: NODE, git: GIT, npm: 'C:\\nvm4w\\nodejs\\npm.cmd', tool: 'C:\\Program Files\\Tool\\tool.exe' } as Record<string, string>)[name] ?? null;
 
   it('gives `node --test` a second rule with the absolute path and the same arguments', async () => {
     const { antigravityAllowRules } = await load();
-    const r = antigravityAllowRules(['node --test'], { platform: 'win32', resolve: exe });
+    const r = antigravityAllowRules(['node --test'], { platform: 'win32', home: NOHOME, resolve: exe });
     expect(r.rules).toEqual(['command(node --test)', `command(${NODE} --test)`]);
     expect(r.notes).toEqual([]);
-    expect(antigravityAllowRules(['node --test'], { platform: 'win32', resolve: () => 'C:/n/node.EXE' }).rules[1]).toBe('command(C:/n/node.exe --test)'); // PATHEXT spelling
+    expect(antigravityAllowRules(['node --test'], { platform: 'win32', home: NOHOME, resolve: () => 'C:/n/node.EXE' }).rules[1]).toBe('command(C:/n/node.exe --test)'); // PATHEXT spelling
   });
 
   it('leaves a .cmd shim alone: `npm test` keeps one rule', async () => {
     const { antigravityAllowRules } = await load();
-    expect(antigravityAllowRules(['npm test'], { platform: 'win32', resolve: exe }).rules).toEqual(['command(npm test)']);
+    expect(antigravityAllowRules(['npm test'], { platform: 'win32', home: NOHOME, resolve: exe }).rules).toEqual(['command(npm test)']);
   });
 
   it('leaves an unresolved program alone', async () => {
     const { antigravityAllowRules } = await load();
-    expect(antigravityAllowRules(['nothere --x'], { platform: 'win32', resolve: exe })).toMatchObject({ rules: ['command(nothere --x)'], notes: [] });
+    expect(antigravityAllowRules(['nothere --x'], { platform: 'win32', home: NOHOME, resolve: exe })).toMatchObject({ rules: ['command(nothere --x)'], notes: [] });
   });
 
   it('adds nothing for a path with spaces and says which program could not be given a full-path rule', async () => {
     const { antigravityAllowRules } = await load();
-    const r = antigravityAllowRules(['tool run'], { platform: 'win32', resolve: exe });
+    const r = antigravityAllowRules(['tool run'], { platform: 'win32', home: NOHOME, resolve: exe });
     expect(r.rules).toEqual(['command(tool run)']);
     expect(r.notes).toHaveLength(1);
     expect(r.notes[0]).toContain('tool');
@@ -1776,11 +2016,12 @@ describe('the Antigravity allow rules: a full-path rule for a bare program that 
     const { antigravityAllowRules } = await load();
     const seen: string[] = [];
     const spy = (n: string): string | null => { seen.push(n); return exe(n); };
-    expect(antigravityAllowRules(['node --test'], { platform: 'linux', resolve: spy }).rules).toEqual(['command(node --test)']);
+    expect(antigravityAllowRules(['node --test'], { platform: 'linux', home: NOHOME, resolve: spy }).rules).toEqual(['command(node --test)']); // no full-path rule off Windows
+    expect(seen).toEqual(['node']); // the resolver is asked everywhere now: the read-only mount (RF8) applies on every platform
+    seen.length = 0;
+    expect(antigravityAllowRules(['./node --test', 'C:/x/node.exe -v'], { platform: 'win32', home: NOHOME, resolve: spy }).rules).toEqual(['command(./node --test)', 'command(C:/x/node.exe -v)']);
     expect(seen).toEqual([]);
-    expect(antigravityAllowRules(['./node --test', 'C:/x/node.exe -v'], { platform: 'win32', resolve: spy }).rules).toEqual(['command(./node --test)', 'command(C:/x/node.exe -v)']);
-    expect(seen).toEqual([]);
-    antigravityAllowRules(['node --test'], { platform: 'win32', resolve: spy });
+    antigravityAllowRules(['node --test'], { platform: 'win32', home: NOHOME, resolve: spy });
     expect(seen).toEqual(['node']);
   });
 
@@ -1788,7 +2029,7 @@ describe('the Antigravity allow rules: a full-path rule for a bare program that 
     const { buildSpec } = await load();
     const t = CFG.hosts.antigravity.tiers.medium;
     const edit = (host: string, extra: Record<string, unknown>): SpecN => buildSpec(CFG, host, CFG.hosts[host]!.tiers.medium, 'TASK', 'edit', 'C:/w', 'medium', extra);
-    const win = edit('antigravity', { platform: 'win32', resolve: exe, allowCmd: ['tool run'] });
+    const win = edit('antigravity', { platform: 'win32', home: NOHOME, resolve: exe, allowCmd: ['tool run'] });
     const allow = (JSON.parse(win.args[win.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
     expect(allow).toEqual(expect.arrayContaining(['command(node --test)', `command(${NODE} --test)`, 'command(git status)', `command(${GIT} status)`, 'command(npm test)', 'command(tool run)']));
     expect(allow.join()).not.toMatch(/npm\.cmd|Program Files|git push|git commit/);
@@ -1796,13 +2037,686 @@ describe('the Antigravity allow rules: a full-path rule for a bare program that 
     expect(prompt).toContain(`${NODE} --test`);
     expect(prompt).toMatch(/not recognised/);
     expect(win.notes?.join(' ')).toContain('tool');
-    const linux = edit('antigravity', { platform: 'linux', resolve: exe });
+    const linux = edit('antigravity', { platform: 'linux', home: NOHOME, resolve: exe });
     expect(linux.args[linux.args.indexOf('--settings') + 1]).not.toContain('nodejs');
     expect(linux.args[linux.args.indexOf('-p') + 1]).not.toMatch(/not recognised/);
-    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', 'C:/w', 'medium', { platform: 'win32', resolve: exe });
+    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', 'C:/w', 'medium', { platform: 'win32', home: NOHOME, resolve: exe });
     expect(ro.args).not.toContain('--settings');
-    expect(edit('claude', { platform: 'win32', resolve: exe }).args.join(' ')).not.toMatch(/nodejs|\.exe/);
-    expect(edit('cline', { platform: 'win32', resolve: exe }).args.join(' ')).not.toContain(NODE);
-    expect(edit('codex', { platform: 'win32', resolve: exe }).args.join(' ')).not.toContain(NODE);
+    expect(edit('claude', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toMatch(/nodejs|\.exe/);
+    expect(edit('cline', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toContain(NODE);
+    expect(edit('codex', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toContain(NODE);
+  });
+});
+
+// RF8 (2026-11-14): the Antigravity sandbox does not expose folders inside the user profile unless a read_file rule mounts them (host-library
+// antigravity permissions/sandbox.md). A Node installed by a version manager lives there; a probe with the rule printed v24.19.0, without it
+// "not recognized" / "Access is denied".
+describe('the Antigravity read-only mount of a program folder inside the user profile (edit runs, every platform)', () => {
+  type R = { rules: string[]; notes: string[]; full: string[] };
+  type Fn = (allow: string[], o: { platform: string; resolve: (n: string) => string | null; realpath: (p: string) => string; home: string; cwd?: string }) => R;
+  const load = async (): Promise<{ antigravityAllowRules: Fn; buildSpec: (...a: unknown[]) => { args: string[]; notes?: string[] } }> => (await import(pathToFileURL(SCRIPT).href)) as never;
+  const reads = (r: R): string[] => r.rules.filter(x => x.startsWith('read_file('));
+  const WH = 'C:\\Users\\u';
+  const REAL = 'C:\\Users\\u\\AppData\\Local\\nvm\\v24.19.0';
+  const win = (map: Record<string, string>, real: Record<string, string> = {}, home = WH, cwd = 'C:\\w\\proj') => ({
+    platform: 'win32', home, cwd, resolve: (n: string): string | null => map[n] ?? null, realpath: (p: string): string => real[p] ?? p,
+  });
+
+  it('an nvm-style link: the real folder, once, as read_file(<real folder>), next to the unchanged command rules', async () => {
+    const { antigravityAllowRules } = await load();
+    const link = 'C:\\nvm4w\\nodejs\\node.exe';
+    const r = antigravityAllowRules(['node --test'], win({ node: link }, { [link]: `${REAL}\\node.exe` }));
+    expect(reads(r)).toEqual([`read_file(${REAL})`]);
+    expect(r.rules).toEqual(expect.arrayContaining(['command(node --test)', `command(${link} --test)`]));
+    expect(r.notes.join(' ')).toMatch(/inside the user profile was mounted read-only/);
+    expect(r.notes.join(' ')).not.toContain('Users');
+  });
+
+  it('a program outside the home directory gets no mount and no note', async () => {
+    const { antigravityAllowRules } = await load();
+    const r = antigravityAllowRules(['git status'], win({ git: 'C:\\Program Files\\Git\\cmd\\git.exe' }));
+    expect(reads(r)).toEqual([]);
+    expect(r.notes.join(' ')).not.toMatch(/mounted|not mounted/);
+  });
+
+  it('a program directly in the home directory is skipped with a note, never mounting home', async () => {
+    const { antigravityAllowRules } = await load();
+    const r = antigravityAllowRules(['node --test'], win({ node: `${WH}\\node.exe` }));
+    expect(reads(r)).toEqual([]);
+    expect(r.notes.join(' ')).toMatch(/not mounted/);
+  });
+
+  it('a filesystem root and a folder that contains the working directory are skipped with a note', async () => {
+    const { antigravityAllowRules } = await load();
+    const root = antigravityAllowRules(['node --test'], win({ node: 'C:\\node.exe' }, {}, 'C:\\'));
+    expect(reads(root)).toEqual([]);
+    const anc = antigravityAllowRules(['node --test'], win({ node: `${WH}\\tools\\node.exe` }, {}, WH, `${WH}\\tools\\repo`));
+    expect(reads(anc)).toEqual([]);
+    expect(anc.notes.join(' ')).toMatch(/not mounted/);
+  });
+
+  it('two programs in one folder give one rule; two folders give two', async () => {
+    const { antigravityAllowRules } = await load();
+    const f = `${WH}\\tools\\bin`;
+    const one = antigravityAllowRules(['node --test', 'npm test'], win({ node: `${f}\\node.exe`, npm: `${f}\\npm.cmd` }));
+    expect(reads(one)).toEqual([`read_file(${f})`]);
+    const two = antigravityAllowRules(['node --test', 'git status'], win({ node: `${f}\\node.exe`, git: `${WH}\\other\\git.exe` }));
+    expect(reads(two)).toHaveLength(2);
+  });
+
+  it('compares case-insensitively on win32, and a folder with spaces is mounted with a note that it is untested', async () => {
+    const { antigravityAllowRules } = await load();
+    const r = antigravityAllowRules(['node --test'], win({ node: 'C:\\USERS\\U NAME\\bin\\node.exe' }, {}, 'c:\\users\\u name'));
+    expect(reads(r)).toEqual(['read_file(C:\\USERS\\U NAME\\bin)']);
+    expect(r.notes.join(' ')).toMatch(/spaces[^.]*untested/);
+  });
+
+  it('works with Linux paths and platform linux (no full-path rule there)', async () => {
+    const { antigravityAllowRules } = await load();
+    const bin = '/home/u/.nvm/versions/node/v24/bin';
+    const r = antigravityAllowRules(['node --test'], { platform: 'linux', home: '/home/u', cwd: '/work/repo', resolve: n => (n === 'node' ? `${bin}/node` : null), realpath: p => p });
+    expect(r.rules).toEqual(['command(node --test)', `read_file(${bin})`]);
+    const out = antigravityAllowRules(['git status'], { platform: 'linux', home: '/home/u', cwd: '/work/repo', resolve: () => '/usr/bin/git', realpath: p => p });
+    expect(reads(out)).toEqual([]);
+  });
+
+  it('buildSpec: the rule is in --settings and the dry-run notes, an edit run only, and the home path is not in the notes', async () => {
+    const { buildSpec } = await load();
+    const t = CFG.hosts.antigravity.tiers.medium;
+    const extra = { platform: 'linux', home: '/home/u', resolve: (n: string) => (n === 'node' ? '/home/u/.nvm/v24/bin/node' : null), realpath: (p: string) => p };
+    const edit = buildSpec(CFG, 'antigravity', t, 'TASK', 'edit', '/work/repo', 'medium', extra);
+    const allow = (JSON.parse(edit.args[edit.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
+    expect(allow).toContain('read_file(/home/u/.nvm/v24/bin)');
+    expect(edit.notes?.join(' ')).toMatch(/mounted read-only/);
+    expect(edit.notes?.join(' ')).not.toContain('/home/u');
+    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', '/work/repo', 'medium', extra);
+    expect(ro.args).not.toContain('--settings');
+    expect(ro.notes).toBeUndefined();
+  });
+});
+
+// 2026-11-15: three operator mistakes seen on a live Antigravity run, caught before a worker starts. Everything here is a dry run or pure data.
+describe('operator mistakes caught before a worker starts (2026-11-15)', () => {
+  type Run = { status: number | null; out: string; json: Record<string, unknown> | null };
+  const run = (args: string[]): Run => {
+    const r = spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+    let json: Record<string, unknown> | null = null;
+    try { json = JSON.parse(r.stdout) as Record<string, unknown>; } catch { /* text */ }
+    return { status: r.status, out: `${r.stdout}${r.stderr}`, json };
+  };
+  const replay = (): string => {
+    const f = path.join(tmp(), 'statuses.json');
+    fs.writeFileSync(f, JSON.stringify({ cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } }));
+    return f;
+  };
+  const SHORT = 'node node_modules/vitest/vitest.mjs run';
+  const LONG = `${SHORT} tests/x.test.ts --configLoader runner`;
+  // A dry run of an edit brief. `flags` come last, so a test can add --allow-cmd, --host and the like.
+  const edit = (brief: string, flags: string[]): Run =>
+    run(['run', '--tier', 'medium', '--prompt', brief, '--access', 'edit', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp(), ...flags]);
+  type Try = { host: string; side: string; skip?: string; allow_rules?: string[] };
+  const tries = (r: Run): Try[] => (r.json as unknown as { would_try: Try[] }).would_try;
+  const notesOf = (r: Run): string[] => ((r.json as unknown as { notes?: string[] }).notes ?? []);
+
+  describe('1. a shorter allowed line than the one in the brief (Antigravity matches whole lines)', () => {
+    it('refuses a brief whose backtick span extends an --allow-cmd value, as a usage error naming both lines, under --dry-run too', () => {
+      const r = edit(`Acceptance: run \`${LONG}\` and report.`, ['--allow-cmd', SHORT, '--host', 'antigravity']);
+      expect(r.status).toBe(64);
+      expect(r.out).toContain(`"${SHORT}"`);
+      expect(r.out).toContain(LONG);
+      expect(r.out).toMatch(/exact lines only/);
+      expect(r.json).toBeNull(); // nothing was listed: the run never got as far as a plan to print
+    });
+
+    it('refuses a longer line at the start of a line, with or without a list marker or a "$ " prompt', () => {
+      for (const start of [LONG, `  ${LONG}`, `- ${LONG}`, `3. ${LONG}`, `$ ${LONG}`]) {
+        const r = edit(`Run:\n${start}\nthen stop.`, ['--allow-cmd', SHORT, '--host', 'antigravity']);
+        expect(r.status, start).toBe(64);
+        expect(r.out, start).toContain(LONG);
+      }
+    });
+
+    it('lets these through: the exact line, the longer line allowed too, a configured default, another host, a read-only run', () => {
+      const ok = (r: Run, why: string): void => { expect(r.status, `${why}: ${r.out.slice(0, 300)}`).toBe(0); };
+      ok(edit(`Run \`${SHORT}\`.`, ['--allow-cmd', SHORT, '--host', 'antigravity']), 'the exact line');
+      ok(edit(`Run \`${LONG}\`.`, ['--allow-cmd', SHORT, '--allow-cmd', LONG, '--host', 'antigravity']), 'the longer line is allowed as well');
+      ok(edit('Run `npm test -- foo` and `git status -s`.', ['--host', 'antigravity']), 'defaults are not checked');
+      ok(edit('Run `npm test -- foo`.', ['--allow-cmd', 'npm run build', '--host', 'antigravity']), 'a different command');
+      ok(edit(`Run \`${LONG}\`.`, ['--allow-cmd', SHORT, '--host', 'cline']), 'Cline carries no allow list');
+      const ro = run(['run', '--tier', 'medium', '--prompt', `Run \`${LONG}\`.`, '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp(), '--allow-cmd', SHORT, '--host', 'antigravity']);
+      ok(ro, 'read-only: no allow rules are sent');
+    });
+
+    it('does not mistake a longer word for a longer line: "npm run build2" does not extend "npm run build"', () => {
+      expect(edit('Run `npm run build2`.', ['--allow-cmd', 'npm run build', '--host', 'antigravity']).status).toBe(0);
+    });
+
+    it('a one-word value is a bare program name, which Antigravity matches whatever follows, so it is not checked', () => {
+      expect(edit('Run `node scripts/x.mjs --flag`.', ['--allow-cmd', 'node', '--host', 'antigravity']).status).toBe(0);
+    });
+
+    it('--allow-prefix-ok turns the refusal into a note in the result', () => {
+      const r = edit(`Run \`${LONG}\`.`, ['--allow-cmd', SHORT, '--host', 'antigravity', '--allow-prefix-ok']);
+      expect(r.status).toBe(0);
+      expect(notesOf(r).join('\n')).toContain(SHORT);
+      expect(notesOf(r).join('\n')).toContain(LONG);
+      expect(notesOf(r).join('\n')).toMatch(/exact lines only/);
+    });
+
+    it('--allow-prefix-ok belongs to run only', () => {
+      const r = run(['plan', '--tier', 'medium', '--allow-prefix-ok', '--here', 'windows', '--statuses-file', replay()]);
+      expect(r.status).toBe(64);
+      expect(r.out).toMatch(/--allow-prefix-ok does not apply to plan/);
+    });
+  });
+
+  describe('2. the wording of the --allow-cmd error', () => {
+    it('says command line and whole line, never prefix', async () => {
+      const { validateAllowCmd } = await lib();
+      const msg = validateAllowCmd(['a;b']).join('\n');
+      expect(msg).toMatch(/--allow-cmd "a;b"/);
+      expect(msg).toMatch(/command line/);
+      expect(msg).toMatch(/whole line/);
+      expect(msg).not.toMatch(/prefix/i);
+      expect(fs.readFileSync(SCRIPT, 'utf8')).not.toMatch(/command prefix/);
+    });
+  });
+
+  describe('3. and 4. the length of the command line: shown in the dry run, coded in the real run', () => {
+    const bigBrief = (): string => { const f = path.join(tmp(), 'brief.md'); fs.writeFileSync(f, 'q'.repeat(40_000)); return f; };
+
+    it('a dry run where every listed attempt is too long still exits 0 and says so in a top-level note, with the reason on each attempt', () => {
+      const r = run(['run', '--tier', 'simple', '--prompt-file', bigBrief(), '--pin-host', 'cline', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      expect(r.status).toBe(0);
+      expect(tries(r)).toHaveLength(1);
+      expect(tries(r)[0]!.skip).toMatch(/too long/);
+      expect(notesOf(r).join('\n')).toMatch(/every .*(attempt|candidate).* too long/i);
+    });
+
+    it('says nothing of the kind when at least one listed attempt fits', () => {
+      const r = run(['run', '--tier', 'simple', '--prompt-file', bigBrief(), '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      expect(r.status).toBe(0);
+      expect(tries(r).map(t => Boolean(t.skip))).toEqual([true, false]);
+      expect(notesOf(r).join('\n')).not.toMatch(/too long/);
+    });
+
+    // Not a dry run, but nothing can start: the only candidate (Cline on Windows) is skipped for the length of its command line before any host is called.
+    it('a real run where every candidate was skipped for length ends with failure "too_long" and ok false', () => {
+      const r = run(['run', '--tier', 'simple', '--prompt-file', bigBrief(), '--pin-host', 'cline', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      expect(r.status).toBe(1);
+      expect(r.json).toMatchObject({ ok: false, failure: 'too_long' });
+      expect((r.json as unknown as { attempts: Array<{ skipped: string }> }).attempts[0]!.skipped).toMatch(/too long/);
+    });
+  });
+
+  describe('5. fewer full-path rules when the command line would be too long (Antigravity on Windows)', () => {
+    const NODE = 'C:\\nvm4w\\nodejs\\node.exe';
+    const exe = (n: string): string | null => (n === 'node' ? NODE : null);
+    const NOHOME = 'C:\\nowhere-home';
+    const lines = Array.from({ length: 8 }, (_, i) => `node tests/check-${i}.mjs ${'x'.repeat(300)}`);
+    const build = async (prompt: string, allowCmd: string[], resolve: (n: string) => string | null = exe): Promise<{ args: string[]; notes?: string[] }> => {
+      const { buildSpec } = await lib2();
+      return buildSpec(CFGE, 'antigravity', CFGE.hosts.antigravity!.tiers.medium!, prompt, 'edit', 'C:/w', 'medium', { allowCmd, platform: 'win32', home: NOHOME, resolve } as never) as never;
+    };
+    const size = (a: string[]): number => a.reduce((n, x) => n + x.length + 1, 0);
+    const fullRules = (s: { args: string[] }): string[] =>
+      (JSON.parse(s.args[s.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow.filter(x => x.startsWith(`command(${NODE} `));
+
+    it('adds a full-path rule for every long line while the command line fits, and says nothing', async () => {
+      const spec = await build('TASK', lines);
+      expect(fullRules(spec).filter(x => x.includes('check-'))).toHaveLength(8);
+      expect(spec.notes ?? []).toEqual([]);
+    });
+
+    it('leaves full-path rules of the longest lines out when they would push the command line over the limit, and counts them', async () => {
+      const { argvTooLong } = await lib2();
+      const base = await build('TASK', lines, () => null); // no full-path rule at all
+      const prompt = 'p'.repeat(27_000 - size(base.args)); // the brief alone leaves about 3,000 characters
+      const spec = await build(prompt, lines);
+      expect(argvTooLong(spec as never, 'windows')).toBeNull();
+      const kept = fullRules(spec).filter(x => x.includes('check-')).length;
+      expect(kept).toBeGreaterThan(0);
+      expect(kept).toBeLessThan(8);
+      const note = (spec.notes ?? []).find(n => /left out/.test(n));
+      expect(note).toBeDefined();
+      expect(note).toContain(String(8 - kept));
+      expect(note).not.toContain(NODE); // notes never carry a path
+      // every bare rule is still there
+      const allow = (JSON.parse(spec.args[spec.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
+      for (const l of lines) expect(allow).toContain(`command(${l})`);
+    });
+
+    it('does nothing when the brief alone is already too long (dropping rules would not help)', async () => {
+      const spec = await build('p'.repeat(31_000), lines);
+      expect(fullRules(spec).filter(x => x.includes('check-'))).toHaveLength(8);
+      expect(spec.notes ?? []).toEqual([]);
+    });
+  });
+
+  describe('6. a drive path in an allowed line', () => {
+    const LINE = 'node dist/cli.js skill-check --artifact C:/work/x --corpus C:/work/y --policy p';
+    const BACK = 'node dist/cli.js check --in D:\\work\\y\\in --out D:\\work\\y\\out';
+
+    it('accepts a drive prefix at the start of a word, with / or \\ after the colon', async () => {
+      const { validateAllowCmd } = await lib();
+      expect(validateAllowCmd([LINE, BACK, 'tool C:/', 'tool c:\\a.b_c-d/e@f=g'])).toEqual([]);
+    });
+
+    it('still refuses every other colon, and a backslash outside such a path', async () => {
+      const { validateAllowCmd } = await lib();
+      for (const bad of ['a:b', 'C:', 'C:x', 'CC:/x', '1:/x', 'x --policy=C:/x', 'tool C:/x:y', 'regex:npm run', 'tool http://h/x', 'a\\b', 'tool x\\y', 'tool \\x', 'tool C:\\\\srv\\share', 'tool \\\\srv\\share', 'tool C:/(x', 'tool C:/x"', 'tool C:/x;y', 'tool C:/x*']) {
+        expect(validateAllowCmd([bad]).join(), bad).toMatch(/allow-cmd/);
+      }
+    });
+
+    it('the rule of each host stays inside its syntax: Claude Bash(<cmd>:*), Antigravity command(<line>) as JSON, Cline and Codex carry nothing', async () => {
+      const { buildSpec } = await lib2();
+      const spec = (host: string): Spec => buildSpec(CFGE, host, CFGE.hosts[host]!.tiers.medium!, 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: [LINE, BACK] });
+      const claude = spec('claude').args;
+      expect(claude).toEqual(expect.arrayContaining([`Bash(${LINE}:*)`, `Bash(${BACK}:*)`]));
+      const agy = spec('antigravity').args;
+      const allow = (JSON.parse(agy[agy.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
+      expect(allow).toEqual(expect.arrayContaining([`command(${LINE})`, `command(${BACK})`])); // the backslashes survive the JSON round trip
+      for (const host of ['cline', 'codex']) expect(spec(host).args.join(' ')).not.toContain('C:/work');
+    });
+  });
+
+  describe('7. --allow-cmd-file', () => {
+    const fileWith = (text: string): string => { const f = path.join(tmp(), 'allowed.txt'); fs.writeFileSync(f, text); return f; };
+    const rulesOf = (r: Run): string[] => tries(r).find(t => t.host === 'antigravity')!.allow_rules ?? [];
+
+    it('reads one command line per line, ignoring blank lines and # comments, a BOM and CRLF, and combines with --allow-cmd', () => {
+      const f = fileWith('\uFEFF# acceptance lines\r\nnode dist/cli.js one C:/work/x\r\n\r\n  # indented comment\r\n   npm run build   \r\n');
+      const r = edit('Do the task.', ['--host', 'antigravity', '--allow-cmd', 'git diff --stat', '--allow-cmd-file', f]);
+      expect(r.status, r.out).toBe(0);
+      expect(rulesOf(r)).toEqual(expect.arrayContaining(['command(git diff --stat)', 'command(node dist/cli.js one C:/work/x)', 'command(npm run build)']));
+      expect(rulesOf(r).join()).not.toMatch(/acceptance|#/);
+    });
+
+    it('validates each line like --allow-cmd and names the file line', () => {
+      const f = fileWith('npm run build\nrm -rf x;y\n');
+      const r = edit('Do the task.', ['--host', 'antigravity', '--allow-cmd-file', f]);
+      expect(r.status).toBe(64);
+      expect(r.out).toMatch(/--allow-cmd "rm -rf x;y"/);
+      expect(r.out).toMatch(/line 2/);
+    });
+
+    it('a missing file is a usage error, and the prefix check also reads the lines of the file', () => {
+      const none = edit('Do the task.', ['--allow-cmd-file', path.join(tmp(), 'nope.txt')]);
+      expect(none.status).toBe(64);
+      expect(none.out).toMatch(/--allow-cmd-file/);
+      const f = fileWith(`${SHORT}\n`);
+      const r = edit(`Run \`${LONG}\`.`, ['--host', 'antigravity', '--allow-cmd-file', f]);
+      expect(r.status).toBe(64);
+      expect(r.out).toContain(LONG);
+    });
+
+    it('belongs to run, and the usage text lists it with --allow-prefix-ok', () => {
+      expect(run(['plan', '--tier', 'medium', '--allow-cmd-file', 'x']).status).toBe(64);
+      const help = run(['--help']).out;
+      expect(help).toContain('--allow-cmd-file');
+      expect(help).toContain('--allow-prefix-ok');
+      expect(help).toMatch(/exact (command )?lines?/i);
+      expect(help).not.toMatch(/PREFIX/);
+    });
+  });
+
+  describe('8. the documents', () => {
+    const doc = (rel: string): string => fs.readFileSync(path.join(DIR, rel), 'utf8').replace(/\r\n/g, '\n');
+
+    it('SKILL.md names --allow-cmd-file and says a dry run checks length and exact lines, and stays inside its size cap', () => {
+      const t = doc('SKILL.md');
+      expect(t).toContain('--allow-cmd-file');
+      expect(t).toMatch(/dry.run[^.\n]*(length|too long)[^.\n]*exact lines/i);
+      expect(t).toContain('`too_long`');
+      expect(t).toMatch(/version: 1\.1\.1/);
+    });
+
+    it('the brief guide has an Antigravity paragraph: number every command line, no env var or directory change, the shell is not for reading files', () => {
+      const t = doc('references/delegation-brief.md');
+      const para = t.split('\n').find(l => l.startsWith('**Antigravity.**'));
+      expect(para, 'a paragraph that starts with **Antigravity.**').toBeDefined();
+      expect(para).toMatch(/number/i);
+      expect(para).toMatch(/exact/i);
+      expect(para).toMatch(/environment variable/i);
+      expect(para).toMatch(/directory/i);
+      expect(para).toMatch(/list|read/i);
+    });
+
+    it('hosts.md records the three mistakes of 2026-11-15 and what the script now does', () => {
+      const t = doc('references/hosts.md');
+      const lines = t.split('\n').filter(l => l.includes('2026-11-15'));
+      expect(lines.length).toBeGreaterThan(0);
+      const day = lines.join('\n');
+      for (const w of ['whole line', 'too_long', 'drive', '--allow-cmd-file', '--allow-prefix-ok', '32404']) expect(day, w).toContain(w);
+    });
+
+    it('the failure codes list too_long wherever the others are listed', () => {
+      expect(doc('references/worker-contract.md')).toContain('`too_long`');
+      expect(doc('references/delegation-brief.md')).toContain('`too_long`');
+    });
+  });
+});
+
+describe('a temp folder the Antigravity sandbox can use (edit runs, 2026-11-15)', () => {
+  interface Plan2 { place: 'config' | 'beside' | 'inside'; dir: string; parent: string; vars: Record<string, string>; fallback?: { place: string; dir: string; parent: string } }
+  interface TempLib {
+    planWorkerTemp: (o: { cwd: string; configured?: string | null; platform?: string; env?: Record<string, string | undefined>; home?: string; name?: () => string }) => Plan2 | null;
+    workerTempEnv: (dir: string, platform: string) => Record<string, string>;
+    applyTempEnv: (env: Record<string, string | undefined>, vars: Record<string, string>, platform: string) => Record<string, string | undefined>;
+    withWorkerTemp: <T>(plan: Plan2 | null, fn: (vars: Record<string, string>) => Promise<T>) => Promise<{ value: T; note: string | null }>;
+    validateConfig: (cfg: unknown, o?: { home?: string; platform?: string }) => string[];
+    snapshotTree: (dir: string) => Snap;
+    runAttempts: Lib['runAttempts'];
+  }
+  const tl = async (): Promise<TempLib> => (await import(pathToFileURL(SCRIPT).href)) as never;
+  const TMPDIRNAME = '.host-agent-router-tmp';
+  const WIN = { platform: 'win32', home: 'C:\\Users\\u', env: { TEMP: 'C:\\Users\\u\\AppData\\Local\\Temp', TMP: 'C:\\Users\\u\\AppData\\Local\\Temp' } as Record<string, string | undefined>, name: () => 'abc123' };
+  const LIN = { platform: 'linux', home: '/home/u', env: { TMPDIR: '/home/u/tmp' } as Record<string, string | undefined>, name: () => 'abc123' };
+
+  describe('which folder', () => {
+    it('(a) workerTemp from the config comes first', async () => {
+      const { planWorkerTemp } = await tl();
+      const p = planWorkerTemp({ ...WIN, cwd: 'C:\\w\\proj', configured: 'D:\\scratch' });
+      expect(p?.place).toBe('config');
+      expect(p?.dir).toBe('D:\\scratch\\abc123');
+      expect(p?.parent).toBe('D:\\scratch');
+    });
+
+    it('(b) beside the working directory when that is outside the home folder', async () => {
+      const { planWorkerTemp } = await tl();
+      const p = planWorkerTemp({ ...WIN, cwd: 'C:\\w\\proj' });
+      expect(p?.place).toBe('beside');
+      expect(p?.dir).toBe(`C:\\w\\${TMPDIRNAME}\\abc123`);
+      expect(p?.fallback?.place).toBe('inside');
+      expect(p?.fallback?.dir).toBe(`C:\\w\\proj\\${TMPDIRNAME}\\abc123`);
+    });
+
+    it('(c) inside the working directory when that is inside the home folder, on Windows and elsewhere', async () => {
+      const { planWorkerTemp } = await tl();
+      const w = planWorkerTemp({ ...WIN, cwd: 'C:\\Users\\u\\code\\proj' });
+      expect(w?.place).toBe('inside');
+      expect(w?.dir).toBe(`C:\\Users\\u\\code\\proj\\${TMPDIRNAME}\\abc123`);
+      expect(w?.fallback).toBeUndefined();
+      const l = planWorkerTemp({ ...LIN, cwd: '/home/u/code/proj' });
+      expect(l?.place).toBe('inside');
+      expect(l?.dir).toBe(`/home/u/code/proj/${TMPDIRNAME}/abc123`);
+      expect(planWorkerTemp({ ...LIN, cwd: '/srv/proj' })?.dir).toBe(`/srv/${TMPDIRNAME}/abc123`);
+    });
+
+    it('no change when the default temp folder is already outside the home folder', async () => {
+      const { planWorkerTemp } = await tl();
+      expect(planWorkerTemp({ ...WIN, env: { TEMP: 'D:\\Temp' }, cwd: 'C:\\w\\proj', configured: 'D:\\scratch' })).toBeNull();
+      expect(planWorkerTemp({ ...LIN, env: {}, cwd: '/home/u/proj' })).toBeNull(); // /tmp
+      expect(planWorkerTemp({ ...LIN, env: { TMPDIR: '/home/user/tmp' }, cwd: '/home/u/proj' })).toBeNull(); // a sibling with the same prefix
+    });
+
+    it('the home folder is compared as the platform does: case-insensitive on Windows, exact elsewhere', async () => {
+      const { planWorkerTemp } = await tl();
+      expect(planWorkerTemp({ ...WIN, env: { TEMP: 'c:\\users\\U\\appdata\\local\\temp' }, cwd: 'C:\\w\\proj' })?.place).toBe('beside');
+      expect(planWorkerTemp({ ...LIN, env: { TMPDIR: '/HOME/u/tmp' }, cwd: '/srv/p' })).toBeNull();
+    });
+
+    it('the worker temp folder of the config may not be inside the home folder: a plan error and a config error', async () => {
+      const { planWorkerTemp, validateConfig } = await tl();
+      expect(() => planWorkerTemp({ ...WIN, cwd: 'C:\\w\\proj', configured: 'C:\\Users\\u\\scratch' })).toThrow(/workerTemp.*home/);
+      const o = { home: 'C:\\Users\\u', platform: 'win32' };
+      const errs = (v: unknown): string => validateConfig({ ...CFG, workerTemp: v }, o).join('\n');
+      expect(errs('C:\\Users\\u\\scratch')).toMatch(/workerTemp.*home/);
+      expect(errs('relative\\dir')).toMatch(/workerTemp.*absolute/);
+      expect(errs(5)).toMatch(/workerTemp/);
+      expect(errs('D:\\scratch')).toBe('');
+      expect(validateConfig({ ...CFG }, o)).toEqual([]);
+    });
+  });
+
+  describe('the variables', () => {
+    it('TEMP, TMP and TMPDIR on Windows; TMPDIR elsewhere', async () => {
+      const { workerTempEnv, planWorkerTemp } = await tl();
+      expect(workerTempEnv('D:\\t\\x', 'win32')).toEqual({ TEMP: 'D:\\t\\x', TMP: 'D:\\t\\x', TMPDIR: 'D:\\t\\x' });
+      expect(workerTempEnv('/t/x', 'linux')).toEqual({ TMPDIR: '/t/x' });
+      expect(workerTempEnv('/t/x', 'darwin')).toEqual({ TMPDIR: '/t/x' });
+      const d = `C:\\w\\${TMPDIRNAME}\\abc123`;
+      expect(planWorkerTemp({ ...WIN, cwd: 'C:\\w\\proj' })?.vars).toEqual({ TEMP: d, TMP: d, TMPDIR: d });
+      expect(Object.keys(planWorkerTemp({ ...LIN, cwd: '/srv/p' })?.vars ?? {})).toEqual(['TMPDIR']);
+    });
+
+    it('a variable already in the environment under another letter case is replaced, not duplicated, on Windows', async () => {
+      const { applyTempEnv } = await tl();
+      const out = applyTempEnv({ Temp: 'old', tmp: 'old', PATH: 'p' }, { TEMP: 'new', TMP: 'new', TMPDIR: 'new' }, 'win32');
+      expect(out).toEqual({ PATH: 'p', TEMP: 'new', TMP: 'new', TMPDIR: 'new' });
+      expect(applyTempEnv({ TMPDIR: 'old', Temp: 'keep' }, { TMPDIR: 'new' }, 'linux')).toEqual({ TMPDIR: 'new', Temp: 'keep' });
+    });
+  });
+
+  describe('creating and removing the folder around a run', () => {
+    // Real folders under the OS temp folder; the "home" is another folder there, so no real profile is touched.
+    const setup = (): { base: string; home: string; env: Record<string, string> } => {
+      const base = fs.realpathSync(tmp());
+      const home = path.join(base, 'home');
+      fs.mkdirSync(home);
+      return { base, home, env: { TEMP: path.join(home, 'T'), TMP: path.join(home, 'T'), TMPDIR: path.join(home, 'T') } };
+    };
+    const plan = async (cwd: string, s: { home: string; env: Record<string, string> }, configured?: string): Promise<Plan2> => {
+      const { planWorkerTemp } = await tl();
+      const p = planWorkerTemp({ cwd, configured, platform: process.platform, env: s.env, home: s.home, name: () => 'run1' });
+      expect(p).not.toBeNull();
+      return p!;
+    };
+
+    it('inside the working directory: the folder exists during the run, is gone after it, with its parent', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s);
+      expect(p.place).toBe('inside');
+      let during = false;
+      const r = await withWorkerTemp(p, async vars => {
+        during = fs.statSync(vars.TMPDIR!).isDirectory();
+        return 'done';
+      });
+      expect(during).toBe(true);
+      expect(r.value).toBe('done');
+      expect(r.note).toMatch(/inside the working directory/);
+      expect(fs.existsSync(p.dir)).toBe(false);
+      expect(fs.readdirSync(cwd)).toEqual([]);
+    });
+
+    it('beside the working directory: the same, and the folder the router did not create stays', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.base, 'work', 'proj');
+      fs.mkdirSync(cwd, { recursive: true });
+      const p = await plan(cwd, s);
+      expect(p.place).toBe('beside');
+      let during = false;
+      const r = await withWorkerTemp(p, async () => { during = fs.existsSync(p.dir); return 1; });
+      expect(during).toBe(true);
+      expect(r.note).toMatch(/beside the working directory/);
+      expect(fs.readdirSync(path.join(s.base, 'work'))).toEqual(['proj']);
+    });
+
+    it('from the config: the subfolder is removed, the configured folder stays', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cfgDir = path.join(s.base, 'cfgtmp');
+      fs.mkdirSync(cfgDir);
+      const cwd = path.join(s.base, 'work');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s, cfgDir);
+      expect(p.place).toBe('config');
+      const r = await withWorkerTemp(p, async () => fs.existsSync(p.dir));
+      expect(r.value).toBe(true);
+      expect(r.note).toMatch(/from the config/);
+      expect(fs.readdirSync(cfgDir)).toEqual([]);
+    });
+
+    it('the note names no path', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const r = await withWorkerTemp(await plan(cwd, s), async () => 0);
+      expect(r.note).not.toContain(s.base);
+      expect(r.note).not.toContain(TMPDIRNAME);
+    });
+
+    it('a failed run (a result with rc 1), a timeout (rc 124) and a thrown error all remove it', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s);
+      for (const rc of [1, 124]) {
+        const r = await withWorkerTemp(p, async () => ({ rc }));
+        expect(r.value.rc).toBe(rc);
+        expect(fs.readdirSync(cwd), `rc ${rc}`).toEqual([]);
+      }
+      await expect(withWorkerTemp(p, async () => { throw new Error('boom'); })).rejects.toThrow('boom');
+      expect(fs.readdirSync(cwd)).toEqual([]);
+    });
+
+    it('another run keeps its own folder: the shared parent goes only when empty', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s);
+      const other = path.join(p.parent, 'other');
+      await withWorkerTemp(p, async () => { fs.mkdirSync(other); });
+      expect(fs.existsSync(other)).toBe(true);
+      expect(fs.existsSync(p.dir)).toBe(false);
+    });
+
+    it('no plan: nothing is created, the run still happens, no note', async () => {
+      const { withWorkerTemp } = await tl();
+      const r = await withWorkerTemp(null, async vars => Object.keys(vars));
+      expect(r).toEqual({ value: [], note: null });
+    });
+
+    it('when the beside folder cannot be made the one inside the working directory is used', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.base, 'work', 'proj');
+      fs.mkdirSync(cwd, { recursive: true });
+      const p = await plan(cwd, s);
+      fs.writeFileSync(path.join(s.base, 'work', TMPDIRNAME), 'a file where the folder should go');
+      const r = await withWorkerTemp(p, async vars => fs.existsSync(vars.TMPDIR!));
+      expect(r.value).toBe(true);
+      expect(r.note).toMatch(/inside the working directory/);
+      expect(fs.readdirSync(cwd)).toEqual([]);
+    });
+
+    it('when no folder can be made the run goes on with the default and says so', async () => {
+      const { withWorkerTemp } = await tl();
+      const s = setup();
+      const cwd = path.join(s.home, 'proj');
+      fs.mkdirSync(cwd);
+      const p = await plan(cwd, s);
+      fs.writeFileSync(path.join(cwd, TMPDIRNAME), 'a file where the folder should go');
+      const r = await withWorkerTemp(p, async vars => Object.keys(vars));
+      expect(r.value).toEqual([]);
+      expect(r.note).toMatch(/default temp folder/);
+    });
+  });
+
+  describe('the result and the working tree', () => {
+    it('nothing under the temp folder is in the snapshot or in changed', async () => {
+      const { snapshotTree, runAttempts } = await tl();
+      const cwd = tmp();
+      fs.writeFileSync(path.join(cwd, 'a.txt'), 'a');
+      const snap = snapshotTree(cwd);
+      const r = await runAttempts({
+        cands: [{ host: 'antigravity', side: 'windows', model: 'm' }], access: 'edit', cwd, ignoredOf: () => null,
+        tryOne: async () => {
+          fs.mkdirSync(path.join(cwd, TMPDIRNAME, 'run1'), { recursive: true });
+          fs.writeFileSync(path.join(cwd, TMPDIRNAME, 'run1', 'scratch.txt'), 'x');
+          fs.writeFileSync(path.join(cwd, 'b.txt'), 'b');
+          return { rc: 0, stdout: '{}', stderr: '', seconds: 1 };
+        },
+      });
+      expect(Object.keys(snapshotTree(cwd).files).sort()).toEqual(['a.txt', 'b.txt']);
+      expect(Object.keys(snap.files)).toEqual(['a.txt']);
+      expect(r.changed?.created).toEqual(['b.txt']);
+      expect(JSON.stringify(r.changed)).not.toContain(TMPDIRNAME);
+    });
+  });
+
+  describe('--dry-run shows the decision and creates nothing', () => {
+    type Out = { notes?: string[]; would_try: Array<{ host: string; notes?: string[] }> };
+    const dry = (o: { access?: string; host?: string; cwdIn?: 'home' | 'outside'; temp?: 'inside' | 'outside'; workerTemp?: string }): { out: Out; text: string; cwd: string; home: string; base: string } => {
+      const base = fs.realpathSync(tmp());
+      const home = path.join(base, 'home');
+      fs.mkdirSync(home);
+      const cwd = o.cwdIn === 'home' ? path.join(home, 'proj') : path.join(base, 'work', 'proj');
+      fs.mkdirSync(cwd, { recursive: true });
+      const t = o.temp === 'outside' ? path.join(base, 'T') : path.join(home, 'T');
+      const cfgFile = path.join(base, 'config.json');
+      fs.writeFileSync(cfgFile, JSON.stringify(o.workerTemp ? { workerTemp: o.workerTemp } : {}));
+      const statuses = path.join(base, 'statuses.json');
+      fs.writeFileSync(statuses, JSON.stringify({ antigravity: { windows: status({ binding: 60 }) }, cline: { windows: status() } }));
+      const r = spawnSync(process.execPath, [SCRIPT, 'run', '--tier', 'medium', '--prompt', 'Do it.', '--access', o.access ?? 'edit', '--dry-run', '--here', 'windows', '--statuses-file', statuses, '--cwd', cwd, '--host', o.host ?? 'antigravity'], {
+        encoding: 'utf8',
+        env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '', HOST_AGENT_ROUTER_CONFIG: cfgFile, USERPROFILE: home, HOME: home, TEMP: t, TMP: t, TMPDIR: t },
+      });
+      expect(r.status, r.stdout + r.stderr).toBe(0);
+      return { out: JSON.parse(r.stdout) as Out, text: r.stdout, cwd, home, base };
+    };
+    const noteOf = (o: Out): string => (o.would_try[0]?.notes ?? []).join(' | ');
+
+    it('beside the working directory, and nothing is created', () => {
+      const d = dry({});
+      expect(noteOf(d.out)).toMatch(/temp folder outside the user profile \(beside the working directory\)/);
+      expect(d.text).not.toContain(TMPDIRNAME);
+      expect(noteOf(d.out)).not.toContain(d.base);
+      expect(noteOf(d.out)).not.toContain(JSON.stringify(d.base).slice(1, -1));
+      expect(fs.readdirSync(path.join(d.base, 'work'))).toEqual(['proj']);
+      expect(fs.readdirSync(d.cwd)).toEqual([]);
+      expect(fs.readdirSync(d.home)).toEqual([]);
+    });
+
+    it('inside the working directory when that lies in the home folder, and nothing is created', () => {
+      const d = dry({ cwdIn: 'home' });
+      expect(noteOf(d.out)).toMatch(/\(inside the working directory\)/);
+      expect(fs.readdirSync(d.cwd)).toEqual([]);
+    });
+
+    it('from the config', () => {
+      const cfgTmp = path.join(fs.realpathSync(tmp()), 'cfgtmp');
+      const d = dry({ workerTemp: cfgTmp });
+      expect(noteOf(d.out)).toMatch(/\(from the config\)/);
+      expect(fs.existsSync(cfgTmp)).toBe(false);
+    });
+
+    it('no note when the default temp folder is outside the home folder', () => {
+      expect(noteOf(dry({ temp: 'outside' }).out)).not.toMatch(/temp folder/);
+    });
+
+    it('no note for a read-only run, and none for another host', () => {
+      expect(noteOf(dry({ access: 'read-only' }).out)).not.toMatch(/temp folder/);
+      expect(JSON.stringify(dry({ host: 'cline' }).out)).not.toMatch(/temp folder/);
+    });
+  });
+
+  describe('the documents', () => {
+    const doc = (f: string): string => fs.readFileSync(path.join(DIR, f), 'utf8').replace(/\r\n/g, '\n');
+    it('hosts.md has the dated entry with the live re-run and what was not run live', () => {
+      const t = doc('references/hosts.md');
+      const line = t.split('\n').find(l => l.includes('2026-11-15') && l.includes('workerTemp'));
+      expect(line, 'a 2026-11-15 line that names workerTemp').toBeDefined();
+      for (const w of ['EPERM', 'realpath', 'TEMP', 're-run live with the fix', 'Not run live']) expect(line, w).toContain(w);
+      expect(line).not.toMatch(/[A-Z]:\\Users|\/home\//);
+    });
+    it('the contract says an Antigravity edit worker gets its own temp folder', () => {
+      expect(doc('references/worker-contract.md')).toMatch(/Antigravity[^\n]*own temp folder/);
+      expect(doc('references/worker-contract.md')).toContain('workerTemp');
+    });
+    it('SKILL.md stays within its limits', () => {
+      const t = doc('SKILL.md');
+      expect(t.length).toBeLessThanOrEqual(6000);
+      expect(t.split('\n').length).toBeLessThanOrEqual(90);
+      expect(t).toMatch(/version: 1\.1\.1/);
+    });
   });
 });
