@@ -920,3 +920,228 @@ describe('postflight refusals: plan record, digest, affected computation and hol
     failure(await untouched(fx, () => fx.post()), 'HOLD_VIOLATION', 'postflight');
   });
 });
+
+describe('design rules confirmed by the maintainer, 2026-11-15', () => {
+  it('marks a target pinning a removed input (newSha256: null, absent on disk and from lock) as affected with newSha256: null and passes postflight', async () => {
+    const fx = await make();
+    const removedPath = fx.libPath('pages/skill/skills.md');
+    await fs.remove(removedPath);
+    delete fx.lock.files['pages/skill/skills.md'];
+    await fx.repinLock();
+    fx.job.changedInputs[1] = { path: removedPath, oldSha256: fx.hashes.skillsOld, newSha256: null };
+    fx.targetRecords[1]!.inputs.push({ kind: 'snapshot', path: removedPath, sha256: fx.hashes.skillsOld });
+    await fx.repinTargets();
+    await fx.saveJob();
+    fx.plan = fx.buildPlan();
+    await fx.savePlan();
+    expect(fx.plan.artifacts[1].affected).toBe(true);
+    expect(fx.plan.artifacts[1].changedPins).toEqual([
+      {
+        kind: 'snapshot',
+        path: removedPath,
+        pinnedSha256: fx.hashes.skillsOld,
+        oldSha256: fx.hashes.skillsOld,
+        newSha256: null,
+        pinnedAtPrevious: true,
+      },
+    ]);
+    expect(fx.plan.unpinnedChanges).not.toContain(removedPath);
+    const out = success(await untouched(fx, () => fx.post()));
+    expect(out.recordValid).toBe(true);
+    expect(out.counts.affected).toBe(2);
+  });
+
+  it('marks a target pinning a removed input at a hash other than oldSha256 as affected with pinnedAtPrevious: false', async () => {
+    const fx = await make();
+    const removedPath = fx.libPath('pages/skill/skills.md');
+    await fs.remove(removedPath);
+    delete fx.lock.files['pages/skill/skills.md'];
+    await fx.repinLock();
+    fx.job.changedInputs[1] = { path: removedPath, oldSha256: fx.hashes.skillsOld, newSha256: null };
+    fx.targetRecords[1]!.inputs.push({ kind: 'snapshot', path: removedPath, sha256: hex('9') });
+    await fx.repinTargets();
+    await fx.saveJob();
+    fx.plan = fx.buildPlan();
+    await fx.savePlan();
+    expect(fx.plan.artifacts[1].affected).toBe(true);
+    expect(fx.plan.artifacts[1].changedPins).toEqual([
+      {
+        kind: 'snapshot',
+        path: removedPath,
+        pinnedSha256: hex('9'),
+        oldSha256: fx.hashes.skillsOld,
+        newSha256: null,
+        pinnedAtPrevious: false,
+      },
+    ]);
+    const out = success(await untouched(fx, () => fx.post()));
+    expect(out.recordValid).toBe(true);
+    expect(out.counts.affected).toBe(2);
+  });
+
+  it('refuses a plan that marks a target pinning a removed input as not affected with AFFECTED_MISMATCH', async () => {
+    const fx = await make();
+    const removedPath = fx.libPath('pages/skill/skills.md');
+    await fs.remove(removedPath);
+    delete fx.lock.files['pages/skill/skills.md'];
+    await fx.repinLock();
+    fx.job.changedInputs[1] = { path: removedPath, oldSha256: fx.hashes.skillsOld, newSha256: null };
+    fx.targetRecords[1]!.inputs.push({ kind: 'snapshot', path: removedPath, sha256: fx.hashes.skillsOld });
+    await fx.repinTargets();
+    await fx.saveJob();
+    fx.plan = fx.buildPlan();
+    fx.plan.artifacts[1].affected = false;
+    fx.plan.artifacts[1].changedPins = [];
+    fx.plan.unpinnedChanges.push(removedPath);
+    await fx.savePlan();
+    failure(await untouched(fx, () => fx.post()), 'AFFECTED_MISMATCH', 'postflight');
+  });
+
+  const omittedJobFields: Array<[string, (fx: SyncJobFixture) => void]> = [
+    ['top-level changelogSignals', fx => { fx.job.changelogSignals = []; }],
+    ['top-level budget', fx => { fx.job.budget = {}; }],
+    ['top-level constraints', fx => { fx.job.constraints = {}; }],
+    ['library.sources', fx => { fx.job.library.sources = structuredClone(fx.job.library.lock); }],
+    ['library.lastSeen', fx => { fx.job.library.lastSeen = []; }],
+    ['library.verifyStatus', fx => { fx.job.library.verifyStatus = 'pass'; }],
+    ['source.previousHead', fx => { fx.job.source.previousHead = '0'.repeat(40); }],
+    ['changedInputs[0].kind', fx => { fx.job.changedInputs[0].kind = 'snapshot'; }],
+    ['changedInputs[0].artifactTypes', fx => { fx.job.changedInputs[0].artifactTypes = ['agent']; }],
+    ['heldSources[0].evidenceLine', fx => { fx.job.heldSources[0].evidenceLine = 1; }],
+  ];
+  it.each(omittedJobFields)('refuses omitted job field %s with JOB_INVALID in preflight', async (_label, edit) => {
+    const fx = await make();
+    edit(fx);
+    await fx.saveJob();
+    failure(await untouched(fx, () => fx.pre()), 'JOB_INVALID', 'preflight');
+  });
+
+  it('accepts an arbitrary oldSha256 on an untracked guide in both phases, reports pinnedAtPrevious: false and lists untracked-old-hash in claimsNotAccepted', async () => {
+    const fx = await make();
+    const guidePath = fx.libPath('guide/agent.md');
+    fx.targetRecords[0]!.inputs.push({ kind: 'guide', path: guidePath, sha256: fx.hashes.guideOld });
+    await fx.repinTargets();
+    fx.job.changedInputs[2].oldSha256 = hex('7');
+    await fx.saveJob();
+    fx.plan = fx.buildPlan();
+    await fx.savePlan();
+    const guidePin = fx.plan.artifacts[0].changedPins.find((pin: Json) => pin.path === guidePath);
+    expect(guidePin).toMatchObject({
+      kind: 'guide',
+      path: guidePath,
+      pinnedSha256: fx.hashes.guideOld,
+      oldSha256: hex('7'),
+      newSha256: fx.hashes.guideNew,
+      pinnedAtPrevious: false,
+    });
+    const pre = success(await untouched(fx, () => fx.pre()));
+    expect(pre.recordValid).toBe(true);
+    expect(pre.claimsNotAccepted).toContain('untracked-old-hash');
+    const post = success(await untouched(fx, () => fx.post()));
+    expect(post.recordValid).toBe(true);
+    expect(post.claimsNotAccepted).toContain('untracked-old-hash');
+  });
+
+  it('refuses an existing source.checkout that is not a git repository with CHECKOUT_HEAD', async () => {
+    const fx = await make();
+    const plainCheckout = path.join(fx.root, 'plain-checkout');
+    await fs.copy(path.join(fx.checkout, 'host-library'), path.join(plainCheckout, 'host-library'));
+    fx.job.source.checkout = plainCheckout;
+    fx.job.library.lock = await pinOf(path.join(plainCheckout, 'host-library', 'claude', 'library.lock.json'));
+    fx.job.changedInputs = fx.job.changedInputs.map((item: Json) => ({
+      ...item,
+      path: path.join(plainCheckout, path.relative(fx.checkout, item.path)),
+    }));
+    fx.job.heldSources = fx.job.heldSources.map((item: Json) => ({
+      ...item,
+      path: path.join(plainCheckout, path.relative(fx.checkout, item.path)),
+    }));
+    await fx.saveJob();
+    failure(await untouched(fx, () => fx.pre()), 'CHECKOUT_HEAD', 'preflight');
+  });
+
+  it('refuses a previously valid job with CHECKOUT_HEAD after a new commit advances the checkout HEAD', async () => {
+    const fx = await make();
+    expect(success(await untouched(fx, () => fx.pre())).recordValid).toBe(true);
+    const commit = spawnSync('git', ['-C', fx.checkout, 'commit', '--allow-empty', '-m', 'Advance fixture HEAD'], {
+      encoding: 'utf8',
+      timeout: 30_000,
+    });
+    expect(commit.status, commit.stderr).toBe(0);
+    failure(await untouched(fx, () => fx.pre()), 'CHECKOUT_HEAD', 'preflight');
+  });
+
+  it('leaves the fixture tree including checkout .git, HEAD and refs untouched after preflight and postflight', async () => {
+    const fx = await make();
+    const gitOut = (args: string[]): string => {
+      const res = spawnSync('git', ['-C', fx.checkout, ...args], { encoding: 'utf8', timeout: 30_000 });
+      expect(res.status, res.stderr).toBe(0);
+      return res.stdout;
+    };
+    const beforeTree = await treeOf(fx.root);
+    expect(Object.keys(beforeTree).some(key => key.startsWith('checkout/.git/'))).toBe(true);
+    const beforeHead = gitOut(['rev-parse', '--verify', 'HEAD']).trim();
+    const beforeRefs = gitOut(['show-ref']);
+    expect(success(fx.pre()).recordValid).toBe(true);
+    expect(success(fx.post()).recordValid).toBe(true);
+    expect(await treeOf(fx.root)).toEqual(beforeTree);
+    expect(gitOut(['rev-parse', '--verify', 'HEAD']).trim()).toBe(beforeHead);
+    expect(gitOut(['show-ref'])).toBe(beforeRefs);
+  });
+
+  it('treats a UNC-form target checkout (\\\\server\\share\\repo) as Windows form and joins', async () => {
+    const fx = await make();
+    fx.targetRecords[0]!.source.checkout = '\\\\server\\share\\repo';
+    fx.targetRecords[0]!.inputs = [
+      { kind: 'snapshot', path: '\\\\server\\share\\repo\\host-library\\claude\\pages\\agent\\sub-agents.md', sha256: fx.hashes.subAgentsOld },
+    ];
+    await fx.repinTargets();
+    await fx.saveJob();
+    fx.plan = fx.buildPlan();
+    await fx.savePlan();
+    expect(fx.plan.artifacts[0].affected).toBe(true);
+    expect(fx.plan.artifacts[0].changedPins).toHaveLength(1);
+    expect(success(await untouched(fx, () => fx.post())).counts.affected).toBe(1);
+  });
+
+  it('joins a Windows-form target whose inputs use forward slashes', async () => {
+    const fx = await make();
+    fx.targetRecords[0]!.source.checkout = 'C:\\repo';
+    fx.targetRecords[0]!.inputs = [
+      { kind: 'snapshot', path: 'C:/repo/host-library/claude/pages/agent/sub-agents.md', sha256: fx.hashes.subAgentsOld },
+    ];
+    await fx.repinTargets();
+    await fx.saveJob();
+    fx.plan = fx.buildPlan();
+    await fx.savePlan();
+    expect(fx.plan.artifacts[0].affected).toBe(true);
+    expect(fx.plan.artifacts[0].changedPins).toHaveLength(1);
+    expect(success(await untouched(fx, () => fx.post())).counts.affected).toBe(1);
+  });
+
+  it('pins nothing for a Windows-form target whose input is inside another checkout library', async () => {
+    const fx = await make();
+    fx.targetRecords[0]!.source.checkout = 'C:\\remote\\checkout-a';
+    fx.targetRecords[0]!.inputs = [
+      { kind: 'snapshot', path: 'C:\\remote\\checkout-b\\host-library\\claude\\pages\\agent\\sub-agents.md', sha256: fx.hashes.subAgentsOld },
+    ];
+    await fx.repinTargets();
+    await fx.saveJob();
+    fx.plan = fx.buildPlan();
+    await fx.savePlan();
+    expect(fx.plan.artifacts[0].affected).toBe(false);
+    expect(fx.plan.artifacts[0].changedPins).toEqual([]);
+    expect(fx.plan.artifacts[0].heldPins).toEqual([]);
+    const out = success(await untouched(fx, () => fx.post()));
+    expect(out.counts.affected).toBe(0);
+    expect(out.counts.unpinnedChanges).toBe(3);
+  });
+
+  it('refuses a POSIX-form target checkout containing a .. segment with TARGET_INVALID', async () => {
+    const fx = await make();
+    fx.targetRecords[0]!.source.checkout = '/remote/a/../checkout';
+    await fx.repinTargets();
+    await fx.saveJob();
+    failure(await untouched(fx, () => fx.pre()), 'TARGET_INVALID', 'preflight');
+  });
+});

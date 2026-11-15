@@ -7,7 +7,7 @@ import { RegistryResolver } from '../src/core/registry.js';
 import { planClaudeFactoryArtifacts } from '../src/core/claude-factory-binding.js';
 import { readClaudeFactoryMain } from '../src/core/claude-factory-start.js';
 import { FACTORY_BINDINGS, FACTORY_WORKERS, assertClaudeFactoryRoleMechanics, assertClaudeFactoryWorkerBinding,
-  factoryEntryBySkill, factoryWorkerByRole, factoryWorkerBySkill } from '../src/core/claude-factory-declaration.js';
+  factoryEntryBySkill, factoryWorkerByRole, factoryWorkerBySkill, normalizeClaudeFactoryCoordinatorTools } from '../src/core/claude-factory-declaration.js';
 import { nativeGuardFileHooks } from '../src/core/guard.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { prepareFactoryCoordinator } from './helpers/factory-coordinator.js';
@@ -63,6 +63,30 @@ describe('factory worker posture lookup', () => {
   });
 });
 
+describe('coordinator delegate grant', () => {
+  const others = ['AskUserQuestion', 'Bash', 'Read'];
+  it('accepts exactly the three reviewed workers and reduces the scoped grant to Agent', () => {
+    expect(normalizeClaudeFactoryCoordinatorTools(['Agent(factory-realizer, factory-evaluator, factory-sync)', ...others])).toEqual(['Agent', ...others]);
+    expect(normalizeClaudeFactoryCoordinatorTools(['Agent(factory-sync, factory-evaluator, factory-realizer)', ...others])).toEqual(['Agent', ...others]);
+  });
+  it.each([
+    ['the old two-worker grant', 'Agent(factory-realizer, factory-evaluator)'],
+    ['a missing realizer', 'Agent(factory-evaluator, factory-sync)'],
+    ['a fourth name', 'Agent(factory-realizer, factory-evaluator, factory-sync, Explore)'],
+    ['a substitute for the sync worker', 'Agent(factory-realizer, factory-evaluator, Explore)'],
+    ['a repeated name', 'Agent(factory-realizer, factory-evaluator, factory-evaluator)'],
+    ['a duplicate sync worker', 'Agent(factory-realizer, factory-evaluator, factory-sync, factory-sync)'],
+    ['a wildcard', 'Agent(*)'],
+    ['a bare Agent', 'Agent'],
+  ])('refuses %s', (_label, grant) => {
+    expect(() => normalizeClaudeFactoryCoordinatorTools([grant, ...others])).toThrow(/coordinate-artifact requires exactly Agent\(factory-realizer, factory-evaluator, factory-sync\)/);
+  });
+  it('refuses a bare Agent beside the scoped grant and a second scoped grant', () => {
+    expect(() => normalizeClaudeFactoryCoordinatorTools(['Agent', 'Agent(factory-realizer, factory-evaluator, factory-sync)', ...others])).toThrow(/coordinate-artifact requires exactly/);
+    expect(() => normalizeClaudeFactoryCoordinatorTools(['Agent(factory-realizer, factory-evaluator, factory-sync)', 'Agent(factory-sync)', ...others])).toThrow(/coordinate-artifact requires exactly/);
+  });
+});
+
 describe('factory closure wiring independent of the declared order', () => {
   let root: string | undefined;
   afterEach(async () => { if (root) { await fs.remove(root); root = undefined; } });
@@ -79,6 +103,25 @@ describe('factory closure wiring independent of the declared order', () => {
     expect(straight.map(artifact => artifact.relPath)).toContain('.claude/skills/realize-artifact/assets/claude-binding.json');
     const reordered = await withReorderedBindings(plan);
     expect(reordered).toEqual(straight);
+  });
+
+  it('checks the installed workers in the order realizer, evaluator, sync after the main, whatever order the bindings are declared in', async () => {
+    const fixture = await prepareFactoryCoordinator(); root = fixture.root;
+    await new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options);
+    const receipt = (skill: string): string => `.claude/skills/${skill}/assets/claude-binding.json`;
+    const firstFailure = (): string => {
+      try { readClaudeFactoryMain(fixture.workspace); } catch (error) { return error instanceof Error ? error.message : String(error); }
+      return 'startup accepted an edited closure';
+    };
+    await fs.appendFile(fixture.installed(receipt('sync-host')), '\nuser edit\n');
+    expect(firstFailure()).toContain(`edited required file ${receipt('sync-host')}`);
+    await fs.appendFile(fixture.installed(receipt('evaluate-artifact')), '\nuser edit\n');
+    expect(firstFailure()).toContain(`edited required file ${receipt('evaluate-artifact')}`);
+    await withReorderedBindings(async () => { expect(firstFailure()).toContain(`edited required file ${receipt('evaluate-artifact')}`); });
+    await fs.appendFile(fixture.installed(receipt('realize-artifact')), '\nuser edit\n');
+    expect(firstFailure()).toContain(`edited required file ${receipt('realize-artifact')}`);
+    await fs.appendFile(fixture.installed(receipt('coordinate-artifact')), '\nuser edit\n');
+    expect(firstFailure()).toContain(`edited required file ${receipt('coordinate-artifact')}`);
   });
 
   it('checks the installed main closure first whatever order the bindings are declared in', async () => {

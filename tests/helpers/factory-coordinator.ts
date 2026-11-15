@@ -16,7 +16,8 @@ export function cleanFactoryEnv(overrides: Record<string, string> = {}): NodeJS.
 export const COORDINATOR_DECLARATION = 'hosts/claude/agent-factory-coordinate.binding.json';
 export const COORDINATOR_SUPPORT = ['references/job.md', 'references/dispatch.md', 'references/verification.md', 'references/repair.md', 'references/handback.md', 'examples/claude-agent-journey.md', 'assets/report.json',
   'references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json',
-  'references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json'] as const;
+  'references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json',
+  'references/host-sync.md'] as const;
 export const coordinatorTree = bundleTemplateTree;
 
 /** Disposable owning factory, with the existing approved worker closures. */

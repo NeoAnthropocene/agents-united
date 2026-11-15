@@ -272,7 +272,7 @@ export class ClaudeLauncher {
     const bootstrapLines = factory ? [
       'You are the installed Agents United artifact factory coordinator.',
       `Read your checked native main at ".claude/agents/${coordinatorName}.md" and its required "coordinate-artifact" preload before acting.`,
-      'The fixed ordinary foreground worker map is factory-realizer for bounded native draft creation/update and factory-evaluator for fresh independent read-only review. Inspect the actual Host result and refuse an unsupported fork, teammate, background or partial mechanism.',
+      'The fixed ordinary foreground worker map is factory-realizer for bounded native draft creation/update, factory-evaluator for fresh independent read-only review and factory-sync for read-only host-update sync planning. Inspect the actual Host result and refuse an unsupported fork, teammate, background or partial mechanism.',
       'Use the supplied fixed job and caller-held digests. Keep draftRoot and evidenceRoot physically disjoint from each other, the selected source checkout and managed/protected paths. Verify final bytes and installed P2/P5 check results before reporting a candidate; repair defaults to zero and needs explicit bounded authorization.',
       'Installed .claude/ files are managed runtime copies: do not edit them. In the selected authoritative source checkout, registry/core/ owns shared pairs, registry/hosts/claude/ owns native definitions and loaders, and registry/skills/ owns shared Skill support. The optional .agents/ store is not the authoritative native source registry. If those sources are unavailable, report the dependent authoring work unavailable.',
       firstMessageText,

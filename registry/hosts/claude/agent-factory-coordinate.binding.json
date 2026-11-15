@@ -46,7 +46,8 @@
     "references/contract-authoring.md",
     "scripts/check-contract-return.mjs",
     "assets/contract-task.schema.json",
-    "assets/contract-return.schema.json"
+    "assets/contract-return.schema.json",
+    "references/host-sync.md"
   ],
   "references": [
     {
@@ -81,6 +82,7 @@
   "requiredInstalled": [
     ".claude/agents/factory-realizer.md",
     ".claude/agents/factory-evaluator.md",
+    ".claude/agents/factory-sync.md",
     ".claude/skills/realize-artifact/SKILL.md",
     ".claude/skills/realize-artifact/assets/claude-binding.json",
     ".claude/skills/realize-artifact/assets/job.schema.json",
@@ -92,7 +94,12 @@
     ".claude/skills/evaluate-artifact/assets/job.schema.json",
     ".claude/skills/evaluate-artifact/assets/result.schema.json",
     ".claude/skills/evaluate-artifact/assets/rubric.json",
-    ".claude/skills/evaluate-artifact/scripts/check-review.mjs"
+    ".claude/skills/evaluate-artifact/scripts/check-review.mjs",
+    ".claude/skills/sync-host/SKILL.md",
+    ".claude/skills/sync-host/assets/claude-binding.json",
+    ".claude/skills/sync-host/assets/sync-job.schema.json",
+    ".claude/skills/sync-host/assets/sync-plan.schema.json",
+    ".claude/skills/sync-host/scripts/check-sync.mjs"
   ],
   "reviewedInputs": [
     "host-library/claude/guide/agent.md",
@@ -109,6 +116,7 @@
   ],
   "requiredRoles": [
     "factory-realizer",
-    "factory-evaluator"
+    "factory-evaluator",
+    "factory-sync"
   ]
 }

@@ -50,10 +50,10 @@ describe('factory coordinator native production lifecycle', () => {
     expect(lock.projections?.['.claude/agents/orchestrator-agent-factory.md']?.canonical).toBeUndefined();
   });
 
-  it('owns, restores, protects and removes every one of the fifteen declared support files, the skill-route and contract-route files included', async () => {
+  it('owns, restores, protects and removes every one of the sixteen declared support files, the skill-route and contract-route files included', async () => {
     const resolver = new RegistryResolver(fixture.registry);
     await new InstallEngine(resolver).install('agent-factory', fixture.options);
-    expect(COORDINATOR_SUPPORT).toHaveLength(15);
+    expect(COORDINATOR_SUPPORT).toHaveLength(16);
     const lock = await fs.readJson(path.join(fixture.state, 'agents-united.json')) as LockfileManifest;
     for (const rel of COORDINATOR_SUPPORT) expect(lock.projections?.[`${COORDINATOR_ROOT}/${rel}`]?.owners, rel).toContain('agent-factory');
     for (const name of ['check-skill-return.mjs', 'check-contract-return.mjs']) {
@@ -86,7 +86,7 @@ describe('factory coordinator native production lifecycle', () => {
     await new InstallEngine(resolver).install('agent-factory', fixture.options);
     await fs.remove(fixture.source('hosts/claude/agent-factory-coordinate.binding.json'));
     const lockFile = path.join(fixture.state, 'agents-united.json'), lock = await fs.readJson(lockFile) as LockfileManifest;
-    for (const skill of ['realize-artifact', 'evaluate-artifact', 'author-contract', 'author-bundle']) {
+    for (const skill of ['realize-artifact', 'evaluate-artifact', 'sync-host', 'author-contract', 'author-bundle']) {
       const rel = `.claude/skills/${skill}/assets/claude-binding.json`;
       if (lock.projections) delete lock.projections[rel];
       await fs.remove(fixture.installed(rel));

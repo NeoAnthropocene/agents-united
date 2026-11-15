@@ -28,7 +28,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     expect(installed.status, installed.stdout + installed.stderr).toBe(0);
     const cli = path.join(packageRoot, 'dist/cli.js');
     const installedLock = await fs.readJson(path.join(target, '.claude/.agents-united/agents-united.json')) as LockfileManifest;
-    for (const task of ['coordinate-artifact', 'realize-artifact', 'evaluate-artifact']) {
+    for (const task of ['coordinate-artifact', 'realize-artifact', 'evaluate-artifact', 'sync-host']) {
       const root = `.claude/skills/${task}`, receipt = await fs.readJson(path.join(target, root, 'assets/claude-binding.json'));
       for (const rel of [receipt.installed, `${root}/assets/claude-binding.json`, ...receipt.roles.map((role: {installed: string}) => role.installed), ...receipt.requiredSupport.map((rel: string) => `${root}/${rel}`), ...receipt.references.map((ref: {installed: string}) => ref.installed), ...receipt.requiredInstalled]) {
         expect(installedLock.projections?.[rel]?.owners, rel).toContain('agent-factory');
@@ -37,10 +37,11 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
       expect(await fs.pathExists(path.join(target, root, 'evals'))).toBe(false);
     }
     const coordinatorReceipt = await fs.readJson(path.join(target, '.claude/skills/coordinate-artifact/assets/claude-binding.json')) as { requiredSupport: string[] };
-    expect(coordinatorReceipt.requiredSupport).toHaveLength(15);
+    expect(coordinatorReceipt.requiredSupport).toHaveLength(16);
     expect(coordinatorReceipt.requiredSupport).toEqual(expect.arrayContaining([
       'references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json',
       'references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json',
+      'references/host-sync.md',
     ]));
     // Remove the package's entire source registry for this startup proof; no overlay.
     const unavailableRegistry = path.join(packageRoot, 'registry-unavailable');

@@ -49,16 +49,19 @@ export function factoryWorkerByRole(role: string): FactoryWorker {
 }
 export const COORDINATOR_SUPPORT = ['references/job.md', 'references/dispatch.md', 'references/verification.md', 'references/repair.md', 'references/handback.md', 'examples/claude-agent-journey.md', 'assets/report.json',
   'references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json',
-  'references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json'] as const;
+  'references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json',
+  'references/host-sync.md'] as const;
 export const COORDINATOR_RULES = ['skill-attribution.md', 'git-guardrails.md', 'test-driven-development.md', 'clean-code-and-architecture.md', 'domain-modeling-and-adr.md', 'multi-agent-coordination.md', 'quality-aesthetics-accessibility.md'] as const;
 const COORDINATOR_INSTALLED = [
-  '.claude/agents/factory-realizer.md', '.claude/agents/factory-evaluator.md',
+  '.claude/agents/factory-realizer.md', '.claude/agents/factory-evaluator.md', '.claude/agents/factory-sync.md',
   '.claude/skills/realize-artifact/SKILL.md', '.claude/skills/realize-artifact/assets/claude-binding.json',
   '.claude/skills/realize-artifact/assets/job.schema.json', '.claude/skills/realize-artifact/assets/handback.schema.json',
   '.claude/skills/realize-artifact/scripts/check-job.mjs', '.claude/skills/realize-artifact/scripts/check-handback.mjs',
   '.claude/skills/evaluate-artifact/SKILL.md', '.claude/skills/evaluate-artifact/assets/claude-binding.json',
   '.claude/skills/evaluate-artifact/assets/job.schema.json', '.claude/skills/evaluate-artifact/assets/result.schema.json',
   '.claude/skills/evaluate-artifact/assets/rubric.json', '.claude/skills/evaluate-artifact/scripts/check-review.mjs',
+  '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json',
+  '.claude/skills/sync-host/assets/sync-job.schema.json', '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs',
 ] as const;
 export const COORDINATOR_WORKER_SUPPORT = {
   "realize-artifact": [
@@ -124,7 +127,7 @@ const declaration = (entry: FactoryEntry, receipt: boolean): z.ZodType<ClaudeFac
   }).strict();
   const shape = receipt ? base.extend({ _agentsUnitedManaged: z.literal('managed-by: agents-united | profile: claude-native'), sourceHash: z.string().regex(/^sha256:[a-f0-9]{64}$/) }) : base;
   return entry.skill === 'coordinate-artifact'
-    ? shape.extend({ skill: z.literal('coordinate-artifact'), requiredRoles: z.tuple([z.literal('factory-realizer'), z.literal('factory-evaluator')]) }).strict()
+    ? shape.extend({ skill: z.literal('coordinate-artifact'), requiredRoles: z.tuple([z.literal('factory-realizer'), z.literal('factory-evaluator'), z.literal('factory-sync')]) }).strict()
     : shape.extend({ skill: z.literal(entry.skill) }).strict();
 };
 
@@ -181,7 +184,7 @@ export function normalizeClaudeFactoryCoordinatorTools(tools: readonly string[])
   const delegates = tools.filter(tool => /^Agent(?:\b|\()/.test(tool));
   const match = delegates.length === 1 ? /^Agent\(([^()]*)\)$/.exec(delegates[0]!) : null;
   const names = match?.[1]?.split(',').map(name => name.trim());
-  if (!names || !isDeepStrictEqual([...names].sort(), ['factory-evaluator', 'factory-realizer'])) fail('coordinate-artifact requires exactly Agent(factory-realizer, factory-evaluator) without a bare, duplicate or additional delegate');
+  if (!names || !isDeepStrictEqual([...names].sort(), ['factory-evaluator', 'factory-realizer', 'factory-sync'])) fail('coordinate-artifact requires exactly Agent(factory-realizer, factory-evaluator, factory-sync) without a bare, duplicate, missing or additional delegate');
   return tools.map(tool => tool === delegates[0] ? 'Agent' : tool);
 }
 

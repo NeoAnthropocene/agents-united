@@ -117,18 +117,22 @@ describe('installed factory main selection through public resolve and plan', () 
     expect(await fs.pathExists(sentinel)).toBe(false);
   });
 
-  it('checks every file in all three complete installed closures without the source registry', async () => {
+  it('checks every file in the main and all three complete worker closures without the source registry', async () => {
     await install();
     await fs.remove(fixture.registry);
     const selection = (await resolve()).nativeFactoryMain!;
     expect(selection.checked.map(item => item.path)).toEqual(expect.arrayContaining([
-      '.claude/agents/factory-realizer.md', '.claude/agents/factory-evaluator.md',
+      '.claude/agents/factory-realizer.md', '.claude/agents/factory-evaluator.md', '.claude/agents/factory-sync.md',
       '.claude/skills/author-skill/references/skill-attribution.md',
       '.claude/skills/realize-artifact/references/handback.md', '.claude/skills/evaluate-artifact/scripts/check-review.mjs',
       '.claude/skills/coordinate-artifact/references/skill-authoring.md', '.claude/skills/coordinate-artifact/scripts/check-skill-return.mjs',
       '.claude/skills/coordinate-artifact/assets/skill-task.schema.json', '.claude/skills/coordinate-artifact/assets/skill-return.schema.json',
       '.claude/skills/coordinate-artifact/references/contract-authoring.md', '.claude/skills/coordinate-artifact/scripts/check-contract-return.mjs',
       '.claude/skills/coordinate-artifact/assets/contract-task.schema.json', '.claude/skills/coordinate-artifact/assets/contract-return.schema.json',
+      '.claude/skills/coordinate-artifact/references/host-sync.md',
+      '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json', '.claude/skills/sync-host/assets/sync-job.schema.json',
+      '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs', '.claude/skills/sync-host/references/plan.md',
+      '.claude/skills/sync-host/references/rules/skill-attribution.md',
     ]));
     for (const item of selection.checked) {
       const file = fixture.installed(item.path), bytes = await fs.readFile(file);
@@ -139,6 +143,34 @@ describe('installed factory main selection through public resolve and plan', () 
       expect(failure instanceof Error ? failure.message : 'resolution succeeded', item.path).toMatch(/missing|required|ENOENT|not a regular/i);
     }
     expect((await resolve()).nativeFactoryMain).toEqual(selection);
+  });
+
+  it.each(['.claude/agents/factory-sync.md', '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json', '.claude/skills/sync-host/assets/sync-job.schema.json',
+    '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs', '.claude/skills/sync-host/references/handback.md',
+    '.claude/skills/sync-host/references/rules/git-guardrails.md', '.claude/skills/coordinate-artifact/references/host-sync.md'])('refuses startup when the sync closure file %s is missing', async rel => {
+    await install();
+    await fs.remove(fixture.registry);
+    await fs.unlink(fixture.installed(rel));
+    await expect(resolve()).rejects.toThrow(/missing|required|ENOENT|not a regular/i);
+  });
+
+  it('refuses startup for an edited sync closure file even when only the sync closure changed', async () => {
+    await install();
+    await fs.appendFile(fixture.installed('.claude/skills/sync-host/scripts/check-sync.mjs'), '\n// edited\n');
+    await expect(resolve()).rejects.toThrow(/edited required file \.claude\/skills\/sync-host\/scripts\/check-sync\.mjs/);
+  });
+
+  it('refuses a selection that lacks any sync closure file at the pure planner boundary', async () => {
+    await install();
+    const launcher = new ClaudeLauncher();
+    const resolution = await resolve();
+    const selection = resolution.nativeFactoryMain!;
+    for (const rel of ['.claude/agents/factory-sync.md', '.claude/skills/sync-host/scripts/check-sync.mjs', '.claude/skills/coordinate-artifact/references/host-sync.md']) {
+      expect(selection.checked.map(item => item.path), rel).toContain(rel);
+      expect(() => launcher.planActivation({ ...resolution, bundleName: 'agent-factory', report,
+        nativeFactoryMain: { ...selection, checked: selection.checked.filter(item => item.path !== rel) },
+      }), rel).toThrow(/closure|selection|inventory/i);
+    }
   });
 
   it.each(['owner', 'host', 'kind', 'managed', 'edited', 'malformed', 'unknown', 'redirect', 'sourceHash'])('refuses %s receipt state, even with refreshed hashes for semantic mutations', async kind => {
@@ -195,7 +227,7 @@ describe('installed factory main selection through public resolve and plan', () 
     await expect(resolve()).rejects.toThrow(/linked|physical|regular|collid/i);
   });
 
-  it.each(['realize-artifact', 'evaluate-artifact', 'coordinate-artifact'])('checks %s critical preload semantics beyond its recorded hash', async skill => {
+  it.each(['realize-artifact', 'evaluate-artifact', 'sync-host', 'coordinate-artifact'])('checks %s critical preload semantics beyond its recorded hash', async skill => {
     await install();
     const rel = `.claude/skills/${skill}/SKILL.md`, original = await fs.readFile(fixture.installed(rel), 'utf8');
     for (const changed of [original.replace('user-invocable: false', 'user-invocable: false\nallowed-tools: Bash(*)'), `${original}\n!\`node unreviewed.mjs\`\n`]) {
@@ -205,7 +237,7 @@ describe('installed factory main selection through public resolve and plan', () 
     }
   });
 
-  it.each(['orchestrator-agent-factory', 'factory-realizer', 'factory-evaluator'])('checks %s critical native mechanism beyond its recorded hash', async name => {
+  it.each(['orchestrator-agent-factory', 'factory-realizer', 'factory-evaluator', 'factory-sync'])('checks %s critical native mechanism beyond its recorded hash', async name => {
     await install();
     const rel = `.claude/agents/${name}.md`, original = await fs.readFile(fixture.installed(rel), 'utf8');
     for (const changed of [original.replace('model: inherit', 'model: opus'), original.replace('background: false', 'background: true'), original.replace('tools: ', 'tools: Workflow, '), original.replace('skills:', 'permissionMode: acceptEdits\nskills:'), original.replace('hooks:', 'not-hooks:')]) {
@@ -229,6 +261,7 @@ describe('installed factory main selection through public resolve and plan', () 
     expect(plan.bootstrapPrompt).toContain('registry/core/');
     expect(plan.bootstrapPrompt).toContain('registry/hosts/claude/');
     expect(plan.bootstrapPrompt).toContain('do not edit them');
+    expect(plan.bootstrapPrompt).toContain('factory-realizer for bounded native draft creation/update, factory-evaluator for fresh independent read-only review and factory-sync for read-only host-update sync planning');
     expect(plan.bootstrapPrompt).not.toContain('Addon auto-installation');
     expect(plan.bootstrapPrompt).not.toContain('Team Manifest');
     expect(plan.env).toEqual({ CLAUDE_CODE_ENABLE_TODO_TOOLS: '1' });

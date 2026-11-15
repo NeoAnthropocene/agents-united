@@ -13,6 +13,8 @@ import type { ClaudeFactoryMainSelection, LockfileManifest, ProjectionKind } fro
 const MAIN = 'orchestrator-agent-factory' as const;
 const ROLE = '.claude/agents/orchestrator-agent-factory.md' as const;
 const RECEIPT = '.claude/skills/coordinate-artifact/assets/claude-binding.json' as const;
+/** The coordinator first, then its workers in workflow order. */
+const FACTORY_CHECK_ORDER = ['coordinate-artifact', 'realize-artifact', 'evaluate-artifact', 'sync-host'] as const;
 const HASH = /^sha256:[a-f0-9]{64}$/;
 const REL = /^(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*|\.claude|\.agents)(?:\/[A-Za-z0-9_.-]+)*$/;
 const fail = (message: string): never => { throw new Error(`Claude factory startup: ${message}. Run 'agents update agent-factory --fanout claude --native' in this workspace.`); };
@@ -34,7 +36,7 @@ function physicalFile(workspace: string, rel: string): string {
   return current;
 }
 
-/** Strict receipt/ownership/physical-byte validation of main and both complete workers. */
+/** Strict receipt/ownership/physical-byte validation of main and all three complete workers. */
 export function readClaudeFactoryMain(workspace: string): ClaudeFactoryMainSelection {
   workspace = path.resolve(workspace);
   try {
@@ -65,14 +67,14 @@ export function readClaudeFactoryMain(workspace: string): ClaudeFactoryMainSelec
       checked.set(rel, hash);
       return text;
     };
-    // The main coordinator is checked first, then its workers; each entry resolves by Skill name, never by list position.
-    for (const entry of [factoryEntryBySkill('coordinate-artifact'), factoryEntryBySkill('realize-artifact'), factoryEntryBySkill('evaluate-artifact')]) {
+    // The main coordinator is checked first, then its workers in workflow order; each entry resolves by Skill name, never by list position.
+    for (const entry of FACTORY_CHECK_ORDER.map(factoryEntryBySkill)) {
       const receipt = `${entry.root}/assets/claude-binding.json`;
       const binding = parseClaudeFactoryBinding(JSON.parse(read(receipt, 'skill', true)) as unknown, entry, true);
       if (entry.skill !== 'coordinate-artifact') assertClaudeFactoryWorkerBinding(binding, entry, factoryWorkerBySkill(entry.skill).role);
       const skillText = read(binding.installed, 'skill', true);
       assertClaudeFactoryLoader(binding, entry, skillText, true);
-      // All three fixed preloads are reference guidance; no new execution/loader mechanism.
+      // All four fixed preloads are reference guidance; no new execution/loader mechanism.
       if (/(?:^|\s)!`/.test(skillText) || /^\s*```!/m.test(skillText)) fail(`dynamic shell injection in ${binding.skill}`);
       for (const rel of binding.requiredSupport) read(`${entry.root}/${rel}`, 'skill', false);
       for (const ref of binding.references) read(ref.installed, 'rule', true);
@@ -83,7 +85,7 @@ export function readClaudeFactoryMain(workspace: string): ClaudeFactoryMainSelec
         const script = text.replace(/\r\n/g, '\n').replace(/\/\/ managed-by: agents-united[^\n]*\n?$/, '').trimEnd();
         if (script !== (role.guard === 'destructive' ? GUARD_SCRIPT : READ_ONLY_GUARD_SCRIPT).trimEnd()) fail(`critical guard bytes differ ${guard.rel}`);
       }
-      // Coordinator edges are checked by the two fixed worker entries in this loop.
+      // Coordinator edges are checked by the three fixed worker entries in this loop.
       if (entry.skill === 'realize-artifact') for (const rel of binding.requiredInstalled) read(rel, 'rule', true);
     }
     return { kind: 'factory-native', name: MAIN, installed: ROLE, receipt: RECEIPT,
@@ -99,7 +101,7 @@ export function assertClaudeFactorySelection(selection: ClaudeFactoryMainSelecti
   const shape = z.object({ kind: z.literal('factory-native'), name: z.literal(MAIN), installed: z.literal(ROLE), receipt: z.literal(RECEIPT),
     checked: z.array(z.object({ path: z.string().min(1), hash: z.string().regex(HASH) }).strict()).min(1) }).strict();
   if (!shape.safeParse(selection).success) fail('matching installed main selection is required');
-  const paths = [factoryEntryBySkill('coordinate-artifact'), factoryEntryBySkill('realize-artifact'), factoryEntryBySkill('evaluate-artifact')].flatMap(entry => {
+  const paths = FACTORY_CHECK_ORDER.map(factoryEntryBySkill).flatMap(entry => {
     const name = entry.skill === 'coordinate-artifact' ? MAIN : factoryWorkerBySkill(entry.skill).role;
     const support = entry.skill === 'coordinate-artifact' ? COORDINATOR_SUPPORT : COORDINATOR_WORKER_SUPPORT[entry.skill];
     return [`.claude/agents/${name}.md`, `${entry.root}/SKILL.md`, `${entry.root}/assets/claude-binding.json`,

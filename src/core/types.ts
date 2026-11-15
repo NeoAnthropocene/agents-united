@@ -892,10 +892,10 @@ interface ClaudeFactoryBindingBase {
   reviewedInputs: string[];
 }
 
-/** Only the coordinator declares the two fixed worker dependencies. */
+/** Only the coordinator declares the three fixed worker dependencies, in workflow order. */
 export type ClaudeFactoryBinding = ClaudeFactoryBindingBase & (
   { skill: 'realize-artifact' | 'evaluate-artifact' | 'sync-host' }
-  | { skill: 'coordinate-artifact'; requiredRoles: ['factory-realizer', 'factory-evaluator'] }
+  | { skill: 'coordinate-artifact'; requiredRoles: ['factory-realizer', 'factory-evaluator', 'factory-sync'] }
 );
 
 /** Plan 021 gate 4 — conformance input: what the realization binds, adds, and declares. */
