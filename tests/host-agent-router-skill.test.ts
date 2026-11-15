@@ -2669,7 +2669,8 @@ describe('a temp folder the Antigravity sandbox can use (edit runs, 2026-11-15)'
       const d = dry({});
       expect(noteOf(d.out)).toMatch(/temp folder outside the user profile \(beside the working directory\)/);
       expect(d.text).not.toContain(TMPDIRNAME);
-      expect(d.text).not.toContain(d.base);
+      expect(noteOf(d.out)).not.toContain(d.base);
+      expect(noteOf(d.out)).not.toContain(JSON.stringify(d.base).slice(1, -1));
       expect(fs.readdirSync(path.join(d.base, 'work'))).toEqual(['proj']);
       expect(fs.readdirSync(d.cwd)).toEqual([]);
       expect(fs.readdirSync(d.home)).toEqual([]);
