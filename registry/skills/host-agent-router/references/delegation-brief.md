@@ -14,7 +14,10 @@ Antigravity's sandbox cannot see a program that lives inside the user profile (a
 
 Name the commands the worker needs with `--allow-cmd "<exact command line>"`, usually the acceptance command (`npm test` and `node --test` are
 allowed by default). Claude and Antigravity deny every command not on the list, and Antigravity matches the exact line and ends the whole run on
-the first denial, so give it the line you want run, not a pattern.
+the first denial, so give it the line you want run, not a pattern. Many long lines also lengthen the command line that carries the prompt (see
+`too_long` below); `--allow-cmd-file <file>` takes one line per line and avoids shell quoting.
+
+**Antigravity.** List and number every command line the worker may run, exactly as it must be typed, in the brief and in `--allow-cmd` or `--allow-cmd-file`: the host allows a command only when the whole line matches, so `node node_modules/vitest/vitest.mjs run` does not cover `node node_modules/vitest/vitest.mjs run tests/x.test.ts` (the router refuses such a brief with exit 64, also under `--dry-run`; `--allow-prefix-ok` turns that into a note). Put no environment variable (`FOO=1 npm test`) and no directory change (`cd dir && ...`) in front of a command: that is a different line, and `--cwd` already sets the directory. The shell is not for listing or reading files: tell the worker to use its file tools for that. A drive path such as `C:/work/x` or `D:\work\y` is accepted in an allowed line; any other colon is not.
 
 ## Brief template
 
@@ -41,7 +44,9 @@ The router also reports `changed` (created, modified, deleted, head moved) from 
 
 1. `ok`, `failure`, `stopped` and `guard`. `stopped` means the attempt changed files and then failed; no other host was started. Decide:
    continue from this tree with a new brief that says what exists, or discard the worktree. `guard.blocked` lists what the guard cancelled
-   (the run is not ok even if the host exited 0). `empty` and `denied` mean a host exited 0 having done nothing.
+   (the run is not ok even if the host exited 0). `empty` and `denied` mean a host exited 0 having done nothing. `too_long` means every candidate
+   was skipped because its command line would be too long for the host (a long brief, attached skills or many long allowed lines); nothing ran, so
+   shorten the brief, attach fewer skills or allow fewer lines. A `--dry-run` shows the same reason as `skip` on each attempt.
 2. Compare the report's "Changed files" with the router's `changed`. A file in one list and not the other means the report is not reliable.
 3. Read the diff. Run the acceptance command yourself; do not accept "tests pass" as quoted.
 4. Check out-of-scope files and the commit count (`head_moved` true means the worker committed against the brief).

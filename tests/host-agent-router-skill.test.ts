@@ -2105,3 +2105,266 @@ describe('the Antigravity read-only mount of a program folder inside the user pr
     expect(ro.notes).toBeUndefined();
   });
 });
+
+// 2026-11-15: three operator mistakes seen on a live Antigravity run, caught before a worker starts. Everything here is a dry run or pure data.
+describe('operator mistakes caught before a worker starts (2026-11-15)', () => {
+  type Run = { status: number | null; out: string; json: Record<string, unknown> | null };
+  const run = (args: string[]): Run => {
+    const r = spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+    let json: Record<string, unknown> | null = null;
+    try { json = JSON.parse(r.stdout) as Record<string, unknown>; } catch { /* text */ }
+    return { status: r.status, out: `${r.stdout}${r.stderr}`, json };
+  };
+  const replay = (): string => {
+    const f = path.join(tmp(), 'statuses.json');
+    fs.writeFileSync(f, JSON.stringify({ cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } }));
+    return f;
+  };
+  const SHORT = 'node node_modules/vitest/vitest.mjs run';
+  const LONG = `${SHORT} tests/x.test.ts --configLoader runner`;
+  // A dry run of an edit brief. `flags` come last, so a test can add --allow-cmd, --host and the like.
+  const edit = (brief: string, flags: string[]): Run =>
+    run(['run', '--tier', 'medium', '--prompt', brief, '--access', 'edit', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp(), ...flags]);
+  type Try = { host: string; side: string; skip?: string; allow_rules?: string[] };
+  const tries = (r: Run): Try[] => (r.json as unknown as { would_try: Try[] }).would_try;
+  const notesOf = (r: Run): string[] => ((r.json as unknown as { notes?: string[] }).notes ?? []);
+
+  describe('1. a shorter allowed line than the one in the brief (Antigravity matches whole lines)', () => {
+    it('refuses a brief whose backtick span extends an --allow-cmd value, as a usage error naming both lines, under --dry-run too', () => {
+      const r = edit(`Acceptance: run \`${LONG}\` and report.`, ['--allow-cmd', SHORT, '--host', 'antigravity']);
+      expect(r.status).toBe(64);
+      expect(r.out).toContain(`"${SHORT}"`);
+      expect(r.out).toContain(LONG);
+      expect(r.out).toMatch(/exact lines only/);
+      expect(r.json).toBeNull(); // nothing was listed: the run never got as far as a plan to print
+    });
+
+    it('refuses a longer line at the start of a line, with or without a list marker or a "$ " prompt', () => {
+      for (const start of [LONG, `  ${LONG}`, `- ${LONG}`, `3. ${LONG}`, `$ ${LONG}`]) {
+        const r = edit(`Run:\n${start}\nthen stop.`, ['--allow-cmd', SHORT, '--host', 'antigravity']);
+        expect(r.status, start).toBe(64);
+        expect(r.out, start).toContain(LONG);
+      }
+    });
+
+    it('lets these through: the exact line, the longer line allowed too, a configured default, another host, a read-only run', () => {
+      const ok = (r: Run, why: string): void => { expect(r.status, `${why}: ${r.out.slice(0, 300)}`).toBe(0); };
+      ok(edit(`Run \`${SHORT}\`.`, ['--allow-cmd', SHORT, '--host', 'antigravity']), 'the exact line');
+      ok(edit(`Run \`${LONG}\`.`, ['--allow-cmd', SHORT, '--allow-cmd', LONG, '--host', 'antigravity']), 'the longer line is allowed as well');
+      ok(edit('Run `npm test -- foo` and `git status -s`.', ['--host', 'antigravity']), 'defaults are not checked');
+      ok(edit('Run `npm test -- foo`.', ['--allow-cmd', 'npm run build', '--host', 'antigravity']), 'a different command');
+      ok(edit(`Run \`${LONG}\`.`, ['--allow-cmd', SHORT, '--host', 'cline']), 'Cline carries no allow list');
+      const ro = run(['run', '--tier', 'medium', '--prompt', `Run \`${LONG}\`.`, '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp(), '--allow-cmd', SHORT, '--host', 'antigravity']);
+      ok(ro, 'read-only: no allow rules are sent');
+    });
+
+    it('does not mistake a longer word for a longer line: "npm run build2" does not extend "npm run build"', () => {
+      expect(edit('Run `npm run build2`.', ['--allow-cmd', 'npm run build', '--host', 'antigravity']).status).toBe(0);
+    });
+
+    it('a one-word value is a bare program name, which Antigravity matches whatever follows, so it is not checked', () => {
+      expect(edit('Run `node scripts/x.mjs --flag`.', ['--allow-cmd', 'node', '--host', 'antigravity']).status).toBe(0);
+    });
+
+    it('--allow-prefix-ok turns the refusal into a note in the result', () => {
+      const r = edit(`Run \`${LONG}\`.`, ['--allow-cmd', SHORT, '--host', 'antigravity', '--allow-prefix-ok']);
+      expect(r.status).toBe(0);
+      expect(notesOf(r).join('\n')).toContain(SHORT);
+      expect(notesOf(r).join('\n')).toContain(LONG);
+      expect(notesOf(r).join('\n')).toMatch(/exact lines only/);
+    });
+
+    it('--allow-prefix-ok belongs to run only', () => {
+      const r = run(['plan', '--tier', 'medium', '--allow-prefix-ok', '--here', 'windows', '--statuses-file', replay()]);
+      expect(r.status).toBe(64);
+      expect(r.out).toMatch(/--allow-prefix-ok does not apply to plan/);
+    });
+  });
+
+  describe('2. the wording of the --allow-cmd error', () => {
+    it('says command line and whole line, never prefix', async () => {
+      const { validateAllowCmd } = await lib();
+      const msg = validateAllowCmd(['a;b']).join('\n');
+      expect(msg).toMatch(/--allow-cmd "a;b"/);
+      expect(msg).toMatch(/command line/);
+      expect(msg).toMatch(/whole line/);
+      expect(msg).not.toMatch(/prefix/i);
+      expect(fs.readFileSync(SCRIPT, 'utf8')).not.toMatch(/command prefix/);
+    });
+  });
+
+  describe('3. and 4. the length of the command line: shown in the dry run, coded in the real run', () => {
+    const bigBrief = (): string => { const f = path.join(tmp(), 'brief.md'); fs.writeFileSync(f, 'q'.repeat(40_000)); return f; };
+
+    it('a dry run where every listed attempt is too long still exits 0 and says so in a top-level note, with the reason on each attempt', () => {
+      const r = run(['run', '--tier', 'simple', '--prompt-file', bigBrief(), '--pin-host', 'cline', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      expect(r.status).toBe(0);
+      expect(tries(r)).toHaveLength(1);
+      expect(tries(r)[0]!.skip).toMatch(/too long/);
+      expect(notesOf(r).join('\n')).toMatch(/every .*(attempt|candidate).* too long/i);
+    });
+
+    it('says nothing of the kind when at least one listed attempt fits', () => {
+      const r = run(['run', '--tier', 'simple', '--prompt-file', bigBrief(), '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      expect(r.status).toBe(0);
+      expect(tries(r).map(t => Boolean(t.skip))).toEqual([true, false]);
+      expect(notesOf(r).join('\n')).not.toMatch(/too long/);
+    });
+
+    // Not a dry run, but nothing can start: the only candidate (Cline on Windows) is skipped for the length of its command line before any host is called.
+    it('a real run where every candidate was skipped for length ends with failure "too_long" and ok false', () => {
+      const r = run(['run', '--tier', 'simple', '--prompt-file', bigBrief(), '--pin-host', 'cline', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      expect(r.status).toBe(1);
+      expect(r.json).toMatchObject({ ok: false, failure: 'too_long' });
+      expect((r.json as unknown as { attempts: Array<{ skipped: string }> }).attempts[0]!.skipped).toMatch(/too long/);
+    });
+  });
+
+  describe('5. fewer full-path rules when the command line would be too long (Antigravity on Windows)', () => {
+    const NODE = 'C:\\nvm4w\\nodejs\\node.exe';
+    const exe = (n: string): string | null => (n === 'node' ? NODE : null);
+    const NOHOME = 'C:\\nowhere-home';
+    const lines = Array.from({ length: 8 }, (_, i) => `node tests/check-${i}.mjs ${'x'.repeat(300)}`);
+    const build = async (prompt: string, allowCmd: string[], resolve: (n: string) => string | null = exe): Promise<{ args: string[]; notes?: string[] }> => {
+      const { buildSpec } = await lib2();
+      return buildSpec(CFGE, 'antigravity', CFGE.hosts.antigravity!.tiers.medium!, prompt, 'edit', 'C:/w', 'medium', { allowCmd, platform: 'win32', home: NOHOME, resolve } as never) as never;
+    };
+    const size = (a: string[]): number => a.reduce((n, x) => n + x.length + 1, 0);
+    const fullRules = (s: { args: string[] }): string[] =>
+      (JSON.parse(s.args[s.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow.filter(x => x.startsWith(`command(${NODE} `));
+
+    it('adds a full-path rule for every long line while the command line fits, and says nothing', async () => {
+      const spec = await build('TASK', lines);
+      expect(fullRules(spec).filter(x => x.includes('check-'))).toHaveLength(8);
+      expect(spec.notes ?? []).toEqual([]);
+    });
+
+    it('leaves full-path rules of the longest lines out when they would push the command line over the limit, and counts them', async () => {
+      const { argvTooLong } = await lib2();
+      const base = await build('TASK', lines, () => null); // no full-path rule at all
+      const prompt = 'p'.repeat(27_000 - size(base.args)); // the brief alone leaves about 3,000 characters
+      const spec = await build(prompt, lines);
+      expect(argvTooLong(spec as never, 'windows')).toBeNull();
+      const kept = fullRules(spec).filter(x => x.includes('check-')).length;
+      expect(kept).toBeGreaterThan(0);
+      expect(kept).toBeLessThan(8);
+      const note = (spec.notes ?? []).find(n => /left out/.test(n));
+      expect(note).toBeDefined();
+      expect(note).toContain(String(8 - kept));
+      expect(note).not.toContain(NODE); // notes never carry a path
+      // every bare rule is still there
+      const allow = (JSON.parse(spec.args[spec.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
+      for (const l of lines) expect(allow).toContain(`command(${l})`);
+    });
+
+    it('does nothing when the brief alone is already too long (dropping rules would not help)', async () => {
+      const spec = await build('p'.repeat(31_000), lines);
+      expect(fullRules(spec).filter(x => x.includes('check-'))).toHaveLength(8);
+      expect(spec.notes ?? []).toEqual([]);
+    });
+  });
+
+  describe('6. a drive path in an allowed line', () => {
+    const LINE = 'node dist/cli.js skill-check --artifact C:/work/x --corpus C:/work/y --policy p';
+    const BACK = 'node dist/cli.js check --in D:\\work\\y\\in --out D:\\work\\y\\out';
+
+    it('accepts a drive prefix at the start of a word, with / or \\ after the colon', async () => {
+      const { validateAllowCmd } = await lib();
+      expect(validateAllowCmd([LINE, BACK, 'tool C:/', 'tool c:\\a.b_c-d/e@f=g'])).toEqual([]);
+    });
+
+    it('still refuses every other colon, and a backslash outside such a path', async () => {
+      const { validateAllowCmd } = await lib();
+      for (const bad of ['a:b', 'C:', 'C:x', 'CC:/x', '1:/x', 'x --policy=C:/x', 'tool C:/x:y', 'regex:npm run', 'tool http://h/x', 'a\\b', 'tool x\\y', 'tool \\x', 'tool C:\\\\srv\\share', 'tool \\\\srv\\share', 'tool C:/(x', 'tool C:/x"', 'tool C:/x;y', 'tool C:/x*']) {
+        expect(validateAllowCmd([bad]).join(), bad).toMatch(/allow-cmd/);
+      }
+    });
+
+    it('the rule of each host stays inside its syntax: Claude Bash(<cmd>:*), Antigravity command(<line>) as JSON, Cline and Codex carry nothing', async () => {
+      const { buildSpec } = await lib2();
+      const spec = (host: string): Spec => buildSpec(CFGE, host, CFGE.hosts[host]!.tiers.medium!, 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: [LINE, BACK] });
+      const claude = spec('claude').args;
+      expect(claude).toEqual(expect.arrayContaining([`Bash(${LINE}:*)`, `Bash(${BACK}:*)`]));
+      const agy = spec('antigravity').args;
+      const allow = (JSON.parse(agy[agy.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
+      expect(allow).toEqual(expect.arrayContaining([`command(${LINE})`, `command(${BACK})`])); // the backslashes survive the JSON round trip
+      for (const host of ['cline', 'codex']) expect(spec(host).args.join(' ')).not.toContain('C:/work');
+    });
+  });
+
+  describe('7. --allow-cmd-file', () => {
+    const fileWith = (text: string): string => { const f = path.join(tmp(), 'allowed.txt'); fs.writeFileSync(f, text); return f; };
+    const rulesOf = (r: Run): string[] => tries(r).find(t => t.host === 'antigravity')!.allow_rules ?? [];
+
+    it('reads one command line per line, ignoring blank lines and # comments, a BOM and CRLF, and combines with --allow-cmd', () => {
+      const f = fileWith('\uFEFF# acceptance lines\r\nnode dist/cli.js one C:/work/x\r\n\r\n  # indented comment\r\n   npm run build   \r\n');
+      const r = edit('Do the task.', ['--host', 'antigravity', '--allow-cmd', 'git diff --stat', '--allow-cmd-file', f]);
+      expect(r.status, r.out).toBe(0);
+      expect(rulesOf(r)).toEqual(expect.arrayContaining(['command(git diff --stat)', 'command(node dist/cli.js one C:/work/x)', 'command(npm run build)']));
+      expect(rulesOf(r).join()).not.toMatch(/acceptance|#/);
+    });
+
+    it('validates each line like --allow-cmd and names the file line', () => {
+      const f = fileWith('npm run build\nrm -rf x;y\n');
+      const r = edit('Do the task.', ['--host', 'antigravity', '--allow-cmd-file', f]);
+      expect(r.status).toBe(64);
+      expect(r.out).toMatch(/--allow-cmd "rm -rf x;y"/);
+      expect(r.out).toMatch(/line 2/);
+    });
+
+    it('a missing file is a usage error, and the prefix check also reads the lines of the file', () => {
+      const none = edit('Do the task.', ['--allow-cmd-file', path.join(tmp(), 'nope.txt')]);
+      expect(none.status).toBe(64);
+      expect(none.out).toMatch(/--allow-cmd-file/);
+      const f = fileWith(`${SHORT}\n`);
+      const r = edit(`Run \`${LONG}\`.`, ['--host', 'antigravity', '--allow-cmd-file', f]);
+      expect(r.status).toBe(64);
+      expect(r.out).toContain(LONG);
+    });
+
+    it('belongs to run, and the usage text lists it with --allow-prefix-ok', () => {
+      expect(run(['plan', '--tier', 'medium', '--allow-cmd-file', 'x']).status).toBe(64);
+      const help = run(['--help']).out;
+      expect(help).toContain('--allow-cmd-file');
+      expect(help).toContain('--allow-prefix-ok');
+      expect(help).toMatch(/exact (command )?lines?/i);
+      expect(help).not.toMatch(/PREFIX/);
+    });
+  });
+
+  describe('8. the documents', () => {
+    const doc = (rel: string): string => fs.readFileSync(path.join(DIR, rel), 'utf8').replace(/\r\n/g, '\n');
+
+    it('SKILL.md names --allow-cmd-file and says a dry run checks length and exact lines, and stays inside its size cap', () => {
+      const t = doc('SKILL.md');
+      expect(t).toContain('--allow-cmd-file');
+      expect(t).toMatch(/dry.run[^.\n]*(length|too long)[^.\n]*exact lines/i);
+      expect(t).toContain('`too_long`');
+      expect(t).toMatch(/version: 1\.1\.1/);
+    });
+
+    it('the brief guide has an Antigravity paragraph: number every command line, no env var or directory change, the shell is not for reading files', () => {
+      const t = doc('references/delegation-brief.md');
+      const para = t.split('\n').find(l => l.startsWith('**Antigravity.**'));
+      expect(para, 'a paragraph that starts with **Antigravity.**').toBeDefined();
+      expect(para).toMatch(/number/i);
+      expect(para).toMatch(/exact/i);
+      expect(para).toMatch(/environment variable/i);
+      expect(para).toMatch(/directory/i);
+      expect(para).toMatch(/list|read/i);
+    });
+
+    it('hosts.md records the three mistakes of 2026-11-15 and what the script now does', () => {
+      const t = doc('references/hosts.md');
+      const lines = t.split('\n').filter(l => l.includes('2026-11-15'));
+      expect(lines.length).toBeGreaterThan(0);
+      const day = lines.join('\n');
+      for (const w of ['whole line', 'too_long', 'drive', '--allow-cmd-file', '--allow-prefix-ok', '32404']) expect(day, w).toContain(w);
+    });
+
+    it('the failure codes list too_long wherever the others are listed', () => {
+      expect(doc('references/worker-contract.md')).toContain('`too_long`');
+      expect(doc('references/delegation-brief.md')).toContain('`too_long`');
+    });
+  });
+});

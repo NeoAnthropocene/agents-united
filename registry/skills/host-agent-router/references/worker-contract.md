@@ -26,8 +26,8 @@ still gets the headings from the prompt. Your reply is the report: write no stat
 | Codex | `-s workspace-write`. On WSL `.git` and everything outside the workspace are read-only. | `git commit`: "Read-only file system" on `.git/index.lock`; outside write refused. The Windows sandbox started in `C:\`, without `node`, so edits go to WSL (`editSide`). |
 | Antigravity | `--mode accept-edits --sandbox` and `--settings` with exact `command(<line>)` allow rules. Anything not allowed is denied, and one denial ends the run with exit 0 and no output. | Rules match an exact command line or a program name; wildcards are ignored. The host-level denial was confirmed by a direct call on 2026-11-13 (called directly, outside the router: allow `command(node --test)`, a prompt to run `whoami`; exit 0, `status` `SUCCESS`, empty `response`, `denied_actions` `{"action":"command","display_name":"Bash"}`, and a stderr line that headless mode cannot prompt for the `command` permission). Through the router it was not reached in three attempts on the second machine (two `git commit` briefs, one `whoami` brief): each time the worker declined from the prompt contract, because the router's note lists the allowed commands. On Windows an allowed `.exe` program also gets a full-path rule (see hosts.md). |
 
-The commands a worker may run are `workerCommands.allow` in the config plus the lead's `--allow-cmd` (its acceptance command, as an exact
-line). `workerCommands.deny` feeds Claude's `--disallowedTools` and the Cline hook.
+The commands a worker may run are `workerCommands.allow` in the config plus the lead's `--allow-cmd` or `--allow-cmd-file` (its acceptance command, as an exact
+line; a drive path such as `C:/work/x` is the only place a colon is accepted). `workerCommands.deny` feeds Claude's `--disallowedTools` and the Cline hook.
 
 The prompt rule is the first line of defence and it held on both hosts it was tried on (2026-11-13): a worker told by the brief to commit declined, on
 Cline and on Antigravity, from the contract alone. The host-level control was reached only when the brief insisted, and only Cline's was seen to act.
@@ -44,7 +44,8 @@ directory) does not depend on the record. That was true before this change; the 
 
 `changed` (created, modified, deleted, `head_moved`; in a git work tree the paths git ignores are summarised apart as `ignored`, counted in `count`) from its own look at the directory; `stopped` when an attempt changed files and then
 failed; `guard.blocked` when a tool call was cancelled; `failure` for `limit`, `auth`, `model`, `missing`, `timeout`, `empty`, `denied`,
-`guard` or `unfinished`. A run that exited 0 but was blocked, unfinished, denied or silent is not `ok`.
+`too_long` (every candidate skipped for the length of its command line), `guard` or `unfinished`. A run that exited 0 but was blocked, unfinished,
+denied or silent is not `ok`.
 
 ## Getting the two skills to the worker
 

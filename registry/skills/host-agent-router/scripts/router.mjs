@@ -298,15 +298,64 @@ export function ranOf(c) {
   return { host: c.host, side: c.side, model: c.model, effort: c.effort, label: c.label, ...(c.effort_note ? { effort_note: c.effort_note } : {}) };
 }
 
-/** Problems with a list of command prefixes for --allow-cmd or `workerCommands`: plain words only, so a prefix cannot break out of a host's rule syntax. */
+const PLAIN_WORD = /^[\w@./=-]+$/;
+const DRIVE_WORD = /^[A-Za-z]:[\\/][\w@./=\\-]*$/; // a Windows drive path: one letter, a colon, then / or \ ; the colon appears nowhere else
+
+/**
+ * Problems with a list of command lines for --allow-cmd, --allow-cmd-file or `workerCommands`. Each is the exact line a worker may run:
+ * Antigravity matches an allowed command as a WHOLE line (seen live 2026-11-15: a shorter allowed line did not cover the longer one), so
+ * this is not a prefix. Plain words only, so a line cannot break out of a host's rule syntax: Antigravity `command(<line>)`, Claude
+ * `Bash(<line>:*)`. The one exception is a drive path (`C:/work/x`, `D:\work\y`) at the start of a word, the only place a colon or a
+ * backslash is accepted; `\\` (a UNC path) stays refused, since Claude's rule parser reads `\\` as one backslash. The Cline hook and Codex
+ * take no allowed lines, so nothing of this reaches them.
+ */
 export function validateAllowCmd(list) {
   const errs = [];
   for (const c of Array.isArray(list) ? list : [list]) {
-    if (typeof c !== 'string' || !/^[\w@./= -]+$/.test(c) || !c.trim()) {
-      errs.push(`--allow-cmd ${JSON.stringify(c)} is not a plain command prefix (letters, digits, spaces and _ @ . / = - only)`);
+    const words = typeof c === 'string' ? c.split(' ').filter(Boolean) : [];
+    if (typeof c !== 'string' || !c.trim() || c.includes('\\\\') || !words.every(w => PLAIN_WORD.test(w) || DRIVE_WORD.test(w))) {
+      errs.push(`--allow-cmd ${JSON.stringify(c)} is not a plain command line (letters, digits, spaces and _ @ . / = - only; a colon or backslash only in a drive path such as C:/work/x or D:\\work\\y at the start of a word). Antigravity matches the whole line, so give the exact line the worker will run`);
     }
   }
   return errs;
+}
+
+/** Command lines from a --allow-cmd-file: UTF-8, one per line; blank lines, lines starting with # and a BOM are ignored. Throws a UsageError for a file that cannot be read or a line that is not plain. */
+export function readAllowCmdFile(file) {
+  if (file === undefined) return [];
+  let text;
+  try { text = fs.readFileSync(file, 'utf8'); } catch (e) { throw new UsageError(`--allow-cmd-file ${JSON.stringify(file)} cannot be read (${e?.code ?? e?.message ?? e})`); }
+  const out = [];
+  text.replace(/^\uFEFF/, '').split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) return;
+    const bad = validateAllowCmd([line]);
+    if (bad.length) throw new UsageError(`${bad.join('')} (line ${i + 1} of ${file})`);
+    out.push(line);
+  });
+  return out;
+}
+
+/**
+ * Lines the brief gives the worker that extend an allowed line: [{ allowed, longer }] for each of `allowed` that some line of `brief` starts
+ * with, followed by a space and more text. A HEURISTIC, not a shell parser: a "line" here is the text inside a backtick span or the start of a
+ * line of the brief (after a list marker or "$ "). A longer line that is itself in `known` is fine. Antigravity matches whole lines, so the
+ * short allowed line would not cover the long one the brief tells the worker to run. A one-word value is a bare program name, which that host
+ * matches whatever follows it, so it is never reported.
+ */
+export function longerCommandLines(brief, allowed, known = allowed) {
+  const spans = [];
+  for (const raw of String(brief ?? '').split(/\r?\n/)) {
+    spans.push(raw.trim().replace(/^(?:[-*+]|\d+[.)])\s+/, '').replace(/^\$\s+/, ''));
+    for (const m of raw.matchAll(/`([^`]+)`/g)) spans.push(m[1].trim());
+  }
+  const out = [];
+  for (const a of allowed) {
+    const v = a.trim();
+    const longer = v.includes(' ') && spans.find(s => s.startsWith(`${v} `) && s.slice(v.length).trim() && !known.includes(s));
+    if (longer) out.push({ allowed: v, longer });
+  }
+  return out;
 }
 
 /**
@@ -460,13 +509,15 @@ function mountFolders(allow, { platform, resolve, realpath, home, cwd }, notes) 
  * antigravity permissions/sandbox.md; a Node under nvm lives there: seen 2026-11-14, "not recognized" without the rule, v24.19.0 with it). So the
  * REAL folder (links followed) of each resolved allowed program gets `read_file(<folder>)` when it is inside `home`: never home itself, a
  * filesystem root, or a folder that contains the working directory (a note says so instead). Notes never carry a path.
- * Returns { rules, full (the added command lines, for the worker's note), notes }.
+ * `omit` (a Set of allowed lines) are given no full-path rule: buildSpec uses it when the rules would make the command line too long.
+ * Returns { rules, full (the added command lines, for the worker's note), fullFor (allowed line -> its full-path line), notes }.
  */
-export function antigravityAllowRules(allow, { platform = process.platform, resolve: lookupRaw = which, realpath = defaultRealpath, home = os.homedir(), cwd } = {}) {
+export function antigravityAllowRules(allow, { platform = process.platform, resolve: lookupRaw = which, realpath = defaultRealpath, home = os.homedir(), cwd, omit = new Set() } = {}) {
   const seen = new Map(); // one lookup per program name
   const resolve = n => { if (!seen.has(n)) seen.set(n, lookupRaw(n)); return seen.get(n); };
   const rules = allow.map(c => `command(${c})`);
   const full = [];
+  const fullFor = new Map();
   const notes = [];
   const mounts = mountFolders(allow, { platform, resolve, realpath, home, cwd }, notes);
   if (platform === 'win32') {
@@ -481,11 +532,13 @@ export function antigravityAllowRules(allow, { platform = process.platform, reso
         if (!spaced.has(prog)) { spaced.add(prog); notes.push(`no full-path rule for "${prog}": its path has spaces, so only the bare-name rule is given`); }
         continue;
       }
-      full.push(abs.replace(/\.exe$/i, '.exe') + line.slice(prog.length)); // PATHEXT yields `.EXE`; the rule seen live used `.exe`
+      const fullLine = abs.replace(/\.exe$/i, '.exe') + line.slice(prog.length); // PATHEXT yields `.EXE`; the rule seen live used `.exe`
+      fullFor.set(line, fullLine);
+      if (!omit.has(line)) full.push(fullLine);
     }
   }
   const all = [...new Set([...rules, ...full.map(c => `command(${c})`), ...mounts.map(f => `read_file(${f})`)])];
-  return { rules: all, full: [...new Set(full)], notes };
+  return { rules: all, full: [...new Set(full)], fullFor, notes };
 }
 
 /** Arguments (without the binary) for one headless run. `cwd` must already be valid on the target side. Never a full-access flag. `t` is { model, effort }. */
@@ -511,14 +564,33 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
     case 'antigravity': {
       // Headless Antigravity denies every command that is not allowed, and one denial ends the run with exit 0. Its rules match an exact
       // command line or a bare program name and ignore wildcards (checked live), so the allow list is exact and the worker is told so.
-      const rules = ro ? { rules: [], full: [], notes: [] } : antigravityAllowRules(allow, { platform: extra.platform, resolve: extra.resolve, realpath: extra.realpath, home: extra.home, cwd });
-      const fullSentence = rules.full.length ? ` If a program name is not recognised, you may run the listed full-path form of the same command (${rules.full.join('; ')}) and nothing else.` : '';
-      const note = ro ? '' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
-      const text = preamble(access, tier) + note + attached + prompt;
-      const args = ['-p', text, '--model', t.model, '--mode', ro ? 'plan' : 'accept-edits', '--output-format', 'json'];
-      if (!ro) args.push('--sandbox', '--settings', JSON.stringify({ permissions: { allow: rules.rules } }));
-      if (!cfg.hosts.antigravity.effortInModel) args.push('--effort', t.effort);
-      return { args, stdin: null, env, chars: text.length, ...(rules.notes.length ? { notes: rules.notes } : {}) };
+      const make = omit => {
+        const rules = ro ? { rules: [], full: [], fullFor: new Map(), notes: [] } : antigravityAllowRules(allow, { platform: extra.platform, resolve: extra.resolve, realpath: extra.realpath, home: extra.home, cwd, omit });
+        const fullSentence = rules.full.length ? ` If a program name is not recognised, you may run the listed full-path form of the same command (${rules.full.join('; ')}) and nothing else.` : '';
+        const note = ro ? '' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
+        const text = preamble(access, tier) + note + attached + prompt;
+        const args = ['-p', text, '--model', t.model, '--mode', ro ? 'plan' : 'accept-edits', '--output-format', 'json'];
+        if (!ro) args.push('--sandbox', '--settings', JSON.stringify({ permissions: { allow: rules.rules } }));
+        if (!cfg.hosts.antigravity.effortInModel) args.push('--effort', t.effort);
+        return { rules, spec: { args, stdin: null, env, chars: text.length, ...(rules.notes.length ? { notes: rules.notes } : {}) } };
+      };
+      let built = make(new Set());
+      // Each full-path duplicate of a long allowed line is carried three times (the rule, the list of lines, the full-path sentence). On
+      // Windows the whole command line may not pass ~30,000 characters, so the duplicates of the LONG lines (over 120 characters) go, longest
+      // first, only as far as needed; when even none of them would make it fit, nothing is left out (the length check reports it).
+      if (!ro && (extra.platform ?? process.platform) === 'win32') {
+        const longFirst = [...built.rules.fullFor.keys()].filter(l => l.length > 120).sort((a, b) => b.length - a.length);
+        if (longFirst.length && argvSize(built.spec.args, true) > ARGV_LIMIT_WINDOWS && argvSize(make(new Set(longFirst)).spec.args, true) <= ARGV_LIMIT_WINDOWS) {
+          const left = new Set();
+          for (const line of longFirst) {
+            if (argvSize(built.spec.args, true) <= ARGV_LIMIT_WINDOWS) break;
+            left.add(line);
+            built = make(left);
+          }
+          built.spec.notes = [...(built.spec.notes ?? []), `${left.size} full-path rule${left.size === 1 ? '' : 's'} left out for long allowed lines, so the command line stays under the Windows limit; if that program is not recognised in the sandbox, the bare line is all the worker has`];
+        }
+      }
+      return built.spec;
     }
     case 'cline': {
       // --json: plain text mode prints the whole activity log before the answer; JSON ends in one run_result line (see parseClineJson).
@@ -532,6 +604,10 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
   }
 }
 
+const ARGV_LIMIT_WINDOWS = 30_000;
+/** Windows counts every argument and its separator; Linux limits each argument alone. */
+const argvSize = (args, win) => (win ? args.reduce((n, a) => n + a.length + 1, 0) : Math.max(0, ...args.map(a => a.length)));
+
 /**
  * The command line a Windows process may have is about 32,000 characters in all; Linux limits one argument to 128 KiB. The two hosts whose
  * prompt travels as an argument (Antigravity, Cline) cannot take a longer one, so the router skips them rather than let the start fail.
@@ -540,8 +616,8 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
 export function argvTooLong(spec, side) {
   if (spec.stdin != null) return null;
   const win = side === 'windows';
-  const size = win ? spec.args.reduce((n, a) => n + a.length + 1, 0) : Math.max(0, ...spec.args.map(a => a.length));
-  const limit = win ? 30_000 : 120_000;
+  const size = argvSize(spec.args, win);
+  const limit = win ? ARGV_LIMIT_WINDOWS : 120_000;
   return size > limit ? `the command line would be ${size} characters, too long for this host on ${side} (limit about ${limit}): attach fewer or smaller skills, or shorten the brief` : null;
 }
 
@@ -1633,14 +1709,28 @@ async function cmdRun(opts, cfg) {
   const prompt = readPrompt(opts);
   const cwd = path.resolve(opts.cwd ?? process.cwd());
   const only = opts['pin-host'] ? [opts['pin-host']] : opts.host?.length ? opts.host : undefined; // --pin-host and --host never arrive together (main refuses it)
-  const allowCmd = opts['allow-cmd'] ?? [];
-  const badCmd = validateAllowCmd(allowCmd);
+  const badCmd = validateAllowCmd(opts['allow-cmd'] ?? []);
   if (badCmd.length) throw new UsageError(badCmd.join('\n'));
+  const allowCmd = [...new Set([...(opts['allow-cmd'] ?? []), ...readAllowCmdFile(opts['allow-cmd-file'])])];
   const { here, statuses } = await gather(cfg, opts, tier, only, opts.effort);
   const plan = buildPlan(cfg, tier, statuses, here, only, access, opts.effort);
   const cands = plan.candidates.filter(c => !opts['pin-side'] || c.side === opts['pin-side']);
   const attached = skills.map(({ name, chars }) => ({ name, chars }));
   const specFor = (c, text, tcwd) => buildSpec(cfg, c.host, c, text, access, tcwd, tier, { allowCmd, skills });
+
+  // Antigravity edit runs match an allowed command as a whole line: a brief that tells the worker to run a longer line than the one allowed
+  // would end the run at once with nothing done (seen live 2026-11-15). Only the lines the operator passed are checked, not the defaults.
+  const routerNotes = [];
+  if (access === 'edit' && cands.some(c => c.host === 'antigravity')) {
+    const known = [...(cfg.workerCommands?.allow ?? []), ...allowCmd];
+    const found = longerCommandLines(prompt, allowCmd, known);
+    if (found.length) {
+      const shorten = s => (s.length > 200 ? `${s.slice(0, 197)}...` : s);
+      const lines = found.map(f => `--allow-cmd ${JSON.stringify(f.allowed)} is shorter than the line the brief tells the worker to run: ${JSON.stringify(shorten(f.longer))}. This host allows exact lines only, so the longer line would be denied and the run would end with nothing done`);
+      if (!opts['allow-prefix-ok']) throw new UsageError(`${lines.join('\n')}\nAllow the exact line the worker will run (--allow-cmd or --allow-cmd-file), or pass --allow-prefix-ok if the worker will run the short line.`);
+      routerNotes.push(...lines.map(l => `${l} (--allow-prefix-ok was given)`));
+    }
+  }
 
   if (opts['dry-run']) {
     const would_try = cands.map(c => {
@@ -1649,16 +1739,19 @@ async function cmdRun(opts, cfg) {
       const skip = argvTooLong(spec, c.side);
       return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}) };
     });
-    print({ dry_run: true, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, plan, would_try });
+    // A dry run is where the length is cheap to find out: each attempt carries `skip` (the reason the real run would skip it).
+    if (would_try.length && would_try.every(t => t.skip)) routerNotes.push('every listed attempt would be skipped: its command line is too long for the host (see skip on each); a real run would end with failure "too_long"');
+    print({ dry_run: true, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, plan, would_try, ...(routerNotes.length ? { notes: routerNotes } : {}) });
     return cands.length ? 0 : 2;
   }
 
+  let lengthSkips = 0;
   const tryOne = async c => {
     const tcwd = translateCwd(cwd, here, c.side);
     if (tcwd == null) return { skipped: `working directory ${cwd} is not reachable from ${c.side}` };
     const spec = specFor(c, prompt, tcwd);
     const tooLong = argvTooLong(spec, c.side);
-    if (tooLong) return { skipped: tooLong };
+    if (tooLong) { lengthSkips += 1; return { skipped: tooLong }; }
     const payload = { host: c.host, args: spec.args, stdin: spec.stdin, env: spec.env, cwd: tcwd, timeout: timeoutFor(cfg, tier, opts.timeout) };
     try {
       return await callSide(cfg, here, c.side, 'local-exec', payload, payload.timeout * 1000 + 60_000);
@@ -1672,6 +1765,9 @@ async function cmdRun(opts, cfg) {
   const env = { ok, tier, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, attempts, skipped: plan.skipped };
   // A run the guard stopped, or that Cline did not complete, exited 0 but is not a success; say why, and never hand it to another host.
   if (verdict.problem) env.failure = verdict.problem;
+  // Every candidate skipped because its command line was too long: nothing ran, and the cause has a code of its own.
+  if (!last && attempts.length > 0 && lengthSkips === attempts.length) env.failure = 'too_long';
+  if (routerNotes.length) env.notes = [...routerNotes];
   if (verdict.finish_reason) env.finish_reason = verdict.finish_reason;
   if (last?.[1].blocked?.length) env.guard = { blocked: last[1].blocked };
   // What the router saw change in the working directory, independent of what the worker's report claims.
@@ -1682,7 +1778,7 @@ async function cmdRun(opts, cfg) {
     const [c, res] = last;
     env.ran = ranOf(c);
     const specNotes = specFor(c, prompt, translateCwd(cwd, here, c.side)).notes;
-    if (specNotes) env.notes = specNotes;
+    if (specNotes) env.notes = [...(env.notes ?? []), ...specNotes];
     const cl = c.host === 'cline' ? parseClineJson(res.stdout) : null;
     const ag = c.host === 'antigravity' ? parseAgyRun(res.stdout) : null;
     if (ag) {
@@ -1746,10 +1842,15 @@ Commands:
   status [--tier T] [--effort E] [--host H...] [--json]   table of every host x side with 5-hour / weekly headroom
   plan   [--tier T] [--effort E] [--host H...]            the routing decision as JSON (starts no model)
   run    --tier T (--prompt S | --prompt-file F | stdin) [--access read-only|edit] [--cwd D] [--effort E]
-         [--skill NAME ...] [--timeout SEC] [--allow-cmd PREFIX ...] [--host H...] [--pin-host H] [--pin-side S] [--dry-run]
+         [--skill NAME ...] [--timeout SEC] [--allow-cmd LINE ...] [--allow-cmd-file FILE] [--allow-prefix-ok] [--host H...] [--pin-host H] [--pin-side S] [--dry-run]
          --host H (repeat it) limits the candidates to those hosts, still in priority order, and a fall-through stays inside them; --pin-host H is one host
          with no fall-through; the two cannot be combined. A flag that does not belong to the command given is a usage error.
-         --timeout defaults per tier (config timeoutSeconds); --allow-cmd adds a command prefix the worker may run (its acceptance command).
+         --timeout defaults per tier (config timeoutSeconds); --allow-cmd adds a command line the worker may run (its acceptance command).
+         Antigravity matches exact command lines only: give the whole line the brief tells the worker to run. A run is refused (exit 64) when the
+         brief holds a longer line that starts with an --allow-cmd value; --allow-prefix-ok turns that into a note. --allow-cmd-file FILE reads
+         one line per line (blank lines and # comments ignored). A colon or backslash is accepted only in a drive path such as C:/work/x.
+         --dry-run shows, for each attempt, whether its command line would be too long (skip), and a real run that skips every candidate for
+         length ends with failure "too_long".
          --effort E picks a setting inside the tier where a host has one (config tiers.<tier>.efforts); a host without it keeps its
          default and the result says so. An effort no candidate host knows is a usage error.
          --skill NAME (up to 3) puts the SKILL.md text of a sibling skill into the worker's prompt, after the contract; --dry-run lists them.
@@ -1766,7 +1867,8 @@ Exit codes: 0 ok, 1 the run failed, 2 no usable host/side, 3 refused (inside a r
 const OPTIONS = {
   tier: { type: 'string' }, host: { type: 'string', multiple: true }, json: { type: 'boolean' }, here: { type: 'string' },
   'statuses-file': { type: 'string' }, prompt: { type: 'string' }, 'prompt-file': { type: 'string' }, access: { type: 'string' },
-  cwd: { type: 'string' }, timeout: { type: 'string' }, 'allow-cmd': { type: 'string', multiple: true }, 'pin-host': { type: 'string' }, 'pin-side': { type: 'string' },
+  cwd: { type: 'string' }, timeout: { type: 'string' }, 'allow-cmd': { type: 'string', multiple: true }, 'allow-cmd-file': { type: 'string' }, 'allow-prefix-ok': { type: 'boolean' },
+  'pin-host': { type: 'string' }, 'pin-side': { type: 'string' },
   'dry-run': { type: 'boolean' }, payload: { type: 'string' }, help: { type: 'boolean', short: 'h' },
   effort: { type: 'string' }, skill: { type: 'string', multiple: true }, save: { type: 'boolean' },
 };
@@ -1775,7 +1877,7 @@ const OPTIONS = {
 const COMMAND_OPTIONS = {
   status: ['tier', 'effort', 'host', 'json', 'here', 'statuses-file'],
   plan: ['tier', 'effort', 'host', 'here', 'statuses-file'],
-  run: ['tier', 'effort', 'host', 'prompt', 'prompt-file', 'access', 'cwd', 'timeout', 'allow-cmd', 'pin-host', 'pin-side', 'skill', 'dry-run', 'here', 'statuses-file'],
+  run: ['tier', 'effort', 'host', 'prompt', 'prompt-file', 'access', 'cwd', 'timeout', 'allow-cmd', 'allow-cmd-file', 'allow-prefix-ok', 'pin-host', 'pin-side', 'skill', 'dry-run', 'here', 'statuses-file'],
   models: ['here'],
   machine: ['here', 'save'],
 };
