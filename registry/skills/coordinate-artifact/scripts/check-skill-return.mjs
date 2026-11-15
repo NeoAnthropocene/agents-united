@@ -203,11 +203,12 @@ function loaderFrontmatter(bytes) {
   const front = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
   if (!front) stop('LOADER_MECHANISM', 'Installed author-skill entry has no frontmatter.');
   const top = new Map();
-  for (const line of front[1].split(/\r?\n/)) {
-    const match = /^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*?)[ \t]*$/.exec(line);
+  for (const line of front[1].split(/\r?\n|[\u2028\u2029]/)) {
+    const match = /^([A-Za-z][A-Za-z0-9_-]*):/.exec(line);
     if (!match) continue;
     if (top.has(match[1])) stop('LOADER_MECHANISM', `Installed author-skill entry repeats ${match[1]}.`);
-    top.set(match[1], match[2].replace(/^(["'])(.*)\1$/, '$2'));
+    const value = line.slice(match[0].length).replace(/^[ \t]+|[ \t]+$/g, '');
+    top.set(match[1], value.replace(/^(["'])(.*)\1$/, '$2'));
   }
   if (top.get('name') !== 'author-skill' || top.get('context') !== 'fork' || top.get('agent') !== 'general-purpose'
     || top.get('background') !== 'false' || top.has('disable-model-invocation')) {
@@ -395,7 +396,7 @@ function checkReturn(ctx, resultArg) {
       report = parseJson(stdoutBytes, 'Helper stdout', 'HELPER_RECORD');
       if (!isObject(report) || report.status !== 'draft-prepared') stop('HELPER_RECORD', 'Exit 0 needs a draft-prepared report on stdout.');
     } else {
-      const blocked = parseJson(Buffer.from(decode(stderrBytes).trim()), 'Helper stderr', 'HELPER_RECORD');
+      const blocked = parseJson(stderrBytes, 'Helper stderr', 'HELPER_RECORD');
       if (stdoutBytes.length !== 0 || !isObject(blocked) || blocked.status !== 'blocked' || typeof blocked.reason !== 'string') stop('HELPER_RECORD', 'Exit 1 needs an empty stdout and a blocked JSON record on stderr.');
     }
     if ((ret.status === 'draft') !== (helper.exitCode === 0)) stop('BLOCKED_STATE', `A ${ret.status} return cannot rest on helper exit ${helper.exitCode}.`);
@@ -431,6 +432,7 @@ function checkReturn(ctx, resultArg) {
     if (task.operation === 'create' ? live !== null : live === null || !same(live.inventory, baselineInventory)) stop('BLOCKED_STATE', 'A blocked return needs the draft root exactly as before the run.');
     if (ret.changed.length) stop('BLOCKED_STATE', 'A blocked return cannot claim changed files.');
     if (!same([...ret.inventory].sort(byPath), live ? live.inventory.map(stripKind) : [])) stop('INVENTORY_MISMATCH', 'The returned inventory differs from the untouched draft state.');
+    if (ret.externalActions.length) stop('EXTERNAL_ACTION', 'externalActions must be empty in the report and the return.');
     return { result, helper: { exitCode: helper.exitCode, reportStatus: 'blocked' }, candidate: null };
   }
   if (live === null) stop('INVENTORY_MISMATCH', 'A draft return needs a draft folder.');

@@ -371,6 +371,21 @@ describe('preflight refusals: the installed author-skill closure and loader', ()
     await fx.repinInstalled('SKILL.md');
     failure(await untouched(fx, () => fx.pre()), 'LOADER_MECHANISM', 'preflight');
   });
+
+  it('scans a frontmatter line with 20,000 spaces and a Unicode line separator within two seconds and matches the result without the separator', async () => {
+    const fx = await make();
+    const file = fx.inst('SKILL.md');
+    const original = await fs.readFile(file, 'utf8');
+    await fs.writeFile(file, original.replace('agent: general-purpose', `agent: general-purpose${' '.repeat(20_000)}`));
+    await fx.repinInstalled('SKILL.md');
+    expect(success(fx.pre()).recordValid).toBe(true);
+    await fs.writeFile(file, original.replace('agent: general-purpose', `agent: general-purpose${' '.repeat(20_000)}\u2028`));
+    await fx.repinInstalled('SKILL.md');
+    const started = Date.now();
+    const result = await untouched(fx, () => fx.pre());
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(success(result).recordValid).toBe(true);
+  });
 });
 
 describe('preflight refusals: runtime pins and checkout head', () => {
@@ -626,6 +641,14 @@ describe('postflight refusals: return record and helper files', () => {
     failure(await untouched(fx, () => fx.post()), 'HELPER_RECORD', 'postflight');
   });
 
+  it('refuses a blocked helper run whose saved stderr is not valid UTF-8 with HELPER_RECORD and status failed', async () => {
+    const fx = await make();
+    const produced = await fx.produce({ changes: { 'SKILL.md': 'No front matter at all.\n' } });
+    await fs.writeFile(produced.stderrFile, Buffer.from([0xff, 0xfe, 0xfd]));
+    await produced.repin();
+    failure(await untouched(fx, () => fx.post()), 'HELPER_RECORD', 'postflight', 'failed');
+  });
+
   it('refuses a forged validation text in the helper report', async () => {
     const fx = await make();
     const produced = await fx.produce();
@@ -697,6 +720,14 @@ describe('postflight refusals: blocked and staging state', () => {
     await fx.produce();
     await fs.ensureDir(path.join(path.dirname(fx.draft), '.author-skill-abc123'));
     failure(await untouched(fx, () => fx.post()), 'BLOCKED_STATE', 'postflight');
+  });
+
+  it('refuses a blocked return with non-empty externalActions with EXTERNAL_ACTION', async () => {
+    const fx = await make();
+    const produced = await fx.produce({ changes: { 'SKILL.md': 'No front matter at all.\n' } });
+    produced.ret.externalActions = ['pushed a branch while blocked'];
+    await produced.save();
+    failure(await untouched(fx, () => fx.post()), 'EXTERNAL_ACTION', 'postflight');
   });
 });
 

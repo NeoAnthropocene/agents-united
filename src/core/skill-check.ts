@@ -1,10 +1,11 @@
 /**
- * Plan 033 P8a: `agents skill-check`, the read-only deterministic QA of one candidate Skill folder.
+ * Plan 033 P8a and P9: `agents skill-check`, the read-only deterministic QA of one candidate Skill folder.
  *
  * It composes the real existing gates (contract, layout, portability, licence, frozen-corpus measure) with a
- * bounded metadata composition for the `agents-united-original` policy (ADR 0052), over one bounded byte
- * inventory that is read back after the gates ran. The candidate is data: nothing in it is imported, required,
- * spawned or evaluated. No terminal I/O here; `src/cli.ts` prints the result and sets the exit code.
+ * bounded metadata composition for the supported authorship policies (ADR 0052 `agents-united-original`; P9
+ * `private-owner` and `adapted-source`), over one bounded byte inventory that is read back after the gates ran.
+ * The candidate is data: nothing in it is imported, required, spawned or evaluated. No terminal I/O here;
+ * `src/cli.ts` prints the result and sets the exit code.
  *
  * Passing means the deterministic gates passed on unchanged bytes. It does not mean useful, legally cleared,
  * correctly attributed, installable or live (`quality` stays pending, `live` unverified).
@@ -16,16 +17,21 @@ import YAML from 'yaml';
 import { validateRewrittenSkill } from './skill-contract.js';
 import { checkSkillLayout, supportingText } from './skill-layout.js';
 import { lintSkillPortability } from './skill-portability-lint.js';
-import { lintSkillLicence } from './skill-licence-lint.js';
+import { lintSkillLicence, lintSkillPolicyLicence } from './skill-licence-lint.js';
 import { STUB_MAX_LINES, TEMPLATED_THRESHOLD, measureSkill, verdictOf } from './skill-quality.js';
 import type {
   SkillCheckCheckId, SkillCheckCode, SkillCheckFinding, SkillCheckGate, SkillCheckInput, SkillCheckInventoryItem,
-  SkillCheckResult, SkillCheckStatus,
+  SkillCheckPolicy, SkillCheckResult, SkillCheckStatus,
 } from './types.js';
 
 /** SHA-256 of the reviewed LF bytes of `registry/quality/skill-boilerplate-corpus.txt`. No other bytes are accepted. */
 export const SKILL_CHECK_CORPUS_SHA256 = '39840b497ae274b48be9220684c6d89ea8f886f06a687409e1c2ed887a51b705';
 export const SKILL_CHECK_POLICY = 'agents-united-original';
+/**
+ * The three maintainer-approved `--policy` values (Plan 033 P9): an original Agents United Skill, a privately owned
+ * original Skill by another author, and a Skill adapted from one pinned upstream commit. Anything else is POLICY_UNSUPPORTED.
+ */
+export const SKILL_CHECK_POLICIES: readonly SkillCheckPolicy[] = ['agents-united-original', 'private-owner', 'adapted-source'];
 
 const CHECK_IDS: readonly SkillCheckCheckId[] = ['metadata', 'contract', 'layout', 'portability', 'licence', 'frozen-corpus'];
 const MAX_FILES = 32;
@@ -179,6 +185,68 @@ function finish(draft: Draft): SkillCheckResult {
 // Inputs: the frozen corpus and the bounded candidate inventory
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * The linked-ancestor walk of the two registry checker scripts (review finding F13): `absolute()` in
+ * registry/skills/evaluate-artifact/scripts/check-review.mjs:27-36 and check-skill-return.mjs:49-60 lstat every
+ * component from the root down, so a link (symbolic link or junction) on the way to a pinned input is refused.
+ * Only the strict ancestors are checked here: the leaf itself is vetted by its own reader (takeInventory for the
+ * candidate folder, readCorpus for the corpus file). Returns the first linked ancestor, or null when there is none.
+ */
+function linkedAncestorOf(leaf: string): string | null {
+  let current = path.parse(leaf).root;
+  const parts = leaf.slice(current.length).split(path.sep).filter(part => part !== '');
+  for (const part of parts.slice(0, -1)) {
+    current = path.join(current, part);
+    let stat: fs.Stats | undefined;
+    try {
+      stat = fs.lstatSync(current, { throwIfNoEntry: false });
+    } catch {
+      // An ancestor that cannot be inspected here is reported by the reader of the leaf itself, exactly as before.
+      return null;
+    }
+    if (stat?.isSymbolicLink()) return current;
+  }
+  return null;
+}
+
+/** The traversal-alias rule of the same `absolute()` helpers: a `.` or `..` segment makes the argument name a different folder per reader. */
+const hasTraversalAlias = (value: string): boolean => value.split(/[\\/]/).some(part => part === '.' || part === '..');
+
+/**
+ * The entry-name rule of the same two scripts (review finding F7): `relative()` in check-review.mjs:37-41 and the
+ * identical per-segment rule in check-skill-return.mjs:62-65 refuse a name that contains one of < > : " \ | ? * or a
+ * control character, that ends with a dot or a space, or that is a Windows reserved device name with or without an
+ * extension. Returns the reason the name is refused, or null when the name is portable.
+ *
+ * Exported as the pure form of the rule, so a host whose file system refuses such a name on disk cannot leave the
+ * rule itself untested (the two disk cases in tests/skill-check.test.ts skip on such a host).
+ */
+const UNSAFE_NAME_CHARS = /[<>:"\\|?*\u0000-\u001f]/;
+const TRAILING_DOT_OR_SPACE = /[. ]$/;
+const WINDOWS_RESERVED_DEVICE_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
+
+export function unsafeEntryName(name: string): string | null {
+  if (UNSAFE_NAME_CHARS.test(name)) return 'contains one of < > : " \\ | ? * or a control character';
+  if (TRAILING_DOT_OR_SPACE.test(name)) return 'ends with a dot or a space';
+  if (WINDOWS_RESERVED_DEVICE_NAME.test(name)) return 'is a Windows reserved device name (CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9)';
+  return null;
+}
+
+/**
+ * The encoding rule of the same scripts (`decode`, a fatal TextDecoder): a file whose bytes are not valid UTF-8 is
+ * not text any gate could read (review finding F7).
+ */
+const utf8Decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+
+function validUtf8(bytes: Buffer): boolean {
+  try {
+    utf8Decoder.decode(bytes);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 type CorpusOutcome =
   | { kind: 'ok'; sha256: string; lines: Set<string> }
   | { kind: 'mismatch'; sha256: string | null; finding: SkillCheckFinding }
@@ -187,6 +255,11 @@ type CorpusOutcome =
 function readCorpus(file: string): CorpusOutcome {
   let fd: number | undefined;
   try {
+    // Review finding F13: a corpus reached through a link or junction is not the pinned file; the real path is the only accepted form.
+    const linkedAncestor = linkedAncestorOf(file);
+    if (linkedAncestor !== null) {
+      return { kind: 'unavailable', finding: finding('INPUT_UNAVAILABLE', null, `The frozen corpus path is reached through a link or junction (${linkedAncestor}); pass the real path of the corpus file.`) };
+    }
     // A regular file by lstat before anything is opened: opening a named pipe would block, and a link is never followed.
     const entry = fs.lstatSync(file);
     if (entry.isSymbolicLink()) return { kind: 'unavailable', finding: finding('INPUT_UNAVAILABLE', null, `The frozen corpus path is a link, not a regular file: ${file}`) };
@@ -231,6 +304,11 @@ const byPath = (a: { path: string }, b: { path: string }): number => (a.path < b
  * special-file and size checks), then reads every file once. Never truncates to meet a bound.
  */
 function takeInventory(root: string): InventoryOutcome {
+  // Review finding F13: the real path of the candidate folder is the only accepted form, as with the corpus above.
+  const linkedAncestor = linkedAncestorOf(root);
+  if (linkedAncestor !== null) {
+    return { kind: 'rejected', findings: [finding('PATH_UNSAFE', null, `The candidate folder is reached through a link or junction (${linkedAncestor}); pass the real path of the candidate folder.`)] };
+  }
   let rootStat: fs.Stats;
   try {
     rootStat = fs.lstatSync(root);
@@ -281,6 +359,13 @@ function takeInventory(root: string): InventoryOutcome {
       const clash = seen.get(key);
       if (clash !== undefined) problems.push(finding('PATH_UNSAFE', relPath, `${relPath} and ${rel}${clash} differ only by letter case.`));
       else seen.set(key, name);
+      // Review finding F7: the entry-name rule of the two registry checker scripts; such an entry is never inspected
+      // beyond its name, so nothing under a reserved or unportable name is listed or read.
+      const unsafeName = unsafeEntryName(name);
+      if (unsafeName !== null) {
+        problems.push(finding('PATH_UNSAFE', relPath, `${relPath} ${unsafeName}; the checker scripts of evaluate-artifact and coordinate-artifact refuse such a name, and so does this inventory.`));
+        continue;
+      }
       const full = path.join(abs, name);
       let stat: fs.Stats;
       try {
@@ -319,6 +404,7 @@ function takeInventory(root: string): InventoryOutcome {
 
   const items: SkillCheckInventoryItem[] = [];
   const bytes = new Map<string, Buffer>();
+  const notUtf8: SkillCheckFinding[] = [];
   for (const file of files) {
     let content: Buffer;
     try {
@@ -327,11 +413,20 @@ function takeInventory(root: string): InventoryOutcome {
       return { kind: 'unavailable', finding: finding('INPUT_UNAVAILABLE', file.rel, `A candidate file cannot be read (${errorCode(error)}): ${file.rel}`) };
     }
     if (content.length !== file.size) return { kind: 'unavailable', finding: finding('CANDIDATE_DRIFT', file.rel, `${file.rel} changed while the inventory was taken.`) };
+    // Review finding F7: the fatal-TextDecoder rule of the two checker scripts. A file that is not valid UTF-8 makes
+    // the whole run fail (exit 1): FRONTMATTER_INVALID when it is SKILL.md, a LAYOUT finding naming any other file.
+    if (!validUtf8(content)) {
+      const message = file.rel === 'SKILL.md'
+        ? 'SKILL.md is not valid UTF-8, so its front matter is not readable text.'
+        : `${file.rel} is not valid UTF-8, so its bytes are not text a gate can read.`;
+      notUtf8.push(finding(file.rel === 'SKILL.md' ? 'FRONTMATTER_INVALID' : 'LAYOUT', file.rel, message));
+    }
     items.push({ path: file.rel, kind: 'file', bytes: content.length, sha256: sha256(content) });
     bytes.set(file.rel, content);
   }
   // The exact name SKILL.md (a case-insensitive filesystem can find skill.md above) is what the gates read.
   if (!bytes.has('SKILL.md')) return { kind: 'unavailable', finding: finding('INPUT_UNAVAILABLE', 'SKILL.md', `SKILL.md (this exact name) is missing from the candidate folder, so it is not a Skill folder: ${root}`) };
+  if (notUtf8.length > 0) return { kind: 'rejected', findings: notUtf8 };
   items.sort(byPath);
   return { kind: 'ok', inventory: { items, bytes } };
 }
@@ -425,6 +520,63 @@ function originalPolicyFindings(meta: Record<string, unknown>): SkillCheckFindin
   return out;
 }
 
+/** Plan 033 P9 (`private-owner`): an original Skill by another author; like the original policy, it declares no upstream at all. */
+function privatePolicyFindings(meta: Record<string, unknown>): SkillCheckFinding[] {
+  const out: SkillCheckFinding[] = [];
+  const problem = (message: string): void => { out.push(finding('PRIVATE_POLICY', 'SKILL.md', message)); };
+  const block = meta.metadata;
+  if (block === null || typeof block !== 'object' || Array.isArray(block)) {
+    problem('metadata is missing: the private-owner policy needs metadata.author, metadata.version and metadata.license.');
+    return out;
+  }
+  const md = block as Record<string, unknown>;
+  if (typeof md.author !== 'string' || md.author.trim() === '') problem('metadata.author must be a non-empty string naming the Skill\'s real owner, and not agents-united.');
+  else if (md.author.trim().toLowerCase() === 'agents-united') problem('metadata.author is agents-united; an original Agents United Skill is checked under the agents-united-original policy.');
+  const version = md.version;
+  if (!((typeof version === 'string' && version.trim() !== '') || (typeof version === 'number' && Number.isFinite(version)))) problem('metadata.version is missing.');
+  if (typeof md.license !== 'string' || md.license.trim() === '') problem('metadata.license is missing.');
+  if (present(md.source)) problem('A privately owned Skill declares no metadata.source (an upstream makes it an adaptation, which is the adapted-source policy).');
+  if (present(md.adaptedFrom)) problem('A privately owned Skill declares no metadata.adaptedFrom (an upstream makes it an adaptation, which is the adapted-source policy).');
+  if (present(md.commit)) problem('A privately owned Skill declares no metadata.commit (a pinned upstream commit makes it an adaptation, which is the adapted-source policy).');
+  return out;
+}
+
+/** A 40-character lowercase hexadecimal commit SHA, the same form `lintSkillPolicyLicence` looks for inside `metadata.source`. */
+const COMMIT_SHA_40 = /\b[0-9a-f]{40}\b/;
+
+/** Plan 033 P9 (`adapted-source`): a Skill adapted from one pinned upstream commit, its adaptation by another author. */
+function adaptedPolicyFindings(meta: Record<string, unknown>): SkillCheckFinding[] {
+  const out: SkillCheckFinding[] = [];
+  const problem = (message: string): void => { out.push(finding('ADAPTED_POLICY', 'SKILL.md', message)); };
+  const block = meta.metadata;
+  if (block === null || typeof block !== 'object' || Array.isArray(block)) {
+    problem('metadata is missing: the adapted-source policy needs metadata.author, metadata.version, metadata.license and metadata.source.');
+    return out;
+  }
+  const md = block as Record<string, unknown>;
+  if (typeof md.author !== 'string' || md.author.trim() === '') problem('metadata.author must be a non-empty string naming who made the adaptation, and not agents-united.');
+  else if (md.author.trim().toLowerCase() === 'agents-united') problem('metadata.author is agents-united; an original Agents United Skill is checked under the agents-united-original policy.');
+  const version = md.version;
+  if (!((typeof version === 'string' && version.trim() !== '') || (typeof version === 'number' && Number.isFinite(version)))) problem('metadata.version is missing.');
+  if (typeof md.license !== 'string' || md.license.trim() === '') problem('metadata.license is missing.');
+  const source = md.source;
+  if (!present(source)) problem('metadata.source is missing: the adapted-source policy names the upstream commit the Skill was adapted from.');
+  else if (typeof source !== 'string') problem(`metadata.source must be a string carrying an https:// upstream URL and its 40-character lowercase commit SHA, is ${JSON.stringify(source)}.`);
+  else {
+    if (!source.includes('https://')) problem('metadata.source must contain https:// (the upstream URL the Skill was adapted from).');
+    const sha = COMMIT_SHA_40.exec(source);
+    if (sha === null) problem('metadata.source must carry the 40-character lowercase hexadecimal commit SHA of the upstream commit.');
+    else {
+      // The same first-party pattern `isThirdPartySource` in skill-quality.ts uses: this repository is not a third-party upstream.
+      if (/NeoAnthropocene\/agents-united/i.test(source)) problem('metadata.source names this repository (NeoAnthropocene/agents-united): the adapted-source policy is for a third-party upstream, and this project\'s own Skills are checked under the agents-united-original policy.');
+      const commit = md.commit;
+      if (present(commit) && (typeof commit !== 'string' || commit !== sha[0])) problem(`metadata.commit, when present, must be exactly the 40-character commit SHA of metadata.source (${sha[0]}).`);
+    }
+  }
+  if (present(md.adaptedFrom) && (typeof md.adaptedFrom !== 'string' || md.adaptedFrom.trim() === '')) problem('metadata.adaptedFrom, when present, must be a non-empty string naming the upstream Skill.');
+  return out;
+}
+
 function runGate(id: SkillCheckCheckId, code: SkillCheckCode, filePath: string | null, fn: () => string[]): SkillCheckGate {
   let messages: string[];
   try {
@@ -435,7 +587,7 @@ function runGate(id: SkillCheckCheckId, code: SkillCheckCode, filePath: string |
   return messages.length === 0 ? gate(id, 'passed', null) : gate(id, 'failed', null, messages.map(message => finding(code, filePath, message)));
 }
 
-function runGates(artifact: string, inventory: Inventoried, corpus: CorpusOutcome): SkillCheckGate[] {
+function runGates(artifact: string, inventory: Inventoried, corpus: CorpusOutcome, policy: SkillCheckPolicy): SkillCheckGate[] {
   const resolved = path.resolve(artifact);
   const dirName = path.basename(resolved);
   const parent = path.dirname(resolved);
@@ -454,19 +606,37 @@ function runGates(artifact: string, inventory: Inventoried, corpus: CorpusOutcom
     const md = (meta.metadata !== null && typeof meta.metadata === 'object' ? meta.metadata : {}) as Record<string, unknown>;
     const files = inventory.items.map(item => item.path);
     const scripts = files.filter(file => file.startsWith('scripts/')).map(file => ({ relPath: file, content: inventory.bytes.get(file)!.toString('utf8') }));
-    const originals = originalPolicyFindings(meta);
-    checks.push(originals.length === 0 ? gate('metadata', 'passed', null) : gate('metadata', 'failed', null, originals));
-    checks.push(runGate('contract', 'CONTRACT', 'SKILL.md', () => validateRewrittenSkill(dirName, raw, supportingText(resolved))));
+    // The metadata rule of the declared authorship policy (Plan 033 P9); the gates below read the same front matter their own way.
+    const policyFindings = policy === 'agents-united-original'
+      ? originalPolicyFindings(meta)
+      : policy === 'private-owner' ? privatePolicyFindings(meta) : adaptedPolicyFindings(meta);
+    checks.push(policyFindings.length === 0 ? gate('metadata', 'passed', null) : gate('metadata', 'failed', null, policyFindings));
+    checks.push(runGate('contract', 'CONTRACT', 'SKILL.md', policy === 'agents-united-original'
+      ? () => validateRewrittenSkill(dirName, raw, supportingText(resolved))
+      // The licence-carrying policies: the author and source rules are the metadata gate's business here, and top-level
+      // licence or notice prose is no substitute for substance (the excludeTopLevelNotices option of supportingText).
+      : () => validateRewrittenSkill(
+        dirName, raw, supportingText(resolved, { excludeTopLevelNotices: true }),
+        policy === 'private-owner' ? { requireProjectAuthor: false, forbidSource: true } : { requireProjectAuthor: false, forbidSource: false },
+      )));
     checks.push(runGate('layout', 'LAYOUT', null, () => checkSkillLayout(parent, dirName)));
     checks.push(runGate('portability', 'PORTABILITY', null, () => lintSkillPortability({
       dirName, name: typeof meta.name === 'string' ? meta.name : String(meta.name ?? ''), body, scripts,
     })));
-    checks.push(runGate('licence', 'LICENCE', null, () => lintSkillLicence({
+    const licenceInput = {
       dirName,
       license: typeof md.license === 'string' ? md.license : undefined,
       source: typeof md.source === 'string' ? md.source : undefined,
-      files,
-    })));
+    };
+    checks.push(runGate('licence', 'LICENCE', null, policy === 'agents-united-original'
+      ? () => lintSkillLicence({ ...licenceInput, files })
+      // The files, their byte sizes and the notice text come from the inventory this run already vetted: the notice is
+      // decoded from those same bytes, never from a second read of the disk (Plan 033 P9).
+      : () => lintSkillPolicyLicence(policy, {
+        ...licenceInput,
+        files: inventory.items.map(item => ({ path: item.path, bytes: item.bytes })),
+        noticeText: inventory.bytes.get('NOTICE.md')?.toString('utf8'),
+      })));
   }
 
   if (corpus.kind !== 'ok') {
@@ -474,7 +644,10 @@ function runGates(artifact: string, inventory: Inventoried, corpus: CorpusOutcom
   } else {
     try {
       const measure = measureSkill(parent, dirName, corpus.lines);
-      const verdict = verdictOf(measure);
+      // Plan 033 P9: under adapted-source, a candidate whose verdict would be ok only because it declares an upstream
+      // source (extraFiles === 0 and few content lines) is still a stub — an attribution is not substance.
+      const real = verdictOf(measure);
+      const verdict = real === 'ok' && policy === 'adapted-source' && measure.thirdParty && measure.extraFiles === 0 && measure.lines < STUB_MAX_LINES ? 'stub' : real;
       const shown = { lines: measure.lines, templatedLines: measure.templatedLines, share: measure.share, extraFiles: measure.extraFiles, thirdParty: measure.thirdParty, verdict };
       if (verdict === 'ok') checks.push(gate('frozen-corpus', 'passed', null, [], shown));
       else if (verdict === 'templated') {
@@ -516,16 +689,22 @@ export function checkSkill(input: SkillCheckInput): SkillCheckResult {
   else if (!path.isAbsolute(artifact)) usage.push('--artifact must be an absolute path.');
   if (corpusPath === undefined) usage.push('--corpus <absolute-frozen-corpus> is required.');
   else if (!path.isAbsolute(corpusPath)) usage.push('--corpus must be an absolute path.');
-  if (policy === undefined) usage.push(`--policy <name> is required (supported: ${SKILL_CHECK_POLICY}).`);
+  if (policy === undefined) usage.push(`--policy <name> is required (supported: ${SKILL_CHECK_POLICIES.join(', ')}).`);
+  // Review finding F13: the traversal-alias rule of the two registry checker scripts — a `.` or `..` segment makes
+  // the folder the argument names depend on how the caller resolves it, so such an argument never reaches the disk.
+  if (artifact !== undefined && path.isAbsolute(artifact) && hasTraversalAlias(artifact)) usage.push('--artifact must be an absolute path without . or .. segments.');
+  if (corpusPath !== undefined && path.isAbsolute(corpusPath) && hasTraversalAlias(corpusPath)) usage.push('--corpus must be an absolute path without . or .. segments.');
   const echo = { artifact: artifact ?? null, policy: policy ?? null, corpusPath: corpusPath ?? null };
   if (usage.length > 0) return finish(draftOf({ ...echo, checks: idleChecks('not-run', 'The invocation was not valid, so no gate ran.'), before: usage.map(message => finding('USAGE', null, message)) }));
-  if (policy !== SKILL_CHECK_POLICY) {
+  if (policy === undefined || !(SKILL_CHECK_POLICIES as readonly string[]).includes(policy)) {
     return finish(draftOf({
       ...echo,
       checks: idleChecks('not-run', `The policy is not supported, so no gate ran.`),
-      before: [finding('POLICY_UNSUPPORTED', null, `Policy ${JSON.stringify(policy)} is not supported; only ${SKILL_CHECK_POLICY} is (private-owner and adapted-source policies are not available).`)],
+      before: [finding('POLICY_UNSUPPORTED', null, `Policy ${JSON.stringify(policy)} is not supported; the supported policies are ${SKILL_CHECK_POLICIES.join(', ')}.`)],
     }));
   }
+  // The check above ran against the flat list, so the narrowing to the union is written out by hand.
+  const policyValue = policy as SkillCheckPolicy;
 
   // The corpus is read and its hash checked before any gate runs.
   const corpus = readCorpus(corpusPath!);
@@ -550,7 +729,7 @@ export function checkSkill(input: SkillCheckInput): SkillCheckResult {
     }));
   }
 
-  const checks = withoutYamlWarnings(() => runGates(artifact!, first.inventory, corpus));
+  const checks = withoutYamlWarnings(() => runGates(artifact!, first.inventory, corpus, policyValue));
   supplied.seam?.beforeReadback?.();
 
   // Byte-based readback: the same complete inventory must come back, or nothing about the candidate is vouched for.

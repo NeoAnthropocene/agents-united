@@ -94,6 +94,12 @@ Handoff: send the row and question back to the caller's accounts-payable owner w
   ] }, null, 2) + '\n',
 };
 
+/** Plan 033 P9: the two new authorship policies, built from the same fixture as the original policy. */
+const SHA = '30d4553ecd46fbc5212fd0ff006ae43af522158b';
+const LICENSE_TEXT = 'MIT License\n\nCopyright (c) 2026 ExampleCorp\n';
+const privateSkill = invoiceSkill.replace('author: agents-united', 'author: someone-else');
+const adaptedSkill = privateSkill.replace('  license: MIT\n', `  license: MIT\n  source: https://github.com/example/skills/tree/${SHA}/skills/demo\n`);
+
 interface Entry { path: string; bytes: number; sha256: string }
 async function inventory(root: string): Promise<Entry[]> {
   const out: Entry[] = [];
@@ -161,6 +167,10 @@ describe('skill-check from the actual offline npm package', () => {
     };
     const valid = await write('valid', { 'SKILL.md': invoiceSkill, ...invoiceSupport });
 
+    // Plan 033 P9: one valid candidate per new authorship policy.
+    const privateOwner = await write('private-owner', { 'SKILL.md': privateSkill, ...invoiceSupport });
+    const adaptedSource = await write('adapted-source', { 'SKILL.md': adaptedSkill, ...invoiceSupport, LICENSE: LICENSE_TEXT });
+
     const { 'references/csv.md': _removed, ...withoutCsv } = invoiceSupport;
     void _removed;
     const missingSupport = await write('missing-support', { 'SKILL.md': invoiceSkill, ...withoutCsv });
@@ -195,8 +205,8 @@ describe('skill-check from the actual offline npm package', () => {
       ({ pkg: await inventory(packageRoot), cand: await inventory(candidatesRoot), qa: await inventory(path.join(root!, 'qa')) });
     const before = await everything();
 
-    const check = (artifact: string, corpus: string): { status: number | null; stdout: string; stderr: string; json: SkillCheckJson } => {
-      const actual = spawnSync(process.execPath, [installedCli, 'skill-check', '--artifact', artifact, '--corpus', corpus, '--policy', 'agents-united-original'], {
+    const check = (artifact: string, corpus: string, policy: string = 'agents-united-original'): { status: number | null; stdout: string; stderr: string; json: SkillCheckJson } => {
+      const actual = spawnSync(process.execPath, [installedCli, 'skill-check', '--artifact', artifact, '--corpus', corpus, '--policy', policy], {
         cwd: consumer, encoding: 'utf8', timeout: 30_000,
       });
       expect(actual.error).toBeUndefined();
@@ -215,6 +225,18 @@ describe('skill-check from the actual offline npm package', () => {
       quality: 'pending', live: 'unverified', acceptedDraft: false,
     });
     expect(ok.json.candidateDigest).toMatch(/^[0-9a-f]{64}$/);
+
+    const privateOk = check(privateOwner, packagedCorpus, 'private-owner');
+    expect(privateOk.status, privateOk.stdout + privateOk.stderr).toBe(0);
+    expect(privateOk.json).toMatchObject({ version: 1, kind: 'deterministic', status: 'passed', policy: 'private-owner' });
+    expect(privateOk.json.candidateDigest).toMatch(/^[0-9a-f]{64}$/);
+    expect(privateOk.json.findings).toEqual([]);
+
+    const adaptedOk = check(adaptedSource, packagedCorpus, 'adapted-source');
+    expect(adaptedOk.status, adaptedOk.stdout + adaptedOk.stderr).toBe(0);
+    expect(adaptedOk.json).toMatchObject({ version: 1, kind: 'deterministic', status: 'passed', policy: 'adapted-source' });
+    expect(adaptedOk.json.candidateDigest).toMatch(/^[0-9a-f]{64}$/);
+    expect(adaptedOk.json.findings).toEqual([]);
 
     const missing = check(missingSupport, packagedCorpus);
     expect(missing.status, missing.stdout + missing.stderr).toBe(1);

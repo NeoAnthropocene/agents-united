@@ -94,6 +94,12 @@ Handoff: send the row and question back to the caller's accounts-payable owner w
   ] }, null, 2) + '\n',
 };
 
+/** Plan 033 P9: the two new authorship policies, built from the same fixture as the original policy. */
+const SHA = '30d4553ecd46fbc5212fd0ff006ae43af522158b';
+const LICENSE_TEXT = 'MIT License\n\nCopyright (c) 2026 ExampleCorp\n';
+const privateSkill = invoiceSkill.replace('author: agents-united', 'author: someone-else');
+const adaptedSkill = privateSkill.replace('  license: MIT\n', `  license: MIT\n  source: https://github.com/example/skills/tree/${SHA}/skills/demo\n`);
+
 interface Entry { path: string; bytes: number; sha256: string }
 function inventory(root: string): Entry[] {
   const walk = (directory: string): Entry[] =>
@@ -228,6 +234,50 @@ describe('skill-check through the real built public CLI', () => {
     expect(r.json, r.stdout).toBeDefined();
     expect(r.json).toMatchObject({ version: 1, status: 'unavailable' });
     expect(codes(r.json)).toContain('POLICY_UNSUPPORTED');
+  });
+
+  it('accepts a valid private-owner candidate with exit 0 and all six checks passed', () => {
+    const f = build(files => { files['SKILL.md'] = privateSkill; });
+    const r = run(f, full(f, { policy: 'private-owner' }));
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(r.json).toMatchObject({ version: 1, kind: 'deterministic', status: 'passed', policy: 'private-owner' });
+    expect(r.json.checks.map(c => c.id)).toEqual(CHECK_IDS);
+    for (const check of r.json.checks) expect(check.status, check.id).toBe('passed');
+    expect(r.json.findings).toEqual([]);
+  });
+
+  it('accepts a valid adapted-source candidate (MIT with its upstream licence file, no NOTICE.md) with exit 0', () => {
+    const f = build(files => { files['SKILL.md'] = adaptedSkill; files['LICENSE'] = LICENSE_TEXT; });
+    const r = run(f, full(f, { policy: 'adapted-source' }));
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(r.json).toMatchObject({ version: 1, kind: 'deterministic', status: 'passed', policy: 'adapted-source' });
+    for (const check of r.json.checks) expect(check.status, check.id).toBe('passed');
+    expect(r.json.findings).toEqual([]);
+  });
+
+  it('fails the project author under private-owner as PRIVATE_POLICY with exit 1', () => {
+    const f = build();
+    const r = run(f, full(f, { policy: 'private-owner' }));
+    expect(r.status, r.stdout + r.stderr).toBe(1);
+    expect(r.json.status).toBe('failed');
+    expect(codes(r.json)).toContain('PRIVATE_POLICY');
+  });
+
+  it('fails a Skill with no upstream source under adapted-source as ADAPTED_POLICY with exit 1', () => {
+    const f = build(files => { files['SKILL.md'] = privateSkill; files['LICENSE'] = LICENSE_TEXT; });
+    const r = run(f, full(f, { policy: 'adapted-source' }));
+    expect(r.status, r.stdout + r.stderr).toBe(1);
+    expect(r.json.status).toBe('failed');
+    expect(codes(r.json)).toContain('ADAPTED_POLICY');
+  });
+
+  it('reports an --artifact with a .. segment as USAGE with exit 2', () => {
+    const f = build();
+    const dotted = `${f.artifact}${path.sep}..${path.sep}${path.basename(f.artifact)}`;
+    const r = run(f, ['--artifact', dotted, '--corpus', f.corpus, '--policy', 'agents-united-original']);
+    expect(r.status, r.stdout + r.stderr).toBe(2);
+    expect(r.json, r.stdout).toBeDefined();
+    expect(codes(r.json)).toContain('USAGE');
   });
 
   it('routes an unknown option through the JSON exit-2 USAGE result', () => {

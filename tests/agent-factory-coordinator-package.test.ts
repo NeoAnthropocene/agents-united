@@ -37,8 +37,11 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
       expect(await fs.pathExists(path.join(target, root, 'evals'))).toBe(false);
     }
     const coordinatorReceipt = await fs.readJson(path.join(target, '.claude/skills/coordinate-artifact/assets/claude-binding.json')) as { requiredSupport: string[] };
-    expect(coordinatorReceipt.requiredSupport).toHaveLength(11);
-    expect(coordinatorReceipt.requiredSupport).toEqual(expect.arrayContaining(['references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json']));
+    expect(coordinatorReceipt.requiredSupport).toHaveLength(15);
+    expect(coordinatorReceipt.requiredSupport).toEqual(expect.arrayContaining([
+      'references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json',
+      'references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json',
+    ]));
     // Remove the package's entire source registry for this startup proof; no overlay.
     const unavailableRegistry = path.join(packageRoot, 'registry-unavailable');
     await fs.move(path.join(packageRoot, 'registry'), unavailableRegistry);

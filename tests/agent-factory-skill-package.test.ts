@@ -9,7 +9,7 @@ import { INVOICE_FILES } from './helpers/skill-candidate.js';
 import { candidateDigestOf, digest, inventoryOf, prepareSkillTask } from './helpers/skill-task.js';
 import type { Json, SkillTaskFixture } from './helpers/skill-task.js';
 import { prepareEvaluationJob, reviewPin } from './helpers/factory-evaluation.js';
-import { cleanFactoryEnv } from './helpers/factory-coordinator.js';
+import { COORDINATOR_SUPPORT, cleanFactoryEnv } from './helpers/factory-coordinator.js';
 
 /**
  * P8b stage 1, from the actual offline npm package: the installed checker, the installed `draft.mjs` as the producer
@@ -81,7 +81,7 @@ describe('one Skill draft, checked return and review records from the actual off
   it('delivers the four coordinator files, owned and hashed by the installed lock, with the author-skill closure and no evals', async () => {
     const lock = await fs.readJson(path.join(consumer, '.claude/.agents-united/agents-united.json')) as LockfileManifest;
     const receipt = await fs.readJson(path.join(consumer, '.claude/skills/coordinate-artifact/assets/claude-binding.json')) as { requiredSupport: string[] };
-    expect(receipt.requiredSupport).toHaveLength(11);
+    expect(receipt.requiredSupport).toHaveLength(COORDINATOR_SUPPORT.length);
     for (const rel of NEW_SUPPORT) {
       expect(receipt.requiredSupport, rel).toContain(rel);
       const installedRel = `.claude/skills/coordinate-artifact/${rel}`;

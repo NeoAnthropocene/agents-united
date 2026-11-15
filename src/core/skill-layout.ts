@@ -38,10 +38,17 @@ function walk(dir: string, prefix = ''): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => (e.isDirectory() ? walk(path.join(dir, e.name), `${prefix}${e.name}/`) : [`${prefix}${e.name}`]));
 }
 
+/** True for a top-level NOTICE.md or a top-level LICEN[CS]E file: the prose the `excludeTopLevelNotices` option of `supportingText` leaves out. */
+const isTopLevelNoticeOrLicence = (f: string): boolean => !f.includes('/') && (f === 'NOTICE.md' || /^LICEN[CS]E(\.(md|txt))?$/i.test(f));
+
 /** Every markdown file of the skill folder except SKILL.md and the maintainer-only evals. */
-export function supportingText(skillDir: string): string {
+export function supportingText(skillDir: string, options: { excludeTopLevelNotices?: boolean } = {}): string {
   return walk(skillDir)
-    .filter(f => f !== 'SKILL.md' && !f.startsWith('evals/') && f.endsWith('.md'))
+    .filter(f => f !== 'SKILL.md' && !f.startsWith('evals/') && f.endsWith('.md')
+      // When a caller asks for it (the licence-carrying policies), top-level licence and notice
+      // prose stays out, so it cannot satisfy the worked-example, anti-pattern, evidence and
+      // hand-off checks; files in subfolders are unaffected.
+      && (!options.excludeTopLevelNotices || !isTopLevelNoticeOrLicence(f)))
     .map(f => fs.readFileSync(path.join(skillDir, f), 'utf8').replace(/\r\n/g, '\n'))
     .join('\n');
 }
@@ -58,7 +65,17 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
   const raw = fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
   const m = raw.match(/^---\n([\s\S]*?)\n---\n?/);
   if (!m) return [`${name}: no front matter`];
-  const meta = YAML.parse(m[1]!) as Record<string, unknown>;
+  // Front matter that fails to parse, or parses to null, is reported like any other candidate
+  // defect instead of raising; a parsed scalar or list keeps today's Object.keys treatment.
+  let meta: Record<string, unknown>;
+  try {
+    const parsed: unknown = YAML.parse(m[1]!);
+    meta = (parsed === null ? {} : parsed) as Record<string, unknown>;
+    if (parsed === null) errors.push(`${name}: front matter is not a YAML mapping`);
+  } catch (error) {
+    meta = {};
+    errors.push(`${name}: front matter is not valid YAML (${error instanceof Error ? error.message : String(error)})`);
+  }
   const body = raw.slice(m[0].length);
 
   const lines = raw.split('\n').length;
@@ -102,16 +119,38 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
   if (!fs.existsSync(evalsFile)) {
     errors.push(`${name}: evals/evals.json is missing`);
   } else {
-    const evals = JSON.parse(fs.readFileSync(evalsFile, 'utf8')) as { skill_name?: string; evals?: Array<{ id?: number; prompt?: string; expected_output?: string }> };
+    // An evals document that is not valid JSON, is JSON null, or holds no array of JSON objects
+    // is a broken candidate, not an exception: report it and keep the findings collected so far.
+    let evalsJson: unknown;
+    try {
+      evalsJson = JSON.parse(fs.readFileSync(evalsFile, 'utf8'));
+    } catch {
+      errors.push(`${name}: evals/evals.json is not valid JSON`);
+      return errors;
+    }
+    if (evalsJson === null) {
+      errors.push(`${name}: evals/evals.json is not a JSON object`);
+      return errors;
+    }
+    const evals = evalsJson as { skill_name?: string; evals?: Array<{ id?: number; prompt?: string; expected_output?: string } | null> };
     if (evals.skill_name !== name) errors.push(`${name}: evals skill_name is ${evals.skill_name}`);
     const list = evals.evals ?? [];
+    if (!Array.isArray(list)) {
+      errors.push(`${name}: evals is not an array (evals/evals.json must hold a list of eval objects)`);
+      return errors;
+    }
     if (list.length < EVALS_MIN || list.length > EVALS_MAX) errors.push(`${name}: ${list.length} evals (want ${EVALS_MIN} to ${EVALS_MAX})`);
     for (const e of list) {
+      if (e === null) {
+        errors.push(`${name}: an eval is not an object (each entry must be a JSON object)`);
+        continue;
+      }
       if (typeof e.id !== 'number') errors.push(`${name}: an eval has no numeric id`);
       if ((e.prompt ?? '').length < 40) errors.push(`${name}: eval ${e.id} prompt is too short to be realistic`);
       if ((e.expected_output ?? '').length < 40) errors.push(`${name}: eval ${e.id} has no expected_output`);
     }
-    if (new Set(list.map(e => e.prompt)).size !== list.length) errors.push(`${name}: duplicate eval prompts`);
+    const checkable = list.filter(e => e !== null);
+    if (new Set(checkable.map(e => e?.prompt)).size !== checkable.length) errors.push(`${name}: duplicate eval prompts`);
   }
   return errors;
 }

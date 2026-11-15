@@ -34,17 +34,33 @@ export const MAX_BODY_LINES = 500;
 /** About 5k tokens at 4 characters per token (docs/skill-intake.md step 5). */
 export const MAX_CHARS = 20000;
 
-export function validateRewrittenSkill(name: string, content: string, supportText = ''): string[] {
+export function validateRewrittenSkill(name: string, content: string, supportText = '', options: { requireProjectAuthor?: boolean; forbidSource?: boolean } = {}): string[] {
   const errors: string[] = [];
   const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!fm) return [`${name}: no front matter`];
-  const meta = YAML.parse(fm[1]) as { name?: string; description?: string; metadata?: { author?: string; version?: string | number; source?: string } };
+  // Front matter that fails to parse, or parses to null (`---\n~\n---`), has no metadata to read:
+  // report it like any other candidate defect instead of raising. A parsed scalar or list keeps
+  // today's property reads (all undefined), so those findings are unchanged.
+  let meta: { name?: string; description?: string; metadata?: { author?: string; version?: string | number; source?: string } };
+  try {
+    const parsed: unknown = YAML.parse(fm[1]);
+    meta = (parsed === null ? {} : parsed) as typeof meta;
+    if (parsed === null) errors.push(`${name}: front matter is not a YAML mapping`);
+  } catch (error) {
+    meta = {};
+    errors.push(`${name}: front matter is not valid YAML (${error instanceof Error ? error.message : String(error)})`);
+  }
   const body = content.slice(fm[0].length);
   if (meta.name !== name) errors.push(`${name}: front matter name is ${meta.name}`);
-  const description = (meta.description ?? '').replace(/\s+/g, ' ').trim();
+  const descriptionValue = meta.description ?? '';
+  const description = (typeof descriptionValue === 'string' ? descriptionValue : '').replace(/\s+/g, ' ').trim();
   if (description.length < 40 || description.length > 1024) errors.push(`${name}: description must be 40 to 1,024 characters, is ${description.length}`);
-  if (meta.metadata?.author !== 'agents-united') errors.push(`${name}: metadata.author must be agents-united`);
-  if (meta.metadata?.source) errors.push(`${name}: original work carries no metadata.source`);
+  if (options.requireProjectAuthor ?? true) {
+    if (meta.metadata?.author !== 'agents-united') errors.push(`${name}: metadata.author must be agents-united`);
+  }
+  if (options.forbidSource ?? true) {
+    if (meta.metadata?.source) errors.push(`${name}: original work carries no metadata.source`);
+  }
   for (const heading of REQUIRED_HEADINGS) {
     if (!new RegExp(`^${heading.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`, 'm').test(body)) errors.push(`${name}: missing section "${heading}"`);
   }

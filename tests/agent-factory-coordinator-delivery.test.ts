@@ -13,6 +13,8 @@ import { COORDINATOR_DECLARATION, COORDINATOR_ROOT, COORDINATOR_SUPPORT, coordin
 
 /** The four support files the one-Skill-draft route adds to the coordinator closure (P8b stage 1). */
 const NEW_SKILL_ROUTE_SUPPORT = ['references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json'] as const;
+/** The four support files the shared contract-draft route adds to the coordinator closure (P9 stage 2). */
+const NEW_CONTRACT_ROUTE_SUPPORT = ['references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json'] as const;
 
 describe('factory coordinator required native delivery through public installation', () => {
   let fixture: Awaited<ReturnType<typeof prepareFactoryCoordinator>>;
@@ -35,8 +37,8 @@ describe('factory coordinator required native delivery through public installati
     const receipt = await fs.readJson(fixture.installed(`${COORDINATOR_ROOT}/assets/claude-binding.json`));
     expect(receipt.requiredRoles).toEqual(['factory-realizer', 'factory-evaluator']);
     expect(receipt.requiredSupport).toEqual([...COORDINATOR_SUPPORT]);
-    expect(receipt.requiredSupport).toHaveLength(11);
-    for (const rel of NEW_SKILL_ROUTE_SUPPORT) {
+    expect(receipt.requiredSupport).toHaveLength(15);
+    for (const rel of [...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT]) {
       expect(receipt.requiredSupport, rel).toContain(rel);
       expect(await fs.pathExists(fixture.installed(`${COORDINATOR_ROOT}/${rel}`)), rel).toBe(true);
     }
@@ -89,7 +91,7 @@ describe('factory coordinator required native delivery through public installati
     expect(await coordinatorTree(fixture.workspace)).toEqual(before);
   });
 
-  it.each(NEW_SKILL_ROUTE_SUPPORT)('refuses a coordinator declaration that drops the new support %s before writes', async rel => {
+  it.each([...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT])('refuses a coordinator declaration that drops the new support %s before writes', async rel => {
     const file = fixture.source(COORDINATOR_DECLARATION), binding = await fs.readJson(file);
     binding.requiredSupport = binding.requiredSupport.filter((item: string) => item !== rel);
     await fs.writeJson(file, binding);

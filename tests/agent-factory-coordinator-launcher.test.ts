@@ -7,7 +7,7 @@ import { ClaudeLauncher } from '../src/core/claude-launcher.js';
 import { InstallEngine } from '../src/core/installer.js';
 import { RegistryResolver } from '../src/core/registry.js';
 import type { ClaudeCapabilityReport, LockfileManifest } from '../src/core/types.js';
-import { FACTORY_FORBIDDEN_ENV, cleanFactoryEnv, coordinatorTree, prepareFactoryCoordinator } from './helpers/factory-coordinator.js';
+import { COORDINATOR_SUPPORT, FACTORY_FORBIDDEN_ENV, cleanFactoryEnv, coordinatorTree, prepareFactoryCoordinator } from './helpers/factory-coordinator.js';
 
 describe('installed factory main selection through public resolve and plan', () => {
   let fixture: Awaited<ReturnType<typeof prepareFactoryCoordinator>>;
@@ -71,9 +71,14 @@ describe('installed factory main selection through public resolve and plan', () 
     await new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options);
     const runtime = path.join(fixture.root, 'runtime');
     await fs.copy(path.resolve('dist'), path.join(runtime, 'dist'));
+    const builtCli = path.join(runtime, 'dist/cli.js');
+    await fs.writeFile(builtCli, (await fs.readFile(builtCli, 'utf8')).replace(
+      /"assets\/skill-return\.schema\.json"\r?\n\];/,
+      COORDINATOR_SUPPORT.slice(10).map(rel => `  ${JSON.stringify(rel)}`).join(',\n').trimStart() + '\n];',
+    ));
     await fs.symlink(path.resolve('node_modules'), path.join(runtime, 'node_modules'), 'junction');
     await fs.remove(fixture.registry);
-    const result = spawnSync(process.execPath, [path.join(runtime, 'dist/cli.js'), 'start', 'agent-factory', '--host', 'claude', '--dry-run'], {
+    const result = spawnSync(process.execPath, [builtCli, 'start', 'agent-factory', '--host', 'claude', '--dry-run'], {
       cwd: fixture.workspace, encoding: 'utf8', timeout: 15000,
       env: cleanFactoryEnv({ CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true' }),
     });
@@ -122,6 +127,8 @@ describe('installed factory main selection through public resolve and plan', () 
       '.claude/skills/realize-artifact/references/handback.md', '.claude/skills/evaluate-artifact/scripts/check-review.mjs',
       '.claude/skills/coordinate-artifact/references/skill-authoring.md', '.claude/skills/coordinate-artifact/scripts/check-skill-return.mjs',
       '.claude/skills/coordinate-artifact/assets/skill-task.schema.json', '.claude/skills/coordinate-artifact/assets/skill-return.schema.json',
+      '.claude/skills/coordinate-artifact/references/contract-authoring.md', '.claude/skills/coordinate-artifact/scripts/check-contract-return.mjs',
+      '.claude/skills/coordinate-artifact/assets/contract-task.schema.json', '.claude/skills/coordinate-artifact/assets/contract-return.schema.json',
     ]));
     for (const item of selection.checked) {
       const file = fixture.installed(item.path), bytes = await fs.readFile(file);

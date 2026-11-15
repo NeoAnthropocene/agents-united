@@ -375,11 +375,11 @@ cli
   });
 
 cli
-  .command('skill-check', 'Check one original-source Skill folder against the deterministic gates and the frozen corpus (read-only)')
+  .command('skill-check', 'Check one Skill folder against the deterministic gates and the frozen corpus under an authorship policy (read-only)')
   .allowUnknownOptions()
   .option('--artifact [path]', 'Required: absolute path of the Skill folder to check')
   .option('--corpus [path]', 'Required: absolute path of the reviewed frozen boilerplate corpus (only its exact bytes are accepted)')
-  .option('--policy [name]', 'Required: the authorship policy; only agents-united-original is supported')
+  .option('--policy [name]', 'Required: the authorship policy; agents-united-original, private-owner or adapted-source')
   .action((options: Record<string, unknown>) => {
     // Unknown or malformed options take the same JSON exit-2 route as every other normal outcome, not CAC's prose error.
     const problems: string[] = [];

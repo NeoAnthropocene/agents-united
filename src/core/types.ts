@@ -1154,11 +1154,13 @@ export interface SessionReportTrimResult {
 
 /** Plan 033 P8a: the deterministic Skill QA command (`agents skill-check`); policy and corpus are pinned in skill-check.ts. */
 export type SkillCheckCheckId = 'metadata' | 'contract' | 'layout' | 'portability' | 'licence' | 'frozen-corpus';
+/** Plan 033 P9: the maintainer-approved authorship policies of `agents skill-check`; the exported list is `SKILL_CHECK_POLICIES` in skill-check.ts. */
+export type SkillCheckPolicy = 'agents-united-original' | 'private-owner' | 'adapted-source';
 export type SkillCheckStatus = 'passed' | 'failed' | 'unavailable';
 export type SkillCheckGateStatus = SkillCheckStatus | 'not-run';
 export type SkillCheckCode =
   | 'USAGE' | 'POLICY_UNSUPPORTED' | 'INPUT_UNAVAILABLE' | 'CORPUS_MISMATCH' | 'CANDIDATE_DRIFT' | 'OUTPUT_LIMIT'
-  | 'FRONTMATTER_INVALID' | 'ORIGINAL_POLICY' | 'CONTRACT' | 'LAYOUT' | 'PORTABILITY' | 'LICENCE'
+  | 'FRONTMATTER_INVALID' | 'ORIGINAL_POLICY' | 'PRIVATE_POLICY' | 'ADAPTED_POLICY' | 'CONTRACT' | 'LAYOUT' | 'PORTABILITY' | 'LICENCE'
   | 'TEMPLATED' | 'STUB' | 'PATH_UNSAFE' | 'INPUT_LIMIT';
 
 export interface SkillCheckFinding {
@@ -1196,7 +1198,7 @@ export interface SkillCheckInput {
   artifact?: string;
   /** Absolute path of the reviewed frozen boilerplate corpus (its bytes must hash to the pinned value). */
   corpus?: string;
-  /** Only `agents-united-original` is supported. */
+  /** One of `agents-united-original`, `private-owner` or `adapted-source`; anything else is refused as `POLICY_UNSUPPORTED`. */
   policy?: string;
   /** Test seam: called once, after every gate ran and before the final byte readback. */
   seam?: { beforeReadback?: () => void };

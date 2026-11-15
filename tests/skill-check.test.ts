@@ -8,10 +8,12 @@ import YAML from 'yaml';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   SKILL_CHECK_CORPUS_SHA256,
+  SKILL_CHECK_POLICIES,
   SKILL_CHECK_POLICY,
   checkSkill,
   runSkillCheck,
   skillCheckExitCode,
+  unsafeEntryName,
 } from '../src/core/skill-check.js';
 // The existing real gates, imported from their pre-extraction paths (kept as re-exports).
 import { BANNED_PHRASES, validateRewrittenSkill } from './helpers/skill-contract.js';
@@ -123,6 +125,23 @@ Handoff: send the row and question back to the caller's accounts-payable owner w
 };
 
 // ---------------------------------------------------------------------------------------------
+// Plan 033 P9: the two new authorship policies, private-owner and adapted-source (fixtures)
+// ---------------------------------------------------------------------------------------------
+
+/** A plaintext 40-character lowercase commit SHA of a real-looking upstream, as the adapted-source contract requires. */
+const SHA = '30d4553ecd46fbc5212fd0ff006ae43af522158b';
+const SOURCE = `https://github.com/example/skills/tree/${SHA}/skills/demo`;
+const PRIVATE = 'private-owner';
+const ADAPTED = 'adapted-source';
+const LICENSE_TEXT = 'MIT License\n\nCopyright (c) 2026 ExampleCorp\n';
+/** A top-level NOTICE.md that quotes the pinned SHA and names the licence, as a non-MIT adaptation must. */
+const NOTICE_TEXT = `# NOTICE\n\nAdapted from the upstream pinned at ${SHA} under Apache-2.0; what changed: the runbook was compacted.\n`;
+/** The same independently authored fixture, signed by another author: a privately owned original Skill. */
+const privateSkill = invoiceSkill.replace('author: agents-united', 'author: someone-else');
+/** The same fixture carrying the upstream contract adapted-source requires: pinned source, matching commit, named upstream. */
+const adaptedSkill = privateSkill.replace('  license: MIT\n', `  license: MIT\n  source: ${SOURCE}\n  commit: ${SHA}\n  adaptedFrom: example/skills\n`);
+
+// ---------------------------------------------------------------------------------------------
 // Fixture plumbing
 // ---------------------------------------------------------------------------------------------
 
@@ -140,7 +159,7 @@ function makeRoot(): string {
 }
 
 interface Spec {
-  skill?: string;
+  skill?: string | Buffer;
   /** Replaces/adds support files; a null value removes a default one. */
   support?: Record<string, string | Buffer | null>;
   name?: string;
@@ -710,10 +729,10 @@ describe('checkSkill: unavailable outcomes', () => {
 
   it('refuses an unsupported policy with POLICY_UNSUPPORTED, echoing it, and never coerces it to agents-united-original', () => {
     const fx = build();
-    const result = run(fx, { policy: 'private-owner' });
+    const result = run(fx, { policy: 'unsupported-policy' });
     expect(result.status).toBe('unavailable');
     expect(skillCheckExitCode(result)).toBe(2);
-    expect(result.policy).toBe('private-owner');
+    expect(result.policy).toBe('unsupported-policy');
     expect(codes(result)).toContain('POLICY_UNSUPPORTED');
     expect(result.checks.some(c => c.status === 'passed')).toBe(false);
   });
@@ -880,6 +899,9 @@ describe('checkSkill: candidate content is data and is never executed', () => {
 // Review findings F4, F8, F9, F10, F11, F12 and hostile input (F1, F2) end to end
 // ---------------------------------------------------------------------------------------------
 
+/** True when p is a strict ancestor folder of leaf: the F13 linked-ancestor checks may lstat (lstat only, never read or list) such a folder. */
+const isAncestorFolder = (p: string, leaf: string): boolean => p !== leaf && leaf.startsWith(p.endsWith(path.sep) ? p : `${p}${path.sep}`);
+
 describe('checkSkill: a SKILL.md link that leaves the candidate folder', () => {
   const withLink = (target: string): Spec => ({ skill: mutate(invoiceSkill, 'Quote CSV cells', `See [x](${target}) as well.\nQuote CSV cells`) });
   // Exactly the links the layout gate would look up (a target that starts with a support folder) and that normalise out of the candidate folder.
@@ -937,12 +959,12 @@ describe('checkSkill: a SKILL.md link that leaves the candidate folder', () => {
   it.each(notFlagged)('does not report ](%s) as PATH_UNSAFE, and touches nothing outside the folder for it', target => {
     const fx = build(withLink(target));
     fs.writeFileSync(path.join(path.dirname(fx.artifact), 'outside-marker.md'), '# Outside the candidate\n');
-    const touched: string[] = [];
+    const touched: Array<[string, string]> = [];
     const names = ['existsSync', 'statSync', 'lstatSync', 'readFileSync', 'readdirSync', 'openSync', 'accessSync', 'realpathSync', 'readlinkSync'] as const;
     const spies = names.map(name => {
       const original = fs[name] as (...args: unknown[]) => unknown;
       return vi.spyOn(fs, name as 'existsSync').mockImplementation(((...args: unknown[]) => {
-        if (typeof args[0] === 'string') touched.push(path.resolve(args[0]));
+        if (typeof args[0] === 'string') touched.push([name, path.resolve(args[0])]);
         return original.apply(fs, args);
       }) as never);
     });
@@ -954,8 +976,13 @@ describe('checkSkill: a SKILL.md link that leaves the candidate folder', () => {
     }
     expect(codes(result)).not.toContain('PATH_UNSAFE');
     expect(result.checks.some(c => c.status === 'not-run')).toBe(false);
-    const within = (p: string): boolean => p === fx.artifact || p.startsWith(`${fx.artifact}${path.sep}`) || p === fx.corpus;
-    expect(touched.filter(p => !within(p))).toEqual([]);
+    // Allowed outside the candidate folder and the corpus file: only the F13 ancestor walk, which lstats (nothing but
+    // lstat) the ancestor folders of the artifact and of the corpus; the link target itself stays strictly untouchable.
+    const within = (touch: [string, string]): boolean => touch[1] === fx.artifact
+      || touch[1].startsWith(`${fx.artifact}${path.sep}`)
+      || touch[1] === fx.corpus
+      || (touch[0] === 'lstatSync' && (isAncestorFolder(touch[1], fx.artifact) || isAncestorFolder(touch[1], fx.corpus)));
+    expect(touched.filter(touch => !within(touch))).toEqual([]);
   });
 
   it('never learns whether the outside target exists: the result is the same with and without the file', () => {
@@ -971,12 +998,12 @@ describe('checkSkill: a SKILL.md link that leaves the candidate folder', () => {
   it('touches no path outside the candidate folder and the supplied corpus on account of the link', () => {
     const fx = build(withLink('references/../../../outside-marker.md'));
     fs.writeFileSync(path.join(path.dirname(fx.artifact), 'outside-marker.md'), '# Outside the candidate\n');
-    const touched: string[] = [];
+    const touched: Array<[string, string]> = [];
     const names = ['existsSync', 'statSync', 'lstatSync', 'readFileSync', 'readdirSync', 'openSync', 'accessSync', 'realpathSync', 'readlinkSync'] as const;
     const spies = names.map(name => {
       const original = fs[name] as (...args: unknown[]) => unknown;
       return vi.spyOn(fs, name as 'existsSync').mockImplementation(((...args: unknown[]) => {
-        if (typeof args[0] === 'string') touched.push(path.resolve(args[0]));
+        if (typeof args[0] === 'string') touched.push([name, path.resolve(args[0])]);
         return original.apply(fs, args);
       }) as never);
     });
@@ -987,8 +1014,12 @@ describe('checkSkill: a SKILL.md link that leaves the candidate folder', () => {
       for (const spy of spies) spy.mockRestore();
     }
     expect(touched.length).toBeGreaterThan(0);
-    const inside = (p: string): boolean => p === fx.artifact || p.startsWith(`${fx.artifact}${path.sep}`) || p === fx.corpus;
-    expect(touched.filter(p => !inside(p))).toEqual([]);
+    // The same allowed set as the test above: outside the folder and the corpus file, only the F13 ancestor walk's lstat on the ancestor folders.
+    const inside = (touch: [string, string]): boolean => touch[1] === fx.artifact
+      || touch[1].startsWith(`${fx.artifact}${path.sep}`)
+      || touch[1] === fx.corpus
+      || (touch[0] === 'lstatSync' && (isAncestorFolder(touch[1], fx.artifact) || isAncestorFolder(touch[1], fx.corpus)));
+    expect(touched.filter(touch => !inside(touch))).toEqual([]);
   });
 });
 
@@ -1203,4 +1234,518 @@ describe('checkSkill: hostile single-line input is bounded end to end', () => {
     expect(elapsed, `took ${elapsed.toFixed(0)} ms`).toBeLessThan(5000);
     expect(result.status).toBe('failed');
   }, 120_000);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Plan 033 P9: the private-owner and adapted-source policies
+// ---------------------------------------------------------------------------------------------
+
+describe('checkSkill: the three supported policies', () => {
+  it('exports the supported policy list and refuses a name outside it while naming all three', () => {
+    expect(SKILL_CHECK_POLICIES).toEqual([SKILL_CHECK_POLICY, PRIVATE, ADAPTED]);
+    const fx = build();
+    const result = run(fx, { policy: 'unknown-policy' });
+    expect(result.status).toBe('unavailable');
+    expect(skillCheckExitCode(result)).toBe(2);
+    expect(result.policy).toBe('unknown-policy');
+    expect(codes(result)).toContain('POLICY_UNSUPPORTED');
+    const message = result.findings.find(f => f.code === 'POLICY_UNSUPPORTED')!.message;
+    expect(message).toContain('agents-united-original');
+    expect(message).toContain('private-owner');
+    expect(message).toContain('adapted-source');
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+  });
+});
+
+describe('checkSkill: the private-owner policy', () => {
+  it('passes a valid privately owned Skill with all six checks and a vouched digest', () => {
+    const fx = build({ skill: privateSkill });
+    const result = run(fx, { policy: PRIVATE });
+    expect(result.status).toBe('passed');
+    expect(skillCheckExitCode(result)).toBe(0);
+    expect(result).toMatchObject({ policy: PRIVATE, inventoryComplete: true, findingsComplete: true });
+    expect(result.findings).toEqual([]);
+    expect(result.checks.map(c => [c.id, c.status])).toEqual(CHECK_IDS.map(id => [id, 'passed']));
+    expect(result.candidateDigest).toBe(expectedDigest(fx.artifact));
+  });
+
+  it('passes a weak-copyleft private Skill that carries its licence file', () => {
+    const result = run(build({
+      skill: privateSkill.replace('license: MIT', 'license: MPL-2.0'),
+      support: { LICENSE: LICENSE_TEXT },
+    }), { policy: PRIVATE });
+    expect(result.status).toBe('passed');
+    expect(skillCheckExitCode(result)).toBe(0);
+  });
+
+  const METADATA: Array<[string, Spec]> = [
+    ['a missing metadata block', { skill: mutate(privateSkill, 'metadata:\n  author: someone-else\n  version: \'1.0.0\'\n  license: MIT\n', '') }],
+    ['a metadata block that is not a mapping', { skill: mutate(privateSkill, 'metadata:\n  author: someone-else\n  version: \'1.0.0\'\n  license: MIT\n', 'metadata: 42\n') }],
+    ['a missing author', { skill: mutate(privateSkill, '  author: someone-else\n', '') }],
+    ['an empty author', { skill: privateSkill.replace('author: someone-else', "author: ''") }],
+    ['the project author', { skill: privateSkill.replace('author: someone-else', 'author: agents-united') }],
+    ['the project author in mixed case and spacing', { skill: privateSkill.replace('author: someone-else', 'author: "  Agents-United "') }],
+    ['a missing version', { skill: mutate(privateSkill, "  version: '1.0.0'\n", '') }],
+    ['a missing licence', { skill: mutate(privateSkill, '  license: MIT\n', '') }],
+    ['a declared source', { skill: mutate(privateSkill, "  version: '1.0.0'\n", `  version: '1.0.0'\n  source: ${SOURCE}\n`) }],
+    ['a declared adaptedFrom', { skill: mutate(privateSkill, "  version: '1.0.0'\n", `  version: '1.0.0'\n  adaptedFrom: example/skills\n`) }],
+    ['a declared commit', { skill: mutate(privateSkill, "  version: '1.0.0'\n", `  version: '1.0.0'\n  commit: ${SHA}\n`) }],
+  ];
+
+  it.each(METADATA)('fails the metadata check with PRIVATE_POLICY and exit 1 for %s', (_label, spec) => {
+    const result = run(build(spec), { policy: PRIVATE });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(checkOf(result, 'metadata').status).toBe('failed');
+    expect(has(checkOf(result, 'metadata').findings, 'PRIVATE_POLICY')).toBe(true);
+    expect(codes(result)).toContain('PRIVATE_POLICY');
+  });
+
+  it('says the project author belongs to the original policy', () => {
+    const result = run(build({ skill: privateSkill.replace('author: someone-else', 'author: agents-united') }), { policy: PRIVATE });
+    const policyFinding = checkOf(result, 'metadata').findings.find(f => f.code === 'PRIVATE_POLICY')!;
+    expect(policyFinding.message).toContain('agents-united-original');
+  });
+
+  it('reports the licence rules of the policy with the LICENCE code and exit 1', () => {
+    const mpl = run(build({ skill: privateSkill.replace('license: MIT', 'license: MPL-2.0') }), { policy: PRIVATE });
+    expect(mpl.status).toBe('failed');
+    expect(skillCheckExitCode(mpl)).toBe(1);
+    expect(checkOf(mpl, 'licence').status).toBe('failed');
+    expect(has(checkOf(mpl, 'licence').findings, 'LICENCE')).toBe(true);
+    const remotion = run(build({
+      skill: privateSkill.replace('license: MIT', 'license: LicenseRef-Remotion'),
+      support: { LICENSE: LICENSE_TEXT, 'NOTICE.md': NOTICE_TEXT },
+    }), { policy: PRIVATE });
+    expect(remotion.status).toBe('failed');
+    expect(codes(remotion)).toContain('LICENCE');
+  });
+});
+
+describe('checkSkill: the adapted-source policy', () => {
+  it('passes a valid MIT adaptation that carries the upstream licence file and no NOTICE.md', () => {
+    const fx = build({ skill: adaptedSkill, support: { LICENSE: LICENSE_TEXT } });
+    const result = run(fx, { policy: ADAPTED });
+    expect(result.status).toBe('passed');
+    expect(skillCheckExitCode(result)).toBe(0);
+    expect(result).toMatchObject({ policy: ADAPTED, inventoryComplete: true, findingsComplete: true });
+    expect(result.findings).toEqual([]);
+    expect(result.checks.map(c => [c.id, c.status])).toEqual(CHECK_IDS.map(id => [id, 'passed']));
+    expect(result.candidateDigest).toBe(expectedDigest(fx.artifact));
+    // The measure sees the declared upstream: the candidate is ok through substance, not through the source exemption.
+    expect(checkOf(result, 'frozen-corpus').measure).toMatchObject({ thirdParty: true, extraFiles: 4, verdict: 'ok' });
+  });
+
+  it('passes a valid Apache-2.0 adaptation whose NOTICE.md quotes the pinned SHA and names the licence', () => {
+    const result = run(build({
+      skill: adaptedSkill.replace('license: MIT', 'license: Apache-2.0'),
+      support: { LICENSE: 'Apache License\nVersion 2.0\n', 'NOTICE.md': NOTICE_TEXT },
+    }), { policy: ADAPTED });
+    expect(result.status).toBe('passed');
+    expect(skillCheckExitCode(result)).toBe(0);
+  });
+
+  const ADAPTED_METADATA: Array<[string, Spec]> = [
+    ['the project author', { skill: privateSkill }],
+    ['a missing source', { skill: adaptedSkill.replace(`  source: ${SOURCE}\n`, '') }],
+    ['a source with no https:// scheme', { skill: adaptedSkill.replace('https://', 'git://') }],
+    ['a source whose commit SHA is not lowercase hexadecimal', { skill: adaptedSkill.replace(SHA, '30d4553ecd46fbc5212fd0ff006ae43af522158B') }],
+    ['a source with no commit SHA at all', { skill: adaptedSkill.replace(`/tree/${SHA}/`, '/tree/main/') }],
+    ['a source that names this repository', { skill: adaptedSkill.replace('example/skills', 'NeoAnthropocene/agents-united') }],
+    ['a commit that differs from the pinned source SHA', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, '  commit: ffffffffffffffffffffffffffffffffffff\n') }],
+    ['an adaptedFrom that is not a non-empty string', { skill: adaptedSkill.replace('adaptedFrom: example/skills', 'adaptedFrom: [not, a, string]') }],
+    ['a missing version', { skill: adaptedSkill.replace("  version: '1.0.0'\n", '') }],
+    ['a missing licence', { skill: adaptedSkill.replace('  license: MIT\n', '') }],
+  ];
+
+  it.each(ADAPTED_METADATA)('fails the metadata check with ADAPTED_POLICY and exit 1 for %s', (_label, spec) => {
+    const result = run(build(spec), { policy: ADAPTED });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(checkOf(result, 'metadata').status).toBe('failed');
+    expect(has(checkOf(result, 'metadata').findings, 'ADAPTED_POLICY')).toBe(true);
+    expect(codes(result)).toContain('ADAPTED_POLICY');
+  });
+
+  it('reports the licence rules of the policy with the LICENCE code and exit 1', () => {
+    // The upstream licence file is required on every tier, MIT included.
+    const mit = run(build({ skill: adaptedSkill }), { policy: ADAPTED });
+    expect(mit.status).toBe('failed');
+    expect(skillCheckExitCode(mit)).toBe(1);
+    expect(checkOf(mit, 'licence').status).toBe('failed');
+    expect(has(checkOf(mit, 'licence').findings, 'LICENCE')).toBe(true);
+    // A non-MIT adaptation must also carry a NOTICE.md...
+    const noNotice = build({ skill: adaptedSkill.replace('license: MIT', 'license: Apache-2.0'), support: { LICENSE: 'Apache License\nVersion 2.0\n' } });
+    expect(run(noNotice, { policy: ADAPTED }).status).toBe('failed');
+    // ...that quotes the pinned SHA and names the licence.
+    const noticed = run(build({
+      skill: adaptedSkill.replace('license: MIT', 'license: Apache-2.0'),
+      support: { LICENSE: 'Apache License\nVersion 2.0\n', 'NOTICE.md': 'Nothing pinned here.\n' },
+    }), { policy: ADAPTED });
+    expect(noticed.status).toBe('failed');
+    const licence = checkOf(noticed, 'licence');
+    expect(has(licence.findings, 'LICENCE')).toBe(true);
+    expect(licence.findings.some(f => f.message.includes('does not quote the pinned'))).toBe(true);
+    expect(licence.findings.some(f => f.message.includes('does not name the licence identifier'))).toBe(true);
+    // A missing licence identifier is a metadata finding and a licence finding at once.
+    const bare = run(build({ skill: adaptedSkill.replace('  license: MIT\n', '') }), { policy: ADAPTED });
+    expect(bare.status).toBe('failed');
+    expect(codes(bare)).toContain('ADAPTED_POLICY');
+    expect(codes(bare)).toContain('LICENCE');
+  });
+
+  it('reports a short third-party adaptation that is ok only through its source as STUB with exit 1', () => {
+    const stubSkill = NO_SUPPORT_STUB.replace('author: agents-united', 'author: someone-else').replace("  license: MIT\n", `  license: MIT\n  source: ${SOURCE}\n`);
+    const fx = build({
+      skill: stubSkill,
+      support: { 'references/csv.md': null, 'examples/invoice.md': null, 'evals/evals.json': null },
+    });
+    const result = run(fx, { policy: ADAPTED });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    const quality = checkOf(result, 'frozen-corpus');
+    expect(quality.status).toBe('failed');
+    expect(has(quality.findings, 'STUB')).toBe(true);
+    expect(quality.measure).toMatchObject({ thirdParty: true, extraFiles: 0, verdict: 'stub' });
+    expect(quality.measure!.lines).toBeLessThan(30);
+  });
+});
+
+describe('checkSkill: a candidate valid under one policy is refused under the others', () => {
+  const CROSS: Array<[string, Spec, string, string]> = [
+    ['the original fixture under private-owner, which finds the project author', {}, PRIVATE, 'PRIVATE_POLICY'],
+    ['the original fixture under adapted-source, which finds no upstream source', {}, ADAPTED, 'ADAPTED_POLICY'],
+    ['the private-owner fixture under agents-united-original, which is not by the project author', { skill: privateSkill }, POLICY, 'ORIGINAL_POLICY'],
+    ['the private-owner fixture under adapted-source, which has no upstream source', { skill: privateSkill }, ADAPTED, 'ADAPTED_POLICY'],
+    ['the adapted-source fixture under private-owner, which declares a source', { skill: adaptedSkill, support: { LICENSE: LICENSE_TEXT } }, PRIVATE, 'PRIVATE_POLICY'],
+    ['the adapted-source fixture under agents-united-original, which is not original work', { skill: adaptedSkill, support: { LICENSE: LICENSE_TEXT } }, POLICY, 'ORIGINAL_POLICY'],
+  ];
+
+  it.each(CROSS)('refuses %s with the right policy code and exit 1', (_label, spec, policy, code) => {
+    const result = run(build(spec), { policy });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(checkOf(result, 'metadata').status).toBe('failed');
+    expect(has(checkOf(result, 'metadata').findings, code)).toBe(true);
+  });
+});
+
+describe('checkSkill: licence and notice prose cannot satisfy the contract gate of the new policies', () => {
+  /** Removes exactly the four substance phrases from a text; everything else stays as it is. */
+  const withoutSubstance = (text: string): string => text
+    .replace(/worked example/gi, 'illustrated run')
+    .replace(/anti-patterns?/gi, 'failure mode')
+    .replace(/\bevidence\b/gi, 'records')
+    .replace(/handoff/gi, 'delivery')
+    .replace(/\bhand off\b/gi, 'deliver');
+
+  it('excludes top-level licence and notice prose, and accepts the same words from a supporting subfolder', () => {
+    const skill = withoutSubstance(privateSkill);
+    const csv = withoutSubstance(invoiceSupport['references/csv.md']!);
+    const example = withoutSubstance(invoiceSupport['examples/invoice.md']!);
+    for (const text of [skill, csv, example]) {
+      expect(text, 'the scrubbed fixture must carry none of the substance phrases').not.toMatch(/worked example|anti-pattern|\bevidence\b|hand-?off|handoff/i);
+    }
+    const support = {
+      'references/csv.md': csv,
+      'examples/invoice.md': example,
+      LICENSE: LICENSE_TEXT,
+      'NOTICE.md': 'Notices only.\n\nThis file shows a worked example, names anti-patterns, lists the evidence to produce and ends with a handoff to a reviewer.\n',
+    };
+    const fromNotice = run(build({ skill, support }), { policy: PRIVATE });
+    expect(fromNotice.status).toBe('failed');
+    expect(skillCheckExitCode(fromNotice)).toBe(1);
+    const contract = checkOf(fromNotice, 'contract');
+    expect(contract.status).toBe('failed');
+    expect(contract.findings.some(f => f.message.includes('no "worked example"'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('no anti-patterns'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('names no evidence to produce'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('no hand-off to a teammate'))).toBe(true);
+
+    // The same words in a supporting subfolder file, referenced from SKILL.md, do satisfy the contract.
+    const inSubfolder = build({
+      skill: skill.replace(
+        'Read [examples/invoice.md](examples/invoice.md) for the illustrated run and expected row.',
+        'Read [examples/invoice.md](examples/invoice.md) and [references/substance.md](references/substance.md) for the illustrated run and expected row.',
+      ),
+      support: { ...support, 'references/substance.md': '# Substance\n\nThe worked example lives here, with anti-patterns, the evidence to produce, and a handoff to a teammate.\n' },
+    });
+    const fromSubfolder = run(inSubfolder, { policy: PRIVATE });
+    expect(fromSubfolder.status).toBe('passed');
+    expect(skillCheckExitCode(fromSubfolder)).toBe(0);
+  });
+
+  it('holds under adapted-source too: the upstream licence file and a top-level notice do not replace substance', () => {
+    const skill = withoutSubstance(adaptedSkill);
+    const csv = withoutSubstance(invoiceSupport['references/csv.md']!);
+    const example = withoutSubstance(invoiceSupport['examples/invoice.md']!);
+    const support = {
+      'references/csv.md': csv,
+      'examples/invoice.md': example,
+      LICENSE: LICENSE_TEXT,
+      'NOTICE.md': 'Notices only.\n\nThis file shows a worked example, names anti-patterns, lists the evidence to produce and ends with a handoff to a reviewer.\n',
+    };
+    const fromNotice = run(build({ skill, support }), { policy: ADAPTED });
+    expect(fromNotice.status).toBe('failed');
+    expect(skillCheckExitCode(fromNotice)).toBe(1);
+    const contract = checkOf(fromNotice, 'contract');
+    expect(contract.status).toBe('failed');
+    expect(contract.findings.some(f => f.message.includes('no "worked example"'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('no anti-patterns'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('names no evidence to produce'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('no hand-off to a teammate'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('raised'))).toBe(false);
+
+    // The same words in a supporting subfolder file, referenced from SKILL.md, do satisfy the same adapted candidate.
+    const inSubfolder = build({
+      skill: skill.replace(
+        'Read [examples/invoice.md](examples/invoice.md) for the illustrated run and expected row.',
+        'Read [examples/invoice.md](examples/invoice.md) and [references/substance.md](references/substance.md) for the illustrated run and expected row.',
+      ),
+      support: { ...support, 'NOTICE.md': null, 'references/substance.md': '# Substance\n\nThe worked example lives here, with anti-patterns, the evidence to produce, and a handoff to a teammate.\n' },
+    });
+    const fromSubfolder = run(inSubfolder, { policy: ADAPTED });
+    expect(fromSubfolder.status).toBe('passed');
+    expect(skillCheckExitCode(fromSubfolder)).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Plan 033 P9: review findings F5, F7 and F13, end to end through checkSkill
+// ---------------------------------------------------------------------------------------------
+
+describe('checkSkill: malformed candidate data yields the gates own findings instead of a thrown-away gate (F5)', () => {
+  it('keeps a wrong name next to a description that is not a string, as findings of the contract gate', () => {
+    const fx = build({ skill: mutate(
+      // The whole description line becomes the number 27: a valid YAML mapping with a description that is not a
+      // string. Replacing only the opening of the quoted value would leave `trigger phrases:` colons of the old text
+      // in a plain scalar, which is invalid YAML and never reaches any gate.
+      mutate(invoiceSkill, "description: 'Use when one supplied invoice must become an action CSV; trigger phrases: invoice action row, export invoice CSV. Skip payment execution, invoice discovery, and requests to infer missing purchase-order details.'", 'description: 27'),
+      `name: ${NAME}`,
+      'name: wrong-name',
+    ) });
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    const contract = checkOf(result, 'contract');
+    expect(contract.status).toBe('failed');
+    expect(contract.findings.some(f => f.code === 'CONTRACT' && f.message.includes('front matter name is wrong-name'))).toBe(true);
+    expect(contract.findings.some(f => f.code === 'CONTRACT' && f.message.includes('description must be 40 to 1,024 characters, is 0'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('raised'))).toBe(false);
+  });
+
+  it.each([
+    ['not valid JSON', 'not json at all {', 'is not valid JSON'],
+    ['not an object', 'null', 'is not a JSON object'],
+    ['a non-array evals value', JSON.stringify({ skill_name: NAME, evals: 'bad' }), 'is not an array'],
+    ['a null entry', JSON.stringify({ skill_name: NAME, evals: [null] }), 'an eval is not an object'],
+  ])('keeps the earlier layout findings next to an evals document that is %s', (_label, evals, fragment) => {
+    const fx = build({
+      skill: mutate(invoiceSkill, `name: ${NAME}\n`, `name: ${NAME}\nbogus-key: true\n`),
+      support: { 'evals/evals.json': evals },
+    });
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    const layout = checkOf(result, 'layout');
+    expect(layout.status).toBe('failed');
+    // The unknown front matter key was found before the malformed evals document, and it stayed.
+    expect(layout.findings.some(f => f.code === 'LAYOUT' && f.message.includes('bogus-key'))).toBe(true);
+    expect(layout.findings.some(f => f.code === 'LAYOUT' && f.message.includes(fragment))).toBe(true);
+    expect(layout.findings.some(f => f.message.includes('raised'))).toBe(false);
+    expect(codes(result)).toContain('LAYOUT');
+  });
+});
+
+describe('checkSkill: entry names and byte encodings the inventory refuses before any gate runs (F7)', () => {
+  /**
+   * Writes a file under the candidate and returns whether it exists under exactly the requested name: the refused
+   * name rules come from `relative()` in registry/skills/evaluate-artifact/scripts/check-review.mjs and the identical
+   * per-segment rule of registry/skills/coordinate-artifact/scripts/check-skill-return.mjs, whose names Windows and
+   * other filesystems refuse or quietly rewrite, so this test skips wherever the host kept the name from appearing.
+   */
+  const create = (fx: Fixture, relative: string): boolean => {
+    try {
+      fs.mkdirSync(path.dirname(path.join(fx.artifact, relative)), { recursive: true });
+      fs.writeFileSync(path.join(fx.artifact, relative), 'content\n');
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      // ENOENT is how Windows refuses a name it cannot represent (`pri|ce.md`, a control character) at creation time.
+      if (code === 'EPERM' || code === 'EACCES' || code === 'EINVAL' || code === 'ENOENT') return false;
+      throw error;
+    }
+    return fs.lstatSync(path.join(fx.artifact, relative), { throwIfNoEntry: false }) !== undefined;
+  };
+
+  it('refuses a file name with a forbidden character as PATH_UNSAFE with exit 1 (skipped when the host refuses the name)', ctx => {
+    const fx = build();
+    if (!create(fx, 'references/pri|ce.md')) return ctx.skip();
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    const unsafe = result.findings.filter(f => f.code === 'PATH_UNSAFE');
+    expect(unsafe.length).toBeGreaterThanOrEqual(1);
+    expect(unsafe.some(f => (f.path ?? '').includes('pri|ce.md'))).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+    expect(result.inventoryComplete).toBe(false);
+    expect(result.inventory).toEqual([]);
+    expect(result.candidateDigest).toBeNull();
+  });
+
+  it('refuses a Windows reserved device name as PATH_UNSAFE with exit 1 (skipped when the host refuses the name)', ctx => {
+    const fx = build();
+    if (!create(fx, 'extras/CON.md')) return ctx.skip();
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(result.findings.some(f => f.code === 'PATH_UNSAFE' && (f.path ?? '').includes('CON.md'))).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+  });
+
+  it('refuses a Windows reserved device folder without entering it as PATH_UNSAFE with exit 1 (skipped when the host refuses the name)', ctx => {
+    const fx = build();
+    const inside = path.join(fx.artifact, 'extras', 'aux', 'shell.md');
+    try {
+      fs.mkdirSync(path.dirname(inside), { recursive: true });
+      fs.writeFileSync(inside, '# Never read\n');
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'EPERM' || code === 'EACCES' || code === 'EINVAL') return ctx.skip();
+      throw error;
+    }
+    if (fs.lstatSync(inside, { throwIfNoEntry: false }) === undefined) return ctx.skip();
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(result.findings.some(f => f.code === 'PATH_UNSAFE' && (f.path ?? '').includes('aux'))).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+    expect(result.inventory).toEqual([]);
+  });
+
+  it('refuses a name ending in a space as PATH_UNSAFE with exit 1 (skipped when the host rewrites the name)', ctx => {
+    const fx = build();
+    if (!create(fx, 'extras/notes.md ')) return ctx.skip();
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(result.findings.some(f => f.code === 'PATH_UNSAFE' && (f.path ?? '').includes('notes.md'))).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+  });
+
+  it('refuses a name ending in a dot as PATH_UNSAFE with exit 1 (skipped when the host rewrites the name)', ctx => {
+    const fx = build();
+    if (!create(fx, 'extras/notes.md.')) return ctx.skip();
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(result.findings.some(f => f.code === 'PATH_UNSAFE' && (f.path ?? '').includes('notes.md.'))).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+  });
+
+  it('refuses a name with a control character as PATH_UNSAFE with exit 1 (skipped when the host refuses the name)', ctx => {
+    const fx = build();
+    if (!create(fx, 'extras/ctrl\u0007chart.md')) return ctx.skip();
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(result.findings.some(f => f.code === 'PATH_UNSAFE')).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+  });
+
+  it('applies the refused-name rule of the two checker scripts as a pure function, without touching the disk', () => {
+    // The disk-free form of the two cases above, which only run where the file system allows the name to appear at all.
+    for (const refused of ['pri|ce.md', 'a<b.md', 'semi:colon.md', 'quote".md', 'back\\slash.md', 'quest?on.md', 'star*.md', 'ctrl\u0007chart.md', 'con.md', 'NUL', 'aux', 'COM1.md', 'lpt9.txt', 'ends with space ', 'ends with dot.']) {
+      expect(unsafeEntryName(refused), refused).not.toBeNull();
+    }
+    // Portable look-alikes: the reserved-name rule anchors the whole stem (CON, not `const`), and case alone does not refuse it.
+    for (const portable of ['references', 'csv.md', 'price.md', 'const.md', 'control.md', 'variable-3.json', 'EXAMPLE.md']) {
+      expect(unsafeEntryName(portable), portable).toBeNull();
+    }
+  });
+
+  const NOT_UTF8_TAIL = Buffer.from([0xc3, 0x28, 0xff, 0xfe]);
+
+  it('fails a support file whose bytes are not valid UTF-8 with a LAYOUT finding naming it, exit 1', () => {
+    const fx = build({ support: { 'references/broken.md': Buffer.concat([Buffer.from('# Broken\n'), NOT_UTF8_TAIL]) } });
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    const layout = result.findings.filter(f => f.code === 'LAYOUT');
+    expect(layout.length).toBeGreaterThanOrEqual(1);
+    expect(layout.some(f => f.path === 'references/broken.md' && f.message.includes('references/broken.md'))).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+    expect(result.inventoryComplete).toBe(false);
+    expect(result.candidateDigest).toBeNull();
+  });
+
+  it('fails a SKILL.md whose bytes are not valid UTF-8 as FRONTMATTER_INVALID, exit 1, before any gate runs', () => {
+    const fx = build({ skill: Buffer.concat([Buffer.from(invoiceSkill), NOT_UTF8_TAIL]) });
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(codes(result)).toContain('FRONTMATTER_INVALID');
+    expect(result.findings.some(f => f.code === 'FRONTMATTER_INVALID' && (f.path ?? '').includes('SKILL.md'))).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+    expect(result.candidateDigest).toBeNull();
+  });
+});
+
+describe('checkSkill: path arguments with traversal aliases or linked ancestors (F13)', () => {
+  it('reports USAGE (exit 2) for an --artifact whose path contains a .. segment that path.join would resolve away', () => {
+    const fx = build();
+    const dotted = `${fx.artifact}${path.sep}..${path.sep}${path.basename(fx.artifact)}`;
+    const result = run(fx, { artifact: dotted });
+    expect(result.status).toBe('unavailable');
+    expect(skillCheckExitCode(result)).toBe(2);
+    expect(codes(result)).toContain('USAGE');
+    expect(result.artifact).toBe(dotted);
+    expect(result.checks.some(c => c.status === 'passed')).toBe(false);
+  });
+
+  it('reports USAGE (exit 2) for a --corpus whose path contains a . segment', () => {
+    const fx = build();
+    const dotted = `${path.dirname(fx.corpus)}${path.sep}.${path.sep}${path.basename(fx.corpus)}`;
+    const result = run(fx, { corpus: dotted });
+    expect(result.status).toBe('unavailable');
+    expect(skillCheckExitCode(result)).toBe(2);
+    expect(codes(result)).toContain('USAGE');
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+  });
+
+  it('refuses an --artifact reached through a linked ancestor as PATH_UNSAFE, exit 1, and says to pass the real path (skipped when the OS refuses links)', ctx => {
+    const fx = build();
+    const link = path.join(fx.root, 'linked-candidate');
+    try {
+      fs.symlinkSync(path.dirname(fx.artifact), link, 'junction');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EPERM' || (error as NodeJS.ErrnoException).code === 'EACCES') return ctx.skip();
+      throw error;
+    }
+    const result = run(fx, { artifact: path.join(link, path.basename(fx.artifact)) });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(codes(result)).toContain('PATH_UNSAFE');
+    expect(result.findings.find(f => f.code === 'PATH_UNSAFE')!.message).toContain('real path');
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+    expect(result.candidateDigest).toBeNull();
+    expect(result.inventory).toEqual([]);
+  });
+
+  it('refuses a --corpus reached through a linked ancestor as INPUT_UNAVAILABLE, exit 2, and says to pass the real path (skipped when the OS refuses links)', ctx => {
+    const fx = build();
+    const link = path.join(fx.root, 'linked-qa');
+    try {
+      fs.symlinkSync(path.dirname(fx.corpus), link, 'junction');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EPERM' || (error as NodeJS.ErrnoException).code === 'EACCES') return ctx.skip();
+      throw error;
+    }
+    const result = run(fx, { corpus: path.join(link, path.basename(fx.corpus)) });
+    expect(result.status).toBe('unavailable');
+    expect(skillCheckExitCode(result)).toBe(2);
+    expect(codes(result)).toContain('INPUT_UNAVAILABLE');
+    expect(result.findings.find(f => f.code === 'INPUT_UNAVAILABLE')!.message).toContain('real path');
+    expect(checkOf(result, 'frozen-corpus').status).toBe('unavailable');
+    expect(result.corpus.sha256).toBeNull();
+  });
 });

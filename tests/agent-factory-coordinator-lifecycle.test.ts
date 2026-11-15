@@ -50,19 +50,21 @@ describe('factory coordinator native production lifecycle', () => {
     expect(lock.projections?.['.claude/agents/orchestrator-agent-factory.md']?.canonical).toBeUndefined();
   });
 
-  it('owns, restores, protects and removes every one of the eleven declared support files, the four skill-route files included', async () => {
+  it('owns, restores, protects and removes every one of the fifteen declared support files, the skill-route and contract-route files included', async () => {
     const resolver = new RegistryResolver(fixture.registry);
     await new InstallEngine(resolver).install('agent-factory', fixture.options);
-    expect(COORDINATOR_SUPPORT).toHaveLength(11);
+    expect(COORDINATOR_SUPPORT).toHaveLength(15);
     const lock = await fs.readJson(path.join(fixture.state, 'agents-united.json')) as LockfileManifest;
     for (const rel of COORDINATOR_SUPPORT) expect(lock.projections?.[`${COORDINATOR_ROOT}/${rel}`]?.owners, rel).toContain('agent-factory');
-    const script = fixture.installed(`${COORDINATOR_ROOT}/scripts/check-skill-return.mjs`), original = await fs.readFile(script);
-    await fs.appendFile(script, '\n// caller edit\n');
-    const before = await coordinatorTree(fixture.workspace);
-    await expect(new UpdateEngine(resolver).update('agent-factory', { targetDir: fixture.state })).rejects.toThrow(/modified/i);
-    expect(await coordinatorTree(fixture.workspace)).toEqual(before);
-    await new UpdateEngine(resolver).update('agent-factory', { targetDir: fixture.state, force: true });
-    expect(await fs.readFile(script)).toEqual(original);
+    for (const name of ['check-skill-return.mjs', 'check-contract-return.mjs']) {
+      const script = fixture.installed(`${COORDINATOR_ROOT}/scripts/${name}`), original = await fs.readFile(script);
+      await fs.appendFile(script, '\n// caller edit\n');
+      const before = await coordinatorTree(fixture.workspace);
+      await expect(new UpdateEngine(resolver).update('agent-factory', { targetDir: fixture.state })).rejects.toThrow(/modified/i);
+      expect(await coordinatorTree(fixture.workspace)).toEqual(before);
+      await new UpdateEngine(resolver).update('agent-factory', { targetDir: fixture.state, force: true });
+      expect(await fs.readFile(script)).toEqual(original);
+    }
     await new UninstallEngine(resolver).uninstall('agent-factory', { targetDir: fixture.state });
     for (const rel of COORDINATOR_SUPPORT) expect(await fs.pathExists(fixture.installed(`${COORDINATOR_ROOT}/${rel}`)), rel).toBe(false);
   });
