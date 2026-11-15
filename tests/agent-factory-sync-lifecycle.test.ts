@@ -69,6 +69,31 @@ describe('production sync lifecycle independently of realization', () => {
     for (const name of ['factory-sync', 'agents-united-readonly-guard', 'sync-plan.schema.json', 'plan.md']) expect(findings).toContain(name);
   });
 
+  it('completes the sync closure when a workspace installed without the sync worker updates from a registry that has it', async () => {
+    const catalog = await fs.readJson(fixture.source('bundles.json'));
+    const withSync = [...catalog.bundles['agent-factory'].skills as string[]];
+    catalog.bundles['agent-factory'].skills = withSync.filter(skill => skill !== 'sync-host');
+    await fs.writeJson(fixture.source('bundles.json'), catalog);
+    await new InstallEngine(resolver).install('agent-factory', fixture.options);
+    expect(await fs.pathExists(fixture.installed('.claude/agents/factory-sync.md'))).toBe(false);
+    expect(await fs.pathExists(fixture.installed(`${skill}/SKILL.md`))).toBe(false);
+    catalog.bundles['agent-factory'].skills = withSync;
+    await fs.writeJson(fixture.source('bundles.json'), catalog);
+    await new UpdateEngine(new RegistryResolver(fixture.registry)).update('agent-factory', { targetDir: fixture.state });
+    const lock = await fs.readJson(path.join(fixture.state, 'agents-united.json')) as LockfileManifest;
+    for (const rel of [fixture.binding.installed, `${skill}/assets/claude-binding.json`, '.claude/agents/factory-sync.md',
+      '.claude/hooks/agents-united-readonly-guard.js', ...fixture.binding.requiredSupport.map(rel => `${skill}/${rel}`),
+      ...fixture.binding.references.map(ref => ref.installed)]) {
+      expect(await fs.pathExists(fixture.installed(rel)), rel).toBe(true);
+      expect(lock.projections?.[rel]?.owners, rel).toEqual(['agent-factory']);
+      expect(lock.projections?.[rel]?.hash, rel).toBe(`sha256:${(await reviewPin(fixture.installed(rel))).sha256}`);
+    }
+    expect(lock.nativeLane).toBe(true);
+    const report = await DoctorEngine.runDoctor(fixture.state, 'claude');
+    expect(report.agentsCount).toBe(1);
+    expect(report.issues).toEqual([]);
+  });
+
   it('restores a missing support file through the recorded native lane', async () => {
     await new InstallEngine(resolver).install('agent-factory', fixture.options);
     const file = fixture.installed(`${skill}/references/rules/domain-modeling-and-adr.md`);

@@ -12,7 +12,7 @@ const prompts = vi.hoisted(() => ({
 // Terminal prompts are the external boundary; registry and installation stay real.
 vi.mock('@clack/prompts', () => prompts);
 
-import { cli, canInstallEntireDomain } from '../src/cli.js';
+import { cli, canInstallEntireDomain, underConstructionNotice } from '../src/cli.js';
 import { RegistryResolver } from '../src/core/registry.js';
 import type { BundleDefinition, BundlesManifest } from '../src/core/types.js';
 
@@ -202,6 +202,11 @@ describe('Contributor CLI wizards', () => {
     expect(canInstallEntireDomain('engineering', 1)).toBe(false);
     expect(canInstallEntireDomain('organization', 2)).toBe(false);
     expect(canInstallEntireDomain('universal', 3)).toBe(false);
+  });
+
+  it('the agent-factory install notice names all three workers', () => {
+    const notice = underConstructionNotice({ name: 'agent-factory', domain: 'contributor', description: 'Factory fixture', status: 'under-construction' });
+    for (const worker of ['factory-realizer', 'factory-evaluator', 'factory-sync']) expect(notice).toContain(worker);
   });
 
   it('full inspection shows the current end-user inventory and preserves shared skills', async () => {

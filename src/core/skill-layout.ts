@@ -39,7 +39,36 @@ function walk(dir: string, prefix = ''): string[] {
 }
 
 /** True for a top-level NOTICE.md or a top-level LICEN[CS]E file: the prose the `excludeTopLevelNotices` option of `supportingText` leaves out. */
-const isTopLevelNoticeOrLicence = (f: string): boolean => !f.includes('/') && (f === 'NOTICE.md' || /^LICEN[CS]E(\.(md|txt))?$/i.test(f));
+const isTopLevelNoticeOrLicence = (f: string): boolean => !f.includes('/') && (/^NOTICE\.md$/i.test(f) || /^LICEN[CS]E(\.(md|txt))?$/i.test(f));
+
+/**
+ * Text for a message or a length test from a front matter or evals value of any type. A string is itself, anything else is its
+ * `String()` form, and a value whose conversion raises (an object with a `toString` key that is not a function) is its JSON form,
+ * so a hostile value becomes a finding instead of a thrown error.
+ */
+export function plainText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  try {
+    return String(value);
+  } catch {
+    try {
+      return JSON.stringify(value) ?? 'unreadable value';
+    } catch {
+      return 'unreadable value';
+    }
+  }
+}
+
+/**
+ * The target of every SKILL.md link into a support folder (`](examples/...)`, `references/`, `assets/`, `scripts/`), exactly as the
+ * layout gate looks it up. `skill-check` reads the same targets before any gate runs, so both see one string.
+ */
+export function supportLinkTargets(body: string): string[] {
+  return [...body.matchAll(/\]\(((?:examples|references|assets|scripts)\/[^)#\s]+)\)/g)].map(link => link[1]!);
+}
+
+/** True when a link target holds a `..` segment, written with either separator: such a target is never looked up. */
+const hasParentSegment = (target: string): boolean => target.split(/[\\/]/).some(part => part === '..');
 
 /** Every markdown file of the skill folder except SKILL.md and the maintainer-only evals. */
 export function supportingText(skillDir: string, options: { excludeTopLevelNotices?: boolean } = {}): string {
@@ -84,8 +113,8 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
 
   for (const key of Object.keys(meta)) if (!KNOWN_KEYS.has(key)) errors.push(`${name}: unknown front matter key "${key}" (Claude Code ignores it silently)`);
 
-  const description = String(meta.description ?? '').replace(/\s+/g, ' ').trim();
-  const whenToUse = String(meta.when_to_use ?? '').replace(/\s+/g, ' ').trim();
+  const description = plainText(meta.description ?? '').replace(/\s+/g, ' ').trim();
+  const whenToUse = plainText(meta.when_to_use ?? '').replace(/\s+/g, ' ').trim();
   if (!/^Use when /.test(description)) errors.push(`${name}: description must lead with the key use case ("Use when ...")`);
   // `when_to_use` is Claude-only and not recorded for Antigravity or Cline (tests/native-antigravity-skills.test.ts), so the trigger
   // phrases and the "skip it when" go into the description until a host guide says the key is safe on every host.
@@ -100,8 +129,10 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
   for (const f of files) {
     if (!body.includes(f)) errors.push(`${name}: ${f} is not referenced from SKILL.md (say what it holds and when to load it)`);
   }
-  for (const link of body.matchAll(/\]\(((?:examples|references|assets|scripts)\/[^)#\s]+)\)/g)) {
-    if (!fs.existsSync(path.join(dir, link[1]!))) errors.push(`${name}: SKILL.md links to ${link[1]} which does not exist`);
+  for (const target of supportLinkTargets(body)) {
+    // A target with a `..` segment is not looked up at all: what it names depends on how it is resolved, and may be outside the folder.
+    if (hasParentSegment(target)) errors.push(`${name}: SKILL.md links to ${target}, which has a ".." segment; links stay inside the skill folder and are not looked up`);
+    else if (!fs.existsSync(path.join(dir, target))) errors.push(`${name}: SKILL.md links to ${target} which does not exist`);
   }
 
   // A script replaces hand arithmetic for the roles that have a shell (Selin, Emre, Deniz, Defne); Ava, Kaan, Yavuz, Jale and
@@ -132,8 +163,8 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
       errors.push(`${name}: evals/evals.json is not a JSON object`);
       return errors;
     }
-    const evals = evalsJson as { skill_name?: string; evals?: Array<{ id?: number; prompt?: string; expected_output?: string } | null> };
-    if (evals.skill_name !== name) errors.push(`${name}: evals skill_name is ${evals.skill_name}`);
+    const evals = evalsJson as { skill_name?: unknown; evals?: Array<{ id?: unknown; prompt?: unknown; expected_output?: unknown } | null> };
+    if (evals.skill_name !== name) errors.push(`${name}: evals skill_name is ${plainText(evals.skill_name)}`);
     const list = evals.evals ?? [];
     if (!Array.isArray(list)) {
       errors.push(`${name}: evals is not an array (evals/evals.json must hold a list of eval objects)`);
@@ -146,8 +177,12 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
         continue;
       }
       if (typeof e.id !== 'number') errors.push(`${name}: an eval has no numeric id`);
-      if ((e.prompt ?? '').length < 40) errors.push(`${name}: eval ${e.id} prompt is too short to be realistic`);
-      if ((e.expected_output ?? '').length < 40) errors.push(`${name}: eval ${e.id} has no expected_output`);
+      // A prompt or an expected output that is present but not a string is a finding of its own; its length is never measured.
+      const id = plainText(e.id);
+      if (e.prompt !== undefined && e.prompt !== null && typeof e.prompt !== 'string') errors.push(`${name}: eval ${id} prompt is not a string`);
+      else if (((e.prompt as string | null | undefined) ?? '').length < 40) errors.push(`${name}: eval ${id} prompt is too short to be realistic`);
+      if (e.expected_output !== undefined && e.expected_output !== null && typeof e.expected_output !== 'string') errors.push(`${name}: eval ${id} expected_output is not a string`);
+      else if (((e.expected_output as string | null | undefined) ?? '').length < 40) errors.push(`${name}: eval ${id} has no expected_output`);
     }
     const checkable = list.filter(e => e !== null);
     if (new Set(checkable.map(e => e?.prompt)).size !== checkable.length) errors.push(`${name}: duplicate eval prompts`);

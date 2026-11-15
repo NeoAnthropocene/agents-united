@@ -34,6 +34,19 @@ export const MAX_BODY_LINES = 500;
 /** About 5k tokens at 4 characters per token (docs/skill-intake.md step 5). */
 export const MAX_CHARS = 20000;
 
+/** A front matter value as message text: its `String()` form, or its JSON form when that conversion raises (an object with a `toString` key). */
+function showValue(value: unknown): string {
+  try {
+    return String(value);
+  } catch {
+    try {
+      return JSON.stringify(value) ?? 'unreadable value';
+    } catch {
+      return 'unreadable value';
+    }
+  }
+}
+
 export function validateRewrittenSkill(name: string, content: string, supportText = '', options: { requireProjectAuthor?: boolean; forbidSource?: boolean } = {}): string[] {
   const errors: string[] = [];
   const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -51,7 +64,7 @@ export function validateRewrittenSkill(name: string, content: string, supportTex
     errors.push(`${name}: front matter is not valid YAML (${error instanceof Error ? error.message : String(error)})`);
   }
   const body = content.slice(fm[0].length);
-  if (meta.name !== name) errors.push(`${name}: front matter name is ${meta.name}`);
+  if (meta.name !== name) errors.push(`${name}: front matter name is ${showValue(meta.name)}`);
   const descriptionValue = meta.description ?? '';
   const description = (typeof descriptionValue === 'string' ? descriptionValue : '').replace(/\s+/g, ' ').trim();
   if (description.length < 40 || description.length > 1024) errors.push(`${name}: description must be 40 to 1,024 characters, is ${description.length}`);

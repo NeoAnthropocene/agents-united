@@ -4,7 +4,7 @@
 
 In `scripts/check-sync.mjs` (`computePlan`), the join proceeds in this order:
 
-1. **Job library root and caller platform**: Using the running machine's path rules, the sync job's library root is `<job.source.checkout>/host-library/<job.host>`. Every path in `job.changedInputs` and `job.heldSources` is expressed as a relative path with forward slashes from that library root (together with its lower-cased form). The worker can tell the caller's platform from the form of `job.source.checkout`: a drive-letter prefix (`C:\...` or `C:/...`) or UNC prefix (`\\...`) means Windows, while a single leading slash (`/...`, not `//...`) means POSIX.
+1. **Job library root and path rules**: The sync job's library root is `<job.source.checkout>/host-library/<job.host>`. The job's own relative paths follow the path rules of the machine the checker runs on: every path in `job.changedInputs` and `job.heldSources` is expressed as a relative path with forward slashes from that library root (together with its lower-cased form). Each target's paths follow the form of that target's own checkout (item 2), and case is ignored when the checker runs on Windows or the target is Windows form. As a hint for the worker only, not a rule of the checker: the form of the job's checkout path (a drive-letter prefix such as `C:\...` or `C:/...`, or a `\\...` prefix, or a single leading `/`) usually shows which machine that is.
 2. **Target path form**: For each target realizer job record in `job.targets`, `computePlan` chooses the path form from that target's own `source.checkout`:
    - **Windows form**: `target.source.checkout` starts with `<drive-letter>:/`, `<drive-letter>:\`, or `\\`.
    - **POSIX form**: `target.source.checkout` starts with `/` and not `//`.
@@ -17,19 +17,29 @@ In `scripts/check-sync.mjs` (`computePlan`), the join proceeds in this order:
 Iterate `job.targets` (`targetPin` at index `index`, with parsed realizer job `target` at that same index) in exact array order:
 
 1. **`changedPins`**: Iterate `job.changedInputs` in exact array order. Let `match` be the counted entry in `target.inputs` inside `<target.source.checkout>/host-library/<job.host>` whose relative key matches `changed.path`:
-   - If `match` exists and `(changed.newSha256 === null || match.sha256 !== changed.newSha256)`, mark `changed.path` as pinned-stale and append:
+   - If a counted input matches (`match` exists) and `(changed.newSha256 === null || match.sha256 !== changed.newSha256)`, mark `changed.path` as pinned-stale and append one entry. Two entries as they appear in `changedPins` (the first pin was current before the change, the second belongs to a page that was deleted):
      ```json
-     {
-       "kind": "<match.kind>",
-       "path": "<changed.path>",
-       "pinnedSha256": "<match.sha256>",
-       "oldSha256": "<changed.oldSha256 or null>",
-       "newSha256": "<changed.newSha256 or null>",
-       "pinnedAtPrevious": true
-     }
+     [
+       {
+         "kind": "snapshot",
+         "path": "/workspace/repo/host-library/claude/pages/agent/sub-agents.md",
+         "pinnedSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+         "oldSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+         "newSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+         "pinnedAtPrevious": true
+       },
+       {
+         "kind": "guide",
+         "path": "/workspace/repo/host-library/claude/guide/agent.md",
+         "pinnedSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+         "oldSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+         "newSha256": null,
+         "pinnedAtPrevious": false
+       }
+     ]
      ```
-     where `pinnedAtPrevious` is `match.sha256 === changed.oldSha256`.
-   - If `changed.newSha256 !== null && match.sha256 === changed.newSha256`, omit it from `changedPins` (and do not mark `changed.path` as pinned-stale from this target).
+     `kind` is `match.kind`, `path` is `changed.path`, `pinnedSha256` is `match.sha256`, and `oldSha256` and `newSha256` are copied from the job: each is a 64-hex string or `null` (a JSON `null`, never a quoted string). `pinnedAtPrevious` is `match.sha256 === changed.oldSha256`, so it is `false` when the pin predates the old hash or `oldSha256` is `null`.
+   - If a counted input matches (`match` exists) and `changed.newSha256 !== null && match.sha256 === changed.newSha256`, omit it from `changedPins` (and do not mark `changed.path` as pinned-stale from this target). If no counted input matches, nothing is appended and `match` is never read.
 2. **`heldPins`**: Iterate `job.heldSources` in exact array order. If `match` is found in `target.inputs` inside `<target.source.checkout>/host-library/<job.host>` with the matching relative key for `held.path`, append `{ "path": held.path, "pinnedSha256": match.sha256 }`.
 3. **`affected`**: Set `affected: changedPins.length > 0`. Held pins alone (`changedPins.length === 0`) always produce `affected: false`.
 4. **`reason`**: Non-empty string (`1..512` chars) explaining the stale changed pins or why the artifact is unaffected.

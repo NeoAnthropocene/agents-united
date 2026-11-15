@@ -14,6 +14,7 @@ import {
   runSkillCheck,
   skillCheckExitCode,
   unsafeEntryName,
+  withoutTrailingSeparators,
 } from '../src/core/skill-check.js';
 // The existing real gates, imported from their pre-extraction paths (kept as re-exports).
 import { BANNED_PHRASES, validateRewrittenSkill } from './helpers/skill-contract.js';
@@ -1346,16 +1347,29 @@ describe('checkSkill: the adapted-source policy', () => {
   });
 
   const ADAPTED_METADATA: Array<[string, Spec]> = [
-    ['the project author', { skill: privateSkill }],
+    ['the project author', { skill: adaptedSkill.replace('author: someone-else', 'author: agents-united') }],
     ['a missing source', { skill: adaptedSkill.replace(`  source: ${SOURCE}\n`, '') }],
     ['a source with no https:// scheme', { skill: adaptedSkill.replace('https://', 'git://') }],
     ['a source whose commit SHA is not lowercase hexadecimal', { skill: adaptedSkill.replace(SHA, '30d4553ecd46fbc5212fd0ff006ae43af522158B') }],
     ['a source with no commit SHA at all', { skill: adaptedSkill.replace(`/tree/${SHA}/`, '/tree/main/') }],
     ['a source that names this repository', { skill: adaptedSkill.replace('example/skills', 'NeoAnthropocene/agents-united') }],
-    ['a commit that differs from the pinned source SHA', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, '  commit: ffffffffffffffffffffffffffffffffffff\n') }],
+    ['a commit that differs from the pinned source SHA', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, `  commit: ${'f'.repeat(40)}\n`) }],
     ['an adaptedFrom that is not a non-empty string', { skill: adaptedSkill.replace('adaptedFrom: example/skills', 'adaptedFrom: [not, a, string]') }],
     ['a missing version', { skill: adaptedSkill.replace("  version: '1.0.0'\n", '') }],
     ['a missing licence', { skill: adaptedSkill.replace('  license: MIT\n', '') }],
+    ['a missing metadata block', { skill: adaptedSkill.replace(/metadata:\n(?: {2}.*\n)+/, '') }],
+    ['a metadata block that is not a mapping', { skill: adaptedSkill.replace(/metadata:\n(?: {2}.*\n)+/, 'metadata: 42\n') }],
+    ['a missing author', { skill: adaptedSkill.replace('  author: someone-else\n', '') }],
+    ['an empty author', { skill: adaptedSkill.replace('author: someone-else', "author: ''") }],
+    ['a source that is a number', { skill: adaptedSkill.replace(`  source: ${SOURCE}\n`, '  source: 42\n') }],
+    ['a source that is a list', { skill: adaptedSkill.replace(`  source: ${SOURCE}\n`, `  source: [${SOURCE}]\n`) }],
+    ['a source that is a mapping', { skill: adaptedSkill.replace(`  source: ${SOURCE}\n`, `  source:\n    url: ${SOURCE}\n`) }],
+    ['a commit that is a number', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, '  commit: 123\n') }],
+    ['a commit that is a list', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, `  commit: [${SHA}]\n`) }],
+    ['a commit that is false', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, '  commit: false\n') }],
+    ['a commit that is empty', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, "  commit: ''\n") }],
+    ['a commit that is null', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, '  commit:\n') }],
+    ['a capitalised Commit key with a wrong value', { skill: adaptedSkill.replace(`  commit: ${SHA}\n`, '  Commit: wrong\n') }],
   ];
 
   it.each(ADAPTED_METADATA)('fails the metadata check with ADAPTED_POLICY and exit 1 for %s', (_label, spec) => {
@@ -1747,5 +1761,464 @@ describe('checkSkill: path arguments with traversal aliases or linked ancestors 
     expect(result.findings.find(f => f.code === 'INPUT_UNAVAILABLE')!.message).toContain('real path');
     expect(checkOf(result, 'frozen-corpus').status).toBe('unavailable');
     expect(result.corpus.sha256).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Independent review of skill-check (P13 fixes), end to end through checkSkill
+// ---------------------------------------------------------------------------------------------
+
+/** Records every path handed to a read-like fs call while `fn` runs; the spies are always restored. */
+function touchedBy<T>(fn: () => T): { value: T; touched: Array<[string, string]> } {
+  const touched: Array<[string, string]> = [];
+  const names = ['existsSync', 'statSync', 'lstatSync', 'readFileSync', 'readdirSync', 'openSync', 'accessSync', 'realpathSync', 'readlinkSync'] as const;
+  const spies = names.map(name => {
+    const original = fs[name] as (...args: unknown[]) => unknown;
+    return vi.spyOn(fs, name as 'existsSync').mockImplementation(((...args: unknown[]) => {
+      if (typeof args[0] === 'string') touched.push([name, path.resolve(args[0])]);
+      return original.apply(fs, args);
+    }) as never);
+  });
+  try {
+    return { value: fn(), touched };
+  } finally {
+    for (const spy of spies) spy.mockRestore();
+  }
+}
+
+/** A junction (a symbolic link where the platform has no junctions); false when the OS refuses to create one. */
+function makeLink(target: string, at: string): boolean {
+  try {
+    fs.symlinkSync(target, at, 'junction');
+    return true;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'EPERM' || code === 'EACCES') return false;
+    throw error;
+  }
+}
+
+describe('checkSkill: the adapted-source STUB rule counts only real supporting files (review 1)', () => {
+  const stubAdapted = NO_SUPPORT_STUB.replace('author: agents-united', 'author: someone-else').replace('  license: MIT\n', `  license: MIT\n  source: ${SOURCE}\n`);
+  /** Removes the two default supporting documents; evals/evals.json stays. */
+  const bare = { 'references/csv.md': null, 'examples/invoice.md': null };
+
+  it.each<[string, Record<string, string | null>]>([
+    ['the licence file and the evals only', { ...bare, LICENSE: LICENSE_TEXT }],
+    ['the licence file in another spelling', { ...bare, 'licence.txt': LICENSE_TEXT }],
+    ['an upper-case NOTICE.md', { ...bare, LICENSE: LICENSE_TEXT, 'NOTICE.md': 'Adapted from upstream; nothing more.\n' }],
+    ['a lower-case notice.md', { ...bare, LICENSE: LICENSE_TEXT, 'notice.md': 'Adapted from upstream; nothing more.\n' }],
+    ['a zero-byte supporting file', { ...bare, LICENSE: LICENSE_TEXT, 'extras/empty.txt': '' }],
+    ['no evals at all', { ...bare, 'evals/evals.json': null, LICENSE: LICENSE_TEXT }],
+  ])('reports STUB (exit 1) for a short adaptation whose only files are %s', (_label, support) => {
+    const result = run(build({ skill: stubAdapted, support }), { policy: ADAPTED });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    const quality = checkOf(result, 'frozen-corpus');
+    expect(quality.status).toBe('failed');
+    expect(has(quality.findings, 'STUB')).toBe(true);
+    expect(quality.measure).toMatchObject({ thirdParty: true, verdict: 'stub' });
+    expect(quality.findings.find(f => f.code === 'STUB')!.message).toContain('and 0 supporting files');
+  });
+
+  it('does not report STUB once the adaptation carries one real, non-empty supporting file', () => {
+    const result = run(build({ skill: stubAdapted, support: { ...bare, LICENSE: LICENSE_TEXT, 'references/notes.md': '# Notes\nA real supporting note.\n' } }), { policy: ADAPTED });
+    const quality = checkOf(result, 'frozen-corpus');
+    expect(quality.status).toBe('passed');
+    expect(quality.measure).toMatchObject({ thirdParty: true, verdict: 'ok' });
+  });
+
+  it('leaves the original policy as it was: evals/evals.json still counts as a supporting file there', () => {
+    const original = run(build({ skill: NO_SUPPORT_STUB, support: bare }));
+    const quality = checkOf(original, 'frozen-corpus');
+    expect(quality.status).toBe('passed');
+    expect(quality.measure).toMatchObject({ thirdParty: false, extraFiles: 1, verdict: 'ok' });
+  });
+});
+
+describe('checkSkill: a linked ancestor is refused whatever separators the path is written with (review 2)', () => {
+  it('refuses an --artifact written with forward, mixed or doubled separators (skipped when the OS refuses links)', ctx => {
+    const fx = build();
+    const linked = path.join(fx.root, 'linked-candidate');
+    if (!makeLink(path.dirname(fx.artifact), linked)) return ctx.skip();
+    const leaf = path.basename(fx.artifact);
+    const writings: Array<[string, string]> = [
+      ['forward slashes', `${linked}/${leaf}`.replace(/\\/g, '/')],
+      ['mixed separators', `${linked}/${leaf}`],
+      ['doubled separators', `${linked}${path.sep}${path.sep}${leaf}`],
+    ];
+    for (const [label, artifact] of writings) {
+      const result = run(fx, { artifact });
+      expect(result.status, label).toBe('failed');
+      expect(skillCheckExitCode(result), label).toBe(1);
+      expect(codes(result), label).toContain('PATH_UNSAFE');
+      expect(result.findings.find(f => f.code === 'PATH_UNSAFE')!.message, label).toContain('real path');
+      expect(result.checks.every(c => c.status === 'not-run'), label).toBe(true);
+      expect(result.candidateDigest, label).toBeNull();
+    }
+  });
+
+  it('refuses a --corpus written with forward, mixed or doubled separators (skipped when the OS refuses links)', ctx => {
+    const fx = build();
+    const linked = path.join(fx.root, 'linked-qa');
+    if (!makeLink(path.dirname(fx.corpus), linked)) return ctx.skip();
+    const leaf = path.basename(fx.corpus);
+    const writings: Array<[string, string]> = [
+      ['forward slashes', `${linked}/${leaf}`.replace(/\\/g, '/')],
+      ['mixed separators', `${linked}/${leaf}`],
+      ['doubled separators', `${linked}${path.sep}${path.sep}${leaf}`],
+    ];
+    for (const [label, corpus] of writings) {
+      const result = run(fx, { corpus });
+      expect(result.status, label).toBe('unavailable');
+      expect(skillCheckExitCode(result), label).toBe(2);
+      expect(codes(result), label).toContain('INPUT_UNAVAILABLE');
+      expect(result.findings.find(f => f.code === 'INPUT_UNAVAILABLE')!.message, label).toContain('real path');
+      expect(result.corpus.sha256, label).toBeNull();
+    }
+  });
+});
+
+describe('checkSkill: a link as the candidate folder itself, written with a trailing separator (review 3)', () => {
+  // On Windows a junction written with a trailing separator is still the junction to lstat (pinned below, with a real junction).
+  // On a POSIX host lstat(2) with a trailing slash resolves the link, so the folder path is cleaned of trailing separators
+  // before it is inspected; the POSIX case below runs with a real symbolic link wherever the platform can create one.
+  it('removes trailing separators of a path, never those of a bare root, and only the separators the platform has', () => {
+    const win = path.sep === '\\';
+    expect(withoutTrailingSeparators('/a/b')).toBe('/a/b');
+    expect(withoutTrailingSeparators('/a/b/')).toBe('/a/b');
+    expect(withoutTrailingSeparators('/a/b///')).toBe('/a/b');
+    expect(withoutTrailingSeparators('/')).toBe('/');
+    if (win) {
+      expect(withoutTrailingSeparators('C:\\a\\b\\')).toBe('C:\\a\\b');
+      expect(withoutTrailingSeparators('C:\\a\\b/')).toBe('C:\\a\\b');
+      expect(withoutTrailingSeparators('C:\\a\\b\\/\\')).toBe('C:\\a\\b');
+      expect(withoutTrailingSeparators('C:/a/b/')).toBe('C:/a/b');
+      expect(withoutTrailingSeparators('C:\\')).toBe('C:\\');
+      expect(withoutTrailingSeparators('C:/')).toBe('C:/');
+    } else {
+      expect(withoutTrailingSeparators('//')).toBe('/');
+      // A backslash is an ordinary character of a name here: it stays.
+      expect(withoutTrailingSeparators('/a/b\\')).toBe('/a/b\\');
+      expect(withoutTrailingSeparators('/a/b\\/')).toBe('/a/b\\');
+    }
+  });
+
+  it.skipIf(process.platform === 'win32')('refuses a symbolic link leaf written with one or several trailing slashes as PATH_UNSAFE (exit 1)', () => {
+    const fx = build();
+    const linked = path.join(fx.root, 'linked-skill');
+    fs.symlinkSync(fx.artifact, linked);
+    for (const artifact of [linked, `${linked}/`, `${linked}///`]) {
+      const result = run(fx, { artifact });
+      expect(result.status, artifact).toBe('failed');
+      expect(skillCheckExitCode(result), artifact).toBe(1);
+      expect(codes(result), artifact).toContain('PATH_UNSAFE');
+      expect(result.findings.find(f => f.code === 'PATH_UNSAFE')!.message, artifact).toContain('link');
+      expect(result.checks.every(c => c.status === 'not-run'), artifact).toBe(true);
+      expect(result.candidateDigest, artifact).toBeNull();
+    }
+  });
+
+  it('reports a --corpus written with a trailing separator as INPUT_UNAVAILABLE (exit 2) naming the separator', () => {
+    const fx = build();
+    const result = run(fx, { corpus: `${fx.corpus}${path.sep}` });
+    expect(result.status).toBe('unavailable');
+    expect(skillCheckExitCode(result)).toBe(2);
+    expect(result.findings.find(f => f.code === 'INPUT_UNAVAILABLE')!.message).toContain('separator');
+    expect(result.corpus.sha256).toBeNull();
+  });
+
+  it.skipIf(process.platform !== 'win32')('refuses a junction leaf written with a trailing backslash or slash as PATH_UNSAFE (exit 1)', ctx => {
+    const fx = build();
+    const linked = path.join(fx.root, 'linked-skill');
+    if (!makeLink(fx.artifact, linked)) return ctx.skip();
+    for (const artifact of [`${linked}\\`, `${linked}/`, `${linked.replace(/\\/g, '/')}/`]) {
+      const result = run(fx, { artifact });
+      expect(result.status, artifact).toBe('failed');
+      expect(skillCheckExitCode(result), artifact).toBe(1);
+      expect(codes(result), artifact).toContain('PATH_UNSAFE');
+      expect(result.checks.every(c => c.status === 'not-run'), artifact).toBe(true);
+      expect(result.candidateDigest, artifact).toBeNull();
+    }
+  });
+});
+
+describe('checkSkill: a SKILL.md link that hides a .. behind a > (review 4)', () => {
+  const hiding = [
+    'references/>/../../../outside-marker.md',
+    'references/a>b/../../../outside-marker.md',
+    'references/<x>/../../../outside-marker.md',
+    'examples/>/../../../outside-marker.md',
+  ];
+  const withLink = (target: string): Spec => ({ skill: mutate(invoiceSkill, 'Quote CSV cells', `See [x](${target}) as well.\nQuote CSV cells`) });
+
+  it.each(hiding)('reports ](%s) as PATH_UNSAFE before any gate runs, whether or not the outside file exists', target => {
+    const fx = build(withLink(target));
+    const without = run(fx);
+    fs.writeFileSync(path.join(path.dirname(fx.artifact), 'outside-marker.md'), '# Outside the candidate\n');
+    const withFile = run(fx);
+    expect(withFile).toEqual(without);
+    expect(without.status).toBe('failed');
+    expect(codes(without)).toEqual(['PATH_UNSAFE']);
+    expect(without.findings[0]!.path).toBe('SKILL.md');
+    expect(without.checks.every(c => c.status === 'not-run' && c.findings.length === 0)).toBe(true);
+  });
+
+  it('touches no path outside the candidate folder and the corpus except the ancestor lstat walk', () => {
+    const fx = build(withLink('references/>/../../../outside-marker.md'));
+    fs.writeFileSync(path.join(path.dirname(fx.artifact), 'outside-marker.md'), '# Outside the candidate\n');
+    const { value: result, touched } = touchedBy(() => checkSkill(input(fx)));
+    expect(codes(result)).toEqual(['PATH_UNSAFE']);
+    const allowed = (touch: [string, string]): boolean => touch[1] === fx.artifact
+      || touch[1].startsWith(`${fx.artifact}${path.sep}`)
+      || touch[1] === fx.corpus
+      || (touch[0] === 'lstatSync' && (isAncestorFolder(touch[1], fx.artifact) || isAncestorFolder(touch[1], fx.corpus)));
+    expect(touched.filter(touch => !allowed(touch))).toEqual([]);
+  });
+});
+
+describe('checkSkill: metadata.source of an adaptation is a URL whose path pins the commit (review 5)', () => {
+  const sourceCases: Array<[string, string]> = [
+    ['an http URL', `http://github.com/example/skills/tree/${SHA}/skills/demo`],
+    ['an http URL that mentions https:// later on', `http://evil.example/repo/${SHA}?next=https://x`],
+    ['a URL with user-info', `https://user:secret@github.com/example/skills/tree/${SHA}`],
+    ['a URL with a user name only', `https://user@github.com/example/skills/tree/${SHA}`],
+    ['an https text that is not a URL', `see https://x and ${SHA}`],
+    ['a URL carrying whitespace', `https://github.com/example/skills/tree/${SHA} /skills/demo`],
+    ['the percent-encoded project repository', `https://github.com/NeoAnthropocene%2Fagents-united/tree/${SHA}`],
+    ['the project repository, lower-case percent escape and other case', `https://github.com/neoanthropocene%2fAgents-United/tree/${SHA}`],
+    ['the project repository, percent-encoded twice', `https://github.com/NeoAnthropocene%252Fagents-united/tree/${SHA}`],
+    ['the project repository behind a doubled slash', `https://github.com/NeoAnthropocene//agents-united/tree/${SHA}`],
+    ['a 40-hex run glued to other characters in a segment', `https://example.com/skills/${SHA}-not-a-commit/SKILL.md`],
+    ['a 40-hex run in the query', `https://example.com/repo?id=${SHA}`],
+    ['a 40-hex run in the fragment', `https://example.com/repo#${SHA}`],
+    ['a 40-hex run with a file extension', `https://example.com/archive/${SHA}.zip`],
+    ['a longer hexadecimal run', `https://example.com/repo/tree/${SHA}0/skills`],
+  ];
+
+  it.each(sourceCases)('fails the metadata check with ADAPTED_POLICY (exit 1) for %s', (_label, source) => {
+    const result = run(build({ skill: adaptedSkill.replace(SOURCE, () => source), support: { LICENSE: LICENSE_TEXT } }), { policy: ADAPTED });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(checkOf(result, 'metadata').status).toBe('failed');
+    expect(has(checkOf(result, 'metadata').findings, 'ADAPTED_POLICY')).toBe(true);
+  });
+
+  it.each([
+    ['a tree URL', SOURCE],
+    ['a commit URL', `https://github.com/example/skills/commit/${SHA}`],
+    ['a URL whose last segment is the commit', `https://example.org/archive/${SHA}`],
+    ['a URL with a trailing slash and an upper-case host', `https://GitHub.com/example/skills/tree/${SHA}/`],
+    ['a URL with a port and a query after the commit segment', `https://git.example.org:8443/a/b/tree/${SHA}/x?plain=1#L10`],
+  ])('keeps passing the metadata check for %s', (_label, source) => {
+    const result = run(build({ skill: adaptedSkill.replace(SOURCE, () => source), support: { LICENSE: LICENSE_TEXT } }), { policy: ADAPTED });
+    expect(checkOf(result, 'metadata').status).toBe('passed');
+    expect(checkOf(result, 'licence').status).toBe('passed');
+    expect(result.status).toBe('passed');
+  });
+});
+
+describe('checkSkill: NOTICE.md must name the pinned SHA and the licence as whole tokens outside comments (review 6)', () => {
+  const apache = adaptedSkill.replace('license: MIT', 'license: Apache-2.0');
+  const notices: Array<[string, string]> = [
+    ['an HTML comment holding both', `<!-- ${SHA} Apache-2.0 -->\n`],
+    ['an unterminated HTML comment holding both', `Changes follow.\n<!-- ${SHA} Apache-2.0\n`],
+    ['a longer licence name that contains the right one', `Adapted under Apache-2.0-with-LLVM-exception from ${SHA}.\n`],
+    ['a longer hexadecimal run that contains the SHA', `Adapted under Apache-2.0 from sha256:${SHA}000000000000000000000000.\n`],
+    ['a longer hexadecimal run in front of the SHA', `Adapted under Apache-2.0 from 0${SHA}.\n`],
+  ];
+
+  it.each(notices)('fails the licence check with LICENCE (exit 1) for %s', (_label, notice) => {
+    const result = run(build({ skill: apache, support: { LICENSE: 'Apache License\nVersion 2.0\n', 'NOTICE.md': notice } }), { policy: ADAPTED });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(checkOf(result, 'licence').status).toBe('failed');
+    expect(has(checkOf(result, 'licence').findings, 'LICENCE')).toBe(true);
+  });
+
+  it('passes when the tokens stand in visible text, even next to a comment', () => {
+    const notice = `<!-- reviewer note -->\nAdapted from ${SHA}, licensed (Apache-2.0).\n`;
+    const result = run(build({ skill: apache, support: { LICENSE: 'Apache License\nVersion 2.0\n', 'NOTICE.md': notice } }), { policy: ADAPTED });
+    expect(result.status).toBe('passed');
+  });
+});
+
+describe('checkSkill: front matter and evals whose values are objects, numbers or carry a toString key (review 7)', () => {
+  const DESCRIPTION_LINE = "description: 'Use when one supplied invoice must become an action CSV; trigger phrases: invoice action row, export invoice CSV. Skip payment execution, invoice discovery, and requests to infer missing purchase-order details.'";
+  const noneRaised = (result: SkillCheckResult): void => {
+    expect(result.findings.filter(f => f.message.includes('raised'))).toEqual([]);
+    expect(result.findings.filter(f => f.message.includes('internal error'))).toEqual([]);
+  };
+
+  it('keeps every finding next to a description that is an object with a toString key', () => {
+    const fx = build({ skill: mutate(mutate(invoiceSkill, DESCRIPTION_LINE, 'description:\n  toString: x'), `name: ${NAME}\n`, `name: ${NAME}\nbogus-key: true\n`) });
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    noneRaised(result);
+    const layout = checkOf(result, 'layout');
+    expect(layout.status).toBe('failed');
+    expect(layout.findings.some(f => f.message.includes('bogus-key'))).toBe(true);
+    expect(layout.findings.some(f => f.message.includes('must lead with the key use case'))).toBe(true);
+    expect(checkOf(result, 'contract').findings.some(f => f.message.includes('description must be 40 to 1,024 characters'))).toBe(true);
+  });
+
+  it.each([
+    ['an object with a toString key', 'name:\n  toString: x'],
+    ['a number', 'name: 42'],
+    ['a list', 'name: [a, b]'],
+    ['a mapping', 'name:\n  a: b'],
+  ])('keeps the findings of every gate next to a name that is %s', (_label, nameLines) => {
+    const fx = build({ skill: mutate(invoiceSkill, `name: ${NAME}`, nameLines) });
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    noneRaised(result);
+    expect(checkOf(result, 'contract').findings.some(f => f.message.includes('front matter name is'))).toBe(true);
+  });
+
+  it('turns an eval with object, numeric or toString values into layout findings', () => {
+    const evals = JSON.stringify({
+      skill_name: { toString: 'x' },
+      evals: [
+        { id: { toString: 'x' }, prompt: 123, expected_output: 456 },
+        { id: 2, prompt: Array.from({ length: 60 }, () => 'a'), expected_output: { toString: 'x', padding: 'long enough to look like an expected output of forty characters' } },
+      ],
+    });
+    const result = run(build({ support: { 'evals/evals.json': evals } }));
+    expect(result.status).toBe('failed');
+    noneRaised(result);
+    const layout = checkOf(result, 'layout').findings.map(f => f.message);
+    expect(layout.some(m => m.includes('prompt is not a string'))).toBe(true);
+    expect(layout.some(m => m.includes('expected_output is not a string'))).toBe(true);
+  });
+
+  it('holds under the two new policies as well', () => {
+    for (const [policy, skill] of [
+      [PRIVATE, mutate(privateSkill, DESCRIPTION_LINE, 'description:\n  toString: x')],
+      [ADAPTED, mutate(adaptedSkill, DESCRIPTION_LINE, 'description:\n  toString: x')],
+    ] as const) {
+      const result = run(build({ skill, support: { LICENSE: LICENSE_TEXT } }), { policy });
+      expect(result.status).toBe('failed');
+      noneRaised(result);
+    }
+  });
+});
+
+describe('checkSkill: the author rule of adapted-source tests the rule itself (review 8)', () => {
+  it.each([
+    ['agents-united', 'author: agents-united'],
+    ['mixed case and spacing', 'author: "  Agents-United "'],
+    ['upper case', 'author: AGENTS-UNITED'],
+  ])('names agents-united-original when the declared author is %s, with source and commit in place', (_label, authorLine) => {
+    const skill = adaptedSkill.replace('author: someone-else', authorLine);
+    expect(skill).toContain(`source: ${SOURCE}`);
+    const result = run(build({ skill, support: { LICENSE: LICENSE_TEXT } }), { policy: ADAPTED });
+    expect(result.status).toBe('failed');
+    const findings = checkOf(result, 'metadata').findings;
+    expect(findings).toHaveLength(1);
+    expect(findings[0]!.code).toBe('ADAPTED_POLICY');
+    expect(findings[0]!.message).toContain('agents-united-original');
+  });
+});
+
+describe('checkSkill: the licence is trimmed once in the policy licence lint (review 9)', () => {
+  it('treats "MIT " as MIT under adapted-source: the licence file alone is enough', () => {
+    const result = run(build({ skill: adaptedSkill.replace('license: MIT', 'license: "MIT "'), support: { LICENSE: LICENSE_TEXT } }), { policy: ADAPTED });
+    expect(result.status).toBe('passed');
+    expect(checkOf(result, 'licence').status).toBe('passed');
+  });
+
+  it('treats " Apache-2.0 " as Apache-2.0: the NOTICE.md must name it', () => {
+    const skill = adaptedSkill.replace('license: MIT', 'license: " Apache-2.0 "');
+    const good = run(build({ skill, support: { LICENSE: 'Apache License\nVersion 2.0\n', 'NOTICE.md': NOTICE_TEXT } }), { policy: ADAPTED });
+    expect(good.status).toBe('passed');
+    const bad = run(build({ skill, support: { LICENSE: 'Apache License\nVersion 2.0\n', 'NOTICE.md': 'Nothing pinned here.\n' } }), { policy: ADAPTED });
+    expect(bad.status).toBe('failed');
+    expect(checkOf(bad, 'licence').findings.some(f => f.message.includes('does not name the licence identifier "Apache-2.0"'))).toBe(true);
+  });
+});
+
+describe('checkSkill: a top-level notice.md in any case cannot satisfy the contract gate (review 10)', () => {
+  const withoutSubstance = (text: string): string => text
+    .replace(/worked example/gi, 'illustrated run')
+    .replace(/anti-patterns?/gi, 'failure mode')
+    .replace(/\bevidence\b/gi, 'records')
+    .replace(/handoff/gi, 'delivery')
+    .replace(/\bhand off\b/gi, 'deliver');
+  const prose = 'Notices only.\n\nThis file shows a worked example, names anti-patterns, lists the evidence to produce and ends with a handoff to a reviewer.\n';
+
+  it.each<[string, string, string, Record<string, string>]>([
+    ['notice.md', PRIVATE, privateSkill, {}],
+    ['Notice.md', PRIVATE, privateSkill, {}],
+    ['notice.md', ADAPTED, adaptedSkill, { LICENSE: LICENSE_TEXT }],
+    ['NoTiCe.md', ADAPTED, adaptedSkill, { LICENSE: LICENSE_TEXT }],
+  ])('leaves %s out of the text the contract gate reads under %s', (noticeName, policy, base, extra) => {
+    const result = run(build({
+      skill: withoutSubstance(base),
+      support: {
+        'references/csv.md': withoutSubstance(invoiceSupport['references/csv.md']!),
+        'examples/invoice.md': withoutSubstance(invoiceSupport['examples/invoice.md']!),
+        ...extra,
+        [noticeName]: prose,
+      },
+    }), { policy });
+    expect(result.status).toBe('failed');
+    const contract = checkOf(result, 'contract');
+    expect(contract.status).toBe('failed');
+    expect(contract.findings.some(f => f.message.includes('no "worked example"'))).toBe(true);
+    expect(contract.findings.some(f => f.message.includes('no hand-off to a teammate'))).toBe(true);
+  });
+});
+
+describe('checkSkill: DEL and C1 control characters in an entry name (review 11)', () => {
+  it('refuses DEL and every C1 control character as a pure function, and keeps near neighbours portable', () => {
+    for (const refused of ['a\u007fb.md', '\u007f', 'a\u0080b.md', 'a\u0085b.md', 'a\u009fb.md']) {
+      expect(unsafeEntryName(refused), JSON.stringify(refused)).not.toBeNull();
+    }
+    for (const portable of ['a b.md', 'café.md', 'aé.md', 'Ā.md']) {
+      expect(unsafeEntryName(portable), JSON.stringify(portable)).toBeNull();
+    }
+  });
+
+  it('refuses a file named with DEL as PATH_UNSAFE with exit 1 (skipped when the host refuses the name)', ctx => {
+    const fx = build();
+    const relative = 'extras/a\u007fb.md';
+    try {
+      fs.mkdirSync(path.dirname(path.join(fx.artifact, relative)), { recursive: true });
+      fs.writeFileSync(path.join(fx.artifact, relative), 'content\n');
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'EPERM' || code === 'EACCES' || code === 'EINVAL' || code === 'ENOENT') return ctx.skip();
+      throw error;
+    }
+    if (fs.lstatSync(path.join(fx.artifact, relative), { throwIfNoEntry: false }) === undefined) return ctx.skip();
+    const result = run(fx);
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(result.findings.some(f => f.code === 'PATH_UNSAFE')).toBe(true);
+    expect(result.checks.every(c => c.status === 'not-run')).toBe(true);
+  });
+});
+
+describe('checkSkill: upstream keys of metadata in any letter case (review 12)', () => {
+  const withKey = (line: string): Spec => ({ skill: mutate(privateSkill, "  version: '1.0.0'\n", `  version: '1.0.0'\n  ${line}\n`) });
+
+  it.each([
+    ['a capitalised Source', 'Source: https://example.com/upstream'],
+    ['a false source', 'source: false'],
+    ['an empty source', "source: ''"],
+    ['a null source', 'source:'],
+    ['a false adaptedFrom', 'adaptedFrom: false'],
+    ['an upper-case ADAPTEDFROM', 'ADAPTEDFROM: x'],
+    ['a lower-case adaptedfrom', "adaptedfrom: ''"],
+    ['an empty commit', "commit: ''"],
+    ['a false commit', 'commit: false'],
+    ['a capitalised Commit', 'Commit: abc'],
+  ])('fails the metadata check with PRIVATE_POLICY and exit 1 for %s', (_label, line) => {
+    const result = run(build(withKey(line)), { policy: PRIVATE });
+    expect(result.status).toBe('failed');
+    expect(skillCheckExitCode(result)).toBe(1);
+    expect(has(checkOf(result, 'metadata').findings, 'PRIVATE_POLICY')).toBe(true);
   });
 });

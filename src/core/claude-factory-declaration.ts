@@ -15,15 +15,25 @@ export const FACTORY_BINDINGS = [
   { skill: 'coordinate-artifact', file: 'hosts/claude/agent-factory-coordinate.binding.json', root: '.claude/skills/coordinate-artifact' },
 ] as const;
 export type FactoryEntry = typeof FACTORY_BINDINGS[number];
-/** Maps each factory worker Skill to the role name and reviewed posture its closure derives; wiring resolves by these names, never by list position. */
+/**
+ * Maps each factory worker Skill to the role name and reviewed posture its closure derives; wiring resolves by these names, never by list position.
+ * `capabilities` are the semantic-core classes the worker must have, checked in the binder `when` the coordinator is part of the install
+ * (`coordinated`) or `always`; `capabilityRefusal` is the existing refusal text for that check.
+ */
 export const FACTORY_WORKERS = [
   { skill: 'realize-artifact', role: 'factory-realizer', definition: 'subagent-realize-for-host', guard: 'destructive',
     requiredInstalled: ['.claude/skills/author-skill/references/skill-attribution.md'], hooks: [{ id: 'reject-destructive-operations', kind: 'destructive' }],
-    grant: ['Bash', 'Edit', 'NotebookEdit', 'PowerShell', 'Skill', 'SubagentHandback', 'Write'] },
+    grant: ['Bash', 'Edit', 'NotebookEdit', 'PowerShell', 'Skill', 'SubagentHandback', 'Write'],
+    capabilities: ['edit', 'handback', 'read', 'report', 'search', 'shell', 'skill'], capabilitiesWhen: 'coordinated',
+    capabilityRefusal: 'coordinate-artifact worker realizer capabilities differ' },
   { skill: 'evaluate-artifact', role: 'factory-evaluator', definition: 'subagent-factory-evaluator', guard: 'read-only',
-    requiredInstalled: [], hooks: [{ id: 'reject-mutating-tools', kind: 'read-only' }], grant: ['SubagentHandback'] },
+    requiredInstalled: [], hooks: [{ id: 'reject-mutating-tools', kind: 'read-only' }], grant: ['SubagentHandback'],
+    capabilities: ['handback', 'read', 'report', 'search'], capabilitiesWhen: 'always',
+    capabilityRefusal: 'evaluator capabilities must retain exactly the reviewed read/search/report/handback classes' },
   { skill: 'sync-host', role: 'factory-sync', definition: 'subagent-host-update-sync', guard: 'read-only',
-    requiredInstalled: [], hooks: [{ id: 'reject-mutating-tools', kind: 'read-only' }], grant: ['SubagentHandback'] },
+    requiredInstalled: [], hooks: [{ id: 'reject-mutating-tools', kind: 'read-only' }], grant: ['SubagentHandback'],
+    capabilities: ['handback', 'read', 'report', 'search'], capabilitiesWhen: 'always',
+    capabilityRefusal: 'sync capabilities must retain exactly the reviewed read/search/report/handback classes' },
 ] as const;
 export type FactoryWorker = typeof FACTORY_WORKERS[number];
 
@@ -177,6 +187,8 @@ export function assertClaudeFactoryWorkerBinding(worker: ClaudeFactoryBinding, d
       const { definition: expectedDefinition, guard: expectedGuard } = factoryWorkerByRole(name);
       if (!isDeepStrictEqual(worker.roles, [{ name, definition: expectedDefinition, contract: `core/${expectedDefinition}.contract.json`,
         source: `hosts/claude/agents/${name}.md`, installed: `.claude/agents/${name}.md`, loading: 'subagent', skills: [dependency.skill], guard: expectedGuard }])) fail(`coordinate-artifact required worker ${name} binding differs`);
+      // The worker found by Skill and the one found by role name must be one table row.
+      if (bySkill !== factoryWorkerByRole(name)) fail(`coordinate-artifact worker ${name} does not belong to skill ${dependency.skill}`);
 }
 
 /** Validate the one exact reviewed main-only scope before comparing its base class. */
@@ -234,5 +246,10 @@ export function assertClaudeFactoryRoleMechanics(text: string, name: string, ski
     : [...base, ...factoryWorkerByRole(name).grant];
   if (!isDeepStrictEqual([...tools].sort(), expected.sort())) mechanicsFail(`critical tool grant differs for ${name}`);
   if (!isDeepStrictEqual(facts.meta.hooks, destructive ? nativeGuardFileHooks() : readOnlyGuardFileHooks())) mechanicsFail(`critical guard registration differs for ${name}`);
+  // The caller's Skill and guard class must be the table's for a worker role; the coordinator main is not a table worker.
+  if (name !== 'orchestrator-agent-factory') {
+    const worker = factoryWorkerByRole(name);
+    if (skill !== worker.skill || destructive !== (worker.guard === 'destructive')) mechanicsFail(`critical role binding differs for ${name}`);
+  }
 }
 

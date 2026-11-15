@@ -72,10 +72,9 @@ describe('installed factory main selection through public resolve and plan', () 
     const runtime = path.join(fixture.root, 'runtime');
     await fs.copy(path.resolve('dist'), path.join(runtime, 'dist'));
     const builtCli = path.join(runtime, 'dist/cli.js');
-    await fs.writeFile(builtCli, (await fs.readFile(builtCli, 'utf8')).replace(
-      /"assets\/skill-return\.schema\.json"\r?\n\];/,
-      COORDINATOR_SUPPORT.slice(10).map(rel => `  ${JSON.stringify(rel)}`).join(',\n').trimStart() + '\n];',
-    ));
+    // A stale dist/ fails here, loudly, instead of being patched into shape.
+    const builtSource = await fs.readFile(builtCli, 'utf8');
+    for (const rel of COORDINATOR_SUPPORT) expect(builtSource, `dist/cli.js is stale: run npm run build (missing ${rel})`).toContain(JSON.stringify(rel));
     await fs.symlink(path.resolve('node_modules'), path.join(runtime, 'node_modules'), 'junction');
     await fs.remove(fixture.registry);
     const result = spawnSync(process.execPath, [builtCli, 'start', 'agent-factory', '--host', 'claude', '--dry-run'], {

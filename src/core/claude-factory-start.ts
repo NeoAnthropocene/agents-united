@@ -86,7 +86,7 @@ export function readClaudeFactoryMain(workspace: string): ClaudeFactoryMainSelec
         if (script !== (role.guard === 'destructive' ? GUARD_SCRIPT : READ_ONLY_GUARD_SCRIPT).trimEnd()) fail(`critical guard bytes differ ${guard.rel}`);
       }
       // Coordinator edges are checked by the three fixed worker entries in this loop.
-      if (entry.skill === 'realize-artifact') for (const rel of binding.requiredInstalled) read(rel, 'rule', true);
+      if (entry.skill !== 'coordinate-artifact') for (const rel of factoryWorkerBySkill(entry.skill).requiredInstalled) read(rel, 'rule', true);
     }
     return { kind: 'factory-native', name: MAIN, installed: ROLE, receipt: RECEIPT,
       checked: [...checked].sort(([a], [b]) => a.localeCompare(b)).map(([file, hash]) => ({ path: file, hash })) };
@@ -107,6 +107,7 @@ export function assertClaudeFactorySelection(selection: ClaudeFactoryMainSelecti
     return [`.claude/agents/${name}.md`, `${entry.root}/SKILL.md`, `${entry.root}/assets/claude-binding.json`,
       ...support.map(rel => `${entry.root}/${rel}`), ...COORDINATOR_RULES.map(rule => `${entry.root}/references/rules/${rule}`)];
   });
-  paths.push(NATIVE_GUARD_FILES.destructive.rel, NATIVE_GUARD_FILES['read-only'].rel, '.claude/skills/author-skill/references/skill-attribution.md');
+  paths.push(NATIVE_GUARD_FILES.destructive.rel, NATIVE_GUARD_FILES['read-only'].rel,
+    ...FACTORY_CHECK_ORDER.filter(skill => skill !== 'coordinate-artifact').flatMap(skill => factoryWorkerBySkill(skill).requiredInstalled));
   if (!isDeepStrictEqual(selection!.checked.map(item => item.path).sort(), [...new Set(paths)].sort())) fail('matching complete installed closure inventory is required');
 }

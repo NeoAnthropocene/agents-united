@@ -8,7 +8,7 @@
       "domain": "contributor",
       "category": "Developers only: contribute to Agents United",
       "status": "under-construction",
-      "description": "Contributor Skill/shared-contract authoring, reviewable Bundle proposals, bounded Claude agent drafts and read-only evaluator opinions with caller-checked records. Claude Code CLI workspace native installs only; orchestration, actual invocation and evaluator usefulness remain unverified.",
+      "description": "Contributor Skill/shared-contract authoring, reviewable Bundle proposals, bounded Claude agent drafts, read-only evaluator opinions and read-only host-update sync planning with caller-checked records. Claude Code CLI workspace native installs only; orchestration, actual invocation and evaluator and sync usefulness remain unverified.",
       "agents": [],
       "skills": [
         "author-skill",

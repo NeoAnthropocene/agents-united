@@ -15,9 +15,9 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import YAML from 'yaml';
 import { validateRewrittenSkill } from './skill-contract.js';
-import { checkSkillLayout, supportingText } from './skill-layout.js';
+import { checkSkillLayout, plainText, supportLinkTargets, supportingText } from './skill-layout.js';
 import { lintSkillPortability } from './skill-portability-lint.js';
-import { lintSkillLicence, lintSkillPolicyLicence } from './skill-licence-lint.js';
+import { lintSkillLicence, lintSkillPolicyLicence, parseSource } from './skill-licence-lint.js';
 import { STUB_MAX_LINES, TEMPLATED_THRESHOLD, measureSkill, verdictOf } from './skill-quality.js';
 import type {
   SkillCheckCheckId, SkillCheckCode, SkillCheckFinding, SkillCheckGate, SkillCheckInput, SkillCheckInventoryItem,
@@ -186,6 +186,24 @@ function finish(draft: Draft): SkillCheckResult {
 // ---------------------------------------------------------------------------------------------
 
 /**
+ * Every separator the platform accepts in a path: both `\` and `/` on Windows (a path written with forward or mixed slashes names the
+ * same folder), only `/` elsewhere, where a backslash is an ordinary character of a name.
+ */
+const PATH_SEPARATORS = path.sep === '\\' ? /[\\/]+/ : /\/+/;
+const isPathSeparator = (char: string | undefined): boolean => char === '/' || (path.sep === '\\' && char === '\\');
+
+/**
+ * The path without its trailing separators, never cutting into a bare root (`/`, `C:\`). lstat(2) on a POSIX host resolves a
+ * symbolic link written with a trailing slash, so the leaf is inspected under its own name: a link is then seen as a link.
+ */
+export function withoutTrailingSeparators(value: string): string {
+  const rootLength = path.parse(value).root.length;
+  let end = value.length;
+  while (end > rootLength && isPathSeparator(value[end - 1])) end -= 1;
+  return value.slice(0, end);
+}
+
+/**
  * The linked-ancestor walk of the two registry checker scripts (review finding F13): `absolute()` in
  * registry/skills/evaluate-artifact/scripts/check-review.mjs:27-36 and check-skill-return.mjs:49-60 lstat every
  * component from the root down, so a link (symbolic link or junction) on the way to a pinned input is refused.
@@ -194,7 +212,7 @@ function finish(draft: Draft): SkillCheckResult {
  */
 function linkedAncestorOf(leaf: string): string | null {
   let current = path.parse(leaf).root;
-  const parts = leaf.slice(current.length).split(path.sep).filter(part => part !== '');
+  const parts = leaf.slice(current.length).split(PATH_SEPARATORS).filter(part => part !== '');
   for (const part of parts.slice(0, -1)) {
     current = path.join(current, part);
     let stat: fs.Stats | undefined;
@@ -221,12 +239,12 @@ const hasTraversalAlias = (value: string): boolean => value.split(/[\\/]/).some(
  * Exported as the pure form of the rule, so a host whose file system refuses such a name on disk cannot leave the
  * rule itself untested (the two disk cases in tests/skill-check.test.ts skip on such a host).
  */
-const UNSAFE_NAME_CHARS = /[<>:"\\|?*\u0000-\u001f]/;
+const UNSAFE_NAME_CHARS = /[<>:"\\|?*\u0000-\u001f\u007f-\u009f]/;
 const TRAILING_DOT_OR_SPACE = /[. ]$/;
 const WINDOWS_RESERVED_DEVICE_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
 
 export function unsafeEntryName(name: string): string | null {
-  if (UNSAFE_NAME_CHARS.test(name)) return 'contains one of < > : " \\ | ? * or a control character';
+  if (UNSAFE_NAME_CHARS.test(name)) return 'contains one of < > : " \\ | ? * or a control character (U+0000 to U+001F, DEL, U+0080 to U+009F)';
   if (TRAILING_DOT_OR_SPACE.test(name)) return 'ends with a dot or a space';
   if (WINDOWS_RESERVED_DEVICE_NAME.test(name)) return 'is a Windows reserved device name (CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9)';
   return null;
@@ -255,6 +273,10 @@ type CorpusOutcome =
 function readCorpus(file: string): CorpusOutcome {
   let fd: number | undefined;
   try {
+    // A path that ends in a separator names a folder, never the corpus file (and some hosts would follow a link written that way): refused before any lstat.
+    if (isPathSeparator(file[file.length - 1])) {
+      return { kind: 'unavailable', finding: finding('INPUT_UNAVAILABLE', null, `The frozen corpus path ends with a path separator, so it does not name a file; pass the real path of the corpus file: ${file}`) };
+    }
     // Review finding F13: a corpus reached through a link or junction is not the pinned file; the real path is the only accepted form.
     const linkedAncestor = linkedAncestorOf(file);
     if (linkedAncestor !== null) {
@@ -303,7 +325,9 @@ const byPath = (a: { path: string }, b: { path: string }): number => (a.path < b
  * Walks the candidate with lstat only (nothing is read or followed until the whole tree passed the link, case,
  * special-file and size checks), then reads every file once. Never truncates to meet a bound.
  */
-function takeInventory(root: string): InventoryOutcome {
+function takeInventory(given: string): InventoryOutcome {
+  // The folder is inspected under its own name, before the ancestor walk or any lstat (see withoutTrailingSeparators).
+  const root = withoutTrailingSeparators(given);
   // Review finding F13: the real path of the candidate folder is the only accepted form, as with the corpus above.
   const linkedAncestor = linkedAncestorOf(root);
   if (linkedAncestor !== null) {
@@ -363,7 +387,7 @@ function takeInventory(root: string): InventoryOutcome {
       // beyond its name, so nothing under a reserved or unportable name is listed or read.
       const unsafeName = unsafeEntryName(name);
       if (unsafeName !== null) {
-        problems.push(finding('PATH_UNSAFE', relPath, `${relPath} ${unsafeName}; the checker scripts of evaluate-artifact and coordinate-artifact refuse such a name, and so does this inventory.`));
+        problems.push(finding('PATH_UNSAFE', relPath, `${relPath} ${unsafeName}; the checker scripts of evaluate-artifact and coordinate-artifact refuse such a name, and so does this inventory (which also refuses DEL and the C1 controls).`));
         continue;
       }
       const full = path.join(abs, name);
@@ -439,8 +463,8 @@ const MAX_ESCAPING_LINKS = 32;
 /** The target of a markdown inline link: `](target)`, `](target "title")`, `](<target>)`. */
 const LINK_TARGET = /\]\(\s*<?([^)\s>]*)/g;
 
-function leavesFolder(raw: string): boolean {
-  const slashed = raw.replace(/[?#].*$/, '').replace(/\\/g, '/');
+function leavesFolder(raw: string, keepQuery = false): boolean {
+  const slashed = (keepQuery ? raw : raw.replace(/[?#].*$/, '')).replace(/\\/g, '/');
   // Only the targets the layout gate looks up (it matches a support folder prefix) matter; sibling-skill links, absolute paths,
   // drive letters and URLs are never looked up by anything here, so they are not this check's business.
   if (!/^(?:examples|references|assets|scripts)\//.test(slashed)) return false;
@@ -458,6 +482,12 @@ function escapingLinks(skillText: string): string[] {
   for (const match of skillText.matchAll(LINK_TARGET)) {
     if (leavesFolder(match[1]!)) found.add(match[1]!);
     if (found.size >= MAX_ESCAPING_LINKS) break;
+  }
+  // The targets the layout gate itself looks up, read with its own pattern: a character the pattern above stops at (a `>`, say)
+  // cannot hide a `..` from this check while the gate still sees it. The query part is kept: a `?` is an ordinary character there.
+  for (const target of supportLinkTargets(skillText)) {
+    if (found.size >= MAX_ESCAPING_LINKS) break;
+    if (leavesFolder(target, true)) found.add(target);
   }
   return [...found];
 }
@@ -501,6 +531,10 @@ function parseSkill(raw: string): Parsed | string {
 
 const present = (value: unknown): boolean => value !== undefined && value !== null && value !== '' && value !== false;
 
+/** The own keys of a metadata mapping that spell `name` in any letter case, ignoring surrounding whitespace. */
+const keysNamed = (md: Record<string, unknown>, name: string): string[] => Object.keys(md).filter(key => key.trim().toLowerCase() === name.toLowerCase());
+const hasKey = (md: Record<string, unknown>, name: string): boolean => keysNamed(md, name).length > 0;
+
 /** ADR 0052: an original Agents United Skill names its author, carries a version and a licence, and declares no upstream. */
 function originalPolicyFindings(meta: Record<string, unknown>): SkillCheckFinding[] {
   const out: SkillCheckFinding[] = [];
@@ -535,14 +569,38 @@ function privatePolicyFindings(meta: Record<string, unknown>): SkillCheckFinding
   const version = md.version;
   if (!((typeof version === 'string' && version.trim() !== '') || (typeof version === 'number' && Number.isFinite(version)))) problem('metadata.version is missing.');
   if (typeof md.license !== 'string' || md.license.trim() === '') problem('metadata.license is missing.');
-  if (present(md.source)) problem('A privately owned Skill declares no metadata.source (an upstream makes it an adaptation, which is the adapted-source policy).');
-  if (present(md.adaptedFrom)) problem('A privately owned Skill declares no metadata.adaptedFrom (an upstream makes it an adaptation, which is the adapted-source policy).');
-  if (present(md.commit)) problem('A privately owned Skill declares no metadata.commit (a pinned upstream commit makes it an adaptation, which is the adapted-source policy).');
+  // The key itself is the declaration: in any letter case, and whatever it holds (false, an empty string and null included).
+  if (hasKey(md, 'source')) problem('A privately owned Skill declares no metadata.source (an upstream makes it an adaptation, which is the adapted-source policy).');
+  if (hasKey(md, 'adaptedFrom')) problem('A privately owned Skill declares no metadata.adaptedFrom (an upstream makes it an adaptation, which is the adapted-source policy).');
+  if (hasKey(md, 'commit')) problem('A privately owned Skill declares no metadata.commit (a pinned upstream commit makes it an adaptation, which is the adapted-source policy).');
   return out;
 }
 
-/** A 40-character lowercase hexadecimal commit SHA, the same form `lintSkillPolicyLicence` looks for inside `metadata.source`. */
-const COMMIT_SHA_40 = /\b[0-9a-f]{40}\b/;
+/**
+ * True when the path of a source URL names this repository (NeoAnthropocene/agents-united), whatever the letter case, however many
+ * times its slash is percent-encoded and however many slashes separate the two names. Decoding stops after four rounds.
+ */
+function namesThisRepository(url: URL): boolean {
+  let text = url.pathname;
+  for (let round = 0; round < 4; round += 1) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(text);
+    } catch {
+      break;
+    }
+    if (decoded === text) break;
+    text = decoded;
+  }
+  return /neoanthropocene\/agents-united/i.test(text.replace(/\/{2,}/g, '/'));
+}
+
+const SOURCE_PROBLEMS: Record<'whitespace' | 'not-a-url' | 'not-https' | 'user-info', string> = {
+  whitespace: 'metadata.source must be one URL with no whitespace in it.',
+  'not-a-url': 'metadata.source must be an https:// URL (the upstream the Skill was adapted from); this value does not parse as a URL.',
+  'not-https': 'metadata.source must use the https: scheme (the upstream URL the Skill was adapted from).',
+  'user-info': 'metadata.source must not carry a user name or a password in the URL.',
+};
 
 /** Plan 033 P9 (`adapted-source`): a Skill adapted from one pinned upstream commit, its adaptation by another author. */
 function adaptedPolicyFindings(meta: Record<string, unknown>): SkillCheckFinding[] {
@@ -563,18 +621,34 @@ function adaptedPolicyFindings(meta: Record<string, unknown>): SkillCheckFinding
   if (!present(source)) problem('metadata.source is missing: the adapted-source policy names the upstream commit the Skill was adapted from.');
   else if (typeof source !== 'string') problem(`metadata.source must be a string carrying an https:// upstream URL and its 40-character lowercase commit SHA, is ${JSON.stringify(source)}.`);
   else {
-    if (!source.includes('https://')) problem('metadata.source must contain https:// (the upstream URL the Skill was adapted from).');
-    const sha = COMMIT_SHA_40.exec(source);
-    if (sha === null) problem('metadata.source must carry the 40-character lowercase hexadecimal commit SHA of the upstream commit.');
+    // Plan 033 P12: the source is read as a URL (https:, no user-info) whose path pins the commit as a whole segment.
+    const parsed = parseSource(source);
+    if (!parsed.ok) problem(SOURCE_PROBLEMS[parsed.reason]);
     else {
-      // The same first-party pattern `isThirdPartySource` in skill-quality.ts uses: this repository is not a third-party upstream.
-      if (/NeoAnthropocene\/agents-united/i.test(source)) problem('metadata.source names this repository (NeoAnthropocene/agents-united): the adapted-source policy is for a third-party upstream, and this project\'s own Skills are checked under the agents-united-original policy.');
-      const commit = md.commit;
-      if (present(commit) && (typeof commit !== 'string' || commit !== sha[0])) problem(`metadata.commit, when present, must be exactly the 40-character commit SHA of metadata.source (${sha[0]}).`);
+      const sha = parsed.commit;
+      if (sha === null) problem('metadata.source must carry the 40-character lowercase hexadecimal commit SHA of the upstream commit as a whole segment of its path.');
+      // The first-party pattern `isThirdPartySource` in skill-quality.ts uses, on the raw text, and on the decoded path: this repository is not a third-party upstream.
+      if (/NeoAnthropocene\/agents-united/i.test(source) || namesThisRepository(parsed.url)) problem('metadata.source names this repository (NeoAnthropocene/agents-united): the adapted-source policy is for a third-party upstream, and this project\'s own Skills are checked under the agents-united-original policy.');
+      // A commit key (in any letter case) that is present must equal the SHA, whatever it holds: false, an empty string, null or a number is a mismatch.
+      if (sha !== null) {
+        for (const key of keysNamed(md, 'commit')) {
+          if (md[key] !== sha) problem(`metadata.commit, when present, must be exactly the 40-character commit SHA of metadata.source (${sha}).`);
+        }
+      }
     }
   }
   if (present(md.adaptedFrom) && (typeof md.adaptedFrom !== 'string' || md.adaptedFrom.trim() === '')) problem('metadata.adaptedFrom, when present, must be a non-empty string naming the upstream Skill.');
   return out;
+}
+
+const LICENCE_OR_NOTICE_FILE = /^(?:LICEN[CS]E(?:\.(?:md|txt))?|NOTICE\.md)$/i;
+
+/**
+ * The inventoried files that count as supporting files for the adapted-source STUB rule: not SKILL.md, not empty, not a top-level
+ * licence file or NOTICE.md (either case), not under evals/. Computed from the vetted inventory, not from a second walk of the disk.
+ */
+function countSupportingFiles(items: SkillCheckInventoryItem[]): number {
+  return items.filter(item => item.path !== 'SKILL.md' && item.bytes > 0 && !LICENCE_OR_NOTICE_FILE.test(item.path) && !item.path.toLowerCase().startsWith('evals/')).length;
 }
 
 function runGate(id: SkillCheckCheckId, code: SkillCheckCode, filePath: string | null, fn: () => string[]): SkillCheckGate {
@@ -621,7 +695,7 @@ function runGates(artifact: string, inventory: Inventoried, corpus: CorpusOutcom
       )));
     checks.push(runGate('layout', 'LAYOUT', null, () => checkSkillLayout(parent, dirName)));
     checks.push(runGate('portability', 'PORTABILITY', null, () => lintSkillPortability({
-      dirName, name: typeof meta.name === 'string' ? meta.name : String(meta.name ?? ''), body, scripts,
+      dirName, name: plainText(meta.name ?? ''), body, scripts,
     })));
     const licenceInput = {
       dirName,
@@ -647,13 +721,16 @@ function runGates(artifact: string, inventory: Inventoried, corpus: CorpusOutcom
       // Plan 033 P9: under adapted-source, a candidate whose verdict would be ok only because it declares an upstream
       // source (extraFiles === 0 and few content lines) is still a stub — an attribution is not substance.
       const real = verdictOf(measure);
-      const verdict = real === 'ok' && policy === 'adapted-source' && measure.thirdParty && measure.extraFiles === 0 && measure.lines < STUB_MAX_LINES ? 'stub' : real;
+      // Under adapted-source the files that make a short Skill more than an attribution are the real supporting files: a
+      // top-level licence file, NOTICE.md and evals/ are required by the policy or the layout gate, and an empty file says nothing.
+      const supporting = policy === 'adapted-source' ? countSupportingFiles(inventory.items) : measure.extraFiles;
+      const verdict = real === 'ok' && policy === 'adapted-source' && measure.thirdParty && supporting === 0 && measure.lines < STUB_MAX_LINES ? 'stub' : real;
       const shown = { lines: measure.lines, templatedLines: measure.templatedLines, share: measure.share, extraFiles: measure.extraFiles, thirdParty: measure.thirdParty, verdict };
       if (verdict === 'ok') checks.push(gate('frozen-corpus', 'passed', null, [], shown));
       else if (verdict === 'templated') {
         checks.push(gate('frozen-corpus', 'failed', null, [finding('TEMPLATED', 'SKILL.md', `${dirName}: ${measure.templatedLines} of ${measure.lines} content lines (${(measure.share * 100).toFixed(1)}%) are lines of the frozen boilerplate corpus (threshold ${TEMPLATED_THRESHOLD * 100}%).`)], shown));
       } else {
-        checks.push(gate('frozen-corpus', 'failed', null, [finding('STUB', 'SKILL.md', `${dirName}: ${measure.lines} content lines (a Skill under ${STUB_MAX_LINES} lines needs supporting files) and ${measure.extraFiles} supporting files.`)], shown));
+        checks.push(gate('frozen-corpus', 'failed', null, [finding('STUB', 'SKILL.md', `${dirName}: ${measure.lines} content lines (a Skill under ${STUB_MAX_LINES} lines needs supporting files) and ${supporting} supporting files.`)], shown));
       }
     } catch (error) {
       checks.push(gate('frozen-corpus', 'unavailable', `The measure could not read the candidate (${errorCode(error)}).`, [finding('INPUT_UNAVAILABLE', 'SKILL.md', `The frozen-corpus measure could not read the candidate: ${errorText(error)}`)]));

@@ -47,7 +47,7 @@ Goal: review the [Claude artifact-realization design](../plans/033-slice-4-claud
 
 ## Ground checked
 
-- Worktree `C:\Users\ozy\.codex\worktrees\fb0a\agents-united`; remote `https://github.com/NeoAnthropocene/agents-united.git`; Node `v24.19.0`.
+- Worktree `<worktree>`; remote `https://github.com/NeoAnthropocene/agents-united.git`; Node `v24.19.0`.
 - Initial state clean, detached `2674e6bbd4d46ea4b7155ac6355b0acf61fa8665`. Fetched `origin/dev` and created **`codex/plan-033-realize-design`** at **`cfa4682915c23e6c9eb3510468a1b262d6f2689a`** before document edits. Only design/ADR/plan/index/handoff documents changed.
 - #199 merged at `44e398ac6e9ecdee66bec6f7bcb5c8c74962118e`; no new work goes to `codex/plan-033-author-skill`. Earlier `ecb0` draft/evidence checkout was not modified.
 - #205 **merged** at `7108b89d0ad613db955e39e25d52867270891610`; #206 **merged** at `cfa4682915c23e6c9eb3510468a1b262d6f2689a`. Inspected state/body/files/check metadata, #206's complete diff and relevant #205 native/skill changes and committed evidence. Both successful test checks are historical PR metadata. No open PR/reservation was returned at inspection; recheck before assigning/publishing ADRs.

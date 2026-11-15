@@ -46,12 +46,13 @@ function unavailableBundleBadge(bundle: BundleDefinition): string {
   return isEmptyContributorBundle(bundle) ? pc.yellow(' [Unavailable]') : '';
 }
 
-function underConstructionNotice(bundle: BundleDefinition): string {
+export function underConstructionNotice(bundle: BundleDefinition): string {
   const heading = `The bundle "${bundle.name}" is currently under active construction (status: under-construction).\n`;
   if (bundle.name === 'agent-factory') {
     return heading
       + '`author-skill` creates or repairs one skill folder and prepares draft evidence.\n'
       + '`author-contract` prepares a shared definition/contract pair; `factory-realizer` prepares one Claude agent draft.\n'
+      + '`factory-evaluator` gives an independent read-only review of a draft; `factory-sync` plans host-update syncs, read-only.\n'
       + 'First delivery: Claude Code CLI in a workspace with --native. Use:\n'
       + 'agents add agent-factory -t claude --native --allow-under-construction --copy -y\n'
       + 'Validation requires a reviewed source checkout and Node.js 24+. Local work ends with a draft; live invocation remains unverified.';

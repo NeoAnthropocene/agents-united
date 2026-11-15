@@ -14,7 +14,7 @@ import { checkFloor } from './native-floor.js';
 import { inspectNativeAgent } from './native-guard.js';
 import { loadHostProfile, loadToolPolicy, resolveGrant } from './host-profile.js';
 import { hasClaudeContractTaskReceipt } from './claude-contract-binding.js';
-import { FACTORY_BINDINGS, type FactoryEntry, parseClaudeFactoryBinding, assertClaudeFactoryWorkerBinding, assertClaudeFactoryLoader, assertClaudeFactoryRoleMechanics, normalizeClaudeFactoryCoordinatorTools, factoryEntryBySkill, factoryWorkerByRole } from './claude-factory-declaration.js';
+import { FACTORY_BINDINGS, type FactoryEntry, parseClaudeFactoryBinding, assertClaudeFactoryWorkerBinding, assertClaudeFactoryLoader, assertClaudeFactoryRoleMechanics, normalizeClaudeFactoryCoordinatorTools, factoryEntryBySkill, factoryWorkerByRole, factoryWorkerBySkill } from './claude-factory-declaration.js';
 export { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
 
 function fail(message: string): never { throw new Error(`Claude factory binding: ${message}.`); }
@@ -103,10 +103,10 @@ async function planFactoryEntry(
     if (!isDeepStrictEqual([...preloaded].sort(), [...role.skills].sort())) fail(`required preload mismatch for ${role.name}`);
     for (const skill of role.skills) if (!contract.skills.includes(skill)) fail(`unbound preload ${skill} for ${role.name}`);
     const core = cores.get(role.definition)!;
-    if (entry.skill === 'realize-artifact' && resolved.skills.includes('coordinate-artifact')
-      && !isDeepStrictEqual([...(core.capabilities ?? [])].sort(), ['edit', 'handback', 'read', 'report', 'search', 'shell', 'skill'])) fail('coordinate-artifact worker realizer capabilities differ');
-    if ((entry.skill === 'evaluate-artifact' || entry.skill === 'sync-host') && !isDeepStrictEqual([...(core.capabilities ?? [])].sort(), ['handback', 'read', 'report', 'search'])) {
-      fail(`${entry.skill === 'sync-host' ? 'sync' : 'evaluator'} capabilities must retain exactly the reviewed read/search/report/handback classes`);
+    if (entry.skill !== 'coordinate-artifact') {
+      const worker = factoryWorkerBySkill(entry.skill);
+      if ((worker.capabilitiesWhen === 'always' || resolved.skills.includes('coordinate-artifact'))
+        && !isDeepStrictEqual([...(core.capabilities ?? [])].sort(), [...worker.capabilities].sort())) fail(worker.capabilityRefusal);
     }
     const floorProblems = checkFloor(text, core);
     if (floorProblems.length) fail(`floor mismatch for ${role.name}: ${floorProblems.join('; ')}`);

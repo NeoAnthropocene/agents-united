@@ -208,6 +208,36 @@ describe('independent factory sync delivery', () => {
     expect(await fs.readdir(fixture.workspace)).toEqual([]);
   });
 
+  it.each<[string, (text: string) => string, RegExp]>([
+    ['widened tools', text => text.replace(/^tools: /m, 'tools: Edit, Write, '), /grant mismatch for factory-sync/],
+    ['a changed model', text => text.replace(/^model: inherit/m, 'model: opus'), /inherited model and medium effort/],
+    ['a changed effort', text => text.replace(/^effort: medium/m, 'effort: high'), /inherited model and medium effort/],
+    ['a background worker', text => text.replace(/^background: false/m, 'background: true'), /foreground background: false/],
+    ['a narrowed hook matcher', text => text.replace('"matcher":"Bash|', '"matcher":"'), /required guard registration mismatch for factory-sync/],
+  ])('refuses %s in the native factory-sync.md while the semantic core is untouched', async (_label, change, message) => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-sync-native-only-'));
+    const fixture = await prepareProductionSync(root);
+    const file = fixture.source('hosts/claude/agents/factory-sync.md');
+    const before = await fs.readFile(file, 'utf8');
+    const changed = change(before);
+    expect(changed).not.toBe(before);
+    await fs.writeFile(file, changed);
+    await expect(new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options)).rejects.toThrow(message);
+    expect(await fs.readdir(fixture.workspace)).toEqual([]);
+  });
+
+  it('refuses a context: fork mechanic in the native sync preload before writes', async () => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-sync-fork-'));
+    const fixture = await prepareProductionSync(root);
+    const file = fixture.source('hosts/claude/skills/sync-host/SKILL.md');
+    const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(await fs.readFile(file, 'utf8'))!;
+    const metadata = YAML.parse(match[1]!) as Record<string, unknown>; metadata.context = 'fork';
+    await fs.writeFile(file, `---\n${YAML.stringify(metadata)}---\n${match[2]}`);
+    await expect(new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options))
+      .rejects.toThrow(/non-fork guidance for its required preload/);
+    expect(await fs.readdir(fixture.workspace)).toEqual([]);
+  });
+
   it.each(['!`node --version`', '```!\nnode --version\n```'])('refuses dynamic shell injection in a read-only sync preload before writes: %s', async injection => {
     root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-sync-injection-'));
     const fixture = await prepareProductionSync(root);

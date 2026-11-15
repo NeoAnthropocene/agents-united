@@ -1,17 +1,18 @@
 import path from 'node:path';
+import crypto from 'node:crypto';
 import fs from 'fs-extra';
 import YAML from 'yaml';
 import { afterEach, describe, expect, it } from 'vitest';
 import { InstallEngine } from '../src/core/installer.js';
 import { RegistryResolver } from '../src/core/registry.js';
 import { planClaudeFactoryArtifacts } from '../src/core/claude-factory-binding.js';
-import { readClaudeFactoryMain } from '../src/core/claude-factory-start.js';
+import { assertClaudeFactorySelection, readClaudeFactoryMain } from '../src/core/claude-factory-start.js';
 import { FACTORY_BINDINGS, FACTORY_WORKERS, assertClaudeFactoryRoleMechanics, assertClaudeFactoryWorkerBinding,
   factoryEntryBySkill, factoryWorkerByRole, factoryWorkerBySkill, normalizeClaudeFactoryCoordinatorTools } from '../src/core/claude-factory-declaration.js';
 import { nativeGuardFileHooks } from '../src/core/guard.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { prepareFactoryCoordinator } from './helpers/factory-coordinator.js';
-import type { ClaudeFactoryBinding } from '../src/core/types.js';
+import type { ClaudeFactoryBinding, LockfileManifest } from '../src/core/types.js';
 
 /** The exact tool classes every native role starts from before its own grant is added. */
 const BASE_GRANT = ['Glob', 'Grep', 'ListMcpResourcesTool', 'Read', 'ReadMcpResourceTool', 'ReportFindings'];
@@ -172,5 +173,86 @@ describe('factory worker table lookups', () => {
     expect(factoryEntryBySkill('evaluate-artifact')).toEqual({ skill: 'evaluate-artifact', file: 'hosts/claude/agent-factory-evaluate.binding.json', root: '.claude/skills/evaluate-artifact' });
     expect(factoryEntryBySkill('sync-host')).toEqual({ skill: 'sync-host', file: 'hosts/claude/agent-factory-sync.binding.json', root: '.claude/skills/sync-host' });
     expect(factoryEntryBySkill('coordinate-artifact')).toEqual({ skill: 'coordinate-artifact', file: 'hosts/claude/agent-factory-coordinate.binding.json', root: '.claude/skills/coordinate-artifact' });
+  });
+});
+
+/** Change fields of one worker row for the length of a run, then restore them; the closure must read these rows, not names of its own. */
+async function withWorkerRow<T>(skill: string, patch: Record<string, unknown>, run: () => Promise<T>): Promise<T> {
+  const row = FACTORY_WORKERS.find(item => item.skill === skill) as unknown as Record<string, unknown>;
+  const saved = { ...row };
+  Object.assign(row, patch);
+  return run().finally(() => { Object.assign(row, saved); });
+}
+
+describe('factory worker table cross-checks', () => {
+  const readBinding = (file: string): ClaudeFactoryBinding => JSON.parse(fs.readFileSync(path.resolve(file), 'utf8')) as unknown as ClaudeFactoryBinding;
+
+  it('refuses a worker found by Skill whose role name belongs to another worker row', () => {
+    const binding = readBinding('registry/hosts/claude/agent-factory-realize.binding.json');
+    const evaluator = factoryWorkerByRole('factory-evaluator');
+    binding.roles = [{ name: 'factory-evaluator', definition: evaluator.definition, contract: `core/${evaluator.definition}.contract.json`,
+      source: 'hosts/claude/agents/factory-evaluator.md', installed: '.claude/agents/factory-evaluator.md',
+      loading: 'subagent', skills: ['realize-artifact'], guard: evaluator.guard }];
+    expect(() => assertClaudeFactoryWorkerBinding(binding, factoryEntryBySkill('realize-artifact'), 'factory-evaluator'))
+      .toThrow(/worker factory-evaluator does not belong to skill realize-artifact/);
+    const sync = readBinding('registry/hosts/claude/agent-factory-sync.binding.json');
+    expect(() => assertClaudeFactoryWorkerBinding(sync, factoryEntryBySkill('sync-host'), 'factory-sync')).not.toThrow();
+  });
+
+  it.each([
+    ['a Skill that is not the table Skill of the role', 'factory-evaluator', 'sync-host', EVALUATOR_GRANT, readOnlyGuardFileHooks(), false],
+    ['a destructive flag on a read-only worker', 'factory-evaluator', 'evaluate-artifact', EVALUATOR_GRANT, nativeGuardFileHooks(), true],
+    ['a read-only flag on the destructive worker', 'factory-realizer', 'realize-artifact', REALIZER_GRANT, readOnlyGuardFileHooks(), false],
+  ] as const)('refuses %s in the role mechanics', (_label, name, skill, grant, hooks, destructive) => {
+    expect(() => assertClaudeFactoryRoleMechanics(nativeWorkerText(name, skill, grant, hooks), name, skill, destructive))
+      .toThrow(/critical role binding differs for factory-/);
+  });
+
+  it('lists the capability classes each worker must have on its table row', () => {
+    expect([...factoryWorkerBySkill('realize-artifact').capabilities]).toEqual(['edit', 'handback', 'read', 'report', 'search', 'shell', 'skill']);
+    expect([...factoryWorkerBySkill('evaluate-artifact').capabilities]).toEqual(['handback', 'read', 'report', 'search']);
+    expect([...factoryWorkerBySkill('sync-host').capabilities]).toEqual(['handback', 'read', 'report', 'search']);
+  });
+
+  describe('through a coordinated install', () => {
+    let root: string | undefined;
+    afterEach(async () => { if (root) { await fs.remove(root); root = undefined; } });
+    const install = async (fixture: Awaited<ReturnType<typeof prepareFactoryCoordinator>>) =>
+      new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options);
+
+    it.each([
+      ['realize-artifact', /coordinate-artifact worker realizer capabilities differ/],
+      ['evaluate-artifact', /evaluator capabilities must retain exactly the reviewed read\/search\/report\/handback classes/],
+      ['sync-host', /sync capabilities must retain exactly the reviewed read\/search\/report\/handback classes/],
+    ])('reads the capability classes of %s from its table row', async (skill, message) => {
+      const fixture = await prepareFactoryCoordinator(); root = fixture.root;
+      const classes = [...factoryWorkerBySkill(skill).capabilities, 'web'];
+      await withWorkerRow(skill, { capabilities: classes }, async () => { await expect(install(fixture)).rejects.toThrow(message); });
+      expect(await fs.readdir(fixture.workspace)).toEqual([]);
+    });
+
+    it('reads the required installed edges of each worker from its table row at startup and in the selection check', async () => {
+      const fixture = await prepareFactoryCoordinator(); root = fixture.root;
+      await install(fixture);
+      const selection = readClaudeFactoryMain(fixture.workspace);
+      expect(() => assertClaudeFactorySelection(selection)).not.toThrow();
+      // The realizer edge leaves the table: the selection inventory no longer lists it.
+      await withWorkerRow('realize-artifact', { requiredInstalled: [] }, async () => {
+        expect(() => assertClaudeFactorySelection(selection)).toThrow(/matching complete installed closure inventory is required/);
+      });
+      // A table edge on the evaluator is read at startup (here a role file, which is not a rule projection).
+      const receipt = fixture.installed('.claude/skills/evaluate-artifact/assets/claude-binding.json');
+      const edge = '.claude/agents/factory-evaluator.md';
+      const body = await fs.readJson(receipt) as ClaudeFactoryBinding;
+      body.requiredInstalled = [edge];
+      await fs.writeJson(receipt, body);
+      const lockFile = path.join(fixture.state, 'agents-united.json');
+      const lock = await fs.readJson(lockFile) as LockfileManifest;
+      lock.projections!['.claude/skills/evaluate-artifact/assets/claude-binding.json']!.hash = `sha256:${crypto.createHash('sha256').update(await fs.readFile(receipt)).digest('hex')}`;
+      await fs.writeJson(lockFile, lock);
+      await withWorkerRow('evaluate-artifact', { requiredInstalled: [edge] }, async () => {
+        expect(() => readClaudeFactoryMain(fixture.workspace)).toThrow(/invalid required rule \.claude\/agents\/factory-evaluator\.md/);
+      });
+    });
   });
 });

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { validateRewrittenSkill } from '../src/core/skill-contract.js';
 import { checkSkillLayout, supportingText } from '../src/core/skill-layout.js';
 import * as skillLicenceLint from '../src/core/skill-licence-lint.js';
@@ -406,5 +406,203 @@ describe('lintSkillPolicyLicence: adapted-source (a Skill adapted from a pinned 
       'Skill "x": Apache-2.0 content must pin metadata.source to a 40-character upstream commit SHA.',
       'Skill "x": Apache-2.0 content must carry a NOTICE.md saying what was changed from upstream.',
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Independent review of skill-check (P13 fixes): the gates behind it, called directly
+// ---------------------------------------------------------------------------------------------
+
+describe('lintSkillPolicyLicence: the licence is trimmed once (review 9)', () => {
+  it('treats a licence with surrounding whitespace like the bare identifier', () => {
+    expect(lintSkillPolicyLicence('adapted-source', { dirName: 'x', license: 'MIT ', files: [file('LICENSE')], source: SOURCE })).toEqual([]);
+    expect(lintSkillPolicyLicence('adapted-source', { dirName: 'x', license: ' MIT', files: [file('LICENSE')], source: SOURCE })).toEqual([]);
+    expect(lintSkillPolicyLicence('private-owner', { dirName: 'x', license: ' MPL-2.0 ', files: [file('LICENSE')] })).toEqual([]);
+    expect(lintSkillPolicyLicence('private-owner', { dirName: 'x', license: ' MPL-2.0 ', files: [file('SKILL.md')] }))
+      .toEqual(['Skill "x": MPL-2.0 content must carry its licence file (LICENSE) in the skill folder.']);
+    expect(lintSkillPolicyLicence('adapted-source', {
+      dirName: 'x', license: ' Apache-2.0 ', files: [file('LICENSE'), file('NOTICE.md')], source: SOURCE, noticeText: NOTICE,
+    })).toEqual([]);
+  });
+});
+
+describe('lintSkillPolicyLicence: NOTICE.md tokens stand outside HTML comments and are whole tokens (review 6)', () => {
+  const lint = (license: string, noticeText: string, source = SOURCE): string[] => lintSkillPolicyLicence('adapted-source', {
+    dirName: 'x', license, files: [file('LICENSE'), file('NOTICE.md')], source, noticeText,
+  });
+  const SHA_FINDING = 'Skill "x": NOTICE.md does not quote the pinned 40-character commit SHA of metadata.source.';
+  const LICENCE_FINDING = (id: string): string => `Skill "x": NOTICE.md does not name the licence identifier "${id}".`;
+
+  it('does not count tokens inside an HTML comment, terminated or not, on one line or several', () => {
+    expect(lint('Apache-2.0', `<!-- ${SHA} Apache-2.0 -->`)).toEqual([SHA_FINDING, LICENCE_FINDING('Apache-2.0')]);
+    expect(lint('Apache-2.0', `<!--\n${SHA}\nApache-2.0\n-->\n`)).toEqual([SHA_FINDING, LICENCE_FINDING('Apache-2.0')]);
+    expect(lint('Apache-2.0', `visible text\n<!-- ${SHA} Apache-2.0\nstill inside`)).toEqual([SHA_FINDING, LICENCE_FINDING('Apache-2.0')]);
+    expect(lint('Apache-2.0', `<!-- one --> ${SHA} <!-- two --> Apache-2.0`)).toEqual([]);
+    expect(lint('Apache-2.0', `<!-- a --><!-- b --> adapted at ${SHA} under Apache-2.0.`)).toEqual([]);
+  });
+
+  it('does not take a longer licence name, or a licence glued to other letters, for the licence', () => {
+    expect(lint('Apache-2.0', `from ${SHA} under Apache-2.0-with-LLVM-exception`)).toEqual([LICENCE_FINDING('Apache-2.0')]);
+    expect(lint('Apache-2.0', `from ${SHA} under Apache-2.0.1`)).toEqual([LICENCE_FINDING('Apache-2.0')]);
+    expect(lint('Apache-2.0', `from ${SHA} under XApache-2.0`)).toEqual([LICENCE_FINDING('Apache-2.0')]);
+    expect(lint('ISC', `from ${SHA}: MISC changes`)).toEqual([LICENCE_FINDING('ISC')]);
+    expect(lint('MPL-2.0', `from ${SHA} under MPL-2.0+`)).toEqual([LICENCE_FINDING('MPL-2.0')]);
+  });
+
+  it('does not take a longer hexadecimal run for the SHA', () => {
+    expect(lint('Apache-2.0', `Apache-2.0 sha256:${SHA}${'0'.repeat(24)}`)).toEqual([SHA_FINDING]);
+    expect(lint('Apache-2.0', `Apache-2.0 0${SHA}`)).toEqual([SHA_FINDING]);
+    expect(lint('Apache-2.0', `Apache-2.0 ${SHA}a`)).toEqual([SHA_FINDING]);
+    expect(lint('Apache-2.0', `Apache-2.0 g${SHA}`)).toEqual([SHA_FINDING]);
+  });
+
+  it('accepts the tokens in ordinary prose: punctuation, parentheses, a sentence end, a markdown link or code span', () => {
+    expect(lint('Apache-2.0', `Adapted from ${SHA}, licensed under (Apache-2.0).`)).toEqual([]);
+    expect(lint('Apache-2.0', `Apache-2.0. Commit: ${SHA}.`)).toEqual([]);
+    expect(lint('Apache-2.0', `[upstream](https://github.com/example/skills/tree/${SHA}) is \`Apache-2.0\``)).toEqual([]);
+    expect(lint('LicenseRef-Remotion', `Pinned at ${SHA}; LicenseRef-Remotion applies.`)).toEqual([]);
+  });
+
+  it('stays linear on a notice made of 200 KiB of unterminated comment openers', () => {
+    const started = Date.now();
+    expect(lint('Apache-2.0', '<!--'.repeat(50_000))).toEqual([SHA_FINDING, LICENCE_FINDING('Apache-2.0')]);
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+});
+
+describe('lintSkillPolicyLicence: the commit is a whole segment of an https source URL (review 5)', () => {
+  const lint = (source: string): string[] => lintSkillPolicyLicence('adapted-source', { dirName: 'x', license: 'MIT', files: [file('LICENSE')], source });
+  const PIN_FINDING = ['Skill "x": MIT content must pin metadata.source to a 40-character upstream commit SHA.'];
+
+  it('refuses a SHA that is not a whole path segment of an https URL without user-info', () => {
+    for (const source of [
+      `https://example.com/skills/${SHA}-not-a-commit/SKILL.md`,
+      `https://example.com/repo?id=${SHA}`,
+      `https://example.com/repo#${SHA}`,
+      `http://example.com/repo/tree/${SHA}`,
+      `https://user:secret@example.com/repo/tree/${SHA}`,
+      `${SHA}`,
+      `not a url ${SHA}`,
+    ]) expect(lint(source), source).toEqual(PIN_FINDING);
+  });
+
+  it('accepts the forms the intake rule and the existing tests show', () => {
+    for (const source of [
+      SOURCE,
+      `https://github.com/example/skills/commit/${SHA}`,
+      `https://github.com/trailofbits/skills/tree/${SHA}/plugins/static-analysis/skills/codeql`,
+    ]) expect(lint(source), source).toEqual([]);
+  });
+});
+
+describe('supportingText: a top-level notice.md in any case (review 10)', () => {
+  it('leaves out NOTICE.md in every letter case, and only at the top level', () => {
+    for (const name of ['notice.md', 'Notice.md']) {
+      const dir = path.join(tmpSkill({ 'SKILL.md': '# Demo skill body\n', [name]: 'top notice prose\n', 'references/notice.md': 'sub notice prose\n' }), 'demo');
+      const text = supportingText(dir, { excludeTopLevelNotices: true });
+      expect(text, name).not.toContain('top notice prose');
+      expect(text, name).toContain('sub notice prose');
+      expect(supportingText(dir), name).toContain('top notice prose');
+    }
+  });
+});
+
+describe('the layout gate: a support-folder link never leads to a lookup with a .. segment (review 4)', () => {
+  const links = (target: string): string => `${FM}\nSee [x](${target}) for more.\n`;
+  const inside = (dir: string, p: string): boolean => p === dir || p.startsWith(`${dir}${path.sep}`);
+
+  it.each([
+    'references/../../../outside.md',
+    'references/>/../../../outside.md',
+    'references/a>b/../../../outside.md',
+    'examples/..\\..\\..\\outside.md',
+  ])('reports ](%s) without asking the file system about anything outside the skill folder', target => {
+    const root = tmpSkill({ 'SKILL.md': links(target), 'evals/evals.json': EVALS });
+    fs.writeFileSync(path.join(root, 'outside.md'), '# Outside\n');
+    const dir = path.join(root, 'demo');
+    const spy = vi.spyOn(fs, 'existsSync');
+    let errors: string[];
+    try {
+      errors = checkSkillLayout(root, 'demo');
+    } finally {
+      spy.mockRestore();
+    }
+    const asked = spy.mock.calls.map(call => path.resolve(String(call[0])));
+    expect(asked.filter(p => !inside(dir, p))).toEqual([]);
+    expect(errors.some(e => e.includes('".." segment'))).toBe(true);
+  });
+
+  it('reports a .. link that stays inside the folder too, and does not look the target up', () => {
+    const root = tmpSkill({ 'SKILL.md': links('references/sub/../csv.md'), 'references/csv.md': '# CSV\n', 'evals/evals.json': EVALS });
+    const dir = path.join(root, 'demo');
+    const spy = vi.spyOn(fs, 'existsSync');
+    let errors: string[];
+    try {
+      errors = checkSkillLayout(root, 'demo');
+    } finally {
+      spy.mockRestore();
+    }
+    const asked = spy.mock.calls.map(call => path.resolve(String(call[0])));
+    expect(asked).not.toContain(path.join(dir, 'references', 'csv.md'));
+    expect(errors.some(e => e.includes('".." segment'))).toBe(true);
+  });
+
+  it('keeps the exact finding for a link to a missing file without a .. segment', () => {
+    const root = tmpSkill({ 'SKILL.md': links('references/missing.md'), 'evals/evals.json': EVALS });
+    expect(checkSkillLayout(root, 'demo')).toEqual(['demo: SKILL.md links to references/missing.md which does not exist']);
+  });
+});
+
+describe('the gates return findings, never an exception, for values that are objects with a toString key (review 7)', () => {
+  const TOSTRING_DESC = `---\nname: demo\ndescription:\n  toString: x\nbogus: true\n---\n# Demo\n`;
+
+  it('the layout gate keeps the unknown key and the description findings', () => {
+    const errors = checkSkillLayout(tmpSkill({ 'SKILL.md': TOSTRING_DESC, 'evals/evals.json': EVALS }), 'demo');
+    expect(errors).toContain('demo: unknown front matter key "bogus" (Claude Code ignores it silently)');
+    expect(errors).toContain('demo: description must lead with the key use case ("Use when ...")');
+  });
+
+  it('the layout gate does the same for a when_to_use that is an object with a toString key', () => {
+    const skill = '---\nname: demo\ndescription: "Use when you demo the layout; trigger phrases: demo it. Skip it when idle."\nwhen_to_use:\n  toString: x\n---\n# Demo\n';
+    expect(() => checkSkillLayout(tmpSkill({ 'SKILL.md': skill, 'evals/evals.json': EVALS }), 'demo')).not.toThrow();
+  });
+
+  it('the contract gate names an object name without raising', () => {
+    const named = GOOD.replace(`name: ${NAME}`, 'name:\n  toString: x');
+    const findings = validateRewrittenSkill(NAME, named);
+    expect(findings.some(f => f.startsWith('sample-skill: front matter name is'))).toBe(true);
+    expect(validateRewrittenSkill(NAME, GOOD.replace(`name: ${NAME}`, 'name: [a, b]')).some(f => f.startsWith('sample-skill: front matter name is'))).toBe(true);
+  });
+
+  it('keeps today\'s findings for an eval that has no prompt or expected_output, and for string and numeric ids', () => {
+    expect(checkSkillLayout(tmpSkill({ 'SKILL.md': FM, 'evals/evals.json': JSON.stringify({ skill_name: 'demo', evals: [{ id: 1 }, { id: 2 }] }) }), 'demo')).toEqual([
+      'demo: eval 1 prompt is too short to be realistic',
+      'demo: eval 1 has no expected_output',
+      'demo: eval 2 prompt is too short to be realistic',
+      'demo: eval 2 has no expected_output',
+      'demo: duplicate eval prompts',
+    ]);
+  });
+
+  it('reports a prompt or expected_output that is not a string, whatever its length', () => {
+    const evals = JSON.stringify({
+      skill_name: 'demo',
+      evals: [
+        { id: 1, prompt: 123, expected_output: 456 },
+        { id: 2, prompt: Array.from({ length: 60 }, () => 'a'), expected_output: { toString: 'x', padding: 'a long enough object to pass any length test, if one were made' } },
+        { id: { toString: 'x' }, prompt: { toString: 'x' }, expected_output: true },
+      ],
+    });
+    const errors = checkSkillLayout(tmpSkill({ 'SKILL.md': FM, 'evals/evals.json': evals }), 'demo');
+    expect(errors).toContain('demo: eval 1 prompt is not a string');
+    expect(errors).toContain('demo: eval 1 expected_output is not a string');
+    expect(errors).toContain('demo: eval 2 prompt is not a string');
+    expect(errors).toContain('demo: eval 2 expected_output is not a string');
+    expect(errors.filter(e => e.endsWith('is not a string'))).toHaveLength(6);
+  });
+
+  it('reports a skill_name that is an object with a toString key', () => {
+    const errors = checkSkillLayout(tmpSkill({ 'SKILL.md': FM, 'evals/evals.json': JSON.stringify({ skill_name: { toString: 'x' }, evals: [OK_ENTRY, { ...OK_ENTRY, id: 2, prompt: `${OK_ENTRY.prompt} (second)` }] }) }), 'demo');
+    expect(errors.some(e => e.startsWith('demo: evals skill_name is '))).toBe(true);
   });
 });
