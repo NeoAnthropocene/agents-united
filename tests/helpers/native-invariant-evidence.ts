@@ -29,7 +29,7 @@ export const EVIDENCE: Record<string, RegExp> = {
 
   'Read the complete fixed review job before evaluating.': /Read the complete fixed review job and the caller-held job\/candidate digests before reviewing/,
   'Preserve the candidate and its declared review scope.': /Preserve the candidate and its declared review scope: read only the supplied subject\/support and selected evidence/,
-  'Tie findings to supplied source pins and actual quoted lines.': /Tie findings to supplied source pins and actual quoted lines: include source ID, contained path, caller-provided hash, logical line range, bounded quote/,
+  'Tie findings to supplied source pins and actual quoted lines.': /Tie findings to supplied source pins and actual quoted lines: include source ID, path \(candidate-relative, or the basename of a pinned input's file\), caller-provided hash, logical line range, bounded quote/,
   'Keep record consistency, evaluator judgment and live proof distinct.': /Keep record consistency, evaluator judgment and live proof distinct\. The caller runs validators and persists\/checks your result/,
   'Return missing required evidence without inventing approval.': /Return missing required evidence without inventing approval\. Apply the fixed rubric/,
   'Never mutate the workspace, registry, git state, lockfile or installed host projections, and never execute commands or compute hashes.': /Never mutate the workspace, registry, git state, lockfile or installed host projections, and never execute commands or compute hashes: you have no shell or editor/,

@@ -74,6 +74,125 @@ describe('caller-only review records through the installed evaluator CLI', () =>
     expect(JSON.parse(actual.stderr).reason).toMatch(/citation.*quote/i);
   });
 
+  // Fix 1 (finding S1-B of the 2026-11-15 headless factory runs): the coordinator saved the check output and told the evaluator to read it, but the
+  // review job gave that file no input id, so the evaluator's citation of it was refused. The schema and the checker already allow the pin: an input of
+  // kind `validator` whose path sits under a declared read root and outside the review root (the review root's own checks/<id>.raw.txt belongs to `checks[]`).
+  it('lets a result cite a saved check output that the job pins as an input, and refuses the same citation when the job does not pin it', async () => {
+    const selected = await prepareEvaluationJob(fixture);
+    const saved = path.join(fixture.root, 'saved-checks');
+    const copy = path.join(saved, 'native-check.raw.txt');
+    await fs.ensureDir(saved);
+    await fs.copy(selected.rawFile, copy);
+    const withoutPin = selected.job.inputs.length;
+    selected.job.roots.read.push(saved);
+    selected.job.inputs.push({ id: 'native-check-raw', kind: 'validator', ...await reviewPin(copy), sections: [], status: 'clear', required: true });
+    await fs.writeJson(selected.jobFile, selected.job);
+    const preflight = run(['--job', selected.jobFile]);
+    expect(preflight.status, preflight.stderr).toBe(0);
+    const citeLog = (result: ReturnType<typeof evaluationResult>, sourceId: string) => {
+      result.criteria[0]!.citations = [{ sourceId, path: 'native-check.raw.txt', sha256: selected.job.inputs.at(-1)!.sha256,
+        startLine: 1, endLine: 1, quote: 'selected fixture layout checked' }];
+      return result;
+    };
+    const file = path.join(selected.evidence, 'result.json');
+    await fs.writeJson(file, citeLog(evaluationResult(selected, JSON.parse(preflight.stdout)), 'native-check-raw'));
+    const pinned = run(['--job', selected.jobFile, '--result', file]);
+    expect(pinned.status, pinned.stderr).toBe(0);
+    expect(JSON.parse(pinned.stdout)).toMatchObject({ recordValid: true, candidateMatch: true, acceptedDraft: false });
+
+    // The same result against a job that carries no such input (the observed run): the id is not a pinned input.
+    selected.job.inputs = selected.job.inputs.slice(0, withoutPin);
+    await fs.writeJson(selected.jobFile, selected.job);
+    const bare = run(['--job', selected.jobFile]);
+    expect(bare.status, bare.stderr).toBe(0);
+    await fs.writeJson(file, citeLog(evaluationResult(selected, JSON.parse(bare.stdout)), 'native-check-raw'));
+    const refused = run(['--job', selected.jobFile, '--result', file]);
+    expect(refused.status).toBe(1);
+    expect(JSON.parse(refused.stderr).reason).toBe('Citation selects an unavailable/unpinned input or substituted path.');
+  });
+
+  it('cannot pin the review root\'s own check output as an input, which is why the pin is a copy outside the review root', async () => {
+    const selected = await prepareEvaluationJob(fixture);
+    selected.job.roots.read.push(path.join(selected.evidence, 'checks'));
+    selected.job.inputs.push({ id: 'native-check-raw', kind: 'validator', ...await reviewPin(selected.rawFile), sections: [], status: 'clear', required: true });
+    await fs.writeJson(selected.jobFile, selected.job);
+    const actual = run(['--job', selected.jobFile]);
+    expect(actual.status, actual.stderr).toBe(1);
+    expect(JSON.parse(actual.stderr).reason).toMatch(/review output root overlaps/i);
+  });
+
+  it('refuses a read root that is the parent of the review root, so the pinned copy must sit in a sibling folder', async () => {
+    const selected = await prepareEvaluationJob(fixture);
+    const saved = path.join(fixture.root, 'saved-checks', 'native-check.raw.txt');
+    await fs.outputFile(saved, await fs.readFile(selected.rawFile));
+    selected.job.roots.read.push(fixture.root);
+    selected.job.inputs.push({ id: 'native-check-raw', kind: 'validator', ...await reviewPin(saved), sections: [], status: 'clear', required: true });
+    await fs.writeJson(selected.jobFile, selected.job);
+    const actual = run(['--job', selected.jobFile]);
+    expect(actual.status, actual.stderr).toBe(1);
+    expect(JSON.parse(actual.stderr).reason).toMatch(/review output root overlaps/i);
+  });
+
+  it('refuses a citation of a pinned input that is not clear, so the pin the citation names must be status clear', async () => {
+    const selected = await prepareEvaluationJob(fixture);
+    const saved = path.join(fixture.root, 'saved-checks');
+    await fs.outputFile(path.join(saved, 'native-check.raw.txt'), await fs.readFile(selected.rawFile));
+    const pin = await reviewPin(path.join(saved, 'native-check.raw.txt'));
+    selected.job.roots.read.push(saved);
+    selected.job.inputs.push({ id: 'native-check-raw', kind: 'validator', ...pin, sections: [], status: 'held', required: false });
+    await fs.writeJson(selected.jobFile, selected.job);
+    const preflight = run(['--job', selected.jobFile]);
+    expect(preflight.status, preflight.stderr).toBe(0);
+    const result = evaluationResult(selected, JSON.parse(preflight.stdout));
+    result.criteria[0]!.citations = [{ sourceId: 'native-check-raw', path: 'native-check.raw.txt', sha256: pin.sha256, startLine: 1, endLine: 1, quote: 'selected fixture layout checked' }];
+    const file = path.join(selected.evidence, 'result.json');
+    await fs.writeJson(file, result);
+    const refused = run(['--job', selected.jobFile, '--result', file]);
+    expect(refused.status).toBe(1);
+    expect(JSON.parse(refused.stderr).reason).toBe('Citation selects an unavailable/unpinned input or substituted path.');
+  });
+
+  // The coordinator's instruction is enough to build a job the checker accepts: the test takes the field list out of the reference text itself
+  // (the eight fields of an input, and the fixed value the text gives to each), builds the input from it and checks the job and a citing result.
+  it('accepts a review job whose saved check output is pinned by following the coordinator\'s instruction literally, and a result citing it', async () => {
+    const text = (await fs.readFile(path.resolve('registry/skills/coordinate-artifact/references/verification.md'), 'utf8')).replace(/\r\n/g, '\n');
+    const from = text.indexOf('with all eight fields of `assets/job.schema.json`:');
+    expect(from).toBeGreaterThan(0);
+    const span = text.slice(from + 'with all eight fields of `assets/job.schema.json`:'.length, text.indexOf('. Keep that copy', from));
+    const tokens = [...span.matchAll(/`([^`]+)`/g)].map(match => match[1]!);
+    const schema = await fs.readJson(path.resolve('registry/skills/evaluate-artifact/assets/job.schema.json')) as { properties: { inputs: { items: { required: string[] } } } };
+    const fields = schema.properties.inputs.items.required;
+    const grouped = new Map<string, string[]>();
+    for (const token of tokens) { if (fields.includes(token)) grouped.set(token, []); else [...grouped.values()].at(-1)!.push(token); }
+    expect([...grouped.keys()].sort()).toEqual([...fields].sort());
+
+    const selected = await prepareEvaluationJob(fixture);
+    const saved = path.join(fixture.root, 'saved-checks');
+    const copy = path.join(saved, 'native-check.raw.txt');
+    await fs.outputFile(copy, await fs.readFile(selected.rawFile));
+    const pin = await reviewPin(copy);
+    const input: Record<string, unknown> = {};
+    for (const [field, values] of grouped) {
+      if (field === 'path' || field === 'bytes' || field === 'sha256') input[field] = pin[field];
+      else { const last = values.at(-1)!; try { input[field] = JSON.parse(last); } catch { input[field] = last; } }
+    }
+    expect(input).toMatchObject({ id: 'native-check-raw', kind: 'validator', sections: [], status: 'clear', required: true });
+    // Where the copy lives: a folder of its own beside the review root, declared alone as a read root.
+    expect(path.dirname(path.dirname(copy))).toBe(path.dirname(selected.evidence));
+    selected.job.roots.read.push(saved);
+    selected.job.inputs.push(input as typeof selected.job.inputs[number]);
+    await fs.writeJson(selected.jobFile, selected.job);
+    const preflight = run(['--job', selected.jobFile]);
+    expect(preflight.status, preflight.stderr).toBe(0);
+    const result = evaluationResult(selected, JSON.parse(preflight.stdout));
+    result.criteria[0]!.citations = [{ sourceId: input.id as string, path: 'native-check.raw.txt', sha256: pin.sha256, startLine: 1, endLine: 1, quote: 'selected fixture layout checked' }];
+    const file = path.join(selected.evidence, 'result.json');
+    await fs.writeJson(file, result);
+    const actual = run(['--job', selected.jobFile, '--result', file]);
+    expect(actual.status, actual.stderr).toBe(0);
+    expect(JSON.parse(actual.stdout)).toMatchObject({ recordValid: true, candidateMatch: true, acceptedDraft: false });
+  });
+
   it.each<[string, (result: ReturnType<typeof evaluationResult>) => unknown]>([
     ['duplicate file coverage', result => ({ ...result, coverage: [...result.coverage, ...result.coverage] })],
     ['duplicate/omitted criterion', result => ({ ...result, criteria: result.criteria.map((item, index) => index === 0 ? { ...item, id: 'host-fit' } : item) })],

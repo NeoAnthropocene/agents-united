@@ -23,7 +23,7 @@
   "coverage": "Exactly one reviewed/preservation-only/unavailable row per inventory path, with a rationale.",
   "criteria": "Every fixed criterion ID with outcome, rationale and pinned citations for applicable substantive opinions.",
   "findings": "Stable ID, criterionId, CRITICAL/HIGH/MEDIUM/LOW/INFO severity, confidence, actual source citations, rationale and actionable correction.",
-  "citation": "sourceId selects candidate or one declared evidence pin; path is candidate-relative or the input basename. Include pinned sha256, logical startLine/endLine and an actual bounded quote.",
+  "citation": "sourceId selects candidate or one declared evidence pin with status clear; path is candidate-relative or the input basename. Include pinned sha256, logical startLine/endLine and an actual bounded quote.",
   "deterministicEvidence": "Mirror every selected caller check's id/status/exit/rawSha256/receiptSha256; observations do not authenticate execution.",
   "status": "reviewed/partial/blocked with no-blocking-findings/changes-requested/inconclusive opinion; a blocked review needs an open item.",
   "live": "unverified",

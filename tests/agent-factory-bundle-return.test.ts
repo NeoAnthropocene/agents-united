@@ -777,7 +777,7 @@ describe('the route is named where it is loaded', () => {
   it('gives the Bundle route its own paragraph in the coordinator main: the maintainer invokes the fork and no P5 review follows', async () => {
     const body = await lf('registry/hosts/claude/agents/orchestrator-agent-factory.md');
     const section = body.slice(body.indexOf('## One Bundle proposal'), body.indexOf('## One host-update sync'));
-    for (const needle of ['references/bundle-authoring.md', 'This main has no Skill tool and does not start the `author-bundle` fork', '`/author-bundle <absolute task path>`', 'postflight check and `agents bundle-check`', 'never reruns `bundle-return.mjs`', 'independent quality review is unavailable', 'separate tasks']) expect(section, needle).toContain(needle);
+    for (const needle of ['references/bundle-authoring.md', 'This main has no Skill tool and does not start the `author-bundle` fork', '`/author-bundle <absolute task path>`', 'postflight check and `node <checkout>/dist/cli.js bundle-check`', 'never reruns `bundle-return.mjs`', 'independent quality review is unavailable', 'separate tasks']) expect(section, needle).toContain(needle);
     expect(body).toContain('the maintainer, not this main, invokes the `author-skill`, `author-contract` and `author-bundle` forks');
   });
   it('states in the reference what bundle-check does not show and the evidence the hand-back carries', async () => {

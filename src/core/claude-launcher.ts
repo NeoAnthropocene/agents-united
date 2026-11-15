@@ -18,6 +18,12 @@ import type {
 /** Default coordinator when the caller could not resolve the bundle's own `orchestrator` field. */
 const DEFAULT_COORDINATOR = 'orchestrator-engineering.md';
 
+// Observed on 2.1.323 (2026-11-15, headless `--agent` runs): the factory main's preloaded Skill text was not in its context, so a main that reads the entry itself is told
+// where it is and what `${CLAUDE_SKILL_DIR}` and the relative paths of a Skill file mean (it sees the variable as literal text). The agent body of the main
+// (registry/hosts/claude/agents/orchestrator-agent-factory.md) states both sentences in the same words; tests/agent-factory-coordinator-launcher.test.ts pins that.
+const FACTORY_SKILL_ENTRY_SENTENCE = 'If the text of the "coordinate-artifact" Skill is not already in your context, read its installed entry ".claude/skills/coordinate-artifact/SKILL.md" in full before your first action.';
+const FACTORY_SKILL_DIR_SENTENCE = 'In a Skill file, "${CLAUDE_SKILL_DIR}" means that Skill\'s installed folder (".claude/skills/<skill name>" in the project), and a "scripts/", "references/" or "assets/" path in a Skill file is relative to that folder; use the absolute path when running a script.';
+
 export interface ClaudeActivationPlan {
   bundleName: string;
   scope: InstallScope;
@@ -271,7 +277,8 @@ export class ClaudeLauncher {
 
     const bootstrapLines = factory ? [
       'You are the installed Agents United artifact factory coordinator.',
-      `Read your checked native main at ".claude/agents/${coordinatorName}.md" and its required "coordinate-artifact" preload before acting.`,
+      // Observed on 2.1.323 (2026-11-15, headless `--agent` runs): the main's preloaded Skill text was not in its context, so the entry is named by its installed path.
+      `Read your checked native main at ".claude/agents/${coordinatorName}.md" before acting. ${FACTORY_SKILL_ENTRY_SENTENCE} ${FACTORY_SKILL_DIR_SENTENCE}`,
       'The fixed ordinary foreground worker map is factory-realizer for bounded native draft creation/update, factory-evaluator for fresh independent read-only review and factory-sync for read-only host-update sync planning. Inspect the actual Host result and refuse an unsupported fork, teammate, background or partial mechanism.',
       'Use the supplied fixed job and caller-held digests. Keep draftRoot and evidenceRoot physically disjoint from each other, the selected source checkout and managed/protected paths. Verify final bytes and installed P2/P5 check results before reporting a candidate; repair defaults to zero and needs explicit bounded authorization.',
       'Installed .claude/ files are managed runtime copies: do not edit them. In the selected authoritative source checkout, registry/core/ owns shared pairs, registry/hosts/claude/ owns native definitions and loaders, and registry/skills/ owns shared Skill support. The optional .agents/ store is not the authoritative native source registry. If those sources are unavailable, report the dependent authoring work unavailable.',

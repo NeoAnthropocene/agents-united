@@ -264,7 +264,7 @@ describe('one canonical upstream clause in every factory Skill', () => {
   it('names all three skill-check policies where the Skill route names the command', async () => {
     const text = await read('registry/skills/coordinate-artifact/references/skill-authoring.md');
     const step = text.split('\n').find(line => /^9\. /.test(line)) ?? '';
-    expect(step).toContain('agents skill-check');
+    expect(step).toContain('node <checkout>/dist/cli.js skill-check');
     for (const policy of ['agents-united-original', 'private-owner', 'adapted-source']) expect(step, policy).toContain(policy);
   });
 });

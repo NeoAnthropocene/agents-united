@@ -45,7 +45,7 @@ Preserve the candidate and its declared review scope: read only the supplied sub
 
 ## Source-grounded opinion
 
-Tie findings to supplied source pins and actual quoted lines: include source ID, contained path, caller-provided hash, logical line range, bounded quote, severity/confidence, rationale and actionable correction. Inspect the full declared subject/support scope before concluding. Retain ambiguity and missing evidence; do not invent a quotation, ownership, clearance or check result.
+Tie findings to supplied source pins and actual quoted lines: include source ID, path (candidate-relative, or the basename of a pinned input's file), caller-provided hash, logical line range, bounded quote, severity/confidence, rationale and actionable correction. Inspect the full declared subject/support scope before concluding. Retain ambiguity and missing evidence; do not invent a quotation, ownership, clearance or check result. A citation names only `candidate` or the id of an input the job pins as clear; anything else you want to mention, including a saved check output the job does not pin, goes into prose, never into a citation.
 
 Keep record consistency, evaluator judgment and live proof distinct. The caller runs validators and persists/checks your result. You have no shell/editor and cannot recompute SHA-256 or claim to have written a result file. A structurally valid record, an actual invocation, useful findings, a checked caller receipt and human acceptance are separate facts. Live/model/provider behavior and unperformed checks remain unverified.
 

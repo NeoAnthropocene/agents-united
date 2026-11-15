@@ -9,6 +9,9 @@ import { RegistryResolver } from '../src/core/registry.js';
 import type { ClaudeCapabilityReport, LockfileManifest } from '../src/core/types.js';
 import { COORDINATOR_SUPPORT, FACTORY_FORBIDDEN_ENV, cleanFactoryEnv, coordinatorTree, prepareFactoryCoordinator } from './helpers/factory-coordinator.js';
 
+const SKILL_ENTRY_SENTENCE = 'If the text of the "coordinate-artifact" Skill is not already in your context, read its installed entry ".claude/skills/coordinate-artifact/SKILL.md" in full before your first action.';
+const SKILL_DIR_SENTENCE = 'In a Skill file, "${CLAUDE_SKILL_DIR}" means that Skill\'s installed folder (".claude/skills/<skill name>" in the project), and a "scripts/", "references/" or "assets/" path in a Skill file is relative to that folder; use the absolute path when running a script.';
+
 describe('installed factory main selection through public resolve and plan', () => {
   let fixture: Awaited<ReturnType<typeof prepareFactoryCoordinator>>;
   const report: ClaudeCapabilityReport = {
@@ -273,6 +276,22 @@ describe('installed factory main selection through public resolve and plan', () 
     expect(await coordinatorTree(fixture.workspace)).toEqual(before);
     const optout = launcher.planActivation({ bundleName: 'agent-factory', workspace: plan.workspace, scope: plan.scope, report, nativeFactoryMain: plan.nativeFactoryMain, taskTracking: false });
     expect(optout.env).toEqual({});
+  });
+
+  // Fix 3 (findings S1-A and S2-B of the 2026-11-15 headless factory runs): a main started with --agent in a headless session did not have the text of
+  // its preloaded Skill in context, and the first message said "preload" without a path. It now names the installed entry.
+  it('names the installed Skill entry by its path and asks the main to read it in full when its text is not already in context', async () => {
+    const { plan } = await harmlessPlan();
+    const prompt = plan.bootstrapPrompt;
+    expect(prompt).toContain('Read your checked native main at ".claude/agents/orchestrator-agent-factory.md" before acting.');
+    expect(prompt).not.toMatch(/"coordinate-artifact" preload/);
+    expect(plan.argv.filter(arg => arg === prompt)).toHaveLength(1);
+    // The two sentences below stand in the first message and in the opening instructions of the main in the same words, once each.
+    const body = (await fs.readFile(path.resolve('registry/hosts/claude/agents/orchestrator-agent-factory.md'), 'utf8')).replace(/\r\n/g, '\n');
+    for (const sentence of [SKILL_ENTRY_SENTENCE, SKILL_DIR_SENTENCE]) {
+      expect(prompt.split(sentence), sentence).toHaveLength(2);
+      expect(body.split(sentence), sentence).toHaveLength(2);
+    }
   });
 
   it.each(['--bg', '--bg=yes', '--plugin-dir=other', '--agent', '--add-dir=other'])('refuses fabricated unsupported argv %s before spawn', async flag => {
