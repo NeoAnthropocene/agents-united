@@ -1017,6 +1017,31 @@ describe("the worker contract, enforced with each host's own controls", () => {
     expect(ro).not.toContain('--settings');
   });
 
+  it('Antigravity read-only: the prompt says no shell command is available and that any attempt ends the run', async () => {
+    const { buildSpec } = await lib();
+    const spec = buildSpec(CFG, 'antigravity', CFG.hosts.antigravity.tiers.medium, 'TASK', 'read-only', 'C:/w', 'medium', {});
+    const prompt = spec.args[spec.args.indexOf('-p') + 1]!;
+    expect(prompt).toContain('Shell commands: none are available in this read-only run, and any shell command at all stops the run with no result.');
+    expect(prompt).toContain('You can read a file only by its path: there is no tool here to list a folder or to search file contents.');
+    expect(prompt).toContain('Read the files the brief names; if you would need to find a file or a line you were not given, say what you could not look up instead of guessing.');
+    expect(prompt).not.toContain('file search tools');
+    expect(prompt).not.toContain('only these exact command lines');
+  });
+
+  it('Antigravity edit: the prompt keeps the edit note and does not carry the read-only note', async () => {
+    const { buildSpec } = await lib();
+    const spec = buildSpec(CFG, 'antigravity', CFG.hosts.antigravity.tiers.medium, 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: ['npm run build'] });
+    const prompt = spec.args[spec.args.indexOf('-p') + 1]!;
+    expect(prompt).toContain('only these exact command lines');
+    expect(prompt).not.toContain('none are available in this read-only run');
+  });
+
+  it('a read-only spec for another host does not carry the Antigravity read-only shell note', async () => {
+    const { buildSpec } = await lib();
+    const spec = buildSpec(CFG, 'cline', CFG.hosts.cline.tiers.medium, 'TASK', 'read-only', 'C:/w', 'medium', {});
+    expect(JSON.stringify(spec)).not.toContain('none are available in this read-only run');
+  });
+
   it('Codex and Cline carry no allow list: Codex has its sandbox, Cline has the hook guard', async () => {
     const c = await argsOf('codex', 'edit');
     expect(c).toContain('workspace-write');
@@ -1944,6 +1969,10 @@ describe('the documents describe the new behaviour in one wording', () => {
     expect(doc('examples/worked-example.md')).toMatch(/lead delegates/i);
     expect(doc('references/delegation-brief.md')).toMatch(/--access edit/);
     expect(doc('SKILL.md')).toMatch(/`read-only` by default/);
+  });
+
+  it('the brief tells the lead that a read-only Antigravity worker can only read files by path, so every file must be named', () => {
+    expect(doc('references/delegation-brief.md')).toContain('A read-only Antigravity worker can only read files by path, with no listing or search tool, so name every file it should read; do not ask it to search.');
   });
 });
 

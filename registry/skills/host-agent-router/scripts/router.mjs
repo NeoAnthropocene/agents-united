@@ -571,7 +571,7 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
       const make = omit => {
         const rules = ro ? { rules: [], full: [], fullFor: new Map(), notes: [] } : antigravityAllowRules(allow, { platform: extra.platform, resolve: extra.resolve, realpath: extra.realpath, home: extra.home, cwd, omit });
         const fullSentence = rules.full.length ? ` If a program name is not recognised, you may run the listed full-path form of the same command (${rules.full.join('; ')}) and nothing else.` : '';
-        const note = ro ? '' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
+        const note = ro ? 'Shell commands: none are available in this read-only run, and any shell command at all stops the run with no result. You can read a file only by its path: there is no tool here to list a folder or to search file contents. Read the files the brief names; if you would need to find a file or a line you were not given, say what you could not look up instead of guessing.\n\n' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
         const text = preamble(access, tier) + note + attached + prompt;
         const args = ['-p', text, '--model', t.model, '--mode', ro ? 'plan' : 'accept-edits', '--output-format', 'json'];
         if (!ro) args.push('--sandbox', '--settings', JSON.stringify({ permissions: { allow: rules.rules } }));
