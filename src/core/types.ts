@@ -1221,3 +1221,75 @@ export interface SkillCheckResult {
   live: 'unverified';
   acceptedDraft: false;
 }
+
+/** Plan 033 P20: the deterministic Bundle proposal command (`agents bundle-check`); the rules live in bundle-check.ts. */
+export type BundleCheckCheckId = 'inventory' | 'shape' | 'registry-rules' | 'references' | 'bundle-rules' | 'consistency';
+export type BundleCheckOperation = 'create' | 'update' | 'reuse';
+export type BundleCheckStatus = 'passed' | 'failed' | 'unavailable';
+export type BundleCheckGateStatus = BundleCheckStatus | 'not-run';
+export type BundleCheckCode =
+  | 'USAGE' | 'INPUT_UNAVAILABLE' | 'CANDIDATE_DRIFT' | 'REGISTRY_DRIFT' | 'OUTPUT_LIMIT'
+  | 'PATH_UNSAFE' | 'INPUT_LIMIT' | 'INVENTORY' | 'ENCODING' | 'JSON_INVALID'
+  | 'SHAPE' | 'BUNDLE_CONFLICT' | 'REGISTRY_RULE' | 'REGISTRY_REF' | 'BUNDLE_RULE' | 'CONSISTENCY';
+
+export interface BundleCheckFinding {
+  code: BundleCheckCode;
+  path: string | null;
+  message: string;
+}
+
+export interface BundleCheckGate {
+  id: BundleCheckCheckId;
+  status: BundleCheckGateStatus;
+  reason: string | null;
+  findings: BundleCheckFinding[];
+}
+
+/** A reference of a proposed Bundle that does not resolve in the selected registry. */
+export interface BundleCheckUnresolved {
+  bundle: string;
+  kind: 'orchestrator' | 'agent' | 'skill' | 'workflow' | 'rule' | 'parentBundle' | 'recommendedAddon';
+  name: string;
+}
+
+export interface BundleCheckInput {
+  /** Absolute path of the proposal folder (the four authored files). */
+  artifact?: string;
+  /** Absolute path of the registry folder the proposal is checked against. */
+  registry?: string;
+  /** `create` (default), `update` or `reuse`; the last two allow preservation-only files in the proposal folder. */
+  operation?: string;
+  /** Accept references that do not resolve in the registry (they are still listed in `unresolved`). */
+  allowUnresolved?: boolean;
+  /** Test seam: called once, after every check ran and before the final readback of the proposal and the registry. */
+  seam?: { beforeReadback?: () => void };
+}
+
+export interface BundleCheckResult {
+  version: 1;
+  kind: 'deterministic';
+  status: BundleCheckStatus;
+  operation: string | null;
+  allowUnresolved: boolean;
+  artifact: string | null;
+  registry: string | null;
+  bundleNames: string[];
+  candidateDigest: string | null;
+  registryDigest: string | null;
+  inventoryComplete: boolean;
+  findingsComplete: boolean;
+  inventory: SkillCheckInventoryItem[];
+  /** Paths of the preservation-only files (update and reuse); never parsed or interpreted. */
+  preserved: string[];
+  /** Names of the registry bundles the proposal replaces in the merged manifest (update and reuse). */
+  replaces: string[];
+  unresolved: BundleCheckUnresolved[];
+  checks: BundleCheckGate[];
+  findings: BundleCheckFinding[];
+  quality: 'pending';
+  live: 'unverified';
+  delivery: 'unverified';
+  provisioning: 'unverified';
+  licensing: 'unverified';
+  acceptedDraft: false;
+}

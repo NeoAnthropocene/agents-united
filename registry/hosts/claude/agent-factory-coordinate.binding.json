@@ -47,7 +47,8 @@
     "scripts/check-contract-return.mjs",
     "assets/contract-task.schema.json",
     "assets/contract-return.schema.json",
-    "references/host-sync.md"
+    "references/host-sync.md",
+    "references/contribution.md"
   ],
   "references": [
     {

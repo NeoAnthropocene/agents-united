@@ -17,6 +17,8 @@ const NEW_SKILL_ROUTE_SUPPORT = ['references/skill-authoring.md', 'scripts/check
 const NEW_CONTRACT_ROUTE_SUPPORT = ['references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json'] as const;
 /** The one support file the host-update sync route adds to the coordinator closure (slice 2); the sync checker itself stays in the sync-host Skill. */
 const NEW_SYNC_ROUTE_SUPPORT = ['references/host-sync.md'] as const;
+/** The one support file the contribution runbook adds to the coordinator closure (P22); `tests/agent-factory-contribution-runbook.test.ts` pins its content. */
+const NEW_CONTRIBUTION_SUPPORT = ['references/contribution.md'] as const;
 /** The installed files of the sync worker closure that the coordinator declares it depends on. */
 const SYNC_CLOSURE_INSTALLED = ['.claude/agents/factory-sync.md', '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json',
   '.claude/skills/sync-host/assets/sync-job.schema.json', '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs'] as const;
@@ -43,8 +45,8 @@ describe('factory coordinator required native delivery through public installati
     const receipt = await fs.readJson(fixture.installed(`${COORDINATOR_ROOT}/assets/claude-binding.json`));
     expect(receipt.requiredRoles).toEqual(['factory-realizer', 'factory-evaluator', 'factory-sync']);
     expect(receipt.requiredSupport).toEqual([...COORDINATOR_SUPPORT]);
-    expect(receipt.requiredSupport).toHaveLength(16);
-    for (const rel of [...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT, ...NEW_SYNC_ROUTE_SUPPORT]) {
+    expect(receipt.requiredSupport).toHaveLength(17);
+    for (const rel of [...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT, ...NEW_SYNC_ROUTE_SUPPORT, ...NEW_CONTRIBUTION_SUPPORT]) {
       expect(receipt.requiredSupport, rel).toContain(rel);
       expect(await fs.pathExists(fixture.installed(`${COORDINATOR_ROOT}/${rel}`)), rel).toBe(true);
     }
@@ -100,7 +102,7 @@ describe('factory coordinator required native delivery through public installati
     expect(await coordinatorTree(fixture.workspace)).toEqual(before);
   });
 
-  it.each([...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT, ...NEW_SYNC_ROUTE_SUPPORT])('refuses a coordinator declaration that drops the new support %s before writes', async rel => {
+  it.each([...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT, ...NEW_SYNC_ROUTE_SUPPORT, ...NEW_CONTRIBUTION_SUPPORT])('refuses a coordinator declaration that drops the new support %s before writes', async rel => {
     const file = fixture.source(COORDINATOR_DECLARATION), binding = await fs.readJson(file);
     binding.requiredSupport = binding.requiredSupport.filter((item: string) => item !== rel);
     await fs.writeJson(file, binding);
@@ -188,13 +190,17 @@ describe('factory coordinator required native delivery through public installati
       'producer self-review is not independent review': ['Producer self-review is not independent'],
       'an empty create baseline or an old pass is never reused': ['Never reuse an empty create baseline, old review hash or pass receipt'],
       'local and upstream intent stop at the candidate, with no installation, publication, external or paid call': [
-        'Local intent stops at the candidate; upstream intent only prepares the full pinned dev contribution template with sent false',
+        'Local intent stops at the candidate. Upstream intent only prepares the pinned `.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md`, base `dev`, `sent: false`, following the checkout\'s `docs/artifact-contribution.md`; no commit, push, pull request or publication follows.',
         'No installation, publication, external Host/provider or paid call follows, for local and upstream intent alike'],
+      // Moved out of both coordinator entries by the contribution runbook (P22) to make room for the runbook pointer in step 6.
+      'a revision reopens or links the work, invalidates dependent acceptance and closes only after changed-byte readback and applicable rechecks': [
+        'Before repair reopen assigned work or link an owned fix, invalidate dependent acceptance and close after changed-byte readback/rechecks',
+        'Do not leave unresolved fixes marked complete', 'Read back the changed outputs and applicable rechecks before closing'],
       'absent Task tools mean concise briefs, no invented IDs and no retry loop': [
         'Main Task tools are conditional', 'No invented IDs, TaskOutput or retry/status-poll loop',
         'use concise briefs and handoffs without invented tool calls or retrying missing tools'],
     };
-    expect(Object.keys(obligations)).toHaveLength(8);
+    expect(Object.keys(obligations)).toHaveLength(9);
     for (const [label, parts] of Object.entries(obligations)) for (const part of parts) expect(body, `${label}: ${part}`).toContain(part);
   });
 

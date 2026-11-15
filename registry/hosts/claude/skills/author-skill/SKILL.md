@@ -29,7 +29,7 @@ Return the complete folder, before/after diff, final inventory/hashes, provenanc
 4. Define the skill's decision-changing guidance: concrete trigger, useful output, constraints, error recovery and hand-off. Use an existing skill only as prior art; do not carry its unrelated procedures into this job.
 5. Write a small entry with selective references and justified scripts. Apply already-authored scoped text using Node >=24, the selected absolute skill-root path to `scripts/draft.mjs` and an absolute job JSON; see the contract. Claude path example: `node "${CLAUDE_SKILL_DIR}/scripts/draft.mjs" <absolute-job.json>`. Each realization resolves its own root. The helper emits hashes/diff; actual validators remain separate.
 6. Inspect the final files and run applicable [quality checks](references/quality.md). Report missing tools and unperformed host checks; a listing or prose instruction does not prove loading or enforcement.
-7. Compare the final inventory against the baseline, check the repair scope and return the report. Local intent ends here. Upstream intent prepares the existing contribution template and evidence without sending a PR.
+7. Compare the final inventory against the baseline, check the repair scope and return the report. Local intent ends here. Upstream intent only prepares the pinned `.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md`, base `dev`, `sent: false`, following the checkout's `docs/artifact-contribution.md`; no commit, push, pull request or publication follows.
 
 ## Code & Config Exemplars
 Read [the worked example](examples/one-draft.md) for a new draft and a repair that retains a user's notes. Choose truthful metadata for the source disposition; an original skill has no upstream source field.

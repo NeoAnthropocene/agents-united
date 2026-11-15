@@ -37,11 +37,11 @@ const CHECK_IDS: readonly SkillCheckCheckId[] = ['metadata', 'contract', 'layout
 const MAX_FILES = 32;
 const MAX_TOTAL_BYTES = 1024 * 1024;
 const MAX_FILE_BYTES = 256 * 1024;
-const MAX_DIRECTORIES = 128;
+export const MAX_DIRECTORIES = 128;
 /** Every entry looked at (files, directories, links, specials), so a tree of links cannot make the walk unbounded. */
-const MAX_ENTRIES = 1024;
-const MAX_FINDINGS = 256;
-const MAX_OUTPUT_BYTES = 256 * 1024;
+export const MAX_ENTRIES = 1024;
+export const MAX_FINDINGS = 256;
+export const MAX_OUTPUT_BYTES = 256 * 1024;
 /** The reviewed corpus is about 6 KB; a bigger file is a different file, hashed only up to this many bytes. */
 const MAX_CORPUS_BYTES = 64 * 1024;
 
@@ -55,13 +55,13 @@ export function skillCheckExitCode(result: SkillCheckResult): 0 | 1 | 2 {
   return result.status === 'passed' ? 0 : result.status === 'failed' ? 1 : 2;
 }
 
-const sha256 = (bytes: Buffer | string): string => createHash('sha256').update(bytes).digest('hex');
+export const sha256 = (bytes: Buffer | string): string => createHash('sha256').update(bytes).digest('hex');
 const finding = (code: SkillCheckCode, filePath: string | null, message: string): SkillCheckFinding => ({ code, path: filePath, message });
-const errorText = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-const errorCode = (error: unknown): string => (error as NodeJS.ErrnoException | undefined)?.code ?? errorText(error);
+export const errorText = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+export const errorCode = (error: unknown): string => (error as NodeJS.ErrnoException | undefined)?.code ?? errorText(error);
 
 /** The P5 check-review canonical form: recursively sorted keys, no whitespace. */
-function canonical(value: unknown): string {
+export function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
   if (value !== null && typeof value === 'object') {
     const record = value as Record<string, unknown>;
@@ -105,8 +105,8 @@ function draftOf(partial: Partial<Draft>): Draft {
 }
 
 /** Echoed text (a path or a policy name taken from the command line) is shortened to this many characters in the last-resort result. */
-const MAX_ECHO_CHARS = 512;
-const shortened = (value: string | null): string | null => (value !== null && value.length > MAX_ECHO_CHARS ? `${value.slice(0, MAX_ECHO_CHARS)}...` : value);
+export const MAX_ECHO_CHARS = 512;
+export const shortened = (value: string | null): string | null => (value !== null && value.length > MAX_ECHO_CHARS ? `${value.slice(0, MAX_ECHO_CHARS)}...` : value);
 
 function finish(draft: Draft): SkillCheckResult {
   const gateFindings = draft.checks.flatMap(check => check.findings);
@@ -210,7 +210,7 @@ export function withoutTrailingSeparators(value: string): string {
  * Only the strict ancestors are checked here: the leaf itself is vetted by its own reader (takeInventory for the
  * candidate folder, readCorpus for the corpus file). Returns the first linked ancestor, or null when there is none.
  */
-function linkedAncestorOf(leaf: string): string | null {
+export function linkedAncestorOf(leaf: string): string | null {
   let current = path.parse(leaf).root;
   const parts = leaf.slice(current.length).split(PATH_SEPARATORS).filter(part => part !== '');
   for (const part of parts.slice(0, -1)) {
@@ -228,7 +228,7 @@ function linkedAncestorOf(leaf: string): string | null {
 }
 
 /** The traversal-alias rule of the same `absolute()` helpers: a `.` or `..` segment makes the argument name a different folder per reader. */
-const hasTraversalAlias = (value: string): boolean => value.split(/[\\/]/).some(part => part === '.' || part === '..');
+export const hasTraversalAlias = (value: string): boolean => value.split(/[\\/]/).some(part => part === '.' || part === '..');
 
 /**
  * The entry-name rule of the same two scripts (review finding F7): `relative()` in check-review.mjs:37-41 and the
@@ -256,7 +256,7 @@ export function unsafeEntryName(name: string): string | null {
  */
 const utf8Decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 
-function validUtf8(bytes: Buffer): boolean {
+export function validUtf8(bytes: Buffer): boolean {
   try {
     utf8Decoder.decode(bytes);
     return true;
@@ -319,7 +319,7 @@ type InventoryOutcome =
   | { kind: 'unavailable'; finding: SkillCheckFinding }
   | { kind: 'rejected'; findings: SkillCheckFinding[] };
 
-const byPath = (a: { path: string }, b: { path: string }): number => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+export const byPath = (a: { path: string }, b: { path: string }): number => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 
 /**
  * Walks the candidate with lstat only (nothing is read or followed until the whole tree passed the link, case,

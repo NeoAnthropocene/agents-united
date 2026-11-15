@@ -25,7 +25,7 @@ Return candidate/evidence or rework with original/revision digests, complete pat
 3. Delegate realization through the reviewed ordinary foreground mechanism with the complete job and caller-held digest, then inspect the actual return. Read and independently inventory/hash all candidate and preserved bytes, check the realizer handback and run trusted final-byte validators.
 4. Build and validate the existing P5 claude-agent review job against those final bytes. Invoke a fresh independent evaluator with complete job/candidate digests; save its returned data, run the installed review checker and inspect actual citations, coverage and findings.
 5. Follow [repair](references/repair.md): default zero repairs, at most one explicitly preauthorized scoped repair. Preserve immutable r0/r1 evidence, invalidate acceptance, issue a new update job/digest against the current candidate baseline and require fresh independent review.
-6. Follow [handback](references/handback.md). Keep required gaps visible, account for every process/byte/time limit, and stop on exhaustion or unsupported mechanism.
+6. Follow [handback](references/handback.md); upstream intent also follows [contribution](references/contribution.md). Keep required gaps visible, account for every process/byte/time limit, and stop on exhaustion or unsupported mechanism.
 7. For a Skill draft, check the task with `assets/skill-task.schema.json`, run `node "${CLAUDE_SKILL_DIR}/scripts/check-skill-return.mjs"` pre/postflight, and check `assets/skill-return.schema.json`. For a shared definition/contract draft, use `assets/contract-task.schema.json`, `node "${CLAUDE_SKILL_DIR}/scripts/check-contract-return.mjs"` and `assets/contract-return.schema.json`. Never rerun `draft.mjs` or `draft-pair.mjs`.
 8. For host-update sync, follow [host-update sync](references/host-sync.md): assemble the sync job, run the sync checker before and after the read-only `factory-sync` worker, and report affected artifacts. Nothing is implemented; no hold is cleared.
 
@@ -39,5 +39,4 @@ Anti-patterns: editing the candidate instead of delegating; accepting a producer
 ## Verification Checklist
 - Original fixed values, supplied pair and immutable revision evidence remain independently pinned.
 - Caller execution, producer output, evaluator opinion, human acceptance and live proof stay distinct.
-- Revisions reopen/link actual work, invalidate dependent acceptance and close only after changed-byte readback and applicable checks.
 - Prepared comparisons remain unrun; no Host/model/provider/private-record access or publication is authorized by this Skill.

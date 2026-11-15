@@ -38,4 +38,4 @@ Anti-patterns: rewriting the shared floor to fit a host; inferring authorization
 - Final paths/hashes/diffs match the actual files and original scope; required source and loading edges are present.
 - Every required check names exact command, revision, complete logs and actual exit; independent caller execution remains distinct.
 - Quality review and live behavior remain unverified until their own evidence exists. Prepared evals give no spending permission.
-- Local intent ends in hand-off; upstream intent only prepares the pinned contribution template with base dev and sent false.
+- Local intent ends in hand-off. Upstream intent only prepares the pinned `.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md`, base `dev`, `sent: false`, following the checkout's `docs/artifact-contribution.md`; no commit, push, pull request or publication follows.

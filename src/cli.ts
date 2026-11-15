@@ -8,6 +8,7 @@ import { InstallEngine } from './core/installer.js';
 import { checkFactoryArtifact } from './core/factory-check.js';
 import { checkSharedPair } from './core/shared-pair.js';
 import { runSkillCheck, skillCheckExitCode, skillCheckUsageResult } from './core/skill-check.js';
+import { bundleCheckExitCode, bundleCheckUsageResult, runBundleCheck } from './core/bundle-check.js';
 import type { FactoryCheckResult } from './core/types.js';
 import { resolveStateDir } from './core/state-dir.js';
 import { UninstallEngine } from './core/uninstaller.js';
@@ -403,6 +404,42 @@ cli
     const result = problems.length > 0 ? skillCheckUsageResult(problems, input) : runSkillCheck(input);
     console.log(JSON.stringify(result, null, 2));
     process.exitCode = skillCheckExitCode(result);
+  });
+
+cli
+  .command('bundle-check', 'Check one drafted Bundle proposal folder against one registry folder (read-only)')
+  .allowUnknownOptions()
+  .option('--artifact [path]', 'Required: absolute path of the proposal folder (bundles.json, leader-responsibility.md, bindings.json, report.json)')
+  .option('--registry [path]', 'Required: absolute path of the registry folder to check the proposal against')
+  .option('--operation [name]', 'Optional: create (default), update or reuse; the last two allow preservation-only files in the proposal folder')
+  .option('--allow-unresolved', 'Optional flag: accept members the registry does not have (still listed as unresolved)')
+  .action((options: Record<string, unknown>) => {
+    // Unknown or malformed options take the same JSON exit-2 route as every other normal outcome, not CAC's prose error.
+    const problems: string[] = [];
+    for (const name of Object.keys(options)) {
+      if (name === '--') {
+        if (Array.isArray(options['--']) && options['--'].length > 0) problems.push('Unexpected arguments after --.');
+      } else if (name !== 'artifact' && name !== 'registry' && name !== 'operation' && name !== 'allowUnresolved') {
+        problems.push(`Unknown option ${name.length > 1 ? `--${name}` : `-${name}`}.`);
+      }
+    }
+    if (cli.args.length > 0) problems.push(`Unexpected argument ${JSON.stringify(String(cli.args[0]))}; use --artifact, --registry, --operation and --allow-unresolved.`);
+    const text = (name: 'artifact' | 'registry' | 'operation'): string | undefined => {
+      const value = options[name];
+      if (value === undefined) return undefined;
+      if (typeof value === 'string') return value;
+      problems.push(`--${name} needs exactly one text value.`);
+      return undefined;
+    };
+    let allowUnresolved: boolean | undefined;
+    if (options.allowUnresolved !== undefined) {
+      if (options.allowUnresolved === true) allowUnresolved = true;
+      else problems.push('--allow-unresolved is a flag and takes no value.');
+    }
+    const input = { artifact: text('artifact'), registry: text('registry'), operation: text('operation'), allowUnresolved };
+    const result = problems.length > 0 ? bundleCheckUsageResult(problems, input) : runBundleCheck(input);
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = bundleCheckExitCode(result);
   });
 
 cli

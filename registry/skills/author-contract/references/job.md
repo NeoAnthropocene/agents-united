@@ -16,4 +16,4 @@ The output paths are only `core/<definition>.core.md` and `core/<definition>.con
 
 The maximum job budget is six named offline checks/600 seconds with bounded raw logs and draft file/byte ceilings. Host sessions, model/provider calls, prompts and USD are zero. The caller tracks total elapsed work; schema caps and helper checks are not a general sandbox or automatic spending permission. Prepared maintainer evals do not change that budget.
 
-For upstream intent pin the complete existing `.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md` in the chosen checkout. The helper returns its body plus draft evidence for dev/sent false. Local intent omits that field. Neither record mode authorizes publication or source installation.
+For upstream intent pin the complete existing `.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md` in the chosen checkout. The helper returns its body plus draft evidence. Local intent omits that field. Neither record mode authorizes publication or source installation.

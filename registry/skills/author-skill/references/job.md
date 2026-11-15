@@ -18,7 +18,7 @@ Reject equality or containment between the validation/source checkout and the pr
 
 Before creating files, list the planned skill files and how each helps the job. Supporting files must be discoverable from the entry and required resources must survive installation. Keep optional material selective: a host-specific example is read only for that target. An intended runnable skill cannot be relabelled reference-only to bypass its loading gate.
 
-For upstream preparation, use the selected checkout's `docs/artifact-contribution.md` and focused PR template. If unavailable, report the prerequisite; do not fabricate an equivalent workflow. Managed workspace-source installation and host-library updates remain separate operations.
+Upstream preparation needs the selected checkout's guide and focused PR template. If either is unavailable, report the prerequisite; do not fabricate an equivalent workflow. Managed workspace-source installation and host-library updates remain separate operations.
 
 ## Bounded text helper
 
@@ -59,6 +59,6 @@ The helper supports ordinary scalar `metadata` fields; arbitrary YAML belongs to
 
 Create requires an absent draft directory. For repair, supply `mode: "repair"` and a `baseline` object mapping every existing file's relative path to its SHA-256. Capture that full inventory before proposing changes; a stale/incomplete baseline blocks replacement. The helper applies only `allowedPaths`, copies other existing files and directories, rejects link traversal/managed outputs/overlap, and stages the full result before replacing the draft. It never deletes a requested file; handle authorized removal explicitly outside this helper. Inspect its final inventory/diff and retain a separate baseline copy before editing.
 
-For upstream intent, additionally supply `contributionTemplate`, an absolute path inside the reviewed checkout to the existing focused artifact template. The report's `upstreamPreparation` carries that template plus draft evidence for base `dev`, with `sent: false`. Fill the template's remaining review fields using the actual final checks; this is local preparation, not a sent PR or completed review.
+For upstream intent, additionally supply `contributionTemplate`, an absolute path inside the reviewed checkout to the existing focused artifact template. The report's `upstreamPreparation` carries that template plus draft evidence. Upstream intent only prepares the pinned `.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md`, base `dev`, `sent: false`, following the checkout's `docs/artifact-contribution.md`; no commit, push, pull request or publication follows. Fill the template's remaining review fields using the actual final checks; a prepared body is not a completed review.
 
 Without a shell, follow the same bounded procedure manually: compare resolved roots, inspect each prerequisite and provenance source, capture all baseline hashes, apply only the proposed paths, preserve unrelated content, and compute the final inventory/diff. If required checks cannot run, preserve the draft and return the named blocked check. Do not substitute the helper's prerequisite checks for a quality verdict.

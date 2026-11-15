@@ -128,7 +128,7 @@ describe('installed factory main selection through public resolve and plan', () 
       '.claude/skills/coordinate-artifact/assets/skill-task.schema.json', '.claude/skills/coordinate-artifact/assets/skill-return.schema.json',
       '.claude/skills/coordinate-artifact/references/contract-authoring.md', '.claude/skills/coordinate-artifact/scripts/check-contract-return.mjs',
       '.claude/skills/coordinate-artifact/assets/contract-task.schema.json', '.claude/skills/coordinate-artifact/assets/contract-return.schema.json',
-      '.claude/skills/coordinate-artifact/references/host-sync.md',
+      '.claude/skills/coordinate-artifact/references/host-sync.md', '.claude/skills/coordinate-artifact/references/contribution.md',
       '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json', '.claude/skills/sync-host/assets/sync-job.schema.json',
       '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs', '.claude/skills/sync-host/references/plan.md',
       '.claude/skills/sync-host/references/rules/skill-attribution.md',
@@ -146,7 +146,8 @@ describe('installed factory main selection through public resolve and plan', () 
 
   it.each(['.claude/agents/factory-sync.md', '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json', '.claude/skills/sync-host/assets/sync-job.schema.json',
     '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs', '.claude/skills/sync-host/references/handback.md',
-    '.claude/skills/sync-host/references/rules/git-guardrails.md', '.claude/skills/coordinate-artifact/references/host-sync.md'])('refuses startup when the sync closure file %s is missing', async rel => {
+    '.claude/skills/sync-host/references/rules/git-guardrails.md', '.claude/skills/coordinate-artifact/references/host-sync.md',
+    '.claude/skills/coordinate-artifact/references/contribution.md'])('refuses startup when the sync closure file %s is missing', async rel => {
     await install();
     await fs.remove(fixture.registry);
     await fs.unlink(fixture.installed(rel));
