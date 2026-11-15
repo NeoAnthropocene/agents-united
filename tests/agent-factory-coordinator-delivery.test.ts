@@ -19,6 +19,8 @@ const NEW_CONTRACT_ROUTE_SUPPORT = ['references/contract-authoring.md', 'scripts
 const NEW_SYNC_ROUTE_SUPPORT = ['references/host-sync.md'] as const;
 /** The one support file the contribution runbook adds to the coordinator closure (P22); `tests/agent-factory-contribution-runbook.test.ts` pins its content. */
 const NEW_CONTRIBUTION_SUPPORT = ['references/contribution.md'] as const;
+/** The four support files the Bundle proposal route adds to the coordinator closure (P26). */
+const NEW_BUNDLE_ROUTE_SUPPORT = ['references/bundle-authoring.md', 'scripts/check-bundle-return.mjs', 'assets/bundle-task.schema.json', 'assets/bundle-return.schema.json'] as const;
 /** The installed files of the sync worker closure that the coordinator declares it depends on. */
 const SYNC_CLOSURE_INSTALLED = ['.claude/agents/factory-sync.md', '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json',
   '.claude/skills/sync-host/assets/sync-job.schema.json', '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs'] as const;
@@ -45,8 +47,8 @@ describe('factory coordinator required native delivery through public installati
     const receipt = await fs.readJson(fixture.installed(`${COORDINATOR_ROOT}/assets/claude-binding.json`));
     expect(receipt.requiredRoles).toEqual(['factory-realizer', 'factory-evaluator', 'factory-sync']);
     expect(receipt.requiredSupport).toEqual([...COORDINATOR_SUPPORT]);
-    expect(receipt.requiredSupport).toHaveLength(17);
-    for (const rel of [...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT, ...NEW_SYNC_ROUTE_SUPPORT, ...NEW_CONTRIBUTION_SUPPORT]) {
+    expect(receipt.requiredSupport).toHaveLength(21);
+    for (const rel of [...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT, ...NEW_SYNC_ROUTE_SUPPORT, ...NEW_CONTRIBUTION_SUPPORT, ...NEW_BUNDLE_ROUTE_SUPPORT]) {
       expect(receipt.requiredSupport, rel).toContain(rel);
       expect(await fs.pathExists(fixture.installed(`${COORDINATOR_ROOT}/${rel}`)), rel).toBe(true);
     }
@@ -87,6 +89,18 @@ describe('factory coordinator required native delivery through public installati
     expect(await coordinatorTree(fixture.workspace)).toEqual(before);
   });
 
+  // Maintainer decision: no scripted workflow ships, so the coordinator's tools never include Workflow.
+  it('refuses a coordinator tools line that also lists Workflow before any workspace mutation, and the committed tools have none', async () => {
+    const file = fixture.source('hosts/claude/agents/orchestrator-agent-factory.md');
+    const text = await fs.readFile(file, 'utf8');
+    const committed = YAML.parse(/^---\r?\n([\s\S]*?)\r?\n---/.exec(text)![1]!).tools as string;
+    expect(committed.split(',').map(tool => tool.trim())).not.toContain('Workflow');
+    await fs.writeFile(file, text.replace(GRANT, `${GRANT}, Workflow`));
+    const before = await coordinatorTree(fixture.workspace);
+    await expect(new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options)).rejects.toThrow(/grant|Workflow/i);
+    expect(await coordinatorTree(fixture.workspace)).toEqual(before);
+  });
+
   it('refuses an unreviewed extra coordinator support file before writes', async () => {
     await fs.outputFile(fixture.source('skills/coordinate-artifact/assets/unreviewed.json'), '{}\n');
     const before = await coordinatorTree(fixture.workspace);
@@ -102,7 +116,7 @@ describe('factory coordinator required native delivery through public installati
     expect(await coordinatorTree(fixture.workspace)).toEqual(before);
   });
 
-  it.each([...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT, ...NEW_SYNC_ROUTE_SUPPORT, ...NEW_CONTRIBUTION_SUPPORT])('refuses a coordinator declaration that drops the new support %s before writes', async rel => {
+  it.each([...NEW_SKILL_ROUTE_SUPPORT, ...NEW_CONTRACT_ROUTE_SUPPORT, ...NEW_SYNC_ROUTE_SUPPORT, ...NEW_CONTRIBUTION_SUPPORT, ...NEW_BUNDLE_ROUTE_SUPPORT])('refuses a coordinator declaration that drops the new support %s before writes', async rel => {
     const file = fixture.source(COORDINATOR_DECLARATION), binding = await fs.readJson(file);
     binding.requiredSupport = binding.requiredSupport.filter((item: string) => item !== rel);
     await fs.writeJson(file, binding);
@@ -118,9 +132,9 @@ describe('factory coordinator required native delivery through public installati
       expect(text.length, rel).toBeLessThanOrEqual(SKILL_MD_MAX_CHARS);
       expect(text.split('\n').length, rel).toBeLessThanOrEqual(SKILL_MD_MAX_LINES);
     }
-    // Room for the later Bundle route (about 280 characters) must remain in the native entry, the larger of the two.
+    // The Bundle route (P26) used the reserve kept for it; the native entry, the larger of the two, is pinned at its measured LF size (5,788: 5,993 as installed with its managed header).
     const nativeLength = lf(await fs.readFile(fixture.source('hosts/claude/skills/coordinate-artifact/SKILL.md'), 'utf8')).length;
-    expect(nativeLength).toBeLessThanOrEqual(SKILL_MD_MAX_CHARS - 280);
+    expect(nativeLength).toBeLessThanOrEqual(5788);
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-coordinator-layout-'));
     try {
       const native = lf(await fs.readFile(fixture.source('hosts/claude/skills/coordinate-artifact/SKILL.md'), 'utf8'));

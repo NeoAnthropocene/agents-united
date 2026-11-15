@@ -92,13 +92,16 @@ async function repositoryFacts(): Promise<{ cliSource: string; known: Parameters
 }
 
 describe('the contribution runbook is a seventeenth coordinator support path', () => {
-  it('exists, is the last declared support path and the last required support of the binding', async () => {
+  it('exists and is the seventeenth declared support path and required support of the binding, followed only by the four Bundle route paths', async () => {
     expect(await fs.pathExists(path.resolve(RUNBOOK_FILE))).toBe(true);
-    expect(DECLARED_SUPPORT).toHaveLength(17);
+    const bundleRoute = ['references/bundle-authoring.md', 'scripts/check-bundle-return.mjs', 'assets/bundle-task.schema.json', 'assets/bundle-return.schema.json'];
+    expect(DECLARED_SUPPORT).toHaveLength(21);
     expect(DECLARED_SUPPORT[16]).toBe(RUNBOOK);
+    expect(DECLARED_SUPPORT.slice(17)).toEqual(bundleRoute);
     const binding = await fs.readJson(path.resolve('registry', COORDINATOR_DECLARATION)) as { requiredSupport: string[] };
-    expect(binding.requiredSupport).toHaveLength(17);
+    expect(binding.requiredSupport).toHaveLength(21);
     expect(binding.requiredSupport[16]).toBe(RUNBOOK);
+    expect(binding.requiredSupport.slice(17)).toEqual(bundleRoute);
     expect([...COORDINATOR_SUPPORT]).toEqual([...DECLARED_SUPPORT]);
   });
 
@@ -112,7 +115,7 @@ describe('the contribution runbook is a seventeenth coordinator support path', (
     }
   });
 
-  it.each(['references/handback.md', 'references/skill-authoring.md', 'references/contract-authoring.md'])('points %s at the runbook for upstream intent', async rel => {
+  it.each(['references/handback.md', 'references/skill-authoring.md', 'references/contract-authoring.md', 'references/bundle-authoring.md'])('points %s at the runbook for upstream intent', async rel => {
     const text = await read(`registry/skills/coordinate-artifact/${rel}`);
     expect(text).toMatch(/\]\((?:\.\/)?contribution\.md\)/);
   });
@@ -169,6 +172,7 @@ describe('one canonical upstream clause in every factory Skill', () => {
     ['coordinate-artifact', 'registry/skills/coordinate-artifact/references/handback.md'],
     ['coordinate-artifact', 'registry/skills/coordinate-artifact/references/skill-authoring.md'],
     ['coordinate-artifact', 'registry/skills/coordinate-artifact/references/contract-authoring.md'],
+    ['coordinate-artifact', 'registry/skills/coordinate-artifact/references/bundle-authoring.md'],
     ['coordinate-artifact', RUNBOOK_FILE],
     ['author-skill', shared('author-skill')], ['author-skill', native('author-skill')], ['author-skill', 'registry/skills/author-skill/references/job.md'],
     ['author-contract', 'registry/skills/author-contract/references/verification.md'],
@@ -231,7 +235,7 @@ describe('one canonical upstream clause in every factory Skill', () => {
     }
   });
 
-  it('keeps each Skill entry inside the layout cap and the native coordinator entry at or under 5,720 characters', async () => {
+  it('keeps each Skill entry inside the layout cap and the native coordinator entry at or under its measured 5,788 characters', async () => {
     for (const skill of SKILLS) {
       for (const rel of [shared(skill), native(skill)]) {
         const text = await read(rel);
@@ -239,7 +243,7 @@ describe('one canonical upstream clause in every factory Skill', () => {
         expect(text.split('\n').length, rel).toBeLessThanOrEqual(SKILL_MD_MAX_LINES);
       }
     }
-    expect((await read(native('coordinate-artifact'))).length).toBeLessThanOrEqual(5720);
+    expect((await read(native('coordinate-artifact'))).length).toBeLessThanOrEqual(5788);
   });
 
   it('made the room for the runbook pointer by moving one checklist bullet into the agent body, which still states the whole rule', async () => {
@@ -267,7 +271,7 @@ describe('one canonical upstream clause in every factory Skill', () => {
 
 describe('the runbook states the route plainly', () => {
   it('is short enough to be read at the hand-off', async () => {
-    expect((await read(RUNBOOK_FILE)).length).toBeLessThanOrEqual(10900);
+    expect((await read(RUNBOOK_FILE)).length).toBeLessThanOrEqual(11300);
   });
 
   it('names the template, the guide, base dev, sent false, a branch from origin/dev, never main, and each artifact kind', async () => {
@@ -287,7 +291,7 @@ describe('the runbook states the route plainly', () => {
     ]) expect(text, needle).toContain(needle);
   });
 
-  it('names agents bundle-check as the contributor\'s check of a Bundle proposal, says the coordinator has no route that runs it, and says what a pass does not show', async () => {
+  it('names agents bundle-check as the contributor\'s check of a Bundle proposal, names the evidence of the coordinator route, and says what a pass does not show', async () => {
     const text = await read(RUNBOOK_FILE);
     const section = text.slice(text.indexOf('## Bundle proposal'), text.indexOf('## Gate before a pull request'));
     expect(section).not.toContain('no deterministic check');
@@ -295,7 +299,11 @@ describe('the runbook states the route plainly', () => {
     const step = section.split('\n').find(line => line.includes('dist/cli.js bundle-check')) ?? '';
     for (const needle of ['`npm run build`', '`node <checkout>/dist/cli.js bundle-check --artifact <absolute proposal folder> --registry <checkout>/registry`', '`--operation update` for an update folder',
       '`--allow-unresolved` only when the proposal names members that are still to be realized', 'lists them as open', 'Exit 0 passed, 1 failed, 2 unavailable', '[script: agents bundle-check]']) expect(step, needle).toContain(needle);
-    expect(section).toContain('The coordinator has no route that runs `bundle-check` yet');
+    expect(section).not.toContain('no route that runs');
+    expect(section).toContain('(bundle-authoring.md)');
+    const collect = section.split('\n').find(line => line.includes('Collect: `bundle-task.json`')) ?? '';
+    for (const needle of ['`bundle-return.json`', 'check-bundle-return.mjs', 'preflight and postflight', 'saved `bundle-check` stdout, stderr and exit']) expect(collect, needle).toContain(needle);
+    expect(collect).toMatch(/\[script: check-bundle-return\.mjs, agents bundle-check; [^\]]*prose\]/);
     const pass = section.split('\n').find(line => line.includes('A pass does not show')) ?? '';
     for (const needle of ["the leader file's content", "the report's content and hashes", 'licence truth', 'quality', 'prose', '`unverified`']) expect(pass, needle).toContain(needle);
     const template = section.split('\n').find(line => line.includes('Template:')) ?? '';

@@ -16,7 +16,7 @@ const TASKS = [
   },
   {
     skill: 'author-bundle', declaration: 'hosts/claude/agent-factory-bundle.binding.json',
-    support: ['references/job.md', 'references/verification.md', 'references/bundle-shape.md', 'references/prerequisites.md', 'assets/domain-bundle.template.json', 'assets/organization-bundle.template.json', 'assets/leader-responsibility.template.md', 'assets/report.json', 'examples/domain.md', 'examples/organization.md'],
+    support: ['references/job.md', 'references/verification.md', 'references/bundle-shape.md', 'references/prerequisites.md', 'assets/domain-bundle.template.json', 'assets/organization-bundle.template.json', 'assets/leader-responsibility.template.md', 'assets/report.json', 'examples/domain.md', 'examples/organization.md', 'scripts/bundle-return.mjs'],
   },
 ] as const;
 type TaskEntry = typeof TASKS[number];

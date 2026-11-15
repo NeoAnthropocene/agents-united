@@ -129,6 +129,8 @@ describe('installed factory main selection through public resolve and plan', () 
       '.claude/skills/coordinate-artifact/references/contract-authoring.md', '.claude/skills/coordinate-artifact/scripts/check-contract-return.mjs',
       '.claude/skills/coordinate-artifact/assets/contract-task.schema.json', '.claude/skills/coordinate-artifact/assets/contract-return.schema.json',
       '.claude/skills/coordinate-artifact/references/host-sync.md', '.claude/skills/coordinate-artifact/references/contribution.md',
+      '.claude/skills/coordinate-artifact/references/bundle-authoring.md', '.claude/skills/coordinate-artifact/scripts/check-bundle-return.mjs',
+      '.claude/skills/coordinate-artifact/assets/bundle-task.schema.json', '.claude/skills/coordinate-artifact/assets/bundle-return.schema.json',
       '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json', '.claude/skills/sync-host/assets/sync-job.schema.json',
       '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs', '.claude/skills/sync-host/references/plan.md',
       '.claude/skills/sync-host/references/rules/skill-attribution.md',

@@ -50,13 +50,13 @@ describe('factory coordinator native production lifecycle', () => {
     expect(lock.projections?.['.claude/agents/orchestrator-agent-factory.md']?.canonical).toBeUndefined();
   });
 
-  it('owns, restores, protects and removes every one of the seventeen declared support files, the skill-route and contract-route files included', async () => {
+  it('owns, restores, protects and removes every one of the twenty-one declared support files, the skill-route, contract-route and bundle-route files included', async () => {
     const resolver = new RegistryResolver(fixture.registry);
     await new InstallEngine(resolver).install('agent-factory', fixture.options);
-    expect(COORDINATOR_SUPPORT).toHaveLength(17);
+    expect(COORDINATOR_SUPPORT).toHaveLength(21);
     const lock = await fs.readJson(path.join(fixture.state, 'agents-united.json')) as LockfileManifest;
     for (const rel of COORDINATOR_SUPPORT) expect(lock.projections?.[`${COORDINATOR_ROOT}/${rel}`]?.owners, rel).toContain('agent-factory');
-    for (const name of ['check-skill-return.mjs', 'check-contract-return.mjs']) {
+    for (const name of ['check-skill-return.mjs', 'check-contract-return.mjs', 'check-bundle-return.mjs']) {
       const script = fixture.installed(`${COORDINATOR_ROOT}/scripts/${name}`), original = await fs.readFile(script);
       await fs.appendFile(script, '\n// caller edit\n');
       const before = await coordinatorTree(fixture.workspace);

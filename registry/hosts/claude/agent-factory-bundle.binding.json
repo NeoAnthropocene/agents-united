@@ -27,7 +27,8 @@
     "assets/leader-responsibility.template.md",
     "assets/report.json",
     "examples/domain.md",
-    "examples/organization.md"
+    "examples/organization.md",
+    "scripts/bundle-return.mjs"
   ],
   "references": [
     {

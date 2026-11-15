@@ -9,6 +9,7 @@ export const BUNDLE_SUPPORT = [
   'references/job.md', 'references/verification.md', 'references/bundle-shape.md', 'references/prerequisites.md',
   'assets/domain-bundle.template.json', 'assets/organization-bundle.template.json',
   'assets/leader-responsibility.template.md', 'assets/report.json', 'examples/domain.md', 'examples/organization.md',
+  'scripts/bundle-return.mjs',
 ] as const;
 export const BUNDLE_RULES = ['skill-attribution.md', 'git-guardrails.md', 'test-driven-development.md',
   'clean-code-and-architecture.md', 'domain-modeling-and-adr.md', 'multi-agent-coordination.md', 'quality-aesthetics-accessibility.md'] as const;

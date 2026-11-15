@@ -48,7 +48,11 @@
     "assets/contract-task.schema.json",
     "assets/contract-return.schema.json",
     "references/host-sync.md",
-    "references/contribution.md"
+    "references/contribution.md",
+    "references/bundle-authoring.md",
+    "scripts/check-bundle-return.mjs",
+    "assets/bundle-task.schema.json",
+    "assets/bundle-return.schema.json"
   ],
   "references": [
     {

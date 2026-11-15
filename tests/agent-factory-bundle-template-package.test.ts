@@ -42,7 +42,8 @@ describe('production bundle templates from an offline npm package', () => {
     // Package installation uses its actual registry, without source overlays or fixture loaders.
     for (const rel of BUNDLE_SUPPORT) expect(await fs.readFile(path.join(skill, rel))).toEqual(await fs.readFile(path.join(packageRoot, 'registry/skills/author-bundle', rel)));
     expect(await fs.pathExists(path.join(skill, 'evals'))).toBe(false);
-    expect(await fs.pathExists(path.join(skill, 'scripts'))).toBe(false);
+    // The one script is the return helper of the Bundle route (Plan 033 P26); the four proposal files are still written by ordinary editing.
+    expect(await fs.readdir(path.join(skill, 'scripts'))).toEqual(['bundle-return.mjs']);
     const native = (await fs.readFile(path.join(skill, 'SKILL.md'), 'utf8')).replace(/\r\n/g, '\n');
     expect(native.length).toBeLessThanOrEqual(6000);
     expect(native.split('\n').length).toBeLessThanOrEqual(90);

@@ -5,7 +5,7 @@ Upstream intent only prepares the pinned `.github/PULL_REQUEST_TEMPLATE/artifact
 Only for upstream intent. A local draft stops at the candidate and needs none of this. Without the checkout's guide and template, report the missing prerequisite; invent no equivalent.
 
 ## Common steps
-1. The draft, evidence and producer roots stay outside the checkout and every managed Host folder until a human moves the reviewed files. `[script: check-skill-return.mjs, check-contract-return.mjs, check-job.mjs; the move and the Bundle proposal are prose]`
+1. The draft, evidence and producer roots stay outside the checkout and every managed Host folder until a human moves the reviewed files. `[script: check-skill-return.mjs, check-contract-return.mjs, check-bundle-return.mjs, check-job.mjs; the move is prose]`
 2. Search prior art: `registry/` artifacts and cores, `registry/hosts/` profiles, `host-library/` guides and observations, `tests/`, `docs/adr/`, and open and closed pull requests with `gh pr list --state all --repo github.com/NeoAnthropocene/agents-united`. Record the reuse or the reason for a new artifact. `[prose]`
 3. The human cuts a branch from a fresh `origin/dev`; the pull request base is `dev`, never `main`; Conventional Commits. `[prose]`
 4. Provenance and licence: carry the draft's recorded disposition. An original or inspired Skill omits `metadata.source`; an inspired one credits the reviewed inspiration truthfully and does not claim its text was copied. An adapted Skill pins `metadata.source` (https and a 40-character commit SHA), ships `LICENSE` and `NOTICE.md` where `docs/skill-intake.md` asks, and adds a `README.md` section 5 credit with the author or project, an upstream link and, if substantially changed, "adapted from X by Y". `[script: agents skill-check; legal truth and the credit are prose]`
@@ -38,12 +38,13 @@ Only for upstream intent. A local draft stops at the candidate and needs none of
 6. Template: one Claude host row (surface, observed version, native path, bindings and deltas, offline checks, live `unverified` or a sanitized record); the shared pair box; each preloaded Skill's loading role; the guard box naming mechanism versus prose, input visibility and limits. `[prose]`
 
 ## Bundle proposal
-The contributor checks the proposal in the checkout (step 3). The coordinator has no route that runs `bundle-check` yet, so it has run nothing here; its own reads and hashes are other evidence.
-1. Collect the four proposal files, their hashes and diff, the template kind (Domain or Organization), the three shared Skills declared once and the leader's prerequisite status. `[prose]`
-2. Agree with the maintainer whether the pull request is a proposal for review or an implemented Bundle that changes `registry/bundles.json`; the shared pairs and native realizations of its roles are separate tasks, and the counts in `README.md` and `PROJECT.md` change. `[prose]`
-3. After `npm run build`, run `node <checkout>/dist/cli.js bundle-check --artifact <absolute proposal folder> --registry <checkout>/registry`, with `--operation update` for an update folder and `--allow-unresolved` only when the proposal names members that are still to be realized (the template lists them as open). Exit 0 passed, 1 failed, 2 unavailable. `[script: agents bundle-check]`
-4. A pass does not show the leader file's content, the report's content and hashes, licence truth or quality: these stay prose and `unverified`. `[prose]`
-5. Template: unimplemented hosts are `unverified`; the Verification section reports the command's exit and result, its `unresolved` list and its `unverified` fields. `[prose]`
+The coordinator's route ([bundle authoring](bundle-authoring.md)) ends in `bundle-check` on the draft; the contributor reruns it in the checkout (step 4).
+1. Collect: `bundle-task.json`, `bundle-return.json`, the preflight and postflight output of `check-bundle-return.mjs` with exits, and the route's saved `bundle-check` stdout, stderr and exit. `[script: check-bundle-return.mjs, agents bundle-check; collecting the output is prose]`
+2. Collect the four proposal files, their hashes and diff, the template kind (Domain or Organization), the three shared Skills declared once and the leader's prerequisite status. `[prose]`
+3. Agree with the maintainer whether the pull request is a proposal for review or an implemented Bundle that changes `registry/bundles.json`; the shared pairs and native realizations of its roles are separate tasks, and the counts in `README.md` and `PROJECT.md` change. `[prose]`
+4. After `npm run build`, run `node <checkout>/dist/cli.js bundle-check --artifact <absolute proposal folder> --registry <checkout>/registry`, with `--operation update` for an update folder and `--allow-unresolved` only when the proposal names members that are still to be realized (the template lists them as open). Exit 0 passed, 1 failed, 2 unavailable. `[script: agents bundle-check]`
+5. A pass does not show the leader file's content, the report's content and hashes, licence truth or quality: these stay prose and `unverified`. `[prose]`
+6. Template: unimplemented hosts are `unverified`; the Verification section reports the command's exit and result, its `unresolved` list and its `unverified` fields. `[prose]`
 
 ## Gate before a pull request
 Read each command's own exit code, never the exit code of a pipe.
