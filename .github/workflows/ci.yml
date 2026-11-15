@@ -11,6 +11,8 @@ jobs:
     # Skip CI for automated main -> dev sync PRs (release commits already passed CI on main)
     if: github.event_name != 'pull_request' || github.head_ref != 'main' || github.base_ref != 'dev'
     runs-on: ubuntu-latest
+    # A test that hangs must fail the job, not hold it for the default six hours.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
