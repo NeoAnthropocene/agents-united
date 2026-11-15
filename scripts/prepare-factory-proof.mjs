@@ -5,17 +5,17 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { parseArgs } from 'node:util';
+import { Refusal, refuse, buildS3, buildS4Probe, buildS5Prompts, PROBE_SKILL_REL, probeSkillText, sittingTexts } from './factory-proof-scenarios.mjs';
 
-const USAGE = 'Usage: node scripts/prepare-factory-proof.mjs --destination ABS --cli ABS --checkout ABS [--only s0|s1|s2]  (--only may join several, for example s0,s1)';
+const USAGE = 'Usage: node scripts/prepare-factory-proof.mjs --destination ABS --cli ABS --checkout ABS [--only s0|s1|s2|s3|s4|s5|s6]  (--only may join several, for example s0,s1)';
 const MANAGED = ['.claude', '.agents', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
-const SCENARIOS = { s0: 's0-launcher', s1: 's1-coord-realize', s2: 's2-sync' };
+// Scenario id to its workspace folders, in the order they are prepared. S4 and S5 have more than one workspace.
+const SCENARIOS = { s0: ['s0-launcher'], s1: ['s1-coord-realize'], s2: ['s2-sync'], s3: ['s3-typed-forks'], s4: ['s4a-factory-guards', 's4b-readonly-probe'], s5: ['s5-with', 's5-without', 's5-control'], s6: ['s6-skill-args'] };
 const STEM = 'subagent-note-checker';
 const AGENT_PATH = 'hosts/claude/agents/note-checker.md';
 const HOLDS_DOC = ['docs', 'skill-quality', '2026-11-07-host-source-holds.md'];
 const MAX_NODE_BYTES = 128 * 1024 * 1024;
 
-class Refusal extends Error {}
-const refuse = message => { throw new Refusal(message); };
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const fold = value => (process.platform === 'win32' ? path.resolve(value).toLowerCase() : path.resolve(value));
 const inside = (parent, child) => {
@@ -51,10 +51,10 @@ function parseArguments() {
   let only = Object.keys(SCENARIOS);
   if (values.only !== undefined) {
     const asked = values.only.split(',');
-    if (!asked.every(id => Object.hasOwn(SCENARIOS, id))) refuse('--only must be s0, s1 or s2 (several may be joined with commas).');
+    if (!asked.every(id => Object.hasOwn(SCENARIOS, id))) refuse('--only must be one of s0, s1, s2, s3, s4, s5, s6 (several may be joined with commas).');
     only = Object.keys(SCENARIOS).filter(id => asked.includes(id));
   }
-  return { ...values, only };
+  return { ...values, only, explicitOnly: values.only !== undefined };
 }
 
 /** Every existing component of a path must be a real directory or file, never a symbolic link or junction. */
@@ -144,19 +144,27 @@ function sectionsOf(file) {
 
 // ---------------------------------------------------------------- one scenario folder
 
-function createWorkspace(ctx, id) {
-  const folder = path.join(ctx.destination, SCENARIOS[id]);
+/**
+ * A scenario folder that is its own git repository with one commit. `tag` names it in the command record. A factory install is
+ * the default; `files` are written before the commit (relative path to text); `dryRun` runs the Claude start dry run after the install.
+ */
+function createWorkspace(ctx, tag, name, options = {}) {
+  const { install = true, dryRun = true, files = {} } = options;
+  const folder = path.join(ctx.destination, name);
   fs.mkdirSync(folder);
   const noHooks = path.join(ctx.destination, '.no-git-hooks');
-  run(id, 'git-init', 'git', ['-C', folder, 'init', '-q', '-b', 'main'], ctx.destination);
-  run(id, 'git-config-name', 'git', ['-C', folder, 'config', '--local', 'user.name', 'Proof Fixture'], ctx.destination);
-  run(id, 'git-config-email', 'git', ['-C', folder, 'config', '--local', 'user.email', 'proof-fixture@example.invalid'], ctx.destination);
-  writeNew(path.join(folder, 'README.md'), `# ${SCENARIOS[id]}\n\nSynthetic workspace for an offline factory proof. It holds no project content.\n`);
-  run(id, 'git-add', 'git', ['-C', folder, 'add', 'README.md'], ctx.destination);
-  run(id, 'git-commit', 'git', ['-C', folder, '-c', `core.hooksPath=${noHooks}`, '-c', 'commit.gpgsign=false', 'commit', '-q', '--no-verify', '-m', 'Initial synthetic workspace'], ctx.destination);
-  run(id, 'install', process.execPath, [ctx.cli, 'add', 'agent-factory', '-t', 'claude', '--native', '--allow-under-construction', '--copy', '-y'], folder);
-  run(id, 'doctor', process.execPath, [ctx.cli, 'doctor', '--host', 'claude'], folder);
-  run(id, 'start-dry-run', process.execPath, [ctx.cli, 'start', 'agent-factory', '--host', 'claude', '--dry-run'], folder);
+  run(tag, 'git-init', 'git', ['-C', folder, 'init', '-q', '-b', 'main'], ctx.destination);
+  run(tag, 'git-config-name', 'git', ['-C', folder, 'config', '--local', 'user.name', 'Proof Fixture'], ctx.destination);
+  run(tag, 'git-config-email', 'git', ['-C', folder, 'config', '--local', 'user.email', 'proof-fixture@example.invalid'], ctx.destination);
+  writeNew(path.join(folder, 'README.md'), `# ${name}\n\nSynthetic workspace for an offline factory proof. It holds no project content.\n`);
+  for (const [rel, text] of Object.entries(files)) writeNew(path.join(folder, ...rel.split('/')), text);
+  run(tag, 'git-add', 'git', ['-C', folder, 'add', '-A'], ctx.destination);
+  run(tag, 'git-commit', 'git', ['-C', folder, '-c', `core.hooksPath=${noHooks}`, '-c', 'commit.gpgsign=false', 'commit', '-q', '--no-verify', '-m', 'Initial synthetic workspace'], ctx.destination);
+  if (install) {
+    run(tag, 'install', process.execPath, [ctx.cli, 'add', 'agent-factory', '-t', 'claude', '--native', '--allow-under-construction', '--copy', '-y'], folder);
+    run(tag, 'doctor', process.execPath, [ctx.cli, 'doctor', '--host', 'claude'], folder);
+    if (dryRun) run(tag, 'start-dry-run', process.execPath, [ctx.cli, 'start', 'agent-factory', '--host', 'claude', '--dry-run'], folder);
+  }
   return folder;
 }
 
@@ -431,9 +439,18 @@ Save the complete output of every check, with its exit code, in the evidence fol
 function main() {
   const values = parseArguments();
   const ctx = validate(values);
-  const only = values.only;
+  let only = values.only;
+  const skipped = {};
   // S2 is planned from the history of the checkout before anything is written, so a refusal leaves no destination behind.
-  const s2plan = only.includes('s2') ? planS2(ctx) : null;
+  // Without --only a checkout with no usable history simply has no S2; with --only s2 it is a refusal.
+  let s2plan = null;
+  if (only.includes('s2')) {
+    try { s2plan = planS2(ctx); } catch (error) {
+      if (values.explicitOnly || !(error instanceof Refusal)) throw error;
+      skipped.s2 = error.message;
+      only = only.filter(id => id !== 's2');
+    }
+  }
   const statusBefore = git(ctx.checkout, ['status', '--porcelain']).stdout;
   fs.mkdirSync(ctx.destination);
   const manifest = {
@@ -441,30 +458,75 @@ function main() {
     checkout: { path: ctx.checkout, head: ctx.head, statusPorcelain: statusBefore },
     cli: { path: ctx.cli, sha256: sha256(fs.readFileSync(ctx.cli)), checkoutCli: ctx.builtCli },
     node: { path: fs.realpathSync(process.execPath), version: process.version },
-    scenarios: {}, prompts: {}, commands,
+    skipped, scenarios: {}, prompts: {}, commands,
   };
-  const folders = {}, extra = {}, prompts = {};
+  const folders = {}, extra = {}, prompts = {}, briefs = {};
   for (const id of only) {
-    const folder = createWorkspace(ctx, id);
-    folders[id] = folder;
-    if (id === 's1') extra.s1 = buildS1(ctx, folder);
-    if (id === 's2') extra.s2 = buildS2(ctx, folder, s2plan);
+    const names = SCENARIOS[id];
+    if (id === 's0' || id === 's1' || id === 's2' || id === 's3') {
+      const folder = createWorkspace(ctx, id, names[0]);
+      folders[id] = { [names[0]]: folder };
+      if (id === 's1') extra.s1 = buildS1(ctx, folder);
+      if (id === 's2') extra.s2 = buildS2(ctx, folder, s2plan);
+      if (id === 's3') briefs.s3 = buildS3(ctx, folder);
+    } else if (id === 's4') {
+      const a = createWorkspace(ctx, 's4a', names[0]);
+      const b = createWorkspace(ctx, 's4b', names[1]);
+      buildS4Probe(b);
+      run('s4b', 'start-dry-run-with-probe', process.execPath, [ctx.cli, 'start', 'agent-factory', '--host', 'claude', '--dry-run'], b);
+      folders.s4 = { [names[0]]: a, [names[1]]: b };
+    } else if (id === 's5') {
+      const withFolder = createWorkspace(ctx, 's5-with', names[0]);
+      const withoutFolder = createWorkspace(ctx, 's5-without', names[1], { dryRun: false });
+      const controlFolder = createWorkspace(ctx, 's5-control', names[2]);
+      fs.rmSync(path.join(withoutFolder, '.claude', 'skills', 'author-skill'), { recursive: true });
+      folders.s5 = { [names[0]]: withFolder, [names[1]]: withoutFolder, [names[2]]: controlFolder };
+      Object.assign(prompts, buildS5Prompts());
+    } else if (id === 's6') {
+      const folder = createWorkspace(ctx, 's6', names[0], { install: false, files: { [PROBE_SKILL_REL]: probeSkillText() } });
+      folders.s6 = { [names[0]]: folder };
+    }
   }
-  if (extra.s1) prompts['prompts/s1.txt'] = promptS1(ctx, folders.s1, extra.s1.brief);
-  if (extra.s2) prompts['prompts/s2.txt'] = promptS2(ctx, folders.s2, extra.s2.brief);
+  if (extra.s1) prompts['prompts/s1.txt'] = promptS1(ctx, Object.values(folders.s1)[0], extra.s1.brief);
+  if (extra.s2) prompts['prompts/s2.txt'] = promptS2(ctx, Object.values(folders.s2)[0], extra.s2.brief);
+  // Sitting instructions: one file for the maintainer, one short file per workspace.
+  const sitting = {};
+  const workspaces = {
+    ...(folders.s6 ? { s6: Object.values(folders.s6)[0] } : {}),
+    ...(folders.s4 ? { s4a: folders.s4[SCENARIOS.s4[0]], s4b: folders.s4[SCENARIOS.s4[1]] } : {}),
+    ...(folders.s3 ? { s3: Object.values(folders.s3)[0] } : {}),
+  };
+  if (Object.keys(workspaces).length) {
+    const texts = sittingTexts(ctx, workspaces, briefs);
+    for (const [key, text] of Object.entries(texts.perWorkspace)) writeNew(path.join(workspaces[key], 'SITTING.md'), `${text}\n`);
+    writeNew(path.join(ctx.destination, 'SITTINGS.md'), `${texts.full}\n`);
+    sitting.file = path.join(ctx.destination, 'SITTINGS.md');
+    sitting.sha256 = sha256(fs.readFileSync(sitting.file));
+    sitting.futurePaths = texts.future;
+    manifest.sittings = sitting;
+  }
   for (const [rel, text] of Object.entries(prompts)) {
     writeNew(path.join(ctx.destination, rel), Buffer.from(text, 'utf8'));
     manifest.prompts[rel] = sha256(Buffer.from(text, 'utf8'));
   }
   for (const id of only) {
-    const { files, emptyDirectories } = walk(folders[id]);
-    manifest.scenarios[id] = { folder: folders[id], files, emptyDirectories, ...(id === 's2' ? extra.s2.details : {}) };
+    const entries = Object.fromEntries(Object.entries(folders[id]).map(([name, folder]) => [name, { folder, ...walk(folder) }]));
+    if (SCENARIOS[id].length === 1) {
+      manifest.scenarios[id] = { ...entries[SCENARIOS[id][0]], ...(id === 's2' ? extra.s2.details : {}) };
+    } else manifest.scenarios[id] = { folders: entries };
+  }
+  if (folders.s5) {
+    const quoted = (folder, prompt, cap) => ({ cwd: folder, prompt: path.join(ctx.destination, 'prompts', prompt), suggestedArgv: ['claude', '-p', '<contents of the prompt file>', '--model', 'sonnet', '--effort', 'medium', '--output-format', 'json', '--max-budget-usd', cap], note: 'A suggestion only; nothing here was run. No --agent: a default session.' });
+    manifest.scenarios.s5.suggestedRuns = {
+      's5-with': quoted(folders.s5['s5-with'], 's5-with.txt', '0.8'), 's5-without': quoted(folders.s5['s5-without'], 's5-without.txt', '0.8'),
+      's5-control': quoted(folders.s5['s5-control'], 's5-control.txt', '0.4'),
+    };
   }
   const statusAfter = git(ctx.checkout, ['status', '--porcelain']).stdout;
   if (statusAfter !== statusBefore) refuse('The checkout changed while preparing (git status --porcelain differs); the manifest was not written. Inspect the checkout and the partial destination.');
   const manifestPath = path.join(ctx.destination, 'manifest.json');
   writeJson(manifestPath, manifest);
-  console.log(JSON.stringify({ destination: ctx.destination, scenarios: only, manifest: manifestPath, hostLaunched: false }));
+  console.log(JSON.stringify({ destination: ctx.destination, scenarios: only, skipped, manifest: manifestPath, ...(sitting.file ? { sittings: sitting.file } : {}), hostLaunched: false }));
 }
 
 try { main(); } catch (error) {

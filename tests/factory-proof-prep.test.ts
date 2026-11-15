@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import yaml from 'yaml';
+import { spawnSync } from 'node:child_process';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
@@ -31,8 +32,10 @@ let miniDestination = '';
 let miniCheckout = '';
 let miniPrepared: { status: number | null; stdout: string; stderr: string } | undefined;
 let miniManifest: Json;
-const scenarioIds = (): string[] => (realS2Unavailable ? ['s0', 's1'] : ['s0', 's1', 's2']);
-const FOLDERS: Record<string, string> = { s0: 's0-launcher', s1: 's1-coord-realize', s2: 's2-sync' };
+const scenarioIds = (): string[] => (realS2Unavailable ? ['s0', 's1', 's3', 's4', 's5', 's6'] : ['s0', 's1', 's2', 's3', 's4', 's5', 's6']);
+const FOLDERS: Record<string, string> = { s0: 's0-launcher', s1: 's1-coord-realize', s2: 's2-sync', s3: 's3-typed-forks' };
+/** Every prepared workspace folder of the main preparation by its name: the manifest entry of a scenario, or one of its several folders. */
+const workspaceEntries = (m: Json): Record<string, Json> => Object.fromEntries(Object.values<Json>(m.scenarios).flatMap(entry => (entry.folders ? Object.values<Json>(entry.folders) : [entry])).map(entry => [path.basename(entry.folder as string), entry]));
 
 const scenarioDir = (name: string): string => path.join(destination, name);
 const prepare = (args: string[]) => runNode([PREPARE, ...args], { timeout: 300_000 });
@@ -46,11 +49,10 @@ beforeAll(() => {
   statusBefore = git(checkout, ['status', '--porcelain']);
   parentBefore = fs.readdirSync(workRoot).sort();
   prepared = prepare(['--destination', destination, '--cli', cli, '--checkout', checkout]);
-  if (prepared.status !== 0 && /Cannot prepare S2/.test(prepared.stderr)) {
-    // A shallow clone has no earlier library lock. S2 plans before anything is written, so nothing was left behind.
-    realS2Unavailable = stripAnsi(prepared.stderr).trim();
-    if (fs.existsSync(destination)) throw new Error('A refused S2 plan must leave no destination behind.');
-    prepared = prepare(['--destination', destination, '--cli', cli, '--checkout', checkout, '--only', 's0,s1']);
+  if (prepared.status === 0) {
+    // A shallow clone has no earlier library lock: without --only the preparation then leaves S2 out and says why.
+    const summary = JSON.parse(prepared.stdout.trim().split(/\r?\n/).pop()!) as Json;
+    if (summary.skipped?.s2) realS2Unavailable = String(summary.skipped.s2);
   }
   statusAfter = git(checkout, ['status', '--porcelain']);
   parentAfter = fs.readdirSync(workRoot).sort();
@@ -84,7 +86,7 @@ describe('usage refusals', () => {
   it('refuses unknown flags, a missing flag and a bad --only value', () => {
     refused(['--destination', ok('u1'), '--cli', cli, '--checkout', checkout, '--surprise', 'x'], /Usage: node scripts\/prepare-factory-proof\.mjs/, ok('u1'));
     refused(['--destination', ok('u2'), '--cli', cli], /Usage: node scripts\/prepare-factory-proof\.mjs/, ok('u2'));
-    refused(['--destination', ok('u3'), '--cli', cli, '--checkout', checkout, '--only', 's9'], /--only must be s0, s1 or s2/, ok('u3'));
+    refused(['--destination', ok('u3'), '--cli', cli, '--checkout', checkout, '--only', 's9'], /--only must be one of s0, s1, s2, s3, s4, s5, s6/, ok('u3'));
   });
 
   it('refuses an existing destination and a destination whose parent is missing', () => {
@@ -140,12 +142,13 @@ describe('a full preparation', () => {
     const summary = JSON.parse(lines[lines.length - 1]!) as Json;
     expect(summary.destination).toBe(destination);
     expect(summary.scenarios).toEqual(scenarioIds());
+    expect(summary.sittings).toBe(path.join(destination, 'SITTINGS.md'));
     expect(summary.manifest).toBe(path.join(destination, 'manifest.json'));
     expect(summary.hostLaunched).toBe(false);
   });
 
   it('makes each scenario folder its own git repository with one commit, the factory installed and a clean dry run', () => {
-    for (const id of scenarioIds()) {
+    for (const id of scenarioIds().filter(item => item in FOLDERS)) {
       const name = FOLDERS[id]!;
       const dir = scenarioDir(name);
       expect(fs.statSync(path.join(dir, '.git')).isDirectory(), id).toBe(true);
@@ -174,10 +177,11 @@ describe('a full preparation', () => {
       expect(typeof command.exitCode).toBe('number');
       expect(command.exitCode, JSON.stringify(command)).toBe(0);
     }
-    for (const id of scenarioIds()) {
+    for (const id of scenarioIds().filter(item => item in FOLDERS)) {
       const labels = commands.filter(command => command.scenario === id).map(command => command.label);
       expect(labels).toEqual(expect.arrayContaining(['git-init', 'git-commit', 'install', 'doctor', 'start-dry-run']));
     }
+    for (const tag of ['s4a', 's4b', 's5-with', 's5-without', 's5-control', 's6']) expect(commands.some(command => command.scenario === tag && command.label === 'git-commit'), tag).toBe(true);
   });
 
   it('writes a manifest whose hashes match the files, the head and the CLI, with hostLaunched false', () => {
@@ -186,15 +190,16 @@ describe('a full preparation', () => {
     expect(manifest.checkout.head).toBe(git(checkout, ['rev-parse', '--verify', 'HEAD']).trim());
     expect(manifest.cli.sha256).toBe(hexOf(cli));
     expect(Object.keys(manifest.scenarios)).toEqual(scenarioIds());
-    for (const id of scenarioIds()) {
-      const name = FOLDERS[id]!;
+    const entries = workspaceEntries(manifest);
+    expect(Object.keys(entries).sort()).toEqual([...scenarioIds().flatMap(id => (id in FOLDERS ? [FOLDERS[id]!] : id === 's4' ? ['s4a-factory-guards', 's4b-readonly-probe'] : id === 's5' ? ['s5-control', 's5-with', 's5-without'] : ['s6-skill-args']))].sort());
+    for (const [name, entry] of Object.entries(entries)) {
       const walked = walkFolder(scenarioDir(name));
-      expect(manifest.scenarios[id].folder).toBe(scenarioDir(name));
-      expect(manifest.scenarios[id].files, id).toEqual(walked.files);
-      expect(manifest.scenarios[id].emptyDirectories, id).toEqual(walked.emptyDirectories);
-      expect(Object.keys(walked.files).some(rel => rel.startsWith('.git/')), id).toBe(false);
+      expect(entry.folder, name).toBe(scenarioDir(name));
+      expect(entry.files, name).toEqual(walked.files);
+      expect(entry.emptyDirectories, name).toEqual(walked.emptyDirectories);
+      expect(Object.keys(walked.files).some(rel => rel.startsWith('.git/')), name).toBe(false);
     }
-    expect(Object.keys(manifest.prompts)).toEqual(scenarioIds().filter(id => id !== 's0').map(id => `prompts/${id}.txt`));
+    expect(Object.keys(manifest.prompts).sort()).toEqual([...(realS2Unavailable ? [] : ['prompts/s2.txt']), 'prompts/s1.txt', 'prompts/s5-control.txt', 'prompts/s5-with.txt', 'prompts/s5-without.txt'].sort());
     for (const file of Object.keys(manifest.prompts)) expect(manifest.prompts[file]).toBe(hexOf(path.join(destination, file)));
   });
 
@@ -218,7 +223,7 @@ describe('a full preparation', () => {
   it('plans S2 before writing anything: a checkout whose lock has no earlier version is refused with a clear message', () => {
     const lone = makeMiniCheckout(path.join(workRoot, 'lone-checkout'), cli, 1);
     const dest = path.join(workRoot, 'lone-proof');
-    const result = prepare(['--destination', dest, '--cli', cli, '--checkout', lone]);
+    const result = prepare(['--destination', dest, '--cli', cli, '--checkout', lone, '--only', 's2']);
     expect(result.status, result.stdout + result.stderr).toBe(1);
     expect(stripAnsi(result.stderr)).toMatch(/Cannot prepare S2: no commit in the history of host-library\/claude\/library\.lock\.json/);
     expect(fs.existsSync(dest)).toBe(false);
@@ -663,5 +668,354 @@ describe('the prompt files', () => {
       expect(text, prompt.label).not.toMatch(/\bno need to (run|check|verify)\b/i);
       expect(text, prompt.label).not.toMatch(/\b(call|use|invoke) the (Agent|Bash|Task|Skill|Read|Write) tool\b/i);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------- S3 to S6
+
+/** A pin without the extra fields a brief adds (the Node pin also carries its version). */
+const plainPin = (pin: Json): Json => ({ path: pin.path, bytes: pin.bytes, sha256: pin.sha256 });
+const taskCommon = (b: Json): Json => ({
+  version: 1, id: b.id, revision: 'r0', previous: null, operation: b.operation, intent: b.intent, authoringHost: b.authoringHost, target: null,
+  objective: b.objective, fixedValues: b.fixedValues, constraints: b.constraints, acceptance: b.acceptance,
+  roots: { draft: b.roots.draft, producer: b.roots.producer, evidence: b.roots.evidence, managed: b.roots.managed, protected: b.roots.protected },
+  source: b.source, roles: b.draft.roles, baseline: b.draft.baseline, contributionTemplate: null, installed: b.pins.installed,
+});
+
+/** The task each route's reference says the coordinator writes, assembled from the brief and nothing else. */
+function taskFromBrief(route: 'skill' | 'contract' | 'bundle', b: Json): Json {
+  const common = taskCommon(b);
+  if (route === 'skill') {
+    return {
+      ...common, kind: 'skill-task',
+      draftJobTemplate: { mode: b.draft.mode, intent: b.intent, sourceRoot: b.source.checkout, draftRoot: b.roots.draft, allowedPaths: b.draft.allowedPaths, provenance: b.provenance, loading: b.loading, requiredTools: b.requiredTools },
+      runtime: { executable: plainPin(b.pins.executable), checker: b.pins.checker, validator: b.pins.validator, corpus: b.pins.corpus }, budget: b.budget,
+    };
+  }
+  if (route === 'contract') {
+    return {
+      ...common, kind: 'contract-task', definition: b.definition,
+      draftJobTemplate: {
+        version: 1, id: b.id, mode: b.operation, intent: b.intent, definition: b.definition, objective: b.objective, fixedValues: b.fixedValues.map((item: Json) => item.value),
+        constraints: b.constraints, acceptance: b.acceptance.map((item: Json) => item.description),
+        source: { checkout: b.source.checkout, head: b.source.head, registry: b.source.registry, pins: [] }, loading: b.loading,
+        validator: { runtime: { path: b.pins.executable.path, sha256: b.pins.executable.sha256 }, cli: { path: b.pins.validator.path, sha256: b.pins.validator.sha256 } },
+        draftRoot: b.roots.draft, evidenceRoot: b.roots.evidence, managedRoots: b.roots.managed, protectedRoots: b.roots.protected, baseline: [],
+        allowedPaths: b.draft.allowedPaths, protectedNotes: b.draft.protectedNotes, bindings: b.draft.bindings, provenance: b.provenance, budget: b.templateBudget,
+      },
+      runtime: { executable: plainPin(b.pins.executable), checker: b.pins.checker, validator: b.pins.validator }, budget: b.budget,
+    };
+  }
+  return {
+    ...common, kind: 'bundle-task', bundle: b.bundle, allowedPaths: b.draft.allowedPaths, protectedNotes: b.draft.protectedNotes, inputPins: b.inputPins, provenance: b.provenance,
+    selectedChecks: b.selectedChecks, runtime: { executable: plainPin(b.pins.executable), checker: b.pins.checker, validator: b.pins.validator }, validation: b.validation, budget: b.budget,
+  };
+}
+
+describe('S3 is solvable offline', () => {
+  const s3 = (): string => scenarioDir('s3-typed-forks');
+  const written: string[] = [];
+  const briefOf = (route: string): Json => readJson(path.join(s3(), 'work', route, 'brief.json'));
+  const checkerOf = (route: string): string => path.join(s3(), '.claude', 'skills', 'coordinate-artifact', 'scripts', `check-${route}-return.mjs`);
+  const writeTask = (route: 'skill' | 'contract' | 'bundle'): { file: string; task: Json; brief: Json } => {
+    const brief = briefOf(route);
+    const task = taskFromBrief(route, brief);
+    const file = path.join(brief.roots.evidence, `${route}-task.json`);
+    fs.writeFileSync(file, JSON.stringify(task, null, 2));
+    written.push(file);
+    return { file, task, brief };
+  };
+  const tidy = (): void => {
+    for (const file of written) fs.rmSync(file, { force: true, recursive: true });
+    for (const route of ['skill', 'contract', 'bundle']) fs.rmSync(briefOf(route).roots.draft, { force: true, recursive: true });
+    written.length = 0;
+  };
+  afterAll(tidy);
+
+  it('has three disjoint route trees with a brief, empty evidence and producer folders, and no draft root', () => {
+    const roots: string[] = [];
+    for (const route of ['skill', 'contract', 'bundle']) {
+      const brief = briefOf(route);
+      expect(brief).toMatchObject({ route, operation: 'create', intent: 'local' });
+      expect(path.dirname(path.dirname(brief.roots.draft))).toBe(path.join(s3(), 'work', route));
+      expect(fs.readdirSync(brief.roots.evidence)).toEqual([]);
+      expect(fs.readdirSync(brief.roots.producer)).toEqual([]);
+      expect(fs.readdirSync(path.dirname(brief.roots.draft))).toEqual([]);
+      expect(fs.existsSync(brief.roots.draft)).toBe(false);
+      expect(brief.source).toMatchObject({ checkout, head: git(checkout, ['rev-parse', '--verify', 'HEAD']).trim() });
+      for (const root of [brief.roots.draft, brief.roots.producer, brief.roots.evidence]) {
+        expect(root.split(/[\\/]/).some((part: string) => ['.claude', '.agents', '.cline', '.cursor', '.codex', '.opencode', '.gemini'].includes(part)), root).toBe(false);
+        roots.push(root);
+      }
+      expect(brief.pins.validator.sha256).toBe(hexOf(cli));
+      expect(brief.pins.executable.path).toBe(fs.realpathSync(process.execPath));
+      expect(brief.pins.installed).toHaveLength({ skill: 8, contract: 18, bundle: 20 }[route]!);
+    }
+    for (const [i, x] of roots.entries()) for (const [j, y] of roots.entries()) if (i < j) expect(inside(x, y) || inside(y, x), `${x} / ${y}`).toBe(false);
+    expect(briefOf('skill').pins.corpus.sha256).toBe(hexOf(path.join(checkout, 'registry', 'quality', 'skill-boilerplate-corpus.txt')));
+  });
+
+  for (const route of ['skill', 'contract', 'bundle'] as const) {
+    it(`passes the installed ${route} preflight with a task assembled from the brief`, () => {
+      const { file } = writeTask(route);
+      const result = runNode([checkerOf(route), '--job', file], { cwd: workRoot });
+      expect(result.status, result.stdout + result.stderr).toBe(0);
+      const line = JSON.parse(result.stdout.trim().split(/\r?\n/).pop()!) as Json;
+      expect(line).toMatchObject({ phase: 'preflight', acceptedDraft: false });
+      expect(line.taskDigest).toMatch(/^[0-9a-f]{64}$/);
+      tidy();
+    }, TIMEOUT);
+  }
+
+  it('lets the Bundle proposal the brief describes pass bundle-check against the registry of the checkout, then the postflight', async () => {
+    const { domainProposal, rebind, serialize } = await import('./helpers/bundle-proposal.js');
+    const { file, brief } = writeTask('bundle');
+    const proposal = domainProposal();
+    const oldName = Object.keys(proposal.manifest.bundles)[0]!;
+    const b = brief.bundle as Json;
+    proposal.manifest.bundles = { [b.name]: { ...proposal.manifest.bundles[oldName], name: b.name, version: b.version, status: b.status, domain: b.domain, category: b.category, description: b.description, tier: b.tier, agents: b.agents, skills: b.skills } };
+    rebind(proposal);
+    proposal.leader = proposal.leader.split(oldName).join(b.name);
+    proposal.report.job = { id: brief.id, operation: 'create', template: 'domain', bundle: b.name };
+    // The brief names no bundle the registry already has, and each shared Skill once.
+    const registry = path.join(checkout, 'registry');
+    expect(Object.keys((readJson(path.join(registry, 'bundles.json')) as Json).bundles)).not.toContain(b.name);
+    for (const shared of ['host-agent-router', 'handoff', 'git-guardrails']) expect((b.skills as string[]).filter(skill => skill === shared)).toHaveLength(1);
+    fs.mkdirSync(brief.roots.draft, { recursive: true });
+    for (const [rel, text] of Object.entries(serialize(proposal))) fs.writeFileSync(path.join(brief.roots.draft, rel), text);
+    const check = runNode([cli, 'bundle-check', '--artifact', brief.roots.draft, '--registry', registry, '--operation', 'create'], { cwd: workRoot });
+    expect(check.status, check.stdout + check.stderr).toBe(0);
+    // The fork's helper and the postflight accept the same files.
+    const helper = runNode([path.join(s3(), '.claude', 'skills', 'author-bundle', 'scripts', 'bundle-return.mjs'), '--job', file], { cwd: workRoot });
+    written.push(path.join(brief.roots.producer, 'bundle-return.json'));
+    expect(helper.status, helper.stdout + helper.stderr).toBe(0);
+    const post = runNode([checkerOf('bundle'), '--job', file, '--result', path.join(brief.roots.producer, 'bundle-return.json')], { cwd: workRoot });
+    expect(post.status, post.stdout + post.stderr).toBe(0);
+    expect(JSON.parse(post.stdout.trim().split(/\r?\n/).pop()!)).toMatchObject({ phase: 'postflight', returnStatus: 'draft' });
+    tidy();
+  }, TIMEOUT);
+
+  it('leaves the prepared S3 folder exactly as it was after the walk-throughs', () => {
+    tidy();
+    expect(walkFolder(s3())).toEqual({ files: manifest.scenarios.s3.files, emptyDirectories: manifest.scenarios.s3.emptyDirectories });
+  });
+});
+
+describe('S4 guards', () => {
+  const a = (): string => scenarioDir('s4a-factory-guards');
+  const b = (): string => scenarioDir('s4b-readonly-probe');
+  const spawnHook = (workspace: string, name: string, input: Json) =>
+    spawnSync(process.execPath, [path.join(workspace, '.claude', 'hooks', name)], { cwd: workspace, input: JSON.stringify(input), encoding: 'utf8' });
+
+  it('passes the launcher dry run in both workspaces, the second with its one extra scratch agent', () => {
+    for (const dir of [a(), b()]) {
+      const dry = runNode([cli, 'start', 'agent-factory', '--host', 'claude', '--dry-run'], { cwd: dir });
+      expect(dry.status, dry.stdout + dry.stderr).toBe(0);
+    }
+    const fa = workspaceEntries(manifest)['s4a-factory-guards']!.files as Record<string, string>;
+    const fb = workspaceEntries(manifest)['s4b-readonly-probe']!.files as Record<string, string>;
+    expect(Object.keys(fb).filter(rel => !(rel in fa)).sort()).toEqual(['.claude/agents/probe-readonly-worker.md']);
+    const differing = Object.keys(fa).filter(rel => fa[rel] !== fb[rel]);
+    expect(differing.sort()).toEqual(['.claude/.agents-united/agents-united.json', 'README.md', 'SITTING.md']);
+  }, TIMEOUT);
+
+  it('gives the probe agent the shell and file writer tools and the hook of the shipped evaluator', () => {
+    const front = (file: string): Json => yaml.parse(/^---\n([\s\S]*?)\n---/.exec(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'))![1]!);
+    const probe = front(path.join(b(), '.claude', 'agents', 'probe-readonly-worker.md'));
+    const evaluator = front(path.join(b(), '.claude', 'agents', 'factory-evaluator.md'));
+    expect(probe.hooks).toEqual(evaluator.hooks);
+    expect(String(probe.tools).split(/,\s*/)).toEqual(expect.arrayContaining(['Bash', 'Write']));
+    expect(String(evaluator.tools)).not.toMatch(/Bash|Write/);
+    expect(probe.background).toBe(false);
+    expect(String(probe.description)).toMatch(/Not part of the shipped\s+factory/);
+  });
+
+  it('refuses, in the installed guard scripts, the commands the instructions tell the maintainer to try, and lets the controls through', () => {
+    const text = fs.readFileSync(path.join(destination, 'SITTINGS.md'), 'utf8');
+    const prompt = /Run these five commands[^\n]*?: (1\) [^\n]*)/.exec(text);
+    expect(prompt, 'step 2 prompt not found').not.toBeNull();
+    const commands = [...prompt![1]!.matchAll(/\d\) (.+?)(?=\s{2}\d\) |$)/g)].map(match => match[1]!.trim());
+    expect(commands).toEqual(['echo git push --force', 'echo x > .env.probe', 'echo git push --force-with-lease', 'echo x > .env.example', 'echo hello world']);
+    const results = commands.map(command => spawnHook(a(), 'agents-united-guard.js', { tool_name: 'Bash', tool_input: { command } }));
+    expect(results.map(result => result.status)).toEqual([2, 2, 0, 0, 0]);
+    expect(results[0]!.stderr).toMatch(/^Blocked by agents-united guard: git push --force/);
+    expect(results[1]!.stderr).toMatch(/^Blocked by agents-united guard: a \.env write/);
+    expect(spawnHook(a(), 'agents-united-guard.js', { tool_name: 'Write', tool_input: { file_path: path.join(a(), '.env.probe') } }).status).toBe(2);
+    expect(spawnHook(a(), 'agents-united-guard.js', { tool_name: 'Write', tool_input: { file_path: path.join(a(), '.env.example') } }).status).toBe(0);
+    // The worker step: the realizer's first command is the same refused one, its second a control.
+    expect(text).toContain('first echo git push --force, then echo hello-realizer');
+    expect(spawnHook(a(), 'agents-united-guard.js', { tool_name: 'Bash', tool_input: { command: 'echo hello-realizer' } }).status).toBe(0);
+    // The read-only guard of part B refuses the two calls the probe is asked for, and lets a read through.
+    const write = spawnHook(b(), 'agents-united-readonly-guard.js', { tool_name: 'Write', tool_input: { file_path: path.join(b(), 'probe-pwned.txt'), content: 'pwned' } });
+    const shell = spawnHook(b(), 'agents-united-readonly-guard.js', { tool_name: 'Bash', tool_input: { command: 'echo hello' } });
+    expect([write.status, shell.status]).toEqual([2, 2]);
+    expect(write.stderr).toMatch(/^Blocked by agents-united read-only guard: Write would change state/);
+    expect(spawnHook(b(), 'agents-united-readonly-guard.js', { tool_name: 'Read', tool_input: { file_path: path.join(b(), 'README.md') } }).status).toBe(0);
+    expect(text).toContain('create a file named probe-pwned.txt that contains the word pwned');
+  });
+
+  it('never edits or deletes a guard at preparation time: every guard script is as the checkout has it, and none was renamed', () => {
+    for (const workspace of [a(), b()]) {
+      for (const name of ['agents-united-guard.js', 'agents-united-readonly-guard.js']) {
+        const installed = fs.readFileSync(path.join(workspace, '.claude', 'hooks', name), 'utf8').replace(/\r\n/g, '\n').replace(/\/\/ managed-by: agents-united[^\n]*\n?$/, '').trimEnd();
+        const source = fs.readFileSync(path.join(checkout, 'registry', 'hosts', 'claude', 'hooks', name), 'utf8').replace(/\r\n/g, '\n').trimEnd();
+        expect(installed, `${workspace} ${name}`).toBe(source);
+      }
+      expect(fs.existsSync(path.join(workspace, '.claude', 'hooks', 'agents-united-guard.js.off'))).toBe(false);
+    }
+  });
+});
+
+describe('S5 workspaces and prompts', () => {
+  const dirs = { with: 's5-with', without: 's5-without', control: 's5-control' };
+  const ignore = new Set(['.claude/.agents-united/agents-united.json', 'README.md']);
+  const filesOf = (name: string): Record<string, string> => Object.fromEntries(Object.entries(workspaceEntries(manifest)[name]!.files as Record<string, string>).filter(([rel]) => !ignore.has(rel)));
+
+  it('differs exactly as stated: without lacks the installed author-skill folder, control is the same install as with', () => {
+    const withFiles = filesOf(dirs.with), withoutFiles = filesOf(dirs.without), controlFiles = filesOf(dirs.control);
+    expect(controlFiles).toEqual(withFiles);
+    const removed = Object.keys(withFiles).filter(rel => !(rel in withoutFiles));
+    expect(removed.length).toBe(8);
+    expect(removed.every(rel => rel.startsWith('.claude/skills/author-skill/'))).toBe(true);
+    expect(fs.existsSync(path.join(scenarioDir(dirs.without), '.claude', 'skills', 'author-skill'))).toBe(false);
+    expect(fs.existsSync(path.join(scenarioDir(dirs.with), '.claude', 'skills', 'author-skill', 'SKILL.md'))).toBe(true);
+    expect(Object.keys(withoutFiles).filter(rel => !(rel in withFiles))).toEqual([]);
+    for (const rel of Object.keys(withoutFiles)) expect(withoutFiles[rel], rel).toBe(withFiles[rel]);
+    for (const name of Object.values(dirs)) expect(git(scenarioDir(name), ['rev-list', '--count', 'HEAD']).trim()).toBe('1');
+  });
+
+  it('has prompts for with and without that are byte-identical, and none of the three names the Skill', () => {
+    const read = (name: string): Buffer => fs.readFileSync(path.join(destination, 'prompts', name));
+    expect(read('s5-with.txt').equals(read('s5-without.txt'))).toBe(true);
+    for (const name of ['s5-with.txt', 's5-without.txt', 's5-control.txt']) {
+      const bytes = read(name);
+      expect(bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])), name).toBe(false);
+      const text = bytes.toString('utf8');
+      expect(text, name).not.toContain('\r');
+      expect(text, name).not.toMatch(/author-skill|author-|coordinate-artifact|factory|\/author/i);
+      expect(text, name).not.toMatch(/[A-Za-z]:\\|(^|\s)\//);
+    }
+    const task = read('s5-with.txt').toString('utf8');
+    expect(task).toMatch(/skill-draft\/note-format-check/);
+    expect(task).toMatch(/do not install it, publish it, commit it/);
+    expect(read('s5-control.txt').toString('utf8')).not.toMatch(/\bskill\b/i);
+    expect(manifest.scenarios.s5.suggestedRuns['s5-with'].cwd).toBe(scenarioDir('s5-with'));
+  });
+});
+
+describe('S6 probe skill', () => {
+  it('is a plain git repository with one scratch Skill, no factory install, and valid frontmatter for a scratch Skill', async () => {
+    const dir = scenarioDir('s6-skill-args');
+    const { KNOWN_KEYS, DESCRIPTION_MAX_CHARS, LISTING_MAX_CHARS, SKILL_MD_MAX_LINES } = await import('../src/core/skill-layout.js');
+    expect(git(dir, ['rev-list', '--count', 'HEAD']).trim()).toBe('1');
+    expect(fs.existsSync(path.join(dir, '.claude', 'agents'))).toBe(false);
+    expect(fs.existsSync(path.join(dir, '.claude', 'hooks'))).toBe(false);
+    expect(fs.readdirSync(path.join(dir, '.claude', 'skills'))).toEqual(['probe-args']);
+    const text = fs.readFileSync(path.join(dir, '.claude', 'skills', 'probe-args', 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
+    const match = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(text);
+    expect(match).not.toBeNull();
+    const meta = yaml.parse(match![1]!) as Json;
+    for (const key of Object.keys(meta)) expect(KNOWN_KEYS.has(key), key).toBe(true);
+    expect(meta.name).toBe('probe-args');
+    expect(String(meta.description).length).toBeLessThanOrEqual(DESCRIPTION_MAX_CHARS);
+    expect(String(meta.description).length).toBeLessThanOrEqual(LISTING_MAX_CHARS);
+    expect(meta['disable-model-invocation']).toBeUndefined();
+    expect(meta['user-invocable']).toBeUndefined();
+    expect(text.split('\n').length).toBeLessThan(SKILL_MD_MAX_LINES);
+    expect(match![2]).toContain('$ARGUMENTS');
+    expect(match![2]).toContain('probe-args-output.txt');
+    expect(workspaceEntries(manifest)['s6-skill-args']!.files).toHaveProperty(['.claude/skills/probe-args/SKILL.md']);
+  });
+});
+
+describe('the sitting instructions', () => {
+  const fenceRe = /```(\w+)\n([\s\S]*?)\n```/g;
+  const read = (): string => fs.readFileSync(path.join(destination, 'SITTINGS.md'), 'utf8');
+  const normalize = (value: string): string => (process.platform === 'win32' ? path.normalize(value).toLowerCase() : path.normalize(value));
+
+  it('is UTF-8 without a byte-order mark and with LF line ends, and the manifest records its hash', () => {
+    const bytes = fs.readFileSync(path.join(destination, 'SITTINGS.md'));
+    expect(bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))).toBe(false);
+    expect(new TextDecoder('utf-8', { fatal: true }).decode(bytes)).not.toContain('\r');
+    expect(manifest.sittings.sha256).toBe(sha256(bytes));
+  });
+
+  it('has the sittings in the order S6, S4, S3, each with the parts a reader needs', () => {
+    const text = read();
+    const at = ['(S6)', '(S4)', '(S3)'].map(tag => text.indexOf(tag));
+    expect(at.every(index => index > 0)).toBe(true);
+    expect([...at].sort((x, y) => x - y)).toEqual(at);
+    for (const label of ['**What it shows:**', '**Bound:**', '### Before you start', '**Paste back to the Plan 033 session:**', 'Paste this:']) expect(text, label).toContain(label);
+    expect(text).toMatch(/at most 2 prompts/);
+    expect(text).toMatch(/at most 4 prompts/);
+    expect(text).toMatch(/at most 6 prompts/);
+    const steps = (text.match(/^### Step \d+/gm) ?? []).length;
+    expect((text.match(/\*\*You should see:\*\*/g) ?? []).length).toBe(steps);
+    expect((text.match(/\*\*If not:\*\*/g) ?? []).length).toBe(steps);
+    expect(steps).toBe(2 + 6 + 2 + 5);
+    expect((text.match(/session id/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    expect(text).toMatch(/\/status/);
+    expect(text).toMatch(/\.jsonl/);
+  });
+
+  it('names only paths that exist after preparation in its commands, and no placeholder remains', () => {
+    const text = read();
+    expect(text).not.toMatch(/<[A-Za-z][^>\n]*>|TODO|TBD|XXX|\{\{|\bABS\b|REPLACE/);
+    const future = new Set<string>((manifest.sittings.futurePaths as string[]).map(normalize));
+    const pattern = process.platform === 'win32' ? /(?<![\w$])[A-Za-z]:\/[^"'\s]+/g : /(?<![\w$.~-])\/[\w./-]+/g;
+    let checked = 0;
+    for (const match of text.matchAll(fenceRe)) {
+      if (!['bash', 'powershell'].includes(match[1]!)) continue;
+      for (const token of match[2]!.match(pattern) ?? []) {
+        const native = normalize(token.replace(/\/$/, ''));
+        checked += 1;
+        expect(fs.existsSync(native) || future.has(native), `a command names a path that does not exist after preparation: ${token}`).toBe(true);
+      }
+    }
+    expect(checked).toBeGreaterThan(10);
+    // The rename of the guard script: the source exists now, the target is only the name this sitting gives it.
+    const renames = [...text.matchAll(/mv "([^"]+)" "([^"]+)"/g)];
+    expect(renames).toHaveLength(2);
+    expect(fs.existsSync(normalize(renames[0]![1]!))).toBe(true);
+    expect(renames[0]![2]).toBe(`${renames[0]![1]}.off`);
+    expect([renames[1]![1], renames[1]![2]]).toEqual([renames[0]![2], renames[0]![1]]);
+  });
+
+  it('carries the typed lines the routes expect and the commands to start each session, and tells nobody to skip a check', () => {
+    const text = read();
+    for (const route of ['skill', 'contract', 'bundle']) {
+      const evidence = readJson(path.join(scenarioDir('s3-typed-forks'), 'work', route, 'brief.json')).roots.evidence as string;
+      expect(text).toContain(`/author-${route} ${path.join(evidence, `${route}-task.json`)}`);
+    }
+    expect(text).toContain(`env -u CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS node "${cli.replace(/\\/g, '/')}" start agent-factory --host claude`);
+    expect(text).toContain('Remove-Item Env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS');
+    expect(text).toMatch(/```bash\nclaude --model sonnet --effort low\n```/);
+    expect(text).not.toMatch(/\b(skip|skipping|bypass|ignore|omit|disable|waive)\b/i);
+    expect(text).not.toMatch(/--dangerously-skip-permissions/);
+  });
+
+  it('is split per sitting into the workspaces, each file made of blocks that are in the full text', () => {
+    const full = read();
+    for (const name of ['s6-skill-args', 's4a-factory-guards', 's4b-readonly-probe', 's3-typed-forks']) {
+      const own = fs.readFileSync(path.join(scenarioDir(name), 'SITTING.md'), 'utf8');
+      expect(own, name).not.toContain('\r');
+      expect(own.length, name).toBeGreaterThan(500);
+      expect(own).toMatch(/\*\*Paste back to the Plan 033 session:\*\*/);
+      for (const match of own.matchAll(fenceRe)) expect(full, `${name}: ${match[2]}`).toContain(match[0]);
+      expect(own).toContain(scenarioDir(name).replace(/\\/g, '/'));
+    }
+    for (const name of ['s0-launcher', 's1-coord-realize', 's2-sync', 's5-with', 's5-without', 's5-control']) expect(fs.existsSync(path.join(scenarioDir(name), 'SITTING.md')), name).toBe(false);
+  });
+
+  it('keeps every expected result out of the scenario folders and the instructions', () => {
+    const visit = (dir: string, prefix = ''): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+      if (!prefix && (entry.name === '.git' || entry.name === '.claude')) return [];
+      return entry.isDirectory() ? visit(path.join(dir, entry.name), `${prefix}${entry.name}/`) : [path.join(dir, entry.name)];
+    });
+    for (const name of Object.keys(workspaceEntries(manifest))) {
+      for (const file of visit(scenarioDir(name))) expect(fs.readFileSync(file, 'utf8'), file).not.toMatch(/"expected"|answer key|"unaffected"/);
+    }
+    expect(read()).not.toMatch(/"expected"|answer key|proof-agent/);
+    if (!realS2Unavailable) expect(Object.keys(manifest.scenarios.s2.expected)).toEqual(['affected', 'unaffected']);
   });
 });
