@@ -12,7 +12,7 @@ import { UninstallEngine } from '../src/core/uninstaller.js';
 import type { InstallOptions, LockfileManifest } from '../src/core/types.js';
 
 // Exact reviewed factory declaration, including the P7 coordinator and dormant router companions.
-const factorySkills = ['author-bundle', 'author-contract', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact'];
+const factorySkills = ['author-bundle', 'author-contract', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'sync-host'];
 
 describe('shipped factory native lifecycle in fresh workspaces', () => {
   let root: string;

@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Host-update sync job v1",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "host-update-sync-job"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "host": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "checkout": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "head": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      },
+      "required": [
+        "checkout",
+        "head"
+      ],
+      "additionalProperties": false
+    },
+    "roots": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        }
+      },
+      "required": [
+        "workspace",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "library": {
+      "type": "object",
+      "properties": {
+        "lock": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4194304
+            }
+          },
+          "required": [
+            "path",
+            "sha256",
+            "bytes"
+          ],
+          "additionalProperties": false
+        },
+        "previousLock": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4194304
+            }
+          },
+          "required": [
+            "path",
+            "sha256",
+            "bytes"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "lock",
+        "previousLock"
+      ],
+      "additionalProperties": false
+    },
+    "changedInputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "oldSha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "newSha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "oldSha256",
+          "newSha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 256
+    },
+    "heldSources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "lockedSha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "candidateSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "path",
+          "lockedSha256",
+          "candidateSha256",
+          "rule",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4194304
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "bytes"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 256
+    }
+  },
+  "required": [
+    "version",
+    "kind",
+    "id",
+    "host",
+    "source",
+    "roots",
+    "library",
+    "changedInputs",
+    "heldSources",
+    "targets"
+  ],
+  "additionalProperties": false
+}

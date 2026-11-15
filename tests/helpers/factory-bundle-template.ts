@@ -23,7 +23,7 @@ export async function prepareBundleTemplate() {
   const factory = catalog.bundles['agent-factory']!;
   factory.skills = ['author-skill', 'author-bundle', 'host-agent-router', 'handoff', 'git-guardrails'];
   await fs.writeJson(path.join(registry, 'bundles.json'), catalog);
-  for (const name of ['realize', 'evaluate', 'contract']) await fs.remove(path.join(registry, `hosts/claude/agent-factory-${name}.binding.json`));
+  for (const name of ['realize', 'evaluate', 'sync', 'contract']) await fs.remove(path.join(registry, `hosts/claude/agent-factory-${name}.binding.json`));
   const state = path.join(workspace, '.claude/.agents-united');
   const options: InstallOptions = { targetDir: state, method: 'copy', fanout: ['claude'], nativeLane: true };
   return { root, registry, workspace, state, options,

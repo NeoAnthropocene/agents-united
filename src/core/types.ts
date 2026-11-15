@@ -894,7 +894,7 @@ interface ClaudeFactoryBindingBase {
 
 /** Only the coordinator declares the two fixed worker dependencies. */
 export type ClaudeFactoryBinding = ClaudeFactoryBindingBase & (
-  { skill: 'realize-artifact' | 'evaluate-artifact' }
+  { skill: 'realize-artifact' | 'evaluate-artifact' | 'sync-host' }
   | { skill: 'coordinate-artifact'; requiredRoles: ['factory-realizer', 'factory-evaluator'] }
 );
 

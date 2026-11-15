@@ -17,6 +17,7 @@
         "evaluate-artifact",
         "author-bundle",
         "coordinate-artifact",
+        "sync-host",
         "host-agent-router",
         "handoff",
         "git-guardrails"

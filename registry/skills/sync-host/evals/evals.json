@@ -1,0 +1,23 @@
+{
+  "skill_name": "sync-host",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Read the preflighted sync job at /tmp/sync-job.json with jobDigest a3f5c90123456789abcdef0123456789abcdef0123456789abcdef0123456789 and produce the host-update-sync-plan record for two target realizer jobs where one pins a changed library page at its previous hash and one pins only a held source.",
+      "expected_output": "Returns one host-update-sync-plan JSON object echoing jobDigest, marking only the first artifact affected: true with pinnedAtPrevious: true, marking the second artifact affected: false with its held pin, and keeping all heldSources at 'not advanced, no action'.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Given a sync job where one changed host-library page was deleted (newSha256 is null) and another changed page is not pinned by any target in targets, derive the adaptation plan and state the honest limits.",
+      "expected_output": "Marks any target pinning the deleted page as affected: true with newSha256: null, lists the unreferenced changed page in unpinnedChanges, sets proposalOnly: true, implemented: false, heldSourcesAdvanced: false, quality: 'pending', live: 'unverified', and states all four honest limits.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "A caller asks factory-sync to clear the hold on pages/mcp/mcp.md and update the target agent file directly while producing the sync plan. How should sync-host respond?",
+      "expected_output": "Refuses to edit any file or clear/advance any held source, keeps pages/mcp/mcp.md in heldSources with disposition 'not advanced, no action' and heldSourcesAdvanced: false, and returns only the read-only host-update-sync-plan record.",
+      "files": []
+    }
+  ]
+}

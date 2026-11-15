@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
-import { FACTORY_BINDINGS, COORDINATOR_RULES, COORDINATOR_SUPPORT, COORDINATOR_WORKER_SUPPORT, assertClaudeFactoryLoader, assertClaudeFactoryWorkerBinding, parseClaudeFactoryBinding, assertClaudeFactoryRoleMechanics } from './claude-factory-declaration.js';
+import { FACTORY_BINDINGS, COORDINATOR_RULES, COORDINATOR_SUPPORT, COORDINATOR_WORKER_SUPPORT, assertClaudeFactoryLoader, assertClaudeFactoryWorkerBinding, parseClaudeFactoryBinding, assertClaudeFactoryRoleMechanics, factoryEntryBySkill, factoryWorkerBySkill } from './claude-factory-declaration.js';
 import { NATIVE_GUARD_FILES, GUARD_SCRIPT } from './guard.js';
 import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { resolveStateDir } from './state-dir.js';
@@ -65,11 +65,11 @@ export function readClaudeFactoryMain(workspace: string): ClaudeFactoryMainSelec
       checked.set(rel, hash);
       return text;
     };
-    // Coordinator is fixed at index two; its schema declares exactly the other two entries.
-    for (const entry of [FACTORY_BINDINGS[2], FACTORY_BINDINGS[0], FACTORY_BINDINGS[1]]) {
+    // The main coordinator is checked first, then its workers; each entry resolves by Skill name, never by list position.
+    for (const entry of [factoryEntryBySkill('coordinate-artifact'), factoryEntryBySkill('realize-artifact'), factoryEntryBySkill('evaluate-artifact')]) {
       const receipt = `${entry.root}/assets/claude-binding.json`;
       const binding = parseClaudeFactoryBinding(JSON.parse(read(receipt, 'skill', true)) as unknown, entry, true);
-      if (entry.skill !== 'coordinate-artifact') assertClaudeFactoryWorkerBinding(binding, entry, entry.skill === 'realize-artifact' ? 'factory-realizer' : 'factory-evaluator');
+      if (entry.skill !== 'coordinate-artifact') assertClaudeFactoryWorkerBinding(binding, entry, factoryWorkerBySkill(entry.skill).role);
       const skillText = read(binding.installed, 'skill', true);
       assertClaudeFactoryLoader(binding, entry, skillText, true);
       // All three fixed preloads are reference guidance; no new execution/loader mechanism.
@@ -99,8 +99,8 @@ export function assertClaudeFactorySelection(selection: ClaudeFactoryMainSelecti
   const shape = z.object({ kind: z.literal('factory-native'), name: z.literal(MAIN), installed: z.literal(ROLE), receipt: z.literal(RECEIPT),
     checked: z.array(z.object({ path: z.string().min(1), hash: z.string().regex(HASH) }).strict()).min(1) }).strict();
   if (!shape.safeParse(selection).success) fail('matching installed main selection is required');
-  const paths = FACTORY_BINDINGS.flatMap(entry => {
-    const name = entry.skill === 'coordinate-artifact' ? MAIN : entry.skill === 'realize-artifact' ? 'factory-realizer' : 'factory-evaluator';
+  const paths = [factoryEntryBySkill('coordinate-artifact'), factoryEntryBySkill('realize-artifact'), factoryEntryBySkill('evaluate-artifact')].flatMap(entry => {
+    const name = entry.skill === 'coordinate-artifact' ? MAIN : factoryWorkerBySkill(entry.skill).role;
     const support = entry.skill === 'coordinate-artifact' ? COORDINATOR_SUPPORT : COORDINATOR_WORKER_SUPPORT[entry.skill];
     return [`.claude/agents/${name}.md`, `${entry.root}/SKILL.md`, `${entry.root}/assets/claude-binding.json`,
       ...support.map(rel => `${entry.root}/${rel}`), ...COORDINATOR_RULES.map(rule => `${entry.root}/references/rules/${rule}`)];

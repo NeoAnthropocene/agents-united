@@ -14,7 +14,7 @@ import { checkFloor } from './native-floor.js';
 import { inspectNativeAgent } from './native-guard.js';
 import { loadHostProfile, loadToolPolicy, resolveGrant } from './host-profile.js';
 import { hasClaudeContractTaskReceipt } from './claude-contract-binding.js';
-import { FACTORY_BINDINGS, type FactoryEntry, parseClaudeFactoryBinding, assertClaudeFactoryWorkerBinding, assertClaudeFactoryLoader, assertClaudeFactoryRoleMechanics, normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
+import { FACTORY_BINDINGS, type FactoryEntry, parseClaudeFactoryBinding, assertClaudeFactoryWorkerBinding, assertClaudeFactoryLoader, assertClaudeFactoryRoleMechanics, normalizeClaudeFactoryCoordinatorTools, factoryEntryBySkill, factoryWorkerByRole } from './claude-factory-declaration.js';
 export { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
 
 function fail(message: string): never { throw new Error(`Claude factory binding: ${message}.`); }
@@ -58,8 +58,8 @@ async function planFactoryEntry(
   }
   const binding = readBinding(registryDir, entry);
   if (binding.skill === 'coordinate-artifact') {
-    for (const [index, name] of binding.requiredRoles.entries()) {
-      const dependency = FACTORY_BINDINGS[index]!;
+    for (const name of binding.requiredRoles) {
+      const dependency = factoryEntryBySkill(factoryWorkerByRole(name).skill);
       if (!resolved.skills.includes(dependency.skill)) fail(`coordinate-artifact requires worker ${name} and task ${dependency.skill}`);
       const worker = readBinding(registryDir, dependency);
       assertClaudeFactoryWorkerBinding(worker, dependency, name);
@@ -105,8 +105,8 @@ async function planFactoryEntry(
     const core = cores.get(role.definition)!;
     if (entry.skill === 'realize-artifact' && resolved.skills.includes('coordinate-artifact')
       && !isDeepStrictEqual([...(core.capabilities ?? [])].sort(), ['edit', 'handback', 'read', 'report', 'search', 'shell', 'skill'])) fail('coordinate-artifact worker realizer capabilities differ');
-    if (entry.skill === 'evaluate-artifact' && !isDeepStrictEqual([...(core.capabilities ?? [])].sort(), ['handback', 'read', 'report', 'search'])) {
-      fail('evaluator capabilities must retain exactly the reviewed read/search/report/handback classes');
+    if ((entry.skill === 'evaluate-artifact' || entry.skill === 'sync-host') && !isDeepStrictEqual([...(core.capabilities ?? [])].sort(), ['handback', 'read', 'report', 'search'])) {
+      fail(`${entry.skill === 'sync-host' ? 'sync' : 'evaluator'} capabilities must retain exactly the reviewed read/search/report/handback classes`);
     }
     const floorProblems = checkFloor(text, core);
     if (floorProblems.length) fail(`floor mismatch for ${role.name}: ${floorProblems.join('; ')}`);

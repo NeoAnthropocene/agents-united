@@ -1545,6 +1545,12 @@
       ],
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/supply-chain-risk-auditor"
     },
+    "sync-host": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-15",
+      "skill": "sync-host"
+    },
     "systematic-debugging": {
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",

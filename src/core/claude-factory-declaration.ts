@@ -11,9 +11,42 @@ function fail(message: string): never { throw new Error(`Claude factory binding:
 export const FACTORY_BINDINGS = [
   { skill: 'realize-artifact', file: 'hosts/claude/agent-factory-realize.binding.json', root: '.claude/skills/realize-artifact' },
   { skill: 'evaluate-artifact', file: 'hosts/claude/agent-factory-evaluate.binding.json', root: '.claude/skills/evaluate-artifact' },
+  { skill: 'sync-host', file: 'hosts/claude/agent-factory-sync.binding.json', root: '.claude/skills/sync-host' },
   { skill: 'coordinate-artifact', file: 'hosts/claude/agent-factory-coordinate.binding.json', root: '.claude/skills/coordinate-artifact' },
 ] as const;
 export type FactoryEntry = typeof FACTORY_BINDINGS[number];
+/** Maps each factory worker Skill to the role name and reviewed posture its closure derives; wiring resolves by these names, never by list position. */
+export const FACTORY_WORKERS = [
+  { skill: 'realize-artifact', role: 'factory-realizer', definition: 'subagent-realize-for-host', guard: 'destructive',
+    requiredInstalled: ['.claude/skills/author-skill/references/skill-attribution.md'], hooks: [{ id: 'reject-destructive-operations', kind: 'destructive' }],
+    grant: ['Bash', 'Edit', 'NotebookEdit', 'PowerShell', 'Skill', 'SubagentHandback', 'Write'] },
+  { skill: 'evaluate-artifact', role: 'factory-evaluator', definition: 'subagent-factory-evaluator', guard: 'read-only',
+    requiredInstalled: [], hooks: [{ id: 'reject-mutating-tools', kind: 'read-only' }], grant: ['SubagentHandback'] },
+  { skill: 'sync-host', role: 'factory-sync', definition: 'subagent-host-update-sync', guard: 'read-only',
+    requiredInstalled: [], hooks: [{ id: 'reject-mutating-tools', kind: 'read-only' }], grant: ['SubagentHandback'] },
+] as const;
+export type FactoryWorker = typeof FACTORY_WORKERS[number];
+
+/** Resolve a closed binding entry by its Skill name; an unregistered Skill is refused, never guessed by position. */
+export function factoryEntryBySkill(skill: string): FactoryEntry {
+  const entry = FACTORY_BINDINGS.find(item => item.skill === skill);
+  if (!entry) fail(`unknown factory skill ${skill}`);
+  return entry;
+}
+
+/** Resolve a fixed worker by its Skill name; an unlisted Skill is never treated as one of the existing workers. */
+export function factoryWorkerBySkill(skill: string): FactoryWorker {
+  const worker = FACTORY_WORKERS.find(item => item.skill === skill);
+  if (!worker) fail(`unknown factory worker skill ${skill}`);
+  return worker;
+}
+
+/** Resolve a fixed worker by its role name; an unlisted role is never treated as one of the existing workers. */
+export function factoryWorkerByRole(role: string): FactoryWorker {
+  const worker = FACTORY_WORKERS.find(item => item.role === role);
+  if (!worker) fail(`unknown factory worker role ${role}`);
+  return worker;
+}
 export const COORDINATOR_SUPPORT = ['references/job.md', 'references/dispatch.md', 'references/verification.md', 'references/repair.md', 'references/handback.md', 'examples/claude-agent-journey.md', 'assets/report.json',
   'references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json',
   'references/contract-authoring.md', 'scripts/check-contract-return.mjs', 'assets/contract-task.schema.json', 'assets/contract-return.schema.json'] as const;
@@ -53,6 +86,15 @@ export const COORDINATOR_WORKER_SUPPORT = {
     "assets/rubric.json",
     "assets/report.json",
     "scripts/check-review.mjs"
+  ],
+  "sync-host": [
+    "references/job.md",
+    "references/plan.md",
+    "references/handback.md",
+    "examples/one-sync.md",
+    "assets/sync-job.schema.json",
+    "assets/sync-plan.schema.json",
+    "scripts/check-sync.mjs"
   ]
 } as const;
 const COORDINATOR_ROLE = { name: 'orchestrator-agent-factory', definition: 'orchestrator-agent-factory',
@@ -95,6 +137,12 @@ export function parseClaudeFactoryBinding(raw: unknown, entry: FactoryEntry, rec
     source: 'hosts/claude/agents/factory-evaluator.md', installed: '.claude/agents/factory-evaluator.md',
     loading: 'subagent', skills: ['evaluate-artifact'], guard: 'read-only',
   }])) fail('required evaluator role binding must deliver factory-evaluator with its reviewed definition, preload and read-only worker mechanism');
+  if (entry.skill === 'sync-host' && !isDeepStrictEqual(result.data.roles, [{
+    name: 'factory-sync', definition: 'subagent-host-update-sync',
+    contract: 'core/subagent-host-update-sync.contract.json',
+    source: 'hosts/claude/agents/factory-sync.md', installed: '.claude/agents/factory-sync.md',
+    loading: 'subagent', skills: ['sync-host'], guard: 'read-only',
+  }])) fail('required sync role binding must deliver factory-sync with its reviewed definition, preload and read-only worker mechanism');
   if (entry.skill === 'coordinate-artifact') {
     if (!isDeepStrictEqual(result.data.roles, [COORDINATOR_ROLE])) fail('coordinate-artifact requires its exact main role, preload and destructive guard');
     if (!isDeepStrictEqual(result.data.hooks, [{ id: 'reject-destructive-operations', kind: 'destructive' }])) fail('coordinate-artifact requires its exact existing guard mapping');
@@ -114,16 +162,16 @@ export function parseClaudeFactoryBinding(raw: unknown, entry: FactoryEntry, rec
 }
 
 export function assertClaudeFactoryWorkerBinding(worker: ClaudeFactoryBinding, dependency: FactoryEntry, name: string): void {
+      const bySkill = factoryWorkerBySkill(dependency.skill);
       const expectedSupport = COORDINATOR_WORKER_SUPPORT[dependency.skill as keyof typeof COORDINATOR_WORKER_SUPPORT];
       const expectedReferences = COORDINATOR_RULES.map(rule => ({ source: `rules/${rule}`, installed: `${dependency.root}/references/rules/${rule}` }));
-      const expectedInstalled = dependency.skill === 'realize-artifact' ? ['.claude/skills/author-skill/references/skill-attribution.md'] : [];
-      const expectedHooks = dependency.skill === 'realize-artifact' ? [{ id: 'reject-destructive-operations', kind: 'destructive' }] : [{ id: 'reject-mutating-tools', kind: 'read-only' }];
+      const expectedInstalled = bySkill.requiredInstalled;
+      const expectedHooks = bySkill.hooks;
       if (!expectedSupport || !isDeepStrictEqual([...worker.requiredSupport].sort(), [...expectedSupport].sort())
         || !isDeepStrictEqual(worker.references, expectedReferences) || !isDeepStrictEqual(worker.requiredInstalled, expectedInstalled)
         || !isDeepStrictEqual(worker.hooks, expectedHooks)) fail(`coordinate-artifact worker ${name} required closure differs`);
 
-      const expectedDefinition = name === 'factory-realizer' ? 'subagent-realize-for-host' : 'subagent-factory-evaluator';
-      const expectedGuard = name === 'factory-realizer' ? 'destructive' : 'read-only';
+      const { definition: expectedDefinition, guard: expectedGuard } = factoryWorkerByRole(name);
       if (!isDeepStrictEqual(worker.roles, [{ name, definition: expectedDefinition, contract: `core/${expectedDefinition}.contract.json`,
         source: `hosts/claude/agents/${name}.md`, installed: `.claude/agents/${name}.md`, loading: 'subagent', skills: [dependency.skill], guard: expectedGuard }])) fail(`coordinate-artifact required worker ${name} binding differs`);
 }
@@ -145,7 +193,7 @@ export function assertClaudeFactoryLoader(binding: ClaudeFactoryBinding, entry: 
   catch { fail('invalid native runbook frontmatter'); }
   const skillLoader = z.object({ name: z.literal(binding.skill), 'user-invocable': z.literal(false), 'disable-model-invocation': z.literal(false).optional(), context: z.never().optional() }).passthrough();
   if (!skillLoader.safeParse(skillMeta).success) fail('native runbook must be model-invocable, non-fork guidance for its required preload');
-  if (fixedWorker || entry.skill === 'evaluate-artifact' || entry.skill === 'coordinate-artifact') {
+  if (fixedWorker || entry.skill === 'evaluate-artifact' || entry.skill === 'sync-host' || entry.skill === 'coordinate-artifact') {
     const evaluatorLoader = z.object({
       name: z.literal(entry.skill), description: z.string().min(1), 'user-invocable': z.literal(false),
       'disable-model-invocation': z.literal(false).optional(), license: z.string().optional(), compatibility: z.string().optional(),
@@ -153,7 +201,8 @@ export function assertClaudeFactoryLoader(binding: ClaudeFactoryBinding, entry: 
     }).strict();
     if (!evaluatorLoader.safeParse(skillMeta).success) fail(`${entry.skill} preload contains unsupported native mechanics or missing metadata`);
     if (/(?:^|\s)!`/.test(skillText) || /^\s*```!/m.test(skillText)) {
-      const preload = entry.skill === 'evaluate-artifact' ? 'factory-evaluator (evaluate-artifact)' : entry.skill;
+      const preload = entry.skill === 'evaluate-artifact' ? 'factory-evaluator (evaluate-artifact)'
+        : entry.skill === 'sync-host' ? 'factory-sync (sync-host)' : entry.skill;
       fail(`${preload} preload dynamic shell injection is unavailable`);
     }
   }
@@ -179,9 +228,7 @@ export function assertClaudeFactoryRoleMechanics(text: string, name: string, ski
   const tools = name === 'orchestrator-agent-factory' ? normalizeClaudeFactoryCoordinatorTools(facts.tools) : facts.tools;
   const expected = name === 'orchestrator-agent-factory'
     ? [...base, 'Agent', 'AskUserQuestion', 'Bash', 'Edit', 'NotebookEdit', 'PowerShell', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'Write']
-    : name === 'factory-realizer'
-      ? [...base, 'Bash', 'Edit', 'NotebookEdit', 'PowerShell', 'Skill', 'SubagentHandback', 'Write']
-      : [...base, 'SubagentHandback'];
+    : [...base, ...factoryWorkerByRole(name).grant];
   if (!isDeepStrictEqual([...tools].sort(), expected.sort())) mechanicsFail(`critical tool grant differs for ${name}`);
   if (!isDeepStrictEqual(facts.meta.hooks, destructive ? nativeGuardFileHooks() : readOnlyGuardFileHooks())) mechanicsFail(`critical guard registration differs for ${name}`);
 }

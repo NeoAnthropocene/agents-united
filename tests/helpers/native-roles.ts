@@ -9,6 +9,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'orchestrator-agent-factory', stem: 'orchestrator-agent-factory', tier: 1, coordinator: true },
   { role: 'factory-evaluator', stem: 'subagent-factory-evaluator', tier: 1, coordinator: false },
   { role: 'factory-realizer', stem: 'subagent-realize-for-host', tier: 1, coordinator: false },
+  { role: 'factory-sync', stem: 'subagent-host-update-sync', tier: 1, coordinator: false },
   { role: 'orchestrator-engineering', stem: 'orchestrator-engineering', tier: 1, coordinator: true },
   { role: 'backend-architect', stem: 'subagent-backend-architect', tier: 1, coordinator: false },
   { role: 'frontend-architect', stem: 'subagent-frontend-architect', tier: 1, coordinator: false },

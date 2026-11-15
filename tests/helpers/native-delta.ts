@@ -54,7 +54,7 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
   if (roles.length === 0) return [];
   const cores = await loadSemanticCore(registryDir);
   const policy = loadToolPolicy(registryDir, host);
-  const factories = host === 'claude' ? ['agent-factory-realize.binding.json', 'agent-factory-evaluate.binding.json', 'agent-factory-coordinate.binding.json']
+  const factories = host === 'claude' ? ['agent-factory-realize.binding.json', 'agent-factory-evaluate.binding.json', 'agent-factory-sync.binding.json', 'agent-factory-coordinate.binding.json']
     .map(name => path.join(registryDir, 'hosts', host, name))
     .filter(file => fs.existsSync(file))
     .map(file => JSON.parse(fs.readFileSync(file, 'utf8')) as ClaudeFactoryBinding) : [];

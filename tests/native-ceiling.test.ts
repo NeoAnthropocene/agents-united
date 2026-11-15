@@ -35,7 +35,7 @@ describe('native agents against the Semantic Core', () => {
     expect(rows['orchestrator-agent-factory']).toMatchObject({ floor: 'ok', toolGains: [], toolExtras: [], guard: 'destructive', model: 'inherit', effort: 'medium', issues: [] });
     expect(rows['factory-realizer']).toMatchObject({ floor: 'ok', toolGains: [], toolExtras: [], guard: 'destructive', model: 'inherit', effort: 'medium', issues: [] });
   });
-  it.each(['factory-realizer', 'factory-evaluator'])('rejects model drift after resolving %s through its native binding', async role => {
+  it.each(['factory-realizer', 'factory-evaluator', 'factory-sync'])('rejects model drift after resolving %s through its native binding', async role => {
     const edited = sourceOf(role).replace('model: inherit', 'model: opus');
     const row = (await nativeDeltaRows(REGISTRY, 'claude', { installed: new Map([[role, edited]]) })).find(item => item.role === role)!;
     expect(row.floor).toBe('ok');

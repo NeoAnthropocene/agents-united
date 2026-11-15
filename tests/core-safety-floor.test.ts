@@ -17,7 +17,7 @@ const normalize = (text: string): string => text.replace(/\s+/g, ' ').trim();
 const sourceOf = (stem: string): string => {
   const legacy = path.join('registry', 'agents', `${stem}.md`);
   if (fs.existsSync(legacy)) return legacy;
-  const bindings = ['agent-factory-realize.binding.json', 'agent-factory-evaluate.binding.json', 'agent-factory-coordinate.binding.json']
+  const bindings = ['agent-factory-realize.binding.json', 'agent-factory-evaluate.binding.json', 'agent-factory-sync.binding.json', 'agent-factory-coordinate.binding.json']
     .map(name => JSON.parse(fs.readFileSync(path.join('registry/hosts/claude', name), 'utf8')) as ClaudeFactoryBinding);
   const role = bindings.flatMap(binding => binding.roles).find(item => item.definition === stem);
   const native = role && path.join('registry', role.source);
@@ -54,7 +54,7 @@ describe('Contract Floor safety carries every registry guardrail', async () => {
   it.each([...cores.keys()])('%s: safety is not cut mid-sentence', stem => {
     expect(normalize(cores.get(stem)!.safety)).toMatch(/[.)`*"]$/);
   });
-  it.each(['subagent-realize-for-host', 'subagent-factory-evaluator'])('checks the actual native-only %s floor and refuses an unbound missing source', stem => {
+  it.each(['subagent-realize-for-host', 'subagent-factory-evaluator', 'subagent-host-update-sync'])('checks the actual native-only %s floor and refuses an unbound missing source', stem => {
     expect(checkFloor(fs.readFileSync(sourceOf(stem), 'utf8'), cores.get(stem)!)).toEqual([]);
     expect(() => sourceOf('unbound-missing-definition')).toThrow(/Missing required/);
   });

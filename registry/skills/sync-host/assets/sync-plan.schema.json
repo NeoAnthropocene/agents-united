@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Host-update sync adaptation plan v1 (every field is an unaccepted claim)",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "host-update-sync-plan"
+    },
+    "jobId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "host": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "jobDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "proposalOnly": {
+      "const": true
+    },
+    "implemented": {
+      "const": false
+    },
+    "heldSourcesAdvanced": {
+      "const": false
+    },
+    "quality": {
+      "const": "pending"
+    },
+    "live": {
+      "const": "unverified"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "job": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            },
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "additionalProperties": false
+          },
+          "jobId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "artifact": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "definition": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 8192
+                },
+                "minItems": 0,
+                "maxItems": 1000
+              }
+            },
+            "required": [
+              "type",
+              "definition",
+              "paths"
+            ],
+            "additionalProperties": false
+          },
+          "affected": {
+            "type": "boolean"
+          },
+          "changedPins": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 8192
+                },
+                "pinnedSha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "oldSha256": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "newSha256": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "pinnedAtPrevious": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "kind",
+                "path",
+                "pinnedSha256",
+                "oldSha256",
+                "newSha256",
+                "pinnedAtPrevious"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "maxItems": 256
+          },
+          "heldPins": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 8192
+                },
+                "pinnedSha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "path",
+                "pinnedSha256"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "maxItems": 64
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "job",
+          "jobId",
+          "artifact",
+          "affected",
+          "changedPins",
+          "heldPins",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 256
+    },
+    "unpinnedChanges": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 8192
+      },
+      "minItems": 0,
+      "maxItems": 256
+    },
+    "heldSources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "lockedSha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "candidateSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "disposition": {
+            "const": "not advanced, no action"
+          }
+        },
+        "required": [
+          "path",
+          "lockedSha256",
+          "candidateSha256",
+          "disposition"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 64
+    }
+  },
+  "required": [
+    "version",
+    "kind",
+    "jobId",
+    "host",
+    "jobDigest",
+    "proposalOnly",
+    "implemented",
+    "heldSourcesAdvanced",
+    "quality",
+    "live",
+    "artifacts",
+    "unpinnedChanges",
+    "heldSources"
+  ],
+  "additionalProperties": false
+}

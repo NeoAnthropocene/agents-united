@@ -1059,7 +1059,7 @@ export class ClaudeProjector {
   ): Promise<PlannedClaudeArtifact[]> {
     if (resolved.skills.includes('author-contract')) throw new Error('Claude author-contract plugin distribution is unavailable; use the workspace native lane.');
     if (resolved.skills.includes('author-bundle')) throw new Error('Claude author-bundle plugin distribution is unavailable; use the workspace native lane.');
-    if (['realize-artifact', 'evaluate-artifact', 'coordinate-artifact'].some(skill => resolved.skills.includes(skill))) throw new Error('Claude factory worker plugin distribution is unavailable; use the workspace native lane.');
+    if (['realize-artifact', 'evaluate-artifact', 'sync-host', 'coordinate-artifact'].some(skill => resolved.skills.includes(skill))) throw new Error('Claude factory worker plugin distribution is unavailable; use the workspace native lane.');
     const artifacts: PlannedClaudeArtifact[] = [];
     const baseDir = `.agents/plugins/${bundle.name}`;
 

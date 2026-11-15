@@ -15,7 +15,7 @@ describe('Claude session task protocol', () => {
       const tools = resolveGrant(policy, core.capabilities ?? [], { subagent: !role.coordinator, background: false }).tools;
       const text = nativeText(role.role);
       const nativeTools = inspectNativeAgent(text).tools;
-      if (role.role === 'factory-realizer' || role.role === 'factory-evaluator') {
+      if (role.role === 'factory-realizer' || role.role === 'factory-evaluator' || role.role === 'factory-sync') {
         // These fixed-job workers return progress to their caller; tracking belongs
         // to the main factory coordinator, outside their reviewed grant ceilings.
         expect(core.capabilities, role.role).not.toContain('task-tracking');

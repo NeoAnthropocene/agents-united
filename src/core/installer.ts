@@ -1355,7 +1355,7 @@ private toPosix(p: string): string {
       }
     }
     const restricted = [...required.values()].filter(bundle => bundle.hostAvailability !== undefined);
-    const needsBinding = required.has('agent-factory') || resolved.skills.includes('author-skill') || resolved.skills.includes('realize-artifact') || resolved.skills.includes('author-contract') || resolved.skills.includes('author-bundle') || resolved.skills.includes('evaluate-artifact') || resolved.skills.includes('coordinate-artifact');
+    const needsBinding = required.has('agent-factory') || resolved.skills.includes('author-skill') || resolved.skills.includes('realize-artifact') || resolved.skills.includes('author-contract') || resolved.skills.includes('author-bundle') || resolved.skills.includes('evaluate-artifact') || resolved.skills.includes('sync-host') || resolved.skills.includes('coordinate-artifact');
     if (resolved.skills.includes('author-skill') && !required.has('agent-factory')) {
       throw new Error('author-skill requires its owning contributor bundle declaration agent-factory before delivery.');
     }
@@ -1364,6 +1364,9 @@ private toPosix(p: string): string {
     }
     if (resolved.skills.includes('evaluate-artifact') && !required.has('agent-factory')) {
       throw new Error('evaluate-artifact requires its owning contributor bundle declaration agent-factory before delivery.');
+    }
+    if (resolved.skills.includes('sync-host') && !required.has('agent-factory')) {
+      throw new Error('sync-host requires its owning contributor bundle declaration agent-factory before delivery.');
     }
     if (resolved.skills.includes('author-contract') && !required.has('agent-factory')) {
       throw new Error('author-contract requires its owning contributor bundle declaration agent-factory before delivery.');
@@ -1399,7 +1402,7 @@ private toPosix(p: string): string {
       if (resolved.skills.includes('author-bundle') && InstallEngine.effectivePluginLane(options, lock)) {
         throw new Error('Claude author-bundle plugin distribution is unavailable; select the workspace native lane without --plugin.');
       }
-      if (['realize-artifact', 'evaluate-artifact', 'coordinate-artifact'].some(skill => resolved.skills.includes(skill)) && InstallEngine.effectivePluginLane(options, lock)) {
+      if (['realize-artifact', 'evaluate-artifact', 'sync-host', 'coordinate-artifact'].some(skill => resolved.skills.includes(skill)) && InstallEngine.effectivePluginLane(options, lock)) {
         throw new Error('Claude factory worker plugin distribution is unavailable; select the workspace native lane without --plugin.');
       }
       if (targets.includes('claude')) {
@@ -1640,7 +1643,7 @@ private toPosix(p: string): string {
 
         await this.assertSkillCopyUnmodified(targetDir, dest, lockfile, options.force);
         // Plan 035 — a skill's `evals/` is for the maintainers: a copy leaves it out, and the records below skip it (a link still shows the whole folder).
-        const factoryCopy = skillName === 'author-skill' || skillName === 'realize-artifact' || skillName === 'author-contract' || skillName === 'author-bundle' || skillName === 'evaluate-artifact' || skillName === 'coordinate-artifact';
+        const factoryCopy = skillName === 'author-skill' || skillName === 'realize-artifact' || skillName === 'author-contract' || skillName === 'author-bundle' || skillName === 'evaluate-artifact' || skillName === 'sync-host' || skillName === 'coordinate-artifact';
         const actualMethod = await this.deployFile(src, dest, factoryCopy ? 'copy' : skillMethod, options.force, from => !isMaintainerOnlySkillPath(path.relative(src, from)));
         const skillFile = path.join(src, 'SKILL.md');
         if (await fs.pathExists(skillFile)) {
