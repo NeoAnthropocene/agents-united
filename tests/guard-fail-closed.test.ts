@@ -1,0 +1,187 @@
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import fs from 'fs-extra';
+import { describe, expect, it } from 'vitest';
+import { GUARD_SCRIPT, guardFileHandler, guardHandler, managedGuardHooks, nativeGuardFileHooks, nativeGuardHandler, nativeGuardHooks } from '../src/core/guard.js';
+import { ClaudeProjector } from '../src/core/claude-projector.js';
+import { renderHooks } from '../src/core/native-floor.js';
+import { inspectNativeAgent } from '../src/core/native-guard.js';
+import { modeLineGateHooks } from '../src/core/mode-line-gate.js';
+import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks, readOnlyGuardHandler, readOnlyGuardHooks } from '../src/core/readonly-guard.js';
+import { preToolUseGroups, type HookHandler } from './helpers/claude-host-hooks.js';
+
+/**
+ * Plan 033 P20 — the native guards block when their hook cannot run. A Claude Code hook whose script cannot run does not block by default (an interactive sitting on
+ * 2.1.325 ran the guarded command with the script moved away), so every handler of the destructive-command guard and the read-only guard sets
+ * `onFailure: "block"` (host-library/claude/pages/hook/hooks.md, "Block the action when a hook fails"; Claude Code 2.1.295 or later). The mode-line
+ * gate is not a guard of what a role may do, and a lead whose gate script is missing could make no tool call, so its handler does not carry the field.
+ * Offline: the Host is never started; the scripts are run with `node` and a crafted stdin, as the other guard tests do.
+ */
+
+const AGENTS = path.resolve('registry/hosts/claude/agents');
+const HOOKS = path.resolve('registry/hosts/claude/hooks');
+const BLOCK = { onFailure: 'block' } as const;
+const handlersOf = (groups: Array<{ hooks: unknown[] }>): HookHandler[] => groups.flatMap(group => group.hooks as HookHandler[]);
+
+describe('the generated guard handlers carry onFailure "block", last in key order', () => {
+  it('the script-file handlers of both guards', () => {
+    expect(guardFileHandler('destructive')).toEqual({ type: 'command', command: 'node', args: ['${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js'], ...BLOCK });
+    expect(guardFileHandler('read-only')).toEqual({ type: 'command', command: 'node', args: ['${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js'], ...BLOCK });
+    for (const kind of ['destructive', 'read-only'] as const) expect(Object.keys(guardFileHandler(kind))).toEqual(['type', 'command', 'args', 'onFailure']);
+  });
+
+  it('the inline node -e handlers of both guards', () => {
+    expect(nativeGuardHandler()).toEqual({ type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT], ...BLOCK });
+    expect(readOnlyGuardHandler()).toEqual({ type: 'command', command: 'node', args: ['-e', READ_ONLY_GUARD_SCRIPT], ...BLOCK });
+    expect(Object.keys(nativeGuardHandler())).toEqual(['type', 'command', 'args', 'onFailure']);
+    expect(Object.keys(readOnlyGuardHandler())).toEqual(['type', 'command', 'args', 'onFailure']);
+  });
+
+  it.each([
+    ['nativeGuardHooks', nativeGuardHooks],
+    ['nativeGuardFileHooks', nativeGuardFileHooks],
+    ['readOnlyGuardHooks', readOnlyGuardHooks],
+    ['readOnlyGuardFileHooks', readOnlyGuardFileHooks],
+  ])('every handler of %s', (_name, build) => {
+    const handlers = handlersOf(build().PreToolUse);
+    expect(handlers.length).toBeGreaterThan(0);
+    for (const handler of handlers) expect(handler.onFailure).toBe('block');
+  });
+
+  it('the mode-line gate handler does not: it is not a guard of what a role may do', () => {
+    expect(guardFileHandler('mode-line')).toEqual({ type: 'command', command: 'node', args: ['${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-mode-line-gate.js'] });
+    for (const handler of handlersOf(modeLineGateHooks().PreToolUse)) expect(handler).not.toHaveProperty('onFailure');
+  });
+
+  it('the legacy projection and the settings-level session guard keep their handler (not a native agent: no hash or golden changes)', () => {
+    expect(guardHandler()).toEqual({ type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT] });
+    for (const handler of handlersOf(managedGuardHooks().PreToolUse)) expect(handler).not.toHaveProperty('onFailure');
+  });
+});
+
+describe('every committed native Claude agent with a hooks block', () => {
+  const files = fs.readdirSync(AGENTS).filter(file => file.endsWith('.md'));
+  const withHooks = files.filter(file => preToolUseGroups(fs.readFileSync(path.join(AGENTS, file), 'utf8')).length > 0);
+
+  it('is a real roster', () => {
+    expect(withHooks.length).toBeGreaterThanOrEqual(22);
+  });
+
+  it.each(withHooks)('%s: onFailure "block" on each guard handler and on no mode-line handler', file => {
+    const handlers = handlersOf(preToolUseGroups(fs.readFileSync(path.join(AGENTS, file), 'utf8')));
+    expect(handlers.length).toBeGreaterThan(0);
+    let guards = 0;
+    for (const handler of handlers) {
+      const target = String(handler.args?.[0] ?? '');
+      if (/agents-united-mode-line-gate\.js$/.test(target)) {
+        expect(handler, `${file} mode-line`).not.toHaveProperty('onFailure');
+      } else {
+        expect(target, `${file} guard`).toMatch(/agents-united-(readonly-)?guard\.js$/);
+        expect(handler.onFailure, `${file} ${target}`).toBe('block');
+        guards++;
+      }
+    }
+    expect(guards).toBeGreaterThan(0);
+  });
+});
+
+// This calls the real generator functions `nativeGuardFileHooks`, `readOnlyGuardFileHooks`, `modeLineGateHooks` and `renderHooks` (the rendering behind `syncHooks`).
+// It re-implements two choices the `UPDATE_NATIVE=1` path makes in tests/native-claude-agents.test.ts: which guard kind a role has (here read from the file with
+// `inspectNativeAgent`) and the mode-line group of the digital-agency lead. No single exported function renders a role's whole hooks block.
+describe('the hooks block of every committed native Claude agent is what the real generator renders', () => {
+  const files = fs.readdirSync(AGENTS).filter(file => file.endsWith('.md'));
+  it.each(files)('%s', file => {
+    const text = fs.readFileSync(path.join(AGENTS, file), 'utf8').replace(/\r\n/g, '\n');
+    const { guard } = inspectNativeAgent(text);
+    if (guard === 'none') {
+      expect(text, `${file} has no guard and no generated hooks block`).not.toContain('agents-united:hooks:start');
+      return;
+    }
+    const base = guard === 'read-only' ? readOnlyGuardFileHooks() : nativeGuardFileHooks();
+    const hooks = file === 'orchestrator-digital-agency.md' ? { PreToolUse: [...base.PreToolUse, ...modeLineGateHooks().PreToolUse] } : base;
+    const block = /# agents-united:hooks:start[^\n]*\n([\s\S]*?)\n  # agents-united:hooks:end/.exec(text)?.[1];
+    expect(block, file).toBe(renderHooks(hooks));
+  });
+});
+
+describe('the inline form (a global install) carries the field too', () => {
+  it.each([
+    ['backend-architect', 'agents-united-guard'],
+    ['code-reviewer', 'agents-united-readonly-guard'],
+  ])('%s: each guard handler of the rendered role has onFailure "block"', (role, _name) => {
+    const text = ClaudeProjector.nativeRoleContent(path.resolve('registry'), role, `.agents/agents/${role}.md`, 'inline') ?? '';
+    const handlers = handlersOf(preToolUseGroups(text));
+    expect(handlers.length).toBeGreaterThan(0);
+    for (const handler of handlers) {
+      expect(handler.args?.[0], role).toBe('-e');
+      expect(handler.onFailure, role).toBe('block');
+    }
+  });
+});
+
+describe('the other Hosts are untouched', () => {
+  it('no Antigravity or Cline registry file mentions onFailure', () => {
+    const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => (entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)]));
+    for (const host of ['antigravity', 'cline']) {
+      for (const file of walk(path.resolve('registry/hosts', host))) {
+        if (/\.(png|jpg|jpeg|gif|webp|zip|woff2?)$/i.test(file)) continue;
+        expect(fs.readFileSync(file, 'utf8'), file).not.toContain('onFailure');
+      }
+    }
+  });
+
+  it('the Antigravity and Cline guard sources (and the Cline plugin file) do not use the Claude handler builders', () => {
+    for (const file of ['src/core/antigravity-hooks.ts', 'src/core/antigravity-projector.ts', 'src/core/cline-projector.ts', 'registry/hosts/cline/plugins/agents-united-guard.js']) {
+      const text = fs.readFileSync(path.resolve(file), 'utf8');
+      expect(text, file).not.toMatch(/guardFileHandler|nativeGuardHandler|readOnlyGuardHandler|onFailure/);
+    }
+  });
+});
+
+describe('the guard scripts exit 0 where they allow and 2 where they block; every other exit now blocks through onFailure', () => {
+  const run = (script: string, stdin: string): { status: number | null; stderr: string } => {
+    const result = spawnSync(process.execPath, [path.join(HOOKS, script)], { input: stdin, encoding: 'utf8' });
+    return { status: result.status, stderr: result.stderr };
+  };
+  const call = (tool_name: string, tool_input: Record<string, unknown> = {}): string => JSON.stringify({ tool_name, tool_input });
+
+  it('destructive guard: a destructive call exits 2', () => {
+    expect(run('agents-united-guard.js', call('Bash', { command: 'git push --force origin main' })).status).toBe(2);
+  });
+
+  it('destructive guard: a harmless call, an unknown tool name, an empty payload and unparseable stdin deliberately allow and exit 0', () => {
+    expect(run('agents-united-guard.js', call('Bash', { command: 'echo hello world' })).status).toBe(0);
+    expect(run('agents-united-guard.js', call('SomeFutureTool', { anything: 1 })).status).toBe(0);
+    expect(run('agents-united-guard.js', '').status).toBe(0);
+    expect(run('agents-united-guard.js', '{not json').status).toBe(0);
+    expect(run('agents-united-guard.js', '{}').status).toBe(0);
+  });
+
+  it('records that a null payload crashes the destructive guard with exit 1, which now blocks (current behaviour, not a requirement)', () => {
+    const result = run('agents-united-guard.js', 'null');
+    expect(result.status).toBe(1);
+    expect(result.status).not.toBe(0);
+    expect(result.status).not.toBe(2);
+  });
+
+  it('read-only guard: a mutating call exits 2; unreadable, empty and null input exit 2 too (it fails closed on its own)', () => {
+    expect(run('agents-united-readonly-guard.js', call('Write', { file_path: 'a.txt' })).status).toBe(2);
+    for (const stdin of ['', '{not json', 'null']) {
+      const result = run('agents-united-readonly-guard.js', stdin);
+      expect(result.status, JSON.stringify(stdin)).toBe(2);
+      expect(result.stderr).toMatch(/unreadable hook input/);
+    }
+  });
+
+  it('read-only guard: a read-only tool and an unknown tool name exit 0', () => {
+    expect(run('agents-united-readonly-guard.js', call('Read', { file_path: 'a.txt' })).status).toBe(0);
+    expect(run('agents-united-readonly-guard.js', call('SomeFutureTool')).status).toBe(0);
+    expect(run('agents-united-readonly-guard.js', '{}').status).toBe(0);
+  });
+
+  it('a guard script that is gone makes node exit 1: a failure in the Host sense, so onFailure "block" blocks', () => {
+    const result = spawnSync(process.execPath, [path.join(HOOKS, 'no-such-guard.js')], { input: call('Bash', { command: 'echo x' }), encoding: 'utf8' });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toMatch(/Cannot find module/);
+  });
+});

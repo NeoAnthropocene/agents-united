@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import YAML from 'yaml';
 import { AgentHostAdapter } from './adapter.js';
 import { HostProjector } from './projector.js';
-import { ClaudeCapabilityProbe } from './claude-capabilities.js';
+import { ClaudeCapabilityProbe, supportsVersion } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { ClineProjector } from './cline-projector.js';
@@ -17,7 +17,7 @@ import { inspectAntigravityMcp, loadMcpCatalog } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
 import { optionalMcpNames } from './prerequisites.js';
 import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
-import { NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
+import { GUARD_ON_FAILURE_MIN_VERSION, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
 import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
@@ -58,6 +58,16 @@ export interface HealthReport {
 }
 
 /** Hosts the Declared-Delta Registry (Plan 026) carries entries for. */
+/**
+ * What a missing guard script means, per kind. The two guards carry onFailure "block" (Claude Code 2.1.295 or later); the mode-line gate does not,
+ * so its missing script blocks nothing. The read-only matcher (READ_ONLY_GUARD_MATCHER) covers shells, file writers, the delegation tools and every connected-server tool.
+ */
+const MISSING_SCRIPT_EFFECT: Record<NativeGuardKind, string> = {
+  destructive: `The guard blocks when its hook cannot run (onFailure "block", Claude Code ${GUARD_ON_FAILURE_MIN_VERSION} or later), so the shell and file-write tools it guards are blocked until the file is restored; below ${GUARD_ON_FAILURE_MIN_VERSION} the behaviour with this field is unverified (without it, a hook that cannot start lets the call through).`,
+  'read-only': `The guard blocks when its hook cannot run (onFailure "block", Claude Code ${GUARD_ON_FAILURE_MIN_VERSION} or later), so every tool call its matcher covers (shells, file writers, the delegation tools Agent, Workflow, CronCreate, EnterWorktree, Artifact and SendUserFile, and every connected-server mcp__ tool) is blocked until the file is restored; below ${GUARD_ON_FAILURE_MIN_VERSION} the behaviour with this field is unverified (without it, a hook that cannot start lets the call through).`,
+  'mode-line': "The gate does not run, so the lead's first-message check is not enforced; nothing is blocked.",
+};
+
 const DECLARED_DELTA_HOSTS = new Set(['claude', 'antigravity', 'cline']);
 
 /** The only hosts that own a content-derived compound lane: Cline (ADR 0013), Claude (ADR 0018). */
@@ -713,9 +723,10 @@ export class DoctorEngine {
     // (edits, stale installs) is already covered by the projection hash and freshness checks above.
     if (host === 'claude' && manifest?.nativeLane === true) {
       const workspaceRoot = workspaceRootOf(root);
-      // Roles that name a guard script file (project scope), per script: a hook whose script cannot start does not block, so a gone
-      // script is the guard gone, whatever the role's frontmatter still says.
+      // Roles that name a guard script file (project scope), per script: the guard handlers carry onFailure "block" (Claude Code 2.1.295 or later),
+      // so a gone script blocks the role's guarded calls there. Below that version the behaviour with this field is unverified (without it, a hook that cannot start lets the call through).
       const needsScript = new Map<NativeGuardKind, { roles: string[]; owner?: string }>();
+      let anyGuardedRole = false;
       for (const [relPath, proj] of Object.entries(manifest.projections ?? {})) {
         const match = proj.host === 'claude' && proj.kind === 'role' ? /^\.claude\/agents\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
         if (!match) continue;
@@ -724,6 +735,7 @@ export class DoctorEngine {
         const text = await fs.readFile(abs, 'utf8');
         if (!text.includes('profile: claude-native')) continue;
         const facts = inspectNativeAgent(text);
+        if (facts.guard !== 'none') anyGuardedRole = true;
         const problem = nativeGuardProblem(facts);
         if (problem) {
           const owner = proj.owners[0];
@@ -740,8 +752,16 @@ export class DoctorEngine {
         if (await fs.pathExists(path.join(workspaceRoot, rel))) continue;
         warnings.push(
           `Native agent${need.roles.length > 1 ? 's' : ''} ${need.roles.join(', ')} ${need.roles.length > 1 ? 'depend' : 'depends'} on the guard script ${rel}, which is missing:` +
-          ' when a hook script cannot start, Claude Code lets the call through unguarded.' +
+          ` ${MISSING_SCRIPT_EFFECT[kind]}` +
           (need.owner ? ` Run: agents update ${need.owner} --fanout claude to restore it.` : '')
+        );
+      }
+      // The guard handlers carry onFailure "block", which needs Claude Code 2.1.295 or later (hooks.md). Only a known, older version warns.
+      const probed = claudeCapability?.version;
+      if (anyGuardedRole && probed !== undefined && !supportsVersion(probed, GUARD_ON_FAILURE_MIN_VERSION)) {
+        warnings.push(
+          `Claude Code ${probed} is older than ${GUARD_ON_FAILURE_MIN_VERSION}: the native guard handlers carry onFailure "block", which needs ${GUARD_ON_FAILURE_MIN_VERSION} or later. ` +
+          'On this version the behaviour is unverified and a guard whose script cannot run may let the call through. Update Claude Code.'
         );
       }
     }

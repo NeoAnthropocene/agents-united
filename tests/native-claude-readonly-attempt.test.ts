@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { InstallEngine } from '../src/core/installer.js';
 import { loadToolPolicy } from '../src/core/host-profile.js';
-import { attempt, toolOffered, widenTools, withoutGuard } from './helpers/claude-host-hooks.js';
+import { ON_FAILURE_BLOCK_MESSAGE, attempt, toolOffered, widenTools, withoutGuard } from './helpers/claude-host-hooks.js';
 
 /**
  * Plan 032 close-out follow-up (6), slice 1b — a read-only reviewer that ATTEMPTS a write. In the real sessions of the close-out the
@@ -87,7 +87,7 @@ describe.each(READ_ONLY_ROLES)('read-only role %s, as installed', role => {
     expect([result.fired, result.blocked]).toEqual([0, false]);
   });
 
-  it('is not guarded by a deleted script: node exits 1, which is not a block (the host lets the call through, which is why the doctor warns)', async () => {
+  it('checks the helper model of the documented onFailure "block" behaviour: a deleted script makes node exit 1, which the model blocks (not an observation of the Host; the doctor still warns)', async () => {
     const copy = path.join(os.tmpdir(), `agents-united-readonly-attempt-${process.pid}`);
     await fs.remove(copy);
     await fs.copy(WS, copy);
@@ -96,7 +96,8 @@ describe.each(READ_ONLY_ROLES)('read-only role %s, as installed', role => {
       const result = attempt(widenTools(roleText(copy, role), ['Write']), copy, { tool: 'Write', input: input('Write') });
       expect(result.fired).toBe(1);
       expect(result.statuses).toEqual([1]);
-      expect(result.blocked).toBe(false);
+      expect(result.blocked).toBe(true);
+      expect(result.reason).toContain(ON_FAILURE_BLOCK_MESSAGE);
     } finally {
       await fs.remove(copy);
     }
