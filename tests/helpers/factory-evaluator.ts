@@ -36,7 +36,7 @@ export async function prepareFactoryEvaluator(root: string) {
   await fs.outputFile(fixture.source('skills/evaluate-artifact/evals/control.json'), '{"preparedOnly":true}\n');
   const binding = {
     ...fixture.binding, skill: 'evaluate-artifact', source: 'hosts/claude/skills/evaluate-artifact/SKILL.md', installed: '.claude/skills/evaluate-artifact/SKILL.md',
-    invocation: 'Agent with subagent_type factory-evaluator, run_in_background false, complete fixed review job, and no teammate name',
+    invocation: 'Agent with subagent_type factory-evaluator, complete fixed review job, and no teammate name, as an ordinary subagent',
     roles: [{ name: 'factory-evaluator', definition: 'subagent-factory-evaluator', contract: 'core/subagent-factory-evaluator.contract.json',
       source: 'hosts/claude/agents/factory-evaluator.md', installed: '.claude/agents/factory-evaluator.md', loading: 'subagent', skills: ['evaluate-artifact'], guard: 'read-only' }],
     hooks: [{ id: 'reject-mutating-tools', kind: 'read-only' }],

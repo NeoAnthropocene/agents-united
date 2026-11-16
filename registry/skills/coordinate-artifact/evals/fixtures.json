@@ -103,7 +103,6 @@
     "case-3": {
       "targetMutation": "loading main with Agent(factory-realizer, factory-evaluator), outside generic P2 adapter",
       "unavailableMechanism": [
-        "asynchronous",
         "fork",
         "teammate"
       ],

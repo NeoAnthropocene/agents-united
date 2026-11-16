@@ -10,7 +10,7 @@
     "scope": "workspace",
     "lane": "native"
   },
-  "invocation": "Main thread orchestrator-agent-factory; foreground manual Agent dispatch after caller checks",
+  "invocation": "Main thread orchestrator-agent-factory; manual Agent dispatch of one ordinary worker at a time after caller checks, waiting for each hand-back",
   "roles": [
     {
       "name": "orchestrator-agent-factory",

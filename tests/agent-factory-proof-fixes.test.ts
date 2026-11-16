@@ -69,9 +69,9 @@ describe('Fix 2 (S2-A, S1-C): the entry dry run is the pinned checkout\'s built 
   const ENTRY_CLI = 'Run the pinned checkout\'s built CLI, `node <checkout>/dist/cli.js start agent-factory --host claude --dry-run`, never a bare `agents` from the path, and save its output in the evidence folder.';
   const ENTRY_STOP = 'The planned agent must be `orchestrator-agent-factory`; anything else, or a nonzero exit, is recorded and the route stops there and reports, without a workaround.';
   // Plan 033 P38 (S1-C): the launcher no longer refuses an inherited teams setting; it turns teams off for the factory's own session.
-  // Plan 033 P19: the launcher also turns fork mode off, so a worker that starts in the background is refused and reported.
-  const ENTRY_TEAMS = 'The launcher turns agent teams and fork mode off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry those switches do not apply, so a worker that starts as a teammate or in the background is refused and reported.';
-  const P38_ENTRY_TEAMS = 'The launcher turns agent teams off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry that switch does not apply, so a worker that starts as a teammate is refused and reported.';
+  // Plan 033 P22 (reverses P19): the launcher turns only agent teams off again; a worker that runs in the background is waited for, not refused.
+  const ENTRY_TEAMS = 'The launcher turns agent teams off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry that switch does not apply, so a worker that starts as a teammate is refused and reported.';
+  const P19_ENTRY_TEAMS = 'The launcher turns agent teams and fork mode off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry those switches do not apply, so a worker that starts as a teammate or in the background is refused and reported.';
   const OLD_ENTRY_TEAMS = 'When the launcher refuses the dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set in the session, report the refusal and stop; do not clear the variable yourself.';
   const ROUTES = [`${REFERENCES}/skill-authoring.md`, `${REFERENCES}/contract-authoring.md`, `${REFERENCES}/bundle-authoring.md`, `${REFERENCES}/host-sync.md`];
   const PLACES = [...ROUTES, `${REFERENCES}/dispatch.md`, AGENT_BODY];
@@ -99,13 +99,10 @@ describe('Fix 2 (S2-A, S1-C): the entry dry run is the pinned checkout\'s built 
     }
   });
 
-  it('has the teams-and-fork-mode sentence exactly once in each of the six files and the teams-only sentence in none', async () => {
+  it('has the teams-only sentence exactly once in each of the six files and the P19 teams-and-fork-mode sentence in no coordinator file', async () => {
     expect(PLACES).toHaveLength(6);
-    for (const rel of PLACES) {
-      const text = await read(rel);
-      expect(count(text, ENTRY_TEAMS), rel).toBe(1);
-      expect(text, rel).not.toContain(P38_ENTRY_TEAMS);
-    }
+    for (const rel of PLACES) expect(count(await read(rel), ENTRY_TEAMS), rel).toBe(1);
+    for (const rel of await coordinatorFiles()) expect(await read(rel), rel).not.toContain(P19_ENTRY_TEAMS);
   });
 
   it('has no `agents start` anywhere in the coordinator\'s files', async () => {

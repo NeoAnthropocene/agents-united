@@ -176,7 +176,10 @@ describe('factory coordinator required native delivery through public installati
       'nothing was implemented', 'not advanced', 'cannot be proved', 'unverified']) expect(route, needle).toContain(needle);
     const dispatch = lf(await fs.readFile(fixture.source('skills/coordinate-artifact/references/dispatch.md'), 'utf8'));
     expect(dispatch).toContain('"factory-sync"');
-    expect(dispatch).toMatch(/factory-sync[^\n]*run_in_background: false|run_in_background: false[^\n]*factory-sync/);
+    // P22: the sync worker is started like the others, with no run_in_background argument, and waited for as the waiting rule says.
+    const syncLine = dispatch.split('\n').find(line => line.includes('"factory-sync"')) ?? '';
+    expect(syncLine).not.toContain('run_in_background');
+    expect(syncLine).toContain('Start it as an ordinary subagent and, when it runs in the background, wait for its hand-back as the waiting rule above says');
   });
 
   it('says in the coordinator main that three worker closures exist, that factory-sync is read-only and that the caller runs the sync checker', async () => {
@@ -213,8 +216,11 @@ describe('factory coordinator required native delivery through public installati
       'absent Task tools mean concise briefs, no invented IDs and no retry loop': [
         'Main Task tools are conditional', 'No invented IDs, TaskOutput or retry/status-poll loop',
         'use concise briefs and handoffs without invented tool calls or retrying missing tools'],
+      // Moved out of both coordinator entries by P22 (background workers) to make room for the waiting-rule pointer in step 3.
+      'the coordinator is an intermediate consumer, not a complete factory, quality judgment or live proof': [
+        'This is an intermediate consumer, not a complete factory, automated quality judgment or live proof'],
     };
-    expect(Object.keys(obligations)).toHaveLength(9);
+    expect(Object.keys(obligations)).toHaveLength(10);
     for (const [label, parts] of Object.entries(obligations)) for (const part of parts) expect(body, `${label}: ${part}`).toContain(part);
   });
 

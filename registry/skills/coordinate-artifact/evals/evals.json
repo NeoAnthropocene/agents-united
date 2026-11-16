@@ -44,18 +44,18 @@
       "id": 3,
       "name": "Unavailable adapter and worker mechanism",
       "fixture": "fixtures.json#case-3",
-      "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary foreground non-fork dispatch, and the supplied return is asynchronous/fork/teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI.",
+      "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary non-fork subagent dispatch, and the supplied return is a fork or teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI.",
       "expected_output": "Reports both unsupported target and mechanism precisely, blocks their dependent actions, and does not broaden the existing one-agent adapter or call a second route.",
       "status": "prepared-not-run",
       "binding": "Complete setup.md using common and selected case; identical actual job bytes/digests, prompt, baseline and budgets in both conditions.",
       "runs": [
         {
           "condition": "with-skill",
-          "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary foreground non-fork dispatch, and the supplied return is asynchronous/fork/teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI."
+          "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary non-fork subagent dispatch, and the supplied return is a fork or teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI."
         },
         {
           "condition": "without-skill",
-          "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary foreground non-fork dispatch, and the supplied return is asynchronous/fork/teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI."
+          "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary non-fork subagent dispatch, and the supplied return is a fork or teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI."
         }
       ]
     },

@@ -57,7 +57,8 @@ describe('sync-host runbook text matches the checker', () => {
     expect(handback).not.toMatch(/^\d\. Call `ReportFindings`/m);
     expect(handback).toMatch(/`SubagentHandback` when the Host supplies it/);
     expect(handback).toMatch(/otherwise[^\n]*ordinary final response/);
-    expect(handback).toMatch(/`ReportFindings` is optional and never replaces/);
+    // P22: a background run does not supply ReportFindings, so the text qualifies it with "when supplied".
+    expect(handback).toMatch(/`ReportFindings`, when supplied, is optional and never replaces/);
     for (const text of [skill, nativeSkill]) {
       const step = text.split('\n').find(line => line.startsWith('5. **Hand-off the plan record**'))!;
       expect(step).toMatch(/when the Host supplies it/);

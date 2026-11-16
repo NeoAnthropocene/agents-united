@@ -97,7 +97,7 @@ async function planFactoryEntry(
     if (role.loading === 'subagent' && (facts.meta.permissionMode !== undefined || facts.meta.memory !== undefined || facts.meta.mcpServers !== undefined)) {
       fail(`permission, memory or server override is unavailable for worker ${role.name}`);
     }
-    if (role.loading === 'subagent' && facts.meta.background !== false) fail(`role ${role.name} must select foreground background: false`);
+    if (role.loading === 'subagent' && facts.meta.background !== false) fail(`role ${role.name} must declare background: false`);
     if (role.loading === 'subagent' && (facts.meta.model !== 'inherit' || facts.meta.effort !== 'medium')) fail(`worker ${role.name} must retain the reviewed inherited model and medium effort`);
     const preloaded = Array.isArray(facts.meta.skills) ? facts.meta.skills as unknown[] : [];
     if (!isDeepStrictEqual([...preloaded].sort(), [...role.skills].sort())) fail(`required preload mismatch for ${role.name}`);

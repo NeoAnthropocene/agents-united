@@ -11,7 +11,7 @@ metadata:
 # Evaluate Artifact
 
 ## Overview & Purpose
-Judge one bounded text artifact against its original objective, fixed values and acceptance criteria. An intact record, a useful quality opinion, an actual reviewer invocation and human acceptance are different evidence. This delivery uses a foreground read-only worker on Claude Code CLI/workspace/native; other authoring Hosts remain unavailable.
+Judge one bounded text artifact against its original objective, fixed values and acceptance criteria. An intact record, a useful quality opinion, an actual reviewer invocation and human acceptance are different evidence. This delivery uses an ordinary read-only worker on Claude Code CLI/workspace/native; other authoring Hosts remain unavailable.
 
 ## Execution Triggers
 Review final validated bytes, or a caller-issued repair revision with a new digest. Choose exactly one subject kind: shared pair, Skill or Claude agent with its support. Partition a larger Bundle into explicit review jobs; report omitted coverage instead of implying whole-Bundle review.

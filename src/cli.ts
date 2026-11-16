@@ -2847,18 +2847,6 @@ export function describeClaudeTeamsOff(detail?: string): string {
 }
 
 /**
- * The reason text for a factory session whose plan turned fork mode off (`CLAUDE_CODE_FORK_SUBAGENT` = `0` in the plan env). One place for the dry-run line and the real-start note.
- */
-export function describeClaudeForkModeOff(detail?: string): string {
-  return `off (turned off for this session by the launcher${detail ? `: ${detail}` : ''}; managed settings can still turn fork mode on)`;
-}
-
-/** The fork-mode line of the real-start note, with its line break: present only for a plan that carries the fork variable as `0` (the factory plan), empty otherwise. */
-export function describeClaudeForkModeNoteLine(planForkValue: string | undefined): string {
-  return planForkValue === '0' ? `Fork mode: ${describeClaudeForkModeOff()}\n` : '';
-}
-
-/**
  * The value of the "Teams scaffold:" line of the real-start note. Non-factory output is unchanged; a plan that carries the teams variable as `0` (the factory plan) says the launcher turned
  * teams off instead of repeating the tier text, which would wrongly invite `--teams` (refused for the factory).
  */
@@ -2987,7 +2975,6 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     `Workspace: ${plan.workspace}\n` +
     `Background: ${options.bg ? 'yes (--bg)' : 'no'}\n` +
     `Teams scaffold: ${describeClaudeTeamsScaffold(teamsActive, teamsPosture, plan.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS)}\n` +
-    describeClaudeForkModeNoteLine(plan.env.CLAUDE_CODE_FORK_SUBAGENT) +
     `Plugin dir: ${pluginDir || '(none)'}`,
     'Starting Claude Code Session'
   );
@@ -3077,7 +3064,6 @@ export function renderClaudeActivationPlan(
       : teamsOff
         ? `Agent teams (--teams): no (${describeClaudeTeamsOff('environment value 0 and the --settings element below')})`
         : `Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`,
-    ...(plan.env['CLAUDE_CODE_FORK_SUBAGENT'] === '0' ? [`Fork mode: ${describeClaudeForkModeOff('environment value 0 and the --settings element below, so that workers can run in the foreground')}`] : []),
     `Plugin (--plugin-dir): ${pluginFlagIndex >= 0 ? plan.argv[pluginFlagIndex + 1] : '(none)'}`,
     `Env injected (merged over process.env): ${envEntries.length > 0 ? envEntries.map((k) => `${k}=${plan.env[k]}`).join(', ') : '(none)'}`,
     `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}, subagent handback=${report.subagentHandback ? 'yes' : 'no'}`,

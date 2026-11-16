@@ -5,7 +5,7 @@
 When `factory-sync` finishes deriving the adaptation plan:
 
 1. Return the complete `host-update-sync-plan` JSON record conforming to [../assets/sync-plan.schema.json](../assets/sync-plan.schema.json), with a concise summary of the honest limits below. Use `SubagentHandback` when the Host supplies it; otherwise put the identical record in the ordinary final response.
-2. `ReportFindings` is optional and never replaces the record: use it only to present per-artifact stale-pin observations beside the complete plan.
+2. `ReportFindings`, when supplied, is optional and never replaces the record: use it only to present per-artifact stale-pin observations beside the complete plan.
 
 The caller writes the returned plan JSON to disk inside `roots.evidence` and runs `node <installed skill folder>/scripts/check-sync.mjs --job <absolute sync job> --result <absolute plan>` in postflight mode, which recomputes the plan from the sync job and target records, prints one JSON line on stdout, and rejects any mismatch in `jobId`, `host`, `jobDigest`, `artifacts` (other than each artifact's `reason` text), `changedPins`, `heldPins`, `unpinnedChanges`, `heldSources`, or required status constants. The postflight also refuses a plan file that is not directly in `roots.evidence` or is the job file, one over the 262144-byte cap, one without `version: 1` or `kind: "host-update-sync-plan"`, and one outside the schema's bounds (more than 256 `artifacts`, `changedPins` or `unpinnedChanges`, more than 64 `heldPins` or `heldSources`, or a `reason` outside 1..512 characters).
 

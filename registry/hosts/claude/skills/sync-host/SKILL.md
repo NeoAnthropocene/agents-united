@@ -30,7 +30,7 @@ Run this skill only inside the `factory-sync` subagent when handed a fixed sync 
 2. **Read each target realizer job record**: In the exact `targets` array order, read each `targetPin.path` and inspect its `id`, `source.checkout`, `artifact` (`type`, `definition`, `paths`), and `inputs` (`kind`, `path`, `sha256`); other fields of the record are ignored.
 3. **Join changed inputs and held sources by library-relative path**: Apply the exact `computePlan` join rules and field ordering documented in [references/plan.md](references/plan.md), matching [scripts/check-sync.mjs](scripts/check-sync.mjs).
 4. **Compose per-artifact reasons and held dispositions**: Give every target artifact a concise factual `reason`, record `unpinnedChanges`, and mark every entry in `heldSources` with `disposition: "not advanced, no action"`.
-5. **Hand-off the plan record**: Return the `host-update-sync-plan` JSON object through `SubagentHandback` when the Host supplies it, otherwise in the ordinary final response; `ReportFindings` is optional and never replaces the record ([references/handback.md](references/handback.md)). Follow the worked example in [examples/one-sync.md](examples/one-sync.md).
+5. **Hand-off the plan record**: Return the `host-update-sync-plan` JSON object through `SubagentHandback` when the Host supplies it, otherwise in the ordinary final response; `ReportFindings`, when supplied, is optional and never replaces the record ([references/handback.md](references/handback.md)). Follow the worked example in [examples/one-sync.md](examples/one-sync.md).
 
 ## Code & Config Exemplars
 

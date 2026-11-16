@@ -26,20 +26,17 @@ const FACTORY_SKILL_DIR_SENTENCE = 'In a Skill file, "${CLAUDE_SKILL_DIR}" means
 
 /** The variable that opts a Claude Code session into agent teams. */
 const FACTORY_TEAMS_ENV = 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS';
-/** The variable that switches fork mode; with fork mode on, a subagent started from an interactive session runs in the background. */
-const FACTORY_FORK_ENV = 'CLAUDE_CODE_FORK_SUBAGENT';
 /**
- * The one argv element (single `--opt=value` element, like `--add-dir=`) that turns both switches off for the factory session in the settings the Host reads: agent teams
- * (finding S1-C of 2026-11-15: a teammate instead of a subagent) and fork mode (the interactive sitting of 2026-11-16 on 2.1.325: `factory-realizer` ran in the background, `status: async_launched`;
- * sub-agents.md "Which subagents run in the background", "Let Claude wait for a subagent" and "Turn fork mode off": Claude can wait for a subagent in an interactive session only when
- * `CLAUDE_CODE_FORK_SUBAGENT` is `0`). Limits: managed settings still apply after a `--settings` payload (settings.md "Settings precedence"); nothing here is observed live for fork mode yet.
+ * The one argv element (single `--opt=value` element, like `--add-dir=`) that turns agent teams off for the factory session in the settings the Host reads (finding S1-C of
+ * 2026-11-15: a teammate instead of a subagent). Fork mode is left to the Host and the user's settings (P22, 2026-11-16: the maintainer chose background workers; the coordinator
+ * waits for each hand-back, see the waiting rule in coordinate-artifact references/dispatch.md). Limit: managed settings still apply after a `--settings` payload (settings.md "Settings precedence").
  */
-export const FACTORY_SESSION_SETTINGS_ARG = `--settings=${JSON.stringify({ env: { [FACTORY_TEAMS_ENV]: '0', [FACTORY_FORK_ENV]: '0' } })}`;
+export const FACTORY_SESSION_SETTINGS_ARG = `--settings=${JSON.stringify({ env: { [FACTORY_TEAMS_ENV]: '0' } })}`;
 
 /**
- * The checked shape of a factory plan at launch: the last five argv elements are exactly `--agent`, the checked main, `--add-dir=<workspace>`, the teams-off and fork-mode-off `--settings` element
- * and the first message; everything before them (the executable prefix) is not option-like; there is exactly one `--settings` element in either form; the plan env carries each of the
- * two variables as `0` and no other spelling of its name (Windows names are case-insensitive).
+ * The checked shape of a factory plan at launch: the last five argv elements are exactly `--agent`, the checked main, `--add-dir=<workspace>`, the teams-off `--settings` element and the
+ * first message; everything before them (the executable prefix) is not option-like; there is exactly one `--settings` element in either form; the plan env carries the teams variable as
+ * `0` and no other spelling of its name (Windows names are case-insensitive).
  */
 export function factoryLaunchShapeOk(plan: Pick<ClaudeActivationPlan, 'argv' | 'env' | 'workspace' | 'bootstrapPrompt' | 'nativeFactoryMain'>): boolean {
   const { argv } = plan;
@@ -48,10 +45,8 @@ export function factoryLaunchShapeOk(plan: Pick<ClaudeActivationPlan, 'argv' | '
   if (tail[0] !== '--agent' || tail[1] !== plan.nativeFactoryMain.name || tail[2] !== `--add-dir=${plan.workspace}` || tail[3] !== FACTORY_SESSION_SETTINGS_ARG || tail[4] !== plan.bootstrapPrompt) return false;
   if (argv.slice(0, -5).some(arg => arg.startsWith('--'))) return false;
   if (argv.filter(arg => /^--settings(?:=|$)/.test(arg)).length !== 1) return false;
-  return [FACTORY_TEAMS_ENV, FACTORY_FORK_ENV].every(name => {
-    const spellings = Object.keys(plan.env).filter(key => key.toUpperCase() === name);
-    return spellings.length === 1 && spellings[0] === name && plan.env[name] === '0';
-  });
+  const spellings = Object.keys(plan.env).filter(key => key.toUpperCase() === FACTORY_TEAMS_ENV);
+  return spellings.length === 1 && spellings[0] === FACTORY_TEAMS_ENV && plan.env[FACTORY_TEAMS_ENV] === '0';
 }
 
 export interface ClaudeActivationPlan {
@@ -311,7 +306,7 @@ export class ClaudeLauncher {
       'You are the installed Agents United artifact factory coordinator.',
       // Observed on 2.1.323 (2026-11-15, headless `--agent` runs): the main's preloaded Skill text was not in its context, so the entry is named by its installed path.
       `Read your checked native main at ".claude/agents/${coordinatorName}.md" before acting. ${FACTORY_SKILL_ENTRY_SENTENCE} ${FACTORY_SKILL_DIR_SENTENCE}`,
-      'The fixed ordinary foreground worker map is factory-realizer for bounded native draft creation/update, factory-evaluator for fresh independent read-only review and factory-sync for read-only host-update sync planning. Inspect the actual Host result and refuse an unsupported fork, teammate, background or partial mechanism.',
+      'The fixed ordinary worker map is factory-realizer for bounded native draft creation/update, factory-evaluator for fresh independent read-only review and factory-sync for read-only host-update sync planning. Start one worker at a time as an ordinary subagent and, when it runs in the background, wait for its hand-back as the waiting rule in your checked native main and the coordinate-artifact references/dispatch.md says. Inspect the actual Host result and refuse a fork, a teammate or a partial return.',
       'Use the supplied fixed job and caller-held digests. Keep draftRoot and evidenceRoot physically disjoint from each other, the selected source checkout and managed/protected paths. Verify final bytes and installed P2/P5 check results before reporting a candidate; repair defaults to zero and needs explicit bounded authorization.',
       'Installed .claude/ files are managed runtime copies: do not edit them. In the selected authoritative source checkout, registry/core/ owns shared pairs, registry/hosts/claude/ owns native definitions and loaders, and registry/skills/ owns shared Skill support. The optional .agents/ store is not the authoritative native source registry. If those sources are unavailable, report the dependent authoring work unavailable.',
       firstMessageText,
@@ -358,10 +353,9 @@ export class ClaudeLauncher {
     if (teams === true) {
       env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = '1';
     } else if (factory) {
-      // First of the two switches (environment value, then the `--settings` element below) that turn agent teams and fork mode off for the factory session.
-      // An inherited CLAUDE_CODE_FORK_SUBAGENT never refuses the plan; the plan overrides it.
+      // First of the two switches that turn agent teams off for the factory session (the second is the `--settings` element below).
+      // Fork mode is not touched: an inherited CLAUDE_CODE_FORK_SUBAGENT reaches the session unchanged (P22).
       env[FACTORY_TEAMS_ENV] = '0';
-      env[FACTORY_FORK_ENV] = '0';
     }
 
     const argv: string[] = [...command.prefixArgs];
@@ -377,8 +371,7 @@ export class ClaudeLauncher {
     argv.push(`--add-dir=${workspace}`);
     // Observed 2026-11-15 on 2.1.323 (finding S1-C): a user settings `env` entry exports the teams variable into every session and overrides the shell, so the process
     // environment alone cannot turn teams off; a `--settings` payload applies after user settings (agent-teams.md "Claude spawns teammates instead of subagents",
-    // settings.md "Settings precedence"), so the factory carries both switches. Fork mode (interactive sitting of 2026-11-16 on 2.1.325: a worker ran in the background; sub-agents.md "Which subagents run in the background",
-    // "Let Claude wait for a subagent", "Turn fork mode off") is turned off the same way, by the same element. Limits: managed settings still apply after the payload; nothing here is observed live for fork mode yet.
+    // settings.md "Settings precedence"), so the factory carries both switches. Limit: managed settings still apply after it.
     if (factory) argv.push(FACTORY_SESSION_SETTINGS_ARG);
     if (background === true) {
       argv.push('--bg');
@@ -415,16 +408,16 @@ export class ClaudeLauncher {
         || plan.argv.filter(arg => /^--agent(?:=|$)/.test(arg)).length !== 1 || plan.argv[agent + 1] !== plan.nativeFactoryMain.name
         || plan.argv.filter(arg => arg.startsWith('--add-dir')).length !== 1 || !plan.argv.includes(`--add-dir=${plan.workspace}`)
         || plan.argv.some(arg => /^--(?:bg|plugin-dir)(?:=|$)/.test(arg))
-        // Both switches (agent teams and fork mode off) must be in the checked plan, in the checked shape of the argv tail (see factoryLaunchShapeOk).
+        // Both teams-off switches must be in the checked plan, in the checked shape of the argv tail (see factoryLaunchShapeOk).
         || !factoryLaunchShapeOk(plan)) {
-        throw new Error('Claude factory launch requires its checked foreground project plan without background, plugin or teams options, and with agent teams and fork mode turned off in its settings and environment.');
+        throw new Error('Claude factory launch requires its checked foreground project plan without background, plugin or teams options, and with agent teams turned off in its settings and environment.');
       }
       if (!isDeepStrictEqual(readClaudeFactoryMain(plan.workspace), plan.nativeFactoryMain)) throw new Error('Claude factory installed closure changed after planning; resolve and plan again.');
     }
     const { spawn } = await import('node:child_process');
     const env: Record<string, string | undefined> = { ...process.env };
-    // Windows environment names are case-insensitive: for the factory, no other spelling of the teams or fork variable may survive from the parent next to the plan's `0`.
-    if (factorySession) for (const key of Object.keys(env)) if (key.toUpperCase() === FACTORY_TEAMS_ENV || key.toUpperCase() === FACTORY_FORK_ENV) delete env[key];
+    // Windows environment names are case-insensitive: for the factory, no other spelling of the teams variable may survive from the parent next to the plan's `0`.
+    if (factorySession) for (const key of Object.keys(env)) if (key.toUpperCase() === FACTORY_TEAMS_ENV) delete env[key];
     const child = spawn(plan.executable, plan.argv, {
       cwd: plan.workspace,
       stdio: 'inherit',

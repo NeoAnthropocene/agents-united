@@ -10,7 +10,7 @@ metadata:
 # Coordinate Artifact
 
 ## Overview & Purpose
-Coordinate the current one-Claude-agent journey using existing realizer, evaluator, host-update sync and caller checks. This is an intermediate consumer, not a complete factory, automated quality judgment or live proof.
+Coordinate the current one-Claude-agent journey using existing realizer, evaluator, host-update sync and caller checks.
 
 ## Execution Triggers
 Accept a complete fixed create/update brief and already supplied shared pair. Return separate author-contract work for a missing pair. Preserve current supported target/subject kinds and original fixed semantics; no extra adapter is implied. One Skill draft follows [skill authoring](references/skill-authoring.md), a shared definition-and-contract draft [contract authoring](references/contract-authoring.md) and a Bundle proposal [bundle authoring](references/bundle-authoring.md); the maintainer types `/author-skill`, `/author-contract` or `/author-bundle <task path>`. A host-update sync plan is a separate read-only route (step 8).
@@ -22,7 +22,7 @@ Return candidate/evidence or rework with original/revision digests, complete pat
 ## Step-by-Step Runbook
 1. Consult [dispatch](references/dispatch.md) before any worker call. The native binding supplies seven on-demand policies and an installed receipt; consult attribution before sources and other rules when applicable.
 2. Follow [verification](references/verification.md): independently check the supplied pair, installed P2 job and current physical source/baseline before dispatch.
-3. Delegate realization through the reviewed ordinary foreground mechanism with the complete job and caller-held digest, then inspect the actual return. Read and independently inventory/hash all candidate and preserved bytes, check the realizer handback and run trusted final-byte validators.
+3. Give the realizer the complete job and caller-held digest. Start it as an ordinary subagent and, when it runs in the background, wait for its hand-back as the waiting rule in [dispatch](references/dispatch.md) says. Then inspect the actual return. Read and independently inventory/hash all candidate and preserved bytes, check the realizer handback and run trusted final-byte validators.
 4. Build and validate the existing P5 claude-agent review job against those final bytes. Invoke a fresh independent evaluator with complete job/candidate digests; save its returned data, run the installed review checker and inspect actual citations, coverage and findings.
 5. Follow [repair](references/repair.md): default zero repairs, at most one explicitly preauthorized scoped repair. Preserve immutable r0/r1 evidence, invalidate acceptance, issue a new update job/digest against the current candidate baseline and require fresh independent review.
 6. Follow [handback](references/handback.md); upstream intent also follows [contribution](references/contribution.md). Keep required gaps visible, account for every process/byte/time limit, and stop on exhaustion or unsupported mechanism.
@@ -33,7 +33,7 @@ Return candidate/evidence or rework with original/revision digests, complete pat
 Read [the worked example](examples/claude-agent-journey.md) for an initial candidate and a separately authorized scoped repair. It illustrates record plumbing, not a model invocation or useful independent judgment.
 
 ## Edge Cases & Error Recovery
-Missing dependencies, stale source/job/candidate/review bytes, overlapping roots, held provenance, unexpected fork/background/teammate returns, failed checks or omitted evidence block the dependent action.
+Missing dependencies, stale source/job/candidate/review bytes, overlapping roots, held provenance, unexpected fork/teammate returns, failed checks or omitted evidence block the dependent action.
 Anti-patterns: editing the candidate instead of delegating; accepting a producer opinion as independent review; treating a checker pass as acceptance; silently increasing repair scope, count or budget; adding coordination fields to existing strict worker jobs.
 
 ## Verification Checklist

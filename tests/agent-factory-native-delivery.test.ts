@@ -41,7 +41,7 @@ describe('native-only factory delivery through the public installer', () => {
     ['required preload', meta => { meta.skills = []; }],
     ['loader name', meta => { meta.name = 'another-worker'; }],
     ['grant ceiling', meta => { meta.tools = `${String(meta.tools)}, Agent`; }],
-    ['foreground surface', meta => { meta.background = true; }],
+    ['background: true frontmatter', meta => { meta.background = true; }],
     ['inherited model', meta => { meta.model = 'opus'; }],
     ['bounded effort', meta => { meta.effort = 'max'; }],
     ['description', meta => { delete meta.description; }],
@@ -56,7 +56,7 @@ describe('native-only factory delivery through the public installer', () => {
     change(meta);
     await fs.writeFile(file, `---\n${YAML.stringify(meta)}---\n${match[2]}`);
     await expect(new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options))
-      .rejects.toThrow(/factory.*(guard|preload|name|grant|foreground|background|model|effort|description|key|permission)/i);
+      .rejects.toThrow(/factory.*(guard|preload|name|grant|background|model|effort|description|key|permission)/i);
     expect(await fs.readdir(fixture.workspace)).toEqual([]);
   });
 

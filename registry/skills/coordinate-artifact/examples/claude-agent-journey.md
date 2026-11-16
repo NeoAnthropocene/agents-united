@@ -1,6 +1,6 @@
 # Worked example: original reviewer draft, then authorized repair
 
-The caller supplies an existing shared reviewer pair, a fresh draft directory, immutable source pins, fixed acceptance and a P2 create job. The main validates the pair and job, dispatches one ordinary foreground factory-realizer, inspects its actual return and independently inventories/hashes the produced agent. It checks the producer result and executes the pinned final-byte validator, recording complete raw output and actual exit.
+The caller supplies an existing shared reviewer pair, a fresh draft directory, immutable source pins, fixed acceptance and a P2 create job. The main validates the pair and job, dispatches one factory-realizer as an ordinary subagent (waiting for its hand-back when it runs in the background), inspects its actual return and independently inventories/hashes the produced agent. It checks the producer result and executes the pinned final-byte validator, recording complete raw output and actual exit.
 
 It then pins those exact bytes in a P5 claude-agent job, validates that job and dispatches a fresh read-only factory-evaluator. The main saves returned data and checks it against original job/candidate pins, real cited lines and complete coverage. Suppose a supported finding requires a missing safety sentence. With repair count zero, the outcome is candidate plus precise rework; no repair call occurs. A no-blocking opinion alone would still not be human acceptance or live proof.
 

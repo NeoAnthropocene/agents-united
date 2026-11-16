@@ -10,7 +10,7 @@
     "scope": "workspace",
     "lane": "native"
   },
-  "invocation": "Agent({subagent_type: factory-realizer, run_in_background: false, prompt: complete fixed job and caller-held digest}); omit teammate name; verify actual launch result",
+  "invocation": "Agent({subagent_type: factory-realizer, prompt: complete fixed job and caller-held digest}) as an ordinary subagent; omit teammate name; wait for its hand-back when it runs in the background; verify actual launch result",
   "roles": [
     {
       "name": "factory-realizer",

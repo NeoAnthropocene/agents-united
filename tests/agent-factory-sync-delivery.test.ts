@@ -41,7 +41,7 @@ export async function prepareFactorySync(root: string) {
   await fs.outputFile(fixture.source('skills/sync-host/evals/control.json'), '{"preparedOnly":true}\n');
   const binding = {
     ...fixture.binding, skill: 'sync-host', source: 'hosts/claude/skills/sync-host/SKILL.md', installed: '.claude/skills/sync-host/SKILL.md',
-    invocation: 'Agent with subagent_type factory-sync, run_in_background false, complete fixed sync job, and no teammate name',
+    invocation: 'Agent with subagent_type factory-sync, complete fixed sync job, and no teammate name, as an ordinary subagent',
     roles: [{ name: 'factory-sync', definition: 'subagent-host-update-sync', contract: 'core/subagent-host-update-sync.contract.json',
       source: 'hosts/claude/agents/factory-sync.md', installed: '.claude/agents/factory-sync.md', loading: 'subagent', skills: ['sync-host'], guard: 'read-only' }],
     hooks: [{ id: 'reject-mutating-tools', kind: 'read-only' }],
@@ -212,7 +212,7 @@ describe('independent factory sync delivery', () => {
     ['widened tools', text => text.replace(/^tools: /m, 'tools: Edit, Write, '), /grant mismatch for factory-sync/],
     ['a changed model', text => text.replace(/^model: inherit/m, 'model: opus'), /inherited model and medium effort/],
     ['a changed effort', text => text.replace(/^effort: medium/m, 'effort: high'), /inherited model and medium effort/],
-    ['a background worker', text => text.replace(/^background: false/m, 'background: true'), /foreground background: false/],
+    ['a background: true worker', text => text.replace(/^background: false/m, 'background: true'), /must declare background: false/],
     ['a narrowed hook matcher', text => text.replace('"matcher":"Bash|', '"matcher":"'), /required guard registration mismatch for factory-sync/],
   ])('refuses %s in the native factory-sync.md while the semantic core is untouched', async (_label, change, message) => {
     root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-sync-native-only-'));
