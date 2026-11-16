@@ -223,7 +223,19 @@ export function validateConfig(cfg, { home = os.homedir(), platform = process.pl
     const bad = configWorkerTempProblem(cfg.workerTemp, { home, platform });
     if (bad) errs.push(bad);
   }
+  if (cfg.wslNode !== undefined && cfg.wslNode !== null) {
+    const bad = configWslNodeProblem(cfg.wslNode);
+    if (bad) errs.push(bad);
+  }
   return errs;
+}
+
+/** What is wrong with a configured wslNode (the Linux path of node inside WSL), or null. */
+export function configWslNodeProblem(value) {
+  if (typeof value !== 'string' || !value.startsWith('/') || /[\u0000-\u001f\u007f\\]/.test(value)) {
+    return 'wslNode must be an absolute Linux path (a string that starts with /, with no control characters or backslashes)';
+  }
+  return null;
 }
 
 /**
@@ -396,7 +408,7 @@ export function loadConfig(env = process.env) {
 /** Why a side was skipped, with no file path in it (a path names the user): a WSL that has no node says only that. */
 export function skipNote(error) {
   const s = String(error?.message ?? error ?? '');
-  if (/wsl bridge returned no JSON/.test(s) && /node: (?:command )?not found/.test(s)) return 'WSL has no node';
+  if (/wsl bridge returned no JSON/.test(s) && /node: (?:command )?not found/.test(s)) return 'WSL has no node (the config key "wslNode" can name it)';
   return cleanNote(s);
 }
 
@@ -791,7 +803,7 @@ export function runCmd(argv, { timeout = 60_000, input = '', cwd, env } = {}) {
   return new Promise(resolve => {
     let child;
     try {
-      child = spawn(argv[0], argv.slice(1), { cwd, env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+      child = spawn(argv[0], argv.slice(1), { cwd, env: envWithNodeDir(env ?? process.env), windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (e) {
       resolve({ rc: 126, stdout: '', stderr: String(e) });
       return;
@@ -813,10 +825,27 @@ export function runCmd(argv, { timeout = 60_000, input = '', cwd, env } = {}) {
 
 const isFile = p => { try { return fs.statSync(p).isFile(); } catch { return false; } };
 
-export function which(name) {
+/**
+ * Where a program is looked for: PATH and, off Windows, the folder of the node that runs this script (the npm globals of an nvm, Volta
+ * or fnm node live beside it, and a WSL login shell does not put it on PATH) and ~/.local/bin. Windows resolution is PATH only.
+ */
+export function searchDirs({ pathVar = process.env.PATH || '', platform = process.platform, execPath = process.execPath, home = os.homedir() } = {}) {
+  const dirs = pathVar.split(path.delimiter).filter(Boolean);
+  return platform === 'win32' ? dirs : [...dirs, path.dirname(execPath), path.join(home, '.local', 'bin')];
+}
+
+/** `env` with the folder of the running node appended to PATH when it is missing (a host's script may start with `#!/usr/bin/env node`). Windows: unchanged. */
+export function envWithNodeDir(env = process.env, { platform = process.platform, execPath = process.execPath } = {}) {
+  if (platform === 'win32') return env;
+  const dir = path.dirname(execPath);
+  if ((env.PATH ?? '').split(path.delimiter).includes(dir)) return env;
+  return { ...env, PATH: [env.PATH, dir].filter(Boolean).join(path.delimiter) };
+}
+
+export function which(name, { dirs = searchDirs() } = {}) {
   const win = process.platform === 'win32';
   const exts = win ? (process.env.PATHEXT || '.EXE;.CMD;.BAT').split(';').filter(Boolean) : [''];
-  for (const dir of (process.env.PATH || '').split(path.delimiter)) {
+  for (const dir of dirs) {
     if (!dir) continue;
     for (const ext of exts) {
       const p = path.join(dir, win && name.toLowerCase().endsWith(ext.toLowerCase()) ? name : name + ext);
@@ -882,7 +911,7 @@ function codexAppServer(cmd, wanted, timeout = 30_000) {
     const responses = {};
     let child;
     try {
-      child = spawn(cmd[0], [...cmd.slice(1), 'app-server'], { stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
+      child = spawn(cmd[0], [...cmd.slice(1), 'app-server'], { env: envWithNodeDir(process.env), stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
     } catch {
       resolve(responses);
       return;
@@ -1275,6 +1304,32 @@ function findWindowsNode() {
   return node;
 }
 
+/** Per-user places a node can be, after the login PATH and nvm, checked by file test only (no globbing of the home folder). */
+export const WSL_NODE_PLACES = ['$HOME/.volta/bin/node', '$HOME/.local/share/fnm/aliases/default/bin/node', '$HOME/.asdf/shims/node', '$HOME/.local/bin/node'];
+
+/**
+ * The bash line that finds node inside WSL and runs the staged script with it (`$0` is the script, `$@` the rest). Order: the
+ * configured `wslNode`; `node` on the login PATH; nvm (`${NVM_DIR:-$HOME/.nvm}/nvm.sh`, silenced so it cannot print into the JSON line);
+ * WSL_NODE_PLACES. Nothing found: a message the skip note recognises, status 127. One line, no carriage return, no interactive shell.
+ */
+export function wslNodeLine(wslNode) {
+  const quoted = wslNode ? `'${wslNode.replace(/'/g, "'\\''")}'` : "''";
+  const places = WSL_NODE_PLACES.map(p => `"${p}"`).join(' ');
+  return [
+    `N=${quoted}`,
+    '[ -f "$N" ] && [ -x "$N" ] || N=$(command -v node 2>/dev/null)',
+    '[ -n "$N" ] || { D=${NVM_DIR:-$HOME/.nvm}; [ -s "$D/nvm.sh" ] && { . "$D/nvm.sh" >/dev/null 2>&1; N=$(command -v node 2>/dev/null); }; }',
+    `[ -n "$N" ] || for C in ${places}; do [ -f "$C" ] && [ -x "$C" ] && { N=$C; break; }; done`,
+    '[ -n "$N" ] || { echo "node: not found (not on the login PATH, not in nvm, not in the usual per-user folders)" >&2; exit 127; }',
+    'exec "$N" "$0" "$@"',
+  ].join('; ');
+}
+
+/** The argv that runs the staged script inside WSL from Windows. --exec hands argv over as is: with `--`, wsl.exe runs the line through the outer shell, which would expand $0 and $@ itself. */
+export function wslBridgeArgv({ distro, script, command, payloadFile, wslNode }) {
+  return ['wsl.exe', '-d', distro, '--exec', 'bash', '-lc', wslNodeLine(wslNode), script, command, '--payload', payloadFile];
+}
+
 /** Run a local-* command on the other side: stage this file and the payload in the Windows temp dir (visible to both), run, parse the JSON line. */
 async function crossCall(cfg, here, target, command, payload, timeoutMs) {
   const base = here === 'windows' ? os.tmpdir() : windowsTempFromWsl();
@@ -1288,8 +1343,7 @@ async function crossCall(cfg, here, target, command, payload, timeoutMs) {
     if (here === 'windows' && target === 'wsl') {
       const distro = wslDistro(cfg);
       if (!distro) throw new Error('no WSL distro found');
-      // --exec hands argv over as is. With `--`, wsl.exe runs the line through the outer shell, which would expand $0 and $@ itself.
-      argv = ['wsl.exe', '-d', distro, '--exec', 'bash', '-lc', 'exec node "$0" "$@"', winToWsl(script), command, '--payload', winToWsl(pfile)];
+      argv = wslBridgeArgv({ distro, script: winToWsl(script), command, payloadFile: winToWsl(pfile), wslNode: cfg.wslNode });
     } else if (here === 'wsl' && target === 'windows') {
       argv = [findWindowsNode(), wslToWin(script), command, '--payload', wslToWin(pfile)];
     } else {

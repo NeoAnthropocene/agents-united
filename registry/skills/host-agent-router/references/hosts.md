@@ -87,6 +87,15 @@ and runs the other side's node on it. From Windows it uses `wsl.exe -d <distro> 
 `wsl.exe -- <command>` runs the line through the outer shell, which expands `$0` and `$@` itself. A user profile path with spaces under WSL
 is untested.
 
+Inside WSL the line finds `node` in this order, and the first hit runs the staged script (no interactive shell is used: it can print job-control warnings and run prompt code):
+
+1. `wslNode` in the config (a Linux path such as `/opt/node/bin/node`; optional, default `null`, like `wslDistro`); it must be an absolute path with no control characters or backslashes, else the config is a usage error.
+2. `node` on the login shell's PATH.
+3. nvm: `${NVM_DIR:-$HOME/.nvm}/nvm.sh` is sourced quietly when the file exists, then `node` again. nvm is the usual way node is installed on WSL, and it puts `node` on the PATH from `~/.bashrc`, which a non-interactive login shell does not run to the end.
+4. File tests, no globbing: `$HOME/.volta/bin/node`, `$HOME/.local/share/fnm/aliases/default/bin/node`, `$HOME/.asdf/shims/node`, `$HOME/.local/bin/node`.
+
+Nothing found: the line prints `node: not found` and exits 127, and `plan`/`run` show the skip reason `WSL has no node (the config key "wslNode" can name it)`; install node there, or set `wslNode`. Once the script runs inside WSL it looks for a Host's executable on PATH, then in the folder of its own node (where the npm globals of an nvm node, such as `cline`, live) and in `~/.local/bin`, and it appends its node's folder to the PATH of every Host it starts. Windows resolution is unchanged.
+
 ## Cline quota
 
 Checked 2026-11-07 against Cline 3.0.74 and the docs (`docs.cline.bot/cli/cli-reference.md`, `getting-started/clinepass.md`): no `cline` command or flag reports ClinePass usage, and the docs say to open the web dashboard. A `--json` run emits `usage` events with token counts and a `totalCost` of 0 (flat subscription), and `cline history --json` keeps the same per run, so consumption is visible and what is left is not. Asking a model is not a source either: one low-effort `--plan` run in an empty directory, asked to answer only from session facts, replied `UNKNOWN` (9,483 input and 4 output tokens). The account REST calls in Cline's own code (`/api/v1/users/me/plan`, `/balance`, `/usages`) need the stored account token, are undocumented for ClinePass windows, and would be a network call the script does not make; they were not tried.
@@ -177,7 +186,7 @@ Windows 11 with WSL present but without Node. Install routes seen on that machin
 
 - Codex 0.169.0 installed through npm on Windows: `AppData\Roaming\npm\codex.cmd` beside `node_modules/@openai/codex`. The router starts it as `node <package entry>`, the way it starts Cline, because neither npm shim can be spawned directly (`npmShimCommand`); the Codex run listed below came after this lookup fix.
 - Antigravity as `agy.exe` on Windows (`AppData\Local\agy\bin`); Cline through npm on Windows.
-- Every WSL side reports "not runnable": the bridge answers `exec: node: not found`, so `status` skips those candidates and `models` shows an error for WSL. In `plan` and `run` the reason reads `not installed or not runnable (WSL has no node)`; any other skip reason is shown with file paths replaced by `<path>`, because a path names the user. Codex is not installed in WSL there.
+- Every WSL side reports "not runnable": the bridge answers `exec: node: not found`, so `status` skips those candidates and `models` shows an error for WSL. In `plan` and `run` the reason read `not installed or not runnable (WSL has no node)` (since 1.1.2 the text in brackets ends with a hint about `wslNode`; see above); any other skip reason is shown with file paths replaced by `<path>`, because a path names the user. Codex is not installed in WSL there.
 - `router.mjs machine`, run on 2026-11-13 for this update, reported (the `--version` lines): Cline 3.0.74 (npm entry), Antigravity 1.5.8 (exe), Codex 0.169.0 (npm entry), Claude Code 2.1.323 (exe).
 - Read-only runs at the simple tier, seen live on 2026-11-13 (reported to this update by the lead, not run by it): Antigravity on Windows with `gemini-3.8-flash-medium`, Cline on Windows with `cline-pass/deepseek-v4.1-flash-1017`, and Codex on Windows with `gpt-6.1-terra` (after the npm lookup fix).
 - Codex edit runs: `editSide` is `wsl` and there is no usable WSL side, so the router uses the Windows side. That side's sandbox failed for edits on the first machine (started in `C:\` without `node`). On this machine it edited the file (see the edit runs below) but could not run the acceptance command.

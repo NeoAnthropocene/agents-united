@@ -1320,7 +1320,7 @@ describe('the command line, on a replayed statuses file (no host is started)', (
       expect(r.status).toBe(0);
       const plan = (args[0] === 'plan' ? r.json : (r.json as { plan: unknown }).plan) as unknown as Plan;
       const reason = (host: string, side: string): string | undefined => plan.skipped.find(s => s.host === host && s.side === side)?.reason;
-      expect(reason('cline', 'wsl')).toBe('not installed or not runnable (WSL has no node)');
+      expect(reason('cline', 'wsl')).toBe('not installed or not runnable (WSL has no node (the config key "wslNode" can name it))');
       expect(reason('antigravity', 'windows')).toBe('not installed or not runnable (cannot start <path> now)');
       expect(reason('antigravity', 'wsl')).toBe('not installed or not runnable');
       expect(JSON.stringify(plan.skipped)).not.toMatch(/Users|har-84776f/); // the dry run's own cwd is a path by design; the skip reasons are not
@@ -1910,9 +1910,9 @@ describe('the documents describe the new behaviour in one wording', () => {
     }
   });
 
-  it('SKILL.md is version 1.1.1 and names the new options', () => {
+  it('SKILL.md is version 1.1.2 and names the new options', () => {
     const t = doc('SKILL.md');
-    expect(t).toMatch(/version: 1\.1\.1/);
+    expect(t).toMatch(/version: 1\.1\.2/);
     for (const w of ['--effort', '--skill', 'router.mjs" machine', '--pin-host']) expect(t, w).toContain(w);
   });
 
@@ -2369,7 +2369,7 @@ describe('operator mistakes caught before a worker starts (2026-11-15)', () => {
       expect(t).toContain('--allow-cmd-file');
       expect(t).toMatch(/dry.run[^.\n]*(length|too long)[^.\n]*exact lines/i);
       expect(t).toContain('`too_long`');
-      expect(t).toMatch(/version: 1\.1\.1/);
+      expect(t).toMatch(/version: 1\.1\.2/);
     });
 
     it('the brief guide has an Antigravity paragraph: number every command line, no env var or directory change, the shell is not for reading files', () => {
@@ -2716,7 +2716,7 @@ describe('a temp folder the Antigravity sandbox can use (edit runs, 2026-11-15)'
       const t = doc('SKILL.md');
       expect(t.length).toBeLessThanOrEqual(6000);
       expect(t.split('\n').length).toBeLessThanOrEqual(90);
-      expect(t).toMatch(/version: 1\.1\.1/);
+      expect(t).toMatch(/version: 1\.1\.2/);
     });
   });
 });
