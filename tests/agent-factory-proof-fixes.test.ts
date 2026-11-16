@@ -69,7 +69,9 @@ describe('Fix 2 (S2-A, S1-C): the entry dry run is the pinned checkout\'s built 
   const ENTRY_CLI = 'Run the pinned checkout\'s built CLI, `node <checkout>/dist/cli.js start agent-factory --host claude --dry-run`, never a bare `agents` from the path, and save its output in the evidence folder.';
   const ENTRY_STOP = 'The planned agent must be `orchestrator-agent-factory`; anything else, or a nonzero exit, is recorded and the route stops there and reports, without a workaround.';
   // Plan 033 P38 (S1-C): the launcher no longer refuses an inherited teams setting; it turns teams off for the factory's own session.
-  const ENTRY_TEAMS = 'The launcher turns agent teams off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry that switch does not apply, so a worker that starts as a teammate is refused and reported.';
+  // Plan 033 P19: the launcher also turns fork mode off, so a worker that starts in the background is refused and reported.
+  const ENTRY_TEAMS = 'The launcher turns agent teams and fork mode off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry those switches do not apply, so a worker that starts as a teammate or in the background is refused and reported.';
+  const P38_ENTRY_TEAMS = 'The launcher turns agent teams off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry that switch does not apply, so a worker that starts as a teammate is refused and reported.';
   const OLD_ENTRY_TEAMS = 'When the launcher refuses the dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set in the session, report the refusal and stop; do not clear the variable yourself.';
   const ROUTES = [`${REFERENCES}/skill-authoring.md`, `${REFERENCES}/contract-authoring.md`, `${REFERENCES}/bundle-authoring.md`, `${REFERENCES}/host-sync.md`];
   const PLACES = [...ROUTES, `${REFERENCES}/dispatch.md`, AGENT_BODY];
@@ -94,6 +96,15 @@ describe('Fix 2 (S2-A, S1-C): the entry dry run is the pinned checkout\'s built 
       expect(text, rel).not.toContain(OLD_ENTRY_TEAMS);
       expect(text, rel).not.toMatch(/launcher refuses the dry run/i);
       expect(text, rel).not.toMatch(/report the refusal and stop/i);
+    }
+  });
+
+  it('has the teams-and-fork-mode sentence exactly once in each of the six files and the teams-only sentence in none', async () => {
+    expect(PLACES).toHaveLength(6);
+    for (const rel of PLACES) {
+      const text = await read(rel);
+      expect(count(text, ENTRY_TEAMS), rel).toBe(1);
+      expect(text, rel).not.toContain(P38_ENTRY_TEAMS);
     }
   });
 

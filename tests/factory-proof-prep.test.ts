@@ -947,7 +947,7 @@ describe('the sitting instructions', () => {
     expect([...at].sort((x, y) => x - y)).toEqual(at);
     for (const label of ['**What it shows:**', '**Bound:**', '### Before you start', '**Paste back to the Plan 033 session:**', 'Paste this:']) expect(text, label).toContain(label);
     expect(text).toMatch(/at most 2 prompts/);
-    expect(text).toMatch(/at most 5 prompts/);
+    expect(text).toMatch(/at most 6 prompts/);
     expect(text).toMatch(/at most 7 prompts/);
     const steps = (text.match(/^### Step \d+/gm) ?? []).length;
     expect((text.match(/\*\*You should see:\*\*/g) ?? []).length).toBe(steps);
@@ -992,9 +992,19 @@ describe('the sitting instructions', () => {
     expect(text.split(plain).length - 1).toBe(2);
     expect(text).not.toContain('env -u');
     expect(text).not.toContain('Remove-Item');
-    expect(text).not.toMatch(/```powershell/);
+    // The only PowerShell fence is the session-id command (P19); every launcher command stays one form.
+    const psOpen = text.match(/```powershell/g) ?? [];
+    const psFences = [...text.matchAll(/```powershell\n([^\n]*)\n```/g)].map(m => m[1]!);
+    expect(psOpen.length).toBeGreaterThan(0);
+    expect(psFences).toHaveLength(psOpen.length);
+    for (const line of psFences) {
+      expect(line.startsWith('Get-ChildItem "$HOME\\.claude\\projects\\')).toBe(true);
+      expect(line.endsWith('| Sort-Object LastWriteTime -Descending | Select-Object -First 3 Name')).toBe(true);
+    }
+    expect(text.split('In PowerShell use this instead:').length - 1).toBe(psFences.length);
     expect(text).not.toMatch(/launcher refuses/);
-    expect(text.split('The launcher turns agent teams off for this session by itself.').length - 1).toBe(2);
+    expect(text.split('The launcher turns agent teams and fork mode off for this session by itself.').length - 1).toBe(2);
+    expect(text).not.toContain('The launcher turns agent teams off for this session by itself.');
     expect(text).not.toContain('The only command that differs in PowerShell');
     expect(text).toMatch(/```bash\nclaude --model sonnet --effort low\n```/);
     expect(text).not.toMatch(/\b(skip|skipping|bypass|ignore|omit|disable|waive)\b/i);
@@ -1023,9 +1033,9 @@ describe('the sitting instructions', () => {
     const zeroA = stepAt(partA, 0);
     expect(partA.indexOf('### Step 0')).toBeGreaterThan(0);
     expect(partA.indexOf('### Step 0')).toBeLessThan(partA.indexOf('### Step 1'));
-    expect(zeroA).toContain('Run exactly one command with your shell tool and report the tool result word for word. If your shell tool is Bash, run: echo "TEAMS=[$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS]" If it is PowerShell, run: Write-Output "TEAMS=[$env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS]"');
-    expect(zeroA).toContain('**You should see:** `TEAMS=[0]`.');
-    expect(zeroA).toContain('**If not:** write down the line that was printed (`TEAMS=[]` means the variable is not set, `TEAMS=[1]` means agent teams are on) and go on; do not paste it again.');
+    expect(zeroA).toContain('Run exactly one command with your shell tool and report the tool result word for word. If your shell tool is Bash, run: echo "TEAMS=[$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS] FORK=[$CLAUDE_CODE_FORK_SUBAGENT]" If it is PowerShell, run: Write-Output "TEAMS=[$env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS] FORK=[$env:CLAUDE_CODE_FORK_SUBAGENT]"');
+    expect(zeroA).toContain('**You should see:** `TEAMS=[0] FORK=[0]`.');
+    expect(zeroA).toContain('**If not:** write down the line that was printed (an empty bracket means the variable is not set; `TEAMS=[1]` means agent teams are on; `FORK=[1]` or `FORK=[]` means fork mode was not turned off) and go on; do not paste it again.');
     expect(stepAt(partA, 1)).toContain('/hooks');
     // The position is pinned, not only the presence: the second item of part A's list, right after the session id, as in the typed routes.
     const backA = partA.slice(partA.indexOf('**Paste back to the Plan 033 session:**')).split('\n').filter(line => line.startsWith('- '));
@@ -1034,13 +1044,24 @@ describe('the sitting instructions', () => {
     expect(backA.filter(line => line.includes('TEAMS='))).toHaveLength(1);
     expect(text).toContain('The command that starts the coordinator through the launcher is the same in PowerShell.');
     // The per-workspace files carry the same Step 0 as the full text.
-    for (const [name, marker] of [['s4a-factory-guards', 'TEAMS=[$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS]'], ['s3-typed-forks', 'is the text of a Skill named coordinate-artifact already in your context']] as const) {
+    for (const [name, marker] of [['s4a-factory-guards', 'TEAMS=[$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS] FORK=[$CLAUDE_CODE_FORK_SUBAGENT]'], ['s3-typed-forks', 'is the text of a Skill named coordinate-artifact already in your context']] as const) {
       const own = fs.readFileSync(path.join(scenarioDir(name), 'SITTING.md'), 'utf8');
       expect(own.indexOf('### Step 0'), name).toBeGreaterThan(0);
       expect(own.indexOf('### Step 0'), name).toBeLessThan(own.indexOf('### Step 1'));
       expect(own.slice(own.indexOf('### Step 0'), own.indexOf('### Step 1')), name).toContain(marker);
     }
-    expect(text).toContain('**Bound:** at most 5 prompts in all (4 in the first part, 1 in the second).');
+    expect(text).toContain('**Bound:** at most 6 prompts in all (5 in the first part, 1 in the second).');
+    // P19: step 3 of part A waits for both workers in the foreground and has one fenced answer for a background launch; the paste-back list asks the three new questions.
+    const threeA = stepAt(partA, 3);
+    expect(threeA).toContain('Both workers run in the foreground: the coordinator waits for each and then reports its answer.');
+    expect(threeA).toContain("```text\nWait for the background worker's result, report it word for word, then start the factory-evaluator subagent the same way and report its answer word for word.\n```");
+    expect(threeA).toContain('this is the one extra prompt of the bound');
+    expect(backA).toContain('- yes or no: did the coordinator start a worker named factory-evaluator at all?');
+    expect(backA).toContain('- what did the evaluator answer about its shell and file writer (one line, or say it never ran)?');
+    expect(backA).toContain('- yes or no: did the coordinator say a worker ran in the background?');
+    expect(backA).not.toContain('- yes or no: did the evaluator say it holds no shell and no file writer?');
+    expect(text).toContain('Get-ChildItem "$HOME\\.claude\\projects\\');
+    expect(text).toContain('| Sort-Object LastWriteTime -Descending | Select-Object -First 3 Name');
     const routes = from(/^## Sitting 3/m);
     const zeroRoutes = stepAt(routes, 0);
     expect(routes.indexOf('### Step 0')).toBeGreaterThan(0);
