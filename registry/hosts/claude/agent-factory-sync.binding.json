@@ -10,7 +10,7 @@
     "scope": "workspace",
     "lane": "native"
   },
-  "invocation": "Agent({subagent_type: factory-sync, prompt: complete fixed sync job path and caller-held preflight jobDigest}) as an ordinary subagent; omit teammate name; wait for its hand-back when it runs in the background; verify actual launch result",
+  "invocation": "Agent({subagent_type: factory-sync, prompt: complete fixed sync job path and caller-held preflight jobDigest}) as an ordinary subagent; omit teammate name; verify the actual launch result, then wait for the worker's result when it runs in the background",
   "roles": [
     {
       "name": "factory-sync",

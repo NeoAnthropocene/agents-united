@@ -30,7 +30,7 @@ const RETURN_CHECKERS = ['skill', 'contract', 'bundle'].map(route => `${SKILL_RO
 const WORKERS = ['factory-realizer', 'factory-evaluator', 'factory-sync'];
 
 /** The waiting rule: one wording, verbatim in the dispatch reference and in the coordinator's agent body (an interactive main does not preload the Skill). */
-const WAITING_RULE = 'Start one worker at a time with Agent: `subagent_type`, a description and a prompt that carries the complete fixed job and the caller-held digest; no teammate name, no model override, no `run_in_background`. If the call returns the worker\'s finished result, go on with the checks. If it returns a launch notice instead, the worker runs in the background: say in one line which worker runs, start no other worker, do nothing that depends on its result, and end your turn; do not poll, sleep or read Host session records. Its hand-back arrives later as a message: accept it only if it comes from the worker you started and repeats the job digest you hold, then treat it as the actual return and go on with the checks. While you wait you may answer the human, but change nothing under the job\'s roots and advance no step. Refuse and report a teammate, a fork of this conversation, a hand-back from a worker you did not start, and a partial or failed return. If no hand-back has come and the human asks, say that the worker still runs and the dependent step is not done; never invent a result or a timeout.';
+const WAITING_RULE = 'Start one worker at a time with Agent: `subagent_type`, a description and a prompt that carries the fixed job, or its path where the route says so, and the caller-held digest; no teammate name, no model override. Pass no `run_in_background`, except `false` in a headless session (`claude -p`) when the tool offers it: there, ending your turn ends the session. If the call returns the worker\'s finished result, go on with the checks. If it returns a launch notice instead, the worker runs in the background: say in one line which worker runs, start no other worker, do nothing that depends on its result, and end your turn; do not poll, sleep or read Host session records. Its result arrives later by itself, as a hand-back message or a completion notice: accept it only if it comes from the worker you started and repeats the digest you hold, then treat it as the actual return and go on with the checks. While you wait you may answer the human, but change nothing under the job\'s roots and advance no step. Refuse and report a teammate, a fork of this conversation, a result from a worker you did not start, a result with another digest, and a partial or failed return. If no result has come and the human asks, say that the worker still runs and the dependent step is not done; if the human tells you to stop waiting, report the journey as blocked at that worker and whatever it may have written as unverified. Never invent a result or a timeout.';
 
 const NEW_ENTRY = 'The launcher turns agent teams off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry that switch does not apply, so a worker that starts as a teammate is refused and reported.';
 const OLD_ENTRY = 'The launcher turns agent teams and fork mode off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry those switches do not apply, so a worker that starts as a teammate or in the background is refused and reported.';
@@ -70,7 +70,18 @@ describe('P22: the waiting rule stands verbatim once in the dispatch reference a
     for (const rel of [SHARED_ENTRY, NATIVE_ENTRY]) {
       const text = await read(rel);
       expect(count(text, WAITING_RULE), rel).toBe(0);
-      expect(text, rel).toContain('Start it as an ordinary subagent and, when it runs in the background, wait for its hand-back as the waiting rule in [dispatch](references/dispatch.md) says.');
+      expect(text, rel).toContain('Start every worker as an ordinary subagent and, when it runs in the background, wait for its hand-back as the waiting rule in [dispatch](references/dispatch.md) says.');
+      expect(text, rel).not.toContain('Start it as an ordinary subagent');
+    }
+  });
+
+  it('has the realizer step carry the pointer and the evaluator step start the evaluator the same way, in both entries', async () => {
+    for (const rel of [SHARED_ENTRY, NATIVE_ENTRY]) {
+      const text = await read(rel);
+      const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(text)![0];
+      expect(step(3), rel).toContain('Start every worker as an ordinary subagent');
+      expect(step(4), rel).toContain('Start a fresh independent evaluator the same way, with complete job/candidate digests;');
+      expect(step(4), rel).not.toContain('Invoke a fresh independent evaluator');
     }
   });
 
@@ -112,11 +123,72 @@ describe('P22: no coordinator file asks for the foreground or refuses a backgrou
   });
 });
 
+describe('P23: no worker file, binding or proof-kit text demands the foreground for one of the three workers', () => {
+  /** Literal text kept on purpose, each with its reason. Everything else in these files must not say "foreground" or name run_in_background. */
+  const ALLOWED = [
+    // The workers' own handback text: they return once whether the Host runs them in the foreground or the background.
+    'in the foreground or the background',
+    // The decision record the realizer's host-inputs reference summarises: an observation about #210, not an instruction to anyone.
+    '#210 names foreground inline return, while its re-run used async',
+    // The guards sitting tells the maintainer what he sees when the Host happens to run a worker in the foreground: a description, not a demand.
+    'If the Host runs a worker in the foreground instead, its answer simply comes back in the same turn.',
+    // A source file name in the coordinator binding's evidence list (the Step 0 observation of 2026-10-19), not an instruction.
+    'claude-2.1.299-step0-foreground-rerun.md',
+    // The plain-session probe of the guards sitting starts a scratch worker, not one of the three; its prompt keeps the foreground on purpose.
+    'Start the subagent named probe-readonly-worker in the foreground (not in the background)',
+    // The typed-routes sitting's author-skill fork is a typed fork (context: fork, background: false), which runs in the foreground.
+    'It runs in the foreground: you wait for it.',
+  ];
+  const BINDINGS = ['coordinate', 'evaluate', 'realize', 'sync'].map(name => `registry/hosts/claude/agent-factory-${name}.binding.json`);
+  const WORKER_SKILLS = ['realize-artifact', 'evaluate-artifact', 'sync-host'];
+
+  it('finds neither run_in_background nor a foreground demand in the worker agents, worker Skills, bindings and the proof kit', async () => {
+    const files = [
+      ...WORKERS.map(name => `registry/hosts/claude/agents/${name}.md`),
+      ...(await Promise.all(WORKER_SKILLS.flatMap(skill => [`registry/skills/${skill}`, `registry/hosts/claude/skills/${skill}`].map(filesBelow)))).flat(),
+      ...BINDINGS,
+      'scripts/factory-proof-scenarios.mjs',
+    ];
+    expect(files.length).toBeGreaterThan(20);
+    for (const rel of files) {
+      let text = await read(rel);
+      for (const kept of ALLOWED) text = text.split(kept).join('');
+      expect(text, rel).not.toContain('run_in_background');
+      expect(text, rel).not.toMatch(/foreground/i);
+    }
+    expect(await read('scripts/factory-proof-scenarios.mjs')).not.toContain('Start the factory-realizer subagent in the foreground');
+  });
+
+  it.each(['evaluate', 'realize', 'sync'])('the %s binding invocation verifies the launch result before it waits for the worker', async name => {
+    const invocation = (JSON.parse(await read(`registry/hosts/claude/agent-factory-${name}.binding.json`)) as { invocation: string }).invocation;
+    expect(invocation.indexOf('verify the actual launch result'), name).toBeGreaterThan(-1);
+    expect(invocation.indexOf('verify'), name).toBeLessThan(invocation.indexOf('wait'));
+    expect(invocation).toContain("then wait for the worker's result when it runs in the background");
+  });
+
+  it('the realize-artifact native entry verifies the launch result before it waits for the worker', async () => {
+    const text = await read('registry/hosts/claude/skills/realize-artifact/SKILL.md');
+    expect(text.indexOf('Verify the actual host launch result')).toBeGreaterThan(-1);
+    expect(text.indexOf('Verify the actual host launch result')).toBeLessThan(text.indexOf("then wait for the worker's result when it runs in the background"));
+  });
+});
+
 describe('P22: the six-file entry sentence', () => {
   it.each(ENTRY_PLACES)('%s has the teams-only sentence once and the P19 sentence nowhere', async rel => {
     const text = await read(rel);
     expect(count(text, NEW_ENTRY)).toBe(1);
     expect(text).not.toContain(OLD_ENTRY);
+  });
+});
+
+describe('P23: the dispatch and agent sentences after P22', () => {
+  it('states the workers as ordinary subagents the Host runs, and the Skill as preloaded or read', async () => {
+    const dispatch = await read(DISPATCH);
+    expect(dispatch).toContain('The workers are ordinary subagents, never a fork of this conversation. The Host decides whether an Agent call returns the worker\'s result at once or only a launch notice (its fork-mode default varies); do not change user settings, invent a per-call flag or switch to teams/workflows.');
+    expect(dispatch).not.toContain('ordinary non-fork workers');
+    const agent = await read(AGENT_BODY);
+    expect(agent).toContain('The coordinate-artifact Skill, preloaded or read as above, provides the job, dispatch, verification, repair, handback and host-update sync runbook;');
+    expect(agent).not.toContain('The required coordinate-artifact preload provides');
   });
 });
 
@@ -181,7 +253,7 @@ describe('P22: the launcher leaves fork mode alone', () => {
     expect(prompt).not.toMatch(/\bbackground\b[^.]*\bmechanism\b|refuse[^.]*\bbackground\b/i);
     expect(prompt).not.toMatch(/foreground/i);
     expect(prompt).toContain('Start one worker at a time as an ordinary subagent and, when it runs in the background, wait for its hand-back as the waiting rule');
-    expect(prompt).toContain('refuse a fork, a teammate or a partial return');
+    expect(prompt).toContain('refuse a fork, a teammate or a partial or failed return');
   });
 });
 

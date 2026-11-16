@@ -204,6 +204,14 @@ describe('a full preparation', () => {
     for (const file of Object.keys(manifest.prompts)) expect(manifest.prompts[file]).toBe(hexOf(path.join(destination, file)));
   });
 
+  it('opens each headless prompt that makes the coordinator start a worker with the one waiting sentence, and no other prompt', () => {
+    const sentence = "This is a headless session (claude -p): ending your turn ends the session, so wait for each worker's result in the same turn.";
+    for (const name of ['s1.txt', ...(realS2Unavailable ? [] : ['s2.txt'])]) {
+      expect(fs.readFileSync(path.join(destination, 'prompts', name), 'utf8').startsWith(sentence + '\n\n'), name).toBe(true);
+    }
+    for (const name of ['s5-with.txt', 's5-without.txt', 's5-control.txt']) expect(fs.readFileSync(path.join(destination, 'prompts', name), 'utf8'), name).not.toContain('headless session');
+  });
+
   it('leaves the checkout unchanged and creates nothing outside the destination', () => {
     expect(statusAfter).toBe(statusBefore);
     expect(parentAfter).toEqual([...parentBefore, 'proof'].sort());
@@ -1172,6 +1180,11 @@ describe('the sitting instructions', () => {
     expect(threeA).not.toMatch(/in the foreground \(not in the background\)/);
     expect(threeA).not.toContain("Wait for the background worker's result");
     expect(threeA).not.toContain('extra prompt');
+    // P23 part 2: the probe steps hold no job, so the prompt gives the caller-held digest as a token and the answer names it.
+    expect(threeA).toContain('The digest you hold for this probe is PROBE-1: tell factory-realizer to repeat PROBE-1 in its answer.');
+    expect(threeA).toContain('the digest you hold is PROBE-2: tell factory-evaluator to repeat PROBE-2 in its answer.');
+    expect(threeA).toContain('it names the token `PROBE-1`');
+    expect(threeA).toContain('it names the token `PROBE-2`');
     expect(backA).toContain('- yes or no: did the coordinator start a worker named factory-evaluator at all?');
     expect(backA).toContain('- what did the evaluator answer about its shell and file writer (one line, or say it never ran)?');
     expect(backA).toContain('- yes or no: did the coordinator say in one line that factory-realizer runs, and report its hand-back before it started factory-evaluator?');
@@ -1181,6 +1194,8 @@ describe('the sitting instructions', () => {
     const oneB = stepAt(from(/^### Part B/m), 1);
     expect(oneB).toContain('Start the subagent named probe-readonly-worker');
     expect(oneB.slice(oneB.indexOf('**You should see:**'))).not.toMatch(/foreground/);
+    expect(oneB).toContain('A plain session may run the worker in the background; its answer then arrives by itself a little later');
+    expect(oneB).toContain('If Claude asks whether to wait, type: Wait for its result and report it word for word.');
     // The typed-routes sitting keeps the foreground wording for the typed forks only; its evaluator step follows the waiting rule.
     const routesText = from(/^## Sitting 3/m);
     expect(stepAt(routesText, 2)).toContain('It runs in the foreground: you wait for it.');

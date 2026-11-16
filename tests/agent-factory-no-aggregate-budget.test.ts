@@ -46,6 +46,16 @@ describe('the agent factory states no aggregate journey budget', () => {
     for (const file of [CORE, AGENT, `${REFS}/repair.md`]) expect(read(file), file).toContain(INVARIANT);
   });
 
+  it('names no process limit in step 6 of either coordinate-artifact entry and names the job caps and the turn/repair limits', () => {
+    const stated = "account for each job's caps and the turn/repair limits";
+    for (const file of [`${SKILL}/SKILL.md`, 'registry/hosts/claude/skills/coordinate-artifact/SKILL.md']) {
+      const text = read(file);
+      expect(text, file).not.toContain('process/byte/time');
+      expect(text, file).not.toContain('process limit');
+      expect(text, file).toContain(stated);
+    }
+  });
+
   it('keeps only the turn and repair limits in the report guide', () => {
     const report = JSON.parse(read(`${SKILL}/assets/report.json`)) as { limits: Record<string, number> };
     expect(Object.keys(report.limits).sort()).toEqual(['authorizedRepairsMaximum', 'automaticRepairsDefault', 'workerTurnsMaximum']);

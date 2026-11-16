@@ -401,7 +401,9 @@ function buildS2(ctx, folder, plan) {
 // ---------------------------------------------------------------- prompts
 
 function promptS1(ctx, folder, brief) {
-  return `You are the installed Agents United artifact factory coordinator (orchestrator-agent-factory), working in the prepared workspace ${folder}.
+  return `This is a headless session (claude -p): ending your turn ends the session, so wait for each worker's result in the same turn.
+
+You are the installed Agents United artifact factory coordinator (orchestrator-agent-factory), working in the prepared workspace ${folder}.
 
 Task: follow your coordinate-artifact runbook for one complete fixed create brief for one Claude agent. The brief is ${path.join(folder, 'work', 'brief.json')}. It fixes the objective, the supplied shared pair, the pins, the roots, the checks, the acceptance and the repair authorization. It is the caller's record; you write the job record from it and hold its digest yourself.
 
@@ -419,7 +421,9 @@ Save the complete output of every check, with its exit code, in the evidence fol
 }
 
 function promptS2(ctx, folder, brief) {
-  return `You are the installed Agents United artifact factory coordinator (orchestrator-agent-factory), working in the prepared workspace ${folder}.
+  return `This is a headless session (claude -p): ending your turn ends the session, so wait for each worker's result in the same turn.
+
+You are the installed Agents United artifact factory coordinator (orchestrator-agent-factory), working in the prepared workspace ${folder}.
 
 Task: one host-update sync for the host claude, following the host-update sync route of your coordinate-artifact runbook (the host-sync reference). The maintainer's inputs are in ${path.join(folder, 'work', 'sync-brief.json')}: the host, the checkout, the commit before the library refresh, the target realizer job records to consider, the held source (if the brief lists one) and the evidence folder. Nothing is implemented, no library page is refreshed and no hold is cleared.
 

@@ -219,8 +219,10 @@ describe('factory coordinator required native delivery through public installati
       // Moved out of both coordinator entries by P22 (background workers) to make room for the waiting-rule pointer in step 3.
       'the coordinator is an intermediate consumer, not a complete factory, quality judgment or live proof': [
         'This is an intermediate consumer, not a complete factory, automated quality judgment or live proof'],
+      // Moved out of both coordinator entries by P23 part 2 to make room for the waiting-rule pointer in step 4.
+      'the worked example illustrates record plumbing, not a model invocation or independent judgment': ["The Skill's worked example illustrates record plumbing, not a model invocation or useful independent judgment."], // reworded in the body only to spell out the referent: in the entries "It" meant the worked example of the sentence before
     };
-    expect(Object.keys(obligations)).toHaveLength(10);
+    expect(Object.keys(obligations)).toHaveLength(11);
     for (const [label, parts] of Object.entries(obligations)) for (const part of parts) expect(body, `${label}: ${part}`).toContain(part);
   });
 
