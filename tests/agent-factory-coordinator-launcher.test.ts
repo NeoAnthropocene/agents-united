@@ -3,7 +3,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ClaudeLauncher } from '../src/core/claude-launcher.js';
+import { ClaudeLauncher, FACTORY_TEAMS_OFF_SETTINGS_ARG, factoryLaunchShapeOk } from '../src/core/claude-launcher.js';
+import { describeClaudeTeamsPosture, describeClaudeTeamsScaffold, renderClaudeActivationPlan, resolveClaudeTeamsPosture } from '../src/cli.js';
 import { InstallEngine } from '../src/core/installer.js';
 import { RegistryResolver } from '../src/core/registry.js';
 import type { ClaudeCapabilityReport, LockfileManifest } from '../src/core/types.js';
@@ -41,7 +42,7 @@ describe('installed factory main selection through public resolve and plan', () 
   const harmlessPlan = async () => {
     await install();
     const sentinel = path.join(fixture.root, 'spawned.json'), script = path.join(fixture.root, 'harmless.mjs');
-    await fs.writeFile(script, `import fs from 'node:fs'; fs.writeFileSync(${JSON.stringify(sentinel)}, JSON.stringify({argv: process.argv.slice(2), todo: process.env.CLAUDE_CODE_ENABLE_TODO_TOOLS}));\n`);
+    await fs.writeFile(script, `import fs from 'node:fs'; fs.writeFileSync(${JSON.stringify(sentinel)}, JSON.stringify({argv: process.argv.slice(2), todo: process.env.CLAUDE_CODE_ENABLE_TODO_TOOLS, teams: process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS ?? null, teamsVars: Object.entries(process.env).filter(([key]) => key.toUpperCase() === 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS')}));\n`);
     const launcher = new ClaudeLauncher(), resolution = await resolve();
     return { launcher, sentinel, plan: launcher.planActivation({ ...resolution, bundleName: 'agent-factory', report: {
       ...report, command: { executable: process.execPath, prefixArgs: [script], source: 'node-wrapper' },
@@ -269,13 +270,13 @@ describe('installed factory main selection through public resolve and plan', () 
     expect(plan.bootstrapPrompt).toContain('factory-realizer for bounded native draft creation/update, factory-evaluator for fresh independent read-only review and factory-sync for read-only host-update sync planning');
     expect(plan.bootstrapPrompt).not.toContain('Addon auto-installation');
     expect(plan.bootstrapPrompt).not.toContain('Team Manifest');
-    expect(plan.env).toEqual({ CLAUDE_CODE_ENABLE_TODO_TOOLS: '1' });
+    expect(plan.env).toEqual({ CLAUDE_CODE_ENABLE_TODO_TOOLS: '1', CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '0' });
     const before = await coordinatorTree(fixture.workspace);
     await launcher.launch(plan);
-    expect(await fs.readJson(sentinel)).toEqual({ argv: plan.argv.slice(1), todo: '1' });
+    expect(await fs.readJson(sentinel)).toEqual({ argv: plan.argv.slice(1), todo: '1', teams: '0', teamsVars: [[FACTORY_FORBIDDEN_ENV, '0']] });
     expect(await coordinatorTree(fixture.workspace)).toEqual(before);
     const optout = launcher.planActivation({ bundleName: 'agent-factory', workspace: plan.workspace, scope: plan.scope, report, nativeFactoryMain: plan.nativeFactoryMain, taskTracking: false });
-    expect(optout.env).toEqual({});
+    expect(optout.env).toEqual({ CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '0' });
   });
 
   // Fix 3 (findings S1-A and S2-B of the 2026-11-15 headless factory runs): a main started with --agent in a headless session did not have the text of
@@ -322,12 +323,128 @@ describe('installed factory main selection through public resolve and plan', () 
     expect(await coordinatorTree(fixture.workspace)).toEqual(before);
   });
 
-  it('refuses inherited teams activation at planning and immediately before spawning', async () => {
-    const { launcher, sentinel, plan } = await harmlessPlan();
+  // Plan 033 P38 (finding S1-C of the 2026-11-15 headless factory runs): an inherited teams opt-in no longer refuses the factory; the launcher turns teams off for the factory's own session.
+  it('turns agent teams off for the factory session when the opt-in is inherited, instead of refusing at planning or before spawning', async () => {
     vi.stubEnv('CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS', '1');
-    expect(() => launcher.planActivation({ bundleName: 'agent-factory', workspace: plan.workspace, scope: 'project', report, nativeFactoryMain: plan.nativeFactoryMain })).toThrow(/teams|foreground/i);
-    await expect(launcher.launch(plan)).rejects.toThrow(/teams|foreground/i);
+    const { launcher, sentinel, plan } = await harmlessPlan();
+    expect(plan.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS).toBe('0');
+    // The literal pins the shape of the element; the constant is what the code builds it from.
+    expect(plan.argv.filter(arg => arg.startsWith('--settings'))).toEqual(['--settings={"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}']);
+    expect(FACTORY_TEAMS_OFF_SETTINGS_ARG).toBe('--settings={"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}');
+    expect(plan.argv[plan.argv.length - 1]).toBe(plan.bootstrapPrompt);
+    expect(plan.argv.indexOf(FACTORY_TEAMS_OFF_SETTINGS_ARG)).toBeLessThan(plan.argv.length - 1);
+    // Launching with the inherited `1` still reaches the spawn, and the child sees `0`: the plan's env is merged over the process environment.
+    await launcher.launch(plan);
+    expect(await fs.readJson(sentinel)).toEqual({ argv: plan.argv.slice(1), todo: '1', teams: '0', teamsVars: [[FACTORY_FORBIDDEN_ENV, '0']] });
+    expect(process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS).toBe('1');
+  });
+
+  // FIX1 point 7: the full factory argv order with no executable prefix, and the same five-element tail behind a prefix.
+  it('plans exactly five argv elements with no executable prefix: --agent, the main, --add-dir, the settings element, the first message', async () => {
+    await install();
+    const plan = new ClaudeLauncher().planActivation({ ...(await resolve()), bundleName: 'agent-factory', report });
+    expect(plan.argv).toEqual(['--agent', 'orchestrator-agent-factory', `--add-dir=${fixture.workspace}`, FACTORY_TEAMS_OFF_SETTINGS_ARG, plan.bootstrapPrompt]);
+  });
+
+  // FIX1 points 3 and 4: an executable prefix never starts with `--`, and the launcher keeps the two prefix forms it really resolves (a Node wrapper path; `/c <path>` for a .cmd shim).
+  it.each([['--'], ['--setting-sources=user'], ['--model'], ['--bg'], ['--settings']])('refuses an executable prefix element %s at planning', async element => {
+    await install();
+    const resolution = await resolve();
+    expect(() => new ClaudeLauncher().planActivation({ ...resolution, bundleName: 'agent-factory', report: { ...report, command: { executable: 'node', prefixArgs: [element], source: 'node-wrapper' } } })).toThrow(/prefix/i);
+  });
+
+  it.each([
+    ['a Node wrapper path', 'node', ['C:/Users/someone/node_modules/@anthropic-ai/claude-code/cli.js'], 'node-wrapper'],
+    ['a .cmd shim through /c', 'cmd.exe', ['/c', 'C:/Users/someone/AppData/Roaming/npm/claude.cmd'], 'path-executable'],
+  ] as const)('plans and passes the launch tail check with the resolved prefix form: %s', async (_label, executable, prefixArgs, source) => {
+    await install();
+    const plan = new ClaudeLauncher().planActivation({ ...(await resolve()), bundleName: 'agent-factory', report: { ...report, command: { executable, prefixArgs: [...prefixArgs], source } } });
+    expect(plan.argv.slice(0, prefixArgs.length)).toEqual([...prefixArgs]);
+    expect(plan.argv.slice(prefixArgs.length)).toEqual(['--agent', 'orchestrator-agent-factory', `--add-dir=${fixture.workspace}`, FACTORY_TEAMS_OFF_SETTINGS_ARG, plan.bootstrapPrompt]);
+    expect(factoryLaunchShapeOk(plan)).toBe(true);
+  });
+
+  it.each([
+    ['the settings element stands after the first message', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(p.argv.indexOf(FACTORY_TEAMS_OFF_SETTINGS_ARG), 1); p.argv.push(FACTORY_TEAMS_OFF_SETTINGS_ARG); }],
+    ['the settings element stands directly after --model', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(p.argv.indexOf(FACTORY_TEAMS_OFF_SETTINGS_ARG), 1); p.argv.splice(1, 0, '--model', FACTORY_TEAMS_OFF_SETTINGS_ARG); }],
+    ['-- stands before the first message', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(p.argv.length - 1, 0, '--'); }],
+    ['-- stands in the executable prefix', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(1, 0, '--'); }],
+    ['--setting-sources=user stands in the executable prefix', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(1, 0, '--setting-sources=user'); }],
+    ['--setting-sources=user stands before the first message', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(p.argv.length - 1, 0, '--setting-sources=user'); }],
+    ['the last element is not the planned first message', (p: { argv: string[]; env: Record<string, string> }) => { p.argv[p.argv.length - 1] = 'another message'; }],
+    ['the env value is the empty string', (p: { argv: string[]; env: Record<string, string> }) => { p.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = ''; }],
+    ['the plan env holds a lower-case spelling of the variable', (p: { argv: string[]; env: Record<string, string> }) => { p.env.claude_code_experimental_agent_teams = '0'; }],
+    ['the plan env holds a lower-case spelling with the value 1', (p: { argv: string[]; env: Record<string, string> }) => { p.env.Claude_Code_Experimental_Agent_Teams = '1'; }],
+  ])('refuses a fabricated factory plan before spawning when %s', async (_label, mutate) => {
+    const { launcher, sentinel, plan } = await harmlessPlan();
+    mutate(plan);
+    await expect(launcher.launch(plan)).rejects.toThrow(/factory.*plan/i);
     expect(await fs.pathExists(sentinel)).toBe(false);
+  });
+
+  // FIX1 point 5: Windows environment names are case-insensitive. On Windows `process.env` itself folds the spelling, so the stub below overwrites the one variable and the child sees one `0`;
+  // on POSIX the lower-case spelling is a second variable, which the launcher must drop before merging the plan env. Either way exactly one variable with the value 0 reaches the child.
+  it('hands the child exactly one teams variable, with the value 0, when another spelling of its name is set in the parent', async () => {
+    vi.stubEnv('claude_code_experimental_agent_teams', '1');
+    vi.stubEnv('Claude_Code_Experimental_Agent_Teams', '1');
+    const { launcher, sentinel, plan } = await harmlessPlan();
+    await launcher.launch(plan);
+    const seen = await fs.readJson(sentinel);
+    expect(seen.teamsVars).toHaveLength(1);
+    expect(seen.teamsVars[0][1]).toBe('0');
+    expect(seen.teamsVars[0][0].toUpperCase()).toBe(FACTORY_FORBIDDEN_ENV);
+  });
+
+  it('still refuses every other unsupported factory option when the opt-in is inherited', async () => {
+    const { launcher, plan } = await harmlessPlan();
+    vi.stubEnv('CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS', '1');
+    const base = { bundleName: 'agent-factory', workspace: plan.workspace, scope: 'project' as const, report, nativeFactoryMain: plan.nativeFactoryMain };
+    for (const delta of [{ background: true }, { teams: true }, { pluginDir: 'plugin' }, { scope: 'global' as const }, { workspace: 'relative/workspace' }, { orchestrator: 'orchestrator-engineering.md' }]) {
+      expect(() => launcher.planActivation({ ...base, ...delta }), JSON.stringify(delta)).toThrow(/factory/i);
+    }
+    expect(() => launcher.planActivation({ ...base, report: { ...report, command: { executable: 'claude', prefixArgs: ['--settings', '{}'], source: 'path-executable' } } })).toThrow(/prefix/i);
+    expect(() => launcher.planActivation({ ...base, report: { ...report, command: { executable: 'claude', prefixArgs: ['--settings={}'], source: 'path-executable' } } })).toThrow(/prefix/i);
+  });
+
+  it.each([
+    ['is missing', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(p.argv.indexOf(FACTORY_TEAMS_OFF_SETTINGS_ARG), 1); }],
+    ['is duplicated', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(p.argv.length - 1, 0, FACTORY_TEAMS_OFF_SETTINGS_ARG); }],
+    ['carries another payload', (p: { argv: string[]; env: Record<string, string> }) => { p.argv[p.argv.indexOf(FACTORY_TEAMS_OFF_SETTINGS_ARG)] = '--settings={"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"1"}}'; }],
+    ['carries a payload with an extra key', (p: { argv: string[]; env: Record<string, string> }) => { p.argv[p.argv.indexOf(FACTORY_TEAMS_OFF_SETTINGS_ARG)] = '--settings={"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0","X":"1"}}'; }],
+    ['is given in the two-element form', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(p.argv.indexOf(FACTORY_TEAMS_OFF_SETTINGS_ARG), 1, '--settings', FACTORY_TEAMS_OFF_SETTINGS_ARG.slice('--settings='.length)); }],
+    ['is followed by a second one in the two-element form', (p: { argv: string[]; env: Record<string, string> }) => { p.argv.splice(p.argv.length - 1, 0, '--settings', '{}'); }],
+    ['is accompanied by an env value of 1', (p: { argv: string[]; env: Record<string, string> }) => { p.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = '1'; }],
+    ['is accompanied by no env value', (p: { argv: string[]; env: Record<string, string> }) => { delete p.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS; }],
+  ])('refuses a fabricated factory plan before spawning when the teams-off switch %s', async (_label, mutate) => {
+    const { launcher, sentinel, plan } = await harmlessPlan();
+    mutate(plan);
+    await expect(launcher.launch(plan)).rejects.toThrow(/factory.*plan/i);
+    expect(await fs.pathExists(sentinel)).toBe(false);
+  });
+
+  it('gives a non-factory plan no --settings element and leaves its teams behaviour as it was', async () => {
+    await install();
+    const launcher = new ClaudeLauncher();
+    const plain = launcher.planActivation({ bundleName: 'software-engineering', workspace: fixture.workspace, scope: 'project', report });
+    expect(plain.argv.some(arg => /^--settings(?:=|$)/.test(arg))).toBe(false);
+    expect(plain.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS).toBeUndefined();
+    const teams = launcher.planActivation({ bundleName: 'software-engineering', workspace: fixture.workspace, scope: 'project', report, teams: true });
+    expect(teams.argv.some(arg => /^--settings(?:=|$)/.test(arg))).toBe(false);
+    expect(teams.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS).toBe('1');
+  });
+
+  it('previews the factory through the built CLI with the opt-in inherited: exit 0, the --settings element and the env value 0 shown, no claim that teams are on', async () => {
+    await install();
+    const result = spawnSync(process.execPath, [path.resolve('dist/cli.js'), 'start', 'agent-factory', '--host', 'claude', '--dry-run'], {
+      cwd: fixture.workspace, encoding: 'utf8', timeout: 15000,
+      env: cleanFactoryEnv({ CLAUDE_BIN_PATH: process.execPath, PATH: '', CI: 'true', [FACTORY_FORBIDDEN_ENV]: '1' }),
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).toContain(`  [3] ${FACTORY_TEAMS_OFF_SETTINGS_ARG}`);
+    expect(result.stdout).toContain('Env injected (merged over process.env): CLAUDE_CODE_ENABLE_TODO_TOOLS=1, CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0');
+    expect(result.stdout).not.toContain('Agent teams (--teams): yes');
+    expect(result.stdout).toContain('Agent teams (--teams): no');
+    expect(result.stdout).toContain('Agent teams (--teams): no (turned off for this session by the launcher: environment value 0 and the --settings element below; managed settings can still enable agent teams)');
   });
 
   it('normalizes relative resolve cwd and supports the existing canonical-store state shape', async () => {
@@ -346,5 +463,25 @@ describe('installed factory main selection through public resolve and plan', () 
     delete plan.nativeFactoryMain;
     await expect(launcher.launch(plan)).rejects.toThrow(/factory|selection/i);
     expect(await fs.pathExists(sentinel)).toBe(false);
+  });
+
+  // FIX1 points 1, 2 and 7: the dry-run line and the real-start note share their reason; the non-factory lines stay as they were.
+  it('says in the dry run and in the real-start note that the launcher turned teams off, with the managed-settings limit, and leaves the non-factory lines unchanged', async () => {
+    await install();
+    const launcher = new ClaudeLauncher();
+    const posture = resolveClaudeTeamsPosture(undefined, 'domain');
+    const factoryPlan = launcher.planActivation({ ...(await resolve()), bundleName: 'agent-factory', report });
+    expect(renderClaudeActivationPlan(factoryPlan, report, ['claude'], posture).split('\n'))
+      .toContain('Agent teams (--teams): no (turned off for this session by the launcher: environment value 0 and the --settings element below; managed settings can still enable agent teams)');
+    expect(describeClaudeTeamsScaffold(false, posture, factoryPlan.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS))
+      .toBe('no (turned off for this session by the launcher; managed settings can still enable agent teams)');
+    // A non-factory plan with teams off keeps the old text in both places.
+    const plain = launcher.planActivation({ bundleName: 'software-engineering', workspace: fixture.workspace, scope: 'project', report });
+    const rendered = renderClaudeActivationPlan(plain, report, ['claude'], posture);
+    expect(rendered.split('\n')).toContain(`Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`);
+    expect(rendered).not.toContain('turned off for this session');
+    expect(describeClaudeTeamsScaffold(false, posture, plain.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS)).toBe(`no (${describeClaudeTeamsPosture(posture)})`);
+    const explicit = resolveClaudeTeamsPosture(true, 'domain');
+    expect(describeClaudeTeamsScaffold(true, explicit, '1')).toBe(`yes (${describeClaudeTeamsPosture(explicit)}; experimental, ephemeral env only)`);
   });
 });

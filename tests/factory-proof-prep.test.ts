@@ -947,12 +947,12 @@ describe('the sitting instructions', () => {
     expect([...at].sort((x, y) => x - y)).toEqual(at);
     for (const label of ['**What it shows:**', '**Bound:**', '### Before you start', '**Paste back to the Plan 033 session:**', 'Paste this:']) expect(text, label).toContain(label);
     expect(text).toMatch(/at most 2 prompts/);
-    expect(text).toMatch(/at most 4 prompts/);
-    expect(text).toMatch(/at most 6 prompts/);
+    expect(text).toMatch(/at most 5 prompts/);
+    expect(text).toMatch(/at most 7 prompts/);
     const steps = (text.match(/^### Step \d+/gm) ?? []).length;
     expect((text.match(/\*\*You should see:\*\*/g) ?? []).length).toBe(steps);
     expect((text.match(/\*\*If not:\*\*/g) ?? []).length).toBe(steps);
-    expect(steps).toBe(2 + 6 + 2 + 5);
+    expect(steps).toBe(2 + 7 + 2 + 6);
     expect((text.match(/session id/g) ?? []).length).toBeGreaterThanOrEqual(4);
     expect(text).toMatch(/\/status/);
     expect(text).toMatch(/\.jsonl/);
@@ -987,8 +987,15 @@ describe('the sitting instructions', () => {
       const evidence = readJson(path.join(scenarioDir('s3-typed-forks'), 'work', route, 'brief.json')).roots.evidence as string;
       expect(text).toContain(`/author-${route} ${path.join(evidence, `${route}-task.json`)}`);
     }
-    expect(text).toContain(`env -u CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS node "${cli.replace(/\\/g, '/')}" start agent-factory --host claude`);
-    expect(text).toContain('Remove-Item Env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS');
+    // The launcher turns agent teams off for the factory's own session, so the sittings start it plainly (the same command in Git Bash and PowerShell).
+    const plain = `node "${cli.replace(/\\/g, '/')}" start agent-factory --host claude`;
+    expect(text.split(plain).length - 1).toBe(2);
+    expect(text).not.toContain('env -u');
+    expect(text).not.toContain('Remove-Item');
+    expect(text).not.toMatch(/```powershell/);
+    expect(text).not.toMatch(/launcher refuses/);
+    expect(text.split('The launcher turns agent teams off for this session by itself.').length - 1).toBe(2);
+    expect(text).not.toContain('The only command that differs in PowerShell');
     expect(text).toMatch(/```bash\nclaude --model sonnet --effort low\n```/);
     expect(text).not.toMatch(/\b(skip|skipping|bypass|ignore|omit|disable|waive)\b/i);
     expect(text).not.toMatch(/--dangerously-skip-permissions/);
@@ -1005,6 +1012,46 @@ describe('the sitting instructions', () => {
       expect(own).toContain(scenarioDir(name).replace(/\\/g, '/'));
     }
     for (const name of ['s0-launcher', 's1-coord-realize', 's2-sync', 's5-with', 's5-without', 's5-control']) expect(fs.existsSync(path.join(scenarioDir(name), 'SITTING.md')), name).toBe(false);
+  });
+
+  // The guards sitting observes the agent-teams switch live in its first step, and the typed-routes sitting first asks what is already in the context.
+  it('observes the agent-teams switch in step 0 of part A and the Skill text in step 0 of the typed routes, before any other step', () => {
+    const text = read();
+    const from = (heading: RegExp): string => text.slice(text.search(heading));
+    const stepAt = (block: string, n: number): string => block.slice(block.indexOf(`### Step ${n}`), block.indexOf(`### Step ${n + 1}`));
+    const partA = from(/^### Part A/m);
+    const zeroA = stepAt(partA, 0);
+    expect(partA.indexOf('### Step 0')).toBeGreaterThan(0);
+    expect(partA.indexOf('### Step 0')).toBeLessThan(partA.indexOf('### Step 1'));
+    expect(zeroA).toContain('Run exactly one command with your shell tool and report the tool result word for word. If your shell tool is Bash, run: echo "TEAMS=[$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS]" If it is PowerShell, run: Write-Output "TEAMS=[$env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS]"');
+    expect(zeroA).toContain('**You should see:** `TEAMS=[0]`.');
+    expect(zeroA).toContain('**If not:** write down the line that was printed (`TEAMS=[]` means the variable is not set, `TEAMS=[1]` means agent teams are on) and go on; do not paste it again.');
+    expect(stepAt(partA, 1)).toContain('/hooks');
+    // The position is pinned, not only the presence: the second item of part A's list, right after the session id, as in the typed routes.
+    const backA = partA.slice(partA.indexOf('**Paste back to the Plan 033 session:**')).split('\n').filter(line => line.startsWith('- '));
+    expect(backA[0]).toBe('- the session id (how to find it is above);');
+    expect(backA[1]).toBe('- the line printed in step 0 (it starts `TEAMS=`), copied exactly;');
+    expect(backA.filter(line => line.includes('TEAMS='))).toHaveLength(1);
+    expect(text).toContain('The command that starts the coordinator through the launcher is the same in PowerShell.');
+    // The per-workspace files carry the same Step 0 as the full text.
+    for (const [name, marker] of [['s4a-factory-guards', 'TEAMS=[$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS]'], ['s3-typed-forks', 'is the text of a Skill named coordinate-artifact already in your context']] as const) {
+      const own = fs.readFileSync(path.join(scenarioDir(name), 'SITTING.md'), 'utf8');
+      expect(own.indexOf('### Step 0'), name).toBeGreaterThan(0);
+      expect(own.indexOf('### Step 0'), name).toBeLessThan(own.indexOf('### Step 1'));
+      expect(own.slice(own.indexOf('### Step 0'), own.indexOf('### Step 1')), name).toContain(marker);
+    }
+    expect(text).toContain('**Bound:** at most 5 prompts in all (4 in the first part, 1 in the second).');
+    const routes = from(/^## Sitting 3/m);
+    const zeroRoutes = stepAt(routes, 0);
+    expect(routes.indexOf('### Step 0')).toBeGreaterThan(0);
+    expect(routes.indexOf('### Step 0')).toBeLessThan(routes.indexOf('### Step 1'));
+    expect(zeroRoutes).toContain('Before you read any file or call any tool, answer two things. One: is the text of a Skill named coordinate-artifact already in your context, yes or no? Two: if yes, quote the first heading line of that Skill exactly as it stands; if no, say so and quote nothing. Do not open any file to answer.');
+    expect(zeroRoutes).toContain('**You should see:** a short answer with yes or no and, for yes, one quoted heading line; no tool call.');
+    expect(zeroRoutes).toContain('**If not:** if Claude reads a file or calls a tool before answering, do not repeat the question; note that it did and go on to Step 1.');
+    expect(text).toContain('**Bound:** at most 7 prompts (1 + 1 + 3 + 1, one spare).');
+    const back = routes.slice(routes.indexOf('**Paste back to the Plan 033 session:**')).split('\n').filter(line => line.startsWith('- '));
+    expect(back[0]).toBe('- the session id (how to find it is above);');
+    expect(back[1]).toBe('- the answer to Step 0, copied exactly, and yes or no: did Claude call a tool before answering it?');
   });
 
   it('keeps every expected result out of the scenario folders and the instructions', () => {

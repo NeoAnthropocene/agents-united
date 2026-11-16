@@ -2838,6 +2838,24 @@ export function resolveClaudeTeamsPosture(
   return { active: false, reason: 'unresolved-tier' };
 }
 
+/**
+ * The reason text for a factory session whose plan turned agent teams off (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` = `0` in the plan env). One place for the dry-run line and the
+ * real-start note, so they cannot drift; the limit is stated because managed settings apply after the launcher's `--settings` payload.
+ */
+export function describeClaudeTeamsOff(detail?: string): string {
+  return `turned off for this session by the launcher${detail ? `: ${detail}` : ''}; managed settings can still enable agent teams`;
+}
+
+/**
+ * The value of the "Teams scaffold:" line of the real-start note. Non-factory output is unchanged; a plan that carries the teams variable as `0` (the factory plan) says the launcher turned
+ * teams off instead of repeating the tier text, which would wrongly invite `--teams` (refused for the factory).
+ */
+export function describeClaudeTeamsScaffold(teamsActive: boolean, posture: ClaudeTeamsPosture, planTeamsValue: string | undefined): string {
+  if (teamsActive) return `yes (${describeClaudeTeamsPosture(posture)}; experimental, ephemeral env only)`;
+  if (planTeamsValue === '0') return `no (${describeClaudeTeamsOff()})`;
+  return `no (${describeClaudeTeamsPosture(posture)})`;
+}
+
 /** One-line, honest explanation of why teams is on or off — shared by the live notice and `--dry-run`. */
 export function describeClaudeTeamsPosture(posture: ClaudeTeamsPosture): string {
   switch (posture.reason) {
@@ -2956,7 +2974,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     `Executable: ${plan.executable}\n` +
     `Workspace: ${plan.workspace}\n` +
     `Background: ${options.bg ? 'yes (--bg)' : 'no'}\n` +
-    `Teams scaffold: ${teamsActive ? `yes (${describeClaudeTeamsPosture(teamsPosture)}; experimental, ephemeral env only)` : `no (${describeClaudeTeamsPosture(teamsPosture)})`}\n` +
+    `Teams scaffold: ${describeClaudeTeamsScaffold(teamsActive, teamsPosture, plan.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS)}\n` +
     `Plugin dir: ${pluginDir || '(none)'}`,
     'Starting Claude Code Session'
   );
@@ -3021,7 +3039,7 @@ function printDeclaredDeltas(report: HealthReport, host: string | undefined): vo
 }
 
 /** Render the `--dry-run` Claude plan: one argv element per line so each flag/value pair is unambiguous. */
-function renderClaudeActivationPlan(
+export function renderClaudeActivationPlan(
   plan: ClaudeActivationPlan,
   report: ClaudeCapabilityReport,
   recordedFanout: string[],
@@ -3029,7 +3047,10 @@ function renderClaudeActivationPlan(
 ): string {
   const envEntries = Object.keys(plan.env);
   const pluginFlagIndex = plan.argv.indexOf('--plugin-dir');
-  const teamsActive = envEntries.includes('CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS');
+  // The key alone no longer means "on": the factory plan carries it with the value 0 (teams turned off for its session), so the value decides.
+  const teamsValue = plan.env['CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'];
+  const teamsActive = teamsValue === '1';
+  const teamsOff = teamsValue === '0';
   return [
     `Bundle: ${plan.bundleName}`,
     `Host: claude`,
@@ -3040,7 +3061,9 @@ function renderClaudeActivationPlan(
     `Background (--bg): ${plan.argv.includes('--bg') ? 'yes' : 'no'}`,
     teamsActive
       ? `Agent teams (--teams): yes (${describeClaudeTeamsPosture(posture)} — experimental; ephemeral env only, nothing persisted)`
-      : `Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`,
+      : teamsOff
+        ? `Agent teams (--teams): no (${describeClaudeTeamsOff('environment value 0 and the --settings element below')})`
+        : `Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`,
     `Plugin (--plugin-dir): ${pluginFlagIndex >= 0 ? plan.argv[pluginFlagIndex + 1] : '(none)'}`,
     `Env injected (merged over process.env): ${envEntries.length > 0 ? envEntries.map((k) => `${k}=${plan.env[k]}`).join(', ') : '(none)'}`,
     `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}, subagent handback=${report.subagentHandback ? 'yes' : 'no'}`,

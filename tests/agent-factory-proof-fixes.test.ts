@@ -68,7 +68,9 @@ describe('Fix 1 (S1-B): a review job pins the saved check output the evaluator i
 describe('Fix 2 (S2-A, S1-C): the entry dry run is the pinned checkout\'s built CLI and must show the factory main', () => {
   const ENTRY_CLI = 'Run the pinned checkout\'s built CLI, `node <checkout>/dist/cli.js start agent-factory --host claude --dry-run`, never a bare `agents` from the path, and save its output in the evidence folder.';
   const ENTRY_STOP = 'The planned agent must be `orchestrator-agent-factory`; anything else, or a nonzero exit, is recorded and the route stops there and reports, without a workaround.';
-  const ENTRY_TEAMS = 'When the launcher refuses the dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set in the session, report the refusal and stop; do not clear the variable yourself.';
+  // Plan 033 P38 (S1-C): the launcher no longer refuses an inherited teams setting; it turns teams off for the factory's own session.
+  const ENTRY_TEAMS = 'The launcher turns agent teams off for the factory\'s own session and does not refuse a dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set; with direct `claude --agent` entry that switch does not apply, so a worker that starts as a teammate is refused and reported.';
+  const OLD_ENTRY_TEAMS = 'When the launcher refuses the dry run because `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set in the session, report the refusal and stop; do not clear the variable yourself.';
   const ROUTES = [`${REFERENCES}/skill-authoring.md`, `${REFERENCES}/contract-authoring.md`, `${REFERENCES}/bundle-authoring.md`, `${REFERENCES}/host-sync.md`];
   const PLACES = [...ROUTES, `${REFERENCES}/dispatch.md`, AGENT_BODY];
 
@@ -84,6 +86,15 @@ describe('Fix 2 (S2-A, S1-C): the entry dry run is the pinned checkout\'s built 
     const at = [ENTRY_CLI, ENTRY_STOP, ENTRY_TEAMS, 'Enforced by script when the launcher starts the session'].map(sentence => step.indexOf(sentence));
     expect(at.every(index => index > 0), at.join()).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
+  });
+
+  it('keeps the old refusal sentence nowhere in the coordinator\'s files, and says nowhere that the launcher refuses a dry run for the teams variable', async () => {
+    for (const rel of await coordinatorFiles()) {
+      const text = await read(rel);
+      expect(text, rel).not.toContain(OLD_ENTRY_TEAMS);
+      expect(text, rel).not.toMatch(/launcher refuses the dry run/i);
+      expect(text, rel).not.toMatch(/report the refusal and stop/i);
+    }
   });
 
   it('has no `agents start` anywhere in the coordinator\'s files', async () => {

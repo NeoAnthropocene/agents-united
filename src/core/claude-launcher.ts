@@ -24,6 +24,27 @@ const DEFAULT_COORDINATOR = 'orchestrator-engineering.md';
 const FACTORY_SKILL_ENTRY_SENTENCE = 'If the text of the "coordinate-artifact" Skill is not already in your context, read its installed entry ".claude/skills/coordinate-artifact/SKILL.md" in full before your first action.';
 const FACTORY_SKILL_DIR_SENTENCE = 'In a Skill file, "${CLAUDE_SKILL_DIR}" means that Skill\'s installed folder (".claude/skills/<skill name>" in the project), and a "scripts/", "references/" or "assets/" path in a Skill file is relative to that folder; use the absolute path when running a script.';
 
+/** The variable that opts a Claude Code session into agent teams. */
+const FACTORY_TEAMS_ENV = 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS';
+/** The one argv element (single `--opt=value` element, like `--add-dir=`) that turns agent teams off for the factory session in the settings the Host reads. */
+export const FACTORY_TEAMS_OFF_SETTINGS_ARG = `--settings=${JSON.stringify({ env: { [FACTORY_TEAMS_ENV]: '0' } })}`;
+
+/**
+ * The checked shape of a factory plan at launch: the last five argv elements are exactly `--agent`, the checked main, `--add-dir=<workspace>`, the teams-off `--settings` element and the
+ * first message; everything before them (the executable prefix) is not option-like; there is exactly one `--settings` element in either form; the plan env carries the variable as
+ * `0` and no other spelling of its name (Windows names are case-insensitive).
+ */
+export function factoryLaunchShapeOk(plan: Pick<ClaudeActivationPlan, 'argv' | 'env' | 'workspace' | 'bootstrapPrompt' | 'nativeFactoryMain'>): boolean {
+  const { argv } = plan;
+  if (argv.length < 5 || !plan.nativeFactoryMain) return false;
+  const tail = argv.slice(-5);
+  if (tail[0] !== '--agent' || tail[1] !== plan.nativeFactoryMain.name || tail[2] !== `--add-dir=${plan.workspace}` || tail[3] !== FACTORY_TEAMS_OFF_SETTINGS_ARG || tail[4] !== plan.bootstrapPrompt) return false;
+  if (argv.slice(0, -5).some(arg => arg.startsWith('--'))) return false;
+  if (argv.filter(arg => /^--settings(?:=|$)/.test(arg)).length !== 1) return false;
+  const spellings = Object.keys(plan.env).filter(key => key.toUpperCase() === FACTORY_TEAMS_ENV);
+  return spellings.length === 1 && spellings[0] === FACTORY_TEAMS_ENV && plan.env[FACTORY_TEAMS_ENV] === '0';
+}
+
 export interface ClaudeActivationPlan {
   bundleName: string;
   scope: InstallScope;
@@ -214,10 +235,12 @@ export class ClaudeLauncher {
     const factory = bundleName === 'agent-factory';
     if (factory) {
       assertClaudeFactorySelection(options.nativeFactoryMain);
-      if (scope !== 'project' || !path.isAbsolute(workspace) || background || teams || process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === '1' || pluginDir || (orchestrator && ClaudeLauncher.resolveCoordinatorName(orchestrator) !== options.nativeFactoryMain.name)) {
+      // An inherited CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS no longer refuses the plan: the plan turns teams off for this session (see the switch below).
+      if (scope !== 'project' || !path.isAbsolute(workspace) || background || teams || pluginDir || (orchestrator && ClaudeLauncher.resolveCoordinatorName(orchestrator) !== options.nativeFactoryMain.name)) {
         throw new Error('Claude factory startup supports only foreground project native sessions without background, plugin or teams options.');
       }
-      if (command.prefixArgs.some(arg => /^--(?:bg|plugin-dir|agent|add-dir)(?:=|$)/.test(arg))) throw new Error('Claude factory executable prefix must not override the checked foreground plan.');
+      // The executable prefix is a Node wrapper path or `/c <shim>`; an option-like element could change the Host's settings, agent or directories ahead of the checked plan.
+      if (command.prefixArgs.some(arg => arg.startsWith('--'))) throw new Error('Claude factory executable prefix must not override the checked foreground plan.');
     } else if (options.nativeFactoryMain) throw new Error('Factory main selection does not match the requested bundle.');
     const coordinatorName = factory ? options.nativeFactoryMain!.name : ClaudeLauncher.resolveCoordinatorName(orchestrator);
     const homePrefix = scope === 'global' ? '~/' : '';
@@ -325,6 +348,9 @@ export class ClaudeLauncher {
     if (taskTracking) env.CLAUDE_CODE_ENABLE_TODO_TOOLS = '1';
     if (teams === true) {
       env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = '1';
+    } else if (factory) {
+      // First of the two switches that turn agent teams off for the factory session (the second is the `--settings` element below).
+      env[FACTORY_TEAMS_ENV] = '0';
     }
 
     const argv: string[] = [...command.prefixArgs];
@@ -338,6 +364,10 @@ export class ClaudeLauncher {
     // (observed on 2.1.291, Plan 035 D52). The `--add-dir=<dir>` form carries its one value inside the element and
     // leaves no option open for the prompt to fall into, whatever flag order a later change picks.
     argv.push(`--add-dir=${workspace}`);
+    // Observed 2026-11-15 on 2.1.323 (finding S1-C): a user settings `env` entry exports the teams variable into every session and overrides the shell, so the process
+    // environment alone cannot turn teams off; a `--settings` payload applies after user settings (agent-teams.md "Claude spawns teammates instead of subagents",
+    // settings.md "Settings precedence"), so the factory carries both switches. Limit: managed settings still apply after it, and nothing here is observed live yet.
+    if (factory) argv.push(FACTORY_TEAMS_OFF_SETTINGS_ARG);
     if (background === true) {
       argv.push('--bg');
     }
@@ -364,23 +394,30 @@ export class ClaudeLauncher {
    * (never `shell: true`), `stdio: 'inherit'`, and the plan's ephemeral env merged over `process.env`.
    */
   public async launch(plan: ClaudeActivationPlan): Promise<void> {
+    let factorySession = false;
     if (plan.bundleName === 'agent-factory' || plan.nativeFactoryMain || plan.argv.some((arg, index) => arg === '--agent=orchestrator-agent-factory' || (arg === '--agent' && plan.argv[index + 1] === 'orchestrator-agent-factory'))) {
+      factorySession = true;
       assertClaudeFactorySelection(plan.nativeFactoryMain);
       const agent = plan.argv.indexOf('--agent');
       if (plan.bundleName !== 'agent-factory' || plan.scope !== 'project' || !path.isAbsolute(plan.workspace) || agent < 0
         || plan.argv.filter(arg => /^--agent(?:=|$)/.test(arg)).length !== 1 || plan.argv[agent + 1] !== plan.nativeFactoryMain.name
         || plan.argv.filter(arg => arg.startsWith('--add-dir')).length !== 1 || !plan.argv.includes(`--add-dir=${plan.workspace}`)
-        || plan.argv.some(arg => /^--(?:bg|plugin-dir)(?:=|$)/.test(arg)) || plan.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS !== undefined || process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === '1') {
-        throw new Error('Claude factory launch requires its checked foreground project plan without background, plugin or teams options.');
+        || plan.argv.some(arg => /^--(?:bg|plugin-dir)(?:=|$)/.test(arg))
+        // Both teams-off switches must be in the checked plan, in the checked shape of the argv tail (see factoryLaunchShapeOk).
+        || !factoryLaunchShapeOk(plan)) {
+        throw new Error('Claude factory launch requires its checked foreground project plan without background, plugin or teams options, and with agent teams turned off in its settings and environment.');
       }
       if (!isDeepStrictEqual(readClaudeFactoryMain(plan.workspace), plan.nativeFactoryMain)) throw new Error('Claude factory installed closure changed after planning; resolve and plan again.');
     }
     const { spawn } = await import('node:child_process');
+    const env: Record<string, string | undefined> = { ...process.env };
+    // Windows environment names are case-insensitive: for the factory, no other spelling of the teams variable may survive from the parent next to the plan's `0`.
+    if (factorySession) for (const key of Object.keys(env)) if (key.toUpperCase() === FACTORY_TEAMS_ENV) delete env[key];
     const child = spawn(plan.executable, plan.argv, {
       cwd: plan.workspace,
       stdio: 'inherit',
       shell: false,
-      env: { ...process.env, ...plan.env },
+      env: { ...env, ...plan.env },
     });
 
     await new Promise<void>((resolve, reject) => {

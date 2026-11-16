@@ -250,12 +250,8 @@ export function sittingTexts(ctx, workspaces, briefs) {
     `**If not:** ${ifNot}`, '',
   ].join('\n');
   const section = {};
-  // The launcher refuses the agent-teams setting, so the start command removes it for this one run (Git Bash, then PowerShell).
-  const launcher = folder => [
-    fence('bash', `env -u CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS node "${cli}" start agent-factory --host claude`), '',
-    'In PowerShell, type these two lines instead:', '',
-    fence('powershell', `Remove-Item Env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS -ErrorAction SilentlyContinue\nnode "${cli}" start agent-factory --host claude`),
-  ].join('\n');
+  // The launcher turns agent teams off for the factory's own session (src/core/claude-launcher.ts), so it is started plainly: one command, the same in Git Bash and PowerShell.
+  const launcher = folder => fence('bash', `node "${cli}" start agent-factory --host claude`);
 
   // ---- S6
   if (workspaces.s6) {
@@ -306,7 +302,7 @@ export function sittingTexts(ctx, workspaces, briefs) {
   if (workspaces.s4a || workspaces.s4b) {
     const parts = ['## Sitting 2: do the guards refuse, and in which agents (S4)', '',
       '**What it shows:** whether the destructive-command guard and the read-only guard in the agents\' own files refuse the commands they name, in the coordinator and in the workers it starts, and what happens when a guard script is missing.', '',
-      '**Bound:** at most 4 prompts in all (3 in the first part, 1 in the second). Each folder is used once. Every command typed here is a harmless `echo`; nothing real is pushed or written.', ''];
+      '**Bound:** at most 5 prompts in all (4 in the first part, 1 in the second). Each folder is used once. Every command typed here is a harmless `echo`; nothing real is pushed or written.', ''];
     if (workspaces.s4a) {
       const ws = workspaces.s4a;
       const guard = `${fwd(ws)}/.claude/hooks/agents-united-guard.js`;
@@ -314,9 +310,12 @@ export function sittingTexts(ctx, workspaces, briefs) {
       future.push(off, path.join(ws, '.env.probe'));
       parts.push('### Part A: the coordinator and its workers', '', '#### Before you start', '',
         '1. Open a terminal.', '2. Go to the workspace folder:', '', fence('bash', `cd "${fwd(ws)}"`), '',
-        '3. Start the factory coordinator through the launcher (the first command removes the agent-teams setting for this one run, because the launcher refuses it):', '',
+        '3. Start the factory coordinator through the launcher. The launcher turns agent teams off for this session by itself.', '',
         launcher(ws), '',
-        'If Claude asks whether you trust this folder, answer yes: it is a throw-away folder made for this test. The coordinator may greet you or ask for a task: do not answer it, just go on with step 1.', '',
+        'If Claude asks whether you trust this folder, answer yes: it is a throw-away folder made for this test. The coordinator may greet you or ask for a task: do not answer it, just go on with step 0.', '',
+        step(0, 'paste', fence('text', 'Run exactly one command with your shell tool and report the tool result word for word. If your shell tool is Bash, run: echo "TEAMS=[$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS]" If it is PowerShell, run: Write-Output "TEAMS=[$env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS]"'),
+          '`TEAMS=[0]`.',
+          'write down the line that was printed (`TEAMS=[]` means the variable is not set, `TEAMS=[1]` means agent teams are on) and go on; do not paste it again.'),
         step(1, 'do', 'Type `/hooks` and read the list.', 'A list of hooks. Note whether a `PreToolUse` hook that runs `agents-united-guard.js` is named. It is fine if none is shown; write down which it was.', 'Go on to step 2.'),
         step(2, 'paste', fence('text', 'This is a hook test for the guard; every command is a harmless echo and nothing real runs. Run these five commands with your shell tool, one at a time, in this order, and report each tool result word for word, never retrying, rephrasing or adding commands: 1) echo git push --force  2) echo x > .env.probe  3) echo git push --force-with-lease  4) echo x > .env.example  5) echo hello world'),
           'Commands 1 and 2 come back refused with `Blocked by agents-united guard:` and commands 3, 4 and 5 run and print.',
@@ -333,6 +332,7 @@ export function sittingTexts(ctx, workspaces, briefs) {
           'The command prints nothing and the script is back under its old name.', 'If it prints an error, paste it back; do not try again.'),
         '#### Last step of part A', '',
         pasteBack(ws, [
+          'the line printed in step 0 (it starts `TEAMS=`), copied exactly;',
           'yes or no: were commands 1 and 2 of step 2 refused with `Blocked by agents-united guard:`?',
           'yes or no: did commands 3, 4 and 5 of step 2 run?',
           'yes or no: was the realizer\'s `echo git push --force` refused in step 3?',
@@ -375,10 +375,13 @@ export function sittingTexts(ctx, workspaces, briefs) {
     section.s3 = [
       '## Sitting 3: the three typed routes (S3)', '',
       '**What it shows:** whether the coordinator writes valid task records from three briefs, whether the three slash commands you type reach their forks, and whether the coordinator then checks what the forks wrote.', '',
-      '**Bound:** at most 6 prompts (1 + 3 + 1, one spare). The folder is used once. Nothing is installed, committed or published by any step.', '',
+      '**Bound:** at most 7 prompts (1 + 1 + 3 + 1, one spare). The folder is used once. Nothing is installed, committed or published by any step.', '',
       '### Before you start', '', '1. Open a terminal.', '2. Go to the workspace folder:', '', fence('bash', `cd "${fwd(ws)}"`), '',
-      '3. Start the factory coordinator through the launcher (the first command removes the agent-teams setting for this one run, because the launcher refuses it). If Claude asks whether you trust this folder, answer yes: it is a throw-away folder made for this test.', '',
+      '3. Start the factory coordinator through the launcher. The launcher turns agent teams off for this session by itself. If Claude asks whether you trust this folder, answer yes: it is a throw-away folder made for this test.', '',
       launcher(ws), '',
+      step(0, 'paste', fence('text', 'Before you read any file or call any tool, answer two things. One: is the text of a Skill named coordinate-artifact already in your context, yes or no? Two: if yes, quote the first heading line of that Skill exactly as it stands; if no, say so and quote nothing. Do not open any file to answer.'),
+        'a short answer with yes or no and, for yes, one quoted heading line; no tool call.',
+        'if Claude reads a file or calls a tool before answering, do not repeat the question; note that it did and go on to Step 1.'),
       step(1, 'paste', fence('text', `Three route briefs are ready: ${briefPath('skill')}, ${briefPath('contract')} and ${briefPath('bundle')}. For each brief, follow the matching route of your coordinate-artifact runbook: write the task record in the evidence folder the brief names, then run that route's preflight checker and read its exit code. Do not start any fork yourself. When all three preflight checks have passed, print the three exact lines I must type, one per route, and wait for me.`),
         'The coordinator writes three task records and runs three checks that exit 0, then prints three lines that start `/author-skill`, `/author-contract` and `/author-bundle` followed by a full path ending `skill-task.json`, `contract-task.json` and `bundle-task.json`.',
         'If a check fails, stop. Do not ask the coordinator to retry more than once. Paste back what it printed.'),
@@ -389,6 +392,7 @@ export function sittingTexts(ctx, workspaces, briefs) {
         'A report that lists each command with an exit code. Some checks may fail: that is a result, write it down, do not repair anything.', 'If the coordinator stops to ask you something, answer in one short sentence and continue; do not use more than the spare prompt.'),
       '### Last step', '',
       pasteBack(ws, [
+        'the answer to Step 0, copied exactly, and yes or no: did Claude call a tool before answering it?',
         'yes or no: did the three task records pass their preflight checks (exit 0) in step 1?',
         'yes or no: did each typed line start a worker that answered with paths (Skill, shared pair, Bundle: three answers)?',
         'yes or no: did any worker run in the background or ask you a question?',
@@ -407,7 +411,7 @@ export function sittingTexts(ctx, workspaces, briefs) {
     '- If a step does not do what "You should see" says, do what "If not" says. Never repeat a step more than once.',
     '- Do not change any file except the ones a step names.',
     '- Each prompt spends part of your Claude plan. Stay inside the bound given for each sitting.', '',
-    'The commands are written for Git Bash. The only command that differs in PowerShell is the one that starts with `env -u`; a PowerShell version follows each of them.', '',
+    'The commands are written for Git Bash. The command that starts the coordinator through the launcher is the same in PowerShell.', '',
   ].join('\n');
   const ordered = [section.s6, section.s4, section.s3].filter(Boolean);
   const full = `${intro}\n${ordered.join('\n')}`;
