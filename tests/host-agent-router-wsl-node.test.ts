@@ -44,7 +44,9 @@ function findBash(): string | null {
     for (const r of roots) for (const rel of ['Git\\bin\\bash.exe', 'Git\\usr\\bin\\bash.exe']) if (fs.existsSync(path.join(r, rel))) return path.join(r, rel);
     return null;
   }
-  return spawnSync('bash', ['-c', 'exit 0']).status === 0 ? 'bash' : null;
+  // An absolute path: the child runs with a PATH of temp folders only, and a bare name is looked up on the child's PATH.
+  const cands = ['/bin/bash', '/usr/bin/bash', ...(process.env.PATH ?? '').split(path.delimiter).filter(Boolean).map(d => path.join(d, 'bash'))];
+  return cands.find(c => fs.existsSync(c) && spawnSync(c, ['-c', 'exit 0']).status === 0) ?? null;
 }
 const BASH = findBash();
 /** A path as bash sees it: Git Bash reads C:\x as /c/x. */
@@ -71,6 +73,7 @@ function runLine(line: string, home: string, pathDirs: string[] = []) {
   const env: Record<string, string> = { PATH: [bin, ...pathDirs.map(toBash)].join(WIN ? ';' : ':'), HOME: home };
   if (WIN) env.SYSTEMROOT = process.env.SYSTEMROOT ?? 'C:\\Windows';
   const r = spawnSync(BASH!, ['-c', line, ...ARGS], { env, encoding: 'utf8' });
+  if (r.error || typeof r.stdout !== 'string') throw new Error(`could not run ${BASH}: ${r.error?.message ?? 'no output'}`);
   return { status: r.status, out: r.stdout.replace(/\r/g, '').split('\n').filter(Boolean), err: r.stderr.replace(/\r/g, '') };
 }
 function nvmHome(label: string, noise = false): { home: string; bin: string } {
