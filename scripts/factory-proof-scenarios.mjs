@@ -81,14 +81,14 @@ function skillBrief(ctx, folder) {
   const { roots, installedRoot, common } = routeBase(ctx, folder, 'skill', { draftName: name });
   const inst = rel => path.join(installedRoot, ...rel.split('/'));
   const corpus = pinOf(path.join(ctx.checkout, 'registry', 'quality', 'skill-boilerplate-corpus.txt'));
-  const files = ['SKILL.md', 'examples/note.md'];
+  const files = ['SKILL.md', 'examples/note.md', 'evals/evals.json'];
   const brief = {
     ...common, kind: 'factory-proof-s3-skill-brief', id: name,
     objective: 'Draft one small original Skill that tells an assistant how to check that a short plain-text note has a one-line title, a date line and a next step.',
     fixedValues: [{ name: 'skill-name', value: name }],
     constraints: ['No installation, publication or live invocation.', 'Original text only; no copied material.'],
     acceptance: [{ id: 'task-fit', description: 'The Skill names the three checks and gives one worked example.' }],
-    policy: 'agents-united-original',
+    policy: 'private-owner',
     draft: { mode: 'create', allowedPaths: files, roles: files.map(file => ({ path: file, role: file === 'SKILL.md' ? 'subject' : 'support' })), baseline: [] },
     provenance: { disposition: 'original', owner: 'Proof Fixture', version: '1.0.0', license: 'MIT' },
     loading: {
@@ -394,7 +394,7 @@ export function sittingTexts(ctx, workspaces, briefs) {
       step(2, 'paste', fence('text', lines.skill), 'A separate worker starts, writes the Skill draft, and answers with the paths it wrote. It runs in the foreground: you wait for it.', 'If the line is not exactly the one the coordinator printed, use the coordinator\'s line instead. If nothing starts, say so and go on to step 3.'),
       step(3, 'paste', fence('text', lines.contract), 'The same kind of answer for the shared pair.', 'As in step 2.'),
       step(4, 'paste', fence('text', lines.bundle), 'The same kind of answer for the Bundle proposal.', 'As in step 2.'),
-      step(5, 'paste', fence('text', 'All three forks have returned. For each route, import the return: run the postflight checker with the task and the return, then the route\'s own check (skill-check with the policy agents-united-original and the corpus pinned in the brief, contract-check, bundle-check), and save every output with its exit code in the evidence folder. For the Skill and the shared pair, start the independent evaluator in the foreground. Do not start an evaluator for the Bundle. Report every command with its exit code, and say what you could not do.'),
+      step(5, 'paste', fence('text', 'All three forks have returned. For each route, import the return: run the postflight checker with the task and the return, then the route\'s own check (skill-check with the policy private-owner and the corpus pinned in the brief, contract-check, bundle-check), and save every output with its exit code in the evidence folder. For the Skill and the shared pair, start the independent evaluator in the foreground. Do not start an evaluator for the Bundle. Report every command with its exit code, and say what you could not do.'),
         'A report that lists each command with an exit code. Some checks may fail: that is a result, write it down, do not repair anything.', 'If the coordinator stops to ask you something, answer in one short sentence and continue; do not use more than the spare prompt.'),
       '### Last step', '',
       pasteBack(ws, [

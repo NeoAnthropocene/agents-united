@@ -39,5 +39,5 @@ Anti-patterns: importing every host's manual into the entry; copying an upstream
 - Entry, support files, links and metadata concern the final version and the actual intended job.
 - Appropriate compact-layout, portability, licence and frozen-corpus checks passed, or the blocked check and consequence are named.
 - Baseline comparison shows only authorized edits; the final report names exact hashes and raw evidence.
-- Eval fixtures remain maintainer-only; no paid run or behavioral improvement is implied by preparing them.
+- The draft carries `evals/evals.json` in the [quality](references/quality.md) format; no paid run or behavioral improvement is implied by preparing it.
 - Hand-off includes remaining review and binding work; no automatic install, commit, push or publication occurred.

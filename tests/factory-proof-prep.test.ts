@@ -11,6 +11,7 @@ import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { FLOOR_END, FLOOR_START, renderFloor } from '../src/core/native-floor.js';
 import { getPath, git, gitBytes, inside, makeMiniCheckout, runNode, sha256, stripAnsi, walkFolder } from './helpers/proof-prep.js';
 import type { Json } from './helpers/proof-prep.js';
+import { canonical, digest } from './helpers/skill-task.js';
 
 const checkout = path.resolve('.');
 const cli = path.join(checkout, 'dist', 'cli.js');
@@ -792,6 +793,109 @@ describe('S3 is solvable offline', () => {
     const post = runNode([checkerOf('bundle'), '--job', file, '--result', path.join(brief.roots.producer, 'bundle-return.json')], { cwd: workRoot });
     expect(post.status, post.stdout + post.stderr).toBe(0);
     expect(JSON.parse(post.stdout.trim().split(/\r?\n/).pop()!)).toMatchObject({ phase: 'postflight', returnStatus: 'draft' });
+    tidy();
+  }, TIMEOUT);
+
+  /**
+   * The Skill route as the brief describes it, run offline the way a compliant fork would: the real installed draft.mjs writes the
+   * files that references/quality.md names, the real installed checker checks task and return, and the built CLI runs skill-check
+   * with the brief's policy and corpus. No Host starts.
+   */
+  const runSkillRoute = (withEvals: boolean): { pre: any; post: any; skillCheck: any; draft: string; policy: string } => {
+    tidy();
+    const { file, task, brief } = writeTask('skill');
+    const pre = runNode([checkerOf('skill'), '--job', file], { cwd: workRoot });
+    expect(pre.status, pre.stdout + pre.stderr).toBe(0);
+    const pin = (target: string): Json => { const bytes = fs.readFileSync(target); return { path: target, bytes: bytes.length, sha256: sha256(bytes) }; };
+    const entry = [
+      '---', `name: ${brief.id}`,
+      'description: "Use when a short plain-text note needs a check; trigger phrases: check this note, review my note format. Skip long documents and anything that is not a note."',
+      'metadata:', '  author: Proof Fixture', '  version: "1.0.0"', '  license: MIT', '---', '',
+      '# Note format check', '',
+      '## Overview & Purpose', 'Tell a writer whether a short plain-text note has a one-line title, a date line and a next step.', '',
+      '## Execution Triggers', 'A user pastes a short note and asks whether it is complete.', '',
+      '## Input/Output Requirements', 'Input is the note text. Output is one line per check, each marked ok or missing, plus the evidence line quoted from the note.', '',
+      '## Step-by-Step Runbook',
+      '1. Confirm the first line is a one-line title.',
+      '2. Confirm a date line follows the title.',
+      '3. Confirm the note ends with one next step.',
+      '4. Hand off to the writer with the missing parts named.', '',
+      '## Code & Config Exemplars', 'Read [the worked example](examples/note.md) before checking a note.', '',
+      '## Edge Cases & Error Recovery', 'An empty note has no title: say so and stop.',
+      'Anti-patterns: rewriting the note for the writer; accepting a date that sits inside a paragraph.', '',
+      '## Verification Checklist', '- Each of the three checks is reported once.', '- The evidence line is quoted, not paraphrased.', '',
+    ].join('\n');
+    const evals = {
+      skill_name: brief.id,
+      evals: [
+        { id: 1, prompt: 'Here is my note: "Standup 12 May. Next step: email Dana." Does it have a title, a date line and a next step?', expected_output: 'The reply names the three checks, says the date line is misplaced or missing a proper line, and keeps the next step.' },
+        { id: 2, prompt: 'Check this note for me: a title line, then a date line, then two paragraphs, and no action at the end.', expected_output: 'The reply finds the title and the date line, and reports that the note has no next step at the end.' },
+      ],
+    };
+    const changes: Record<string, string> = {
+      'SKILL.md': entry,
+      'examples/note.md': '# Worked example\n\nNote: "Budget sync" / "2026-05-12" / "Next step: send the figures to Dana."\nResult: title ok, date ok, next step ok.\n',
+      ...(withEvals ? { 'evals/evals.json': `${JSON.stringify(evals, null, 2)}\n` } : {}),
+    };
+    const job = { ...task.draftJobTemplate, changes };
+    const producer: string = brief.roots.producer;
+    const jobFile = path.join(producer, 'draft-job.json');
+    fs.writeFileSync(jobFile, JSON.stringify(job, null, 2));
+    const helper = runNode([brief.loading.requiredFiles.find((item: string) => item.endsWith('draft.mjs'))!, jobFile], { cwd: workRoot });
+    expect(helper.status, helper.stdout + helper.stderr).toBe(0);
+    const stdoutFile = path.join(producer, 'draft.stdout.json'), stderrFile = path.join(producer, 'draft.stderr.txt'), reportFile = path.join(producer, 'report.md');
+    fs.writeFileSync(stdoutFile, helper.stdout);
+    fs.writeFileSync(stderrFile, helper.stderr);
+    fs.writeFileSync(reportFile, 'Fork-authored report (synthetic; the checker only pins it).\n');
+    const report = JSON.parse(helper.stdout) as Json;
+    const inventory: Json[] = [];
+    const visit = (dir: string, prefix: string): void => {
+      for (const name of fs.readdirSync(dir).sort()) {
+        const full = path.join(dir, name);
+        if (fs.statSync(full).isDirectory()) visit(full, `${prefix}${name}/`);
+        else { const bytes = fs.readFileSync(full); inventory.push({ path: `${prefix}${name}`, bytes: bytes.length, sha256: sha256(bytes) }); }
+      }
+    };
+    visit(brief.roots.draft, '');
+    const returnFile = path.join(producer, 'skill-return.json');
+    written.push(jobFile, stdoutFile, stderrFile, reportFile, returnFile);
+    fs.writeFileSync(returnFile, JSON.stringify({
+      version: 1, kind: 'skill-return', taskId: task.id, taskDigest: digest(canonical(task)), status: 'draft',
+      helper: { draftJob: pin(jobFile), stdout: pin(stdoutFile), stderr: pin(stderrFile), exitCode: 0, runs: 1 },
+      inventory, changed: report.diff.map((item: Json) => ({ path: item.path, operation: 'create' })), report: pin(reportFile),
+      claimedChecks: [], openItems: [], unverified: ['Everything the fork claims is unverified until the caller checks it.'], externalActions: [],
+    }, null, 2));
+    const post = runNode([checkerOf('skill'), '--job', file, '--result', returnFile], { cwd: workRoot });
+    // The brief pins the checkout's corpus file; a CRLF working tree gets the same text with LF line ends, as the reviewed corpus is LF.
+    let corpus: string = brief.pins.corpus.path;
+    if (fs.readFileSync(corpus, 'utf8').includes('\r')) {
+      corpus = path.join(workRoot, 'corpus-lf.txt');
+      fs.writeFileSync(corpus, fs.readFileSync(brief.pins.corpus.path, 'utf8').replace(/\r\n/g, '\n'));
+    }
+    const skillCheck = runNode([cli, 'skill-check', '--artifact', brief.roots.draft, '--corpus', corpus, '--policy', brief.policy], { cwd: workRoot });
+    return { pre, post, skillCheck, draft: brief.roots.draft, policy: brief.policy };
+  };
+
+  it('accepts the Skill draft of the brief when it carries evals/evals.json: postflight and skill-check exit 0 under the brief\'s policy', () => {
+    const brief = briefOf('skill');
+    expect(brief.policy).toBe('private-owner');
+    expect(brief.provenance.owner).toBe('Proof Fixture');
+    expect(brief.draft.allowedPaths).toContain('evals/evals.json');
+    expect(brief.draft.roles.map((role: Json) => role.path)).toContain('evals/evals.json');
+    const run = runSkillRoute(true);
+    expect(run.post.status, run.post.stdout + run.post.stderr).toBe(0);
+    expect(JSON.parse(run.post.stdout.trim().split(/\r?\n/).pop()!)).toMatchObject({ phase: 'postflight', acceptedDraft: false });
+    expect(fs.existsSync(path.join(run.draft, 'evals', 'evals.json'))).toBe(true);
+    expect(run.skillCheck.status, run.skillCheck.stdout + run.skillCheck.stderr).toBe(0);
+    tidy();
+  }, TIMEOUT);
+
+  it('fails skill-check with the layout gate\'s message when the same draft lacks evals/evals.json, though postflight still accepts the bytes', () => {
+    const run = runSkillRoute(false);
+    expect(run.post.status, run.post.stdout + run.post.stderr).toBe(0);
+    expect(fs.existsSync(path.join(run.draft, 'evals'))).toBe(false);
+    expect(run.skillCheck.status, run.skillCheck.stdout + run.skillCheck.stderr).toBe(1);
+    expect(run.skillCheck.stdout + run.skillCheck.stderr).toContain('evals/evals.json is missing');
     tidy();
   }, TIMEOUT);
 
