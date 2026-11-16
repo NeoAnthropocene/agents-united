@@ -5,17 +5,14 @@
     "actual file inventories, lengths, hashes, complete diffs and preserved baseline",
     "separate actual caller checks, raw logs, actual exits and executors/revisions",
     "observed worker mechanism and independent evaluator findings at the current digest",
-    "repair authorization/count/linkage and aggregate budget consumed",
+    "repair authorization/count/linkage and per-job budgets consumed",
     "source rights/notices/holds, precise required and optional gaps, enforcement limits and next action"
   ],
   "selfReference": "After the saved report is final, put its own final length/hash/text diff only in the ordinary outer handback and caller evidence.",
   "limits": {
     "automaticRepairsDefault": 0,
     "authorizedRepairsMaximum": 1,
-    "workerTurnsMaximum": 4,
-    "validationProcessesMaximum": 24,
-    "secondsMaximum": 1800,
-    "rawOutputBytesMaximum": 8388608
+    "workerTurnsMaximum": 4
   },
   "status": {
     "quality": "pending",

@@ -331,14 +331,14 @@ describe('S1 is solvable offline', () => {
     }
     for (const kind of ['guide', 'snapshot', 'observation', 'profile', 'tool-policy', 'loading', 'guard']) expect((b.inputs as Json[]).some(input => input.kind === kind), kind).toBe(true);
     expect(Number.parseInt(String(b.validation.node.version).replace(/^v/, ''), 10)).toBeGreaterThanOrEqual(24);
-    // The next paragraph of the reference: fixed absolute roots, the repair count and the aggregate budget.
+    // The next paragraph of the reference: fixed absolute roots, the repair count and the missing aggregate budget.
     expect(reference).toMatch(/Require fixed absolute draftRoot\/evidenceRoot/);
     for (const root of [b.roots.draft, b.roots.evidence]) expect(path.isAbsolute(root)).toBe(true);
     expect(inside(b.roots.draft, b.roots.evidence) || inside(b.roots.evidence, b.roots.draft)).toBe(false);
     expect(reference).toMatch(/repair count \(default zero, maximum one\)/);
     expect(b.repair.maximum).toBe(1);
-    expect(reference).toMatch(/aggregate process\/time\/output budget/);
-    expect(b.aggregateBudget).toMatchObject({ maxProcesses: 24, maxSeconds: 1800, maxOutputBytes: 8388608 });
+    expect(reference).toMatch(/a journey has no aggregate process, time or output budget/);
+    expect(b.limits).toEqual({ maxSequentialWorkerTurns: 4 });
     expect(b.intent).toBe('upstream');
     expect(b.operation).toBe('create');
   });

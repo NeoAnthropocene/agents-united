@@ -23,7 +23,7 @@ export const EVIDENCE: Record<string, RegExp> = {
   'Read the complete fixed brief before dispatch.': /Read the complete fixed brief before dispatch\./,
   'Verify actual final bytes against caller-held digests and baselines.': /Verify actual final bytes against caller-held digests and baselines\./,
   'Require independent review at the current candidate digest.': /Require independent review at the current candidate digest\./,
-  'Repair only within the accepted count, scope and aggregate budget.': /Repair only within the accepted count, scope and aggregate budget\./,
+  'Repair only within the accepted count, scope and per-job budgets.': /Repair only within the accepted count, scope and per-job budgets\./,
   'Preserve previous revision evidence and invalidate stale acceptance.': /Preserve previous revision evidence and invalidate stale acceptance\./,
   'Report unperformed work as unverified.': /Report unperformed work as unverified\./,
 

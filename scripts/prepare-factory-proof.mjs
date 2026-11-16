@@ -276,7 +276,7 @@ function buildS1(ctx, folder) {
       notAuthorized: ['a change to the shared pair, the objective, the acceptance or the allowed paths', 'a second repair', 'a repair for any reason other than a raised finding'],
       dispatchScope: 'At most one further factory-realizer turn and one further factory-evaluator turn inside this one headless session; no other session.',
     },
-    aggregateBudget: { maxProcesses: 24, maxSeconds: 1800, maxOutputBytes: 8388608, maxSequentialWorkerTurns: 4 },
+    limits: { maxSequentialWorkerTurns: 4 },
     jobBudget: { maxChecks: 6, maxSeconds: 600, maxLogBytes: 1048576, hostSessions: false, modelCalls: false, providerCalls: false, maxUsd: 0, maxPrompts: 0 },
     upstream: {
       template: { path: template, sha256: sha256(fs.readFileSync(template)) }, guide: { path: contributionGuide, sha256: sha256(fs.readFileSync(contributionGuide)) },

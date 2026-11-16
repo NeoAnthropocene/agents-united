@@ -61,9 +61,6 @@
     "preserved": [],
     "budget": {
       "workerTurnsMaximum": 4,
-      "validationProcessesMaximum": 24,
-      "secondsMaximum": 1800,
-      "rawOutputBytesMaximum": 8388608,
       "candidateFilesMaximum": 32,
       "candidateBytesMaximum": 1048576,
       "fileBytesMaximum": 262144
@@ -124,7 +121,7 @@
           "text": "Preserve this caller note.\n"
         }
       ],
-      "exhaustion": "At most one realizer and one independent evaluator per revision; exhaust the separately accepted remaining aggregate budget after r1, never reset counters.",
+      "exhaustion": "At most one realizer and one independent evaluator per revision; exhaust the separately accepted remaining per-job budgets after r1, never reset counters.",
       "expected": "New update job/digest/baseline and independent review, immutable r0/r1 and preserved note; no second repair."
     }
   }

@@ -16,7 +16,7 @@ Coordinate the current one-Claude-agent journey using existing realizer, evaluat
 Accept a complete fixed create/update brief and already supplied shared pair. Return separate author-contract work for a missing pair. Preserve current supported target/subject kinds and original fixed semantics; no extra adapter is implied. One Skill draft follows [skill authoring](references/skill-authoring.md), a shared definition-and-contract draft [contract authoring](references/contract-authoring.md) and a Bundle proposal [bundle authoring](references/bundle-authoring.md); the maintainer types `/author-skill`, `/author-contract` or `/author-bundle <task path>`. A host-update sync plan is a separate read-only route (step 8).
 
 ## Input/Output Requirements
-Read [the fixed brief](references/job.md) and keep its digest outside worker reports. Require actual installed main/worker closure, selected validation checkout/HEAD/registry and Node pins, source/target evidence, immutable baseline, allowed changes, provenance, acceptance and aggregate budget. Use [the report guide](assets/report.json) as audit guidance, not an executable schema.
+Read [the fixed brief](references/job.md) and keep its digest outside worker reports. Require actual installed main/worker closure, selected validation checkout/HEAD/registry and Node pins, source/target evidence, immutable baseline, allowed changes, provenance, acceptance and per-job budgets. Use [the report guide](assets/report.json) as audit guidance, not an executable schema.
 Return candidate/evidence or rework with original/revision digests, complete paths/bytes/hashes/diffs, actual check commands/raw output/exits, invocation observations, independent findings, repair linkage and open items.
 
 ## Step-by-Step Runbook

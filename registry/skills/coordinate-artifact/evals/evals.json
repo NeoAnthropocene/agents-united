@@ -63,18 +63,18 @@
       "id": 4,
       "name": "One authorized update, then exhaustion",
       "fixture": "fixtures.json#case-4",
-      "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once the stated aggregate budget is exhausted return rework and preserve both revisions; no second repair is authorized.",
+      "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once a stated per-job budget is exhausted return rework and preserve both revisions; no second repair is authorized.",
       "expected_output": "Uses the current-candidate update baseline and new job/candidate/review digests, preserves the note and r0 evidence, invalidates dependent acceptance, and stops at one repair or budget exhaustion.",
       "status": "prepared-not-run",
       "binding": "Complete setup.md using common and selected case; identical actual job bytes/digests, prompt, baseline and budgets in both conditions.",
       "runs": [
         {
           "condition": "with-skill",
-          "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once the stated aggregate budget is exhausted return rework and preserve both revisions; no second repair is authorized."
+          "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once a stated per-job budget is exhausted return rework and preserve both revisions; no second repair is authorized."
         },
         {
           "condition": "without-skill",
-          "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once the stated aggregate budget is exhausted return rework and preserve both revisions; no second repair is authorized."
+          "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once a stated per-job budget is exhausted return rework and preserve both revisions; no second repair is authorized."
         }
       ]
     },
