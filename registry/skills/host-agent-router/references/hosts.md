@@ -17,7 +17,7 @@ and attributed there. Nothing below starts a model: every limit readout is a loc
 
 | Host | Command shape | Prompt via |
 |---|---|---|
-| Claude | `claude -p --model <id> --effort <e> --permission-mode plan\|acceptEdits [--allowedTools Bash(<cmd>:*)... --disallowedTools Bash(<cmd>:*)...] --output-format text` | stdin |
+| Claude | `claude -p --model <id> --effort <e> --permission-mode plan\|acceptEdits [--allowedTools Bash(<cmd>:*)... --disallowedTools Bash(<cmd>:*)...] [--max-budget-usd <n>] --output-format text` | stdin |
 | Codex | `codex exec -m <slug> -c model_reasoning_effort="<e>" -s read-only\|workspace-write --skip-git-repo-check --color never -C <cwd> -` | stdin |
 | Antigravity | `agy -p <prompt> --model <slug> --mode plan\|accept-edits [--sandbox --settings '{"permissions":{"allow":["command(<exact line>)"]}}'] --output-format json` (the effort is part of the slug) | argv |
 | Cline | `cline [--config <isolated dir with the hook> --data-dir <real data dir>] -P cline-pass -m <id> --thinking <e> --json [--plan] -c <cwd> -- <prompt>` | argv |
@@ -95,6 +95,10 @@ Inside WSL the line finds `node` in this order, and the first hit runs the stage
 4. File tests, no globbing: `$HOME/.volta/bin/node`, `$HOME/.local/share/fnm/aliases/default/bin/node`, `$HOME/.asdf/shims/node`, `$HOME/.local/bin/node`.
 
 Nothing found: the line prints `node: not found` and exits 127, and `plan`/`run` show the skip reason `WSL has no node (the config key "wslNode" can name it)`; install node there, or set `wslNode`. Once the script runs inside WSL it looks for a Host's executable on PATH, then in the folder of its own node (where the npm globals of an nvm node, such as `cline`, live) and in `~/.local/bin`, and it appends its node's folder to the PATH of every Host it starts. Windows resolution is unchanged.
+
+## Budget cap
+
+`run --max-budget-usd N` (or the config key `maxBudgetUsd`, a number or `null`; the flag wins) asks for a spend cap of N US dollars, a positive amount with at most two decimals. Only Claude has a flag for it: the router adds `--max-budget-usd N` directly before `--output-format`, and Claude's own help says it is the "Maximum dollar amount to spend on API calls (only works with --print)" (read from `claude --help` on 2026-11-16; the library's `host-library/claude/changelog.md` mentions the flag in several fixes, for example line 1400, and has no page that describes it). The help of `codex exec`, `cline` and `agy` shows no budget or spend flag, and the library has no page on one for them (its Antigravity changelog names a `BudgetConfig` in the SDK, which is not a flag of the `agy` command), so nothing is added to their command lines. Every attempt in the result and every `would_try` entry of `--dry-run` then carries `budget`: `{ "usd": N, "applied": true, "flag": "--max-budget-usd" }` for Claude, `{ "usd": N, "applied": false, "reason": "<host> has no budget flag; the run is bounded by --timeout only" }` for the others, and a run that ended on such a host adds the note `no budget cap applied: <host> has no budget flag`. Without a cap there is no `budget` field at all. `--require-budget` (it needs a cap) skips the hosts without a flag with the reason `no budget flag (--require-budget)`; when nothing is left the run ends as "no usable host/side". A run on the other side carries the flag in the command line it sends with the payload; the far side adds nothing.
 
 ## Cline quota
 
