@@ -3,7 +3,7 @@ name: host-agent-router
 description: "Use when the user explicitly asks to run, delegate or fan out work on another agent CLI (Cline, Antigravity, Codex, Claude), or which host and side (Windows or WSL) has the most headroom; trigger phrases: host-agent-router, route this task, run this on another host, which host has the most limit, fan out across hosts, use my other CLIs. Skip it for work you can finish in this session, when nobody asked to use other hosts, and inside a routed worker."
 metadata:
   author: agents-united
-  version: 1.1.1
+  version: 1.1.2
   license: MIT
 ---
 

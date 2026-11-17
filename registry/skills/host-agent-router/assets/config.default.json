@@ -2,6 +2,8 @@
   "version": 1,
   "priority": ["cline", "antigravity", "codex", "claude"],
   "wslDistro": null,
+  "wslNode": null,
+  "maxBudgetUsd": null,
   "minHeadroomPct": 10,
   "tiePct": 2,
   "maxDepth": 1,

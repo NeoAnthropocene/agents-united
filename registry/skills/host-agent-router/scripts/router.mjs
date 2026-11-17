@@ -223,7 +223,45 @@ export function validateConfig(cfg, { home = os.homedir(), platform = process.pl
     const bad = configWorkerTempProblem(cfg.workerTemp, { home, platform });
     if (bad) errs.push(bad);
   }
+  if (cfg.maxBudgetUsd !== undefined && cfg.maxBudgetUsd !== null) {
+    const bad = typeof cfg.maxBudgetUsd === 'number' ? budgetProblem(cfg.maxBudgetUsd) : 'must be a positive number of US dollars with at most two decimals, or null';
+    if (bad) errs.push(`maxBudgetUsd ${bad}`);
+  }
+  if (cfg.wslNode !== undefined && cfg.wslNode !== null) {
+    const bad = configWslNodeProblem(cfg.wslNode);
+    if (bad) errs.push(bad);
+  }
   return errs;
+}
+
+/** The hosts whose CLI has a spend cap flag (read from their own help on 2026-11-16): today only Claude (`--max-budget-usd`). */
+const BUDGET_FLAG = { claude: '--max-budget-usd' };
+
+/** What is wrong with a budget cap (the flag's text or the config's number), or null: a positive amount with at most two decimals. */
+export function budgetProblem(value) {
+  const text = typeof value === 'number' ? (Number.isFinite(value) ? String(value) : '') : typeof value === 'string' ? value : '';
+  if (!/^\d+(\.\d{1,2})?$/.test(text) || !(Number(text) > 0)) return 'must be a positive number of US dollars with at most two decimals (for example 5 or 2.50)';
+  return null;
+}
+
+/** The `budget` field of an attempt or a dry-run entry for a host, or undefined when no cap was asked. */
+export function budgetOf(host, usd) {
+  if (usd === null || usd === undefined) return undefined;
+  if (BUDGET_FLAG[host]) return { usd, applied: true, flag: BUDGET_FLAG[host] };
+  return { usd, applied: false, reason: `${host} has no budget flag; the run is bounded by --timeout only` };
+}
+
+/** The payload for `local-exec` on the side that runs the host. The command line (the budget flag for Claude included) is built here and travels in `args`; the far side adds nothing. */
+export function execPayload(spec, { host, cwd, timeout, workerTemp }) {
+  return { host, args: spec.args, stdin: spec.stdin, env: spec.env, cwd, timeout, ...(workerTemp ? { workerTemp } : {}) };
+}
+
+/** What is wrong with a configured wslNode (the Linux path of node inside WSL), or null. */
+export function configWslNodeProblem(value) {
+  if (typeof value !== 'string' || !value.startsWith('/') || /[\u0000-\u001f\u007f\\]/.test(value)) {
+    return 'wslNode must be an absolute Linux path (a string that starts with /, with no control characters or backslashes)';
+  }
+  return null;
 }
 
 /**
@@ -396,7 +434,7 @@ export function loadConfig(env = process.env) {
 /** Why a side was skipped, with no file path in it (a path names the user): a WSL that has no node says only that. */
 export function skipNote(error) {
   const s = String(error?.message ?? error ?? '');
-  if (/wsl bridge returned no JSON/.test(s) && /node: (?:command )?not found/.test(s)) return 'WSL has no node';
+  if (/wsl bridge returned no JSON/.test(s) && /node: (?:command )?not found/.test(s)) return 'WSL has no node (the config key "wslNode" can name it)';
   return cleanNote(s);
 }
 
@@ -558,7 +596,8 @@ export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
   switch (host) {
     case 'claude': {
       const guard = ro ? [] : ['--allowedTools', ...allow.map(c => `Bash(${c}:*)`), '--disallowedTools', ...deny.map(c => `Bash(${c}:*)`)];
-      return { args: ['-p', '--model', t.model, '--effort', t.effort, '--permission-mode', ro ? 'plan' : 'acceptEdits', ...guard, '--output-format', 'text'], stdin: full, env, chars: full.length };
+      const cap = extra.maxBudgetUsd == null ? [] : [BUDGET_FLAG.claude, String(extra.maxBudgetUsd)];
+      return { args: ['-p', '--model', t.model, '--effort', t.effort, '--permission-mode', ro ? 'plan' : 'acceptEdits', ...guard, ...cap, '--output-format', 'text'], stdin: full, env, chars: full.length };
     }
     case 'codex': {
       const args = ['exec', '-m', t.model, '-c', `model_reasoning_effort="${t.effort}"`, '-s', ro ? 'read-only' : 'workspace-write', '--skip-git-repo-check', '--color', 'never'];
@@ -791,7 +830,7 @@ export function runCmd(argv, { timeout = 60_000, input = '', cwd, env } = {}) {
   return new Promise(resolve => {
     let child;
     try {
-      child = spawn(argv[0], argv.slice(1), { cwd, env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+      child = spawn(argv[0], argv.slice(1), { cwd, env: envWithNodeDir(env ?? process.env), windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (e) {
       resolve({ rc: 126, stdout: '', stderr: String(e) });
       return;
@@ -813,10 +852,27 @@ export function runCmd(argv, { timeout = 60_000, input = '', cwd, env } = {}) {
 
 const isFile = p => { try { return fs.statSync(p).isFile(); } catch { return false; } };
 
-export function which(name) {
+/**
+ * Where a program is looked for: PATH and, off Windows, the folder of the node that runs this script (the npm globals of an nvm, Volta
+ * or fnm node live beside it, and a WSL login shell does not put it on PATH) and ~/.local/bin. Windows resolution is PATH only.
+ */
+export function searchDirs({ pathVar = process.env.PATH || '', platform = process.platform, execPath = process.execPath, home = os.homedir() } = {}) {
+  const dirs = pathVar.split(path.delimiter).filter(Boolean);
+  return platform === 'win32' ? dirs : [...dirs, path.dirname(execPath), path.join(home, '.local', 'bin')];
+}
+
+/** `env` with the folder of the running node appended to PATH when it is missing (a host's script may start with `#!/usr/bin/env node`). Windows: unchanged. */
+export function envWithNodeDir(env = process.env, { platform = process.platform, execPath = process.execPath } = {}) {
+  if (platform === 'win32') return env;
+  const dir = path.dirname(execPath);
+  if ((env.PATH ?? '').split(path.delimiter).includes(dir)) return env;
+  return { ...env, PATH: [env.PATH, dir].filter(Boolean).join(path.delimiter) };
+}
+
+export function which(name, { dirs = searchDirs() } = {}) {
   const win = process.platform === 'win32';
   const exts = win ? (process.env.PATHEXT || '.EXE;.CMD;.BAT').split(';').filter(Boolean) : [''];
-  for (const dir of (process.env.PATH || '').split(path.delimiter)) {
+  for (const dir of dirs) {
     if (!dir) continue;
     for (const ext of exts) {
       const p = path.join(dir, win && name.toLowerCase().endsWith(ext.toLowerCase()) ? name : name + ext);
@@ -882,7 +938,7 @@ function codexAppServer(cmd, wanted, timeout = 30_000) {
     const responses = {};
     let child;
     try {
-      child = spawn(cmd[0], [...cmd.slice(1), 'app-server'], { stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
+      child = spawn(cmd[0], [...cmd.slice(1), 'app-server'], { env: envWithNodeDir(process.env), stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
     } catch {
       resolve(responses);
       return;
@@ -1275,6 +1331,32 @@ function findWindowsNode() {
   return node;
 }
 
+/** Per-user places a node can be, after the login PATH and nvm, checked by file test only (no globbing of the home folder). */
+export const WSL_NODE_PLACES = ['$HOME/.volta/bin/node', '$HOME/.local/share/fnm/aliases/default/bin/node', '$HOME/.asdf/shims/node', '$HOME/.local/bin/node'];
+
+/**
+ * The bash line that finds node inside WSL and runs the staged script with it (`$0` is the script, `$@` the rest). Order: the
+ * configured `wslNode`; `node` on the login PATH; nvm (`${NVM_DIR:-$HOME/.nvm}/nvm.sh`, silenced so it cannot print into the JSON line);
+ * WSL_NODE_PLACES. Nothing found: a message the skip note recognises, status 127. One line, no carriage return, no interactive shell.
+ */
+export function wslNodeLine(wslNode) {
+  const quoted = wslNode ? `'${wslNode.replace(/'/g, "'\\''")}'` : "''";
+  const places = WSL_NODE_PLACES.map(p => `"${p}"`).join(' ');
+  return [
+    `N=${quoted}`,
+    '[ -f "$N" ] && [ -x "$N" ] || N=$(command -v node 2>/dev/null)',
+    '[ -n "$N" ] || { D=${NVM_DIR:-$HOME/.nvm}; [ -s "$D/nvm.sh" ] && { . "$D/nvm.sh" >/dev/null 2>&1; N=$(command -v node 2>/dev/null); }; }',
+    `[ -n "$N" ] || for C in ${places}; do [ -f "$C" ] && [ -x "$C" ] && { N=$C; break; }; done`,
+    '[ -n "$N" ] || { echo "node: not found (not on the login PATH, not in nvm, not in the usual per-user folders)" >&2; exit 127; }',
+    'exec "$N" "$0" "$@"',
+  ].join('; ');
+}
+
+/** The argv that runs the staged script inside WSL from Windows. --exec hands argv over as is: with `--`, wsl.exe runs the line through the outer shell, which would expand $0 and $@ itself. */
+export function wslBridgeArgv({ distro, script, command, payloadFile, wslNode }) {
+  return ['wsl.exe', '-d', distro, '--exec', 'bash', '-lc', wslNodeLine(wslNode), script, command, '--payload', payloadFile];
+}
+
 /** Run a local-* command on the other side: stage this file and the payload in the Windows temp dir (visible to both), run, parse the JSON line. */
 async function crossCall(cfg, here, target, command, payload, timeoutMs) {
   const base = here === 'windows' ? os.tmpdir() : windowsTempFromWsl();
@@ -1288,8 +1370,7 @@ async function crossCall(cfg, here, target, command, payload, timeoutMs) {
     if (here === 'windows' && target === 'wsl') {
       const distro = wslDistro(cfg);
       if (!distro) throw new Error('no WSL distro found');
-      // --exec hands argv over as is. With `--`, wsl.exe runs the line through the outer shell, which would expand $0 and $@ itself.
-      argv = ['wsl.exe', '-d', distro, '--exec', 'bash', '-lc', 'exec node "$0" "$@"', winToWsl(script), command, '--payload', winToWsl(pfile)];
+      argv = wslBridgeArgv({ distro, script: winToWsl(script), command, payloadFile: winToWsl(pfile), wslNode: cfg.wslNode });
     } else if (here === 'wsl' && target === 'windows') {
       argv = [findWindowsNode(), wslToWin(script), command, '--payload', wslToWin(pfile)];
     } else {
@@ -1823,6 +1904,10 @@ async function cmdRun(opts, cfg) {
   if (!TIERS.includes(tier)) throw new UsageError(`--tier must be one of ${TIERS.join(', ')}`);
   const access = opts.access ?? cfg.defaultAccess ?? 'read-only';
   if (!ACCESS.includes(access)) throw new UsageError(`--access must be one of ${ACCESS.join(', ')} (there is no full-access mode)`);
+  // The spend cap: the flag wins over the config; --require-budget needs one. Checked before any status is read.
+  const budgetUsd = opts['max-budget-usd'] !== undefined ? Number(opts['max-budget-usd']) : (cfg.maxBudgetUsd ?? null);
+  const requireBudget = Boolean(opts['require-budget']);
+  if (requireBudget && budgetUsd === null) throw new UsageError('--require-budget needs a cap: pass --max-budget-usd N or set maxBudgetUsd in the config');
   const skills = resolveSkills(opts.skill); // a usage error here means no status was read and no host started
   const prompt = readPrompt(opts);
   const cwd = path.resolve(opts.cwd ?? process.cwd());
@@ -1831,10 +1916,15 @@ async function cmdRun(opts, cfg) {
   if (badCmd.length) throw new UsageError(badCmd.join('\n'));
   const allowCmd = [...new Set([...(opts['allow-cmd'] ?? []), ...readAllowCmdFile(opts['allow-cmd-file'])])];
   const { here, statuses } = await gather(cfg, opts, tier, only, opts.effort);
-  const plan = buildPlan(cfg, tier, statuses, here, only, access, opts.effort);
+  let plan = buildPlan(cfg, tier, statuses, here, only, access, opts.effort);
+  if (requireBudget) {
+    const kept = plan.candidates.filter(c => BUDGET_FLAG[c.host]);
+    const dropped = plan.candidates.filter(c => !BUDGET_FLAG[c.host]).map(c => ({ host: c.host, side: c.side, reason: 'no budget flag (--require-budget)' }));
+    plan = { ...plan, selected: kept[0] ?? null, candidates: kept, skipped: [...plan.skipped, ...dropped] };
+  }
   const cands = plan.candidates.filter(c => !opts['pin-side'] || c.side === opts['pin-side']);
   const attached = skills.map(({ name, chars }) => ({ name, chars }));
-  const specFor = (c, text, tcwd) => buildSpec(cfg, c.host, c, text, access, tcwd, tier, { allowCmd, skills });
+  const specFor = (c, text, tcwd) => buildSpec(cfg, c.host, c, text, access, tcwd, tier, { allowCmd, skills, maxBudgetUsd: budgetUsd });
   // The temp folder decision, shown by a dry run without creating anything; only for a side this process runs on (the other side decides it
   // with its own home folder and environment when the run starts).
   const tempNoteFor = (c, tcwd) => {
@@ -1866,7 +1956,7 @@ async function cmdRun(opts, cfg) {
       const skip = argvTooLong(spec, c.side);
       const tempNote = tempNoteFor(c, tcwd);
       if (tempNote) spec.notes = [...(spec.notes ?? []), tempNote];
-      return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}) };
+      return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}), ...(budgetUsd !== null ? { budget: budgetOf(c.host, budgetUsd) } : {}) };
     });
     // A dry run is where the length is cheap to find out: each attempt carries `skip` (the reason the real run would skip it).
     if (would_try.length && would_try.every(t => t.skip)) routerNotes.push('every listed attempt would be skipped: its command line is too long for the host (see skip on each); a real run would end with failure "too_long"');
@@ -1881,7 +1971,7 @@ async function cmdRun(opts, cfg) {
     const spec = specFor(c, prompt, tcwd);
     const tooLong = argvTooLong(spec, c.side);
     if (tooLong) { lengthSkips += 1; return { skipped: tooLong }; }
-    const payload = { host: c.host, args: spec.args, stdin: spec.stdin, env: spec.env, cwd: tcwd, timeout: timeoutFor(cfg, tier, opts.timeout), ...(access === 'edit' && c.host === 'antigravity' ? { workerTemp: { configured: cfg.workerTemp ?? null } } : {}) };
+    const payload = execPayload(spec, { host: c.host, cwd: tcwd, timeout: timeoutFor(cfg, tier, opts.timeout), workerTemp: access === 'edit' && c.host === 'antigravity' ? { configured: cfg.workerTemp ?? null } : null });
     try {
       return await callSide(cfg, here, c.side, 'local-exec', payload, payload.timeout * 1000 + 60_000);
     } catch (e) {
@@ -1889,6 +1979,7 @@ async function cmdRun(opts, cfg) {
     }
   };
   const { attempts, last, stopped, changed } = await runAttempts({ cands, access, cwd, tryOne });
+  if (budgetUsd !== null) for (const a of attempts) a.budget = budgetOf(a.host, budgetUsd);
   const verdict = last ? judgeRun(last[0].host, last[1]) : { ok: false, problem: null };
   const ok = verdict.ok;
   const env = { ok, tier, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, attempts, skipped: plan.skipped };
@@ -1906,6 +1997,7 @@ async function cmdRun(opts, cfg) {
   if (last) {
     const [c, res] = last;
     env.ran = ranOf(c);
+    if (budgetUsd !== null && !BUDGET_FLAG[c.host]) env.notes = [...(env.notes ?? []), `no budget cap applied: ${c.host} has no budget flag`];
     const specNotes = specFor(c, prompt, translateCwd(cwd, here, c.side)).notes;
     if (specNotes) env.notes = [...(env.notes ?? []), ...specNotes];
     if (res.tempNote) env.notes = [...(env.notes ?? []), res.tempNote];
@@ -1973,6 +2065,7 @@ Commands:
   plan   [--tier T] [--effort E] [--host H...]            the routing decision as JSON (starts no model)
   run    --tier T (--prompt S | --prompt-file F | stdin) [--access read-only|edit] [--cwd D] [--effort E]
          [--skill NAME ...] [--timeout SEC] [--allow-cmd LINE ...] [--allow-cmd-file FILE] [--allow-prefix-ok] [--host H...] [--pin-host H] [--pin-side S] [--dry-run]
+         [--max-budget-usd N] [--require-budget]
          --host H (repeat it) limits the candidates to those hosts, still in priority order, and a fall-through stays inside them; --pin-host H is one host
          with no fall-through; the two cannot be combined. A flag that does not belong to the command given is a usage error.
          --timeout defaults per tier (config timeoutSeconds); --allow-cmd adds a command line the worker may run (its acceptance command).
@@ -1981,6 +2074,9 @@ Commands:
          one line per line (blank lines and # comments ignored). A colon or backslash is accepted only in a drive path such as C:/work/x.
          --dry-run shows, for each attempt, whether its command line would be too long (skip), and a real run that skips every candidate for
          length ends with failure "too_long".
+         --max-budget-usd N (config maxBudgetUsd) caps the spend of a run on a host that has a budget flag (today Claude only); for any other host
+         the result and the dry run say the cap did not apply, and the run is bounded by --timeout only. --require-budget skips the hosts that
+         have no budget flag (and needs a cap).
          --effort E picks a setting inside the tier where a host has one (config tiers.<tier>.efforts); a host without it keeps its
          default and the result says so. An effort no candidate host knows is a usage error.
          --skill NAME (up to 3) puts the SKILL.md text of a sibling skill into the worker's prompt, after the contract; --dry-run lists them.
@@ -1998,6 +2094,7 @@ const OPTIONS = {
   tier: { type: 'string' }, host: { type: 'string', multiple: true }, json: { type: 'boolean' }, here: { type: 'string' },
   'statuses-file': { type: 'string' }, prompt: { type: 'string' }, 'prompt-file': { type: 'string' }, access: { type: 'string' },
   cwd: { type: 'string' }, timeout: { type: 'string' }, 'allow-cmd': { type: 'string', multiple: true }, 'allow-cmd-file': { type: 'string' }, 'allow-prefix-ok': { type: 'boolean' },
+  'max-budget-usd': { type: 'string' }, 'require-budget': { type: 'boolean' },
   'pin-host': { type: 'string' }, 'pin-side': { type: 'string' },
   'dry-run': { type: 'boolean' }, payload: { type: 'string' }, help: { type: 'boolean', short: 'h' },
   effort: { type: 'string' }, skill: { type: 'string', multiple: true }, save: { type: 'boolean' },
@@ -2007,7 +2104,7 @@ const OPTIONS = {
 const COMMAND_OPTIONS = {
   status: ['tier', 'effort', 'host', 'json', 'here', 'statuses-file'],
   plan: ['tier', 'effort', 'host', 'here', 'statuses-file'],
-  run: ['tier', 'effort', 'host', 'prompt', 'prompt-file', 'access', 'cwd', 'timeout', 'allow-cmd', 'allow-cmd-file', 'allow-prefix-ok', 'pin-host', 'pin-side', 'skill', 'dry-run', 'here', 'statuses-file'],
+  run: ['tier', 'effort', 'host', 'prompt', 'prompt-file', 'access', 'cwd', 'timeout', 'allow-cmd', 'allow-cmd-file', 'allow-prefix-ok', 'max-budget-usd', 'require-budget', 'pin-host', 'pin-side', 'skill', 'dry-run', 'here', 'statuses-file'],
   models: ['here'],
   machine: ['here', 'save'],
 };
@@ -2040,6 +2137,10 @@ export async function main(argv) {
   for (const flag of Object.keys(opts)) {
     if (flag === 'help') continue;
     if (!COMMAND_OPTIONS[cmd].includes(flag)) throw new UsageError(`--${flag} does not apply to ${cmd} (${cmd} takes: ${COMMAND_OPTIONS[cmd].map(f => `--${f}`).join(', ')})`);
+  }
+  if (opts['max-budget-usd'] !== undefined) {
+    const bad = budgetProblem(opts['max-budget-usd']);
+    if (bad) throw new UsageError(`--max-budget-usd ${bad}`);
   }
   const cfg = loadConfig();
   if (opts.effort !== undefined) {
