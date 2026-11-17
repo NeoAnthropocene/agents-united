@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import { defaultProcessRunner } from './cline-capabilities.js';
+import { CLAUDE_SHIM_HOST, cmdShimRefusalFor, resolveCmdShimTarget } from './cmd-shim.js';
 import { loadHostProfile } from './host-profile.js';
 import { RegistryResolver } from './registry.js';
 import type {
@@ -92,6 +93,14 @@ export class ClaudeCapabilityProbe {
     // 1. Explicit CLAUDE_BIN_PATH
     const envBin = process.env.CLAUDE_BIN_PATH;
     if (envBin && path.isAbsolute(envBin) && fs.existsSync(envBin)) {
+      // A .cmd/.bat override cannot be spawned with shell:false (EINVAL): read the program it starts, or keep the
+      // cmd.exe bridge as data so the start ends in the same clear refusal as a PATH hit.
+      if (process.platform === 'win32' && ['.cmd', '.bat'].includes(path.extname(envBin).toLowerCase())) {
+        const target = resolveCmdShimTarget(envBin);
+        return target
+          ? { ...target, source: 'env-binary' }
+          : { executable: 'cmd.exe', prefixArgs: ['/c', envBin], source: 'env-binary' };
+      }
       return {
         executable: envBin,
         prefixArgs: [],
@@ -105,7 +114,11 @@ export class ClaudeCapabilityProbe {
     const dirs = pathEnv.split(pathSeparator).filter(Boolean);
 
     if (process.platform === 'win32') {
-      const exeNames = ['claude.cmd', 'claude.bat', 'claude.exe', 'claude'];
+      // Name order inside one folder: a `.exe` beside a shim wins (Windows itself would run it), then the old relative order
+      // `.cmd`, `.bat`, bare name (at a8e535b it was `.cmd`, `.bat`, `.exe`, bare name). The first folder with a hit decides:
+      // a shim the reader cannot resolve ends the scan with the refusal, because the shell would have run it before any
+      // program in a later folder, so a later folder must not win silently over it.
+      const exeNames = ['claude.exe', 'claude.cmd', 'claude.bat', 'claude'];
       for (const dir of dirs) {
         for (const exeName of exeNames) {
           const fullPath = path.join(dir, exeName);
@@ -130,15 +143,22 @@ export class ClaudeCapabilityProbe {
             }
 
             // Windows hardening (ADR 0013 §5): Node >= 18.20 / 20.12 / 24 rejects
-            // spawning .cmd/.bat shims with shell:false (EINVAL), so bridge through
-            // cmd.exe while keeping the argv array shell-safe.
+            // spawning .cmd/.bat shims with shell:false (EINVAL).
             const ext = path.extname(fullPath).toLowerCase();
             if (ext === '.cmd' || ext === '.bat') {
-              return {
-                executable: 'cmd.exe',
-                prefixArgs: ['/c', fullPath],
-                source: 'path-executable',
-              };
+              // First choice: read the program the shim starts and spawn it directly. `cmd.exe /c` cuts a
+              // multi-line first message at its first line break and fails on a shim path with a space
+              // (see cmd-shim.ts), so it never carries a session.
+              const target = resolveCmdShimTarget(fullPath);
+              if (target) {
+                return {
+                  ...target,
+                  source: target.prefixArgs.length > 0 ? 'node-wrapper' : 'path-executable',
+                };
+              }
+              // A shim that cannot be read with certainty is a cmd.exe bridge, as data only: `probe()` does not run
+              // it and `ClaudeLauncher` refuses to start a session through it (the plan carries `cmdShimRefusal`).
+              return { executable: 'cmd.exe', prefixArgs: ['/c', fullPath], source: 'path-executable' };
             }
             return {
               executable: fullPath,
@@ -176,6 +196,21 @@ export class ClaudeCapabilityProbe {
       diagnostics.push('Claude Code executable not found on PATH or via CLAUDE_BIN_PATH.');
       return {
         installed: false,
+        pluginSupport: false,
+        agentTeamsExperimental: false,
+        subagentHandback: false,
+        diagnostics,
+      };
+    }
+
+    // A cmd.exe bridge is never run, not even for `--version`: through cmd.exe a path with `&`, `^` or `@` breaks
+    // the probe too, and the start would be refused anyway. Report the executable as found, carry the refusal text.
+    const refusal = cmdShimRefusalFor(CLAUDE_SHIM_HOST, cmd.executable, cmd.prefixArgs);
+    if (refusal) {
+      diagnostics.push(refusal);
+      return {
+        installed: true,
+        command: cmd,
         pluginSupport: false,
         agentTeamsExperimental: false,
         subagentHandback: false,

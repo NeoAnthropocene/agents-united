@@ -8,6 +8,7 @@ import { HostProjector } from './projector.js';
 import { ClaudeCapabilityProbe, supportsVersion } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
+import { CLAUDE_SHIM_HOST, CLINE_SHIM_HOST, cmdShimRefusalFor } from './cmd-shim.js';
 import { ClineProjector } from './cline-projector.js';
 import { AntigravityProjector } from './antigravity-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
@@ -707,6 +708,10 @@ export class DoctorEngine {
       clineCapability = await probe.probe();
       if (!clineCapability.installed) {
         warnings.push('Cline executable was not detected on PATH or via CLINE_BIN_PATH.');
+      } else if (clineCapability.command) {
+        // Found, but only as a cmd.exe shim bridge: the real start refuses it (cmd-shim.ts).
+        const refusal = cmdShimRefusalFor(CLINE_SHIM_HOST, clineCapability.command.executable, clineCapability.command.prefixArgs);
+        if (refusal) warnings.push(refusal);
       }
     } else if (host === 'claude') {
       // ADR 0018 decision 11 / Plan 016 decision 12 — read-only probe: `--version` and
@@ -715,6 +720,10 @@ export class DoctorEngine {
       claudeCapability = await probe.probe();
       if (!claudeCapability.installed) {
         warnings.push('Claude Code executable was not detected on PATH or via CLAUDE_BIN_PATH.');
+      } else if (claudeCapability.command) {
+        // Found, but only as a cmd.exe shim bridge: the real start refuses it (cmd-shim.ts).
+        const refusal = cmdShimRefusalFor(CLAUDE_SHIM_HOST, claudeCapability.command.executable, claudeCapability.command.prefixArgs);
+        if (refusal) warnings.push(refusal);
       }
     }
 
