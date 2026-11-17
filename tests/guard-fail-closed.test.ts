@@ -8,7 +8,7 @@ import { renderHooks } from '../src/core/native-floor.js';
 import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks, readOnlyGuardHandler, readOnlyGuardHooks } from '../src/core/readonly-guard.js';
-import { preToolUseGroups, type HookHandler } from './helpers/claude-host-hooks.js';
+import { attempt, preToolUseGroups, type HookHandler } from './helpers/claude-host-hooks.js';
 
 /**
  * Plan 033 P20 — the native guards block when their hook cannot run. A Claude Code hook whose script cannot run does not block by default (an interactive sitting on
@@ -119,6 +119,43 @@ describe('the inline form (a global install) carries the field too', () => {
   });
 });
 
+describe('through the Host model: a payload the destructive guard cannot read blocks the call', () => {
+  const role = ClaudeProjector.nativeRoleContent(path.resolve('registry'), 'backend-architect', '.agents/agents/backend-architect.md', 'inline') ?? '';
+  const dir = path.resolve('scratch');
+  const bash = { tool: 'Bash', input: { command: 'echo hello world' } };
+
+  it.each(['', '   ', '{', 'null', '[]'])('stdin %j blocks, with the unreadable-input reason', stdin => {
+    const result = attempt(role, dir, bash, { stdin });
+    expect(result.fired).toBeGreaterThan(0);
+    expect(result.blocked).toBe(true);
+    expect(result.reason).toMatch(/^Blocked by agents-united guard: unreadable hook input/);
+  });
+
+  it('a readable payload for a harmless call still passes', () => {
+    expect(attempt(role, dir, bash).blocked).toBe(false);
+  });
+});
+
+describe('a role installed with an earlier destructive guard script is still seen as guarded', () => {
+  // The script as it was before the unreadable-input change (the 2026-11-17 decision): same ownership marker, other text.
+  const OLD_SCRIPT = GUARD_SCRIPT.replace(/if\(i===null[^}]*\}/, '').replace('let i;', 'let i={};');
+  const roleWith = (script: string): string =>
+    `---\nname: x\ntools: Bash, Read\nhooks:\n  PreToolUse:\n    - matcher: Bash\n      hooks:\n        - type: command\n          command: node\n          args: ["-e", ${JSON.stringify(script)}]\n---\nbody\n`;
+
+  it('the old text really differs from the current script and keeps the marker', () => {
+    expect(OLD_SCRIPT).not.toBe(GUARD_SCRIPT);
+    expect(OLD_SCRIPT).toContain('Blocked by agents-united guard');
+  });
+  it('is read as a destructive guard by its ownership marker', () => {
+    expect(inspectNativeAgent(roleWith(OLD_SCRIPT)).guard).toBe('destructive');
+    expect(inspectNativeAgent(roleWith(GUARD_SCRIPT)).guard).toBe('destructive');
+  });
+  it('a script with neither text is no guard, and the read-only guard stays read-only', () => {
+    expect(inspectNativeAgent(roleWith('process.exit(0)')).guard).toBe('none');
+    expect(inspectNativeAgent(roleWith(READ_ONLY_GUARD_SCRIPT)).guard).toBe('read-only');
+  });
+});
+
 describe('the other Hosts are untouched', () => {
   it('no Antigravity or Cline registry file mentions onFailure', () => {
     const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => (entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)]));
@@ -138,7 +175,7 @@ describe('the other Hosts are untouched', () => {
   });
 });
 
-describe('the guard scripts exit 0 where they allow and 2 where they block; every other exit now blocks through onFailure', () => {
+describe('the guard scripts exit 0 where they allow and 2 where they block (the destructive guard blocks input it cannot read); every other exit blocks through onFailure', () => {
   const run = (script: string, stdin: string): { status: number | null; stderr: string } => {
     const result = spawnSync(process.execPath, [path.join(HOOKS, script)], { input: stdin, encoding: 'utf8' });
     return { status: result.status, stderr: result.stderr };
@@ -149,19 +186,36 @@ describe('the guard scripts exit 0 where they allow and 2 where they block; ever
     expect(run('agents-united-guard.js', call('Bash', { command: 'git push --force origin main' })).status).toBe(2);
   });
 
-  it('destructive guard: a harmless call, an unknown tool name, an empty payload and unparseable stdin deliberately allow and exit 0', () => {
+  it('destructive guard: a harmless call, an unknown tool name, {} and an object without tool_input allow and exit 0', () => {
     expect(run('agents-united-guard.js', call('Bash', { command: 'echo hello world' })).status).toBe(0);
     expect(run('agents-united-guard.js', call('SomeFutureTool', { anything: 1 })).status).toBe(0);
-    expect(run('agents-united-guard.js', '').status).toBe(0);
-    expect(run('agents-united-guard.js', '{not json').status).toBe(0);
     expect(run('agents-united-guard.js', '{}').status).toBe(0);
+    expect(run('agents-united-guard.js', '{"tool_name":"Bash"}').status).toBe(0);
   });
 
-  it('records that a null payload crashes the destructive guard with exit 1, which now blocks (current behaviour, not a requirement)', () => {
-    const result = run('agents-united-guard.js', 'null');
-    expect(result.status).toBe(1);
-    expect(result.status).not.toBe(0);
-    expect(result.status).not.toBe(2);
+  // The maintainer's decision of 2026-11-17: input the guard cannot read is blocked, not allowed.
+  it.each([
+    ['empty', ''],
+    ['white space', ' \n\t '],
+    ['an unclosed brace', '{'],
+    ['not json', '{not json'],
+    ['null', 'null'],
+    ['an array', '[]'],
+    ['a JSON string', '"git push --force"'],
+    ['a number', '42'],
+    ['true', 'true'],
+  ])('destructive guard: %s input is unreadable and exits 2 with the unreadable-input message', (_name, stdin) => {
+    const result = run('agents-united-guard.js', stdin);
+    expect(result.status).toBe(2);
+    expect(result.stderr.startsWith('Blocked by agents-united guard: unreadable hook input')).toBe(true);
+    expect(result.stderr).toMatch(/input of this tool call could not be read/);
+  });
+
+  it('destructive guard: a valid payload behind a BOM is read, not blocked', () => {
+    expect(run('agents-united-guard.js', '﻿' + call('Bash', { command: 'echo hello world' })).status).toBe(0);
+    const blocked = run('agents-united-guard.js', '﻿' + call('Bash', { command: 'git push --force origin main' }));
+    expect(blocked.status).toBe(2);
+    expect(blocked.stderr).toMatch(/git push --force requires/);
   });
 
   it('read-only guard: a mutating call exits 2; unreadable, empty and null input exit 2 too (it fails closed on its own)', () => {

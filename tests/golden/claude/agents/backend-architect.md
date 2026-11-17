@@ -32,7 +32,11 @@ hooks:
           args:
             - -e
             - 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let
-              i={};try{i=JSON.parse(s)}catch(e){}const
+              i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof
+              i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by
+              agents-united guard: unreadable hook input. The input of this tool
+              call could not be read, so the guard cannot tell whether it is
+              safe.\n");process.exit(2)}const
               t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let
               r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
               push --force";else
@@ -48,7 +52,11 @@ hooks:
           args:
             - -e
             - 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let
-              i={};try{i=JSON.parse(s)}catch(e){}const
+              i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof
+              i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by
+              agents-united guard: unreadable hook input. The input of this tool
+              call could not be read, so the guard cannot tell whether it is
+              safe.\n");process.exit(2)}const
               t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let
               r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
               push --force";else

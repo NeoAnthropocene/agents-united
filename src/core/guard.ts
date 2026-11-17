@@ -10,10 +10,17 @@
  * The script blocks `git push --force`/`-f` (not `--force-with-lease`), `vercel --prod`, and
  * `.env*` writes (not `.env.example`) via Write/Edit/NotebookEdit or a shell redirect.
  *
+ * Input it cannot read (empty or white space, not JSON, or JSON that is not an object) is blocked with exit 2 and a message that
+ * starts `Blocked by agents-united guard: unreadable hook input` (the maintainer's decision of 2026-11-17). A BOM is trimmed first.
+ * A valid object, including `{}` and one without `tool_input`, is read as before.
+ *
  * Testing this by hand? Asking a session hypothetically tests the model, not the hook — see
  * `docs/guard-testing.md` (Plan 024 S5) for a model-proof test protocol.
  */
-export const GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+export const GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+
+/** Text every version of the destructive guard script carries: the ownership marker (the read-only guard says "read-only guard", so it never matches). */
+export const GUARD_OWNERSHIP_MARKER = 'Blocked by agents-united guard';
 
 /** The exec-form handler: `node -e <script>`, no shell on any OS. */
 export function guardHandler(): { type: 'command'; command: string; args: string[] } {
@@ -70,7 +77,7 @@ export const GUARD_ON_FAILURE_MIN_VERSION = '2.1.295';
 export interface FailClosedHandler { type: 'command'; command: string; args: string[]; onFailure: 'block' }
 
 /**
- * The exec-form handler that runs a guard script file: `node <file>`, no shell on any OS. The two guards block when their hook cannot run (`onFailure: 'block'`); the destructive guard's own decision to allow a call whose input it cannot parse is unchanged (the read-only guard blocks there);
+ * The exec-form handler that runs a guard script file: `node <file>`, no shell on any OS. The two guards block when their hook cannot run (`onFailure: 'block'`); the destructive guard also blocks (exit 2) a payload it cannot read, as the read-only guard does (the maintainer's decision of 2026-11-17);
  * the mode-line gate does not: it is not a guard of what a role may do, and a lead whose gate script is missing could make no tool call at all.
  */
 export function guardFileHandler(kind: 'destructive' | 'read-only'): FailClosedHandler;

@@ -42,6 +42,10 @@ A harmless control command should NOT be blocked, to confirm the guard isn't ove
 echo hello world
 ```
 
+### Input the guard cannot read
+
+The destructive guard blocks a call whose hook input it cannot read (the maintainer's decision of 2026-11-17): stdin that is empty or only white space, is not JSON, or is JSON that is not an object (`null`, an array, a string, a number). It exits `2` with a message that starts `Blocked by agents-united guard: unreadable hook input`. A valid object, including `{}` and one without `tool_input`, is read as before, and a byte order mark in front of valid JSON is skipped. To check it offline, pipe such input into the script: `echo null | node .claude/hooks/agents-united-guard.js; echo $?` prints the message and `2`. Claude Code itself always sends a valid object, so this case does not come up in a normal session.
+
 ### Why these three specifically
 
 | Command | Matches | Why it's safe to run |
