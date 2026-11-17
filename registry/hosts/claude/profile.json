@@ -2,11 +2,11 @@
   "host": "claude",
   "profileId": "claude@2.1.285",
   "version": "2.1.285",
-  "minVersion": "2.1.271",
+  "minVersion": "2.1.295",
   "reviewedAgainst": "2.1.285",
   "library": "host-library/claude",
   "toolPolicy": "tool-policy.json",
-  "semantics": "Native Claude Code host profile (Plan 032 Phase 3, ADR 0025): the artifact vocabularies a native package may use, generated from and drift-tested against host-library/claude snapshots. It supersedes nothing yet: the legacy 2.1.271 capability profile stays the version floor and feeds the projection lane until Claude reaches parity (strangler). Data, never probed at run time.",
+  "semantics": "Native Claude Code host profile (Plan 032 Phase 3, ADR 0025): the artifact vocabularies a native package may use, generated from and drift-tested against host-library/claude snapshots. It supersedes nothing yet: the legacy 2.1.271 capability profile feeds the projection lane until Claude reaches parity (strangler). The supported floor is minVersion 2.1.295 for every bundle (the maintainer's decision of 2026-11-17; the doctor reports an error below it, installs and starts are not refused); it sits above reviewedAgainst because the docs library lock pins reviewedAgainst and the floor moves on its own. Data, never probed at run time.",
   "artifacts": {
     "agent": {
       "path": ".claude/agents/<name>.md",

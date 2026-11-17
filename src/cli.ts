@@ -2577,12 +2577,10 @@ cli
       }
 
       if (report.claudeCapability) {
-        renderClaudeCapabilityBlock(report.claudeCapability);
-        const refusal = claudeShimRefusal(report.claudeCapability);
-        for (const diagnostic of report.claudeCapability.diagnostics) {
-          if (diagnostic !== refusal) console.log(`  ${pc.dim(diagnostic)}`);
-        }
+        // The block prints the diagnostics. This branch does not list the issues, so the floor message stays among them here.
+        renderClaudeCapabilityBlock(report.claudeCapability, []);
         console.log();
+        if (!report.valid) process.exitCode = 1;
       }
 
       if (report.warnings.length > 0) {
@@ -2633,7 +2631,7 @@ cli
     }
 
     if (report.claudeCapability) {
-      renderClaudeCapabilityBlock(report.claudeCapability);
+      renderClaudeCapabilityBlock(report.claudeCapability, report.issues);
       console.log(`  Configured Agents: ${report.agentsCount} projected into .claude/agents/ ("agents start --host claude" = optional launcher)\n`);
     }
 
@@ -3048,7 +3046,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
  * duplication already drifted once (a capability line landed in one branch only). Both call sites share this
  * renderer so a new capability is reported everywhere.
  */
-function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
+function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport, issues: string[]): void {
   console.log(pc.bold(pc.cyan('Claude Code Runtime & Native Discovery Audit:')));
   const refusal = claudeShimRefusal(capability);
   console.log(`  Installed: ${capability.installed ? (refusal ? pc.yellow('✔ Detected, but cannot be started (cmd.exe shim)') : pc.green('✔ Detected')) : pc.yellow('✖ Not Found')}`);
@@ -3069,8 +3067,16 @@ function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
   if (capability.profile) {
     console.log(`  Host profile: ${capability.profile.profileId} (minimum ${capability.profile.minVersion})`);
   }
-  // The refusal text is printed once, among the doctor warnings; it is not repeated as a diagnostic.
-  for (const diagnostic of capability.diagnostics) if (diagnostic !== refusal) console.log(`  ${pc.yellow('•')} ${diagnostic}`);
+  for (const diagnostic of claudeDiagnosticsToShow(capability, issues)) console.log(`  ${pc.yellow('•')} ${diagnostic}`);
+}
+
+/**
+ * The probe diagnostics the doctor prints in the capability block. The refusal text is printed once, among the doctor warnings,
+ * and the below-floor message once, among the doctor issues; neither is repeated as a diagnostic.
+ */
+export function claudeDiagnosticsToShow(capability: ClaudeCapabilityReport, issues: string[]): string[] {
+  const refusal = claudeShimRefusal(capability);
+  return capability.diagnostics.filter(diagnostic => diagnostic !== refusal && !issues.includes(diagnostic));
 }
 
 /** The refusal text when Claude Code was found only as a cmd.exe shim bridge (cmd-shim.ts), else undefined. */

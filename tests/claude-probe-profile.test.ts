@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ClaudeCapabilityProbe } from '../src/core/claude-capabilities.js';
+import { ClaudeCapabilityProbe, claudeBelowFloorMessage } from '../src/core/claude-capabilities.js';
 import { loadHostProfile } from '../src/core/host-profile.js';
 import type { ProcessRunner } from '../src/core/types.js';
 
@@ -24,7 +24,7 @@ const probeFor = (version: string, help = HELP) => {
 describe('profile-backed Claude capability probe', () => {
   it('the profile carries the SubagentHandback version floor as data', () => {
     expect(profile.features.subagentHandback.since).toBe('2.1.271');
-    expect(profile.minVersion).toBe('2.1.271');
+    expect(profile.minVersion).toBe('2.1.295');
   });
 
   it('derives the hand-off floor from the profile: the floor itself and later versions have it, earlier ones do not', async () => {
@@ -57,16 +57,24 @@ describe('profile-backed Claude capability probe', () => {
     }
   });
 
-  it('reports the profile it checked against, with no diagnostics for a version the profile was reviewed against', async () => {
-    const report = await probeFor(profile.reviewedAgainst);
-    expect(report.profile).toEqual({ profileId: profile.profileId, minVersion: profile.minVersion, reviewedAgainst: profile.reviewedAgainst, belowMinimum: false, newerThanReviewed: false });
+  // The floor (2.1.295, the maintainer's decision of 2026-11-17) is above the version the profile was reviewed against
+  // (2.1.285): the docs library lock pins `reviewedAgainst`, and the floor moves on its own.
+  it('reports the profile it checked against, with no diagnostics for a version at the floor', async () => {
+    const report = await probeFor(profile.minVersion);
+    expect(report.profile).toEqual({ profileId: profile.profileId, minVersion: profile.minVersion, reviewedAgainst: profile.reviewedAgainst, belowMinimum: false, newerThanReviewed: true });
     expect(report.diagnostics).toEqual([]);
   });
 
-  it('flags a version older than the profile minimum', async () => {
+  it('flags a version older than the profile minimum with the shared floor message', async () => {
     const report = await probeFor('2.1.200');
     expect(report.profile?.belowMinimum).toBe(true);
-    expect(report.diagnostics.join('\n')).toMatch(/older than the minimum 2\.1\.271/);
+    expect(report.diagnostics).toEqual([claudeBelowFloorMessage('2.1.200', '2.1.295')]);
+  });
+
+  it('puts the floor between 2.1.294 and 2.1.295', async () => {
+    expect((await probeFor('2.1.294')).profile?.belowMinimum).toBe(true);
+    expect((await probeFor('2.1.295')).profile?.belowMinimum).toBe(false);
+    expect((await probeFor('2.1.296')).profile?.belowMinimum).toBe(false);
   });
 
   it('records a version newer than the reviewed one as data for maintainers, and tells the user nothing', async () => {
@@ -77,7 +85,7 @@ describe('profile-backed Claude capability probe', () => {
   });
 
   it('flags a --help that contradicts the profile (the plugin lane is declared available but the flag is missing)', async () => {
-    const report = await probeFor('2.1.285', 'Usage: claude\n');
+    const report = await probeFor('2.1.295', 'Usage: claude\n');
     expect(report.pluginSupport).toBe(false);
     expect(report.diagnostics.join('\n')).toMatch(/profile declares the plugin lane available.*--plugin-dir/);
   });
@@ -86,7 +94,7 @@ describe('profile-backed Claude capability probe', () => {
     const calls: string[][] = [];
     const runner: ProcessRunner = async (_exe, args) => {
       calls.push(args);
-      return args.includes('--version') ? { exitCode: 0, stdout: '2.1.285\n', stderr: '' } : { exitCode: 0, stdout: HELP, stderr: '' };
+      return args.includes('--version') ? { exitCode: 0, stdout: '2.1.295\n', stderr: '' } : { exitCode: 0, stdout: HELP, stderr: '' };
     };
     await new ClaudeCapabilityProbe(runner, { resolveExecutable: () => ({ executable: 'node', prefixArgs: PREFIX, source: 'node-wrapper' }) }).probe();
     expect(calls).toEqual([[...PREFIX, '--version'], [...PREFIX, '--help']]);

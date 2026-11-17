@@ -432,9 +432,11 @@ On Antigravity, the `agy` binary is found on `PATH` or through `AGY_BIN_PATH`. O
 
 Audits your workspace: frontmatter schemas, lifecycle hooks, lockfile sync, projection drift, and whether the guard hook is wired. It also warns when an installed role expects an MCP server your assistant has not configured, and prints that assistant's own command to add it.
 
+With `--host claude`, `agents doctor` also reports an error, and exits with code 1, when the installed Claude Code is older than 2.1.295. Below that version the guards cannot block when they fail to run. Installs and starts still work.
+
 ```bash
 agents doctor                    # general audit
-agents doctor --host claude      # Claude capabilities and translation-ledger entries
+agents doctor --host claude      # Claude capabilities and translation-ledger entries; an error below Claude Code 2.1.295
 agents doctor --host cline       # Cline runtime, capability probe, and projection integrity
 ```
 
@@ -546,6 +548,7 @@ Safety is layered: policies that every role follows, plus a hook that enforces t
 
 **Enforced by the managed guard hook (Claude Code):** a `PreToolUse` hook blocks `git push --force` (but not `--force-with-lease`), `vercel --prod`, and writes to `.env` files (but not `.env.example`). The hook runs in exec form with no shell, so it behaves the same on Windows PowerShell as on macOS and Linux.
 
+- It needs Claude Code 2.1.295 or later, the supported floor: its handler carries `onFailure: "block"`, so a guard that fails to run blocks the call. `agents doctor --host claude` reports an error below that version; installs and starts still work.
 - It always runs while an Agents United role is active.
 - Add `--session-guard` at install time to cover plain `claude` sessions too.
 - To confirm it fires, follow the model-proof steps in [`docs/guard-testing.md`](./docs/guard-testing.md). Asking the model "would you run this?" tests the model, not the hook.

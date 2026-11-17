@@ -65,7 +65,20 @@ export function supportsVersion(version: string | undefined, floor: string): boo
   return order !== undefined && order >= 0;
 }
 
-function readClaudeProfile(): ReturnType<typeof loadHostProfile> | undefined {
+/**
+ * The one text for a Claude Code that is older than the supported floor (the maintainer's decision of 2026-11-17). The probe
+ * carries it as a diagnostic and the doctor reports it as an error; the CLI prints it once. `version` may be the raw
+ * `--version` line ("2.1.272 (Claude Code)"); only the number is quoted.
+ */
+export function claudeBelowFloorMessage(version: string, floor: string): string {
+  const installed = /\d+\.\d+\.\d+/.exec(version)?.[0] ?? version;
+  return (
+    `Claude Code ${installed} is older than the supported minimum ${floor}: the guards cannot block when they fail to run on this version. ` +
+    'Installs and starts still work. Update Claude Code.'
+  );
+}
+
+function readClaudeProfile():ReturnType<typeof loadHostProfile> | undefined {
   try {
     return loadHostProfile(new RegistryResolver().getRegistryDir(), 'claude');
   } catch {
@@ -301,7 +314,7 @@ export class ClaudeCapabilityProbe {
       };
       if (belowMinimum) {
         diagnostics.push(
-          `Claude Code ${version} is older than the minimum ${hostProfile.minVersion} that profile ${hostProfile.profileId} supports; native agents may rely on features it lacks.`
+          claudeBelowFloorMessage(version as string, hostProfile.minVersion)
         );
       }
       // `newerThanReviewed` stays data for the maintainers' host-update workflow. It is deliberately not a diagnostic:

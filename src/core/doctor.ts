@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import YAML from 'yaml';
 import { AgentHostAdapter } from './adapter.js';
 import { HostProjector } from './projector.js';
-import { ClaudeCapabilityProbe, supportsVersion } from './claude-capabilities.js';
+import { ClaudeCapabilityProbe, claudeBelowFloorMessage } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { CLAUDE_SHIM_HOST, CLINE_SHIM_HOST, cmdShimRefusalFor } from './cmd-shim.js';
@@ -735,7 +735,6 @@ export class DoctorEngine {
       // Roles that name a guard script file (project scope), per script: the guard handlers carry onFailure "block" (Claude Code 2.1.295 or later),
       // so a gone script blocks the role's guarded calls there. Below that version the behaviour with this field is unverified (without it, a hook that cannot start lets the call through).
       const needsScript = new Map<NativeGuardKind, { roles: string[]; owner?: string }>();
-      let anyGuardedRole = false;
       for (const [relPath, proj] of Object.entries(manifest.projections ?? {})) {
         const match = proj.host === 'claude' && proj.kind === 'role' ? /^\.claude\/agents\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
         if (!match) continue;
@@ -744,7 +743,6 @@ export class DoctorEngine {
         const text = await fs.readFile(abs, 'utf8');
         if (!text.includes('profile: claude-native')) continue;
         const facts = inspectNativeAgent(text);
-        if (facts.guard !== 'none') anyGuardedRole = true;
         const problem = nativeGuardProblem(facts);
         if (problem) {
           const owner = proj.owners[0];
@@ -765,14 +763,13 @@ export class DoctorEngine {
           (need.owner ? ` Run: agents update ${need.owner} --fanout claude to restore it.` : '')
         );
       }
-      // The guard handlers carry onFailure "block", which needs Claude Code 2.1.295 or later (hooks.md). Only a known, older version warns.
-      const probed = claudeCapability?.version;
-      if (anyGuardedRole && probed !== undefined && !supportsVersion(probed, GUARD_ON_FAILURE_MIN_VERSION)) {
-        warnings.push(
-          `Claude Code ${probed} is older than ${GUARD_ON_FAILURE_MIN_VERSION}: the native guard handlers carry onFailure "block", which needs ${GUARD_ON_FAILURE_MIN_VERSION} or later. ` +
-          'On this version the behaviour is unverified and a guard whose script cannot run may let the call through. Update Claude Code.'
-        );
-      }
+    }
+
+    // The supported floor is the host profile's minVersion, 2.1.295 (the maintainer's decision of 2026-11-17): the guard handlers carry
+    // onFailure "block", which needs it (hooks.md). A probed version below it is an error; installs and starts are not refused.
+    // An unknown version raises nothing.
+    if (host === 'claude' && claudeCapability?.installed && claudeCapability.version !== undefined && claudeCapability.profile?.belowMinimum) {
+      issues.push(claudeBelowFloorMessage(claudeCapability.version, claudeCapability.profile.minVersion));
     }
 
     // Plan 032 close-out — the native lane swaps three skills for dynamic workflows, which a documented switch can turn off.
