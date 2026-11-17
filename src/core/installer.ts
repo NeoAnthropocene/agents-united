@@ -21,7 +21,7 @@ import { ClaudeProjector } from './claude-projector.js';
 import { listNativeWorkflows } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
-import { mergeSessionGuard, removeOwnedSessionGuard, resolveSessionGuardFile, sessionGuardReach, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
+import { inspectSessionGuard, mergeSessionGuard, removeOwnedSessionGuard, resolveSessionGuardFile, sessionGuardRestoreCommand, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
 import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo, SessionGuardChoiceResult, SessionGuardStep } from './types.js';
@@ -770,10 +770,20 @@ private toPosix(p: string): string {
     const file = resolveSessionGuardFile(variant, workspaceRoot);
     const recordedFile = variant === 'user' ? file : this.toPosix(path.relative(workspaceRoot, file));
     const sameFileRecord = recorded && !('off' in recorded) && recorded.file === recordedFile ? recorded : undefined;
+    // The user settings file is shared by every install, and a way out (`agents update --no-session-guard` from another install) may have
+    // removed the guard on purpose. A plain update or install therefore never re-creates a guard that is entirely absent from it; an
+    // explicit `--session-guard` does, and a guard that is present but outdated is renewed. Project and local files belong to one project
+    // and are restored as before.
+    if (variant === 'user' && options.sessionGuard === undefined && sameFileRecord) {
+      const state = await inspectSessionGuard(file, sameFileRecord.handlerHash);
+      if (state === 'missing' || state === 'absent') {
+        const warnings = [`Session guard not restored in ${file}: it is absent from the user settings file, which every install shares, and a plain update does not re-create it there (a way out may have removed it on purpose). To restore it, run: ${sessionGuardRestoreCommand(scope)}`];
+        projections.push({ host: 'claude', path: recordedFile, warnings });
+        return { warnings };
+      }
+    }
     const existedBefore = await fs.pathExists(file);
-    // Whose way-out the script names follows the install that records the guard: a user-file guard recorded by a project install is
-    // found by `agents update` from that project's folder, without --global.
-    const result = await mergeSessionGuard(file, { replaceHash: sameFileRecord?.handlerHash, reach: sessionGuardReach(variant, scope) });
+    const result = await mergeSessionGuard(file, { replaceHash: sameFileRecord?.handlerHash });
     lockfile.sessionGuard = {
       file: recordedFile,
       handlerHash: result.handlerHash,
@@ -781,7 +791,7 @@ private toPosix(p: string): string {
     };
     const warnings: string[] = [];
     if (result.status === 'skipped-invalid') {
-      warnings.push(`Session guard not written: ${recordedFile} is not valid JSON (comments or trailing commas?). It was left untouched — paste this into it by hand:\n${sessionGuardSnippet(sessionGuardReach(variant, scope))}`);
+      warnings.push(`Session guard not written: ${recordedFile} is not valid JSON (comments or trailing commas?). It was left untouched — paste this into it by hand:\n${sessionGuardSnippet(variant)}`);
     } else if (result.status === 'modified') {
       warnings.push(`Session guard in ${recordedFile} was edited by hand; left as-is (run with --force after removing it to restore).`);
     }
@@ -829,7 +839,7 @@ private toPosix(p: string): string {
       return { changed: false, notes: [`Left as it was: ${label}: a global install can hold the session guard only in the user settings file (--session-guard user).`, ...warnings] };
     }
     const shared = step.file !== undefined && step.userFile === true
-      ? ` ${step.file} is the user settings file, shared by every project: another install that records the guard there will show it as missing until agents update runs there.`
+      ? ` ${step.file} is the user settings file, shared by every install: another install that records the guard there will show it as missing, and its plain update does not re-create it. To put it back on purpose, run ${sessionGuardRestoreCommand('project')} (with --global for the global install).`
       : '';
     if (step.choice === 'off') {
       const what = step.file === undefined

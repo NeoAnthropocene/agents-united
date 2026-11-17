@@ -162,7 +162,9 @@ export function checkSkillLayout(skillsRoot: string, name: string, policy: keyof
 
   const evalsFile = path.join(dir, 'evals', 'evals.json');
   if (!fs.existsSync(evalsFile)) {
-    if (EVALS_FILE_REQUIRED[policy]) errors.push(`${name}: evals/evals.json is missing`);
+    // Required unless the policy is a KNOWN exemption: an unknown, null or inherited name reads as required.
+    const exempt = typeof policy === 'string' && Object.hasOwn(EVALS_FILE_REQUIRED, policy) && EVALS_FILE_REQUIRED[policy] === false;
+    if (!exempt) errors.push(`${name}: evals/evals.json is missing`);
   } else {
     // An evals document that is not valid JSON, is JSON null, or holds no array of JSON objects
     // is a broken candidate, not an exception: report it and keep the findings collected so far.

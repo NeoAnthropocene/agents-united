@@ -34,15 +34,17 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'fs-extra';
-import { EARLIER_GUARD_SCRIPTS, GUARD_OWNERSHIP_MARKER, GUARD_SCRIPT, guardScript, nativeGuardHooks, type FailClosedHandler } from './guard.js';
+import { EARLIER_GUARD_SCRIPTS, GUARD_OWNERSHIP_MARKER, GUARD_SCRIPT, nativeGuardHooks, type FailClosedHandler } from './guard.js';
 import type { InstallScope } from './types.js';
 
 /** Where the guard sits: the settings file the user chose. */
 export type SessionGuardVariant = 'project' | 'local' | 'user';
 /**
- * Whose way-out the guard's script names. `project`: a guard in a workspace settings file (the commands are run from that project).
- * `user`: a guard in the user settings file recorded by a global install (`--global`). `user-project`: a guard in the user settings
- * file recorded by a PROJECT install (`agents add --session-guard user` at project scope): the commands must be run from that project.
+ * Which install records a guard, and so which commands reach it. `project`: a guard in a workspace settings file (the commands are run
+ * from that project). `user`: a guard in the user settings file recorded by a global install (`--global`). `user-project`: a guard in the
+ * user settings file recorded by a PROJECT install (`agents add --session-guard user` at project scope): the commands are run from that
+ * project, without `--global`. `agents doctor` shows the commands of the reach of the lockfile it reads. The block message of the user
+ * file does not depend on the reach: it names both (see `sessionGuardHint`).
  */
 export type SessionGuardReach = 'project' | 'user' | 'user-project';
 export type MergeStatus = 'created' | 'merged' | 'unchanged' | 'modified' | 'skipped-invalid';
@@ -97,23 +99,58 @@ export function variantOfFile(file: string): SessionGuardVariant {
   return path.resolve(file) === user ? 'user' : 'project';
 }
 
-/** The reach a write into `file` has when the caller does not say: a global install for the user file, else a project. */
-const defaultReach = (file: string): SessionGuardReach => (variantOfFile(file) === 'user' ? 'user' : 'project');
+/**
+ * Which script a guard carries. Two texts exist: one for the project and local settings files and one for the user settings file. The
+ * text of the user file does not depend on which install wrote it (the file is shared by the global install and by every project that
+ * records a guard in it, and two installs must not rewrite each other's message), so `user` and `user-project` carry the same script.
+ */
+type ScriptKind = 'project' | 'user';
+const scriptKindOf = (value: SessionGuardVariant | SessionGuardReach): ScriptKind => (value === 'user' || value === 'user-project' ? 'user' : 'project');
 
-/** The reaches whose guard counts as current in `file`: the user file is shared by global and project installs, so either one. */
-const reachesOfFile = (file: string): SessionGuardReach[] => (variantOfFile(file) === 'user' ? ['user', 'user-project'] : ['project']);
+/** The kind of script that counts as current in `file`. */
+const kindOfFile = (file: string): ScriptKind => (variantOfFile(file) === 'user' ? 'user' : 'project');
 
-const ALL_REACHES: readonly SessionGuardReach[] = ['project', 'user', 'user-project'];
+const ALL_KINDS: readonly ScriptKind[] = ['project', 'user'];
+
+/** What the user can do with no working CLI, named by kind of file and without an absolute path. */
+const MANUAL_ROUTE: Record<ScriptKind, string> = {
+  project: "Without the CLI, delete by hand the hook entries that contain 'agents-united guard' from .claude/settings.json or .claude/settings.local.json in the project.",
+  user: "Without the CLI, delete by hand the hook entries that contain 'agents-united guard' from settings.json in the .claude folder of your home directory.",
+};
 
 /**
- * What the session guard adds to its messages: the two commands, to be run outside the session (its shell calls are blocked). The folder
- * is not in the text: the user file is shared by every project that records a guard in it, and one project's folder would be wrong for
- * the others, so a guard recorded by a project says "the project that installed this guard" and `agents doctor` names the folder.
+ * The command that puts a user-file guard back on purpose, for the lockfile of `scope`: a plain update never re-creates it in the shared
+ * user settings file (see the installer), and `agents doctor` and the update output name this command.
+ */
+export function sessionGuardRestoreCommand(scope: InstallScope): string {
+  return `agents update --all${scope === 'global' ? ' --global' : ''} --session-guard user`;
+}
+
+/** The manual route for a guard recorded in `file` (shown by `agents doctor`, which can name the file; the script cannot). */
+export function sessionGuardManualRoute(file: string): string {
+  return `Without the CLI, delete by hand the hook entries that contain 'agents-united guard' from ${file}.`;
+}
+
+/**
+ * What the session guard adds to its messages: the two commands, to be run outside the session (its shell calls are blocked), and the
+ * manual route that needs no CLI. The user-file text names both possibilities in plain words: `--global` for a guard a global install
+ * wrote, and the same commands without it from the project's folder for a guard a project wrote. The folder is not in the text: the user
+ * file is shared by every project that records a guard in it, and one project's folder would be wrong for the others, so `agents doctor`
+ * names it.
  */
 export function sessionGuardHint(value: SessionGuardVariant | SessionGuardReach): string {
-  const { repair, remove } = sessionGuardCommands(value);
-  const where = reachOf(value) === 'user-project' ? ', from the folder of the project that installed this guard' : '';
-  return `To get out, run one of these in your own terminal, not in this session (this session's shell calls are blocked)${where}: ${repair} (repairs the install) or ${remove} (removes the session guard).`;
+  const kind = scriptKindOf(value);
+  const { repair, remove } = sessionGuardCommands(kind);
+  const alternative = kind === 'user' ? '; if a project installed this guard, run the same commands without --global from that project\'s folder' : '';
+  return `To get out, run one of these in your own terminal, not in this session (this session's shell calls are blocked): ${repair} (repairs the install) or ${remove} (removes the session guard)${alternative}. ${MANUAL_ROUTE[kind]}`;
+}
+
+/** Builds the session script from a generic script and a hint: the hint after the unreadable-input sentence, and an `uncaughtException` handler with the same hint. */
+const UNREADABLE_SENTENCE = 'so the guard cannot tell whether it is safe.';
+function composeSessionScript(generic: string, hint: string): string {
+  const inScript = JSON.stringify(hint).slice(1, -1);
+  const failure = JSON.stringify(`Blocked by agents-united guard: the guard failed while reading this tool call. ${hint}\n`).slice(1, -1);
+  return `process.on("uncaughtException",()=>{process.stderr.write("${failure}");process.exit(2)});${generic.replace(UNREADABLE_SENTENCE, () => `${UNREADABLE_SENTENCE} ${inScript}`)}`;
 }
 
 /**
@@ -122,10 +159,25 @@ export function sessionGuardHint(value: SessionGuardVariant | SessionGuardReach)
  * bare failure. Only this variant carries the session text; the role guards keep the generic script.
  */
 export function sessionGuardScript(value: SessionGuardVariant | SessionGuardReach): string {
-  const hint = JSON.stringify(sessionGuardHint(value)).slice(1, -1);
-  const failure = JSON.stringify(`Blocked by agents-united guard: the guard failed while reading this tool call. ${sessionGuardHint(value)}\n`).slice(1, -1);
-  return `process.on("uncaughtException",()=>{process.stderr.write("${failure}");process.exit(2)});${guardScript(` ${hint}`)}`;
+  return composeSessionScript(GUARD_SCRIPT, sessionGuardHint(value));
 }
+
+/**
+ * The session scripts of the version before: the generic script of that version with the three hints it wrote (project, user recorded
+ * globally, user recorded by a project). They are ours and not current, so they read as outdated and `agents update` renews them. A test
+ * ties each to its byte-exact hash.
+ */
+export const EARLIER_SESSION_SCRIPTS: readonly string[] = (() => {
+  const stem = "To get out, run one of these in your own terminal, not in this session (this session's shell calls are blocked)";
+  const end = '(repairs the install) or';
+  const tail = '(removes the session guard).';
+  const hints = [
+    `${stem}: agents update --all ${end} agents update --all --no-session-guard ${tail}`,
+    `${stem}: agents update --all --global ${end} agents update --all --global --no-session-guard ${tail}`,
+    `${stem}, from the folder of the project that installed this guard: agents update --all ${end} agents update --all --no-session-guard ${tail}`,
+  ];
+  return hints.map(hint => composeSessionScript(EARLIER_GUARD_SCRIPTS[1], hint));
+})();
 
 /** The session guard's handler for a reach: the same shape as the role handler (`onFailure: 'block'`), the session script. */
 export function sessionGuardHandler(value: SessionGuardVariant | SessionGuardReach = 'project'): FailClosedHandler {
@@ -185,17 +237,17 @@ const sameHandler = (handler: Record<string, unknown>, expected: object): boolea
   return keys.length === wantedKeys.length && keys.every((key, index) => key === wantedKeys[index] && JSON.stringify(handler[key]) === JSON.stringify(wanted[key]));
 };
 
-const isCurrentGuard = (value: unknown, reaches: readonly SessionGuardReach[]): boolean =>
-  isRecord(value) && reaches.some(reach => sameHandler(value, sessionGuardHandler(reach)));
+const isCurrentGuard = (value: unknown, kind: ScriptKind): boolean => isRecord(value) && sameHandler(value, sessionGuardHandler(kind));
 
 /**
  * An earlier version of our handler, which `agents update` renews. Outdated means: ours, not current, and either (a) exactly one of our
  * earlier forms: `type`, `command` and `args` only, or those plus `onFailure: "block"`, with the script being the generic guard script
- * (the form written before the session guard had its own script), an earlier generic script text, or a session script of another reach;
+ * (the form written before the session guard had its own script), an earlier generic script text, a session script of the version before
+ * (`EARLIER_SESSION_SCRIPTS`, which includes every earlier user-file text), or the current session script of the other kind of file;
  * or (b) a handler whose hash is the one recorded in the lockfile for an earlier version. Anything else in our group is hand-edited.
  */
-const isOutdatedGuard = (value: unknown, reaches: readonly SessionGuardReach[], recordedHash?: string): boolean => {
-  if (!isRecord(value) || !isOursAnyVersion(value) || isCurrentGuard(value, reaches)) return false;
+const isOutdatedGuard = (value: unknown, kind: ScriptKind, recordedHash?: string): boolean => {
+  if (!isRecord(value) || !isOursAnyVersion(value) || isCurrentGuard(value, kind)) return false;
   if (recordedHash !== undefined && hashHandler(value) === recordedHash) return true;
   const handler = value as Handler;
   const keys = Object.keys(value);
@@ -204,7 +256,7 @@ const isOutdatedGuard = (value: unknown, reaches: readonly SessionGuardReach[], 
     keys.every(key => key === 'type' || key === 'command' || key === 'args' || (key === 'onFailure' && handler.onFailure === 'block')) &&
     handler.type === 'command' &&
     (handler.args as unknown[]).length === 2 &&
-    (script === GUARD_SCRIPT || EARLIER_GUARD_SCRIPTS.includes(script) || ALL_REACHES.some(reach => script === sessionGuardScript(reach)))
+    (script === GUARD_SCRIPT || EARLIER_GUARD_SCRIPTS.includes(script) || EARLIER_SESSION_SCRIPTS.includes(script) || ALL_KINDS.some(other => script === sessionGuardScript(other)))
   );
 };
 
@@ -250,15 +302,14 @@ async function write(file: string, parsed: Omit<Parsed, 'settings'>, settings: S
  * Add the guard's two PreToolUse groups. A group whose guard handler was hand-edited is left alone (`modified`, never auto-repaired);
  * an older guard version (recorded by `replaceHash`, or one of our known earlier forms) is replaced where it stands, and a group that
  * carries the earlier matchers moves to the matchers of today (a group that also holds the user's own hooks keeps them under the old
- * matcher). `reach` says whose way-out the script names; it defaults to what the file is.
+ * matcher). The script is the one of the file's kind (project and local files, or the user file), whoever installs.
  */
 export async function mergeSessionGuard(
   file: string,
-  opts: { replaceHash?: string; reach?: SessionGuardReach } = {},
+  opts: { replaceHash?: string } = {},
 ): Promise<{ status: MergeStatus; handlerHash: string }> {
-  const reach = opts.reach ?? defaultReach(file);
-  const reaches = reachesOfFile(file);
-  const wanted = sessionGuardHandler(reach);
+  const kind = kindOfFile(file);
+  const wanted = sessionGuardHandler(kind);
   const handlerHash = hashHandler(wanted);
   const parsed = await parse(file);
   if (parsed === 'invalid') return { status: 'skipped-invalid', handlerHash };
@@ -271,16 +322,14 @@ export async function mergeSessionGuard(
 
   let changed = false;
   let modified = false;
-  // Our earlier version (recorded hash, or one of our known earlier forms), or a current guard of another reach in the shared user file:
-  // the handler is replaced where it stands, so the group keeps its place and every other entry of the file stays as it was. A
-  // hand-edited handler is never touched.
+  // Our earlier version (recorded hash, or one of our known earlier forms): the handler is replaced where it stands, so the group keeps
+  // its place and every other entry of the file stays as it was. A hand-edited handler is never touched.
   for (const entry of pre) {
     const group = asGroup(entry);
     if (!group || !groupIsOurs(group)) continue;
     group.hooks = hooksOf(group).map(handler => {
       if (!isOursAnyVersion(handler)) return handler;
-      const renew = isCurrentGuard(handler, reaches) ? !sameHandler(handler as Record<string, unknown>, wanted) : isOutdatedGuard(handler, reaches, opts.replaceHash);
-      if (!renew) return handler;
+      if (!isOutdatedGuard(handler, kind, opts.replaceHash)) return handler;
       changed = true;
       return JSON.parse(JSON.stringify(wanted)) as Handler;
     });
@@ -288,7 +337,7 @@ export async function mergeSessionGuard(
 
   for (const want of GROUP_MATCHERS) {
     const here = pre.filter(entry => groupIsOurs(entry) && asGroup(entry)?.matcher === want.matcher);
-    if (here.some(entry => hooksOf(entry).some(handler => isCurrentGuard(handler, reaches)))) continue;
+    if (here.some(entry => hooksOf(entry).some(handler => isCurrentGuard(handler, kind)))) continue;
     if (here.length > 0) {
       modified = true;
       continue;
@@ -299,7 +348,7 @@ export async function mergeSessionGuard(
     for (const entry of earlier) {
       const group = asGroup(entry)!;
       const oursHere = hooksOf(group).filter(isOursAnyVersion);
-      if (!oursHere.every(handler => isCurrentGuard(handler, reaches))) {
+      if (!oursHere.every(handler => isCurrentGuard(handler, kind))) {
         modified = true;
         placed = true;
         continue;
@@ -340,7 +389,7 @@ export async function removeOwnedSessionGuard(
   const pre = settings.hooks?.PreToolUse;
   if (!pre || !pre.some(groupIsOurs)) return { status: 'absent', left: 0 };
 
-  const reaches = reachesOfFile(file);
+  const kind = kindOfFile(file);
   let removed = 0;
   let left = 0;
   const kept: unknown[] = [];
@@ -353,7 +402,7 @@ export async function removeOwnedSessionGuard(
     const hooksBefore = hooksOf(group);
     const remaining = hooksBefore.filter(handler => {
       if (!isOursAnyVersion(handler)) return true;
-      if (isCurrentGuard(handler, reaches) || isOutdatedGuard(handler, reaches, opts.recordedHash)) {
+      if (isCurrentGuard(handler, kind) || isOutdatedGuard(handler, kind, opts.recordedHash)) {
         removed++;
         return false;
       }
@@ -384,17 +433,17 @@ export async function inspectSessionGuard(file: string, recordedHash?: string): 
   const parsed = await parse(file);
   if (parsed === 'absent' || parsed === 'invalid') return parsed === 'absent' ? 'absent' : 'skipped-invalid';
   const pre = parsed.settings.hooks?.PreToolUse ?? [];
-  const reaches = reachesOfFile(file);
+  const kind = kindOfFile(file);
   let allCurrent = true;
   let anyModified = false;
   for (const want of GROUP_MATCHERS) {
     const here = pre.filter(entry => groupIsOurs(entry) && asGroup(entry)?.matcher === want.matcher);
-    if (here.some(entry => hooksOf(entry).some(handler => isCurrentGuard(handler, reaches)))) continue;
+    if (here.some(entry => hooksOf(entry).some(handler => isCurrentGuard(handler, kind)))) continue;
     allCurrent = false;
     // Not current: an older version of our handler, or a group with the matcher of an earlier version, is "outdated"; any other difference is a hand edit.
     const earlier = want.earlier === want.matcher ? [] : pre.filter(entry => groupIsOurs(entry) && asGroup(entry)?.matcher === want.earlier);
     const handlers = [...here, ...earlier].flatMap(entry => hooksOf(entry).filter(isOursAnyVersion));
-    const renewable = (handler: unknown): boolean => isOutdatedGuard(handler, reaches, recordedHash) || (earlier.some(entry => hooksOf(entry).includes(handler)) && isCurrentGuard(handler, reaches));
+    const renewable = (handler: unknown): boolean => isOutdatedGuard(handler, kind, recordedHash) || (earlier.some(entry => hooksOf(entry).includes(handler)) && isCurrentGuard(handler, kind));
     // A matcher with no group of ours (removed, or edited until the marker is gone) while another still has one is also an edit.
     if (handlers.length === 0 || !handlers.every(renewable)) anyModified = true;
   }

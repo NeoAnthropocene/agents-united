@@ -46,7 +46,7 @@ hooks:
               agents-united guard: unreadable hook input. The input of this tool
               call could not be read, so the guard cannot tell whether it is
               safe.\n");process.exit(2)}const
-              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let
+              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let
               r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
               push --force";else
               if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else
@@ -67,7 +67,7 @@ hooks:
               agents-united guard: unreadable hook input. The input of this tool
               call could not be read, so the guard cannot tell whether it is
               safe.\n");process.exit(2)}const
-              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let
+              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let
               r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
               push --force";else
               if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else

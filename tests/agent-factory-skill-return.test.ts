@@ -1039,7 +1039,9 @@ describe('preflight compares roots by physical path as well as by string (P26-A)
 // The maintainer's decision of 2026-11-17: postflight refuses a draft without evals/evals.json only where the skill-check policy the task
 // pins requires the file. All three policies required it; adapted-source no longer does (src/core/skill-layout.ts holds the table).
 describe('postflight: the evals file follows the skill-check policy the task pins', () => {
-  const POLICIES = [['agents-united-original', true], ['private-owner', true], ['adapted-source', false]] as const;
+  // The task schema allows the provenance `original` only, so the policies that fit an authored task are the two that require the file.
+  // `adapted-source` (the exemption) is refused at preflight for it; see the test below.
+  const POLICIES = [['agents-united-original', true], ['private-owner', true]] as const;
 
   it.each(POLICIES)('%s with the evals file: passes', async (policy) => {
     const fx = await make({ policy });
@@ -1048,26 +1050,33 @@ describe('postflight: the evals file follows the skill-check policy the task pin
     expect(success(fx.post())).toMatchObject({ phase: 'postflight' });
   });
 
-  it.each(POLICIES)('%s without the evals file: follows the table', async (policy, required) => {
+  it.each(POLICIES)('%s without the evals file: refused', async (policy) => {
     const fx = await make({ policy, evals: false });
     expect((await fx.produce()).run.status).toBe(0);
-    const result = fx.post();
-    if (!required) {
-      expect(success(result)).toMatchObject({ phase: 'postflight' });
-      return;
-    }
-    const out = failure(result, 'EVALS_MISSING', 'postflight');
+    const out = failure(fx.post(), 'EVALS_MISSING', 'postflight');
     expect(out.reason).toContain(policy);
     expect(out.reason).toContain('evals/evals.json');
   });
 
-  it('a repair whose baseline lacks the evals file is refused where the policy requires it, and passes where it does not', async () => {
+  it('a repair whose baseline lacks the evals file is refused where the policy requires it', async () => {
     const required = await make({ operation: 'repair', policy: 'private-owner', evals: false });
     expect((await required.produce()).run.status).toBe(0);
     failure(required.post(), 'EVALS_MISSING', 'postflight');
-    const exempt = await make({ operation: 'repair', policy: 'adapted-source', evals: false });
-    expect((await exempt.produce()).run.status).toBe(0);
-    expect(success(exempt.post())).toMatchObject({ phase: 'postflight', operation: 'repair' });
+  });
+
+  it('refuses the adapted-source policy for a task whose provenance is original, at preflight, so the exemption is not reachable through an authored task', async () => {
+    for (const operation of ['create', 'repair'] as const) {
+      const fx = await make({ operation, policy: 'adapted-source', evals: false });
+      const out = failure(fx.pre(), 'JOB_INVALID', 'preflight');
+      expect(out.reason).toContain('adapted-source');
+      expect(out.reason).toMatch(/does not fit the provenance/);
+      expect(out.reason).toContain('original');
+    }
+  });
+
+  it.each(POLICIES)('%s fits the provenance original: preflight passes', async (policy) => {
+    const fx = await make({ policy });
+    expect(success(fx.pre())).toMatchObject({ phase: 'preflight' });
   });
 
   it('a repair that adds the evals file to a baseline that lacked it passes under a requiring policy', async () => {

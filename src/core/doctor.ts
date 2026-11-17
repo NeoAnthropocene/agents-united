@@ -21,7 +21,7 @@ import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAg
 import { GUARD_ON_FAILURE_MIN_VERSION, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
-import { inspectSessionGuard, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardReach, sessionGuardSnippet, variantOfRecordedFile } from './session-guard.js';
+import { inspectSessionGuard, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardManualRoute, sessionGuardReach, sessionGuardRestoreCommand, sessionGuardSnippet, variantOfRecordedFile } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
@@ -47,7 +47,7 @@ export interface HealthReport {
   /** Plan 023 A — plain-session guard state; absent when no decision was ever recorded. */
   sessionGuard?: 'wired' | 'missing' | 'modified' | 'outdated' | 'skipped-invalid' | 'off';
   /** The two commands that repair the install and remove the session guard; present wherever a session guard is recorded (not when it is off). */
-  sessionGuardCommands?: { repair: string; remove: string; folder?: string };
+  sessionGuardCommands?: { repair: string; remove: string; folder?: string; manual?: string; restore?: string };
   /** Plan 024 S4 — command-permission preset state; absent when no decision was ever recorded. */
   permissionPreset?: 'wired' | 'missing' | 'skipped-invalid' | 'off';
   /**
@@ -623,8 +623,19 @@ export class DoctorEngine {
         // settings file recorded by a project install is found from that project's folder, so the folder is named.
         const recordedScope: InstallScope = manifest?.scope ??(path.resolve(workspaceRootOf(root)) === path.resolve(os.homedir()) ? 'global' : 'project');
         const reach = sessionGuardReach(variantOfRecordedFile(guardRecord.file), recordedScope);
-        sessionGuardCommands = { ...sessionGuardCommandsFor(reach), ...(reach === 'user-project' ? { folder: path.resolve(workspaceRootOf(root)) } : {}) };
-        if (state === 'missing' || state === 'absent') {
+        const userFile = variantOfRecordedFile(guardRecord.file) === 'user';
+        const missing = state === 'missing' || state === 'absent';
+        sessionGuardCommands = {
+          ...sessionGuardCommandsFor(reach),
+          ...(reach === 'user-project' ? { folder: path.resolve(workspaceRootOf(root)) } : {}),
+          // The manual route needs no CLI; doctor can name the file, the script cannot.
+          manual: sessionGuardManualRoute(guardFile),
+          // A guard that is absent from the shared user file is not re-created by a plain update: say how to put it back on purpose.
+          ...(userFile && missing ? { restore: sessionGuardRestoreCommand(recordedScope) } : {}),
+        };
+        if (missing && userFile) {
+          warnings.push(`Session guard missing from ${guardRecord.file}, the user settings file that every install shares: plain Claude sessions are unguarded. A plain 'agents update' does not re-create it there (a way out may have removed it on purpose). To restore it, run: ${sessionGuardRestoreCommand(recordedScope)}`);
+        } else if (missing) {
           warnings.push(`Session guard missing from ${guardRecord.file}: plain Claude sessions are unguarded. Run 'agents update' to restore it.`);
         } else if (state === 'outdated') {
           warnings.push(`Session guard in ${guardRecord.file} is outdated: it is an earlier form, which may not block when it cannot run and does not cover the PowerShell and MultiEdit tools. Run 'agents update' to renew it.`);

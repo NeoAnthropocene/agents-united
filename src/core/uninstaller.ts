@@ -8,7 +8,7 @@ import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, removeAntigravityHook } from './antigravity-hooks.js';
 import { syncAntigravityMcp } from './antigravity-mcp.js';
-import { removeOwnedSessionGuard } from './session-guard.js';
+import { removeOwnedSessionGuard, sessionGuardRestoreCommand } from './session-guard.js';
 import { removePermissionPreset } from './permission-preset.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
@@ -565,7 +565,7 @@ export class UninstallEngine {
                 totalNotes.push(`Session guard in ${guard.file} was edited by hand, so ${outcome.left} entr${outcome.left === 1 ? 'y was' : 'ies were'} left in place; remove ${outcome.left === 1 ? 'it' : 'them'} by hand.`);
               }
               if (removed && path.isAbsolute(guard.file)) {
-                totalNotes.push(`The session guard was removed from ${guard.file}, the user settings file shared by every project: another install that records the guard there will show it as missing until agents update runs there.`);
+                totalNotes.push(`The session guard was removed from ${guard.file}, the user settings file shared by every install: another install that records the guard there will show it as missing, and its plain update does not re-create it. To put it back on purpose, run ${sessionGuardRestoreCommand('project')} (with --global for the global install).`);
               }
               delete lockfile.sessionGuard;
             }

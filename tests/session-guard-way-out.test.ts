@@ -14,6 +14,7 @@ import {
   sessionGuardCommands,
   sessionGuardHandler,
   sessionGuardHooks,
+  sessionGuardRestoreCommand,
   sessionGuardScript,
 } from '../src/core/session-guard.js';
 import { UpdateEngine } from '../src/core/updater.js';
@@ -65,6 +66,18 @@ describe('the two commands are real options of agents update (tie to the CLI def
         const name = flag.slice(2);
         expect(optionNames.has(name) || (name.startsWith('no-') && optionNames.has(name.slice(3))), `${flag} in "${command}"`).toBe(true);
       }
+    }
+  });
+
+  it('the restore command is a real option of agents update too, with --global for the global install', () => {
+    for (const scope of ['project', 'global'] as const) {
+      const tokens = sessionGuardRestoreCommand(scope).split(' ');
+      expect(tokens.slice(0, 2)).toEqual(['agents', 'update']);
+      expect(tokens.includes('--global')).toBe(scope === 'global');
+      for (const flag of tokens.slice(2).filter(token => token.startsWith('--'))) expect(optionNames.has(flag.slice(2)), flag).toBe(true);
+      const parsed = cli.parse(['node', 'agents', ...tokens], { run: false });
+      expect(parsed.options.all).toBe(true);
+      expect(parsed.options.sessionGuard).toBe('user');
     }
   });
 
@@ -280,20 +293,20 @@ describe('the doctor carries both commands for the CLI to print once', () => {
     await install({ sessionGuard: 'project' });
     const report = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');
     expect(report.sessionGuard).toBe('wired');
-    expect(report.sessionGuardCommands).toEqual(sessionGuardCommands('project'));
+    expect(report.sessionGuardCommands).toMatchObject(sessionGuardCommands('project'));
 
     // One group only, so the other matcher has no group of ours: an edit, not an earlier version.
     await fs.writeJson(SETTINGS, { hooks: { PreToolUse: [{ matcher: 'Bash|PowerShell', hooks: [{ ...guardHandler() }] }] } });
     const edited = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');
     expect(edited.sessionGuard).toBe('modified');
-    expect(edited.sessionGuardCommands).toEqual(sessionGuardCommands('project'));
+    expect(edited.sessionGuardCommands).toMatchObject(sessionGuardCommands('project'));
 
     // Both groups hold the earlier generic handler: an earlier version of ours, which `agents update` renews.
     const earlier = sessionGuardHooks('project').PreToolUse.map(group => ({ matcher: group.matcher, hooks: [{ ...guardHandler() }] }));
     await fs.writeJson(SETTINGS, { hooks: { PreToolUse: earlier } });
     const outdated = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');
     expect(outdated.sessionGuard).toBe('outdated');
-    expect(outdated.sessionGuardCommands).toEqual(sessionGuardCommands('project'));
+    expect(outdated.sessionGuardCommands).toMatchObject(sessionGuardCommands('project'));
 
     await update({ sessionGuard: false });
     const off = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');

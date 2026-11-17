@@ -7,6 +7,7 @@ import { sessionGuardCommandLines } from '../src/cli.js';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { InstallEngine } from '../src/core/installer.js';
 import {
+  EARLIER_SESSION_SCRIPTS,
   inspectSessionGuard,
   sessionGuardCommands,
   sessionGuardHooks,
@@ -68,67 +69,192 @@ describe('A: the commands follow the scope of the install that recorded the guar
     expect(sessionGuardCommands('user')).toEqual({ repair: 'agents update --all --global', remove: 'agents update --all --global --no-session-guard' });
   });
 
-  it('a user-file guard recorded by a project install names commands without --global and says where to run them', async () => {
+  const USER_PAIR = 'agents update --all --global (repairs the install) or agents update --all --global --no-session-guard (removes the session guard)';
+  const USER_ALTERNATIVE = "if a project installed this guard, run the same commands without --global from that project's folder";
+
+  it('the user-file text names both possibilities, whoever installed it (project-recorded)', async () => {
     await installProject({ sessionGuard: 'user' });
     const message = blockMessage(await scriptIn(USER_SETTINGS));
-    expect(message).toContain('agents update --all (repairs the install)');
-    expect(message).toContain('agents update --all --no-session-guard (removes the session guard)');
-    expect(message).not.toContain('--global');
-    expect(message).toMatch(/from the folder of the project that installed this guard/);
+    expect(message).toContain(USER_PAIR);
+    expect(message).toContain(USER_ALTERNATIVE);
     expect(message).toMatch(/in your own terminal, not in this session/);
 
+    // Doctor keeps the reach distinction: the commands of the lockfile it reads, and the folder of a project-recorded guard.
     const report = await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude');
     expect(report.sessionGuard).toBe('wired');
-    expect(report.sessionGuardCommands).toEqual({ repair: 'agents update --all', remove: 'agents update --all --no-session-guard', folder: path.resolve(PROJECT) });
+    expect(report.sessionGuardCommands).toMatchObject({ repair: 'agents update --all', remove: 'agents update --all --no-session-guard', folder: path.resolve(PROJECT) });
+    expect(report.sessionGuardCommands?.manual).toContain(USER_SETTINGS);
   });
 
-  it('a user-file guard recorded by a global install names --global and no folder', async () => {
+  it('the user-file text is the same when a global install wrote it, and doctor names --global and no folder', async () => {
     await installGlobal({ sessionGuard: 'user' });
     const message = blockMessage(await scriptIn(USER_SETTINGS));
-    expect(message).toContain('agents update --all --global (repairs the install)');
-    expect(message).toContain('agents update --all --global --no-session-guard (removes the session guard)');
-    expect(message).not.toMatch(/project that installed/);
+    expect(message).toContain(USER_PAIR);
+    expect(message).toContain(USER_ALTERNATIVE);
 
     const report = await DoctorEngine.runDoctor(path.join(HOME, '.agents'), 'claude');
     expect(report.sessionGuard).toBe('wired');
-    expect(report.sessionGuardCommands).toEqual(sessionGuardCommands('user'));
+    expect(report.sessionGuardCommands).toMatchObject(sessionGuardCommands('user'));
+    expect(report.sessionGuardCommands).not.toHaveProperty('folder');
   });
 
-  it('a project guard names the plain commands, as before', async () => {
+  it('a project guard names the plain commands, as before, and the manual route', async () => {
     await installProject({ sessionGuard: 'project' });
     const message = blockMessage(await scriptIn(PROJECT_SETTINGS));
     expect(message).toContain('agents update --all (repairs the install)');
     expect(message).not.toContain('--global');
+    expect(message).toContain("delete by hand the hook entries that contain 'agents-united guard' from .claude/settings.json or .claude/settings.local.json in the project");
     const report = await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude');
-    expect(report.sessionGuardCommands).toEqual(sessionGuardCommands('project'));
+    expect(report.sessionGuardCommands).toMatchObject(sessionGuardCommands('project'));
+    expect(report.sessionGuardCommands?.manual).toContain(PROJECT_SETTINGS);
   });
 
-  it('the user settings file is shared: either install sees it wired, and the last one to write decides which pair the message names', async () => {
+  it('every way-out message carries the manual route, by kind of file, with no absolute path', () => {
+    const user = sessionGuardScript('user');
+    expect(user).toContain("delete by hand the hook entries that contain 'agents-united guard' from settings.json in the .claude folder of your home directory");
+    expect(blockMessage(user)).toContain('settings.json in the .claude folder of your home directory');
+    for (const script of [sessionGuardScript('project'), sessionGuardScript('local'), user]) {
+      expect(script).not.toContain(HOME);
+      expect(script).not.toContain(PROJECT);
+      expect(script).not.toMatch(/[A-Za-z]:\\\\|[\\/]Users[\\/]|[\\/]home[\\/]/);
+      expect(script.length).toBeLessThan(2400);
+    }
+  });
+
+  it('the user settings file is shared: a second install leaves it byte-identical, and a plain update of either changes nothing', async () => {
     await installGlobal({ sessionGuard: 'user' });
+    const first = await fs.readFile(USER_SETTINGS, 'utf8');
     await installProject({ sessionGuard: 'user' });
+    expect(await fs.readFile(USER_SETTINGS, 'utf8')).toBe(first);
+    await installGlobal({});
+    await installProject({});
+    expect(await fs.readFile(USER_SETTINGS, 'utf8')).toBe(first);
     expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
-    expect(blockMessage(await scriptIn(USER_SETTINGS))).toMatch(/project that installed this guard/);
     expect((await DoctorEngine.runDoctor(path.join(HOME, '.agents'), 'claude')).sessionGuard).toBe('wired');
     expect((await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude')).sessionGuard).toBe('wired');
     expect((await groupsOf(USER_SETTINGS)).map(group => group.matcher)).toEqual(sessionGuardHooks('user').PreToolUse.map(group => group.matcher));
-
-    await installGlobal({});
-    expect(blockMessage(await scriptIn(USER_SETTINGS))).toContain('agents update --all --global');
   });
 
-  it('the doctor prints the folder of a project-recorded user guard', () => {
-    const lines = sessionGuardCommandLines({ repair: 'agents update --all', remove: 'agents update --all --no-session-guard', folder: '/work/app' });
-    expect(lines).toHaveLength(3);
+  it('the earlier user-file texts (global-recorded and project-recorded) are outdated, and an update renews them to the one text', async () => {
+    const [earlierProject, earlierUser, earlierUserProject] = EARLIER_SESSION_SCRIPTS;
+    await installGlobal({ sessionGuard: 'user' });
+    const current = await fs.readFile(USER_SETTINGS, 'utf8');
+    for (const script of [earlierUser, earlierUserProject]) {
+      const settings = JSON.parse(current) as { hooks: { PreToolUse: Array<{ hooks: Array<{ args: string[] }> }> } };
+      for (const group of settings.hooks.PreToolUse) group.hooks[0].args[1] = script;
+      await fs.writeFile(USER_SETTINGS, JSON.stringify(settings, null, 2));
+      expect(await inspectSessionGuard(USER_SETTINGS)).toBe('outdated');
+      expect((await DoctorEngine.runDoctor(path.join(HOME, '.agents'), 'claude')).sessionGuard).toBe('outdated');
+      await installGlobal({});
+      expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+      expect(JSON.parse(await fs.readFile(USER_SETTINGS, 'utf8')).hooks.PreToolUse[0].hooks[0].args[1]).toBe(sessionGuardScript('user'));
+    }
+    // The project text of the version before is outdated in a project file.
+    await installProject({ sessionGuard: 'project' });
+    const settings = await fs.readJson(PROJECT_SETTINGS);
+    for (const group of settings.hooks.PreToolUse) group.hooks[0].args[1] = earlierProject;
+    await fs.writeJson(PROJECT_SETTINGS, settings, { spaces: 2 });
+    expect(await inspectSessionGuard(PROJECT_SETTINGS)).toBe('outdated');
+  });
+
+  it('the doctor prints the folder, the restore command and the manual route when it has them', () => {
+    const lines = sessionGuardCommandLines({ repair: 'agents update --all', remove: 'agents update --all --no-session-guard', folder: '/work/app', restore: 'agents update --all --session-guard user', manual: 'By hand: x.' });
+    expect(lines).toHaveLength(5);
     expect(lines[2]).toContain('/work/app');
+    expect(lines[3]).toContain('agents update --all --session-guard user');
+    expect(lines[4]).toContain('By hand: x.');
     expect(sessionGuardCommandLines({ repair: 'a', remove: 'b' })).toHaveLength(2);
   });
 
-  it('the three scripts differ only in the way-out text', () => {
-    const strip = (script: string): string => script.slice(script.indexOf('let s='));
-    expect(sessionGuardScript('user-project')).not.toBe(sessionGuardScript('user'));
-    expect(sessionGuardScript('user-project')).not.toBe(sessionGuardScript('project'));
-    expect(sessionGuardScript('user-project')).toContain('Blocked by agents-united guard');
-    expect(strip(sessionGuardScript('project')).length).toBeGreaterThan(0);
+  it('the project text and the user text are two scripts; a project-recorded user guard carries the user text', () => {
+    expect(sessionGuardScript('user-project')).toBe(sessionGuardScript('user'));
+    expect(sessionGuardScript('user')).not.toBe(sessionGuardScript('project'));
+    expect(sessionGuardScript('local')).toBe(sessionGuardScript('project'));
+    expect(sessionGuardScript('user')).toContain('Blocked by agents-united guard');
+  });
+});
+
+describe('1: a way out is not undone by an unrelated update of the shared user settings file', () => {
+  const restoreProject = 'agents update --all --session-guard user';
+  const restoreGlobal = 'agents update --all --global --session-guard user';
+
+  it('end to end: removed through the global lockfile, not written back by the project\'s plain update, doctor names the restore command, an explicit restore writes it', async () => {
+    await installGlobal({ sessionGuard: 'user' });
+    await installProject({ sessionGuard: 'user' });
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+
+    // The way out: the global command removes the guard from the user file.
+    await update({ global: true, sessionGuard: false });
+    expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
+    // The project lockfile still records it as on.
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: USER_SETTINGS });
+
+    // A plain update (the project scope) and a plain install do not write it back; the output says why.
+    const plain = await update({});
+    expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
+    expect(plain.projections.flatMap(projection => projection.warnings ?? []).join('\n')).toContain(restoreProject);
+    await installProject({});
+    expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: USER_SETTINGS });
+
+    // Doctor reports it as missing and names the command that puts it back on purpose, and the manual route.
+    const report = await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude');
+    expect(report.sessionGuard).toBe('missing');
+    expect(report.sessionGuardCommands?.restore).toBe(restoreProject);
+    expect(report.warnings.join('\n')).toContain(restoreProject);
+    const lines = sessionGuardCommandLines(report.sessionGuardCommands).join('\n');
+    expect(lines).toContain(restoreProject);
+
+    // An explicit restore writes it.
+    await update({ sessionGuard: 'user' });
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+    expect((await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude')).sessionGuard).toBe('wired');
+  });
+
+  it('a bare --session-guard restores it where it was recorded', async () => {
+    await installProject({ sessionGuard: 'user' });
+    await fs.remove(USER_SETTINGS);
+    await update({});
+    expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
+    await update({ sessionGuard: true });
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+  });
+
+  it('the global lockfile names --global in the restore command', async () => {
+    await installGlobal({ sessionGuard: 'user' });
+    await fs.remove(USER_SETTINGS);
+    const report = await DoctorEngine.runDoctor(path.join(HOME, '.agents'), 'claude');
+    expect(report.sessionGuard).toBe('missing');
+    expect(report.sessionGuardCommands?.restore).toBe(restoreGlobal);
+    await installGlobal({});
+    expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
+    await installGlobal({ sessionGuard: 'user' });
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+  });
+
+  it('a guard that is present but outdated in the user file is still renewed by a plain update', async () => {
+    await installProject({ sessionGuard: 'user' });
+    const settings = await fs.readJson(USER_SETTINGS);
+    for (const group of settings.hooks.PreToolUse) group.hooks[0].args[1] = EARLIER_SESSION_SCRIPTS[1];
+    await fs.writeJson(USER_SETTINGS, settings, { spaces: 2 });
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('outdated');
+    await update({});
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+  });
+
+  it.each([
+    ['project', PROJECT_SETTINGS],
+    ['local', path.join(PROJECT, '.claude', 'settings.local.json')],
+  ] as const)('a missing guard in the %s settings file is restored by a plain update, as before', async (variant, file) => {
+    await installProject({ sessionGuard: variant });
+    await fs.remove(file);
+    await update({});
+    expect(await inspectSessionGuard(file)).toBe('wired');
+    await fs.remove(file);
+    await installProject({});
+    expect(await inspectSessionGuard(file)).toBe('wired');
+    const report = await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude');
+    expect(report.sessionGuardCommands).not.toHaveProperty('restore');
   });
 });
 
@@ -191,7 +317,9 @@ describe('B: --no-session-guard reaches only the scope the command addresses', (
     expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
     const notes = (result.sessionGuardNotes ?? []).join('\n');
     expect(notes).toContain(USER_SETTINGS);
-    expect(notes).toMatch(/shared by every project/);
+    expect(notes).toMatch(/shared by every install/);
+    expect(notes).toContain('agents update --all --session-guard user');
+    expect(notes).toMatch(/plain update does not re-create it/);
   });
 
   it('--session-guard turns the guard on only in the lockfiles of the scope addressed', async () => {
@@ -288,7 +416,8 @@ describe('F: uninstall removes only what is ours', () => {
     expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
     const notes = (result.notes ?? []).join('\n');
     expect(notes).toContain(USER_SETTINGS);
-    expect(notes).toMatch(/shared by every project/);
+    expect(notes).toMatch(/shared by every install/);
+    expect(notes).toContain('agents update --all --session-guard user');
     expect(notes).toMatch(/removed/);
   });
 
@@ -298,5 +427,46 @@ describe('F: uninstall removes only what is ours', () => {
     const result = await uninstall();
     expect(await fs.readFile(PROJECT_SETTINGS, 'utf8')).toBe('{ // mine\n}');
     expect((result.notes ?? []).join('\n')).toMatch(/not valid JSON/);
+  });
+});
+
+describe('7: a guard change that was made is reported when a later step fails', () => {
+  /** A lockfile that names a bundle the registry does not know: the preflight install of that record throws after the guard step ran. */
+  const breakLater = async (): Promise<void> => {
+    const file = await lock(PROJECT_LOCK);
+    file.installed.bundles.push('ghost-bundle-xyz');
+    file.bundleVersions = { ...(file.bundleVersions ?? {}), 'ghost-bundle-xyz': '1.0.0' };
+    await fs.writeJson(PROJECT_LOCK, file);
+  };
+
+  it('the error carries the notes and the count of what was changed', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await breakLater();
+    const failure = await update({ sessionGuard: false }).then(() => undefined, (error: unknown) => error as Error & { sessionGuardNotes?: string[]; sessionGuardChanged?: number });
+    expect(failure?.message).toContain('ghost-bundle-xyz');
+    expect(failure?.sessionGuardChanged).toBe(1);
+    expect((failure?.sessionGuardNotes ?? []).some(line => line.startsWith('Changed:') && line.includes(PROJECT_LOCK))).toBe(true);
+    // The change itself was made.
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toEqual({ off: true });
+    expect(await fs.pathExists(PROJECT_SETTINGS)).toBe(false);
+  });
+
+  it('a failure with no guard change keeps its error as it was', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await breakLater();
+    const failure = await update({}).then(() => undefined, (error: unknown) => error as Error & { sessionGuardNotes?: string[] });
+    expect(failure?.message).toContain('ghost-bundle-xyz');
+    expect(failure?.sessionGuardNotes).toBeUndefined();
+  });
+
+  it('the CLI prints the Changed line before the error, and exits 1', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await breakLater();
+    const run = cliRun(PROJECT, ['update', '--all', '--no-session-guard']);
+    expect(run.status).toBe(1);
+    expect(run.text).toContain('Changed:');
+    expect(run.text).toContain(PROJECT_LOCK);
+    expect(run.text).toContain('ghost-bundle-xyz');
+    expect(run.text.indexOf('Changed:')).toBeLessThan(run.text.indexOf('ghost-bundle-xyz'));
   });
 });

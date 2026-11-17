@@ -8,7 +8,8 @@
  * earlier shell form (`node -e '<js>'`) runs under PowerShell on Windows without Git Bash, whose
  * native-argument quoting can mangle the script and let the guarded command through (fail open).
  * The script blocks `git push --force`/`-f` (not `--force-with-lease`), `vercel --prod`, and
- * `.env*` writes (not `.env.example`) via Write/Edit/NotebookEdit or a shell redirect.
+ * `.env*` writes (not `.env.example`) via Write, Edit or MultiEdit (target in `tool_input.file_path`), NotebookEdit (target in
+ * `tool_input.notebook_path`; the script reads `file_path`, else `notebook_path`) or a shell redirect.
  *
  * Input it cannot read (empty or white space, not JSON, or JSON that is not an object) is blocked with exit 2 and a message that
  * starts `Blocked by agents-united guard: unreadable hook input` (the maintainer's decision of 2026-11-17). A BOM is trimmed first.
@@ -19,7 +20,7 @@
  */
 export function guardScript(unreadableHint: string = ''): string {
   // `unreadableHint` is text that is already safe inside a double-quoted JavaScript string; it is appended to the unreadable-input message.
-  return String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.${unreadableHint}\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+  return String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.${unreadableHint}\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
 }
 
 /** The generic script: the role guards and the legacy inline form carry exactly this text. */
@@ -31,7 +32,10 @@ export const GUARD_SCRIPT = guardScript();
  * guard (`session-guard.ts`) and the native role check (`native-guard.ts`) both read it.
  */
 export const EARLIER_GUARD_SCRIPTS: readonly string[] = [
+  // [0] before the unreadable-input change; [1] the script that blocked unreadable input but read only `tool_input.file_path`
+  // (a NotebookEdit to a protected path went through, because it sends `notebook_path`).
   String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
+  String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
 ];
 
 /** Text every version of the destructive guard script carries: the ownership marker (the read-only guard says "read-only guard", so it never matches). */

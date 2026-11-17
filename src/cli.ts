@@ -1574,6 +1574,10 @@ cli
       }
     } catch (err: any) {
       updateSpinner.stop(pc.red('Update failed'));
+      // A session guard change that was made before the failure is still reported.
+      if (Array.isArray(err?.sessionGuardNotes) && err.sessionGuardNotes.length > 0) {
+        note(pc.yellow(err.sessionGuardNotes.join('\n')), 'Session guard (changed before the failure)');
+      }
       outro(pc.red(`Error: ${err.message}`));
       process.exit(1);
     }
@@ -2654,7 +2658,7 @@ cli
       const label: Record<string, string> = {
         wired: pc.green('✔ Wired (plain Claude sessions guarded)'),
         off: pc.dim('Off (declined)'),
-        missing: pc.yellow('✖ Missing — run agents update'),
+        missing: pc.yellow('✖ Missing (see the warning below for the command that restores it)'),
         modified: pc.yellow('⚠ Edited by hand — left as-is'),
         outdated: pc.yellow('⚠ Outdated — run agents update'),
         'skipped-invalid': pc.yellow('⚠ Not wired — settings file is not valid JSON (see warning)'),
@@ -3137,11 +3141,15 @@ export function claudeDiagnosticsToShow(capability: ClaudeCapabilityReport, issu
  * The two doctor lines of the session-guard section: the commands that repair the install and remove the guard, to be run in the
  * user's own terminal (while the guard blocks, the session's shell calls are blocked too). Empty when no guard is recorded.
  */
-export function sessionGuardCommandLines(commands: { repair: string; remove: string; folder?: string } | undefined): string[] {
+export function sessionGuardCommandLines(commands: { repair: string; remove: string; folder?: string; manual?: string; restore?: string } | undefined): string[] {
   if (!commands) return [];
   const lines = [`     Repair the install:   ${commands.repair}`, `     Remove the guard:     ${commands.remove}`];
   // A guard in the user settings file recorded by a project install is found only from that project's folder.
   if (commands.folder !== undefined) lines.push(`     Run them in:          ${commands.folder} (the project that installed this guard)`);
+  // A guard absent from the shared user settings file is put back on purpose, not by a plain update.
+  if (commands.restore !== undefined) lines.push(`     Restore it:           ${commands.restore}`);
+  // The route that needs no working CLI.
+  if (commands.manual !== undefined) lines.push(`     ${commands.manual}`);
   return lines;
 }
 

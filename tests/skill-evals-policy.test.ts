@@ -52,6 +52,14 @@ describe('checkSkillLayout takes the policy', () => {
     expect(errors.join('\n')).toContain('evals/evals.json is not valid JSON');
   });
 
+  it.each([['an unknown name', 'made-up-policy'], ['null', null], ['an empty string', ''], ['an inherited property name', 'toString'], ['a prototype key', '__proto__']])(
+    'a policy that is %s reads as required: only a known exemption exempts',
+    (_name, policy) => {
+      const errors = checkSkillLayout(skill({}), 'demo', policy as never);
+      expect(errors.some(e => e.includes('evals/evals.json is missing'))).toBe(true);
+    },
+  );
+
   it('without a policy the file is required, as before', () => {
     expect(checkSkillLayout(skill({}), 'demo').join('\n')).toContain('evals/evals.json is missing');
   });
@@ -70,6 +78,16 @@ describe('the postflight checker carries a literal copy of the table', () => {
     // The repository's own object literal, evaluated as an expression.
     const copy = new Function(`return ${literal![1]}`)() as Record<string, boolean>;
     expect(copy).toEqual({ ...EVALS_FILE_REQUIRED });
+  });
+
+  it('reads an unknown, null or inherited policy as required, and exempts only a known exemption', () => {
+    const match = /function evalsRequired\(policy\) \{[\s\S]*?\n\}/.exec(source);
+    expect(match, 'a function evalsRequired(policy) in check-skill-return.mjs').not.toBeNull();
+    const table = /const EVALS_REQUIRED_BY_POLICY = (\{[^}]*\});/.exec(source)![1];
+    const evalsRequired = new Function(`const EVALS_REQUIRED_BY_POLICY = ${table}; ${match![0]}; return evalsRequired;`)() as (policy: unknown) => boolean;
+    for (const policy of ['agents-united-original', 'private-owner']) expect(evalsRequired(policy), policy).toBe(true);
+    expect(evalsRequired('adapted-source')).toBe(false);
+    for (const policy of ['made-up-policy', null, undefined, '', 'toString', '__proto__', 7]) expect(evalsRequired(policy), String(policy)).toBe(true);
   });
 
   it('lets the task schema name exactly the same policies', () => {
