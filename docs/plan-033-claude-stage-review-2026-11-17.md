@@ -84,3 +84,7 @@ None of these is fixed.
 - The last full gate on Windows is the one of P25 (in its verification record): `hostlib-verify`, `typecheck`, `full-test-serial` (314 test files; 7,925 passed, 228 skipped) and `addon-matrix` (317 passed), all exit 0. The commits after it (`3688281`, `91d1ce4`) are documentation only.
 - Linux CI check `test`: success on `3688281` (read once). For `91d1ce4` and for the commit of this record it runs after the push and is not read yet.
 - Commits on the branch since the first stage review, oldest first: `d24de09` (P23 code), `55274f8` (P23 records), `000fc18` (Sitting A), `df8fca9` (Sitting B), `a4fc928` (P24 code), `6bbe03f` (P24 records), `a5948c3` (P25 code), `3688281` (P25 records), `91d1ce4` (Sitting C and two headless runs).
+
+## Addendum, later on 2026-11-17: the four open points fixed offline (P26)
+
+P26 fixes offline findings C-1, C-2 and C-3 and the follow-up of P25 listed in "Open findings and follow-ups" above. The fixes are not re-observed; nothing of P26 has been run on a live Host. See [the P26 verification record](plan-033-p26-verification-2026-11-17.md). The row states and what awaits the maintainer are unchanged; the stage is still not closed.
