@@ -232,6 +232,35 @@ describe('1: a way out is not undone by an unrelated update of the shared user s
     expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
   });
 
+  it('moving the guard to another place removes our entries from the earlier file first, and says so, so --no-session-guard still finds everything', async () => {
+    await installProject({ sessionGuard: 'project' });
+    expect(await inspectSessionGuard(PROJECT_SETTINGS)).toBe('wired');
+
+    const moved = await update({ sessionGuard: 'user' });
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+    // The earlier file is no longer left behind untracked.
+    expect(await fs.pathExists(PROJECT_SETTINGS)).toBe(false);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: USER_SETTINGS });
+    const notes = (moved.sessionGuardNotes ?? []).join('\n');
+    expect(notes).toContain(PROJECT_SETTINGS);
+    expect(notes).toMatch(/moved|removed our entries from/);
+
+    await update({ sessionGuard: false });
+    expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
+    expect(await fs.pathExists(PROJECT_SETTINGS)).toBe(false);
+  });
+
+  it('moving the guard leaves the earlier file\'s other content and a hand-edited entry alone', async () => {
+    await installProject({ sessionGuard: 'project' });
+    const settings = await fs.readJson(PROJECT_SETTINGS);
+    settings.env = { KEEP: '1' };
+    await fs.writeJson(PROJECT_SETTINGS, settings, { spaces: 2 });
+    await update({ sessionGuard: 'local' });
+    expect((await fs.readJson(PROJECT_SETTINGS)).env).toEqual({ KEEP: '1' });
+    expect((await groupsOf(PROJECT_SETTINGS))).toEqual([]);
+    expect(await inspectSessionGuard(path.join(PROJECT, '.claude', 'settings.local.json'))).toBe('wired');
+  });
+
   it('a guard that is present but outdated in the user file is still renewed by a plain update', async () => {
     await installProject({ sessionGuard: 'user' });
     const settings = await fs.readJson(USER_SETTINGS);
@@ -468,5 +497,17 @@ describe('7: a guard change that was made is reported when a later step fails', 
     expect(run.text).toContain(PROJECT_LOCK);
     expect(run.text).toContain('ghost-bundle-xyz');
     expect(run.text.indexOf('Changed:')).toBeLessThan(run.text.indexOf('ghost-bundle-xyz'));
+    expect(run.text).toContain('changed before the failure');
+  });
+
+  it('the CLI does not say anything was changed when the notes are only "Left as it was"', async () => {
+    await installProject({ fanout: ['cline'] });
+    await breakLater();
+    const run = cliRun(PROJECT, ['update', '--all', '--no-session-guard']);
+    expect(run.status).toBe(1);
+    expect(run.text).toContain('Left as it was:');
+    expect(run.text).toContain('ghost-bundle-xyz');
+    expect(run.text).not.toMatch(/changed before the failure/i);
+    expect(run.text).not.toContain('Changed:');
   });
 });

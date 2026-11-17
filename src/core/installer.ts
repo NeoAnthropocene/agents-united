@@ -782,6 +782,21 @@ private toPosix(p: string): string {
         return { warnings };
       }
     }
+    // The record holds one place. When the guard moves to another place, the entries already written to the earlier file would be left
+    // untracked (and `--no-session-guard` could not find them), so the careful removal runs on the earlier file first.
+    const warnings: string[] = [];
+    if (recorded && !('off' in recorded) && recorded.file !== recordedFile) {
+      const earlierFile = path.isAbsolute(recorded.file) ? recorded.file : path.join(workspaceRoot, recorded.file);
+      const moved = await removeOwnedSessionGuard(earlierFile, { createdFile: recorded.createdFile, recordedHash: recorded.handlerHash });
+      if (moved.status === 'removed' || moved.status === 'deleted-file') {
+        warnings.push(`Session guard moved from ${earlierFile} to ${file}: our entries were removed from ${earlierFile}.`);
+      } else if (moved.status === 'skipped-invalid') {
+        warnings.push(`Session guard moved to ${file}, but ${earlierFile} is not valid JSON, so agents-united left it untouched. Remove the agents-united guard entries from it by hand.`);
+      }
+      if (moved.left > 0) {
+        warnings.push(`Session guard moved to ${file}, but ${moved.left} edited entr${moved.left === 1 ? 'y' : 'ies'} in ${earlierFile} ${moved.left === 1 ? 'was' : 'were'} left in place; remove ${moved.left === 1 ? 'it' : 'them'} by hand.`);
+      }
+    }
     const existedBefore = await fs.pathExists(file);
     const result = await mergeSessionGuard(file, { replaceHash: sameFileRecord?.handlerHash });
     lockfile.sessionGuard = {
@@ -789,7 +804,6 @@ private toPosix(p: string): string {
       handlerHash: result.handlerHash,
       createdFile: sameFileRecord ? sameFileRecord.createdFile : !existedBefore,
     };
-    const warnings: string[] = [];
     if (result.status === 'skipped-invalid') {
       warnings.push(`Session guard not written: ${recordedFile} is not valid JSON (comments or trailing commas?). It was left untouched — paste this into it by hand:\n${sessionGuardSnippet(variant)}`);
     } else if (result.status === 'modified') {

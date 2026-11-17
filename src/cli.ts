@@ -1576,7 +1576,7 @@ cli
       updateSpinner.stop(pc.red('Update failed'));
       // A session guard change that was made before the failure is still reported.
       if (Array.isArray(err?.sessionGuardNotes) && err.sessionGuardNotes.length > 0) {
-        note(pc.yellow(err.sessionGuardNotes.join('\n')), 'Session guard (changed before the failure)');
+        note(pc.yellow(err.sessionGuardNotes.join('\n')), err.sessionGuardChanged > 0 ? 'Session guard (changed before the failure)' : 'Session guard');
       }
       outro(pc.red(`Error: ${err.message}`));
       process.exit(1);
