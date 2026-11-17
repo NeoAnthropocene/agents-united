@@ -45,7 +45,7 @@ export interface HealthReport {
   clineCapability?: ClineCapabilityReport;
   claudeCapability?: ClaudeCapabilityReport;
   /** Plan 023 A — plain-session guard state; absent when no decision was ever recorded. */
-  sessionGuard?: 'wired' | 'missing' | 'modified' | 'skipped-invalid' | 'off';
+  sessionGuard?: 'wired' | 'missing' | 'modified' | 'outdated' | 'skipped-invalid' | 'off';
   /** Plan 024 S4 — command-permission preset state; absent when no decision was ever recorded. */
   permissionPreset?: 'wired' | 'missing' | 'skipped-invalid' | 'off';
   /**
@@ -613,10 +613,12 @@ export class DoctorEngine {
         const guardFile = path.isAbsolute(guardRecord.file)
           ? guardRecord.file
           : path.join(workspaceRootOf(root), guardRecord.file);
-        const state = await inspectSessionGuard(guardFile);
+        const state = await inspectSessionGuard(guardFile, guardRecord.handlerHash);
         sessionGuard = state === 'absent' ? 'missing' : state;
         if (state === 'missing' || state === 'absent') {
           warnings.push(`Session guard missing from ${guardRecord.file}: plain Claude sessions are unguarded. Run 'agents update' to restore it.`);
+        } else if (state === 'outdated') {
+          warnings.push(`Session guard in ${guardRecord.file} is outdated: it does not block when it cannot run. Run 'agents update' to renew it.`);
         } else if (state === 'modified') {
           warnings.push(`Session guard in ${guardRecord.file} was edited by hand; agents-united leaves it as-is.`);
         } else if (state === 'skipped-invalid') {

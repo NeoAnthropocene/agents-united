@@ -8,7 +8,8 @@ import { renderHooks } from '../src/core/native-floor.js';
 import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks, readOnlyGuardHandler, readOnlyGuardHooks } from '../src/core/readonly-guard.js';
-import { attempt, preToolUseGroups, type HookHandler } from './helpers/claude-host-hooks.js';
+import yaml from 'yaml';
+import { attempt, ON_FAILURE_BLOCK_MESSAGE, preToolUseGroups, type HookHandler } from './helpers/claude-host-hooks.js';
 
 /**
  * Plan 033 P20 — the native guards block when their hook cannot run. A Claude Code hook whose script cannot run does not block by default (an interactive sitting on
@@ -53,9 +54,21 @@ describe('the generated guard handlers carry onFailure "block", last in key orde
     for (const handler of handlersOf(modeLineGateHooks().PreToolUse)) expect(handler).not.toHaveProperty('onFailure');
   });
 
-  it('the legacy projection and the settings-level session guard keep their handler (not a native agent: no hash or golden changes)', () => {
-    expect(guardHandler()).toEqual({ type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT] });
-    for (const handler of handlersOf(managedGuardHooks().PreToolUse)) expect(handler).not.toHaveProperty('onFailure');
+  // The maintainer's decision of 2026-11-17: the legacy inline form and the settings-level session guard block when they cannot run.
+  it('the legacy projection and the settings-level session guard carry the fail-closed handler', () => {
+    expect(guardHandler()).toEqual({ type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT], ...BLOCK });
+    expect(Object.keys(guardHandler())).toEqual(['type', 'command', 'args', 'onFailure']);
+    const handlers = handlersOf(managedGuardHooks().PreToolUse);
+    expect(handlers.length).toBe(2);
+    for (const handler of handlers) expect(handler.onFailure).toBe('block');
+  });
+
+  it('through the Host model: a session-guard handler whose script fails blocks the call', () => {
+    const failing = { ...guardHandler(), args: ['-e', 'process.exit(1)'] };
+    const agent = `---\n${yaml.stringify({ tools: 'Bash', hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [failing] }] } })}---\n`;
+    const result = attempt(agent, path.resolve('scratch'), { tool: 'Bash', input: { command: 'echo hello world' } });
+    expect(result.blocked).toBe(true);
+    expect(result.reason).toContain(ON_FAILURE_BLOCK_MESSAGE);
   });
 });
 

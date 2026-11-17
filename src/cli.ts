@@ -2605,6 +2605,7 @@ cli
         off: pc.dim('Off (declined)'),
         missing: pc.yellow('✖ Missing — run agents update'),
         modified: pc.yellow('⚠ Edited by hand — left as-is'),
+        outdated: pc.yellow('⚠ Outdated — run agents update'),
         'skipped-invalid': pc.yellow('⚠ Not wired — settings file is not valid JSON (see warning)'),
       };
       console.log(`  🛡  Session Guard:      ${label[report.sessionGuard]}\n`);

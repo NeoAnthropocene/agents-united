@@ -19,14 +19,14 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'fs-extra';
-import { guardHandler, managedGuardHooks } from './guard.js';
+import { GUARD_SCRIPT, guardHandler, managedGuardHooks } from './guard.js';
 
 export type SessionGuardVariant = 'project' | 'local' | 'user';
 export type MergeStatus = 'created' | 'merged' | 'unchanged' | 'modified' | 'skipped-invalid';
 export type RemoveStatus = 'removed' | 'deleted-file' | 'absent' | 'skipped-invalid';
-export type InspectStatus = 'wired' | 'missing' | 'modified' | 'skipped-invalid' | 'absent';
+export type InspectStatus = 'wired' | 'missing' | 'modified' | 'outdated' | 'skipped-invalid' | 'absent';
 
-interface Handler { type?: string; command?: string; args?: unknown[] }
+interface Handler { type?: string; command?: string; args?: unknown[]; onFailure?: unknown }
 interface Group { matcher?: string; hooks?: Handler[] }
 type Settings = Record<string, unknown> & { hooks?: Record<string, unknown> & { PreToolUse?: Group[] } };
 
@@ -70,7 +70,33 @@ const isOursAnyVersion = (handler: Handler): boolean =>
   (handler.args[1] as string).includes(GUARD_MARKER);
 
 const isCurrentGuard = (handler: Handler): boolean =>
-  JSON.stringify({ type: handler.type, command: handler.command, args: handler.args }) === JSON.stringify(guardHandler());
+  JSON.stringify({ type: handler.type, command: handler.command, args: handler.args, onFailure: handler.onFailure }) === JSON.stringify(guardHandler());
+
+/**
+ * The destructive guard script as it was before it blocked unreadable input (the maintainer's decision of 2026-11-17), kept so that an
+ * entry written by that version is recognised as ours and renewed. Same ownership marker as the current script.
+ */
+const EARLIER_GUARD_SCRIPTS: readonly string[] = [
+  String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
+];
+
+/**
+ * An earlier version of our handler, which `agents update` renews. Outdated means: ours, not current, and either (a) exactly one of our
+ * earlier forms (`type`, `command` and `args` only, no `onFailure`, with the current script or an earlier script text) or
+ * (b) a handler whose hash is the one recorded in the lockfile for an earlier version. Anything else in our group is hand-edited.
+ */
+const isOutdatedGuard = (handler: Handler, recordedHash?: string): boolean => {
+  if (!isOursAnyVersion(handler) || isCurrentGuard(handler)) return false;
+  if (recordedHash !== undefined && crypto.createHash('sha256').update(JSON.stringify(handler)).digest('hex').slice(0, 16) === recordedHash) return true;
+  const keys = Object.keys(handler);
+  const script = (handler.args as unknown[])[1];
+  return (
+    keys.every(key => key === 'type' || key === 'command' || key === 'args') &&
+    handler.type === 'command' &&
+    (handler.args as unknown[]).length === 2 &&
+    (script === GUARD_SCRIPT || EARLIER_GUARD_SCRIPTS.includes(script as string))
+  );
+};
 
 const groupIsOurs = (group: Group): boolean => Array.isArray(group.hooks) && group.hooks.some(isOursAnyVersion);
 
@@ -123,15 +149,21 @@ export async function mergeSessionGuard(
   const base = created ? { indent: 2, eol: '\n', trailingNewline: true } : parsed;
   const settings: Settings = created ? {} : parsed.settings;
   const hooks = (settings.hooks ??= {});
-  let pre: Group[] = (hooks.PreToolUse ??= []);
-
-  if (opts.replaceHash && opts.replaceHash !== handlerHash) {
-    // Our previous version: drop it so the current handler takes its place.
-    pre = hooks.PreToolUse = pre.filter(group => !(groupIsOurs(group) && !group.hooks!.some(isCurrentGuard)));
-  }
+  const pre: Group[] = (hooks.PreToolUse ??= []);
 
   let changed = false;
   let modified = false;
+  // Our earlier version (recorded hash, or one of our known earlier forms): the handler is replaced where it stands, so the group keeps
+  // its place and every other entry of the file stays as it was. A hand-edited handler is never touched.
+  for (const group of pre) {
+    if (!groupIsOurs(group)) continue;
+    group.hooks = group.hooks!.map(handler => {
+      if (!isOutdatedGuard(handler, opts.replaceHash)) return handler;
+      changed = true;
+      return guardHandler() as Handler;
+    });
+  }
+
   for (const wanted of managedGuardHooks().PreToolUse) {
     const sameMatcher = pre.filter(group => group.matcher === wanted.matcher && groupIsOurs(group));
     if (sameMatcher.some(group => group.hooks!.some(isCurrentGuard))) continue;
@@ -177,17 +209,24 @@ export async function removeSessionGuard(file: string, opts: { createdFile: bool
 }
 
 /** Doctor view: is the current guard wired in this file? */
-export async function inspectSessionGuard(file: string): Promise<InspectStatus> {
+export async function inspectSessionGuard(file: string, recordedHash?: string): Promise<InspectStatus> {
   const parsed = await parse(file);
   if (parsed === 'absent' || parsed === 'invalid') return parsed === 'absent' ? 'absent' : 'skipped-invalid';
   const pre = parsed.settings.hooks?.PreToolUse ?? [];
   let allCurrent = true;
   let anyOurs = false;
+  let anyModified = false;
   for (const wanted of managedGuardHooks().PreToolUse) {
     const ours = pre.filter(group => group.matcher === wanted.matcher && groupIsOurs(group));
     if (ours.length > 0) anyOurs = true;
-    if (!ours.some(group => group.hooks!.some(isCurrentGuard))) allCurrent = false;
+    if (ours.some(group => group.hooks!.some(isCurrentGuard))) continue;
+    allCurrent = false;
+    // Not current: older versions of our handler only is "outdated"; any other difference is a hand edit.
+    const handlers = ours.flatMap(group => group.hooks!.filter(isOursAnyVersion));
+    // A matcher with no group of ours (removed, or edited until the marker is gone) while another still has one is also an edit.
+    if (handlers.length === 0 || !handlers.every(handler => isOutdatedGuard(handler, recordedHash))) anyModified = true;
   }
   if (allCurrent) return 'wired';
-  return anyOurs ? 'modified' : 'missing';
+  if (!anyOurs) return 'missing';
+  return anyModified ? 'modified' : 'outdated';
 }

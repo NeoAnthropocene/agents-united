@@ -54,6 +54,7 @@ hooks:
               .env write";if(r){process.stderr.write("Blocked by agents-united
               guard: "+r+" requires explicit human approval outside the agent
               session.\n");process.exit(2)}})'
+          onFailure: block
     - matcher: Write|Edit|NotebookEdit
       hooks:
         - type: command
@@ -74,6 +75,7 @@ hooks:
               .env write";if(r){process.stderr.write("Blocked by agents-united
               guard: "+r+" requires explicit human approval outside the agent
               session.\n");process.exit(2)}})'
+          onFailure: block
 ---
 <!-- managed-by: agents-united | profile: claude | canonical: agents/orchestrator-engineering.md | do not edit -->
 

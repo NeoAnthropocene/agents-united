@@ -22,9 +22,12 @@ export const GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c)
 /** Text every version of the destructive guard script carries: the ownership marker (the read-only guard says "read-only guard", so it never matches). */
 export const GUARD_OWNERSHIP_MARKER = 'Blocked by agents-united guard';
 
-/** The exec-form handler: `node -e <script>`, no shell on any OS. */
-export function guardHandler(): { type: 'command'; command: string; args: string[] } {
-  return { type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT] };
+/**
+ * The exec-form handler: `node -e <script>`, no shell on any OS. It carries `onFailure: 'block'` (Claude Code 2.1.295 or later; the
+ * maintainer's decision of 2026-11-17): the legacy inline form and the settings-level session guard block when the script cannot run.
+ */
+export function guardHandler(): FailClosedHandler {
+  return { type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT], onFailure: 'block' };
 }
 
 /** The PreToolUse groups every guarded surface carries. */
@@ -89,7 +92,7 @@ export function guardFileHandler(kind: NativeGuardKind): { type: 'command'; comm
 
 /** The inline (`node -e`) form of the destructive-command guard for native agents: the file handler's fail-closed field, the script embedded. */
 export function nativeGuardHandler(): FailClosedHandler {
-  return { ...guardHandler(), onFailure: 'block' };
+  return guardHandler();
 }
 
 /** The destructive-command guard of a native agent, as a script file (project scope): the matchers of `nativeGuardHooks`, a file handler. */

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { InstallEngine } from '../src/core/installer.js';
@@ -37,9 +38,9 @@ import { guardHandler } from '../src/core/guard.js';
  * HealthReport.sessionGuard?: 'wired'|'missing'|'modified'|'skipped-invalid'|'off'.
  */
 interface SessionGuardModule {
-  mergeSessionGuard(file: string): Promise<{ status: string; handlerHash: string }>;
+  mergeSessionGuard(file: string, opts?: { replaceHash?: string }): Promise<{ status: string; handlerHash: string }>;
   removeSessionGuard(file: string, opts: { createdFile: boolean }): Promise<string>;
-  inspectSessionGuard(file: string): Promise<string>;
+  inspectSessionGuard(file: string, recordedHash?: string): Promise<string>;
   guardHandlerHash(): string;
 }
 
@@ -247,5 +248,97 @@ describe('Plan 023 A — session guard through install / doctor / uninstall (int
     const warning = report.warnings.find(w => /session guard/i.test(w)) ?? '';
     expect(warning).toMatch(/not valid JSON/i);
     expect(warning).toMatch(/paste/i);
+  });
+});
+
+/**
+ * The maintainer's decision of 2026-11-17: the session guard blocks when it cannot run, so its handler carries `onFailure: "block"`.
+ * An entry written by an earlier version (no `onFailure`, or the earlier script text) is OURS but outdated: `agents update`
+ * replaces it in place and the doctor says so. Rule: a handler is outdated when it is exactly one of our earlier forms
+ * (the current script without `onFailure`, or an earlier script text that carries our marker, each without `onFailure`)
+ * or when its hash equals the recorded hash of an earlier version. Anything else in our group is "modified" (hand-edited).
+ */
+describe('session guard fail-closed handler and the outdated state', () => {
+  type Handler = Record<string, unknown>;
+  const withoutOnFailure = (handler: Handler): Handler => {
+    const { onFailure: _dropped, ...rest } = handler;
+    return rest;
+  };
+  /** The file text as an earlier version left it: our handlers without `onFailure`, the user's style (4 spaces, CRLF) kept. */
+  const olderText = async (mutate: (handler: Handler) => Handler = withoutOnFailure): Promise<string> => {
+    const settings = JSON.parse(await fs.readFile(SETTINGS, 'utf8')) as { hooks: { PreToolUse: Array<{ hooks: Handler[] }> } };
+    for (const group of settings.hooks.PreToolUse) group.hooks = group.hooks.map(h => (h.command === 'node' ? mutate(h) : h));
+    return JSON.stringify(settings, null, 4).replace(/\n/g, '\r\n') + '\r\n';
+  };
+  const hashOf = (handler: Handler): string => crypto.createHash('sha256').update(JSON.stringify(handler)).digest('hex').slice(0, 16);
+
+  it('writes the handler with onFailure "block"', async () => {
+    const { mergeSessionGuard } = await api();
+    await mergeSessionGuard(SETTINGS);
+    for (const group of ourGroups(await readJson(SETTINGS))) expect((group.hooks[0] as Record<string, unknown>).onFailure).toBe('block');
+  });
+
+  it('replaces an old recorded handler in place on update and keeps the rest of the file byte for byte', async () => {
+    const { mergeSessionGuard } = await api();
+    await fs.outputFile(SETTINGS, USER_SETTINGS_TEXT);
+    await mergeSessionGuard(SETTINGS);
+    const current = await fs.readFile(SETTINGS, 'utf8');
+    const old = await olderText();
+    expect(old).not.toBe(current);
+    await fs.writeFile(SETTINGS, old);
+    const recorded = hashOf(withoutOnFailure({ ...guardHandler() }));
+    expect((await mergeSessionGuard(SETTINGS, { replaceHash: recorded })).status).toBe('merged');
+    expect(await fs.readFile(SETTINGS, 'utf8')).toBe(current);
+  });
+
+  it('reports an old unrecorded handler as outdated, and update renews it without a recorded hash', async () => {
+    const { mergeSessionGuard, inspectSessionGuard } = await api();
+    await mergeSessionGuard(SETTINGS);
+    await fs.writeFile(SETTINGS, await olderText());
+    expect(await inspectSessionGuard(SETTINGS)).toBe('outdated');
+    expect((await mergeSessionGuard(SETTINGS)).status).toBe('merged');
+    expect(await inspectSessionGuard(SETTINGS)).toBe('wired');
+  });
+
+  it('knows the script text of the version before the unreadable-input change as an earlier form', async () => {
+    const { mergeSessionGuard, inspectSessionGuard } = await api();
+    await mergeSessionGuard(SETTINGS);
+    const earlier = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+    await fs.writeFile(SETTINGS, await olderText(h => ({ type: 'command', command: 'node', args: ['-e', earlier] })));
+    expect(await inspectSessionGuard(SETTINGS)).toBe('outdated');
+    await mergeSessionGuard(SETTINGS);
+    expect(await inspectSessionGuard(SETTINGS)).toBe('wired');
+  });
+
+  it('keeps a hand-edited handler as modified, never replaced, even when the field is missing too', async () => {
+    const { mergeSessionGuard, inspectSessionGuard } = await api();
+    await mergeSessionGuard(SETTINGS);
+    await fs.writeFile(SETTINGS, await olderText(h => ({ ...withoutOnFailure(h), args: ['-e', `${(h.args as string[])[1]};process.exit(0)`] })));
+    const before = await fs.readFile(SETTINGS, 'utf8');
+    expect(await inspectSessionGuard(SETTINGS)).toBe('modified');
+    expect((await mergeSessionGuard(SETTINGS)).status).toBe('modified');
+    expect((await mergeSessionGuard(SETTINGS, { replaceHash: 'deadbeefdeadbeef' })).status).toBe('modified');
+    expect(await fs.readFile(SETTINGS, 'utf8')).toBe(before);
+  });
+
+  it('doctor says the guard is outdated and that agents update renews it; update then wires it', async () => {
+    const add = (opts: Record<string, unknown> = {}) =>
+      new InstallEngine().install('software-engineering', { targetDir: AGENTS_DIR, method: 'copy', fanout: ['claude'], ...opts });
+    await add({ sessionGuard: 'project' });
+    await fs.writeFile(SETTINGS, await olderText());
+    const lock = await lockfile();
+    lock.sessionGuard.handlerHash = hashOf(withoutOnFailure({ ...guardHandler() }));
+    await fs.writeJson(path.join(AGENTS_DIR, 'agents-united.json'), lock, { spaces: 2 });
+
+    const report = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');
+    expect(report.sessionGuard).toBe('outdated');
+    const warning = report.warnings.find(w => /Session guard/.test(w)) ?? '';
+    expect(warning).toBe(
+      "Session guard in .claude/settings.json is outdated: it does not block when it cannot run. Run 'agents update' to renew it.",
+    );
+    expect(report.valid).toBe(true);
+
+    await add();
+    expect((await DoctorEngine.runDoctor(AGENTS_DIR, 'claude')).sessionGuard).toBe('wired');
   });
 });
