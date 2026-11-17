@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
@@ -13,6 +13,7 @@ import {
   mergeSessionGuard,
   sessionGuardCommands,
   sessionGuardHandler,
+  sessionGuardHooks,
   sessionGuardScript,
 } from '../src/core/session-guard.js';
 import { UpdateEngine } from '../src/core/updater.js';
@@ -123,11 +124,11 @@ describe('agents update --no-session-guard removes the session guard and --sessi
   it('leaves a hand-modified guard in place, says so, and does not delete it silently', async () => {
     await install({ sessionGuard: 'project' });
     const settings = await fs.readJson(SETTINGS);
-    const bash = settings.hooks.PreToolUse.find((group: Group) => group.matcher === 'Bash');
+    const bash = settings.hooks.PreToolUse.find((group: Group) => group.matcher === 'Bash|PowerShell');
     bash.hooks[0].args = ['-e', `${bash.hooks[0].args[1]};process.exit(0)`];
     await fs.writeJson(SETTINGS, settings, { spaces: 2 });
     const result = await update({ sessionGuard: false });
-    expect(ourGroups(await groups()).map(group => group.matcher)).toEqual(['Bash']);
+    expect(ourGroups(await groups()).map(group => group.matcher)).toEqual(['Bash|PowerShell']);
     expect(result.sessionGuardNotes?.join('\n')).toMatch(/edited by hand/);
     expect((await lockfile()).sessionGuard).toEqual({ off: true });
   });
@@ -213,6 +214,24 @@ describe('the session script blocks with both commands when it cannot do its wor
     expect(sessionGuardScript('project')).toContain('Blocked by agents-united guard');
   });
 
+  // The reviewer suspected an exit 0 when stdin closes without `end` or `error`. A host closes the pipe or sends end of file, and both end the
+  // stream with `end`: the guard blocks (exit 2). Only a script that destroys its own stdin ends it with `close` alone, which no host does.
+  it('input that the host closes (end of file, or a pipe closed at once) blocks with exit 2, never 0', async () => {
+    const eof = spawnSync(process.execPath, ['-e', sessionGuardScript('project')], { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' });
+    expect(eof.status).toBe(2);
+    expect(eof.stderr.startsWith('Blocked by agents-united guard: unreadable hook input')).toBe(true);
+
+    const closed = await new Promise<{ code: number | null; stderr: string }>(resolve => {
+      const child = spawn(process.execPath, ['-e', sessionGuardScript('project')], { stdio: ['pipe', 'pipe', 'pipe'] });
+      let stderr = '';
+      child.stderr.on('data', chunk => (stderr += String(chunk)));
+      child.on('close', code => resolve({ code, stderr }));
+      child.stdin.destroy();
+    });
+    expect(closed.code).toBe(2);
+    expect(closed.stderr).toContain('unreadable hook input');
+  });
+
   it('the role guards keep the generic script without the session-only text', () => {
     for (const script of [GUARD_SCRIPT, READ_ONLY_GUARD_SCRIPT]) {
       expect(script).not.toContain('agents update');
@@ -227,7 +246,7 @@ describe('the session script blocks with both commands when it cannot do its wor
 describe('earlier forms of the session guard are outdated, the new form is current', () => {
   const asFile = async (handler: Record<string, unknown>): Promise<void> => {
     const entry = (matcher: string) => ({ matcher, hooks: [handler] });
-    await fs.outputJson(SETTINGS, { hooks: { PreToolUse: [entry('Bash'), entry('Write|Edit|NotebookEdit')] } }, { spaces: 2 });
+    await fs.outputJson(SETTINGS, { hooks: { PreToolUse: sessionGuardHooks('project').PreToolUse.map(group => entry(group.matcher)) } }, { spaces: 2 });
   };
   const preS2 = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
 
@@ -263,9 +282,17 @@ describe('the doctor carries both commands for the CLI to print once', () => {
     expect(report.sessionGuard).toBe('wired');
     expect(report.sessionGuardCommands).toEqual(sessionGuardCommands('project'));
 
-    await fs.writeJson(SETTINGS, { hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ ...guardHandler() }] }] } });
+    // One group only, so the other matcher has no group of ours: an edit, not an earlier version.
+    await fs.writeJson(SETTINGS, { hooks: { PreToolUse: [{ matcher: 'Bash|PowerShell', hooks: [{ ...guardHandler() }] }] } });
+    const edited = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');
+    expect(edited.sessionGuard).toBe('modified');
+    expect(edited.sessionGuardCommands).toEqual(sessionGuardCommands('project'));
+
+    // Both groups hold the earlier generic handler: an earlier version of ours, which `agents update` renews.
+    const earlier = sessionGuardHooks('project').PreToolUse.map(group => ({ matcher: group.matcher, hooks: [{ ...guardHandler() }] }));
+    await fs.writeJson(SETTINGS, { hooks: { PreToolUse: earlier } });
     const outdated = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');
-    expect(outdated.sessionGuard).toBe('modified');
+    expect(outdated.sessionGuard).toBe('outdated');
     expect(outdated.sessionGuardCommands).toEqual(sessionGuardCommands('project'));
 
     await update({ sessionGuard: false });

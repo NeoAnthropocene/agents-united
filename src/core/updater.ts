@@ -15,6 +15,7 @@ import type {
   InstalledPackageRecord,
   LockfileManifest,
   InventoryOptions,
+  InstallScope,
   ProjectionInfo,
 } from './types.js';
 
@@ -272,17 +273,30 @@ export class UpdateEngine {
         targetDirs: inventory.targetDirs,
         dryRun: options.dryRun || false,
         projections: [],
+        ...(options.sessionGuard !== undefined && !options.dryRun ? { sessionGuardNotes: [], sessionGuardChanged: 0 } : {}),
       };
     }
 
     // `--session-guard` / `--no-session-guard`: applied to each install's lockfile before anything that can skip the record, because it is
-    // the way out of a session guard that blocks (the maintainer's decision of 2026-11-17).
+    // the way out of a session guard that blocks (the maintainer's decision of 2026-11-17). It reaches only the lockfiles of the scope the
+    // command addresses: the project's without `--global`, the global one with it. The scan lists both scopes without `--global`, so the
+    // other scope's lockfile is named in the notes and left as it was.
     let sessionGuardNotes: string[] | undefined;
+    let sessionGuardChanged: number | undefined;
     if (options.sessionGuard !== undefined && !options.dryRun) {
       sessionGuardNotes = [];
+      sessionGuardChanged = 0;
+      const addressed: InstallScope = options.global || options.scope === 'global' ? 'global' : 'project';
       for (const dir of new Set(recordsToUpdate.map(record => record.targetDir))) {
         const scope = recordsToUpdate.find(record => record.targetDir === dir)!.scope;
-        sessionGuardNotes.push(...await this.installer.applySessionGuardChoice(dir, scope, options.sessionGuard));
+        if (scope !== addressed) {
+          const reach = addressed === 'project' ? 'add --global to reach the global scope' : 'run it without --global in a project folder to reach that project';
+          sessionGuardNotes.push(`Left as it was: ${path.join(dir, 'agents-united.json')} (${scope} scope): this command addresses the ${addressed} scope; ${reach}.`);
+          continue;
+        }
+        const outcome = await this.installer.applySessionGuardChoice(dir, scope, options.sessionGuard);
+        sessionGuardNotes.push(...outcome.notes);
+        if (outcome.changed) sessionGuardChanged++;
       }
     }
 
@@ -445,7 +459,7 @@ export class UpdateEngine {
       targetDirs: inventory.targetDirs,
       dryRun: false,
       projections: this.deduplicateProjections(collectedProjections),
-      ...(sessionGuardNotes ? { sessionGuardNotes } : {}),
+      ...(sessionGuardNotes ? { sessionGuardNotes, sessionGuardChanged: sessionGuardChanged ?? 0 } : {}),
     };
 
   }

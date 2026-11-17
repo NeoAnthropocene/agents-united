@@ -39,7 +39,7 @@ import { sessionGuardHandler as guardHandler } from '../src/core/session-guard.j
  */
 interface SessionGuardModule {
   mergeSessionGuard(file: string, opts?: { replaceHash?: string }): Promise<{ status: string; handlerHash: string }>;
-  removeSessionGuard(file: string, opts: { createdFile: boolean }): Promise<string>;
+  removeOwnedSessionGuard(file: string, opts: { createdFile: boolean; recordedHash?: string }): Promise<{ status: string; left: number }>;
   inspectSessionGuard(file: string, recordedHash?: string): Promise<string>;
   guardHandlerHash(): string;
 }
@@ -52,7 +52,7 @@ async function api(): Promise<SessionGuardModule> {
       `MISSING API: src/core/session-guard.ts cannot be loaded (Plan 023 Step A2 contract) — ${err instanceof Error ? err.message : String(err)}`,
     );
   })) as unknown as Partial<SessionGuardModule>;
-  for (const name of ['mergeSessionGuard', 'removeSessionGuard', 'inspectSessionGuard', 'guardHandlerHash'] as const) {
+  for (const name of ['mergeSessionGuard', 'removeOwnedSessionGuard', 'inspectSessionGuard', 'guardHandlerHash'] as const) {
     if (typeof mod[name] !== 'function') throw new Error(`MISSING API: session-guard.ts must export ${name} (Plan 023 Step A2)`);
   }
   return mod as SessionGuardModule;
@@ -95,7 +95,7 @@ describe('Plan 023 A — session-guard merge engine (unit)', () => {
     expect(result).toEqual({ status: 'created', handlerHash: guardHandlerHash() });
     const settings = await readJson(SETTINGS);
     expect(Object.keys(settings)).toEqual(['hooks']);
-    expect(ourGroups(settings).map(g => g.matcher)).toEqual(['Bash', 'Write|Edit|NotebookEdit']);
+    expect(ourGroups(settings).map(g => g.matcher)).toEqual(['Bash|PowerShell', 'Write|Edit|MultiEdit|NotebookEdit']);
   });
 
   it('merges into an existing file, preserving every other key, the user hook, indent and EOL', async () => {
@@ -122,33 +122,33 @@ describe('Plan 023 A — session-guard merge engine (unit)', () => {
   });
 
   it('never rewrites invalid JSON or JSONC — skipped, bytes untouched', async () => {
-    const { mergeSessionGuard, removeSessionGuard, inspectSessionGuard } = await api();
+    const { mergeSessionGuard, removeOwnedSessionGuard, inspectSessionGuard } = await api();
     const jsonc = '{\n  // my comment\n  "env": { "A": "1" },\n}\n';
     await fs.outputFile(SETTINGS, jsonc);
     expect((await mergeSessionGuard(SETTINGS)).status).toBe('skipped-invalid');
-    expect(await removeSessionGuard(SETTINGS, { createdFile: false })).toBe('skipped-invalid');
+    expect((await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).status).toBe('skipped-invalid');
     expect(await inspectSessionGuard(SETTINGS)).toBe('skipped-invalid');
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(jsonc);
   });
 
   it('remove takes out only our groups and restores the user file byte-for-byte', async () => {
-    const { mergeSessionGuard, removeSessionGuard } = await api();
+    const { mergeSessionGuard, removeOwnedSessionGuard } = await api();
     await fs.outputFile(SETTINGS, USER_SETTINGS_TEXT);
     await mergeSessionGuard(SETTINGS);
-    expect(await removeSessionGuard(SETTINGS, { createdFile: false })).toBe('removed');
+    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toEqual({ status: 'removed', left: 0 });
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(USER_SETTINGS_TEXT);
   });
 
   it('remove deletes a file we created when nothing else remains; keeps it if the user added content', async () => {
-    const { mergeSessionGuard, removeSessionGuard } = await api();
+    const { mergeSessionGuard, removeOwnedSessionGuard } = await api();
     await mergeSessionGuard(SETTINGS);
-    expect(await removeSessionGuard(SETTINGS, { createdFile: true })).toBe('deleted-file');
+    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).toEqual({ status: 'deleted-file', left: 0 });
     expect(await fs.pathExists(SETTINGS)).toBe(false);
 
     await mergeSessionGuard(SETTINGS);
     const withUser = await readJson(SETTINGS);
     await fs.writeJson(SETTINGS, { ...withUser, env: { MINE: '1' } }, { spaces: 2 });
-    expect(await removeSessionGuard(SETTINGS, { createdFile: true })).toBe('removed');
+    expect((await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).status).toBe('removed');
     expect(await readJson(SETTINGS)).toEqual({ env: { MINE: '1' } });
   });
 
@@ -162,7 +162,7 @@ describe('Plan 023 A — session-guard merge engine (unit)', () => {
     // a hand-edited guard group (same matcher, altered script) is "modified", never silently repaired
     const settings = await readJson(SETTINGS);
     const pre = settings.hooks!.PreToolUse!;
-    const bash = pre.find(g => isOurs(g) && g.matcher === 'Bash')!;
+    const bash = pre.find(g => isOurs(g) && g.matcher === 'Bash|PowerShell')!;
     bash.hooks[0].args = ['-e', 'process.exit(0)'];
     await fs.writeJson(SETTINGS, settings, { spaces: 2 });
     expect(await inspectSessionGuard(SETTINGS)).toBe('modified');
@@ -334,7 +334,7 @@ describe('session guard fail-closed handler and the outdated state', () => {
     expect(report.sessionGuard).toBe('outdated');
     const warning = report.warnings.find(w => /Session guard/.test(w)) ?? '';
     expect(warning).toBe(
-      "Session guard in .claude/settings.json is outdated: it does not block when it cannot run. Run 'agents update' to renew it.",
+      "Session guard in .claude/settings.json is outdated: it is an earlier form, which may not block when it cannot run and does not cover the PowerShell and MultiEdit tools. Run 'agents update' to renew it.",
     );
     expect(report.valid).toBe(true);
 

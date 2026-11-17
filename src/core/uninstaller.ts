@@ -8,7 +8,7 @@ import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, removeAntigravityHook } from './antigravity-hooks.js';
 import { syncAntigravityMcp } from './antigravity-mcp.js';
-import { removeSessionGuard } from './session-guard.js';
+import { removeOwnedSessionGuard } from './session-guard.js';
 import { removePermissionPreset } from './permission-preset.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
@@ -204,7 +204,7 @@ export class UninstallEngine {
     await fs.remove(fullPath);
   }
 
-  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; kept: string[]; staleRecords: string[]; retainedOwners: string[]; targetDirs: string[]; dryRun: boolean }> {
+  public async uninstall(identifier: string, options: UninstallOptions = {}): Promise<{ removed: string[]; kept: string[]; staleRecords: string[]; retainedOwners: string[]; targetDirs: string[]; dryRun: boolean; notes: string[] }> {
     const scope = this.parseScope(options);
     const hosts = this.parseHosts(options);
 
@@ -218,6 +218,8 @@ export class UninstallEngine {
     const totalRemoved: string[] = [];
     const totalKept: string[] = [];
     const totalStale: string[] = [];
+    // What the user has to know beyond the file counts: a guard entry left or a settings file that could not be read (session guard).
+    const totalNotes: string[] = [];
     const retainedOwners = new Set<string>();
 
     for (const targetDir of targetDirs) {
@@ -546,13 +548,25 @@ export class UninstallEngine {
             }
 
             // Plan 023 A — the plain-session guard serves the whole workspace, so it goes with the
-            // LAST bundle: only our PreToolUse groups are removed, and the settings file is deleted
-            // only when agents-united created it and nothing of the user's remains.
+            // LAST bundle: only the handlers that are ours and not hand-edited are removed (a hook of the
+            // user's own in the same group stays, and so does an edited handler, reported), and the
+            // settings file is deleted only when agents-united created it and nothing of the user's remains.
+            // A guard in the user settings file is removed too, although other projects may record it: there
+            // is no reference count, so the note says the file is shared.
             const guard = lockfile.sessionGuard;
             if (lockfile.installed.bundles.length === 0 && guard && !('off' in guard)) {
               const guardFile = path.isAbsolute(guard.file) ? guard.file : path.join(workspaceRoot, guard.file);
-              const outcome = await removeSessionGuard(guardFile, { createdFile: guard.createdFile });
-              if (outcome === 'removed' || outcome === 'deleted-file') removedFiles.push(guard.file);
+              const outcome = await removeOwnedSessionGuard(guardFile, { createdFile: guard.createdFile, recordedHash: guard.handlerHash });
+              const removed = outcome.status === 'removed' || outcome.status === 'deleted-file';
+              if (removed) removedFiles.push(guard.file);
+              if (outcome.status === 'skipped-invalid') {
+                totalNotes.push(`Session guard not removed: ${guard.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Remove the agents-united guard entries from it by hand.`);
+              } else if (outcome.left > 0) {
+                totalNotes.push(`Session guard in ${guard.file} was edited by hand, so ${outcome.left} entr${outcome.left === 1 ? 'y was' : 'ies were'} left in place; remove ${outcome.left === 1 ? 'it' : 'them'} by hand.`);
+              }
+              if (removed && path.isAbsolute(guard.file)) {
+                totalNotes.push(`The session guard was removed from ${guard.file}, the user settings file shared by every project: another install that records the guard there will show it as missing until agents update runs there.`);
+              }
               delete lockfile.sessionGuard;
             }
 
@@ -641,6 +655,7 @@ export class UninstallEngine {
       retainedOwners: [...retainedOwners].sort(),
       targetDirs,
       dryRun: options.dryRun || false,
+      notes: totalNotes,
     };
   }
 }

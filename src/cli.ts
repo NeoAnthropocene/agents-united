@@ -1293,6 +1293,9 @@ cli
       if (result.staleRecords.length > 0) {
         log.info(`${result.staleRecords.length} stale record(s) cleaned — bookkeeping only, those files were already gone`);
       }
+      if (result.notes.length > 0) {
+        note(pc.yellow(result.notes.join('\n')), 'Session guard');
+      }
       outro(pc.green(
         result.removed.length === 0 && result.kept.length > 0
           ? `✔ Removed "${identifier}" from this workspace — nothing was deleted, ${result.kept.length} co-owned assets kept`
@@ -1315,7 +1318,7 @@ cli
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force overwrite user modified files')
   .option('--start', 'Start the updated team in Cline immediately after update')
-  .option('--session-guard [where]', 'Claude lane only: turn the settings-level session guard on again (where = project | local | user; default: where it was, else project). --no-session-guard removes our entries from the settings file (nothing else in it is touched) and records the guard as off.')
+  .option('--session-guard [where]', 'Claude lane only: turn the settings-level session guard on again (where = project | local | user; default: where it was, else project). --no-session-guard removes our entries from the settings file (nothing else in it is touched) and records the guard as off. Both reach only the install of the scope the command addresses (the current project; --global for the global install).')
   .option('--dry-run', 'Simulate update without writing files')
   .action(async (targetIdentifier?: string, options: any = {}) => {
     intro(pc.cyan('Agents United — Package Update Engine'));
@@ -1374,6 +1377,11 @@ cli
     s.stop('Inventory discovery complete');
 
     if (report.totalCount === 0) {
+      if (updateSessionGuard !== undefined && !options.dryRun) {
+        outro(pc.red('No installed packages found in project or global configuration. The session guard was not changed.'));
+        process.exitCode = 1;
+        return;
+      }
       outro(pc.yellow('No installed packages found in project or global configuration.'));
       return;
     }
@@ -1500,10 +1508,19 @@ cli
 
       updateSpinner.stop('Update completed');
 
-      if (result.sessionGuardNotes && result.sessionGuardNotes.length > 0) {
-        note(pc.yellow(result.sessionGuardNotes.join('\n')), 'Session guard');
-      } else if (updateSessionGuard === false && !options.dryRun) {
-        note('The session guard is off: its entries (if any) are removed from the settings file and the decision is recorded.', 'Session guard');
+      // The guard step says what it did to each lockfile it examined (`Changed:` / `Left as it was:`, with the file). When it examined
+      // none, nothing was changed and the exit code says so: the CLI never claims a guard is off that it did not touch.
+      if (updateSessionGuard !== undefined && !options.dryRun) {
+        if (result.sessionGuardNotes && result.sessionGuardNotes.length > 0) {
+          note(pc.yellow(result.sessionGuardNotes.join('\n')), 'Session guard');
+        } else {
+          outro(pc.red(
+            (targetIdentifier ? `No installed package matches "${targetIdentifier}" in the scope this command addresses. ` : 'No installed package was found in the scope this command addresses. ') +
+              'The session guard was not changed.'
+          ));
+          process.exitCode = 1;
+          return;
+        }
       }
 
       if (options.dryRun) {
@@ -2600,10 +2617,16 @@ cli
       }
 
       if (report.claudeCapability) {
-        // The block prints the diagnostics. This branch does not list the issues, so the floor message stays among them here.
-        renderClaudeCapabilityBlock(report.claudeCapability, []);
+        // The issues are listed below, so the block leaves out a diagnostic that is also an issue (the floor message prints once).
+        renderClaudeCapabilityBlock(report.claudeCapability, report.issues);
         console.log();
-        if (!report.valid) process.exitCode = 1;
+      }
+
+      // This branch also covers a lockfile that cannot be read. Its issues are printed here, and the exit code is 1 exactly when there are any.
+      if (report.issues.length > 0) {
+        console.log(pc.red(pc.bold('❌ Issues Found:')));
+        report.issues.forEach(i => console.log(`  ✖ ${i}`));
+        console.log();
       }
 
       if (report.warnings.length > 0) {
@@ -2614,6 +2637,11 @@ cli
 
       printDeclaredDeltas(report, options.host);
 
+      if (!report.valid) {
+        outro(pc.red('✖ Doctor found issues in workspace configuration.'));
+        process.exitCode = 1;
+        return;
+      }
       outro(pc.blue('✨ Workspace is ready for initialization.'));
       return;
     }
@@ -3109,8 +3137,12 @@ export function claudeDiagnosticsToShow(capability: ClaudeCapabilityReport, issu
  * The two doctor lines of the session-guard section: the commands that repair the install and remove the guard, to be run in the
  * user's own terminal (while the guard blocks, the session's shell calls are blocked too). Empty when no guard is recorded.
  */
-export function sessionGuardCommandLines(commands: { repair: string; remove: string } | undefined): string[] {
-  return commands ? [`     Repair the install:   ${commands.repair}`, `     Remove the guard:     ${commands.remove}`] : [];
+export function sessionGuardCommandLines(commands: { repair: string; remove: string; folder?: string } | undefined): string[] {
+  if (!commands) return [];
+  const lines = [`     Repair the install:   ${commands.repair}`, `     Remove the guard:     ${commands.remove}`];
+  // A guard in the user settings file recorded by a project install is found only from that project's folder.
+  if (commands.folder !== undefined) lines.push(`     Run them in:          ${commands.folder} (the project that installed this guard)`);
+  return lines;
 }
 
 /** The refusal text when Claude Code was found only as a cmd.exe shim bridge (cmd-shim.ts), else undefined. */

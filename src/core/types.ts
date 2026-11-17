@@ -555,7 +555,8 @@ export interface UpdateOptions {
   /**
    * The settings-level session guard (Claude lane): `false` removes our entries from the settings file and records the guard as off,
    * `true` turns it on where it was (project settings when it never was), a variant names the file. Absent: the recorded decision stands.
-   * Applied on its own before any re-install, so it works when the re-install is skipped.
+   * Applied on its own before any re-install, so it works when the re-install is skipped. It reaches only the lockfiles of the scope the
+   * command addresses (project without `global`, global with it); a lockfile of the other scope is left as it was and the notes say so.
    */
   sessionGuard?: 'project' | 'local' | 'user' | boolean;
 }
@@ -583,8 +584,34 @@ export interface UpdateResult {
   targetDirs: string[];
   dryRun: boolean;
   projections: ProjectionInfo[];
-  /** What the session guard step (`--session-guard` / `--no-session-guard`) has to say; absent when it did not run. */
+  /**
+   * What the session guard step (`--session-guard` / `--no-session-guard`) has to say; absent when it did not run. One line per lockfile
+   * examined, starting `Changed:` or `Left as it was:` and naming the lockfile, then any warnings.
+   */
   sessionGuardNotes?: string[];
+  /** How many lockfiles the session guard step changed (0 when it matched nothing); absent when it did not run. */
+  sessionGuardChanged?: number;
+}
+
+/** What one session guard step did to a lockfile and its settings file (installer-internal; `applySessionGuardChoice` turns it into notes). */
+export interface SessionGuardStep {
+  /** `off`: the choice was "no"; `on`: a guard was written; absent: nothing was done. */
+  choice?: 'off' | 'on';
+  /** The settings file the step worked on, as an absolute path. */
+  file?: string;
+  /** True when that file is the user settings file (shared by every project). */
+  userFile?: boolean;
+  /** Off: our entries were removed from the file. */
+  removed?: boolean;
+  /** On: what the merge did. */
+  merge?: 'created' | 'merged' | 'unchanged' | 'modified' | 'skipped-invalid';
+  warnings: string[];
+}
+
+/** The outcome of applying a session guard choice to one lockfile. */
+export interface SessionGuardChoiceResult {
+  changed: boolean;
+  notes: string[];
 }
 
 

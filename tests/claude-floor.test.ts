@@ -64,9 +64,17 @@ describe('below the floor nothing is refused', () => {
     await fs.remove(root);
   });
 
-  it('plans a start with a report that is below the floor', () => {
-    const activation = new ClaudeLauncher().planActivation({ bundleName: 'software-engineering', workspace: root, scope: 'project', report: belowFloor });
-    expect(activation.argv.length).toBeGreaterThan(0);
+  it('plans a start below the floor exactly as it plans one at the floor', () => {
+    const atFloor: ClaudeCapabilityReport = {
+      ...belowFloor,
+      version: '2.1.295',
+      diagnostics: [],
+      profile: { profileId: 'claude', minVersion: '2.1.295', reviewedAgainst: '2.1.285', belowMinimum: false, newerThanReviewed: false },
+    };
+    const plan = (report: ClaudeCapabilityReport) => new ClaudeLauncher().planActivation({ bundleName: 'software-engineering', workspace: root, scope: 'project', report });
+    const below = plan(belowFloor);
+    expect(below.argv.length).toBeGreaterThan(0);
+    expect(below).toEqual(plan(atFloor));
   });
 
   it('installs a bundle into the Claude lane with no probe in the way', async () => {

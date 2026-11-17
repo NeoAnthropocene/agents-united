@@ -25,6 +25,15 @@ export function guardScript(unreadableHint: string = ''): string {
 /** The generic script: the role guards and the legacy inline form carry exactly this text. */
 export const GUARD_SCRIPT = guardScript();
 
+/**
+ * The destructive guard script as it was before it blocked unreadable input (the maintainer's decision of 2026-11-17), kept so that an
+ * entry written by that version is recognised as ours and renewed. Same ownership marker as the current script. The one list: the session
+ * guard (`session-guard.ts`) and the native role check (`native-guard.ts`) both read it.
+ */
+export const EARLIER_GUARD_SCRIPTS: readonly string[] = [
+  String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
+];
+
 /** Text every version of the destructive guard script carries: the ownership marker (the read-only guard says "read-only guard", so it never matches). */
 export const GUARD_OWNERSHIP_MARKER = 'Blocked by agents-united guard';
 

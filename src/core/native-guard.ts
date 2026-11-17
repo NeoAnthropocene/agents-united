@@ -4,7 +4,7 @@
  * has lost its guard (a safety property); the maintainers' conformance tests use it for the rest. Pure: text in, facts out.
  */
 import yaml from 'yaml';
-import { GUARD_OWNERSHIP_MARKER, GUARD_SCRIPT, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
+import { EARLIER_GUARD_SCRIPTS, GUARD_SCRIPT, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 
 export type NativeGuard = 'read-only' | 'destructive' | 'none';
@@ -91,8 +91,9 @@ function guardOf(hooks: unknown): { guard: NativeGuard; files: NativeGuardKind[]
   }
   const files = (Object.keys(NATIVE_GUARD_FILES) as NativeGuardKind[]).filter(kind => references.includes(NATIVE_GUARD_FILES[kind].reference));
   if (scripts.includes(READ_ONLY_GUARD_SCRIPT) || files.includes('read-only')) return { guard: 'read-only', files };
-  // An inline copy installed before the script last changed differs in text but carries the same ownership marker.
-  if (scripts.some(script => script === GUARD_SCRIPT || script.includes(GUARD_OWNERSHIP_MARKER)) || files.includes('destructive')) return { guard: 'destructive', files };
+  // An inline copy installed before the script last changed is one of our exact earlier scripts. Carrying the ownership marker is not enough:
+  // a script that only contains that text (a comment around `process.exit(0)`) guards nothing.
+  if (scripts.some(script => script === GUARD_SCRIPT || EARLIER_GUARD_SCRIPTS.includes(script)) || files.includes('destructive')) return { guard: 'destructive', files };
   return { guard: 'none', files };
 }
 

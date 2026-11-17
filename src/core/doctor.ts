@@ -21,7 +21,7 @@ import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAg
 import { GUARD_ON_FAILURE_MIN_VERSION, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
-import { inspectSessionGuard, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardSnippet, variantOfFile } from './session-guard.js';
+import { inspectSessionGuard, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardReach, sessionGuardSnippet, variantOfRecordedFile } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
@@ -47,7 +47,7 @@ export interface HealthReport {
   /** Plan 023 A — plain-session guard state; absent when no decision was ever recorded. */
   sessionGuard?: 'wired' | 'missing' | 'modified' | 'outdated' | 'skipped-invalid' | 'off';
   /** The two commands that repair the install and remove the session guard; present wherever a session guard is recorded (not when it is off). */
-  sessionGuardCommands?: { repair: string; remove: string };
+  sessionGuardCommands?: { repair: string; remove: string; folder?: string };
   /** Plan 024 S4 — command-permission preset state; absent when no decision was ever recorded. */
   permissionPreset?: 'wired' | 'missing' | 'skipped-invalid' | 'off';
   /**
@@ -618,16 +618,20 @@ export class DoctorEngine {
           : path.join(workspaceRootOf(root), guardRecord.file);
         const state = await inspectSessionGuard(guardFile, guardRecord.handlerHash);
         sessionGuard = state === 'absent' ? 'missing' : state;
-        // Wherever a guard is recorded, name the two commands that repair the install and remove the guard (the same two its block message names).
-        sessionGuardCommands = sessionGuardCommandsFor(variantOfFile(guardFile));
+        // Wherever a guard is recorded, name the two commands that repair the install and remove the guard (the same two its block message
+        // names). They follow the install that records the guard: this lockfile's scope, not where the settings file sits. A guard in the user
+        // settings file recorded by a project install is found from that project's folder, so the folder is named.
+        const recordedScope: InstallScope = manifest?.scope ??(path.resolve(workspaceRootOf(root)) === path.resolve(os.homedir()) ? 'global' : 'project');
+        const reach = sessionGuardReach(variantOfRecordedFile(guardRecord.file), recordedScope);
+        sessionGuardCommands = { ...sessionGuardCommandsFor(reach), ...(reach === 'user-project' ? { folder: path.resolve(workspaceRootOf(root)) } : {}) };
         if (state === 'missing' || state === 'absent') {
           warnings.push(`Session guard missing from ${guardRecord.file}: plain Claude sessions are unguarded. Run 'agents update' to restore it.`);
         } else if (state === 'outdated') {
-          warnings.push(`Session guard in ${guardRecord.file} is outdated: it does not block when it cannot run. Run 'agents update' to renew it.`);
+          warnings.push(`Session guard in ${guardRecord.file} is outdated: it is an earlier form, which may not block when it cannot run and does not cover the PowerShell and MultiEdit tools. Run 'agents update' to renew it.`);
         } else if (state === 'modified') {
           warnings.push(`Session guard in ${guardRecord.file} was edited by hand; agents-united leaves it as-is.`);
         } else if (state === 'skipped-invalid') {
-          warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand:\n${sessionGuardSnippet(variantOfFile(guardFile))}`);
+          warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand:\n${sessionGuardSnippet(reach)}`);
         }
       }
     }

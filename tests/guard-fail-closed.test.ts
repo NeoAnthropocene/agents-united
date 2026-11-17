@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { describe, expect, it } from 'vitest';
-import { GUARD_SCRIPT, guardFileHandler, guardHandler, managedGuardHooks, nativeGuardFileHooks, nativeGuardHandler, nativeGuardHooks } from '../src/core/guard.js';
+import { EARLIER_GUARD_SCRIPTS, GUARD_SCRIPT, guardFileHandler, guardHandler, managedGuardHooks, nativeGuardFileHooks, nativeGuardHandler, nativeGuardHooks } from '../src/core/guard.js';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { renderHooks } from '../src/core/native-floor.js';
 import { inspectNativeAgent } from '../src/core/native-guard.js';
@@ -150,8 +150,9 @@ describe('through the Host model: a payload the destructive guard cannot read bl
 });
 
 describe('a role installed with an earlier destructive guard script is still seen as guarded', () => {
-  // The script as it was before the unreadable-input change (the 2026-11-17 decision): same ownership marker, other text.
-  const OLD_SCRIPT = GUARD_SCRIPT.replace(/if\(i===null[^}]*\}/, '').replace('let i;', 'let i={};');
+  // The script as it was before the unreadable-input change (the 2026-11-17 decision): same ownership marker, other text. It is read from
+  // the one list of earlier scripts; a role is recognised by that exact text, not by the marker alone.
+  const OLD_SCRIPT = EARLIER_GUARD_SCRIPTS[0];
   const roleWith = (script: string): string =>
     `---\nname: x\ntools: Bash, Read\nhooks:\n  PreToolUse:\n    - matcher: Bash\n      hooks:\n        - type: command\n          command: node\n          args: ["-e", ${JSON.stringify(script)}]\n---\nbody\n`;
 
@@ -159,12 +160,14 @@ describe('a role installed with an earlier destructive guard script is still see
     expect(OLD_SCRIPT).not.toBe(GUARD_SCRIPT);
     expect(OLD_SCRIPT).toContain('Blocked by agents-united guard');
   });
-  it('is read as a destructive guard by its ownership marker', () => {
+  it('is read as a destructive guard by its exact text', () => {
     expect(inspectNativeAgent(roleWith(OLD_SCRIPT)).guard).toBe('destructive');
     expect(inspectNativeAgent(roleWith(GUARD_SCRIPT)).guard).toBe('destructive');
   });
-  it('a script with neither text is no guard, and the read-only guard stays read-only', () => {
+  it('a script with neither text is no guard, even when it carries the marker, and the read-only guard stays read-only', () => {
     expect(inspectNativeAgent(roleWith('process.exit(0)')).guard).toBe('none');
+    expect(inspectNativeAgent(roleWith(`process.exit(0);/*Blocked by agents-united guard*/`)).guard).toBe('none');
+    expect(inspectNativeAgent(roleWith(`${OLD_SCRIPT};process.exit(0)`)).guard).toBe('none');
     expect(inspectNativeAgent(roleWith(READ_ONLY_GUARD_SCRIPT)).guard).toBe('read-only');
   });
 });
