@@ -552,6 +552,12 @@ export interface UpdateOptions {
   /** Fan the canonical store out into these runtimes during the update re-install
    *  (e.g. to add Cline projections to a bundle originally installed without fanout). */
   fanout?: string[];
+  /**
+   * The settings-level session guard (Claude lane): `false` removes our entries from the settings file and records the guard as off,
+   * `true` turns it on where it was (project settings when it never was), a variant names the file. Absent: the recorded decision stands.
+   * Applied on its own before any re-install, so it works when the re-install is skipped.
+   */
+  sessionGuard?: 'project' | 'local' | 'user' | boolean;
 }
 
 export interface UpdateCheckItem {
@@ -577,6 +583,8 @@ export interface UpdateResult {
   targetDirs: string[];
   dryRun: boolean;
   projections: ProjectionInfo[];
+  /** What the session guard step (`--session-guard` / `--no-session-guard`) has to say; absent when it did not run. */
+  sessionGuardNotes?: string[];
 }
 
 

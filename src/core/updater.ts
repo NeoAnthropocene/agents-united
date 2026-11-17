@@ -275,6 +275,17 @@ export class UpdateEngine {
       };
     }
 
+    // `--session-guard` / `--no-session-guard`: applied to each install's lockfile before anything that can skip the record, because it is
+    // the way out of a session guard that blocks (the maintainer's decision of 2026-11-17).
+    let sessionGuardNotes: string[] | undefined;
+    if (options.sessionGuard !== undefined && !options.dryRun) {
+      sessionGuardNotes = [];
+      for (const dir of new Set(recordsToUpdate.map(record => record.targetDir))) {
+        const scope = recordsToUpdate.find(record => record.targetDir === dir)!.scope;
+        sessionGuardNotes.push(...await this.installer.applySessionGuardChoice(dir, scope, options.sessionGuard));
+      }
+    }
+
     // Preflight the entire requested update before any legacy migration can remove files
     // or write state. Reinstall uses exactly these sticky host/native choices.
     if (!options.dryRun) {
@@ -434,6 +445,7 @@ export class UpdateEngine {
       targetDirs: inventory.targetDirs,
       dryRun: false,
       projections: this.deduplicateProjections(collectedProjections),
+      ...(sessionGuardNotes ? { sessionGuardNotes } : {}),
     };
 
   }

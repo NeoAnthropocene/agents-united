@@ -101,6 +101,13 @@ Observed on Claude Code 2.1.288: an in-process teammate that reuses a definition
 run `echo git push --force` and to write `.env.test`; both must come back refused by the hook, and a teammate with no `Write` in its `tools:` list is never
 offered it. Without the settings-level guard the same teammate's calls go through (`agents doctor` warns about it).
 
+## The session guard blocks when it cannot do its work: the way out
+
+The session guard has its own script, built from the same template as the role guards plus the two commands that get you out (the maintainer's decision of 2026-11-17). When the script throws, or its input is unreadable, it exits `2` with a message that ends in:
+`To get out, run one of these in your own terminal, not in this session (this session's shell calls are blocked): agents update --all (repairs the install) or agents update --all --no-session-guard (removes the session guard).` A guard in `~/.claude/settings.json` says `agents update --all --global` and `agents update --all --global --no-session-guard`. `agents doctor` prints the same two commands in its Session Guard section. To check it offline, pipe unreadable input into the script from a settings file: `echo null | node -e "<the args[1] string>"` prints the message and exits `2`.
+
+What the message does not cover: a hook whose `node` cannot be started prints nothing of this kind, and neither do a timeout or a killed process. With `onFailure: "block"` the call is blocked all the same, but the host prints its own failure line, not these commands. A role's own guard (frontmatter, script file) is not affected: it keeps the generic script and its own message.
+
 ## Windows-specific check
 
 The guard renders in **exec form** (`command: "node"`, `args: ["-e", <script>]`, or in a native project install `args: [<script file>]`), so the same

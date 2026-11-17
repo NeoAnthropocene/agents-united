@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import { InstallEngine } from '../src/core/installer.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
 import { DoctorEngine } from '../src/core/doctor.js';
-import { guardHandler } from '../src/core/guard.js';
+import { sessionGuardHandler as guardHandler } from '../src/core/session-guard.js';
 
 /**
  * Plan 023 Workstream A / Step A1 — RED suite for the plain-session guard (owner decisions

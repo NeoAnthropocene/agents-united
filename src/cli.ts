@@ -1315,9 +1315,25 @@ cli
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force overwrite user modified files')
   .option('--start', 'Start the updated team in Cline immediately after update')
+  .option('--session-guard [where]', 'Claude lane only: turn the settings-level session guard on again (where = project | local | user; default: where it was, else project). --no-session-guard removes our entries from the settings file (nothing else in it is touched) and records the guard as off.')
   .option('--dry-run', 'Simulate update without writing files')
   .action(async (targetIdentifier?: string, options: any = {}) => {
     intro(pc.cyan('Agents United — Package Update Engine'));
+
+    // --session-guard [where] / --no-session-guard, parsed like the add command.
+    let updateSessionGuard: 'project' | 'local' | 'user' | boolean | undefined;
+    if (options.sessionGuard === false) {
+      updateSessionGuard = false;
+    } else if (options.sessionGuard === true || options.sessionGuard === '') {
+      updateSessionGuard = true;
+    } else if (typeof options.sessionGuard === 'string') {
+      const where = options.sessionGuard.trim().toLowerCase();
+      if (where !== 'project' && where !== 'local' && where !== 'user') {
+        note(`--session-guard accepts project, local or user (got "${options.sessionGuard}").`, 'Invalid option');
+        process.exit(1);
+      }
+      updateSessionGuard = where;
+    }
 
     // Parse --fanout like the add command: validated against the registry,
     // unknown/non-projection-capable ids are dropped with a warning.
@@ -1479,9 +1495,16 @@ cli
         force: options.force,
         dryRun: options.dryRun,
         fanout: updateFanout,
+        sessionGuard: updateSessionGuard,
       });
 
       updateSpinner.stop('Update completed');
+
+      if (result.sessionGuardNotes && result.sessionGuardNotes.length > 0) {
+        note(pc.yellow(result.sessionGuardNotes.join('\n')), 'Session guard');
+      } else if (updateSessionGuard === false && !options.dryRun) {
+        note('The session guard is off: its entries (if any) are removed from the settings file and the decision is recorded.', 'Session guard');
+      }
 
       if (options.dryRun) {
         outro(pc.yellow(`[DRY RUN] Would update ${result.updated.length} packages in ${result.targetDirs.join(', ')}`));
@@ -2608,7 +2631,9 @@ cli
         outdated: pc.yellow('⚠ Outdated — run agents update'),
         'skipped-invalid': pc.yellow('⚠ Not wired — settings file is not valid JSON (see warning)'),
       };
-      console.log(`  🛡  Session Guard:      ${label[report.sessionGuard]}\n`);
+      console.log(`  🛡  Session Guard:      ${label[report.sessionGuard]}`);
+      for (const line of sessionGuardCommandLines(report.sessionGuardCommands)) console.log(pc.bold(line));
+      console.log();
     }
     // Plan 024 S4 — command-permission preset state (only when a decision was ever recorded).
     if (report.permissionPreset) {
@@ -3078,6 +3103,14 @@ function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport, issues:
 export function claudeDiagnosticsToShow(capability: ClaudeCapabilityReport, issues: string[]): string[] {
   const refusal = claudeShimRefusal(capability);
   return capability.diagnostics.filter(diagnostic => diagnostic !== refusal && !issues.includes(diagnostic));
+}
+
+/**
+ * The two doctor lines of the session-guard section: the commands that repair the install and remove the guard, to be run in the
+ * user's own terminal (while the guard blocks, the session's shell calls are blocked too). Empty when no guard is recorded.
+ */
+export function sessionGuardCommandLines(commands: { repair: string; remove: string } | undefined): string[] {
+  return commands ? [`     Repair the install:   ${commands.repair}`, `     Remove the guard:     ${commands.remove}`] : [];
 }
 
 /** The refusal text when Claude Code was found only as a cmd.exe shim bridge (cmd-shim.ts), else undefined. */

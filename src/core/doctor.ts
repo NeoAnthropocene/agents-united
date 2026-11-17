@@ -21,7 +21,7 @@ import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAg
 import { GUARD_ON_FAILURE_MIN_VERSION, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
-import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
+import { inspectSessionGuard, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardSnippet, variantOfFile } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
@@ -46,6 +46,8 @@ export interface HealthReport {
   claudeCapability?: ClaudeCapabilityReport;
   /** Plan 023 A — plain-session guard state; absent when no decision was ever recorded. */
   sessionGuard?: 'wired' | 'missing' | 'modified' | 'outdated' | 'skipped-invalid' | 'off';
+  /** The two commands that repair the install and remove the session guard; present wherever a session guard is recorded (not when it is off). */
+  sessionGuardCommands?: { repair: string; remove: string };
   /** Plan 024 S4 — command-permission preset state; absent when no decision was ever recorded. */
   permissionPreset?: 'wired' | 'missing' | 'skipped-invalid' | 'off';
   /**
@@ -605,6 +607,7 @@ export class DoctorEngine {
     // Plan 023 A — plain-session guard. Reported whenever a decision is recorded; repairs are
     // never automatic (a hand-edited guard or an unparseable settings file is the user's call).
     let sessionGuard: HealthReport['sessionGuard'];
+    let sessionGuardCommands: HealthReport['sessionGuardCommands'];
     const guardRecord = manifest?.sessionGuard;
     if (guardRecord) {
       if ('off' in guardRecord) {
@@ -615,6 +618,8 @@ export class DoctorEngine {
           : path.join(workspaceRootOf(root), guardRecord.file);
         const state = await inspectSessionGuard(guardFile, guardRecord.handlerHash);
         sessionGuard = state === 'absent' ? 'missing' : state;
+        // Wherever a guard is recorded, name the two commands that repair the install and remove the guard (the same two its block message names).
+        sessionGuardCommands = sessionGuardCommandsFor(variantOfFile(guardFile));
         if (state === 'missing' || state === 'absent') {
           warnings.push(`Session guard missing from ${guardRecord.file}: plain Claude sessions are unguarded. Run 'agents update' to restore it.`);
         } else if (state === 'outdated') {
@@ -622,7 +627,7 @@ export class DoctorEngine {
         } else if (state === 'modified') {
           warnings.push(`Session guard in ${guardRecord.file} was edited by hand; agents-united leaves it as-is.`);
         } else if (state === 'skipped-invalid') {
-          warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand:\n${sessionGuardSnippet()}`);
+          warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand:\n${sessionGuardSnippet(variantOfFile(guardFile))}`);
         }
       }
     }
@@ -920,6 +925,7 @@ export class DoctorEngine {
       clineCapability,
       claudeCapability,
       sessionGuard,
+      sessionGuardCommands,
       declaredDeltas,
     };
   }

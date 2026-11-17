@@ -21,7 +21,7 @@ import { ClaudeProjector } from './claude-projector.js';
 import { listNativeWorkflows } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
-import { mergeSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
+import { mergeSessionGuard, removeOwnedSessionGuard, resolveSessionGuardFile, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
 import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo } from './types.js';
@@ -746,6 +746,19 @@ private toPosix(p: string): string {
     }
     if (variant === undefined) return;
     if (variant === false) {
+      // Off means off: the entries a recorded guard left in its settings file go too (only ours and not hand-edited; an edited one is
+      // left and reported). Idempotent: a second run finds nothing.
+      const warnings: string[] = [];
+      if (recorded && !('off' in recorded)) {
+        const guardFile = path.isAbsolute(recorded.file) ? recorded.file : path.join(workspaceRoot, recorded.file);
+        const outcome = await removeOwnedSessionGuard(guardFile, { createdFile: recorded.createdFile, recordedHash: recorded.handlerHash });
+        if (outcome.status === 'skipped-invalid') {
+          warnings.push(`Session guard not removed: ${recorded.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Remove the agents-united guard entries from it by hand.`);
+        } else if (outcome.left > 0) {
+          warnings.push(`Session guard in ${recorded.file} was edited by hand, so ${outcome.left} entr${outcome.left === 1 ? 'y was' : 'ies were'} left in place; remove ${outcome.left === 1 ? 'it' : 'them'} by hand.`);
+        }
+        if (outcome.status === 'removed' || outcome.status === 'deleted-file' || warnings.length > 0) projections.push({ host: 'claude', path: recorded.file, warnings });
+      }
       lockfile.sessionGuard = { off: true };
       return;
     }
@@ -763,11 +776,37 @@ private toPosix(p: string): string {
     };
     const warnings: string[] = [];
     if (result.status === 'skipped-invalid') {
-      warnings.push(`Session guard not written: ${recordedFile} is not valid JSON (comments or trailing commas?). It was left untouched — paste this into it by hand:\n${sessionGuardSnippet()}`);
+      warnings.push(`Session guard not written: ${recordedFile} is not valid JSON (comments or trailing commas?). It was left untouched — paste this into it by hand:\n${sessionGuardSnippet(variant)}`);
     } else if (result.status === 'modified') {
       warnings.push(`Session guard in ${recordedFile} was edited by hand; left as-is (run with --force after removing it to restore).`);
     }
     projections.push({ host: 'claude', path: recordedFile, warnings });
+  }
+
+  /**
+   * `agents update --session-guard` / `--no-session-guard`: apply the settings-level guard choice to one install's lockfile on its own, without
+   * a re-install. It must work when the re-install is skipped (user-modified files), because it is the way out of a guard that blocks. A
+   * guard in a file that cannot be changed (invalid JSON) or was edited by hand is reported, never forced. Returns the warnings to show.
+   */
+  public async applySessionGuardChoice(
+    targetDir: string,
+    scope: InstallScope,
+    choice: 'project' | 'local' | 'user' | false | true,
+  ): Promise<string[]> {
+    const lockfilePath = path.join(targetDir, 'agents-united.json');
+    if (!await fs.pathExists(lockfilePath)) return [];
+    const lockfile: LockfileManifest = await fs.readJson(lockfilePath);
+    const recorded = lockfile.sessionGuard;
+    // A bare `--session-guard` turns the guard on where it was, and in the project's settings file when it never was.
+    const variant: 'project' | 'local' | 'user' | false =
+      choice === true ? (recorded && !('off' in recorded) ? variantOfRecordedFile(recorded.file) : scope === 'global' ? 'user' : 'project') : choice;
+    if (variant !== false && !(lockfile.fanout ?? []).includes('claude')) {
+      return ['The session guard is part of the Claude lane, and this install does not project into Claude (add it with --fanout claude).'];
+    }
+    const projections: ProjectionInfo[] = [];
+    await this.applySessionGuard(scope, workspaceRootOf(targetDir), lockfile, { sessionGuard: variant } as InstallOptions, projections);
+    await fs.writeJson(lockfilePath, lockfile, { spaces: 2 });
+    return projections.flatMap(projection => projection.warnings ?? []);
   }
 
   /**

@@ -17,7 +17,13 @@
  * Testing this by hand? Asking a session hypothetically tests the model, not the hook — see
  * `docs/guard-testing.md` (Plan 024 S5) for a model-proof test protocol.
  */
-export const GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+export function guardScript(unreadableHint: string = ''): string {
+  // `unreadableHint` is text that is already safe inside a double-quoted JavaScript string; it is appended to the unreadable-input message.
+  return String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.${unreadableHint}\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+}
+
+/** The generic script: the role guards and the legacy inline form carry exactly this text. */
+export const GUARD_SCRIPT = guardScript();
 
 /** Text every version of the destructive guard script carries: the ownership marker (the read-only guard says "read-only guard", so it never matches). */
 export const GUARD_OWNERSHIP_MARKER = 'Blocked by agents-united guard';
