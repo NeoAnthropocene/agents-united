@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import { defaultProcessRunner } from './cline-capabilities.js';
+import { ANTIGRAVITY_SHIM_HOST, cmdShimRefusalFor, resolveCmdShimTarget } from './cmd-shim.js';
 import type {
   AntigravityCapabilityReport,
   ProcessRunner,
@@ -32,8 +33,9 @@ export interface AntigravityProbeResolverOptions {
  *
  * Executable resolution order: an absolute, existing `AGY_BIN_PATH` wins, then a PATH scan
  * (`agy.exe` / `agy.cmd` / `agy.bat` / `agy` on Windows, `agy` on POSIX). A `.cmd`/`.bat` hit is
- * bridged through `cmd.exe` exactly like the Cline/Claude probes (ADR 0013 §5): Node >= 18.20 /
- * 20.12 / 24 rejects spawning shell shims with `shell: false` (EINVAL). There is deliberately **no**
+ * read like the Cline/Claude probes read theirs (ADR 0013 §5, cmd-shim.ts): Node >= 18.20 /
+ * 20.12 / 24 rejects spawning shell shims with `shell: false` (EINVAL), so the program the shim starts
+ * is spawned directly, and a shim that cannot be read is a refused `cmd.exe` bridge. There is deliberately **no**
  * hard-coded install-location fallback — a machine-specific path would make the probe's answer
  * depend on whose machine it runs on; `AGY_BIN_PATH` is the documented escape hatch for an `agy`
  * that is not on PATH.
@@ -42,7 +44,8 @@ export interface AntigravityProbeResolverOptions {
 /**
  * The live-verified floor: `agy 1.2.12` (Windows, probed 2026-09-28) is the release on which
  * `--agent <name>`, `-i, --prompt-interactive` and `--mode <accept-edits|plan>` were confirmed.
- * Reported as data, never as a gate — the probe's `installed` flag stays a pure `--version` signal.
+ * Reported as data, never as a gate. The probe's `installed` flag comes from `--version`, except for a Windows command shim
+ * that cannot be read: that is reported as installed without running it, with the refusal in `diagnostics`.
  */
 const AGY_MIN_VERSION = { major: 1, minor: 2, patch: 12 } as const;
 
@@ -92,6 +95,14 @@ export class AntigravityCapabilityProbe {
     // 1. Explicit AGY_BIN_PATH (mirrors CLAUDE_BIN_PATH: absolute + existing wins).
     const envBin = process.env.AGY_BIN_PATH;
     if (envBin && path.isAbsolute(envBin) && fs.existsSync(envBin)) {
+      // A .cmd/.bat override cannot be spawned with shell:false (EINVAL): read the program it starts, or keep the
+      // cmd.exe bridge as data so the start ends in the same clear refusal as a PATH hit (see cmd-shim.ts).
+      if (process.platform === 'win32' && ['.cmd', '.bat'].includes(path.extname(envBin).toLowerCase())) {
+        const target = resolveCmdShimTarget(envBin);
+        return target
+          ? { executable: target.executable, prefixArgs: target.prefixArgs, source: 'env-binary' }
+          : { executable: 'cmd.exe', prefixArgs: ['/c', envBin], source: 'env-binary' };
+      }
       return {
         executable: envBin,
         prefixArgs: [],
@@ -111,10 +122,22 @@ export class AntigravityCapabilityProbe {
           const fullPath = path.join(dir, exeName);
           if (!fs.existsSync(fullPath)) continue;
 
-          // Windows hardening (ADR 0013 §5): route .cmd/.bat shims through cmd.exe while keeping
-          // the argv array shell-safe.
+          // Windows hardening (ADR 0013 §5): Node >= 18.20 / 20.12 / 24 rejects spawning .cmd/.bat shims
+          // with shell:false (EINVAL). The name order is agy.exe, agy.cmd, agy.bat, then the bare name (unchanged),
+          // so an agy.exe beside a shim wins, and the first folder with a hit decides: a shim the reader cannot
+          // resolve ends the scan with the refusal, because the shell would have run it before any program in a
+          // later folder.
           const ext = path.extname(fullPath).toLowerCase();
           if (ext === '.cmd' || ext === '.bat') {
+            // First choice: read the program the shim starts and spawn it directly (see cmd-shim.ts: `cmd.exe /c`
+            // cuts a multi-line first message). The Antigravity source union has no node-wrapper member, so a
+            // shim found on PATH is a path-executable whatever it starts.
+            const target = resolveCmdShimTarget(fullPath);
+            if (target) {
+              return { executable: target.executable, prefixArgs: target.prefixArgs, source: 'path-executable' };
+            }
+            // A shim that cannot be read with certainty is a cmd.exe bridge, as data only: `probe()` does not run
+            // it and `AntigravityLauncher` refuses to start a session through it (the plan carries `cmdShimRefusal`).
             return {
               executable: 'cmd.exe',
               prefixArgs: ['/c', fullPath],
@@ -157,6 +180,23 @@ export class AntigravityCapabilityProbe {
       diagnostics.push('Antigravity CLI (agy) not found on PATH or via AGY_BIN_PATH.');
       return {
         installed: false,
+        agentFlag: false,
+        promptInteractive: false,
+        modes: [],
+        meetsVersionFloor: false,
+        diagnostics,
+      };
+    }
+
+    // A cmd.exe bridge is never run, not even for `--version`: through cmd.exe a path with `&`, `^` or `@` breaks
+    // the probe too, and the start would be refused anyway. Report the executable as found, carry the refusal text;
+    // the flag fields are false only because nothing was probed (the renderers say "unknown").
+    const refusal = cmdShimRefusalFor(ANTIGRAVITY_SHIM_HOST, cmd.executable, cmd.prefixArgs);
+    if (refusal) {
+      diagnostics.push(refusal);
+      return {
+        installed: true,
+        command: cmd,
         agentFlag: false,
         promptInteractive: false,
         modes: [],

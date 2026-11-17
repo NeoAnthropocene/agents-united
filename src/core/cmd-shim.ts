@@ -21,6 +21,16 @@ export const CLINE_SHIM_HOST: CmdShimHost = {
 };
 
 /**
+ * Antigravity CLI (`agy`): `AGY_BIN_PATH` is spawned directly when it names a native file (an absolute, existing path),
+ * and read as a `.cmd` shim of the standard npm shape when it names a `.cmd`/`.bat`. On the maintainer's machine `agy` is
+ * a native `agy.exe` with no shim beside it, so the advice names only that.
+ */
+export const ANTIGRAVITY_SHIM_HOST: CmdShimHost = {
+  label: 'Antigravity CLI (agy)',
+  advice: 'Set AGY_BIN_PATH to the full path of agy.exe, the native binary, and run the command again.',
+};
+
+/**
  * Windows `.cmd` shims and why a session is never started through one.
  *
  * Node >= 18.20 / 20.12 / 24 refuses to spawn a `.cmd` or `.bat` file with `shell: false` (EINVAL), so the

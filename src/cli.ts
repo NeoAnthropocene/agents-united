@@ -2777,11 +2777,24 @@ async function runAntigravityStart(bundle: string, prompt: string | undefined, o
       `Scope: ${plan.scope}\n` +
       `Workspace: ${plan.workspace}\n` +
       `Executable: ${plan.executable}\n` +
+      (plan.cmdShimRefusal ? `Real start: REFUSED. ${plan.cmdShimRefusal}\n` : '') +
       `Argv: ${plan.argv.map(a => (a.includes(' ') || a.includes('\n') ? `"${a.replace(/\n/g, '\\n')}"` : a)).join(' ')}`,
       'Antigravity Activation Plan (dry run)'
     );
+    if (plan.cmdShimRefusal) {
+      // The real start refuses this plan (cmd-shim.ts): the dry run ends the way the real start would.
+      outro(pc.red('Dry run: the real start would be refused. No processes launched.'));
+      process.exit(1);
+    }
     outro(pc.yellow('Dry run complete. No processes launched.'));
     return;
+  }
+
+  // Refuse before any note: a plan that goes through a cmd.exe shim bridge cannot carry the opening prompt (cmd-shim.ts).
+  // Nothing was probed for such a plan, so the "could not confirm --prompt-interactive" note below must not describe it either.
+  if (plan.cmdShimRefusal) {
+    outro(pc.red(plan.cmdShimRefusal));
+    process.exit(1);
   }
 
   // Plan 029 follow-up (owner gate-6: agy ≥1.2.13): workspace agents may live in the directory
