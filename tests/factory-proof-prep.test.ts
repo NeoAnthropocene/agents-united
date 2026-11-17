@@ -696,7 +696,7 @@ function taskFromBrief(route: 'skill' | 'contract' | 'bundle', b: Json): Json {
   const common = taskCommon(b);
   if (route === 'skill') {
     return {
-      ...common, kind: 'skill-task',
+      ...common, kind: 'skill-task', skillCheckPolicy: b.policy,
       draftJobTemplate: { mode: b.draft.mode, intent: b.intent, sourceRoot: b.source.checkout, draftRoot: b.roots.draft, allowedPaths: b.draft.allowedPaths, provenance: b.provenance, loading: b.loading, requiredTools: b.requiredTools },
       runtime: { executable: plainPin(b.pins.executable), checker: b.pins.checker, validator: b.pins.validator, corpus: b.pins.corpus }, budget: b.budget,
     };
@@ -898,9 +898,10 @@ describe('S3 is solvable offline', () => {
     tidy();
   }, TIMEOUT);
 
-  it('fails skill-check with the layout gate\'s message when the same draft lacks evals/evals.json, though postflight still accepts the bytes', () => {
+  it('refuses the same draft without evals/evals.json at postflight (EVALS_MISSING, the brief\'s policy requires it) and fails skill-check with the layout gate\'s message', () => {
     const run = runSkillRoute(false);
-    expect(run.post.status, run.post.stdout + run.post.stderr).toBe(0);
+    expect(run.post.status, run.post.stdout + run.post.stderr).toBe(1);
+    expect(JSON.parse(run.post.stderr.trim().split(/\r?\n/).pop()!)).toMatchObject({ phase: 'postflight', code: 'EVALS_MISSING' });
     expect(fs.existsSync(path.join(run.draft, 'evals'))).toBe(false);
     expect(run.skillCheck.status, run.skillCheck.stdout + run.skillCheck.stderr).toBe(1);
     expect(run.skillCheck.stdout + run.skillCheck.stderr).toContain('evals/evals.json is missing');

@@ -67,6 +67,13 @@
         "upstream"
       ]
     },
+    "skillCheckPolicy": {
+      "enum": [
+        "agents-united-original",
+        "private-owner",
+        "adapted-source"
+      ]
+    },
     "authoringHost": {
       "type": "object",
       "properties": {
@@ -686,6 +693,7 @@
     "previous",
     "operation",
     "intent",
+    "skillCheckPolicy",
     "authoringHost",
     "target",
     "objective",

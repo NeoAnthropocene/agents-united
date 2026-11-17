@@ -65,6 +65,8 @@ const skillRoot = fileURLToPath(new URL('../', import.meta.url));
 const scriptFile = fileURLToPath(import.meta.url);
 const limits = { envelope: 262144, executable: 134217728, helperJob: 4194304, helperStderr: 65536, installed: 262144, small: 1048576, report: 262144 };
 const TASK_NAME = 'skill-task.json';
+// Which skill-check policies require evals/evals.json: a literal copy, copied on purpose from EVALS_FILE_REQUIRED in src/core/skill-layout.ts (a Skill script cannot import from src/); tests/skill-evals-policy.test.ts ties the two.
+const EVALS_REQUIRED_BY_POLICY = { 'agents-united-original': true, 'private-owner': true, 'adapted-source': false };
 const RETURN_NAME = 'skill-return.json';
 const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
 const INSTALLED = ['SKILL.md', 'references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'scripts/skill-return.mjs', 'references/skill-attribution.md'];
@@ -476,6 +478,10 @@ function checkReturn(ctx, resultArg) {
   }
   for (const [file, text] of changes) if (!final.has(file) || !final.get(file).equals(Buffer.from(text))) stop('BYTES_MISMATCH', `Final bytes differ from the saved changes text: ${file}.`, 'failed', file);
   if (!final.has('SKILL.md')) stop('BYTES_MISMATCH', 'A complete draft needs SKILL.md.');
+  // The evals file is required only where the skill-check policy the task pins requires it (never read as "no requirement" when the field is absent: the schema requires it).
+  if (EVALS_REQUIRED_BY_POLICY[task.skillCheckPolicy] === true && !final.has('evals/evals.json')) {
+    stop('EVALS_MISSING', `The task pins the skill-check policy ${task.skillCheckPolicy}, which requires evals/evals.json, and the draft has none.`, 'failed', 'evals/evals.json');
+  }
 
   if (!same([...ret.inventory].sort(byPath), live.inventory.map(stripKind))) stop('INVENTORY_MISMATCH', 'The returned inventory differs from the recomputed one.');
   if (!Array.isArray(report.inventory) || !same(report.inventory, live.inventory.map(({ path: file, sha256 }) => ({ path: file, sha256 })))) stop('INVENTORY_MISMATCH', 'The helper report inventory differs from the recomputed one.');

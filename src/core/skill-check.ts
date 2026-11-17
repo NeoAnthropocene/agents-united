@@ -693,7 +693,7 @@ function runGates(artifact: string, inventory: Inventoried, corpus: CorpusOutcom
         dirName, raw, supportingText(resolved, { excludeTopLevelNotices: true }),
         policy === 'private-owner' ? { requireProjectAuthor: false, forbidSource: true } : { requireProjectAuthor: false, forbidSource: false },
       )));
-    checks.push(runGate('layout', 'LAYOUT', null, () => checkSkillLayout(parent, dirName)));
+    checks.push(runGate('layout', 'LAYOUT', null, () => checkSkillLayout(parent, dirName, policy)));
     checks.push(runGate('portability', 'PORTABILITY', null, () => lintSkillPortability({
       dirName, name: plainText(meta.name ?? ''), body, scripts,
     })));
@@ -722,7 +722,7 @@ function runGates(artifact: string, inventory: Inventoried, corpus: CorpusOutcom
       // source (extraFiles === 0 and few content lines) is still a stub — an attribution is not substance.
       const real = verdictOf(measure);
       // Under adapted-source the files that make a short Skill more than an attribution are the real supporting files: a
-      // top-level licence file, NOTICE.md and evals/ are required by the policy or the layout gate, and an empty file says nothing.
+      // top-level licence file and NOTICE.md are required by the policy, evals/ is the maintainers' (and not required here), and an empty file says nothing.
       const supporting = policy === 'adapted-source' ? countSupportingFiles(inventory.items) : measure.extraFiles;
       const verdict = real === 'ok' && policy === 'adapted-source' && measure.thirdParty && supporting === 0 && measure.lines < STUB_MAX_LINES ? 'stub' : real;
       const shown = { lines: measure.lines, templatedLines: measure.templatedLines, share: measure.share, extraFiles: measure.extraFiles, thirdParty: measure.thirdParty, verdict };
