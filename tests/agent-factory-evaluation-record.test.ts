@@ -7,6 +7,10 @@ import { InstallEngine } from '../src/core/installer.js';
 import { RegistryResolver } from '../src/core/registry.js';
 import { prepareProductionEvaluator } from './helpers/factory-evaluator.js';
 import { evaluationResult, evaluationTree, prepareEvaluationJob, prepareEvaluationKind, reviewPin } from './helpers/factory-evaluation.js';
+import { NO_ALT, NO_CASE, NO_SHORT, altLeafOf, otherCaseOf, shortLeafOf } from './helpers/path-spellings.js';
+
+const CHECK_REVIEW_SOURCE = path.resolve('registry/skills/evaluate-artifact/scripts/check-review.mjs');
+const CASE_SENSITIVE_ONLY = 'this volume ignores case, so another case names the same folder; the case runs only on a case-sensitive volume (Linux CI is its first run)';
 
 describe('caller-only review records through the installed evaluator CLI', () => {
   let fixture: Awaited<ReturnType<typeof prepareProductionEvaluator>>;
@@ -459,5 +463,150 @@ describe('caller-only review records through the installed evaluator CLI', () =>
     const actual = run(['--job', selected.jobFile]);
     expect(actual.status, actual.stderr).toBe(1);
     expect(JSON.parse(actual.stderr).reason).toMatch(/result schema.*JSON/i);
+  });
+
+  // P27-A: the root rules compare physical paths as well as strings. A refusal holds when the paths overlap as strings or physically;
+  // a grant (coverage by a read root, "this is the required file") needs both, in exact case where the volume is case-sensitive.
+  // Each alias case looks its spelling up on the real volume and skips with the reason when there is none.
+  describe('root rules compare physical paths as well as strings (P27-A)', () => {
+    const overlap = /^Review output root overlaps candidate\/source\/read\/managed\/protected inputs\.$/;
+    const refused = (selected: { jobFile: string }) => {
+      const actual = run(['--job', selected.jobFile]);
+      expect(actual.status, actual.stderr).toBe(1);
+      return JSON.parse(actual.stderr).reason as string;
+    };
+    /** Names the review root (already moved there) by this spelling in the job, its raw log and its receipt, and re-pins them. */
+    const respellReview = async (selected: Awaited<ReturnType<typeof prepareEvaluationJob>>, spelled: string) => {
+      selected.evidence = spelled;
+      selected.jobFile = path.join(spelled, 'job.json');
+      selected.rawFile = path.join(spelled, 'checks', 'skill-layout.raw.txt');
+      selected.receiptFile = path.join(spelled, 'checks', 'skill-layout.receipt.json');
+      selected.job.roots.review = spelled;
+      const check = selected.job.checks[0]!;
+      check.raw = await reviewPin(selected.rawFile);
+      const receipt = await fs.readJson(selected.receiptFile); receipt.raw = check.raw;
+      await fs.writeJson(selected.receiptFile, receipt);
+      check.receipt = await reviewPin(selected.receiptFile);
+      await fs.writeJson(selected.jobFile, selected.job);
+    };
+
+    it('refuses a review root inside a protected root given by its NTFS short name (runs on Windows with short names, skipped otherwise)', async ctx => {
+      const selected = await prepareEvaluationJob(fixture);
+      const short = shortLeafOf(fixture.root);
+      if (!short) ctx.skip(NO_SHORT);
+      // Accepted before P27-A: as strings the short spelling of the fixture folder does not contain the review root.
+      Object.assign(selected.job.roots, { protected: [short!] });
+      await fs.writeJson(selected.jobFile, selected.job);
+      const before = await evaluationTree(fixture.root);
+      expect(refused(selected)).toMatch(overlap);
+      expect(await evaluationTree(fixture.root)).toEqual(before);
+    });
+
+    it('refuses a review root that is a .claude folder only in its physical spelling as a managed Host path (runs on Windows with short names, skipped otherwise)', async ctx => {
+      const selected = await prepareEvaluationJob(fixture);
+      const host = path.join(fixture.root, 'hosted', '.claude');
+      await fs.ensureDir(host);
+      const short = shortLeafOf(host);
+      if (!short) ctx.skip(NO_SHORT);
+      await fs.move(selected.evidence, path.join(host, 'review'));
+      // Accepted before P27-A: the string names no .claude segment.
+      await respellReview(selected, path.join(short!, 'review'));
+      expect(refused(selected)).toBe('Review output root is a managed Host path.');
+    });
+
+    it('refuses a review root inside another case of a protected root (runs where the volume ignores case, skipped otherwise; a compatibility case that the case-folded string comparison refuses too)', async ctx => {
+      const selected = await prepareEvaluationJob(fixture);
+      const flipped = otherCaseOf(fixture.root);
+      if (!flipped) ctx.skip(NO_CASE);
+      Object.assign(selected.job.roots, { protected: [flipped!] });
+      await fs.writeJson(selected.jobFile, selected.job);
+      expect(refused(selected)).toMatch(overlap);
+    });
+
+    /** Adds a read root and a clear pinned input beneath it, each in the spelling given; the file itself lies in the long-named folder. */
+    const coveredInput = async (selected: Awaited<ReturnType<typeof prepareEvaluationJob>>, folder: string, root: string, inputFolder: string) => {
+      await fs.outputFile(path.join(folder, 'note.md'), 'A note the evaluator may read.\n');
+      selected.job.roots.read.push(root);
+      selected.job.inputs.push({ id: 'tool-note', kind: 'observation', ...await reviewPin(path.join(folder, 'note.md')),
+        path: path.join(inputFolder, 'note.md'), sections: [], status: 'clear', required: false });
+      await fs.writeJson(selected.jobFile, selected.job);
+    };
+
+    it('passes a legal job whose disjoint roots are given in two spellings, with a pinned input beneath the alternate-spelled read root in the same spelling (short name or other case)', async ctx => {
+      const selected = await prepareEvaluationJob(fixture);
+      const prot = path.join(fixture.root, 'Protected Folder');
+      const tools = path.join(fixture.root, 'Optional Tools');
+      await fs.ensureDir(prot); await fs.ensureDir(tools);
+      const altProt = altLeafOf(prot, false), altTools = altLeafOf(tools, false);
+      if (!altProt || !altTools) ctx.skip(NO_ALT);
+      Object.assign(selected.job.roots, { protected: [altProt!] });
+      await coveredInput(selected, tools, altTools!, altTools!);
+      const actual = run(['--job', selected.jobFile]);
+      expect(actual.status, actual.stderr).toBe(0);
+      expect(JSON.parse(actual.stdout)).toMatchObject({ recordValid: true, ready: true });
+    });
+
+    it('covers an input given in another case of its read root\'s folder (runs where the volume ignores case, skipped otherwise): the folded strings and the real paths agree, as before P27-A', async ctx => {
+      const selected = await prepareEvaluationJob(fixture);
+      const tools = path.join(fixture.root, 'optional-tools');
+      await fs.ensureDir(tools);
+      const flipped = otherCaseOf(tools);
+      if (!flipped) ctx.skip(NO_CASE);
+      await coveredInput(selected, tools, tools, flipped!);
+      const actual = run(['--job', selected.jobFile]);
+      expect(actual.status, actual.stderr).toBe(0);
+    });
+
+    it('does not cover an input given under the short name of its read root\'s folder (runs on Windows with short names, skipped otherwise): the strings differ, refused as before P27-A; a physical match alone never grants', async ctx => {
+      const selected = await prepareEvaluationJob(fixture);
+      const tools = path.join(fixture.root, 'Optional Tools');
+      await fs.ensureDir(tools);
+      const short = shortLeafOf(tools);
+      if (!short) ctx.skip(NO_SHORT);
+      await coveredInput(selected, tools, tools, short!);
+      expect(refused(selected)).toBe('Input outside declared read roots: tool-note.');
+    });
+
+    it('passes a legal job whose review root is spelled by its short name throughout (runs on Windows with short names, skipped otherwise)', async ctx => {
+      const selected = await prepareEvaluationJob(fixture);
+      const long = path.join(fixture.root, 'Review Output');
+      await fs.move(selected.evidence, long);
+      const short = shortLeafOf(long);
+      if (!short) ctx.skip(NO_SHORT);
+      await respellReview(selected, short!);
+      const actual = run(['--job', selected.jobFile]);
+      expect(actual.status, actual.stderr).toBe(0);
+      expect(JSON.parse(actual.stdout)).toMatchObject({ recordValid: true, ready: true });
+    });
+
+    it('refuses an executable in a folder that differs from a read root only in case (runs only on a case-sensitive volume; Linux CI is its first run)', async ctx => {
+      const selected = await prepareEvaluationJob(fixture);
+      const tools = path.join(fixture.root, 'read');
+      const upper = path.join(fixture.root, 'READ');
+      await fs.ensureDir(tools);
+      if (otherCaseOf(tools)) ctx.skip(CASE_SENSITIVE_ONLY);
+      await fs.ensureDir(upper);
+      selected.job.roots.read.push(tools);
+      await fs.writeJson(selected.jobFile, { ...selected.job, checks: [...selected.job.checks, {
+        id: 'optional-tool', required: false, status: 'unavailable', candidateDigest: selected.candidateDigest,
+        command: { executable: { path: path.join(upper, 'tool'), bytes: null, sha256: null }, argv: [], cwd: fixture.root },
+        exit: null, raw: null, receipt: null,
+      }] });
+      // Before P27-A the case-folded string comparison counted /…/READ/tool as covered by the read root /…/read. The string part still folds;
+      // the physical part (exact case off Windows; READ exists, so its real path is …/READ) refuses it.
+      expect(refused(selected)).toBe('Check executable is outside the declared read scope.');
+    });
+
+    it('resolves physical paths by walking up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', async () => {
+      const text = await fs.readFile(CHECK_REVIEW_SOURCE, 'utf8');
+      expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+      expect(text).toContain('Cannot resolve the physical path of');
+      expect(text).toContain('fs.realpathSync.native(current)');
+      expect(text).toContain('const overlaps = (a, b) => [[a, b], [physical(a), physical(b)]].some(([x, y]) => within(x, y) || within(y, x));');
+      expect(text).toContain('const managedHostPath = root => [root, physical(root)]');
+      // A grant keeps the case-folded string test of before P27-A and adds the physical one, exact case off Windows.
+      expect(text).toContain('const withinBoth = (parent, child) => within(parent, child) && physicallyWithin(parent, child);');
+      expect(text).toContain('const physicallyWithin = (parent, child) => withinExact(physical(parent), physical(child));');
+    });
   });
 });

@@ -16,7 +16,7 @@ Produce one complete skill folder and a reviewable diff for its intended job. Th
 Create a new skill or repair an identified skill within the supplied scope. A repair preserves unrelated user edits, so capture the existing files before changing them.
 
 ## Input/Output Requirements
-Require the job, intended user/loading role, active host/surface, target format, local/upstream intent, absolute source-checkout and draft roots, sources, constraints and evidence budget. The host binding must supply the attribution rule and required support files; missing bindings block the task.
+Require the job, intended user/loading role, active host/surface, target format, local/upstream intent, absolute source-checkout and draft roots, sources, constraints and evidence budget. The host binding must supply the attribution rule and required support files; missing bindings block the task. With no task path, or a path that does not exist or is not a task record of this Skill, stop with a blocked note naming the path; never choose another task file.
 Return the complete folder, before/after diff, final inventory/hashes, provenance disposition, commands/raw results/actual exits, quality findings, unverified items and next action using [the report](assets/report.md).
 
 ## Step-by-Step Runbook

@@ -7,6 +7,7 @@ import type { SpawnSyncReturns } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CHECKER, canonical, digest, pinOf, prepareSyncJob, treeOf, writeSeam } from './helpers/sync-job.js';
 import type { Json, SyncJobFixture } from './helpers/sync-job.js';
+import { NO_ALT, NO_CASE, NO_SHORT, altLeafOf, otherCaseOf, shortLeafOf } from './helpers/path-spellings.js';
 
 const fixtures: SyncJobFixture[] = [];
 const make = async (): Promise<SyncJobFixture> => {
@@ -1143,5 +1144,101 @@ describe('design rules confirmed by the maintainer, 2026-11-15', () => {
     await fx.repinTargets();
     await fx.saveJob();
     failure(await untouched(fx, () => fx.pre()), 'TARGET_INVALID', 'preflight');
+  });
+});
+
+// P27-A: the root rules compare physical paths as well as strings. A refusal holds when the paths relate as strings or physically; a
+// grant ("inside this root", "this is the file") needs both. Each alias case looks its spelling up on the real volume and skips when
+// there is none. Target records are never read from disk, so their paths stay string comparisons.
+describe('check-sync root rules compare physical paths as well as strings (P27-A)', () => {
+  const CASE_SENSITIVE_ONLY = 'this volume ignores case, so another case names the same folder; the case runs only on a case-sensitive volume (Linux CI is its first run)';
+  /** Replaces the held source by an unlocked hold at this spelling (no lock entry, nothing read from disk). */
+  const holdAt = (fx: SyncJobFixture, spelled: string): void => {
+    fx.job.heldSources = [{ path: spelled, lockedSha256: null, candidateSha256: hex('c'), rule: 'quarantine-hold', reason: 'Held under another spelling.' }];
+  };
+
+  it('refuses a held source that is a changed input under its NTFS short name with HOLD_VIOLATION (runs on Windows with short names, skipped otherwise)', async ctx => {
+    const fx = await make();
+    const changed = fx.libPath('pages/agent/sub-agents.md');
+    const short = shortLeafOf(changed);
+    if (!short) ctx.skip(NO_SHORT);
+    // Accepted before P27-A: as strings ...\SUB-AG~1.MD is neither the changed path nor a lock key, so the hold was not seen.
+    holdAt(fx, short!);
+    await fx.saveJob();
+    expect(failure(await untouched(fx, () => fx.pre()), 'HOLD_VIOLATION', 'preflight').reason).toBe(`Hold violation for ${short}.`);
+  });
+
+  it('refuses a held source that is a changed input in another case with HOLD_VIOLATION (runs where the volume ignores case, skipped otherwise; a compatibility case that the folded string comparison refuses too)', async ctx => {
+    const fx = await make();
+    const flipped = otherCaseOf(fx.libPath('pages/agent/sub-agents.md'));
+    if (!flipped) ctx.skip(NO_CASE);
+    holdAt(fx, flipped!);
+    await fx.saveJob();
+    failure(await untouched(fx, () => fx.pre()), 'HOLD_VIOLATION', 'preflight');
+  });
+
+  it('refuses an evidence root inside the NTFS short name of the checkout with ROOT_CONFLICT (runs on Windows with short names, skipped otherwise)', async ctx => {
+    const fx = await make();
+    const long = path.join(fx.root, 'Checkout Folder');
+    await fs.move(fx.checkout, long);
+    const short = shortLeafOf(long);
+    if (!short) ctx.skip(NO_SHORT);
+    // The checkout is named long; the workspace (and the evidence root inside it) by the short name of a folder inside the checkout.
+    const respell = (file: string): string => path.join(long, path.relative(fx.checkout, file));
+    fx.job.source.checkout = long;
+    fx.job.library.lock.path = respell(fx.job.library.lock.path);
+    for (const item of [...fx.job.changedInputs, ...fx.job.heldSources]) item.path = respell(item.path);
+    const workspace = path.join(short!, 'evidence-ws');
+    const evidence = path.join(workspace, 'evidence');
+    await fs.ensureDir(evidence);
+    await fs.copy(fx.previousLockFile, path.join(evidence, path.basename(fx.previousLockFile)));
+    fx.job.roots = { workspace, evidence };
+    fx.job.library.previousLock.path = path.join(evidence, path.basename(fx.previousLockFile));
+    const jobFile = path.join(evidence, 'sync-job.json');
+    await fs.writeFile(jobFile, `${JSON.stringify(fx.job, null, 2)}\n`);
+    // Accepted before P27-A as far as this rule goes: as strings the short spelling is not inside the long checkout.
+    expect(failure(fx.check(['--job', jobFile]), 'ROOT_CONFLICT', 'preflight').reason).toBe('Evidence root must be inside workspace and disjoint from checkout.');
+  });
+
+  it('passes a legal job whose disjoint roots are given in two spellings (the checkout by the short name of its parent, the workspace long)', async ctx => {
+    const fx = await make();
+    const short = shortLeafOf(fx.root);
+    if (!short) ctx.skip(NO_SHORT);
+    const respell = (file: string): string => path.join(short!, path.relative(fx.root, file));
+    fx.job.source.checkout = respell(fx.checkout);
+    fx.job.library.lock.path = respell(fx.job.library.lock.path);
+    for (const item of [...fx.job.changedInputs, ...fx.job.heldSources]) item.path = respell(item.path);
+    await fx.saveJob();
+    const out = success(await untouched(fx, () => fx.pre()));
+    expect(out).toMatchObject({ phase: 'preflight', recordValid: true });
+  });
+
+  it('passes a legal job whose evidence folder is named in another spelling inside the workspace, the job file spelled the same (short name or other case)', async ctx => {
+    const fx = await make();
+    const alt = altLeafOf(fx.evidence, false);
+    if (!alt) ctx.skip(NO_ALT);
+    fx.job.roots.evidence = alt!;
+    fx.job.library.previousLock.path = path.join(alt!, path.basename(fx.previousLockFile));
+    await fx.saveJob();
+    const out = success(await untouched(fx, () => fx.check(['--job', path.join(alt!, path.basename(fx.jobFile))])));
+    expect(out).toMatchObject({ phase: 'preflight', recordValid: true });
+  });
+
+  it('refuses a changed input in a folder that differs from the host library only in case (runs only on a case-sensitive volume; Linux CI is its first run, and the rule was already exact there)', async ctx => {
+    const fx = await make();
+    if (otherCaseOf(fx.library)) ctx.skip(CASE_SENSITIVE_ONLY);
+    const upper = path.join(path.dirname(fx.library), path.basename(fx.library).toUpperCase());
+    await fs.outputFile(path.join(upper, 'pages', 'agent', 'sub-agents.md'), 'another folder\n');
+    fx.job.changedInputs[0].path = path.join(upper, 'pages', 'agent', 'sub-agents.md');
+    await fx.saveJob();
+    expect(failure(await untouched(fx, () => fx.pre()), 'JOB_INVALID', 'preflight').reason).toBe(`Changed input outside host library: ${fx.job.changedInputs[0].path}.`);
+  });
+
+  it('resolves physical paths by walking up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', async () => {
+    const text = await fs.readFile(CHECKER, 'utf8');
+    expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+    expect(text).toContain('Cannot resolve the physical path of');
+    expect(text).toContain('fs.realpathSync.native(current)');
+    expect(text).toContain('const overlaps = (a, b, code) => withinEither(a, b, code) || withinEither(b, a, code);');
   });
 });

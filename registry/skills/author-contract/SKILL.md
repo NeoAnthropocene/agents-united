@@ -16,7 +16,7 @@ Produce one checked shared definition/contract pair for a specified semantic job
 Create an absent pair, reuse a compatible existing pair unchanged, or update explicitly scoped shared semantics. Preserve the existing floor when a native preference does not require a shared change.
 
 ## Input/Output Requirements
-Require the complete [fixed job](references/job.md), caller-held digest, selected validation checkout/runtime, source and output roots, pins/baseline, intended reuse or changes, provenance, constraints and offline budget. Use [the job schema](assets/job.schema.json). The task binding supplies attribution and standing-rule references; missing required edges block the dependent action.
+Require the complete [fixed job](references/job.md), caller-held digest, selected validation checkout/runtime, source and output roots, pins/baseline, intended reuse or changes, provenance, constraints and offline budget. Use [the job schema](assets/job.schema.json). The task binding supplies attribution and standing-rule references; missing required edges block the dependent action. With no task path, or a path that does not exist or is not a task record of this Skill, stop with a blocked note naming the path; never choose another task file.
 Return the pair, complete inventory/hashes/diff, preserved notes/files, source disposition, actual check commands/logs/exits, [binding findings](references/bindings.md), quality findings and open items through [the report](assets/report.json). Keep helper preparation, caller validation, evaluator judgment and live evidence distinct.
 
 ## Step-by-Step Runbook

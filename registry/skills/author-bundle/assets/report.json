@@ -9,7 +9,7 @@
     "provenance": "Original, inspired or adapted disposition; inspected sources, licences, pins, comparisons, retained notices and unresolved rights.",
     "quality": "Author findings and separately executed evaluator judgment if available; whole-Bundle evaluation is not implied.",
     "openItems": "Missing decision or evidence, blocked dependent action, responsible party and next action; keep quality and live behavior pending where unverified.",
-    "upstream": "For upstream intent, identify the pinned dev contribution template and prepared evidence with sent false."
+    "upstream": "Always present, even for local intent. For upstream intent, identify the pinned dev contribution template and prepared evidence with sent false. For local intent write exactly: Local intent: nothing is prepared for upstream."
   },
   "limits": [
     "The caller independently checks final bytes, baseline, digest, scope and actual check outputs.",

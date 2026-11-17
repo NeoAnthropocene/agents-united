@@ -9,6 +9,7 @@ import { RegistryResolver } from '../src/core/registry.js';
 import { prepareProductionEvaluator } from './helpers/factory-evaluator.js';
 import { evaluationTree } from './helpers/factory-evaluation.js';
 import { INVOICE_FILES } from './helpers/skill-candidate.js';
+import { NO_SHORT, shortLeafOf } from './helpers/path-spellings.js';
 
 /**
  * The shipped review-job builder (P24-B, finding B-3 of Sitting B): the caller hands it only its decisions, it computes every pin and
@@ -527,6 +528,19 @@ describe('the shipped review-job builder', () => {
       }
       expect(await fs.pathExists(path.join(CHECKOUT, 'p67-review-x'))).toBe(false);
       expect(await fs.pathExists(review())).toBe(false);
+    });
+
+    // P27-A: check-review.mjs refuses a review root whose physical spelling names a managed Host folder; the builder must not write a job
+    // the checker refuses, so it reads the physical spelling too (here a .claude folder named by its NTFS short name).
+    it('refuses a review root that is a .claude folder only in its physical spelling, in the checker\'s wording (runs on Windows with short names, skipped otherwise)', async ctx => {
+      const spec = await skillSpec();
+      const host = path.join(work, 'hosted', '.claude');
+      await fs.ensureDir(host);
+      const short = shortLeafOf(host);
+      if (!short) ctx.skip(NO_SHORT);
+      const roots = { review: path.join(short!, 'review'), readFolder: path.join(short!, 'review-read'), managed: [] };
+      expect(refusal(build(await writeSpec({ ...spec, roots: { ...spec.roots, ...roots } }))).reason).toBe('Review output root is a managed Host path.');
+      expect(await fs.readdir(host)).toEqual([]);
     });
 
     it('refuses a HEAD that differs from the spec', async () => {

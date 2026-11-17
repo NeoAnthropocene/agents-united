@@ -2,6 +2,10 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { factoryJobFixture, sha256, type FactoryJobFixture } from './helpers/factory-job.js';
+import { NO_ALT, NO_CASE, NO_SHORT, altLeafOf, otherCaseOf, shortLeafOf } from './helpers/path-spellings.js';
+
+const CHECK_HANDBACK_SOURCE = path.resolve('registry/skills/realize-artifact/scripts/check-handback.mjs');
+const CASE_SENSITIVE_ONLY = 'this volume ignores case, so another case names the same folder; the case runs only on a case-sensitive volume (Linux CI is its first run)';
 
 describe('installed realization hand-back postflight', () => {
   let f: FactoryJobFixture;
@@ -144,5 +148,66 @@ describe('installed realization hand-back postflight', () => {
     result.jobDigest = f.digest(); result.checks[0]!.jobDigest = f.digest();
     await f.save(); await save(); expect(run().exit).toBe(0);
     result.upstream.sent = true; await save(); blocked(/sent|constant/i);
+  });
+
+  // P27-A: "inside the evidence root" grants only when the path is inside as a string and physically, in exact case where the volume is
+  // case-sensitive. The hand-back has no root refusal of its own; its job's root rules are tested with check-job.
+  describe('evidence-root grants compare physical paths as well as strings (P27-A)', () => {
+    const logRefusal = 'Raw check log must stay within the fixed evidence root.';
+    /** Moves the stdout log of the receipt to this spelling of a file and re-pins it. */
+    const stdoutAt = async (file: string, spelled = file): Promise<void> => {
+      const text = await fs.readFile(result.checks[0]!.stdout.path);
+      await fs.outputFile(file, text);
+      result.checks[0]!.stdout = { path: spelled, sha256: sha256(text), bytes: text.length };
+      await save();
+    };
+
+    it('passes a raw log in an evidence subfolder named by its NTFS short name or other case (two spellings of a folder inside the evidence root)', async ctx => {
+      const logs = path.join(f.evidence, 'Check Logs');
+      await fs.ensureDir(logs);
+      const alt = altLeafOf(logs, false);
+      if (!alt) ctx.skip(NO_ALT);
+      await stdoutAt(path.join(logs, 'stdout.txt'), path.join(alt!, 'stdout.txt'));
+      const checked = run();
+      expect(checked.exit, checked.raw).toBe(0);
+    });
+
+    it('refuses a raw log under the NTFS short name of the folder holding the evidence root (runs on Windows with short names, skipped otherwise; the string comparison refuses it too: a physical match alone never grants)', async ctx => {
+      const short = shortLeafOf(f.root);
+      if (!short) ctx.skip(NO_SHORT);
+      const rel = path.relative(f.root, path.join(f.evidence, 'stdout.txt'));
+      await stdoutAt(path.join(f.root, rel), path.join(short!, rel));
+      blocked(new RegExp(`^${logRefusal.replace(/\./g, '\\.')}$`));
+    });
+
+    it('accepts a raw log under another case of the evidence root wherever the volume ignores case (detected on the real volume, skipped where it is case-sensitive): the folded strings and the real paths agree, as before P27-A', async ctx => {
+      const flipped = otherCaseOf(f.evidence);
+      if (!flipped) ctx.skip(NO_CASE);
+      await stdoutAt(path.join(f.evidence, 'stdout.txt'), path.join(flipped!, 'stdout.txt'));
+      const checked = run();
+      expect(checked.exit, checked.raw).toBe(0);
+    });
+
+    it('refuses a raw log in a folder that differs from the evidence root only in case (runs only on a case-sensitive volume; Linux CI is its first run)', async ctx => {
+      if (otherCaseOf(f.evidence)) ctx.skip(CASE_SENSITIVE_ONLY);
+      const upper = path.join(path.dirname(f.evidence), path.basename(f.evidence).toUpperCase());
+      // Before P27-A the case-folded string comparison counted …/EVIDENCE/stdout.txt as inside the evidence root …/evidence. The string
+      // part still folds; the physical part (exact case off Windows; EVIDENCE exists, so its real path is …/EVIDENCE) refuses it.
+      await stdoutAt(path.join(upper, 'stdout.txt'));
+      blocked(new RegExp(`^${logRefusal.replace(/\./g, '\\.')}$`));
+    });
+
+    it('takes its physical comparison from check-job.mjs, whose real-path function refuses errors other than ENOENT/ENOTDIR (source text)', async () => {
+      const text = await fs.readFile(CHECK_HANDBACK_SOURCE, 'utf8');
+      expect(text).toMatch(/import \{[^}]*\bphysicallyWithin\b[^}]*\bwithin\b[^}]*\} from '\.\/check-job\.mjs';/);
+      // Each evidence-root grant keeps the folded string test and adds the physical one.
+      expect(text).toContain('!(within(job.roots.evidence, file) && physicallyWithin(job.roots.evidence, file))');
+      expect(text).toContain('if (!physicallyWithin(job.roots.evidence, log.path))');
+      const jobText = await fs.readFile(path.resolve('registry/skills/realize-artifact/scripts/check-job.mjs'), 'utf8');
+      expect(jobText).toContain('export const physicallyWithin = (parent, child) => withinExact(physical(parent), physical(child));');
+      expect(jobText).toContain('const withinBoth = (parent, child) => within(parent, child) && physicallyWithin(parent, child);');
+      expect(jobText).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+      expect(jobText).toContain('Cannot resolve the physical path of');
+    });
   });
 });

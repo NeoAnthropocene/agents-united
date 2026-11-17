@@ -13,12 +13,46 @@ const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(
   : value !== null && typeof value === 'object' ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`
     : JSON.stringify(value);
 const same = (a, b) => canonical(a) === canonical(b);
+// String comparisons fold case on every platform, as before P27. The physical comparison folds case only on Windows: the native real
+// path spells an existing folder as the volume stores it, so two spellings of one folder become one string where the volume ignores
+// case, and stay two (another folder) where it is case-sensitive. A grant needs both, so on a case-sensitive volume it needs exact case.
+const foldName = name => process.platform === 'win32' ? name.toLowerCase() : name;
 const folded = file => path.resolve(file).toLowerCase();
-const within = (parent, child) => {
-  const rel = path.relative(folded(parent), folded(child));
+const exact = file => foldName(path.resolve(file));
+const relWithin = (parent, child) => {
+  const rel = path.relative(parent, child);
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
 };
-const overlaps = (a, b) => within(a, b) || within(b, a);
+const within = (parent, child) => relWithin(folded(parent), folded(child));
+const withinExact = (parent, child) => relWithin(exact(parent), exact(child));
+const sameExact = (a, b) => exact(a) === exact(b);
+const sameString = (a, b) => folded(a) === folded(b);
+// The physical spelling of a path, the rule of the return checkers (copied on purpose, never imported): the deepest existing ancestor is
+// resolved by the platform (a short name, another case on an ignoring volume, both become the one real name) and the absent rest is
+// appended. Only ENOENT and ENOTDIR walk up to the parent; any other error is refused with the path and the code, so a root check never
+// silently falls back to comparing strings. Links are refused on the path as given before a path reaches this function.
+function physical(file) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') fail(`Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`);
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+// Every string comparison stays; a refusal also holds when the paths relate physically, and a grant needs both.
+const physicallyWithin = (parent, child) => withinExact(physical(parent), physical(child));
+const physicallySame = (a, b) => sameExact(physical(a), physical(b));
+const withinBoth = (parent, child) => within(parent, child) && physicallyWithin(parent, child);
+const sameBoth = (a, b) => sameString(a, b) && physicallySame(a, b);
+const overlaps = (a, b) => [[a, b], [physical(a), physical(b)]].some(([x, y]) => within(x, y) || within(y, x));
+const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
+/** A managed Host folder in the root as given or in its physical spelling. */
+const managedHostPath = root => [root, physical(root)].some(spelling => spelling.split(/[\\/]/).some(part => HOST_DIRS.includes(part.toLowerCase())));
 const unique = (values, label) => { if (new Set(values.map(value => value.toLowerCase())).size !== values.length) fail(`${label}: duplicate/case-colliding values.`); };
 const skillRoot = fileURLToPath(new URL('../', import.meta.url));
 const scriptFile = fileURLToPath(import.meta.url);
@@ -145,8 +179,8 @@ function checkJob(jobFile) {
   for (const root of [roots.candidate, job.source.checkout, job.source.registry, ...readRoots, ...roots.managed, ...roots.protected]) {
     if (overlaps(roots.review, absolute(root, 'Protected/read root'))) fail('Review output root overlaps candidate/source/read/managed/protected inputs.');
   }
-  if (roots.review.split(/[\\/]/).some(part => ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'].includes(part.toLowerCase()))) fail('Review output root is a managed Host path.');
-  if (folded(jobFile) !== folded(path.join(roots.review, 'job.json'))) fail('Job must be the caller-owned review-root job.json.');
+  if (managedHostPath(roots.review)) fail('Review output root is a managed Host path.');
+  if (!sameBoth(jobFile, path.join(roots.review, 'job.json'))) fail('Job must be the caller-owned review-root job.json.');
   const host = job.authoringHost;
   if ((host.observedVersion === null) === (host.unverifiedReason === null)) fail('Authoring Host needs an observed version or an explicit unverified reason.');
   if (job.subject.kind === 'claude-agent' && !job.subject.target) fail('Claude agent review requires its explicit target context.');
@@ -164,7 +198,7 @@ function checkJob(jobFile) {
   const unavailable = [];
   for (const input of job.inputs) {
     absolute(input.path, 'Input');
-    if (!readRoots.some(root => within(root, input.path))) fail(`Input outside declared read roots: ${input.id}.`);
+    if (!readRoots.some(root => withinBoth(root, input.path))) fail(`Input outside declared read roots: ${input.id}.`);
     if (input.status !== 'clear') {
       if (input.required) fail(`Required ${input.status} input blocks review: ${input.id}.`);
       unavailable.push({ id: input.id, status: input.status, required: false });
@@ -175,11 +209,19 @@ function checkJob(jobFile) {
     evidenceBytes += bytes.length;
     if (evidenceBytes > budget.maxEvidenceBytes) fail('Evidence total-byte budget exceeded.');
   }
-  if (Number(process.versions.node.split('.')[0]) < 24 || folded(job.runtime.executable.path) !== folded(fs.realpathSync(process.execPath))) fail('Runtime must be this Node >=24 executable, selected by its physical path.');
+  // Each "this is the required file" test: the string first (as before), then the link refusal of the path as given (the one the pin
+  // read below gives, with its label), then the physical identity.
+  const runtimeFile = fs.realpathSync(process.execPath);
+  if (Number(process.versions.node.split('.')[0]) < 24 || !sameString(job.runtime.executable.path, runtimeFile)) fail('Runtime must be this Node >=24 executable, selected by its physical path.');
+  absolute(job.runtime.executable.path, 'Runtime executable');
+  if (!physicallySame(job.runtime.executable.path, runtimeFile)) fail('Runtime must be this Node >=24 executable, selected by its physical path.');
   pinned(job.runtime.executable, budget.maxExecutableBytes, 'Runtime executable');
-  if (folded(job.runtime.checker.path) !== folded(scriptFile)) fail('Checker must be this actually installed script.');
+  if (!sameString(job.runtime.checker.path, scriptFile)) fail('Checker must be this actually installed script.');
+  absolute(job.runtime.checker.path, 'Installed checker');
+  if (!physicallySame(job.runtime.checker.path, scriptFile)) fail('Checker must be this actually installed script.');
   pinned(job.runtime.checker, budget.maxEvidenceFileBytes, 'Installed checker');
-  const hasPin = (file, kind) => job.inputs.some(input => input.required && input.status === 'clear' && folded(input.path) === folded(file) && (!kind || input.kind === kind));
+  // Every input path passed the link refusal above, so the physical identity is compared together with the string.
+  const hasPin = (file, kind) => job.inputs.some(input => input.required && input.status === 'clear' && sameBoth(input.path, file) && (!kind || input.kind === kind));
   const receiptFile = path.join(skillRoot, 'assets/claude-binding.json');
   if (!hasPin(receiptFile, 'loading') || !hasPin(path.join(skillRoot, 'SKILL.md'), 'loading')) fail('Missing required evaluator loading entry/receipt pins.');
   const binding = jsonAt(receiptFile, limits.envelope, 'Installed binding');
@@ -230,7 +272,10 @@ function checkJob(jobFile) {
     const pin = job.inputs.find(input => folded(input.path) === folded(schema.file));
     if (pin.sha256 !== hash(schema.bytes) || pin.bytes !== schema.bytes.length) fail('Executable schema changed between use and pin validation.');
   }
-  if (folded(job.rubric.path) !== folded(path.join(skillRoot, 'assets/rubric.json'))) fail('Review rubric must be this bundled rubric.');
+  const rubricFile = path.join(skillRoot, 'assets/rubric.json');
+  if (!sameString(job.rubric.path, rubricFile)) fail('Review rubric must be this bundled rubric.');
+  absolute(job.rubric.path, 'Rubric');
+  if (!physicallySame(job.rubric.path, rubricFile)) fail('Review rubric must be this bundled rubric.');
   const rubric = JSON.parse(decode(pinned(job.rubric, budget.maxEvidenceFileBytes, 'Rubric')));
   if (rubric.version !== job.rubric.version || !same([...job.rubric.criteria.map(item => item.id)].sort(), rubric.criteria.map(item => item.id).sort())) fail('Fixed rubric criterion coverage mismatch.');
   const needsShared = job.subject.kind !== 'skill';
@@ -248,17 +293,23 @@ function checkJob(jobFile) {
     if (check.candidateDigest !== candidateDigest) fail(`Check candidate digest mismatch: ${check.id}.`);
     absolute(check.command.cwd, 'Check cwd');
     const executable = absolute(check.command.executable.path, 'Check executable');
-    if (folded(executable) !== folded(job.runtime.executable.path) && !readRoots.some(root => within(root, executable))) fail('Check executable is outside the declared read scope.');
+    if (!sameBoth(executable, job.runtime.executable.path) && !readRoots.some(root => withinBoth(root, executable))) fail('Check executable is outside the declared read scope.');
     if (check.status === 'passed' || check.status === 'failed') {
       if (check.command.executable.bytes === null || check.command.executable.sha256 === null) fail('Executed check needs an actual executable length/hash pin.');
       pinned(check.command.executable, budget.maxExecutableBytes, 'Check executable declaration');
       if ((check.status === 'passed') !== (check.exit === 0) || check.exit === null || !check.raw || !check.receipt) fail(`Check status/exit/receipt contradiction: ${check.id}.`);
+      const outputFile = suffix => path.join(roots.review, 'checks', `${check.id}.${suffix}`);
       for (const [pin, suffix] of [[check.raw, 'raw.txt'], [check.receipt, 'receipt.json']]) {
-        if (folded(pin.path) !== folded(path.join(roots.review, 'checks', `${check.id}.${suffix}`))) fail(`Check output path substitution: ${check.id}.`);
+        if (!sameString(pin.path, outputFile(suffix))) fail(`Check output path substitution: ${check.id}.`);
       }
+      // The physical identity of each output follows the link refusal of its own pin read, so the existing refusals keep their order.
+      absolute(check.raw.path, 'Raw check log');
+      if (!physicallySame(check.raw.path, outputFile('raw.txt'))) fail(`Check output path substitution: ${check.id}.`);
       const raw = pinned(check.raw, budget.maxLogBytes, 'Raw check log');
       logBytes += raw.length;
       if (logBytes > budget.maxLogBytes) fail('Raw check log total-byte budget exceeded.');
+      absolute(check.receipt.path, 'Check receipt');
+      if (!physicallySame(check.receipt.path, outputFile('receipt.json'))) fail(`Check output path substitution: ${check.id}.`);
       const actual = JSON.parse(decode(pinned(check.receipt, limits.envelope, 'Check receipt')));
       const expected = { version: 1, id: check.id, kind: 'deterministic', command: check.command, candidateDigest, status: check.status, exit: check.exit, raw: check.raw };
       if (!same(actual, expected)) fail(`Check receipt substitution/inconsistency: ${check.id}.`);
@@ -293,12 +344,12 @@ function checkJob(jobFile) {
 
 function checkResult(record, resultFile) {
   const { job } = record;
-  if (folded(absolute(resultFile, 'Result')) !== folded(path.join(job.roots.review, 'result.json'))) fail('Result must be the caller-owned review-root result.json.');
+  if (!sameBoth(absolute(resultFile, 'Result'), path.join(job.roots.review, 'result.json'))) fail('Result must be the caller-owned review-root result.json.');
   const bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result');
   const result = JSON.parse(decode(bytes));
   validate(result, record.resultSchema, 'result');
   if (!job.inputs.some(input => input.required && input.status === 'clear' && input.kind === 'loading'
-    && folded(input.path) === folded(path.join(skillRoot, 'assets/result.schema.json')))) fail('Missing result-schema loading pin.');
+    && sameBoth(input.path, path.join(skillRoot, 'assets/result.schema.json')))) fail('Missing result-schema loading pin.');
   if (result.jobId !== job.id || result.jobDigest !== record.digest || result.candidateDigest !== record.candidateDigest) fail('Result fixed job/candidate digest mismatch.');
   if (!same(result.subject, job.subject) || !same(result.inventory, record.inventory)) fail('Result subject/inventory substitution.');
   const citation = cite => {

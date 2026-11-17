@@ -2,6 +2,10 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { factoryJobFixture, sha256, type FactoryJobFixture } from './helpers/factory-job.js';
+import { NO_ALT, NO_CASE, NO_SHORT, altLeafOf, otherCaseOf, shortLeafOf } from './helpers/path-spellings.js';
+
+const CHECK_JOB_SOURCE = path.resolve('registry/skills/realize-artifact/scripts/check-job.mjs');
+const CASE_SENSITIVE_ONLY = 'this volume ignores case, so another case names the same folder; the case runs only on a case-sensitive volume (Linux CI is its first run)';
 
 describe('installed realization job preflight', () => {
   let f: FactoryJobFixture;
@@ -86,5 +90,81 @@ describe('installed realization job preflight', () => {
     expect(result.exit, result.raw).toBe(1); // Required native-validation command is no longer present.
     expect(await fs.pathExists(marker)).toBe(false);
     f.job.budget.maxUsd = 1; await f.save(); blocked(/budget|maxUsd|constant/i);
+  });
+
+  // P27-A: the root rules compare physical paths as well as strings. A refusal holds when the paths overlap as strings or physically;
+  // a grant ("inside this root", "this is the pinned file") needs both, in exact case where the volume is case-sensitive.
+  describe('root rules compare physical paths as well as strings (P27-A)', () => {
+    const overlap = /^Writable\/source\/managed\/protected roots overlap: /;
+    /** Moves the draft root, and the required native-validation command that names it. */
+    const draftAt = (draft: string): void => {
+      f.job.roots.draft = draft;
+      const at = f.job.checks[0]!.argv.indexOf('--artifact') + 1;
+      expect(at).toBeGreaterThan(0);
+      f.job.checks[0]!.argv[at] = path.join(draft, f.job.artifact.paths[0]!);
+    };
+    const finding = (): string => {
+      const result = f.run('check-job');
+      expect(result.exit, result.raw).toBe(1);
+      expect(result.report?.ok, result.raw).toBe(false);
+      return result.report!.findings.join('\n');
+    };
+
+    it('refuses a draft root inside a protected root given by its NTFS short name (runs on Windows with short names, skipped otherwise)', async ctx => {
+      const prot = path.join(f.workspace, 'Protected Folder');
+      await fs.ensureDir(prot);
+      const short = shortLeafOf(prot);
+      if (!short) ctx.skip(NO_SHORT);
+      f.job.roots.protected = [prot];
+      // Accepted before P27-A: as strings workspace\PROTEC~1\draft is not inside workspace\Protected Folder.
+      draftAt(path.join(short!, 'draft'));
+      await f.save();
+      expect(finding()).toMatch(overlap);
+      expect(await fs.pathExists(path.join(prot, 'draft'))).toBe(false);
+    });
+
+    it('refuses a draft root inside another case of a protected root (runs where the volume ignores case, skipped otherwise; a compatibility case that the case-folded string comparison refuses too)', async ctx => {
+      const prot = path.join(f.workspace, 'prot-dir');
+      await fs.ensureDir(prot);
+      const flipped = otherCaseOf(prot);
+      if (!flipped) ctx.skip(NO_CASE);
+      f.job.roots.protected = [prot];
+      draftAt(path.join(flipped!, 'draft'));
+      await f.save();
+      expect(finding()).toMatch(overlap);
+    });
+
+    it('passes a legal job whose disjoint roots are given in two spellings (a protected and a managed folder by their short name or other case, the rest long)', async ctx => {
+      const prot = path.join(f.workspace, 'Protected Folder');
+      const managed = path.join(f.workspace, 'Managed Folder');
+      await fs.ensureDir(prot); await fs.ensureDir(managed);
+      const altProt = altLeafOf(prot, false), altManaged = altLeafOf(managed, false);
+      if (!altProt || !altManaged) ctx.skip(NO_ALT);
+      f.job.roots.protected = [altProt!];
+      f.job.roots.managed = [altManaged!];
+      await f.save();
+      const result = f.run('check-job');
+      expect(result.exit, result.raw).toBe(0);
+      expect(result.report).toMatchObject({ ok: true, digest: f.digest() });
+    });
+
+    it('refuses a check cwd in a folder that differs from the checkout only in case (runs only on a case-sensitive volume; Linux CI is its first run)', async ctx => {
+      if (otherCaseOf(f.checkout)) ctx.skip(CASE_SENSITIVE_ONLY);
+      const upper = path.join(path.dirname(f.checkout), path.basename(f.checkout).toUpperCase());
+      await fs.ensureDir(upper);
+      f.job.checks[0]!.cwd = upper;
+      await f.save();
+      // Before P27-A the case-folded string comparison counted …/SOURCE as inside the checkout …/source. The string part still folds; the
+      // physical part (exact case off Windows; SOURCE exists, so its real path is …/SOURCE) refuses it.
+      expect(finding()).toBe('Check cwd must be within selected validation checkout.');
+    });
+
+    it('resolves physical paths by walking up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', async () => {
+      const text = await fs.readFile(CHECK_JOB_SOURCE, 'utf8');
+      expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+      expect(text).toContain('Cannot resolve the physical path of');
+      expect(text).toContain('fs.realpathSync.native(current)');
+      expect(text).toContain('const overlaps = (a, b) => [[a, b], [physical(a), physical(b)]].some(([x, y]) => within(x, y) || within(y, x));');
+    });
   });
 });

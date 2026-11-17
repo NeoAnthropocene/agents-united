@@ -310,7 +310,9 @@ function build(specArg) {
   }
   // The checker's order and wording: the review root's overlap with every input first, then its managed Host segment; the read
   // folder follows the same order. A checkout inside a folder named like a Host folder therefore still yields the overlap reason.
-  const managedSegment = root => root.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase()));
+  // A managed Host folder in the root as given or in its physical spelling (a short name such as CLAUDE~1 hides `.claude` from the
+  // string): check-review.mjs refuses both, so the builder does too and never writes a job the checker refuses.
+  const managedSegment = root => [root, physical(root)].some(spelling => spelling.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase())));
   for (const root of [candidate, checkout, registry, readFolder, ...managed, ...protectedRoots]) {
     if (overlaps(review, root)) fail('Review output root overlaps candidate/source/read/managed/protected inputs.');
   }

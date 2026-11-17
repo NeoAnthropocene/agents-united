@@ -35,3 +35,5 @@ The notes file is one JSON object. Its keys are `openItems`, `unverified`, `clai
 ```
 
 The `assets/report.json` outline is a hand-off guide, not the return.
+
+A two-path helper cannot add an undeclared licence file; prepare an authorized complete baseline or return that limitation.

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { absolute, argumentsFor, checkJob, fail, fileBytes, hash, jsonFile, pinned, relative, runCli, same, schemaFor, unique, validateRecord, within } from './check-job.mjs';
+import { absolute, argumentsFor, checkJob, fail, fileBytes, hash, jsonFile, physicallyWithin, pinned, relative, runCli, same, schemaFor, unique, validateRecord, within } from './check-job.mjs';
 
 /** Checks the returned record against actual bytes; never executes returned commands. */
 export function checkHandback(job, result) {
@@ -47,7 +47,9 @@ export function checkHandback(job, result) {
   for (const item of result.coverage) if (!job.inputs.some(input => input.path === item.input)) fail(`Coverage cites an unpinned input: ${item.input}`);
   for (const file of result.provenance.evidence) {
     absolute(file, 'Provenance evidence');
-    if (!job.inputs.some(input => input.path === file) && !within(job.roots.evidence, file)) fail('Provenance evidence must be a pinned input or within the evidence root.');
+    // "Inside the evidence root" grants when the folded strings say so (as before P27) and the physical spellings do too, which compare
+    // exact case off Windows: refused on a case-sensitive volume for another case (the link refusal of the path as given ran just above).
+    if (!job.inputs.some(input => input.path === file) && !(within(job.roots.evidence, file) && physicallyWithin(job.roots.evidence, file))) fail('Provenance evidence must be a pinned input or within the evidence root.');
     fileBytes(file, 'Provenance evidence');
   }
   unique(result.checks.map(check => check.id), 'Check receipts');
@@ -69,6 +71,9 @@ export function checkHandback(job, result) {
     for (const log of [receipt.stdout, receipt.stderr]) {
       if (!within(job.roots.evidence, log.path)) fail('Raw check log must stay within the fixed evidence root.');
       if (log.bytes > job.budget.maxLogBytes) fail('Raw check log byte budget exceeded.');
+      // The link refusal of the pin read below (same label, same message) comes before the physical comparison; existing refusals keep their order.
+      absolute(log.path, 'Raw check log');
+      if (!physicallyWithin(job.roots.evidence, log.path)) fail('Raw check log must stay within the fixed evidence root.');
       pinned(log, 'Raw check log');
       logBytes += log.bytes;
     }

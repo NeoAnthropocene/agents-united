@@ -13,11 +13,46 @@ export function canonical(value) {
   return JSON.stringify(value);
 }
 export const same = (a, b) => canonical(a) === canonical(b);
+// String comparisons fold case on every platform, as before P27. The physical comparison folds case only on Windows: the native real
+// path spells an existing folder as the volume stores it, so two spellings of one folder become one string where the volume ignores
+// case, and stay two (another folder) where it is case-sensitive. A grant needs both, so on a case-sensitive volume it needs exact case.
+const foldName = name => process.platform === 'win32' ? name.toLowerCase() : name;
 const folded = file => path.resolve(file).toLowerCase();
-export const within = (parent, child) => {
-  const relative = path.relative(folded(parent), folded(child));
+const exact = file => foldName(path.resolve(file));
+const relWithin = (parent, child) => {
+  const relative = path.relative(parent, child);
   return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 };
+/** The string form of every comparison, grant or refusal: case-folded, as before P27. */
+export const within = (parent, child) => relWithin(folded(parent), folded(child));
+/** Exact case except on Windows: used on physical spellings only. */
+export const withinExact = (parent, child) => relWithin(exact(parent), exact(child));
+const sameExact = (a, b) => exact(a) === exact(b);
+// The physical spelling of a path, the rule of the return checkers (copied on purpose, never imported): the deepest existing ancestor is
+// resolved by the platform (a short name, another case on an ignoring volume, both become the one real name) and the absent rest is
+// appended. Only ENOENT and ENOTDIR walk up to the parent; any other error is refused with the path and the code, so a root check never
+// silently falls back to comparing strings. Links are refused on the path as given before a path reaches this function.
+export function physical(file) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') fail(`Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`);
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+// Every string comparison stays; a refusal also holds when the paths relate physically, and a grant needs both.
+/** Physical containment for a refusal (case-folded). */
+export const physicallyWithinFolded = (parent, child) => within(physical(parent), physical(child));
+/** Physical containment for a grant (exact case where the filesystem is case-sensitive). */
+export const physicallyWithin = (parent, child) => withinExact(physical(parent), physical(child));
+const withinBoth = (parent, child) => within(parent, child) && physicallyWithin(parent, child);
+const sameBoth = (a, b) => folded(a) === folded(b) && sameExact(physical(a), physical(b));
+const overlaps = (a, b) => [[a, b], [physical(a), physical(b)]].some(([x, y]) => within(x, y) || within(y, x));
 export function absolute(value, label = 'Path') {
   if (typeof value !== 'string' || !path.isAbsolute(value)) fail(`${label} must be an absolute path.`);
   const file = path.resolve(value);
@@ -109,10 +144,10 @@ export function checkJob(job, { postflight = false } = {}) {
   const { roots, source, constraints, budget } = job;
   for (const [key, value] of Object.entries({ workspace: roots.workspace, draft: roots.draft, evidence: roots.evidence, checkout: source.checkout, registry: source.registry })) absolute(value, key);
   if (!fs.statSync(source.checkout, { throwIfNoEntry: false })?.isDirectory() || !fs.statSync(source.registry, { throwIfNoEntry: false })?.isDirectory()) fail('Selected source checkout/registry is unavailable.');
-  if (!within(roots.workspace, roots.draft) || !within(roots.workspace, roots.evidence)) fail('Draft/evidence must be within the selected workspace.');
+  if (!withinBoth(roots.workspace, roots.draft) || !withinBoth(roots.workspace, roots.evidence)) fail('Draft/evidence must be within the selected workspace.');
   const writable = [roots.draft, roots.evidence];
   const protectedRoots = [source.checkout, source.registry, ...roots.managed, ...roots.protected].map(root => absolute(root, 'Protected root'));
-  for (const root of writable) for (const other of [...writable.filter(item => item !== root), ...protectedRoots]) if (within(root, other) || within(other, root)) fail(`Writable/source/managed/protected roots overlap: ${root} / ${other}`);
+  for (const root of writable) for (const other of [...writable.filter(item => item !== root), ...protectedRoots]) if (overlaps(root, other)) fail(`Writable/source/managed/protected roots overlap: ${root} / ${other}`);
   if (roots.draft === roots.evidence) fail('Draft and evidence roots overlap.');
   // A fixed, read-only Git query. Never use an executable, argv, shell or env from the job.
   const head = spawnSync('git', ['-C', source.checkout, 'rev-parse', '--verify', 'HEAD'], { encoding: 'utf8', timeout: 10000, windowsHide: true });
@@ -123,9 +158,13 @@ export function checkJob(job, { postflight = false } = {}) {
   for (const input of job.inputs) {
     if (input.status !== 'clear') fail(`Held input blocks realization: ${input.kind} ${input.path}`);
     if (within(roots.draft, input.path)) fail(`Input pin overlaps writable draft: ${input.path}`);
+    // The link refusal of the pin read below (same label, same message) comes before the physical comparison.
+    absolute(input.path, `Required ${input.kind}`);
+    if (physicallyWithinFolded(roots.draft, input.path)) fail(`Input pin overlaps writable draft: ${input.path}`);
     pinned(input, `Required ${input.kind}`);
   }
-  const pinAt = (kind, file) => job.inputs.some(input => input.kind === kind && folded(input.path) === folded(file));
+  // Every input path passed the link refusal above, so the physical identity is compared together with the string.
+  const pinAt = (kind, file) => job.inputs.some(input => input.kind === kind && sameBoth(input.path, file));
   const nativeGuide = path.join(source.checkout, 'host-library/claude/guide/agent.md');
   for (const [kind, file] of [
     ['guide', nativeGuide], ['profile', path.join(source.registry, 'hosts/claude/profile.json')],
@@ -139,7 +178,7 @@ export function checkJob(job, { postflight = false } = {}) {
   if (!pinAt('support', lockPath)) fail('Missing required pinned host library lock support input.');
   const lock = jsonFile(lockPath, 'Host library lock');
   for (const snapshot of job.inputs.filter(input => input.kind === 'snapshot')) {
-    if (!within(library, snapshot.path)) fail('Snapshot is outside the selected target library.');
+    if (!withinBoth(library, snapshot.path)) fail('Snapshot is outside the selected target library.');
     const rel = path.relative(library, snapshot.path).split(path.sep).join('/');
     if (lock.files?.[rel]?.sha256 !== `sha256:${snapshot.sha256}`) fail(`Snapshot hash disagrees with the pinned library lock: ${rel}`);
   }
@@ -154,6 +193,8 @@ export function checkJob(job, { postflight = false } = {}) {
   unique(job.preserved.map(pin => pin.path), 'Preserved pins');
   for (const pin of job.preserved) {
     if (within(roots.draft, pin.path)) fail('Preserved external pin overlaps draft; use complete baseline for untouched draft files.');
+    absolute(pin.path, 'Preserved input');
+    if (physicallyWithinFolded(roots.draft, pin.path)) fail('Preserved external pin overlaps draft; use complete baseline for untouched draft files.');
     pinned(pin, 'Preserved input');
   }
   const allChanges = Object.values(job.allowedChanges).flat();
@@ -165,6 +206,8 @@ export function checkJob(job, { postflight = false } = {}) {
   for (const item of job.baseline) {
     relative(item.path);
     if (!within(roots.evidence, item.snapshot)) fail('Baseline snapshot must be within fixed evidence root.');
+    absolute(item.snapshot, 'Immutable baseline snapshot');
+    if (!physicallyWithin(roots.evidence, item.snapshot)) fail('Baseline snapshot must be within fixed evidence root.');
     baseline.set(item.path, pinned({ path: item.snapshot, sha256: item.sha256, bytes: item.bytes }, 'Immutable baseline snapshot'));
   }
   if (job.operation === 'create' && baseline.size) fail('Create requires empty baseline.');
@@ -179,7 +222,7 @@ export function checkJob(job, { postflight = false } = {}) {
   for (const check of job.checks) {
     if (!pinAt('runtime', absolute(check.executable, 'Check executable'))) fail(`Check runtime is not pinned: ${check.id}`);
     absolute(check.cwd, 'Check cwd');
-    if (!within(source.checkout, check.cwd)) fail('Check cwd must be within selected validation checkout.');
+    if (!withinBoth(source.checkout, check.cwd)) fail('Check cwd must be within selected validation checkout.');
   }
   for (const item of job.acceptance) for (const id of item.requiredChecks) if (!job.checks.some(check => check.id === id && check.required)) fail(`Acceptance requires unavailable required check ${id}.`);
   unique(job.artifact.requiredSkills, 'Required preloads');

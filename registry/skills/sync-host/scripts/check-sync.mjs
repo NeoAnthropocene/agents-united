@@ -26,11 +26,36 @@ const same = (a, b) => canonical(a) === canonical(b);
 // Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
 const foldName = name => process.platform === 'win32' ? name.toLowerCase() : name;
 const folded = file => foldName(path.resolve(file));
-const within = (parent, child) => {
-  const rel = path.relative(folded(parent), folded(child));
+const relWithin = (parent, child) => {
+  const rel = path.relative(parent, child);
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
 };
-const overlaps = (a, b) => within(a, b) || within(b, a);
+const within = (parent, child) => relWithin(folded(parent), folded(child));
+// The physical spelling of a path, the rule of the return checkers (copied on purpose, never imported): the deepest existing ancestor is
+// resolved by the platform (a short name, another case on an ignoring volume, both become the one real name) and the absent rest is
+// appended. Only ENOENT and ENOTDIR walk up to the parent; any other error is refused with the path and the code, so a root check never
+// silently falls back to comparing strings. Links are refused on the path as given before a path reaches this function.
+function physical(file, code) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') stop(code, `Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`, 'unavailable');
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+const physicalFolded = (file, code) => foldName(physical(file, code));
+const physicallyWithin = (parent, child, code) => relWithin(physicalFolded(parent, code), physicalFolded(child, code));
+// Every string comparison stays; a refusal also holds when the paths relate physically, and an acceptance needs both.
+const withinEither = (parent, child, code) => within(parent, child) || physicallyWithin(parent, child, code);
+const withinBoth = (parent, child, code) => within(parent, child) && physicallyWithin(parent, child, code);
+const sameEither = (a, b, code) => folded(a) === folded(b) || physicalFolded(a, code) === physicalFolded(b, code);
+const sameBoth = (a, b, code) => folded(a) === folded(b) && physicalFolded(a, code) === physicalFolded(b, code);
+const overlaps = (a, b, code) => withinEither(a, b, code) || withinEither(b, a, code);
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const uniquePaths = (values, label, code) => {
   if (new Set(values.map(folded)).size !== values.length) stop(code, `${label}: duplicate/case-colliding paths.`);
@@ -292,20 +317,21 @@ function checkJob(jobArg) {
   const evidence = absolute(job.roots.evidence, 'Evidence root', 'ROOT_CONFLICT');
   const checkout = absolute(job.source.checkout, 'Source checkout', 'ROOT_CONFLICT');
 
-  if (folded(path.dirname(jobFile)) !== folded(evidence)) stop('JOB_INVALID', 'Job must sit directly in roots.evidence.');
-  if (!within(workspace, evidence) || overlaps(evidence, checkout)) stop('ROOT_CONFLICT', 'Evidence root must be inside workspace and disjoint from checkout.');
+  // Every path compared here passed the link refusal of absolute() above, on the path as given.
+  if (!sameBoth(path.dirname(jobFile), evidence, 'JOB_INVALID')) stop('JOB_INVALID', 'Job must sit directly in roots.evidence.');
+  if (!withinBoth(workspace, evidence, 'ROOT_CONFLICT') || overlaps(evidence, checkout, 'ROOT_CONFLICT')) stop('ROOT_CONFLICT', 'Evidence root must be inside workspace and disjoint from checkout.');
   if (!fs.statSync(checkout, { throwIfNoEntry: false })?.isDirectory()) stop('ROOT_CONFLICT', 'Source checkout: required directory unavailable.', 'unavailable');
 
   const hostLib = path.join(checkout, 'host-library', job.host);
   const expectedLock = path.join(hostLib, 'library.lock.json');
   const lockPath = absolute(job.library.lock.path, 'Library lock', 'JOB_INVALID');
   const prevLockPath = absolute(job.library.previousLock.path, 'Previous library lock', 'JOB_INVALID');
-  if (folded(lockPath) !== folded(expectedLock)) stop('JOB_INVALID', 'library.lock.path must be <checkout>/host-library/<host>/library.lock.json.');
-  if (!within(evidence, prevLockPath) || folded(prevLockPath) === folded(jobFile)) stop('JOB_INVALID', 'library.previousLock.path must be a file inside roots.evidence.');
+  if (!sameBoth(lockPath, expectedLock, 'JOB_INVALID')) stop('JOB_INVALID', 'library.lock.path must be <checkout>/host-library/<host>/library.lock.json.');
+  if (!withinBoth(evidence, prevLockPath, 'JOB_INVALID') || sameEither(prevLockPath, jobFile, 'JOB_INVALID')) stop('JOB_INVALID', 'library.previousLock.path must be a file inside roots.evidence.');
 
   for (const item of job.changedInputs) {
     const file = absolute(item.path, 'Changed input', 'JOB_INVALID');
-    if (!within(hostLib, file) || folded(file) === folded(hostLib)) stop('JOB_INVALID', `Changed input outside host library: ${item.path}.`);
+    if (!withinBoth(hostLib, file, 'JOB_INVALID') || sameEither(file, hostLib, 'JOB_INVALID')) stop('JOB_INVALID', `Changed input outside host library: ${item.path}.`);
     if (item.oldSha256 === null && item.newSha256 === null) stop('JOB_INVALID', `Changed input has both hashes null: ${item.path}.`);
     if (item.oldSha256 === item.newSha256) stop('JOB_INVALID', `Changed input has identical old and new hashes: ${item.path}.`);
   }
@@ -313,7 +339,7 @@ function checkJob(jobArg) {
 
   for (const item of job.heldSources) {
     const file = absolute(item.path, 'Held source', 'JOB_INVALID');
-    if (!within(hostLib, file) || folded(file) === folded(hostLib)) stop('JOB_INVALID', `Held source outside host library: ${item.path}.`);
+    if (!withinBoth(hostLib, file, 'JOB_INVALID') || sameEither(file, hostLib, 'JOB_INVALID')) stop('JOB_INVALID', `Held source outside host library: ${item.path}.`);
   }
   uniquePaths(job.heldSources.map(item => item.path), 'Held sources', 'JOB_INVALID');
 
@@ -336,8 +362,10 @@ function checkJob(jobArg) {
 
   // A held path may never appear in changedInputs, whatever the locks say about it; this test runs before the lock-delta check.
   const changedFolded = new Set(job.changedInputs.map(item => folded(item.path)));
+  // Physically too: a held file named in another spelling (a short name, another case on an ignoring volume) is still the held file.
   for (const hold of job.heldSources) {
-    if (changedFolded.has(folded(hold.path))) stop('HOLD_VIOLATION', `Hold violation for ${hold.path}.`);
+    if (changedFolded.has(folded(hold.path))
+      || job.changedInputs.some(item => physicalFolded(item.path, 'HOLD_VIOLATION') === physicalFolded(hold.path, 'HOLD_VIOLATION'))) stop('HOLD_VIOLATION', `Hold violation for ${hold.path}.`);
   }
 
   // Lock delta check.
@@ -422,7 +450,7 @@ function checkPlan(ctx, resultArg) {
   phase = 'postflight';
   const { job, jobFile, evidence, jobDigest, computed } = ctx;
   const resultFile = absolute(resultArg, 'Result', 'RESULT_INVALID');
-  if (folded(path.dirname(resultFile)) !== folded(evidence) || folded(resultFile) === folded(jobFile)) {
+  if (!sameBoth(path.dirname(resultFile), evidence, 'RESULT_INVALID') || sameEither(resultFile, jobFile, 'RESULT_INVALID')) {
     stop('RESULT_INVALID', 'Plan must sit directly in roots.evidence and not be the job file.');
   }
   const planBytes = watch(resultFile, limits.envelope, 'Plan', 'RESULT_INVALID');
