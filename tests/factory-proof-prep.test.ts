@@ -758,7 +758,7 @@ describe('S3 is solvable offline', () => {
       }
       expect(brief.pins.validator.sha256).toBe(hexOf(cli));
       expect(brief.pins.executable.path).toBe(fs.realpathSync(process.execPath));
-      expect(brief.pins.installed).toHaveLength({ skill: 8, contract: 19, bundle: 20 }[route]!);
+      expect(brief.pins.installed).toHaveLength({ skill: 9, contract: 19, bundle: 20 }[route]!);
     }
     for (const [i, x] of roots.entries()) for (const [j, y] of roots.entries()) if (i < j) expect(inside(x, y) || inside(y, x), `${x} / ${y}`).toBe(false);
     expect(briefOf('skill').pins.corpus.sha256).toBe(hexOf(path.join(checkout, 'registry', 'quality', 'skill-boilerplate-corpus.txt')));
@@ -987,7 +987,7 @@ describe('S5 workspaces and prompts', () => {
     const withFiles = filesOf(dirs.with), withoutFiles = filesOf(dirs.without), controlFiles = filesOf(dirs.control);
     expect(controlFiles).toEqual(withFiles);
     const removed = Object.keys(withFiles).filter(rel => !(rel in withoutFiles));
-    expect(removed.length).toBe(8);
+    expect(removed.length).toBe(9);
     expect(removed.every(rel => rel.startsWith('.claude/skills/author-skill/'))).toBe(true);
     expect(fs.existsSync(path.join(scenarioDir(dirs.without), '.claude', 'skills', 'author-skill'))).toBe(false);
     expect(fs.existsSync(path.join(scenarioDir(dirs.with), '.claude', 'skills', 'author-skill', 'SKILL.md'))).toBe(true);

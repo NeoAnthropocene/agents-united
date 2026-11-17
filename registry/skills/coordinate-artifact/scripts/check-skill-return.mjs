@@ -41,7 +41,7 @@ const limits = { envelope: 262144, executable: 134217728, helperJob: 4194304, he
 const TASK_NAME = 'skill-task.json';
 const RETURN_NAME = 'skill-return.json';
 const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
-const INSTALLED = ['SKILL.md', 'references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'references/skill-attribution.md'];
+const INSTALLED = ['SKILL.md', 'references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'scripts/skill-return.mjs', 'references/skill-attribution.md'];
 // The two fixed texts draft.mjs writes into its report; a forged report must not be able to claim more.
 const EVIDENCE_CLAIM = 'Declared evidence paths exist; provenance/legal review is still required.';
 const VALIDATION = { status: 'unverified', reason: 'Tool presence is checked; validators and live host behavior were not executed.' };
@@ -250,7 +250,7 @@ function checkTask(taskFile, withResult) {
     for (const input of [checkout, registry, ...managed, ...protectedRoots]) if (overlaps(root, input)) stop('ROOT_CONFLICT', `The ${name} root overlaps a source, managed or protected root.`);
   });
 
-  // The installed author-skill closure: exactly the eight reviewed files, byte-pinned, with the fork loader mechanism.
+  // The installed author-skill closure: exactly the nine reviewed files, byte-pinned, with the fork loader mechanism.
   const entryPin = task.installed.filter(pin => path.basename(pin.path) === 'SKILL.md');
   if (entryPin.length !== 1) stop('CLOSURE_MISSING', 'The installed pins must name exactly one author-skill SKILL.md.');
   const installedRoot = path.dirname(path.resolve(entryPin[0].path));
@@ -262,7 +262,7 @@ function checkTask(taskFile, withResult) {
     if (matches.length !== 1) stop('CLOSURE_MISSING', `The installed author-skill closure lacks a pin for ${rel}.`, 'failed', rel);
     installedPaths.set(folded(expected), rel);
   }
-  if (installedPaths.size !== task.installed.length) stop('CLOSURE_MISSING', 'The installed pins are not exactly the eight reviewed author-skill files.');
+  if (installedPaths.size !== task.installed.length) stop('CLOSURE_MISSING', 'The installed pins are not exactly the nine reviewed author-skill files.');
   let entryBytes;
   for (const rel of INSTALLED) {
     const pin = task.installed.find(item => folded(item.path) === folded(path.join(installedRoot, ...rel.split('/'))));

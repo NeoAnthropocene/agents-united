@@ -175,15 +175,17 @@ function replaceFile(file, bytes) {
  */
 function physical(file) {
   const resolved = path.resolve(file);
-  let existing = resolved;
   const rest = [];
-  while (!fs.existsSync(existing)) {
-    const parent = path.dirname(existing);
-    if (parent === existing) return resolved;
-    rest.unshift(path.basename(existing));
-    existing = parent;
+  for (let current = resolved; ;) {
+    // Only ENOENT and ENOTDIR walk up; any other error (EACCES, EPERM, ...) is refused, never read as "absent".
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') fail(`Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`);
+    }
+    const parent = path.dirname(current);
+    if (parent === current) return resolved;
+    rest.unshift(path.basename(current));
+    current = parent;
   }
-  return path.join(fs.realpathSync.native(existing), ...rest);
 }
 // A refusal holds when the paths overlap as the checker compares them (case-folded strings) or physically (case-folded real paths).
 const overlaps = (a, b) => [[a, b], [physical(a), physical(b)]].some(([x, y]) => withinFolded(x, y) || withinFolded(y, x));

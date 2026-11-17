@@ -9,3 +9,5 @@ Inspect caller check declarations and complete raw logs: executable/argv/cwd, re
 Keep five facts distinct: record consistency, actual intended reviewer invocation, a useful independent judgment, the caller's checked receipt and human acceptance. Synthetic fixtures establish only record behavior. P4's existing reader may summarize separately authorized selected Host records; it supplies no permission to read a private session or infer physical process exit, current quota or invoice.
 
 Executable declarations stay inside selected read roots except the pinned physical Node runtime. Passed/failed check records need actual executable pins; unavailable/not-run declarations may keep length/hash null when unknown and are not opened. An optional unavailable check is an explicit delta; it does not block unrelated required work. No declaration proves the command ran.
+
+Read/search classes include conditional connected-resource readers; the supplied-local-evidence rule is guidance, not path or transport isolation. Hook absence/crash/trust behavior remains a Host-proof question.

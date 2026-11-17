@@ -31,7 +31,7 @@ export const VALIDATOR = fs.realpathSync(path.resolve('dist/cli.js'));
 export const CONTRIBUTION_TEMPLATE = fs.realpathSync(path.resolve('.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md'));
 const CORPUS_SOURCE = fs.realpathSync(path.resolve('registry/quality/skill-boilerplate-corpus.txt'));
 
-/** The eight installed `author-skill` files: relative path under the installed root, and the registry source copied there. */
+/** The nine installed `author-skill` files: relative path under the installed root, and the registry source copied there. */
 export const INSTALLED_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['SKILL.md', 'registry/hosts/claude/skills/author-skill/SKILL.md'],
   ['references/job.md', 'registry/skills/author-skill/references/job.md'],
@@ -40,6 +40,7 @@ export const INSTALLED_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['examples/one-draft.md', 'registry/skills/author-skill/examples/one-draft.md'],
   ['assets/report.md', 'registry/skills/author-skill/assets/report.md'],
   ['scripts/draft.mjs', 'registry/skills/author-skill/scripts/draft.mjs'],
+  ['scripts/skill-return.mjs', 'registry/skills/author-skill/scripts/skill-return.mjs'],
   ['references/skill-attribution.md', 'registry/rules/skill-attribution.md'],
 ];
 
@@ -165,7 +166,7 @@ export async function prepareSkillTask(options: PrepareSkillTaskOptions = {}): P
     provenance: { disposition: 'original', owner: 'Fixture Author', version: '1.0.0', license: 'MIT' },
     loading: {
       role: 'general-purpose', entryPath: inst('SKILL.md'), attributionPath: inst('references/skill-attribution.md'),
-      requiredFiles: ['references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs'].map(inst),
+      requiredFiles: ['references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'scripts/skill-return.mjs'].map(inst),
     },
     requiredTools: [{ name: 'skill-check', path: validatorFile }],
     ...(intent === 'upstream' ? { contributionTemplate: CONTRIBUTION_TEMPLATE } : {}),

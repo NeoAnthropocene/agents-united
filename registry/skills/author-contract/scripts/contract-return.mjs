@@ -19,11 +19,33 @@ function canonical(value) {
   return JSON.stringify(value);
 }
 // Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
-const folded = file => (process.platform === 'win32' ? path.resolve(file).toLowerCase() : path.resolve(file));
-const within = (parent, child) => {
-  const rel = path.relative(folded(parent), folded(child));
+// The physical spelling of a path: the deepest existing ancestor is resolved by the platform (a short name, a junction, another case on an
+// ignoring volume all become the one real name) and the not-yet-existing rest is appended. Every comparison of roots and files uses it.
+// Only "does not exist" (ENOENT) and "a parent is not a folder" (ENOTDIR) walk up to the parent; any other error (EACCES, EPERM, ...) is
+// refused with the path and the code, so the alias check never silently falls back to comparing strings.
+function physical(file) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') fail(`Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`);
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+// Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
+const foldName = name => (process.platform === 'win32' ? name.toLowerCase() : name);
+const folded = file => foldName(physical(file));
+const withinBy = (norm, parent, child) => {
+  const rel = path.relative(norm(parent), norm(child));
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
 };
+const within = (parent, child) => withinBy(folded, parent, child);
+// The checker's own rule for "under the producer root" compares the spelling recorded in the return as a string.
+const lexicalWithin = (parent, child) => withinBy(file => foldName(path.resolve(file)), parent, child);
 const overlaps = (a, b) => within(a, b) || within(b, a);
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const byPath = (a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
@@ -135,7 +157,7 @@ function checkRoots(task, jobFile) {
   }
   const outputs = [['draft', draft], ['producer', producer], ['evidence', evidence]];
   for (const [name, root] of outputs) {
-    if (root.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase()))) fail(`The ${name} root is a managed Host path.`);
+    if ([root, physical(root)].some(spelling => spelling.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase())))) fail(`The ${name} root is a managed Host path.`);
   }
   outputs.forEach(([name, root], index) => {
     for (const [other, otherRoot] of outputs.slice(index + 1)) if (overlaps(root, otherRoot)) fail(`The ${name} and ${other} roots overlap.`);
@@ -157,10 +179,10 @@ function inventory(draft, budget) {
     if (++directories > 128) fail('The draft folder is over the directory budget.');
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
       const rel = safeName(`${prefix}${entry.name}`), file = path.join(directory, entry.name);
-      names.push(rel);
       if (entry.isSymbolicLink()) fail(`The draft folder holds a link: ${rel}.`);
       if (entry.isDirectory()) { walk(file, `${rel}/`); continue; }
       if (!entry.isFile()) fail(`The draft folder holds an unsupported entry: ${rel}.`);
+      names.push(rel);
       if (items.length >= budget.maxCandidateFiles) fail('The draft folder is over the candidate file budget.');
       const bytes = readBounded(file, budget.maxCandidateFileBytes, `Draft file ${rel} (task budget)`);
       if ((total += bytes.length) > budget.maxCandidateBytes) fail('The draft folder is over the candidate byte budget.');
@@ -168,8 +190,8 @@ function inventory(draft, budget) {
     }
   };
   walk(draft, '');
-  // Two names that differ only in case are refused on every platform, as the checker does.
-  if (new Set(names.map(name => name.toLowerCase())).size !== names.length) fail('Two draft entry names differ only in case.');
+  // Two file paths that differ only in case are refused on every platform; the checker compares complete file paths, never directory names.
+  if (new Set(names.map(name => name.toLowerCase())).size !== names.length) fail('Two draft file paths differ only in case.');
   return items.sort(byPath);
 }
 
@@ -194,6 +216,8 @@ function isReturnFile(file, producer) {
 function pinUnderProducer(value, label, producer, returnFile, cap) {
   const file = absolute(value, label);
   if (!within(producer, file) || folded(file) === folded(returnFile)) fail(`${label} must be a file under the producer root other than the return.`);
+  // The path is recorded as given and the checker compares that spelling as a string: both rules must hold.
+  if (!lexicalWithin(producer, file)) fail(`${label} names a file under the producer root, but with a different spelling than the task's producer root (${producer}); pass the file with the same spelling as that root.`);
   const bytes = readBounded(file, cap, label);
   if (isReturnFile(file, producer)) fail(`${label} must be a file under the producer root other than the return.`);
   return { file, bytes, pin: { path: file, bytes: bytes.length, sha256: hash(bytes) } };
@@ -276,7 +300,7 @@ function write(values) {
   // What the checker checks for the draft folder: nothing else beside it, and the state the status needs.
   const parent = path.dirname(draft);
   if (fs.existsSync(parent)) {
-    const stray = fs.readdirSync(parent).find(name => folded(name) !== folded(path.basename(draft)));
+    const stray = fs.readdirSync(parent).find(name => foldName(name) !== foldName(path.basename(draft)));
     if (stray !== undefined) fail(`The draft parent holds an entry besides the draft folder: ${stray}.`);
   }
   if (notes.externalActions.length) fail('externalActions must be empty; the return records no external action.');

@@ -414,3 +414,86 @@ describe('bundle-return.mjs decodes the contribution template strictly (point 12
     await refusedUnchanged(fx, ['--job', fx.taskFile], /UTF-8/i);
   });
 });
+
+describe('bundle-return.mjs compares physical roots, not path strings (review of P25-B, point 1)', () => {
+  const overlapRefusal = /overlaps a source, managed or protected root/;
+  const shortNameOf = (dir: string): string | undefined => {
+    const short = spawnSync('cmd', ['/d', '/s', '/c', `"for %I in ("${dir}") do @echo %~sI"`], { encoding: 'utf8', windowsVerbatimArguments: true }).stdout.trim();
+    return short && short.toLowerCase() !== dir.toLowerCase() && fs.pathExistsSync(short) ? short : undefined;
+  };
+  // A second spelling of one existing folder: the NTFS short name on Windows, else another case where the volume ignores case.
+  // lexicallyDistinct: the checker must see a different string (on Windows it folds case, so only a short name counts there).
+  const altSpelling = (dir: string, lexicallyDistinct: boolean): string | undefined => {
+    if (process.platform === 'win32') {
+      const short = shortNameOf(dir);
+      if (short || lexicallyDistinct) return short;
+    }
+    const flipped = path.join(path.dirname(dir), path.basename(dir).toUpperCase());
+    return flipped !== dir && fs.pathExistsSync(flipped) ? flipped : undefined;
+  };
+  const NO_ALT = 'no second spelling of an existing folder on this volume (a short name on Windows, another case on a case-insensitive volume)';
+  it('refuses a draft root under a protected root that does not exist yet (a plain string comparison refuses this too: it only runs the absent-tail walk of physical() on every platform and is not proof of the alias comparison)', async () => {
+    const fx = await make();
+    const prot = path.join(fx.root, 'absent-protected');
+    fx.task.roots.protected = [prot];
+    fx.task.roots.draft = path.join(prot, 'candidate', 'x');
+    await fx.save();
+    await refusedUnchanged(fx, ['--job', fx.taskFile], overlapRefusal);
+  });
+  it('refuses a producer root reached through another case of a protected folder (runs where the volume ignores case, skipped otherwise)', async ctx => {
+    const fx = await make();
+    const prot = path.join(fx.root, 'prot-dir');
+    await fs.ensureDir(path.join(prot, 'out'));
+    const flipped = path.join(fx.root, 'PROT-DIR', 'out');
+    if (!fs.pathExistsSync(flipped)) ctx.skip('this volume is case-sensitive: another case names another folder');
+    fx.task.roots.protected = [prot];
+    fx.task.roots.producer = flipped;
+    await fx.save();
+    await refusedUnchanged(fx, ['--job', fx.taskFile], overlapRefusal);
+  });
+  it('refuses a producer root reached through the NTFS short name of a protected folder (runs on Windows with short names enabled, skipped otherwise)', async ctx => {
+    if (process.platform !== 'win32') ctx.skip('NTFS short names exist only on Windows');
+    const fx = await make();
+    const prot = path.join(fx.root, 'Protected Folder');
+    await fs.ensureDir(path.join(prot, 'out'));
+    const short = shortNameOf(prot);
+    if (!short) ctx.skip('this volume has no 8.3 short names');
+    fx.task.roots.protected = [prot];
+    fx.task.roots.producer = path.join(short!, 'out');
+    await fx.save();
+    await refusedUnchanged(fx, ['--job', fx.taskFile], overlapRefusal);
+  });
+  it('writes a return the checker accepts when a folder that overlaps nothing is given in another spelling', async ctx => {
+    const fx = await make();
+    await fx.writeDraft();
+    const alt = altSpelling(path.dirname(fx.taskFile), false);
+    if (!alt) ctx.skip(NO_ALT);
+    const run = fx.helper(['--job', path.join(alt!, path.basename(fx.taskFile))]);
+    expect(run.status, run.stderr).toBe(0);
+    const post = fx.post();
+    expect(post.status, post.stdout + post.stderr).toBe(0);
+  });
+  it('walks up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', async () => {
+    const text = await fs.readFile(HELPER_SOURCE, 'utf8');
+    expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+    expect(text).toContain('Cannot resolve the physical path of');
+    expect(text).not.toMatch(/catch \{ \/\* absent/);
+  });
+  it('reads the script with one resolver for every root, file and return comparison', async () => {
+    const text = await fs.readFile(HELPER_SOURCE, 'utf8');
+    expect(text).toContain('fs.realpathSync.native(current)');
+    expect(text).toMatch(/const folded = file => foldName\(physical\(file\)\)/);
+  });
+});
+
+describe('bundle-return.mjs follows its checker on case collisions (review of P25-B, point 2)', () => {
+  it('refuses two directories that differ only in case, as check-bundle-return.mjs does for its whole draft listing (so no change was needed); runs on a case-sensitive platform (first run on Linux CI)', async ctx => {
+    const fx = await make();
+    await fs.ensureDir(path.join(fx.root, 'CaseProbe'));
+    if (fs.pathExistsSync(path.join(fx.root, 'caseprobe'))) ctx.skip('this volume ignores case: Refs and refs are one folder');
+    await fx.writeDraft();
+    await fs.ensureDir(path.join(fx.draft, 'Refs'));
+    await fs.ensureDir(path.join(fx.draft, 'refs'));
+    await refusedUnchanged(fx, ['--job', fx.taskFile], /differ only in case/);
+  });
+});

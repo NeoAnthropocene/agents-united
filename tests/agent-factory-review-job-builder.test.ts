@@ -547,3 +547,12 @@ describe('the shipped review-job builder', () => {
     });
   });
 });
+
+describe('the review-job builder resolves physical paths without failing open', () => {
+  it('walks up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', async () => {
+    const text = await fs.readFile(SOURCE, 'utf8');
+    expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+    expect(text).toContain('Cannot resolve the physical path of');
+    expect(text).not.toContain('while (!fs.existsSync(existing))');
+  });
+});

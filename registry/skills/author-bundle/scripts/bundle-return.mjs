@@ -17,7 +17,26 @@ function canonical(value) {
   return JSON.stringify(value);
 }
 // Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
-const folded = file => (process.platform === 'win32' ? path.resolve(file).toLowerCase() : path.resolve(file));
+// The physical spelling of a path: the deepest existing ancestor is resolved by the platform (a short name, a junction, another case on an
+// ignoring volume all become the one real name) and the not-yet-existing rest is appended. Every comparison of roots and files uses it.
+// Only "does not exist" (ENOENT) and "a parent is not a folder" (ENOTDIR) walk up to the parent; any other error (EACCES, EPERM, ...) is
+// refused with the path and the code, so the alias check never silently falls back to comparing strings.
+function physical(file) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') fail(`Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`);
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+// Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
+const foldName = name => (process.platform === 'win32' ? name.toLowerCase() : name);
+const folded = file => foldName(physical(file));
 const within = (parent, child) => {
   const rel = path.relative(folded(parent), folded(child));
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
@@ -133,7 +152,7 @@ function checkRoots(task, jobFile) {
   }
   const outputs = [['draft', draft], ['producer', producer], ['evidence', evidence]];
   for (const [name, root] of outputs) {
-    if (root.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase()))) fail(`The ${name} root is a managed Host path.`);
+    if ([root, physical(root)].some(spelling => spelling.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase())))) fail(`The ${name} root is a managed Host path.`);
   }
   outputs.forEach(([name, root], index) => {
     for (const [other, otherRoot] of outputs.slice(index + 1)) if (overlaps(root, otherRoot)) fail(`The ${name} and ${other} roots overlap.`);

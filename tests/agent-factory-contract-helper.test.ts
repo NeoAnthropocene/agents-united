@@ -328,3 +328,102 @@ describe('contract-return.mjs refusals', () => {
     await refusedUnchanged(fx, flags, /budget/i);
   });
 });
+
+describe('contract-return.mjs compares physical roots, not path strings (review of P25-B, point 1)', () => {
+  const overlapRefusal = /overlaps a source, managed or protected root/;
+  const shortNameOf = (dir: string): string | undefined => {
+    const short = spawnSync('cmd', ['/d', '/s', '/c', `"for %I in ("${dir}") do @echo %~sI"`], { encoding: 'utf8', windowsVerbatimArguments: true }).stdout.trim();
+    return short && short.toLowerCase() !== dir.toLowerCase() && fs.pathExistsSync(short) ? short : undefined;
+  };
+  // A second spelling of one existing folder: the NTFS short name on Windows, else another case where the volume ignores case.
+  // lexicallyDistinct: the checker must see a different string (on Windows it folds case, so only a short name counts there).
+  const altSpelling = (dir: string, lexicallyDistinct: boolean): string | undefined => {
+    if (process.platform === 'win32') {
+      const short = shortNameOf(dir);
+      if (short || lexicallyDistinct) return short;
+    }
+    const flipped = path.join(path.dirname(dir), path.basename(dir).toUpperCase());
+    return flipped !== dir && fs.pathExistsSync(flipped) ? flipped : undefined;
+  };
+  const NO_ALT = 'no second spelling of an existing folder on this volume (a short name on Windows, another case on a case-insensitive volume)';
+  it('refuses a draft root under a protected root that does not exist yet (a plain string comparison refuses this too: it only runs the absent-tail walk of physical() on every platform and is not proof of the alias comparison)', async () => {
+    const fx = await make();
+    const prot = path.join(fx.root, 'absent-protected');
+    fx.task.roots.protected = [prot];
+    fx.task.roots.draft = path.join(prot, 'candidate', 'x');
+    await fx.save();
+    await refusedUnchanged(fx, ['--job', fx.taskFile], overlapRefusal);
+  });
+  it('refuses a producer root reached through another case of a protected folder (runs where the volume ignores case, skipped otherwise)', async ctx => {
+    const fx = await make();
+    const prot = path.join(fx.root, 'prot-dir');
+    await fs.ensureDir(path.join(prot, 'out'));
+    const flipped = path.join(fx.root, 'PROT-DIR', 'out');
+    if (!fs.pathExistsSync(flipped)) ctx.skip('this volume is case-sensitive: another case names another folder');
+    fx.task.roots.protected = [prot];
+    fx.task.roots.producer = flipped;
+    await fx.save();
+    await refusedUnchanged(fx, ['--job', fx.taskFile], overlapRefusal);
+  });
+  it('refuses a producer root reached through the NTFS short name of a protected folder (runs on Windows with short names enabled, skipped otherwise)', async ctx => {
+    if (process.platform !== 'win32') ctx.skip('NTFS short names exist only on Windows');
+    const fx = await make();
+    const prot = path.join(fx.root, 'Protected Folder');
+    await fs.ensureDir(path.join(prot, 'out'));
+    const short = shortNameOf(prot);
+    if (!short) ctx.skip('this volume has no 8.3 short names');
+    fx.task.roots.protected = [prot];
+    fx.task.roots.producer = path.join(short!, 'out');
+    await fx.save();
+    await refusedUnchanged(fx, ['--job', fx.taskFile], overlapRefusal);
+  });
+  it('refuses a helper file given in another spelling of the producer root than the task uses, before anything is written', async ctx => {
+    const fx = await make();
+    const produced = await produce(fx);
+    const alt = altSpelling(fx.producer, true);
+    if (!alt) ctx.skip(NO_ALT);
+    fx.task.roots.producer = alt!;
+    await fx.save();
+    await refusedUnchanged(fx, helperFlags(fx, produced), /same spelling/);
+  });
+  it('writes a return the checker accepts when a folder that overlaps nothing is given in another spelling', async ctx => {
+    const fx = await make();
+    const produced = await produce(fx);
+    const alt = altSpelling(path.dirname(fx.taskFile), false);
+    if (!alt) ctx.skip(NO_ALT);
+    const flags = helperFlags(fx, produced);
+    flags[flags.indexOf('--job') + 1] = path.join(alt!, path.basename(fx.taskFile));
+    written(fx, script(fx, flags));
+  });
+  it('walks up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', async () => {
+    const text = await fs.readFile(SCRIPT_SOURCE, 'utf8');
+    expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+    expect(text).toContain('Cannot resolve the physical path of');
+    expect(text).not.toMatch(/catch \{ \/\* absent/);
+  });
+  it('reads the script with one resolver for every root, file and return comparison', async () => {
+    const text = await fs.readFile(SCRIPT_SOURCE, 'utf8');
+    expect(text).toContain('fs.realpathSync.native(current)');
+    expect(text).toMatch(/const folded = file => foldName\(physical\(file\)\)/);
+  });
+});
+
+describe('contract-return.mjs follows its checker on case collisions and on stderr (review of P25-B, points 2 and 3)', () => {
+  it('still refuses a helper run with exit 0 and a non-empty stderr, as check-contract-return.mjs does (HELPER_RECORD: "Exit 0 needs a draft-prepared report on stdout and an empty stderr")', async () => {
+    const fx = await make();
+    const produced = await produce(fx);
+    await fs.writeFile(produced.stderrFile, 'a warning\n');
+    await refusedUnchanged(fx, helperFlags(fx, produced), /empty stderr/);
+  });
+  it('accepts a draft whose directories differ only in case when its file paths do not, like the checker, on a case-sensitive platform (first run on Linux CI)', async ctx => {
+    const fx = await make();
+    const sensitive = path.join(fx.root, 'CaseProbe');
+    await fs.ensureDir(sensitive);
+    if (fs.pathExistsSync(path.join(fx.root, 'caseprobe'))) ctx.skip('this volume ignores case: Refs and refs are one folder');
+    const produced = await produce(fx);
+    expect(produced.run.status, produced.run.stderr).toBe(0);
+    await fs.ensureDir(path.join(fx.draft, 'Refs'));
+    await fs.ensureDir(path.join(fx.draft, 'refs'));
+    written(fx, script(fx, helperFlags(fx, produced)));
+  });
+});

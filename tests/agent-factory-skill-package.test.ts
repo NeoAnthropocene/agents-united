@@ -19,7 +19,7 @@ import { installPackedPackage } from './helpers/packed-package.js';
  * the OS temp directory (never under `.codex`, which `draft.mjs` rejects). Reviewer JSON below is labelled synthetic.
  */
 const NEW_SUPPORT = ['references/skill-authoring.md', 'scripts/check-skill-return.mjs', 'assets/skill-task.schema.json', 'assets/skill-return.schema.json'] as const;
-const AUTHOR_SKILL_FILES = ['SKILL.md', 'references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'references/skill-attribution.md'] as const;
+const AUTHOR_SKILL_FILES = ['SKILL.md', 'references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'scripts/skill-return.mjs', 'references/skill-attribution.md'] as const;
 const sha = (bytes: Buffer): string => digest(bytes);
 const parse = (result: SpawnSyncReturns<string>, stream: 'stdout' | 'stderr' = 'stdout'): Json => JSON.parse(result[stream]) as Json;
 

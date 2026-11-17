@@ -45,7 +45,7 @@ export function nodePin(ctx) {
 }
 
 const HOST = { host: 'claude', product: 'Claude Code CLI', scope: 'workspace', lane: 'native', observedVersion: null, unverifiedReason: 'Prepared offline; the lead records the Claude Code version of the sitting.' };
-const EXPECTED_INSTALLED = { 'author-skill': 8, 'author-contract': 19, 'author-bundle': 20 };
+const EXPECTED_INSTALLED = { 'author-skill': 9, 'author-contract': 19, 'author-bundle': 20 };
 
 // ---------------------------------------------------------------- S3
 
@@ -93,7 +93,7 @@ function skillBrief(ctx, folder) {
     provenance: { disposition: 'original', owner: 'Proof Fixture', version: '1.0.0', license: 'MIT' },
     loading: {
       role: 'general-purpose', entryPath: inst('SKILL.md'), attributionPath: inst('references/skill-attribution.md'),
-      requiredFiles: ['references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs'].map(inst),
+      requiredFiles: ['references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'scripts/skill-return.mjs'].map(inst),
     },
     requiredTools: [{ name: 'skill-check', path: ctx.builtCli }],
     budget: { maxCandidateFiles: 32, maxCandidateFileBytes: 262144, maxCandidateBytes: 1048576, maxHelperStdoutBytes: 4194304, externalCalls: 0, publication: false },

@@ -78,7 +78,7 @@ Reopen the assigned task with `in_progress` before an authorized revision, or cr
 
 ## One Skill draft
 
-Follow `references/skill-authoring.md` of the coordinate-artifact preload. This main has no Skill tool and does not start the `author-skill` fork: after the preflight check passes, ask the maintainer to type `/author-skill <absolute task path>`, then import the files the fork wrote and run the postflight check, `node <checkout>/dist/cli.js skill-check` and the P5 Skill review. The caller never reruns `draft.mjs`. A fork return is a claim until those checks pass.
+Follow `references/skill-authoring.md` of the coordinate-artifact preload. This main has no Skill tool and does not start the `author-skill` fork: after the preflight check passes, ask the maintainer to type `/author-skill <absolute task path>`, then import the files the fork wrote and run the postflight check, `node <checkout>/dist/cli.js skill-check` and the P5 Skill review. The fork writes its return with `skill-return.mjs`, not by hand, and the caller never reruns `draft.mjs` or `skill-return.mjs`. A fork return is a claim until those checks pass.
 
 ## One contract draft
 
