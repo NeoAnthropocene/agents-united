@@ -37,7 +37,7 @@ export const VALIDATOR = fs.realpathSync(path.resolve('dist/cli.js'));
 export const CONTRIBUTION_TEMPLATE = fs.realpathSync(path.resolve('.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md'));
 const BINDING_SOURCE = fs.realpathSync(path.resolve('registry/hosts/claude/agent-factory-contract.binding.json'));
 
-/** The seventeen source-backed installed `author-contract` files; `assets/claude-binding.json` is generated beside them. */
+/** The eighteen source-backed installed `author-contract` files; `assets/claude-binding.json` is generated beside them. */
 export const INSTALLED_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['SKILL.md', 'registry/hosts/claude/skills/author-contract/SKILL.md'],
   ['references/job.md', 'registry/skills/author-contract/references/job.md'],
@@ -49,6 +49,7 @@ export const INSTALLED_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['assets/job.schema.json', 'registry/skills/author-contract/assets/job.schema.json'],
   ['assets/report.json', 'registry/skills/author-contract/assets/report.json'],
   ['scripts/draft-pair.mjs', 'registry/skills/author-contract/scripts/draft-pair.mjs'],
+  ['scripts/contract-return.mjs', 'registry/skills/author-contract/scripts/contract-return.mjs'],
   ['references/skill-attribution.md', 'registry/rules/skill-attribution.md'],
   ['references/rules/git-guardrails.md', 'registry/rules/git-guardrails.md'],
   ['references/rules/test-driven-development.md', 'registry/rules/test-driven-development.md'],

@@ -26,7 +26,8 @@
     "examples/reused-pair.md",
     "assets/job.schema.json",
     "assets/report.json",
-    "scripts/draft-pair.mjs"
+    "scripts/draft-pair.mjs",
+    "scripts/contract-return.mjs"
   ],
   "references": [
     {

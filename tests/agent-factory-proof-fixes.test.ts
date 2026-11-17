@@ -66,7 +66,7 @@ describe('Fix 1 (S1-B): a review job pins the saved check output the evaluator i
 });
 
 describe('Fix 2 (S2-A, S1-C): the entry dry run is the pinned checkout\'s built CLI and must show the factory main', () => {
-  const ENTRY_CLI = 'Run the pinned checkout\'s built CLI, `node <checkout>/dist/cli.js start agent-factory --host claude --dry-run`, never a bare `agents` from the path, and save its output in the evidence folder.';
+  const ENTRY_CLI = 'Run the pinned checkout\'s built CLI, `node <checkout>/dist/cli.js start agent-factory --host claude --dry-run`, from the workspace root (the folder the session was started in, which holds the installed bundle; not a subfolder), never a bare `agents` from the path, and save its output in the evidence folder.';
   const ENTRY_STOP = 'The planned agent must be `orchestrator-agent-factory`; anything else, or a nonzero exit, is recorded and the route stops there and reports, without a workaround.';
   // Plan 033 P38 (S1-C): the launcher no longer refuses an inherited teams setting; it turns teams off for the factory's own session.
   // Plan 033 P22 (reverses P19): the launcher turns only agent teams off again; a worker that runs in the background is waited for, not refused.

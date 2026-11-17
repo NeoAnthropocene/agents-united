@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
 import type { SpawnSyncReturns } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -202,6 +203,43 @@ describe('bundle-return.mjs never writes through a link and reads every file bou
     await fx.writeDraft();
     await fs.symlink(path.join(fx.draft, 'report.json'), fx.returnFile, 'file');
     await refusedUnchanged(fx, ['--job', fx.taskFile], /link|regular/i);
+  });
+  it('replaces a hard-linked return by a rename and leaves the other name of the inode untouched', async () => {
+    const fx = await make();
+    await fx.writeDraft();
+    const other = path.join(fx.pins, 'precious.txt');
+    await fs.writeFile(other, 'precious bytes');
+    await fs.link(other, fx.returnFile);
+    const run = fx.helper(['--job', fx.taskFile]);
+    expect(run.status, run.stdout + run.stderr).toBe(0);
+    expect(await fs.readFile(other, 'utf8')).toBe('precious bytes');
+    expect((await fs.readJson(fx.returnFile) as Json).kind).toBe('bundle-return');
+    const post = fx.post();
+    expect(post.status, post.stdout + post.stderr).toBe(0);
+    expect((await fs.readdir(fx.producer)).filter(name => name.endsWith('.tmp'))).toEqual([]);
+  });
+  it('refuses another spelling of the return itself as an input (the same physical file)', async () => {
+    const fx = await make();
+    await fx.writeDraft();
+    await fs.writeFile(fx.returnFile, '{}');
+    // The notes file is the bundle script's only input besides the task that could name the return.
+    const spellings: string[] = [];
+    // Another case of the file name: a spelling of the same file only where the volume ignores case (found out by looking it up).
+    const flipped = path.join(path.dirname(fx.returnFile), path.basename(fx.returnFile).toUpperCase());
+    if (await fs.pathExists(flipped)) spellings.push(flipped);
+    // The Windows short name, where the volume has 8.3 names enabled.
+    if (process.platform === 'win32') {
+      const short = spawnSync('cmd', ['/d', '/s', '/c', `"for %I in ("${fx.returnFile}") do @echo %~sI"`], { encoding: 'utf8', windowsVerbatimArguments: true }).stdout.trim();
+      if (short && short.toLowerCase() !== fx.returnFile.toLowerCase() && await fs.pathExists(short)) spellings.push(short);
+    }
+    spellings.push(fx.returnFile);
+    for (const spelling of spellings) await refusedUnchanged(fx, ['--job', fx.taskFile, '--notes', spelling], /other than the return/i);
+  });
+  it('writes through a completion loop and compares the bytes read back', async () => {
+    const text = await fs.readFile(HELPER_SOURCE, 'utf8');
+    expect(text).toContain('function writeAll');
+    expect(text).not.toContain('fs.writeSync(fd, text)');
+    expect(text).toContain('differs from the bytes written');
   });
   it('refuses a folder at the return path', async () => {
     const fx = await make();

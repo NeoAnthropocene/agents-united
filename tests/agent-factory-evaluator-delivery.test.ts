@@ -99,7 +99,7 @@ describe('independent factory evaluator delivery', () => {
     expect(await fs.pathExists(path.join(root, '.claude/agents/factory-evaluator.md'))).toBe(true);
     const binding = await fs.readJson(path.join(skill, 'assets/claude-binding.json'));
     expect(binding.roles).toMatchObject([{ name: 'factory-evaluator', loading: 'subagent', guard: 'read-only' }]);
-    expect(binding.requiredSupport).toHaveLength(12);
+    expect(binding.requiredSupport).toHaveLength(13);
     expect(binding.references).toHaveLength(7);
     for (const rel of binding.requiredSupport as string[]) expect(await fs.pathExists(path.join(skill, rel)), rel).toBe(true);
     expect(await fs.pathExists(path.join(skill, 'evals'))).toBe(false);

@@ -758,7 +758,7 @@ describe('S3 is solvable offline', () => {
       }
       expect(brief.pins.validator.sha256).toBe(hexOf(cli));
       expect(brief.pins.executable.path).toBe(fs.realpathSync(process.execPath));
-      expect(brief.pins.installed).toHaveLength({ skill: 8, contract: 18, bundle: 20 }[route]!);
+      expect(brief.pins.installed).toHaveLength({ skill: 8, contract: 19, bundle: 20 }[route]!);
     }
     for (const [i, x] of roots.entries()) for (const [j, y] of roots.entries()) if (i < j) expect(inside(x, y) || inside(y, x), `${x} / ${y}`).toBe(false);
     expect(briefOf('skill').pins.corpus.sha256).toBe(hexOf(path.join(checkout, 'registry', 'quality', 'skill-boilerplate-corpus.txt')));

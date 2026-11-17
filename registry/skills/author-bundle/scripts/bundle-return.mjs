@@ -173,12 +173,27 @@ function inventory(draft, budget) {
   return items.sort(byPath);
 }
 
+/** Writes every byte or fails: a short write is continued, no progress is an error. */
+function writeAll(fd, buffer) {
+  let offset = 0;
+  while (offset < buffer.length) {
+    const written = fs.writeSync(fd, buffer, offset, buffer.length - offset);
+    if (!(written > 0)) fail('The return could not be written completely (no progress).');
+    offset += written;
+  }
+}
+/** The same physical file under another spelling (a short name, another case): the paths are compared after the platform resolves them. */
+function isReturnFile(file, producer) {
+  return folded(fs.realpathSync.native(file)) === folded(path.join(fs.realpathSync.native(producer), 'bundle-return.json'));
+}
+
 /** The notes the fork writes, checked against the limits and patterns of bundle-return.schema.json before anything is written. */
 function readNotes(file, producer, returnFile, budget) {
   if (file === undefined) return { status: 'draft', openItems: [], unverified: [], claimedChecks: [], externalActions: [], upstreamEvidence: undefined };
   const notesFile = absolute(file, 'Notes');
   if (!within(producer, notesFile) || folded(notesFile) === folded(returnFile)) fail(`The notes file must be a file under the producer root other than the return (by convention ${NOTES_NAME}).`);
   const notes = readJson(notesFile, 'Notes');
+  if (isReturnFile(notesFile, producer)) fail(`The notes file must be a file under the producer root other than the return (by convention ${NOTES_NAME}).`);
   if (!isObject(notes)) fail('The notes file must hold one JSON object.');
   for (const key of Object.keys(notes)) if (!NOTES_KEYS.includes(key)) fail(`Unknown notes key ${key}.`);
   const status = notes.status ?? 'draft';
@@ -251,9 +266,17 @@ function write(jobArg, notesArg) {
   };
   const text = Buffer.from(`${JSON.stringify(ret, null, 2)}\n`);
   if (text.length > ENVELOPE) fail('The return record would be over 256 KiB.');
-  const fd = fs.openSync(returnFile, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_TRUNC | NOFOLLOW, 0o644);
-  try { fs.writeSync(fd, text); } finally { fs.closeSync(fd); }
+  // A new file created exclusively beside the destination, then moved over it: a rename replaces the directory entry and never
+  // writes through an existing destination, so a hard-linked bundle-return.json leaves the other name's bytes untouched.
+  const temp = path.join(producer, `.bundle-return.json.${process.pid}.tmp`);
+  const fd = fs.openSync(temp, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | NOFOLLOW, 0o644);
+  // One cleanup scope from the exclusive creation on: the whole write, the successful close and the rename; the destination stays as it was on failure.
+  try {
+    try { writeAll(fd, text); } finally { fs.closeSync(fd); }
+    fs.renameSync(temp, returnFile);
+  } catch (error) { fs.rmSync(temp, { force: true }); throw error; }
   const bytes = readBounded(returnFile, ENVELOPE, 'Return');
+  if (!bytes.equals(text)) fail('The return read back differs from the bytes written.');
   return { status: 'return-written', returnStatus: ret.status, taskDigest: ret.taskDigest, return: { path: returnFile, bytes: bytes.length, sha256: hash(bytes) } };
 }
 

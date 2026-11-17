@@ -43,7 +43,7 @@ const RETURN_NAME = 'contract-return.json';
 const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
 const SUPPORT = [
   'references/job.md', 'references/reuse.md', 'references/bindings.md', 'references/verification.md',
-  'examples/new-pair.md', 'examples/reused-pair.md', 'assets/job.schema.json', 'assets/report.json', 'scripts/draft-pair.mjs',
+  'examples/new-pair.md', 'examples/reused-pair.md', 'assets/job.schema.json', 'assets/report.json', 'scripts/draft-pair.mjs', 'scripts/contract-return.mjs',
 ];
 const RULES = [
   'skill-attribution.md', 'git-guardrails.md', 'test-driven-development.md', 'clean-code-and-architecture.md',
@@ -278,7 +278,7 @@ function checkTask(taskFile, withResult) {
     for (const input of [checkout, registry, ...managed, ...protectedRoots]) if (overlaps(root, input)) stop('ROOT_CONFLICT', `The ${name} root overlaps a source, managed or protected root.`);
   });
 
-  // The installed author-contract closure: exactly the eighteen reviewed files, byte-pinned, with the fork loader mechanism.
+  // The installed author-contract closure: exactly the nineteen reviewed files, byte-pinned, with the fork loader mechanism.
   const entryPin = task.installed.filter(pin => path.basename(pin.path) === 'SKILL.md');
   if (entryPin.length !== 1) stop('CLOSURE_MISSING', 'The installed pins must name exactly one author-contract SKILL.md.');
   const installedRoot = path.dirname(path.resolve(entryPin[0].path));
@@ -290,7 +290,7 @@ function checkTask(taskFile, withResult) {
     if (matches.length !== 1) stop('CLOSURE_MISSING', `The installed author-contract closure lacks a pin for ${rel}.`, 'failed', rel);
     installedPaths.set(folded(expected), { rel, pin: matches[0] });
   }
-  if (installedPaths.size !== task.installed.length) stop('CLOSURE_MISSING', 'The installed pins are not exactly the eighteen reviewed author-contract files.');
+  if (installedPaths.size !== task.installed.length) stop('CLOSURE_MISSING', 'The installed pins are not exactly the nineteen reviewed author-contract files.');
   let entryBytes, bindingBytes, jobSchemaBytes;
   for (const rel of INSTALLED) {
     const pin = task.installed.find(item => folded(item.path) === folded(path.join(installedRoot, ...rel.split('/'))));
@@ -344,7 +344,7 @@ function checkTask(taskFile, withResult) {
   checkInstalledShortPin(template.loading.attribution, 'references/skill-attribution.md', 'Loading attribution');
   checkInstalledShortPin(template.loading.binding, 'assets/claude-binding.json', 'Loading binding');
   unique(template.loading.requiredFiles.map(item => item.path), 'Loading required files', 'TEMPLATE_INVALID');
-  if (template.loading.requiredFiles.length !== INSTALLED.length) bad('Loading requiredFiles must cover all eighteen installed author-contract files.');
+  if (template.loading.requiredFiles.length !== INSTALLED.length) bad('Loading requiredFiles must cover all nineteen installed author-contract files.');
   for (const item of template.loading.requiredFiles) {
     const file = absolute(item.path, 'Loading required file', 'TEMPLATE_INVALID');
     const instEntry = installedPaths.get(folded(file));

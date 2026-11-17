@@ -71,6 +71,7 @@ const COORDINATOR_INSTALLED = [
   '.claude/skills/evaluate-artifact/SKILL.md', '.claude/skills/evaluate-artifact/assets/claude-binding.json',
   '.claude/skills/evaluate-artifact/assets/job.schema.json', '.claude/skills/evaluate-artifact/assets/result.schema.json',
   '.claude/skills/evaluate-artifact/assets/rubric.json', '.claude/skills/evaluate-artifact/scripts/check-review.mjs',
+  '.claude/skills/evaluate-artifact/scripts/review-job.mjs',
   '.claude/skills/sync-host/SKILL.md', '.claude/skills/sync-host/assets/claude-binding.json',
   '.claude/skills/sync-host/assets/sync-job.schema.json', '.claude/skills/sync-host/assets/sync-plan.schema.json', '.claude/skills/sync-host/scripts/check-sync.mjs',
 ] as const;
@@ -99,7 +100,8 @@ export const COORDINATOR_WORKER_SUPPORT = {
     "assets/result.schema.json",
     "assets/rubric.json",
     "assets/report.json",
-    "scripts/check-review.mjs"
+    "scripts/check-review.mjs",
+    "scripts/review-job.mjs"
   ],
   "sync-host": [
     "references/job.md",

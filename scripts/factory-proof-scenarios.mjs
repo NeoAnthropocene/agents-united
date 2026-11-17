@@ -45,7 +45,7 @@ export function nodePin(ctx) {
 }
 
 const HOST = { host: 'claude', product: 'Claude Code CLI', scope: 'workspace', lane: 'native', observedVersion: null, unverifiedReason: 'Prepared offline; the lead records the Claude Code version of the sitting.' };
-const EXPECTED_INSTALLED = { 'author-skill': 8, 'author-contract': 18, 'author-bundle': 20 };
+const EXPECTED_INSTALLED = { 'author-skill': 8, 'author-contract': 19, 'author-bundle': 20 };
 
 // ---------------------------------------------------------------- S3
 

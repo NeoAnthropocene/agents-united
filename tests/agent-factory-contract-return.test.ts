@@ -96,7 +96,7 @@ describe('preflight of a valid task', () => {
     expect(out.pins.checker).toEqual(await pinOf(CHECKER));
     expect(out.pins.validator).toEqual(fx.task.runtime.validator);
     expect(out.pins.installed).toEqual(fx.task.installed);
-    expect(out.pins.installed).toHaveLength(18);
+    expect(out.pins.installed).toHaveLength(19);
     expect(out).not.toHaveProperty('candidate');
     expect(await fs.pathExists(fx.draft)).toBe(false);
   });
@@ -151,7 +151,7 @@ describe('preflight refusals: task record', () => {
     ['an id that is not kebab-case', 'JOB_INVALID', fx => { fx.task.id = 'Not Kebab'; }],
     ['a definition that is not kebab-case', 'JOB_INVALID', fx => { fx.task.definition = 'Not_Kebab'; }],
     ['a malformed digest in a pin', 'JOB_INVALID', fx => { fx.task.installed[0].sha256 = 'xyz'; }],
-    ['seventeen installed pins instead of eighteen', 'JOB_INVALID', fx => { fx.task.installed.pop(); }],
+    ['eighteen installed pins instead of nineteen', 'JOB_INVALID', fx => { fx.task.installed.pop(); }],
     ['both host version fields set', 'JOB_INVALID', fx => { fx.task.authoringHost.observedVersion = '2.1.0'; }],
     ['a native target', 'JOB_INVALID', fx => { fx.task.target = { host: 'claude' }; }],
     ['publication enabled in the budget', 'JOB_INVALID', fx => { fx.task.budget.publication = true; }],
@@ -410,7 +410,7 @@ describe('preflight refusals: the installed author-contract closure and loader',
     await fs.appendFile(fx.inst(rel), '\nAn unreviewed edit.\n');
     failure(await untouched(fx, () => fx.pre()), 'CLOSURE_MISSING', 'preflight', 'failed');
   });
-  it('refuses an installed pin set that is not the reviewed eighteen (one path renamed)', async () => {
+  it('refuses an installed pin set that is not the reviewed nineteen (one path renamed)', async () => {
     const fx = await make();
     await fs.copy(fx.inst('references/reuse.md'), fx.inst('references/reuse-copy.md'));
     fx.task.installed[3] = await pinOf(fx.inst('references/reuse-copy.md'));

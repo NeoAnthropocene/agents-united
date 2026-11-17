@@ -177,12 +177,12 @@ export class ClaudeLauncher {
           }
         }
       }
-      throw new Error(`Bundle '${bundleName}' is not installed in ${scope} scope.`);
+      throw new Error(`Bundle '${bundleName}' is not installed in ${scope} scope.${scope === 'project' ? ` Checked folder: ${path.resolve(workspace)}.` : ''}`);
     }
 
     const lockfile: LockfileManifest = await fs.readJson(lockfilePath);
     if (!lockfile.installed?.bundles?.includes(bundleName)) {
-      throw new Error(`Bundle '${bundleName}' is not installed in ${scope} scope.`);
+      throw new Error(`Bundle '${bundleName}' is not installed in ${scope} scope.${scope === 'project' ? ` Checked folder: ${path.resolve(workspace)}.` : ''}`);
     }
 
     // Host gate. The Cline lane requires both the recorded fanout and the projected artifact. The Claude

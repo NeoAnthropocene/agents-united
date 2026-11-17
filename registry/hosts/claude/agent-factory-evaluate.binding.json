@@ -43,7 +43,8 @@
     "assets/result.schema.json",
     "assets/rubric.json",
     "assets/report.json",
-    "scripts/check-review.mjs"
+    "scripts/check-review.mjs",
+    "scripts/review-job.mjs"
   ],
   "references": [
     {

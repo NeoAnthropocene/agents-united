@@ -12,7 +12,7 @@ import { unsupportedSkillNames } from './host-profile.js';
 const TASKS = [
   {
     skill: 'author-contract', declaration: 'hosts/claude/agent-factory-contract.binding.json',
-    support: ['references/job.md', 'references/reuse.md', 'references/bindings.md', 'references/verification.md', 'examples/new-pair.md', 'examples/reused-pair.md', 'assets/job.schema.json', 'assets/report.json', 'scripts/draft-pair.mjs'],
+    support: ['references/job.md', 'references/reuse.md', 'references/bindings.md', 'references/verification.md', 'examples/new-pair.md', 'examples/reused-pair.md', 'assets/job.schema.json', 'assets/report.json', 'scripts/draft-pair.mjs', 'scripts/contract-return.mjs'],
   },
   {
     skill: 'author-bundle', declaration: 'hosts/claude/agent-factory-bundle.binding.json',
