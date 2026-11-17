@@ -9,6 +9,7 @@ import {
   CHECKER, CONTRIBUTION_TEMPLATE, INSTALLED_SOURCES, VALIDATOR, canonical, digest, inventoryOf, pinOf, prepareSkillTask, treeOf, writeSeam,
 } from './helpers/skill-task.js';
 import type { Json, SkillTaskFixture } from './helpers/skill-task.js';
+import { NO_ALT, NO_CASE, NO_SHORT, altLeafOf, otherCaseOf, shortNameOf } from './helpers/path-spellings.js';
 
 // The seam is the real source script as a child process (process.execPath, argv arrays) on disposable roots, with a real
 // candidate folder, a real run of registry/skills/author-skill/scripts/draft.mjs as the producer emulation, and the real
@@ -949,5 +950,88 @@ describe('postflight refusals: the claimed inventory, diff, provenance and exter
     fx.task.source.head = '0'.repeat(40);
     await fx.save();
     failure(await untouched(fx, () => fx.post()), 'CHECKOUT_HEAD', 'preflight');
+  });
+});
+
+// The preflight refuses what skill-return.mjs refuses, for the same root reason, before draft.mjs writes anything: every string comparison
+// stays and the physical comparison is added (P26-A). Each alias case looks its spelling up on the real volume and skips when there is none.
+describe('preflight compares roots by physical path as well as by string (P26-A)', () => {
+  const overlap = /overlaps a source, managed or protected root/;
+  const bothDraft = (fx: SkillTaskFixture, draft: string): void => { fx.task.roots.draft = draft; fx.task.draftJobTemplate.draftRoot = draft; };
+  const place = (fx: SkillTaskFixture, which: 'draft' | 'producer', dir: string): void => {
+    if (which === 'draft') bothDraft(fx, path.join(dir, 'incident-actions'));
+    else fx.task.roots.producer = dir;
+  };
+  it.for(['draft', 'producer'] as const)('refuses a %s root under the NTFS short name of a protected folder with ROOT_CONFLICT (runs on Windows with short names, skipped otherwise)', async (which, ctx) => {
+    const fx = await make();
+    const prot = path.join(fx.root, 'Protected Folder');
+    await fs.ensureDir(path.join(prot, 'out'));
+    const short = shortNameOf(prot);
+    if (!short) ctx.skip(NO_SHORT);
+    fx.task.roots.protected = [prot];
+    place(fx, which, path.join(short!, 'out'));
+    await fx.save();
+    expect(failure(await untouched(fx, () => fx.pre()), 'ROOT_CONFLICT', 'preflight').reason).toMatch(overlap);
+  });
+  it.for(['draft', 'producer'] as const)('refuses a %s root under another case of a protected folder with ROOT_CONFLICT (runs where the volume ignores case, skipped otherwise; a compatibility case that a string comparison refuses too, not proof of the physical comparison)', async (which, ctx) => {
+    const fx = await make();
+    const prot = path.join(fx.root, 'prot-dir');
+    await fs.ensureDir(path.join(prot, 'out'));
+    const flipped = otherCaseOf(prot);
+    if (!flipped) ctx.skip(NO_CASE);
+    fx.task.roots.protected = [prot];
+    place(fx, which, path.join(flipped!, 'out'));
+    await fx.save();
+    expect(failure(await untouched(fx, () => fx.pre()), 'ROOT_CONFLICT', 'preflight').reason).toMatch(overlap);
+  });
+  it('refuses a producer root under the NTFS short name of a .claude folder as a managed Host path (runs on Windows with short names, skipped otherwise)', async ctx => {
+    const fx = await make();
+    const host = path.join(fx.root, '.claude');
+    await fs.ensureDir(path.join(host, 'out'));
+    const short = shortNameOf(host);
+    if (!short) ctx.skip(NO_SHORT);
+    fx.task.roots.producer = path.join(short!, 'out');
+    await fx.save();
+    expect(failure(await untouched(fx, () => fx.pre()), 'ROOT_CONFLICT', 'preflight').reason).toMatch(/managed Host path/);
+  });
+  it('passes a legal task whose disjoint roots are given in two spellings (a protected folder by its short name or other case, the rest long)', async ctx => {
+    const fx = await make();
+    const prot = path.join(fx.root, 'Protected Folder');
+    await fs.ensureDir(prot);
+    const alt = altLeafOf(prot, false);
+    if (!alt) ctx.skip(NO_ALT);
+    fx.task.roots.protected = [alt!];
+    await fx.save();
+    success(await untouched(fx, () => fx.pre()));
+  });
+  it('passes a repair whose draft root is another spelling of its own folder: the draft folder is not a stray in its parent', async ctx => {
+    const fx = await make({ operation: 'repair' });
+    const leaf = altLeafOf(fx.draft, false);
+    if (!leaf) ctx.skip(NO_ALT);
+    bothDraft(fx, leaf!);
+    await fx.save();
+    success(await untouched(fx, () => fx.pre()));
+  });
+  it('still refuses a stray beside a draft root given in another spelling of its own folder', async ctx => {
+    const fx = await make({ operation: 'repair' });
+    const leaf = altLeafOf(fx.draft, false);
+    if (!leaf) ctx.skip(NO_ALT);
+    bothDraft(fx, leaf!);
+    await fx.save();
+    await fs.outputFile(path.join(path.dirname(fx.draft), 'stray.txt'), 'not the draft\n');
+    expect(failure(await untouched(fx, () => fx.pre()), 'ROOT_CONFLICT', 'preflight').path).toBe('stray.txt');
+  });
+  it('still refuses a link beside the draft folder that points at it: entries are compared by name, never by what a link resolves to', async () => {
+    const fx = await make({ operation: 'repair' });
+    await fs.symlink(fx.draft, path.join(path.dirname(fx.draft), 'alias-of-draft'), 'junction');
+    expect(failure(await untouched(fx, () => fx.pre()), 'ROOT_CONFLICT', 'preflight').path).toBe('alias-of-draft');
+  });
+  it('resolves physical paths by walking up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', async () => {
+    const text = await fs.readFile(CHECKER, 'utf8');
+    expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+    expect(text).toContain('Cannot resolve the physical path of');
+    expect(text).toContain('fs.realpathSync.native(current)');
+    expect(text).toContain("const overlaps = (a, b) => withinEither(a, b, 'ROOT_CONFLICT') || withinEither(b, a, 'ROOT_CONFLICT');");
+    expect(text).not.toMatch(/catch \{ \/\* absent/);
   });
 });

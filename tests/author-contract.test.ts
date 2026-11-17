@@ -11,6 +11,7 @@ import { checkSkillLayout, supportingText } from './helpers/skill-layout.js';
 import { lintSkillPortability } from '../src/core/skill-portability-lint.js';
 import { lintSkillLicence } from '../src/core/skill-licence-lint.js';
 import { loadCorpus, measureSkill, verdictOf } from '../scripts/skill-quality/measure.ts';
+import { NO_ALT, NO_CASE, NO_SHORT, altLeafOf, otherCaseOf, shortNameOf } from './helpers/path-spellings.js';
 
 const sourceSkill = path.resolve('registry/skills/author-contract');
 const hash = (bytes: string | Buffer): string => crypto.createHash('sha256').update(bytes).digest('hex');
@@ -366,5 +367,81 @@ describe('author-contract: installed bounded draft helper', () => {
     expect(result.report?.retainedNotices).toEqual([{ sourcePath: license, targetPath: 'core/subagent-example.core.md', sha256: hash(notice), mode: 'fragment' }]);
     expect(await fs.readFile(path.join(f.draft, 'core/subagent-example.core.md'), 'utf8')).toContain(notice);
     expect(result.report?.acceptedDraft).toBe(false);
+  });
+});
+
+// draft-pair.mjs refuses, before any write, what the checker's preflight and contract-return.mjs refuse for a root reason (P26-A): its job
+// carries the checkout, registry, draft, evidence, managed and protected roots, and every comparison of them also holds physically. Each
+// alias case looks its spelling up on the real volume and skips when there is none.
+describe('author-contract draft-pair.mjs compares roots by physical path as well as by string (P26-A)', () => {
+  it.for(['draftRoot', 'evidenceRoot'] as const)('refuses a %s under the NTFS short name of a protected folder before any write (runs on Windows with short names, skipped otherwise)', async (key, ctx) => {
+    const f = await fixture();
+    const prot = path.join(f.root, 'Protected Folder');
+    await fs.ensureDir(prot);
+    const short = shortNameOf(prot);
+    if (!short) ctx.skip(NO_SHORT);
+    f.job.protectedRoots = [prot];
+    f.job[key] = path.join(short!, key === 'draftRoot' ? 'draft' : 'evidence');
+    const result = await f.run();
+    expect(result.exit, result.raw).toBe(1);
+    expect(result.raw).toMatch(key === 'draftRoot' ? /Draft overlaps a managed\/protected root/ : /Evidence overlaps a managed\/protected root/);
+    expect(await fs.readdir(prot)).toEqual([]);
+    expect(await fs.pathExists(f.draft)).toBe(false);
+  });
+  it('refuses a draft root under another case of a protected folder before any write (runs where the volume ignores case, skipped otherwise)', async ctx => {
+    const f = await fixture();
+    const prot = path.join(f.root, 'prot-dir');
+    await fs.ensureDir(prot);
+    const flipped = otherCaseOf(prot);
+    if (!flipped) ctx.skip(NO_CASE);
+    f.job.protectedRoots = [prot];
+    f.job.draftRoot = path.join(flipped!, 'draft');
+    const result = await f.run();
+    expect(result.exit, result.raw).toBe(1);
+    expect(result.raw).toMatch(/Draft overlaps a managed\/protected root/);
+    expect(await fs.readdir(prot)).toEqual([]);
+  });
+  it('refuses a draft root reached through the NTFS short name of the input registry before any write (runs on Windows with short names, skipped otherwise)', async ctx => {
+    const f = await fixture();
+    const short = shortNameOf(f.checkout);
+    if (!short) ctx.skip(NO_SHORT);
+    f.job.draftRoot = path.join(short!, 'registry', 'draft');
+    const result = await f.run();
+    expect(result.exit, result.raw).toBe(1);
+    expect(result.raw).toMatch(/roots overlap/);
+    expect(await fs.pathExists(path.join(f.registry, 'draft'))).toBe(false);
+  });
+  it('refuses a draft root under the NTFS short name of a .gemini folder as a managed Host output before any write (runs on Windows with short names, skipped otherwise)', async ctx => {
+    const f = await fixture();
+    const host = path.join(f.root, '.gemini');
+    await fs.ensureDir(host);
+    const short = shortNameOf(host);
+    if (!short) ctx.skip(NO_SHORT);
+    f.job.draftRoot = path.join(short!, 'draft');
+    const result = await f.run();
+    expect(result.exit, result.raw).toBe(1);
+    expect(result.raw).toMatch(/Draft is a managed Host output/);
+    expect(await fs.readdir(host)).toEqual([]);
+  });
+  it('prepares a pair whose draft root is given through another spelling of a folder that overlaps nothing', async ctx => {
+    const f = await fixture();
+    const prot = path.join(f.root, 'Protected Folder');
+    const parent = path.join(f.root, 'Draft Folder');
+    await fs.ensureDir(prot);
+    await fs.ensureDir(parent);
+    const alt = altLeafOf(parent, false);
+    if (!alt) ctx.skip(NO_ALT);
+    f.job.protectedRoots = [prot];
+    f.job.draftRoot = path.join(alt!, 'draft');
+    const result = await f.run();
+    expect(result.exit, result.raw).toBe(0);
+    expect((await fs.readdir(path.join(parent, 'draft', 'core'))).sort()).toEqual(['subagent-example.contract.json', 'subagent-example.core.md']);
+  });
+  it('walks up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', async () => {
+    const text = await fs.readFile(path.join(sourceSkill, 'scripts', 'draft-pair.mjs'), 'utf8');
+    expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+    expect(text).toContain('Cannot resolve the physical path of');
+    expect(text).toContain('fs.realpathSync.native(current)');
+    expect(text).toContain('const within = (parent, child) => lexicalWithin(parent, child) || physicallyWithin(parent, child);');
   });
 });

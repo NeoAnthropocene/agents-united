@@ -205,7 +205,7 @@ export function withoutTrailingSeparators(value: string): string {
 
 /**
  * The linked-ancestor walk of the two registry checker scripts (review finding F13): `absolute()` in
- * registry/skills/evaluate-artifact/scripts/check-review.mjs:27-36 and check-skill-return.mjs:49-60 lstat every
+ * registry/skills/evaluate-artifact/scripts/check-review.mjs:27-36 and check-skill-return.mjs:75-86 lstat every
  * component from the root down, so a link (symbolic link or junction) on the way to a pinned input is refused.
  * Only the strict ancestors are checked here: the leaf itself is vetted by its own reader (takeInventory for the
  * candidate folder, readCorpus for the corpus file). Returns the first linked ancestor, or null when there is none.
@@ -232,7 +232,7 @@ export const hasTraversalAlias = (value: string): boolean => value.split(/[\\/]/
 
 /**
  * The entry-name rule of the same two scripts (review finding F7): `relative()` in check-review.mjs:37-41 and the
- * identical per-segment rule in check-skill-return.mjs:62-65 refuse a name that contains one of < > : " \ | ? * or a
+ * identical per-segment rule in check-skill-return.mjs:88-91 refuse a name that contains one of < > : " \ | ? * or a
  * control character, that ends with a dot or a space, or that is a Windows reserved device name with or without an
  * extension. Returns the reason the name is refused, or null when the name is portable.
  *

@@ -26,11 +26,37 @@ const same = (a, b) => canonical(a) === canonical(b);
 // Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
 const foldName = name => process.platform === 'win32' ? name.toLowerCase() : name;
 const folded = file => foldName(path.resolve(file));
-const within = (parent, child) => {
-  const rel = path.relative(folded(parent), folded(child));
+const relWithin = (parent, child) => {
+  const rel = path.relative(parent, child);
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
 };
-const overlaps = (a, b) => within(a, b) || within(b, a);
+const within = (parent, child) => relWithin(folded(parent), folded(child));
+// The physical spelling of a path, the rule of author-skill's skill-return.mjs (copied on purpose, never imported): the deepest existing
+// ancestor is resolved by the platform (a short name, another case on an ignoring volume, both become the one real name) and the absent
+// rest is appended. Only ENOENT and ENOTDIR walk up to the parent; any other error is refused with the path and the code, so a root check
+// never silently falls back to comparing strings.
+function physical(file, code) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') stop(code, `Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`, 'unavailable');
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+const physicalFolded = (file, code) => foldName(physical(file, code));
+const physicallyWithin = (parent, child, code) => relWithin(physicalFolded(parent, code), physicalFolded(child, code));
+// Every string comparison stays; a refusal also holds when the paths relate physically, and an acceptance needs both.
+const withinEither = (parent, child, code) => within(parent, child) || physicallyWithin(parent, child, code);
+const withinBoth = (parent, child, code) => within(parent, child) && physicallyWithin(parent, child, code);
+const sameEither = (a, b, code) => folded(a) === folded(b) || physicalFolded(a, code) === physicalFolded(b, code);
+const overlaps = (a, b) => withinEither(a, b, 'ROOT_CONFLICT') || withinEither(b, a, 'ROOT_CONFLICT');
+/** A managed Host folder in the root as given or in its physical spelling. */
+const managedHostPath = root => [root, physical(root, 'ROOT_CONFLICT')].some(spelling => spelling.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase())));
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const byPath = (a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 const unique = (values, label, code) => { if (new Set(values.map(value => value.toLowerCase())).size !== values.length) stop(code, `${label}: duplicate/case-colliding values.`); };
@@ -189,10 +215,13 @@ function watchDraft(root, budget, badCode, live) {
     if (!same(again?.inventory ?? null, live?.inventory ?? null)) stop('STALE_INPUT', 'Candidate changed during the check.', 'unavailable');
   });
 }
-function strays(draft) {
+function strays(draft, code) {
   const parent = path.dirname(draft);
   if (!fs.existsSync(parent)) return [];
-  return fs.readdirSync(parent).filter(name => foldName(name) !== foldName(path.basename(draft)));
+  // The draft folder by the name given and by its physical name (a short name in the task names the same entry). Names only: an entry
+  // beside the draft is never excused by what a link in it points to.
+  const own = new Set([path.basename(draft), path.basename(physical(draft, code))].map(foldName));
+  return fs.readdirSync(parent).filter(name => !own.has(foldName(name)));
 }
 const stripKind = ({ path: file, bytes, sha256 }) => ({ path: file, bytes, sha256 });
 const pinOut = ({ path: file, bytes, sha256 }) => ({ path: file, bytes, sha256 });
@@ -243,7 +272,7 @@ function checkTask(taskFile, withResult) {
   }
   const outputs = [['draft', draft], ['producer', producer], ['evidence', evidence]];
   for (const [name, root] of outputs) {
-    if (root.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase()))) stop('ROOT_CONFLICT', `The ${name} root is a managed Host path.`);
+    if (managedHostPath(root)) stop('ROOT_CONFLICT', `The ${name} root is a managed Host path.`);
   }
   outputs.forEach(([name, root], index) => {
     for (const [other, otherRoot] of outputs.slice(index + 1)) if (overlaps(root, otherRoot)) stop('ROOT_CONFLICT', `The ${name} and ${other} roots overlap.`);
@@ -305,7 +334,7 @@ function checkTask(taskFile, withResult) {
   if (task.intent === 'upstream') {
     if (typeof template.contributionTemplate !== 'string' || task.contributionTemplate === null) bad('Upstream intent needs the pinned contribution template.');
     const file = absolute(template.contributionTemplate, 'Contribution template', 'TEMPLATE_INVALID');
-    if (!within(checkout, file)) bad('Use the existing contribution template inside the selected checkout.');
+    if (!withinBoth(checkout, file, 'TEMPLATE_INVALID')) bad('Use the existing contribution template inside the selected checkout.');
     if (folded(task.contributionTemplate.path) !== folded(file)) bad('The contribution template pin names a different file.');
     templateText = decode(pinned(task.contributionTemplate, limits.installed, 'Contribution template', 'TEMPLATE_INVALID'));
   } else if (Object.hasOwn(template, 'contributionTemplate') || task.contributionTemplate !== null) bad('A local task carries no contribution template.');
@@ -323,7 +352,7 @@ function checkTask(taskFile, withResult) {
   const baselineBytes = new Map();
   for (const item of task.baseline) {
     const snapshotFile = absolute(item.snapshot, 'Baseline snapshot', 'BASELINE_MISMATCH');
-    if (!within(evidence, snapshotFile) || folded(snapshotFile) === folded(taskFile)) stop('BASELINE_MISMATCH', `Baseline snapshot is outside the evidence root: ${item.path}.`, 'failed', item.path);
+    if (!withinBoth(evidence, snapshotFile, 'BASELINE_MISMATCH') || sameEither(snapshotFile, taskFile, 'BASELINE_MISMATCH')) stop('BASELINE_MISMATCH', `Baseline snapshot is outside the evidence root: ${item.path}.`, 'failed', item.path);
     const bytes = pinned({ path: item.snapshot, bytes: item.bytes, sha256: item.sha256 }, budget.maxCandidateFileBytes, `Baseline snapshot ${item.path}`, 'BASELINE_MISMATCH');
     try { decode(bytes); } catch { stop('BASELINE_MISMATCH', `Baseline snapshot is not UTF-8 text: ${item.path}.`, 'failed', item.path); }
     baselineBytes.set(item.path, bytes);
@@ -339,7 +368,7 @@ function checkTask(taskFile, withResult) {
 
   // The live state is a preflight question; once a return is checked, the draft is the run's output instead.
   if (!withResult) {
-    const extra = strays(draft);
+    const extra = strays(draft, 'ROOT_CONFLICT');
     if (extra.length) stop('ROOT_CONFLICT', `The draft parent holds entries besides the draft folder: ${extra[0]}.`, 'failed', extra[0]);
     const live = snapshot(draft, budget, 'BASELINE_MISMATCH');
     if (task.operation === 'create' && live !== null) stop('BASELINE_MISMATCH', 'Create requires an absent draft root.');
@@ -378,7 +407,7 @@ function checkReturn(ctx, resultArg) {
   // The pinned helper files, all under the producer root.
   const underProducer = (pin, label) => {
     const file = absolute(pin.path, label, 'HELPER_RECORD');
-    if (!within(producer, file) || folded(file) === folded(returnFile)) stop('HELPER_RECORD', `${label}: not a file under the producer root.`);
+    if (!withinBoth(producer, file, 'HELPER_RECORD') || sameEither(file, returnFile, 'HELPER_RECORD')) stop('HELPER_RECORD', `${label}: not a file under the producer root.`);
   };
   let jobBytes = null, stdoutBytes = null, stderrBytes = null;
   if (helper.runs === 1) {
@@ -423,7 +452,7 @@ function checkReturn(ctx, resultArg) {
   }
 
   // The draft folder itself.
-  const extra = strays(draft);
+  const extra = strays(draft, 'BLOCKED_STATE');
   if (extra.length) stop('BLOCKED_STATE', `A staging or foreign entry is left in the draft parent: ${extra[0]}.`, 'failed', extra[0]);
   const live = snapshot(draft, budget, 'INVENTORY_MISMATCH');
   watchDraft(draft, budget, 'INVENTORY_MISMATCH', live);

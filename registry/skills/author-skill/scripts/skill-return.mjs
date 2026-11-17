@@ -351,7 +351,10 @@ function write(values) {
   // What the checker checks for the draft folder: nothing else beside it, and the state the status needs.
   const parent = path.dirname(draft);
   if (fs.existsSync(parent)) {
-    const stray = fs.readdirSync(parent).find(name => foldName(name) !== foldName(path.basename(draft)));
+    // The draft folder by the name given and by its physical name (a short name in the task names the same entry), as the checker does.
+    // Names only: an entry beside the draft is never excused by what a link in it points to.
+    const own = new Set([path.basename(draft), path.basename(physical(draft))].map(foldName));
+    const stray = fs.readdirSync(parent).find(name => !own.has(foldName(name)));
     if (stray !== undefined) fail(`The draft parent holds an entry besides the draft folder: ${stray}.`);
   }
   if (notes.externalActions.length) fail('externalActions must be empty; the return records no external action.');

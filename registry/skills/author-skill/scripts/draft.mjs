@@ -10,6 +10,26 @@ const within = (parent, child) => {
   const relative = path.relative(parent, child);
   return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
 };
+// The physical spelling of a path, the rule of skill-return.mjs and the coordinator's checker: the deepest existing ancestor is resolved
+// by the platform (a short name, another case on an ignoring volume, both become the one real name) and the absent rest is appended. Only
+// ENOENT and ENOTDIR walk up to the parent; any other error is refused with the path and the code, never a fallback to the string.
+function physical(file) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') fail(`Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`);
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+// Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
+const foldName = name => (process.platform === 'win32' ? name.toLowerCase() : name);
+const physicallyWithin = (parent, child) => within(foldName(physical(parent)), foldName(physical(child)));
+const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.opencode', '.gemini', '.codex'];
 function noLinks(absolute) {
   let current = path.parse(absolute).root;
   for (const segment of absolute.slice(current.length).split(path.sep).filter(Boolean)) {
@@ -83,9 +103,10 @@ function apply(job) {
   if (!['create', 'repair'].includes(job.mode) || !['local', 'upstream'].includes(job.intent)) fail('Choose create/repair mode and local/upstream intent.');
   const source = absolute(job.sourceRoot, 'Source checkout');
   const draft = absolute(job.draftRoot, 'Draft root');
-  if (within(source, draft) || within(draft, source)) fail('Source/output roots overlap; choose a separate draft root.');
+  // As strings and physically: another spelling of one folder (a short name, another case) is the same folder.
+  if (within(source, draft) || within(draft, source) || physicallyWithin(source, draft) || physicallyWithin(draft, source)) fail('Source/output roots overlap; choose a separate draft root.');
   if (!fs.existsSync(source) || !fs.statSync(source).isDirectory()) fail('The selected source checkout is unavailable.');
-  if (draft.split(path.sep).some(p => ['.agents', '.claude', '.cline', '.cursor', '.opencode', '.gemini', '.codex'].includes(p.toLowerCase()))) fail('Draft root is a managed host output; choose a source draft directory.');
+  if ([draft, physical(draft)].some(spelling => spelling.split(path.sep).some(p => HOST_DIRS.includes(p.toLowerCase())))) fail('Draft root is a managed host output; choose a source draft directory.');
   const loading = job.loading ?? {};
   if (typeof loading.role !== 'string' || !loading.role.trim()) fail('A loading role is required.');
   existingFile(loading.entryPath, 'Loading entry');
@@ -120,7 +141,7 @@ function apply(job) {
   let template;
   if (job.intent === 'upstream') {
     templatePath = existingFile(job.contributionTemplate, 'Existing contribution template');
-    if (!within(source, templatePath)) fail('Use the existing contribution template inside the selected checkout.');
+    if (!within(source, templatePath) || !physicallyWithin(source, templatePath)) fail('Use the existing contribution template inside the selected checkout.');
     template = fs.readFileSync(templatePath, 'utf8');
   }
   const inventory = [...after].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([file, bytes]) => ({ path: file, sha256: hash(bytes) }));

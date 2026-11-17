@@ -27,11 +27,37 @@ const same = (a, b) => canonical(a) === canonical(b);
 // Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
 const foldName = name => process.platform === 'win32' ? name.toLowerCase() : name;
 const folded = file => foldName(path.resolve(file));
-const within = (parent, child) => {
-  const rel = path.relative(folded(parent), folded(child));
+const relWithin = (parent, child) => {
+  const rel = path.relative(parent, child);
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
 };
-const overlaps = (a, b) => within(a, b) || within(b, a);
+const within = (parent, child) => relWithin(folded(parent), folded(child));
+// The physical spelling of a path, the rule of author-bundle's bundle-return.mjs (copied on purpose, never imported): the deepest existing
+// ancestor is resolved by the platform (a short name, another case on an ignoring volume, both become the one real name) and the absent
+// rest is appended. Only ENOENT and ENOTDIR walk up to the parent; any other error is refused with the path and the code, so a root check
+// never silently falls back to comparing strings.
+function physical(file, code) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') stop(code, `Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`, 'unavailable');
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+const physicalFolded = (file, code) => foldName(physical(file, code));
+const physicallyWithin = (parent, child, code) => relWithin(physicalFolded(parent, code), physicalFolded(child, code));
+// Every string comparison stays; a refusal also holds when the paths relate physically, and an acceptance needs both.
+const withinEither = (parent, child, code) => within(parent, child) || physicallyWithin(parent, child, code);
+const withinBoth = (parent, child, code) => within(parent, child) && physicallyWithin(parent, child, code);
+const sameEither = (a, b, code) => folded(a) === folded(b) || physicalFolded(a, code) === physicalFolded(b, code);
+const overlaps = (a, b) => withinEither(a, b, 'ROOT_CONFLICT') || withinEither(b, a, 'ROOT_CONFLICT');
+/** A managed Host folder in the root as given or in its physical spelling. */
+const managedHostPath = root => [root, physical(root, 'ROOT_CONFLICT')].some(spelling => spelling.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase())));
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const byPath = (a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 const unique = (values, label, code) => { if (new Set(values.map(value => value.toLowerCase())).size !== values.length) stop(code, `${label}: duplicate/case-colliding values.`); };
@@ -282,7 +308,7 @@ function checkTask(taskFile, withResult) {
   }
   const outputs = [['draft', draft], ['producer', producer], ['evidence', evidence]];
   for (const [name, root] of outputs) {
-    if (root.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase()))) stop('ROOT_CONFLICT', `The ${name} root is a managed Host path.`);
+    if (managedHostPath(root)) stop('ROOT_CONFLICT', `The ${name} root is a managed Host path.`);
   }
   outputs.forEach(([name, root], index) => {
     for (const [other, otherRoot] of outputs.slice(index + 1)) if (overlaps(root, otherRoot)) stop('ROOT_CONFLICT', `The ${name} and ${other} roots overlap.`);
@@ -325,7 +351,7 @@ function checkTask(taskFile, withResult) {
     stop('LIMIT', 'The pinned inputs are over the task pin budget.', 'unavailable');
   }
   for (const pin of inputs) {
-    if (within(draft, absolute(pin.path, 'Input pin', 'JOB_INVALID'))) bad('Writable draft contains a required input.');
+    if (withinEither(draft, absolute(pin.path, 'Input pin', 'JOB_INVALID'), 'JOB_INVALID')) bad('Writable draft contains a required input.');
     pinned(pin, budget.maxPinnedInputBytes, 'Input pin', 'JOB_INVALID');
   }
   if (!task.provenance.author.trim() || !task.provenance.license.trim()) bad('Provenance needs a real author and licence.');
@@ -367,7 +393,7 @@ function checkTask(taskFile, withResult) {
   const baselineBytes = new Map();
   for (const item of task.baseline) {
     const snapshotFile = absolute(item.snapshot, 'Baseline snapshot', 'BASELINE_MISMATCH');
-    if (!within(evidence, snapshotFile) || folded(snapshotFile) === folded(taskFile)) stop('BASELINE_MISMATCH', `Baseline snapshot is outside the evidence root: ${item.path}.`, 'failed', item.path);
+    if (!withinBoth(evidence, snapshotFile, 'BASELINE_MISMATCH') || sameEither(snapshotFile, taskFile, 'BASELINE_MISMATCH')) stop('BASELINE_MISMATCH', `Baseline snapshot is outside the evidence root: ${item.path}.`, 'failed', item.path);
     baselineBytes.set(item.path, pinned({ path: item.snapshot, bytes: item.bytes, sha256: item.sha256 }, Math.max(budget.maxAuthoredFileBytes, budget.maxPreservedBytes), `Baseline snapshot ${item.path}`, 'BASELINE_MISMATCH'));
   }
   if (task.operation === 'update' && AUTHORED.some(file => !baselineBytes.has(file))) stop('BASELINE_MISMATCH', 'An update baseline must include all four proposal files.');

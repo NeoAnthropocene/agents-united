@@ -12,6 +12,7 @@ import { lintSkillLicence } from '../src/core/skill-licence-lint.js';
 import { loadCorpus, measureSkill, verdictOf } from '../scripts/skill-quality/measure.ts';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import type { BundleDefinition, ResolvedAssets } from '../src/core/types.js';
+import { NO_ALT, NO_CASE, NO_SHORT, altLeafOf, otherCaseOf, shortNameOf } from './helpers/path-spellings.js';
 
 const registry = path.resolve('registry');
 const skills = path.join(registry, 'skills');
@@ -270,5 +271,72 @@ describe('author-skill installed-safe bounded draft seam', () => {
     expect(result.report.upstreamPreparation).toEqual(expect.objectContaining({ base: 'dev', sent: false, templatePath, body: expect.stringContaining('# Artifact contribution') }));
     expect(result.report.externalActions).toEqual([]);
     expect(fs.readFileSync(templatePath, 'utf8')).toBe('# Artifact contribution\nHost binding and provenance review\n');
+  });
+});
+
+// draft.mjs refuses, before any write, what the checker's preflight and skill-return.mjs refuse for a root reason (P26-A). Its job carries
+// only sourceRoot and draftRoot (no managed, protected, producer or evidence roots): those are the checker's preflight, which now compares
+// them physically too. Each alias case looks its spelling up on the real volume and skips when there is none.
+describe('author-skill draft.mjs compares roots by physical path as well as by string (P26-A)', () => {
+  /** A source checkout with a long name, so that the volume gives it a short name distinct from the long one. */
+  const longSource = (f: Fixture): string => {
+    const source = path.join(f.root, 'Source Checkout');
+    const tool = path.join(source, 'validate.mjs');
+    fs.mkdirSync(source, { recursive: true });
+    fs.writeFileSync(tool, 'export const validator = true;');
+    f.job.sourceRoot = source;
+    f.job.requiredTools = [{ name: 'candidate validator', path: tool }];
+    return source;
+  };
+  it('refuses a draft root under the NTFS short name of the source checkout before any write (runs on Windows with short names, skipped otherwise)', ctx => {
+    const f = fixture();
+    const source = longSource(f);
+    const short = shortNameOf(source);
+    if (!short) ctx.skip(NO_SHORT);
+    f.job.draftRoot = path.join(short!, 'draft', 'incident-actions');
+    const result = run(f);
+    expect(result.exit, result.output).toBe(1);
+    expect(result.output).toMatch(/roots overlap/);
+    expect(files(source)).toEqual(['validate.mjs']);
+  });
+  it('refuses a draft root under another case of the source checkout before any write (runs where the volume ignores case, skipped otherwise)', ctx => {
+    const f = fixture();
+    const flipped = otherCaseOf(f.source);
+    if (!flipped) ctx.skip(NO_CASE);
+    f.job.draftRoot = path.join(flipped!, 'draft');
+    const result = run(f);
+    expect(result.exit, result.output).toBe(1);
+    expect(result.output).toMatch(/roots overlap/);
+    expect(files(f.source)).toEqual(['validate.mjs']);
+  });
+  it('refuses a draft root under the NTFS short name of a .claude folder as a managed output before any write (runs on Windows with short names, skipped otherwise)', ctx => {
+    const f = fixture();
+    const host = path.join(f.root, '.claude');
+    fs.mkdirSync(host, { recursive: true });
+    const short = shortNameOf(host);
+    if (!short) ctx.skip(NO_SHORT);
+    f.job.draftRoot = path.join(short!, 'skills', 'incident-actions');
+    const result = run(f);
+    expect(result.exit, result.output).toBe(1);
+    expect(result.output).toMatch(/managed host output/);
+    expect(fs.readdirSync(host)).toEqual([]);
+  });
+  it('prepares a draft whose root is given through another spelling of a folder that overlaps nothing', ctx => {
+    const f = fixture();
+    const parent = path.join(f.root, 'Draft Folder');
+    fs.mkdirSync(parent, { recursive: true });
+    const alt = altLeafOf(parent, false);
+    if (!alt) ctx.skip(NO_ALT);
+    f.job.draftRoot = path.join(alt!, 'incident-actions');
+    const result = run(f);
+    expect(result.exit, result.output).toBe(0);
+    expect(files(path.join(parent, 'incident-actions'))).toEqual(['SKILL.md', 'examples/action.md']);
+  });
+  it('walks up only on ENOENT or ENOTDIR and refuses any other real-path error (source text; EACCES cannot be produced portably)', () => {
+    const text = fs.readFileSync(script, 'utf8');
+    expect(text).toMatch(/error\?\.code !== 'ENOENT' && error\?\.code !== 'ENOTDIR'/);
+    expect(text).toContain('Cannot resolve the physical path of');
+    expect(text).toContain('fs.realpathSync.native(current)');
+    expect(text).toContain('physicallyWithin(source, draft) || physicallyWithin(draft, source)');
   });
 });

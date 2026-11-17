@@ -7,6 +7,7 @@ import type { SpawnSyncReturns } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
 import { canonical, digest, inventoryOf, pinOf, prepareContractTask, treeOf } from './helpers/contract-task.js';
 import type { ContractTaskFixture, Json, PrepareContractTaskOptions, Produced } from './helpers/contract-task.js';
+import { NO_ALT, altLeafOf } from './helpers/path-spellings.js';
 
 // The author-contract return script (registry/skills/author-contract/scripts/contract-return.mjs), run installed as a child process on
 // disposable roots. It writes exactly one file, <roots.producer>/contract-return.json, and nothing else. Every legal return of
@@ -425,5 +426,34 @@ describe('contract-return.mjs follows its checker on case collisions and on stde
     await fs.ensureDir(path.join(fx.draft, 'Refs'));
     await fs.ensureDir(path.join(fx.draft, 'refs'));
     written(fx, script(fx, helperFlags(fx, produced)));
+  });
+});
+
+describe('contract-return.mjs and the checker agree on a draft root given by another spelling of its own folder (P26-A)', () => {
+  const bothDraft = (fx: ContractTaskFixture, draft: string): void => { fx.task.roots.draft = draft; fx.task.draftJobTemplate.draftRoot = draft; };
+  it('passes the preflight, writes a blocked update return and passes the postflight when the draft root is the short name (or another case) of the draft folder', async ctx => {
+    const fx = await make({ operation: 'update' });
+    const leaf = altLeafOf(fx.draft, false);
+    if (!leaf) ctx.skip(NO_ALT);
+    bothDraft(fx, leaf!);
+    await fx.save();
+    const pre = fx.pre();
+    expect(pre.status, pre.stdout + pre.stderr).toBe(0);
+    const notes = await writeNotes(fx, { openItems: OPEN });
+    written(fx, script(fx, ['--job', fx.taskFile, '--no-helper', '--notes', notes]));
+  });
+  it('still refuses a stray beside a draft root given in another spelling of its own folder, and a link beside the draft that points at it', async ctx => {
+    const fx = await make({ operation: 'update' });
+    const notes = await writeNotes(fx, { openItems: OPEN });
+    const link = path.join(path.dirname(fx.draft), 'alias-of-draft');
+    await fs.symlink(fx.draft, link, 'junction');
+    await refusedUnchanged(fx, ['--job', fx.taskFile, '--no-helper', '--notes', notes], /besides the draft folder: alias-of-draft/);
+    await fs.remove(link);
+    const leaf = altLeafOf(fx.draft, false);
+    if (!leaf) ctx.skip(NO_ALT);
+    bothDraft(fx, leaf!);
+    await fx.save();
+    await fs.outputFile(path.join(path.dirname(fx.draft), 'stray.txt'), 'not the draft\n');
+    await refusedUnchanged(fx, ['--job', fx.taskFile, '--no-helper', '--notes', notes], /besides the draft folder: stray\.txt/);
   });
 });

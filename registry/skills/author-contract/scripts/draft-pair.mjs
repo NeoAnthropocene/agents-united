@@ -43,11 +43,38 @@ function absolute(value, label) {
   }
   return file;
 }
-const within = (parent, child) => {
+const lexicalWithin = (parent, child) => {
   const relative = path.relative(parent.toLowerCase(), child.toLowerCase());
   return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 };
+// The physical spelling of a path, the rule of contract-return.mjs and the coordinator's checker: the deepest existing ancestor is resolved
+// by the platform (a short name, another case on an ignoring volume, both become the one real name) and the absent rest is appended. Only
+// ENOENT and ENOTDIR walk up to the parent; any other error is refused with the path and the code, never a fallback to the string.
+function physical(file) {
+  const full = path.resolve(file);
+  const rest = [];
+  for (let current = full; ;) {
+    try { return path.join(fs.realpathSync.native(current), ...rest); } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') fail(`Cannot resolve the physical path of ${current}: ${error?.code ?? error}.`);
+    }
+    const up = path.dirname(current);
+    if (up === current) return full;
+    rest.unshift(path.basename(current));
+    current = up;
+  }
+}
+// Case folding is sound only where the filesystem ignores case; on every other platform names are compared exactly.
+const foldName = name => (process.platform === 'win32' ? name.toLowerCase() : name);
+const physicallyWithin = (parent, child) => {
+  const relative = path.relative(foldName(physical(parent)), foldName(physical(child)));
+  return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
+};
+// A refusal holds when the paths relate as strings OR physically (another spelling of one folder is the same folder); an acceptance
+// ("inside the evidence root") needs both.
+const within = (parent, child) => lexicalWithin(parent, child) || physicallyWithin(parent, child);
+const withinBoth = (parent, child) => lexicalWithin(parent, child) && physicallyWithin(parent, child);
 const overlaps = (a, b) => within(a, b) || within(b, a);
+const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
 function pinned(pin, label) {
   const file = absolute(pin.path, label);
   if (!fs.statSync(file, { throwIfNoEntry: false })?.isFile()) fail(`${label}: missing file ${file}.`);
@@ -96,7 +123,7 @@ function apply(job) {
   if (!fs.statSync(source, { throwIfNoEntry: false })?.isDirectory() || !fs.statSync(registry, { throwIfNoEntry: false })?.isDirectory()) fail('Required source directory unavailable.');
   if (overlaps(source, draft) || overlaps(registry, draft) || overlaps(evidence, draft) || overlaps(source, evidence) || overlaps(registry, evidence)) fail('Source/output/evidence roots overlap.');
   for (const [label, file] of [['Draft', draft], ['Evidence', evidence]]) {
-    if (file.split(path.sep).some(part => ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'].includes(part.toLowerCase()))) fail(`${label} is a managed Host output.`);
+    if ([file, physical(file)].some(spelling => spelling.split(path.sep).some(part => HOST_DIRS.includes(part.toLowerCase())))) fail(`${label} is a managed Host output.`);
     for (const root of [...job.managedRoots, ...job.protectedRoots]) if (overlaps(absolute(root, 'Protected root'), file)) fail(`${label} overlaps a managed/protected root.`);
   }
   if (job.mode !== 'update' && fs.existsSync(draft)) fail('Create/reuse require an absent draft; preserve the existing source.');
@@ -135,7 +162,7 @@ function apply(job) {
     for (const entry of job.baseline) {
       const rel = relative(entry.path), bytes = before.get(rel);
       const stored = absolute(entry.snapshot.path, 'Immutable baseline');
-      if (!within(evidence, stored) || within(draft, stored)) fail('Immutable snapshots must be in the separate evidence root.');
+      if (!withinBoth(evidence, stored) || within(draft, stored)) fail('Immutable snapshots must be in the separate evidence root.');
       const original = pinned(entry.snapshot, 'Immutable baseline');
       if (!bytes || bytes.length !== entry.bytes || hash(bytes) !== entry.sha256 || !bytes.equals(original)) fail(`Stale/incomplete baseline: ${rel}.`);
     }
