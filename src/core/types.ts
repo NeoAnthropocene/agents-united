@@ -294,6 +294,22 @@ export type ResolvedClaudeCommand = {
 };
 
 /**
+ * The program an npm `.cmd` shim starts, read from the shim file itself so the host can be spawned
+ * directly (no `cmd.exe` in between). `executable` is a native binary or a Node binary; `prefixArgs`
+ * is empty for a native binary and holds the absolute script path for Node.
+ */
+export interface CmdShimTarget {
+  executable: string;
+  prefixArgs: string[];
+}
+
+/** How a host is named in the refusal of a `cmd.exe` shim bridge: its label, and the way out its resolver really accepts. */
+export interface CmdShimHost {
+  label: string;
+  advice: string;
+}
+
+/**
  * ADR 0018 decision 11 / Plan 016 decision 12 — the read-only Claude Code probe result.
  * `pluginSupport` is derived from `--help` text only and defaults to `false` when help output is
  * unavailable, so an unverifiable capability is never reported as supported. `agentTeamsExperimental`

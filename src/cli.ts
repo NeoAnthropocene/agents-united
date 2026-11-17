@@ -21,6 +21,7 @@ import { ClineCapabilityProbe } from './core/cline-capabilities.js';
 import { ClaudeLauncher } from './core/claude-launcher.js';
 import type { ClaudeActivationPlan } from './core/claude-launcher.js';
 import { ClaudeCapabilityProbe } from './core/claude-capabilities.js';
+import { CLAUDE_SHIM_HOST, CLINE_SHIM_HOST, cmdShimRefusalFor } from './core/cmd-shim.js';
 import { AntigravityLauncher } from './core/antigravity-launcher.js';
 import type { AntigravityActivationPlan } from './core/antigravity-launcher.js';
 import { AntigravityCapabilityProbe } from './core/antigravity-capabilities.js';
@@ -31,7 +32,7 @@ import { linkedSkillAdvice, listLinkedSkills } from './core/skill-links.js';
 import { nativeWorkflowNote } from './core/native-workflows.js';
 import { nativeTeamNote, sessionGuardPrompt } from './core/native-teams.js';
 import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
-import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, PrerequisiteItemCheck, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport } from './core/types.js';
+import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, PrerequisiteItemCheck, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport, ClineCapabilityReport } from './core/types.js';
 import { isEmptyContributorBundle } from './core/types.js';
 
 export const cli = cac('agents-united');
@@ -1080,7 +1081,6 @@ cli
           if (options.dryRun) {
             note(`Would start Cline team for bundle "${bundleName}".`, 'Start in Cline (dry run)');
           } else {
-            note(`Launching Cline team for "${bundleName}"...`, 'Starting Cline');
             const launcher = new ClineLauncher();
             const probe = new ClineCapabilityProbe();
             const probeReport = await probe.probe();
@@ -1093,6 +1093,9 @@ cli
                 report: probeReport,
                 orchestrator: targetBundleDef?.orchestrator,
               });
+              // Refuse before the launching note: a cmd.exe shim bridge cannot carry the first message (cmd-shim.ts).
+              stopWhenStartRefused(plan.cmdShimRefusal, bundleName);
+              note(`Launching Cline team for "${bundleName}"...`, 'Starting Cline');
               await launcher.launch(plan);
             } else {
               note(pc.yellow('Cline executable not detected. Install Cline CLI to run: agents start ' + bundleName), 'Cline Not Found');
@@ -1121,6 +1124,7 @@ cli
                 report: probeReport,
                 orchestrator: targetBundleDef?.orchestrator,
               });
+              stopWhenStartRefused(plan.cmdShimRefusal, bundleName);
               await launcher.launch(plan);
             } else {
               note(pc.yellow('Cline executable not detected. Install Cline CLI to run: agents start ' + bundleName), 'Cline Not Found');
@@ -2501,11 +2505,23 @@ cli
           `Team Name: ${plan.teamName}\n` +
           `Strategy: ${plan.strategy}\n` +
           `Executable: ${plan.executable}\n` +
+          (plan.cmdShimRefusal ? `Real start: REFUSED. ${plan.cmdShimRefusal}\n` : '') +
           `Argv: ${plan.argv.map(a => (a.includes(' ') || a.includes('\n') ? `"${a.replace(/\n/g, '\\n')}"` : a)).join(' ')}`,
           'Activation Plan (dry run)'
         );
+        if (plan.cmdShimRefusal) {
+          // The real start refuses this plan (cmd-shim.ts): the dry run ends the way the real start would.
+          outro(pc.red('Dry run: the real start would be refused. No processes launched.'));
+          process.exit(1);
+        }
         outro(pc.yellow('Dry run complete. No processes launched.'));
         return;
+      }
+
+      // Refuse before any "Starting" note: a plan that goes through a cmd.exe shim bridge cannot carry the first message (cmd-shim.ts).
+      if (plan.cmdShimRefusal) {
+        outro(pc.red(plan.cmdShimRefusal));
+        process.exit(1);
       }
 
       if (organizationTier) {
@@ -2553,17 +2569,18 @@ cli
 
       if (report.clineCapability) {
         console.log(pc.bold(pc.cyan('Cline Runtime & Native Discovery Audit:')));
-        console.log(`  Installed: ${report.clineCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
+        console.log(`  Installed: ${describeClineInstalled(report.clineCapability)}`);
         if (report.clineCapability.version) {
           console.log(`  Version: ${report.clineCapability.version}`);
         }
-        console.log(`  Named Teams: ${report.clineCapability.namedTeams ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported (Adaptive fallback)')}\n`);
+        console.log(`  Named Teams: ${describeClineNamedTeams(report.clineCapability)}\n`);
       }
 
       if (report.claudeCapability) {
         renderClaudeCapabilityBlock(report.claudeCapability);
+        const refusal = claudeShimRefusal(report.claudeCapability);
         for (const diagnostic of report.claudeCapability.diagnostics) {
-          console.log(`  ${pc.dim(diagnostic)}`);
+          if (diagnostic !== refusal) console.log(`  ${pc.dim(diagnostic)}`);
         }
         console.log();
       }
@@ -2607,11 +2624,11 @@ cli
 
     if (report.clineCapability) {
       console.log(pc.bold(pc.cyan('Cline Runtime & Native Discovery Audit:')));
-      console.log(`  Installed: ${report.clineCapability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
+      console.log(`  Installed: ${describeClineInstalled(report.clineCapability)}`);
       if (report.clineCapability.version) {
         console.log(`  Version: ${report.clineCapability.version}`);
       }
-      console.log(`  Named Teams: ${report.clineCapability.namedTeams ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported (Adaptive fallback)')}`);
+      console.log(`  Named Teams: ${describeClineNamedTeams(report.clineCapability)}`);
       console.log(`  Configured Agents: ${report.agentsCount} active natively in any Cline session ("agents start" = optional team-session launcher)\n`);
     }
 
@@ -2938,8 +2955,19 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
 
   if (options.dryRun) {
     note(renderClaudeActivationPlan(plan, probeReport, recordedFanout, teamsPosture), 'Claude Activation Plan (dry run)');
+    if (plan.cmdShimRefusal) {
+      // The real start refuses this plan (cmd-shim.ts): the dry run ends the way the real start would.
+      outro(pc.red('Dry run: the real start would be refused. No processes launched.'));
+      process.exit(1);
+    }
     outro(pc.yellow('Dry run complete. No processes launched.'));
     return;
+  }
+
+  // Refuse before any "Starting" note: a plan that goes through a cmd.exe shim bridge cannot carry the first message (cmd-shim.ts).
+  if (plan.cmdShimRefusal) {
+    outro(pc.red(plan.cmdShimRefusal));
+    process.exit(1);
   }
 
   if (!recordedFanout.includes('claude')) {
@@ -3009,17 +3037,60 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
  */
 function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
   console.log(pc.bold(pc.cyan('Claude Code Runtime & Native Discovery Audit:')));
-  console.log(`  Installed: ${capability.installed ? pc.green('✔ Detected') : pc.yellow('✖ Not Found')}`);
+  const refusal = claudeShimRefusal(capability);
+  console.log(`  Installed: ${capability.installed ? (refusal ? pc.yellow('✔ Detected, but cannot be started (cmd.exe shim)') : pc.green('✔ Detected')) : pc.yellow('✖ Not Found')}`);
   if (capability.version) {
     console.log(`  Version: ${capability.version}`);
   }
-  console.log(`  Plugin Support (--plugin-dir): ${capability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
-  console.log(`  Agent Teams (experimental): ${capability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
-  console.log(`  Subagent hand-off (SubagentHandback): ${capability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
+  if (refusal) {
+    // Nothing was run, so nothing is known: not "unsupported", and not a version floor that was missed.
+    const unknown = pc.yellow('? Unknown (the version could not be read because the shim cannot be started)');
+    console.log(`  Plugin Support (--plugin-dir): ${unknown}`);
+    console.log(`  Agent Teams (experimental): ${unknown}`);
+    console.log(`  Subagent hand-off (SubagentHandback): ${unknown}`);
+  } else {
+    console.log(`  Plugin Support (--plugin-dir): ${capability.pluginSupport ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+    console.log(`  Agent Teams (experimental): ${capability.agentTeamsExperimental ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported')}`);
+    console.log(`  Subagent hand-off (SubagentHandback): ${capability.subagentHandback ? pc.green('✔ Supported') : pc.yellow('✖ Needs v2.1.271+ (auto mode)')}`);
+  }
   if (capability.profile) {
     console.log(`  Host profile: ${capability.profile.profileId} (minimum ${capability.profile.minVersion})`);
   }
-  for (const diagnostic of capability.diagnostics) console.log(`  ${pc.yellow('•')} ${diagnostic}`);
+  // The refusal text is printed once, among the doctor warnings; it is not repeated as a diagnostic.
+  for (const diagnostic of capability.diagnostics) if (diagnostic !== refusal) console.log(`  ${pc.yellow('•')} ${diagnostic}`);
+}
+
+/** The refusal text when Claude Code was found only as a cmd.exe shim bridge (cmd-shim.ts), else undefined. */
+function claudeShimRefusal(capability: ClaudeCapabilityReport): string | undefined {
+  return capability.installed && capability.command
+    ? cmdShimRefusalFor(CLAUDE_SHIM_HOST, capability.command.executable, capability.command.prefixArgs)
+    : undefined;
+}
+
+/** `agents add --start` and the install wizard: the install is done; a refused start ends with the same text and exit as `agents start`. */
+function stopWhenStartRefused(refusal: string | undefined, bundleName: string | undefined): void {
+  if (!refusal) return;
+  outro(pc.red(`"${bundleName}" was installed successfully, but the start was refused. ${refusal}`));
+  process.exit(1);
+}
+
+/** The Installed line of the Cline doctor block: found, found but not startable, or not found. */
+function describeClineInstalled(capability: ClineCapabilityReport): string {
+  if (!capability.installed) return pc.yellow('✖ Not Found');
+  return clineShimRefusal(capability) ? pc.yellow('✔ Detected, but cannot be started (cmd.exe shim; the version could not be read)') : pc.green('✔ Detected');
+}
+
+/** The refusal text when Cline was found only as a cmd.exe shim bridge (cmd-shim.ts), else undefined. */
+function clineShimRefusal(capability: ClineCapabilityReport): string | undefined {
+  return capability.installed && capability.command
+    ? cmdShimRefusalFor(CLINE_SHIM_HOST, capability.command.executable, capability.command.prefixArgs)
+    : undefined;
+}
+
+/** The Named Teams line of the Cline doctor block: for a refused bridge nothing was probed, so it is unknown, not unsupported. */
+function describeClineNamedTeams(capability: ClineCapabilityReport): string {
+  if (clineShimRefusal(capability)) return pc.yellow('? Unknown (the version could not be read because the shim cannot be started)');
+  return capability.namedTeams ? pc.green('✔ Supported') : pc.yellow('✖ Unsupported (Adaptive fallback)');
 }
 
 /**
@@ -3066,8 +3137,12 @@ export function renderClaudeActivationPlan(
         : `Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`,
     `Plugin (--plugin-dir): ${pluginFlagIndex >= 0 ? plan.argv[pluginFlagIndex + 1] : '(none)'}`,
     `Env injected (merged over process.env): ${envEntries.length > 0 ? envEntries.map((k) => `${k}=${plan.env[k]}`).join(', ') : '(none)'}`,
-    `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}, subagent handback=${report.subagentHandback ? 'yes' : 'no'}`,
+    // A refused cmd.exe bridge is never run, so nothing was probed: the capabilities are unknown, not "no".
+    claudeShimRefusal(report)
+      ? `Capability probe: installed=yes (found only as a cmd.exe shim that cannot be started), --plugin-dir=unknown, agent teams=unknown, subagent handback=unknown`
+      : `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}, subagent handback=${report.subagentHandback ? 'yes' : 'no'}`,
     `Recorded fanout: [${recordedFanout.join(', ')}]`,
+    ...(plan.cmdShimRefusal ? [`Real start: REFUSED. ${plan.cmdShimRefusal}`] : []),
     `Argv (${plan.argv.length} elements, one element per line, spawned with shell: false):`,
     ...plan.argv.map((arg, index) => `  [${index}] ${arg.replace(/\r?\n/g, '\\n')}`),
   ].join('\n');

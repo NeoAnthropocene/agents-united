@@ -5,6 +5,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { assertClaudeFactorySelection, readClaudeFactoryMain } from './claude-factory-start.js';
 import { ClaudeCapabilityProbe } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
+import { CLAUDE_SHIM_HOST, cmdShimRefusalFor } from './cmd-shim.js';
 import { defaultProcessRunner } from './cline-capabilities.js';
 import { resolveStateDir } from './state-dir.js';
 import type {
@@ -58,6 +59,8 @@ export interface ClaudeActivationPlan {
   bootstrapPrompt: string;
   env: Record<string, string>;
   nativeFactoryMain?: ClaudeFactoryMainSelection;
+  /** Set when the plan would start Claude Code through `cmd.exe /c <shim>`: the real start refuses with this text (see cmd-shim.ts). */
+  cmdShimRefusal?: string;
 }
 
 export interface PlanClaudeActivationOptions {
@@ -382,6 +385,8 @@ export class ClaudeLauncher {
     }
     argv.push(bootstrapPrompt);
 
+    const cmdShimRefusal = cmdShimRefusalFor(CLAUDE_SHIM_HOST, command.executable, command.prefixArgs);
+
     return {
       bundleName,
       scope,
@@ -390,6 +395,7 @@ export class ClaudeLauncher {
       argv,
       bootstrapPrompt,
       env,
+      ...(cmdShimRefusal ? { cmdShimRefusal } : {}),
       ...(factory ? { nativeFactoryMain: options.nativeFactoryMain } : {}),
     };
   }
@@ -399,6 +405,11 @@ export class ClaudeLauncher {
    * (never `shell: true`), `stdio: 'inherit'`, and the plan's ephemeral env merged over `process.env`.
    */
   public async launch(plan: ClaudeActivationPlan): Promise<void> {
+    // A `cmd.exe /c <shim>` start cuts the first message at its first line break and fails on a shim path
+    // with a space (cmd-shim.ts). The first message always has line breaks, so refuse instead of starting a session with a cut message.
+    // The decision is made from the plan's own shape, so a fabricated plan is refused too.
+    const shimRefusal = cmdShimRefusalFor(CLAUDE_SHIM_HOST, plan.executable, plan.argv);
+    if (shimRefusal) throw new Error(shimRefusal);
     let factorySession = false;
     if (plan.bundleName === 'agent-factory' || plan.nativeFactoryMain || plan.argv.some((arg, index) => arg === '--agent=orchestrator-agent-factory' || (arg === '--agent' && plan.argv[index + 1] === 'orchestrator-agent-factory'))) {
       factorySession = true;
