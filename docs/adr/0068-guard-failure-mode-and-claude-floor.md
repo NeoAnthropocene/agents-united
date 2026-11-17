@@ -1,0 +1,43 @@
+# ADR 0068: Guards block when they cannot work; the Claude Code floor is 2.1.295
+
+- **Status:** Accepted by the maintainer, 2026-11-17, in a questioning session with the lead of that day's session (an AI session). Built in pull requests 221 (decision 7, Claude and Cline) and 222 (decision 7 for Antigravity, and decisions 1 to 6). Built and gated offline; not observed on the Host (see Consequences).
+- **Planned at:** `a8e535b` (`origin/dev` after pull requests 219 and 220). ADR numbers through 0067 were checked on `origin/dev` the same day.
+
+## Context
+
+[The Plan 033 handoff of 2026-11-17](../plan-033-handoff-2026-11-17.md) lists five points that were the maintainer's to decide. Three of them keep the "Factory hooks" row of [the completion matrix](../plan-033-completion-matrix.md) open, and with it the Claude stage.
+
+What was true before this record:
+
+- The native destructive and read-only guards carry `onFailure: "block"` (P20). The legacy inline guard, the settings-level session guard for plain Claude sessions and the mode-line gate do not.
+- `onFailure` needs Claude Code 2.1.295 ([hooks.md](../../host-library/claude/pages/hook/hooks.md), "Block the action when a hook fails"; the field is documented for hooks in settings files as well as in agent frontmatter). The supported floor was 2.1.271, and `agents doctor` only warned below 2.1.295.
+- The destructive guard allowed a call whose input was empty or could not be parsed.
+- The factory's postflight check accepted a Skill draft without `evals/evals.json`; `skill-check` refused it later, under a policy that requires the file.
+- The launcher's `.cmd` shim cuts a multi-line first message and fails on a path with a space, for every bundle.
+
+## Decision
+
+Each choice is the maintainer's own, taken from the options put to him.
+
+1. **Evals file.** Postflight refuses a Skill draft without `evals/evals.json` only when the `skill-check` policy pinned in the task requires the file. A draft under a policy that does not require it is not refused for it. At the time of the decision all three policies (`agents-united-original`, `private-owner`, `adapted-source`) required the file; the maintainer then chose to exempt `adapted-source`, in `skill-check` and in postflight. The policy is pinned in the task as `skillCheckPolicy`, one table in `src/core/skill-layout.ts` says which policies require the file, and postflight carries a copy of that table that a test ties to it. A file that is present is checked under every policy.
+2. **Guards that cannot run.** The legacy inline guard and the settings-level session guard block the call when they cannot run, as the native guards do.
+3. **Way out.** Where the session guard blocks because it cannot run, the message names two commands: the one that repairs the install and the one that removes the session guard. `agents doctor` shows the same two. No command removed only the session guard before; `agents update --no-session-guard` was added for this. The two commands as built are `agents update --all` (repair) and `agents update --all --no-session-guard` (removal), each with `--global` after `--all` when the guard sits in the user settings file (`~/.claude/settings.json`).
+4. **Floor.** The supported floor of the Claude lane becomes 2.1.295 for every bundle (`minVersion` in `registry/hosts/claude/profile.json`).
+5. **Enforcement of the floor.** Below the floor `agents doctor` reports an error. Installs and starts are not refused. The error appears with `agents doctor --host claude` only, which is the one doctor run that probes Claude Code; this was the maintainer's choice.
+6. **Unreadable input.** The destructive guard blocks a call whose input it cannot read and says why. Input counts as unreadable when stdin is empty or only white space, is not JSON, or is JSON that is not an object (`null`, an array, a string, a number). A valid empty object `{}`, or an object without `tool_input`, is readable and handled as before.
+7. **Shim fault.** The `.cmd` shim fault is fixed now, test-first, in a pull request of its own against `dev`, before any Codex work.
+
+Not decided here and unchanged: the mode-line gate keeps its own failure rule (ADR 0044); it was the earlier lead's choice to leave it out of P20 and it was not put to the maintainer.
+
+## Consequences
+
+- With decisions 2, 4 and 6 built and gated offline, the "Factory hooks" row can close once the blocking behaviour has been observed on the Host or closed with that as a stated limit.
+- A broken or half-removed install now stops the guarded shell and file-write calls of a user's plain sessions until it is repaired or the guard is removed. Decision 3 exists for that case.
+- The session guard has its own script, built from the same template as the role guards (one set of patterns). When the script throws, or its input is unreadable, it blocks with a message that names the two commands and says to run them in the user's own terminal, because the session's shell calls are blocked. It cannot cover a hook whose `node` cannot be started, a timeout, a killed process or a syntax error in the script itself: in those cases nothing of this kind is printed, and with `onFailure: "block"` the Host blocks the call and shows only its own notice (and `agents doctor` still names the commands). The role guards keep the generic script without that text, so the role guards print no commands. Where even Node is missing, only the Host's notice and `agents doctor` remain.
+- A limit of decisions 4 and 5 together: on Claude Code 2.1.271 to 2.1.294 an install still goes through and the guards let calls through when they cannot run. The floor is a statement of support with a doctor error, not a gate. `reviewedAgainst` (2.1.285) now sits below the floor on purpose: the docs library lock pins it, and the floor moves on its own.
+- An existing install keeps the old behaviour until `agents update`: a project-scope native role keeps its old guard script file, and an inline copy keeps its old script. A session guard written by an earlier version is reported by `agents doctor` as outdated (not as edited by hand) and `agents update` renews it in place; a hand-edited one is left as it is.
+- Decision 6 means that a change of the Host's input format blocks guarded calls until the guard is updated. This is the intended direction of failure.
+- The session guard's matchers (`Bash`, `Write|Edit|NotebookEdit`) do not cover `PowerShell` or `MultiEdit`; this record does not change them.
+- Decision 1: the Skill task schema's provenance is `original` only, so a task cannot yet describe an adaptation; the exemption for `adapted-source` takes effect in postflight for a task that pins that policy, and in `skill-check` for any adaptation.
+- Not observed on the Host and still to be shown or recorded as limits: the inline form with `onFailure`, the session guard blocking in a plain session, the two-command message, and the block on unreadable input. The behaviour was shown with the Host model in the test helper and by running the scripts offline.
+- Decision 7 puts one pull request ahead of the Codex stage. The slice 5a audit of 2026-11-17 found that the Codex stage needs a docs library first in any case.
