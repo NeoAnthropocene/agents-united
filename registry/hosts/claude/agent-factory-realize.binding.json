@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "bundle": "agent-factory",
+  "skill": "realize-artifact",
+  "source": "hosts/claude/skills/realize-artifact/SKILL.md",
+  "installed": ".claude/skills/realize-artifact/SKILL.md",
+  "surface": {
+    "host": "claude",
+    "product": "Claude Code CLI",
+    "scope": "workspace",
+    "lane": "native"
+  },
+  "invocation": "Agent({subagent_type: factory-realizer, prompt: complete fixed job and caller-held digest}) as an ordinary subagent; omit teammate name; verify the actual launch result, then wait for the worker's result when it runs in the background",
+  "roles": [
+    {
+      "name": "factory-realizer",
+      "definition": "subagent-realize-for-host",
+      "contract": "core/subagent-realize-for-host.contract.json",
+      "source": "hosts/claude/agents/factory-realizer.md",
+      "installed": ".claude/agents/factory-realizer.md",
+      "loading": "subagent",
+      "skills": [
+        "realize-artifact"
+      ],
+      "guard": "destructive"
+    }
+  ],
+  "hooks": [
+    {
+      "id": "reject-destructive-operations",
+      "kind": "destructive"
+    }
+  ],
+  "requiredSupport": [
+    "references/job.md",
+    "references/checks.md",
+    "references/host-inputs.md",
+    "references/handback.md",
+    "examples/claude-agent-draft.md",
+    "assets/job.schema.json",
+    "assets/handback.schema.json",
+    "assets/report.json",
+    "scripts/check-job.mjs",
+    "scripts/check-handback.mjs"
+  ],
+  "references": [
+    {
+      "source": "rules/skill-attribution.md",
+      "installed": ".claude/skills/realize-artifact/references/rules/skill-attribution.md"
+    },
+    {
+      "source": "rules/git-guardrails.md",
+      "installed": ".claude/skills/realize-artifact/references/rules/git-guardrails.md"
+    },
+    {
+      "source": "rules/test-driven-development.md",
+      "installed": ".claude/skills/realize-artifact/references/rules/test-driven-development.md"
+    },
+    {
+      "source": "rules/clean-code-and-architecture.md",
+      "installed": ".claude/skills/realize-artifact/references/rules/clean-code-and-architecture.md"
+    },
+    {
+      "source": "rules/domain-modeling-and-adr.md",
+      "installed": ".claude/skills/realize-artifact/references/rules/domain-modeling-and-adr.md"
+    },
+    {
+      "source": "rules/multi-agent-coordination.md",
+      "installed": ".claude/skills/realize-artifact/references/rules/multi-agent-coordination.md"
+    },
+    {
+      "source": "rules/quality-aesthetics-accessibility.md",
+      "installed": ".claude/skills/realize-artifact/references/rules/quality-aesthetics-accessibility.md"
+    }
+  ],
+  "requiredInstalled": [
+    ".claude/skills/author-skill/references/skill-attribution.md"
+  ],
+  "reviewedInputs": [
+    "host-library/claude/guide/agent.md",
+    "host-library/claude/guide/skill.md",
+    "host-library/claude/guide/hook.md",
+    "host-library/claude/guide/tools.md",
+    "host-library/claude/guide/orchestration.md",
+    "host-library/claude/library.lock.json"
+  ]
+}

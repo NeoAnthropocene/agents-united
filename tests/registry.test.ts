@@ -30,20 +30,26 @@ describe('RegistryResolver', () => {
       rules: ['skill-attribution.md'],
       hostAvailability: { claude: { lane: 'native', scopes: ['workspace'] } },
     });
-    expect([...(bundle?.skills ?? [])].sort()).toEqual(['author-skill', 'git-guardrails', 'handoff', 'host-agent-router']);
+    expect([...(bundle?.skills ?? [])].sort()).toEqual(['author-bundle', 'author-contract', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'sync-host']);
     expect(bundle?.orchestrator).toBeUndefined();
     expect(bundle?.parentBundle).toBeUndefined();
   });
 
   it('resolves the explicit contributor toolkit without adding it to end-user inventories', async () => {
     const authoring = await resolver.resolve('agent-factory');
-    expect([...authoring.skills].sort()).toEqual(['author-skill', 'git-guardrails', 'handoff', 'host-agent-router']);
+    expect([...authoring.skills].sort()).toEqual(['author-bundle', 'author-contract', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'sync-host']);
     expect(authoring.agents).toEqual([]);
     expect(authoring.workflows).toEqual([]);
     expect([...authoring.rules].sort()).toEqual(['GEMINI.md', 'skill-attribution.md']);
     for (const identifier of ['full', 'domain:engineering', 'digital-agency']) {
       const ordinary = await resolver.resolve(identifier);
       expect(ordinary.skills).not.toContain('author-skill');
+      expect(ordinary.skills).not.toContain('realize-artifact');
+      expect(ordinary.skills).not.toContain('author-contract');
+      expect(ordinary.skills).not.toContain('evaluate-artifact');
+      expect(ordinary.skills).not.toContain('author-bundle');
+      expect(ordinary.skills).not.toContain('coordinate-artifact');
+      expect(ordinary.skills).not.toContain('sync-host');
       expect(ordinary.rules).not.toContain('skill-attribution.md');
       expect(ordinary.skills).toEqual(expect.arrayContaining(['host-agent-router', 'handoff', 'git-guardrails']));
     }

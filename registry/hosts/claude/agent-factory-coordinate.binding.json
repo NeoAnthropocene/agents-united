@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "bundle": "agent-factory",
+  "skill": "coordinate-artifact",
+  "source": "hosts/claude/skills/coordinate-artifact/SKILL.md",
+  "installed": ".claude/skills/coordinate-artifact/SKILL.md",
+  "surface": {
+    "host": "claude",
+    "product": "Claude Code CLI",
+    "scope": "workspace",
+    "lane": "native"
+  },
+  "invocation": "Main thread orchestrator-agent-factory; manual Agent dispatch of one ordinary worker at a time after caller checks, waiting for each hand-back",
+  "roles": [
+    {
+      "name": "orchestrator-agent-factory",
+      "definition": "orchestrator-agent-factory",
+      "contract": "core/orchestrator-agent-factory.contract.json",
+      "source": "hosts/claude/agents/orchestrator-agent-factory.md",
+      "installed": ".claude/agents/orchestrator-agent-factory.md",
+      "loading": "main",
+      "skills": [
+        "coordinate-artifact"
+      ],
+      "guard": "destructive"
+    }
+  ],
+  "hooks": [
+    {
+      "id": "reject-destructive-operations",
+      "kind": "destructive"
+    }
+  ],
+  "requiredSupport": [
+    "references/job.md",
+    "references/dispatch.md",
+    "references/verification.md",
+    "references/repair.md",
+    "references/handback.md",
+    "examples/claude-agent-journey.md",
+    "assets/report.json",
+    "references/skill-authoring.md",
+    "scripts/check-skill-return.mjs",
+    "assets/skill-task.schema.json",
+    "assets/skill-return.schema.json",
+    "references/contract-authoring.md",
+    "scripts/check-contract-return.mjs",
+    "assets/contract-task.schema.json",
+    "assets/contract-return.schema.json",
+    "references/host-sync.md",
+    "references/contribution.md",
+    "references/bundle-authoring.md",
+    "scripts/check-bundle-return.mjs",
+    "assets/bundle-task.schema.json",
+    "assets/bundle-return.schema.json"
+  ],
+  "references": [
+    {
+      "source": "rules/skill-attribution.md",
+      "installed": ".claude/skills/coordinate-artifact/references/rules/skill-attribution.md"
+    },
+    {
+      "source": "rules/git-guardrails.md",
+      "installed": ".claude/skills/coordinate-artifact/references/rules/git-guardrails.md"
+    },
+    {
+      "source": "rules/test-driven-development.md",
+      "installed": ".claude/skills/coordinate-artifact/references/rules/test-driven-development.md"
+    },
+    {
+      "source": "rules/clean-code-and-architecture.md",
+      "installed": ".claude/skills/coordinate-artifact/references/rules/clean-code-and-architecture.md"
+    },
+    {
+      "source": "rules/domain-modeling-and-adr.md",
+      "installed": ".claude/skills/coordinate-artifact/references/rules/domain-modeling-and-adr.md"
+    },
+    {
+      "source": "rules/multi-agent-coordination.md",
+      "installed": ".claude/skills/coordinate-artifact/references/rules/multi-agent-coordination.md"
+    },
+    {
+      "source": "rules/quality-aesthetics-accessibility.md",
+      "installed": ".claude/skills/coordinate-artifact/references/rules/quality-aesthetics-accessibility.md"
+    }
+  ],
+  "requiredInstalled": [
+    ".claude/agents/factory-realizer.md",
+    ".claude/agents/factory-evaluator.md",
+    ".claude/agents/factory-sync.md",
+    ".claude/skills/realize-artifact/SKILL.md",
+    ".claude/skills/realize-artifact/assets/claude-binding.json",
+    ".claude/skills/realize-artifact/assets/job.schema.json",
+    ".claude/skills/realize-artifact/assets/handback.schema.json",
+    ".claude/skills/realize-artifact/scripts/check-job.mjs",
+    ".claude/skills/realize-artifact/scripts/check-handback.mjs",
+    ".claude/skills/evaluate-artifact/SKILL.md",
+    ".claude/skills/evaluate-artifact/assets/claude-binding.json",
+    ".claude/skills/evaluate-artifact/assets/job.schema.json",
+    ".claude/skills/evaluate-artifact/assets/result.schema.json",
+    ".claude/skills/evaluate-artifact/assets/rubric.json",
+    ".claude/skills/evaluate-artifact/scripts/check-review.mjs",
+    ".claude/skills/evaluate-artifact/scripts/review-job.mjs",
+    ".claude/skills/sync-host/SKILL.md",
+    ".claude/skills/sync-host/assets/claude-binding.json",
+    ".claude/skills/sync-host/assets/sync-job.schema.json",
+    ".claude/skills/sync-host/assets/sync-plan.schema.json",
+    ".claude/skills/sync-host/scripts/check-sync.mjs"
+  ],
+  "reviewedInputs": [
+    "host-library/claude/guide/agent.md",
+    "host-library/claude/guide/skill.md",
+    "host-library/claude/guide/hook.md",
+    "host-library/claude/guide/tools.md",
+    "host-library/claude/guide/orchestration.md",
+    "host-library/claude/library.lock.json",
+    "registry/hosts/claude/profile.json",
+    "registry/hosts/claude/tool-policy.json",
+    "host-library/claude/observations/2026-10-04-claude-2.1.288-guard-file.md",
+    "host-library/claude/observations/2026-10-19-claude-2.1.301-worker-lifecycle-live.md",
+    "host-library/claude/observations/2026-10-19-claude-2.1.299-step0-foreground-rerun.md"
+  ],
+  "requiredRoles": [
+    "factory-realizer",
+    "factory-evaluator",
+    "factory-sync"
+  ]
+}

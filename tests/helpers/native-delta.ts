@@ -1,3 +1,4 @@
+import { normalizeClaudeFactoryCoordinatorTools } from '../../src/core/claude-factory-binding.js';
 /**
  * Plan 032 Phase 7 — the maintainers' conformance check for native agents (not user-facing: a native package is the
  * product, so users are never shown a translation report). Each native agent is measured against the Semantic Core
@@ -6,6 +7,7 @@
  * the caller passes one.
  */
 import fs from 'node:fs';
+import path from 'node:path';
 import { ClaudeProjector } from '../../src/core/claude-projector.js';
 import { compareRealization, loadToolPolicy, resolveGrant } from '../../src/core/host-profile.js';
 import { checkFloor } from '../../src/core/native-floor.js';
@@ -14,6 +16,7 @@ import { inspectNativeAgent, nativeGuardProblem } from '../../src/core/native-gu
 import { listNativeRoles, nativeRoleSource } from '../../src/core/native-package.js';
 import { loadSemanticCore } from '../../src/core/semantic-core.js';
 import { bundles } from './native-coordinator.js';
+import type { ClaudeFactoryBinding } from '../../src/core/types.js';
 
 export interface NativeDeltaRow {
   role: string;
@@ -51,6 +54,10 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
   if (roles.length === 0) return [];
   const cores = await loadSemanticCore(registryDir);
   const policy = loadToolPolicy(registryDir, host);
+  const factories = host === 'claude' ? ['agent-factory-realize.binding.json', 'agent-factory-evaluate.binding.json', 'agent-factory-sync.binding.json', 'agent-factory-coordinate.binding.json']
+    .map(name => path.join(registryDir, 'hosts', host, name))
+    .filter(file => fs.existsSync(file))
+    .map(file => JSON.parse(fs.readFileSync(file, 'utf8')) as ClaudeFactoryBinding) : [];
   const postureOf = (coordinator: boolean): { model?: string; effort?: string } => ({
     model: ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults?.[coordinator ? 'coordinator' : 'specialist'],
     effort: ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults?.[coordinator ? 'coordinator' : 'specialist'],
@@ -61,10 +68,12 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
     const facts = inspectNativeAgent(text);
     const issues: string[] = [];
     // A bundle-scoped native role (ADR 0036) stands for a canonical agent of another name: its core is that agent's.
-    const core = cores.get(scopedCoreStem(role) ?? `subagent-${role}`) ?? cores.get(role);
+    const factoryBinding = factories.find(factory => factory.roles.some(binding => binding.name === role));
+    const factoryRole = factoryBinding?.roles.find(binding => binding.name === role);
+    const core = cores.get(factoryRole?.definition ?? scopedCoreStem(role) ?? `subagent-${role}`) ?? cores.get(role);
     // A coordinator (it can delegate) runs as the main thread, whose ceiling includes what a subagent never gets.
     const coordinator = core?.capabilities?.includes('delegate') ?? false;
-    const posture = postureOf(coordinator);
+    const posture = factoryRole ? { model: 'inherit', effort: 'medium' } : postureOf(coordinator);
 
     let floor: NativeDeltaRow['floor'] = 'ok';
     let toolGains: string[] = [];
@@ -78,7 +87,13 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
         issues.push(...violations);
       }
       const ceiling = resolveGrant(policy, core.capabilities ?? [], { subagent: !coordinator, background: false });
-      ({ gains: toolGains, extras: toolExtras } = compareRealization(ceiling, facts.tools.map(tool => tool.split('(')[0]).filter(tool => !tool.startsWith('mcp__'))));
+      let realization = facts.tools;
+      if (factoryBinding?.skill === 'coordinate-artifact') {
+        if (factoryRole?.loading !== 'main') issues.push('Factory coordinator loading must be main.');
+        try { realization = normalizeClaudeFactoryCoordinatorTools(facts.tools); }
+        catch (error) { issues.push(error instanceof Error ? error.message : String(error)); }
+      }
+      ({ gains: toolGains, extras: toolExtras } = compareRealization(ceiling, realization.map(tool => tool.split('(')[0]).filter(tool => !tool.startsWith('mcp__'))));
       for (const extra of toolExtras) issues.push(`Holds ${extra} beyond its capability classes.`);
     }
 

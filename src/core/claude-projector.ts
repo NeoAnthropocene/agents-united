@@ -21,6 +21,8 @@ import { CLAUDE_FIELD_POLICY, validateProjectionOverlays } from './overlays.js';
 import { nativeHookSource, nativeRoleSource, nativeSkillSource, nativeWorkflowSource, renderNativeHook, renderNativeRole, renderNativeSkill, renderNativeWorkflow } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
 import { assertClaudeSkillBindings } from './claude-skill-binding.js';
+import { assertClaudeContractTaskBinding, assertClaudeContractTaskDelivery, planClaudeContractTaskArtifacts } from './claude-contract-binding.js';
+import { assertClaudeFactoryDelivery, planClaudeFactoryArtifacts } from './claude-factory-binding.js';
 import { unsupportedSkillNames } from './host-profile.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
@@ -849,12 +851,17 @@ export class ClaudeProjector {
     _excludeAddons?: string[],
     nativeLane = false
   ): Promise<PlannedClaudeArtifact[]> {
+    const contractBinding = assertClaudeContractTaskBinding(bundle, resolved, registryDir, scope, nativeLane);
     const skillBinding = assertClaudeSkillBindings(bundle, resolved, registryDir, scope, nativeLane);
     // A global install writes its roles into `~/.claude/agents`, where `${CLAUDE_PROJECT_DIR}` cannot name a script, so the native
     // roles keep the inline guard there and no script file is planned (see `nativeRoleContent`).
     const guardForm = scope === 'global' ? 'inline' : 'file';
     const nativeRoleNames: string[] = [];
     const artifacts: PlannedClaudeArtifact[] = [];
+    artifacts.push(...planClaudeContractTaskArtifacts(contractBinding, registryDir));
+    const factoryArtifacts = await planClaudeFactoryArtifacts(bundle, resolved, registryDir, scope, nativeLane);
+    artifacts.push(...factoryArtifacts);
+    nativeRoleNames.push(...factoryArtifacts.filter(item => item.kind === 'role').map(item => path.posix.basename(item.relPath, '.md')));
     const coordinatorFile = bundle.orchestrator || `${bundle.name}.md`;
     // A coordinator delegates to its domain team, not just this bundle's declared slice of it.
     const domainRoster = ClaudeProjector.resolveDomainRoster(bundle, coordinatorFile, registryDir);
@@ -962,6 +969,8 @@ export class ClaudeProjector {
       });
     }
 
+    assertClaudeContractTaskDelivery(contractBinding, registryDir, artifacts);
+    assertClaudeFactoryDelivery(resolved, registryDir, artifacts);
     return artifacts;
   }
 
@@ -1048,6 +1057,9 @@ export class ClaudeProjector {
     registryDir: string,
     nativeLane = false
   ): Promise<PlannedClaudeArtifact[]> {
+    if (resolved.skills.includes('author-contract')) throw new Error('Claude author-contract plugin distribution is unavailable; use the workspace native lane.');
+    if (resolved.skills.includes('author-bundle')) throw new Error('Claude author-bundle plugin distribution is unavailable; use the workspace native lane.');
+    if (['realize-artifact', 'evaluate-artifact', 'sync-host', 'coordinate-artifact'].some(skill => resolved.skills.includes(skill))) throw new Error('Claude factory worker plugin distribution is unavailable; use the workspace native lane.');
     const artifacts: PlannedClaudeArtifact[] = [];
     const baseDir = `.agents/plugins/${bundle.name}`;
 

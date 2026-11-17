@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "bundle": "agent-factory",
+  "skill": "sync-host",
+  "source": "hosts/claude/skills/sync-host/SKILL.md",
+  "installed": ".claude/skills/sync-host/SKILL.md",
+  "surface": {
+    "host": "claude",
+    "product": "Claude Code CLI",
+    "scope": "workspace",
+    "lane": "native"
+  },
+  "invocation": "Agent({subagent_type: factory-sync, prompt: complete fixed sync job path and caller-held preflight jobDigest}) as an ordinary subagent; omit teammate name; verify the actual launch result, then wait for the worker's result when it runs in the background",
+  "roles": [
+    {
+      "name": "factory-sync",
+      "definition": "subagent-host-update-sync",
+      "contract": "core/subagent-host-update-sync.contract.json",
+      "source": "hosts/claude/agents/factory-sync.md",
+      "installed": ".claude/agents/factory-sync.md",
+      "loading": "subagent",
+      "skills": [
+        "sync-host"
+      ],
+      "guard": "read-only"
+    }
+  ],
+  "hooks": [
+    {
+      "id": "reject-mutating-tools",
+      "kind": "read-only"
+    }
+  ],
+  "requiredSupport": [
+    "references/job.md",
+    "references/plan.md",
+    "references/handback.md",
+    "examples/one-sync.md",
+    "assets/sync-job.schema.json",
+    "assets/sync-plan.schema.json",
+    "scripts/check-sync.mjs"
+  ],
+  "references": [
+    {
+      "source": "rules/skill-attribution.md",
+      "installed": ".claude/skills/sync-host/references/rules/skill-attribution.md"
+    },
+    {
+      "source": "rules/git-guardrails.md",
+      "installed": ".claude/skills/sync-host/references/rules/git-guardrails.md"
+    },
+    {
+      "source": "rules/test-driven-development.md",
+      "installed": ".claude/skills/sync-host/references/rules/test-driven-development.md"
+    },
+    {
+      "source": "rules/clean-code-and-architecture.md",
+      "installed": ".claude/skills/sync-host/references/rules/clean-code-and-architecture.md"
+    },
+    {
+      "source": "rules/domain-modeling-and-adr.md",
+      "installed": ".claude/skills/sync-host/references/rules/domain-modeling-and-adr.md"
+    },
+    {
+      "source": "rules/multi-agent-coordination.md",
+      "installed": ".claude/skills/sync-host/references/rules/multi-agent-coordination.md"
+    },
+    {
+      "source": "rules/quality-aesthetics-accessibility.md",
+      "installed": ".claude/skills/sync-host/references/rules/quality-aesthetics-accessibility.md"
+    }
+  ],
+  "requiredInstalled": [],
+  "reviewedInputs": [
+    "host-library/claude/guide/agent.md",
+    "host-library/claude/guide/skill.md",
+    "host-library/claude/guide/hook.md",
+    "host-library/claude/guide/tools.md",
+    "host-library/claude/guide/orchestration.md",
+    "host-library/claude/library.lock.json",
+    "registry/hosts/claude/profile.json",
+    "registry/hosts/claude/tool-policy.json",
+    "host-library/claude/observations/2026-10-04-claude-2.1.288-guard-file.md",
+    "host-library/claude/observations/2026-10-19-claude-2.1.301-worker-lifecycle-live.md",
+    "host-library/claude/observations/2026-10-19-claude-2.1.299-step0-foreground-rerun.md"
+  ]
+}

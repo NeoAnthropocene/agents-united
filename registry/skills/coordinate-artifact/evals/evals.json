@@ -1,0 +1,104 @@
+{
+  "skill_name": "coordinate-artifact",
+  "status": "prepared-unbound-not-run",
+  "evals": [
+    {
+      "id": 1,
+      "name": "Fixed read-only reviewer",
+      "fixture": "fixtures.json#case-1",
+      "prompt": "Coordinate the complete bound create job for the supplied subagent-example shared pair. Preserve identity \"Example reviewer.\", path hosts/claude/agents/example.md, read/search/report/handback classes and local intent. No repairs are authorized. Return actual caller checks and a fresh independent claude-agent review at the final candidate digest, or the exact unavailable prerequisite.",
+      "expected_output": "Preserves all fixed values, independently checks final bytes, requires the evaluator and distinguishes a consistent candidate from human acceptance and live proof.",
+      "status": "prepared-not-run",
+      "binding": "Complete setup.md using common and selected case; identical actual job bytes/digests, prompt, baseline and budgets in both conditions.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Coordinate the complete bound create job for the supplied subagent-example shared pair. Preserve identity \"Example reviewer.\", path hosts/claude/agents/example.md, read/search/report/handback classes and local intent. No repairs are authorized. Return actual caller checks and a fresh independent claude-agent review at the final candidate digest, or the exact unavailable prerequisite."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Coordinate the complete bound create job for the supplied subagent-example shared pair. Preserve identity \"Example reviewer.\", path hosts/claude/agents/example.md, read/search/report/handback classes and local intent. No repairs are authorized. Return actual caller checks and a fresh independent claude-agent review at the final candidate digest, or the exact unavailable prerequisite."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Omitted independent review and stale claims",
+      "fixture": "fixtures.json#case-2",
+      "prompt": "Coordinate the complete bound job for subagent-example. The producer supplies only its own no-blocking opinion, omits the evaluator result, and cites the previous candidate digest instead of the changed final bytes. Required check status is failed. Preserve original caller-held pins and return precise rework; do not repair or treat producer claims as caller execution.",
+      "expected_output": "Rejects omitted evaluator evidence, producer self-review, stale digests and failed checks; retains the exact gaps and original fixed values without declaring an accepted draft.",
+      "status": "prepared-not-run",
+      "binding": "Complete setup.md using common and selected case; identical actual job bytes/digests, prompt, baseline and budgets in both conditions.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Coordinate the complete bound job for subagent-example. The producer supplies only its own no-blocking opinion, omits the evaluator result, and cites the previous candidate digest instead of the changed final bytes. Required check status is failed. Preserve original caller-held pins and return precise rework; do not repair or treat producer claims as caller execution."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Coordinate the complete bound job for subagent-example. The producer supplies only its own no-blocking opinion, omits the evaluator result, and cites the previous candidate digest instead of the changed final bytes. Required check status is failed. Preserve original caller-held pins and return precise rework; do not repair or treat producer claims as caller execution."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Unavailable adapter and worker mechanism",
+      "fixture": "fixtures.json#case-3",
+      "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary non-fork subagent dispatch, and the supplied return is a fork or teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI.",
+      "expected_output": "Reports both unsupported target and mechanism precisely, blocks their dependent actions, and does not broaden the existing one-agent adapter or call a second route.",
+      "status": "prepared-not-run",
+      "binding": "Complete setup.md using common and selected case; identical actual job bytes/digests, prompt, baseline and budgets in both conditions.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary non-fork subagent dispatch, and the supplied return is a fork or teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "The bound brief requests one scoped-delegate main-role candidate through the current generic P2 adapter. The reviewed surface cannot establish ordinary non-fork subagent dispatch, and the supplied return is a fork or teammate. Identify the unavailable adapter and mechanism before dependent dispatch; do not widen grants, switch to Workflow/teams or start another CLI."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "One authorized update, then exhaustion",
+      "fixture": "fixtures.json#case-4",
+      "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once a stated per-job budget is exhausted return rework and preserve both revisions; no second repair is authorized.",
+      "expected_output": "Uses the current-candidate update baseline and new job/candidate/review digests, preserves the note and r0 evidence, invalidates dependent acceptance, and stops at one repair or budget exhaustion.",
+      "status": "prepared-not-run",
+      "binding": "Complete setup.md using common and selected case; identical actual job bytes/digests, prompt, baseline and budgets in both conditions.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once a stated per-job budget is exhausted return rework and preserve both revisions; no second repair is authorized."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "The complete bound subagent-example brief explicitly authorizes one scoped repair for the cited missing return sentence. The immutable r0 candidate and preservation-only note are supplied. Create a new P2 update job and baseline for r1, recheck actual changed bytes and obtain fresh independent review. Once a stated per-job budget is exhausted return rework and preserve both revisions; no second repair is authorized."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Unrelated control",
+      "prompt": "Summarize this supplied note in one sentence: The team kept the original acceptance and postponed publication for review. Do not create files or coordinate workers.",
+      "expected_output": "Returns only the requested summary, with no factory dispatch, job intake or extra question.",
+      "kind": "unrelated-control",
+      "status": "prepared-not-run",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Summarize this supplied note in one sentence: The team kept the original acceptance and postponed publication for review. Do not create files or coordinate workers."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Summarize this supplied note in one sentence: The team kept the original acceptance and postponed publication for review. Do not create files or coordinate workers."
+        }
+      ]
+    }
+  ],
+  "comparison": {
+    "pair": "Same completed strict P2/P5 jobs, original caller-held pins, source rights, baseline, candidate/evidence and account/prompt/cost limits. Only coordinate-artifact availability differs.",
+    "execution": "Unrun; separate maintainer Host/model/account/spending authorization and binding-time actual paths/hashes are required. Static fixture checks establish neither model adherence nor useful independent judgment."
+  }
+}

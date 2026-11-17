@@ -23,7 +23,8 @@
     "references/quality.md",
     "examples/one-draft.md",
     "assets/report.md",
-    "scripts/draft.mjs"
+    "scripts/draft.mjs",
+    "scripts/skill-return.mjs"
   ],
   "rule": {
     "source": "rules/skill-attribution.md",

@@ -70,4 +70,20 @@ describe('Plan 035 N2 slice (b): the kickoff prompt points the lead at its first
     expect(prompt).toContain(SENTENCE);
     expect(SENTENCE).not.toMatch(/mode|operational|digital|agency/i);
   });
+
+  // The factory coordinator's first message names its Skill entry and the Skill folder variable (Plan 033, 2026-11-15 headless runs, findings S1-A and S2-B);
+  // another bundle's main must get neither sentence, nor any word of the factory lines.
+  it.each([
+    ['digital-agency', 'orchestrator-digital-agency.md'],
+    ['software-engineering', 'orchestrator-engineering.md'],
+  ])('leaves the first message of the %s main without any of the factory Skill-entry sentences', (bundleName, orchestrator) => {
+    const prompt = plan({ bundleName, orchestrator }).bootstrapPrompt;
+
+    expect(prompt).toContain(`You are coordinating the "${bundleName}" team in Agents United.`);
+    expect(prompt).not.toContain('coordinate-artifact');
+    expect(prompt).not.toContain('SKILL.md');
+    expect(prompt).not.toContain('CLAUDE_SKILL_DIR');
+    expect(prompt).not.toContain('artifact factory coordinator');
+    expect(prompt).not.toContain('already in your context');
+  });
 });

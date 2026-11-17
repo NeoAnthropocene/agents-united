@@ -59,7 +59,7 @@ function compareVersions(a: string | undefined, b: string | undefined): number |
   return 0;
 }
 
-function supportsVersion(version: string | undefined, floor: string): boolean {
+export function supportsVersion(version: string | undefined, floor: string): boolean {
   const order = compareVersions(version, floor);
   return order !== undefined && order >= 0;
 }

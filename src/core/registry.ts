@@ -348,14 +348,30 @@ export class RegistryResolver {
    * @throws if any bundle violates planner-orchestrator invariants.
    */
   private validateBundles(manifest: BundlesManifest): void {
-    const validModes: string[] = ['subagent-first', 'planner-orchestrator'];
+    // Plan 033 P20: the rules moved into collectBundleManifestIssues; the first collected problem is the one thrown here, as before.
+    const issues = collectBundleManifestIssues(manifest, this.registryDir);
+    if (issues.length > 0) throw new Error(issues[0]);
+  }
+}
 
-    // Plan 033: full is an explicit end-user inventory. A contributor declaration
-    // does not remove an asset also declared by an ordinary bundle.
-    const bundles = Object.values(manifest.bundles);
-    const contributors = bundles.filter(bundle => bundle.domain?.toLowerCase() === 'contributor');
-    const ordinary = bundles.filter(bundle => bundle.domain?.toLowerCase() !== 'contributor' && bundle.name !== 'full');
-    const full = manifest.bundles.full;
+/**
+ * ADR 0015 — the manifest rules of `RegistryResolver.validateBundles`, collected instead of thrown at the first problem (Plan 033 P20,
+ * so `agents bundle-check` can report every problem of a merged manifest). The problems come in the order the first-throw code met them,
+ * so `issues[0]` is exactly the message `validateBundles` has always thrown. A malformed manifest that made the old code crash before any
+ * problem was found still throws that same raw error; once a problem has been collected, a crash on a malformed later part is not
+ * raised, because the old code would have stopped at the problem already found.
+ */
+export function collectBundleManifestIssues(manifest: BundlesManifest, registryDir: string): string[] {
+  const issues: string[] = [];
+  const validModes: string[] = ['subagent-first', 'planner-orchestrator'];
+
+  // Plan 033: full is an explicit end-user inventory. A contributor declaration
+  // does not remove an asset also declared by an ordinary bundle.
+  const bundles = Object.values(manifest.bundles);
+  const contributors = bundles.filter(bundle => bundle.domain?.toLowerCase() === 'contributor');
+  const ordinary = bundles.filter(bundle => bundle.domain?.toLowerCase() !== 'contributor' && bundle.name !== 'full');
+  const full = manifest.bundles.full;
+  try {
     if (full) {
       const assetKinds = ['agents', 'skills', 'workflows', 'rules'] as const;
       for (const kind of assetKinds) {
@@ -366,118 +382,135 @@ export class RegistryResolver {
         for (const asset of ordinary.flatMap(declared)) exclusive.delete(asset);
         for (const asset of declared(full)) {
           if (exclusive.has(asset)) {
-            throw new Error(`Registry validation error: full includes contributor-only ${kind} "${asset}".`);
+            issues.push(`Registry validation error: full includes contributor-only ${kind} "${asset}".`);
           }
         }
       }
     }
+  } catch (error) {
+    if (issues.length === 0) throw error;
+  }
 
-    for (const [name, bundle] of Object.entries(manifest.bundles)) {
+  const inspect = (name: string, bundle: BundleDefinition): void => {
+    try {
       validateBundleHostAvailability(bundle);
-      if (bundle.name === 'agent-factory' && !isEmptyContributorBundle(bundle) && bundle.hostAvailability === undefined) {
-        throw new Error('Registry validation error: populated agent-factory requires hostAvailability for its reviewed delivery.');
+    } catch (error) {
+      // Only the rule's own message is a collected problem; any other error is a crash and keeps today's behaviour.
+      if (!(error instanceof Error) || !error.message.startsWith('Registry validation error: ')) throw error;
+      issues.push(error.message);
+    }
+    if (bundle.name === 'agent-factory' && !isEmptyContributorBundle(bundle) && bundle.hostAvailability === undefined) {
+      issues.push('Registry validation error: populated agent-factory requires hostAvailability for its reviewed delivery.');
+    }
+    if (bundle.domain?.toLowerCase() !== 'contributor') {
+      const referencedBundle = (identifier: string): BundleDefinition | undefined => manifest.bundles[identifier]
+        ?? bundles.find(candidate => candidate.aliases?.includes(identifier));
+      const parent = bundle.parentBundle ? referencedBundle(bundle.parentBundle) : undefined;
+      if (parent?.domain?.toLowerCase() === 'contributor') {
+        issues.push(`Registry validation error: ordinary bundle "${name}" cannot inherit contributor bundle "${parent.name}".`);
       }
-      if (bundle.domain?.toLowerCase() !== 'contributor') {
-        const referencedBundle = (identifier: string): BundleDefinition | undefined => manifest.bundles[identifier]
-          ?? bundles.find(candidate => candidate.aliases?.includes(identifier));
-        const parent = bundle.parentBundle ? referencedBundle(bundle.parentBundle) : undefined;
-        if (parent?.domain?.toLowerCase() === 'contributor') {
-          throw new Error(`Registry validation error: ordinary bundle "${name}" cannot inherit contributor bundle "${parent.name}".`);
+      for (const identifier of bundle.recommendedAddons ?? []) {
+        if (identifier.startsWith('domain:') && identifier.slice('domain:'.length).toLowerCase() === 'contributor') {
+          issues.push(`Registry validation error: ordinary bundle "${name}" cannot recommend contributor department "${identifier}".`);
         }
-        for (const identifier of bundle.recommendedAddons ?? []) {
-          if (identifier.startsWith('domain:') && identifier.slice('domain:'.length).toLowerCase() === 'contributor') {
-            throw new Error(`Registry validation error: ordinary bundle "${name}" cannot recommend contributor department "${identifier}".`);
-          }
-          const addon = referencedBundle(identifier);
-          if (addon?.domain?.toLowerCase() === 'contributor') {
-            throw new Error(`Registry validation error: ordinary bundle "${name}" cannot recommend contributor bundle "${addon.name}".`);
-          }
-        }
-      }
-      // Plan 015 §0/D2 — declared rule bindings must resolve on disk.
-      if (Array.isArray(bundle.rules)) {
-        for (const rule of bundle.rules) {
-          if (!fs.existsSync(path.join(this.registryDir, 'rules', rule))) {
-            throw new Error(
-              `Registry validation error: bundle "${name}" references rule "${rule}" which does not exist in registry/rules/.`
-            );
-          }
+        const addon = referencedBundle(identifier);
+        if (addon?.domain?.toLowerCase() === 'contributor') {
+          issues.push(`Registry validation error: ordinary bundle "${name}" cannot recommend contributor bundle "${addon.name}".`);
         }
       }
+    }
+    // Plan 015 §0/D2 — declared rule bindings must resolve on disk.
+    if (Array.isArray(bundle.rules)) {
+      for (const rule of bundle.rules) {
+        if (!fs.existsSync(path.join(registryDir, 'rules', rule))) {
+          issues.push(`Registry validation error: bundle "${name}" references rule "${rule}" which does not exist in registry/rules/.`);
+        }
+      }
+    }
 
-      // ADR 0036 — a bundle-scoped native role name must name one of the bundle's own agents, be a role name, and be unique.
-      if (bundle.nativeRoles !== undefined) {
-        const roles = bundle.nativeRoles as unknown;
-        if (roles === null || typeof roles !== 'object' || Array.isArray(roles)) {
-          throw new Error(`Registry validation error: bundle "${name}" nativeRoles must be an object mapping an agent file to a native role name.`);
-        }
+    // ADR 0036 — a bundle-scoped native role name must name one of the bundle's own agents, be a role name, and be unique.
+    if (bundle.nativeRoles !== undefined) {
+      const roles = bundle.nativeRoles as unknown;
+      if (roles === null || typeof roles !== 'object' || Array.isArray(roles)) {
+        issues.push(`Registry validation error: bundle "${name}" nativeRoles must be an object mapping an agent file to a native role name.`);
+      } else {
         const defaults = new Map((bundle.agents ?? []).map(file => [file, file.replace(/\.md$/i, '').replace(/^subagent-/, '')]));
         const seen = new Set<string>();
         for (const [file, role] of Object.entries(roles as Record<string, unknown>)) {
           if (!defaults.has(file)) {
-            throw new Error(`Registry validation error: bundle "${name}" nativeRoles key "${file}" is not one of its agents.`);
+            issues.push(`Registry validation error: bundle "${name}" nativeRoles key "${file}" is not one of its agents.`);
           }
           if (typeof role !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(role)) {
-            throw new Error(`Registry validation error: bundle "${name}" nativeRoles value ${JSON.stringify(role)} for "${file}" is not a valid role name (lowercase letters, digits and hyphens).`);
+            issues.push(`Registry validation error: bundle "${name}" nativeRoles value ${JSON.stringify(role)} for "${file}" is not a valid role name (lowercase letters, digits and hyphens).`);
+            continue;
           }
           if (seen.has(role)) {
-            throw new Error(`Registry validation error: bundle "${name}" maps more than one agent to the native role "${role}".`);
+            issues.push(`Registry validation error: bundle "${name}" maps more than one agent to the native role "${role}".`);
           }
           seen.add(role);
           const clash = [...defaults.entries()].find(([other, otherRole]) => other !== file && otherRole === role);
           if (clash) {
-            throw new Error(`Registry validation error: bundle "${name}" native role "${role}" for "${file}" collides with the default role name of "${clash[0]}".`);
+            issues.push(`Registry validation error: bundle "${name}" native role "${role}" for "${file}" collides with the default role name of "${clash[0]}".`);
           }
         }
       }
+    }
 
-      const pl = bundle.planningLoop;
-      if (!pl || !pl.enabled) continue;               // no planning → skip
+    const pl = bundle.planningLoop;
+    if (!pl || !pl.enabled) return;               // no planning → skip
 
-      // resolve mode: absent → subagent-first (ADR 0014 backward compat)
-      const mode: string = pl.mode ?? 'subagent-first';
+    // resolve mode: absent → subagent-first (ADR 0014 backward compat)
+    const mode: string = pl.mode ?? 'subagent-first';
 
-      if (!validModes.includes(mode)) {
-        throw new Error(
-          `Registry validation error: bundle "${name}" has unknown planningLoop.mode "${mode}". ` +
-          `Valid modes: ${validModes.join(', ')}`
+    if (!validModes.includes(mode)) {
+      issues.push(
+        `Registry validation error: bundle "${name}" has unknown planningLoop.mode "${mode}". ` +
+        `Valid modes: ${validModes.join(', ')}`
+      );
+    }
+
+    // Plan 022 H1 (owner decision 2026-09-25): iteration caps are Tier-2-only. Only an
+    // organization-tier coordinator may carry a Consultation Budget (rendered as maxTurns);
+    // Tier-1 domain agents stay uncapped.
+    if (pl.budget) {
+      if (bundle.tier !== 'organization') {
+        issues.push(
+          `Registry validation error: bundle "${name}" declares a Consultation Budget but is not an organization-tier bundle. ` +
+          'Iteration caps (planningLoop.budget.maxIterations) are Tier-2-only.'
         );
       }
-
-      // Plan 022 H1 (owner decision 2026-09-25): iteration caps are Tier-2-only. Only an
-      // organization-tier coordinator may carry a Consultation Budget (rendered as maxTurns);
-      // Tier-1 domain agents stay uncapped.
-      if (pl.budget) {
-        if (bundle.tier !== 'organization') {
-          throw new Error(
-            `Registry validation error: bundle "${name}" declares a Consultation Budget but is not an organization-tier bundle. ` +
-            'Iteration caps (planningLoop.budget.maxIterations) are Tier-2-only.'
-          );
-        }
-        const cap = pl.budget.maxIterations;
-        if (!Number.isInteger(cap) || cap < 1) {
-          throw new Error(
-            `Registry validation error: bundle "${name}" has planningLoop.budget.maxIterations ${String(cap)}; expected a positive integer.`
-          );
-        }
-      }
-
-      if (mode === 'planner-orchestrator') {
-        if (pl.budget) {
-          throw new Error(
-            `Registry validation error: bundle "${name}" has planningLoop.mode "planner-orchestrator" ` +
-            'but also declares a Consultation Budget (budget). Planner-orchestrator bundles must not declare budget.'
-          );
-        }
-        if (pl.sidekicks) {
-          throw new Error(
-            `Registry validation error: bundle "${name}" has planningLoop.mode "planner-orchestrator" ` +
-            'but also declares sidekicks. Planner-orchestrator bundles must not declare sidekicks.'
-          );
-        }
+      const cap = pl.budget.maxIterations;
+      if (!Number.isInteger(cap) || cap < 1) {
+        issues.push(
+          `Registry validation error: bundle "${name}" has planningLoop.budget.maxIterations ${String(cap)}; expected a positive integer.`
+        );
       }
     }
+
+    if (mode === 'planner-orchestrator') {
+      if (pl.budget) {
+        issues.push(
+          `Registry validation error: bundle "${name}" has planningLoop.mode "planner-orchestrator" ` +
+          'but also declares a Consultation Budget (budget). Planner-orchestrator bundles must not declare budget.'
+        );
+      }
+      if (pl.sidekicks) {
+        issues.push(
+          `Registry validation error: bundle "${name}" has planningLoop.mode "planner-orchestrator" ` +
+          'but also declares sidekicks. Planner-orchestrator bundles must not declare sidekicks.'
+        );
+      }
+    }
+  };
+
+  for (const [name, bundle] of Object.entries(manifest.bundles)) {
+    try {
+      inspect(name, bundle);
+    } catch (error) {
+      if (issues.length === 0) throw error;
+    }
   }
+  return issues;
 }
 
 /**

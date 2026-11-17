@@ -1,0 +1,90 @@
+{
+  "skill_name": "author-bundle",
+  "status": "prepared-not-run",
+  "evals": [
+    {
+      "id": 1,
+      "name": "Domain, no integrations",
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete fixed job for a local engineering Domain proposal, include the existing reviewer and all three shared Skills. The prerequisite list is explicitly empty. Preserve the pinned baseline and return the four proposal files, delivery gaps and actual checks; no install or Host call.",
+      "expected_output": "Declares real existing assets and empty prerequisites, preserves scope and leaves native delivery and quality pending.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Using the supplied complete fixed job for a local engineering Domain proposal, include the existing reviewer and all three shared Skills. The prerequisite list is explicitly empty. Preserve the pinned baseline and return the four proposal files, delivery gaps and actual checks; no install or Host call."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Using the supplied complete fixed job for a local engineering Domain proposal, include the existing reviewer and all three shared Skills. The prerequisite list is explicitly empty. Preserve the pinned baseline and return the four proposal files, delivery gaps and actual checks; no install or Host call."
+        }
+      ],
+      "fixture": "fixtures.json#case-1",
+      "binding": "Construct the complete bound job using setup.md, common fixture and this case; use identical bytes and task prompt in both conditions."
+    },
+    {
+      "id": 2,
+      "name": "Organization, empty prerequisites",
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete Organization job with an explicitly empty prerequisite list, prepare the four local proposal files and preserve the baseline. Retain the leader provisioning responsibility even though no integration is currently listed; do not install or invoke a Host.",
+      "expected_output": "Keeps unconditional provisioning responsibility and distinguishes the empty current list from future task needs.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Using the supplied complete Organization job with an explicitly empty prerequisite list, prepare the four local proposal files and preserve the baseline. Retain the leader provisioning responsibility even though no integration is currently listed; do not install or invoke a Host."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Using the supplied complete Organization job with an explicitly empty prerequisite list, prepare the four local proposal files and preserve the baseline. Retain the leader provisioning responsibility even though no integration is currently listed; do not install or invoke a Host."
+        }
+      ],
+      "fixture": "fixtures.json#case-2",
+      "binding": "Construct the complete bound job using setup.md, common fixture and this case; use identical bytes and task prompt in both conditions."
+    },
+    {
+      "id": 3,
+      "name": "Required integration unavailable",
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete Organization job, the required integration for publishing is unavailable. Prepare the local four-file proposal from the pinned sources and name the blocked dependent action; do not configure it or claim a successful publish.",
+      "expected_output": "Names the unavailable required integration, blocks its dependent action and preserves other independent work.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Using the supplied complete Organization job, the required integration for publishing is unavailable. Prepare the local four-file proposal from the pinned sources and name the blocked dependent action; do not configure it or claim a successful publish."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Using the supplied complete Organization job, the required integration for publishing is unavailable. Prepare the local four-file proposal from the pinned sources and name the blocked dependent action; do not configure it or claim a successful publish."
+        }
+      ],
+      "fixture": "fixtures.json#case-3",
+      "binding": "Construct the complete bound job using setup.md, common fixture and this case; use identical bytes and task prompt in both conditions."
+    },
+    {
+      "id": 4,
+      "name": "Optional integration unavailable",
+      "kind": "same-prompt-pair",
+      "prompt": "Using the supplied complete Organization job, GitHub is optional and unavailable, while review of the supplied local material does not depend on it. Prepare the four local proposal files, disclose the degraded scope and preserve the baseline; do not configure or contact GitHub.",
+      "expected_output": "Reports optional unavailability, allows only independent local work and does not label a mock as integration output.",
+      "runs": [
+        {
+          "condition": "with-skill",
+          "prompt": "Using the supplied complete Organization job, GitHub is optional and unavailable, while review of the supplied local material does not depend on it. Prepare the four local proposal files, disclose the degraded scope and preserve the baseline; do not configure or contact GitHub."
+        },
+        {
+          "condition": "without-skill",
+          "prompt": "Using the supplied complete Organization job, GitHub is optional and unavailable, while review of the supplied local material does not depend on it. Prepare the four local proposal files, disclose the degraded scope and preserve the baseline; do not configure or contact GitHub."
+        }
+      ],
+      "fixture": "fixtures.json#case-4",
+      "binding": "Construct the complete bound job using setup.md, common fixture and this case; use identical bytes and task prompt in both conditions."
+    },
+    {
+      "id": 9,
+      "kind": "unrelated-control",
+      "prompt": "Summarize this supplied note in one sentence: The workshop approved the revised checklist and postponed publication until review. Do not create files or ask intake questions.",
+      "expected_output": "Returns only the requested summary without Bundle authoring, file writes or unnecessary intake."
+    }
+  ],
+  "preparation": "Unbound: follow setup.md and fixtures.json before any future authorized run. Preconditions, actual paths, HEAD, runtime and hashes are unavailable until bound; no behavior has been verified.",
+  "plan": "primary: four representative matched pairs and the unrelated control; see extended-2026-11-11.json for the remaining four pairs."
+}

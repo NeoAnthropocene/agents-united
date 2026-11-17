@@ -88,6 +88,18 @@
       "recoveredAt": "2026-10-25",
       "skill": "audiovisual-review"
     },
+    "author-bundle": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-10",
+      "skill": "author-bundle"
+    },
+    "author-contract": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-28",
+      "skill": "author-contract"
+    },
     "author-skill": {
       "declaredLicence": "MIT",
       "provenance": "in-house",
@@ -265,6 +277,12 @@
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
       "skill": "conversion-funnel-optimization"
+    },
+    "coordinate-artifact": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-12",
+      "skill": "coordinate-artifact"
     },
     "copywriting-frameworks": {
       "provenance": "in-house",
@@ -471,6 +489,12 @@
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
       "skill": "email-marketing-automation"
+    },
+    "evaluate-artifact": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-29",
+      "skill": "evaluate-artifact"
     },
     "expo-cicd-workflows": {
       "declaredLicence": "MIT",
@@ -1177,6 +1201,12 @@
       "snapshot": true,
       "source": "https://skills.sh/vercel-labs/agent-skills/react-best-practices"
     },
+    "realize-artifact": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-10-28",
+      "skill": "realize-artifact"
+    },
     "receiving-code-review": {
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",
@@ -1514,6 +1544,12 @@
         "agents/openai.yaml"
       ],
       "source": "https://github.com/trailofbits/skills/tree/0cc1c73a5e96749ab32d7ea5e14892fafa6972ae/plugins/supply-chain-risk-auditor"
+    },
+    "sync-host": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-15",
+      "skill": "sync-host"
     },
     "systematic-debugging": {
       "provenance": "in-house",

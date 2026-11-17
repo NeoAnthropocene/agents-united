@@ -5,7 +5,8 @@
   "main": "./dist/cli.js",
   "bin": {
     "agents-united": "./dist/cli.js",
-    "agents": "./dist/cli.js"
+    "agents": "./dist/cli.js",
+    "agents-session-report": "./dist/session-report.js"
   },
   "type": "module",
   "engines": {

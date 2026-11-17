@@ -1,0 +1,39 @@
+# Fixed shared-pair job
+
+The caller keeps the original job and its canonical SHA-256 digest. A fresh task fork needs the entire record; it cannot recover prior conversation from a job id. Use the installed `assets/job.schema.json`; unknown object keys and unsupported schema vocabulary fail. Each pin is an absolute ordinary file path and the SHA-256 of its actual bytes.
+
+The record fixes version/id, create/reuse/update mode, local/upstream intent, semantic definition stem, objective/fixed values/constraints/acceptance, source checkout/actual HEAD/input registry/pins, loading resources, validator Node/compiled CLI pins, draft/evidence/managed/protected roots, complete update baseline, allowed pair paths/protected fragments, authored proposal, binding requirements, provenance and budget. No arbitrary command field exists.
+
+`loading` identifies built-in general-purpose/foreground and the reviewed surface, with pinned entry, attribution, receipt and required files. These are availability checks, not proof the Host loaded them. `validator.cli` is the selected checkout's `dist/cli.js`, not a guessed globally installed version. Node >=24 and Git on PATH are prerequisites. The helper's only subprocess is fixed read-only Git HEAD inspection; caller validation is separate.
+
+The source checkout, input registry and mutable output/evidence roots must not overlap. Managed/protected destinations and linked ancestors are unavailable. Choose a small independent source draft, not an installed `.claude`/`.agents` tree or the validation checkout. An update baseline inventories every existing file and its length/hash, plus an immutable snapshot pin under the separate evidence root; unrelated notes count. Preserve before bytes, including licence/notice files already present. No path deletion is supported.
+
+Create supplies structured `proposal.core`, body and four-field contract. Core fields are identity, mission, scope_boundaries, output_contract, safety, invariants, optional capability classes; extra authored keys fail. Reuse supplies pinned `coreFile` and `contractFile` from the selected registry and copies their bytes unchanged. Update supplies `coreText` and/or contract within the allowed subset; arbitrary existing YAML is not parsed or normalized by the writer. Native preferences do not authorize changing shared semantics.
+
+The output paths are only `core/<definition>.core.md` and `core/<definition>.contract.json`. Existing baseline files survive unchanged. `protectedNotes` names exact fragments that must exist before and after; the caller still reviews the full semantic diff. If a required notice needs a new third path, prepare it through a separately scoped manual task before selecting update, or return the missing delivery edge.
+
+`provenance` names disposition, actual author/licence, evidence pins and unresolved items. Adapted work additionally names the upstream repository/path/full commit, source/licence/comparison pins and required retained notices. A notice either equals an existing final file or is retained as an exact byte fragment, for example in the core body. Original/inspired work carries no adaptation record. Inspect these sources first: pin presence/retention cannot establish legal sufficiency, audit clearance or truthful authorship.
+
+The maximum job budget is six named offline checks/600 seconds with bounded raw logs and draft file/byte ceilings. Host sessions, model/provider calls, prompts and USD are zero. The caller tracks total elapsed work; schema caps and helper checks are not a general sandbox or automatic spending permission. Prepared maintainer evals do not change that budget.
+
+For upstream intent pin the complete existing `.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md` in the chosen checkout. The helper returns its body plus draft evidence. Local intent omits that field. Neither record mode authorizes publication or source installation.
+
+The return record is written by `scripts/contract-return.mjs`, run once after the one `draft-pair.mjs` run and never by hand: `node "${CLAUDE_SKILL_DIR}/scripts/contract-return.mjs" --job <absolute contract-task.json> --saved-job <file> --stdout <file> --stderr <file> --exit-code <0|1> [--report <file>] [--notes <file>]`, or `--no-helper` in place of the four helper flags when the helper never ran. Every file except the task lies under the producer root. The script computes the task id and digest, the status (draft after exit 0, otherwise blocked), the helper pins, the inventory, the changed list and the report pin from the bytes, and writes `<producer>/contract-return.json` with `JSON.stringify`, so Windows backslashes are escaped. The optional notes file (by convention `contract-notes.json`) holds only `openItems`, `unverified`, `claimedChecks` and `externalActions`; a blocked return needs an open item.
+
+The notes file is one JSON object. Its keys are `openItems`, `unverified`, `claimedChecks` and `externalActions`, each optional (default `[]`); no other key is allowed, and `status` is not a note. `openItems` holds at most 16 `{ "id", "description" }` entries (`id` kebab-case, at most 80 characters, unique; `description` 1 to 8192 characters). `claimedChecks` holds at most 16 entries of exactly `{ "name", "command", "exitCode", "raw" }`: `name` 1 to 512 characters, `command` 1 to 8192 characters, `exitCode` an integer 0 to 255 or `null`, and `raw` either `null` or a pin of a saved output, exactly `{ "path", "bytes", "sha256" }` (an absolute path, the byte count at most 524288, the lowercase 64-hex sha256). No task budget lowers this byte limit for this script. `unverified` is at most 32 texts and `externalActions` at most 16 texts, each 1 to 8192 characters (the script refuses a non-empty `externalActions`). A claimed check is recorded, never run or resolved. One valid notes file:
+
+```json
+{
+  "openItems": [{ "id": "licence-open", "description": "The licence of the source is not confirmed." }],
+  "unverified": ["Live loading in a Host session."],
+  "claimedChecks": [
+    { "name": "layout", "command": "node --version", "exitCode": 0, "raw": null },
+    { "name": "helper-log", "command": "node draft-pair.mjs", "exitCode": 0, "raw": { "path": "<absolute path of the saved output>", "bytes": 120, "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" } }
+  ],
+  "externalActions": []
+}
+```
+
+The `assets/report.json` outline is a hand-off guide, not the return.
+
+A two-path helper cannot add an undeclared licence file; prepare an authorized complete baseline or return that limitation.

@@ -36,7 +36,35 @@ const CLINE_BODY_TOKEN_LIMIT = 5000;
 const CLAUDE_BODY_LINE_LIMIT = 500;
 
 const BASH_ONLY_SHEBANG = /^#!.*\bbash\b/;
-const BASH_ONLY_SYNTAX = /\[\[.*\]\]|local\s+-[aA]\b|<\(/;
+/**
+ * Bash-only syntax other than the `[[ ... ]]` test: `local -a` / `local -A` and process substitution.
+ * Both alternatives scan forward only, so the expression is linear in the script size.
+ */
+const BASH_ONLY_SYNTAX = /local\s+-[aA]\b|<\(/;
+
+/**
+ * `[[ ... ]]` on one line: the first `[[` of a line followed by a `]]` later on that same line.
+ * The earlier expression `\[\[.*\]\]` meant the same but re-scanned the rest of the line from every
+ * `[[`, which is quadratic on a long line of brackets. Lines end at the characters `.` does not match
+ * (`\n`, `\r`, U+2028, U+2029), so a `[[` and its `]]` must sit between two of them. The first `[[` is
+ * enough to look at: any later `[[` leaves a shorter tail to search for the same `]]`.
+ */
+function hasBracketTest(content: string): boolean {
+  let lineStart = 0;
+  while (lineStart <= content.length) {
+    let lineEnd = lineStart;
+    while (lineEnd < content.length) {
+      const code = content.charCodeAt(lineEnd);
+      if (code === 0x0a || code === 0x0d || code === 0x2028 || code === 0x2029) break;
+      lineEnd += 1;
+    }
+    const line = content.slice(lineStart, lineEnd);
+    const open = line.indexOf('[[');
+    if (open !== -1 && line.indexOf(']]', open + 2) !== -1) return true;
+    lineStart = lineEnd + 1;
+  }
+  return false;
+}
 
 export interface SkillScriptFile {
   /** Path relative to the skill directory, e.g. "scripts/validate.sh". */
@@ -106,7 +134,7 @@ export function lintSkillPortability(input: SkillPortabilityInput): string[] {
   );
   for (const script of scripts) {
     const isBashShebang = BASH_ONLY_SHEBANG.test(script.content.split('\n')[0] ?? '');
-    const isBashSyntax = BASH_ONLY_SYNTAX.test(script.content);
+    const isBashSyntax = hasBracketTest(script.content) || BASH_ONLY_SYNTAX.test(script.content);
     if (!isBashShebang && !isBashSyntax) continue;
     if (!script.relPath.endsWith('.sh')) continue; // only .sh carries the bash-only presumption
 

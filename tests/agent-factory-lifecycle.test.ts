@@ -11,6 +11,9 @@ import { UpdateEngine } from '../src/core/updater.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
 import type { InstallOptions, LockfileManifest } from '../src/core/types.js';
 
+// Exact reviewed factory declaration, including the P7 coordinator and dormant router companions.
+const factorySkills = ['author-bundle', 'author-contract', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'sync-host'];
+
 describe('shipped factory native lifecycle in fresh workspaces', () => {
   let root: string;
   let state: string;
@@ -23,6 +26,8 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
   });
   afterEach(async () => { await fs.remove(root); });
   it('loads the production source entry and every required resource with ordinary hashes and ownership', async () => {
+    const registry = await fs.readJson(path.resolve('registry/bundles.json'));
+    expect([...registry.bundles['agent-factory'].skills].sort()).toEqual(factorySkills);
     const result = await new InstallEngine().install('agent-factory', options());
     expect(result.installed.targetBundle).toBe('agent-factory');
     const entry = await fs.readFile(path.join(skill, 'SKILL.md'), 'utf8');
@@ -79,20 +84,28 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
     expect(entry).toContain('agent: general-purpose');
     const lock = await fs.readJson(path.join(state, 'agents-united.json'));
     expect(lock.installed.bundles).toContain('agent-factory');
+    expect([...lock.installed.skills].sort()).toEqual(factorySkills);
+    expect(await fs.pathExists(path.join(root, '.claude/agents/factory-realizer.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(root, '.claude/agents/factory-evaluator.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(root, '.claude/agents/orchestrator-agent-factory.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(root, '.claude/skills/realize-artifact'))).toBe(true);
+    expect(await fs.pathExists(path.join(root, '.claude/skills/author-contract'))).toBe(true);
     expect(await fs.pathExists(path.join(root, '.agents'))).toBe(false);
   });
   it('direct bound entry installs the complete factory companions with ownership and removes them together', async () => {
     const result = await new InstallEngine().install('author-skill', options());
     expect(result.installed.targetBundle).toBe('agent-factory');
-    expect(result.installed.skills).toEqual(expect.arrayContaining(['author-skill', 'host-agent-router', 'handoff', 'git-guardrails']));
+    expect([...result.installed.skills].sort()).toEqual(factorySkills);
     const lock = await fs.readJson(path.join(state, 'agents-united.json')) as LockfileManifest;
-    for (const name of ['author-skill', 'host-agent-router', 'handoff', 'git-guardrails']) {
+    for (const name of factorySkills) {
       const rel = `.claude/skills/${name}/SKILL.md`;
       expect(await fs.pathExists(path.join(root, rel)), name).toBe(true);
       expect(lock.projections?.[rel]?.owners, name).toEqual(['agent-factory']);
+      expect(lock.projections?.[rel]?.hash, name).toBe(`sha256:${crypto.createHash('sha256').update(await fs.readFile(path.join(root, rel))).digest('hex')}`);
+      expect((await fs.lstat(path.join(root, '.claude/skills', name))).isSymbolicLink(), name).toBe(false);
     }
     await new UninstallEngine().uninstall('agent-factory', { targetDir: state });
-    for (const name of ['author-skill', 'host-agent-router', 'handoff', 'git-guardrails']) {
+    for (const name of factorySkills) {
       expect(await fs.pathExists(path.join(root, '.claude/skills', name, 'SKILL.md')), name).toBe(false);
     }
   });
@@ -105,7 +118,7 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
   it.each(['author-skill.md', 'author--skill'])('preserves normalized direct entry %s and its complete factory ownership', async identifier => {
     const result = await new InstallEngine().install(identifier, options());
     expect(result.installed.targetBundle).toBe('agent-factory');
-    expect(result.installed.skills).toEqual(expect.arrayContaining(['author-skill', 'host-agent-router', 'handoff', 'git-guardrails']));
+    expect([...result.installed.skills].sort()).toEqual(factorySkills);
     const lock = await fs.readJson(path.join(state, 'agents-united.json')) as LockfileManifest;
     expect(lock.projections?.['.claude/skills/host-agent-router/SKILL.md']?.owners).toEqual(['agent-factory']);
     expect(await fs.pathExists(path.join(skill, 'references/skill-attribution.md'))).toBe(true);

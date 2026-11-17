@@ -4,6 +4,8 @@ import fs from 'fs-extra';
 import { RegistryResolver } from './registry.js';
 import { assertBundleHostAvailability, normalizeAvailabilityHost } from './bundle-host-availability.js';
 import { assertClaudeSkillBindings } from './claude-skill-binding.js';
+import { assertClaudeContractTaskTargets } from './claude-contract-binding.js';
+import { assertClaudeFactoryTargets } from './claude-factory-binding.js';
 import { AgentHostAdapter } from './adapter.js';
 import { isKnownHost, HOST_REGISTRY, resolveHostProjectDir, splitHostList } from './hosts.js';
 import { HostProjector } from './projector.js';
@@ -1353,9 +1355,27 @@ private toPosix(p: string): string {
       }
     }
     const restricted = [...required.values()].filter(bundle => bundle.hostAvailability !== undefined);
-    const needsBinding = required.has('agent-factory') || resolved.skills.includes('author-skill');
+    const needsBinding = required.has('agent-factory') || resolved.skills.includes('author-skill') || resolved.skills.includes('realize-artifact') || resolved.skills.includes('author-contract') || resolved.skills.includes('author-bundle') || resolved.skills.includes('evaluate-artifact') || resolved.skills.includes('sync-host') || resolved.skills.includes('coordinate-artifact');
     if (resolved.skills.includes('author-skill') && !required.has('agent-factory')) {
       throw new Error('author-skill requires its owning contributor bundle declaration agent-factory before delivery.');
+    }
+    if (resolved.skills.includes('realize-artifact') && !required.has('agent-factory')) {
+      throw new Error('realize-artifact requires its owning contributor bundle declaration agent-factory before delivery.');
+    }
+    if (resolved.skills.includes('evaluate-artifact') && !required.has('agent-factory')) {
+      throw new Error('evaluate-artifact requires its owning contributor bundle declaration agent-factory before delivery.');
+    }
+    if (resolved.skills.includes('sync-host') && !required.has('agent-factory')) {
+      throw new Error('sync-host requires its owning contributor bundle declaration agent-factory before delivery.');
+    }
+    if (resolved.skills.includes('author-contract') && !required.has('agent-factory')) {
+      throw new Error('author-contract requires its owning contributor bundle declaration agent-factory before delivery.');
+    }
+    if (resolved.skills.includes('author-bundle') && !required.has('agent-factory')) {
+      throw new Error('author-bundle requires its owning contributor bundle declaration agent-factory before delivery.');
+    }
+    if (resolved.skills.includes('coordinate-artifact') && !required.has('agent-factory')) {
+      throw new Error('coordinate-artifact requires its owning contributor bundle declaration agent-factory before delivery.');
     }
     if (restricted.length === 0 && !needsBinding) return;
     for (const targetDir of new Set([stateDir, ...targetDirs])) {
@@ -1376,10 +1396,21 @@ private toPosix(p: string): string {
           && InstallEngine.effectiveNativeLane(options, lock, normalized);
       };
       for (const bundle of restricted) assertBundleHostAvailability(bundle, [...new Set(targets)], scope, native);
+      if (resolved.skills.includes('author-contract') && InstallEngine.effectivePluginLane(options, lock)) {
+        throw new Error('Claude author-contract plugin distribution is unavailable; select the workspace native lane without --plugin.');
+      }
+      if (resolved.skills.includes('author-bundle') && InstallEngine.effectivePluginLane(options, lock)) {
+        throw new Error('Claude author-bundle plugin distribution is unavailable; select the workspace native lane without --plugin.');
+      }
+      if (['realize-artifact', 'evaluate-artifact', 'sync-host', 'coordinate-artifact'].some(skill => resolved.skills.includes(skill)) && InstallEngine.effectivePluginLane(options, lock)) {
+        throw new Error('Claude factory worker plugin distribution is unavailable; select the workspace native lane without --plugin.');
+      }
       if (targets.includes('claude')) {
+        assertClaudeFactoryTargets(resolved, this.registry.getRegistryDir(), workspaceRootOf(targetDir), lock, options.force === true);
         for (const bundle of required.values()) {
           if (assertClaudeSkillBindings(bundle, resolved, this.registry.getRegistryDir(), scope, native('claude'))) {
-            await ClaudeProjector.planCompoundProjection(bundle, scope, resolved, this.registry.getRegistryDir(), undefined, native('claude'));
+            const artifacts = await ClaudeProjector.planCompoundProjection(bundle, scope, resolved, this.registry.getRegistryDir(), undefined, native('claude'));
+            assertClaudeContractTaskTargets(artifacts, workspaceRootOf(targetDir), lock, options.force === true);
           }
         }
       }
@@ -1612,7 +1643,8 @@ private toPosix(p: string): string {
 
         await this.assertSkillCopyUnmodified(targetDir, dest, lockfile, options.force);
         // Plan 035 — a skill's `evals/` is for the maintainers: a copy leaves it out, and the records below skip it (a link still shows the whole folder).
-        const actualMethod = await this.deployFile(src, dest, skillName === 'author-skill' ? 'copy' : skillMethod, options.force, from => !isMaintainerOnlySkillPath(path.relative(src, from)));
+        const factoryCopy = skillName === 'author-skill' || skillName === 'realize-artifact' || skillName === 'author-contract' || skillName === 'author-bundle' || skillName === 'evaluate-artifact' || skillName === 'sync-host' || skillName === 'coordinate-artifact';
+        const actualMethod = await this.deployFile(src, dest, factoryCopy ? 'copy' : skillMethod, options.force, from => !isMaintainerOnlySkillPath(path.relative(src, from)));
         const skillFile = path.join(src, 'SKILL.md');
         if (await fs.pathExists(skillFile)) {
           const hash = await this.calculateHash(skillFile);

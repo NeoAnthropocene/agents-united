@@ -1,0 +1,22 @@
+{
+  "purpose": "Caller-checked hand-off for one shared definition/contract pair; this asset is a report guide, not an executed check.",
+  "required": {
+    "job": "Original fixed job path/id and caller-held digest; compare with the helper digest.",
+    "writerEvidence": "Complete helper stdout/stderr and actual exit; paths resolve against the original draft root.",
+    "files": "Actual complete final paths, lengths, SHA-256 hashes, before/after diff and unchanged baseline inventory.",
+    "scope": "Protected notes, fixed values, source/loading/runtime pins and exact create/reuse/update limits checked against original inputs.",
+    "callerValidation": "Pinned contract-check commands, checkout revision, complete raw log pins and actual exits from independent execution; state unverified until performed.",
+    "bindingFindings": "Required versus optional permitted affordances; source checked/unavailable and execution unverified remain distinct.",
+    "provenance": "Disposition, actual author/licence, inspected source/pin/comparison/retained notices, unresolved items and review pending unless separately completed.",
+    "qualityFindings": "Author findings and any separately executed evaluator judgment, each tied to final hashes; never substitute deterministic validity for quality.",
+    "liveEvidence": "Unverified unless separately authorized maintainer-led Host records establish the specific behavior.",
+    "openItems": "Named owner, missing evidence/decision, consequence and next action; preserve a blocked or partial draft honestly.",
+    "upstreamPreparation": "Only when requested: full pinned artifact-contribution template, base dev, sent false; no automatic publication."
+  },
+  "limits": [
+    "Helper preparation has acceptedDraft false and validation/quality/live limitations.",
+    "A source pin or tool grant proves no runtime loading, invocation or legal clearance.",
+    "Only the caller compares retained job/digest and independently checks actual final bytes/results.",
+    "No Host/model/provider run, install, repository commit/push, PR or merge is authorized by this report."
+  ]
+}

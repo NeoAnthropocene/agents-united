@@ -39,7 +39,9 @@ export type NativeGuardKind = 'destructive' | 'read-only' | 'mode-line';
  * script byte for byte (`registry/hosts/claude/hooks/<name>.js` is generated from `GUARD_SCRIPT` / `READ_ONLY_GUARD_SCRIPT` and a
  * test ties them). The role names it with `${CLAUDE_PROJECT_DIR}`, the only path placeholder a user-owned script can use, so a GLOBAL
  * install (roles in `~/.claude/agents`, where that placeholder is whichever project is open) keeps the inline guard instead.
- * A hook whose script cannot start does not block (it fails open), so the doctor warns when the file is gone.
+ * A hook whose script cannot start does not block by default (it fails open). The native guard handlers therefore carry
+ * `onFailure: 'block'` (Claude Code 2.1.295 or later): a guard whose script cannot run blocks the calls it guards, so the doctor still
+ * warns when the file is gone (the role's shell and write tools are blocked until it is restored). The mode-line gate does not carry it.
  */
 export const NATIVE_GUARD_FILES: Record<NativeGuardKind, { name: string; rel: string; reference: string }> = {
   destructive: {
@@ -61,13 +63,30 @@ export const NATIVE_GUARD_FILES: Record<NativeGuardKind, { name: string; rel: st
   },
 };
 
-/** The exec-form handler that runs a guard script file: `node <file>`, no shell on any OS. */
-export function guardFileHandler(kind: NativeGuardKind): { type: 'command'; command: string; args: string[] } {
-  return { type: 'command', command: 'node', args: [NATIVE_GUARD_FILES[kind].reference] };
+/** Claude Code release that introduced the hook handler field `onFailure` (host-library/claude/pages/hook/hooks.md). */
+export const GUARD_ON_FAILURE_MIN_VERSION = '2.1.295';
+
+/** A native guard handler: the exec-form command plus `onFailure: 'block'` (a failed or timed-out hook blocks the call), last in key order. */
+export interface FailClosedHandler { type: 'command'; command: string; args: string[]; onFailure: 'block' }
+
+/**
+ * The exec-form handler that runs a guard script file: `node <file>`, no shell on any OS. The two guards block when their hook cannot run (`onFailure: 'block'`); the destructive guard's own decision to allow a call whose input it cannot parse is unchanged (the read-only guard blocks there);
+ * the mode-line gate does not: it is not a guard of what a role may do, and a lead whose gate script is missing could make no tool call at all.
+ */
+export function guardFileHandler(kind: 'destructive' | 'read-only'): FailClosedHandler;
+export function guardFileHandler(kind: NativeGuardKind): { type: 'command'; command: string; args: string[]; onFailure?: 'block' };
+export function guardFileHandler(kind: NativeGuardKind): { type: 'command'; command: string; args: string[]; onFailure?: 'block' } {
+  const handler = { type: 'command' as const, command: 'node', args: [NATIVE_GUARD_FILES[kind].reference] };
+  return kind === 'mode-line' ? handler : { ...handler, onFailure: 'block' };
+}
+
+/** The inline (`node -e`) form of the destructive-command guard for native agents: the file handler's fail-closed field, the script embedded. */
+export function nativeGuardHandler(): FailClosedHandler {
+  return { ...guardHandler(), onFailure: 'block' };
 }
 
 /** The destructive-command guard of a native agent, as a script file (project scope): the matchers of `nativeGuardHooks`, a file handler. */
-export function nativeGuardFileHooks(): { PreToolUse: Array<{ matcher: string; hooks: ReturnType<typeof guardFileHandler>[] }> } {
+export function nativeGuardFileHooks(): { PreToolUse: Array<{ matcher: string; hooks: FailClosedHandler[] }> } {
   return { PreToolUse: nativeGuardHooks().PreToolUse.map(group => ({ matcher: group.matcher, hooks: [guardFileHandler('destructive')] })) };
 }
 
@@ -76,11 +95,11 @@ export function nativeGuardFileHooks(): { PreToolUse: Array<{ matcher: string; h
  * also covers `PowerShell` (a class-derived grant holds it on Windows, and the legacy `Bash`-only matcher would let a
  * forced push through it). `managedGuardHooks` stays as is: the legacy projection goldens pin it.
  */
-export function nativeGuardHooks(): { PreToolUse: Array<{ matcher: string; hooks: ReturnType<typeof guardHandler>[] }> } {
+export function nativeGuardHooks(): { PreToolUse: Array<{ matcher: string; hooks: FailClosedHandler[] }> } {
   return {
     PreToolUse: [
-      { matcher: 'Bash|PowerShell', hooks: [guardHandler()] },
-      { matcher: 'Write|Edit|MultiEdit|NotebookEdit', hooks: [guardHandler()] },
+      { matcher: 'Bash|PowerShell', hooks: [nativeGuardHandler()] },
+      { matcher: 'Write|Edit|MultiEdit|NotebookEdit', hooks: [nativeGuardHandler()] },
     ],
   };
 }

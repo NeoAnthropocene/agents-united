@@ -84,7 +84,7 @@ describe('read-only guard', () => {
 
   it('is exec form: node with the script as one argument, no shell quoting involved', () => {
     const handler = readOnlyGuardHandler();
-    expect(handler).toEqual({ type: 'command', command: 'node', args: ['-e', READ_ONLY_GUARD_SCRIPT] });
+    expect(handler).toEqual({ type: 'command', command: 'node', args: ['-e', READ_ONLY_GUARD_SCRIPT], onFailure: 'block' });
   });
 
   it('hooks cover every tool the script can block', () => {

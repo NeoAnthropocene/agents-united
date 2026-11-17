@@ -5,6 +5,11 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import { RegistryResolver } from './core/registry.js';
 import { InstallEngine } from './core/installer.js';
+import { checkFactoryArtifact } from './core/factory-check.js';
+import { checkSharedPair } from './core/shared-pair.js';
+import { runSkillCheck, skillCheckExitCode, skillCheckUsageResult } from './core/skill-check.js';
+import { bundleCheckExitCode, bundleCheckUsageResult, runBundleCheck } from './core/bundle-check.js';
+import type { FactoryCheckResult } from './core/types.js';
 import { resolveStateDir } from './core/state-dir.js';
 import { UninstallEngine } from './core/uninstaller.js';
 import { InventoryScanner } from './core/inventory.js';
@@ -42,11 +47,13 @@ function unavailableBundleBadge(bundle: BundleDefinition): string {
   return isEmptyContributorBundle(bundle) ? pc.yellow(' [Unavailable]') : '';
 }
 
-function underConstructionNotice(bundle: BundleDefinition): string {
+export function underConstructionNotice(bundle: BundleDefinition): string {
   const heading = `The bundle "${bundle.name}" is currently under active construction (status: under-construction).\n`;
   if (bundle.name === 'agent-factory') {
     return heading
       + '`author-skill` creates or repairs one skill folder and prepares draft evidence.\n'
+      + '`author-contract` prepares a shared definition/contract pair; `factory-realizer` prepares one Claude agent draft.\n'
+      + '`factory-evaluator` gives an independent read-only review of a draft; `factory-sync` plans host-update syncs, read-only.\n'
       + 'First delivery: Claude Code CLI in a workspace with --native. Use:\n'
       + 'agents add agent-factory -t claude --native --allow-under-construction --copy -y\n'
       + 'Validation requires a reviewed source checkout and Node.js 24+. Local work ends with a draft; live invocation remains unverified.';
@@ -336,6 +343,104 @@ const BUNDLE_DISPLAY_NAMES: Record<string, { title: string; summary: string }> =
     summary: 'End-user suite of department teams, skills and workflow playbooks',
   },
 };
+
+cli
+  .command('contract-check', 'Validate a shared definition and companion Subagent Contract without native inputs (read-only)')
+  .option('--registry <path>', 'Absolute selected source registry')
+  .option('--definition <id>', 'Semantic Core/companion contract stem')
+  .action(async (options: { registry?: string; definition?: string }) => {
+    const result = await checkSharedPair({ registryDir: options.registry ?? '', definition: options.definition ?? '' });
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.valid) process.exitCode = 1;
+  });
+
+cli
+  .command('factory-check', 'Validate a contributor shared pair and an optional authored Claude native agent (read-only)')
+  .option('--registry <path>', 'Absolute source registry containing the supplied core/contract')
+  .option('--definition <id>', 'Semantic Core/companion contract stem')
+  .option('--host <host>', 'Target host adapter', { default: 'claude' })
+  .option('--artifact <path>', 'Absolute authored native agent; omit to validate shared inputs first')
+  .option('--loading <kind>', 'Native loading context: subagent or main', { default: 'subagent' })
+  .option('--required-skills <json>', 'Explicit task-required preloads as a JSON array; permitted Skills are not automatically required', { default: '[]' })
+  .action(async (options: { registry?: string; definition?: string; host: string; artifact?: string; loading: string; requiredSkills: string }) => {
+    let result: FactoryCheckResult;
+    try {
+      const required: unknown = JSON.parse(options.requiredSkills);
+      if (!Array.isArray(required) || required.some(id => typeof id !== 'string')) throw new Error('required-skills must be a JSON array of identifiers.');
+      if (options.loading !== 'main' && options.loading !== 'subagent') throw new Error('Loading must be subagent or main.');
+      result = await checkFactoryArtifact({ registryDir: options.registry ?? '', definition: options.definition ?? '', host: options.host, artifactPath: options.artifact, loading: options.loading, requiredSkills: required as string[] });
+    } catch (error) {
+      result = { ok: false, kind: 'deterministic', findings: [error instanceof Error ? error.message : String(error)], quality: 'pending', live: 'unverified' };
+    }
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 1;
+  });
+
+cli
+  .command('skill-check', 'Check one Skill folder against the deterministic gates and the frozen corpus under an authorship policy (read-only)')
+  .allowUnknownOptions()
+  .option('--artifact [path]', 'Required: absolute path of the Skill folder to check')
+  .option('--corpus [path]', 'Required: absolute path of the reviewed frozen boilerplate corpus (only its exact bytes are accepted)')
+  .option('--policy [name]', 'Required: the authorship policy; agents-united-original, private-owner or adapted-source')
+  .action((options: Record<string, unknown>) => {
+    // Unknown or malformed options take the same JSON exit-2 route as every other normal outcome, not CAC's prose error.
+    const problems: string[] = [];
+    for (const name of Object.keys(options)) {
+      if (name === '--') {
+        if (Array.isArray(options['--']) && options['--'].length > 0) problems.push('Unexpected arguments after --.');
+      } else if (name !== 'artifact' && name !== 'corpus' && name !== 'policy') {
+        problems.push(`Unknown option ${name.length > 1 ? `--${name}` : `-${name}`}.`);
+      }
+    }
+    if (cli.args.length > 0) problems.push(`Unexpected argument ${JSON.stringify(String(cli.args[0]))}; use --artifact, --corpus and --policy.`);
+    const text = (name: 'artifact' | 'corpus' | 'policy'): string | undefined => {
+      const value = options[name];
+      if (value === undefined) return undefined;
+      if (typeof value === 'string') return value;
+      problems.push(`--${name} needs exactly one text value.`);
+      return undefined;
+    };
+    const input = { artifact: text('artifact'), corpus: text('corpus'), policy: text('policy') };
+    const result = problems.length > 0 ? skillCheckUsageResult(problems, input) : runSkillCheck(input);
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = skillCheckExitCode(result);
+  });
+
+cli
+  .command('bundle-check', 'Check one drafted Bundle proposal folder against one registry folder (read-only)')
+  .allowUnknownOptions()
+  .option('--artifact [path]', 'Required: absolute path of the proposal folder (bundles.json, leader-responsibility.md, bindings.json, report.json)')
+  .option('--registry [path]', 'Required: absolute path of the registry folder to check the proposal against')
+  .option('--operation [name]', 'Optional: create (default), update or reuse; the last two allow preservation-only files in the proposal folder')
+  .option('--allow-unresolved', 'Optional flag: accept members the registry does not have (still listed as unresolved)')
+  .action((options: Record<string, unknown>) => {
+    // Unknown or malformed options take the same JSON exit-2 route as every other normal outcome, not CAC's prose error.
+    const problems: string[] = [];
+    for (const name of Object.keys(options)) {
+      if (name === '--') {
+        if (Array.isArray(options['--']) && options['--'].length > 0) problems.push('Unexpected arguments after --.');
+      } else if (name !== 'artifact' && name !== 'registry' && name !== 'operation' && name !== 'allowUnresolved') {
+        problems.push(`Unknown option ${name.length > 1 ? `--${name}` : `-${name}`}.`);
+      }
+    }
+    if (cli.args.length > 0) problems.push(`Unexpected argument ${JSON.stringify(String(cli.args[0]))}; use --artifact, --registry, --operation and --allow-unresolved.`);
+    const text = (name: 'artifact' | 'registry' | 'operation'): string | undefined => {
+      const value = options[name];
+      if (value === undefined) return undefined;
+      if (typeof value === 'string') return value;
+      problems.push(`--${name} needs exactly one text value.`);
+      return undefined;
+    };
+    let allowUnresolved: boolean | undefined;
+    if (options.allowUnresolved !== undefined) {
+      if (options.allowUnresolved === true) allowUnresolved = true;
+      else problems.push('--allow-unresolved is a flag and takes no value.');
+    }
+    const input = { artifact: text('artifact'), registry: text('registry'), operation: text('operation'), allowUnresolved };
+    const result = problems.length > 0 ? bundleCheckUsageResult(problems, input) : runBundleCheck(input);
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = bundleCheckExitCode(result);
+  });
 
 cli
   .command('add [identifier]', 'Add a bundle, agent, skill, or workflow to project or global configuration')
@@ -2733,6 +2838,24 @@ export function resolveClaudeTeamsPosture(
   return { active: false, reason: 'unresolved-tier' };
 }
 
+/**
+ * The reason text for a factory session whose plan turned agent teams off (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` = `0` in the plan env). One place for the dry-run line and the
+ * real-start note, so they cannot drift; the limit is stated because managed settings apply after the launcher's `--settings` payload.
+ */
+export function describeClaudeTeamsOff(detail?: string): string {
+  return `turned off for this session by the launcher${detail ? `: ${detail}` : ''}; managed settings can still enable agent teams`;
+}
+
+/**
+ * The value of the "Teams scaffold:" line of the real-start note. Non-factory output is unchanged; a plan that carries the teams variable as `0` (the factory plan) says the launcher turned
+ * teams off instead of repeating the tier text, which would wrongly invite `--teams` (refused for the factory).
+ */
+export function describeClaudeTeamsScaffold(teamsActive: boolean, posture: ClaudeTeamsPosture, planTeamsValue: string | undefined): string {
+  if (teamsActive) return `yes (${describeClaudeTeamsPosture(posture)}; experimental, ephemeral env only)`;
+  if (planTeamsValue === '0') return `no (${describeClaudeTeamsOff()})`;
+  return `no (${describeClaudeTeamsPosture(posture)})`;
+}
+
 /** One-line, honest explanation of why teams is on or off — shared by the live notice and `--dry-run`. */
 export function describeClaudeTeamsPosture(posture: ClaudeTeamsPosture): string {
   switch (posture.reason) {
@@ -2762,6 +2885,10 @@ export function describeClaudeTeamsPosture(posture: ClaudeTeamsPosture): string 
  * always wins over the tier default.
  */
 async function runClaudeStart(bundle: string, prompt: string | undefined, options: any): Promise<void> {
+  const factory = bundle === 'agent-factory';
+  if (factory && (options.bg || options.global || options.plugin || options.teams === true)) {
+    throw new Error('Claude factory startup supports only foreground project native sessions; --bg, --global, --plugin and --teams are unavailable, including dry-run.');
+  }
   const launcher = new ClaudeLauncher();
   const probe = new ClaudeCapabilityProbe();
 
@@ -2776,16 +2903,16 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     process.exit(1);
   }
 
-  const bundleDef = await registry.getBundle(bundle);
+  const bundleDef = factory ? undefined : await registry.getBundle(bundle);
   // Tier-aware Agent-Teams posture: an organization-tier (Tier 2) bundle runs with Agent Teams logic by
   // default, a domain-tier (Tier 1) bundle keeps the ordinary parallel-subagent model unless `--teams`,
   // and an explicit `--no-teams` always wins (Plan 016 decision 14).
-  const teamsPosture = resolveClaudeTeamsPosture(options.teams, bundleDef?.tier);
+  const teamsPosture = resolveClaudeTeamsPosture(options.teams, factory ? 'domain' : bundleDef?.tier);
   const teamsActive = teamsPosture.active;
   // ADR 0018 decision 6 keeps ONE host-neutral team manifest under the organization package, which
   // the Cline half of the compound lane writes. A claude-only fanout has none, so the prompt must
   // not order the coordinator to read a path that does not exist.
-  const manifestAvailable = await fs.pathExists(resolution.manifestPath);
+  const manifestAvailable = factory ? false : await fs.pathExists(resolution.manifestPath);
   // `--plugin` points Claude at the bundle's plugin root. The path is workspace-relative because the session
   // is spawned with `cwd: workspace`; Step 7 emits the plugin manifest inside it.
   const pluginDir = options.plugin
@@ -2799,6 +2926,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     report: probeReport,
     prompt,
     orchestrator: bundleDef?.orchestrator,
+    nativeFactoryMain: resolution.nativeFactoryMain,
     allowAddons: options.allowAddons,
     background: options.bg,
     teams: teamsActive,
@@ -2846,7 +2974,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
     `Executable: ${plan.executable}\n` +
     `Workspace: ${plan.workspace}\n` +
     `Background: ${options.bg ? 'yes (--bg)' : 'no'}\n` +
-    `Teams scaffold: ${teamsActive ? `yes (${describeClaudeTeamsPosture(teamsPosture)}; experimental, ephemeral env only)` : `no (${describeClaudeTeamsPosture(teamsPosture)})`}\n` +
+    `Teams scaffold: ${describeClaudeTeamsScaffold(teamsActive, teamsPosture, plan.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS)}\n` +
     `Plugin dir: ${pluginDir || '(none)'}`,
     'Starting Claude Code Session'
   );
@@ -2856,7 +2984,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
   // `resolveInstallation` accepts either a recorded claude fanout OR the host-neutral manifest, and
   // the manifest is a Cline artifact — so a cline-only workspace can pass the gate. Fail loudly here
   // rather than spawning a session whose `--agent` target does not exist.
-  const coordinatorRel = `.claude/agents/${ClaudeLauncher.resolveCoordinatorName(bundleDef?.orchestrator)}.md`;
+  const coordinatorRel = resolution.nativeFactoryMain?.installed ?? `.claude/agents/${ClaudeLauncher.resolveCoordinatorName(bundleDef?.orchestrator)}.md`;
   if (!await fs.pathExists(path.join(resolution.workspace, coordinatorRel))) {
     outro(
       pc.red(
@@ -2911,7 +3039,7 @@ function printDeclaredDeltas(report: HealthReport, host: string | undefined): vo
 }
 
 /** Render the `--dry-run` Claude plan: one argv element per line so each flag/value pair is unambiguous. */
-function renderClaudeActivationPlan(
+export function renderClaudeActivationPlan(
   plan: ClaudeActivationPlan,
   report: ClaudeCapabilityReport,
   recordedFanout: string[],
@@ -2919,7 +3047,10 @@ function renderClaudeActivationPlan(
 ): string {
   const envEntries = Object.keys(plan.env);
   const pluginFlagIndex = plan.argv.indexOf('--plugin-dir');
-  const teamsActive = envEntries.includes('CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS');
+  // The key alone no longer means "on": the factory plan carries it with the value 0 (teams turned off for its session), so the value decides.
+  const teamsValue = plan.env['CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'];
+  const teamsActive = teamsValue === '1';
+  const teamsOff = teamsValue === '0';
   return [
     `Bundle: ${plan.bundleName}`,
     `Host: claude`,
@@ -2930,7 +3061,9 @@ function renderClaudeActivationPlan(
     `Background (--bg): ${plan.argv.includes('--bg') ? 'yes' : 'no'}`,
     teamsActive
       ? `Agent teams (--teams): yes (${describeClaudeTeamsPosture(posture)} — experimental; ephemeral env only, nothing persisted)`
-      : `Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`,
+      : teamsOff
+        ? `Agent teams (--teams): no (${describeClaudeTeamsOff('environment value 0 and the --settings element below')})`
+        : `Agent teams (--teams): no (${describeClaudeTeamsPosture(posture)})`,
     `Plugin (--plugin-dir): ${pluginFlagIndex >= 0 ? plan.argv[pluginFlagIndex + 1] : '(none)'}`,
     `Env injected (merged over process.env): ${envEntries.length > 0 ? envEntries.map((k) => `${k}=${plan.env[k]}`).join(', ') : '(none)'}`,
     `Capability probe: installed=${report.installed ? `yes${report.version ? ` (${report.version})` : ''}` : 'no'}, --plugin-dir=${report.pluginSupport ? 'yes' : 'no'}, agent teams=${report.agentTeamsExperimental ? 'yes' : 'no'}, subagent handback=${report.subagentHandback ? 'yes' : 'no'}`,

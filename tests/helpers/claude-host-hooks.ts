@@ -6,16 +6,21 @@ import yaml from 'yaml';
  * (the `tools:` allowlist and the `hooks:` of the frontmatter), applies the documented hook rules (host-library/claude/guide/hook.md:
  * a matcher of letters, digits, `_`, `-`, spaces, `,` and `|` is an exact list, anything else an UNANCHORED JavaScript regex;
  * `${CLAUDE_PROJECT_DIR}` is substituted in each `args` element; a command hook is spawned with no shell; exit 2 blocks, any other
- * non-zero exit does not), and spawns each matching handler with the real PreToolUse payload on stdin.
+ * non-zero exit does not, unless the handler sets `onFailure: "block"` (Claude Code 2.1.295 or later): then a failed or timed-out
+ * hook blocks too), and spawns each matching handler with the real PreToolUse payload on stdin.
  *
  * It is not the host: it proves what the files say and what the scripts do when called as documented, and nothing about the model.
  * A real session is the only evidence of the host's own behaviour.
  */
 
+/** The block message the DOCUMENTED behaviour produces (hooks.md, "Block the action when a hook fails"). A model of the Host, NOT an observation of it. */
+export const ON_FAILURE_BLOCK_MESSAGE = 'failed; blocking because onFailure is "block"';
+
 export interface HookHandler {
   type: string;
   command?: string;
   args?: string[];
+  onFailure?: string;
 }
 export interface HookGroup {
   matcher?: string;
@@ -129,6 +134,10 @@ export function attempt(agentText: string, projectDir: string, call: Call, optio
       if (run.status === 2) {
         result.blocked = true;
         result.reason += run.stderr;
+      } else if (handler.onFailure === 'block' && run.status !== 0) {
+        // Documented (hooks.md, "Block the action when a hook fails"): any exit code other than 0 or 2, or a hook that cannot start, is a failure.
+        result.blocked = true;
+        result.reason += `${[handler.command, ...args].join(' ')}: ${ON_FAILURE_BLOCK_MESSAGE}\n${run.stderr}`;
       }
     }
   }

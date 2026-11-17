@@ -1,0 +1,6 @@
+{
+  "definition": "subagent-realize-for-host",
+  "workflows": [],
+  "skills": ["realize-artifact"],
+  "hooks": ["reject-destructive-operations"]
+}

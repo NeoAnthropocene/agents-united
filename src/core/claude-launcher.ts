@@ -1,12 +1,15 @@
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'fs-extra';
+import { isDeepStrictEqual } from 'node:util';
+import { assertClaudeFactorySelection, readClaudeFactoryMain } from './claude-factory-start.js';
 import { ClaudeCapabilityProbe } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { defaultProcessRunner } from './cline-capabilities.js';
 import { resolveStateDir } from './state-dir.js';
 import type {
   ClaudeCapabilityReport,
+  ClaudeFactoryMainSelection,
   InstallScope,
   LockfileManifest,
   ProcessRunner,
@@ -14,6 +17,37 @@ import type {
 
 /** Default coordinator when the caller could not resolve the bundle's own `orchestrator` field. */
 const DEFAULT_COORDINATOR = 'orchestrator-engineering.md';
+
+// Observed on 2.1.323 (2026-11-15, headless `--agent` runs): the factory main's preloaded Skill text was not in its context, so a main that reads the entry itself is told
+// where it is and what `${CLAUDE_SKILL_DIR}` and the relative paths of a Skill file mean (it sees the variable as literal text). The agent body of the main
+// (registry/hosts/claude/agents/orchestrator-agent-factory.md) states both sentences in the same words; tests/agent-factory-coordinator-launcher.test.ts pins that.
+const FACTORY_SKILL_ENTRY_SENTENCE = 'If the text of the "coordinate-artifact" Skill is not already in your context, read its installed entry ".claude/skills/coordinate-artifact/SKILL.md" in full before your first action.';
+const FACTORY_SKILL_DIR_SENTENCE = 'In a Skill file, "${CLAUDE_SKILL_DIR}" means that Skill\'s installed folder (".claude/skills/<skill name>" in the project), and a "scripts/", "references/" or "assets/" path in a Skill file is relative to that folder; use the absolute path when running a script.';
+
+/** The variable that opts a Claude Code session into agent teams. */
+const FACTORY_TEAMS_ENV = 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS';
+/**
+ * The one argv element (single `--opt=value` element, like `--add-dir=`) that turns agent teams off for the factory session in the settings the Host reads (finding S1-C of
+ * 2026-11-15: a teammate instead of a subagent). Fork mode is left to the Host and the user's settings (P22, 2026-11-16: the maintainer chose background workers; the coordinator
+ * waits for each hand-back, see the waiting rule in coordinate-artifact references/dispatch.md). Limit: managed settings still apply after a `--settings` payload (settings.md "Settings precedence").
+ */
+export const FACTORY_SESSION_SETTINGS_ARG = `--settings=${JSON.stringify({ env: { [FACTORY_TEAMS_ENV]: '0' } })}`;
+
+/**
+ * The checked shape of a factory plan at launch: the last five argv elements are exactly `--agent`, the checked main, `--add-dir=<workspace>`, the teams-off `--settings` element and the
+ * first message; everything before them (the executable prefix) is not option-like; there is exactly one `--settings` element in either form; the plan env carries the teams variable as
+ * `0` and no other spelling of its name (Windows names are case-insensitive).
+ */
+export function factoryLaunchShapeOk(plan: Pick<ClaudeActivationPlan, 'argv' | 'env' | 'workspace' | 'bootstrapPrompt' | 'nativeFactoryMain'>): boolean {
+  const { argv } = plan;
+  if (argv.length < 5 || !plan.nativeFactoryMain) return false;
+  const tail = argv.slice(-5);
+  if (tail[0] !== '--agent' || tail[1] !== plan.nativeFactoryMain.name || tail[2] !== `--add-dir=${plan.workspace}` || tail[3] !== FACTORY_SESSION_SETTINGS_ARG || tail[4] !== plan.bootstrapPrompt) return false;
+  if (argv.slice(0, -5).some(arg => arg.startsWith('--'))) return false;
+  if (argv.filter(arg => /^--settings(?:=|$)/.test(arg)).length !== 1) return false;
+  const spellings = Object.keys(plan.env).filter(key => key.toUpperCase() === FACTORY_TEAMS_ENV);
+  return spellings.length === 1 && spellings[0] === FACTORY_TEAMS_ENV && plan.env[FACTORY_TEAMS_ENV] === '0';
+}
 
 export interface ClaudeActivationPlan {
   bundleName: string;
@@ -23,6 +57,7 @@ export interface ClaudeActivationPlan {
   argv: string[];
   bootstrapPrompt: string;
   env: Record<string, string>;
+  nativeFactoryMain?: ClaudeFactoryMainSelection;
 }
 
 export interface PlanClaudeActivationOptions {
@@ -30,6 +65,7 @@ export interface PlanClaudeActivationOptions {
   workspace: string;
   scope: InstallScope;
   report: ClaudeCapabilityReport;
+  nativeFactoryMain?: ClaudeFactoryMainSelection;
   prompt?: string;
   /** Optional coordinator agent filename (e.g. "orchestrator-universal.md"). Resolved from the bundle
    *  definition by the caller; defaults to orchestrator-engineering.md for backward compatibility. */
@@ -107,9 +143,11 @@ export class ClaudeLauncher {
   public async resolveInstallation(
     bundleName: string,
     options: ResolveClaudeInstallationOptions = {}
-  ): Promise<{ scope: InstallScope; workspace: string; lockfile: LockfileManifest; manifestPath: string }> {
-    const cwd = options.cwd || process.cwd();
+  ): Promise<{ scope: InstallScope; workspace: string; lockfile: LockfileManifest; manifestPath: string; nativeFactoryMain?: ClaudeFactoryMainSelection }> {
+    const cwd = bundleName === 'agent-factory' ? path.resolve(options.cwd || process.cwd()) : options.cwd || process.cwd();
     const isGlobal = !!options.global;
+    const factory = bundleName === 'agent-factory';
+    if (factory && (isGlobal || options.scope === 'global')) throw new Error('Claude factory startup requires a project native installation; global startup is unavailable.');
 
     let targetDir: string;
     let scope: InstallScope;
@@ -128,7 +166,7 @@ export class ClaudeLauncher {
 
     const lockfilePath = path.join(targetDir, 'agents-united.json');
     if (!await fs.pathExists(lockfilePath)) {
-      if (!isGlobal) {
+      if (!isGlobal && !factory) {
         // Check if global installation exists as fallback
         const globalTarget = resolveStateDir('global');
         const globalLockfile = path.join(globalTarget, 'agents-united.json');
@@ -139,12 +177,12 @@ export class ClaudeLauncher {
           }
         }
       }
-      throw new Error(`Bundle '${bundleName}' is not installed in ${scope} scope.`);
+      throw new Error(`Bundle '${bundleName}' is not installed in ${scope} scope.${scope === 'project' ? ` Checked folder: ${path.resolve(workspace)}.` : ''}`);
     }
 
     const lockfile: LockfileManifest = await fs.readJson(lockfilePath);
     if (!lockfile.installed?.bundles?.includes(bundleName)) {
-      throw new Error(`Bundle '${bundleName}' is not installed in ${scope} scope.`);
+      throw new Error(`Bundle '${bundleName}' is not installed in ${scope} scope.${scope === 'project' ? ` Checked folder: ${path.resolve(workspace)}.` : ''}`);
     }
 
     // Host gate. The Cline lane requires both the recorded fanout and the projected artifact. The Claude
@@ -158,7 +196,7 @@ export class ClaudeLauncher {
     const manifestRel = `.agents/plugins/${bundleName}/agents-united/teams/${bundleName}.yaml`;
     const manifestPath = path.join(workspace, manifestRel);
 
-    if (!hasClaudeFanout && !await fs.pathExists(manifestPath)) {
+    if (!factory && !hasClaudeFanout && !await fs.pathExists(manifestPath)) {
       throw new Error(
         `Bundle '${bundleName}' is not projected to Claude. Run 'agents update ${bundleName} --fanout claude' first.`
       );
@@ -169,6 +207,7 @@ export class ClaudeLauncher {
       workspace,
       lockfile,
       manifestPath,
+      ...(factory ? { nativeFactoryMain: readClaudeFactoryMain(workspace) } : {}),
     };
   }
 
@@ -197,7 +236,17 @@ export class ClaudeLauncher {
       source: 'path-executable' as const,
     };
 
-    const coordinatorName = ClaudeLauncher.resolveCoordinatorName(orchestrator);
+    const factory = bundleName === 'agent-factory';
+    if (factory) {
+      assertClaudeFactorySelection(options.nativeFactoryMain);
+      // An inherited CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS no longer refuses the plan: the plan turns teams off for this session (see the switch below).
+      if (scope !== 'project' || !path.isAbsolute(workspace) || background || teams || pluginDir || (orchestrator && ClaudeLauncher.resolveCoordinatorName(orchestrator) !== options.nativeFactoryMain.name)) {
+        throw new Error('Claude factory startup supports only foreground project native sessions without background, plugin or teams options.');
+      }
+      // The executable prefix is a Node wrapper path or `/c <shim>`; an option-like element could change the Host's settings, agent or directories ahead of the checked plan.
+      if (command.prefixArgs.some(arg => arg.startsWith('--'))) throw new Error('Claude factory executable prefix must not override the checked foreground plan.');
+    } else if (options.nativeFactoryMain) throw new Error('Factory main selection does not match the requested bundle.');
+    const coordinatorName = factory ? options.nativeFactoryMain!.name : ClaudeLauncher.resolveCoordinatorName(orchestrator);
     const homePrefix = scope === 'global' ? '~/' : '';
     const manifestRel = `${homePrefix}.agents/plugins/${bundleName}/agents-united/teams/${bundleName}.yaml`;
     // The projected coordinator definition. Read-only reference: this launcher never writes under
@@ -253,7 +302,16 @@ export class ClaudeLauncher {
       'If your coordinator definition has a section named "The first message", follow it in your first message, ' +
       'before anything else.';
 
-    const bootstrapLines = [
+    const bootstrapLines = factory ? [
+      'You are the installed Agents United artifact factory coordinator.',
+      // Observed on 2.1.323 (2026-11-15, headless `--agent` runs): the main's preloaded Skill text was not in its context, so the entry is named by its installed path.
+      `Read your checked native main at ".claude/agents/${coordinatorName}.md" before acting. ${FACTORY_SKILL_ENTRY_SENTENCE} ${FACTORY_SKILL_DIR_SENTENCE}`,
+      'The fixed ordinary worker map is factory-realizer for bounded native draft creation/update, factory-evaluator for fresh independent read-only review and factory-sync for read-only host-update sync planning. Start one worker at a time as an ordinary subagent and, when it runs in the background, wait for its hand-back as the waiting rule in your checked native main and the coordinate-artifact references/dispatch.md says. Inspect the actual Host result and refuse a fork, a teammate or a partial or failed return.',
+      'Use the supplied fixed job and caller-held digests. Keep draftRoot and evidenceRoot physically disjoint from each other, the selected source checkout and managed/protected paths. Verify final bytes and installed P2/P5 check results before reporting a candidate; repair defaults to zero and needs explicit bounded authorization.',
+      'Installed .claude/ files are managed runtime copies: do not edit them. In the selected authoritative source checkout, registry/core/ owns shared pairs, registry/hosts/claude/ owns native definitions and loaders, and registry/skills/ owns shared Skill support. The optional .agents/ store is not the authoritative native source registry. If those sources are unavailable, report the dependent authoring work unavailable.',
+      firstMessageText,
+      taskText,
+    ] : [
       `You are coordinating the "${bundleName}" team in Agents United.`,
       manifestInstruction,
       firstMessageText,
@@ -294,6 +352,10 @@ export class ClaudeLauncher {
     if (taskTracking) env.CLAUDE_CODE_ENABLE_TODO_TOOLS = '1';
     if (teams === true) {
       env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = '1';
+    } else if (factory) {
+      // First of the two switches that turn agent teams off for the factory session (the second is the `--settings` element below).
+      // Fork mode is not touched: an inherited CLAUDE_CODE_FORK_SUBAGENT reaches the session unchanged (P22).
+      env[FACTORY_TEAMS_ENV] = '0';
     }
 
     const argv: string[] = [...command.prefixArgs];
@@ -307,6 +369,10 @@ export class ClaudeLauncher {
     // (observed on 2.1.291, Plan 035 D52). The `--add-dir=<dir>` form carries its one value inside the element and
     // leaves no option open for the prompt to fall into, whatever flag order a later change picks.
     argv.push(`--add-dir=${workspace}`);
+    // Observed 2026-11-15 on 2.1.323 (finding S1-C): a user settings `env` entry exports the teams variable into every session and overrides the shell, so the process
+    // environment alone cannot turn teams off; a `--settings` payload applies after user settings (agent-teams.md "Claude spawns teammates instead of subagents",
+    // settings.md "Settings precedence"), so the factory carries both switches. Limit: managed settings still apply after it.
+    if (factory) argv.push(FACTORY_SESSION_SETTINGS_ARG);
     if (background === true) {
       argv.push('--bg');
     }
@@ -324,6 +390,7 @@ export class ClaudeLauncher {
       argv,
       bootstrapPrompt,
       env,
+      ...(factory ? { nativeFactoryMain: options.nativeFactoryMain } : {}),
     };
   }
 
@@ -332,12 +399,30 @@ export class ClaudeLauncher {
    * (never `shell: true`), `stdio: 'inherit'`, and the plan's ephemeral env merged over `process.env`.
    */
   public async launch(plan: ClaudeActivationPlan): Promise<void> {
+    let factorySession = false;
+    if (plan.bundleName === 'agent-factory' || plan.nativeFactoryMain || plan.argv.some((arg, index) => arg === '--agent=orchestrator-agent-factory' || (arg === '--agent' && plan.argv[index + 1] === 'orchestrator-agent-factory'))) {
+      factorySession = true;
+      assertClaudeFactorySelection(plan.nativeFactoryMain);
+      const agent = plan.argv.indexOf('--agent');
+      if (plan.bundleName !== 'agent-factory' || plan.scope !== 'project' || !path.isAbsolute(plan.workspace) || agent < 0
+        || plan.argv.filter(arg => /^--agent(?:=|$)/.test(arg)).length !== 1 || plan.argv[agent + 1] !== plan.nativeFactoryMain.name
+        || plan.argv.filter(arg => arg.startsWith('--add-dir')).length !== 1 || !plan.argv.includes(`--add-dir=${plan.workspace}`)
+        || plan.argv.some(arg => /^--(?:bg|plugin-dir)(?:=|$)/.test(arg))
+        // Both teams-off switches must be in the checked plan, in the checked shape of the argv tail (see factoryLaunchShapeOk).
+        || !factoryLaunchShapeOk(plan)) {
+        throw new Error('Claude factory launch requires its checked foreground project plan without background, plugin or teams options, and with agent teams turned off in its settings and environment.');
+      }
+      if (!isDeepStrictEqual(readClaudeFactoryMain(plan.workspace), plan.nativeFactoryMain)) throw new Error('Claude factory installed closure changed after planning; resolve and plan again.');
+    }
     const { spawn } = await import('node:child_process');
+    const env: Record<string, string | undefined> = { ...process.env };
+    // Windows environment names are case-insensitive: for the factory, no other spelling of the teams variable may survive from the parent next to the plan's `0`.
+    if (factorySession) for (const key of Object.keys(env)) if (key.toUpperCase() === FACTORY_TEAMS_ENV) delete env[key];
     const child = spawn(plan.executable, plan.argv, {
       cwd: plan.workspace,
       stdio: 'inherit',
       shell: false,
-      env: { ...process.env, ...plan.env },
+      env: { ...env, ...plan.env },
     });
 
     await new Promise<void>((resolve, reject) => {

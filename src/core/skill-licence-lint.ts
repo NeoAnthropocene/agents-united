@@ -55,6 +55,48 @@ export interface SkillLicenceInput {
 }
 
 const SHA_40 = /\b[0-9a-f]{40}\b/;
+const SHA_40_SEGMENT = /^[0-9a-f]{40}$/;
+
+export type SourceParse =
+  | { ok: true; url: URL; commit: string | null }
+  | { ok: false; reason: 'whitespace' | 'not-a-url' | 'not-https' | 'user-info' };
+
+/**
+ * Reads `metadata.source` of an adapted Skill as a URL (Plan 033 P12): one token with no whitespace that the WHATWG parser accepts,
+ * scheme `https:`, no user name or password. `commit` is the first path segment that is exactly a 40-character lowercase
+ * hexadecimal SHA, or null; a SHA in the query, in the fragment or glued to other characters of a segment is not a pinned commit.
+ */
+export function parseSource(source: string): SourceParse {
+  if (/\s/.test(source)) return { ok: false, reason: 'whitespace' };
+  let url: URL;
+  try {
+    url = new URL(source);
+  } catch {
+    return { ok: false, reason: 'not-a-url' };
+  }
+  if (url.protocol !== 'https:') return { ok: false, reason: 'not-https' };
+  if (url.username !== '' || url.password !== '') return { ok: false, reason: 'user-info' };
+  return { ok: true, url, commit: url.pathname.split('/').find(segment => SHA_40_SEGMENT.test(segment)) ?? null };
+}
+
+/** The commit SHA an adapted Skill's `metadata.source` pins (see `parseSource`), or null. */
+export function pinnedCommitOf(source: string | undefined): string | null {
+  if (source === undefined) return null;
+  const parsed = parseSource(source);
+  return parsed.ok ? parsed.commit : null;
+}
+
+/** Text with every HTML comment removed; a comment that is never closed runs to the end of the text, as it does when rendered. */
+const withoutHtmlComments = (text: string): string => text.replace(/<!--[\s\S]*?(?:-->|$)/g, ' ');
+
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** The SHA stands alone: not inside a longer run of letters or digits. */
+const hasCommitToken = (text: string, commit: string): boolean => new RegExp(`(?<![0-9A-Za-z])${commit}(?![0-9A-Za-z])`).test(text);
+
+/** The licence identifier stands alone: not inside a longer identifier (`Apache-2.0-with-LLVM-exception`, `MISC`, `MPL-2.0+`, `Apache-2.0.1`). */
+const hasLicenceToken = (text: string, license: string): boolean =>
+  new RegExp(`(?<![A-Za-z0-9_.+-])${escapeRegExp(license)}(?![A-Za-z0-9_+-]|\\.[A-Za-z0-9])`).test(text);
 
 /** Returns one human-readable violation per problem (empty array = clean). */
 export function lintSkillLicence(input: SkillLicenceInput): string[] {
@@ -86,6 +128,71 @@ export function lintSkillLicence(input: SkillLicenceInput): string[] {
   }
   if (!source || !SHA_40.test(source)) {
     violations.push(`Skill "${dirName}": ${license} content must pin metadata.source to a 40-character upstream commit SHA.`);
+  }
+  return violations;
+}
+
+/**
+ * The licence rules of the two new authorship policies of `agents skill-check` (Plan 033 P9:
+ * `private-owner`, an original Skill by another author, and `adapted-source`, a Skill adapted
+ * from a pinned upstream commit). Pure like `lintSkillLicence`: the caller supplies the front
+ * matter identifiers, the file inventory with byte sizes, and the text of a top-level NOTICE.md.
+ *
+ * Both policies require a declared, classified licence: a missing `license`, a blocked tier or
+ * an unknown identifier is refused with `lintSkillLicence`'s own wording. `private-owner` accepts
+ * every classified tier except `source-available` (which only ever fits an upstream vendor's
+ * optional add-on) and asks a weak-copyleft or share-alike folder to carry its licence file.
+ * An adapted Skill always carries the upstream licence file and a SHA-pinned source; whenever
+ * its licence is not exactly `MIT`, it also carries a NOTICE.md naming that SHA and the licence.
+ */
+export function lintSkillPolicyLicence(policy: 'private-owner' | 'adapted-source',
+  input: { dirName: string; license?: string; source?: string; files: Array<{ path: string; bytes: number }>; noticeText?: string }): string[] {
+  const { dirName, source, files, noticeText } = input;
+  // Trimmed once, here: every comparison and message below uses the identifier without surrounding whitespace.
+  const license = input.license?.trim();
+  if (license === undefined) {
+    return [`Skill "${dirName}": metadata.license is missing; the ${policy} policy needs a declared licence identifier.`];
+  }
+  const tier = classifyLicence(license);
+  if (tier === 'blocked' || tier === 'unknown') {
+    return lintSkillLicence({ dirName, license, source, files: files.map(f => f.path) });
+  }
+  /** Top-level files only; a path may come with `\` separators on Windows candidates. */
+  const top = files.filter(f => !f.path.replace(/\\/g, '/').includes('/'));
+  const carriesLicence = top.some(f => f.bytes > 0 && /^LICEN[CS]E(\.(md|txt))?$/i.test(f.path.replace(/\\/g, '/')));
+  const notice = top.find(f => f.path.replace(/\\/g, '/') === 'NOTICE.md');
+  if (policy === 'private-owner') {
+    if (tier === 'source-available') {
+      return [`Skill "${dirName}": licence "${license}" is source-available (an upstream vendor's optional add-on tier) and is refused for a privately owned original skill.`];
+    }
+    if ((tier === 'weak-copyleft' || tier === 'share-alike') && !carriesLicence) {
+      return [`Skill "${dirName}": ${license} content must carry its licence file (LICENSE) in the skill folder.`];
+    }
+    return [];
+  }
+  const violations: string[] = [];
+  if (!carriesLicence) {
+    violations.push(`Skill "${dirName}": ${license} content must carry its licence file (LICENSE) in the skill folder.`);
+  }
+  const sha = pinnedCommitOf(source);
+  if (sha === null) {
+    violations.push(`Skill "${dirName}": ${license} content must pin metadata.source to a 40-character upstream commit SHA.`);
+  }
+  if (license !== 'MIT') {
+    if (notice === undefined || notice.bytes === 0) {
+      violations.push(`Skill "${dirName}": ${license} content must carry a NOTICE.md saying what was changed from upstream.`);
+    } else if (typeof noticeText !== 'string') {
+      violations.push(`Skill "${dirName}": NOTICE.md is present but no notice text was supplied, so what it says cannot be checked.`);
+    } else {
+      // What a reader sees: the SHA and the identifier must stand in the visible text, as whole tokens.
+      const visible = withoutHtmlComments(noticeText);
+      if (sha !== null && !hasCommitToken(visible, sha)) {
+        violations.push(`Skill "${dirName}": NOTICE.md does not quote the pinned 40-character commit SHA of metadata.source.`);
+      }
+      if (!hasLicenceToken(visible, license)) {
+        violations.push(`Skill "${dirName}": NOTICE.md does not name the licence identifier "${license}".`);
+      }
+    }
   }
   return violations;
 }

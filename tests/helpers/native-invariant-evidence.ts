@@ -20,6 +20,26 @@ const COMMS = {
 
 /** Default evidence per invariant text, shared by every role whose core states it. */
 export const EVIDENCE: Record<string, RegExp> = {
+  'Read the complete fixed brief before dispatch.': /Read the complete fixed brief before dispatch\./,
+  'Verify actual final bytes against caller-held digests and baselines.': /Verify actual final bytes against caller-held digests and baselines\./,
+  'Require independent review at the current candidate digest.': /Require independent review at the current candidate digest\./,
+  'Repair only within the accepted count, scope and per-job budgets.': /Repair only within the accepted count, scope and per-job budgets\./,
+  'Preserve previous revision evidence and invalidate stale acceptance.': /Preserve previous revision evidence and invalidate stale acceptance\./,
+  'Report unperformed work as unverified.': /Report unperformed work as unverified\./,
+
+  'Read the complete fixed review job before evaluating.': /Read the complete fixed review job and the caller-held job\/candidate digests before reviewing/,
+  'Preserve the candidate and its declared review scope.': /Preserve the candidate and its declared review scope: read only the supplied subject\/support and selected evidence/,
+  'Tie findings to supplied source pins and actual quoted lines.': /Tie findings to supplied source pins and actual quoted lines: include source ID, path \(candidate-relative, or the basename of a pinned input's file\), caller-provided hash, logical line range, bounded quote/,
+  'Keep record consistency, evaluator judgment and live proof distinct.': /Keep record consistency, evaluator judgment and live proof distinct\. The caller runs validators and persists\/checks your result/,
+  'Return missing required evidence without inventing approval.': /Return missing required evidence without inventing approval\. Apply the fixed rubric/,
+  'Never mutate the workspace, registry, git state, lockfile or installed host projections, and never execute commands or compute hashes.': /Never mutate the workspace, registry, git state, lockfile or installed host projections, and never execute commands or compute hashes: you have no shell or editor/,
+  'Never clear or advance a held source and never propose an edit to a held source; every held source remains "not advanced, no action".': /Never clear or advance a held source and never propose an edit to a held source; every held source remains "not advanced, no action"\./,
+  'State honest limits explicitly — target list completeness is caller-supplied and cannot be proved, the old hash of an input not tracked by the lock is a claim, nothing is implemented by a plan, and live Host behaviour is unverified.': /State honest limits explicitly: target list completeness is caller-supplied and cannot be proved, the old hash of an input not tracked by library\.lock\.json is a caller claim/,
+  'Read and preserve the complete fixed job before draft work.': /Read and preserve the complete fixed job before draft work\./,
+  'Reuse the supplied shared definition without changing its meaning.': /Reuse the supplied shared definition without changing its meaning\./,
+  'Author from reviewed target evidence rather than memory.': /Author from reviewed target evidence rather than memory\./,
+  'Return actual file inventories and differences against the fixed baseline.': /Return actual file inventories and differences against the fixed baseline\./,
+  'Unperformed checks remain unverified.': /Unperformed checks remain unverified\./,
   'Approved brand, copy and timing remain fixed until the lead approves a revision.': /Keep approved brand, copy and timing fixed until the lead approves a revision/,
   'An audio handoff must match the current timeline revision and canonical fingerprint before integration.': /require both the current timeline revision and canonical timeline fingerprint to match before integrating audio/,
   // ── The comms law (Plan 022), as bound by a Tier-2 teammate (and `frontend-architect`, which shares its wording) and by a Tier-1 specialist.

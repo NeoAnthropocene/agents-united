@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ClaudeCapabilityProbe } from '../src/core/claude-capabilities.js';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { GUARD_SCRIPT, nativeGuardHooks } from '../src/core/guard.js';
 import { InstallEngine } from '../src/core/installer.js';
@@ -17,7 +18,8 @@ import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
  * in every block message (about 600 characters of regular expressions, which also reaches the model), so the native lane now ships the
  * two guards as files in `.claude/hooks/` and the role's frontmatter names the file. The script is the guard that already exists, byte for
  * byte; it is a tracked projection like the Antigravity guard (hash, owners, refcount), and the doctor warns when it is gone because a
- * hook whose script cannot start does not block (host-library/claude/guide/hook.md: it fails open). A GLOBAL install cannot name a
+ * hook whose script cannot start does not block by default (host-library/claude/guide/hook.md: it fails open), so the handlers set `onFailure: "block"`
+ * (Claude Code 2.1.295 or later; `tests/guard-fail-closed.test.ts`) and the doctor warns that the guarded tools are blocked until the file is back. A GLOBAL install cannot name a
  * script portably (`${CLAUDE_PROJECT_DIR}` is the only placeholder, and it is the open project), so it keeps the inline guard.
  */
 
@@ -54,7 +56,7 @@ describe('the committed guard scripts', () => {
     const groups = preToolUseGroups(text);
     expect(groups.length).toBeGreaterThan(0);
     for (const group of groups) {
-      expect(group.hooks).toEqual([{ type: 'command', command: 'node', args: [reference(kind)] }]);
+      expect(group.hooks).toEqual([{ type: 'command', command: 'node', args: [reference(kind)], onFailure: 'block' }]);
     }
     expect(text).not.toContain('process.stdin');
     expect(text).not.toMatch(/"args":\["-e"/);
@@ -218,7 +220,7 @@ describe('the guard files in the native install lane (project scope)', () => {
       expect(await guardWarnings()).toEqual([]);
     });
 
-    it('warns, naming the script and the roles, when the destructive-command script is gone, because the host then lets the call through', async () => {
+    it('warns, naming the script and the roles, when the destructive-command script is gone, because the guarded tools are then blocked (2.1.295 or later; unverified below)', async () => {
       await install(true);
       await fs.remove(at(scriptRel('destructive')));
       const found = await guardWarnings();
@@ -227,7 +229,7 @@ describe('the guard files in the native install lane (project scope)', () => {
       expect(found[0]).toMatch(/backend-architect/);
       expect(found[0]).toMatch(/orchestrator-engineering/);
       expect(found[0]).not.toMatch(/code-reviewer/);
-      expect(found[0]).toMatch(/lets the call through/);
+      expect(found[0]).toMatch(/blocks when its hook cannot run \(onFailure "block", Claude Code 2\.1\.295 or later\).*shell and file-write tools it guards are blocked until the file is restored.*below 2\.1\.295 the behaviour with this field is unverified/);
       expect(found[0]).toContain(`agents update ${BUNDLE} --fanout claude`);
     });
 
@@ -238,6 +240,38 @@ describe('the guard files in the native install lane (project scope)', () => {
       expect(found).toHaveLength(1);
       expect(found[0]).toContain(scriptRel('read-only'));
       expect(found[0]).toMatch(/code-reviewer/);
+      expect(found[0]).toMatch(/blocks when its hook cannot run \(onFailure "block", Claude Code 2\.1\.295 or later\).*every tool call its matcher covers \(shells, file writers, the delegation tools Agent, Workflow, CronCreate, EnterWorktree, Artifact and SendUserFile, and every connected-server mcp__ tool\) is blocked until the file is restored.*below 2\.1\.295 the behaviour with this field is unverified/);
+    });
+
+    it('says for the mode-line gate that the check is not enforced and nothing is blocked (its handler has no onFailure)', async () => {
+      await install(true, {}, 'digital-agency');
+      await fs.remove(at('.claude/hooks/agents-united-mode-line-gate.js'));
+      const found = (await guardWarnings()).filter(warning => warning.includes('agents-united-mode-line-gate.js'));
+      expect(found).toHaveLength(1);
+      expect(found[0]).toContain("The gate does not run, so the lead's first-message check is not enforced; nothing is blocked.");
+      expect(found[0]).not.toMatch(/onFailure|2.1.295|unverified/);
+    });
+
+    describe('the Claude Code version the guard handlers need (onFailure "block", 2.1.295)', () => {
+      const versionWarnings = async (version: string | undefined): Promise<string[]> => {
+        vi.spyOn(ClaudeCapabilityProbe.prototype, 'probe').mockResolvedValue({ installed: true, version } as never);
+        return (await warnings()).filter(warning => /needs 2.1.295 or later/.test(warning));
+      };
+      it('warns once, naming the version, when the probed version is below it', async () => {
+        await install(true);
+        const found = await versionWarnings('2.1.294');
+        expect(found).toHaveLength(1);
+        expect(found[0]).toContain('Claude Code 2.1.294');
+        expect(found[0]).toMatch(/unverified.*may let the call through.*Update Claude Code/);
+      });
+      it.each(['2.1.295', '2.1.300', '2.2.0'])('does not warn at %s', async version => {
+        await install(true);
+        expect(await versionWarnings(version)).toEqual([]);
+      });
+      it('does not warn when the version is unknown', async () => {
+        await install(true);
+        expect(await versionWarnings(undefined)).toEqual([]);
+      });
     });
 
     it('reports a script edited by hand as content drift, like any managed file', async () => {

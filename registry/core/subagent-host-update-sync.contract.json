@@ -1,0 +1,10 @@
+{
+  "definition": "subagent-host-update-sync",
+  "workflows": [],
+  "skills": [
+    "sync-host"
+  ],
+  "hooks": [
+    "reject-mutating-tools"
+  ]
+}
