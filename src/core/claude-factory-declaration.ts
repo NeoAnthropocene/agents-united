@@ -98,6 +98,7 @@ export const COORDINATOR_WORKER_SUPPORT = {
     "examples/skill-review.md",
     "assets/job.schema.json",
     "assets/result.schema.json",
+    "assets/result.example.json",
     "assets/rubric.json",
     "assets/report.json",
     "scripts/check-review.mjs",

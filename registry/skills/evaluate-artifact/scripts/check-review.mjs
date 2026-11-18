@@ -8,6 +8,8 @@ import { spawnSync } from 'node:child_process';
 
 // Caller-operated consistency checks only. No command in a job/result is executed.
 const fail = message => { throw new Error(message); };
+// A refusal that also carries a list of details (the refused citations), printed beside its reason.
+class Refusal extends Error { constructor(message, details) { super(message); this.details = details; } }
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(',')}]`
   : value !== null && typeof value === 'object' ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`
@@ -57,6 +59,10 @@ const unique = (values, label) => { if (new Set(values.map(value => value.toLowe
 const skillRoot = fileURLToPath(new URL('../', import.meta.url));
 const scriptFile = fileURLToPath(import.meta.url);
 const limits = { envelope: 262144, executable: 134217728 };
+// The citation limits; registry texts and tests read these numbers from here, so they state what the check enforces.
+const CITATION_LIMITS = { maxLines: 5, maxQuoteLines: 5, maxQuoteBytes: 1024 };
+// A refusal lists this many bad citations and says how many more there are.
+const CITATION_LIST_CAP = 10;
 
 function absolute(value, label) {
   if (typeof value !== 'string' || !path.isAbsolute(value) || value.includes('\0') || value.split(/[\\/]/).some(part => part === '.' || part === '..')) fail(`${label}: expected absolute path without traversal aliases.`);
@@ -342,40 +348,84 @@ function checkJob(jobFile) {
   return { job, jobPin: pinOf(jobFile, jobBytes), digest: hash(canonical(job)), candidateDigest, inventory, checks, unavailable, recheck, resultSchema: schemas[1].schema };
 }
 
+// The hand-back must be exactly one JSON object. A prose or fenced answer is refused plainly, with the start of the file, so the next evaluator is told what went wrong.
+function parseResult(bytes) {
+  let text;
+  try { text = decode(bytes); } catch (error) { return fail(`Result is not valid UTF-8 text: ${error.message}`); }
+  try { return JSON.parse(text); } catch (error) {
+    const fence = /^\s*```/.test(text) ? ' It starts with a code fence; return the bare JSON object.' : '';
+    return fail(`Result is not valid JSON: the hand-back must be exactly ONE JSON object, with no text before or after it, no code fence and no headings. The file starts with ${JSON.stringify(text.slice(0, 40))}.${fence} Parser message: ${error.message}`);
+  }
+}
+
 function checkResult(record, resultFile) {
   const { job } = record;
   if (!sameBoth(absolute(resultFile, 'Result'), path.join(job.roots.review, 'result.json'))) fail('Result must be the caller-owned review-root result.json.');
   const bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result');
-  const result = JSON.parse(decode(bytes));
+  const result = parseResult(bytes);
   validate(result, record.resultSchema, 'result');
   if (!job.inputs.some(input => input.required && input.status === 'clear' && input.kind === 'loading'
     && sameBoth(input.path, path.join(skillRoot, 'assets/result.schema.json')))) fail('Missing result-schema loading pin.');
   if (result.jobId !== job.id || result.jobDigest !== record.digest || result.candidateDigest !== record.candidateDigest) fail('Result fixed job/candidate digest mismatch.');
   if (!same(result.subject, job.subject) || !same(result.inventory, record.inventory)) fail('Result subject/inventory substitution.');
-  const citation = cite => {
-    const rel = relative(cite.path);
+  // Every citation is inspected and every failure is collected, so one refusal names them all: where the citation is, its source, its range, the
+  // file's length, the limit it breaks and, for a quote that stands elsewhere in the file, the line it stands on.
+  const failures = [];
+  let citationTotal = 0;
+  const inspect = (cite, where) => {
+    citationTotal += 1;
+    const base = { where, sourceId: cite.sourceId, path: cite.path, startLine: cite.startLine, endLine: cite.endLine, fileLines: null, problems: [], quoteFoundAtLine: null };
+    const refuse = (lead, extra = {}) => failures.push({ ...base, lead, ...extra, problems: extra.problems ?? [lead] });
+    let rel;
+    try { rel = relative(cite.path); } catch (error) { return refuse(error.message); }
     let file, pin, cap;
     if (cite.sourceId === 'candidate') {
       pin = record.inventory.find(item => item.path === rel);
-      if (!pin) fail(`Citation selects an unreported candidate path: ${rel}.`);
+      if (!pin) return refuse(`Citation selects an unreported candidate path: ${rel}.`);
       file = path.join(job.roots.candidate, rel);
       cap = job.budget.maxCandidateFileBytes;
     } else {
       pin = job.inputs.find(input => input.id === cite.sourceId && input.status === 'clear');
-      if (!pin || rel !== path.basename(pin.path)) fail('Citation selects an unavailable/unpinned input or substituted path.');
+      if (!pin || rel !== path.basename(pin.path)) return refuse('Citation selects an unavailable/unpinned input or substituted path.');
       file = pin.path;
       cap = job.budget.maxEvidenceFileBytes;
     }
     const actual = bytesAt(file, cap, 'Citation source');
-    if (cite.sha256 !== pin.sha256 || hash(actual) !== pin.sha256) fail('Citation source hash mismatch.');
+    if (cite.sha256 !== pin.sha256 || hash(actual) !== pin.sha256) return refuse('Citation source hash mismatch.', { problems: ['the cited sha256 is not the pinned sha256 of this source'] });
     const lines = decode(actual).replace(/\r\n?/g, '\n').split('\n');
-    if (cite.startLine > cite.endLine || cite.endLine > lines.length || cite.endLine - cite.startLine >= 5) fail('Citation logical line range is invalid or over budget.');
+    const text = lines.join('\n');
     const quote = cite.quote.replace(/\r\n?/g, '\n');
-    if (Buffer.byteLength(quote, 'utf8') > 1024 || quote.split('\n').length > 5
-      || !lines.slice(cite.startLine - 1, cite.endLine).join('\n').includes(quote)) fail('Citation quote is absent from the pinned logical lines or over budget.');
+    const quoteLines = quote.split('\n').length;
+    const at = text.indexOf(quote);
+    const quoteFoundAtLine = at < 0 ? null : text.slice(0, at).split('\n').length;
+    const standsOn = quoteFoundAtLine === null ? 'the quote is not found anywhere in the file'
+      : `the quote stands on line${quoteLines > 1 ? 's' : ''} ${quoteFoundAtLine}${quoteLines > 1 ? `-${quoteFoundAtLine + quoteLines - 1}` : ''} of the file`;
+    const { maxLines, maxQuoteLines, maxQuoteBytes } = CITATION_LIMITS;
+    const range = [];
+    if (cite.startLine > cite.endLine) range.push(`the start line ${cite.startLine} is after the end line ${cite.endLine}`);
+    if (cite.endLine > lines.length) range.push(`the end line ${cite.endLine} is past the end of the file`);
+    if (cite.startLine <= cite.endLine && cite.endLine - cite.startLine >= maxLines) {
+      range.push(`the citation spans ${cite.endLine - cite.startLine + 1} lines, at most ${maxLines} are allowed (its end line at most ${maxLines - 1} after its start line)`);
+    }
+    if (range.length) return refuse('Citation logical line range is invalid or over budget.', { fileLines: lines.length, problems: quoteFoundAtLine === null ? range : [...range, standsOn], quoteFoundAtLine });
+    const quoteBytes = Buffer.byteLength(quote, 'utf8');
+    const problems = [];
+    if (quoteBytes > maxQuoteBytes) problems.push(`the quote is ${quoteBytes} bytes, at most ${maxQuoteBytes} are allowed`);
+    if (quoteLines > maxQuoteLines) problems.push(`the quote has ${quoteLines} lines, at most ${maxQuoteLines} are allowed`);
+    if (!lines.slice(cite.startLine - 1, cite.endLine).join('\n').includes(quote)) problems.push('the quote is not inside the cited lines', standsOn);
+    if (problems.length) return refuse('Citation quote is absent from the pinned logical lines or over budget.', { fileLines: lines.length, problems, quoteFoundAtLine });
   };
-  for (const criterion of result.criteria) criterion.citations.forEach(citation);
-  for (const finding of result.findings) finding.citations.forEach(citation);
+  result.criteria.forEach(criterion => criterion.citations.forEach((cite, index) => inspect(cite, `criterion ${criterion.id}, citation ${index + 1}`)));
+  result.findings.forEach(finding => finding.citations.forEach((cite, index) => inspect(cite, `finding ${finding.id}, citation ${index + 1}`)));
+  if (failures.length) {
+    const shown = failures.slice(0, CITATION_LIST_CAP);
+    const sentence = problems => problems.join('; ').replace(/\.?$/, '.');
+    const listed = shown.map((item, index) => `${index + 1}. ${item.where}: source ${item.sourceId} (${item.path}), lines ${item.startLine}-${item.endLine}${item.fileLines === null ? '' : `, the file has ${item.fileLines} lines`}: ${sentence(item.problems)}`);
+    const more = failures.length - shown.length;
+    throw new Refusal([`${failures[0].lead} ${failures.length} of ${citationTotal} citations ${failures.length === 1 ? 'is' : 'are'} refused, and one bad citation refuses the whole result; correct every one listed and hand back the complete result again as ONE JSON object.`,
+      ...listed, ...(more ? [`...and ${more} more not listed.`] : [])].join('\n'),
+    shown.map(({ lead: _lead, ...detail }) => detail));
+  }
   if (result.findings.length > job.budget.maxFindings || result.openItems.length > job.budget.maxOpenItems) fail('Returned finding/open-item budget exceeded.');
   unique(result.coverage.map(item => item.path), 'Returned coverage');
   if (!same(result.coverage.map(item => item.path).sort(), record.inventory.map(item => item.path).sort())) fail('Returned file coverage is incomplete or substituted.');
@@ -432,6 +482,6 @@ try {
     if (!values.result && record.unavailable.some(item => item.required)) process.exitCode = 1;
   } else throw new Error('A supported absolute --job review record is required.');
 } catch (error) {
-  process.stderr.write(JSON.stringify({ version: 1, kind: 'deterministic', status: 'unavailable', reason: error.message, quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false }) + '\n');
+  process.stderr.write(JSON.stringify({ version: 1, kind: 'deterministic', status: 'unavailable', reason: error.message, ...(error.details ? { details: error.details } : {}), quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false }) + '\n');
   process.exitCode = 1;
 }
