@@ -70,8 +70,7 @@
     "skillCheckPolicy": {
       "enum": [
         "agents-united-original",
-        "private-owner",
-        "adapted-source"
+        "private-owner"
       ]
     },
     "authoringHost": {
