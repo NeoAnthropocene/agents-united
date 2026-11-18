@@ -1,12 +1,15 @@
-import path from 'node:path';
-import fs from 'fs-extra';
 import { defaultProcessRunner } from './cline-capabilities.js';
-import { ANTIGRAVITY_SHIM_HOST, cmdShimRefusalFor, resolveCmdShimTarget } from './cmd-shim.js';
+import { ANTIGRAVITY_SHIM_HOST, cmdShimRefusalFor } from './cmd-shim.js';
+import { resolveHostBinary } from './host-binary.js';
+import type { PlainHostBinarySpec } from './host-binary.js';
 import type {
   AntigravityCapabilityReport,
   ProcessRunner,
   ResolvedAgyCommand,
 } from './types.js';
+
+/** `agy`: a native binary or `.cmd`/`.bat` shims; no node-wrapper branch, so a shim found on PATH is a path-executable whatever it starts. */
+const AGY_BINARY: PlainHostBinarySpec = { binaryName: 'agy', envVar: 'AGY_BIN_PATH' };
 
 export interface AntigravityProbeResolverOptions {
   resolveExecutable?: () => ResolvedAgyCommand | null;
@@ -92,79 +95,7 @@ export class AntigravityCapabilityProbe {
       return this.customResolver();
     }
 
-    // 1. Explicit AGY_BIN_PATH (mirrors CLAUDE_BIN_PATH: absolute + existing wins).
-    const envBin = process.env.AGY_BIN_PATH;
-    if (envBin && path.isAbsolute(envBin) && fs.existsSync(envBin)) {
-      // A .cmd/.bat override cannot be spawned with shell:false (EINVAL): read the program it starts, or keep the
-      // cmd.exe bridge as data so the start ends in the same clear refusal as a PATH hit (see cmd-shim.ts).
-      if (process.platform === 'win32' && ['.cmd', '.bat'].includes(path.extname(envBin).toLowerCase())) {
-        const target = resolveCmdShimTarget(envBin);
-        return target
-          ? { executable: target.executable, prefixArgs: target.prefixArgs, source: 'env-binary' }
-          : { executable: 'cmd.exe', prefixArgs: ['/c', envBin], source: 'env-binary' };
-      }
-      return {
-        executable: envBin,
-        prefixArgs: [],
-        source: 'env-binary',
-      };
-    }
-
-    // 2. PATH scanning
-    const pathEnv = process.env.PATH || '';
-    const pathSeparator = process.platform === 'win32' ? ';' : ':';
-    const dirs = pathEnv.split(pathSeparator).filter(Boolean);
-
-    if (process.platform === 'win32') {
-      const exeNames = ['agy.exe', 'agy.cmd', 'agy.bat', 'agy'];
-      for (const dir of dirs) {
-        for (const exeName of exeNames) {
-          const fullPath = path.join(dir, exeName);
-          if (!fs.existsSync(fullPath)) continue;
-
-          // Windows hardening (ADR 0013 §5): Node >= 18.20 / 20.12 / 24 rejects spawning .cmd/.bat shims
-          // with shell:false (EINVAL). The name order is agy.exe, agy.cmd, agy.bat, then the bare name (unchanged),
-          // so an agy.exe beside a shim wins, and the first folder with a hit decides: a shim the reader cannot
-          // resolve ends the scan with the refusal, because the shell would have run it before any program in a
-          // later folder.
-          const ext = path.extname(fullPath).toLowerCase();
-          if (ext === '.cmd' || ext === '.bat') {
-            // First choice: read the program the shim starts and spawn it directly (see cmd-shim.ts: `cmd.exe /c`
-            // cuts a multi-line first message). The Antigravity source union has no node-wrapper member, so a
-            // shim found on PATH is a path-executable whatever it starts.
-            const target = resolveCmdShimTarget(fullPath);
-            if (target) {
-              return { executable: target.executable, prefixArgs: target.prefixArgs, source: 'path-executable' };
-            }
-            // A shim that cannot be read with certainty is a cmd.exe bridge, as data only: `probe()` does not run
-            // it and `AntigravityLauncher` refuses to start a session through it (the plan carries `cmdShimRefusal`).
-            return {
-              executable: 'cmd.exe',
-              prefixArgs: ['/c', fullPath],
-              source: 'path-executable',
-            };
-          }
-          return {
-            executable: fullPath,
-            prefixArgs: [],
-            source: 'path-executable',
-          };
-        }
-      }
-    } else {
-      for (const dir of dirs) {
-        const fullPath = path.join(dir, 'agy');
-        if (fs.existsSync(fullPath)) {
-          return {
-            executable: fullPath,
-            prefixArgs: [],
-            source: 'path-executable',
-          };
-        }
-      }
-    }
-
-    return null;
+    return resolveHostBinary(AGY_BINARY);
   }
 
 

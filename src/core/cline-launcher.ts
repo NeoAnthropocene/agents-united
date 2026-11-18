@@ -4,7 +4,8 @@ import crypto from 'node:crypto';
 import fs from 'fs-extra';
 import { AgentHostAdapter } from './adapter.js';
 import { ClineCapabilityProbe, defaultProcessRunner } from './cline-capabilities.js';
-import { CLINE_SHIM_HOST, cmdShimRefusalFor } from './cmd-shim.js';
+import { CLINE_SHIM_HOST } from './cmd-shim.js';
+import { assertNoCmdShimBridge, cmdShimRefusalField } from './host-binary.js';
 import type {
   ClineActivationStrategy,
   ClineCapabilityReport,
@@ -208,8 +209,6 @@ export class ClineLauncher {
     }
     argv.push(bootstrapPrompt);
 
-    const cmdShimRefusal = cmdShimRefusalFor(CLINE_SHIM_HOST, command.executable, command.prefixArgs);
-
     return {
       bundleName,
       scope,
@@ -219,7 +218,7 @@ export class ClineLauncher {
       executable: command.executable,
       argv,
       bootstrapPrompt,
-      ...(cmdShimRefusal ? { cmdShimRefusal } : {}),
+      ...cmdShimRefusalField(CLINE_SHIM_HOST, command.executable, command.prefixArgs),
     };
   }
 
@@ -228,8 +227,7 @@ export class ClineLauncher {
    */
   public async launch(plan: ClineActivationPlan): Promise<void> {
     // `cmd.exe /c <shim>` cuts the multi-line first message (cmd-shim.ts): refuse from the plan's own shape, so a fabricated plan is refused too.
-    const shimRefusal = cmdShimRefusalFor(CLINE_SHIM_HOST, plan.executable, plan.argv);
-    if (shimRefusal) throw new Error(shimRefusal);
+    assertNoCmdShimBridge(CLINE_SHIM_HOST, plan.executable, plan.argv);
     const { spawn } = await import('node:child_process');
     const child = spawn(plan.executable, plan.argv, {
       cwd: plan.workspace,
