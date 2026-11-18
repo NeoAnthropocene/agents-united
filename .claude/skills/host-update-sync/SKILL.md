@@ -1,6 +1,6 @@
 ---
 name: host-update-sync
-description: Maintainer workflow for the agents-united host docs library. Checks each host's changelog first (Claude Code, Cline, Antigravity), refreshes only the affected doc snapshots, watches pinned upstream skills, writes an adaptation plan and opens a PR to dev. Use when a host ships a release, when asked to sync/refresh host docs, on the daily host-update routine, or with --feature "<topic>" to plan adoption of one new host feature. Never implements artifact changes itself.
+description: Maintainer workflow for the agents-united host docs library. Checks each host's changelog first (Claude Code, Cline, Antigravity, Codex), refreshes only the affected doc snapshots, watches pinned upstream skills, writes an adaptation plan and opens a PR to dev. Use when a host ships a release, when asked to sync/refresh host docs, on the daily host-update routine, or with --feature "<topic>" to plan adoption of one new host feature. Never implements artifact changes itself.
 metadata:
   author: "NeoAnthropocene"
   version: "1.0.0"
@@ -26,7 +26,7 @@ You do **not** edit `registry/hosts/**`, agents or skills here — the owner's d
 ## Prerequisites
 
 The environment must reach `code.claude.com`, `platform.claude.com`, `raw.githubusercontent.com`,
-`api.github.com`, `docs.cline.bot`, `antigravity.google` (each host's `sources.json` `domains`). Set `GITHUB_TOKEN`
+`api.github.com`, `docs.cline.bot`, `antigravity.google`, `learn.chatgpt.com`, `developers.openai.com` (each host's `sources.json` `domains`). Set `GITHUB_TOKEN`
 when it is available: it is sent only to `api.github.com` and raises the unauthenticated limit of 60 requests an hour. If a host is blocked
 (HTTP 403 from a proxy), do not guess: fetch the same URL with an approved channel (e.g. the Firecrawl
 MCP), save it to a scratch file and run
@@ -35,12 +35,12 @@ Ingest runs the same audit gate and records the channel in the lock.
 
 ## Workflow
 
-1. **Changelog first.** `npm run hostlib:check -- --out /tmp/hostlib-check.json` (add `--host claude,cline,antigravity`
+1. **Changelog first.** `npm run hostlib:check -- --out /tmp/hostlib-check.json` (add `--host claude,cline,antigravity,codex`
    to limit). It fetches each changelog + `llms.txt`, compares with `library.lock.json`, classifies new
    entries by artifact type and lists added/removed doc pages. **No changes anywhere and no unreachable
    host → stop; open no PR.** An unreachable host is reported, never treated as "no change".
    A host can follow GitHub release streams as well as a markdown changelog (`sources.json` `releases`; Cline's
-   CLI and SDK release separately from its extension changelog). They are read through the GitHub API and
+   CLI and SDK release separately from its extension changelog; Codex's CLI is read from `openai/codex` tags `rust-v*`, section `CLI`). They are read through the GitHub API and
    reported under their own section (`CLI`, `SDK`); a rate-limit error is an unreachable host, not "no change".
    A host can also follow its own binary's changelog (`sources.json` `commands`; Antigravity's `agy changelog`, free and
    ahead of the docs, section `Antigravity CLI (agy changelog)`). The check runs it with fixed arguments and no shell; on a
