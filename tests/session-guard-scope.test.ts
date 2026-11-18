@@ -39,7 +39,14 @@ const installGlobal = (opts: Json = {}) => install(HOME, { scope: 'global', ...o
 const update = (opts: Json = {}, target: string = '__all__') => new UpdateEngine().update(target, { hosts: ['agents'], cwd: PROJECT, ...opts } as never);
 const lock = async (file: string): Promise<Json> => fs.readJson(file);
 const groupsOf = async (file: string): Promise<Array<{ matcher: string; hooks: Json[] }>> => (await fs.readJson(file)).hooks?.PreToolUse ?? [];
-const scriptIn = async (file: string): Promise<string> => (await groupsOf(file))[0].hooks[0].args[1];
+/** The script the entries of a settings file run: the file beside it (the entries name it; they no longer carry the text). */
+const scriptIn = async (file: string): Promise<string> => {
+  const reference: string = (await groupsOf(file))[0].hooks[0].args[0];
+  expect(path.basename(reference)).toBe('agents-united-session-guard.js');
+  return fs.readFile(path.join(path.dirname(file), 'hooks', 'agents-united-session-guard.js'), 'utf8');
+};
+/** An earlier version's handler: the script inline, `node -e`. */
+const inlineHandler = (script: string): Json => ({ type: 'command', command: 'node', args: ['-e', script], onFailure: 'block' });
 const blockMessage = (script: string): string => spawnSync(process.execPath, ['-e', script], { input: 'null', encoding: 'utf8' }).stderr;
 const cliRun = (cwd: string, args: string[]) => {
   const env: Record<string, string | undefined> = { ...process.env, HOME, USERPROFILE: HOME };
@@ -103,7 +110,7 @@ describe('A: the commands follow the scope of the install that recorded the guar
     const message = blockMessage(await scriptIn(PROJECT_SETTINGS));
     expect(message).toContain('agents update --all (repairs the install)');
     expect(message).not.toContain('--global');
-    expect(message).toContain("delete by hand the hook entries that contain 'agents-united guard' from .claude/settings.json or .claude/settings.local.json in the project");
+    expect(message).toContain('delete by hand the hook entries that run agents-united-session-guard.js from .claude/settings.json or .claude/settings.local.json in the project, and then delete the script file .claude/hooks/agents-united-session-guard.js in the project.');
     const report = await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude');
     expect(report.sessionGuardCommands).toMatchObject(sessionGuardCommands('project'));
     expect(report.sessionGuardCommands?.manual).toContain(PROJECT_SETTINGS);
@@ -111,7 +118,7 @@ describe('A: the commands follow the scope of the install that recorded the guar
 
   it('every way-out message carries the manual route, by kind of file, with no absolute path', () => {
     const user = sessionGuardScript('user');
-    expect(user).toContain("delete by hand the hook entries that contain 'agents-united guard' from settings.json in the .claude folder of your home directory");
+    expect(user).toContain('delete by hand the hook entries that run agents-united-session-guard.js from settings.json in the .claude folder of your home directory, and then delete the script file agents-united-session-guard.js in the hooks folder beside it.');
     expect(blockMessage(user)).toContain('settings.json in the .claude folder of your home directory');
     for (const script of [sessionGuardScript('project'), sessionGuardScript('local'), user]) {
       expect(script).not.toContain(HOME);
@@ -140,19 +147,20 @@ describe('A: the commands follow the scope of the install that recorded the guar
     await installGlobal({ sessionGuard: 'user' });
     const current = await fs.readFile(USER_SETTINGS, 'utf8');
     for (const script of [earlierUser, earlierUserProject]) {
-      const settings = JSON.parse(current) as { hooks: { PreToolUse: Array<{ hooks: Array<{ args: string[] }> }> } };
-      for (const group of settings.hooks.PreToolUse) group.hooks[0].args[1] = script;
+      const settings = JSON.parse(current) as { hooks: { PreToolUse: Array<{ hooks: Json[] }> } };
+      for (const group of settings.hooks.PreToolUse) group.hooks[0] = inlineHandler(script);
       await fs.writeFile(USER_SETTINGS, JSON.stringify(settings, null, 2));
       expect(await inspectSessionGuard(USER_SETTINGS)).toBe('outdated');
       expect((await DoctorEngine.runDoctor(path.join(HOME, '.agents'), 'claude')).sessionGuard).toBe('outdated');
       await installGlobal({});
       expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
-      expect(JSON.parse(await fs.readFile(USER_SETTINGS, 'utf8')).hooks.PreToolUse[0].hooks[0].args[1]).toBe(sessionGuardScript('user'));
+      expect(JSON.parse(await fs.readFile(USER_SETTINGS, 'utf8')).hooks.PreToolUse[0].hooks[0].args).toEqual([path.join(HOME, '.claude', 'hooks', 'agents-united-session-guard.js')]);
+      expect(await scriptIn(USER_SETTINGS)).toBe(`${sessionGuardScript('user')}\n`);
     }
     // The project text of the version before is outdated in a project file.
     await installProject({ sessionGuard: 'project' });
     const settings = await fs.readJson(PROJECT_SETTINGS);
-    for (const group of settings.hooks.PreToolUse) group.hooks[0].args[1] = earlierProject;
+    for (const group of settings.hooks.PreToolUse) group.hooks[0] = inlineHandler(earlierProject);
     await fs.writeJson(PROJECT_SETTINGS, settings, { spaces: 2 });
     expect(await inspectSessionGuard(PROJECT_SETTINGS)).toBe('outdated');
   });
@@ -264,7 +272,7 @@ describe('1: a way out is not undone by an unrelated update of the shared user s
   it('a guard that is present but outdated in the user file is still renewed by a plain update', async () => {
     await installProject({ sessionGuard: 'user' });
     const settings = await fs.readJson(USER_SETTINGS);
-    for (const group of settings.hooks.PreToolUse) group.hooks[0].args[1] = EARLIER_SESSION_SCRIPTS[1];
+    for (const group of settings.hooks.PreToolUse) group.hooks[0] = inlineHandler(EARLIER_SESSION_SCRIPTS[1]);
     await fs.writeJson(USER_SETTINGS, settings, { spaces: 2 });
     expect(await inspectSessionGuard(USER_SETTINGS)).toBe('outdated');
     await update({});

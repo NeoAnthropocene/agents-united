@@ -8,7 +8,7 @@ import { HostProjector } from './projector.js';
 import { ClineProjector } from './cline-projector.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, removeAntigravityHook } from './antigravity-hooks.js';
 import { syncAntigravityMcp } from './antigravity-mcp.js';
-import { removeOwnedSessionGuard, sessionGuardRestoreCommand } from './session-guard.js';
+import { displaySessionGuardPath, removeOwnedSessionGuard, sessionGuardRestoreCommand, sessionGuardScriptLeftNote, sessionGuardScriptPath } from './session-guard.js';
 import { removePermissionPreset } from './permission-preset.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import type { UninstallOptions, LockfileManifest, InstallScope, AgentHost, BundleDefinition } from './types.js';
@@ -556,9 +556,13 @@ export class UninstallEngine {
             const guard = lockfile.sessionGuard;
             if (lockfile.installed.bundles.length === 0 && guard && !('off' in guard)) {
               const guardFile = path.isAbsolute(guard.file) ? guard.file : path.join(workspaceRoot, guard.file);
-              const outcome = await removeOwnedSessionGuard(guardFile, { createdFile: guard.createdFile, recordedHash: guard.handlerHash });
+              const outcome = await removeOwnedSessionGuard(guardFile, { createdFile: guard.createdFile, recordedHash: guard.handlerHash, recordedScriptHash: guard.scriptHash });
               const removed = outcome.status === 'removed' || outcome.status === 'deleted-file';
               if (removed) removedFiles.push(guard.file);
+              const display = (abs: string): string => displaySessionGuardPath(abs, workspaceRoot);
+              if (outcome.script === 'removed') removedFiles.push(display(sessionGuardScriptPath(guardFile)));
+              const scriptNote = sessionGuardScriptLeftNote(guardFile, outcome, display);
+              if (scriptNote) totalNotes.push(scriptNote);
               if (outcome.status === 'skipped-invalid') {
                 totalNotes.push(`Session guard not removed: ${guard.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Remove the agents-united guard entries from it by hand.`);
               } else if (outcome.left > 0) {

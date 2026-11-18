@@ -91,6 +91,16 @@ describe('doctor on a native Tier-2 install', () => {
     expect(await teamWarnings()).toEqual([]);
   });
 
+  it('is not silenced by a settings-level guard whose script file was edited by hand: it may allow everything', { timeout: 120_000 }, async () => {
+    await install('digital-agency', { sessionGuard: 'local' });
+    await fs.writeFile(path.join(workspace, '.claude/hooks/agents-united-session-guard.js'), 'process.exit(0)\n');
+    const found = await teamWarnings();
+    expect(found.length).toBe(1);
+    expect(found[0]).toMatch(/installed but not in effect/);
+    expect(found[0]).toMatch(/script file was edited by hand/);
+    expect(found[0]).not.toMatch(/not installed/);
+  });
+
   it('warns again when the settings-level guard is removed by hand', { timeout: 120_000 }, async () => {
     await install('digital-agency', { sessionGuard: 'local' });
     await fs.writeJson(path.join(workspace, '.claude/settings.local.json'), {});

@@ -28,7 +28,10 @@ const USER_HOOK = { matcher: 'Bash', hooks: [{ type: 'command', command: './scri
 type Json = Record<string, unknown>;
 const readSettings = async (): Promise<Json> => fs.readJson(SETTINGS);
 const preToolUse = async (): Promise<Array<{ matcher?: string; hooks: Json[] }>> => ((await readSettings()).hooks as { PreToolUse: never }).PreToolUse;
-const ours = (handler: Json | null): boolean => typeof handler?.args === 'object' && String((handler.args as string[])[1] ?? '').includes('Blocked by agents-united guard');
+const ours = (handler: Json | null): boolean =>
+  typeof handler?.args === 'object' &&
+  (String((handler.args as string[])[1] ?? '').includes('Blocked by agents-united guard') ||
+    String((handler.args as string[])[0] ?? '').replace(/\\/g, '/').endsWith('/.claude/hooks/agents-united-session-guard.js'));
 const hashOf = (handler: object): string => crypto.createHash('sha256').update(JSON.stringify(handler)).digest('hex').slice(0, 16);
 const writeGroups = async (groups: unknown[], extra: Json = {}): Promise<void> => {
   await fs.outputJson(SETTINGS, { ...extra, hooks: { PreToolUse: groups } }, { spaces: 2 });
@@ -57,7 +60,8 @@ describe('D: current means the exact key set', () => {
     expect(await inspectSessionGuard(SETTINGS)).toBe('modified');
     expect((await mergeSessionGuard(SETTINGS)).status).toBe('modified');
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(before);
-    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toEqual({ status: 'absent', left: 2 });
+    // The merge wrote the script file, and the edited entries that remain may run it: it is kept, and the outcome says so.
+    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toEqual({ status: 'absent', left: 2, script: 'kept-entry' });
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(before);
   });
 
@@ -105,7 +109,7 @@ describe('G: the settings file is read and written without loss', () => {
     expect(merged.charCodeAt(0)).toBe(0xfeff);
     expect(merged.charCodeAt(1)).toBe('{'.charCodeAt(0));
     expect(await inspectSessionGuard(SETTINGS)).toBe('wired');
-    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toEqual({ status: 'removed', left: 0 });
+    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toMatchObject({ status: 'removed', left: 0, script: 'removed' });
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(original);
   });
 
@@ -134,7 +138,7 @@ describe('G: the settings file is read and written without loss', () => {
     const after = await preToolUse();
     expect(after.slice(0, odd.length)).toEqual(odd);
     expect(after).toHaveLength(odd.length + 2);
-    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toEqual({ status: 'removed', left: 0 });
+    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toMatchObject({ status: 'removed', left: 0, script: 'removed' });
     expect(await preToolUse()).toEqual(odd);
   });
 
@@ -147,7 +151,7 @@ describe('G: the settings file is read and written without loss', () => {
     expect(await inspectSessionGuard(SETTINGS)).toBe('wired');
     const firstMatcher = (groups[0] as unknown as { matcher: string }).matcher;
     const outcome = await removeOwnedSessionGuard(SETTINGS, { createdFile: false });
-    expect(outcome).toEqual({ status: 'removed', left: 0 });
+    expect(outcome).toMatchObject({ status: 'removed', left: 0, script: 'removed' });
     expect(await preToolUse()).toEqual([{ matcher: firstMatcher, hooks: [null] }]);
   });
 

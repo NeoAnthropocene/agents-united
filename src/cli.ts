@@ -454,7 +454,7 @@ cli
   .option('--native', 'Claude, Cline and Antigravity lanes: install the committed native files (registry/hosts/<host>/: agents, workflows, rules and, for Cline, the orchestrator rule and skill and the guard plugin) instead of projecting them from the canonical assets; for Antigravity the native agents and rules replace the copies in the .agents/ main library (the legacy GEMINI.md, which repeats the rules, is left out), and the guard hook is installed in .agents/hooks/ and registered by merging one key into .agents/hooks.json (your own hooks stay); the MCP servers its agents declare are merged into .agents/mcp_config.json (your own servers stay, no credential is written, a server that needs one is not written but printed for you to add); the skills in .agents/skills/ are installed as real copies, not links (agy 1.2.16 does not list a skill folder that is a link). The Antigravity files in .agents/ are written only when Antigravity is a target (the default `-t agents`, or --canonical-store); a Cline- or plugin-only install keeps .agents/ for Cline and leaves out the three generic skills (workflow-implement, workflow-review, workflow-test) that a skill-named command would otherwise let shadow the native Cline workflows. Anything without a native file keeps the legacy projection. Recorded per host. Sticky: recorded in the lockfile, so `agents update` keeps it. Use --no-native to turn it back off.')
   .option('--no-native', 'Turn a recorded --native choice back off (legacy projections return).')
   .option('--canonical-store', 'Keep the .agents/ main library even for a Claude-only install (by default a Claude-only install is store-less: its state lives in the hidden .claude/.agents-united/ folder, ADR 0022)')
-  .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding one managed hook entry that blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off.')
+  .option('--session-guard [where]', 'Claude lane only: also guard PLAIN Claude sessions (no --agent) by adding managed hook entries that run a script file (.claude/hooks/agents-united-session-guard.js, beside the settings file) which blocks `git push --force`, `.env` writes and `vercel --prod`. where = project (.claude/settings.json, default) | local (.claude/settings.local.json) | user (~/.claude/settings.json). Everything else in the file is kept; invalid JSON is never rewritten. Sticky; --no-session-guard turns it off and removes the script file.')
   .option('--permission-preset [tier]', 'Opt-in only, never implied by -y: pre-approve a small, fixed set of commands in .claude/settings.local.json (never the shared/committed settings.json) so background specialists are not refused command approval outside auto mode. tier = verify (default: git status/diff/log, npx tsc/vitest/eslint) | build (adds npm install/run/test — executes project code, request explicitly). Never includes git commit/push, rm, curl/wget, or any deploy/publish command. Workspace-scoped only (ignored for --global). Sticky; --no-permission-preset turns it off. Claude only today; other hosts report "not supported yet".')
   .option('--mode <mode>', 'Execution mode for organization bundles (operational | brainstorming)', { default: 'operational' })
   .option('--allow-missing-prereqs', 'Proceed with installation even if some prerequisites are missing')
@@ -1318,7 +1318,7 @@ cli
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force overwrite user modified files')
   .option('--start', 'Start the updated team in Cline immediately after update')
-  .option('--session-guard [where]', 'Claude lane only: turn the settings-level session guard on again (where = project | local | user; default: where it was, else project). --no-session-guard removes our entries from the settings file (nothing else in it is touched) and records the guard as off. Both reach only the install of the scope the command addresses (the current project; --global for the global install).')
+  .option('--session-guard [where]', 'Claude lane only: turn the settings-level session guard on again (where = project | local | user; default: where it was, else project). --no-session-guard removes our entries from the settings file (nothing else in it is touched) and the script file of the guard, and records the guard as off. Both reach only the install of the scope the command addresses (the current project; --global for the global install).')
   .option('--dry-run', 'Simulate update without writing files')
   .action(async (targetIdentifier?: string, options: any = {}) => {
     intro(pc.cyan('Agents United — Package Update Engine'));
@@ -2655,15 +2655,7 @@ cli
     console.log(`  🔄 Installed Workflow Skills: ${pc.bold(report.workflowsCount.toString())}\n`);
     // Plan 023 A — plain-session guard state (only when a decision was ever recorded).
     if (report.sessionGuard) {
-      const label: Record<string, string> = {
-        wired: pc.green('✔ Wired (plain Claude sessions guarded)'),
-        off: pc.dim('Off (declined)'),
-        missing: pc.yellow('✖ Missing (see the warning below for the command that restores it)'),
-        modified: pc.yellow('⚠ Edited by hand — left as-is'),
-        outdated: pc.yellow('⚠ Outdated — run agents update'),
-        'skipped-invalid': pc.yellow('⚠ Not wired — settings file is not valid JSON (see warning)'),
-      };
-      console.log(`  🛡  Session Guard:      ${label[report.sessionGuard]}`);
+      console.log(`  🛡  Session Guard:      ${sessionGuardStateLabel(report.sessionGuard)}`);
       for (const line of sessionGuardCommandLines(report.sessionGuardCommands)) console.log(pc.bold(line));
       console.log();
     }
@@ -3135,6 +3127,22 @@ function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport, issues:
 export function claudeDiagnosticsToShow(capability: ClaudeCapabilityReport, issues: string[]): string[] {
   const refusal = claudeShimRefusal(capability);
   return capability.diagnostics.filter(diagnostic => diagnostic !== refusal && !issues.includes(diagnostic));
+}
+
+/** The doctor's one-line state of the session guard, including the three states of its script file (ADR 0068, addendum of 2026-11-18). */
+export function sessionGuardStateLabel(state: string): string {
+  const label: Record<string, string> = {
+    wired: pc.green('✔ Wired (plain Claude sessions guarded)'),
+    off: pc.dim('Off (declined)'),
+    missing: pc.yellow('✖ Missing (see the warning below for the command that restores it)'),
+    modified: pc.yellow('⚠ Edited by hand — left as-is'),
+    outdated: pc.yellow('⚠ Outdated — run agents update'),
+    'skipped-invalid': pc.yellow('⚠ Not wired — settings file is not valid JSON (see warning)'),
+    'script-missing': pc.red('✖ Script file missing — shell and file-write calls are blocked (see the commands below)'),
+    'script-outdated': pc.yellow('⚠ Script file is an earlier text — run agents update'),
+    'script-modified': pc.yellow('⚠ Script file edited by hand — left as-is'),
+  };
+  return label[state] ?? state;
 }
 
 /**

@@ -67,6 +67,9 @@ describe('the previous script is an earlier form', () => {
       '6ca2aa40dfc6ce4b231eecd5df36d31ee50b806e9def86104dcd70e3ed6941de',
       '1a916c9a8736870cd9ffea6c118976544a23df9d171e5c2b62e43a4994617bdc',
       '10dd8b0aa4abe50ac989e7f3d80ba9f962215a701cfe2fd68e06424981087d06',
+      // The two INLINE session texts (project, user) that were current when the script moved into a file: their manual route named "the hook entries that contain 'agents-united guard'".
+      '34943bfe56ac650384b48dcc921cf65070da492f7a7d3dba5f841140986dae3d',
+      '02a978b2ed9e7a92f60fe7284dd272db0a8f1ca17ea267e51d39f4a6621acd3a',
     ]);
   });
 });
