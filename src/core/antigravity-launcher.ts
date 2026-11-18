@@ -3,7 +3,8 @@ import os from 'node:os';
 import fs from 'fs-extra';
 import { AntigravityCapabilityProbe } from './antigravity-capabilities.js';
 import { defaultProcessRunner } from './cline-capabilities.js';
-import { ANTIGRAVITY_SHIM_HOST, cmdShimRefusalFor } from './cmd-shim.js';
+import { ANTIGRAVITY_SHIM_HOST } from './cmd-shim.js';
+import { assertNoCmdShimBridge, cmdShimRefusalField } from './host-binary.js';
 import { resolveStateDir } from './state-dir.js';
 import type {
   AntigravityCapabilityReport,
@@ -198,8 +199,6 @@ export class AntigravityLauncher {
       argv.push(prompt);
     }
 
-    const cmdShimRefusal = cmdShimRefusalFor(ANTIGRAVITY_SHIM_HOST, command.executable, command.prefixArgs);
-
     return {
       bundleName,
       scope,
@@ -208,7 +207,7 @@ export class AntigravityLauncher {
       argv,
       bootstrapPrompt,
       env,
-      ...(cmdShimRefusal ? { cmdShimRefusal } : {}),
+      ...cmdShimRefusalField(ANTIGRAVITY_SHIM_HOST, command.executable, command.prefixArgs),
     };
   }
 
@@ -219,8 +218,7 @@ export class AntigravityLauncher {
    */
   public async launch(plan: AntigravityActivationPlan): Promise<void> {
     // `cmd.exe /c <shim>` cuts the multi-line first message (cmd-shim.ts): refuse from the plan's own shape, so a fabricated plan is refused too.
-    const shimRefusal = cmdShimRefusalFor(ANTIGRAVITY_SHIM_HOST, plan.executable, plan.argv);
-    if (shimRefusal) throw new Error(shimRefusal);
+    assertNoCmdShimBridge(ANTIGRAVITY_SHIM_HOST, plan.executable, plan.argv);
     const { spawn } = await import('node:child_process');
     const child = spawn(plan.executable, plan.argv, {
       cwd: plan.workspace,
