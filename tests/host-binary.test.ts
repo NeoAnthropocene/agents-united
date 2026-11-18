@@ -128,11 +128,10 @@ describe('resolveHostBinary', () => {
     });
 
     it('reads a PATH shim; a Node script is a node-wrapper for the wrapped spec and a path-executable for the plain one', async () => {
-      const { shim, script } = await nodeShim(shimDir, 'fakehost.cmd');
+      const { script } = await nodeShim(shimDir, 'fakehost.cmd');
       onPath(shimDir);
       expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: process.execPath, prefixArgs: [script], source: 'node-wrapper' });
       expect(resolveHostBinary(PLAIN_SPEC)).toEqual({ executable: process.execPath, prefixArgs: [script], source: 'path-executable' });
-      expect(shim).toContain('fakehost.cmd');
     });
 
     it('reads a PATH shim of a native program as a path-executable', async () => {
@@ -177,6 +176,38 @@ describe('resolveHostBinary', () => {
       await fs.writeFile(path.join(laterDir, 'fakehost.exe'), '');
       onPath(shimDir, laterDir);
       expect(resolveHostBinary(WRAPPED_SPEC)?.executable).toBe('cmd.exe');
+    });
+
+    it('lets an adjacent node wrapper beside a bare .exe hit win for a wrapped spec, and not for a plain one', async () => {
+      const exe = path.join(shimDir, 'fakehost.exe');
+      const wrapper = path.join(shimDir, 'node_modules', 'fakehost', 'bin', 'fakehost');
+      await fs.writeFile(exe, '');
+      await fs.outputFile(wrapper, '');
+      onPath(shimDir);
+      expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: process.execPath, prefixArgs: [wrapper], source: 'node-wrapper' });
+      expect(resolveHostBinary(PLAIN_SPEC)).toEqual({ executable: exe, prefixArgs: [], source: 'path-executable' });
+    });
+
+    it('skips empty PATH entries and a double-quoted entry (the quotes stay in the folder name, so it never matches)', async () => {
+      const exe = path.join(laterDir, 'fakehost.exe');
+      await fs.writeFile(exe, '');
+      await fs.writeFile(path.join(shimDir, 'fakehost.exe'), '');
+      process.env.PATH = ['', `"${shimDir}"`, '', laterDir].join(path.delimiter);
+      expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: exe, prefixArgs: [], source: 'path-executable' });
+    });
+
+    it('reads an override with an uppercase .CMD extension as a shim', async () => {
+      const { script } = await nodeShim(shimDir, 'FAKEHOST.CMD');
+      process.env.FAKEHOST_BIN_PATH = path.join(shimDir, 'FAKEHOST.CMD');
+      expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: process.execPath, prefixArgs: [script], source: 'env-binary' });
+    });
+
+    it('falls through a relative override to the PATH hit', async () => {
+      const exe = path.join(shimDir, 'fakehost.exe');
+      await fs.writeFile(exe, '');
+      onPath(shimDir);
+      process.env.FAKEHOST_BIN_PATH = 'relative-fakehost.exe';
+      expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: exe, prefixArgs: [], source: 'path-executable' });
     });
 
     it('moves on to a later folder when the earlier one has no hit', async () => {

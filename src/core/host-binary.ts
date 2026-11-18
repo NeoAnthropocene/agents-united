@@ -61,8 +61,9 @@ function isShimExtension(file: string): boolean {
   return ['.cmd', '.bat'].includes(path.extname(file).toLowerCase());
 }
 
-export function resolveHostBinary(spec: PlainHostBinarySpec): PlainHostBinaryCommand | null;
+// The wrapped overload comes first: a wrapped spec is also assignable to the plain one, and would otherwise lose 'node-wrapper' from its return type.
 export function resolveHostBinary(spec: WrappedHostBinarySpec): WrappedHostBinaryCommand | null;
+export function resolveHostBinary(spec: PlainHostBinarySpec): PlainHostBinaryCommand | null;
 export function resolveHostBinary(spec: HostBinarySpec): WrappedHostBinaryCommand | null {
   const wrapped = 'adjacentWrappers' in spec ? spec : undefined;
 
