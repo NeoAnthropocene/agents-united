@@ -40,7 +40,13 @@ const update = (opts: Record<string, unknown> = {}) =>
 const lockfile = async (): Promise<Record<string, any>> => fs.readJson(path.join(AGENTS_DIR, 'agents-united.json'));
 type Group = { matcher: string; hooks: Array<Record<string, unknown>> };
 const groups = async (): Promise<Group[]> => (await fs.readJson(SETTINGS)).hooks?.PreToolUse ?? [];
-const ourGroups = (all: Group[]): Group[] => all.filter(group => group.hooks.some(h => String((h.args as string[] | undefined)?.[1] ?? '').includes('Blocked by agents-united guard')));
+/** Ours: the file form (the entry names the session guard script) or an inline form that carries the marker text. */
+const ourGroups = (all: Group[]): Group[] =>
+  all.filter(group =>
+    group.hooks.some(h => {
+      const args = (h.args as string[] | undefined) ?? [];
+      return String(args[1] ?? '').includes('Blocked by agents-united guard') || String(args[0] ?? '').replace(/\\/g, '/').endsWith('/.claude/hooks/agents-united-session-guard.js');
+    }));
 
 beforeEach(async () => {
   await fs.remove(WORKSPACE);
@@ -138,7 +144,7 @@ describe('agents update --no-session-guard removes the session guard and --sessi
     await install({ sessionGuard: 'project' });
     const settings = await fs.readJson(SETTINGS);
     const bash = settings.hooks.PreToolUse.find((group: Group) => group.matcher === 'Bash|PowerShell');
-    bash.hooks[0].args = ['-e', `${bash.hooks[0].args[1]};process.exit(0)`];
+    bash.hooks[0].args = ['-e', `${sessionGuardScript('project')};process.exit(0)`];
     await fs.writeJson(SETTINGS, settings, { spaces: 2 });
     const result = await update({ sessionGuard: false });
     expect(ourGroups(await groups()).map(group => group.matcher)).toEqual(['Bash|PowerShell']);
@@ -252,7 +258,8 @@ describe('the session script blocks with both commands when it cannot do its wor
       expect(script).not.toContain('own terminal');
     }
     expect(guardHandler().args[1]).toBe(GUARD_SCRIPT);
-    expect(sessionGuardHandler('project').args[1]).not.toBe(GUARD_SCRIPT);
+    expect(sessionGuardHandler('project').args).toHaveLength(1); // the session guard names a script file; the text is not in the entry
+    expect(sessionGuardScript('project')).not.toBe(GUARD_SCRIPT);
   });
 });
 

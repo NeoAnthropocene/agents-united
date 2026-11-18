@@ -475,9 +475,14 @@ export type PermissionPresetRecord =
   | { off: true }
   | { tier: 'verify' | 'build'; file: string; entries: string[]; createdFile: boolean };
 
+/**
+ * `scriptHash`: the content hash of the session guard's script file (`.claude/hooks/agents-united-session-guard.js` beside the settings
+ * file) as this install wrote it, so a later version can tell an earlier text of ours from a hand edit. Absent in a lockfile written before the
+ * script moved out of the settings entry (ADR 0068, addendum of 2026-11-18).
+ */
 export type SessionGuardRecord =
   | { off: true }
-  | { file: string; handlerHash: string; createdFile: boolean };
+  | { file: string; handlerHash: string; createdFile: boolean; scriptHash?: string };
 
 export interface AntigravityHooksRecord {
   file: string;

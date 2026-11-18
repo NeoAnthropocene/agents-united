@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import { InstallEngine } from '../src/core/installer.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
 import { DoctorEngine } from '../src/core/doctor.js';
-import { sessionGuardHandler as guardHandler } from '../src/core/session-guard.js';
+import { sessionGuardHandler as guardHandler, sessionGuardScript } from '../src/core/session-guard.js';
 
 /**
  * Plan 023 Workstream A / Step A1 — RED suite for the plain-session guard (owner decisions
@@ -92,7 +92,7 @@ describe('Plan 023 A — session-guard merge engine (unit)', () => {
   it('creates the settings file with exactly our two exec-form groups when absent', async () => {
     const { mergeSessionGuard, guardHandlerHash } = await api();
     const result = await mergeSessionGuard(SETTINGS);
-    expect(result).toEqual({ status: 'created', handlerHash: guardHandlerHash() });
+    expect(result).toMatchObject({ status: 'created', handlerHash: guardHandlerHash() });
     const settings = await readJson(SETTINGS);
     expect(Object.keys(settings)).toEqual(['hooks']);
     expect(ourGroups(settings).map(g => g.matcher)).toEqual(['Bash|PowerShell', 'Write|Edit|MultiEdit|NotebookEdit']);
@@ -135,14 +135,14 @@ describe('Plan 023 A — session-guard merge engine (unit)', () => {
     const { mergeSessionGuard, removeOwnedSessionGuard } = await api();
     await fs.outputFile(SETTINGS, USER_SETTINGS_TEXT);
     await mergeSessionGuard(SETTINGS);
-    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toEqual({ status: 'removed', left: 0 });
+    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toMatchObject({ status: 'removed', left: 0, script: 'removed' });
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(USER_SETTINGS_TEXT);
   });
 
   it('remove deletes a file we created when nothing else remains; keeps it if the user added content', async () => {
     const { mergeSessionGuard, removeOwnedSessionGuard } = await api();
     await mergeSessionGuard(SETTINGS);
-    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).toEqual({ status: 'deleted-file', left: 0 });
+    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).toMatchObject({ status: 'deleted-file', left: 0, script: 'removed' });
     expect(await fs.pathExists(SETTINGS)).toBe(false);
 
     await mergeSessionGuard(SETTINGS);
@@ -181,6 +181,7 @@ describe('Plan 023 A — session guard through install / doctor / uninstall (int
       file: '.claude/settings.json',
       handlerHash: guardHandlerHash(),
       createdFile: true,
+      scriptHash: expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
     });
     const report = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');
     expect((report as unknown as { sessionGuard?: string }).sessionGuard).toBe('wired');
@@ -260,12 +261,10 @@ describe('Plan 023 A — session guard through install / doctor / uninstall (int
  */
 describe('session guard fail-closed handler and the outdated state', () => {
   type Handler = Record<string, unknown>;
-  const withoutOnFailure = (handler: Handler): Handler => {
-    const { onFailure: _dropped, ...rest } = handler;
-    return rest;
-  };
-  /** The file text as an earlier version left it: our handlers without `onFailure`, the user's style (4 spaces, CRLF) kept. */
-  const olderText = async (mutate: (handler: Handler) => Handler = withoutOnFailure): Promise<string> => {
+  /** The inline handler an earlier version wrote: `node -e <script>`, no `onFailure` (the session guard now names a script file). */
+  const inlineEarlier: Handler = { type: 'command', command: 'node', args: ['-e', sessionGuardScript('project')] };
+  /** The file text as an earlier version left it: our handlers in the inline form without `onFailure`, the user's style (4 spaces, CRLF) kept. */
+  const olderText = async (mutate: (handler: Handler) => Handler = () => inlineEarlier): Promise<string> => {
     const settings = JSON.parse(await fs.readFile(SETTINGS, 'utf8')) as { hooks: { PreToolUse: Array<{ hooks: Handler[] }> } };
     for (const group of settings.hooks.PreToolUse) group.hooks = group.hooks.map(h => (h.command === 'node' ? mutate(h) : h));
     return JSON.stringify(settings, null, 4).replace(/\n/g, '\r\n') + '\r\n';
@@ -286,7 +285,7 @@ describe('session guard fail-closed handler and the outdated state', () => {
     const old = await olderText();
     expect(old).not.toBe(current);
     await fs.writeFile(SETTINGS, old);
-    const recorded = hashOf(withoutOnFailure({ ...guardHandler() }));
+    const recorded = hashOf(inlineEarlier);
     expect((await mergeSessionGuard(SETTINGS, { replaceHash: recorded })).status).toBe('merged');
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(current);
   });
@@ -313,7 +312,7 @@ describe('session guard fail-closed handler and the outdated state', () => {
   it('keeps a hand-edited handler as modified, never replaced, even when the field is missing too', async () => {
     const { mergeSessionGuard, inspectSessionGuard } = await api();
     await mergeSessionGuard(SETTINGS);
-    await fs.writeFile(SETTINGS, await olderText(h => ({ ...withoutOnFailure(h), args: ['-e', `${(h.args as string[])[1]};process.exit(0)`] })));
+    await fs.writeFile(SETTINGS, await olderText(() => ({ ...inlineEarlier, args: ['-e', `${sessionGuardScript('project')};process.exit(0)`] })));
     const before = await fs.readFile(SETTINGS, 'utf8');
     expect(await inspectSessionGuard(SETTINGS)).toBe('modified');
     expect((await mergeSessionGuard(SETTINGS)).status).toBe('modified');
@@ -327,7 +326,7 @@ describe('session guard fail-closed handler and the outdated state', () => {
     await add({ sessionGuard: 'project' });
     await fs.writeFile(SETTINGS, await olderText());
     const lock = await lockfile();
-    lock.sessionGuard.handlerHash = hashOf(withoutOnFailure({ ...guardHandler() }));
+    lock.sessionGuard.handlerHash = hashOf(inlineEarlier);
     await fs.writeJson(path.join(AGENTS_DIR, 'agents-united.json'), lock, { spaces: 2 });
 
     const report = await DoctorEngine.runDoctor(AGENTS_DIR, 'claude');
