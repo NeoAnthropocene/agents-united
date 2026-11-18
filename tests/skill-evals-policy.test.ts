@@ -77,7 +77,10 @@ describe('the postflight checker carries a literal copy of the table', () => {
     expect(literal, 'a literal EVALS_REQUIRED_BY_POLICY table in check-skill-return.mjs').not.toBeNull();
     // The repository's own object literal, evaluated as an expression.
     const copy = new Function(`return ${literal![1]}`)() as Record<string, boolean>;
-    expect(copy).toEqual({ ...EVALS_FILE_REQUIRED });
+    // A task pins only the policies it can use; `adapted-source` (the exemption) lives in skill-check alone, so the copy has no row for it.
+    const { 'adapted-source': _exempt, ...taskPolicies } = EVALS_FILE_REQUIRED;
+    expect(copy).toEqual(taskPolicies);
+    expect(Object.keys(copy)).not.toContain('adapted-source');
   });
 
   it('reads an unknown, null or inherited policy as required, and exempts only a known exemption', () => {
@@ -86,15 +89,15 @@ describe('the postflight checker carries a literal copy of the table', () => {
     const table = /const EVALS_REQUIRED_BY_POLICY = (\{[^}]*\});/.exec(source)![1];
     const evalsRequired = new Function(`const EVALS_REQUIRED_BY_POLICY = ${table}; ${match![0]}; return evalsRequired;`)() as (policy: unknown) => boolean;
     for (const policy of ['agents-united-original', 'private-owner']) expect(evalsRequired(policy), policy).toBe(true);
-    expect(evalsRequired('adapted-source')).toBe(false);
-    for (const policy of ['made-up-policy', null, undefined, '', 'toString', '__proto__', 7]) expect(evalsRequired(policy), String(policy)).toBe(true);
+    for (const policy of ['adapted-source', 'made-up-policy', null, undefined, '', 'toString', '__proto__', 7]) expect(evalsRequired(policy), String(policy)).toBe(true);
   });
 
-  it('lets the task schema name exactly the same policies', () => {
+  it('lets the task schema name the skill-check policies a task can use, and not adapted-source', () => {
     const schema = JSON.parse(fs.readFileSync(path.resolve('registry/skills/coordinate-artifact/assets/skill-task.schema.json'), 'utf8')) as {
       properties: Record<string, { enum?: string[] }>; required: string[];
     };
-    expect([...schema.properties.skillCheckPolicy.enum!].sort()).toEqual([...SKILL_CHECK_POLICIES].sort());
+    expect([...schema.properties.skillCheckPolicy.enum!].sort()).toEqual(SKILL_CHECK_POLICIES.filter(policy => policy !== 'adapted-source').sort());
+    expect(schema.properties.skillCheckPolicy.enum).not.toContain('adapted-source');
     expect(schema.required).toContain('skillCheckPolicy');
   });
 });

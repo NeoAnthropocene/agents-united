@@ -1064,13 +1064,16 @@ describe('postflight: the evals file follows the skill-check policy the task pin
     failure(required.post(), 'EVALS_MISSING', 'postflight');
   });
 
-  it('refuses the adapted-source policy for a task whose provenance is original, at preflight, so the exemption is not reachable through an authored task', async () => {
+  it('refuses the adapted-source policy in a task at preflight, with a message that names the two allowed policies and the by-hand route', async () => {
     for (const operation of ['create', 'repair'] as const) {
       const fx = await make({ operation, policy: 'adapted-source', evals: false });
       const out = failure(fx.pre(), 'JOB_INVALID', 'preflight');
       expect(out.reason).toContain('adapted-source');
-      expect(out.reason).toMatch(/does not fit the provenance/);
-      expect(out.reason).toContain('original');
+      expect(out.reason).toMatch(/not available in a (Skill )?task/);
+      expect(out.reason).toContain('agents-united-original');
+      expect(out.reason).toContain('private-owner');
+      expect(out.reason).toContain('agents skill-check');
+      expect(out.reason).toMatch(/by hand/);
     }
   });
 

@@ -14,7 +14,7 @@ Only for upstream intent. A local draft stops at the candidate and needs none of
 
 ## Skill
 1. Collect: `skill-task.json`, `skill-return.json`, the saved `draft.mjs` job, stdout, stderr and exit, the preflight and postflight output with its exit, the final inventory, hashes and diff. `[script: check-skill-return.mjs; collecting the output is prose]`
-2. Collect the `agents skill-check` output and exit, run with absolute `--artifact` and `--corpus` paths and `--policy` set to `agents-united-original` for work of this project, `private-owner` for another owner's Skill or `adapted-source` for a pinned adaptation. `[script: agents skill-check]`
+2. Collect the `agents skill-check` output and exit, run with absolute `--artifact` and `--corpus` paths and `--policy` set to `agents-united-original` for work of this project, `private-owner` for another owner's Skill or `adapted-source` for a pinned adaptation (a hand run only; a Skill task cannot pin it). `[script: agents skill-check]`
 3. Collect the P5 `skill` review result and its checker output; the judgment itself is prose. `[script: check-review.mjs]`
 4. Place the folder in `registry/skills/<name>/`, or `registry/hosts/claude/skills/<name>/` for a Claude-only variant. A new Skill's `evals/` folder stays inside its checkout folder; no install copies it. `[prose]`
 5. In `registry/bundles.json`, follow `docs/skill-intake.md` section 6: a contributor-only Skill goes in its named contributor bundle and stays out of `full`; an end-user Skill goes in its bundle (a vendor or niche one in an addon bundle, never an Essentials bundle) and in the explicit `full` inventory (section 8). Add the specialist wiring of section 7 and update the "N skills" counts in `README.md` and `PROJECT.md` (section 8). `[prose]`

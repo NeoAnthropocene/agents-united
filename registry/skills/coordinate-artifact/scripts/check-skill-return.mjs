@@ -66,13 +66,13 @@ const scriptFile = fileURLToPath(import.meta.url);
 const limits = { envelope: 262144, executable: 134217728, helperJob: 4194304, helperStderr: 65536, installed: 262144, small: 1048576, report: 262144 };
 const TASK_NAME = 'skill-task.json';
 // Which skill-check policies require evals/evals.json: a literal copy, copied on purpose from EVALS_FILE_REQUIRED in src/core/skill-layout.ts (a Skill script cannot import from src/); tests/skill-evals-policy.test.ts ties the two.
-const EVALS_REQUIRED_BY_POLICY = { 'agents-united-original': true, 'private-owner': true, 'adapted-source': false };
+const EVALS_REQUIRED_BY_POLICY = { 'agents-united-original': true, 'private-owner': true };
 // Required unless the policy is a KNOWN exemption: an unknown, null or inherited name reads as required.
 function evalsRequired(policy) {
   return !(typeof policy === 'string' && Object.hasOwn(EVALS_REQUIRED_BY_POLICY, policy) && EVALS_REQUIRED_BY_POLICY[policy] === false);
 }
-// Which task provenance each policy fits: the schema allows `original` only, so `adapted-source` cannot be pinned by an authored task yet.
-const POLICY_FITS_PROVENANCE = { 'agents-united-original': ['original'], 'private-owner': ['original'], 'adapted-source': ['adapted'] };
+// Which task provenance each policy fits: a task describes an original only, and offers only the two policies that fit it.
+const POLICY_FITS_PROVENANCE = { 'agents-united-original': ['original'], 'private-owner': ['original'] };
 const RETURN_NAME = 'skill-return.json';
 const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
 const INSTALLED = ['SKILL.md', 'references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'scripts/skill-return.mjs', 'references/skill-attribution.md'];
@@ -257,6 +257,10 @@ function checkTask(taskFile, withResult) {
   phase = 'preflight';
   const taskBytes = watch(taskFile, limits.envelope, 'Task', 'JOB_INVALID');
   const task = parseJson(taskBytes, 'Task', 'JOB_INVALID');
+  // `adapted-source` exists in `agents skill-check` only; say so plainly before the schema reports a bare enum mismatch.
+  if (isObject(task) && task.skillCheckPolicy === 'adapted-source') {
+    stop('JOB_INVALID', 'The skill-check policy adapted-source is not available in a Skill task: a task pins agents-united-original or private-owner. adapted-source is for `agents skill-check` run by hand on an adopted third-party Skill.');
+  }
   conform(task, loadSchema('skill-task', 'JOB_INVALID'), 'task', at => (at.startsWith('task.draftJobTemplate') ? 'TEMPLATE_INVALID' : 'JOB_INVALID'));
   const { roots, source, budget, runtime, draftJobTemplate: template } = task;
 
@@ -264,7 +268,7 @@ function checkTask(taskFile, withResult) {
   if ((task.revision === 'r0') !== (task.previous === null)) stop('JOB_INVALID', 'Revision r0 has no previous link and revision r1 needs one.');
   if ((task.authoringHost.observedVersion === null) === (task.authoringHost.unverifiedReason === null)) stop('JOB_INVALID', 'Authoring Host needs an observed version or an explicit unverified reason.');
   if (!(POLICY_FITS_PROVENANCE[task.skillCheckPolicy] ?? []).includes(task.draftJobTemplate.provenance.disposition)) {
-    stop('JOB_INVALID', `The skill-check policy ${task.skillCheckPolicy} does not fit the provenance ${task.draftJobTemplate.provenance.disposition} the task declares (a task can describe an original only, so adapted-source cannot be pinned yet).`);
+    stop('JOB_INVALID', `The skill-check policy ${task.skillCheckPolicy} does not fit the provenance ${task.draftJobTemplate.provenance.disposition} the task declares.`);
   }
   unique(task.fixedValues.map(item => item.name), 'Fixed value names', 'JOB_INVALID');
   unique(task.acceptance.map(item => item.id), 'Acceptance IDs', 'JOB_INVALID');
