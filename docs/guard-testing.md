@@ -42,6 +42,10 @@ A harmless control command should NOT be blocked, to confirm the guard isn't ove
 echo hello world
 ```
 
+### Input the guard cannot read
+
+The destructive guard blocks a call whose hook input it cannot read (the maintainer's decision of 2026-11-17): stdin that is empty or only white space, is not JSON, or is JSON that is not an object (`null`, an array, a string, a number). It exits `2` with a message that starts `Blocked by agents-united guard: unreadable hook input`. A valid object, including `{}` and one without `tool_input`, is read as before, and a byte order mark in front of valid JSON is skipped. To check it offline, pipe such input into the script: `echo null | node .claude/hooks/agents-united-guard.js; echo $?` prints the message and `2`. Claude Code itself always sends a valid object, so this case does not come up in a normal session.
+
 ### Why these three specifically
 
 | Command | Matches | Why it's safe to run |
@@ -96,6 +100,21 @@ Observed on Claude Code 2.1.288: an in-process teammate that reuses a definition
 `.claude/settings.json` or `.claude/settings.local.json` does fire for it. To test a team, install the guard with `--session-guard` and ask a teammate to
 run `echo git push --force` and to write `.env.test`; both must come back refused by the hook, and a teammate with no `Write` in its `tools:` list is never
 offered it. Without the settings-level guard the same teammate's calls go through (`agents doctor` warns about it).
+
+## The session guard blocks when it cannot do its work: the way out
+
+The session guard has its own script, built from the same template as the role guards plus the two commands that get you out (the maintainer's decision of 2026-11-17). When the script throws, or its input is unreadable, it exits `2` with a message that ends in:
+`To get out, run one of these in your own terminal, not in this session (this session's shell calls are blocked): agents update --all (repairs the install) or agents update --all --no-session-guard (removes the session guard).` The message of a guard in `~/.claude/settings.json` has one text whichever install wrote it, because that file is shared and two installs must not rewrite each other: `agents update --all --global (repairs the install) or agents update --all --global --no-session-guard (removes the session guard); if a project installed this guard, run the same commands without --global from that project's folder`. The script cannot name the folder (it is the project's, and the file is shared by every project that records a guard in it), so `agents doctor` names it for a project-recorded guard and shows the commands of the lockfile it reads. The two failure messages (unreadable input, an exception in the script) end with the route that needs no working CLI; an ordinary block message, such as the one for a forced push, does not. The route is by kind of file and without an absolute path: `Without the CLI, delete by hand the hook entries that contain 'agents-united guard' from .claude/settings.json or .claude/settings.local.json in the project.` (project and local files) or `... from settings.json in the .claude folder of your home directory.` (user file); doctor names the exact file. Deleting a project-file entry by hand leaves the lockfile saying the guard is on, so the next plain `agents update` writes it back; to keep it off, run the removal command or record it off. The two commands do less than their labels in three cases: the repair command skips a package whose files were edited by hand (and says so; the removal command still removes the guard then), a guard entry edited by hand is left in place and reported by both, and a settings file that is not valid JSON is never rewritten. The manual route remains in those cases. The removal command reaches only the install of the scope it addresses (the project's without `--global`, the global one with it) and prints which lockfile it changed and which it left. To check it offline, pipe unreadable input into the script from a settings file: `echo null | node -e "<the args[1] string>"` prints the message and exits `2`.
+
+The session guard matches `Bash|PowerShell` and `Write|Edit|MultiEdit|NotebookEdit`, the same tools as the role guards, and reads a PowerShell command from `tool_input.command` like a Bash command (the Claude Code hooks reference lists the same field for both). `echo '{"tool_name":"PowerShell","tool_input":{"command":"git push --force"}}' | node -e "<the args[1] string>"` exits `2`. A guard written with the earlier matchers (`Bash`, `Write|Edit|NotebookEdit`), or with an earlier script (the one that read only `file_path`, or an earlier user-file message), is reported by `agents doctor` as outdated, and `agents update` renews it where it stands.
+
+The destructive script reads the target path from `tool_input.file_path`, else `tool_input.notebook_path`, so a NotebookEdit to `.env` is blocked as a Write is (NotebookEdit sends `notebook_path`; the permissions page of the Claude Code reference lists it). `echo '{"tool_name":"NotebookEdit","tool_input":{"notebook_path":"/repo/.env","new_source":"x"}}' | node .claude/hooks/agents-united-guard.js` exits `2`. A role installed before this change carries the earlier script and does not guard that call until it is installed again.
+
+`~/.claude/settings.json` is shared by the global install and every project that records a guard there. A plain `agents update` or install never re-creates a guard that is entirely absent from it (a way out may have removed it on purpose); `agents doctor` reports it as missing and prints the command that puts it back, `agents update --all --session-guard user` (with `--global` for the global install). An explicit `--session-guard` writes it; a guard that is present but outdated is renewed.
+
+A host that closes the hook's input (end of file, or a pipe closed at once) ends the stream with `end`, so the script blocks (exit `2`). The script would exit `0` only if it destroyed its own stdin, which no host does; this was run, not assumed (`tests/session-guard-way-out.test.ts`).
+
+What the message does not cover: a hook whose `node` cannot be started prints nothing of this kind, and neither do a timeout or a killed process. With `onFailure: "block"` the call is blocked all the same, but the host prints its own failure line, not these commands. A role's own guard (frontmatter, script file) is not affected: it keeps the generic script and its own message.
 
 ## Windows-specific check
 

@@ -20,7 +20,7 @@ Validate installation bindings against the actual installed set in a fresh priva
 
 ## Evals file
 
-The draft carries `evals/evals.json`; `skill-check` fails every draft without it, so put `evals/evals.json` in the allowed paths and write it with the other files. Format:
+The draft carries `evals/evals.json` unless the task's `skillCheckPolicy` is `adapted-source`: `skill-check` fails a draft without it under `agents-united-original` and `private-owner` (and postflight refuses it with `EVALS_MISSING`), so put `evals/evals.json` in the allowed paths and write it with the other files. A file that is present is checked under every policy. Format:
 
 ```json
 {

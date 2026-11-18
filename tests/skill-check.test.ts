@@ -2224,3 +2224,37 @@ describe('checkSkill: upstream keys of metadata in any letter case (review 12)',
     expect(has(checkOf(result, 'metadata').findings, 'PRIVATE_POLICY')).toBe(true);
   });
 });
+
+describe('checkSkill: the evals file is required only by the policies that say so (the maintainer\'s decision of 2026-11-17)', () => {
+  const MISSING = 'evals/evals.json is missing';
+  const cases: Array<[string, string, string | undefined, boolean]> = [
+    ['agents-united-original', invoiceSkill, undefined, true],
+    ['private-owner', privateSkill, PRIVATE, true],
+    ['adapted-source', adaptedSkill, ADAPTED, false],
+  ];
+
+  it.each(cases)('%s without the evals file: the layout gate follows the table', (policy, skill, flag, required) => {
+    const result = run(build({ skill, support: { 'evals/evals.json': null, LICENSE: LICENSE_TEXT } }), flag === undefined ? {} : { policy: flag });
+    const layout = checkOf(result, 'layout');
+    if (required) {
+      expect(layout.status, policy).toBe('failed');
+      expect(layout.findings.some(f => f.message.includes(MISSING)), policy).toBe(true);
+    } else {
+      expect(layout.status, policy).toBe('passed');
+      expect(result.findings.some(f => f.message.includes(MISSING)), policy).toBe(false);
+    }
+  });
+
+  it.each(cases)('%s with a valid evals file: the layout gate passes', (policy, skill, flag) => {
+    const result = run(build({ skill, support: { LICENSE: LICENSE_TEXT } }), flag === undefined ? {} : { policy: flag });
+    expect(checkOf(result, 'layout').status, policy).toBe('passed');
+  });
+
+  it.each(cases)('%s with a malformed evals file: still validated, whether or not the file is required', (policy, skill, flag) => {
+    const bad = JSON.stringify({ skill_name: NAME, evals: 'bad' });
+    const result = run(build({ skill, support: { 'evals/evals.json': bad, LICENSE: LICENSE_TEXT } }), flag === undefined ? {} : { policy: flag });
+    const layout = checkOf(result, 'layout');
+    expect(layout.status, policy).toBe('failed');
+    expect(layout.findings.some(f => f.message.includes('is not an array')), policy).toBe(true);
+  });
+});

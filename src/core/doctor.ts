@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import YAML from 'yaml';
 import { AgentHostAdapter } from './adapter.js';
 import { HostProjector } from './projector.js';
-import { ClaudeCapabilityProbe, supportsVersion } from './claude-capabilities.js';
+import { ClaudeCapabilityProbe, claudeBelowFloorMessage } from './claude-capabilities.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { ClineCapabilityProbe } from './cline-capabilities.js';
 import { CLAUDE_SHIM_HOST, CLINE_SHIM_HOST, cmdShimRefusalFor } from './cmd-shim.js';
@@ -21,7 +21,7 @@ import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAg
 import { GUARD_ON_FAILURE_MIN_VERSION, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
-import { inspectSessionGuard, sessionGuardSnippet } from './session-guard.js';
+import { inspectSessionGuard, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardManualRoute, sessionGuardReach, sessionGuardRestoreCommand, sessionGuardSnippet, variantOfRecordedFile } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
@@ -45,7 +45,9 @@ export interface HealthReport {
   clineCapability?: ClineCapabilityReport;
   claudeCapability?: ClaudeCapabilityReport;
   /** Plan 023 A — plain-session guard state; absent when no decision was ever recorded. */
-  sessionGuard?: 'wired' | 'missing' | 'modified' | 'skipped-invalid' | 'off';
+  sessionGuard?: 'wired' | 'missing' | 'modified' | 'outdated' | 'skipped-invalid' | 'off';
+  /** The two commands that repair the install and remove the session guard; present wherever a session guard is recorded (not when it is off). */
+  sessionGuardCommands?: { repair: string; remove: string; folder?: string; manual?: string; restore?: string };
   /** Plan 024 S4 — command-permission preset state; absent when no decision was ever recorded. */
   permissionPreset?: 'wired' | 'missing' | 'skipped-invalid' | 'off';
   /**
@@ -605,6 +607,7 @@ export class DoctorEngine {
     // Plan 023 A — plain-session guard. Reported whenever a decision is recorded; repairs are
     // never automatic (a hand-edited guard or an unparseable settings file is the user's call).
     let sessionGuard: HealthReport['sessionGuard'];
+    let sessionGuardCommands: HealthReport['sessionGuardCommands'];
     const guardRecord = manifest?.sessionGuard;
     if (guardRecord) {
       if ('off' in guardRecord) {
@@ -613,14 +616,33 @@ export class DoctorEngine {
         const guardFile = path.isAbsolute(guardRecord.file)
           ? guardRecord.file
           : path.join(workspaceRootOf(root), guardRecord.file);
-        const state = await inspectSessionGuard(guardFile);
+        const state = await inspectSessionGuard(guardFile, guardRecord.handlerHash);
         sessionGuard = state === 'absent' ? 'missing' : state;
-        if (state === 'missing' || state === 'absent') {
+        // Wherever a guard is recorded, name the two commands that repair the install and remove the guard (the same two its block message
+        // names). They follow the install that records the guard: this lockfile's scope, not where the settings file sits. A guard in the user
+        // settings file recorded by a project install is found from that project's folder, so the folder is named.
+        const recordedScope: InstallScope = manifest?.scope ??(path.resolve(workspaceRootOf(root)) === path.resolve(os.homedir()) ? 'global' : 'project');
+        const reach = sessionGuardReach(variantOfRecordedFile(guardRecord.file), recordedScope);
+        const userFile = variantOfRecordedFile(guardRecord.file) === 'user';
+        const missing = state === 'missing' || state === 'absent';
+        sessionGuardCommands = {
+          ...sessionGuardCommandsFor(reach),
+          ...(reach === 'user-project' ? { folder: path.resolve(workspaceRootOf(root)) } : {}),
+          // The manual route needs no CLI; doctor can name the file, the script cannot.
+          manual: sessionGuardManualRoute(guardFile),
+          // A guard that is absent from the shared user file is not re-created by a plain update: say how to put it back on purpose.
+          ...(userFile && missing ? { restore: sessionGuardRestoreCommand(recordedScope) } : {}),
+        };
+        if (missing && userFile) {
+          warnings.push(`Session guard missing from ${guardRecord.file}, the user settings file that every install shares: plain Claude sessions are unguarded. A plain 'agents update' does not re-create it there (a way out may have removed it on purpose). To restore it, run: ${sessionGuardRestoreCommand(recordedScope)}`);
+        } else if (missing) {
           warnings.push(`Session guard missing from ${guardRecord.file}: plain Claude sessions are unguarded. Run 'agents update' to restore it.`);
+        } else if (state === 'outdated') {
+          warnings.push(`Session guard in ${guardRecord.file} is outdated: it is an earlier form, which may not block when it cannot run and does not cover the PowerShell and MultiEdit tools. Run 'agents update' to renew it.`);
         } else if (state === 'modified') {
           warnings.push(`Session guard in ${guardRecord.file} was edited by hand; agents-united leaves it as-is.`);
         } else if (state === 'skipped-invalid') {
-          warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand:\n${sessionGuardSnippet()}`);
+          warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand:\n${sessionGuardSnippet(reach)}`);
         }
       }
     }
@@ -735,7 +757,6 @@ export class DoctorEngine {
       // Roles that name a guard script file (project scope), per script: the guard handlers carry onFailure "block" (Claude Code 2.1.295 or later),
       // so a gone script blocks the role's guarded calls there. Below that version the behaviour with this field is unverified (without it, a hook that cannot start lets the call through).
       const needsScript = new Map<NativeGuardKind, { roles: string[]; owner?: string }>();
-      let anyGuardedRole = false;
       for (const [relPath, proj] of Object.entries(manifest.projections ?? {})) {
         const match = proj.host === 'claude' && proj.kind === 'role' ? /^\.claude\/agents\/([a-z0-9-]+)\.md$/.exec(relPath) : null;
         if (!match) continue;
@@ -744,7 +765,6 @@ export class DoctorEngine {
         const text = await fs.readFile(abs, 'utf8');
         if (!text.includes('profile: claude-native')) continue;
         const facts = inspectNativeAgent(text);
-        if (facts.guard !== 'none') anyGuardedRole = true;
         const problem = nativeGuardProblem(facts);
         if (problem) {
           const owner = proj.owners[0];
@@ -765,14 +785,13 @@ export class DoctorEngine {
           (need.owner ? ` Run: agents update ${need.owner} --fanout claude to restore it.` : '')
         );
       }
-      // The guard handlers carry onFailure "block", which needs Claude Code 2.1.295 or later (hooks.md). Only a known, older version warns.
-      const probed = claudeCapability?.version;
-      if (anyGuardedRole && probed !== undefined && !supportsVersion(probed, GUARD_ON_FAILURE_MIN_VERSION)) {
-        warnings.push(
-          `Claude Code ${probed} is older than ${GUARD_ON_FAILURE_MIN_VERSION}: the native guard handlers carry onFailure "block", which needs ${GUARD_ON_FAILURE_MIN_VERSION} or later. ` +
-          'On this version the behaviour is unverified and a guard whose script cannot run may let the call through. Update Claude Code.'
-        );
-      }
+    }
+
+    // The supported floor is the host profile's minVersion, 2.1.295 (the maintainer's decision of 2026-11-17): the guard handlers carry
+    // onFailure "block", which needs it (hooks.md). A probed version below it is an error; installs and starts are not refused.
+    // An unknown version raises nothing.
+    if (host === 'claude' && claudeCapability?.installed && claudeCapability.version !== undefined && claudeCapability.profile?.belowMinimum) {
+      issues.push(claudeBelowFloorMessage(claudeCapability.version, claudeCapability.profile.minVersion));
     }
 
     // Plan 032 close-out — the native lane swaps three skills for dynamic workflows, which a documented switch can turn off.
@@ -921,6 +940,7 @@ export class DoctorEngine {
       clineCapability,
       claudeCapability,
       sessionGuard,
+      sessionGuardCommands,
       declaredDeltas,
     };
   }

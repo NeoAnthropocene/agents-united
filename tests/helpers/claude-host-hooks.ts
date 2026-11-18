@@ -104,9 +104,10 @@ export function toolOffered(agentText: string, toolName: string): boolean {
  * `projectDir` stands for `${CLAUDE_PROJECT_DIR}`; `cwd` is where the host's hook process starts (it can differ from the project
  * root, for instance in a worktree or after a `cd`).
  */
-export function attempt(agentText: string, projectDir: string, call: Call, options: { cwd?: string; agentType?: string } = {}): Attempt {
+export function attempt(agentText: string, projectDir: string, call: Call, options: { cwd?: string; agentType?: string; stdin?: string } = {}): Attempt {
   const offered = toolOffered(agentText, call.tool);
-  const payload = JSON.stringify({
+  // `stdin` replaces the payload as a whole: a host that wrote something unreadable (a test of the guards' fail-closed reading).
+  const payload = options.stdin ?? JSON.stringify({
     session_id: 'test-session',
     transcript_path: '',
     cwd: options.cwd ?? projectDir,

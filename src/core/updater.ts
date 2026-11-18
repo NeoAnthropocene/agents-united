@@ -15,10 +15,26 @@ import type {
   InstalledPackageRecord,
   LockfileManifest,
   InventoryOptions,
+  InstallScope,
   ProjectionInfo,
 } from './types.js';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]+?)\r?\n---/;
+
+/**
+ * An update that failed after the session guard step had already changed a lockfile. The message is the original error's; the notes of what
+ * was changed ride on it, so the CLI can report a change that was made even though a later step threw.
+ */
+export class UpdateFailedAfterGuardChange extends Error {
+  public readonly sessionGuardNotes: string[];
+  public readonly sessionGuardChanged: number;
+  constructor(original: Error, sessionGuardNotes: string[], sessionGuardChanged: number) {
+    super(original.message, { cause: original });
+    this.name = original.name;
+    this.sessionGuardNotes = sessionGuardNotes;
+    this.sessionGuardChanged = sessionGuardChanged;
+  }
+}
 
 export class UpdateEngine {
   private registry: RegistryResolver;
@@ -248,6 +264,23 @@ export class UpdateEngine {
     targets: string | string[] | '__all__',
     options: UpdateOptions = {}
   ): Promise<UpdateResult> {
+    const progress: { notes?: string[]; changed: number } = { changed: 0 };
+    try {
+      return await this.runUpdate(targets, options, progress);
+    } catch (error) {
+      // The guard step runs first and writes files; if a later step throws, the change that was made is still reported.
+      if (error instanceof Error && progress.notes && progress.notes.length > 0) {
+        throw new UpdateFailedAfterGuardChange(error, progress.notes, progress.changed);
+      }
+      throw error;
+    }
+  }
+
+  private async runUpdate(
+    targets: string | string[] | '__all__',
+    options: UpdateOptions,
+    progress: { notes?: string[]; changed: number },
+  ): Promise<UpdateResult> {
     const inventory = await this.scanner.scan({
       scope: options.scope,
       global: options.global,
@@ -272,7 +305,32 @@ export class UpdateEngine {
         targetDirs: inventory.targetDirs,
         dryRun: options.dryRun || false,
         projections: [],
+        ...(options.sessionGuard !== undefined && !options.dryRun ? { sessionGuardNotes: [], sessionGuardChanged: 0 } : {}),
       };
+    }
+
+    // `--session-guard` / `--no-session-guard`: applied to each install's lockfile before anything that can skip the record, because it is
+    // the way out of a session guard that blocks (the maintainer's decision of 2026-11-17). It reaches only the lockfiles of the scope the
+    // command addresses: the project's without `--global`, the global one with it. The scan lists both scopes without `--global`, so the
+    // other scope's lockfile is named in the notes and left as it was.
+    let sessionGuardNotes: string[] | undefined;
+    let sessionGuardChanged: number | undefined;
+    if (options.sessionGuard !== undefined && !options.dryRun) {
+      sessionGuardNotes = [];
+      sessionGuardChanged = 0;
+      progress.notes = sessionGuardNotes;
+      const addressed: InstallScope = options.global || options.scope === 'global' ? 'global' : 'project';
+      for (const dir of new Set(recordsToUpdate.map(record => record.targetDir))) {
+        const scope = recordsToUpdate.find(record => record.targetDir === dir)!.scope;
+        if (scope !== addressed) {
+          const reach = addressed === 'project' ? 'add --global to reach the global scope' : 'run it without --global in a project folder to reach that project';
+          sessionGuardNotes.push(`Left as it was: ${path.join(dir, 'agents-united.json')} (${scope} scope): this command addresses the ${addressed} scope; ${reach}.`);
+          continue;
+        }
+        const outcome = await this.installer.applySessionGuardChoice(dir, scope, options.sessionGuard);
+        sessionGuardNotes.push(...outcome.notes);
+        if (outcome.changed) progress.changed = ++sessionGuardChanged;
+      }
     }
 
     // Preflight the entire requested update before any legacy migration can remove files
@@ -434,6 +492,7 @@ export class UpdateEngine {
       targetDirs: inventory.targetDirs,
       dryRun: false,
       projections: this.deduplicateProjections(collectedProjections),
+      ...(sessionGuardNotes ? { sessionGuardNotes, sessionGuardChanged: sessionGuardChanged ?? 0 } : {}),
     };
 
   }

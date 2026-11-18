@@ -1,6 +1,8 @@
+import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
   captureClaudeGoldens,
+  goldenDiskPath,
   GOLDEN_SET,
   readGolden,
   syncGolden,
@@ -34,6 +36,14 @@ describe('Golden pin — Claude lane pre-refactor snapshots (tests/golden/claude
       expect(artifact.content, `snapshot drift for ${artifact.relPath} (${artifact.file})`).toBe(
         readGolden(artifact)
       );
+    }
+  });
+
+  // The rule, skill and manifest snapshots were committed with carriage returns long ago; the comparison normalises both sides, so they stay as they are.
+  it('holds no carriage return in the five role snapshots: they are LF files on every platform', async () => {
+    for (const artifact of (await captureClaudeGoldens()).filter(entry => entry.file.startsWith('agents/'))) {
+      const disk = goldenDiskPath(artifact);
+      expect(fs.readFileSync(disk, 'utf8').includes('\r'), `${artifact.file} holds a carriage return`).toBe(false);
     }
   });
 

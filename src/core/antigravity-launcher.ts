@@ -3,6 +3,7 @@ import os from 'node:os';
 import fs from 'fs-extra';
 import { AntigravityCapabilityProbe } from './antigravity-capabilities.js';
 import { defaultProcessRunner } from './cline-capabilities.js';
+import { ANTIGRAVITY_SHIM_HOST, cmdShimRefusalFor } from './cmd-shim.js';
 import { resolveStateDir } from './state-dir.js';
 import type {
   AntigravityCapabilityReport,
@@ -22,6 +23,8 @@ export interface AntigravityActivationPlan {
   argv: string[];
   bootstrapPrompt: string;
   env: Record<string, string>;
+  /** Set when the plan would start `agy` through `cmd.exe /c <shim>`: the real start refuses with this text (see cmd-shim.ts). */
+  cmdShimRefusal?: string;
 }
 
 export interface PlanAntigravityActivationOptions {
@@ -195,6 +198,8 @@ export class AntigravityLauncher {
       argv.push(prompt);
     }
 
+    const cmdShimRefusal = cmdShimRefusalFor(ANTIGRAVITY_SHIM_HOST, command.executable, command.prefixArgs);
+
     return {
       bundleName,
       scope,
@@ -203,6 +208,7 @@ export class AntigravityLauncher {
       argv,
       bootstrapPrompt,
       env,
+      ...(cmdShimRefusal ? { cmdShimRefusal } : {}),
     };
   }
 
@@ -212,6 +218,9 @@ export class AntigravityLauncher {
    * and the plan's ephemeral env merged over `process.env`.
    */
   public async launch(plan: AntigravityActivationPlan): Promise<void> {
+    // `cmd.exe /c <shim>` cuts the multi-line first message (cmd-shim.ts): refuse from the plan's own shape, so a fabricated plan is refused too.
+    const shimRefusal = cmdShimRefusalFor(ANTIGRAVITY_SHIM_HOST, plan.executable, plan.argv);
+    if (shimRefusal) throw new Error(shimRefusal);
     const { spawn } = await import('node:child_process');
     const child = spawn(plan.executable, plan.argv, {
       cwd: plan.workspace,

@@ -128,8 +128,12 @@ export function readGolden(entry: GoldenEntry): string | undefined {
 
 export const isUpdateGolden: boolean = process.env.UPDATE_GOLDEN === '1';
 
-/** `UPDATE_GOLDEN=1` maintainer run: rewrite one snapshot (raw bytes, style-preserving); a no-op otherwise. */
+/**
+ * `UPDATE_GOLDEN=1` maintainer run: rewrite one snapshot as LF; a no-op otherwise. The snapshots are `-text`
+ * (byte-exact) and the repo stores LF, so the write must not carry the carriage returns that a CRLF checkout of the
+ * registry sources puts into `rawContent` (a Windows regeneration once committed CRLF bodies that a Linux render would not match).
+ */
 export function syncGolden(artifact: GoldenArtifact): void {
   if (!isUpdateGolden) return;
-  fs.outputFileSync(goldenDiskPath(artifact), artifact.rawContent, 'utf8');
+  fs.outputFileSync(goldenDiskPath(artifact), artifact.content, 'utf8');
 }

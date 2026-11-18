@@ -31,8 +31,12 @@ hooks:
           args:
             - -e
             - 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let
-              i={};try{i=JSON.parse(s)}catch(e){}const
-              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let
+              i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof
+              i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by
+              agents-united guard: unreadable hook input. The input of this tool
+              call could not be read, so the guard cannot tell whether it is
+              safe.\n");process.exit(2)}const
+              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let
               r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
               push --force";else
               if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else
@@ -40,6 +44,7 @@ hooks:
               .env write";if(r){process.stderr.write("Blocked by agents-united
               guard: "+r+" requires explicit human approval outside the agent
               session.\n");process.exit(2)}})'
+          onFailure: block
     - matcher: Write|Edit|NotebookEdit
       hooks:
         - type: command
@@ -47,8 +52,12 @@ hooks:
           args:
             - -e
             - 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let
-              i={};try{i=JSON.parse(s)}catch(e){}const
-              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let
+              i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof
+              i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by
+              agents-united guard: unreadable hook input. The input of this tool
+              call could not be read, so the guard cannot tell whether it is
+              safe.\n");process.exit(2)}const
+              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let
               r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
               push --force";else
               if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else
@@ -56,6 +65,7 @@ hooks:
               .env write";if(r){process.stderr.write("Blocked by agents-united
               guard: "+r+" requires explicit human approval outside the agent
               session.\n");process.exit(2)}})'
+          onFailure: block
 ---
 <!-- managed-by: agents-united | profile: claude | canonical: agents/subagent-code-reviewer.md | do not edit -->
 

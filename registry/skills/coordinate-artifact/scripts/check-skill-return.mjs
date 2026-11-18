@@ -65,6 +65,14 @@ const skillRoot = fileURLToPath(new URL('../', import.meta.url));
 const scriptFile = fileURLToPath(import.meta.url);
 const limits = { envelope: 262144, executable: 134217728, helperJob: 4194304, helperStderr: 65536, installed: 262144, small: 1048576, report: 262144 };
 const TASK_NAME = 'skill-task.json';
+// Which skill-check policies require evals/evals.json: a literal copy, copied on purpose from EVALS_FILE_REQUIRED in src/core/skill-layout.ts (a Skill script cannot import from src/); tests/skill-evals-policy.test.ts ties the two.
+const EVALS_REQUIRED_BY_POLICY = { 'agents-united-original': true, 'private-owner': true, 'adapted-source': false };
+// Required unless the policy is a KNOWN exemption: an unknown, null or inherited name reads as required.
+function evalsRequired(policy) {
+  return !(typeof policy === 'string' && Object.hasOwn(EVALS_REQUIRED_BY_POLICY, policy) && EVALS_REQUIRED_BY_POLICY[policy] === false);
+}
+// Which task provenance each policy fits: the schema allows `original` only, so `adapted-source` cannot be pinned by an authored task yet.
+const POLICY_FITS_PROVENANCE = { 'agents-united-original': ['original'], 'private-owner': ['original'], 'adapted-source': ['adapted'] };
 const RETURN_NAME = 'skill-return.json';
 const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
 const INSTALLED = ['SKILL.md', 'references/job.md', 'references/provenance.md', 'references/quality.md', 'examples/one-draft.md', 'assets/report.md', 'scripts/draft.mjs', 'scripts/skill-return.mjs', 'references/skill-attribution.md'];
@@ -255,6 +263,9 @@ function checkTask(taskFile, withResult) {
   // Task-internal consistency.
   if ((task.revision === 'r0') !== (task.previous === null)) stop('JOB_INVALID', 'Revision r0 has no previous link and revision r1 needs one.');
   if ((task.authoringHost.observedVersion === null) === (task.authoringHost.unverifiedReason === null)) stop('JOB_INVALID', 'Authoring Host needs an observed version or an explicit unverified reason.');
+  if (!(POLICY_FITS_PROVENANCE[task.skillCheckPolicy] ?? []).includes(task.draftJobTemplate.provenance.disposition)) {
+    stop('JOB_INVALID', `The skill-check policy ${task.skillCheckPolicy} does not fit the provenance ${task.draftJobTemplate.provenance.disposition} the task declares (a task can describe an original only, so adapted-source cannot be pinned yet).`);
+  }
   unique(task.fixedValues.map(item => item.name), 'Fixed value names', 'JOB_INVALID');
   unique(task.acceptance.map(item => item.id), 'Acceptance IDs', 'JOB_INVALID');
   if (folded(taskFile) !== folded(path.join(roots.evidence, TASK_NAME))) stop('JOB_INVALID', `Task must be the caller-owned evidence-root ${TASK_NAME}.`);
@@ -476,6 +487,10 @@ function checkReturn(ctx, resultArg) {
   }
   for (const [file, text] of changes) if (!final.has(file) || !final.get(file).equals(Buffer.from(text))) stop('BYTES_MISMATCH', `Final bytes differ from the saved changes text: ${file}.`, 'failed', file);
   if (!final.has('SKILL.md')) stop('BYTES_MISMATCH', 'A complete draft needs SKILL.md.');
+  // The evals file is required only where the skill-check policy the task pins requires it (never read as "no requirement" when the field is absent: the schema requires it).
+  if (evalsRequired(task.skillCheckPolicy) && !final.has('evals/evals.json')) {
+    stop('EVALS_MISSING', `The task pins the skill-check policy ${task.skillCheckPolicy}, which requires evals/evals.json, and the draft has none.`, 'failed', 'evals/evals.json');
+  }
 
   if (!same([...ret.inventory].sort(byPath), live.inventory.map(stripKind))) stop('INVENTORY_MISMATCH', 'The returned inventory differs from the recomputed one.');
   if (!Array.isArray(report.inventory) || !same(report.inventory, live.inventory.map(({ path: file, sha256 }) => ({ path: file, sha256 })))) stop('INVENTORY_MISMATCH', 'The helper report inventory differs from the recomputed one.');

@@ -8,16 +8,45 @@
  * earlier shell form (`node -e '<js>'`) runs under PowerShell on Windows without Git Bash, whose
  * native-argument quoting can mangle the script and let the guarded command through (fail open).
  * The script blocks `git push --force`/`-f` (not `--force-with-lease`), `vercel --prod`, and
- * `.env*` writes (not `.env.example`) via Write/Edit/NotebookEdit or a shell redirect.
+ * `.env*` writes (not `.env.example`) via Write, Edit or MultiEdit (target in `tool_input.file_path`), NotebookEdit (target in
+ * `tool_input.notebook_path`; the script reads `file_path`, else `notebook_path`) or a shell redirect.
+ *
+ * Input it cannot read (empty or white space, not JSON, or JSON that is not an object) is blocked with exit 2 and a message that
+ * starts `Blocked by agents-united guard: unreadable hook input` (the maintainer's decision of 2026-11-17). A BOM is trimmed first.
+ * A valid object, including `{}` and one without `tool_input`, is read as before.
  *
  * Testing this by hand? Asking a session hypothetically tests the model, not the hook — see
  * `docs/guard-testing.md` (Plan 024 S5) for a model-proof test protocol.
  */
-export const GUARD_SCRIPT = String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+export function guardScript(): string {
+  // The session guard (`session-guard.ts`) does not call this with text: it builds its script by inserting its hint after the unreadable-input sentence of GUARD_SCRIPT.
+  return String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+}
 
-/** The exec-form handler: `node -e <script>`, no shell on any OS. */
-export function guardHandler(): { type: 'command'; command: string; args: string[] } {
-  return { type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT] };
+/** The generic script: the role guards and the legacy inline form carry exactly this text. */
+export const GUARD_SCRIPT = guardScript();
+
+/**
+ * The destructive guard script as it was before it blocked unreadable input (the maintainer's decision of 2026-11-17), kept so that an
+ * entry written by that version is recognised as ours and renewed. Same ownership marker as the current script. The one list: the session
+ * guard (`session-guard.ts`) and the native role check (`native-guard.ts`) both read it.
+ */
+export const EARLIER_GUARD_SCRIPTS: readonly string[] = [
+  // [0] before the unreadable-input change; [1] the script that blocked unreadable input but read only `tool_input.file_path`
+  // (a NotebookEdit to a protected path went through, because it sends `notebook_path`).
+  String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
+  String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
+];
+
+/** Text every version of the destructive guard script carries: the ownership marker (the read-only guard says "read-only guard", so it never matches). */
+export const GUARD_OWNERSHIP_MARKER = 'Blocked by agents-united guard';
+
+/**
+ * The exec-form handler: `node -e <script>`, no shell on any OS. It carries `onFailure: 'block'` (Claude Code 2.1.295 or later; the
+ * maintainer's decision of 2026-11-17): the legacy inline form and the settings-level session guard block when the script cannot run.
+ */
+export function guardHandler(): FailClosedHandler {
+  return { type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT], onFailure: 'block' };
 }
 
 /** The PreToolUse groups every guarded surface carries. */
@@ -70,7 +99,7 @@ export const GUARD_ON_FAILURE_MIN_VERSION = '2.1.295';
 export interface FailClosedHandler { type: 'command'; command: string; args: string[]; onFailure: 'block' }
 
 /**
- * The exec-form handler that runs a guard script file: `node <file>`, no shell on any OS. The two guards block when their hook cannot run (`onFailure: 'block'`); the destructive guard's own decision to allow a call whose input it cannot parse is unchanged (the read-only guard blocks there);
+ * The exec-form handler that runs a guard script file: `node <file>`, no shell on any OS. The two guards block when their hook cannot run (`onFailure: 'block'`); the destructive guard also blocks (exit 2) a payload it cannot read, as the read-only guard does (the maintainer's decision of 2026-11-17);
  * the mode-line gate does not: it is not a guard of what a role may do, and a lead whose gate script is missing could make no tool call at all.
  */
 export function guardFileHandler(kind: 'destructive' | 'read-only'): FailClosedHandler;
@@ -82,7 +111,7 @@ export function guardFileHandler(kind: NativeGuardKind): { type: 'command'; comm
 
 /** The inline (`node -e`) form of the destructive-command guard for native agents: the file handler's fail-closed field, the script embedded. */
 export function nativeGuardHandler(): FailClosedHandler {
-  return { ...guardHandler(), onFailure: 'block' };
+  return guardHandler();
 }
 
 /** The destructive-command guard of a native agent, as a script file (project scope): the matchers of `nativeGuardHooks`, a file handler. */

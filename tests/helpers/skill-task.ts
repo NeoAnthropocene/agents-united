@@ -118,7 +118,21 @@ export interface PrepareSkillTaskOptions {
   checker?: string; validator?: string; corpus?: string;
   /** Skill folder name (default `incident-actions`) and, for a create, the complete files the producer will author. */
   name?: string; changes?: Record<string, string>;
+  /**
+   * The `skill-check` policy the task pins (default `private-owner`, the owner of the fixture author is not agents-united). The default
+   * draft carries `evals/evals.json`, because the default policy requires it; `evals: false` leaves it out (a draft without the file).
+   */
+  policy?: 'agents-united-original' | 'private-owner' | 'adapted-source'; evals?: boolean;
 }
+
+/** A valid `evals/evals.json` for a Skill of this name (two evals, each field long enough for the layout gate). */
+export const evalsText = (skillName: string): string => `${JSON.stringify({
+  skill_name: skillName,
+  evals: [
+    { id: 1, prompt: 'An on-call engineer pastes an incident timeline and asks for owned follow-up actions.', expected_output: 'Every contributing factor has exactly one owner and one due date.' },
+    { id: 2, prompt: 'The engineer asks for follow-ups on a timeline that names no owner for one factor.', expected_output: 'The Skill asks who owns the factor instead of inventing an owner.' },
+  ],
+}, null, 2)}\n`;
 
 export async function prepareSkillTask(options: PrepareSkillTaskOptions = {}): Promise<SkillTaskFixture> {
   const operation = options.operation ?? 'create';
@@ -143,13 +157,21 @@ export async function prepareSkillTask(options: PrepareSkillTaskOptions = {}): P
   let roles: Array<{ path: string; role: string }>;
   let baseline: Json[] = [];
   if (create) {
-    fx.changes = options.changes ?? { 'SKILL.md': entryText(), 'examples/actions.md': '# Worked example\n\nTimeline: the cache filled at 09:10. Action: add an alert (owner: infra, due: Friday).\n' };
+    fx.changes = options.changes ?? {
+      'SKILL.md': entryText(), 'examples/actions.md': '# Worked example\n\nTimeline: the cache filled at 09:10. Action: add an alert (owner: infra, due: Friday).\n',
+      ...(options.evals === false ? {} : { 'evals/evals.json': evalsText(skillName) }),
+    };
     roles = Object.keys(fx.changes).sort().map(file => ({ path: file, role: file === 'SKILL.md' ? 'subject' : 'support' }));
   } else {
     const before: Record<string, string> = { 'SKILL.md': entryText('3. Close the review.\n'), 'references/usage.md': 'Old usage note.\n', 'notes/user.md': 'The maintainer wrote this note by hand.\n' };
     for (const [rel, text] of Object.entries(before)) await fs.outputFile(path.join(draft, ...rel.split('/')), text);
-    fx.changes = { 'SKILL.md': entryText('3. Review the actions every week.\n'), 'references/usage.md': 'Updated usage note.\n' };
-    roles = [{ path: 'SKILL.md', role: 'subject' }, { path: 'references/usage.md', role: 'support' }, { path: 'notes/user.md', role: 'preservation-only' }];
+    // The baseline has no evals file: the repair adds it (default) or leaves it out (`evals: false`, a baseline that lacks it stays without).
+    fx.changes = {
+      'SKILL.md': entryText('3. Review the actions every week.\n'), 'references/usage.md': 'Updated usage note.\n',
+      ...(options.evals === false ? {} : { 'evals/evals.json': evalsText(skillName) }),
+    };
+    roles = [{ path: 'SKILL.md', role: 'subject' }, { path: 'references/usage.md', role: 'support' }, { path: 'notes/user.md', role: 'preservation-only' },
+      ...(options.evals === false ? [] : [{ path: 'evals/evals.json', role: 'support' }])];
     for (const item of await inventoryOf(draft)) {
       const snapshot = path.join(fx.evidence, 'r0', 'baseline', ...item.path.split('/'));
       await fs.copy(path.join(draft, ...item.path.split('/')), snapshot);
@@ -172,7 +194,7 @@ export async function prepareSkillTask(options: PrepareSkillTaskOptions = {}): P
     ...(intent === 'upstream' ? { contributionTemplate: CONTRIBUTION_TEMPLATE } : {}),
   };
   fx.task = {
-    version: 1, kind: 'skill-task', id: 'incident-actions', revision: 'r0', previous: null, operation, intent,
+    version: 1, kind: 'skill-task', id: 'incident-actions', revision: 'r0', previous: null, operation, intent, skillCheckPolicy: options.policy ?? 'private-owner',
     authoringHost: { host: 'claude', product: 'Claude Code CLI', scope: 'workspace', lane: 'native', observedVersion: null, unverifiedReason: 'Offline fixture; no Claude process invoked.' },
     target: null,
     objective: 'Draft one Skill that turns an incident timeline into owned follow-up actions.',

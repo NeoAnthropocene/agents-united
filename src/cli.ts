@@ -1293,6 +1293,9 @@ cli
       if (result.staleRecords.length > 0) {
         log.info(`${result.staleRecords.length} stale record(s) cleaned — bookkeeping only, those files were already gone`);
       }
+      if (result.notes.length > 0) {
+        note(pc.yellow(result.notes.join('\n')), 'Session guard');
+      }
       outro(pc.green(
         result.removed.length === 0 && result.kept.length > 0
           ? `✔ Removed "${identifier}" from this workspace — nothing was deleted, ${result.kept.length} co-owned assets kept`
@@ -1315,9 +1318,25 @@ cli
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force overwrite user modified files')
   .option('--start', 'Start the updated team in Cline immediately after update')
+  .option('--session-guard [where]', 'Claude lane only: turn the settings-level session guard on again (where = project | local | user; default: where it was, else project). --no-session-guard removes our entries from the settings file (nothing else in it is touched) and records the guard as off. Both reach only the install of the scope the command addresses (the current project; --global for the global install).')
   .option('--dry-run', 'Simulate update without writing files')
   .action(async (targetIdentifier?: string, options: any = {}) => {
     intro(pc.cyan('Agents United — Package Update Engine'));
+
+    // --session-guard [where] / --no-session-guard, parsed like the add command.
+    let updateSessionGuard: 'project' | 'local' | 'user' | boolean | undefined;
+    if (options.sessionGuard === false) {
+      updateSessionGuard = false;
+    } else if (options.sessionGuard === true || options.sessionGuard === '') {
+      updateSessionGuard = true;
+    } else if (typeof options.sessionGuard === 'string') {
+      const where = options.sessionGuard.trim().toLowerCase();
+      if (where !== 'project' && where !== 'local' && where !== 'user') {
+        note(`--session-guard accepts project, local or user (got "${options.sessionGuard}").`, 'Invalid option');
+        process.exit(1);
+      }
+      updateSessionGuard = where;
+    }
 
     // Parse --fanout like the add command: validated against the registry,
     // unknown/non-projection-capable ids are dropped with a warning.
@@ -1358,6 +1377,11 @@ cli
     s.stop('Inventory discovery complete');
 
     if (report.totalCount === 0) {
+      if (updateSessionGuard !== undefined && !options.dryRun) {
+        outro(pc.red('No installed packages found in project or global configuration. The session guard was not changed.'));
+        process.exitCode = 1;
+        return;
+      }
       outro(pc.yellow('No installed packages found in project or global configuration.'));
       return;
     }
@@ -1479,9 +1503,25 @@ cli
         force: options.force,
         dryRun: options.dryRun,
         fanout: updateFanout,
+        sessionGuard: updateSessionGuard,
       });
 
       updateSpinner.stop('Update completed');
+
+      // The guard step says what it did to each lockfile it examined (`Changed:` / `Left as it was:`, with the file). When it examined
+      // none, nothing was changed and the exit code says so: the CLI never claims a guard is off that it did not touch.
+      if (updateSessionGuard !== undefined && !options.dryRun) {
+        if (result.sessionGuardNotes && result.sessionGuardNotes.length > 0) {
+          note(pc.yellow(result.sessionGuardNotes.join('\n')), 'Session guard');
+        } else {
+          outro(pc.red(
+            (targetIdentifier ? `No installed package matches "${targetIdentifier}" in the scope this command addresses. ` : 'No installed package was found in the scope this command addresses. ') +
+              'The session guard was not changed.'
+          ));
+          process.exitCode = 1;
+          return;
+        }
+      }
 
       if (options.dryRun) {
         outro(pc.yellow(`[DRY RUN] Would update ${result.updated.length} packages in ${result.targetDirs.join(', ')}`));
@@ -1534,6 +1574,10 @@ cli
       }
     } catch (err: any) {
       updateSpinner.stop(pc.red('Update failed'));
+      // A session guard change that was made before the failure is still reported.
+      if (Array.isArray(err?.sessionGuardNotes) && err.sessionGuardNotes.length > 0) {
+        note(pc.yellow(err.sessionGuardNotes.join('\n')), err.sessionGuardChanged > 0 ? 'Session guard (changed before the failure)' : 'Session guard');
+      }
       outro(pc.red(`Error: ${err.message}`));
       process.exit(1);
     }
@@ -2577,11 +2621,15 @@ cli
       }
 
       if (report.claudeCapability) {
-        renderClaudeCapabilityBlock(report.claudeCapability);
-        const refusal = claudeShimRefusal(report.claudeCapability);
-        for (const diagnostic of report.claudeCapability.diagnostics) {
-          if (diagnostic !== refusal) console.log(`  ${pc.dim(diagnostic)}`);
-        }
+        // The issues are listed below, so the block leaves out a diagnostic that is also an issue (the floor message prints once).
+        renderClaudeCapabilityBlock(report.claudeCapability, report.issues);
+        console.log();
+      }
+
+      // This branch also covers a lockfile that cannot be read. Its issues are printed here, and the exit code is 1 exactly when there are any.
+      if (report.issues.length > 0) {
+        console.log(pc.red(pc.bold('❌ Issues Found:')));
+        report.issues.forEach(i => console.log(`  ✖ ${i}`));
         console.log();
       }
 
@@ -2593,6 +2641,11 @@ cli
 
       printDeclaredDeltas(report, options.host);
 
+      if (!report.valid) {
+        outro(pc.red('✖ Doctor found issues in workspace configuration.'));
+        process.exitCode = 1;
+        return;
+      }
       outro(pc.blue('✨ Workspace is ready for initialization.'));
       return;
     }
@@ -2605,11 +2658,14 @@ cli
       const label: Record<string, string> = {
         wired: pc.green('✔ Wired (plain Claude sessions guarded)'),
         off: pc.dim('Off (declined)'),
-        missing: pc.yellow('✖ Missing — run agents update'),
+        missing: pc.yellow('✖ Missing (see the warning below for the command that restores it)'),
         modified: pc.yellow('⚠ Edited by hand — left as-is'),
+        outdated: pc.yellow('⚠ Outdated — run agents update'),
         'skipped-invalid': pc.yellow('⚠ Not wired — settings file is not valid JSON (see warning)'),
       };
-      console.log(`  🛡  Session Guard:      ${label[report.sessionGuard]}\n`);
+      console.log(`  🛡  Session Guard:      ${label[report.sessionGuard]}`);
+      for (const line of sessionGuardCommandLines(report.sessionGuardCommands)) console.log(pc.bold(line));
+      console.log();
     }
     // Plan 024 S4 — command-permission preset state (only when a decision was ever recorded).
     if (report.permissionPreset) {
@@ -2633,7 +2689,7 @@ cli
     }
 
     if (report.claudeCapability) {
-      renderClaudeCapabilityBlock(report.claudeCapability);
+      renderClaudeCapabilityBlock(report.claudeCapability, report.issues);
       console.log(`  Configured Agents: ${report.agentsCount} projected into .claude/agents/ ("agents start --host claude" = optional launcher)\n`);
     }
 
@@ -2777,11 +2833,24 @@ async function runAntigravityStart(bundle: string, prompt: string | undefined, o
       `Scope: ${plan.scope}\n` +
       `Workspace: ${plan.workspace}\n` +
       `Executable: ${plan.executable}\n` +
+      (plan.cmdShimRefusal ? `Real start: REFUSED. ${plan.cmdShimRefusal}\n` : '') +
       `Argv: ${plan.argv.map(a => (a.includes(' ') || a.includes('\n') ? `"${a.replace(/\n/g, '\\n')}"` : a)).join(' ')}`,
       'Antigravity Activation Plan (dry run)'
     );
+    if (plan.cmdShimRefusal) {
+      // The real start refuses this plan (cmd-shim.ts): the dry run ends the way the real start would.
+      outro(pc.red('Dry run: the real start would be refused. No processes launched.'));
+      process.exit(1);
+    }
     outro(pc.yellow('Dry run complete. No processes launched.'));
     return;
+  }
+
+  // Refuse before any note: a plan that goes through a cmd.exe shim bridge cannot carry the opening prompt (cmd-shim.ts).
+  // Nothing was probed for such a plan, so the "could not confirm --prompt-interactive" note below must not describe it either.
+  if (plan.cmdShimRefusal) {
+    outro(pc.red(plan.cmdShimRefusal));
+    process.exit(1);
   }
 
   // Plan 029 follow-up (owner gate-6: agy ≥1.2.13): workspace agents may live in the directory
@@ -3035,7 +3104,7 @@ async function runClaudeStart(bundle: string, prompt: string | undefined, option
  * duplication already drifted once (a capability line landed in one branch only). Both call sites share this
  * renderer so a new capability is reported everywhere.
  */
-function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
+function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport, issues: string[]): void {
   console.log(pc.bold(pc.cyan('Claude Code Runtime & Native Discovery Audit:')));
   const refusal = claudeShimRefusal(capability);
   console.log(`  Installed: ${capability.installed ? (refusal ? pc.yellow('✔ Detected, but cannot be started (cmd.exe shim)') : pc.green('✔ Detected')) : pc.yellow('✖ Not Found')}`);
@@ -3056,8 +3125,32 @@ function renderClaudeCapabilityBlock(capability: ClaudeCapabilityReport): void {
   if (capability.profile) {
     console.log(`  Host profile: ${capability.profile.profileId} (minimum ${capability.profile.minVersion})`);
   }
-  // The refusal text is printed once, among the doctor warnings; it is not repeated as a diagnostic.
-  for (const diagnostic of capability.diagnostics) if (diagnostic !== refusal) console.log(`  ${pc.yellow('•')} ${diagnostic}`);
+  for (const diagnostic of claudeDiagnosticsToShow(capability, issues)) console.log(`  ${pc.yellow('•')} ${diagnostic}`);
+}
+
+/**
+ * The probe diagnostics the doctor prints in the capability block. The refusal text is printed once, among the doctor warnings,
+ * and the below-floor message once, among the doctor issues; neither is repeated as a diagnostic.
+ */
+export function claudeDiagnosticsToShow(capability: ClaudeCapabilityReport, issues: string[]): string[] {
+  const refusal = claudeShimRefusal(capability);
+  return capability.diagnostics.filter(diagnostic => diagnostic !== refusal && !issues.includes(diagnostic));
+}
+
+/**
+ * The two doctor lines of the session-guard section: the commands that repair the install and remove the guard, to be run in the
+ * user's own terminal (while the guard blocks, the session's shell calls are blocked too). Empty when no guard is recorded.
+ */
+export function sessionGuardCommandLines(commands: { repair: string; remove: string; folder?: string; manual?: string; restore?: string } | undefined): string[] {
+  if (!commands) return [];
+  const lines = [`     Repair the install:   ${commands.repair}`, `     Remove the guard:     ${commands.remove}`];
+  // A guard in the user settings file recorded by a project install is found only from that project's folder.
+  if (commands.folder !== undefined) lines.push(`     Run them in:          ${commands.folder} (the project that installed this guard)`);
+  // A guard absent from the shared user settings file is put back on purpose, not by a plain update.
+  if (commands.restore !== undefined) lines.push(`     Restore it:           ${commands.restore}`);
+  // The route that needs no working CLI.
+  if (commands.manual !== undefined) lines.push(`     ${commands.manual}`);
+  return lines;
 }
 
 /** The refusal text when Claude Code was found only as a cmd.exe shim bridge (cmd-shim.ts), else undefined. */

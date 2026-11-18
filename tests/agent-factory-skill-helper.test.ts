@@ -117,8 +117,8 @@ describe('skill-return.mjs writes a return that the checker accepts', () => {
     expect(repaired.run.status, repaired.run.stderr).toBe(0);
     written(repair, script(repair, helperFlags(repair, repaired)));
     const ret = await fs.readJson(repair.returnFile) as Json;
-    expect(ret.changed).toEqual([{ path: 'SKILL.md', operation: 'update' }, { path: 'references/usage.md', operation: 'update' }]);
-    expect(ret.inventory.map((item: Json) => item.path)).toEqual(['SKILL.md', 'notes/user.md', 'references/usage.md'].sort());
+    expect(ret.changed).toEqual([{ path: 'SKILL.md', operation: 'update' }, { path: 'evals/evals.json', operation: 'create' }, { path: 'references/usage.md', operation: 'update' }]);
+    expect(ret.inventory.map((item: Json) => item.path)).toEqual(['SKILL.md', 'evals/evals.json', 'notes/user.md', 'references/usage.md'].sort());
 
     const fx = await make();
     await fx.produce();

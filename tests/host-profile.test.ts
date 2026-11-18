@@ -12,6 +12,8 @@ import {
   validateHostProfile,
   validateToolPolicy,
 } from '../src/core/host-profile.js';
+import { supportsVersion } from '../src/core/claude-capabilities.js';
+import { GUARD_ON_FAILURE_MIN_VERSION } from '../src/core/guard.js';
 import { loadSemanticCore, validateCoreSchema } from '../src/core/semantic-core.js';
 import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { nativeText, NATIVE_ROLES } from './helpers/native-roles.js';
@@ -194,10 +196,15 @@ describe('the committed Claude host profile and tool policy', () => {
     expect(profile.toolPolicy).toBe('tool-policy.json');
   });
 
-  it('keeps 2.1.271 as the version floor; the legacy capability profile it came from is retired (ADR 0037)', () => {
+  it('holds 2.1.295 as the version floor (the maintainer\'s decision of 2026-11-17); the legacy capability profile is retired (ADR 0037)', () => {
     expect(profile.legacyProfile, 'the retired profile file is no longer pointed at').toBeUndefined();
     expect(fs.existsSync(path.resolve('registry/profiles')), 'registry/profiles is gone with the created lane').toBe(false);
-    expect(profile.minVersion).toBe('2.1.271');
+    expect(profile.minVersion).toBe('2.1.295');
+  });
+
+  it('keeps the floor at or above the version the guard handlers need, and the hand-off gate below it', () => {
+    expect(supportsVersion(profile.minVersion, GUARD_ON_FAILURE_MIN_VERSION)).toBe(true);
+    expect(profile.features.subagentHandback.since).toBe('2.1.271');
   });
 
   it('lists exactly the tools of the tools-reference snapshot (a new upstream tool fails here)', () => {

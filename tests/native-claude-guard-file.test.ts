@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ClaudeCapabilityProbe } from '../src/core/claude-capabilities.js';
+import { ClaudeCapabilityProbe, claudeBelowFloorMessage, supportsVersion } from '../src/core/claude-capabilities.js';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { GUARD_SCRIPT, nativeGuardHooks } from '../src/core/guard.js';
 import { InstallEngine } from '../src/core/installer.js';
@@ -252,25 +252,37 @@ describe('the guard files in the native install lane (project scope)', () => {
       expect(found[0]).not.toMatch(/onFailure|2.1.295|unverified/);
     });
 
-    describe('the Claude Code version the guard handlers need (onFailure "block", 2.1.295)', () => {
-      const versionWarnings = async (version: string | undefined): Promise<string[]> => {
-        vi.spyOn(ClaudeCapabilityProbe.prototype, 'probe').mockResolvedValue({ installed: true, version } as never);
-        return (await warnings()).filter(warning => /needs 2.1.295 or later/.test(warning));
+    describe('the Claude Code floor the guard handlers need (onFailure "block", 2.1.295; the maintainer\'s decision of 2026-11-17)', () => {
+      // The probe reports `profile.belowMinimum` from the host profile's floor; the doctor turns it into an error and no longer warns.
+      const floorReport = async (version: string | undefined) => {
+        const belowMinimum = version !== undefined && !supportsVersion(version, '2.1.295');
+        vi.spyOn(ClaudeCapabilityProbe.prototype, 'probe').mockResolvedValue({
+          installed: true,
+          version,
+          diagnostics: belowMinimum ? [claudeBelowFloorMessage(version as string, '2.1.295')] : [],
+          profile: version === undefined ? undefined : { profileId: 'claude', minVersion: '2.1.295', reviewedAgainst: '2.1.285', belowMinimum, newerThanReviewed: false },
+        } as never);
+        return DoctorEngine.runDoctor(sidecar, 'claude');
       };
-      it('warns once, naming the version, when the probed version is below it', async () => {
+      it('reports an error, once, and an invalid report when the probed version is below it', async () => {
         await install(true);
-        const found = await versionWarnings('2.1.294');
-        expect(found).toHaveLength(1);
-        expect(found[0]).toContain('Claude Code 2.1.294');
-        expect(found[0]).toMatch(/unverified.*may let the call through.*Update Claude Code/);
+        const report = await floorReport('2.1.294');
+        const found = report.issues.filter(issue => issue.includes('2.1.295'));
+        expect(found).toEqual([claudeBelowFloorMessage('2.1.294', '2.1.295')]);
+        expect(report.valid).toBe(false);
+        expect(report.warnings.filter(warning => /2\.1\.294|needs 2\.1\.295/.test(warning))).toEqual([]);
       });
-      it.each(['2.1.295', '2.1.300', '2.2.0'])('does not warn at %s', async version => {
+      it.each(['2.1.295', '2.1.300', '2.2.0'])('reports no error at %s', async version => {
         await install(true);
-        expect(await versionWarnings(version)).toEqual([]);
+        const report = await floorReport(version);
+        expect(report.issues.filter(issue => issue.includes('2.1.295'))).toEqual([]);
+        expect(report.valid).toBe(true);
       });
-      it('does not warn when the version is unknown', async () => {
+      it('reports no error when the version is unknown', async () => {
         await install(true);
-        expect(await versionWarnings(undefined)).toEqual([]);
+        const report = await floorReport(undefined);
+        expect(report.issues).toEqual([]);
+        expect(report.valid).toBe(true);
       });
     });
 

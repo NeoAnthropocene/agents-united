@@ -19,6 +19,19 @@ export const DESCRIPTION_MAX_CHARS = 1024;
 export const EVALS_MIN = 2;
 export const EVALS_MAX = 5;
 
+/**
+ * Which `skill-check` policies require `evals/evals.json` (the maintainer's decision of 2026-11-17). All three required it at the time;
+ * `adapted-source` stops requiring it: an adaptation is the upstream's Skill, and the upstream's evals are not shipped with it (the
+ * NOTICE.md of the adapted registry Skills say so). A file that is present is validated under every policy.
+ * `registry/skills/coordinate-artifact/scripts/check-skill-return.mjs` cannot import from `src/` and carries a literal copy of this table;
+ * `tests/skill-evals-policy.test.ts` ties the copy to it.
+ */
+export const EVALS_FILE_REQUIRED: Readonly<Record<'agents-united-original' | 'private-owner' | 'adapted-source', boolean>> = {
+  'agents-united-original': true,
+  'private-owner': true,
+  'adapted-source': false,
+};
+
 /** Frontmatter keys Claude Code acts on, the Agent Skills ones, and this repository's own `disable-slash-command`. */
 export const KNOWN_KEYS = new Set([
   'name', 'description', 'when_to_use', 'argument-hint', 'arguments', 'disable-model-invocation', 'user-invocable', 'allowed-tools',
@@ -88,7 +101,8 @@ export function skillFolderText(skillsRoot: string, name: string): string {
   return `${fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n')}\n${supportingText(dir)}`;
 }
 
-export function checkSkillLayout(skillsRoot: string, name: string): string[] {
+/** `policy` names the `skill-check` policy; the finding for a missing evals file is skipped only for a policy that does not require it. No policy: required. */
+export function checkSkillLayout(skillsRoot: string, name: string, policy: keyof typeof EVALS_FILE_REQUIRED = 'agents-united-original'): string[] {
   const errors: string[] = [];
   const dir = path.join(skillsRoot, name);
   const raw = fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
@@ -148,7 +162,9 @@ export function checkSkillLayout(skillsRoot: string, name: string): string[] {
 
   const evalsFile = path.join(dir, 'evals', 'evals.json');
   if (!fs.existsSync(evalsFile)) {
-    errors.push(`${name}: evals/evals.json is missing`);
+    // Required unless the policy is a KNOWN exemption: an unknown, null or inherited name reads as required.
+    const exempt = typeof policy === 'string' && Object.hasOwn(EVALS_FILE_REQUIRED, policy) && EVALS_FILE_REQUIRED[policy] === false;
+    if (!exempt) errors.push(`${name}: evals/evals.json is missing`);
   } else {
     // An evals document that is not valid JSON, is JSON null, or holds no array of JSON objects
     // is a broken candidate, not an exception: report it and keep the findings collected so far.
