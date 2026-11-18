@@ -109,10 +109,12 @@ export function variantOfFile(file: string): SessionGuardVariant {
  * Two paths name the same file: resolved (slash style, `.` and `..`), and on Windows compared without regard to letter case (the file
  * system does not tell `C:\Users\Me` from `c:/users/me`). A relative path is read against `base` when one is given.
  */
-export function sameSessionGuardPath(a: string, b: string, base: string = process.cwd()): boolean {
-  const left = path.resolve(base, a);
-  const right = path.resolve(base, b);
-  return process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
+export function sameSessionGuardPath(a: string, b: string, base: string = process.cwd(), platform: NodeJS.Platform = process.platform): boolean {
+  // The path rules follow the platform asked about (injectable, so the logic is tested on every CI machine).
+  const rules = platform === 'win32' ? path.win32 : path.posix;
+  const left = rules.resolve(base, a);
+  const right = rules.resolve(base, b);
+  return platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
 }
 
 /**
@@ -324,14 +326,17 @@ async function siblingUsingScript(settingsFile: string): Promise<{ file: string;
  * What of ours a settings file holds, for the sentence that says what still guards: `none`; `inline` (only earlier `node -e` entries, which
  * carry their own script and keep guarding); `file` (some entry runs the script file, so the script decides what is allowed); `unreadable`.
  */
-export async function sessionGuardEntriesKind(settingsFile: string): Promise<'none' | 'inline' | 'file' | 'unreadable'> {
+export async function sessionGuardEntriesKind(settingsFile: string, recordedHash?: string): Promise<'none' | 'inline' | 'edited-inline' | 'file' | 'unreadable'> {
   const parsed = await parse(settingsFile);
   if (parsed === 'invalid') return 'unreadable';
   if (parsed === 'absent') return 'none';
   const groups = parsed.settings.hooks?.PreToolUse ?? [];
   const handlers = groups.flatMap(group => hooksOf(group)).filter(isOursAnyVersion);
   if (handlers.length === 0) return 'none';
-  return handlers.some(handler => namesScriptFile(handler as Handler)) ? 'file' : 'inline';
+  if (handlers.some(handler => namesScriptFile(handler as Handler))) return 'file';
+  // Only an entry that is exactly an earlier form of ours is known to guard; one edited by hand (an extra key, an altered script) may not.
+  const kind = kindOfFile(settingsFile);
+  return handlers.every(handler => isOutdatedGuard(handler, kind, recordedHash)) ? 'inline' : 'edited-inline';
 }
 
 /** True when any entry of ours in `settingsFile` runs the script file, whatever state the entry is in (current, outdated in the file form, or hand-edited). */
@@ -360,6 +365,14 @@ async function removeSessionGuardScript(settingsFile: string, recordedScriptHash
   return { script: 'removed' };
 }
 
+/**
+ * Take back a script file that a merge just wrote into a place where none was, when the settings write was then refused: removed only if it
+ * is ours (or an earlier text of ours) and no entry of the sibling settings file runs it; its empty folder goes too.
+ */
+export async function undoSessionGuardScript(settingsFile: string, recordedScriptHash?: string): Promise<void> {
+  await removeSessionGuardScript(settingsFile, recordedScriptHash);
+}
+
 /** A path as the user reads it in the output: workspace-relative with forward slashes when it sits inside the workspace, else absolute. */
 export function displaySessionGuardPath(absolute: string, workspaceRoot: string): string {
   const relative = path.relative(workspaceRoot, absolute);
@@ -369,10 +382,11 @@ export function displaySessionGuardPath(absolute: string, workspaceRoot: string)
 /** What was left of the script file, as a sentence for the install, update and uninstall output; undefined when nothing was left. `display` names a path as the user reads it. */
 export function sessionGuardScriptLeftNote(
   settingsFile: string,
-  outcome: { script?: 'removed' | 'left-edited' | 'kept-shared'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean },
+  outcome: { script?: 'removed' | 'left-edited' | 'kept-shared' | 'kept-entry'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean },
   display: (absolute: string) => string,
 ): string | undefined {
   const label = display(sessionGuardScriptPath(settingsFile));
+  if (outcome.script === 'kept-entry') return `Session guard script ${label} was left in place as well: the hand-edited entry of ours that remains in ${display(settingsFile)} may still run it.`;
   if (outcome.script === 'left-edited') return `Session guard script ${label} was edited by hand or cannot be read as a file, so it was left in place; remove it by hand.`;
   if (outcome.script === 'kept-shared' && outcome.scriptSharedWith !== undefined) {
     const other = display(outcome.scriptSharedWith);
@@ -610,11 +624,12 @@ export async function mergeSessionGuard(
 export async function removeOwnedSessionGuard(
   file: string,
   opts: { createdFile: boolean; recordedHash?: string; recordedScriptHash?: string },
-): Promise<{ status: RemoveStatus; left: number; script?: 'removed' | 'left-edited' | 'kept-shared'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean }> {
+): Promise<{ status: RemoveStatus; left: number; script?: 'removed' | 'left-edited' | 'kept-shared' | 'kept-entry'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean }> {
   const outcome = await removeOwnedHandlers(file, opts);
   // The script file goes with the entries, but only while no entry of ours is left behind that may still name it (a hand-edited entry), and
   // never when the settings file could not be read. Entries the user deleted by hand leave the script orphaned: it goes too.
-  if (outcome.status === 'skipped-invalid' || outcome.left > 0) return outcome;
+  if (outcome.status === 'skipped-invalid') return outcome;
+  if (outcome.left > 0) return (await readScript(sessionGuardScriptPath(file))) === undefined ? outcome : { ...outcome, script: 'kept-entry' };
   const removal = await removeSessionGuardScript(file, opts.recordedScriptHash);
   return removal === undefined
     ? outcome

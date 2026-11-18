@@ -60,7 +60,8 @@ describe('D: current means the exact key set', () => {
     expect(await inspectSessionGuard(SETTINGS)).toBe('modified');
     expect((await mergeSessionGuard(SETTINGS)).status).toBe('modified');
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(before);
-    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toEqual({ status: 'absent', left: 2 });
+    // The merge wrote the script file, and the edited entries that remain may run it: it is kept, and the outcome says so.
+    expect(await removeOwnedSessionGuard(SETTINGS, { createdFile: false })).toEqual({ status: 'absent', left: 2, script: 'kept-entry' });
     expect(await fs.readFile(SETTINGS, 'utf8')).toBe(before);
   });
 

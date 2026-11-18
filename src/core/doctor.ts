@@ -655,7 +655,9 @@ export class DoctorEngine {
             ? `${guardRecord.file} holds no entry of ours, so nothing guards plain Claude sessions through it`
             : kind === 'file'
               ? `the entries in ${guardRecord.file} run that file, so what they allow is up to it`
-              : `the entries in ${guardRecord.file} are an earlier form and stay as they are, and they keep guarding`;
+              : kind === 'edited-inline'
+                ? `an entry of ours in ${guardRecord.file} was edited by hand and what it allows is not known`
+                : `the entries in ${guardRecord.file} are an earlier form and stay as they are, and they keep guarding`;
           // A plain update never re-creates a guard that is absent from the shared user file: name the command that does.
           const rerun = userFile && missing ? sessionGuardRestoreCommand(recordedScope) : "'agents update'";
           warnings.push(`Session guard script ${scriptLabel} was edited by hand or cannot be read as a file, and the entries of the guard would run it, so agents update does not write or renew the guard (${rest}). Delete or restore that file, then run ${rerun}.`);
@@ -684,7 +686,8 @@ export class DoctorEngine {
 
     // ADR 0036 — a native Tier-2 bundle runs as an Agent Team, and a teammate gets no frontmatter hook (observed on Claude Code 2.1.288),
     // so only the settings-level guard protects its shell and file writes. Say so while that guard is not in effect.
-    // A script that is an earlier text of ours, or edited by hand, still guards; only a missing one does not.
+    // In effect means: entries wired and a script that is ours (current or an earlier text of ours). A missing script blocks everything and
+    // one edited by hand may allow everything, so neither counts.
     if (host === 'claude' && manifest?.nativeLane === true && !sessionGuardInEffect) {
       const registry = new RegistryResolver();
       const teams: string[] = [];
@@ -693,10 +696,19 @@ export class DoctorEngine {
         if (definition?.tier === 'organization') teams.push(bundleName);
       }
       if (teams.length > 0) {
+        const notInstalled = sessionGuard === undefined || sessionGuard === 'off' || sessionGuard === 'missing';
+        const reasons: Record<string, string> = {
+          'script-modified': 'its script file was edited by hand, so what it allows is not known',
+          'script-missing': 'its script file is missing, so guarded calls are blocked',
+          outdated: 'its entries are an earlier form',
+          modified: 'its entries were edited by hand',
+          'skipped-invalid': 'its settings file is not valid JSON, so nothing is wired',
+        };
         warnings.push(
           `Native Agent Team ${teams.join(', ')}: a teammate is not guarded by a role's own frontmatter hook (observed on Claude Code 2.1.288), ` +
-          `so the team's shell and file writes are guarded only by the settings-level guard, which is not installed. ` +
-          `Run: agents update ${teams[0]} --session-guard to add it.`
+          (notInstalled
+            ? `so the team's shell and file writes are guarded only by the settings-level guard, which is not installed. Run: agents update ${teams[0]} --session-guard to add it.`
+            : `so the team's shell and file writes are guarded only by the settings-level guard, which is installed but not in effect (${reasons[sessionGuard ?? ''] ?? 'see the session guard warning'}). See the session guard warning above for what to do.`)
         );
       }
     }

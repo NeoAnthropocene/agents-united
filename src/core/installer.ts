@@ -21,7 +21,7 @@ import { ClaudeProjector } from './claude-projector.js';
 import { listNativeWorkflows } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
-import { displaySessionGuardPath, inspectSessionGuard, inspectSessionGuardScript, mergeSessionGuard, sameSessionGuardPath, sessionGuardEntriesKind, removeOwnedSessionGuard, resolveSessionGuardFile, sessionGuardRestoreCommand, sessionGuardScriptLeftNote, sessionGuardScriptPath, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
+import { displaySessionGuardPath, inspectSessionGuard, mergeSessionGuard, undoSessionGuardScript, sameSessionGuardPath, sessionGuardEntriesKind, removeOwnedSessionGuard, resolveSessionGuardFile, sessionGuardRestoreCommand, sessionGuardScriptLeftNote, sessionGuardScriptPath, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
 import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo, SessionGuardChoiceResult, SessionGuardStep } from './types.js';
@@ -785,21 +785,49 @@ private toPosix(p: string): string {
         return { warnings };
       }
     }
-    // The record holds one place. When the guard moves to another place, the entries already written to the earlier file would be left
-    // untracked (and `--no-session-guard` could not find them), so the careful removal runs on the earlier file first.
+    // The record holds one place. When the guard moves to another place, the entries written to the earlier file would be left untracked
+    // (and `--no-session-guard` could not find them), so the careful removal runs on the earlier file. It runs AFTER the target took the
+    // guard: the target is written first, and only when its merge says our current entries and our script are there is the earlier file
+    // stripped and the lockfile recorded on the target. Any other outcome leaves the earlier file, its script and the record as they were.
     const warnings: string[] = [];
-    if (recorded && !('off' in recorded) && !sameSessionGuardPath(recorded.file, recordedFile, workspaceRoot)) {
-      const earlierFile = path.isAbsolute(recorded.file) ? recorded.file : path.join(workspaceRoot, recorded.file);
-      // Only the TARGET's script decides. When merging into the target would find a script that is not ours, nothing could be wired there,
-      // and stripping the earlier file first would leave the guard nowhere: refuse the move and change nothing.
-      const sameScript = sameSessionGuardPath(sessionGuardScriptPath(earlierFile), sessionGuardScriptPath(file));
-      if ((await inspectSessionGuardScript(file, sameScript ? recorded.scriptHash : undefined)) === 'modified') {
-        const refused = [`Session guard not moved to ${recordedFile}: the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)} there was edited by hand or cannot be read as a file, and the entries would run it. Nothing was changed: the guard stays in ${recorded.file}. Delete or restore that file, then run agents update --all${scope === 'global' ? ' --global' : ''} --session-guard ${variant}.`];
-        projections.push({ host: 'claude', path: recordedFile, warnings: refused });
-        return { choice: 'on', file, userFile: variant === 'user', merge: 'move-refused', warnings: refused };
+    const moving = recorded !== undefined && !('off' in recorded) && !sameSessionGuardPath(recorded.file, recordedFile, workspaceRoot);
+    const earlierRecord = moving ? (recorded as Extract<typeof recorded, { file: string }>) : undefined;
+    const earlierFile = earlierRecord === undefined ? undefined : path.isAbsolute(earlierRecord.file) ? earlierRecord.file : path.join(workspaceRoot, earlierRecord.file);
+    // One recorded script hash for the check and the write: the earlier record's when the earlier and the target share a script file.
+    const scriptHash = earlierRecord !== undefined && earlierFile !== undefined
+      ? (sameSessionGuardPath(sessionGuardScriptPath(earlierFile), sessionGuardScriptPath(file)) ? earlierRecord.scriptHash : undefined)
+      : sameFileRecord?.scriptHash;
+    const existedBefore = await fs.pathExists(file);
+    const scriptExistedBefore = await fs.pathExists(sessionGuardScriptPath(file));
+    const rerunMove = `agents update --all${scope === 'global' ? ' --global' : ''} --session-guard ${variant}`;
+    const refuseMove = async (why: string, fix: string): Promise<SessionGuardStep> => {
+      // The merge may have written a script file into a place that had none; take it back (only if it is ours and no entry runs it).
+      if (!scriptExistedBefore) await undoSessionGuardScript(file, scriptHash);
+      const refused = [`Session guard not moved to ${recordedFile}: ${why} Nothing was changed: the guard stays in ${earlierRecord?.file}. ${fix} then run ${rerunMove}.`];
+      projections.push({ host: 'claude', path: recordedFile, warnings: refused });
+      return { choice: 'on', file, userFile: variant === 'user', merge: 'move-refused', warnings: refused };
+    };
+    let result: Awaited<ReturnType<typeof mergeSessionGuard>>;
+    try {
+      result = await mergeSessionGuard(file, { replaceHash: sameFileRecord?.handlerHash, recordedScriptHash: scriptHash });
+    } catch (error) {
+      if (!moving) throw error;
+      return refuseMove(`writing there failed (${error instanceof Error ? error.message : String(error)}).`, 'Make the file writable,');
+    }
+    if (moving && earlierRecord !== undefined && earlierFile !== undefined) {
+      if (result.status === 'script-edited') {
+        return refuseMove(`the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)} there was edited by hand or cannot be read as a file, and the entries would run it.`, 'Delete or restore that file,');
       }
-      const moved = await removeOwnedSessionGuard(earlierFile, { createdFile: recorded.createdFile, recordedHash: recorded.handlerHash, recordedScriptHash: recorded.scriptHash });
-      const scriptNote = sessionGuardScriptLeftNote(earlierFile, moved, abs => displaySessionGuardPath(abs, workspaceRoot));
+      if (result.status === 'skipped-invalid') {
+        return refuseMove(`${recordedFile} is not valid JSON or cannot be read (comments or trailing commas? a folder?), so no entries could be written there.`, 'Fix or remove that file,');
+      }
+      if (result.status !== 'created' && result.status !== 'merged' && result.status !== 'unchanged') {
+        return refuseMove(`${recordedFile} holds hook entries of ours that were edited by hand, so the current entries could not be written there.`, 'Remove or restore those entries,');
+      }
+      const moved = await removeOwnedSessionGuard(earlierFile, { createdFile: earlierRecord.createdFile, recordedHash: earlierRecord.handlerHash, recordedScriptHash: earlierRecord.scriptHash });
+      // The target now holds the entries that run a shared script: that is not news.
+      const targetHoldsIt = moved.script === 'kept-shared' && moved.scriptSharedWith !== undefined && sameSessionGuardPath(moved.scriptSharedWith, file);
+      const scriptNote = targetHoldsIt ? undefined : sessionGuardScriptLeftNote(earlierFile, moved, abs => displaySessionGuardPath(abs, workspaceRoot));
       if (scriptNote) warnings.push(scriptNote);
       if (moved.status === 'removed' || moved.status === 'deleted-file') {
         warnings.push(`Session guard moved from ${earlierFile} to ${file}: our entries were removed from ${earlierFile}.`);
@@ -810,8 +838,6 @@ private toPosix(p: string): string {
         warnings.push(`Session guard moved to ${file}, but ${moved.left} edited entr${moved.left === 1 ? 'y' : 'ies'} in ${earlierFile} ${moved.left === 1 ? 'was' : 'were'} left in place; remove ${moved.left === 1 ? 'it' : 'them'} by hand.`);
       }
     }
-    const existedBefore = await fs.pathExists(file);
-    const result = await mergeSessionGuard(file, { replaceHash: sameFileRecord?.handlerHash, recordedScriptHash: sameFileRecord?.scriptHash });
     lockfile.sessionGuard = {
       file: recordedFile,
       handlerHash: result.handlerHash,
@@ -824,14 +850,16 @@ private toPosix(p: string): string {
       warnings.push(`Session guard in ${recordedFile} was edited by hand; left as-is (run with --force after removing it to restore).`);
     }
     if (result.status === 'script-edited') {
-      const kind = await sessionGuardEntriesKind(file);
+      const kind = await sessionGuardEntriesKind(file, sameFileRecord?.handlerHash);
       const what = kind === 'none'
         ? `nothing guards plain Claude sessions through ${recordedFile}`
         : kind === 'inline'
           ? 'the inline entry of ours already there keeps guarding as before'
-          : kind === 'file'
-            ? 'the entries there run that file, so what they allow is up to it'
-            : '';
+          : kind === 'edited-inline'
+            ? 'an entry of ours already there was edited by hand and what it allows is not known'
+            : kind === 'file'
+              ? 'the entries there run that file, so what they allow is up to it'
+              : '';
       // A plain update never re-creates a guard that is absent from the shared user file: name the command that does.
       const rerun = variant === 'user' && kind === 'none' ? sessionGuardRestoreCommand(scope) : 'agents update';
       warnings.push(`Session guard not written or renewed in ${recordedFile}: the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)} was edited by hand or cannot be read as a file, and the entries would run it, so ${recordedFile} was left as it is${what ? ` (${what})` : ''}. Delete or restore that file, then run ${rerun}.`);
@@ -899,6 +927,18 @@ private toPosix(p: string): string {
     const recordChanged = JSON.stringify(lockfile.sessionGuard) !== before;
     if (step.merge === 'move-refused') {
       return { changed: false, notes: [`Left as it was: ${label}: the session guard was not moved to ${step.file}; it stays in ${hasGuardRecord ? recorded.file : 'its earlier file'}.`, ...warnings] };
+    }
+    if (step.merge === 'skipped-invalid') {
+      // Nothing was written: the guard is not on in that file, whatever the record says.
+      return {
+        changed: recordChanged,
+        notes: [
+          recordChanged
+            ? `Changed: ${label}: recorded the choice for ${step.file}, but the session guard is not on in ${step.file}: that file is not valid JSON or cannot be read, so nothing was written. Paste the snippet below into it by hand.`
+            : `Left as it was: ${label}: the session guard is not on in ${step.file}: that file is not valid JSON or cannot be read, so nothing was written. Paste the snippet below into it by hand.`,
+          ...warnings,
+        ],
+      };
     }
     if (step.merge === 'script-edited') {
       // Nothing was wired: the script file at that path is not ours. Say so, and do not claim the guard is on.

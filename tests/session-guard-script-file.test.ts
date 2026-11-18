@@ -21,6 +21,7 @@ import {
   sessionGuardScriptContent,
   sessionGuardScriptLeftNote,
   sessionGuardScriptPath,
+  sameSessionGuardPath,
 } from '../src/core/session-guard.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
 import { UpdateEngine } from '../src/core/updater.js';
@@ -662,12 +663,13 @@ describe('one script, two settings files: project and local share it', () => {
     guardWorks();
   });
 
-  it('moving while the target file already has the guard keeps the script and says why', async () => {
+  it('moving while the target file already has the guard: the target is written first and recorded, the script stays, and no "kept" note is needed', async () => {
     await installProject({ sessionGuard: 'project' });
     await mergeSessionGuard(SETTINGS_LOCAL);
     const result = await update({ sessionGuard: 'local' });
     expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
-    expect((result.sessionGuardNotes ?? []).join('\n')).toMatch(/\.claude\/hooks\/agents-united-session-guard\.js[^\n]*kept/);
+    expect((result.sessionGuardNotes ?? []).join('\n')).not.toMatch(/was kept/);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: '.claude/settings.local.json' });
     guardWorks();
   });
 
@@ -1104,5 +1106,154 @@ describe('the recorded settings path and the current one differ only in case or 
     expect(await fs.readFile(USER_SETTINGS, 'utf8')).toBe(before);
     expect(await fs.readFile(USER_SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('user'));
     expect((await doctor(HOME)).sessionGuard).toBe('wired');
+  });
+});
+
+describe('a move writes the target first; no failure of the target can leave the guard nowhere (round 3, point 1)', () => {
+  type Place = 'project' | 'local' | 'user';
+  const settingsOf: Record<Place, string> = { project: SETTINGS, local: SETTINGS_LOCAL, user: USER_SETTINGS };
+  const scriptOf: Record<Place, string> = { project: SCRIPT, local: SCRIPT, user: USER_SCRIPT };
+  const DIRECTIONS = [['project', 'local'], ['local', 'project'], ['project', 'user'], ['user', 'project']] as const;
+  const snap = async (file: string): Promise<string | undefined> => {
+    try {
+      return await fs.readFile(file, 'utf8');
+    } catch (error) {
+      return (error as NodeJS.ErrnoException).code === 'ENOENT' ? undefined : 'UNREADABLE';
+    }
+  };
+  const canBlockWrites = process.platform === 'win32' || (typeof process.getuid === 'function' && process.getuid() !== 0);
+  const REASONS = [
+    ['an invalid-JSON target', 'invalid', /not valid JSON or cannot be read/],
+    ['a folder as the target', 'folder', /not valid JSON or cannot be read/],
+    ['a target that cannot be written', 'readonly', /writing there failed/],
+  ] as const;
+  const breakTarget = async (file: string, how: 'invalid' | 'folder' | 'readonly'): Promise<void> => {
+    if (how === 'invalid') await fs.outputFile(file, '{ // mine\n}');
+    else if (how === 'folder') await fs.ensureDir(file);
+    else {
+      await fs.outputFile(file, '{}\n');
+      await fs.chmod(file, 0o444);
+    }
+  };
+  const unbreak = async (file: string): Promise<void> => {
+    await fs.chmod(file, 0o666).catch(() => undefined);
+  };
+  const state = async (from: Place, to: Place) => ({
+    fromSettings: await snap(settingsOf[from]),
+    toSettings: await snap(settingsOf[to]),
+    fromScript: await snap(scriptOf[from]),
+    toScript: await snap(scriptOf[to]),
+    record: (await lock(PROJECT_LOCK)).sessionGuard,
+  });
+
+  for (const [name, how, reason] of REASONS) {
+    it.each(DIRECTIONS)(`${name}: %s to %s is refused, nothing changes on disk, and nothing new is left in the target`, async (from, to) => {
+      if (how === 'readonly' && !canBlockWrites) return; // a root user on Linux can write to a read-only file
+      await installProject({ sessionGuard: from });
+      await breakTarget(settingsOf[to], how);
+      const before = await state(from, to);
+      try {
+        const result = await update({ sessionGuard: to });
+        expect(await state(from, to)).toEqual(before);
+        expect(result.sessionGuardChanged).toBe(0);
+        const notes = (result.sessionGuardNotes ?? []).join('\n');
+        expect(notes).toMatch(/not moved/);
+        expect(notes).toMatch(reason);
+        expect(await inspectSessionGuard(settingsOf[from])).toBe('wired');
+      } finally {
+        if (how === 'readonly') await unbreak(settingsOf[to]);
+      }
+    });
+  }
+
+  it.each([
+    ['a foreign script', 'script'],
+    ['an invalid-JSON target', 'invalid'],
+  ] as const)('install time (agents add --session-guard <other place>), %s: the move is refused with a message, disk and record unchanged', async (_name, how) => {
+    for (const [from, to] of [['project', 'local'], ['project', 'user']] as const) {
+      await fs.remove(ROOT);
+      await fs.ensureDir(HOME);
+      await fs.ensureDir(PROJECT);
+      await installProject({ sessionGuard: from });
+      if (how === 'script') await fs.outputFile(scriptOf[to], '// mine\nprocess.exit(0)\n');
+      else await breakTarget(settingsOf[to], 'invalid');
+      const before = await state(from, to);
+      const result = await installProject({ sessionGuard: to });
+      expect(await state(from, to)).toEqual(before);
+      const text = result.projections.flatMap(projection => projection.warnings ?? []).join('\n');
+      expect(text).toMatch(/not moved/);
+      expect(text).toMatch(how === 'script' ? /edited by hand/ : /not valid JSON or cannot be read/);
+    }
+  });
+
+  it.each(DIRECTIONS)('the successful move %s to %s: entries and script in the target only, the earlier place stripped, one working script', async (from, to) => {
+    await installProject({ sessionGuard: from });
+    const result = await update({ sessionGuard: to });
+    expect(await inspectSessionGuard(settingsOf[to])).toBe('wired');
+    expect(await inspectSessionGuardScript(settingsOf[to])).toBe('present');
+    expect(await fs.pathExists(settingsOf[from])).toBe(false);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: to === 'user' ? USER_SETTINGS : `.claude/settings${to === 'local' ? '.local' : ''}.json` });
+    if (scriptOf[from] !== scriptOf[to]) expect(await fs.pathExists(scriptOf[from])).toBe(false);
+    expect(runScript(scriptOf[to], bashCall('git push --force origin main')).status).toBe(2);
+    expect(runScript(scriptOf[to], bashCall('git status --short')).status).toBe(0);
+    expect((result.sessionGuardNotes ?? []).join('\n')).not.toMatch(/was kept/);
+  });
+});
+
+describe('skipped-invalid has its own output (round 3, point 2)', () => {
+  it('update --session-guard says the guard is not on, on the first and on the next run', async () => {
+    await installProject({ fanout: ['claude'] });
+    await fs.outputFile(SETTINGS, '{ // mine\n}');
+    for (let run = 0; run < 2; run += 1) {
+      const result = await update({ sessionGuard: 'project' });
+      const notes = (result.sessionGuardNotes ?? []).join('\n');
+      expect(notes).toMatch(/the session guard is not on in/);
+      expect(notes).not.toMatch(/is on in|already on/);
+      expect(notes).toMatch(/not valid JSON/);
+      expect(notes).toMatch(/paste/i);
+    }
+  });
+});
+
+describe('"keeps guarding as before" is said only of an entry that is exactly an earlier form (round 3, point 3)', () => {
+  it('an inline entry edited by hand (an extra key): the warning says it was edited by hand and what it allows is not known', async () => {
+    await writeInlineSettings(SETTINGS, { ...inline(sessionGuardScript('project')), async: true });
+    await fs.outputFile(SCRIPT, '// mine\nprocess.exit(0)\n');
+    const result = await installProject({ sessionGuard: 'project' });
+    const text = result.projections.flatMap(projection => projection.warnings ?? []).join('\n');
+    expect(text).not.toMatch(/keeps guarding/);
+    expect(text).toMatch(/edited by hand and what it allows is not known/);
+  });
+});
+
+describe('removal that leaves a hand-edited entry says the script was left as well (round 3, point 4)', () => {
+  it('--no-session-guard and uninstall', async () => {
+    await installProject({ sessionGuard: 'project' });
+    const settings = await fs.readJson(SETTINGS);
+    settings.hooks.PreToolUse[0].hooks[0].async = true;
+    await fs.writeJson(SETTINGS, settings, { spaces: 2 });
+    const result = await update({ sessionGuard: false });
+    expect((result.sessionGuardNotes ?? []).join('\n')).toMatch(/script[^\n]*left in place as well[^\n]*edited entry/);
+    expect(await fs.pathExists(SCRIPT)).toBe(true);
+
+    await installProject({ sessionGuard: 'project' });
+    const again = await fs.readJson(SETTINGS);
+    again.hooks.PreToolUse[0].hooks[0].async = true;
+    await fs.writeJson(SETTINGS, again, { spaces: 2 });
+    const gone = await uninstall();
+    expect((gone.notes ?? []).join('\n')).toMatch(/script[^\n]*left in place as well[^\n]*edited entry/);
+  });
+});
+
+describe('sameSessionGuardPath is platform independent (round 3, point 5)', () => {
+  it('Windows: letter case and slash style do not matter', () => {
+    expect(sameSessionGuardPath('C:\\Users\\Me\\.claude\\settings.json', 'c:/users/me/.claude/settings.json', undefined, 'win32')).toBe(true);
+    expect(sameSessionGuardPath('C:\\Users\\Me\\a.json', 'C:\\Users\\Me\\b.json', undefined, 'win32')).toBe(false);
+    expect(sameSessionGuardPath('.claude\\settings.json', '.claude/settings.json', 'C:\\proj', 'win32')).toBe(true);
+  });
+  it('elsewhere: letter case matters, `.` and `..` do not', () => {
+    expect(sameSessionGuardPath('/Users/Me/.claude/settings.json', '/users/me/.claude/settings.json', undefined, 'linux')).toBe(false);
+    expect(sameSessionGuardPath('/home/me/x/../.claude/settings.json', '/home/me/.claude/settings.json', undefined, 'linux')).toBe(true);
+    expect(sameSessionGuardPath('.claude/settings.json', '/work/p/.claude/settings.json', '/work/p', 'linux')).toBe(true);
   });
 });
