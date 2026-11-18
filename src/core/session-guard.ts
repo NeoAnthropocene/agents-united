@@ -117,8 +117,16 @@ const kindOfFile = (file: string): ScriptKind => (variantOfFile(file) === 'user'
 
 const ALL_KINDS: readonly ScriptKind[] = ['project', 'user'];
 
-/** What the user can do with no working CLI, named by kind of file and without an absolute path. */
+/**
+ * What the user can do with no working CLI, named by kind of file and without an absolute path. One wording with the doctor's route
+ * (`sessionGuardManualRoute`) and the README: the entries are found by the script they run, and the script file goes after them.
+ */
 const MANUAL_ROUTE: Record<ScriptKind, string> = {
+  project: 'Without the CLI, delete by hand the hook entries that run agents-united-session-guard.js from .claude/settings.json or .claude/settings.local.json in the project, and then delete the script file .claude/hooks/agents-united-session-guard.js in the project.',
+  user: 'Without the CLI, delete by hand the hook entries that run agents-united-session-guard.js from settings.json in the .claude folder of your home directory, and then delete the script file agents-united-session-guard.js in the hooks folder beside it.',
+};
+/** The sentences of the version before (the entries held the marker text, then): the texts that carry them are earlier texts of ours. */
+const EARLIER_MANUAL_ROUTE: Record<ScriptKind, string> = {
   project: "Without the CLI, delete by hand the hook entries that contain 'agents-united guard' from .claude/settings.json or .claude/settings.local.json in the project.",
   user: "Without the CLI, delete by hand the hook entries that contain 'agents-united guard' from settings.json in the .claude folder of your home directory.",
 };
@@ -133,10 +141,11 @@ export function sessionGuardRestoreCommand(scope: InstallScope): string {
 
 /**
  * The manual route for a guard recorded in `file` (shown by `agents doctor`, which can name the files; the script cannot). The entries
- * now run the script file, so they are found by its name and not by the marker text, and the script file goes with them.
+ * run the script file, so they are found by its name and not by the marker text, and the script file goes after them. Same wording as
+ * the route inside the script (`MANUAL_ROUTE`), with the paths filled in.
  */
 export function sessionGuardManualRoute(file: string): string {
-  return `Without the CLI, delete by hand the hook entries in ${file} that run ${SESSION_GUARD_SCRIPT_NAME}, and then the file ${sessionGuardScriptPath(file)}.`;
+  return `Without the CLI, delete by hand the hook entries that run ${SESSION_GUARD_SCRIPT_NAME} from ${file}, and then delete the script file ${sessionGuardScriptPath(file)}.`;
 }
 
 /**
@@ -147,10 +156,13 @@ export function sessionGuardManualRoute(file: string): string {
  * names it.
  */
 export function sessionGuardHint(value: SessionGuardVariant | SessionGuardReach): string {
-  const kind = scriptKindOf(value);
+  return hintWithRoute(scriptKindOf(value), MANUAL_ROUTE);
+}
+
+function hintWithRoute(kind: ScriptKind, routes: Record<ScriptKind, string>): string {
   const { repair, remove } = sessionGuardCommands(kind);
   const alternative = kind === 'user' ? '; if a project installed this guard, run the same commands without --global from that project\'s folder' : '';
-  return `To get out, run one of these in your own terminal, not in this session (this session's shell calls are blocked): ${repair} (repairs the install) or ${remove} (removes the session guard)${alternative}. ${MANUAL_ROUTE[kind]}`;
+  return `To get out, run one of these in your own terminal, not in this session (this session's shell calls are blocked): ${repair} (repairs the install) or ${remove} (removes the session guard)${alternative}. ${routes[kind]}`;
 }
 
 /** Builds the session script from a generic script and a hint: the hint after the unreadable-input sentence, and an `uncaughtException` handler with the same hint. */
@@ -171,9 +183,9 @@ export function sessionGuardScript(value: SessionGuardVariant | SessionGuardReac
 }
 
 /**
- * The session scripts of the version before: the generic script of that version with the three hints it wrote (project, user recorded
- * globally, user recorded by a project). They are ours and not current, so they read as outdated and `agents update` renews them. A test
- * ties each to its byte-exact hash.
+ * The session scripts of the versions before: the generic script of the version before that with the three hints it wrote (project, user
+ * recorded globally, user recorded by a project), then the two texts (project, user) that named the old manual route. They are ours and
+ * not current, so they read as outdated and `agents update` renews them. A test ties each to its byte-exact hash.
  */
 export const EARLIER_SESSION_SCRIPTS: readonly string[] = (() => {
   const stem = "To get out, run one of these in your own terminal, not in this session (this session's shell calls are blocked)";
@@ -184,7 +196,10 @@ export const EARLIER_SESSION_SCRIPTS: readonly string[] = (() => {
     `${stem}: agents update --all --global ${end} agents update --all --global --no-session-guard ${tail}`,
     `${stem}, from the folder of the project that installed this guard: agents update --all ${end} agents update --all --no-session-guard ${tail}`,
   ];
-  return hints.map(hint => composeSessionScript(EARLIER_GUARD_SCRIPTS[1], hint));
+  // The texts that were current when the script moved into a file: today's generic script with the manual route that named "the hook entries
+  // that contain 'agents-united guard'" (project, user). The entries of the file form do not contain that text, so the sentence changed.
+  const withEarlierRoute = ALL_KINDS.map(kind => composeSessionScript(GUARD_SCRIPT, hintWithRoute(kind, EARLIER_MANUAL_ROUTE)));
+  return [...hints.map(hint => composeSessionScript(EARLIER_GUARD_SCRIPTS[1], hint)), ...withEarlierRoute];
 })();
 
 /**
@@ -264,16 +279,62 @@ async function ensureSessionGuardScript(settingsFile: string, recordedScriptHash
   return { status: state === 'missing' ? 'created' : 'renewed', hash };
 }
 
-/** Remove the script file when it is ours or an earlier text of ours, and its folder when that is empty; a file edited by hand is left. */
-async function removeSessionGuardScript(settingsFile: string, recordedScriptHash?: string): Promise<'removed' | 'left-edited' | undefined> {
+/**
+ * `project` and `local` settings files share one script. The other settings file of the same `.claude` folder that still has an entry
+ * running it (current, outdated in the file form, or hand-edited), or that cannot be read and so may have one; undefined when none does.
+ * The user file has a script of its own under the home folder and has no sibling.
+ */
+async function siblingUsingScript(settingsFile: string): Promise<string | undefined> {
+  if (kindOfFile(settingsFile) === 'user') return undefined;
+  for (const name of ['settings.json', 'settings.local.json']) {
+    const other = path.join(path.dirname(settingsFile), name);
+    if (path.resolve(other) === path.resolve(settingsFile)) continue;
+    const parsed = await parse(other);
+    if (parsed === 'absent') continue;
+    if (parsed === 'invalid') return other;
+    const groups = parsed.settings.hooks?.PreToolUse ?? [];
+    if (groups.some(group => hooksOf(group).some(handler => isRecord(handler) && namesScriptFile(handler as Handler)))) return other;
+  }
+  return undefined;
+}
+
+export type SessionGuardScriptRemoval = { script: 'removed' | 'left-edited' | 'kept-shared'; sharedWith?: string };
+
+/**
+ * Remove the script file when it is ours or an earlier text of ours, and its folder when that is empty. A file edited by hand is left, and
+ * so is a file that the other settings file of the folder (project and local share it) still runs.
+ */
+async function removeSessionGuardScript(settingsFile: string, recordedScriptHash?: string): Promise<SessionGuardScriptRemoval | undefined> {
   const target = sessionGuardScriptPath(settingsFile);
   const state = classifyScript(await readScript(target), kindOfFile(settingsFile), recordedScriptHash);
   if (state === 'missing') return undefined;
-  if (state === 'modified') return 'left-edited';
+  const sharedWith = await siblingUsingScript(settingsFile);
+  if (sharedWith !== undefined) return { script: 'kept-shared', sharedWith };
+  if (state === 'modified') return { script: 'left-edited' };
   await fs.remove(target);
   // Role guards live in the same folder: it goes only when nothing else is in it.
   await fs.rmdir(path.dirname(target)).catch(() => undefined);
-  return 'removed';
+  return { script: 'removed' };
+}
+
+/** A path as the user reads it in the output: workspace-relative with forward slashes when it sits inside the workspace, else absolute. */
+export function displaySessionGuardPath(absolute: string, workspaceRoot: string): string {
+  const relative = path.relative(workspaceRoot, absolute);
+  return relative === '' || relative.startsWith('..') || path.isAbsolute(relative) ? absolute : relative.replace(/\\/g, '/');
+}
+
+/** What was left of the script file, as a sentence for the install, update and uninstall output; undefined when nothing was left. `display` names a path as the user reads it. */
+export function sessionGuardScriptLeftNote(
+  settingsFile: string,
+  outcome: { script?: 'removed' | 'left-edited' | 'kept-shared'; scriptSharedWith?: string },
+  display: (absolute: string) => string,
+): string | undefined {
+  const label = display(sessionGuardScriptPath(settingsFile));
+  if (outcome.script === 'left-edited') return `Session guard script ${label} was edited by hand, so it was left in place; remove it by hand.`;
+  if (outcome.script === 'kept-shared' && outcome.scriptSharedWith !== undefined) {
+    return `Session guard script ${label} was kept: ${display(outcome.scriptSharedWith)} still has hook entries that run it. It goes when the guard is removed from that file too.`;
+  }
+  return undefined;
 }
 
 /** The matchers the role guards carry (`nativeGuardHooks`, the one source), and the matchers this guard wrote before it matched the same tools. */
@@ -479,13 +540,13 @@ export async function mergeSessionGuard(
 export async function removeOwnedSessionGuard(
   file: string,
   opts: { createdFile: boolean; recordedHash?: string; recordedScriptHash?: string },
-): Promise<{ status: RemoveStatus; left: number; script?: 'removed' | 'left-edited' }> {
+): Promise<{ status: RemoveStatus; left: number; script?: 'removed' | 'left-edited' | 'kept-shared'; scriptSharedWith?: string }> {
   const outcome = await removeOwnedHandlers(file, opts);
   // The script file goes with the entries, but only while no entry of ours is left behind that may still name it (a hand-edited entry), and
   // never when the settings file could not be read. Entries the user deleted by hand leave the script orphaned: it goes too.
   if (outcome.status === 'skipped-invalid' || outcome.left > 0) return outcome;
-  const script = await removeSessionGuardScript(file, opts.recordedScriptHash);
-  return script === undefined ? outcome : { ...outcome, script };
+  const removal = await removeSessionGuardScript(file, opts.recordedScriptHash);
+  return removal === undefined ? outcome : { ...outcome, script: removal.script, ...(removal.sharedWith !== undefined ? { scriptSharedWith: removal.sharedWith } : {}) };
 }
 
 async function removeOwnedHandlers(

@@ -110,7 +110,7 @@ describe('A: the commands follow the scope of the install that recorded the guar
     const message = blockMessage(await scriptIn(PROJECT_SETTINGS));
     expect(message).toContain('agents update --all (repairs the install)');
     expect(message).not.toContain('--global');
-    expect(message).toContain("delete by hand the hook entries that contain 'agents-united guard' from .claude/settings.json or .claude/settings.local.json in the project");
+    expect(message).toContain('delete by hand the hook entries that run agents-united-session-guard.js from .claude/settings.json or .claude/settings.local.json in the project, and then delete the script file .claude/hooks/agents-united-session-guard.js in the project.');
     const report = await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude');
     expect(report.sessionGuardCommands).toMatchObject(sessionGuardCommands('project'));
     expect(report.sessionGuardCommands?.manual).toContain(PROJECT_SETTINGS);
@@ -118,7 +118,7 @@ describe('A: the commands follow the scope of the install that recorded the guar
 
   it('every way-out message carries the manual route, by kind of file, with no absolute path', () => {
     const user = sessionGuardScript('user');
-    expect(user).toContain("delete by hand the hook entries that contain 'agents-united guard' from settings.json in the .claude folder of your home directory");
+    expect(user).toContain('delete by hand the hook entries that run agents-united-session-guard.js from settings.json in the .claude folder of your home directory, and then delete the script file agents-united-session-guard.js in the hooks folder beside it.');
     expect(blockMessage(user)).toContain('settings.json in the .claude folder of your home directory');
     for (const script of [sessionGuardScript('project'), sessionGuardScript('local'), user]) {
       expect(script).not.toContain(HOME);

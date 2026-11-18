@@ -21,7 +21,7 @@ import { ClaudeProjector } from './claude-projector.js';
 import { listNativeWorkflows } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
-import { inspectSessionGuard, mergeSessionGuard, removeOwnedSessionGuard, resolveSessionGuardFile, sessionGuardRestoreCommand, sessionGuardScriptPath, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
+import { displaySessionGuardPath, inspectSessionGuard, mergeSessionGuard, removeOwnedSessionGuard, resolveSessionGuardFile, sessionGuardRestoreCommand, sessionGuardScriptLeftNote, sessionGuardScriptPath, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
 import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo, SessionGuardChoiceResult, SessionGuardStep } from './types.js';
@@ -760,9 +760,8 @@ private toPosix(p: string): string {
         } else if (outcome.left > 0) {
           warnings.push(`Session guard in ${recorded.file} was edited by hand, so ${outcome.left} entr${outcome.left === 1 ? 'y was' : 'ies were'} left in place; remove ${outcome.left === 1 ? 'it' : 'them'} by hand.`);
         }
-        if (outcome.script === 'left-edited') {
-          warnings.push(`Session guard script ${this.sessionGuardScriptLabel(recorded.file, workspaceRoot)} was edited by hand, so it was left in place; remove it by hand.`);
-        }
+        const scriptNote = sessionGuardScriptLeftNote(file, outcome, abs => displaySessionGuardPath(abs, workspaceRoot));
+        if (scriptNote) warnings.push(scriptNote);
         if (removed || warnings.length > 0) projections.push({ host: 'claude', path: recorded.file, warnings });
       }
       lockfile.sessionGuard = { off: true };
@@ -791,9 +790,8 @@ private toPosix(p: string): string {
     if (recorded && !('off' in recorded) && recorded.file !== recordedFile) {
       const earlierFile = path.isAbsolute(recorded.file) ? recorded.file : path.join(workspaceRoot, recorded.file);
       const moved = await removeOwnedSessionGuard(earlierFile, { createdFile: recorded.createdFile, recordedHash: recorded.handlerHash, recordedScriptHash: recorded.scriptHash });
-      if (moved.script === 'left-edited') {
-        warnings.push(`Session guard script ${this.sessionGuardScriptLabel(recorded.file, workspaceRoot)} was edited by hand, so it was left in place; remove it by hand.`);
-      }
+      const scriptNote = sessionGuardScriptLeftNote(earlierFile, moved, abs => displaySessionGuardPath(abs, workspaceRoot));
+      if (scriptNote) warnings.push(scriptNote);
       if (moved.status === 'removed' || moved.status === 'deleted-file') {
         warnings.push(`Session guard moved from ${earlierFile} to ${file}: our entries were removed from ${earlierFile}.`);
       } else if (moved.status === 'skipped-invalid') {

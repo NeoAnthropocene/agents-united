@@ -502,3 +502,171 @@ describe('the doctor line for the new states', () => {
     expect(label).not.toBe(sessionGuardStateLabel('wired'));
   });
 });
+
+describe('the manual route inside the script is true for the file form', () => {
+  const NEW_PROJECT = 'delete by hand the hook entries that run agents-united-session-guard.js from .claude/settings.json or .claude/settings.local.json in the project, and then delete the script file .claude/hooks/agents-united-session-guard.js in the project.';
+  const NEW_USER = 'delete by hand the hook entries that run agents-united-session-guard.js from settings.json in the .claude folder of your home directory, and then delete the script file agents-united-session-guard.js in the hooks folder beside it.';
+  const OLD_PROJECT = "delete by hand the hook entries that contain 'agents-united guard' from .claude/settings.json or .claude/settings.local.json in the project.";
+  const OLD_USER = "delete by hand the hook entries that contain 'agents-united guard' from settings.json in the .claude folder of your home directory.";
+  /** The session script as the version before this change wrote it. */
+  const before = (kind: 'project' | 'user'): string =>
+    sessionGuardScript(kind).split(kind === 'project' ? NEW_PROJECT : NEW_USER).join(kind === 'project' ? OLD_PROJECT : OLD_USER);
+
+  it('both failure messages carry the new sentence, and no script text keeps the old phrase', () => {
+    expect(sessionGuardScript('project')).toContain(`Without the CLI, ${NEW_PROJECT}`);
+    expect(sessionGuardScript('user')).toContain(`Without the CLI, ${NEW_USER}`);
+    for (const kind of ['project', 'user'] as const) {
+      expect(sessionGuardScript(kind)).not.toContain("contain 'agents-united guard'");
+      // In the unreadable-input message and in the uncaughtException message: twice.
+      expect(sessionGuardScript(kind).split('delete by hand the hook entries that run agents-united-session-guard.js').length - 1).toBe(2);
+    }
+    expect(sessionGuardScript('project').length).toBeLessThan(2400);
+    expect(sessionGuardScript('user').length).toBeLessThan(2400);
+  });
+
+  it('the running script prints it, with no absolute path', async () => {
+    await mergeSessionGuard(SETTINGS);
+    expect(runScript(SCRIPT, 'null').stderr).toContain(NEW_PROJECT);
+    await mergeSessionGuard(USER_SETTINGS);
+    const user = runScript(USER_SCRIPT, 'null').stderr;
+    expect(user).toContain(NEW_USER);
+    expect(user).not.toContain(HOME);
+  });
+
+  it('the doctor words the route the same way, naming the settings file and the script file', async () => {
+    await installProject({ sessionGuard: 'project' });
+    const report = await doctor(PROJECT);
+    expect(report.sessionGuardCommands?.manual).toBe(`Without the CLI, delete by hand the hook entries that run agents-united-session-guard.js from ${SETTINGS}, and then delete the script file ${SCRIPT}.`);
+  });
+
+  it('the texts of the version before are earlier texts of ours (project and user)', () => {
+    expect(before('project')).not.toBe(sessionGuardScript('project'));
+    expect(before('user')).not.toBe(sessionGuardScript('user'));
+    expect(EARLIER_SESSION_SCRIPTS).toContain(before('project'));
+    expect(EARLIER_SESSION_SCRIPTS).toContain(before('user'));
+  });
+
+  it('a script file or an inline entry that carries the old sentence is outdated, and an update renews it', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.writeFile(SCRIPT, `${before('project')}\n`);
+    expect(await inspectSessionGuardScript(SETTINGS)).toBe('outdated');
+    expect((await doctor(PROJECT)).sessionGuard).toBe('script-outdated');
+    await update();
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
+    expect((await doctor(PROJECT)).sessionGuard).toBe('wired');
+
+    await writeInlineSettings(SETTINGS, inline(before('project')));
+    expect(await inspectSessionGuard(SETTINGS)).toBe('outdated');
+
+    await mergeSessionGuard(USER_SETTINGS);
+    await fs.writeFile(USER_SCRIPT, `${before('user')}\n`);
+    expect(await inspectSessionGuardScript(USER_SETTINGS)).toBe('outdated');
+  });
+});
+
+describe('one script, two settings files: project and local share it', () => {
+  const both = async (): Promise<void> => {
+    await mergeSessionGuard(SETTINGS);
+    await mergeSessionGuard(SETTINGS_LOCAL);
+  };
+  const guardWorks = (): void => {
+    expect(runScript(SCRIPT, bashCall('git status --short')).status).toBe(0);
+    expect(runScript(SCRIPT, bashCall('git push --force origin main')).status).toBe(2);
+  };
+
+  it('removing the guard from the project file keeps the script while the local file still has it, and says why', async () => {
+    await both();
+    const outcome = await removeOwnedSessionGuard(SETTINGS, { createdFile: true });
+    expect(outcome).toMatchObject({ status: 'deleted-file', left: 0, script: 'kept-shared', scriptSharedWith: SETTINGS_LOCAL });
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
+    expect(await inspectSessionGuard(SETTINGS_LOCAL)).toBe('wired');
+    guardWorks();
+  });
+
+  it('removing the guard from the local file keeps the script while the project file still has it', async () => {
+    await both();
+    const outcome = await removeOwnedSessionGuard(SETTINGS_LOCAL, { createdFile: true });
+    expect(outcome).toMatchObject({ status: 'deleted-file', left: 0, script: 'kept-shared', scriptSharedWith: SETTINGS });
+    expect(await inspectSessionGuard(SETTINGS)).toBe('wired');
+    guardWorks();
+  });
+
+  it('both removed: the first keeps the script, the second removes it and the empty folder', async () => {
+    await both();
+    expect((await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).script).toBe('kept-shared');
+    expect((await removeOwnedSessionGuard(SETTINGS_LOCAL, { createdFile: true })).script).toBe('removed');
+    expect(await fs.pathExists(SCRIPT)).toBe(false);
+    expect(await fs.pathExists(path.dirname(SCRIPT))).toBe(false);
+  });
+
+  it('a hand-edited entry of ours in the other file that names the script also keeps it', async () => {
+    await both();
+    const local = await fs.readJson(SETTINGS_LOCAL);
+    local.hooks.PreToolUse[0].hooks[0].timeout = 5;
+    await fs.writeJson(SETTINGS_LOCAL, local, { spaces: 2 });
+    expect((await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).script).toBe('kept-shared');
+    expect(await fs.pathExists(SCRIPT)).toBe(true);
+  });
+
+  it('an other file that cannot be read counts as in use (the script is kept)', async () => {
+    await mergeSessionGuard(SETTINGS);
+    await fs.outputFile(SETTINGS_LOCAL, '{ // mine\n}');
+    expect((await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).script).toBe('kept-shared');
+    expect(await fs.pathExists(SCRIPT)).toBe(true);
+  });
+
+  it('an other file without entries of ours does not keep it', async () => {
+    await mergeSessionGuard(SETTINGS);
+    await fs.outputJson(SETTINGS_LOCAL, { env: { A: '1' } });
+    expect((await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).script).toBe('removed');
+  });
+
+  it('the user file has its own script and is not affected by the project files, nor they by it', async () => {
+    await mergeSessionGuard(SETTINGS);
+    await mergeSessionGuard(USER_SETTINGS);
+    expect((await removeOwnedSessionGuard(USER_SETTINGS, { createdFile: true })).script).toBe('removed');
+    expect(await fs.pathExists(USER_SCRIPT)).toBe(false);
+    expect(await fs.pathExists(SCRIPT)).toBe(true);
+    expect((await removeOwnedSessionGuard(SETTINGS, { createdFile: true })).script).toBe('removed');
+  });
+
+  it('--no-session-guard on an install that records the project file keeps the script while the local file has it, and reports it', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await mergeSessionGuard(SETTINGS_LOCAL);
+    const result = await update({ sessionGuard: false });
+    expect(await fs.pathExists(SETTINGS)).toBe(false);
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
+    expect((result.sessionGuardNotes ?? []).join('\n')).toMatch(/\.claude\/hooks\/agents-united-session-guard\.js[^\n]*kept[^\n]*\.claude\/settings\.local\.json/);
+    guardWorks();
+  });
+
+  it('uninstall of the last bundle keeps the script while the other file has it, and says so', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await mergeSessionGuard(SETTINGS_LOCAL);
+    const result = await uninstall();
+    expect(await fs.pathExists(SCRIPT)).toBe(true);
+    expect((result.notes ?? []).join('\n')).toMatch(/\.claude\/hooks\/agents-united-session-guard\.js[^\n]*kept[^\n]*\.claude\/settings\.local\.json/);
+    guardWorks();
+  });
+
+  it.each([
+    ['project', 'local', SETTINGS_LOCAL],
+    ['local', 'project', SETTINGS],
+  ] as const)('moving the guard from the %s file to the %s file leaves the script in place and the guard working', async (from, to, toFile) => {
+    await installProject({ sessionGuard: from });
+    await update({ sessionGuard: to });
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
+    expect(await inspectSessionGuard(toFile)).toBe('wired');
+    expect((await doctor(PROJECT)).sessionGuard).toBe('wired');
+    guardWorks();
+  });
+
+  it('moving while the target file already has the guard keeps the script and says why', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await mergeSessionGuard(SETTINGS_LOCAL);
+    const result = await update({ sessionGuard: 'local' });
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
+    expect((result.sessionGuardNotes ?? []).join('\n')).toMatch(/\.claude\/hooks\/agents-united-session-guard\.js[^\n]*kept/);
+    guardWorks();
+  });
+});
