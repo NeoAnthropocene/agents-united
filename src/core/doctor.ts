@@ -21,7 +21,7 @@ import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAg
 import { GUARD_ON_FAILURE_MIN_VERSION, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
-import { inspectSessionGuard, inspectSessionGuardScript, sessionGuardNamesScript, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardManualRoute, sessionGuardReach, sessionGuardRestoreCommand, sessionGuardScriptPath, sessionGuardSnippet, variantOfRecordedFile } from './session-guard.js';
+import { inspectSessionGuard, inspectSessionGuardScript, sessionGuardEntriesKind, sessionGuardNamesScript, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardManualRoute, sessionGuardReach, sessionGuardRestoreCommand, sessionGuardScriptPath, sessionGuardSnippet, variantOfRecordedFile } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
@@ -628,7 +628,8 @@ export class DoctorEngine {
         if (scriptState === 'missing' && namesScript) sessionGuard = 'script-missing';
         else if (state === 'wired' && (scriptState === 'outdated' || scriptState === 'modified')) sessionGuard = `script-${scriptState}`;
         else if (scriptBlocks) sessionGuard = 'script-modified';
-        sessionGuardInEffect = state === 'wired' && scriptState !== 'missing';
+        // A script that is missing blocks everything; one edited by hand may allow everything. Neither is a guard in effect.
+        sessionGuardInEffect = state === 'wired' && scriptState !== 'missing' && scriptState !== 'modified';
         const scriptLabel = path.isAbsolute(guardRecord.file)
           ? sessionGuardScriptPath(guardFile)
           : path.relative(workspaceRootOf(root), sessionGuardScriptPath(guardFile)).replace(/\\/g, '/');
@@ -649,7 +650,15 @@ export class DoctorEngine {
         };
         if (scriptBlocks) {
           // A file edited by hand (or not a readable file) sits at the script path: `agents update` writes nothing and renews nothing until it is gone.
-          warnings.push(`Session guard script ${scriptLabel} was edited by hand or cannot be read as a file, and the entries of the guard would run it, so agents update does not write or renew the guard (${missing ? `${guardRecord.file} holds no entry of ours` : `the entries in ${guardRecord.file} are an earlier form and stay as they are`}). Delete or restore that file, then run 'agents update'.`);
+          const kind = await sessionGuardEntriesKind(guardFile);
+          const rest = missing
+            ? `${guardRecord.file} holds no entry of ours, so nothing guards plain Claude sessions through it`
+            : kind === 'file'
+              ? `the entries in ${guardRecord.file} run that file, so what they allow is up to it`
+              : `the entries in ${guardRecord.file} are an earlier form and stay as they are, and they keep guarding`;
+          // A plain update never re-creates a guard that is absent from the shared user file: name the command that does.
+          const rerun = userFile && missing ? sessionGuardRestoreCommand(recordedScope) : "'agents update'";
+          warnings.push(`Session guard script ${scriptLabel} was edited by hand or cannot be read as a file, and the entries of the guard would run it, so agents update does not write or renew the guard (${rest}). Delete or restore that file, then run ${rerun}.`);
         } else if (missing && userFile) {
           warnings.push(`Session guard missing from ${guardRecord.file}, the user settings file that every install shares: plain Claude sessions are unguarded. A plain 'agents update' does not re-create it there (a way out may have removed it on purpose). To restore it, run: ${sessionGuardRestoreCommand(recordedScope)}`);
         } else if (missing) {
@@ -668,7 +677,7 @@ export class DoctorEngine {
         } else if (state === 'wired' && scriptState === 'outdated') {
           warnings.push(`Session guard script ${scriptLabel} holds an earlier text of ours. Run 'agents update' to renew it.`);
         } else if (state === 'wired' && scriptState === 'modified') {
-          warnings.push(`Session guard script ${scriptLabel} was edited by hand; agents-united leaves it as-is.`);
+          warnings.push(`Session guard script ${scriptLabel} was edited by hand; agents-united leaves it as-is. The entries run it, so guarded calls may be allowed or blocked as that file decides, not as the guard does.`);
         }
       }
     }

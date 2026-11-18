@@ -102,7 +102,17 @@ export function sessionGuardCommands(value: SessionGuardVariant | SessionGuardRe
 /** The variant of the settings file a guard sits in: `user` only for the home directory's own `.claude/settings.json`. */
 export function variantOfFile(file: string): SessionGuardVariant {
   const user = path.resolve(os.homedir(), ...SESSION_GUARD_FILES.user.split('/'));
-  return path.resolve(file) === user ? 'user' : 'project';
+  return sameSessionGuardPath(file, user) ? 'user' : 'project';
+}
+
+/**
+ * Two paths name the same file: resolved (slash style, `.` and `..`), and on Windows compared without regard to letter case (the file
+ * system does not tell `C:\Users\Me` from `c:/users/me`). A relative path is read against `base` when one is given.
+ */
+export function sameSessionGuardPath(a: string, b: string, base: string = process.cwd()): boolean {
+  const left = path.resolve(base, a);
+  const right = path.resolve(base, b);
+  return process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
 }
 
 /**
@@ -310,6 +320,20 @@ async function siblingUsingScript(settingsFile: string): Promise<{ file: string;
   return undefined;
 }
 
+/**
+ * What of ours a settings file holds, for the sentence that says what still guards: `none`; `inline` (only earlier `node -e` entries, which
+ * carry their own script and keep guarding); `file` (some entry runs the script file, so the script decides what is allowed); `unreadable`.
+ */
+export async function sessionGuardEntriesKind(settingsFile: string): Promise<'none' | 'inline' | 'file' | 'unreadable'> {
+  const parsed = await parse(settingsFile);
+  if (parsed === 'invalid') return 'unreadable';
+  if (parsed === 'absent') return 'none';
+  const groups = parsed.settings.hooks?.PreToolUse ?? [];
+  const handlers = groups.flatMap(group => hooksOf(group)).filter(isOursAnyVersion);
+  if (handlers.length === 0) return 'none';
+  return handlers.some(handler => namesScriptFile(handler as Handler)) ? 'file' : 'inline';
+}
+
 /** True when any entry of ours in `settingsFile` runs the script file, whatever state the entry is in (current, outdated in the file form, or hand-edited). */
 export async function sessionGuardNamesScript(settingsFile: string): Promise<boolean> {
   const parsed = await parse(settingsFile);
@@ -352,9 +376,11 @@ export function sessionGuardScriptLeftNote(
   if (outcome.script === 'left-edited') return `Session guard script ${label} was edited by hand or cannot be read as a file, so it was left in place; remove it by hand.`;
   if (outcome.script === 'kept-shared' && outcome.scriptSharedWith !== undefined) {
     const other = display(outcome.scriptSharedWith);
+    // True whether or not an install recorded the entries there: no command reaches entries that no lockfile records.
+    const rest = 'The script stays while that file has such entries; entries there that no install recorded are not reached by any command, so remove them by hand, and then delete the script.';
     return outcome.scriptSharedUnreadable === true
-      ? `Session guard script ${label} was kept: ${other} could not be read, so it may still have hook entries that run it. It goes when the guard is removed from that file too.`
-      : `Session guard script ${label} was kept: ${other} still has hook entries that run it. It goes when the guard is removed from that file too.`;
+      ? `Session guard script ${label} was kept: ${other} could not be read, so it may still have hook entries that run it. ${rest}`
+      : `Session guard script ${label} was kept: ${other} still has hook entries that run it. ${rest}`;
   }
   return undefined;
 }
@@ -455,7 +481,13 @@ interface Parsed { settings: Settings; indent: string | number; eol: string; tra
 
 async function parse(file: string): Promise<Parsed | 'absent' | 'invalid'> {
   if (!(await fs.pathExists(file))) return 'absent';
-  const raw = await fs.readFile(file, 'utf8');
+  let raw: string;
+  try {
+    raw = await fs.readFile(file, 'utf8');
+  } catch {
+    // A folder named like the settings file, or a file that cannot be read: not something we may rewrite.
+    return 'invalid';
+  }
   const bom = raw.charCodeAt(0) === 0xfeff;
   const text = bom ? raw.slice(1) : raw;
   const eol = text.includes('\r\n') ? '\r\n' : '\n';

@@ -886,3 +886,223 @@ describe('the shared USER script has no reference count (point 9)', () => {
     expect((await doctor(PROJECT)).sessionGuard).toBe('missing');
   });
 });
+
+describe('a move never leaves the guard unwired (round 2, point 1)', () => {
+  const FOREIGN = '// mine\nprocess.exit(0)\n';
+  const files = { project: SETTINGS, local: SETTINGS_LOCAL, user: USER_SETTINGS } as const;
+  const scripts = { project: SCRIPT, local: SCRIPT, user: USER_SCRIPT } as const;
+  const snapshot = async (file: string): Promise<string | undefined> => ((await fs.pathExists(file)) ? fs.readFile(file, 'utf8') : undefined);
+
+  it.each([
+    ['project', 'local'],
+    ['local', 'project'],
+    ['project', 'user'],
+    ['user', 'project'],
+  ] as const)('%s to %s: refused when the script at the TARGET is not ours; neither settings file nor the record changes, and the output says why', async (from, to) => {
+    await installProject({ sessionGuard: from });
+    await fs.outputFile(scripts[to], FOREIGN);
+    const before = { from: await snapshot(files[from]), to: await snapshot(files[to]), lock: (await lock(PROJECT_LOCK)).sessionGuard };
+
+    const result = await update({ sessionGuard: to });
+
+    expect(await snapshot(files[from])).toBe(before.from);
+    expect(await snapshot(files[to])).toBe(before.to);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toEqual(before.lock);
+    expect(await fs.readFile(scripts[to], 'utf8')).toBe(FOREIGN);
+    expect(result.sessionGuardChanged).toBe(0);
+    const notes = (result.sessionGuardNotes ?? []).join('\n');
+    expect(notes).toMatch(/not moved/);
+    expect(notes).toMatch(/edited by hand/);
+    expect(notes).toContain('agents-united-session-guard.js');
+    expect(await inspectSessionGuard(files[from])).toBe('wired');
+  });
+
+  it('only the target\'s script decides: project to user succeeds when the PROJECT script is edited, and user to project when the USER script is', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.writeFile(SCRIPT, FOREIGN);
+    await update({ sessionGuard: 'user' });
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+    expect(await fs.readFile(USER_SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('user'));
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: USER_SETTINGS });
+    expect(await fs.pathExists(SETTINGS)).toBe(false);
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(FOREIGN);
+
+    await fs.writeFile(USER_SCRIPT, FOREIGN);
+    await fs.remove(SCRIPT);
+    await update({ sessionGuard: 'project' });
+    expect(await inspectSessionGuard(SETTINGS)).toBe('wired');
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
+  });
+
+  it('a move with no edited script is made, as before', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await update({ sessionGuard: 'local' });
+    expect(await inspectSessionGuard(SETTINGS_LOCAL)).toBe('wired');
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: '.claude/settings.local.json' });
+  });
+});
+
+describe('what the "not written" warning says about the entries there (round 2, point 1) and the advice for the user file (point 2)', () => {
+  const FOREIGN = '// mine\nprocess.exit(0)\n';
+  const warningsOf = (result: { projections: Array<{ warnings?: string[] }> }): string => result.projections.flatMap(projection => projection.warnings ?? []).join('\n');
+
+  it('no entry of ours in the file: it says that nothing guards plain sessions there, and never claims an inline entry keeps guarding', async () => {
+    await fs.outputFile(SCRIPT, FOREIGN);
+    const text = warningsOf(await installProject({ sessionGuard: 'project' }));
+    expect(text).toMatch(/not written or renewed/);
+    expect(text).toMatch(/nothing guards plain Claude sessions through \.claude\/settings\.json/);
+    expect(text).not.toMatch(/keeps guarding/);
+  });
+
+  it('an inline entry of ours is there: the claim is made', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await writeInlineSettings(SETTINGS, inline(sessionGuardScript('project')));
+    await fs.writeFile(SCRIPT, FOREIGN);
+    const text = warningsOf(await update());
+    expect(text).toMatch(/inline entry of ours already there keeps guarding as before/);
+    expect(text).not.toMatch(/nothing guards/);
+  });
+
+  it('the user file with no entry: the sentence names the restore command, because a plain update does not re-create it', async () => {
+    await fs.outputFile(USER_SCRIPT, FOREIGN);
+    const globalText = warningsOf(await installGlobal({ sessionGuard: 'user' }));
+    expect(globalText).toContain('agents update --all --global --session-guard user');
+    const report = await doctor(HOME);
+    expect(report.sessionGuard).toBe('script-modified');
+    expect(report.warnings.join('\n')).toContain('agents update --all --global --session-guard user');
+    expect(report.warnings.join('\n')).not.toMatch(/then run 'agents update'\./);
+    expect(report.sessionGuardCommands?.restore).toBe('agents update --all --global --session-guard user');
+
+    const projectText = warningsOf(await installProject({ sessionGuard: 'user' }));
+    expect(projectText).toContain('agents update --all --session-guard user');
+    expect(projectText).not.toContain('--global');
+    expect((await doctor(PROJECT)).warnings.join('\n')).toContain('agents update --all --session-guard user');
+  });
+
+  it('a project file with no entry keeps the plain advice', async () => {
+    await fs.outputFile(SCRIPT, FOREIGN);
+    await installProject({ sessionGuard: 'project' });
+    const text = (await doctor(PROJECT)).warnings.join('\n');
+    expect(text).toMatch(/then run 'agents update'\./);
+    expect(text).toMatch(/nothing guards plain Claude sessions/);
+  });
+});
+
+describe('a script that is not ours, wired entries (round 2, point 3)', () => {
+  it('the doctor says plainly that guarded calls may be allowed or blocked as that file decides', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.writeFile(SCRIPT, '// mine\nprocess.exit(0)\n');
+    const report = await doctor(PROJECT);
+    expect(report.sessionGuard).toBe('script-modified');
+    expect(report.warnings.join('\n')).toMatch(/guarded calls may be allowed or blocked/);
+    expect(report.warnings.join('\n')).toMatch(/edited by hand/);
+  });
+});
+
+describe('the sibling settings file cannot be read (round 2, point 4) and the kept note is true in both cases (point 5)', () => {
+  it('a folder named like the sibling settings file does not abort the removal; the script is kept with the unreadable wording', async () => {
+    await mergeSessionGuard(SETTINGS);
+    await fs.ensureDir(SETTINGS_LOCAL);
+    const outcome = await removeOwnedSessionGuard(SETTINGS, { createdFile: true });
+    expect(outcome).toMatchObject({ script: 'kept-shared', scriptSharedWith: SETTINGS_LOCAL, scriptSharedUnreadable: true });
+    expect(await fs.pathExists(SCRIPT)).toBe(true);
+  });
+
+  it('uninstall and --no-session-guard do not abort either', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.ensureDir(SETTINGS_LOCAL);
+    const result = await update({ sessionGuard: false });
+    expect((result.sessionGuardNotes ?? []).join('\n')).toMatch(/could not be read/);
+    await installProject({ sessionGuard: 'project' });
+    const gone = await uninstall();
+    expect((gone.notes ?? []).join('\n')).toMatch(/could not be read/);
+    expect(await fs.pathExists(SCRIPT)).toBe(true);
+  });
+
+  it('the wording does not promise that a command removes it: entries no install recorded are removed by hand', async () => {
+    await both();
+    const outcome = await removeOwnedSessionGuard(SETTINGS, { createdFile: true });
+    const note = sessionGuardScriptLeftNote(SETTINGS, outcome, abs => abs) ?? '';
+    expect(note).toContain('still has hook entries that run it');
+    expect(note).toContain('stays while that file has such entries');
+    expect(note).toMatch(/entries there that no install recorded .* by hand/);
+    expect(note).not.toContain('It goes when');
+    async function both(): Promise<void> {
+      await mergeSessionGuard(SETTINGS);
+      await mergeSessionGuard(SETTINGS_LOCAL);
+    }
+  });
+});
+
+describe('agents update --all repairs the mixed states the doctor reports (round 2, point 7)', () => {
+  it('outdated (inline) entries and a missing script: one update leaves a wired guard and a script', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await writeInlineSettings(SETTINGS, inline(sessionGuardScript('project')));
+    await fs.remove(path.dirname(SCRIPT));
+    expect((await doctor(PROJECT)).sessionGuard).toBe('outdated');
+    await update();
+    expect((await doctor(PROJECT)).sessionGuard).toBe('wired');
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
+  });
+
+  it('one group inline, one in the file form, and a missing script', async () => {
+    await installProject({ sessionGuard: 'project' });
+    const settings = await fs.readJson(SETTINGS);
+    settings.hooks.PreToolUse[1].hooks[0] = inline(sessionGuardScript('project'));
+    await fs.writeJson(SETTINGS, settings, { spaces: 2 });
+    await fs.remove(SCRIPT);
+    expect((await doctor(PROJECT)).sessionGuard).toBe('script-missing');
+    await update();
+    expect((await doctor(PROJECT)).sessionGuard).toBe('wired');
+    expect((await groupsOf(SETTINGS)).map(group => group.hooks[0])).toEqual([sessionGuardHandler('project'), sessionGuardHandler('project')]);
+  });
+});
+
+describe('the lockfile records the guard, the settings file holds nothing of ours, a foreign script sits at the path (round 2, point 7)', () => {
+  const FOREIGN = '// mine\nprocess.exit(0)\n';
+  const USER_CONTENT = { env: { KEEP: '1' } };
+  const setup = async (): Promise<void> => {
+    await fs.outputJson(SETTINGS, USER_CONTENT, { spaces: 2 });
+    await fs.outputFile(SCRIPT, FOREIGN);
+    await installProject({ sessionGuard: 'project' });
+    expect(await fs.readJson(SETTINGS)).toEqual(USER_CONTENT);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: '.claude/settings.json' });
+  };
+
+  it('--no-session-guard deletes nothing of the user\'s, records off, and the notes name the script that was left', async () => {
+    await setup();
+    const result = await update({ sessionGuard: false });
+    expect(await fs.readJson(SETTINGS)).toEqual(USER_CONTENT);
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(FOREIGN);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toEqual({ off: true });
+    const notes = (result.sessionGuardNotes ?? []).join('\n');
+    expect(notes).toMatch(/^Changed:/m);
+    expect(notes).toMatch(/\.claude\/hooks\/agents-united-session-guard\.js[^\n]*left in place/);
+  });
+
+  it('uninstall deletes nothing of the user\'s, and the notes name the script that was left', async () => {
+    await setup();
+    const result = await uninstall();
+    expect(await fs.readJson(SETTINGS)).toEqual(USER_CONTENT);
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(FOREIGN);
+    expect((result.notes ?? []).join('\n')).toMatch(/\.claude\/hooks\/agents-united-session-guard\.js[^\n]*left in place/);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toBeUndefined();
+  });
+});
+
+describe('the recorded settings path and the current one differ only in case or slash style (round 2, point 8)', () => {
+  it.skipIf(process.platform !== 'win32')('win32: that is not a move; nothing is removed or rewritten and no "moved" is printed', async () => {
+    await installGlobal({ sessionGuard: 'user' });
+    const before = await fs.readFile(USER_SETTINGS, 'utf8');
+    const old = await lock(HOME_LOCK);
+    old.sessionGuard.file = USER_SETTINGS.toUpperCase().replace(/\\/g, '/');
+    await fs.writeJson(HOME_LOCK, old, { spaces: 2 });
+
+    const result = await installGlobal({});
+
+    expect(result.projections.flatMap(projection => projection.warnings ?? []).join('\n')).not.toMatch(/moved/);
+    expect(await fs.readFile(USER_SETTINGS, 'utf8')).toBe(before);
+    expect(await fs.readFile(USER_SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('user'));
+    expect((await doctor(HOME)).sessionGuard).toBe('wired');
+  });
+});
