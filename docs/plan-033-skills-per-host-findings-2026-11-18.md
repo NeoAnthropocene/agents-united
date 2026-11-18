@@ -1,6 +1,6 @@
 # Plan 033: should a Skill be written once per Host? Findings (2026-11-18)
 
-The maintainer asked, before the Claude lane of the remaining Bundles is started, whether "creating the Skills for every Host is the right choice for our case". This record holds what the lead of the session of 2026-11-18 (an AI session) found in the repository and in the Hosts' docs libraries, and its recommendation. It is a finding and a recommendation, not a decision: the maintainer has not decided.
+The maintainer asked, before the Claude lane of the remaining Bundles is started, whether "creating the Skills for every Host is the right choice for our case". This record holds what the lead of the session of 2026-11-18 (an AI session) found in the repository and in the Hosts' docs libraries, and its recommendation. It was written as a finding and a recommendation. The maintainer then accepted the recommendation ("Yes, shared"); the decision is [ADR 0069](adr/0069-skills-are-shared-with-a-host-layer-where-needed.md).
 
 No Host session was started for this record. Everything below is read from files in the repository at `dev` `c4156dd`, and from the Codex docs snapshot fetched on 2026-11-18, which is on a local branch and not yet on `dev`.
 
