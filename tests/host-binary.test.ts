@@ -69,6 +69,16 @@ describe('resolveHostBinary', () => {
       expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: path.join(shimDir, 'fakehost'), prefixArgs: [], source: 'path-executable' });
     });
 
+    it.runIf(process.platform !== 'win32')('treats quotes in a PATH entry as ordinary characters on POSIX and strips nothing', async () => {
+      const quotedDir = path.join(root, '"quoted"');
+      const bare = path.join(quotedDir, 'fakehost');
+      await fs.outputFile(bare, '');
+      process.env.PATH = quotedDir;
+      expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: bare, prefixArgs: [], source: 'path-executable' });
+      process.env.PATH = path.join(root, 'quoted');
+      expect(resolveHostBinary(WRAPPED_SPEC)).toBeNull();
+    });
+
     it('returns an absolute existing native override unchanged', async () => {
       const native = path.join(root, 'fakehost-native');
       await fs.writeFile(native, '');
@@ -188,12 +198,29 @@ describe('resolveHostBinary', () => {
       expect(resolveHostBinary(PLAIN_SPEC)).toEqual({ executable: exe, prefixArgs: [], source: 'path-executable' });
     });
 
-    it('skips empty PATH entries and a double-quoted entry (the quotes stay in the folder name, so it never matches)', async () => {
+    it('skips empty PATH entries and finds a hit in a double-quoted entry, which decides as the first folder with a hit', async () => {
+      const quotedHit = path.join(shimDir, 'fakehost.exe');
+      await fs.writeFile(quotedHit, '');
+      await fs.writeFile(path.join(laterDir, 'fakehost.exe'), '');
+      process.env.PATH = ['', `"${shimDir}"`, '', laterDir].join(path.delimiter);
+      expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: quotedHit, prefixArgs: [], source: 'path-executable' });
+    });
+
+    it('drops an entry that is only two quotes like an empty one', async () => {
+      const exe = path.join(laterDir, 'fakehost.exe');
+      await fs.writeFile(exe, '');
+      process.env.PATH = ['""', laterDir].join(path.delimiter);
+      expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: exe, prefixArgs: [], source: 'path-executable' });
+    });
+
+    it('leaves an entry with a quote at one end only, or in the middle, as it is: no throw, it never matches and the scan falls through', async () => {
       const exe = path.join(laterDir, 'fakehost.exe');
       await fs.writeFile(exe, '');
       await fs.writeFile(path.join(shimDir, 'fakehost.exe'), '');
-      process.env.PATH = ['', `"${shimDir}"`, '', laterDir].join(path.delimiter);
-      expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: exe, prefixArgs: [], source: 'path-executable' });
+      for (const entry of [`"${shimDir}`, `${shimDir}"`, `${shimDir.slice(0, 4)}"${shimDir.slice(4)}`]) {
+        process.env.PATH = [entry, laterDir].join(path.delimiter);
+        expect(resolveHostBinary(WRAPPED_SPEC)).toEqual({ executable: exe, prefixArgs: [], source: 'path-executable' });
+      }
     });
 
     it('reads an override with an uppercase .CMD extension as a shim', async () => {

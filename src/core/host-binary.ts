@@ -57,6 +57,19 @@ function shimCommand(shimPath: string, source: HostBinarySource, shimSource?: (t
   return { executable: 'cmd.exe', prefixArgs: ['/c', shimPath], source };
 }
 
+/**
+ * The PATH folders in order. On Windows an entry may be wrapped in one pair of double quotes (a legal way to list a folder,
+ * which Windows' own search honours), so one surrounding pair is stripped; an entry with a quote at one end only or in the
+ * middle is left as written. Empty entries are dropped. Elsewhere quotes are ordinary characters.
+ */
+function pathEntries(pathEnv: string): string[] {
+  if (process.platform !== 'win32') return pathEnv.split(':').filter(Boolean);
+  return pathEnv
+    .split(';')
+    .map(entry => (entry.length >= 2 && entry.startsWith('"') && entry.endsWith('"') ? entry.slice(1, -1) : entry))
+    .filter(Boolean);
+}
+
 function isShimExtension(file: string): boolean {
   return ['.cmd', '.bat'].includes(path.extname(file).toLowerCase());
 }
@@ -79,7 +92,7 @@ export function resolveHostBinary(spec: HostBinarySpec): WrappedHostBinaryComman
   }
 
   // 2. PATH scanning
-  const dirs = (process.env.PATH || '').split(process.platform === 'win32' ? ';' : ':').filter(Boolean);
+  const dirs = pathEntries(process.env.PATH || '');
 
   if (process.platform === 'win32') {
     const names = [`${spec.binaryName}.exe`, `${spec.binaryName}.cmd`, `${spec.binaryName}.bat`, spec.binaryName];
