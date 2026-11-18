@@ -1,0 +1,359 @@
+{
+  "changelog": {
+    "checkedAt": "2026-11-18T09:29:36.846Z",
+    "lastSeen": {
+      "CLI": "0.170.0"
+    }
+  },
+  "files": {
+    "changelog-cli.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:ae2f9b41895a449eb03177809096909d3c7490bf3f2ee416d8e9e9e1cf584748",
+      "url": "https://api.github.com/repos/openai/codex/releases?per_page=100&page=1",
+      "via": "http"
+    },
+    "changelog.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:606cef0c8200e3c04bc6f659a6a7ee4a6ae953facde2f7148df9a9afb230b29c",
+      "url": "https://learn.chatgpt.com/docs/whats-new.md",
+      "via": "http"
+    },
+    "llms.txt": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:cc1459b0ee6b116702a2a74d1ca44d8c20192a79a6f3e16b343afd83b296ae58",
+      "url": "https://learn.chatgpt.com/docs/llms.txt",
+      "via": "http"
+    },
+    "pages/agent/subagents.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:840882c4d47a0a6e7e305dab4e14a9fbcffe816e869eb1706915d644dd9935f6",
+      "url": "https://learn.chatgpt.com/docs/agent-configuration/subagents.md",
+      "via": "http"
+    },
+    "pages/agent/working-with-agents.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:efb778d9b625abe8386f7421031e531050e3225a0962522efccb0fd55b9b62b0",
+      "url": "https://learn.chatgpt.com/docs/working-with-agents.md",
+      "via": "http"
+    },
+    "pages/command/app-commands.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:e41c0b89447e903e84eef4989a6282b35acb0a87a794c53cf5c9339e7ee825cc",
+      "url": "https://learn.chatgpt.com/docs/reference/commands.md",
+      "via": "http"
+    },
+    "pages/command/cli-commands.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:7f25f60f43070348b9c813d82b5d2e70b36d1d9559d29224fb5716427e3e88ee",
+      "url": "https://learn.chatgpt.com/docs/developer-commands.md?surface=cli",
+      "via": "http"
+    },
+    "pages/command/repo-slash-commands.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:0c063e80ca817a88bc7cd81c11669f73dad1941296142153bdac4dc08a733e69",
+      "url": "https://raw.githubusercontent.com/openai/codex/main/docs/slash_commands.md",
+      "via": "http"
+    },
+    "pages/hook/hooks.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:829639950a083cabdd5900589d6563fa94fbfbf732d8f70edfad52f85fc083f1",
+      "url": "https://learn.chatgpt.com/docs/hooks.md",
+      "via": "http"
+    },
+    "pages/mcp/mcp-server.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:56b9f16369de95bad39f1a0cacd9e86ece483a07439b586d24a2f07a7d769898",
+      "url": "https://learn.chatgpt.com/docs/mcp-server.md",
+      "via": "http"
+    },
+    "pages/mcp/mcp.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:2f4e0153a726631c2debe9057807d0ea2d3d9314eec6e4436d6ee46e10fe184b",
+      "url": "https://learn.chatgpt.com/docs/extend/mcp.md",
+      "via": "http"
+    },
+    "pages/orchestration/app-server.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:811276d143a5b232f6d8456a378cc490690b03c548dc66a5a4ff3b25d9e568e9",
+      "url": "https://learn.chatgpt.com/docs/app-server.md",
+      "via": "http"
+    },
+    "pages/orchestration/automations.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:c4675c09a02c1507950076be53a2a14a45a323d85e7d6f9c905c01c1e385d7a0",
+      "url": "https://learn.chatgpt.com/docs/automations.md",
+      "via": "http"
+    },
+    "pages/orchestration/codex-sdk.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:f5c1e47d78319ff534261a2d7094400f751cb0852f27f7d5ebf3823cccbc3e21",
+      "url": "https://learn.chatgpt.com/docs/codex-sdk.md",
+      "via": "http"
+    },
+    "pages/orchestration/git-worktrees.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:23bf031f20e674d5117c0575b4243d46775f814d1af81dc781414bc42d0631e5",
+      "url": "https://learn.chatgpt.com/docs/environments/git-worktrees.md",
+      "via": "http"
+    },
+    "pages/orchestration/github-action.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:42b0c3ac45fa265d54b64f621883d0ecb5b41bcca29306ae40d871e332bb5157",
+      "url": "https://learn.chatgpt.com/docs/github-action.md",
+      "via": "http"
+    },
+    "pages/orchestration/long-running-work.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:23aa34cc17449c3ed46fccd392b3fd85e81eb849caab391ddc7c561a8dc97b47",
+      "url": "https://learn.chatgpt.com/docs/long-running-work.md",
+      "via": "http"
+    },
+    "pages/orchestration/non-interactive-mode.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:743533c05cdf0db1f5a2902a78bf51a088cc4ae570a4f4c2b27fb7befbee95fc",
+      "url": "https://learn.chatgpt.com/docs/non-interactive-mode.md",
+      "via": "http"
+    },
+    "pages/orchestration/repo-exec.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:49eac6fd452d21763683c9f224075d6c5c74ffa28217fbe50c279fa6a543200b",
+      "url": "https://raw.githubusercontent.com/openai/codex/main/docs/exec.md",
+      "via": "http"
+    },
+    "pages/permissions/agent-approvals-security.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:0358f79c23bad36c8d285201512c1bf1fef4bbc57c1a26a4152b6ec06fc8bf48",
+      "url": "https://learn.chatgpt.com/docs/agent-approvals-security.md",
+      "via": "http"
+    },
+    "pages/permissions/auto-review.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:6ca854f181c13676ba0643df57a78454eadaaa1b57ac8998fc8a3550143272b9",
+      "url": "https://learn.chatgpt.com/docs/sandboxing/auto-review.md",
+      "via": "http"
+    },
+    "pages/permissions/permission-modes.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:fb7fe86841ad98c2f7e0217ce71cfe184521bc58d73fff727041399ad1a3ee49",
+      "url": "https://learn.chatgpt.com/docs/permission-modes.md",
+      "via": "http"
+    },
+    "pages/permissions/permissions.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:4cea52b0768d1e2ef5548593cbad8ae815eb486503cc30d607b0733136aba7cd",
+      "url": "https://learn.chatgpt.com/docs/permissions.md",
+      "via": "http"
+    },
+    "pages/permissions/repo-execpolicy.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:76b29e8cffcfab00c706e9bbd443e4f4b8c53288968b434e5990af1766132450",
+      "url": "https://raw.githubusercontent.com/openai/codex/main/docs/execpolicy.md",
+      "via": "http"
+    },
+    "pages/permissions/repo-sandbox.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:61d4dd0ccda2a0cbbde78832e752cdf56b1eb8cf7a54f1d46b52a2824c911249",
+      "url": "https://raw.githubusercontent.com/openai/codex/main/docs/sandbox.md",
+      "via": "http"
+    },
+    "pages/permissions/sandboxing.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:ec76ce0274aaeb5db9a276b60cc43c7e0221d931804eb845ebd6d7fa3dfc24d8",
+      "url": "https://learn.chatgpt.com/docs/sandboxing.md",
+      "via": "http"
+    },
+    "pages/permissions/windows-sandbox.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:0769bb9f25809cce3db7190ccea1502cddcbf192018e7375ebbe01631e7272dd",
+      "url": "https://learn.chatgpt.com/docs/windows/windows-sandbox.md",
+      "via": "http"
+    },
+    "pages/plugin/build-plugins.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:e860b2e4476cee5f63491fcf9689f9ba50b9e0f68f25137e18655a40bf16acd0",
+      "url": "https://learn.chatgpt.com/docs/build-plugins.md",
+      "via": "http"
+    },
+    "pages/plugin/plugins.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:dfc1df540980b6b798d524601b75bdc94da41ba706c92fa14e8ba87830d94d4b",
+      "url": "https://learn.chatgpt.com/docs/plugins.md",
+      "via": "http"
+    },
+    "pages/rule/agents-md.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:4a81af9eeb7597184d295ff7f142478855b0b09100d8b75c2ae1058b3dd3203f",
+      "url": "https://learn.chatgpt.com/docs/agent-configuration/agents-md.md",
+      "via": "http"
+    },
+    "pages/rule/custom-prompts.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:603423825c9cce8da5357f8ed627ff3fe153bca5033c40661f1d2b07924b9428",
+      "url": "https://learn.chatgpt.com/docs/custom-prompts.md",
+      "via": "http"
+    },
+    "pages/rule/repo-agents-md.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:56f5b6026b15fad40fe8b1f6f8910b9fccdf66da3b39dd943c91877e2299619e",
+      "url": "https://raw.githubusercontent.com/openai/codex/main/docs/agents_md.md",
+      "via": "http"
+    },
+    "pages/rule/rules.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:3af6fe56ba451a9f046590e2e6ec62a45572f8dd90e8c074710a9814f93d6ebd",
+      "url": "https://learn.chatgpt.com/docs/agent-configuration/rules.md",
+      "via": "http"
+    },
+    "pages/settings/app-settings.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:06c208677af1674390dde40dcb580c177ba4212e1709eb6735768b446919f724",
+      "url": "https://learn.chatgpt.com/docs/reference/settings.md",
+      "via": "http"
+    },
+    "pages/settings/app.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:e399c666f6c4436f4d10068996c23e63ac44c40be0309fa8cb5f5c039c17430c",
+      "url": "https://learn.chatgpt.com/docs/app.md",
+      "via": "http"
+    },
+    "pages/settings/auth.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:ad2adc12fc5836380dded4eb3e12a92b6593c705074840e3fbac93a1c847feb8",
+      "url": "https://learn.chatgpt.com/docs/auth.md",
+      "via": "http"
+    },
+    "pages/settings/cli-customization.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:f6c100c19ad3527ae718a6965f2a209ae3ee7a1542e49bea78441a2a95e5f9ac",
+      "url": "https://learn.chatgpt.com/docs/cli-customization.md",
+      "via": "http"
+    },
+    "pages/settings/cli.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:81101360c5eec65a4410a7be9fd07fe91df238934494fdc3f63b315dfa4b7cd3",
+      "url": "https://learn.chatgpt.com/docs/codex/cli.md",
+      "via": "http"
+    },
+    "pages/settings/config-advanced.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:3e48ae7b7c3fcc33c303faf016faaa53bdfe59ffe7c7ed37e36bc4e9747abaed",
+      "url": "https://learn.chatgpt.com/docs/config-file/config-advanced.md",
+      "via": "http"
+    },
+    "pages/settings/config-basic.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:1f22347e553c051ea6261afa1cd4536032c4269198548220b826490f89d33546",
+      "url": "https://learn.chatgpt.com/docs/config-file/config-basic.md",
+      "via": "http"
+    },
+    "pages/settings/config-reference.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:4995ebe0e95de56d6d2841b3a60a7d66929161fb204d2b465d572cce18ad77c5",
+      "url": "https://learn.chatgpt.com/docs/config-file/config-reference.md",
+      "via": "http"
+    },
+    "pages/settings/config-sample.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:9637e3df375aa235f63eae8dc338ef736a22133a01bffd550eec718352d6d127",
+      "url": "https://learn.chatgpt.com/docs/config-file/config-sample.md",
+      "via": "http"
+    },
+    "pages/settings/configuration.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:efd7eac499aae548eb8ab29597afb18111067de08b80b735642199f57b0b1dd4",
+      "url": "https://learn.chatgpt.com/docs/configuration.md",
+      "via": "http"
+    },
+    "pages/settings/environment-variables.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:80736b316fdaf4db6e41bcd4bd6fd122912f62545565a627c71ecbf0251f6cca",
+      "url": "https://learn.chatgpt.com/docs/config-file/environment-variables.md",
+      "via": "http"
+    },
+    "pages/settings/feature-maturity.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:78f3385ec04a286cece01428dfbb5ff15bb25add550a84d782416a8697f3d3b4",
+      "url": "https://learn.chatgpt.com/docs/feature-maturity.md",
+      "via": "http"
+    },
+    "pages/settings/managed-configuration.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:17d2457570c27bc0eff8dfda492fd96225772994a15ddbf2c2df597d3ba578b4",
+      "url": "https://learn.chatgpt.com/docs/enterprise/managed-configuration.md",
+      "via": "http"
+    },
+    "pages/settings/quickstart.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:81a8270f34ea91568a0da096fdf8c2a7e96f383a15a899ea35f723fba31fe391",
+      "url": "https://learn.chatgpt.com/docs/quickstart.md",
+      "via": "http"
+    },
+    "pages/settings/repo-config.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:745768b4da6cd73e414fc49c5c6ef3d6bf8a0c08289fab23a7dd79776ab31d9d",
+      "url": "https://raw.githubusercontent.com/openai/codex/main/docs/config.md",
+      "via": "http"
+    },
+    "pages/settings/repo-install.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:1126ec733921878a40720e139ba7be88e325ecf9fa5b113de2cc636bc71a1f5a",
+      "url": "https://raw.githubusercontent.com/openai/codex/main/docs/install.md",
+      "via": "http"
+    },
+    "pages/settings/troubleshooting.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:722e30463b406a048720a7aeba7cd946446230e4cecafc681f043040c918d2f5",
+      "url": "https://learn.chatgpt.com/docs/reference/troubleshooting.md",
+      "via": "http"
+    },
+    "pages/settings/windows-app.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:dc994e44229133cbbde2ce9c1f2e8528a35cc77c293f3b972e09e1dc955897b7",
+      "url": "https://learn.chatgpt.com/docs/windows/windows-app.md",
+      "via": "http"
+    },
+    "pages/settings/windows-deployment.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:d0dd20fe3b8a6b0fcfda15ade3dc073c3769c494556f2768055be0f6b801fc35",
+      "url": "https://learn.chatgpt.com/docs/enterprise/windows-deployment.md",
+      "via": "http"
+    },
+    "pages/settings/wsl.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:ebb229bd704a2bab9e2dc5e3c1d1b30de959dc413170623794c02a8c5c177256",
+      "url": "https://learn.chatgpt.com/docs/windows/wsl.md",
+      "via": "http"
+    },
+    "pages/skill/build-skills.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:bc0fc1d9169800c0e0615dcac216a344adb32859d2fa24b3274cf00e358a9b84",
+      "url": "https://learn.chatgpt.com/docs/build-skills.md",
+      "via": "http"
+    },
+    "pages/skill/repo-skills.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:e59789d09692310bbf94e2ef8db0aaf00d97f2226982c8c5330d2d260583a97d",
+      "url": "https://raw.githubusercontent.com/openai/codex/main/docs/skills.md",
+      "via": "http"
+    },
+    "pages/skill/skills-and-plugins.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:c869955ec5dc19b42325f20758ed942fce818eb5a08fbba257348c90fedeac4b",
+      "url": "https://learn.chatgpt.com/docs/skills-and-plugins.md",
+      "via": "http"
+    },
+    "pages/tools/integrated-terminal.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:0f7ea125273a7bae7ba0c2f2ce4c0b374d76de35f01aeb3921332c856b5cd9fc",
+      "url": "https://learn.chatgpt.com/docs/integrated-terminal.md",
+      "via": "http"
+    },
+    "pages/tools/web-search.md": {
+      "fetchedAt": "2026-11-18T09:29:05.153Z",
+      "sha256": "sha256:9bdd161b3d5a38ef0c0967895a9c6b86c9027e6d4c2ca70a365acc5824b97935",
+      "url": "https://learn.chatgpt.com/docs/web-search.md",
+      "via": "http"
+    }
+  },
+  "host": "codex"
+}
