@@ -610,6 +610,8 @@ export interface SessionGuardStep {
   removed?: boolean;
   /** On: what the merge did. */
   merge?: 'created' | 'merged' | 'unchanged' | 'modified' | 'skipped-invalid' | 'script-edited' | 'move-refused';
+  /** A refused move whose target could not be put back to its earlier content: it may hold what the merge wrote. */
+  notRestored?: boolean;
   /** On: what happened to the script file (`created` and `renewed` are changes; `modified`: a file edited by hand sits there and nothing was wired). */
   script?: 'created' | 'renewed' | 'unchanged' | 'modified';
   warnings: string[];

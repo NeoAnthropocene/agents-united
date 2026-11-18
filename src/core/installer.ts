@@ -21,7 +21,7 @@ import { ClaudeProjector } from './claude-projector.js';
 import { listNativeWorkflows } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
 import { isSidecarDir, resolveStateDir, stateDirFor, workspaceRootOf } from './state-dir.js';
-import { displaySessionGuardPath, inspectSessionGuard, inspectSessionGuardScript, mergeSessionGuard, sameSessionGuardFile, undoSessionGuardScript, sameSessionGuardPath, sessionGuardEntriesKind, removeOwnedSessionGuard, resolveSessionGuardFile, sessionGuardRestoreCommand, sessionGuardScriptLeftNote, sessionGuardScriptPath, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
+import { displaySessionGuardPath, sessionGuardScriptUsedBy, inspectSessionGuard, inspectSessionGuardScript, mergeSessionGuard, sameSessionGuardFile, undoSessionGuardScript, sameSessionGuardPath, sessionGuardEntriesKind, removeOwnedSessionGuard, resolveSessionGuardFile, sessionGuardRestoreCommand, sessionGuardScriptLeftNote, sessionGuardScriptPath, variantOfRecordedFile, sessionGuardSnippet } from './session-guard.js';
 import { mergePermissionPreset, SUPPORTED_PERMISSION_PRESET_HOSTS } from './permission-preset.js';
 import YAML from 'yaml';
 import type { BundleDefinition, InstallOptions, LockfileManifest, ResolvedAssets, InstallScope, InstallMethod, AgentHost, PlannedProjectionArtifact, ProjectionInfo, SessionGuardChoiceResult, SessionGuardStep } from './types.js';
@@ -831,19 +831,36 @@ private toPosix(p: string): string {
       } catch (error) {
         notRestored ??= `the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)}: ${error instanceof Error ? error.message : String(error)}`;
       }
-      // The merge may have written a script file into a place that had none; take it back (only if it is ours and no entry runs it).
-      if (!scriptExistedBefore) await undoSessionGuardScript(file, scriptHash);
+      // The merge may have written a script file into a place that had none; take it back (only if it is ours and no entry runs it). Not
+      // when the target could not be put back: its entries may still name that script. A failure is a sentence, never a raw error.
+      let scriptUndoError: string | undefined;
+      if (!scriptExistedBefore && notRestored === undefined) {
+        try {
+          await undoSessionGuardScript(file, scriptHash);
+        } catch (error) {
+          scriptUndoError = error instanceof Error ? error.message : String(error);
+        }
+      }
       // When the entries of another settings file (the earlier one) run that same script and it was missing, it stays: say so, so that
       // "nothing changed" stays true.
-      const recreated = !scriptExistedBefore && (await fs.pathExists(scriptTarget));
+      const recreated = !scriptExistedBefore && notRestored === undefined && scriptUndoError === undefined && (await fs.pathExists(scriptTarget));
+      // Name the file that really runs the script: the target's sibling, which is the earlier file only in a move between project and local.
+      const user = recreated ? await sessionGuardScriptUsedBy(file).catch(() => undefined) : undefined;
+      const userLabel = user === undefined ? undefined : displaySessionGuardPath(user.file, workspaceRoot);
+      const runBy = user === undefined || userLabel === undefined
+        ? 'which other hook entries run'
+        : user.unreadable ? `which ${userLabel} may run (it could not be read)` : `which the entries in ${userLabel} run`;
+      const scriptLabel = this.sessionGuardScriptLabel(recordedFile, workspaceRoot);
       const outcome = notRestored !== undefined
         ? `The guard stays in ${earlierRecord?.file}, but ${recordedFile} could not be restored to its earlier content (${notRestored}); check it by hand.`
-        : recreated
-          ? `The guard stays in ${earlierRecord?.file}; the only change is that the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)}, which the entries in ${earlierRecord?.file} run, was missing and was re-created.`
-          : `Nothing was changed: the guard stays in ${earlierRecord?.file}.`;
+        : scriptUndoError !== undefined
+          ? `The guard stays in ${earlierRecord?.file}; the script file ${scriptLabel} that was written there could not be removed (${scriptUndoError}); delete it by hand.`
+          : recreated
+            ? `The guard stays in ${earlierRecord?.file}; the only change is that the script file ${scriptLabel}, ${runBy}, was missing and was re-created.`
+            : `Nothing was changed: the guard stays in ${earlierRecord?.file}.`;
       const refused = [`Session guard not moved to ${recordedFile}: ${why} ${outcome} ${fix} then run ${rerunMove}.`];
       projections.push({ host: 'claude', path: recordedFile, warnings: refused });
-      return { choice: 'on', file, userFile: variant === 'user', merge: 'move-refused', ...(recreated ? { script: 'created' as const } : {}), warnings: refused };
+      return { choice: 'on', file, userFile: variant === 'user', merge: 'move-refused', ...(recreated ? { script: 'created' as const } : {}), ...(notRestored !== undefined ? { notRestored: true } : {}), warnings: refused };
     };
     let result: Awaited<ReturnType<typeof mergeSessionGuard>>;
     try {
@@ -982,7 +999,10 @@ private toPosix(p: string): string {
     if (step.merge === 'move-refused') {
       // A refused move that re-created the script the earlier entries run did change something: say so.
       const repaired = step.script === 'created';
-      return { changed: repaired, notes: [`${repaired ? 'Changed' : 'Left as it was'}: ${label}: the session guard was not moved to ${step.file}; it stays in ${hasGuardRecord ? recorded.file : 'its earlier file'}.`, ...warnings] };
+      const stays = `the session guard was not moved to ${step.file}; it stays in ${hasGuardRecord ? recorded.file : 'its earlier file'}`;
+      // A target that could not be put back may differ from what it was: not "Left as it was".
+      if (step.notRestored === true) return { changed: true, notes: [`Changed: ${label}: ${stays}, but ${step.file} could not be restored to its earlier content (details below).`, ...warnings] };
+      return { changed: repaired, notes: [`${repaired ? 'Changed' : 'Left as it was'}: ${label}: ${stays}.`, ...warnings] };
     }
     if (step.merge === 'skipped-invalid') {
       // No entry was written: the guard is not on in that file, whatever the record says. The script file may have been (it is what the pasted entry names).

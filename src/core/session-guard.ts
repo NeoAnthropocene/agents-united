@@ -375,6 +375,11 @@ export async function sessionGuardEntriesKind(settingsFile: string, recordedHash
   return handlers.every(handler => isOutdatedGuard(handler, kind, recordedHash)) ? 'inline' : 'edited-inline';
 }
 
+/** The other settings file of the folder that runs the script of `settingsFile` (or could not be read, and so may), for the sentences that name it. */
+export async function sessionGuardScriptUsedBy(settingsFile: string): Promise<{ file: string; unreadable: boolean } | undefined> {
+  return siblingUsingScript(settingsFile);
+}
+
 /** True when any entry of ours in `settingsFile` runs the script file, whatever state the entry is in (current, outdated in the file form, or hand-edited). */
 export async function sessionGuardNamesScript(settingsFile: string): Promise<boolean> {
   const parsed = await parse(settingsFile);
@@ -418,11 +423,17 @@ export function displaySessionGuardPath(absolute: string, workspaceRoot: string)
 /** What was left of the script file, as a sentence for the install, update and uninstall output; undefined when nothing was left. `display` names a path as the user reads it. */
 export function sessionGuardScriptLeftNote(
   settingsFile: string,
-  outcome: { script?: 'removed' | 'left-edited' | 'kept-shared' | 'kept-entry'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean; scriptError?: string },
+  outcome: { status?: RemoveStatus; script?: 'removed' | 'left-edited' | 'kept-shared' | 'kept-entry'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean; scriptError?: string },
   display: (absolute: string) => string,
 ): string | undefined {
   const label = display(sessionGuardScriptPath(settingsFile));
-  if (outcome.scriptError !== undefined) return `Session guard script ${label} could not be removed (${outcome.scriptError}); the entries were removed from ${display(settingsFile)}. Delete the script file by hand.`;
+  if (outcome.scriptError !== undefined) {
+    // Say what really happened to the entries: removed, or none were there.
+    const entries = outcome.status === 'removed' || outcome.status === 'deleted-file'
+      ? `the entries were removed from ${display(settingsFile)}`
+      : `no entries of ours were present in ${display(settingsFile)}`;
+    return `Session guard script ${label} could not be removed (${outcome.scriptError}); ${entries}. Delete the script file by hand.`;
+  }
   if (outcome.script === 'kept-entry') return `Session guard script ${label} was left in place as well: the hand-edited entry of ours that remains in ${display(settingsFile)} may still run it.`;
   if (outcome.script === 'left-edited') return `Session guard script ${label} was edited by hand or cannot be read as a file, so it was left in place; remove it by hand.`;
   if (outcome.script === 'kept-shared' && outcome.scriptSharedWith !== undefined) {

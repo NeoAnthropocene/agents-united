@@ -1516,6 +1516,8 @@ describe('messages of a refused or partly failed move that could be false (round
       expect(notes).toContain('.claude/settings.local.json');
       expect(notes).toMatch(/locked by another program/);
       expect(notes).not.toMatch(/Nothing was changed/);
+      expect(notes).not.toMatch(/Left as it was/);
+      expect(notes.split('\n')[0]).toMatch(/could not be restored/);
     } finally {
       spy.mockRestore();
     }
@@ -1550,6 +1552,83 @@ describe('messages of a refused or partly failed move that could be false (round
       expect(notes).toMatch(/script[^\n]*could not be removed/);
       expect(notes).not.toMatch(/entries in [^\n]* could not be removed/);
       expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: USER_SETTINGS });
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
+describe('last notes of a refused move (round 6)', () => {
+  const real = (): ((...args: unknown[]) => Promise<void>) => fs.remove.bind(fs) as (...args: unknown[]) => Promise<void>;
+  const partlyEdited = { hooks: { PreToolUse: [{ matcher: 'Bash|PowerShell', hooks: [{ ...sessionGuardHandler('user'), async: true }] }] } };
+
+  it('1. the re-created sentence names the file that really uses the script: the sibling of the target, not the earlier file', async () => {
+    await installProject({ sessionGuard: 'user' });
+    await mergeSessionGuard(SETTINGS_LOCAL);
+    await fs.remove(SCRIPT);
+    await fs.outputFile(SETTINGS, '{ // mine\n}');
+    const notes = ((await update({ sessionGuard: 'project' })).sessionGuardNotes ?? []).join('\n');
+    expect(notes).toMatch(/not moved/);
+    expect(notes).toMatch(/which the entries in \.claude\/settings\.local\.json run, was missing and was re-created/);
+    expect(notes).not.toMatch(/which the entries in [^\n]*home[^\n]* run/);
+  });
+
+  it('1. an unreadable sibling is named as such, with no claim about the earlier file', async () => {
+    await installProject({ sessionGuard: 'user' });
+    await fs.remove(SCRIPT);
+    await fs.outputFile(SETTINGS_LOCAL, '{ // mine\n}');
+    await fs.outputFile(SETTINGS, '{ // mine\n}');
+    const notes = ((await update({ sessionGuard: 'project' })).sessionGuardNotes ?? []).join('\n');
+    expect(notes).toMatch(/\.claude\/settings\.local\.json may run[^\n]*could not be read[^\n]*was missing and was re-created/);
+    expect(notes).not.toMatch(/which the entries in [^\n]*home[^\n]* run/);
+  });
+
+  it('2. when the target could not be put back, the script it names is not removed', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.outputJson(USER_SETTINGS, partlyEdited, { spaces: 2 });
+    const write = fs.writeFile.bind(fs) as (...args: unknown[]) => Promise<void>;
+    let writes = 0;
+    const spy = vi.spyOn(fs, 'writeFile').mockImplementation(((...args: unknown[]) => {
+      if (path.resolve(String(args[0])) === path.resolve(USER_SETTINGS) && ++writes === 2) return Promise.reject(new Error('locked by another program'));
+      return write(...args);
+    }) as never);
+    try {
+      const notes = ((await update({ sessionGuard: 'user' })).sessionGuardNotes ?? []).join('\n');
+      expect(notes).toMatch(/could not be restored/);
+      expect(await fs.pathExists(USER_SCRIPT)).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('3. a script that could not be taken back does not throw out of the step: a sentence, and the install still writes its lockfile', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.outputFile(USER_SETTINGS, '{ // mine\n}');
+    const remove = real();
+    const spy = vi.spyOn(fs, 'remove').mockImplementation(((...args: unknown[]) =>
+      path.resolve(String(args[0])) === path.resolve(USER_SCRIPT) ? Promise.reject(new Error('script is in use')) : remove(...args)) as never);
+    try {
+      const result = await installProject({ sessionGuard: 'user' });
+      const text = result.projections.flatMap(projection => projection.warnings ?? []).join('\n');
+      expect(text).toMatch(/not moved/);
+      expect(text).toMatch(/script[^\n]*could not be removed[^\n]*script is in use/);
+      expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: '.claude/settings.json' });
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('4. the script-removal note says no entry was present when none was', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.writeJson(SETTINGS, {});
+    const remove = real();
+    const spy = vi.spyOn(fs, 'remove').mockImplementation(((...args: unknown[]) =>
+      path.resolve(String(args[0])) === path.resolve(SCRIPT) ? Promise.reject(new Error('script is in use')) : remove(...args)) as never);
+    try {
+      const notes = ((await update({ sessionGuard: false })).sessionGuardNotes ?? []).join('\n');
+      expect(notes).toMatch(/script[^\n]*could not be removed/);
+      expect(notes).toMatch(/no entries of ours were present/);
+      expect(notes).not.toMatch(/the entries were removed/);
     } finally {
       spy.mockRestore();
     }
