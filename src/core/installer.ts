@@ -807,27 +807,43 @@ private toPosix(p: string): string {
     const scriptExistedBefore = await fs.pathExists(scriptTarget);
     // The target's bytes before the merge, so a refused move can leave it exactly as it was (a group the merge added is taken out with them).
     const targetBefore: Buffer | undefined = moving && existedBefore ? await fs.readFile(file).catch(() => undefined) : undefined;
+    // The same for the script: a merge may renew an earlier text of ours in it, and a refused move puts that back.
+    const scriptBefore: Buffer | undefined = moving && scriptExistedBefore ? await fs.readFile(scriptTarget).catch(() => undefined) : undefined;
     const rerunMove = `agents update --all${scope === 'global' ? ' --global' : ''} --session-guard ${variant}`;
     const refuseMove = async (why: string, fix: string): Promise<SessionGuardStep> => {
+      let notRestored: string | undefined;
       try {
         if (!existedBefore) await fs.remove(file);
         else if (targetBefore !== undefined) {
           const now = await fs.readFile(file).catch(() => undefined);
           if (now === undefined || !now.equals(targetBefore)) await fs.writeFile(file, targetBefore);
         }
-      } catch {
-        // The target could not be put back (it is the reason the move is refused when it cannot be written); the earlier file is untouched.
+      } catch (error) {
+        // Say so: the target may hold what the merge wrote. The earlier file is untouched either way.
+        notRestored = error instanceof Error ? error.message : String(error);
+      }
+      try {
+        // The merge may have renewed an earlier text of ours in the script: put it back as it was.
+        if (scriptBefore !== undefined) {
+          const now = await fs.readFile(scriptTarget).catch(() => undefined);
+          if (now === undefined || !now.equals(scriptBefore)) await fs.writeFile(scriptTarget, scriptBefore);
+        }
+      } catch (error) {
+        notRestored ??= `the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)}: ${error instanceof Error ? error.message : String(error)}`;
       }
       // The merge may have written a script file into a place that had none; take it back (only if it is ours and no entry runs it).
       if (!scriptExistedBefore) await undoSessionGuardScript(file, scriptHash);
-      // When the entries of the earlier file run that same script and it was missing, it stays: say so, so that "nothing changed" is true.
+      // When the entries of another settings file (the earlier one) run that same script and it was missing, it stays: say so, so that
+      // "nothing changed" stays true.
       const recreated = !scriptExistedBefore && (await fs.pathExists(scriptTarget));
-      const outcome = recreated
-        ? `The guard stays in ${earlierRecord?.file}; the only change is that the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)}, which the entries there run, was missing and was re-created.`
-        : `Nothing was changed: the guard stays in ${earlierRecord?.file}.`;
+      const outcome = notRestored !== undefined
+        ? `The guard stays in ${earlierRecord?.file}, but ${recordedFile} could not be restored to its earlier content (${notRestored}); check it by hand.`
+        : recreated
+          ? `The guard stays in ${earlierRecord?.file}; the only change is that the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)}, which the entries in ${earlierRecord?.file} run, was missing and was re-created.`
+          : `Nothing was changed: the guard stays in ${earlierRecord?.file}.`;
       const refused = [`Session guard not moved to ${recordedFile}: ${why} ${outcome} ${fix} then run ${rerunMove}.`];
       projections.push({ host: 'claude', path: recordedFile, warnings: refused });
-      return { choice: 'on', file, userFile: variant === 'user', merge: 'move-refused', warnings: refused };
+      return { choice: 'on', file, userFile: variant === 'user', merge: 'move-refused', ...(recreated ? { script: 'created' as const } : {}), warnings: refused };
     };
     let result: Awaited<ReturnType<typeof mergeSessionGuard>>;
     try {
@@ -836,7 +852,10 @@ private toPosix(p: string): string {
       if (!moving) throw error;
       return refuseMove(`writing there failed (${error instanceof Error ? error.message : String(error)}).`, 'Make the file writable,');
     }
-    if (moving && earlierRecord !== undefined && earlierFile !== undefined) {
+    // The earlier file did not exist, so the first comparison could not tell: now that the merge has created the target, ask again. If the two
+    // names are one file, nothing is stripped; the record is only re-pointed.
+    const nowSame = moving && earlierFile !== undefined && (result.status === 'created' || result.status === 'merged' || result.status === 'unchanged') && (await sameSessionGuardFile(earlierFile, file));
+    if (moving && !nowSame && earlierRecord !== undefined && earlierFile !== undefined) {
       if (result.status === 'script-edited') {
         return refuseMove(`the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)} there was edited by hand or cannot be read as a file, and the entries would run it.`, 'Delete or restore that file,');
       }
@@ -876,7 +895,7 @@ private toPosix(p: string): string {
     lockfile.sessionGuard = {
       file: recordedFile,
       handlerHash: result.handlerHash,
-      createdFile: sameFileRecord ? sameFileRecord.createdFile : !existedBefore,
+      createdFile: sameFileRecord ? sameFileRecord.createdFile : nowSame && earlierRecord !== undefined ? (existedBefore ? earlierRecord.createdFile : true) : !existedBefore,
       scriptHash: result.script.hash,
     };
     if (result.status === 'skipped-invalid') {
@@ -961,7 +980,9 @@ private toPosix(p: string): string {
     }
     const recordChanged = JSON.stringify(lockfile.sessionGuard) !== before;
     if (step.merge === 'move-refused') {
-      return { changed: false, notes: [`Left as it was: ${label}: the session guard was not moved to ${step.file}; it stays in ${hasGuardRecord ? recorded.file : 'its earlier file'}.`, ...warnings] };
+      // A refused move that re-created the script the earlier entries run did change something: say so.
+      const repaired = step.script === 'created';
+      return { changed: repaired, notes: [`${repaired ? 'Changed' : 'Left as it was'}: ${label}: the session guard was not moved to ${step.file}; it stays in ${hasGuardRecord ? recorded.file : 'its earlier file'}.`, ...warnings] };
     }
     if (step.merge === 'skipped-invalid') {
       // No entry was written: the guard is not on in that file, whatever the record says. The script file may have been (it is what the pasted entry names).

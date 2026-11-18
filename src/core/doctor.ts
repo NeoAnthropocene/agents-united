@@ -44,6 +44,8 @@ export function teammateGuardClause(input: {
   firstTeam?: string;
   sessionGuard?: HealthReport['sessionGuard'];
   entryState?: InspectStatus;
+  /** What the entries are, when they are earlier forms: `inline` entries carry their own script and keep guarding; `file` entries run the file. */
+  entriesKind?: 'none' | 'inline' | 'edited-inline' | 'file' | 'unreadable';
   scriptLabel: string;
 }): string {
   const first = input.firstTeam ?? input.team;
@@ -54,7 +56,10 @@ export function teammateGuardClause(input: {
     return `${head}not installed, and a script file that is not ours sits at ${input.scriptLabel}, so agents update will not write it. Delete or restore that file, then run: agents update ${first} --session-guard.`;
   }
   if (guard === 'script-modified' && input.entryState === 'outdated') {
-    return `${head}installed in an earlier form that keeps guarding, but its renewal is blocked by a script file that is not ours at ${input.scriptLabel}. Delete or restore that file, then run: agents update.`;
+    // Inline entries carry their own script and keep guarding; entries of the file form run the file that is not ours.
+    return input.entriesKind === 'inline'
+      ? `${head}installed in an earlier form that keeps guarding, but its renewal is blocked by a script file that is not ours at ${input.scriptLabel}. Delete or restore that file, then run: agents update.`
+      : `${head}installed in an earlier form whose entries run the script file at ${input.scriptLabel}, which is not ours, so what it allows is not known. Delete or restore that file, then run: agents update.`;
   }
   if (guard === undefined || guard === 'off' || guard === 'missing') {
     return `${head}not installed. Run: agents update ${first} --session-guard to add it.`;
@@ -646,6 +651,7 @@ export class DoctorEngine {
     let sessionGuardCommands: HealthReport['sessionGuardCommands'];
     let sessionGuardInEffect = false;
     let guardEntryState: InspectStatus | undefined;
+    let guardEntriesKind: Awaited<ReturnType<typeof sessionGuardEntriesKind>> | undefined;
     let guardScriptLabel = '';
     const guardRecord = manifest?.sessionGuard;
     if (guardRecord) {
@@ -691,6 +697,7 @@ export class DoctorEngine {
         if (scriptBlocks) {
           // A file edited by hand (or not a readable file) sits at the script path: `agents update` writes nothing and renews nothing until it is gone.
           const kind = await sessionGuardEntriesKind(guardFile, guardRecord.handlerHash);
+          guardEntriesKind = kind;
           const rest = missing
             ? `${guardRecord.file} holds no entry of ours, so nothing guards plain Claude sessions through it`
             : kind === 'file'
@@ -736,7 +743,7 @@ export class DoctorEngine {
         if (definition?.tier === 'organization') teams.push(bundleName);
       }
       if (teams.length > 0) {
-        warnings.push(teammateGuardClause({ team: teams.join(', '), firstTeam: teams[0], sessionGuard, entryState: guardEntryState, scriptLabel: guardScriptLabel }));
+        warnings.push(teammateGuardClause({ team: teams.join(', '), firstTeam: teams[0], sessionGuard, entryState: guardEntryState, entriesKind: guardEntriesKind, scriptLabel: guardScriptLabel }));
       }
     }
 

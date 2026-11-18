@@ -1362,6 +1362,9 @@ describe('a merge status is not proof that the target guards (round 4, point 2)'
     const notes = (result.sessionGuardNotes ?? []).join('\n');
     expect(notes).toMatch(/not moved/);
     expect(notes).toMatch(/was missing and was re-created/);
+    expect(notes).toMatch(/which the entries in \.claude\/settings\.json run, was missing/);
+    expect(notes).toMatch(/^Changed:/m);
+    expect(result.sessionGuardChanged).toBe(1);
     expect(notes).not.toMatch(/Nothing was changed/);
     expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
     expect(await fs.readFile(SETTINGS_LOCAL, 'utf8')).toBe('{ // mine\n}');
@@ -1403,8 +1406,14 @@ describe('the teammate warning follows the state of the entries (round 4, point 
       expect(text).not.toMatch(/installed but not in effect/);
     }
   });
+  it('earlier FILE-form entries run the file that is not ours: what it allows is not known, not "keeps guarding"', () => {
+    const text = teammateGuardClause({ team: 'digital-agency', sessionGuard: 'script-modified', entryState: 'outdated', entriesKind: 'file', scriptLabel: LABEL });
+    expect(text).toMatch(/what it allows is not known/);
+    expect(text).not.toMatch(/keeps guarding/);
+    expect(text).toContain(LABEL);
+  });
   it('earlier inline entries and a script that is not ours: they keep guarding, renewal is blocked', () => {
-    const text = teammateGuardClause({ team: 'digital-agency', sessionGuard: 'script-modified', entryState: 'outdated', scriptLabel: LABEL });
+    const text = teammateGuardClause({ team: 'digital-agency', sessionGuard: 'script-modified', entryState: 'outdated', entriesKind: 'inline', scriptLabel: LABEL });
     expect(text).toMatch(/earlier form that keeps guarding/);
     expect(text).toMatch(/renewal is blocked/);
     expect(text).toContain(LABEL);
@@ -1443,5 +1452,106 @@ describe('smaller points (round 4)', () => {
     const text = report.warnings.join('\n');
     expect(text).toMatch(/an earlier form and stay as they are, and they keep guarding/);
     expect(text).not.toMatch(/what it allows is not known/);
+  });
+});
+
+describe('the same user file under two names when it does not exist yet (round 5, point 1)', () => {
+  const link = path.join(ROOT, 'homelink');
+  const linkedSettings = path.join(link, '.claude', 'settings.json');
+  const setup = async (): Promise<void> => {
+    await installGlobal({ sessionGuard: 'user' });
+    fsSync.symlinkSync(HOME, link, 'junction');
+    const old = await lock(HOME_LOCK);
+    old.sessionGuard.file = linkedSettings;
+    await fs.writeJson(HOME_LOCK, old, { spaces: 2 });
+    await fs.remove(USER_SETTINGS);
+  };
+  const warningsOf = (result: { projections: Array<{ warnings?: string[] }> }): string => result.projections.flatMap(projection => projection.warnings ?? []).join('\n');
+
+  it('(a) a plain update leaves it absent, as for the same path spelled one way, and does not say moved', async () => {
+    await setup();
+    const text = warningsOf(await installGlobal({}));
+    expect(await fs.pathExists(USER_SETTINGS)).toBe(false);
+    expect(text).not.toMatch(/Session guard moved|not moved/);
+    expect(text).toContain('agents update --all --global --session-guard user');
+  });
+
+  it('(b) --session-guard user writes it once; entries, script and record are there afterwards; no moved text', async () => {
+    await setup();
+    const text = warningsOf(await installGlobal({ sessionGuard: 'user' }));
+    expect(text).not.toMatch(/Session guard moved|not moved/);
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+    expect(await fs.readFile(USER_SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('user'));
+    expect((await lock(HOME_LOCK)).sessionGuard).toMatchObject({ file: USER_SETTINGS });
+    expect((await doctor(HOME)).sessionGuard).toBe('wired');
+  });
+});
+
+describe('messages of a refused or partly failed move that could be false (round 5, point 2)', () => {
+  it('a refused move puts back a script it renewed, so Nothing was changed is true', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.writeFile(SCRIPT, `${EARLIER_SESSION_SCRIPTS[0]}\n`);
+    await fs.outputFile(SETTINGS_LOCAL, '{ // mine\n}');
+    // An install, not an update: an update goes on to renew the outdated script of the recorded place after the refused step, as it should.
+    const result = await installProject({ sessionGuard: 'local' });
+    const notes = result.projections.flatMap(projection => projection.warnings ?? []).join('\n');
+    expect(notes).toMatch(/Nothing was changed/);
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(`${EARLIER_SESSION_SCRIPTS[0]}\n`);
+  });
+
+  it('a target that cannot be put back is named, and Nothing was changed is not said', async () => {
+    await installProject({ sessionGuard: 'project' });
+    const partly = { hooks: { PreToolUse: [{ matcher: 'Bash|PowerShell', hooks: [{ ...sessionGuardHandler('project'), async: true }] }] } };
+    await fs.outputJson(SETTINGS_LOCAL, partly, { spaces: 2 });
+    const real = fs.writeFile.bind(fs) as (...args: unknown[]) => Promise<void>;
+    let writes = 0;
+    const spy = vi.spyOn(fs, 'writeFile').mockImplementation(((...args: unknown[]) => {
+      if (path.resolve(String(args[0])) === path.resolve(SETTINGS_LOCAL) && ++writes === 2) return Promise.reject(new Error('locked by another program'));
+      return real(...args);
+    }) as never);
+    try {
+      const notes = ((await update({ sessionGuard: 'local' })).sessionGuardNotes ?? []).join('\n');
+      expect(notes).toMatch(/not moved/);
+      expect(notes).toMatch(/could not be restored/);
+      expect(notes).toContain('.claude/settings.local.json');
+      expect(notes).toMatch(/locked by another program/);
+      expect(notes).not.toMatch(/Nothing was changed/);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  const failScriptRemoval = () => {
+    const real = fs.remove.bind(fs) as (...args: unknown[]) => Promise<void>;
+    return vi.spyOn(fs, 'remove').mockImplementation(((...args: unknown[]) =>
+      path.resolve(String(args[0])) === path.resolve(SCRIPT) ? Promise.reject(new Error('script is in use')) : real(...args)) as never);
+  };
+
+  it('--no-session-guard: the entries are removed and the script could not be; the output says exactly that', async () => {
+    await installProject({ sessionGuard: 'project' });
+    const spy = failScriptRemoval();
+    try {
+      const notes = ((await update({ sessionGuard: false })).sessionGuardNotes ?? []).join('\n');
+      expect(await fs.pathExists(SETTINGS)).toBe(false);
+      expect(notes).toMatch(/script[^\n]*could not be removed[^\n]*script is in use/);
+      expect(notes).not.toMatch(/entries[^\n]*could not be removed/);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('a move whose strip removed the entries but not the script: the warning does not say the entries stayed', async () => {
+    await installProject({ sessionGuard: 'project' });
+    const spy = failScriptRemoval();
+    try {
+      const result = await update({ sessionGuard: 'user' });
+      const notes = (result.sessionGuardNotes ?? []).join('\n');
+      expect(notes).toMatch(/our entries were removed from/);
+      expect(notes).toMatch(/script[^\n]*could not be removed/);
+      expect(notes).not.toMatch(/entries in [^\n]* could not be removed/);
+      expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: USER_SETTINGS });
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

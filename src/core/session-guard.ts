@@ -328,13 +328,33 @@ async function siblingUsingScript(settingsFile: string): Promise<{ file: string;
  * link): their real paths are equal, or they share a device and an inode. False when either does not exist or cannot be examined.
  */
 export async function sameSessionGuardFile(a: string, b: string): Promise<boolean> {
+  // A file that does not exist yet is compared by the real path of its nearest existing parent folder plus the segments after it.
+  const left = await looseRealPath(a);
+  const right = await looseRealPath(b);
+  if (left === undefined || right === undefined) return false;
+  if (sameSessionGuardPath(left, right)) return true;
   try {
-    if (sameSessionGuardPath(await realpath(a), await realpath(b))) return true;
-    const left = await fs.stat(a, { bigint: true });
-    const right = await fs.stat(b, { bigint: true });
-    return left.ino !== 0n && left.ino === right.ino && left.dev === right.dev;
+    const first = await fs.stat(a, { bigint: true });
+    const second = await fs.stat(b, { bigint: true });
+    return first.ino !== 0n && first.ino === second.ino && first.dev === second.dev;
   } catch {
     return false;
+  }
+}
+
+/** The real path of `target`, or, when it does not exist, that of its nearest existing parent with the remaining segments appended. */
+async function looseRealPath(target: string): Promise<string | undefined> {
+  const rest: string[] = [];
+  let current = path.resolve(target);
+  for (;;) {
+    try {
+      return path.join(await realpath(current), ...rest);
+    } catch {
+      const parent = path.dirname(current);
+      if (parent === current) return undefined;
+      rest.unshift(path.basename(current));
+      current = parent;
+    }
   }
 }
 
@@ -398,10 +418,11 @@ export function displaySessionGuardPath(absolute: string, workspaceRoot: string)
 /** What was left of the script file, as a sentence for the install, update and uninstall output; undefined when nothing was left. `display` names a path as the user reads it. */
 export function sessionGuardScriptLeftNote(
   settingsFile: string,
-  outcome: { script?: 'removed' | 'left-edited' | 'kept-shared' | 'kept-entry'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean },
+  outcome: { script?: 'removed' | 'left-edited' | 'kept-shared' | 'kept-entry'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean; scriptError?: string },
   display: (absolute: string) => string,
 ): string | undefined {
   const label = display(sessionGuardScriptPath(settingsFile));
+  if (outcome.scriptError !== undefined) return `Session guard script ${label} could not be removed (${outcome.scriptError}); the entries were removed from ${display(settingsFile)}. Delete the script file by hand.`;
   if (outcome.script === 'kept-entry') return `Session guard script ${label} was left in place as well: the hand-edited entry of ours that remains in ${display(settingsFile)} may still run it.`;
   if (outcome.script === 'left-edited') return `Session guard script ${label} was edited by hand or cannot be read as a file, so it was left in place; remove it by hand.`;
   if (outcome.script === 'kept-shared' && outcome.scriptSharedWith !== undefined) {
@@ -640,13 +661,19 @@ export async function mergeSessionGuard(
 export async function removeOwnedSessionGuard(
   file: string,
   opts: { createdFile: boolean; recordedHash?: string; recordedScriptHash?: string },
-): Promise<{ status: RemoveStatus; left: number; script?: 'removed' | 'left-edited' | 'kept-shared' | 'kept-entry'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean }> {
+): Promise<{ status: RemoveStatus; left: number; script?: 'removed' | 'left-edited' | 'kept-shared' | 'kept-entry'; scriptSharedWith?: string; scriptSharedUnreadable?: boolean; scriptError?: string }> {
   const outcome = await removeOwnedHandlers(file, opts);
   // The script file goes with the entries, but only while no entry of ours is left behind that may still name it (a hand-edited entry), and
   // never when the settings file could not be read. Entries the user deleted by hand leave the script orphaned: it goes too.
   if (outcome.status === 'skipped-invalid') return outcome;
   if (outcome.left > 0) return (await readScript(sessionGuardScriptPath(file))) === undefined ? outcome : { ...outcome, script: 'kept-entry' };
-  const removal = await removeSessionGuardScript(file, opts.recordedScriptHash);
+  let removal: SessionGuardScriptRemoval | undefined;
+  try {
+    removal = await removeSessionGuardScript(file, opts.recordedScriptHash);
+  } catch (error) {
+    // The entries are already out of the settings file: say what was and was not removed, instead of failing the whole step.
+    return { ...outcome, scriptError: error instanceof Error ? error.message : String(error) };
+  }
   return removal === undefined
     ? outcome
     : {
