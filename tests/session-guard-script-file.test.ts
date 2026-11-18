@@ -2,10 +2,11 @@ import { spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
+import fsSync from 'node:fs';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionGuardStateLabel } from '../src/cli.js';
-import { DoctorEngine } from '../src/core/doctor.js';
+import { DoctorEngine, teammateGuardClause } from '../src/core/doctor.js';
 import { EARLIER_GUARD_SCRIPTS, GUARD_SCRIPT } from '../src/core/guard.js';
 import { InstallEngine } from '../src/core/installer.js';
 import {
@@ -1147,8 +1148,8 @@ describe('a move writes the target first; no failure of the target can leave the
   });
 
   for (const [name, how, reason] of REASONS) {
-    it.each(DIRECTIONS)(`${name}: %s to %s is refused, nothing changes on disk, and nothing new is left in the target`, async (from, to) => {
-      if (how === 'readonly' && !canBlockWrites) return; // a root user on Linux can write to a read-only file
+    // A root user on Linux can write to a read-only file: those cases are skipped there, not passed.
+    (how === 'readonly' && !canBlockWrites ? it.skip : it).each(DIRECTIONS)(`${name}: %s to %s is refused, nothing changes on disk, and nothing new is left in the target`, async (from, to) => {
       await installProject({ sessionGuard: from });
       await breakTarget(settingsOf[to], how);
       const before = await state(from, to);
@@ -1255,5 +1256,192 @@ describe('sameSessionGuardPath is platform independent (round 3, point 5)', () =
     expect(sameSessionGuardPath('/Users/Me/.claude/settings.json', '/users/me/.claude/settings.json', undefined, 'linux')).toBe(false);
     expect(sameSessionGuardPath('/home/me/x/../.claude/settings.json', '/home/me/.claude/settings.json', undefined, 'linux')).toBe(true);
     expect(sameSessionGuardPath('.claude/settings.json', '/work/p/.claude/settings.json', '/work/p', 'linux')).toBe(true);
+  });
+});
+
+describe('earlier and target are one physical file under two names (round 4, point 1)', () => {
+  const canFileSymlink = ((): boolean => {
+    const dir = fsSync.mkdtempSync(path.join(os.tmpdir(), 'sg-probe-'));
+    try {
+      fsSync.writeFileSync(path.join(dir, 't'), 'x');
+      fsSync.symlinkSync(path.join(dir, 't'), path.join(dir, 'l'), 'file');
+      return true;
+    } catch {
+      return false;
+    } finally {
+      fsSync.rmSync(dir, { recursive: true, force: true });
+    }
+  })();
+  const repoint = async (recordedPath: string): Promise<void> => {
+    const old = await lock(HOME_LOCK);
+    old.sessionGuard.file = recordedPath;
+    await fs.writeJson(HOME_LOCK, old, { spaces: 2 });
+  };
+  const expectUntouched = async (before: string, warnings: string): Promise<void> => {
+    expect(warnings).not.toMatch(/moved/);
+    expect(await fs.readFile(USER_SETTINGS, 'utf8')).toBe(before);
+    expect(await fs.readFile(USER_SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('user'));
+    expect(await inspectSessionGuard(USER_SETTINGS)).toBe('wired');
+    expect((await lock(HOME_LOCK)).sessionGuard).toMatchObject({ file: USER_SETTINGS });
+    expect((await doctor(HOME)).sessionGuard).toBe('wired');
+  };
+
+  it('a linked home folder (a directory junction, which needs no privilege on Windows): entries and script stay, the record points at the current path', async () => {
+    await installGlobal({ sessionGuard: 'user' });
+    const before = await fs.readFile(USER_SETTINGS, 'utf8');
+    const link = path.join(ROOT, 'homelink');
+    fsSync.symlinkSync(HOME, link, 'junction');
+    await repoint(path.join(link, '.claude', 'settings.json'));
+    const result = await installGlobal({});
+    await expectUntouched(before, result.projections.flatMap(projection => projection.warnings ?? []).join('\n'));
+  });
+
+  it.skipIf(!canFileSymlink)('a symlinked settings file: entries and script stay, the record points at the current path', async () => {
+    await installGlobal({ sessionGuard: 'user' });
+    const before = await fs.readFile(USER_SETTINGS, 'utf8');
+    const link = path.join(ROOT, 'settings-link.json');
+    fsSync.symlinkSync(USER_SETTINGS, link, 'file');
+    await repoint(link);
+    const result = await installGlobal({});
+    await expectUntouched(before, result.projections.flatMap(projection => projection.warnings ?? []).join('\n'));
+  });
+
+  it('a different file is still a move', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await update({ sessionGuard: 'local' });
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: '.claude/settings.local.json' });
+    expect(await fs.pathExists(SETTINGS)).toBe(false);
+  });
+});
+
+describe('a merge status is not proof that the target guards (round 4, point 2)', () => {
+  const edited = (extra: Json = {}): Json => ({ ...sessionGuardHandler('project'), async: true, ...extra });
+  const oneGroupEdited = (which: number) => ({
+    hooks: { PreToolUse: [sessionGuardHooks('project').PreToolUse[which]].map(group => ({ matcher: group.matcher, hooks: [edited()] })) },
+  });
+  const bothEdited = () => ({
+    hooks: { PreToolUse: sessionGuardHooks('project').PreToolUse.map(group => ({ matcher: group.matcher, hooks: [edited()] })) },
+  });
+  const snap = async (file: string): Promise<string | undefined> => ((await fs.pathExists(file)) ? fs.readFile(file, 'utf8') : undefined);
+
+  it.each([
+    ['project', 'local', SETTINGS, SETTINGS_LOCAL, SCRIPT, 0],
+    ['project', 'local', SETTINGS, SETTINGS_LOCAL, SCRIPT, 1],
+    ['project', 'user', SETTINGS, USER_SETTINGS, USER_SCRIPT, 0],
+  ] as const)('%s to %s, the target has one of the two groups edited by hand: refused, the group the merge would add is not left in the target, nothing else changes', async (from, to, fromFile, toFile, toScript, which) => {
+    await installProject({ sessionGuard: from });
+    await fs.outputJson(toFile, oneGroupEdited(which), { spaces: 2 });
+    const before = { from: await snap(fromFile), to: await snap(toFile), script: await snap(toScript), record: (await lock(PROJECT_LOCK)).sessionGuard };
+    const result = await update({ sessionGuard: to });
+    expect(await snap(fromFile)).toBe(before.from);
+    expect(await snap(toFile)).toBe(before.to);
+    expect(await snap(toScript)).toBe(before.script);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toEqual(before.record);
+    expect(result.sessionGuardChanged).toBe(0);
+    expect((result.sessionGuardNotes ?? []).join('\n')).toMatch(/not moved[^\n]*holds hook entries of ours that were edited by hand/);
+    expect(await inspectSessionGuard(fromFile)).toBe('wired');
+  });
+
+  it('a fully hand-edited target is refused too, with both files, the script and the record unchanged', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.outputJson(SETTINGS_LOCAL, bothEdited(), { spaces: 2 });
+    const before = { from: await snap(SETTINGS), to: await snap(SETTINGS_LOCAL), script: await snap(SCRIPT), record: (await lock(PROJECT_LOCK)).sessionGuard };
+    const result = await update({ sessionGuard: 'local' });
+    expect(await snap(SETTINGS)).toBe(before.from);
+    expect(await snap(SETTINGS_LOCAL)).toBe(before.to);
+    expect(await snap(SCRIPT)).toBe(before.script);
+    expect((await lock(PROJECT_LOCK)).sessionGuard).toEqual(before.record);
+    expect((result.sessionGuardNotes ?? []).join('\n')).toMatch(/not moved/);
+  });
+
+  it('a refused move that re-created the missing shared script says so; "Nothing was changed" is not said then', async () => {
+    await installProject({ sessionGuard: 'project' });
+    await fs.remove(SCRIPT);
+    await fs.outputFile(SETTINGS_LOCAL, '{ // mine\n}');
+    const result = await update({ sessionGuard: 'local' });
+    const notes = (result.sessionGuardNotes ?? []).join('\n');
+    expect(notes).toMatch(/not moved/);
+    expect(notes).toMatch(/was missing and was re-created/);
+    expect(notes).not.toMatch(/Nothing was changed/);
+    expect(await fs.readFile(SCRIPT, 'utf8')).toBe(sessionGuardScriptContent('project'));
+    expect(await fs.readFile(SETTINGS_LOCAL, 'utf8')).toBe('{ // mine\n}');
+  });
+});
+
+describe('the strip of the earlier file can throw after the target is written (round 4, point 3)', () => {
+  const canBlockWrites = process.platform === 'win32' || (typeof process.getuid === 'function' && process.getuid() !== 0);
+  it.skipIf(!canBlockWrites)('a read-only earlier file: the target holds the guard, the record goes to the target, the output names the file that still holds entries', async () => {
+    await fs.outputJson(SETTINGS, { env: { A: '1' } }, { spaces: 2 });
+    await installProject({ sessionGuard: 'project' });
+    const earlierBytes = await fs.readFile(SETTINGS, 'utf8');
+    await fs.chmod(SETTINGS, 0o444);
+    try {
+      const result = await update({ sessionGuard: 'local' });
+      expect(await fs.readFile(SETTINGS, 'utf8')).toBe(earlierBytes);
+      expect(await inspectSessionGuard(SETTINGS_LOCAL)).toBe('wired');
+      expect((await lock(PROJECT_LOCK)).sessionGuard).toMatchObject({ file: '.claude/settings.local.json' });
+      const notes = (result.sessionGuardNotes ?? []).join('\n');
+      expect(notes).toMatch(/could not be removed/);
+      expect(notes).toContain(SETTINGS);
+      expect(notes).toMatch(/by hand/);
+      expect(notes).not.toMatch(/not moved/);
+    } finally {
+      await fs.chmod(SETTINGS, 0o666).catch(() => undefined);
+    }
+  });
+});
+
+describe('the teammate warning follows the state of the entries (round 4, point 4)', () => {
+  const LABEL = '.claude/hooks/agents-united-session-guard.js';
+  it('no entry of ours (missing or absent) and a script that is not ours: not installed, and why a command will not write it', () => {
+    for (const entryState of ['missing', 'absent'] as const) {
+      const text = teammateGuardClause({ team: 'digital-agency', sessionGuard: 'script-modified', entryState, scriptLabel: LABEL });
+      expect(text).toMatch(/which is not installed/);
+      expect(text).toContain(LABEL);
+      expect(text).toMatch(/not ours/);
+      expect(text).toMatch(/agents update will not write it/);
+      expect(text).not.toMatch(/installed but not in effect/);
+    }
+  });
+  it('earlier inline entries and a script that is not ours: they keep guarding, renewal is blocked', () => {
+    const text = teammateGuardClause({ team: 'digital-agency', sessionGuard: 'script-modified', entryState: 'outdated', scriptLabel: LABEL });
+    expect(text).toMatch(/earlier form that keeps guarding/);
+    expect(text).toMatch(/renewal is blocked/);
+    expect(text).toContain(LABEL);
+    expect(text).not.toMatch(/not installed/);
+  });
+  it('wired entries and a script edited by hand: installed but not in effect', () => {
+    const text = teammateGuardClause({ team: 'digital-agency', sessionGuard: 'script-modified', entryState: 'wired', scriptLabel: LABEL });
+    expect(text).toMatch(/installed but not in effect/);
+    expect(text).toMatch(/script file was edited by hand/);
+  });
+  it('no guard at all keeps the original wording and command', () => {
+    expect(teammateGuardClause({ team: 'digital-agency', sessionGuard: undefined, entryState: undefined, scriptLabel: LABEL })).toMatch(/which is not installed\. Run: agents update digital-agency --session-guard to add it\./);
+  });
+});
+
+describe('smaller points (round 4)', () => {
+  it('skipped-invalid names the script file the merge wrote', async () => {
+    await installProject({ fanout: ['claude'] });
+    await fs.outputFile(SETTINGS, '{ // mine\n}');
+    const first = (await update({ sessionGuard: 'project' })).sessionGuardNotes ?? [];
+    expect(first.join('\n')).toMatch(/Its script file \.claude\/hooks\/agents-united-session-guard\.js was written/);
+    expect(first.join('\n')).toMatch(/^Changed:/m);
+  });
+
+  it('the doctor calls a hash-only outdated inline entry an earlier form, not an edited one', async () => {
+    const hashOf = (handler: object): string => crypto.createHash('sha256').update(JSON.stringify(handler)).digest('hex').slice(0, 16);
+    const unknownForm = { type: 'command', command: 'node', args: ['-e', 'process.stderr.write("Blocked by agents-united guard: an earlier wording");process.exit(2)'], legacy: true };
+    await installProject({ sessionGuard: 'project' });
+    await writeInlineSettings(SETTINGS, unknownForm);
+    const old = await lock(PROJECT_LOCK);
+    old.sessionGuard.handlerHash = hashOf(unknownForm);
+    await fs.writeJson(PROJECT_LOCK, old, { spaces: 2 });
+    await fs.writeFile(SCRIPT, '// mine\nprocess.exit(0)\n');
+    const report = await doctor(PROJECT);
+    expect(report.sessionGuard).toBe('script-modified');
+    const text = report.warnings.join('\n');
+    expect(text).toMatch(/an earlier form and stay as they are, and they keep guarding/);
+    expect(text).not.toMatch(/what it allows is not known/);
   });
 });

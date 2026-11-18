@@ -38,6 +38,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { realpath } from 'node:fs/promises';
 import fs from 'fs-extra';
 import { EARLIER_GUARD_SCRIPTS, GUARD_OWNERSHIP_MARKER, GUARD_SCRIPT, nativeGuardHooks, type FailClosedHandler } from './guard.js';
 import type { InstallScope } from './types.js';
@@ -320,6 +321,21 @@ async function siblingUsingScript(settingsFile: string): Promise<{ file: string;
     if (groups.some(group => hooksOf(group).some(handler => isRecord(handler) && namesScriptFile(handler as Handler)))) return { file: other, unreadable: false };
   }
   return undefined;
+}
+
+/**
+ * Two settings files that differ lexically are one physical file (a junction, a symlink, an 8.3 short name, /var and /private/var, a hard
+ * link): their real paths are equal, or they share a device and an inode. False when either does not exist or cannot be examined.
+ */
+export async function sameSessionGuardFile(a: string, b: string): Promise<boolean> {
+  try {
+    if (sameSessionGuardPath(await realpath(a), await realpath(b))) return true;
+    const left = await fs.stat(a, { bigint: true });
+    const right = await fs.stat(b, { bigint: true });
+    return left.ino !== 0n && left.ino === right.ino && left.dev === right.dev;
+  } catch {
+    return false;
+  }
 }
 
 /**
