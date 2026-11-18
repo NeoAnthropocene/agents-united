@@ -236,8 +236,8 @@ describe('the committed host-library/', () => {
   const root = path.resolve('host-library');
   const hosts = listHosts(root);
 
-  it('ships the three supported hosts with valid sources', () => {
-    expect(hosts).toEqual(['antigravity', 'claude', 'cline']);
+  it('ships the four supported hosts with valid sources', () => {
+    expect(hosts).toEqual(['antigravity', 'claude', 'cline', 'codex']);
     for (const host of hosts) expect(() => loadSources(path.join(root, host))).not.toThrow();
   });
 

@@ -1,0 +1,188 @@
+{
+  "host": "codex",
+  "label": "OpenAI Codex (CLI, desktop app, Windows and WSL)",
+  "indexes": [
+    {
+      "url": "https://learn.chatgpt.com/docs/llms.txt",
+      "role": "primary",
+      "snapshot": "llms.txt"
+    }
+  ],
+  "changelog": {
+    "url": "https://learn.chatgpt.com/docs/whats-new.md",
+    "snapshot": "changelog.md"
+  },
+  "releases": [
+    {
+      "repo": "openai/codex",
+      "tagPrefix": "rust-v",
+      "section": "CLI",
+      "snapshot": "changelog-cli.md",
+      "pages": 2
+    }
+  ],
+  "pages": {
+    "agent": [
+      { "url": "https://learn.chatgpt.com/docs/agent-configuration/subagents.md", "slug": "subagents" },
+      { "url": "https://learn.chatgpt.com/docs/working-with-agents.md", "slug": "working-with-agents" }
+    ],
+    "skill": [
+      { "url": "https://learn.chatgpt.com/docs/build-skills.md", "slug": "build-skills" },
+      { "url": "https://learn.chatgpt.com/docs/skills-and-plugins.md", "slug": "skills-and-plugins" },
+      { "url": "https://raw.githubusercontent.com/openai/codex/main/docs/skills.md", "slug": "repo-skills" }
+    ],
+    "hook": [
+      { "url": "https://learn.chatgpt.com/docs/hooks.md", "slug": "hooks" }
+    ],
+    "mcp": [
+      { "url": "https://learn.chatgpt.com/docs/extend/mcp.md", "slug": "mcp" },
+      { "url": "https://learn.chatgpt.com/docs/mcp-server.md", "slug": "mcp-server" }
+    ],
+    "plugin": [
+      { "url": "https://learn.chatgpt.com/docs/plugins.md", "slug": "plugins" },
+      { "url": "https://learn.chatgpt.com/docs/build-plugins.md", "slug": "build-plugins" }
+    ],
+    "rule": [
+      { "url": "https://learn.chatgpt.com/docs/agent-configuration/agents-md.md", "slug": "agents-md" },
+      { "url": "https://learn.chatgpt.com/docs/agent-configuration/rules.md", "slug": "rules" },
+      { "url": "https://learn.chatgpt.com/docs/custom-prompts.md", "slug": "custom-prompts" },
+      { "url": "https://raw.githubusercontent.com/openai/codex/main/docs/agents_md.md", "slug": "repo-agents-md" }
+    ],
+    "command": [
+      { "url": "https://learn.chatgpt.com/docs/developer-commands.md?surface=cli", "slug": "cli-commands" },
+      { "url": "https://learn.chatgpt.com/docs/reference/commands.md", "slug": "app-commands" },
+      { "url": "https://raw.githubusercontent.com/openai/codex/main/docs/slash_commands.md", "slug": "repo-slash-commands" }
+    ],
+    "permissions": [
+      { "url": "https://learn.chatgpt.com/docs/sandboxing.md", "slug": "sandboxing" },
+      { "url": "https://learn.chatgpt.com/docs/sandboxing/auto-review.md", "slug": "auto-review" },
+      { "url": "https://learn.chatgpt.com/docs/permission-modes.md", "slug": "permission-modes" },
+      { "url": "https://learn.chatgpt.com/docs/permissions.md", "slug": "permissions" },
+      { "url": "https://learn.chatgpt.com/docs/agent-approvals-security.md", "slug": "agent-approvals-security" },
+      { "url": "https://learn.chatgpt.com/docs/windows/windows-sandbox.md", "slug": "windows-sandbox" },
+      { "url": "https://raw.githubusercontent.com/openai/codex/main/docs/sandbox.md", "slug": "repo-sandbox" },
+      { "url": "https://raw.githubusercontent.com/openai/codex/main/docs/execpolicy.md", "slug": "repo-execpolicy" }
+    ],
+    "settings": [
+      { "url": "https://learn.chatgpt.com/docs/config-file/config-basic.md", "slug": "config-basic" },
+      { "url": "https://learn.chatgpt.com/docs/config-file/config-advanced.md", "slug": "config-advanced" },
+      { "url": "https://learn.chatgpt.com/docs/config-file/config-reference.md", "slug": "config-reference" },
+      { "url": "https://learn.chatgpt.com/docs/config-file/config-sample.md", "slug": "config-sample" },
+      { "url": "https://learn.chatgpt.com/docs/config-file/environment-variables.md", "slug": "environment-variables" },
+      { "url": "https://learn.chatgpt.com/docs/configuration.md", "slug": "configuration" },
+      { "url": "https://learn.chatgpt.com/docs/cli-customization.md", "slug": "cli-customization" },
+      { "url": "https://learn.chatgpt.com/docs/feature-maturity.md", "slug": "feature-maturity" },
+      { "url": "https://learn.chatgpt.com/docs/codex/cli.md", "slug": "cli" },
+      { "url": "https://learn.chatgpt.com/docs/quickstart.md", "slug": "quickstart" },
+      { "url": "https://learn.chatgpt.com/docs/app.md", "slug": "app" },
+      { "url": "https://learn.chatgpt.com/docs/windows/windows-app.md", "slug": "windows-app" },
+      { "url": "https://learn.chatgpt.com/docs/windows/wsl.md", "slug": "wsl" },
+      { "url": "https://learn.chatgpt.com/docs/reference/settings.md", "slug": "app-settings" },
+      { "url": "https://learn.chatgpt.com/docs/reference/troubleshooting.md", "slug": "troubleshooting" },
+      { "url": "https://learn.chatgpt.com/docs/enterprise/windows-deployment.md", "slug": "windows-deployment" },
+      { "url": "https://learn.chatgpt.com/docs/enterprise/managed-configuration.md", "slug": "managed-configuration" },
+      { "url": "https://learn.chatgpt.com/docs/auth.md", "slug": "auth" },
+      { "url": "https://raw.githubusercontent.com/openai/codex/main/docs/install.md", "slug": "repo-install" },
+      { "url": "https://raw.githubusercontent.com/openai/codex/main/docs/config.md", "slug": "repo-config" }
+    ],
+    "tools": [
+      { "url": "https://learn.chatgpt.com/docs/web-search.md", "slug": "web-search" },
+      { "url": "https://learn.chatgpt.com/docs/integrated-terminal.md", "slug": "integrated-terminal" }
+    ],
+    "orchestration": [
+      { "url": "https://learn.chatgpt.com/docs/non-interactive-mode.md", "slug": "non-interactive-mode" },
+      { "url": "https://learn.chatgpt.com/docs/app-server.md", "slug": "app-server" },
+      { "url": "https://learn.chatgpt.com/docs/codex-sdk.md", "slug": "codex-sdk" },
+      { "url": "https://learn.chatgpt.com/docs/automations.md", "slug": "automations" },
+      { "url": "https://learn.chatgpt.com/docs/environments/git-worktrees.md", "slug": "git-worktrees" },
+      { "url": "https://learn.chatgpt.com/docs/long-running-work.md", "slug": "long-running-work" },
+      { "url": "https://learn.chatgpt.com/docs/github-action.md", "slug": "github-action" },
+      { "url": "https://raw.githubusercontent.com/openai/codex/main/docs/exec.md", "slug": "repo-exec" }
+    ]
+  },
+  "keywords": {
+    "agent": [
+      "subagents?",
+      "sub-agents?",
+      "custom agents?",
+      "agent definitions?",
+      "agents?/[\\w-]+\\.(md|toml|ya?ml)"
+    ],
+    "skill": [
+      "\\bskills?\\b",
+      "SKILL\\.md"
+    ],
+    "hook": [
+      "\\bhooks?\\b",
+      "PreToolUse",
+      "PostToolUse",
+      "SessionStart",
+      "UserPromptSubmit",
+      "Stop\\b"
+    ],
+    "mcp": [
+      "\\bMCP\\b",
+      "mcp servers?",
+      "mcp_servers",
+      "mcp-server"
+    ],
+    "plugin": [
+      "\\bplugins?\\b",
+      "marketplaces?",
+      "plugin\\.json"
+    ],
+    "permissions": [
+      "permissions?",
+      "sandbox",
+      "approval",
+      "approval_policy",
+      "sandbox_mode",
+      "auto-review",
+      "execpolicy",
+      "full access"
+    ],
+    "settings": [
+      "config\\.toml",
+      "\\bprofiles?\\b",
+      "feature flags?",
+      "\\[features\\]",
+      "environment variables?",
+      "\\bconfig(uration)?\\b",
+      "\\bWSL\\b",
+      "Windows"
+    ],
+    "tools": [
+      "\\b(built-in )?tools?\\b",
+      "web search"
+    ],
+    "orchestration": [
+      "codex exec",
+      "non-interactive",
+      "app-server",
+      "app server",
+      "\\bSDK\\b",
+      "worktrees?",
+      "automations?",
+      "scheduled tasks?",
+      "orchestrat"
+    ],
+    "rule": [
+      "AGENTS\\.md",
+      "AGENTS\\.override\\.md",
+      "custom instructions",
+      "\\brules\\b",
+      "custom prompts?"
+    ],
+    "command": [
+      "slash commands?",
+      "`/[a-z][a-z-]*`",
+      "command line options?"
+    ]
+  },
+  "domains": [
+    "learn.chatgpt.com",
+    "developers.openai.com",
+    "raw.githubusercontent.com",
+    "api.github.com"
+  ]
+}
