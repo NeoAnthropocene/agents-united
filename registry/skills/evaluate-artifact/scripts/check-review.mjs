@@ -63,6 +63,16 @@ const limits = { envelope: 262144, executable: 134217728 };
 const CITATION_LIMITS = { maxLines: 5, maxQuoteLines: 5, maxQuoteBytes: 1024 };
 // A refusal lists this many bad citations and says how many more there are.
 const CITATION_LIST_CAP = 10;
+// Text the result controls (a path, an id, the start of the file) is echoed in a refusal, and the coordinator quotes that refusal into the next
+// evaluator's prompt. So it is echoed short and on one line: the characters that break a line or hide in one are spelled out, and a value over
+// ECHO_MAX characters is cut with its original length.
+const ECHO_MAX = 120;
+const spelled = value => value.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029\ufeff]/g,
+  char => char === '\n' ? '\\n' : char === '\r' ? '\\r' : char === '\t' ? '\\t' : `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`);
+const echo = value => {
+  const original = String(value), flat = spelled(original);
+  return flat.length > ECHO_MAX ? `${flat.slice(0, ECHO_MAX)}... (${original.length} characters)` : flat;
+};
 
 function absolute(value, label) {
   if (typeof value !== 'string' || !path.isAbsolute(value) || value.includes('\0') || value.split(/[\\/]/).some(part => part === '.' || part === '..')) fail(`${label}: expected absolute path without traversal aliases.`);
@@ -348,13 +358,18 @@ function checkJob(jobFile) {
   return { job, jobPin: pinOf(jobFile, jobBytes), digest: hash(canonical(job)), candidateDigest, inventory, checks, unavailable, recheck, resultSchema: schemas[1].schema };
 }
 
-// The hand-back must be exactly one JSON object. A prose or fenced answer is refused plainly, with the start of the file, so the next evaluator is told what went wrong.
+// The hand-back must be exactly one JSON object. A prose, fenced, byte-order-marked or trailing-text answer is refused plainly, with the start of the
+// file, so the next evaluator is told what went wrong. The start is quoted with its odd characters (a byte order mark, a line separator) spelled out.
 function parseResult(bytes) {
   let text;
   try { text = decode(bytes); } catch (error) { return fail(`Result is not valid UTF-8 text: ${error.message}`); }
   try { return JSON.parse(text); } catch (error) {
-    const fence = /^\s*```/.test(text) ? ' It starts with a code fence; return the bare JSON object.' : '';
-    return fail(`Result is not valid JSON: the hand-back must be exactly ONE JSON object, with no text before or after it, no code fence and no headings. The file starts with ${JSON.stringify(text.slice(0, 40))}.${fence} Parser message: ${error.message}`);
+    const notes = [];
+    if (text.charCodeAt(0) === 0xfeff) notes.push('It starts with a byte order mark (BOM); save the file as plain UTF-8 without one.');
+    if (/^\s*```/.test(text)) notes.push('It starts with a code fence; return the bare JSON object.');
+    const after = /after JSON at position (\d+)/.exec(error.message);
+    if (after) notes.push(`Parsing stopped because text follows the JSON object, starting at character ${after[1]}: ${spelled(JSON.stringify(text.slice(Number(after[1]), Number(after[1]) + 40)))}; return the JSON object alone.`);
+    return fail(`Result is not valid JSON: the hand-back must be exactly ONE JSON object, with no text before or after it, no code fence and no headings. The file starts with ${spelled(JSON.stringify(text.slice(0, 40)))}.${notes.map(note => ` ${note}`).join('')} Parser message: ${echo(error.message)}`);
   }
 }
 
@@ -369,19 +384,20 @@ function checkResult(record, resultFile) {
   if (result.jobId !== job.id || result.jobDigest !== record.digest || result.candidateDigest !== record.candidateDigest) fail('Result fixed job/candidate digest mismatch.');
   if (!same(result.subject, job.subject) || !same(result.inventory, record.inventory)) fail('Result subject/inventory substitution.');
   // Every citation is inspected and every failure is collected, so one refusal names them all: where the citation is, its source, its range, the
-  // file's length, the limit it breaks and, for a quote that stands elsewhere in the file, the line it stands on.
+  // file's length (as the Read tool counts it), every limit it breaks and, for a quote that stands elsewhere in the file, the line it stands on.
   const failures = [];
   let citationTotal = 0;
   const inspect = (cite, where) => {
     citationTotal += 1;
-    const base = { where, sourceId: cite.sourceId, path: cite.path, startLine: cite.startLine, endLine: cite.endLine, fileLines: null, problems: [], quoteFoundAtLine: null };
+    // Everything the result controls (an id, a path) is echoed through echo(): one short line, never a line break.
+    const base = { where: echo(where), sourceId: echo(cite.sourceId), path: echo(cite.path), startLine: cite.startLine, endLine: cite.endLine, fileLines: null, problems: [], quoteFoundAtLine: null, endLineIsPastLastShown: false };
     const refuse = (lead, extra = {}) => failures.push({ ...base, lead, ...extra, problems: extra.problems ?? [lead] });
     let rel;
-    try { rel = relative(cite.path); } catch (error) { return refuse(error.message); }
+    try { rel = relative(cite.path); } catch { return refuse(`Invalid contained relative path: ${echo(cite.path)}.`); }
     let file, pin, cap;
     if (cite.sourceId === 'candidate') {
       pin = record.inventory.find(item => item.path === rel);
-      if (!pin) return refuse(`Citation selects an unreported candidate path: ${rel}.`);
+      if (!pin) return refuse(`Citation selects an unreported candidate path: ${echo(rel)}.`);
       file = path.join(job.roots.candidate, rel);
       cap = job.budget.maxCandidateFileBytes;
     } else {
@@ -393,6 +409,10 @@ function checkResult(record, resultFile) {
     const actual = bytesAt(file, cap, 'Citation source');
     if (cite.sha256 !== pin.sha256 || hash(actual) !== pin.sha256) return refuse('Citation source hash mismatch.', { problems: ['the cited sha256 is not the pinned sha256 of this source'] });
     const lines = decode(actual).replace(/\r\n?/g, '\n').split('\n');
+    // The checker accepts the empty string after a final newline as a last line, as before; the Read tool does not show it, so the count told to the
+    // evaluator is the Read tool's, and an end line on that phantom line is named.
+    const phantom = lines.length > 1 && lines.at(-1) === '';
+    const shown = phantom ? lines.length - 1 : lines.length;
     const text = lines.join('\n');
     const quote = cite.quote.replace(/\r\n?/g, '\n');
     const quoteLines = quote.split('\n').length;
@@ -401,19 +421,23 @@ function checkResult(record, resultFile) {
     const standsOn = quoteFoundAtLine === null ? 'the quote is not found anywhere in the file'
       : `the quote stands on line${quoteLines > 1 ? 's' : ''} ${quoteFoundAtLine}${quoteLines > 1 ? `-${quoteFoundAtLine + quoteLines - 1}` : ''} of the file`;
     const { maxLines, maxQuoteLines, maxQuoteBytes } = CITATION_LIMITS;
-    const range = [];
-    if (cite.startLine > cite.endLine) range.push(`the start line ${cite.startLine} is after the end line ${cite.endLine}`);
-    if (cite.endLine > lines.length) range.push(`the end line ${cite.endLine} is past the end of the file`);
-    if (cite.startLine <= cite.endLine && cite.endLine - cite.startLine >= maxLines) {
-      range.push(`the citation spans ${cite.endLine - cite.startLine + 1} lines, at most ${maxLines} are allowed (its end line at most ${maxLines - 1} after its start line)`);
-    }
-    if (range.length) return refuse('Citation logical line range is invalid or over budget.', { fileLines: lines.length, problems: quoteFoundAtLine === null ? range : [...range, standsOn], quoteFoundAtLine });
-    const quoteBytes = Buffer.byteLength(quote, 'utf8');
+    // Every limit this citation breaks is listed, whether or not another one is broken too; the decision to refuse is the same as with one.
     const problems = [];
+    if (cite.startLine > cite.endLine) problems.push(`the start line ${cite.startLine} is after the end line ${cite.endLine}`);
+    if (cite.endLine > lines.length) problems.push(`the end line ${cite.endLine} is past the end of the file (the Read tool shows ${shown} lines)`);
+    if (cite.startLine <= cite.endLine && cite.endLine - cite.startLine >= maxLines) {
+      problems.push(`the citation spans ${cite.endLine - cite.startLine + 1} lines, at most ${maxLines} are allowed (its end line at most ${maxLines - 1} after its start line)`);
+    }
+    const rangeBad = problems.length > 0;
+    const quoteBytes = Buffer.byteLength(quote, 'utf8');
     if (quoteBytes > maxQuoteBytes) problems.push(`the quote is ${quoteBytes} bytes, at most ${maxQuoteBytes} are allowed`);
     if (quoteLines > maxQuoteLines) problems.push(`the quote has ${quoteLines} lines, at most ${maxQuoteLines} are allowed`);
     if (!lines.slice(cite.startLine - 1, cite.endLine).join('\n').includes(quote)) problems.push('the quote is not inside the cited lines', standsOn);
-    if (problems.length) return refuse('Citation quote is absent from the pinned logical lines or over budget.', { fileLines: lines.length, problems, quoteFoundAtLine });
+    if (!problems.length) return;
+    const onPhantom = phantom && cite.endLine === lines.length;
+    if (onPhantom) problems.push(`line ${lines.length} is the empty line after the final newline, which the Read tool does not show`);
+    refuse(rangeBad ? 'Citation logical line range is invalid or over budget.' : 'Citation quote is absent from the pinned logical lines or over budget.',
+      { fileLines: shown, problems, quoteFoundAtLine, endLineIsPastLastShown: onPhantom });
   };
   result.criteria.forEach(criterion => criterion.citations.forEach((cite, index) => inspect(cite, `criterion ${criterion.id}, citation ${index + 1}`)));
   result.findings.forEach(finding => finding.citations.forEach((cite, index) => inspect(cite, `finding ${finding.id}, citation ${index + 1}`)));
