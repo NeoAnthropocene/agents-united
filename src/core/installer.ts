@@ -814,11 +814,11 @@ private toPosix(p: string): string {
     } else if (result.status === 'modified') {
       warnings.push(`Session guard in ${recordedFile} was edited by hand; left as-is (run with --force after removing it to restore).`);
     }
-    if (result.script.status === 'modified') {
-      warnings.push(`Session guard script ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)} was edited by hand; left as-is (delete it and run agents update to restore it).`);
+    if (result.status === 'script-edited') {
+      warnings.push(`Session guard not written or renewed in ${recordedFile}: the script file ${this.sessionGuardScriptLabel(recordedFile, workspaceRoot)} was edited by hand or cannot be read as a file, and the entries would run it, so ${recordedFile} was left as it is (an inline entry of ours keeps guarding as before). Delete or restore that file, then run agents update.`);
     }
     projections.push({ host: 'claude', path: recordedFile, warnings });
-    return { choice: 'on', file, userFile: variant === 'user', merge: result.status, warnings };
+    return { choice: 'on', file, userFile: variant === 'user', merge: result.status, script: result.script.status, warnings };
   }
 
   /** The session guard's script file as the user reads it: workspace-relative for a project or local settings file, absolute for the user file. */
@@ -877,10 +877,27 @@ private toPosix(p: string): string {
           : `recorded the session guard as off; ${step.file} held no entries of ours that could be removed.`;
       return { changed: true, notes: [`Changed: ${label}: ${what}`, ...warnings] };
     }
-    const changed = JSON.stringify(lockfile.sessionGuard) !== before || step.merge === 'created' || step.merge === 'merged';
+    const recordChanged = JSON.stringify(lockfile.sessionGuard) !== before;
+    if (step.merge === 'script-edited') {
+      // Nothing was wired: the script file at that path is not ours. Say so, and do not claim the guard is on.
+      return {
+        changed: recordChanged,
+        notes: [recordChanged ? `Changed: ${label}: recorded the choice for ${step.file}, but the session guard was not written.` : `Left as it was: ${label}: the session guard was not written or renewed in ${step.file}.`, ...warnings],
+      };
+    }
+    const entriesChanged = step.merge === 'created' || step.merge === 'merged';
+    const scriptRepaired = step.script === 'created' || step.script === 'renewed';
+    const changed = recordChanged || entriesChanged || scriptRepaired;
+    const scriptLabel = step.file === undefined ? '' : displaySessionGuardPath(sessionGuardScriptPath(step.file), workspaceRootOf(targetDir));
+    const repair = scriptRepaired ? ` Its script file ${scriptLabel} was ${step.script === 'created' ? 're-created' : 'renewed'}.` : '';
     return {
       changed,
-      notes: [changed ? `Changed: ${label}: the session guard is on in ${step.file}.` : `Left as it was: ${label}: the session guard was already on in ${step.file}.`, ...warnings],
+      notes: [
+        changed
+          ? `Changed: ${label}: the session guard is on in ${step.file}.${repair}`
+          : `Left as it was: ${label}: the session guard was already on in ${step.file}.`,
+        ...warnings,
+      ],
     };
   }
 

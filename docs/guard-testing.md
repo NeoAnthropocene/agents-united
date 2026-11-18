@@ -118,7 +118,7 @@ What the message does not cover: a hook whose `node` cannot be started prints no
 
 ## Windows-specific check
 
-The guard renders in **exec form** (`command: "node"`, `args: ["-e", <script>]`, or in a native project install `args: [<script file>]`), so the same
+The guard renders in **exec form** (`command: "node"`, `args: [<script file>]` for the session guard and for a native project install; `args: ["-e", <script>]` only for a role's inline guard, such as a global install's), so the same
 three test commands must still block **identically** on a Windows machine with no Git Bash
 installed (Claude Code falls back to PowerShell for shell-form hooks there; exec form has no
 shell in the path at all — Plan 024 field finding, `plans/023-…md` Workstream A, Step A0).

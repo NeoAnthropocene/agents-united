@@ -21,7 +21,7 @@ import { inspectAntigravityNativeAgent, inspectClineNativeAgent, inspectNativeAg
 import { GUARD_ON_FAILURE_MIN_VERSION, NATIVE_GUARD_FILES, type NativeGuardKind } from './guard.js';
 import { installedClaudeWorkflows, userSettingsFile, workflowsDisabledBy } from './native-workflows.js';
 import { assetOwners } from './types.js';
-import { inspectSessionGuard, inspectSessionGuardScript, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardManualRoute, sessionGuardReach, sessionGuardRestoreCommand, sessionGuardScriptPath, sessionGuardSnippet, variantOfRecordedFile } from './session-guard.js';
+import { inspectSessionGuard, inspectSessionGuardScript, sessionGuardNamesScript, sessionGuardCommands as sessionGuardCommandsFor, sessionGuardManualRoute, sessionGuardReach, sessionGuardRestoreCommand, sessionGuardScriptPath, sessionGuardSnippet, variantOfRecordedFile } from './session-guard.js';
 import { isSidecarDir, resolveStateDir, workspaceRootOf } from './state-dir.js';
 import { linkedSkillAdvice, listLinkedSkills } from './skill-links.js';
 import type {
@@ -608,6 +608,7 @@ export class DoctorEngine {
     // never automatic (a hand-edited guard or an unparseable settings file is the user's call).
     let sessionGuard: HealthReport['sessionGuard'];
     let sessionGuardCommands: HealthReport['sessionGuardCommands'];
+    let sessionGuardInEffect = false;
     const guardRecord = manifest?.sessionGuard;
     if (guardRecord) {
       if ('off' in guardRecord) {
@@ -618,10 +619,16 @@ export class DoctorEngine {
           : path.join(workspaceRootOf(root), guardRecord.file);
         const state = await inspectSessionGuard(guardFile, guardRecord.handlerHash);
         sessionGuard = state === 'absent' ? 'missing' : state;
-        // The entries run a script file beside the settings file. With the entries wired, the file's own state is the guard's state: gone
-        // (the Host blocks every guarded call and no way-out message is printed), an earlier text of ours, or edited by hand.
-        const scriptState = state === 'wired' ? await inspectSessionGuardScript(guardFile, guardRecord.scriptHash) : undefined;
-        if (scriptState !== undefined && scriptState !== 'present') sessionGuard = `script-${scriptState}` as 'script-missing' | 'script-outdated' | 'script-modified';
+        // The entries run a script file beside the settings file. Its own state is part of the guard's state: gone while ANY entry of ours
+        // names it, whatever state that entry is in (the Host blocks every guarded call and no way-out message is printed); an earlier text of
+        // ours; or a file edited by hand, which also keeps `agents update` from wiring or renewing anything (it is never wired).
+        const scriptState = await inspectSessionGuardScript(guardFile, guardRecord.scriptHash);
+        const namesScript = state === 'wired' || (scriptState === 'missing' && (await sessionGuardNamesScript(guardFile)));
+        const scriptBlocks = scriptState === 'modified' && (state === 'missing' || state === 'absent' || state === 'outdated');
+        if (scriptState === 'missing' && namesScript) sessionGuard = 'script-missing';
+        else if (state === 'wired' && (scriptState === 'outdated' || scriptState === 'modified')) sessionGuard = `script-${scriptState}`;
+        else if (scriptBlocks) sessionGuard = 'script-modified';
+        sessionGuardInEffect = state === 'wired' && scriptState !== 'missing';
         const scriptLabel = path.isAbsolute(guardRecord.file)
           ? sessionGuardScriptPath(guardFile)
           : path.relative(workspaceRootOf(root), sessionGuardScriptPath(guardFile)).replace(/\\/g, '/');
@@ -640,7 +647,10 @@ export class DoctorEngine {
           // A guard that is absent from the shared user file is not re-created by a plain update: say how to put it back on purpose.
           ...(userFile && missing ? { restore: sessionGuardRestoreCommand(recordedScope) } : {}),
         };
-        if (missing && userFile) {
+        if (scriptBlocks) {
+          // A file edited by hand (or not a readable file) sits at the script path: `agents update` writes nothing and renews nothing until it is gone.
+          warnings.push(`Session guard script ${scriptLabel} was edited by hand or cannot be read as a file, and the entries of the guard would run it, so agents update does not write or renew the guard (${missing ? `${guardRecord.file} holds no entry of ours` : `the entries in ${guardRecord.file} are an earlier form and stay as they are`}). Delete or restore that file, then run 'agents update'.`);
+        } else if (missing && userFile) {
           warnings.push(`Session guard missing from ${guardRecord.file}, the user settings file that every install shares: plain Claude sessions are unguarded. A plain 'agents update' does not re-create it there (a way out may have removed it on purpose). To restore it, run: ${sessionGuardRestoreCommand(recordedScope)}`);
         } else if (missing) {
           warnings.push(`Session guard missing from ${guardRecord.file}: plain Claude sessions are unguarded. Run 'agents update' to restore it.`);
@@ -650,12 +660,14 @@ export class DoctorEngine {
           warnings.push(`Session guard in ${guardRecord.file} was edited by hand; agents-united leaves it as-is.`);
         } else if (state === 'skipped-invalid') {
           warnings.push(`Session guard not wired: ${guardRecord.file} is not valid JSON (comments or trailing commas?), so agents-united left it untouched. Paste this into it by hand (it names the script file ${scriptLabel}, which agents update writes):\n${sessionGuardSnippet(reach)}`);
-        } else if (scriptState === 'missing') {
+        }
+        // The script's own warnings come in addition to the entries' state: they are independent.
+        if (scriptState === 'missing' && namesScript) {
           const { repair, remove } = sessionGuardCommandsFor(reach);
-          warnings.push(`Session guard script ${scriptLabel} is missing, but ${guardRecord.file} still has the hook entries that run it: node cannot load the file, so every shell and file-write call of a plain Claude session is blocked (the hooks are set to block when they fail) and no way-out message is printed. In your own terminal, run: ${repair} (repairs the install) or ${remove} (removes the session guard).`);
-        } else if (scriptState === 'outdated') {
+          warnings.push(`Session guard script ${scriptLabel} is missing, but ${guardRecord.file} still has hook entries that run it: node cannot load the file, so every shell and file-write call of a plain Claude session is blocked (the hooks are set to block when they fail) and no way-out message is printed. In your own terminal, run: ${repair} (repairs the install) or ${remove} (removes the session guard).`);
+        } else if (state === 'wired' && scriptState === 'outdated') {
           warnings.push(`Session guard script ${scriptLabel} holds an earlier text of ours. Run 'agents update' to renew it.`);
-        } else if (scriptState === 'modified') {
+        } else if (state === 'wired' && scriptState === 'modified') {
           warnings.push(`Session guard script ${scriptLabel} was edited by hand; agents-united leaves it as-is.`);
         }
       }
@@ -664,7 +676,7 @@ export class DoctorEngine {
     // ADR 0036 — a native Tier-2 bundle runs as an Agent Team, and a teammate gets no frontmatter hook (observed on Claude Code 2.1.288),
     // so only the settings-level guard protects its shell and file writes. Say so while that guard is not in effect.
     // A script that is an earlier text of ours, or edited by hand, still guards; only a missing one does not.
-    if (host === 'claude' && manifest?.nativeLane === true && sessionGuard !== 'wired' && sessionGuard !== 'script-outdated' && sessionGuard !== 'script-modified') {
+    if (host === 'claude' && manifest?.nativeLane === true && !sessionGuardInEffect) {
       const registry = new RegistryResolver();
       const teams: string[] = [];
       for (const bundleName of manifest.installed?.bundles ?? []) {
