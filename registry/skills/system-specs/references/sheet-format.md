@@ -1,6 +1,6 @@
 # Sheet format
 
-The sheet is built from an allowlist: nothing outside this list is emitted. Produced by `scripts/specs.mjs`; schema version 1.
+The sheet is built from an allowlist: nothing outside this list is emitted. Produced by `scripts/specs.mjs`; schema version 2.
 
 ## Files
 - `.agents-united/system-specs.md`: the short, human-readable sheet (target under 2,500 characters).
@@ -12,7 +12,7 @@ The sheet is built from an allowlist: nothing outside this list is emitted. Prod
 ## Fields (JSON)
 | Field | Meaning |
 |---|---|
-| `schemaVersion` | The format version, `1`. A sheet with another version is never reused. |
+| `schemaVersion` | The format version, `2`. A sheet with another version is never reused. |
 | `collectedAt` | UTC time of collection, `YYYY-MM-DDTHH:MM:SSZ`. |
 | `os.family` | `windows`, `linux`, `macos` or `other`. |
 | `os.environment` | The same, or `wsl` when Linux runs inside Windows Subsystem for Linux. |
@@ -27,6 +27,7 @@ The sheet is built from an allowlist: nothing outside this list is emitted. Prod
 | `freeDiskGiB` | Free space of the volume that holds the working folder, rounded; `null` when unreadable or zero. |
 | `shells[]` | `{ name, status, version }` for pwsh, powershell (Windows), bash, zsh, cmd (Windows). On Windows a `bash` found under System32 is the WSL launcher: it is not run and is listed as `bash (WSL launcher)`; a `bash` under a Git or MSYS folder is listed as `bash (Git Bash/MSYS)`. No path is printed. |
 | `tools[]` | `{ name, status, version }` for the fixed tool table in `scripts/specs.mjs` (`PROBES`). |
+| `fingerprint` | `{ hash, parts }`: one SHA-256 and one 8-character hash per probed tool plus `os release`, `architecture` and `memory`. Hashes only, never a path (see `check` below). |
 
 `status` is one of, with one meaning each:
 - `present`: the version call ran and exited 0. `version` holds the first version number it printed, digits only, or `null` when the output has none (ffmpeg prints a build id).
@@ -44,8 +45,17 @@ How a probe runs: no shell string, only a fixed argument array; the command is f
 ## Privacy rule
 Never in the sheet: the user name, the machine name, the home folder or any absolute path (the sheet may say `~` or a workspace-relative path), environment variable values, git remotes, account or login state, or whether any credential exists. The collector asks no tool about accounts. The free-text fields (CPU model, OS name, distribution and release, GPU names) are scrubbed of the home folder and its name, the user name, the first label of the machine name, UNC and drive paths, and the values of USERNAME, USER, LOGNAME, COMPUTERNAME and USERDOMAIN (matched, never emitted); names of fewer than three characters are matched only as a whole field. Tool names, statuses and versions are never scrubbed: versions hold digits only. A test plants a fake user name, machine name and home path and checks that none reaches either file.
 
-## Freshness and trust
-A sheet is reused when it is younger than `--max-age` hours (default 24) and passes validation: the JSON has exactly the keys above, statuses from the enum, versions that are numbers, free text on one line from a small character set, a `collectedAt` of the exact shape, and OS family, architecture and memory equal to this machine. A cached sheet is untrusted input: the Markdown is always rewritten from the validated JSON, never trusted from disk, and a sheet that fails any check is collected again, not reported as an error. An empty Markdown file or one without the header also makes the sheet stale. `--refresh` collects again. A reuse prints "reused" and the collected-at time read from the validated sheet. A machine change (a tool installed, a disk filled) is not noticed until the window ends or `--refresh` is given.
+## Collect once, trust, and check
+`collect` collects once. A valid sheet of this machine is reused whatever its age; `--refresh` always collects again. There is no age limit and no `--max-age`. A sheet is valid and of this machine when: the JSON has exactly the keys above, statuses from the enum, versions that are numbers, free text on one line from a small character set, a `collectedAt` of the exact shape, a well-formed fingerprint, and OS family, architecture and memory equal to this machine. A cached sheet is untrusted input: the Markdown is always rewritten from the validated JSON, never trusted from disk, and a sheet that fails any check is collected again, not reported as an error. An empty Markdown file or one without the header also counts as no sheet. A reuse prints "reused" and the collected-at time read from the validated sheet.
+
+### check
+`check` tests whether the environment changed since collection, read-only and without running any tool or making any version call. It re-resolves each probed tool on the PATH (absolute entries only) and hashes, per tool, found or not and, for a found tool, the size and modification time of the resolved file, plus OS release, architecture and memory. It compares that with the fingerprint in the JSON and prints one line: `unchanged` (exit 0), `changed: <names>` (exit 3; names of the tools or of `os release` that differ, never a path), or `no usable sheet` (exit 1: missing, damaged, edited, or from another machine). It writes nothing and takes well under a second.
+
+What `check` cannot see, plainly:
+- A tool updated in place with the same file size and modification time.
+- A version manager (nvm, corepack, pyenv, rustup) that switches versions behind one unchanged shim: `check` says "unchanged" although the version differs.
+- Anything that is not a probed tool, and a changed tool configuration.
+The answer to all of these is `collect --refresh`, asked for by the specialist and run by the coordinating agent.
 
 ## Exit codes
-0 written, reused or printed; 1 the sheet could not be written; 2 usage error or a refused `--out`.
+`collect`: 0 written, reused or printed; 1 the sheet could not be written. `check`: 0 unchanged, 3 changed, 1 no usable sheet. Both: 2 usage error or a refused `--out`.
