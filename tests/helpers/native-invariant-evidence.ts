@@ -134,6 +134,17 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
   },
+  // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
+  'devops-engineer': {
+    'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /Never commit a secret, token or connection string into a workflow file or IaC template/,
+    'Every container runs as a non-root user.': /Never run a container as root; enforce an unprivileged user in every Dockerfile/,
+    'No production container image uses the latest tag.': /Never tag a production container image latest/,
+    'Production changes follow GitOps only: IaC plus CI/CD, never out-of-band.': /Never modify a production cloud resource out-of-band; every change goes through IaC and CI\/CD \(GitOps\)/,
+    'A preview deployment is never promoted to production by this role; the production command goes to the orchestrator for explicit user approval.': /Never promote a preview deployment to production yourself; hand the production command to the orchestrator for explicit user approval/,
+    'Consult the named Skill before writing platform-specific code; report a missing platform skill instead of improvising.': /Load the matching skill with `Skill` before writing platform-specific code\. A skill that is not installed is a gap to report/,
+    'Hand your result back to the coordinator, not across to a peer.': /Return the report from the Output Contract as your final message through `SubagentHandback`, to the agent that spawned you/,
+    'The handoff report lists peer messages received and open items.': /List peer messages received \(or "none"\) and end with `Open items`/,
+  },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,

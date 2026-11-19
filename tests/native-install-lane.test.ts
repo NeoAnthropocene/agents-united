@@ -25,7 +25,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 /** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
-  'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer',
+  'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
   'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
 ];
 const COORDINATORS = ['orchestrator-engineering'];
@@ -42,7 +42,7 @@ describe('native package helpers', () => {
 
   it('finds a role source by its stripped name, and nothing for a legacy-only role', () => {
     expect(nativeRoleSource(REGISTRY, 'claude', 'code-reviewer')).toBe(path.join(REGISTRY, 'hosts', 'claude', 'agents', 'code-reviewer.md'));
-    expect(nativeRoleSource(REGISTRY, 'claude', 'devops-engineer')).toBeUndefined();
+    expect(nativeRoleSource(REGISTRY, 'claude', 'data-engineer')).toBeUndefined();
     expect(nativeRoleSource(REGISTRY, 'claude', '../profile')).toBeUndefined();
   });
 
@@ -121,12 +121,21 @@ describe('native install lane (agents add --native)', () => {
 
   it('keeps the legacy projection for a type that has no native agent, in the same workspace', async () => {
     await install(true);
-    await new InstallEngine().install('devops-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
-    const legacy = await fs.readFile(claudeAgent('devops-engineer'), 'utf8');
+    await new InstallEngine().install('backend-distributed-systems', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const legacy = await fs.readFile(claudeAgent('data-engineer'), 'utf8');
     expect(legacy).toContain('profile: claude |');
     expect(legacy).not.toContain('claude-native');
     // The native agents installed earlier are untouched by the second install.
     expect(await fs.readFile(claudeAgent('code-reviewer'), 'utf8')).toBe(expected('code-reviewer'));
+  });
+
+  it('installs the native devops-engineer for the devops-engineering bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('devops-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('devops-engineer'), 'utf8')).toBe(expected('devops-engineer'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/devops-engineer.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('devops-engineer'));
+    expect(record.managedMarker).toBe(true);
   });
 
   it('records the lane, and every projection hash matches the file on disk', async () => {
