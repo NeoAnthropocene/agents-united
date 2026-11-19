@@ -66,6 +66,8 @@ const limits = { envelope: 262144, executable: 134217728 };
 const CITATION_LIMITS = { maxQuoteLines: 5, maxQuoteBytes: 1024 };
 // A refusal lists this many bad citations and says how many more there are.
 const CITATION_LIST_CAP = 10;
+// The occurrences of one quote that the citation check collects; a quote found more often is reported as occurring more than this many times.
+const OCCURRENCE_CAP = 1000;
 // Text the result controls (a path, an id, the start of the file) is echoed in a refusal, and the coordinator quotes that refusal into the next
 // evaluator's prompt. So it is echoed short and on one line: the characters that break a line or hide in one are spelled out, and a value over
 // ECHO_MAX characters is cut with its original length.
@@ -395,7 +397,7 @@ function checkResult(record, resultFile, precheck = false) {
   try { bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result'); } catch (error) { if (precheck) throw new Environment(error.message); throw error; }
   const result = parseResult(bytes);
   // The earlier format gave a line range per citation; it is refused before the schema, with a reason that says what changed.
-  if (result !== null && typeof result === 'object' && result.version === 1) fail('Result version 1 is no longer accepted: its citations give a line range. This checker accepts version 2, where a citation gives its source and an exact quote and the checker finds the lines itself (ADR 0071).');
+  refuseVersionOne(result);
   validate(result, record.resultSchema, 'result');
   if (!job.inputs.some(input => input.required && input.status === 'clear' && input.kind === 'loading'
     && sameBoth(input.path, path.join(skillRoot, 'assets/result.schema.json')))) (precheck ? environment : fail)('Missing result-schema loading pin.');
@@ -447,7 +449,7 @@ function checkResult(record, resultFile, precheck = false) {
     // The start line of every occurrence of the quote, overlapping ones included.
     const occurrences = [];
     let line = 1, counted = 0;
-    for (let at = text.indexOf(quote); at >= 0; at = text.indexOf(quote, at + 1)) {
+    for (let at = text.indexOf(quote); at >= 0 && occurrences.length <= OCCURRENCE_CAP; at = text.indexOf(quote, at + 1)) {
       for (let newline = text.indexOf('\n', counted); newline >= 0 && newline < at; newline = text.indexOf('\n', counted)) { line += 1; counted = newline + 1; }
       occurrences.push(line);
     }
@@ -461,7 +463,7 @@ function checkResult(record, resultFile, precheck = false) {
     let wrongLine = false;
     if (!occurrences.length) problems.push('the quote is not found anywhere in the file');
     else if (cite.line === undefined && occurrences.length > 1) {
-      problems.push(`the quote occurs ${occurrences.length} times, beginning on lines ${lineList(occurrences)}; give \`line\` with one of them, or quote more so that it occurs once`);
+      problems.push(`the quote occurs ${occurrences.length > OCCURRENCE_CAP ? `more than ${OCCURRENCE_CAP}` : occurrences.length} times, beginning on lines ${lineList(occurrences.slice(0, OCCURRENCE_CAP))}; give \`line\` with one of them, or quote more so that it occurs once`);
     } else if (cite.line !== undefined && !occurrences.includes(cite.line)) {
       wrongLine = true;
       problems.push(`\`line\` ${cite.line} is not a line where the quote begins; it begins on line${occurrences.length > 1 ? 's' : ''} ${lineList(occurrences)}`);
@@ -475,7 +477,8 @@ function checkResult(record, resultFile, precheck = false) {
       : overBudget ? 'Citation quote is over budget.'
         : wrongLine ? 'Citation line does not name a line where its quote begins.'
           : 'Citation quote occurs more than once and names no line.';
-    refuse(lead, { fileLines, problems, occurrences });
+    // The details carry at most CITATION_LIST_CAP line numbers, and the count, so that a quote found everywhere cannot swell the refusal.
+    refuse(lead, { fileLines, problems, occurrences: occurrences.slice(0, CITATION_LIST_CAP), occurrenceCount: occurrences.length });
   };
   result.criteria.forEach(criterion => criterion.citations.forEach((cite, index) => inspect(cite, `criterion ${criterion.id}, citation ${index + 1}`)));
   result.findings.forEach(finding => finding.citations.forEach((cite, index) => inspect(cite, `finding ${finding.id}, citation ${index + 1}`)));
@@ -529,6 +532,10 @@ function checkResult(record, resultFile, precheck = false) {
 }
 
 const deterministic = { quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false };
+/** The earlier format gave a line range per citation (ADR 0071); it is refused before the schema, in every entry point, with a reason that says what changed. */
+function refuseVersionOne(result) {
+  if (result !== null && typeof result === 'object' && result.version === 1) fail('Result version 1 is no longer accepted: its citations give a line range. This checker accepts version 2, where a citation gives its source and an exact quote and the checker finds the lines itself (ADR 0071).');
+}
 /** The record fields printed on acceptance, in both entry points, then what the result check added. */
 const recordOutput = (record, result) => JSON.stringify({ version: 1, kind: 'deterministic', recordValid: true, ready: !record.unavailable.some(item => item.required),
   job: record.jobPin, jobDigest: record.digest, candidateDigest: record.candidateDigest, inventory: record.inventory,
@@ -540,7 +547,7 @@ const refusal = error => process.stderr.write(JSON.stringify({ version: 1, kind:
 // result?" before the evaluator hands it back. It runs the SAME checks as `--job --result` (one implementation, `checkJob` and `checkResult`), on a result file
 // anywhere, with the same reasons and details. Exit codes: 0 accepted; 1 refused for what the result says (the hook blocks); 3 the fault is the job's, the
 // input's or the environment's (a missing file, a job that no longer checks, an `Environment` fault inside checkResult): the hook lets the hand-back through, because
-// the evaluator cannot repair that and the caller's check decides. Without `--job` it only checks that the file is exactly one JSON object, which needs no job. The saved-file mode keeps its exit code 1 for everything.
+// the evaluator cannot repair that and the caller's check decides. Without `--job` it only checks that the file is exactly one JSON object and not of the earlier version 1, which needs no job. The saved-file mode keeps its exit code 1 for everything.
 function precheck(values) {
   let stage = 'input';
   try {
@@ -551,6 +558,7 @@ function precheck(values) {
       const value = parseResult(bytes);
       // The saved-file mode reaches the same refusal from the schema check, with this text.
       if (value === null || typeof value !== 'object' || Array.isArray(value)) fail('result: expected object.');
+      refuseVersionOne(value);
       process.stdout.write(JSON.stringify({ version: 1, kind: 'deterministic', precheck: 'json-only', ...deterministic }) + '\n');
       return;
     }

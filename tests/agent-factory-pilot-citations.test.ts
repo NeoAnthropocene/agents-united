@@ -39,11 +39,11 @@ describe('the refused pilot citations, quote-located, pass the record check', ()
   });
 
   /** A review job whose candidate holds the pilot's cited candidate files and whose inputs pin the pilot's cited evidence, under the pilot's ids. */
-  async function prepare(name: string) {
-    const pilot = await fs.readJson(path.join(FIXTURES, name, 'citations.json')) as PilotCase;
+  async function prepare(name: string, synthetic?: { sources: string; pilot: PilotCase }) {
+    const pilot = synthetic?.pilot ?? await fs.readJson(path.join(FIXTURES, name, 'citations.json')) as PilotCase;
     const selected = await prepareEvaluationJob(fixture);
-    const sources = path.join(FIXTURES, name, 'sources');
-    await fs.copy(path.join(sources, 'candidate'), selected.candidate);
+    const sources = synthetic?.sources ?? path.join(FIXTURES, name, 'sources');
+    if (await fs.pathExists(path.join(sources, 'candidate'))) await fs.copy(path.join(sources, 'candidate'), selected.candidate);
     const files = (await fs.readdir(selected.candidate, { recursive: true }) as string[]).map(rel => rel.replace(/\\/g, '/'))
       .filter(rel => fs.statSync(path.join(selected.candidate, rel)).isFile()).sort();
     selected.inventory = await Promise.all(files.map(async rel => {
@@ -133,5 +133,63 @@ describe('the refused pilot citations, quote-located, pass the record check', ()
     const reason = (JSON.parse(refused.stderr) as { reason: string }).reason;
     expect(reason).toMatch(/^Citation quote occurs more than once and names no line\./);
     expect(reason).toContain(`beginning on lines ${startsOf(p.textOf(repeated[0]!), lf(repeated[0]!.quote)).join(', ')}`);
+  });
+
+  /** One evidence file with exact bytes, cited by the findings of a result; the checker's answer in the saved-file mode or the pre-check mode. */
+  async function checkSynthetic(text: string, cites: Array<{ quote: string; line?: number }>, mode: 'saved' | 'precheck' = 'saved') {
+    const sources = path.join(fixture.root, 'synthetic-sources');
+    await fs.outputFile(path.join(sources, 'evidence', 'evidence.txt'), text);
+    const pilot: PilotCase = { origin: 'synthetic', subjectKind: 'skill', citations: cites.map((cite, index) => ({ where: `synthetic ${index + 1}`,
+      sourceId: 'evidence', inputKind: 'observation', path: 'evidence.txt', quote: cite.quote, given: { startLine: cite.line ?? 1, endLine: cite.line ?? 1 } })) };
+    const p = await prepare('synthetic', { sources, pilot });
+    const result = evaluationResult(p.selected, JSON.parse(p.preflight.stdout));
+    (result as { findings: unknown[] }).findings = [{ id: 'synthetic', criterionId: 'clarity-maintainability', severity: 'INFO', confidence: 'high',
+      citations: pilot.citations.map((cite, index) => ({ sourceId: cite.sourceId, path: cite.path, sha256: p.pinOf(cite), quote: cite.quote,
+        ...(cites[index]!.line === undefined ? {} : { line: cites[index]!.line }) })), rationale: 'Synthetic citations.', correction: 'None; a fixture.' }];
+    const file = path.join(p.selected.evidence, 'result.json');
+    await fs.writeJson(file, result);
+    const actual = run(mode === 'saved' ? ['--job', p.selected.jobFile, '--result', file] : ['--precheck', file, '--job', p.selected.jobFile]);
+    const placed = actual.status === 0 ? (JSON.parse(actual.stdout) as { citations: Array<{ where: string; startLine: number; endLine: number }> }).citations
+      .filter(item => item.where.startsWith('finding synthetic')).map(item => [item.startLine, item.endLine]) : [];
+    const error = actual.stderr ? JSON.parse(actual.stderr) as { reason: string; details?: Array<Record<string, unknown>> } : null;
+    return { status: actual.status, placed, error };
+  }
+
+  it('reads a file with CRLF line endings, a quote with CRLF inside and a quote with one trailing newline, in both modes', async () => {
+    const text = 'first line\r\nsecond line here\r\nthird line\r\n';
+    const cites = [{ quote: 'second line here' }, { quote: 'second line here\r\nthird line' }, { quote: 'third line\n' }];
+    for (const mode of ['saved', 'precheck'] as const) {
+      const checked = await checkSynthetic(text, cites, mode);
+      expect(checked.status, JSON.stringify(checked.error)).toBe(0);
+      expect(checked.placed).toEqual([[2, 2], [2, 3], [3, 3]]);
+    }
+  });
+
+  it('counts overlapping occurrences: a quote that begins again inside its own previous match', async () => {
+    const refused = await checkSynthetic('x\nx\nx\n', [{ quote: 'x\nx' }]);
+    expect(refused.status).toBe(1);
+    expect(refused.error!.reason).toContain('the quote occurs 2 times, beginning on lines 1, 2;');
+    const placed = await checkSynthetic('x\nx\nx\n', [{ quote: 'x\nx', line: 2 }]);
+    expect(placed.status, JSON.stringify(placed.error)).toBe(0);
+    expect(placed.placed).toEqual([[2, 3]]);
+  });
+
+  it('writes out at most ten lines of a repeated quote, then how many more, and keeps the details as short', async () => {
+    const refused = await checkSynthetic('same\n'.repeat(13), [{ quote: 'same' }]);
+    expect(refused.status).toBe(1);
+    expect(refused.error!.reason).toContain('the quote occurs 13 times, beginning on lines 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, and 3 more;');
+    expect(refused.error!.details![0]).toMatchObject({ occurrences: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], occurrenceCount: 13 });
+  });
+
+  it('refuses a version 1 result in the pre-check mode with and without a job (exit 1, the result\'s own fault), as in the saved-file mode', async () => {
+    const p = await prepare('r2-claude-agent');
+    const old = { ...resultWith(p, true), version: 1 };
+    const file = path.join(fixture.root, 'old-result.json');
+    await fs.writeJson(file, old);
+    for (const args of [['--precheck', file], ['--precheck', file, '--job', p.selected.jobFile]]) {
+      const refused = run(args);
+      expect(refused.status, args.join(' ')).toBe(1);
+      expect((JSON.parse(refused.stderr) as { reason: string }).reason).toMatch(/^Result version 1 is no longer accepted/);
+    }
   });
 });
