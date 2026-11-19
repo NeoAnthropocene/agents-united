@@ -15,7 +15,7 @@
  * rimraf) of a root, home or project folder (`/`, `~`, `$HOME`, `.`, `..`, `*`, `.git`, a drive root, a system folder), privilege escalation
  * (sudo, doas, pkexec, runas, su, `Start-Process -Verb RunAs`), shutdown and reboot, `az group delete`, `gcloud projects delete`, an AWS
  * account closure, and disk formatting (mkfs, dd of=/dev/, format X:, diskpart). These match only where a command starts (after `;`, `&&`, `||`,
- * `|`, `(`, `$(`, a backtick or a newline, behind wrappers such as env, nohup, timeout and xargs, and inside a `-c`/`-Command` string), so
+ * `|`, `(`, `$(`, a backtick or a newline, behind wrappers such as env, nohup, timeout and xargs, and inside the `-c`/`-Command`/`/c` string of a shell or `eval`), so
  * `echo rm -rf /` and `git commit -m "sudo fix"` pass; the three rules above keep matching anywhere. It is a seat belt against a model's slip,
  * not a security boundary: variables, aliases, interpreters, encoded commands and scripts written to a file then run are not seen.
  *
@@ -31,6 +31,7 @@ export function guardScript(): string {
   return String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");
 const W=new Set(["env","command","exec","nohup","time","builtin","xargs","nice","{","!","then","do","else","if","while","until"]),A=new Set(["sudo","doas","pkexec","runas"]),S=new Set(["shutdown","reboot","halt","poweroff","stop-computer","restart-computer"]);
 const B=w=>w.replace(/^.*[\/\\]/,"").replace(/\.exe$/i,"").toLowerCase();
+const Y=h=>{h=h.slice(Math.max(h.lastIndexOf(";"),h.lastIndexOf("&"),h.lastIndexOf("|"),h.lastIndexOf("\n"),h.lastIndexOf("("))+1);const t=h.split(/\s+/).filter(Boolean);let i=0;while(i<t.length&&(/^[A-Za-z_]\w*=/.test(t[i])||W.has(B(t[i]))))i++;return new Set(["bash","sh","zsh","dash","ksh","fish","pwsh","powershell","cmd","eval"]).has(B(t[i]||""))};
 const F=h=>h.length<64&&/^-[a-z]*r[a-z]*$/i.test(h);
 const X=x=>{if(x.length>4096)return false;let p=x.replace(/\\/g,"/").replace(/\/\*+$/,""),e=p.length;while(e>0&&p[e-1]==="/")e--;p=e?p.slice(0,e):"/";return /^(\/|~|\$home|\$\{home\}|\$env:userprofile|%userprofile%|\.\.?|\*|\.git|[a-z]:|\/(bin|boot|dev|etc|home|lib\w*|opt|root|sbin|usr|var))$/.test(p.toLowerCase())};
 const U=b=>{let o="",d=0;for(let k=0;k<b.length;k++){const h=b[k];if(h==="$"&&b[k+1]==="("){o+="$(";k++;d++}else if(h===")"&&d>0){o+=h;d--}else if(d===0&&";&|\n(){}".includes(h))o+="\u0001";else o+=h}return o};
@@ -38,7 +39,7 @@ const D=(x,d)=>{x=x.replace(/\\\r?\n/g," ").replace(/\`\r?\n/g," ").replace(/\r/
 while(j<n){const q=x[j];if(q!=='"'&&q!=="'"){const m=j;while(j<n&&x[j]!=='"'&&x[j]!=="'")j++;z+=x.slice(m,j);continue}
 let e=j+1;while(e<n&&x[e]!==q)e+=q==='"'&&x[e]==="\\"?2:1;
 const b=x.slice(j+1,Math.min(e,n));
-if(/(?:^|\s)(?:-[a-z]*c|-command|\/[ck]|eval)\s*$/i.test(x.slice(Math.max(0,j-60),j)))Q.push(q==='"'?b.replace(/\\(.)/g,"$1"):b);
+if(/(?:^|\s)(?:-[a-z]*c|-command|\/[ck]|eval)\s*$/i.test(x.slice(Math.max(0,j-60),j))&&Y(x.slice(Math.max(0,j-200),j)))Q.push(q==='"'?b.replace(/\\(.)/g,"$1"):b);
 z+=q+(q==="'"?b.replace(/[;&|\n\`(){}]/g,"\u0001"):U(b))+(e<n?q:"");j=e+1}
 if(d<3)for(const p of Q){const y=D(p,d+1);if(y)return y}
 for(const g of z.split(/[;&|\n\`()]|\$\(/)){const k=g.replace(/["']/g,"").split(/\s+/).filter(Boolean);let a=0;
