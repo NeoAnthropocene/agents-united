@@ -136,15 +136,15 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
   },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
-    'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /Never commit a secret, token or connection string into a workflow file or IaC template/,
-    'Every container runs as a non-root user.': /Never run a container as root; enforce an unprivileged user in every Dockerfile/,
-    'No production container image uses the latest tag.': /Never tag a production container image latest/,
-    'Production changes follow GitOps only: IaC plus CI/CD, never out-of-band.': /Never modify a production cloud resource out-of-band; every change goes through IaC and CI\/CD \(GitOps\)/,
-    'A preview deployment is never promoted to production by this role; the production command goes to the orchestrator for explicit user approval.': /Never promote a preview deployment to production yourself; hand the production command to the orchestrator for explicit user approval/,
-    'Consult the named Skill before writing platform-specific code; report a missing platform skill instead of improvising.': /Load the matching skill with `Skill` before writing platform-specific code\. A skill that is not installed is a gap to report/,
-    // Messaging (maintainer decision on the pilot's point a): the comms-law wording of the team-capable specialists, bound under this core's longer invariant texts.
-    'Hand your result back to the coordinator, not across to a peer.': /A hand-off goes back to the agent that spawned you|Your final report is your one hand-?back/,
-    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /\*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`/,
+    'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities\.(?=\n|$)/,
+    'Every container runs as a non-root user.': /- Never run a container as root; enforce an unprivileged user in every Dockerfile\.(?=\n|$)/,
+    'No production container image uses the latest tag.': /- Never tag a production container image latest; pin an explicit semantic tag or digest\.(?=\n|$)/,
+    'Production changes follow GitOps only: IaC plus CI/CD, never out-of-band.': /- Never modify a production cloud resource out-of-band; every change goes through IaC and CI\/CD \(GitOps\)\.(?=\n|$)/,
+    'A preview deployment is never promoted to production by this role; the production command goes to the orchestrator for explicit user approval.': /- Never promote a preview deployment to production yourself; hand the production command to the orchestrator for explicit user approval\.(?=\n|$)/,
+    'Consult the named Skill before writing platform-specific code; report a missing platform skill instead of improvising.': /Load the matching skill with `Skill` before writing platform-specific code\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    // Messaging (maintainer decision on the pilot's point a): the engineering family's peers section (frontend-architect), bound under this core's longer invariant texts.
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\)/,
   },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {

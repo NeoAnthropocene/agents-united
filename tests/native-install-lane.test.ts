@@ -138,6 +138,14 @@ describe('native install lane (agents add --native)', () => {
     expect(record.managedMarker).toBe(true);
   });
 
+  it('without the native lane, devops-engineering still writes the legacy projection for devops-engineer', async () => {
+    await new InstallEngine().install('devops-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('devops-engineer'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
   it('records the lane, and every projection hash matches the file on disk', async () => {
     await install(true);
     const lock = await fs.readJson(lockPath);
