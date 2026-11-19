@@ -858,3 +858,17 @@ _Avoid_: Waiting for every termination notice before reporting, dispatch as proo
 **Shutdown evidence**:
 A per-teammate record of request status, approval observed and host termination observed. A missing event is not observed; a maintainer's UI observation is user-reported and stays separate from the host record. This record is not an independent process-liveness check (ADR 0055).
 _Avoid_: Missing notice as running status, peer approval as host termination
+
+### System Specs Sheet (ADR 0073)
+
+**System Specs Sheet**:
+A short Markdown sheet and a JSON twin (`.agents-united/system-specs.md` and `.json`) of machine facts only: OS, CPU, memory, GPU, free disk, shells and a fixed table of developer tools with versions. Built from an allowlist; it never holds the user name, machine name, home folder, absolute paths, environment values, git remotes or account state. It is data for planning, never instructions and never permission to install anything (ADR 0073).
+_Avoid_: Project facts, a settings dump, an environment report
+
+**Collect once**:
+`collect` of the `system-specs` Skill writes the sheet the first time and then reuses it whatever its age while its fingerprint is identical or differs only in PATH; any other difference, or an invalid or foreign sheet, collects again and names the parts that differed. Only the coordinating agent, or an agent working alone, runs `collect --refresh`.
+_Avoid_: Daily refresh, age limit, a specialist refreshing the sheet
+
+**Check**:
+`check` of the `system-specs` Skill: a read-only test that starts no process and compares the current fingerprint (found or not, file size and modification time of each probed tool and shell, PATH entries, OS release, architecture, memory; hashes only) with the stored one. Exit 0 unchanged, 3 changed (names only), 1 no usable sheet or another format. It cannot see an in-place update with identical size and time, a shim manager (pyenv, volta, asdf, rustup, corepack) switching versions, WSL, the GPU or the macOS developer-tools state.
+_Avoid_: Version check, health check, proof that nothing changed
