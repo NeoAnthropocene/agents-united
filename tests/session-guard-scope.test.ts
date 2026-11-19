@@ -124,7 +124,7 @@ describe('A: the commands follow the scope of the install that recorded the guar
       expect(script).not.toContain(HOME);
       expect(script).not.toContain(PROJECT);
       expect(script).not.toMatch(/[A-Za-z]:\\\\|[\\/]Users[\\/]|[\\/]home[\\/]/);
-      expect(script.length).toBeLessThan(2400);
+      expect(script.length).toBeLessThan(7000); // was 2400 before the destructive shell rules (ADR 0074)
     }
   });
 

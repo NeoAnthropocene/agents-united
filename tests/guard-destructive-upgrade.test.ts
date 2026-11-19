@@ -221,11 +221,11 @@ describe('the role texts say one true sentence about the guard', () => {
     expect(text.split(SENTENCE)).toHaveLength(2);
   });
 
-  it('no Claude role still claims the guard blocks "production deploys", and every "A guard blocks" sentence is the one sentence', () => {
+  it('no Claude role still claims the guard blocks "production deploys", and every "A guard blocks forced..." sentence is the one sentence', () => {
     for (const file of fs.readdirSync(AGENTS).filter(name => name.endsWith('.md'))) {
       const text = fs.readFileSync(path.join(AGENTS, file), 'utf8').replace(/\r\n/g, '\n');
       expect(text, file).not.toMatch(/guard blocks forced pushes, production deploys/);
-      for (const line of text.split('\n').filter(item => item.includes('A guard blocks'))) expect(line, file).toContain(SENTENCE);
+      for (const line of text.split('\n').filter(item => item.includes('A guard blocks forced'))) expect(line, file).toContain(SENTENCE);
     }
   });
 });

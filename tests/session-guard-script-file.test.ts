@@ -513,7 +513,7 @@ describe('the manual route inside the script is true for the file form', () => {
   const OLD_USER = "delete by hand the hook entries that contain 'agents-united guard' from settings.json in the .claude folder of your home directory.";
   /** The session script as the version before this change wrote it. */
   const before = (kind: 'project' | 'user'): string =>
-    sessionGuardScript(kind).split(kind === 'project' ? NEW_PROJECT : NEW_USER).join(kind === 'project' ? OLD_PROJECT : OLD_USER);
+    sessionGuardScript(kind).replace(GUARD_SCRIPT.slice(GUARD_SCRIPT.indexOf('const t=')), () => EARLIER_GUARD_SCRIPTS[2]!.slice(EARLIER_GUARD_SCRIPTS[2]!.indexOf('const t='))).split(kind === 'project' ? NEW_PROJECT : NEW_USER).join(kind === 'project' ? OLD_PROJECT : OLD_USER);
 
   it('both failure messages carry the new sentence, and no script text keeps the old phrase', () => {
     expect(sessionGuardScript('project')).toContain(`Without the CLI, ${NEW_PROJECT}`);
@@ -523,8 +523,9 @@ describe('the manual route inside the script is true for the file form', () => {
       // In the unreadable-input message and in the uncaughtException message: twice.
       expect(sessionGuardScript(kind).split('delete by hand the hook entries that run agents-united-session-guard.js').length - 1).toBe(2);
     }
-    expect(sessionGuardScript('project').length).toBeLessThan(2400);
-    expect(sessionGuardScript('user').length).toBeLessThan(2400);
+    // 7000: the generic script grew with the destructive shell rules (ADR 0074); it was 2400 before.
+    expect(sessionGuardScript('project').length).toBeLessThan(7000);
+    expect(sessionGuardScript('user').length).toBeLessThan(7000);
   });
 
   it('the running script prints it, with no absolute path', async () => {
