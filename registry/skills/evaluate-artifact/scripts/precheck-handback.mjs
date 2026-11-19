@@ -10,12 +10,13 @@
 //      job file and nothing else) says where the job is. The pointer is only a locator and is never trusted: the checker verifies the job's own digest against the result's.
 //      No pointer means that this worker is not doing a factory review, and the hand-back passes.
 //   4. The checker runs with the job. Exit 1 (the result is refused) blocks; exit 0 passes; exit 3 (the job or the input is at fault, which the evaluator cannot repair) passes.
-//   5. It blocks at most three times for one worker (keyed by the agent id of the hook input, else by the session id and the job digest), then lets the hand-back through.
+//   5. It blocks at most TWO times for one worker (keyed by the agent id of the hook input, else by the session id and the job digest), then lets the next hand-back through.
 //      The caller's check stays the judge; this hook only gives the evaluator the chance to correct itself.
 //
 // IT FAILS OPEN, on purpose. Any error of its own ends in exit 0, and its handler in the role's frontmatter carries NO `onFailure: "block"`. This differs from the guards
 // of ADR 0068, which must fail closed: this is not a safety guard, a result it lets through is still checked by the caller, and a hook that blocked every hand-back whenever
-// it failed would strand the worker (the Host tells a worker whose hand-back is denied that its report was not delivered, up to three times, and then ends it without a report).
+// it failed would strand the worker (the Host tells a worker whose hand-back is denied that its report was not delivered, up to three times, and then ends it without a report:
+// hooks.md:2026; two blocks keep this hook inside that limit under either reading of it, and the third attempt is delivered).
 // It writes nothing except its state under <temp>/agents-united/handback-checks/ and the temporary result file, which it removes. It runs no command except the checker.
 // It does not run in a headless session (`claude -p` skips a project agent's frontmatter hooks, ADR 0042), and the Host provides SubagentHandback only in auto mode.
 import fs from 'node:fs';
@@ -25,7 +26,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const MAX_BLOCKS = 3;
+const MAX_BLOCKS = 2;
 const CHECK_TIMEOUT_MS = 90_000;
 const checker = path.join(path.dirname(fileURLToPath(import.meta.url)), 'check-review.mjs');
 const stateRoot = () => path.join(os.tmpdir(), 'agents-united');

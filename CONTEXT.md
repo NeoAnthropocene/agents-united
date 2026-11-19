@@ -242,7 +242,7 @@ The `PreToolUse` hook of the digital-agency lead (`registry/hosts/claude/hooks/a
 _Avoid_: Treating a timer as proof that the line was written, assuming every hold is one-time, treating the gate as a role tool-permission guard
 
 **Hand-Back Hook**:
-The `PreToolUse` hook of `factory-evaluator` on its hand-back tool `SubagentHandback` (`scripts/precheck-handback.mjs` of the `evaluate-artifact` Skill, ADR 0070). It runs `check-review.mjs --precheck` on the result about to be handed back and, when the caller's check would refuse it, blocks the hand-back with the checker's reason so the evaluator can correct it; at most three times per worker, and it fails open. The caller's check remains the judge. It does not run in a headless session or where the Host provides no `SubagentHandback` (auto mode only).
+The `PreToolUse` hook of `factory-evaluator` on its hand-back tool `SubagentHandback` (`scripts/precheck-handback.mjs` of the `evaluate-artifact` Skill, ADR 0070). It runs `check-review.mjs --precheck` on the result about to be handed back and, when the caller's check would refuse it, blocks the hand-back with the checker's reason so the evaluator can correct it; at most twice per worker (the Host's own limit on denied hand-backs is three), and it fails open. The caller's check remains the judge. It does not run in a headless session or where the Host provides no `SubagentHandback` (auto mode only).
 _Avoid_: Calling it a guard (it carries no `onFailure: "block"` and fails open on purpose), assuming it replaces the caller's `check-review.mjs --job --result`, assuming it covers a final message handed back without the tool
 
 **Multimodal Asset Inlining (`@path/to/file`)**:

@@ -141,27 +141,32 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
     expect(reason).toContain('criterion task-fit, citation 1');
   });
 
-  it('counts per worker: three blocks, then the fourth attempt of the same worker goes through; another worker starts at one', () => {
+  it('keeps the cap inside the Host\'s own limit: the Host tells a worker whose hand-back is denied, up to three times, that its report was not delivered (hooks.md:2026), so the hook blocks fewer than three times', () => {
+    expect(HANDBACK_MAX_BLOCKS).toBe(2);
+    expect(HANDBACK_MAX_BLOCKS).toBeLessThan(3);
+  });
+
+  it('counts per worker: the cap in blocks, then the next attempt of the same worker goes through; another worker starts at one', () => {
     const message = text(badResult());
-    for (const attempt of [1, 2, 3]) {
+    for (let attempt = 1; attempt <= HANDBACK_MAX_BLOCKS; attempt++) {
       const run = hook(message);
       expect(run.status).toBe(2);
-      expect(run.stderr.split('\n')[0]).toContain(`attempt ${attempt} of 3`);
+      expect(run.stderr.split('\n')[0]).toContain(`attempt ${attempt} of ${HANDBACK_MAX_BLOCKS}:`);
     }
-    const fourth = hook(message);
-    expect(fourth.status).toBe(0);
-    expect(fourth.stderr).toBe('');
+    const next = hook(message);
+    expect(next.status).toBe(0);
+    expect(next.stderr).toBe('');
     const other = hook(message, { agent_id: 'agent-two' });
     expect(other.status).toBe(2);
-    expect(other.stderr.split('\n')[0]).toContain('attempt 1 of 3');
+    expect(other.stderr.split('\n')[0]).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
   });
 
   it('keys the count by session and job digest when the input carries no agent id', () => {
     const message = text(badResult());
     const noAgent = { agent_id: undefined, agent_type: undefined };
     expect(hook(message, noAgent).status).toBe(2);
-    expect(hook(message, noAgent).stderr.split('\n')[0]).toContain('attempt 2 of 3');
-    expect(hook(message, { ...noAgent, session_id: 'session-2' }).stderr.split('\n')[0]).toContain('attempt 1 of 3');
+    expect(hook(message, noAgent).stderr.split('\n')[0]).toContain(`attempt 2 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(hook(message, { ...noAgent, session_id: 'session-2' }).stderr.split('\n')[0]).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
   });
 
   it('blocks prose and a fenced record with the not-JSON reason, even when no pointer exists', async () => {

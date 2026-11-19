@@ -20,8 +20,13 @@ export const HANDBACK_CHECK_ROLE = 'factory-evaluator';
 export const HANDBACK_CHECK_REFERENCE = '${CLAUDE_PROJECT_DIR}/.claude/skills/evaluate-artifact/scripts/precheck-handback.mjs';
 /** Where an install puts it, relative to the workspace. */
 export const HANDBACK_CHECK_SCRIPT_REL = '.claude/skills/evaluate-artifact/scripts/precheck-handback.mjs';
-/** The hook blocks at most this many hand-backs of one worker, then lets the hand-back through; the caller's check stays the judge. */
-export const HANDBACK_MAX_BLOCKS = 3;
+/**
+ * The hook blocks at most this many hand-backs of one worker, then lets the next one through; the caller's check stays the judge.
+ * TWO, because the Host has a limit of its own: after a denied `SubagentHandback` it tells the worker, "up to three times", that its report was not delivered, and if the
+ * hook keeps denying "the subagent ends without delivering a report" (hooks.md:2026). The library does not say whether the third denial ends the worker or a fourth
+ * attempt is still made, and nothing has observed it; with two blocks the third attempt is delivered under either reading. Every text and test derives from this number.
+ */
+export const HANDBACK_MAX_BLOCKS = 2;
 
 export type WorkerHookHandler = { type: 'command'; command: string; args: string[]; onFailure?: 'block' };
 export type WorkerHooks = { PreToolUse: Array<{ matcher: string; hooks: WorkerHookHandler[] }> };
