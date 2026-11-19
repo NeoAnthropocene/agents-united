@@ -26,41 +26,82 @@
       "effortInModel": true,
       "quotaGroups": {
         "gemini-4-argon": "Gemini 4 Argon",
+        "gemini-pro-orchestrator-neon": "Gemini Models",
+        "gemini-pro-orchestrator-g1-pro": ["Gemini Models", "Gemini 4 Argon"],
         "gemini-": "Gemini Models",
         "claude-": "Claude and GPT models",
         "gpt-oss": "Claude and GPT models"
       },
       "tiers": {
         "simple": {
-          "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium",
-          "efforts": {
-            "low": { "label": "Gemini 3.8 Flash (Low)", "model": "gemini-3.8-flash-low" },
-            "high": { "label": "Gemini 3.8 Flash (High)", "model": "gemini-3.8-flash-high" }
-          }
+          "models": [
+            {
+              "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium",
+              "efforts": {
+                "low": { "label": "Gemini 3.8 Flash (Low)", "model": "gemini-3.8-flash-low" },
+                "high": { "label": "Gemini 3.8 Flash (High)", "model": "gemini-3.8-flash-high" }
+              }
+            }
+          ]
         },
         "medium": {
-          "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium", "effort": "medium",
-          "efforts": {
-            "low": { "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low" },
-            "high": { "label": "Gemini 4 Hydrogen (High)", "model": "gemini-4-hydrogen-high" },
-            "extra": { "label": "Gemini 4 Hydrogen (XHigh)", "model": "gemini-4-hydrogen-xhigh" }
-          }
+          "models": [
+            {
+              "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium", "effort": "medium",
+              "efforts": {
+                "low": { "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low" },
+                "high": { "label": "Gemini 4 Hydrogen (High)", "model": "gemini-4-hydrogen-high" },
+                "extra": { "label": "Gemini 4 Hydrogen (XHigh)", "model": "gemini-4-hydrogen-xhigh" }
+              }
+            },
+            {
+              "label": "Gemini 3.8 Flash (High)", "model": "gemini-3.8-flash-high", "effort": "high",
+              "efforts": {
+                "low": { "label": "Gemini 3.8 Flash (Low)", "model": "gemini-3.8-flash-low" },
+                "medium": { "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium" }
+              }
+            }
+          ]
         },
         "high": {
-          "label": "Gemini 4 Argon (Medium)", "model": "gemini-4-argon-medium", "effort": "medium",
-          "efforts": {
-            "low": { "label": "Gemini 4 Argon (Low)", "model": "gemini-4-argon-low" },
-            "high": { "label": "Gemini 4 Argon (High)", "model": "gemini-4-argon-high" }
-          }
+          "models": [
+            { "label": "Orchestrator (Carbon)", "displayName": "Orchestrator (Carbon)", "fixedEffort": true, "quotaGroups": ["Gemini Models"] },
+            { "label": "Orchestrator (Neon)", "model": "gemini-pro-orchestrator-neon", "fixedEffort": true, "quotaGroups": ["Gemini Models"] },
+            { "label": "Orchestrator (Argon)", "model": "gemini-pro-orchestrator-g1-pro", "fixedEffort": true, "quotaGroups": ["Gemini Models", "Gemini 4 Argon"] },
+            {
+              "label": "Gemini 4 Hydrogen (High)", "model": "gemini-4-hydrogen-high", "effort": "high",
+              "efforts": {
+                "low": { "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low" },
+                "medium": { "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium" },
+                "extra": { "label": "Gemini 4 Hydrogen (XHigh)", "model": "gemini-4-hydrogen-xhigh" }
+              }
+            }
+          ]
         }
       }
     },
     "codex": {
       "editSide": "wsl",
       "tiers": {
-        "simple": { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium" },
-        "medium": { "label": "GPT-6.1-Sol", "model": "gpt-6.1-sol", "effort": "medium" },
-        "high": { "label": "GPT-6-Astra", "model": "gpt-6-astra", "effort": "medium" }
+        "simple": {
+          "models": [
+            { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+          ]
+        },
+        "medium": {
+          "models": [
+            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.1 Sol", "model": "gpt-6.1-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+          ]
+        },
+        "high": {
+          "models": [
+            { "label": "GPT-6.2 Astra", "model": "gpt-6.2-astra", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6 Astra", "model": "gpt-6-astra", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+          ]
+        }
       }
     },
     "claude": {

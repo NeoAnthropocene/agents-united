@@ -7,7 +7,8 @@
  *
  * Selection: hosts are tried in priority order. For one host the side with the most headroom wins (headroom = the smaller of
  * the 5-hour and weekly remaining), a tie keeps the side you are on. A host/side that is missing, logged out or below the
- * headroom floor is skipped. After a run that did no work because of a limit, login or model refusal, the next candidate runs.
+ * headroom floor is skipped. After a run that did no work because of a limit, login or model refusal, the next candidate runs; a model
+ * refusal first tries the next model of the same tier on the same host (see "the model pool" below).
  */
 import { spawn, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
@@ -94,7 +95,11 @@ function modelFamily(model) {
 
 export function makeUsage(windows, extra = {}) {
   const vals = windows.map(w => w.remaining_pct).filter(v => v != null);
-  const pick = name => windows.find(w => w.name === name)?.remaining_pct ?? null;
+  // Windows of one name from several quota groups (an Orchestrator draws on two): the smaller figure is the one that counts.
+  const pick = name => {
+    const same = windows.filter(w => w.name === name && w.remaining_pct != null).map(w => w.remaining_pct);
+    return same.length ? Math.min(...same) : null;
+  };
   return { binding_pct: vals.length ? Math.min(...vals) : null, five_hour_pct: pick('five_hour'), weekly_pct: pick('weekly'), windows, ...extra };
 }
 
@@ -119,16 +124,26 @@ export function parseClaudeUsage(text, model = '') {
   return windows;
 }
 
-export function agyGroupFor(model, groups) {
+/**
+ * The quota groups a model draws on: the entry's own list when it has one, else the longest matching prefix in the host's `quotaGroups`
+ * (a group name, or a list of names for a model that draws on several). An empty list means no group is known.
+ */
+export function agyGroupsFor(model, groups, entryGroups) {
+  if (Array.isArray(entryGroups) && entryGroups.length) return [...entryGroups];
   let best = null;
   for (const [prefix, group] of Object.entries(groups ?? {})) {
-    if (String(model).startsWith(prefix) && (best === null || prefix.length > best[0].length)) best = [prefix, group];
+    if (String(model ?? '').startsWith(prefix) && (best === null || prefix.length > best[0].length)) best = [prefix, group];
   }
-  return best ? best[1] : null;
+  if (!best) return [];
+  return Array.isArray(best[1]) ? [...best[1]] : [best[1]];
 }
 
-/** Antigravity `-p "/usage" --output-format json`: groups with 5h / weekly buckets (remaining_fraction). */
-export function parseAgyUsage(text, model, groups) {
+export function agyGroupFor(model, groups) {
+  return agyGroupsFor(model, groups)[0] ?? null;
+}
+
+/** Antigravity `-p "/usage" --output-format json`: the 5h / weekly buckets (remaining_fraction) of the named groups, each window naming its group. */
+export function parseAgyUsageGroups(text, names) {
   let data;
   try {
     data = JSON.parse(text)?.command?.data?.groups;
@@ -136,17 +151,39 @@ export function parseAgyUsage(text, model, groups) {
     return [];
   }
   if (!Array.isArray(data)) return [];
-  const target = agyGroupFor(model, groups);
+  const wanted = new Set(names);
   const windows = [];
   for (const g of data) {
-    if (g?.name !== target) continue;
+    if (!wanted.has(g?.name)) continue;
     for (const b of g.buckets ?? []) {
       if (b?.remaining_fraction == null) continue;
       const name = { '5h': 'five_hour', weekly: 'weekly' }[b.window] ?? String(b.window);
-      windows.push({ name, remaining_pct: round1(Number(b.remaining_fraction) * 100), resets: b.reset_time ?? null });
+      windows.push({ group: g.name, name, remaining_pct: round1(Number(b.remaining_fraction) * 100), resets: b.reset_time ?? null });
     }
   }
   return windows;
+}
+
+/** The same for the one group that owns `model` (the host's `quotaGroups`). */
+export function parseAgyUsage(text, model, groups) {
+  const target = agyGroupFor(model, groups);
+  return target === null ? [] : parseAgyUsageGroups(text, [target]).map(({ group: _group, ...w }) => w);
+}
+
+/**
+ * The usage of each model of the tier, from ONE /usage readout: { slug: usage }. `resolved` are the tier's entries as resolveEntry
+ * returns them; an entry that names a display name takes its slug from the pool. An entry with no readable group is left out (unknown).
+ */
+export function agyUsageByModel(text, resolved, pool, groups) {
+  const out = {};
+  for (const r of resolved) {
+    const model = r.model ?? slugByName(pool, r.displayName);
+    if (!model || out[model]) continue;
+    const names = agyGroupsFor(model, groups, r.quotaGroups);
+    const windows = names.length ? parseAgyUsageGroups(text, names) : [];
+    if (windows.length) out[model] = makeUsage(windows, { groups: names });
+  }
+  return out;
 }
 
 const codexWindowName = mins => ({ 300: 'five_hour', 10080: 'weekly' })[mins] ?? `window_${mins}m`;
@@ -176,21 +213,158 @@ export function parseCodexRolloutRateLimits(rl, now) {
   return windows;
 }
 
+// ----------------------------------------------------------------------------- the model pool (which models this account can use)
+//
+// A pool is { source: 'cli' | 'config' | 'unknown', models: [slug], names: { slug: display name }, efforts: { slug: [effort] }, reason? }.
+// 'cli' was read from the host (Antigravity `agy models`, Codex app-server `model/list`), 'config' is the user's explicit list, 'unknown'
+// means the list could not be read and the router then behaves as it did before pools: the first entry of a tier that has a model id.
+
+/** `agy models` prints one `slug<TAB>display name` line per model (a progress line, if any, goes to stderr). null when no such line is found. */
+export function parseAgyModels(stdout) {
+  const rows = [];
+  for (const raw of stripAnsi(stdout).split(/\r?\n/)) {
+    if (!raw.includes('\t')) continue;
+    const [slug, ...rest] = raw.split('\t');
+    const name = rest.join('\t').trim();
+    if (/^[A-Za-z0-9][\w.-]*$/.test(slug.trim()) && name) rows.push({ slug: slug.trim(), name });
+  }
+  return rows.length ? rows : null;
+}
+
+export function agyPool(stdout) {
+  const rows = parseAgyModels(stdout);
+  return rows ? { source: 'cli', models: rows.map(r => r.slug), names: Object.fromEntries(rows.map(r => [r.slug, r.name])), efforts: {} } : null;
+}
+
+/** The app-server `model/list` answer (the whole response or its result). null for an error, an empty list or a list with a next page: a partial list would drop real models. */
+export function codexPool(resp) {
+  const result = isPlain(resp) && 'result' in resp ? resp.result : resp;
+  if (!isPlain(result) || !Array.isArray(result.data) || result.nextCursor) return null;
+  const slugOf = m => (isPlain(m) ? String(m.model ?? m.id ?? '').trim() : '');
+  const rows = result.data.filter(m => slugOf(m) && m.hidden !== true);
+  if (!rows.length) return null;
+  const effortsOf = m => (Array.isArray(m.supportedReasoningEfforts) ? m.supportedReasoningEfforts.map(e => (typeof e === 'string' ? e : e?.reasoningEffort)).filter(e => typeof e === 'string') : []);
+  return {
+    source: 'cli',
+    models: rows.map(slugOf),
+    names: Object.fromEntries(rows.filter(m => typeof m.displayName === 'string').map(m => [slugOf(m), m.displayName])),
+    efforts: Object.fromEntries(rows.map(m => [slugOf(m), effortsOf(m)]).filter(([, e]) => e.length)),
+  };
+}
+
+export const configPool = list => ({ source: 'config', models: [...list], names: {}, efforts: {} });
+export const unknownPool = reason => ({ source: 'unknown', models: [], names: {}, efforts: {}, ...(reason ? { reason } : {}) });
+
+/** True when the pool is a real list (read from the host or configured) that entries are checked against. */
+const poolKnown = pool => Boolean(pool) && pool.source !== 'unknown';
+
+/** The slug the pool lists under this display name (case-insensitive), or null. */
+export function slugByName(pool, name) {
+  if (!poolKnown(pool) || typeof name !== 'string') return null;
+  const want = name.trim().toLowerCase();
+  const hit = Object.entries(pool.names ?? {}).find(([, n]) => String(n).trim().toLowerCase() === want);
+  return hit ? hit[0] : null;
+}
+
 // ----------------------------------------------------------------------------- config
 
 const isPlain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-/** Deep merge: objects merge key by key, arrays and scalars in `over` replace. Neither input is mutated. */
+/** Deep merge in place: objects merge key by key, arrays and scalars in `src` replace. */
+function deepMergeInto(dst, src) {
+  for (const [k, v] of Object.entries(src ?? {})) {
+    if (isPlain(v) && isPlain(dst[k])) deepMergeInto(dst[k], v);
+    else dst[k] = structuredClone(v);
+  }
+  return dst;
+}
+
+/**
+ * A user's tier over the shipped one. A tier is an ordered list (`models`) or, in the old shape, one model with its effort and efforts.
+ * - `models` in the user's tier replaces the list; so does an old-shape `model` (the tier becomes that one model: its effort defaults to the
+ *   first shipped entry's, its label to the model name, and nothing of the shipped efforts is kept, they belong to other models).
+ * - Only effort, label or efforts: they apply to the first model of the shipped list (efforts merge key by key).
+ * - A shipped tier that is itself in the old shape merges key by key as it always did.
+ */
+function mergeTier(base, over) {
+  if (!isPlain(base) || !isPlain(over)) return structuredClone(over);
+  if ('models' in over) return structuredClone(over);
+  if (!Array.isArray(base.models)) return deepMergeInto(structuredClone(base), over);
+  const [first] = tierEntries(base);
+  if (over.model !== undefined) {
+    return {
+      ...(over.label === undefined ? {} : { label: over.label }),
+      model: over.model,
+      effort: over.effort ?? first?.effort ?? 'medium',
+      ...(over.efforts === undefined ? {} : { efforts: structuredClone(over.efforts) }),
+    };
+  }
+  const out = structuredClone(base);
+  const head = typeof out.models[0] === 'string' ? { model: out.models[0] } : (out.models[0] ?? {});
+  if (over.effort !== undefined) head.effort = over.effort;
+  if (over.label !== undefined) head.label = over.label;
+  if (over.efforts !== undefined) head.efforts = isPlain(over.efforts) && isPlain(head.efforts) ? deepMergeInto(head.efforts, over.efforts) : structuredClone(over.efforts);
+  out.models[0] = head;
+  return out;
+}
+
+/** Deep merge: objects merge key by key, arrays and scalars in `over` replace (a host's tiers merge as mergeTier says). Neither input is mutated. */
 export function mergeConfig(base, over) {
   const out = structuredClone(base);
-  const walk = (dst, src) => {
+  const walk = (dst, src, trail) => {
     for (const [k, v] of Object.entries(src ?? {})) {
-      if (isPlain(v) && isPlain(dst[k])) walk(dst[k], v);
+      if (trail.length === 3 && trail[0] === 'hosts' && trail[2] === 'tiers') dst[k] = mergeTier(dst[k], v);
+      else if (isPlain(v) && isPlain(dst[k])) walk(dst[k], v, [...trail, k]);
       else dst[k] = structuredClone(v);
     }
   };
-  walk(out, over);
+  walk(out, over, []);
   return out;
+}
+
+const WORD = /^[a-z]+$/;
+const nonEmpty = v => typeof v === 'string' && v.trim() !== '';
+
+/**
+ * The entries of a tier, normalised: `models` (a model name or an object each), or the old shape (the tier itself is the one entry).
+ * An entry: { model?, displayName?, label, effort, efforts?, fixedEffort?, quotaGroups? }. `effort` defaults to the tier's `effort`, else
+ * 'medium'; a fixed-configuration entry (an Orchestrator) takes the effort 'fixed' and no `--effort` changes it. `displayName` names a
+ * model whose id is not in the config: the id is then taken from the account's own list by that name.
+ */
+export function tierEntries(tier) {
+  if (!isPlain(tier)) return [];
+  const make = e => {
+    const fixed = e.fixedEffort === true;
+    const out = { ...e, effort: e.effort ?? (fixed ? 'fixed' : (tier.effort ?? 'medium')) };
+    delete out.models;
+    out.label = e.label ?? e.model ?? e.displayName;
+    return out;
+  };
+  if (!('models' in tier)) return [make(tier)];
+  return Array.isArray(tier.models) ? tier.models.map(e => make(isPlain(e) ? e : { model: e })) : [];
+}
+
+/** Problems with one tier of a host: the old shape (one model, an effort) or a list of entries. */
+function validateTier(where, t, effortInModel) {
+  if (!isPlain(t)) return [`${where}: needs a model and an effort`];
+  if (!('models' in t)) {
+    if (!t.model || !WORD.test(t.effort ?? '')) return [`${where}: needs a model and an effort`];
+    return t.efforts === undefined ? [] : validateEfforts(where, t.efforts, effortInModel);
+  }
+  if (!Array.isArray(t.models) || t.models.length === 0) return [`${where}: models must be a non-empty list of model names or entries`];
+  const errs = [];
+  t.models.forEach((raw, i) => {
+    const n = i + 1;
+    if (typeof raw !== 'string' && !isPlain(raw)) { errs.push(`${where}: entry ${n} must be a model name or an object`); return; }
+    const e = typeof raw === 'string' ? { model: raw } : raw;
+    if (!nonEmpty(e.model) && !nonEmpty(e.displayName)) errs.push(`${where}: entry ${n} needs a model or a displayName`);
+    if (e.model !== undefined && !nonEmpty(e.model) && nonEmpty(e.displayName)) errs.push(`${where}: entry ${n}: model must be a non-empty string`);
+    if (e.fixedEffort !== undefined && typeof e.fixedEffort !== 'boolean') errs.push(`${where}: entry ${n}: fixedEffort must be true or false`);
+    if (!WORD.test(e.effort ?? (e.fixedEffort === true ? 'fixed' : (t.effort ?? 'medium')))) errs.push(`${where}: entry ${n} needs an effort (lowercase letters)`);
+    if (e.quotaGroups !== undefined && !(Array.isArray(e.quotaGroups) && e.quotaGroups.length > 0 && e.quotaGroups.every(nonEmpty))) errs.push(`${where}: entry ${n}: quotaGroups must be a list of group names`);
+    if (e.efforts !== undefined) errs.push(...validateEfforts(`${where}[${n}]`, e.efforts, effortInModel));
+  });
+  return errs;
 }
 
 export function validateConfig(cfg, { home = os.homedir(), platform = process.platform } = {}) {
@@ -202,10 +376,13 @@ export function validateConfig(cfg, { home = os.homedir(), platform = process.pl
   }
   for (const host of cfg.priority) {
     if (!HOSTS.includes(host) || !cfg.hosts?.[host]) continue;
-    for (const tier of TIERS) {
-      const t = cfg.hosts[host].tiers?.[tier];
-      if (!t?.model || !/^[a-z]+$/.test(t.effort ?? '')) errs.push(`${host}/${tier}: needs a model and an effort`);
-      else if (t.efforts !== undefined) errs.push(...validateEfforts(`${host}/${tier}`, t.efforts, Boolean(cfg.hosts[host].effortInModel)));
+    const h = cfg.hosts[host];
+    for (const tier of TIERS) errs.push(...validateTier(`${host}/${tier}`, h.tiers?.[tier], Boolean(h.effortInModel)));
+    if (h.pool !== undefined && h.pool !== null && !(Array.isArray(h.pool) && h.pool.length > 0 && h.pool.every(nonEmpty))) {
+      errs.push(`${host}: pool must be a non-empty list of model names (or null to read the list from the host)`);
+    }
+    for (const [prefix, g] of Object.entries(h.quotaGroups ?? {})) {
+      if (!(nonEmpty(g) || (Array.isArray(g) && g.length > 0 && g.every(nonEmpty)))) errs.push(`${host}: quotaGroups.${prefix} must be a group name or a list of group names`);
     }
   }
   if (!Number.isFinite(Number(cfg.minHeadroomPct))) errs.push('minHeadroomPct must be a number');
@@ -293,26 +470,40 @@ export function validateEfforts(where, efforts, effortInModel = false) {
  * The model, effort and label a host/tier runs at when the lead asks for `effort`. No effort, or the tier's own default, keeps the tier.
  * An entry of the tier's `efforts` map wins; a host with no entry keeps its default and says so in `note` (never an error).
  */
-export function resolveEffort(cfg, host, tier, effort) {
-  const t = cfg.hosts[host].tiers[tier];
-  const base = { model: t.model, effort: t.effort, label: t.label ?? t.model, note: null };
+export function resolveEntry(entry, host, tier, effort) {
+  const name = entry.model ?? entry.displayName;
+  const base = {
+    model: entry.model, effort: entry.effort, label: entry.label, note: null,
+    ...(entry.displayName ? { displayName: entry.displayName } : {}),
+    ...(entry.quotaGroups ? { quotaGroups: entry.quotaGroups } : {}),
+    ...(entry.fixedEffort ? { fixed: true } : {}),
+  };
   if (!effort) return base;
-  const e = t.efforts?.[effort];
+  // An Orchestrator has a fixed configuration: the effort cannot change the model, and the plan says so.
+  if (entry.fixedEffort) return { ...base, note: `${host}: --effort ${JSON.stringify(effort)} was not applied: ${entry.label} has a fixed configuration, so the ${tier} tier keeps ${name}` };
+  const e = entry.efforts?.[effort];
   if (typeof e === 'string') return { ...base, effort: e };
-  if (isPlain(e)) return { model: e.model ?? t.model, effort: e.effort ?? effort, label: e.label ?? e.model ?? base.label, note: null };
-  if (effort === t.effort) return base;
-  return { ...base, note: `${host}: no "${effort}" effort in the ${tier} tier; kept ${t.model} (${t.effort})` };
+  if (isPlain(e)) return { ...base, model: e.model ?? entry.model, effort: e.effort ?? effort, label: e.label ?? e.model ?? base.label };
+  if (effort === entry.effort) return base;
+  return { ...base, note: `${host}: no "${effort}" effort in the ${tier} tier; kept ${name} (${entry.effort})` };
 }
 
-/** Every effort name some host in scope offers for `tier`: its default effort plus the keys of its `efforts` map. */
+/** `resolveEntry` for the `index`th entry of a tier (the first, the tier's primary model, by default). */
+export function resolveEffort(cfg, host, tier, effort, index = 0) {
+  const entries = tierEntries(cfg.hosts[host].tiers[tier]);
+  return resolveEntry(entries[index] ?? entries[0], host, tier, effort);
+}
+
+/** Every effort name some host in scope offers for `tier`: the default effort and the keys of the `efforts` map of each entry (a fixed-configuration entry offers none). */
 export function knownEfforts(cfg, tier, only) {
   const names = new Set();
   for (const host of cfg.priority) {
     if (only?.length && !only.includes(host)) continue;
-    const t = cfg.hosts[host]?.tiers?.[tier];
-    if (!t) continue;
-    names.add(t.effort);
-    for (const n of Object.keys(t.efforts ?? {})) names.add(n);
+    for (const e of tierEntries(cfg.hosts[host]?.tiers?.[tier])) {
+      if (e.fixedEffort) continue;
+      names.add(e.effort);
+      for (const n of Object.keys(e.efforts ?? {})) names.add(n);
+    }
   }
   return [...names].sort();
 }
@@ -329,8 +520,9 @@ export function checkEffort(cfg, tier, effort, only) {
 export function configuredModels(cfg, host) {
   const out = [];
   for (const tier of TIERS) {
-    const t = cfg.hosts[host].tiers[tier];
-    for (const m of [t.model, ...Object.values(t.efforts ?? {}).map(e => (isPlain(e) ? e.model : null))]) if (m && !out.includes(m)) out.push(m);
+    for (const t of tierEntries(cfg.hosts[host].tiers[tier])) {
+      for (const m of [t.model ?? t.displayName, ...Object.values(t.efforts ?? {}).map(e => (isPlain(e) ? e.model : null))]) if (m && !out.includes(m)) out.push(m);
+    }
   }
   return out;
 }
@@ -451,39 +643,111 @@ function orderSides(usable, here, tiePct) {
   return [...known, ...unknown].map(u => u[0]);
 }
 
-/** statuses: { host: { side: { installed, logged_in, usage } } }. Returns the ordered candidates and why others were skipped. */
+/** What `pools` says of one side: the source and how many models, or that the list is unknown. null when there is nothing worth saying (a host with one model per tier and no pool). */
+function poolInfo(pool, entryCount) {
+  if (poolKnown(pool)) return { source: pool.source, models: pool.models.length };
+  if (pool) return { source: 'unknown', ...(pool.reason ? { reason: pool.reason } : {}) };
+  return entryCount > 1 ? { source: 'unknown' } : null;
+}
+
+/**
+ * Which model of the tier a host/side runs. `resolved[i]` is entry `i` resolved for the asked effort. Entries are tried in order: one the
+ * account does not have (not in a known pool), one with no model id (Carbon, when the list does not give it), and one whose quota group is
+ * below the floor are skipped, each with its reason. The first left is `chosen`, the rest are `alternates` (a refused model moves to the next).
+ * With an unknown pool nothing is checked against it: the first entry that has a model id is used.
+ */
+function pickModels({ host, tier, entries, resolved, pool, st, min, flagEffort, asked }) {
+  const known = poolKnown(pool);
+  const where = pool?.source === 'config' ? 'the configured pool' : "the account's model list";
+  const accepted = [];
+  const skipped = [];
+  const lowest = [];
+  resolved.forEach((r0, i) => {
+    let r = r0;
+    const name = r.model ?? r.displayName;
+    const model = r.model ?? slugByName(pool, r.displayName);
+    if (!model) {
+      skipped.push({ model: name, reason: known ? `not in ${where}` : "no model id is configured for it and the account's model list is unknown" });
+      return;
+    }
+    if (known && !pool.models.includes(model)) {
+      skipped.push({ model: name, reason: `not in ${where}` });
+      return;
+    }
+    // A model that does not offer the asked effort keeps the entry's own (Codex: the pool lists the efforts of each model).
+    const offered = known ? pool.efforts?.[model] : undefined;
+    if (flagEffort && !r.fixed && asked && offered?.length && !offered.includes(r.effort) && r.effort !== entries[i].effort) {
+      r = { ...r, effort: entries[i].effort, note: `${host}: ${model} does not offer "${r.effort}" on this account; kept ${entries[i].effort}` };
+    }
+    const usage = st.usage_by_model ? (st.usage_by_model[model] ?? null) : (st.usage ?? null);
+    const b = usage?.binding_pct ?? null;
+    if (b !== null && b < min) {
+      skipped.push({ model: name, reason: `headroom ${b}% below minimum ${min}%` });
+      lowest.push(b);
+      return;
+    }
+    accepted.push({ model, effort: r.effort, label: r.label ?? model, ...(r.note ? { effort_note: r.note } : {}), usage, binding: b });
+  });
+  if (accepted.length) {
+    const [chosen, ...rest] = accepted;
+    return { chosen, alternates: rest.map(({ usage: _u, binding: _b, ...a }) => a), skipped, usage: chosen.usage, binding: chosen.binding };
+  }
+  const names = skipped.map(s => s.model).join(', ');
+  const reason = skipped.length === lowest.length && lowest.length ? `headroom ${Math.max(...lowest)}% below minimum ${min}%`
+    : lowest.length === 0 && known ? `no model of the ${tier} tier is in ${where} (${names})`
+      : lowest.length === 0 ? `no model of the ${tier} tier has a model id (${names})`
+        : `no usable model in the ${tier} tier: ${skipped.map(s => `${s.model} (${s.reason})`).join('; ')}`;
+  return { chosen: null, alternates: [], skipped, reason };
+}
+
+/**
+ * statuses: { host: { side: { installed, logged_in, usage, usage_by_model?, pool? } } }. Returns the ordered candidates and why others were skipped.
+ * A candidate is the first model of the tier that the account has and has headroom (`alternates`: the models after it, `skipped_models`: the
+ * ones before it that were passed over, with the reason); `pools` says where each side's model list came from.
+ */
 export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) {
   const min = Number(cfg.minHeadroomPct ?? 10);
   const tie = Number(cfg.tiePct ?? 2);
   const candidates = [];
   const skipped = [];
+  const pools = {};
   for (const host of cfg.priority) {
     if (onlyHosts?.length && !onlyHosts.includes(host)) continue;
     const sides = statuses[host] ?? {};
-    const t = resolveEffort(cfg, host, tier, effort);
+    const hostCfg = cfg.hosts[host];
+    const entries = tierEntries(hostCfg.tiers[tier]);
+    const resolved = entries.map(e => resolveEntry(e, host, tier, effort));
     const usable = [];
+    const picks = new Map();
     for (const [side, st] of Object.entries(sides)) {
       if (!st.installed) skipped.push({ host, side, reason: `not installed or not runnable${st.error ? ` (${skipNote(st.error)})` : ''}` });
       else if (st.logged_in === false) skipped.push({ host, side, reason: 'not logged in' });
       else {
-        const b = st.usage?.binding_pct ?? null;
-        if (b !== null && b < min) skipped.push({ host, side, reason: `headroom ${b}% below minimum ${min}%` });
-        else usable.push([side, b]);
+        const pool = hostCfg.pool ? configPool(hostCfg.pool) : (st.pool ?? null);
+        const info = poolInfo(pool, entries.length);
+        if (info) pools[`${host}/${side}`] = info;
+        const pick = pickModels({ host, tier, entries, resolved, pool, st, min, flagEffort: !hostCfg.effortInModel, asked: effort });
+        if (!pick.chosen) skipped.push({ host, side, reason: pick.reason });
+        else { picks.set(side, pick); usable.push([side, pick.binding]); }
       }
     }
     let ordered = orderSides(usable, here, tie);
     // Some hosts only work as an editor on one side (Codex's Windows sandbox lost its working directory and PATH; its WSL sandbox is sound).
-    const editSide = cfg.hosts[host].editSide;
+    const editSide = hostCfg.editSide;
     if (access === 'edit' && editSide && ordered.includes(editSide)) ordered = [editSide, ...ordered.filter(s => s !== editSide)];
     for (const side of ordered) {
-      const u = sides[side].usage ?? {};
+      const pick = picks.get(side);
+      const c = pick.chosen;
+      const u = pick.usage ?? {};
       candidates.push({
-        host, side, model: t.model, effort: t.effort, label: t.label, ...(t.note ? { effort_note: t.note } : {}),
+        host, side, model: c.model, effort: c.effort, label: c.label, ...(c.effort_note ? { effort_note: c.effort_note } : {}),
         binding_pct: u.binding_pct ?? null, five_hour_pct: u.five_hour_pct ?? null, weekly_pct: u.weekly_pct ?? null,
+        ...(pick.alternates.length ? { alternates: pick.alternates } : {}),
+        ...(pick.skipped.length ? { skipped_models: pick.skipped } : {}),
       });
     }
   }
-  return { tier, here, ...(effort ? { effort_requested: effort } : {}), selected: candidates[0] ?? null, candidates, skipped };
+  return { tier, here, ...(effort ? { effort_requested: effort } : {}), selected: candidates[0] ?? null, candidates, skipped, ...(Object.keys(pools).length ? { pools } : {}) };
 }
 
 // ----------------------------------------------------------------------------- command building
@@ -959,7 +1223,8 @@ function codexAppServer(cmd, wanted, timeout = 30_000) {
       if (o.id === 0 && !ready) {
         ready = true;
         send({ method: 'initialized' });
-        for (const [id, method] of Object.entries(wanted)) send({ method, id: Number(id), ...(method === 'account/read' ? { params: { refreshToken: false } } : {}) });
+        const params = { 'account/read': { refreshToken: false }, 'model/list': { limit: 200, includeHidden: false } };
+        for (const [id, method] of Object.entries(wanted)) send({ method, id: Number(id), ...(params[method] ? { params: params[method] } : {}) });
       } else if (Object.keys(wanted).every(id => id in responses)) finish();
     });
     send({ method: 'initialize', id: 0, params: { clientInfo: { name: 'host-agent-router', title: 'host-agent-router', version: '1.0.0' } } });
@@ -1004,15 +1269,31 @@ async function probeClaude(cmd, model, _cfgHost, st) {
   else st.notes.push('could not read /usage (API-key billing or unexpected output)');
 }
 
-async function probeAntigravity(cmd, model, cfgHost, st) {
-  const u = await runCmd([...cmd, '-p', '/usage', '--output-format', 'json'], { timeout: 75_000, cwd: os.homedir() });
-  const windows = parseAgyUsage(u.stdout, model, cfgHost.quotaGroups ?? {});
-  if (windows.length) { st.logged_in = true; st.usage = makeUsage(windows); }
+async function probeAntigravity(cmd, model, cfgHost, st, payload = {}) {
+  // `agy models` lists the models of the logged-in account and starts no model; a configured pool replaces it, so it is not asked for then.
+  const [u, m] = await Promise.all([
+    runCmd([...cmd, '-p', '/usage', '--output-format', 'json'], { timeout: 75_000, cwd: os.homedir() }),
+    cfgHost.pool ? Promise.resolve(null) : runCmd([...cmd, 'models'], { timeout: 60_000, cwd: os.homedir() }),
+  ]);
+  if (!cfgHost.pool) {
+    st.pool = (m?.rc === 0 ? agyPool(m.stdout) : null) ?? unknownPool(m?.rc === 0 ? 'agy models printed a list the router could not read' : `agy models failed (rc=${m?.rc})`);
+    if (st.pool.source === 'unknown') st.notes.push(`model pool unknown (${st.pool.reason}); the first configured model of the tier is used`);
+  }
+  const resolved = payload.entries ?? [{ model }];
+  const byModel = agyUsageByModel(u.stdout, resolved, cfgHost.pool ? configPool(cfgHost.pool) : st.pool, cfgHost.quotaGroups ?? {});
+  const first = resolved.map(r => r.model ?? slugByName(st.pool, r.displayName)).find(s => s && byModel[s]);
+  if (first) { st.logged_in = true; st.usage = byModel[first]; st.usage_by_model = byModel; }
   else st.notes.push(`could not read quota for this model group: ${(u.stdout || u.stderr).trim().slice(0, 160).replace(/\n/g, ' ')}`);
 }
 
-async function probeCodex(cmd, _model, _cfgHost, st) {
-  const resp = await codexAppServer(cmd, { 1: 'account/read', 2: 'account/rateLimits/read' });
+async function probeCodex(cmd, _model, cfgHost, st) {
+  // `model/list` answers from the account without starting a model. A configured pool replaces it.
+  const wanted = { 1: 'account/read', 2: 'account/rateLimits/read', ...(cfgHost.pool ? {} : { 3: 'model/list' }) };
+  const resp = await codexAppServer(cmd, wanted);
+  if (!cfgHost.pool) {
+    st.pool = codexPool(resp[3]) ?? unknownPool(resp[3]?.error ? 'the app-server refused model/list' : 'the app-server gave no readable model/list');
+    if (st.pool.source === 'unknown') st.notes.push(`model pool unknown (${st.pool.reason}); the first configured model of the tier is used`);
+  }
   if (resp[1]) st.logged_in = Boolean(resp[1].result?.account);
   if (resp[2]?.result) {
     const { windows, meta } = parseCodexRateLimits(resp[2].result);
@@ -1049,7 +1330,7 @@ export async function probeLocal(payload) {
   st.installed = true;
   st.version = ver;
   try {
-    await PROBES[host](cmd, model, payload.host_cfg ?? {}, st);
+    await PROBES[host](cmd, model, payload.host_cfg ?? {}, st, payload);
   } catch (e) { // a failed readout must never break routing
     st.notes.push(`usage probe failed: ${e?.name}: ${e?.message}`);
   }
@@ -1208,8 +1489,10 @@ export async function modelsLocal(payload) {
     } else if (host === 'antigravity') {
       const cmd = resolveCmd('antigravity');
       if (cmd) {
+        // `agy models` lists the account's models and starts none. A configured name is "ok" as a slug or as a display name.
         const r = await runCmd([...cmd, 'models'], { timeout: 60_000, cwd: os.homedir() });
-        if (r.rc === 0) known = new Set(r.stdout.split(/\r?\n/).filter(l => l.includes('\t')).map(l => l.split('\t')[0].trim()));
+        const rows = r.rc === 0 ? parseAgyModels(r.stdout) : null;
+        if (rows) known = new Set(rows.flatMap(x => [x.slug, x.name]));
       }
     }
     const note = known ? null : resolveCmd(host) ? 'unverified (host has no offline model list)' : 'not checked (host not installed on this side)';
@@ -1391,7 +1674,9 @@ const callSide = (cfg, here, side, command, payload, timeoutMs = 120_000) =>
 async function probeAll(cfg, tier, here, sides, onlyHosts, effort) {
   const jobs = cfg.priority.filter(h => !onlyHosts?.length || onlyHosts.includes(h)).flatMap(h => sides.map(s => [h, s]));
   const results = await Promise.all(jobs.map(async ([host, side]) => {
-    const payload = { host, side, model: resolveEffort(cfg, host, tier, effort).model, host_cfg: cfg.hosts[host] };
+    // `entries`: every model of the tier, resolved for the asked effort, so the probe can read the quota of each (an Orchestrator draws on two groups).
+    const entries = tierEntries(cfg.hosts[host].tiers[tier]).map(e => resolveEntry(e, host, tier, effort));
+    const payload = { host, side, model: entries.find(r => r.model)?.model ?? '', entries, host_cfg: cfg.hosts[host] };
     try {
       return await callSide(cfg, here, side, 'local-probe', payload, 150_000);
     } catch (e) {
@@ -1426,10 +1711,12 @@ async function cmdStatus(opts, cfg) {
   console.log(`tier=${tier}  here=${here}  floor=${cfg.minHeadroomPct}%  (binding = smaller of 5h / weekly remaining)`);
   console.log(`${'HOST'.padEnd(12)}${'SIDE'.padEnd(9)}${'STATE'.padEnd(22)}${'5H LEFT'.padEnd(9)}${'WEEK LEFT'.padEnd(11)}MODEL`);
   for (const host of cfg.priority) {
+    const first = tierEntries(cfg.hosts[host].tiers[tier]).map(e => resolveEntry(e, host, tier, opts.effort)).find(r => r.model);
     for (const [side, st] of Object.entries(statuses[host] ?? {})) {
       const u = st.usage ?? {};
       const state = !st.installed ? 'not runnable' : st.logged_in === false ? 'logged out' : 'ready';
-      console.log(`${host.padEnd(12)}${side.padEnd(9)}${state.padEnd(22)}${fmt(u.five_hour_pct).padEnd(9)}${fmt(u.weekly_pct).padEnd(11)}${resolveEffort(cfg, host, tier, opts.effort).model}`);
+      const chosen = plan.candidates.find(c => c.host === host && c.side === side);
+      console.log(`${host.padEnd(12)}${side.padEnd(9)}${state.padEnd(22)}${fmt(u.five_hour_pct).padEnd(9)}${fmt(u.weekly_pct).padEnd(11)}${chosen?.model ?? first?.model ?? '-'}`);
     }
   }
   const sel = plan.selected;
@@ -1437,6 +1724,7 @@ async function cmdStatus(opts, cfg) {
   for (const s of plan.skipped) console.log(`  skipped ${s.host}/${s.side}: ${s.reason}`);
   const noted = new Set(); // one note per host, not one per side
   for (const c of plan.candidates) if (c.effort_note && !noted.has(c.host)) { noted.add(c.host); console.log(`  note ${c.effort_note}`); }
+  for (const c of plan.candidates) for (const s of c.skipped_models ?? []) console.log(`  skipped model ${c.host}/${c.side}: ${s.model}: ${s.reason}`);
   for (const [host, sides] of Object.entries(statuses)) for (const [side, st] of Object.entries(sides)) for (const n of st.notes ?? []) console.log(`  note ${host}/${side}: ${n}`);
   return 0;
 }
@@ -1569,7 +1857,10 @@ export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotT
   const start = guard ? snap(cwd) : null;
   let before = start;
   let end = start;
-  for (const c of cands) {
+  // A refused model moves to the next model of the same tier on the same host and side (`alternates`) before any other host or side runs.
+  const queue = [...cands];
+  for (let i = 0; i < queue.length; i++) {
+    const c = queue[i];
     const out = await tryOne(c);
     if (out.skipped) { attempts.push({ host: c.host, side: c.side, skipped: out.skipped }); continue; }
     // A run that exited 0 but did nothing (empty, or a command denied) is a failure that did no work, like a limit; a guard block or an
@@ -1598,6 +1889,11 @@ export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotT
       break;
     }
     before = end;
+    if (failure === 'model' && c.alternates?.length) {
+      const { alternates, effort_note: _note, skipped_models: _skipped, ...same } = c;
+      const [next, ...rest] = alternates;
+      queue.splice(i + 1, 0, { ...same, ...next, alternates: rest });
+    }
   }
   return { attempts, last, stopped, changed: guard ? diffSnapshots(start, end, classify) : null };
 }
@@ -1982,7 +2278,7 @@ async function cmdRun(opts, cfg) {
   if (budgetUsd !== null) for (const a of attempts) a.budget = budgetOf(a.host, budgetUsd);
   const verdict = last ? judgeRun(last[0].host, last[1]) : { ok: false, problem: null };
   const ok = verdict.ok;
-  const env = { ok, tier, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, attempts, skipped: plan.skipped };
+  const env = { ok, tier, access, ...(opts.effort ? { effort_requested: opts.effort } : {}), skills: attached, attempts, skipped: plan.skipped, ...(plan.pools ? { pools: plan.pools } : {}) };
   // A run the guard stopped, or that Cline did not complete, exited 0 but is not a success; say why, and never hand it to another host.
   if (verdict.problem) env.failure = verdict.problem;
   // Every candidate skipped because its command line was too long: nothing ran, and the cause has a code of its own.
@@ -2078,9 +2374,14 @@ Commands:
          the result and the dry run say the cap did not apply, and the run is bounded by --timeout only. --require-budget skips the hosts that
          have no budget flag (and needs a cap).
          --effort E picks a setting inside the tier where a host has one (config tiers.<tier>.efforts); a host without it keeps its
-         default and the result says so. An effort no candidate host knows is a usage error.
+         default and the result says so. An effort no candidate host knows is a usage error. An Orchestrator model has a fixed
+         configuration: --effort does not change it, and the plan says so.
+         Each tier is an ordered list of models (config tiers.<tier>.models). The router reads the models the logged-in account can use
+         (Antigravity: agy models; Codex: model/list; hosts.<host>.pool in the config replaces that list) and runs the first entry that is
+         in it; a model the host refuses runs the next entry of the tier on the same host before another host or side. If the list cannot
+         be read, the first entry that has a model id is used and the plan says the pool is unknown.
          --skill NAME (up to 3) puts the SKILL.md text of a sibling skill into the worker's prompt, after the contract; --dry-run lists them.
-  models                                     check configured model names (tiers and efforts) against each host's own list
+  models                                     check configured model names (tiers and efforts) against each host's own list (agy models, a Codex cache file; starts no model)
   machine [--save]                           what this machine has per host and side and how each is started (starts no model);
                                              --save writes it to ~/.agents/host-agent-router/machines/<hostname>.json
 

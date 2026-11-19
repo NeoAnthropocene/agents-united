@@ -20,8 +20,8 @@
     },
     {
       "id": 4,
-      "prompt": "The router's last run returned ok false with attempts showing cline failing on a limit, then codex failing with rc 1 and no failure label after it ran the migration script. What now?",
-      "expected_output": "Explains that the Cline attempt did no work and fell through correctly, while the Codex failure carries no failure label so it is a real task failure that must not be re-run on another host because files may have changed. Reports the failure with the stderr tail, inspects the working tree state before anything else, and hands the decision to the user or the lead."
+      "prompt": "The router's last run returned ok false with attempts showing cline failing on a limit, then codex failing with failure model for its first model, then codex again with the second model of the tier, failing with rc 1 and no failure label after it ran the migration script. What now?",
+      "expected_output": "Explains that the Cline attempt did no work and fell through correctly, and that the refused first Codex model was followed by the next model of the same tier on the same host before any other host (the plan's pools and skipped_models, if shown, say which models the account lacks), while the last Codex failure carries no failure label so it is a real task failure that must not be re-run on another host because files may have changed. Reports the failure with the stderr tail, inspects the working tree state before anything else, and hands the decision to the user or the lead."
     },
     {
       "id": 5,

@@ -1,6 +1,6 @@
 # Worked example: a review routed, then a briefed fix, with one fall-through
 
-The user is on Windows with a WSL Ubuntu side and asks: "Review the `parser/` changes for race conditions, then fix the two worst, using my other CLIs." The headroom figures in step 2 are from a real `status` run on 2026-11-06; its MODEL column shows the current defaults, not the ones of that day. The Cline refusal in step 5 is constructed to show a fall-through, because a real limit refusal was never provoked. The shape of step 4 and 6 (a brief, a checkout, a report checked against `changed`) was run live on Cline on 2026-11-07 on a small test project, not on a real parser. The `--skill` flag in step 4 came later and was only dry-run.
+The user is on Windows with a WSL Ubuntu side and asks: "Review the `parser/` changes for race conditions, then fix the two worst, using my other CLIs." The headroom figures in step 2 are from a real `status` run on 2026-11-06; its MODEL column shows the model each side would run now, the first model of the tier that the account has (the model pool), not the one of that day. The Cline refusal in step 5 is constructed to show a fall-through, because a real limit refusal was never provoked. The shape of step 4 and 6 (a brief, a checkout, a report checked against `changed`) was run live on Cline on 2026-11-07 on a small test project, not on a real parser. The `--skill` flag in step 4 came later and was only dry-run.
 
 ## 1. Tier and access
 
@@ -18,8 +18,8 @@ HOST        SIDE     STATE         5H LEFT  WEEK LEFT  MODEL
 cline       windows  ready         ?        ?          cline-pass/glm-5.3
 cline       wsl      not runnable  ?        ?          cline-pass/glm-5.3
 antigravity wsl      ready         100%     98.5%      gemini-4-hydrogen-medium
-codex       windows  ready         74%      66%        gpt-6.1-sol
-codex       wsl      ready         74%      66%        gpt-6.1-sol
+codex       windows  ready         74%      66%        gpt-6.2-sol
+codex       wsl      ready         74%      66%        gpt-6.2-sol
 claude      windows  ready         80%      84%        claude-sonnet-5-5
 selected: cline on windows -> cline-pass/glm-5.3 (medium)
 ```
@@ -71,7 +71,7 @@ The dry run lists Cline on Windows, then Antigravity on WSL, then Codex and Clau
   "changed": { "created": ["parser/queue.test.ts"], "modified": ["parser/lexer.ts", "parser/queue.ts"], "deleted": [], "head_moved": false, "count": 3 } }
 ```
 
-Cline refused on a limit and the tree was unchanged, so the next candidate ran. Had Cline changed `parser/lexer.ts` before refusing, the result would instead carry `stopped` and the failed attempt's `changed`, and no other host would have started: the lead would then either send a new brief that says what already exists, or delete the worktree. Had the first attempt failed with no `failure` label (a real task failure), the router would have stopped and the lead would have reported it.
+Cline refused on a limit and the tree was unchanged, so the next candidate ran. Had Cline changed `parser/lexer.ts` before refusing, the result would instead carry `stopped` and the failed attempt's `changed`, and no other host would have started: the lead would then either send a new brief that says what already exists, or delete the worktree. Had Antigravity refused its model (`failure: model`) the next model of the medium tier would have run on the same host and side before Codex was tried; `attempts` would list both. Had the first attempt failed with no `failure` label (a real task failure), the router would have stopped and the lead would have reported it.
 
 ## 6. Review, then report
 
