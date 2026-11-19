@@ -25,7 +25,9 @@ interface Usage { binding_pct: number | null; five_hour_pct: number | null; week
 interface Status { installed: boolean; logged_in: boolean | null; usage: Usage | null; error?: string | null; notes?: string[] }
 interface Candidate { host: string; side: string; model: string; effort: string; label: string; binding_pct: number | null }
 interface Plan { tier: string; here: string; selected: Candidate | null; candidates: Candidate[]; skipped: Array<{ host: string; side: string; reason: string }> }
-interface TierCfg { label?: string; model: string; effort: string }
+interface TierCfg { label?: string; model: string; effort: string; models?: TierCfg[]; displayName?: string; fixedEffort?: boolean }
+/** The first model of a tier: the tier itself in the old shape, `models[0]` in the list shape (what buildSpec reads as `t`). */
+const firstOf = <T extends TierCfg>(t: T): T => (t.models?.[0] ?? t) as T;
 interface Cfg {
   priority: string[];
   minHeadroomPct: number;
@@ -210,7 +212,7 @@ describe('selection: host priority, then the side with more headroom', () => {
     const { buildPlan } = await lib();
     const st = { codex: { windows: status({ binding: 50 }), wsl: status({ installed: false }) } };
     const c = buildPlan(CFG, 'high', st, 'windows').selected;
-    expect([c?.model, c?.effort]).toEqual(['gpt-6-astra', 'medium']);
+    expect([c?.model, c?.effort]).toEqual(['gpt-6.2-astra', 'high']); // no pool in the status: the first entry that has a model id
     expect(new Set(buildPlan(CFG, 'simple', all(status({ binding: 80 })), 'windows', ['claude']).candidates.map(x => x.host))).toEqual(new Set(['claude']));
     const none = buildPlan(CFG, 'simple', all(status({ installed: false })), 'windows');
     expect([none.selected, none.candidates]).toEqual([null, []]);
@@ -222,27 +224,34 @@ describe('the default config', () => {
     expect(new Set(CFG.priority)).toEqual(new Set(Object.keys(CFG.hosts)));
     for (const [host, h] of Object.entries(CFG.hosts)) {
       for (const tier of ['simple', 'medium', 'high']) {
-        expect(h.tiers[tier]?.model, `${host}/${tier}`).toBeTruthy();
-        expect(['low', 'medium', 'high']).toContain(h.tiers[tier]!.effort);
+        const first = firstOf(h.tiers[tier]!);
+        expect(first.model ?? first.displayName, `${host}/${tier}`).toBeTruthy();
+        if (first.effort !== undefined) expect(['low', 'medium', 'high']).toContain(first.effort);
+        else expect(first.fixedEffort, `${host}/${tier}: an entry with no effort has a fixed configuration`).toBe(true);
       }
     }
   });
 
-  it('carries the maintainer-specified model table', () => {
-    const m = (h: string): string[] => ['simple', 'medium', 'high'].map(t => CFG.hosts[h]!.tiers[t]!.model);
+  // The ordered lists themselves (the Neon and Argon Orchestrators, the Codex fallbacks) are pinned in host-agent-router-model-pool.test.ts.
+  it('carries the maintainer-specified model table: the first model of each tier', () => {
+    const m = (h: string): Array<string | undefined> => ['simple', 'medium', 'high'].map(t => { const e = firstOf(CFG.hosts[h]!.tiers[t]!); return e.model ?? e.displayName; });
     expect(CFG.priority).toEqual(['cline', 'antigravity', 'codex', 'claude']);
     expect(m('cline')).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'cline-pass/glm-5.3', 'cline-pass/kimi-k3.1-pro']);
-    expect(m('antigravity')).toEqual(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'gemini-4-argon-medium']);
-    expect(m('codex')).toEqual(['gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6-astra']);
+    expect(m('antigravity')).toEqual(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'Orchestrator (Carbon)']);
+    expect(m('codex')).toEqual(['gpt-6.1-terra', 'gpt-6.2-sol', 'gpt-6.2-astra']);
     expect(m('claude')).toEqual(['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5']);
   });
 
   it('lets a user override change one model without restating the rest, and rejects a broken override', async () => {
     const { mergeConfig, validateConfig } = await lib();
+    // The 1.1.2 shape (one model string for a tier) defines the tier completely, as before: effort medium (the 1.1.2 default of every tier), nothing inherited from the shipped entries.
     const merged = mergeConfig(CFG, { hosts: { codex: { tiers: { high: { model: 'gpt-6-sol' } } } } });
-    expect(merged.hosts.codex!.tiers.high).toEqual({ label: 'GPT-6-Astra', model: 'gpt-6-sol', effort: 'medium' });
+    expect(merged.hosts.codex!.tiers.high).toEqual({ model: 'gpt-6-sol', effort: 'medium' });
+    expect(mergeConfig(CFG, { hosts: { antigravity: { tiers: { high: { model: 'gemini-4-argon-medium' } } } } }).hosts.antigravity!.tiers.high).toEqual({ model: 'gemini-4-argon-medium', effort: 'medium' }); // never the fixed effort of the shipped Orchestrator
     expect(merged.hosts.codex!.tiers.simple).toEqual(CFG.hosts.codex!.tiers.simple);
-    expect(CFG.hosts.codex!.tiers.high!.model).toBe('gpt-6-astra'); // the base is not mutated
+    expect(firstOf(CFG.hosts.codex!.tiers.high!).model).toBe('gpt-6.2-astra'); // the base is not mutated
+    // A model override over a one-model tier defines it completely too (1.1.2 kept the label of the model it replaced, which named the wrong model).
+    expect(mergeConfig(CFG, { hosts: { cline: { tiers: { medium: { model: 'cline-pass/x' } } } } }).hosts.cline!.tiers.medium).toEqual({ model: 'cline-pass/x', effort: 'medium' });
     expect(validateConfig(merged)).toEqual([]);
     expect(validateConfig({ ...CFG, priority: ['cline', 'nope'] }).join('\n')).toContain('nope');
     expect(validateConfig(mergeConfig(CFG, { hosts: { claude: { tiers: { high: { model: '' } } } } })).join('\n')).toContain('claude');
@@ -252,7 +261,7 @@ describe('the default config', () => {
 describe('command building: the host CLI flags that carry model, effort and access', () => {
   const spec = async (host: string, tier = 'medium', access = 'read-only', cwd: string | null = '/work'): Promise<Spec> => {
     const { buildSpec } = await lib();
-    return buildSpec(CFG, host, CFG.hosts[host]!.tiers[tier]!, 'do the thing', access, cwd, tier);
+    return buildSpec(CFG, host, firstOf(CFG.hosts[host]!.tiers[tier]!), 'do the thing', access, cwd, tier);
   };
   const after = (a: string[], flag: string): string | undefined => a[a.indexOf(flag) + 1];
 
@@ -267,8 +276,8 @@ describe('command building: the host CLI flags that carry model, effort and acce
   it('Codex: exec with model, reasoning effort and a sandbox; edit is workspace-write, never full access', async () => {
     const s = await spec('codex', 'high');
     expect(s.args[0]).toBe('exec');
-    expect(after(s.args, '-m')).toBe('gpt-6-astra');
-    expect(s.args).toContain('model_reasoning_effort="medium"');
+    expect(after(s.args, '-m')).toBe('gpt-6.2-astra');
+    expect(s.args).toContain('model_reasoning_effort="high"');
     expect(after(s.args, '-s')).toBe('read-only');
     expect(s.args.at(-1)).toBe('-');
     expect(s.stdin).toContain('do the thing');
@@ -955,7 +964,7 @@ describe('one worker contract for every host: the guardrails skill and the hando
   it('tells an editing worker, on any host, the git-guardrails rules and the handoff report, naming both skills', async () => {
     const { buildSpec } = await lib();
     for (const host of ['cline', 'claude', 'codex', 'antigravity']) {
-      const spec = buildSpec(CFG, host, CFG.hosts[host].tiers.medium, 'TASK-BODY', 'edit', null, 'medium');
+      const spec = buildSpec(CFG, host, firstOf(CFG.hosts[host].tiers.medium), 'TASK-BODY', 'edit', null, 'medium');
       const text = (spec.stdin ?? (spec.args.find(a => a.includes('TASK-BODY')) as string)).toLowerCase();
       for (const w of ['git-guardrails', 'handoff', 'protected branch', 'force-push', 'secret', 'never push', 'do not commit']) expect(text, `${host}: ${w}`).toContain(w);
     }
@@ -979,7 +988,7 @@ describe('one worker contract for every host: the guardrails skill and the hando
 describe("the worker contract, enforced with each host's own controls", () => {
   const argsOf = async (host: string, access: string, extra?: { allowCmd?: string[] }) => {
     const { buildSpec } = await lib();
-    return buildSpec(CFG, host, CFG.hosts[host].tiers.medium, 'TASK', access, 'C:/w', 'medium', extra).args;
+    return buildSpec(CFG, host, firstOf(CFG.hosts[host].tiers.medium), 'TASK', access, 'C:/w', 'medium', extra).args;
   };
   const after = (a: string[], flag: string): string[] => { const i = a.indexOf(flag); const out: string[] = []; for (let j = i + 1; i >= 0 && j < a.length && !a[j]!.startsWith('--'); j++) out.push(a[j]!); return out; };
 
@@ -1001,7 +1010,7 @@ describe("the worker contract, enforced with each host's own controls", () => {
   // wildcard form tried (`npm test*`, `npm *`, `npm test:*`, `npm test *`). Anything not allowed is denied, and a denial ends the run with exit 0.
   it('Antigravity: edit runs in its sandbox, allowed only the exact command lines listed (wildcards do not work there), JSON result', async () => {
     const { buildSpec } = await lib();
-    const spec = buildSpec(CFG, 'antigravity', CFG.hosts.antigravity.tiers.medium, 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: ['npm run build'] });
+    const spec = buildSpec(CFG, 'antigravity', firstOf(CFG.hosts.antigravity.tiers.medium), 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: ['npm run build'] });
     const a = spec.args;
     expect(a).toContain('--sandbox');
     expect(a[a.indexOf('--output-format') + 1]).toBe('json');
@@ -1019,7 +1028,7 @@ describe("the worker contract, enforced with each host's own controls", () => {
 
   it('Antigravity read-only: the prompt says no shell command is available and that any attempt ends the run', async () => {
     const { buildSpec } = await lib();
-    const spec = buildSpec(CFG, 'antigravity', CFG.hosts.antigravity.tiers.medium, 'TASK', 'read-only', 'C:/w', 'medium', {});
+    const spec = buildSpec(CFG, 'antigravity', firstOf(CFG.hosts.antigravity.tiers.medium), 'TASK', 'read-only', 'C:/w', 'medium', {});
     const prompt = spec.args[spec.args.indexOf('-p') + 1]!;
     expect(prompt).toContain('Shell commands: none are available in this read-only run, and any shell command at all stops the run with no result.');
     expect(prompt).toContain('You can read a file only by its path: there is no tool here to list a folder or to search file contents.');
@@ -1030,7 +1039,7 @@ describe("the worker contract, enforced with each host's own controls", () => {
 
   it('Antigravity edit: the prompt keeps the edit note and does not carry the read-only note', async () => {
     const { buildSpec } = await lib();
-    const spec = buildSpec(CFG, 'antigravity', CFG.hosts.antigravity.tiers.medium, 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: ['npm run build'] });
+    const spec = buildSpec(CFG, 'antigravity', firstOf(CFG.hosts.antigravity.tiers.medium), 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: ['npm run build'] });
     const prompt = spec.args[spec.args.indexOf('-p') + 1]!;
     expect(prompt).toContain('only these exact command lines');
     expect(prompt).not.toContain('none are available in this read-only run');
@@ -1448,25 +1457,28 @@ type Lib2 = {
 const lib2 = async (): Promise<Lib2> => (await import(pathToFileURL(SCRIPT).href)) as unknown as Lib2;
 const CFGE = CFG as unknown as CfgE;
 const AGY_LISTED = ['gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-4-argon-low', 'gemini-4-argon-medium', 'gemini-4-argon-high',
-  'gemini-3.8-flash-low', 'gemini-3.8-flash-medium', 'gemini-3.8-flash-high'];
+  'gemini-3.8-flash-low', 'gemini-3.8-flash-medium', 'gemini-3.8-flash-high', 'gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro']; // the Orchestrator slugs: `agy models` on 2026-11-19
 
 describe('Antigravity tiers (from `agy models` on 2026-11-13)', () => {
-  it('uses Flash Medium for simple, Hydrogen for medium and Argon Medium for high', () => {
+  // Since 1.2.0 the high tier is an ordered list that starts with the Orchestrators (see host-agent-router-model-pool.test.ts); Argon Medium is no longer a tier model.
+  it('uses Flash Medium for simple and Hydrogen for medium as the first model, and Hydrogen High as the last of high', () => {
     const t = CFGE.hosts.antigravity!.tiers;
-    expect([t.simple!.model, t.simple!.effort]).toEqual(['gemini-3.8-flash-medium', 'medium']);
-    expect([t.medium!.model, t.medium!.effort, t.medium!.label]).toEqual(['gemini-4-hydrogen-medium', 'medium', 'Gemini 4 Hydrogen (Medium)']);
-    expect([t.high!.model, t.high!.effort]).toEqual(['gemini-4-argon-medium', 'medium']);
+    expect([firstOf(t.simple!).model, firstOf(t.simple!).effort]).toEqual(['gemini-3.8-flash-medium', 'medium']);
+    expect([firstOf(t.medium!).model, firstOf(t.medium!).effort, firstOf(t.medium!).label]).toEqual(['gemini-4-hydrogen-medium', 'medium', 'Gemini 4 Hydrogen (Medium)']);
+    expect(t.high!.models!.at(-1)).toMatchObject({ model: 'gemini-4-hydrogen-high', effort: 'high' });
   });
 
   it('lets Hydrogen go up to high and extra by job complexity', () => {
-    const e = CFGE.hosts.antigravity!.tiers.medium!.efforts!;
+    const e = firstOf(CFGE.hosts.antigravity!.tiers.medium!).efforts!;
     expect(e.high).toMatchObject({ model: 'gemini-4-hydrogen-high' });
     expect(e.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' });
   });
 
   it('names only models that `agy models` lists, in the tiers and in every effort', () => {
-    for (const [tier, t] of Object.entries(CFGE.hosts.antigravity!.tiers)) {
-      for (const m of [t.model, ...Object.values(t.efforts ?? {}).map(e => (typeof e === 'string' ? '' : e.model ?? ''))].filter(Boolean)) expect(AGY_LISTED, `${tier}: ${m}`).toContain(m);
+    for (const [tier, tt] of Object.entries(CFGE.hosts.antigravity!.tiers)) {
+      for (const t of (tt.models ?? [tt]) as TierE[]) {
+        for (const m of [t.model, ...Object.values(t.efforts ?? {}).map(e => (typeof e === 'string' ? '' : e.model ?? ''))].filter(Boolean)) expect(AGY_LISTED, `${tier}: ${m}`).toContain(m);
+      }
     }
   });
 
@@ -1487,14 +1499,14 @@ describe('Antigravity tiers (from `agy models` on 2026-11-13)', () => {
   it('lists the models to check, efforts included, once each', async () => {
     const { configuredModels } = await lib2();
     const m = configuredModels(CFGE, 'antigravity');
-    expect(m).toEqual(expect.arrayContaining(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-4-argon-medium']));
+    expect(m).toEqual(expect.arrayContaining(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-pro-orchestrator-neon']));
     expect(new Set(m).size).toBe(m.length);
-    expect(configuredModels(CFGE, 'codex')).toEqual(['gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6-astra']);
+    expect(configuredModels(CFGE, 'codex')).toEqual(['gpt-6.1-terra', 'gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-6-astra']);
   });
 });
 
 describe('an effort choice inside a tier', () => {
-  const agyMedium = (): TierE => CFGE.hosts.antigravity!.tiers.medium!;
+  const agyMedium = (): TierE => firstOf(CFGE.hosts.antigravity!.tiers.medium!);
 
   it('keeps the tier as it is when no effort is asked for', async () => {
     const { resolveEffort } = await lib2();
@@ -1512,16 +1524,16 @@ describe('an effort choice inside a tier', () => {
     const { resolveEffort, mergeConfig } = await lib2();
     const cfg = mergeConfig(CFGE, { hosts: { codex: { tiers: { medium: { efforts: { extra: 'xhigh' } } } } } });
     const r = resolveEffort(cfg, 'codex', 'medium', 'extra');
-    expect([r.model, r.effort, r.note]).toEqual(['gpt-6.1-sol', 'xhigh', null]);
+    expect([r.model, r.effort, r.note]).toEqual(['gpt-6.2-sol', 'xhigh', null]);
   });
 
   it('keeps the default and says so, as a note and not an error, when a host has no such entry', async () => {
     const { resolveEffort } = await lib2();
     const r = resolveEffort(CFGE, 'codex', 'medium', 'extra');
-    expect([r.model, r.effort]).toEqual(['gpt-6.1-sol', 'medium']);
+    expect([r.model, r.effort]).toEqual(['gpt-6.2-sol', 'medium']);
     expect(r.note).toMatch(/codex/);
     expect(r.note).toMatch(/extra/);
-    expect(r.note).toMatch(/gpt-6\.1-sol/);
+    expect(r.note).toMatch(/gpt-6\.2-sol/);
   });
 
   it('treats the default effort of a tier as always known, with no note', async () => {
@@ -1575,7 +1587,7 @@ describe('an effort choice inside a tier', () => {
     const cfg = mergeConfig(CFGE, { hosts: { antigravity: { tiers: { medium: { efforts: { extra: { model: 'gemini-4-hydrogen-high' }, max: { model: 'gemini-4-hydrogen-xhigh' } } } } } } });
     expect(validateConfig(cfg)).toEqual([]);
     expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').model).toBe('gemini-4-hydrogen-high');
-    expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').label).toBe((agyMedium().efforts!.extra as { label: string }).label); // the label was not restated
+    expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').label).toBe('gemini-4-hydrogen-high'); // since 1.2.0 the user map is the tier's own: the label of the shipped entry of that name is not inherited (name it, or the model name shows)
     expect(resolveEffort(cfg, 'antigravity', 'medium', 'max').model).toBe('gemini-4-hydrogen-xhigh');
     expect(resolveEffort(cfg, 'antigravity', 'medium', 'high').model).toBe('gemini-4-hydrogen-high');
     expect(agyMedium().efforts!.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' }); // the base is not mutated
@@ -1703,8 +1715,8 @@ describe('skills for the worker (--skill)', () => {
     const skills = [{ name: 'demo', text: '# Demo\nbody line' }, { name: 'other', text: 'second skill text' }];
     for (const access of ['read-only', 'edit']) {
       for (const host of ['cline', 'claude', 'codex', 'antigravity']) {
-        const plain = promptOf(buildSpec(CFGE, host, CFGE.hosts[host]!.tiers.medium!, 'TASK-BODY', access, '/w', 'medium'));
-        const withSkills = promptOf(buildSpec(CFGE, host, CFGE.hosts[host]!.tiers.medium!, 'TASK-BODY', access, '/w', 'medium', { skills }));
+        const plain = promptOf(buildSpec(CFGE, host, firstOf(CFGE.hosts[host]!.tiers.medium!), 'TASK-BODY', access, '/w', 'medium'));
+        const withSkills = promptOf(buildSpec(CFGE, host, firstOf(CFGE.hosts[host]!.tiers.medium!), 'TASK-BODY', access, '/w', 'medium', { skills }));
         const head = plain.slice(0, plain.length - 'TASK-BODY'.length);
         expect(withSkills.startsWith(head), `${host}/${access}: the contract stays first, word for word`).toBe(true);
         expect(withSkills.endsWith('TASK-BODY'), `${host}/${access}: the task stays last`).toBe(true);
@@ -1910,9 +1922,9 @@ describe('the documents describe the new behaviour in one wording', () => {
     }
   });
 
-  it('SKILL.md is version 1.1.2 and names the new options', () => {
+  it('SKILL.md is version 1.2.0 and names the new options', () => {
     const t = doc('SKILL.md');
-    expect(t).toMatch(/version: 1\.1\.2/);
+    expect(t).toMatch(/version: 1\.2\.0/);
     for (const w of ['--effort', '--skill', 'router.mjs" machine', '--pin-host']) expect(t, w).toContain(w);
   });
 
@@ -2027,7 +2039,7 @@ describe('the Antigravity allow rules: a full-path rule for a bare program that 
 
   it('buildSpec: rules and worker note carry the full-path form on Windows; read-only runs and the other hosts do not change', async () => {
     const { buildSpec } = await load();
-    const t = CFG.hosts.antigravity.tiers.medium;
+    const t = firstOf(CFG.hosts.antigravity.tiers.medium);
     const edit = (host: string, extra: Record<string, unknown>): SpecN => buildSpec(CFG, host, CFG.hosts[host]!.tiers.medium, 'TASK', 'edit', 'C:/w', 'medium', extra);
     const win = edit('antigravity', { platform: 'win32', home: NOHOME, resolve: exe, allowCmd: ['tool run'] });
     const allow = (JSON.parse(win.args[win.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
@@ -2122,7 +2134,7 @@ describe('the Antigravity read-only mount of a program folder inside the user pr
 
   it('buildSpec: the rule is in --settings and the dry-run notes, an edit run only, and the home path is not in the notes', async () => {
     const { buildSpec } = await load();
-    const t = CFG.hosts.antigravity.tiers.medium;
+    const t = firstOf(CFG.hosts.antigravity.tiers.medium);
     const extra = { platform: 'linux', home: '/home/u', resolve: (n: string) => (n === 'node' ? '/home/u/.nvm/v24/bin/node' : null), realpath: (p: string) => p };
     const edit = buildSpec(CFG, 'antigravity', t, 'TASK', 'edit', '/work/repo', 'medium', extra);
     const allow = (JSON.parse(edit.args[edit.args.indexOf('--settings') + 1]!) as { permissions: { allow: string[] } }).permissions.allow;
@@ -2256,7 +2268,7 @@ describe('operator mistakes caught before a worker starts (2026-11-15)', () => {
     const lines = Array.from({ length: 8 }, (_, i) => `node tests/check-${i}.mjs ${'x'.repeat(300)}`);
     const build = async (prompt: string, allowCmd: string[], resolve: (n: string) => string | null = exe): Promise<{ args: string[]; notes?: string[] }> => {
       const { buildSpec } = await lib2();
-      return buildSpec(CFGE, 'antigravity', CFGE.hosts.antigravity!.tiers.medium!, prompt, 'edit', 'C:/w', 'medium', { allowCmd, platform: 'win32', home: NOHOME, resolve } as never) as never;
+      return buildSpec(CFGE, 'antigravity', firstOf(CFGE.hosts.antigravity!.tiers.medium!), prompt, 'edit', 'C:/w', 'medium', { allowCmd, platform: 'win32', home: NOHOME, resolve } as never) as never;
     };
     const size = (a: string[]): number => a.reduce((n, x) => n + x.length + 1, 0);
     const fullRules = (s: { args: string[] }): string[] =>
@@ -2311,7 +2323,7 @@ describe('operator mistakes caught before a worker starts (2026-11-15)', () => {
 
     it('the rule of each host stays inside its syntax: Claude Bash(<cmd>:*), Antigravity command(<line>) as JSON, Cline and Codex carry nothing', async () => {
       const { buildSpec } = await lib2();
-      const spec = (host: string): Spec => buildSpec(CFGE, host, CFGE.hosts[host]!.tiers.medium!, 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: [LINE, BACK] });
+      const spec = (host: string): Spec => buildSpec(CFGE, host, firstOf(CFGE.hosts[host]!.tiers.medium!), 'TASK', 'edit', 'C:/w', 'medium', { allowCmd: [LINE, BACK] });
       const claude = spec('claude').args;
       expect(claude).toEqual(expect.arrayContaining([`Bash(${LINE}:*)`, `Bash(${BACK}:*)`]));
       const agy = spec('antigravity').args;
@@ -2369,7 +2381,7 @@ describe('operator mistakes caught before a worker starts (2026-11-15)', () => {
       expect(t).toContain('--allow-cmd-file');
       expect(t).toMatch(/dry.run[^.\n]*(length|too long)[^.\n]*exact lines/i);
       expect(t).toContain('`too_long`');
-      expect(t).toMatch(/version: 1\.1\.2/);
+      expect(t).toMatch(/version: 1\.2\.0/);
     });
 
     it('the brief guide has an Antigravity paragraph: number every command line, no env var or directory change, the shell is not for reading files', () => {
@@ -2716,7 +2728,7 @@ describe('a temp folder the Antigravity sandbox can use (edit runs, 2026-11-15)'
       const t = doc('SKILL.md');
       expect(t.length).toBeLessThanOrEqual(6000);
       expect(t.split('\n').length).toBeLessThanOrEqual(90);
-      expect(t).toMatch(/version: 1\.1\.2/);
+      expect(t).toMatch(/version: 1\.2\.0/);
     });
   });
 });

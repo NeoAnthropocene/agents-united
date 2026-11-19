@@ -23,6 +23,9 @@ interface Lib {
 }
 const lib = async (): Promise<Lib> => (await import(pathToFileURL(SCRIPT).href)) as Lib;
 
+/** The first model of a tier: the tier itself in the old shape, models[0] in the list shape (what buildSpec reads as t). */
+const firstOf = (t: any): any => t.models?.[0] ?? t;
+
 const dirs: string[] = [];
 afterEach(() => {
   while (dirs.length > 0) fs.rmSync(dirs.pop()!, { recursive: true, force: true });
@@ -109,7 +112,7 @@ describe('the flag and the config key', () => {
 describe('the command lines', () => {
   const spec = async (host: string, access: string, extra: Record<string, unknown> = {}) => {
     const { buildSpec } = await lib();
-    return buildSpec(CFG, host, CFG.hosts[host].tiers.medium, 'TASK', access, 'C:/w', 'medium', extra);
+    return buildSpec(CFG, host, firstOf(CFG.hosts[host].tiers.medium), 'TASK', access, 'C:/w', 'medium', extra);
   };
 
   it('Claude gets the flag and the value as two elements directly before --output-format, and only then', async () => {
@@ -159,14 +162,14 @@ describe('the budget field and the notes', () => {
   });
 
   it('the uncapped dry run is byte-identical to the one before this change (one candidate per Host, taken from the unchanged script)', () => {
-    // The expected text was captured on 2026-11-16 from the script as it was before R6 (same statuses, same prompt), with the temp
+    // The expected text was captured on 2026-11-16 from the script as it was before R6 (same statuses, same prompt; since 1.2.0 the Codex simple tier has a second model, so its entry also carries `alternates`), with the temp
     // working directory replaced by <CWD>; the args of each Host are compared whole.
     const want: Record<string, string[]> = {
-      codex: ['exec', '-m', CFG.hosts.codex.tiers.simple.model, '-c', `model_reasoning_effort="${CFG.hosts.codex.tiers.simple.effort}"`, '-s', 'read-only', '--skip-git-repo-check', '--color', 'never', '-C', '<CWD>', '-'],
+      codex: ['exec', '-m', CFG.hosts.codex.tiers.simple.models[0].model, '-c', `model_reasoning_effort="${CFG.hosts.codex.tiers.simple.models[0].effort}"`, '-s', 'read-only', '--skip-git-repo-check', '--color', 'never', '-C', '<CWD>', '-'],
     };
     const cwd = tmp();
     const r = run(['run', '--tier', 'simple', '--prompt', 'Say hi', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', cwd]);
-    expect(Object.keys(entry(r, 'codex'))).toEqual(['host', 'side', 'model', 'effort', 'label', 'binding_pct', 'five_hour_pct', 'weekly_pct', 'cwd', 'prompt_chars', 'args', 'prompt_via']);
+    expect(Object.keys(entry(r, 'codex'))).toEqual(['host', 'side', 'model', 'effort', 'label', 'binding_pct', 'five_hour_pct', 'weekly_pct', 'alternates', 'cwd', 'prompt_chars', 'args', 'prompt_via']);
     expect(entry(r, 'codex').args.map((a: string) => (a === cwd ? '<CWD>' : a))).toEqual(want.codex);
     expect(Object.keys(r.json)).toEqual(['dry_run', 'access', 'skills', 'plan', 'would_try']);
   });
@@ -224,7 +227,7 @@ describe('the far side', () => {
     // Without a cap the payload has no flag; for another Host it has none either way.
     const none = execPayload(buildSpec(CFG, 'claude', t, 'TASK', 'read-only', '/work', 'medium'), { host: 'claude', cwd: '/work', timeout: 900 });
     expect(none.args).not.toContain('--max-budget-usd');
-    const codex = execPayload(buildSpec(CFG, 'codex', CFG.hosts.codex.tiers.medium, 'TASK', 'read-only', '/work', 'medium', { maxBudgetUsd: 5 }), { host: 'codex', cwd: '/work', timeout: 900 });
+    const codex = execPayload(buildSpec(CFG, 'codex', firstOf(CFG.hosts.codex.tiers.medium), 'TASK', 'read-only', '/work', 'medium', { maxBudgetUsd: 5 }), { host: 'codex', cwd: '/work', timeout: 900 });
     expect(codex.args).not.toContain('--max-budget-usd');
   });
 
