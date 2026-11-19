@@ -1,6 +1,6 @@
 # Plan 033, a sitting case for the agent-teams variable (prepared 2026-11-17)
 
-This is one short interactive case the maintainer can sit himself. It is prepared, not run. It was written by the lead of the session that started on 2026-11-17 after the merge of pull request 219 (an AI session), because that lead had told the maintainer to clear `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` before starting the factory coordinator and could not justify the advice.
+This is one short interactive case the maintainer can sit himself. It was prepared on 2026-11-17 and sat by him on 2026-11-19: arm A printed `TEAMS=[0] FORK=[]`, arm B `TEAMS=[1] FORK=[]`, as expected; the result is recorded in [the observation of that day](../host-library/claude/observations/2026-11-19-claude-2.1.328-guards-interactive-by-the-maintainer.md). It was written by the lead of the session that started on 2026-11-17 after the merge of pull request 219 (an AI session), because that lead had told the maintainer to clear `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` before starting the factory coordinator and could not justify the advice.
 
 ## Why the case exists
 
@@ -24,17 +24,19 @@ This is one short interactive case the maintainer can sit himself. It is prepare
 
 Each arm is one prompt in one new interactive session on the maintainer's subscription. An interactive session has no budget cap.
 
+Correction, 2026-11-19: as first written, the preparation pointed at the checkout the factory had been installed into on 2026-11-17, and arm A started it with that checkout's own `dist\cli.js`. By 2026-11-19 that checkout had been rebuilt from a later `dev`, and the maintainer's first attempt at arm A was refused by the launcher: "Claude factory startup: critical guard bytes differ .claude/hooks/agents-united-guard.js. Run 'agents update agent-factory --fanout claude --native' in this workspace." The refusal is the launcher's check doing its work: the installed guard script was older than the build that started it. The case now uses a workspace installed from the same build that starts it. `<workspace>` is a new git folder with `node <built dev checkout>\dist\cli.js add agent-factory -t claude --native --allow-under-construction --copy -y`.
+
 Preparation, once:
 
 ```powershell
-cd C:\github\agents-united\.claude\worktrees\agent-factory-plan-setup-3640f9
+cd <workspace>
 $env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
 ```
 
 Arm A:
 
 ```powershell
-node dist\cli.js start agent-factory --host claude
+node <built dev checkout>\dist\cli.js start agent-factory --host claude
 ```
 
 Arm B (after arm A is closed):
