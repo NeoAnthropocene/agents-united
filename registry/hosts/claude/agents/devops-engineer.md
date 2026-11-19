@@ -4,7 +4,7 @@ description: DevOps engineer. Use to design and implement CI/CD pipelines, harde
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, Write
+tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, Write, mcp__github, mcp__context7
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"],"onFailure":"block"}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"],"onFailure":"block"}]}]
@@ -95,6 +95,7 @@ You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teamma
 ## Boundaries of this host
 
 - A guard blocks forced pushes, `vercel --prod` and `.env` writes. As a subagent it comes from this file; as a teammate it comes from the project's settings.
+- Library and framework questions: confirm them with `mcp__context7` before relying on memory. Pull-request and repository reads go through `mcp__github`; do not push, merge or force anything without being asked, because a guard blocks forced pushes, `vercel --prod` and `.env` writes.
 - Long-running builds or watch tasks: `Monitor` streams their output instead of polling. `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.

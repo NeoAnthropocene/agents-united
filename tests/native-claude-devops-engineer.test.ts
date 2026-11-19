@@ -85,6 +85,19 @@ describe('native devops-engineer: the peers section of the engineering family', 
   });
 });
 
+describe('native devops-engineer: the MCP servers of its canonical agent', () => {
+  it('holds github and context7 in its tools line and says when to use them', () => {
+    const tools = /^tools: (.*)$/m.exec(text())![1]!.split(', ');
+    expect(tools).toEqual(expect.arrayContaining(['mcp__github', 'mcp__context7']));
+    expect(text()).toContain('- Library and framework questions: confirm them with `mcp__context7` before relying on memory. Pull-request and repository reads go through `mcp__github`; do not push, merge or force anything without being asked, because a guard blocks forced pushes, `vercel --prod` and `.env` writes.');
+  });
+
+  it('declares the same servers as the canonical registry agent', () => {
+    const canonical = fs.readFileSync(path.resolve('registry/agents/subagent-devops-engineer.md'), 'utf8').replace(/\r\n/g, '\n');
+    expect([...canonical.matchAll(/^  - name: (github|context7)$/gm)].map(match => match[1]).sort()).toEqual(['context7', 'github']);
+  });
+});
+
 describe('native devops-engineer: permission mode', () => {
   it('equals the value of the canonical registry agent', () => {
     const mode = (source: string): string | undefined => /^permissionMode: (.+)$/m.exec(source.replace(/\r\n/g, '\n'))?.[1];
