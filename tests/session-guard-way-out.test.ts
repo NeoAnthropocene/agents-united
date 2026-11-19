@@ -221,7 +221,7 @@ describe('the session script blocks with both commands when it cannot do its wor
     expect(result.stderr).toContain('agents update --all --global --no-session-guard');
   });
 
-  it('one template: the patterns are the generic script\'s, and the regex literal count is unchanged', () => {
+  it('one template: the patterns are the generic script\'s, and the regex literal count is the same in every form', () => {
     const count = (script: string): number => [...script.matchAll(/\/((?:\\.|[^/\\\n])+)\/\.test\(/g)].length;
     expect(count(GUARD_SCRIPT)).toBeGreaterThanOrEqual(4);
     expect(count(sessionGuardScript('project'))).toBe(count(GUARD_SCRIPT));

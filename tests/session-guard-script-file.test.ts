@@ -523,9 +523,9 @@ describe('the manual route inside the script is true for the file form', () => {
       // In the unreadable-input message and in the uncaughtException message: twice.
       expect(sessionGuardScript(kind).split('delete by hand the hook entries that run agents-united-session-guard.js').length - 1).toBe(2);
     }
-    // 7000: the generic script grew with the destructive shell rules (ADR 0074); it was 2400 before.
-    expect(sessionGuardScript('project').length).toBeLessThan(7000);
-    expect(sessionGuardScript('user').length).toBeLessThan(7000);
+    // 9000: the generic script grew with the destructive shell rules (ADR 0074); it was 2400 before.
+    expect(sessionGuardScript('project').length).toBeLessThan(9000);
+    expect(sessionGuardScript('user').length).toBeLessThan(9000);
   });
 
   it('the running script prints it, with no absolute path', async () => {

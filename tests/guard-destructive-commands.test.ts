@@ -59,7 +59,7 @@ const BLOCK: Array<[string, string]> = [
   ['echo $(rm -rf ~)', 'recursive delete'],
   ['echo "$(rm -rf /)"', 'recursive delete'],
   ['rm \\\n  -rf /', 'recursive delete'],
-  ['cat <<EOF\nrm -rf /\nEOF', 'recursive delete'],
+  ['sh <<EOF\nrm -rf /\nEOF', 'recursive delete'],
   ['rm -rf dist\r\nrm -rf /', 'recursive delete'],
   ['rimraf .', 'recursive delete'],
   ['Remove-Item -Recurse -Force C:\\', 'recursive delete'],

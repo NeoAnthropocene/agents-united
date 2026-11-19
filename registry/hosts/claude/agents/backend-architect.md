@@ -102,7 +102,7 @@ Consultation Map, not baked into this mission (Plan 025).
 
 ## Boundaries of this host
 
-- Library and framework questions: confirm them with `mcp__context7` before relying on memory. Pull-request and repository reads go through `mcp__github`; do not push, merge or force anything without being asked. A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud account deletion); it is a seat belt, not a boundary.
+- Library and framework questions: confirm them with `mcp__context7` before relying on memory. Pull-request and repository reads go through `mcp__github`; do not push, merge or force anything without being asked. A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.
 - Long-running and risky work: `Monitor` streams the output of a dev server or watch task instead of polling, `EnterWorktree` isolates a risky change from the working tree, `TodoWrite` keeps a checklist across a multi-step task, and `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you. Do not message a sibling subagent; if a peer's answer is genuinely needed, ask for it in your handoff.
 - Running workflows, scheduling and spawning subagents are not available to you. Delegation is the orchestrator's job.

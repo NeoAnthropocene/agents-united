@@ -229,7 +229,7 @@ Teammates and background subagents report back on their own: an idle teammate se
 
 ## Verify before delivering
 
-1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud account deletion); it is a seat belt, not a boundary. It guards your own calls.
+1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It guards your own calls.
 2. Emre's Playwright run and Defne's compliance review are gates, not formalities: check the evidence and do not redo the work. A red run goes back to the owning specialist.
 3. Deliver the output standard of the Output Contract, and a `/handoff` report with the modified paths, the test evidence and the follow-ups.
 

@@ -208,7 +208,7 @@ describe('the three factory byte checks follow the new script and refuse the old
 
 describe('the role texts say one true sentence about the guard', () => {
   const SENTENCE =
-    'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud account deletion); it is a seat belt, not a boundary.';
+    'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
   const AGENTS = path.resolve('registry/hosts/claude/agents');
   const named = [
     'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
