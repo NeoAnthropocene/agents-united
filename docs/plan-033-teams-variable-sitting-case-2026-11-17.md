@@ -1,6 +1,6 @@
 # Plan 033, a sitting case for the agent-teams variable (prepared 2026-11-17)
 
-This is one short interactive case the maintainer can sit himself. It is prepared, not run. It was written by the lead of the session that started on 2026-11-17 after the merge of pull request 219 (an AI session), because that lead had told the maintainer to clear `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` before starting the factory coordinator and could not justify the advice.
+This is one short interactive case the maintainer can sit himself. It was prepared on 2026-11-17 and sat by him on 2026-11-19: arm A printed `TEAMS=[0] FORK=[]`, arm B `TEAMS=[1] FORK=[]`, as expected; the result is recorded in [the observation of that day](../host-library/claude/observations/2026-11-19-claude-2.1.328-guards-interactive-by-the-maintainer.md). It was written by the lead of the session that started on 2026-11-17 after the merge of pull request 219 (an AI session), because that lead had told the maintainer to clear `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` before starting the factory coordinator and could not justify the advice.
 
 ## Why the case exists
 
