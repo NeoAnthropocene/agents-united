@@ -238,7 +238,7 @@ describe('the default config', () => {
     expect(CFG.priority).toEqual(['cline', 'antigravity', 'codex', 'claude']);
     expect(m('cline')).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'cline-pass/glm-5.3', 'cline-pass/kimi-k3.1-pro']);
     expect(m('antigravity')).toEqual(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'Orchestrator (Carbon)']);
-    expect(m('codex')).toEqual(['gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.2-astra']);
+    expect(m('codex')).toEqual(['gpt-6.1-terra', 'gpt-6.2-sol', 'gpt-6.2-astra']);
     expect(m('claude')).toEqual(['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5']);
   });
 
@@ -1501,7 +1501,7 @@ describe('Antigravity tiers (from `agy models` on 2026-11-13)', () => {
     const m = configuredModels(CFGE, 'antigravity');
     expect(m).toEqual(expect.arrayContaining(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-pro-orchestrator-neon']));
     expect(new Set(m).size).toBe(m.length);
-    expect(configuredModels(CFGE, 'codex')).toEqual(['gpt-6-luna', 'gpt-6.1-terra', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-6-astra']);
+    expect(configuredModels(CFGE, 'codex')).toEqual(['gpt-6.1-terra', 'gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-6-astra']);
   });
 });
 
