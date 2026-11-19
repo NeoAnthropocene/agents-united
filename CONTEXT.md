@@ -866,7 +866,7 @@ A short Markdown sheet and a JSON twin (`.agents-united/system-specs.md` and `.j
 _Avoid_: Project facts, a settings dump, an environment report
 
 **Collect once**:
-`collect` of the `system-specs` Skill writes the sheet the first time and then reuses it whatever its age while its fingerprint is identical or differs only in PATH; any other difference, or an invalid or foreign sheet, collects again and names the parts that differed. Only the coordinating agent, or an agent working alone, runs `collect --refresh`.
+`collect` of the `system-specs` Skill writes the sheet the first time and then reuses it whatever its age while its fingerprint is identical or differs only in PATH; any other difference, or an invalid or foreign sheet, collects again and names the parts that differed. A sheet with a higher schema number than the script writes is refused (exit 2), never overwritten. Only the coordinating agent, or an agent working alone, runs `collect --refresh`.
 _Avoid_: Daily refresh, age limit, a specialist refreshing the sheet
 
 **Check**:
