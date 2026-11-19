@@ -25,8 +25,8 @@
     },
     {
       "id": 5,
-      "prompt": "You work alone with no lead. You switched node versions with nvm and the check command says unchanged, but node --version now differs from the sheet. What do you do?",
-      "expected_output": "Explains that the check cannot see a version manager switching behind one unchanged shim, so unchanged means not seen, and runs collect --refresh itself because there is no coordinating agent. Then reads the new version from the sheet."
+      "prompt": "You work alone with no lead. You switched python versions with pyenv and the check command says unchanged, but python --version now differs from the sheet. What do you do?",
+      "expected_output": "Explains that the check cannot see a shim manager such as pyenv switching behind one unchanged shim, so unchanged means not seen, and runs collect --refresh itself because there is no coordinating agent. Then reads the new version from the sheet."
     }
   ]
 }

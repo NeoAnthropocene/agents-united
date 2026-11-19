@@ -33,4 +33,4 @@ Not determined (found, but timed out or failed): gcloud
 
 Later the database specialist is about to write the compose file. It runs `check`: exit 3, "changed: podman". It does not refresh the sheet. It reports to the coordinating agent: "podman now resolves on the path; the sheet says absent; please update." The coordinating agent runs `collect --refresh` and tells the specialists that depend on the sheet. A specialist working alone would run `collect --refresh` itself.
 
-If `check` had said "unchanged" while the specialist saw a different node version after a version-manager switch, the same report applies: `check` cannot see that, and `--refresh` is the answer.
+If `check` had said "unchanged" while the specialist saw a different python version after a pyenv switch, the same report applies: `check` cannot see that, and `--refresh` is the answer.
