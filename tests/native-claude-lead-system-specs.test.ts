@@ -75,11 +75,12 @@ describe('Step 0 collects the machine facts once', () => {
   it('refreshes only on a specialist request or the user, and tells the specialists that depend on it', () => {
     expect(SPECS).toMatch(/`collect --refresh` only when a specialist asks for an update or the user does/);
     expect(SPECS).toMatch(/tell the specialists that depend on the sheet/);
-    expect(SKILL).toMatch(/Only the coordinating agent, or an agent working alone, runs `collect --refresh`/);
+    expect(SKILL).toMatch(/Only the coordinating agent, or an agent working alone, runs `collect`; a specialist runs `check` only\./);
+    expect(SKILL).not.toMatch(/running it again is cheap/);
   });
 
-  it('never lets a collector failure block the work, in the same words as the Skill', () => {
-    expect(SPECS).toMatch(/If `collect` fails \(exit 1 or 2, no Node\), say so once and plan without the sheet/);
+  it('never lets a collector failure or a refused shell call block the work, in the same words as the Skill', () => {
+    expect(SPECS).toMatch(/If `collect` fails or is refused \(exit 1 or 2, no Node, a refused shell call\), say so once and plan without the sheet/);
     expect(SKILL).toMatch(/say so once and plan without the sheet/);
   });
 
@@ -122,6 +123,7 @@ describe('every brief carries the sheet and the rule', () => {
     expect(skillAt).toBeGreaterThan(-1);
     expect(checkAt).toBeGreaterThan(skillAt);
     expect(SPECS_LINE).toMatch(/If you hold a shell, load the Skill/);
+    expect(SPECS_LINE).toMatch(/run its `check` from the project folder/);
   });
 
   it('says what to do on a change: three triggers, where to report, ask once, mark it unknown, no second check, never refresh', () => {
@@ -131,9 +133,10 @@ describe('every brief carries the sheet and the rule', () => {
     expect(SPECS_LINE).toMatch(/under `Open items`/);
     expect(SPECS_LINE).toMatch(/in team mode you may message me/);
     expect(SPECS_LINE).toMatch(/ask for an update, once/);
-    expect(SPECS_LINE).toMatch(/marked unknown/);
+    expect(SPECS_LINE).toMatch(/until it arrives, continue with that fact marked unknown/);
     expect(SPECS_LINE).toMatch(/do not check again/);
-    expect(SPECS_LINE).toMatch(/[Nn]ever refresh it yourself/);
+    expect(SPECS_LINE).toMatch(/Never run `collect` yourself, with or without `--refresh`\./);
+    expect(SPECS_LINE).not.toMatch(/refresh it yourself/);
   });
 
   it('means the same as the Skill: the clauses of the Skill that the brief must repeat are in both', () => {
@@ -141,6 +144,8 @@ describe('every brief carries the sheet and the rule', () => {
       expect(SKILL_STEP3, `Skill: ${clause}`).toContain(clause);
       expect(SPECS_LINE, `brief: ${clause}`).toContain(clause);
     }
+    expect(SKILL_STEP3).toMatch(/until the update arrives[^.]*marked unknown/);
+    expect(SPECS_LINE).toMatch(/until it arrives[^.;]*marked unknown/);
     expect(SKILL_STEP3).not.toMatch(/at most once per task/);
     expect(LEAD).not.toMatch(/at most once per task/);
   });
