@@ -9,7 +9,7 @@ skills:
   - evaluate-artifact
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
-  PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|Agent|Workflow|CronCreate|EnterWorktree|Artifact|SendUserFile|mcp__.*","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js"],"onFailure":"block"}]}]
+  PreToolUse: [{"matcher":"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit|Agent|Workflow|CronCreate|EnterWorktree|Artifact|SendUserFile|mcp__.*","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-readonly-guard.js"],"onFailure":"block"}]},{"matcher":"SubagentHandback","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/skills/evaluate-artifact/scripts/precheck-handback.mjs"]}]}]
   # agents-united:hooks:end
 ---
 
@@ -55,4 +55,4 @@ Return missing required evidence without inventing approval. Apply the fixed rub
 
 The class-derived allowlist and existing read-only guard narrow tool operations; neither supplies path isolation, offline confinement or sender authorization. Read classes include conditional MCP-resource readers (`ListMcpResourcesTool` and `ReadMcpResourceTool`, when supplied), but this task selects only local supplied evidence. The guard filters matched tool names/MCP verbs; trust, missing/crashed hooks and actual subagent execution remain Host-proof limits. No permissionMode, memory, server override or messaging/delegation grant is added.
 
-Your hand-back (the SubagentHandback message, or your final message where that tool is absent) is exactly ONE JSON object that validates against `assets/result.schema.json`, with no text before or after it, no code fence and no headings. ReportFindings, when supplied, may present findings but cannot replace the complete record. This ordinary Agent worker returns once, in the foreground or the background: no teammate shutdown frames, resumed peer, mailbox polling or lifecycle-notice wait. Tier-2 mode-line/agency-team mechanics are inapplicable.
+Your hand-back (the SubagentHandback message, or your final message where that tool is absent) is exactly ONE JSON object that validates against `assets/result.schema.json`, with no text before or after it, no code fence and no headings. Where the Host supports it, a hand-back the caller's check would refuse is blocked and the reason is shown to you; correct every item listed and hand back the complete result again. After three blocked attempts it goes through as it is. ReportFindings, when supplied, may present findings but cannot replace the complete record. This ordinary Agent worker returns once, in the foreground or the background: no teammate shutdown frames, resumed peer, mailbox polling or lifecycle-notice wait. Tier-2 mode-line/agency-team mechanics are inapplicable.

@@ -8,6 +8,7 @@ import { renderHooks } from '../src/core/native-floor.js';
 import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks, readOnlyGuardHandler, readOnlyGuardHooks } from '../src/core/readonly-guard.js';
+import { expectedWorkerHooks } from '../src/core/handback-check.js';
 import yaml from 'yaml';
 import { attempt, ON_FAILURE_BLOCK_MESSAGE, preToolUseGroups, type HookHandler } from './helpers/claude-host-hooks.js';
 
@@ -88,6 +89,10 @@ describe('every committed native Claude agent with a hooks block', () => {
       const target = String(handler.args?.[0] ?? '');
       if (/agents-united-mode-line-gate\.js$/.test(target)) {
         expect(handler, `${file} mode-line`).not.toHaveProperty('onFailure');
+      } else if (/\/precheck-handback\.mjs$/.test(target)) {
+        // The hand-back hook of the factory evaluator (ADR 0070) is not a guard: it fails open on purpose, so it carries no onFailure, and no other role has it.
+        expect(file).toBe('factory-evaluator.md');
+        expect(handler, `${file} hand-back`).not.toHaveProperty('onFailure');
       } else {
         expect(target, `${file} guard`).toMatch(/agents-united-(readonly-)?guard\.js$/);
         expect(handler.onFailure, `${file} ${target}`).toBe('block');
@@ -110,7 +115,7 @@ describe('the hooks block of every committed native Claude agent is what the rea
       expect(text, `${file} has no guard and no generated hooks block`).not.toContain('agents-united:hooks:start');
       return;
     }
-    const base = guard === 'read-only' ? readOnlyGuardFileHooks() : nativeGuardFileHooks();
+    const base = expectedWorkerHooks(file.replace(/\.md$/, ''), guard);
     const hooks = file === 'orchestrator-digital-agency.md' ? { PreToolUse: [...base.PreToolUse, ...modeLineGateHooks().PreToolUse] } : base;
     const block = /# agents-united:hooks:start[^\n]*\n([\s\S]*?)\n  # agents-united:hooks:end/.exec(text)?.[1];
     expect(block, file).toBe(renderHooks(hooks));

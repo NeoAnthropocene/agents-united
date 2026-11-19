@@ -1,6 +1,6 @@
 # Return review data; the caller persists it
 
-Your hand-back (the SubagentHandback message, or your final message where that tool is absent) is exactly ONE JSON object that validates against `assets/result.schema.json`, with no text before or after it, no code fence and no headings. [A minimal valid result](../assets/result.example.json) shows the shape; every hash, id, path, line and quote in it is a placeholder for your own values from the job.
+Your hand-back (the SubagentHandback message, or your final message where that tool is absent) is exactly ONE JSON object that validates against `assets/result.schema.json`, with no text before or after it, no code fence and no headings. Where the Host supports it, a hand-back the caller's check would refuse is blocked and the reason is shown to you; correct every item listed and hand back the complete result again. After three blocked attempts it goes through as it is. [A minimal valid result](../assets/result.example.json) shows the shape; every hash, id, path, line and quote in it is a placeholder for your own values from the job.
 
 Return result.schema.json data with the original job ID/digests, unchanged subject, complete actual inventory pins and one coverage row per file. Set inventorySource to caller-provided; read-only tools do not recompute them. Report criterion outcomes, grounded findings, deterministic-evidence observations, limitations, live unverified, explicit open items and acceptedDraft false.
 

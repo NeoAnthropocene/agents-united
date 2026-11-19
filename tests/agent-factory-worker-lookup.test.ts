@@ -11,6 +11,7 @@ import { FACTORY_BINDINGS, FACTORY_WORKERS, assertClaudeFactoryRoleMechanics, as
   factoryEntryBySkill, factoryWorkerByRole, factoryWorkerBySkill, normalizeClaudeFactoryCoordinatorTools } from '../src/core/claude-factory-declaration.js';
 import { nativeGuardFileHooks } from '../src/core/guard.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
+import { expectedWorkerHooks, handbackCheckHooks } from '../src/core/handback-check.js';
 import { prepareFactoryCoordinator } from './helpers/factory-coordinator.js';
 import type { ClaudeFactoryBinding, LockfileManifest } from '../src/core/types.js';
 
@@ -40,11 +41,31 @@ describe('factory worker posture lookup', () => {
       nativeWorkerText('factory-realizer', 'realize-artifact', REALIZER_GRANT, nativeGuardFileHooks()),
       'factory-realizer', 'realize-artifact', true)).not.toThrow();
     expect(() => assertClaudeFactoryRoleMechanics(
-      nativeWorkerText('factory-evaluator', 'evaluate-artifact', EVALUATOR_GRANT, readOnlyGuardFileHooks()),
+      nativeWorkerText('factory-evaluator', 'evaluate-artifact', EVALUATOR_GRANT, expectedWorkerHooks('factory-evaluator', 'read-only')),
       'factory-evaluator', 'evaluate-artifact', false)).not.toThrow();
     expect(() => assertClaudeFactoryRoleMechanics(
       nativeWorkerText('factory-sync', 'sync-host', EVALUATOR_GRANT, readOnlyGuardFileHooks()),
       'factory-sync', 'sync-host', false)).not.toThrow();
+  });
+
+  it('gives the hand-back entry to the evaluator and to no other worker (ADR 0070)', () => {
+    const withEntry = (hooks: ReturnType<typeof readOnlyGuardFileHooks>) => ({ PreToolUse: [...hooks.PreToolUse, ...handbackCheckHooks().PreToolUse] });
+    // The evaluator without its entry, and the sync worker and the realizer with one, are all refused.
+    expect(() => assertClaudeFactoryRoleMechanics(
+      nativeWorkerText('factory-evaluator', 'evaluate-artifact', EVALUATOR_GRANT, readOnlyGuardFileHooks()),
+      'factory-evaluator', 'evaluate-artifact', false)).toThrow(/critical guard registration differs for factory-evaluator/);
+    expect(() => assertClaudeFactoryRoleMechanics(
+      nativeWorkerText('factory-sync', 'sync-host', EVALUATOR_GRANT, withEntry(readOnlyGuardFileHooks())),
+      'factory-sync', 'sync-host', false)).toThrow(/critical guard registration differs for factory-sync/);
+    expect(() => assertClaudeFactoryRoleMechanics(
+      nativeWorkerText('factory-realizer', 'realize-artifact', REALIZER_GRANT, withEntry(nativeGuardFileHooks())),
+      'factory-realizer', 'realize-artifact', true)).toThrow(/critical guard registration differs for factory-realizer/);
+    // An entry that adds onFailure is not the reviewed one: the hook fails open on purpose.
+    const strict = withEntry(readOnlyGuardFileHooks());
+    (strict.PreToolUse[1]!.hooks[0] as { onFailure?: string }).onFailure = 'block';
+    expect(() => assertClaudeFactoryRoleMechanics(
+      nativeWorkerText('factory-evaluator', 'evaluate-artifact', EVALUATOR_GRANT, strict),
+      'factory-evaluator', 'evaluate-artifact', false)).toThrow(/critical guard registration differs/);
   });
 
   it('refuses an unlisted worker posture instead of silently granting the evaluator grant', () => {
@@ -200,7 +221,7 @@ describe('factory worker table cross-checks', () => {
   });
 
   it.each([
-    ['a Skill that is not the table Skill of the role', 'factory-evaluator', 'sync-host', EVALUATOR_GRANT, readOnlyGuardFileHooks(), false],
+    ['a Skill that is not the table Skill of the role', 'factory-evaluator', 'sync-host', EVALUATOR_GRANT, expectedWorkerHooks('factory-evaluator', 'read-only'), false],
     ['a destructive flag on a read-only worker', 'factory-evaluator', 'evaluate-artifact', EVALUATOR_GRANT, nativeGuardFileHooks(), true],
     ['a read-only flag on the destructive worker', 'factory-realizer', 'realize-artifact', REALIZER_GRANT, readOnlyGuardFileHooks(), false],
   ] as const)('refuses %s in the role mechanics', (_label, name, skill, grant, hooks, destructive) => {

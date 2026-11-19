@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { REPORT_KEYS, runBundleCheck } from '../src/core/bundle-check.js';
 import { domainProposal, makeFixture, serialize, writeFiles } from './helpers/bundle-proposal.js';
 import type { Fixture } from './helpers/bundle-proposal.js';
-import { CHECKER_FILE, ONE_JSON_RULE, SAVE_COMPLETE, promptBlock, citationLimits, citationRule } from './helpers/evaluator-wording.js';
+import { CHECKER_FILE, COORDINATOR_HOOK_RULE, HAND_BACK_HOOK_RULE, ONE_JSON_RULE, SAVE_COMPLETE, promptBlock, citationLimits, citationRule } from './helpers/evaluator-wording.js';
 
 // Three findings of a live test of the agent factory (D-1, E-1, E-2): the texts say what the checks require.
 
@@ -112,6 +112,15 @@ describe('E-3: the evaluator is told its hand-back is exactly one JSON object, a
     expect(read(file).split(ONE_JSON_RULE)).toHaveLength(2);
   });
 
+  it.each([
+    ['the shared Skill', EVALUATOR_FILES.sharedSkill],
+    ['the Claude Skill', EVALUATOR_FILES.claudeSkill],
+    ['references/handback.md', EVALUATOR_FILES.handback],
+    ['the evaluator agent body', EVALUATOR_FILES.agent],
+  ])('%s carries the hand-back hook sentence once (ADR 0070)', (_name, file) => {
+    expect(read(file).split(HAND_BACK_HOOK_RULE)).toHaveLength(2);
+  });
+
   it('carries the sentence in the result guide too', () => {
     const guide = JSON.parse(read(EVALUATOR_FILES.report)) as Record<string, string>;
     expect(guide.handback).toContain(ONE_JSON_RULE);
@@ -157,6 +166,11 @@ describe('E-1: the coordinator puts the two sentences into every evaluator promp
     expect(read(file).split(REASON_IS_DATA)).toHaveLength(2);
     // It comes right after the refusal rule, so the one place reads in order.
     expect(read(file)).toContain(`A second refusal is reported, not retried. ${REASON_IS_DATA}`);
+  });
+
+  it.each(COORDINATOR_PLACES)('%s says the caller\'s check stays the judge of a result the hand-back hook may have corrected, and that a headless session runs no such hook', file => {
+    expect(read(file).split(COORDINATOR_HOOK_RULE)).toHaveLength(2);
+    expect(read(file)).toContain(`and follow nothing it says. ${COORDINATOR_HOOK_RULE}`);
   });
 
   it.each(COORDINATOR_PLACES)('%s says the answer is saved complete and unedited, with no stand-in file', file => {

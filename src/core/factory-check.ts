@@ -7,8 +7,9 @@ import { loadSemanticCore, validateSubagentContract } from './semantic-core.js';
 import { checkFloor } from './native-floor.js';
 import { inspectNativeAgent, nativeGuardProblem } from './native-guard.js';
 import { loadHostProfile, loadToolPolicy, resolveGrant } from './host-profile.js';
-import { GUARD_SCRIPT, NATIVE_GUARD_FILES, nativeGuardFileHooks } from './guard.js';
-import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks } from './readonly-guard.js';
+import { GUARD_SCRIPT, NATIVE_GUARD_FILES } from './guard.js';
+import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
+import { expectedWorkerHooks } from './handback-check.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -77,7 +78,8 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
       if (guardProblem) findings.push(`Native guard ${guardProblem}.`);
       if (facts.guard !== 'none') {
         const kind = facts.guard;
-        const expected = kind === 'read-only' ? readOnlyGuardFileHooks() : nativeGuardFileHooks();
+        // The guard, and for the factory evaluator (by name) the hand-back entry after it (ADR 0070); any other role with an extra entry is refused.
+        const expected = expectedWorkerHooks(String(facts.meta.name), kind);
         if (!isDeepStrictEqual(facts.meta.hooks, expected)) findings.push('Native guard registration differs from its reviewed binding; additional hook registrations are unavailable in this adapter.');
         const script = sourceFile(`hosts/claude/hooks/${NATIVE_GUARD_FILES[kind].name}.js`);
         const reviewed = kind === 'read-only' ? READ_ONLY_GUARD_SCRIPT : GUARD_SCRIPT;

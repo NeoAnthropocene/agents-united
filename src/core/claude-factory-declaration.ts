@@ -3,8 +3,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import YAML from 'yaml';
 import { inspectNativeAgent } from './native-guard.js';
-import { nativeGuardFileHooks } from './guard.js';
-import { readOnlyGuardFileHooks } from './readonly-guard.js';
+import { expectedWorkerHooks } from './handback-check.js';
 import type { ClaudeFactoryBinding } from './types.js';
 
 function fail(message: string): never { throw new Error(`Claude factory binding: ${message}.`); }
@@ -102,6 +101,7 @@ export const COORDINATOR_WORKER_SUPPORT = {
     "assets/rubric.json",
     "assets/report.json",
     "scripts/check-review.mjs",
+    "scripts/precheck-handback.mjs",
     "scripts/review-job.mjs"
   ],
   "sync-host": [
@@ -249,7 +249,7 @@ export function assertClaudeFactoryRoleMechanics(text: string, name: string, ski
     ? [...base, 'Agent', 'AskUserQuestion', 'Bash', 'Edit', 'NotebookEdit', 'PowerShell', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'Write']
     : [...base, ...factoryWorkerByRole(name).grant];
   if (!isDeepStrictEqual([...tools].sort(), expected.sort())) mechanicsFail(`critical tool grant differs for ${name}`);
-  if (!isDeepStrictEqual(facts.meta.hooks, destructive ? nativeGuardFileHooks() : readOnlyGuardFileHooks())) mechanicsFail(`critical guard registration differs for ${name}`);
+  if (!isDeepStrictEqual(facts.meta.hooks, expectedWorkerHooks(name, destructive ? 'destructive' : 'read-only'))) mechanicsFail(`critical guard registration differs for ${name}`);
   // The caller's Skill and guard class must be the table's for a worker role; the coordinator main is not a table worker.
   if (name !== 'orchestrator-agent-factory') {
     const worker = factoryWorkerByRole(name);

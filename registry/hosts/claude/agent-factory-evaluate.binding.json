@@ -45,6 +45,7 @@
     "assets/rubric.json",
     "assets/report.json",
     "scripts/check-review.mjs",
+    "scripts/precheck-handback.mjs",
     "scripts/review-job.mjs"
   ],
   "references": [

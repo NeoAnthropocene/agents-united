@@ -3,13 +3,14 @@ import os from 'node:os';
 import path from 'node:path';
 import yaml from 'yaml';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { GUARD_SCRIPT, nativeGuardFileHooks } from '../src/core/guard.js';
+import { GUARD_SCRIPT } from '../src/core/guard.js';
+import { HANDBACK_CHECK_REFERENCE, HANDBACK_CHECK_ROLE, expectedWorkerHooks } from '../src/core/handback-check.js';
 import { checkFloor, checkHooks, syncFloor, syncHooks } from '../src/core/native-floor.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { splitTools } from '../src/core/native-guard.js';
 import { syncRoster } from '../src/core/native-roster.js';
 import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
-import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
+import { READ_ONLY_GUARD_SCRIPT } from '../src/core/readonly-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
@@ -178,9 +179,9 @@ const ROLES: RoleSpec[] = [
 
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const fileOf = (role: RoleSpec): string => path.resolve('registry/hosts/claude/agents', `${role.name}.md`);
-/** The hooks of a role as generated: its guard, and for the digital-agency lead also the gate on its first message (Plan 035 N2 slice e, `mode-line-gate.ts`). */
+/** The hooks of a role as generated: its guard, for the factory evaluator also its hand-back entry (ADR 0070, `handback-check.ts`), and for the digital-agency lead also the gate on its first message (Plan 035 N2 slice e, `mode-line-gate.ts`). */
 const guardGroups = (role: RoleSpec): Record<string, unknown> => {
-  const guard = role.guard === 'read-only' ? readOnlyGuardFileHooks() : nativeGuardFileHooks();
+  const guard = expectedWorkerHooks(role.name, role.guard);
   return role.name === 'orchestrator-digital-agency' ? { PreToolUse: [...guard.PreToolUse, ...modeLineGateHooks().PreToolUse] } : { ...guard };
 };
 
@@ -239,10 +240,14 @@ describe.each(ROLES)('native Claude $name', role => {
     // Fired as a subagent of the role (it carries an `agent_id`), which is the case the guards were written for; the lead's mode-line gate leaves such calls
     // alone and has its own tests (tests/claude-mode-line-gate.test.ts).
     const fire = (tool_name: string, tool_input: object): number => (attempt(read(), guardProject, { tool: tool_name, input: tool_input as Record<string, unknown> }, { agentType: role.name }).blocked ? 2 : 0);
-    for (const group of groups) for (const hook of group.hooks) expect([hook.command, hook.args.length, hook.args[0].startsWith('${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-')]).toEqual(['node', 1, true]);
+    // Every entry is `node <one script>`: a guard script under .claude/hooks, or (the factory evaluator only) the hand-back script of its Skill.
+    for (const group of groups) for (const hook of group.hooks) {
+      const handback = role.name === HANDBACK_CHECK_ROLE && hook.args[0] === HANDBACK_CHECK_REFERENCE;
+      expect([hook.command, hook.args.length, handback || hook.args[0].startsWith('${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-')]).toEqual(['node', 1, true]);
+    }
     const covered = (tool: string): boolean => groups.some(group => new RegExp(`^(?:${group.matcher})$`).test(tool));
     if (role.guard === 'read-only') {
-      expect(groups).toHaveLength(1);
+      expect(groups).toHaveLength(role.name === HANDBACK_CHECK_ROLE ? 2 : 1);
       expect(fire('Write', { file_path: 'C:\\repo\\src\\a.ts' })).toBe(2);
       expect(fire('Bash', { command: 'git push --force' })).toBe(2);
       expect(fire('mcp__github__create_pull_request', {})).toBe(2);

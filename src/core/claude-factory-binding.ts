@@ -8,8 +8,9 @@ import { assetOwners } from './types.js';
 import type { PlannedClaudeArtifact } from './claude-projector.js';
 import { nativeWorkflowSource, renderNativeRole, renderNativeRule } from './native-package.js';
 import { loadSemanticCore, validateSubagentContract } from './semantic-core.js';
-import { GUARD_SCRIPT, NATIVE_GUARD_FILES, nativeGuardFileHooks } from './guard.js';
-import { READ_ONLY_GUARD_SCRIPT, readOnlyGuardFileHooks } from './readonly-guard.js';
+import { GUARD_SCRIPT, NATIVE_GUARD_FILES } from './guard.js';
+import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
+import { expectedWorkerHooks } from './handback-check.js';
 import { checkFloor } from './native-floor.js';
 import { inspectNativeAgent } from './native-guard.js';
 import { loadHostProfile, loadToolPolicy, resolveGrant } from './host-profile.js';
@@ -117,7 +118,8 @@ async function planFactoryEntry(
     }
     const granted = resolveGrant(policy, core.capabilities ?? [], { subagent: role.loading === 'subagent', background: false }).tools;
     if (!isDeepStrictEqual([...realization].sort(), [...granted].sort())) fail(`grant mismatch for ${role.name}`);
-    const hooks = role.guard === 'destructive' ? nativeGuardFileHooks() : readOnlyGuardFileHooks();
+    // The guard of the role, and for the evaluator the hand-back entry after it (ADR 0070); no other role carries it.
+    const hooks = expectedWorkerHooks(role.name, role.guard);
     if (!isDeepStrictEqual(facts.meta.hooks, hooks)) fail(`required guard registration mismatch for ${role.name}`);
     if (resolved.skills.includes('coordinate-artifact')) assertClaudeFactoryRoleMechanics(text, role.name, binding.skill, role.guard === 'destructive');
   }

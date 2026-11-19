@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomBytes } from 'node:crypto';
@@ -576,6 +577,13 @@ function build(specArg) {
   let after;
   try { after = snapshot(candidate, budget); } catch (error) { partly(error); }
   if (!same(after, inventory)) partly(new Error('Candidate changed while the job was built.'));
+  // The hand-back hook (precheck-handback.mjs, ADR 0070) finds the job of a result by its digest. This pointer, in the operating system's temp folder, holds the absolute path of
+  // the job file and nothing else. It is a locator only, never evidence: the checker still verifies the job's own digest against the result's. It is best effort: a job is valid without it.
+  try {
+    const pointers = path.join(os.tmpdir(), 'agents-united', 'review-jobs');
+    fs.mkdirSync(pointers, { recursive: true });
+    fs.writeFileSync(path.join(pointers, `${hash(canonical(job))}.txt`), path.resolve(jobFile));
+  } catch { /* no pointer, no hand-back check; the caller's check is the judge */ }
   return { version: 1, status: 'job-written', job: pinOf(jobFile, jobBytes), jobDigest: hash(canonical(job)), candidateDigest,
     counts: { files: files.length, inputs: inputs.length, checks: checks.length, copies: copies.length, readRoots: readRoots.length } };
 }

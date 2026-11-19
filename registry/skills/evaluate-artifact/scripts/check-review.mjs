@@ -373,9 +373,15 @@ function parseResult(bytes) {
   }
 }
 
-function checkResult(record, resultFile) {
+// One implementation for two entry points. The saved-file mode (`--job --result`) is the caller's check of the review root's result.json. With `precheck`
+// (`--job --precheck <file>`, ADR 0070) the same parsing, schema, digest, citation, coverage, criteria, finding and evidence checks run on a result file anywhere, with the same
+// reasons. Skipped in pre-check mode, because they only make sense for the saved file: (1) the rule that the file is the review root's own result.json; (2) the
+// postflight that the saved file did not change while it was checked; (3) the second `record.recheck()` of the job's pins, the candidate and the job bytes after the
+// result checks (`checkJob` has just made the first, and a hook has no caller to protect from a swap in between). Nothing else is skipped.
+function checkResult(record, resultFile, precheck = false) {
   const { job } = record;
-  if (!sameBoth(absolute(resultFile, 'Result'), path.join(job.roots.review, 'result.json'))) fail('Result must be the caller-owned review-root result.json.');
+  const file = absolute(resultFile, 'Result');
+  if (!precheck && !sameBoth(file, path.join(job.roots.review, 'result.json'))) fail('Result must be the caller-owned review-root result.json.');
   const bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result');
   const result = parseResult(bytes);
   validate(result, record.resultSchema, 'result');
@@ -484,28 +490,62 @@ function checkResult(record, resultFile) {
     if (item.status !== check.status || item.exit !== check.exit || item.rawSha256 !== (check.raw?.sha256 ?? null)
       || item.receiptSha256 !== (check.receipt?.sha256 ?? null)) fail(`Returned deterministic evidence contradicts pinned receipts: ${item.id}.`);
   }
+  if (precheck) return { precheck: true, candidateMatch: true, opinion: result.opinion, reviewStatus: result.status };
   record.recheck();
   if (!bytesAt(resultFile, job.budget.maxResultBytes, 'Result postflight').equals(bytes)) fail('Result changed during postflight.');
   return { result: pinOf(resultFile, bytes), candidateMatch: true, opinion: result.opinion, reviewStatus: result.status };
 }
 
+const deterministic = { quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false };
+/** The record fields printed on acceptance, in both entry points, then what the result check added. */
+const recordOutput = (record, result) => JSON.stringify({ version: 1, kind: 'deterministic', recordValid: true, ready: !record.unavailable.some(item => item.required),
+  job: record.jobPin, jobDigest: record.digest, candidateDigest: record.candidateDigest, inventory: record.inventory,
+  checks: record.checks, unavailable: record.unavailable, inputPins: record.job.inputs,
+  ...result, ...deterministic }) + '\n';
+const refusal = error => process.stderr.write(JSON.stringify({ version: 1, kind: 'deterministic', status: 'unavailable', reason: error.message, ...(error.details ? { details: error.details } : {}), ...deterministic }) + '\n');
+
+// The pre-check entry point (ADR 0070): `--precheck <result-file> [--job <absolute-job.json>]`. It is the hook's way to ask "would the caller's check refuse this
+// result?" before the evaluator hands it back. It runs the SAME checks as `--job --result` (one implementation, `checkJob` and `checkResult`), on a result file
+// anywhere, with the same reasons and details. Exit codes: 0 accepted; 1 refused for what the result says (the hook blocks); 3 the fault is the job's or the
+// input's (a missing file, a job that no longer checks): the hook lets the hand-back through, because the evaluator cannot repair that and the caller's check
+// decides. Without `--job` it only checks that the file is exactly one JSON object, which needs no job. The saved-file mode keeps its exit code 1 for everything.
+function precheck(values) {
+  let stage = 'input';
+  try {
+    const file = absolute(values.precheck, 'Pre-check result');
+    if (!values.job) {
+      const bytes = bytesAt(file, limits.envelope, 'Result');
+      stage = 'result';
+      parseResult(bytes);
+      process.stdout.write(JSON.stringify({ version: 1, kind: 'deterministic', precheck: 'json-only', ...deterministic }) + '\n');
+      return;
+    }
+    const record = checkJob(absolute(values.job, 'Job argument'));
+    stage = 'result';
+    process.stdout.write(recordOutput(record, checkResult(record, file, true)));
+  } catch (error) {
+    refusal(error);
+    process.exitCode = stage === 'result' ? 1 : 3;
+  }
+}
+
 try {
-  for (const flag of ['job', 'result', 'help']) {
+  for (const flag of ['job', 'result', 'precheck', 'help']) {
     if (process.argv.slice(2).filter(arg => arg === `--${flag}` || arg.startsWith(`--${flag}=`)).length > 1) fail(`Duplicate --${flag} selector.`);
   }
-  const { values, positionals } = parseArgs({ options: { job: { type: 'string' }, result: { type: 'string' }, help: { type: 'boolean' } }, strict: true, allowPositionals: true });
-  if (values.help && !values.job && !values.result && !positionals.length) {
-    process.stdout.write('check-review --job <absolute-job.json> [--result <absolute-result.json>]\nChecks fixed review records; does not run validators or a reviewer.\n');
+  const { values, positionals } = parseArgs({ options: { job: { type: 'string' }, result: { type: 'string' }, precheck: { type: 'string' }, help: { type: 'boolean' } }, strict: true, allowPositionals: true });
+  if (values.precheck !== undefined) {
+    if (values.result || values.help || positionals.length) throw new Error('--precheck takes a result file and optionally --job, nothing else.');
+    precheck(values);
+  } else if (values.help && !values.job && !values.result && !positionals.length) {
+    process.stdout.write('check-review --job <absolute-job.json> [--result <absolute-result.json>]\nChecks fixed review records; does not run validators or a reviewer.\ncheck-review --precheck <result-file> [--job <absolute-job.json>]\nThe same checks on a result file anywhere, for the hand-back hook; exit 0 accepted, 1 refused, 3 the job or the input is at fault.\n');
   } else if (values.job && !values.help && !positionals.length) {
     const record = checkJob(absolute(values.job, 'Job argument'));
     const result = values.result ? checkResult(record, values.result) : {};
-    process.stdout.write(JSON.stringify({ version: 1, kind: 'deterministic', recordValid: true, ready: !record.unavailable.some(item => item.required),
-      job: record.jobPin, jobDigest: record.digest, candidateDigest: record.candidateDigest, inventory: record.inventory,
-      checks: record.checks, unavailable: record.unavailable, inputPins: record.job.inputs,
-      ...result, quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false }) + '\n');
+    process.stdout.write(recordOutput(record, result));
     if (!values.result && record.unavailable.some(item => item.required)) process.exitCode = 1;
   } else throw new Error('A supported absolute --job review record is required.');
 } catch (error) {
-  process.stderr.write(JSON.stringify({ version: 1, kind: 'deterministic', status: 'unavailable', reason: error.message, ...(error.details ? { details: error.details } : {}), quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false }) + '\n');
+  refusal(error);
   process.exitCode = 1;
 }
