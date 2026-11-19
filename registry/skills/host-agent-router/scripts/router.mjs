@@ -183,14 +183,21 @@ export function parseAgyUsage(text, model, groups) {
  */
 export function agyUsageByModel(text, resolved, pool, groups, userGroups) {
   const out = {};
+  const sameSet = (a, b) => a.length === b.length && a.every(g => b.includes(g));
   for (const r of resolved) {
     const model = r.model ?? slugByName(pool, r.displayName);
     if (!model || out[model]) continue;
     const names = agyGroupsFor(model, groups, r.quotaGroups, userGroups);
-    const windows = names.length ? parseAgyUsageGroups(text, names) : [];
+    // No rule, or a group the readout does not have: the headroom is unknown and the model runs (as in 1.1.2); the plan says so.
+    if (!names.length) { out[model] = makeUsage([], { groups: [], unknown: `no quota rule matches ${model}` }); continue; }
+    const windows = parseAgyUsageGroups(text, names);
+    if (!windows.length) { out[model] = makeUsage([], { groups: names, unknown: `${names.join(' and ')} ${names.length > 1 ? 'are' : 'is'} not in the /usage readout` }); continue; }
     // A group the readout does not have is named, not ignored silently: the figure then rests on the groups that were there.
     const missing = names.filter(g => !windows.some(w => w.group === g));
-    if (windows.length) out[model] = makeUsage(windows, { groups: names, ...(missing.length ? { missing_groups: missing } : {}) });
+    // A rule of the user's that replaces the groups the model would otherwise draw on (an Orchestrator names two): their quota is not checked.
+    const plain = userGroups ? agyGroupsFor(model, groups, r.quotaGroups) : [];
+    const replaced = plain.length && !sameSet(plain, names) ? plain : [];
+    out[model] = makeUsage(windows, { groups: names, ...(missing.length ? { missing_groups: missing } : {}), ...(replaced.length ? { replaced_groups: replaced } : {}) });
   }
   return out;
 }
@@ -317,10 +324,13 @@ function deepMergeInto(dst, src) {
 function mergeTier(base, over) {
   if (!isPlain(over)) return structuredClone(over);
   if ('models' in over) return structuredClone(over);
-  if (over.model !== undefined) return { ...structuredClone(over), effort: over.effort ?? 'medium' };
+  if (over.model !== undefined) return { ...structuredClone(over), effort: over.effort === undefined ? 'medium' : over.effort };
   if (!isPlain(base)) return structuredClone(over);
-  if (!Array.isArray(base.models)) return deepMergeInto(structuredClone(base), over);
+  // Keys a tier override without a model does not read are kept, under badKeys, so the config check can name them instead of the merge dropping them.
+  const badKeys = Object.keys(over).filter(k => !['effort', 'label', 'efforts'].includes(k));
+  if (!Array.isArray(base.models)) return { ...deepMergeInto(structuredClone(base), over), ...(badKeys.length ? { badKeys } : {}) };
   const out = structuredClone(base);
+  if (badKeys.length) out.badKeys = badKeys;
   const entries = out.models.map(e => (isPlain(e) ? e : { model: e }));
   if (over.effort !== undefined) {
     for (const e of entries) {
@@ -382,6 +392,9 @@ export function tierEntries(tier) {
   return Array.isArray(tier.models) ? tier.models.map(e => make(isPlain(e) ? e : { model: e })) : [];
 }
 
+const FIXED_MESSAGE = '"fixed" is only for a host whose effort is part of the model name (Antigravity); on a host that takes its effort as a command-line flag, name a real effort';
+const orchestratorMessage = model => `${model} is an Orchestrator (fixed configuration); only a host whose effort is part of the model name (Antigravity) can run it`;
+const badKeyProblems = (where, keys) => keys.map(k => `${where}: ${k} is not read in a tier override without a model; a tier override takes effort, label and efforts; write "model" or "models" to define the tier`);
 const ULTRA_MESSAGE = '"ultra" is not offered by the router (it runs parallel subagents and spends much more)';
 
 /** Problems with one tier of a host: the old shape (one model, an effort) or a list of entries. */
@@ -392,12 +405,16 @@ function validateTier(where, t, effortInModel) {
     for (const key of ['fixedEffort', 'displayName', 'quotaGroups']) {
       if (key in t) errs.push(`${where}: ${key} beside model is not read; write { "models": [ { "model": "...", "${key}": ... } ] } instead`);
     }
+    if (t.badKeys) errs.push(...badKeyProblems(where, t.badKeys));
     if (!t.model || !WORD.test(t.effort ?? '')) errs.push(`${where}: needs a model and an effort`);
     else if (t.effort === 'ultra') errs.push(`${where}: effort: ${ULTRA_MESSAGE}`);
+    else if (t.effort === 'fixed' && !effortInModel) errs.push(`${where}: effort: ${FIXED_MESSAGE}`);
+    if (!effortInModel && shippedFixedModels().has(t.model)) errs.push(`${where}: ${orchestratorMessage(t.model)}`);
     if (t.efforts !== undefined) errs.push(...validateEfforts(where, t.efforts, effortInModel));
     return errs;
   }
   const errs = [];
+  if (t.badKeys) errs.push(...badKeyProblems(where, t.badKeys));
   if ('model' in t) errs.push(`${where}: model and models are both given; write one: "model" for a single model, or "models" for an ordered list`);
   if ('label' in t) errs.push(`${where}: label beside models belongs to an entry; write { "models": [ { "model": "...", "label": "..." } ] }`);
   if (!Array.isArray(t.models) || t.models.length === 0) return [...errs, `${where}: models must be a non-empty list of model names or entries`];
@@ -417,8 +434,12 @@ function validateTier(where, t, effortInModel) {
     if (e.model !== undefined && !nonEmpty(e.model) && nonEmpty(e.displayName)) errs.push(`${where}: entry ${n}: model must be a non-empty string`);
     if (e.fixedEffort !== undefined && typeof e.fixedEffort !== 'boolean') errs.push(`${where}: entry ${n}: fixedEffort must be true or false`);
     else if (e.fixedEffort === true && !effortInModel) errs.push(`${where}: entry ${n}: fixedEffort is only for a host whose effort is part of the model name (${where.split('/')[0]} takes its effort as a command-line flag); give the entry an effort instead`);
-    if (!WORD.test(e.effort ?? (e.fixedEffort === true ? 'fixed' : (t.effort ?? 'medium')))) errs.push(`${where}: entry ${n} needs an effort (lowercase letters)`);
-    else if (e.effort === 'ultra') errs.push(`${where}: entry ${n}: ${ULTRA_MESSAGE}`);
+    const eff = e.effort === undefined ? (e.fixedEffort === true ? 'fixed' : (t.effort ?? 'medium')) : e.effort;
+    if (!(typeof eff === 'string' && WORD.test(eff))) errs.push(`${where}: entry ${n} needs an effort (lowercase letters)`);
+    else if (eff === 'ultra') errs.push(`${where}: entry ${n}: ${ULTRA_MESSAGE}`);
+    else if (eff === 'fixed' && e.fixedEffort !== true && !effortInModel) errs.push(`${where}: entry ${n}: ${FIXED_MESSAGE}`);
+    if (e.configEffort !== undefined && !(typeof e.configEffort === 'string' && WORD.test(e.configEffort))) errs.push(`${where}: entry ${n} needs an effort (lowercase letters)`);
+    if (!effortInModel && nonEmpty(e.model) && shippedFixedModels().has(e.model)) errs.push(`${where}: entry ${n}: ${orchestratorMessage(e.model)}`);
     if (e.quotaGroups !== undefined && !(Array.isArray(e.quotaGroups) && e.quotaGroups.length > 0 && e.quotaGroups.every(nonEmpty))) errs.push(`${where}: entry ${n}: quotaGroups must be a list of group names`);
     if (e.efforts !== undefined) errs.push(...validateEfforts(`${where}[${n}]`, e.efforts, effortInModel));
   });
@@ -511,6 +532,8 @@ export function validateEfforts(where, efforts, effortInModel = false) {
     const at = `${where}: efforts.${name}`;
     if (!word(name)) errs.push(`${at}: an effort name is lowercase letters only`);
     if (name === 'ultra' || e === 'ultra' || (isPlain(e) && e.effort === 'ultra')) errs.push(`${at}: ${ULTRA_MESSAGE}`);
+    if (!effortInModel && (e === 'fixed' || (isPlain(e) && e.effort === 'fixed'))) errs.push(`${at}: ${FIXED_MESSAGE}`);
+    if (!effortInModel && isPlain(e) && typeof e.model === 'string' && shippedFixedModels().has(e.model)) errs.push(`${at}: ${orchestratorMessage(e.model)}`);
     if (typeof e === 'string') {
       if (!word(e)) errs.push(`${at}: needs an effort value (lowercase letters)`);
       else if (effortInModel) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
@@ -583,7 +606,11 @@ const fixedModelsFor = hostCfg => new Set([...shippedFixedModels(), ...Object.va
 export function resolveTier(tier, host, tierName, effort, hostCfg) {
   const selector = tierSelector(tier);
   const userTier = Array.isArray(hostCfg?.userTiers) && hostCfg.userTiers.includes(tierName);
-  const all = tierEntries(tier).map(e => ({ r: { ...resolveEntry(e, host, tierName, effort, selector), ...(userTier ? { user: true } : {}) }, defaultEffort: e.effort }));
+  const fixedSet = hostCfg?.effortInModel ? fixedModelsFor(hostCfg) : null;
+  const asFixed = r => (fixedSet && r.model && fixedSet.has(r.model) && !r.fixed
+    ? { ...r, effort: 'fixed', fixed: true, note: effort ? `${host}: --effort ${JSON.stringify(effort)} was not applied: ${r.label} has a fixed configuration, so the ${tierName} tier keeps ${r.model}` : null }
+    : r);
+  const all = tierEntries(tier).map(e => ({ r: asFixed({ ...resolveEntry(e, host, tierName, effort, selector), ...(userTier ? { user: true } : {}) }), defaultEffort: e.effort }));
   const u = effort ? selector?.[effort] : undefined;
   if (isPlain(u) && nonEmpty(u.model)) {
     const label = u.label ?? u.model;
@@ -776,8 +803,11 @@ function poolInfo(pool, entryCount) {
  * below the floor are skipped, each with its reason. The first left is `chosen`, the rest are `alternates` (a refused model moves to the next).
  * With an unknown pool nothing is checked against it: the first entry that has a model id is used.
  */
+const CODEX_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
+
 function pickModels({ host, tier, pairs, pool, st, min, flagEffort, asked }) {
   const known = poolKnown(pool);
+  const seen = new Set();
   const where = pool?.source === 'config' ? 'the configured pool' : "the account's model list";
   const accepted = [];
   const skipped = [];
@@ -790,6 +820,9 @@ function pickModels({ host, tier, pairs, pool, st, min, flagEffort, asked }) {
       skipped.push({ model: name, reason: known ? `not in ${where}` : "no model id is configured for it and the account's model list is unknown" });
       continue;
     }
+    // Two entries that name the same model (one by display name, one by slug) are one: the first stays, the refused model is not tried again.
+    if (seen.has(model)) continue;
+    seen.add(model);
     // The pool filters SHIPPED entries only: a model the user's config names runs even when the list does not show it (the list hides some
     // models, and aliases exist). The plan says so; a refusal then follows the normal retry and fall-through.
     let poolNote = null;
@@ -804,6 +837,9 @@ function pickModels({ host, tier, pairs, pool, st, min, flagEffort, asked }) {
     const offered = known ? pool.efforts?.[model] : undefined;
     if (flagEffort && !r.fixed && asked && offered?.length && !offered.includes(r.effort) && r.effort !== defaultEffort) {
       r = { ...r, effort: defaultEffort, note: `${host}: ${model} does not offer "${r.effort}" on this account; kept ${defaultEffort}` };
+    } else if (host === 'codex' && flagEffort && !r.fixed && asked && !offered?.length && r.effort !== defaultEffort && !CODEX_EFFORTS.includes(r.effort)) {
+      // No effort list for the model (the pool is unknown): a word the router does not offer never reaches the CLI.
+      r = { ...r, effort: defaultEffort, note: `${host}: effort "${r.effort}" is not one the router offers for codex (${CODEX_EFFORTS.join(', ')}); kept ${defaultEffort}` };
     }
     const usage = st.usage_by_model ? (st.usage_by_model[model] ?? null) : (st.usage ?? null);
     const b = usage?.binding_pct ?? null;
@@ -814,7 +850,11 @@ function pickModels({ host, tier, pairs, pool, st, min, flagEffort, asked }) {
     }
     // A model that draws on several quota groups, with one of them missing from the readout: say so, the figure is not the whole picture.
     const missing = usage?.missing_groups ?? [];
-    const quota = missing.length ? { quota_note: `headroom judged on ${(usage.groups ?? []).filter(g => !missing.includes(g)).join(' and ')} only: ${missing.join(' and ')} ${missing.length > 1 ? 'were' : 'was'} not in the /usage readout` } : {};
+    const notes = [];
+    if (missing.length) notes.push(`headroom judged on ${(usage.groups ?? []).filter(g => !missing.includes(g)).join(' and ')} only: ${missing.join(' and ')} ${missing.length > 1 ? 'were' : 'was'} not in the /usage readout`);
+    if (usage?.replaced_groups?.length) notes.push(`your quotaGroups rule replaces this model's groups (${usage.replaced_groups.join(' and ')}); headroom is read from ${(usage.groups ?? []).join(' and ')} only, so their quota is not checked`);
+    if (usage?.unknown) notes.push(`headroom unknown (${usage.unknown}); the model runs`);
+    const quota = notes.length ? { quota_note: notes.join('; ') } : {};
     accepted.push({ model, effort: r.effort, label: r.label ?? model, ...(r.note ? { effort_note: r.note } : {}), ...(poolNote ? { pool_note: poolNote } : {}), ...quota, usage, binding: b });
   }
   if (accepted.length) {
@@ -1400,21 +1440,26 @@ async function probeClaude(cmd, model, _cfgHost, st) {
   else st.notes.push('could not read /usage (API-key billing or unexpected output)');
 }
 
+/** What the two Antigravity readouts (`agy -p /usage`, `agy models`) say about a side: its pool and the usage of each model of the tier. Pure; no host is started. */
+export function applyAgyProbe(st, { usageOut, usageErr, models }, cfgHost, payload = {}) {
+  if (!cfgHost.pool) {
+    st.pool = (models?.rc === 0 ? agyPool(models.stdout) : null) ?? unknownPool(models?.rc === 0 ? 'agy models printed a list the router could not read' : `agy models failed (rc=${models?.rc})`);
+    if (st.pool.source === 'unknown') st.notes.push(`model pool unknown (${st.pool.reason}); the first configured model of the tier is used`);
+  }
+  const resolved = payload.entries ?? [{ model: payload.model }];
+  const byModel = agyUsageByModel(usageOut, resolved, cfgHost.pool ? configPool(cfgHost.pool) : st.pool, cfgHost.quotaGroups ?? {}, cfgHost.userQuotaGroups);
+  const first = resolved.map(r => r.model ?? slugByName(st.pool, r.displayName)).find(s => s && byModel[s]?.windows?.length);
+  if (first) { st.logged_in = true; st.usage = byModel[first]; st.usage_by_model = byModel; }
+  else st.notes.push(`could not read quota for this model group: ${(usageOut || usageErr).trim().slice(0, 160).replace(/\n/g, ' ')}`);
+}
+
 async function probeAntigravity(cmd, model, cfgHost, st, payload = {}) {
   // `agy models` lists the models of the logged-in account and starts no model; a configured pool replaces it, so it is not asked for then.
   const [u, m] = await Promise.all([
     runCmd([...cmd, '-p', '/usage', '--output-format', 'json'], { timeout: 75_000, cwd: os.homedir() }),
     cfgHost.pool ? Promise.resolve(null) : runCmd([...cmd, 'models'], { timeout: 60_000, cwd: os.homedir() }),
   ]);
-  if (!cfgHost.pool) {
-    st.pool = (m?.rc === 0 ? agyPool(m.stdout) : null) ?? unknownPool(m?.rc === 0 ? 'agy models printed a list the router could not read' : `agy models failed (rc=${m?.rc})`);
-    if (st.pool.source === 'unknown') st.notes.push(`model pool unknown (${st.pool.reason}); the first configured model of the tier is used`);
-  }
-  const resolved = payload.entries ?? [{ model }];
-  const byModel = agyUsageByModel(u.stdout, resolved, cfgHost.pool ? configPool(cfgHost.pool) : st.pool, cfgHost.quotaGroups ?? {}, cfgHost.userQuotaGroups);
-  const first = resolved.map(r => r.model ?? slugByName(st.pool, r.displayName)).find(s => s && byModel[s]);
-  if (first) { st.logged_in = true; st.usage = byModel[first]; st.usage_by_model = byModel; }
-  else st.notes.push(`could not read quota for this model group: ${(u.stdout || u.stderr).trim().slice(0, 160).replace(/\n/g, ' ')}`);
+  applyAgyProbe(st, { usageOut: u.stdout, usageErr: u.stderr, models: m }, cfgHost, { ...payload, model });
 }
 
 async function probeCodex(cmd, _model, cfgHost, st) {
@@ -2027,7 +2072,7 @@ export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotT
     }
     before = end;
     if (failure === 'model' && c.alternates?.length) {
-      const { alternates, effort_note: _note, skipped_models: _skipped, quota_note: _quota, pool_note: _pool, binding_pct: _b, five_hour_pct: _f, weekly_pct: _w, ...same } = c;
+      const { alternates, effort_note: _note, quota_note: _quota, pool_note: _pool, binding_pct: _b, five_hour_pct: _f, weekly_pct: _w, ...same } = c;
       const [next, ...rest] = alternates;
       queue.splice(i + 1, 0, { ...same, ...next, alternates: rest });
     }
