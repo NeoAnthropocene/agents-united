@@ -139,7 +139,7 @@ You run as a teammate of a live Agent Team (the digital agency, the usual case f
 
 ## Boundaries of this host
 
-- A guard blocks forced pushes, production deploys and `.env` writes. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never disable a CSP or CORS rule to get past a local error.
+- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never disable a CSP or CORS rule to get past a local error.
 - Long-running and risky work: `Monitor` streams the output of a dev server or watch task instead of polling, `EnterWorktree` isolates a risky change from the working tree, `TodoWrite` keeps a checklist across a multi-step task, and `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.

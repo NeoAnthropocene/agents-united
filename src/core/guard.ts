@@ -11,6 +11,14 @@
  * `.env*` writes (not `.env.example`) via Write, Edit or MultiEdit (target in `tool_input.file_path`), NotebookEdit (target in
  * `tool_input.notebook_path`; the script reads `file_path`, else `notebook_path`) or a shell redirect.
  *
+ * ADR 0074 adds the common forms of destructive shell commands, for Bash and PowerShell alike: a recursive delete (rm, Remove-Item, rd, del,
+ * rimraf) of a root, home or project folder (`/`, `~`, `$HOME`, `.`, `..`, `*`, `.git`, a drive root, a system folder), privilege escalation
+ * (sudo, doas, pkexec, runas, su, `Start-Process -Verb RunAs`), shutdown and reboot, `az group delete`, `gcloud projects delete`, an AWS
+ * account closure, and disk formatting (mkfs, dd of=/dev/, format X:, diskpart). These match only where a command starts (after `;`, `&&`, `||`,
+ * `|`, `(`, `$(`, a backtick or a newline, behind wrappers such as env, nohup, timeout and xargs, and inside a `-c`/`-Command` string), so
+ * `echo rm -rf /` and `git commit -m "sudo fix"` pass; the three rules above keep matching anywhere. It is a seat belt against a model's slip,
+ * not a security boundary: variables, aliases, interpreters, encoded commands and scripts written to a file then run are not seen.
+ *
  * Input it cannot read (empty or white space, not JSON, or JSON that is not an object) is blocked with exit 2 and a message that
  * starts `Blocked by agents-united guard: unreadable hook input` (the maintainer's decision of 2026-11-17). A BOM is trimmed first.
  * A valid object, including `{}` and one without `tool_input`, is read as before.
@@ -20,7 +28,31 @@
  */
 export function guardScript(): string {
   // The session guard (`session-guard.ts`) does not call this with text: it builds its script by inserting its hint after the unreadable-input sentence of GUARD_SCRIPT.
-  return String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`;
+  return String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");
+const W=new Set(["env","command","exec","nohup","time","builtin","xargs","nice","{","!","then","do","else","if","while","until"]),A=new Set(["sudo","doas","pkexec","runas"]),S=new Set(["shutdown","reboot","halt","poweroff","stop-computer","restart-computer"]);
+const B=w=>w.replace(/^.*[\/\\]/,"").replace(/\.exe$/i,"").toLowerCase();
+const F=h=>h.length<64&&/^-[a-z]*r[a-z]*$/i.test(h);
+const X=x=>{if(x.length>4096)return false;let p=x.replace(/\\/g,"/").replace(/\/\*+$/,""),e=p.length;while(e>0&&p[e-1]==="/")e--;p=e?p.slice(0,e):"/";return /^(\/|~|\$home|\$\{home\}|\$env:userprofile|%userprofile%|\.\.?|\*|\.git|[a-z]:|\/(bin|boot|dev|etc|home|lib\w*|opt|root|sbin|usr|var))$/.test(p.toLowerCase())};
+const U=b=>{let o="",d=0;for(let k=0;k<b.length;k++){const h=b[k];if(h==="$"&&b[k+1]==="("){o+="$(";k++;d++}else if(h===")"&&d>0){o+=h;d--}else if(d===0&&";&|\n(){}".includes(h))o+="\u0001";else o+=h}return o};
+const D=(x,d)=>{x=x.replace(/\\\r?\n/g," ").replace(/\`\r?\n/g," ").replace(/\r/g,"");const Q=[],n=x.length;let z="",j=0;
+while(j<n){const q=x[j];if(q!=='"'&&q!=="'"){const m=j;while(j<n&&x[j]!=='"'&&x[j]!=="'")j++;z+=x.slice(m,j);continue}
+let e=j+1;while(e<n&&x[e]!==q)e+=q==='"'&&x[e]==="\\"?2:1;
+const b=x.slice(j+1,Math.min(e,n));
+if(/(?:^|\s)(?:-[a-z]*c|-command|\/[ck]|eval)\s*$/i.test(x.slice(Math.max(0,j-60),j)))Q.push(q==='"'?b.replace(/\\(.)/g,"$1"):b);
+z+=q+(q==="'"?b.replace(/[;&|\n\`(){}]/g,"\u0001"):U(b))+(e<n?q:"");j=e+1}
+if(d<3)for(const p of Q){const y=D(p,d+1);if(y)return y}
+for(const g of z.split(/[;&|\n\`()]|\$\(/)){const k=g.replace(/["']/g,"").split(/\s+/).filter(Boolean);let a=0;
+while(a<k.length){const w=B(k[a]);if(/^[A-Za-z_]\w*=/.test(k[a])){a++}else if(W.has(w)){if(w==="command"&&/^-[vV]$/.test(k[a+1]||""))break;a++;while(a<k.length&&k[a][0]==="-")a++}else if(w==="timeout"){a++;while(a<k.length&&k[a][0]==="-")a++;a++}else break}
+if(a>=k.length)continue;
+const v=B(k[a]),R=k.slice(a+1),N=R.filter(h=>h[0]!=="-").map(h=>h.toLowerCase());
+if(A.has(v)||v==="su"||(/^(start-process|saps|start)$/.test(v)&&/(^|\s)-verb[\s:=]+runas/i.test(R.join(" "))))return "sudo or another privilege escalation";
+if(S.has(v)||(v==="init"&&/^[06]$/.test(N[0]||""))||(v==="systemctl"&&/^(poweroff|reboot|halt)$/.test(N[0]||"")))return "a shutdown or reboot";
+if((v==="az"&&N[0]==="group"&&N[1]==="delete")||(v==="gcloud"&&N[0]==="projects"&&N[1]==="delete")||(v==="aws"&&N[0]==="organizations"&&/^(close-account|delete-organization)$/.test(N[1]||"")))return "a cloud account or resource-group deletion";
+if(/^mkfs(\.\w+)?$/.test(v)||v==="wipefs"||v==="diskpart"||/^(format-volume|clear-disk|initialize-disk)$/.test(v)||(v==="format"&&R.some(h=>/^[a-z]:$/i.test(h)))||(v==="dd"&&R.some(h=>h.startsWith("of=/dev/")))||(v==="shred"&&R.some(h=>h.startsWith("/dev/"))))return "a disk or filesystem format";
+if(/^(rm|rmdir|rd|del|erase|ri|remove-item|rimraf)$/.test(v)&&(v==="rimraf"||R.some(h=>F(h)||h==="--recursive"||h.toLowerCase()==="/s"))&&R.some(h=>h[0]!=="-"&&!/^\/[a-z]$/i.test(h)&&X(h)))return "a recursive delete of a root, home or project folder"}
+return ""};
+let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";else if(c){try{r=D(c,0)}catch(e){r="a command the guard could not analyse"}}
+if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session. If you mean it, run it yourself in your own terminal.\n");process.exit(2)}})`.replace(/\n\s*/g, '');
 }
 
 /** The generic script: the role guards and the legacy inline form carry exactly this text. */
@@ -36,6 +68,8 @@ export const EARLIER_GUARD_SCRIPTS: readonly string[] = [
   // (a NotebookEdit to a protected path went through, because it sends `notebook_path`).
   String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i={};try{i=JSON.parse(s)}catch(e){}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
   String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
+  // [2] the script of ADR 0068 (fail-closed on unreadable input, NotebookEdit path), before ADR 0074 added the destructive shell commands.
+  String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
 ];
 
 /** Text every version of the destructive guard script carries: the ownership marker (the read-only guard says "read-only guard", so it never matches). */
