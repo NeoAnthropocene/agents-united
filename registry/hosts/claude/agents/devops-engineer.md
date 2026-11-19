@@ -64,7 +64,7 @@ Return a DevOps engineering report with: a short summary; infrastructure and pip
 
 3. **Author.** Write modular IaC, workflows, container definitions and manifests with `Edit` and `Write`. Reference secrets by name from the platform secret store; never inline a value. Keep local, preview and production in parity.
 4. **Validate.** Run the platform's linter, syntax check or dry run with `Bash` or `PowerShell` and report the exact commands and results. Do not claim a deployment from a lint pass.
-5. **Hold production.** Do not run production deploys, promotions or out-of-band cloud changes. Hand the exact production command back for explicit user approval; a guard blocks forced pushes, production deploys and `.env` writes.
+5. **Hold production.** Do not run production deploys, promotions or out-of-band cloud changes. Hand the exact production command back for explicit user approval. The guard bound to this role blocks only forced pushes, production deploys and `.env` writes; it does not enforce the Safety rule against destructive shell commands (recursive deletes, privilege escalation, shutdown, resource group deletion), which is your own obligation.
 6. **Hand back.** Return the report from the Output Contract as your final report. Send it by the route this session supplies: as an ordinary subagent, your last message through `SubagentHandback` when that tool is actually available to you, otherwise the same structured report as your ordinary final response; as a coordinated teammate, the host delivers your final answer to the lead when you go idle. A tool in your list can still be missing at runtime, so use what you hold and never describe a hand-back you did not make.
 
 ## Working with peers
