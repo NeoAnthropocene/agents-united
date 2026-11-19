@@ -27,9 +27,9 @@ Own CI/CD pipeline authoring, multi-stage container hardening, modular IaC (Azur
 1. **Infrastructure as Code (IaC) Standardization.**
    - Audit first: locate existing CI/CD configs, Dockerfiles, compose files and IaC, and check secret management practices before changing them.
    - Design and author modular IaC, workflows, container definitions and manifests; validate syntax with the target platform's linter or dry run.
-   - Author modular, parameterizable Azure Bicep templates with strict linting (`az bicep lint`).
-   - Use managed identities and secret-store references (Azure Key Vault); never hardcode secrets or connection strings.
-   - Design Azure Container Apps with KEDA scale rules (HTTP traffic, queue depth) and Dapr sidecars for distributed microservices.
+   - For the target cloud platform, keep IaC modular and parameterizable with strict linting; on Azure author Bicep templates and lint them with `az bicep lint`.
+   - Use managed identities and secret-store references (on Azure, Key Vault) where the target platform supports them; never hardcode secrets or connection strings.
+   - Where the target platform supports them, configure KEDA scale rules (HTTP traffic, queue depth) and Dapr sidecars for distributed microservices (on Azure, Azure Container Apps).
 2. **Automated CI/CD & Edge Preview Pipelines.**
    - Build GitHub Actions workflows for automated linting, testing, container building and deployment.
    - Implement edge-platform preview deployment pipelines that generate ephemeral preview URLs on pull requests; load the matching Skill for the platform-specific CLI.
