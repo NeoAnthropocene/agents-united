@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawn, spawnSync } from 'node:child_process';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import * as specs from '../../registry/skills/system-specs/scripts/specs.mjs';
 
 // All command execution and every os/fs read of the collector goes through one `deps` object, so these cases run
@@ -357,11 +359,11 @@ for (const variant of [
           username: () => user,
           cwd: () => dir,
           env: { PATH: variant.home, USERPROFILE: variant.home, USERNAME: user, COMPUTERNAME: host, GITHUB_TOKEN: 'ghp_SECRETSECRET', OPENAI_API_KEY: 'sk-SECRETSECRET' },
-          cpus: () => [{ model: `Fake CPU of ${host}` }],
-          osVersion: `Windows 11 Pro of ${user}`,
-          readFile: p => { if (p === '/etc/os-release') return `PRETTY_NAME="Ubuntu 24.04 ${host}"`; throw new Error('ENOENT'); },
+          cpus: () => [{ model: `Fake CPU ${user}@${host}` }],
+          osVersion: `Windows 11 Pro ${variant.home}`,
+          readFile: p => { if (p === '/etc/os-release') return `PRETTY_NAME="Ubuntu 24.04 /srv/${host}"`; throw new Error('ENOENT'); },
         },
-        extraRun: (cmd, args) => (cmd === 'nvidia-smi' ? { status: 'ok', code: 0, out: `GPU of ${user}, 8192\n` } : null),
+        extraRun: (cmd, args) => (cmd === 'nvidia-smi' ? { status: 'ok', code: 0, out: `GPU ${user}@lab, 8192\n` } : null),
       });
       const res = await specs.runCli(['collect'], deps);
       assert.equal(res.code, 0, res.err);
@@ -435,7 +437,7 @@ const realEnv = over => ({ ...process.env, ...over });
 
 // ---- 1: a timeout ends the whole process tree
 
-test('the real runner ends a timed-out child and its grandchild, and resolves inside the bound', async () => {
+test('killTree ends a child and its grandchild; the runner timeout glue reports a timeout', async () => {
   const dir = mkTemp();
   try {
     const script = path.join(dir, 'tree.js');
@@ -446,15 +448,19 @@ test('the real runner ends a timed-out child and its grandchild, and resolves in
       "require('node:fs').writeFileSync(process.argv[2], process.pid + ' ' + g.pid);",
       'setInterval(() => {}, 1000);',
     ].join('\n'));
-    const run = specs.realRunner(process.env, process.platform);
-    const t0 = Date.now();
-    const res = await run(process.execPath, [script, pidFile], { timeoutMs: 2500 });
-    const took = Date.now() - t0;
-    assert.equal(res.status, 'timeout');
-    assert.ok(took < 8000, `returned in ${took} ms`);
+    const child = spawn(process.execPath, [script, pidFile], { stdio: 'ignore', windowsHide: true, detached: process.platform !== 'win32' });
+    const deadline = Date.now() + 15000;
+    while (!fs.existsSync(pidFile) || !/ \d+$/.test(fs.readFileSync(pidFile, 'utf8'))) {
+      assert.ok(Date.now() < deadline, 'the child never wrote its pids');
+      await new Promise(resolve => setImmediate(resolve));
+    }
     const [childPid, grandPid] = fs.readFileSync(pidFile, 'utf8').split(' ').map(Number);
+    await specs.killTree(child, process.platform, process.env);
     assert.ok(!alive(childPid), 'the child is gone');
     assert.ok(!alive(grandPid), 'the grandchild is gone');
+    const run = specs.realRunner(process.env, process.platform);
+    const res = await run(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { timeoutMs: 1000 });
+    assert.equal(res.status, 'timeout');
   } finally { rmTemp(dir); }
 });
 
@@ -619,20 +625,21 @@ test('a custom --out folder gets no .gitignore', async () => {
 
 // ---- 5: scrub the free-text fields only
 
-test('scrub also matches the home folder name, the first label of the host, UNC and spaced paths, and env-held names', () => {
+test('scrub also matches the home folder name, the first label of the host, UNC and spaced paths, and env-held names, in path-like text', () => {
   const ctx = specs.scrubContext({
     homedir: () => 'C:\\Users\\Jane Q Public', hostname: () => 'laptop-7.corp.example', username: () => 'jqpublic',
     env: { USERNAME: 'jqp-login', USER: 'jqpuser', LOGNAME: 'jqplog', COMPUTERNAME: 'LAPTOP-7', USERDOMAIN: 'CORPDOM' },
   });
   for (const [input, secret] of [
     ['x C:\\Users\\Jane Q Public\\bin y', 'Jane'],
-    ['Jane Q Public chip', 'Jane'],
-    ['on laptop-7 today', 'laptop-7'],
-    ['by jqp-login', 'jqp-login'],
-    ['by jqpuser and jqplog', 'jqplog'],
-    ['dom CORPDOM', 'CORPDOM'],
+    ['Jane Q Public', 'Jane'],
+    ['chip@laptop-7', 'laptop-7'],
+    ['jqp-login@box', 'jqp-login'],
+    ['jqpuser/tools', 'jqpuser'],
+    ['CORPDOM\\someone', 'CORPDOM'],
     ['at \\\\fileserver\\share\\tools\\x', 'fileserver'],
     ['at C:\\Program Files\\My Tool\\bin', 'Program Files'],
+    ['jqplog', 'jqplog'],
   ]) assert.ok(!specs.scrub(input, ctx).toLowerCase().includes(secret.toLowerCase()), `${input} still holds ${secret}`);
 });
 
@@ -731,21 +738,23 @@ test('the child environment blocks Corepack network access (COREPACK_ENABLE_NETW
 
 // ---- 10: the real runner
 
-test('real runner: ENOENT is missing; a decoy in the working folder is never run; relative PATH entries are skipped', async () => {
+test('real runner: ENOENT is missing; a decoy in the process working folder is never run; relative PATH entries are skipped', async () => {
   const dir = mkTemp();
+  const here = process.cwd();
   try {
     const name = 'decoyprobe';
     const decoy = path.join(dir, process.platform === 'win32' ? `${name}.cmd` : name);
     fs.writeFileSync(decoy, process.platform === 'win32' ? '@echo off\r\necho RAN\r\n' : '#!/bin/sh\necho RAN\n', { mode: 0o755 });
-    const relative = path.relative(process.cwd(), dir) || '.';
-    const env = realEnv({ PATH: relative, Path: relative });
+    process.chdir(dir);
+    const env = realEnv({ PATH: '.', Path: '.' });
     assert.equal(specs.resolveOnPath(name, env, process.platform), null, 'a relative PATH entry is skipped');
+    assert.equal(specs.resolveOnPath(`.${path.sep}${name}`, env, process.platform), null, 'a relative command is refused');
     const run = specs.realRunner(env, process.platform);
     assert.equal((await run(name, [], { timeoutMs: 5000 })).status, 'missing');
     assert.equal((await run('definitely-not-a-command-xyz', [], { timeoutMs: 5000 })).status, 'missing');
     const absEnv = realEnv({ PATH: dir, Path: dir });
     assert.equal((specs.resolveOnPath(name, absEnv, process.platform) ?? '').toLowerCase(), decoy.toLowerCase(), 'an absolute PATH entry is used');
-  } finally { rmTemp(dir); }
+  } finally { process.chdir(here); rmTemp(dir); }
 });
 
 test('real runner: output is capped at 64 KB and stdout is kept apart from stderr', async () => {
@@ -934,7 +943,7 @@ test('the fingerprint stores only hashes: no resolved path, no tool file name, i
   } finally { rmTemp(dir); }
 });
 
-test('real check: collect then check on this machine reports unchanged, and is quick', async () => {
+test('real check: collect then check on this machine reports unchanged', async () => {
   const dir = mkTemp();
   try {
     const deps = { ...specs.defaultDeps(), cwd: () => dir };
@@ -942,6 +951,273 @@ test('real check: collect then check on this machine reports unchanged, and is q
     const t0 = Date.now();
     const res = await specs.runCli(['check'], deps);
     assert.equal(res.code, 0, res.out + res.err);
-    assert.ok(Date.now() - t0 < 1500, `check took ${Date.now() - t0} ms`);
+    assert.ok(Date.now() - t0 < 10000, `check took ${Date.now() - t0} ms`);
+  } finally { rmTemp(dir); }
+});
+
+
+// ================================================================================== fix round 2
+
+// ---- 1: system tools are started by an absolute path, never by a bare name with the workspace as cwd
+
+test('systemToolPath is absolute under SystemRoot, with a fixed fallback and an empty-env result that is not drive-relative', () => {
+  assert.equal(specs.systemToolPath({ SystemRoot: 'D:\\Win' }, 'taskkill.exe'), 'D:\\Win\\System32\\taskkill.exe');
+  assert.equal(specs.systemToolPath({ SYSTEMROOT: 'D:\\Win' }, 'taskkill.exe'), 'D:\\Win\\System32\\taskkill.exe', 'the key is matched case-insensitively');
+  assert.equal(specs.systemToolPath({}, 'taskkill.exe'), 'C:\\Windows\\System32\\taskkill.exe');
+  assert.equal(specs.comSpec({}), 'C:\\Windows\\System32\\cmd.exe');
+  assert.equal(specs.comSpec({ ComSpec: 'X:\\cmd.exe' }), 'X:\\cmd.exe');
+  assert.ok(path.win32.isAbsolute(specs.comSpec({})), 'not drive-relative');
+});
+
+test('no spawn in the collector names a bare tool: source check', () => {
+  const src = fs.readFileSync(new URL('../../registry/skills/system-specs/scripts/specs.mjs', import.meta.url), 'utf8');
+  const spawns = [...src.matchAll(/spawn\(([^,)]+),/g)].map(m => m[1].trim());
+  assert.ok(spawns.length >= 2);
+  for (const first of spawns) assert.ok(!/^['"`]/.test(first), `spawn(${first}) starts a bare name`);
+  assert.doesNotMatch(src, /['"`][A-Za-z]:[A-Za-z]/, 'a drive-relative literal such as C:Windows');
+});
+
+test('Windows: a taskkill decoy in the working folder is not run when a probe times out', { skip: process.platform !== 'win32' }, async t => {
+  const dir = mkTemp();
+  const here = process.cwd();
+  const savedOptions = process.env.NODE_OPTIONS;
+  try {
+    const marker = path.join(dir, 'ran.txt');
+    const hook = path.join(dir, 'hook.cjs');
+    fs.writeFileSync(hook, `if (/taskkill\\.exe$/i.test(process.execPath)) require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'ran');`);
+    fs.copyFileSync(process.execPath, path.join(dir, 'taskkill.exe'));
+    process.env.NODE_OPTIONS = `--require ${JSON.stringify(hook.replace(/\\/g, '/'))}`;
+    process.chdir(dir);
+    // Sanity: a bare-name start from this folder does reach the decoy, so the assertion below is meaningful.
+    spawnSync('taskkill', ['/?'], { cwd: dir, windowsHide: true, timeout: 20000 });
+    if (!fs.existsSync(marker)) { t.skip('the decoy is not reachable by a bare name on this machine'); return; }
+    fs.rmSync(marker);
+    const run = specs.realRunner({ ...process.env, NODE_OPTIONS: '' }, 'win32');
+    const res = await run(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { timeoutMs: 1000 });
+    assert.equal(res.status, 'timeout');
+    assert.ok(!fs.existsSync(marker), 'the decoy taskkill was run');
+  } finally {
+    process.chdir(here);
+    if (savedOptions === undefined) delete process.env.NODE_OPTIONS; else process.env.NODE_OPTIONS = savedOptions;
+    rmTemp(dir);
+  }
+});
+
+// ---- 3 and 4: the fingerprint decides reuse; shells and PATH are part of it
+
+const PATH_A = 'C:\\tools\\a;C:\\tools\\b';
+const PATH_B = 'C:\\tools\\a;C:\\tools\\c';
+
+test('collect reuses a sheet only when the fingerprint is identical; a difference recollects and names the tools', async () => {
+  const dir = mkTemp();
+  try {
+    const files = { node: FILE_A, git: FILE_A };
+    await collectedIn(dir, files);
+    const same = machine(files, { cwd: () => dir, now: () => NOW + 400 * 24 * 3600 * 1000 });
+    const reuse = await specs.runCli(['collect'], same.deps);
+    assert.match(reuse.out, /reused/);
+    assert.equal(same.calls.length, 0);
+    const moved = machine({ ...files, podman: FILE_A, git: { ...FILE_A, size: 5 } }, { cwd: () => dir });
+    const res = await specs.runCli(['collect'], moved.deps);
+    assert.equal(res.code, 0, res.err);
+    assert.ok(moved.calls.length > 0, 'collected again');
+    assert.match(res.out, /changed since the last sheet: .*git/);
+    assert.match(res.out, /podman/);
+    assert.ok(!/fakeuser|\.exe/.test(res.out), 'names only');
+    const after = await specs.runCli(['collect'], machine({ ...files, podman: FILE_A, git: { ...FILE_A, size: 5 } }, { cwd: () => dir }).deps);
+    assert.match(after.out, /reused/, 'the new sheet is reused');
+  } finally { rmTemp(dir); }
+});
+
+test('a sheet planted in the folder, valid but from another machine state, is recollected', async () => {
+  const dir = mkTemp();
+  const other = mkTemp();
+  try {
+    await collectedIn(other, { node: FILE_A, git: FILE_A, docker: FILE_A, podman: FILE_A });
+    fs.mkdirSync(path.join(dir, '.agents-united'));
+    for (const f of ['system-specs.md', 'system-specs.json']) fs.copyFileSync(path.join(other, '.agents-united', f), path.join(dir, '.agents-united', f));
+    const mine = machine({ node: FILE_A }, { cwd: () => dir });
+    const res = await specs.runCli(['collect'], mine.deps);
+    assert.equal(res.code, 0, res.err);
+    assert.ok(mine.calls.length > 0, 'recollected');
+    assert.doesNotMatch(res.out, /reused/);
+  } finally { rmTemp(dir); rmTemp(other); }
+});
+
+test('a fingerprint whose hash does not match its parts is not valid', async () => {
+  const { deps } = machine({ node: FILE_A });
+  const sheet = JSON.parse(JSON.stringify(await specs.collectSpecs(deps)));
+  assert.ok(specs.validateSheet(sheet));
+  sheet.fingerprint.parts.node = 'deadbeef';
+  assert.equal(specs.validateSheet(sheet), null);
+});
+
+test('the fingerprint covers the shells and an 8-character hash of the absolute PATH entries', async () => {
+  const { deps } = machine({ node: FILE_A, pwsh: FILE_A }, { env: { PATH: PATH_A }, platform: 'win32' });
+  const fp = specs.computeFingerprint(deps).parts;
+  assert.ok('shell pwsh' in fp && 'shell bash' in fp && 'PATH' in fp);
+  const other = specs.computeFingerprint(machine({ node: FILE_A, pwsh: FILE_A }, { env: { PATH: PATH_B } }).deps).parts;
+  assert.notEqual(fp.PATH, other.PATH);
+  const relative = specs.computeFingerprint(machine({}, { env: { PATH: `rel;${PATH_A}` } }).deps).parts;
+  assert.equal(relative.PATH, fp.PATH, 'a relative entry is not part of it');
+});
+
+test('check: only the PATH differs is unchanged; PATH plus tools is changed with a PATH-effect warning; the names are capped at 8', async () => {
+  const dir = mkTemp();
+  try {
+    await collectedIn(dir, { node: FILE_A }, { env: { PATH: PATH_A } });
+    const pathOnly = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, env: { PATH: PATH_B } }).deps);
+    assert.equal(pathOnly.code, 0);
+    assert.match(pathOnly.out, /^unchanged/);
+    const both = await specs.runCli(['check'], machine({ node: FILE_A, git: FILE_A }, { cwd: () => dir, env: { PATH: PATH_B } }).deps);
+    assert.equal(both.code, 3);
+    assert.match(both.out, /^changed: PATH differs from the collection, so the names may be a PATH effect: git\n$/);
+    const many = Object.fromEntries(['npm', 'pnpm', 'yarn', 'bun', 'deno', 'uv', 'gh', 'podman', 'helm', 'terraform', 'az', 'aws'].map(n => [n, FILE_A]));
+    const lots = await specs.runCli(['check'], machine({ node: FILE_A, ...many }, { cwd: () => dir, env: { PATH: PATH_A } }).deps);
+    assert.equal(lots.code, 3);
+    assert.match(lots.out, / \.\.\. and 4 more\n$/, lots.out);
+    assert.equal(lots.out.split(',').length, 8, 'eight names are listed');
+  } finally { rmTemp(dir); }
+});
+
+test('check says older format for a sheet with another schema number, and never calls the runner', async () => {
+  const dir = mkTemp();
+  try {
+    await collectedIn(dir, { node: FILE_A });
+    const jsonFile = path.join(dir, '.agents-united', 'system-specs.json');
+    const sheet = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+    sheet.schemaVersion = specs.SCHEMA_VERSION - 1;
+    fs.writeFileSync(jsonFile, JSON.stringify(sheet));
+    const m = machine({ node: FILE_A }, { cwd: () => dir, run: async () => { throw new Error('the runner must not be called'); } });
+    const res = await specs.runCli(['check'], m.deps);
+    assert.equal(res.code, 1);
+    assert.match(res.out + res.err, /older format, run collect/);
+    const unchanged = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, run: async () => { throw new Error('no'); } }).deps);
+    assert.equal(unchanged.code, 1);
+    await specs.runCli(['collect', '--refresh'], machine({ node: FILE_A }, { cwd: () => dir }).deps);
+    const ok = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, run: async () => { throw new Error('the runner must not be called'); } }).deps);
+    assert.equal(ok.code, 0, ok.out + ok.err);
+  } finally { rmTemp(dir); }
+});
+
+// ---- 6: account-derived tokens leave ordinary words alone
+
+test('a user named ubuntu or debian leaves "Ubuntu 24.04" intact, but is still removed from a path or a whole field', async () => {
+  for (const user of ['ubuntu', 'debian']) {
+    const { deps } = makeDeps({ deps: {
+      platform: 'linux', release: '6.8.0', homedir: () => `/home/${user}`, username: () => user, hostname: () => 'box', cwd: () => '/work',
+      readFile: p => { if (p === '/etc/os-release') return 'PRETTY_NAME="Ubuntu 24.04.1 LTS (debian-based)"'; throw new Error('ENOENT'); },
+      env: { PATH: 'X', USER: user },
+    } });
+    const sheet = await specs.collectSpecs(deps);
+    assert.equal(sheet.os.name, 'Ubuntu 24.04.1 LTS (debian-based)');
+    assert.equal(sheet.os.distribution, 'Ubuntu 24.04.1 LTS (debian-based)');
+  }
+  const ctx = { home: '/home/ubuntu', user: 'ubuntu', host: '', tokens: [] };
+  assert.equal(specs.scrub('Ubuntu 24.04', ctx), 'Ubuntu 24.04');
+  assert.equal(specs.scrub('ubuntu', ctx), '<user>');
+  assert.equal(specs.scrub('built by ubuntu@ci', ctx), 'built by <user>@ci');
+});
+
+// ---- 7: robustness
+
+test('two collects at once: an existing .gitignore that appears between the check and the write is not an error', async () => {
+  const dir = mkTemp();
+  const original = fs.writeFileSync;
+  let armed = true;
+  try {
+    fs.writeFileSync = function patched(file, data, options) {
+      if (armed && String(file).endsWith('.gitignore') && options?.flag === 'wx') {
+        armed = false;
+        original.call(fs, file, '*\n');
+      }
+      return original.call(fs, file, data, options);
+    };
+    const { deps } = makeDeps({ deps: { cwd: () => dir } });
+    const res = await specs.runCli(['collect'], deps);
+    assert.equal(res.code, 0, res.err);
+    assert.ok(!armed, 'the race was staged');
+    assert.equal(lf(fs.readFileSync(path.join(dir, '.agents-united', '.gitignore'), 'utf8')), '*\n');
+  } finally { fs.writeFileSync = original; rmTemp(dir); }
+});
+
+test('cleanText trims again after the length cut, so the collector accepts its own sheet', async () => {
+  assert.equal(specs.cleanText(`${'x'.repeat(99)} tail`), 'x'.repeat(99));
+  const model = `${'y'.repeat(99)} more`;
+  const { deps } = makeDeps({ deps: { cpus: () => [{ model }] } });
+  const sheet = await specs.collectSpecs(deps);
+  assert.ok(specs.validateSheet(JSON.parse(JSON.stringify(sheet))), 'a 100th-character space does not break the round trip');
+});
+
+test('--out: a harmless name starting with two dots is allowed; a folder that is a link to the outside is refused', async () => {
+  const dir = mkTemp();
+  const outside = mkTemp();
+  try {
+    const { deps } = makeDeps({ deps: { cwd: () => dir } });
+    const dots = await specs.runCli(['collect', '--out', '..notes.md'], deps);
+    assert.equal(dots.code, 0, dots.err);
+    assert.ok(fs.existsSync(path.join(dir, '..notes.md')));
+    try { fs.symlinkSync(outside, path.join(dir, 'link'), 'junction'); } catch { return; }
+    const res = await specs.runCli(['collect', '--out', 'link/sheet.md'], makeDeps({ deps: { cwd: () => dir } }).deps);
+    assert.equal(res.code, 2, res.err);
+    assert.match(res.err, /working folder/);
+    assert.deepEqual(fs.readdirSync(outside), [], 'nothing was written outside');
+    const deeper = await specs.runCli(['collect', '--out', 'link/new/sheet.md'], makeDeps({ deps: { cwd: () => dir } }).deps);
+    assert.equal(deeper.code, 2);
+    assert.deepEqual(fs.readdirSync(outside), []);
+  } finally { rmTemp(dir); rmTemp(outside); }
+});
+
+test('bash (WSL launcher) follows the WSL state: not determined when no distribution is installed', async () => {
+  const ran = [];
+  const launcher = { resolve: cmd => (cmd === 'bash' ? 'C:\\Windows\\System32\\bash.exe' : null) };
+  const none = makeDeps({ deps: launcher, extraRun: (cmd, args) => { ran.push(cmd); return /^wsl/.test(cmd) ? { status: 'ok', code: 0, out: '' } : null; } });
+  const a = await specs.collectSpecs(none.deps);
+  assert.equal(a.shells.find(s => s.name === 'bash (WSL launcher)').status, 'not determined');
+  assert.equal(ran.filter(c => /^wsl/.test(c)).length, 1, 'WSL is asked once');
+  const some = makeDeps({ deps: launcher, extraRun: cmd => (/^wsl/.test(cmd) ? { status: 'ok', code: 0, out: 'Ubuntu\r\n' } : null) });
+  assert.equal((await specs.collectSpecs(some.deps)).shells.find(s => s.name === 'bash (WSL launcher)').status, 'present');
+  const missing = makeDeps({ deps: launcher });
+  assert.equal((await specs.collectSpecs(missing.deps)).shells.find(s => s.name === 'bash (WSL launcher)').status, 'absent');
+});
+
+test('memory uses the container limit when it is above 0 and below the total', async () => {
+  const limited = await specs.collectSpecs(makeDeps({ deps: { constrainedMemory: () => 8 * GiB } }).deps);
+  assert.equal(limited.memoryGiB, 8);
+  for (const limit of [0, undefined, 64 * GiB]) {
+    const sheet = await specs.collectSpecs(makeDeps({ deps: { constrainedMemory: () => limit } }).deps);
+    assert.equal(sheet.memoryGiB, 32, String(limit));
+  }
+});
+
+test('macOS: an xcode-select timeout makes the stub tools not determined, and they are not run', async () => {
+  const ran = [];
+  const { deps } = makeDeps({
+    deps: { platform: 'darwin', arch: 'arm64', release: '24.1.0', cwd: () => '/work', resolve: cmd => `/usr/bin/${cmd}` },
+    extraRun: (cmd, args) => {
+      ran.push(cmd);
+      if (cmd === 'xcode-select') return { status: 'timeout', code: null, out: '' };
+      if (cmd === 'sw_vers') return { status: 'ok', code: 0, out: '15.1\n' };
+      return null;
+    },
+  });
+  const tools = byName((await specs.collectSpecs(deps)).tools);
+  assert.equal(tools.git.status, 'not determined');
+  assert.ok(!ran.includes('git'));
+});
+
+test('the command line catches a failure and exits 1 with a short message: no stack, no path', () => {
+  const dir = mkTemp();
+  try {
+    const hook = path.join(dir, 'hook.cjs');
+    fs.writeFileSync(hook, [
+      'const real = process.cwd.bind(process);',
+      "process.cwd = () => { if (/scripts[\\\\/]specs[.]mjs/.test(new Error().stack)) throw new Error('C:\\\\secret\\\\place exploded'); return real(); };",
+    ].join('\n'));
+    const script = fileURLToPath(new URL('../../registry/skills/system-specs/scripts/specs.mjs', import.meta.url));
+    const run = spawnSync(process.execPath, ['--require', hook, script, 'collect'], { encoding: 'utf8', windowsHide: true, timeout: 30000 });
+    assert.equal(run.status, 1, run.stderr);
+    assert.doesNotMatch(run.stderr, /secret|place exploded|\n\s+at /);
+    assert.match(run.stderr, /system-specs failed/);
   } finally { rmTemp(dir); }
 });

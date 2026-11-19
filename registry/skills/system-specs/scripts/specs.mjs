@@ -32,7 +32,7 @@ import { spawn } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const DEFAULT_OUT = path.join('.agents-united', 'system-specs.md');
 export const SHEET_HEADER = '# System specs';
 const DEFAULT_TIMEOUT_MS = 5000;
@@ -126,8 +126,8 @@ export function parseVersion(text, pattern) {
 export function cleanText(text) {
   return String(text ?? '')
     .replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ')
-    .replace(/[^\p{L}\p{N} .()@+,/:_#'&%[\]\u00ae\u2122-]/gu, '')
-    .replace(/\s+/g, ' ').trim().slice(0, 100);
+    .replace(/[^\p{L}\p{N} .()@+,/:_#'&%[\]~<>\u00ae\u2122-]/gu, '')
+    .replace(/\s+/g, ' ').trim().slice(0, 100).trim();
 }
 
 /** The private values to scrub, from the same `deps` the collector reads. Environment values are matched, never emitted. */
@@ -148,8 +148,9 @@ export function scrubContext(deps) {
 
 /**
  * Remove private values from a free-text string: the home folder (any separator, any case) becomes `~`, UNC and drive paths and
- * other absolute paths `<path>`, then the user name, machine name and the extra tokens `<user>` / `<host>`. A token shorter than
- * three characters is ignored inside text and replaced only when it is the whole string.
+ * other absolute paths `<path>`. An account-derived token (user name, machine name and the environment values) is replaced only
+ * when the whole string equals it or when it touches a path separator or an `@` (`user@host`, `/user/`), never inside ordinary
+ * words: a user named ubuntu leaves "Ubuntu 24.04" intact. A token shorter than three characters is replaced only as a whole string.
  */
 export function scrub(text, ctx = {}) {
   let s = String(text ?? '');
@@ -168,7 +169,9 @@ export function scrub(text, ctx = {}) {
   ].sort((a, b) => b.value.length - a.value.length);
   for (const { value, mark } of tokens) {
     if (s.trim().toLowerCase() === value.toLowerCase()) return mark;
-    if (value.length >= 3) s = s.replace(new RegExp(escapeRe(value), 'gi'), mark);
+    if (value.length < 3) continue;
+    const body = escapeRe(value);
+    s = s.replace(new RegExp(`(?<=[\\\\/@~])${body}|${body}(?=[\\\\/@])`, 'gi'), mark);
   }
   return s;
 }
@@ -212,23 +215,26 @@ function interpret(result, entry) {
 
 const resolveCmd = (deps, cmd) => (typeof deps.resolve === 'function' ? safely(() => deps.resolve(cmd), null) : null);
 
-/** On macOS, true when a /usr/bin stub for this tool would open an install dialog (so it must not be run). */
-async function isMacStub(deps, gate, entry, cmd) {
+/**
+ * On macOS: 'stub' when the tool is a /usr/bin stub that would open an install dialog (it is never run), 'unknown' when the question
+ * itself timed out or could not run (the tool is then "not determined"), else false.
+ */
+async function macStubState(deps, gate, entry, cmd) {
   if (deps.platform !== 'darwin' || !entry.macStub) return false;
   const file = resolveCmd(deps, cmd);
   if (!file || !file.replace(/\\/g, '/').startsWith('/usr/bin/')) return false;
-  if (entry.name === 'java') {
-    const r = await safeRun(deps, '/usr/libexec/java_home', [], gate.timeoutFor(3000) || 500);
-    return !(r.status === 'ok' && r.code === 0);
-  }
-  gate.devTools ??= safeRun(deps, 'xcode-select', ['-p'], gate.timeoutFor(3000) || 500).then(r => r.status === 'ok' && r.code === 0);
-  return !(await gate.devTools);
+  const answered = r => (r.status === 'ok' ? (r.code === 0 ? false : 'stub') : 'unknown');
+  if (entry.name === 'java') return answered(await safeRun(deps, '/usr/libexec/java_home', [], gate.timeoutFor(3000) || 500));
+  gate.devTools ??= safeRun(deps, 'xcode-select', ['-p'], gate.timeoutFor(3000) || 500).then(answered);
+  return gate.devTools;
 }
 
 async function probeOne(deps, entry, gate) {
   let last = { status: 'absent', version: null };
   for (const cmd of [].concat(entry.cmd)) {
-    if (await isMacStub(deps, gate, entry, cmd)) continue;
+    const stub = await macStubState(deps, gate, entry, cmd);
+    if (stub === 'unknown') return { status: 'not determined', version: null };
+    if (stub) continue;
     const timeoutMs = gate.timeoutFor(entry.timeoutMs ?? DEFAULT_TIMEOUT_MS);
     if (timeoutMs === 0) return { status: 'not determined', version: null };
     const res = interpret(await safeRun(deps, cmd, entry.args, timeoutMs), entry);
@@ -242,7 +248,11 @@ async function probeShell(deps, entry, gate) {
   let name = entry.name;
   if (entry.name === 'bash' && deps.platform === 'win32') {
     const file = (resolveCmd(deps, 'bash') ?? '').replace(/\\/g, '/');
-    if (/\/windows\/system32\/bash(\.exe)?$/i.test(file)) return { name: 'bash (WSL launcher)', status: 'present', version: null };
+    if (/\/windows\/system32\/bash(\.exe)?$/i.test(file)) {
+      // The launcher is never run; it is only as present as the WSL distribution behind it.
+      const state = await wslState(deps, gate);
+      return { name: 'bash (WSL launcher)', status: state === 'present' ? 'present' : state === 'absent' ? 'absent' : 'not determined', version: null };
+    }
     if (/\/(git|msys\d*|mingw\d*)\//i.test(file)) name = 'bash (Git Bash/MSYS)';
   }
   return { name, ...(await probeOne(deps, entry, gate)) };
@@ -309,6 +319,9 @@ async function readWsl(deps, gate) {
   return String(r.stdout ?? r.out).replace(/[\0\s]/g, '') ? 'present' : 'installed, no distribution';
 }
 
+/** WSL is asked once per collect; the `wsl` fact and the launcher shell share the answer. */
+const wslState = (deps, gate) => (gate.wsl ??= readWsl(deps, gate));
+
 async function readOs(deps, gate) {
   const family = { win32: 'windows', darwin: 'macos', linux: 'linux' }[deps.platform] ?? 'other';
   let environment = family;
@@ -333,29 +346,56 @@ async function readOs(deps, gate) {
 
 const shortHash = text => crypto.createHash('sha256').update(text).digest('hex').slice(0, 8);
 
+/** The parts of the fingerprint, in the order that is hashed: each probed tool, each shell, the PATH, OS release, architecture, memory. */
+export const FINGERPRINT_KEYS = [...PROBES.map(p => p.name), ...SHELLS.map(s => `shell ${s.name}`), 'PATH', 'os release', 'architecture', 'memory'];
+
+/** Total memory in whole GiB, or the container limit when `constrainedMemory` is above 0 and below the total. */
+export function memoryGiBOf(deps) {
+  const total = safely(() => deps.totalmem(), 0);
+  const limit = typeof deps.constrainedMemory === 'function' ? safely(() => deps.constrainedMemory(), 0) : 0;
+  return positiveInt((limit > 0 && limit < total ? limit : total) / GiB);
+}
+
+/** Found or not, and the size and modification time of the resolved file; no process is started. */
+function fileState(deps, cmds) {
+  for (const cmd of [].concat(cmds)) {
+    const file = resolveCmd(deps, cmd);
+    if (!file) continue;
+    const st = typeof deps.statFile === 'function' ? safely(() => deps.statFile(file), null) : null;
+    return st ? `found:${st.size}:${Math.round(st.mtimeMs)}` : 'found:?';
+  }
+  return 'absent';
+}
+
+/** The ordered absolute PATH entries, hashed. */
+function pathPart(deps) {
+  const win = deps.platform === 'win32';
+  const flavor = win ? path.win32 : path.posix;
+  const env = deps.env ?? {};
+  const key = Object.keys(env).find(k => k.toLowerCase() === 'path') ?? 'PATH';
+  const entries = String(env[key] ?? '').split(win ? ';' : ':').map(e => e.replace(/^"|"$/g, '')).filter(e => e && flavor.isAbsolute(e));
+  return shortHash(`PATH|${entries.join('\n')}`);
+}
+
+export const fingerprintHash = parts => crypto.createHash('sha256').update(JSON.stringify(FINGERPRINT_KEYS.map(k => [k, parts[k]]))).digest('hex');
+
+/** The names of the parts that differ between two fingerprints' `parts`. */
+export const diffParts = (now, then) => FINGERPRINT_KEYS.filter(k => now[k] !== then[k]);
+
 /**
- * A fingerprint of the environment, with no tool run: per probed tool, whether it resolves on PATH and, when it does, the size and
- * modification time of the resolved file; plus OS release, architecture and memory. Only hashes are kept (one short hash per part,
- * one SHA-256 over all), never a path, so a changed part can be named and nothing private is stored.
+ * A fingerprint of the environment, with no process started: per probed tool and shell, whether it resolves on PATH and, when it
+ * does, the size and modification time of the resolved file; the PATH entries; OS release, architecture and memory. Only hashes are
+ * kept (one short hash per part, one SHA-256 over all), never a path, so a changed part can be named and nothing private is stored.
  */
 export function computeFingerprint(deps) {
   const parts = {};
-  for (const entry of PROBES) {
-    let state = 'absent';
-    for (const cmd of [].concat(entry.cmd)) {
-      const file = resolveCmd(deps, cmd);
-      if (!file) continue;
-      const st = typeof deps.statFile === 'function' ? safely(() => deps.statFile(file), null) : null;
-      state = st ? `found:${st.size}:${Math.round(st.mtimeMs)}` : 'found:?';
-      break;
-    }
-    parts[entry.name] = shortHash(`${entry.name}|${state}`);
-  }
+  for (const entry of PROBES) parts[entry.name] = shortHash(`${entry.name}|${fileState(deps, entry.cmd)}`);
+  for (const shell of SHELLS) parts[`shell ${shell.name}`] = shortHash(`shell ${shell.name}|${fileState(deps, shell.cmd)}`);
+  parts.PATH = pathPart(deps);
   parts['os release'] = shortHash(`os release|${deps.release}`);
   parts.architecture = shortHash(`architecture|${deps.arch}`);
-  parts.memory = shortHash(`memory|${positiveInt(safely(() => deps.totalmem(), 0) / GiB)}`);
-  const hash = crypto.createHash('sha256').update(JSON.stringify(Object.entries(parts))).digest('hex');
-  return { hash, parts };
+  parts.memory = shortHash(`memory|${memoryGiBOf(deps)}`);
+  return { hash: fingerprintHash(parts), parts };
 }
 
 /**
@@ -367,6 +407,7 @@ export async function collectSpecs(deps, opts = {}) {
   const t0 = deps.monotonic();
   const gate = {
     devTools: null,
+    wsl: null,
     timeoutFor(wanted) {
       const left = budgetMs - (deps.monotonic() - t0);
       return left <= 0 ? 0 : Math.max(500, Math.min(wanted, left));
@@ -382,7 +423,7 @@ export async function collectSpecs(deps, opts = {}) {
     { kind: 'os' },
   ];
   const results = await pool(tasks, cap, async task => {
-    if (task.kind === 'wsl') return readWsl(deps, gate);
+    if (task.kind === 'wsl') return wslState(deps, gate);
     if (task.kind === 'gpu') return readGpus(deps, gate);
     if (task.kind === 'os') return readOs(deps, gate);
     if (task.kind === 'shell') return probeShell(deps, task.entry, gate);
@@ -411,7 +452,7 @@ export async function collectSpecs(deps, opts = {}) {
       wsl: one('wsl'),
     },
     cpu: { model: free(cpus[0]?.model) || 'not determined', logicalCores: positiveInt(parallel) },
-    memoryGiB: positiveInt(safely(() => deps.totalmem(), 0) / GiB),
+    memoryGiB: memoryGiBOf(deps),
     gpus: one('gpu').map(g => ({ name: free(g.name) || 'not determined', vramGiB: g.vramGiB ?? null })),
     freeDiskGiB: typeof freeBytes === 'number' ? positiveInt(freeBytes / GiB) : null,
     shells: of('shell'),
@@ -439,8 +480,7 @@ function validEntry(e, names) {
 export function validateSheet(x) {
   if (!sameKeys(x, ['schemaVersion', 'collectedAt', 'os', 'cpu', 'memoryGiB', 'gpus', 'freeDiskGiB', 'shells', 'tools', 'fingerprint'])) return null;
   const fp = x.fingerprint;
-  const partNames = [...PROBES.map(p => p.name), 'os release', 'architecture', 'memory'];
-  if (!sameKeys(fp, ['hash', 'parts']) || !/^[0-9a-f]{64}$/.test(fp.hash) || !sameKeys(fp.parts, partNames) || !partNames.every(n => /^[0-9a-f]{8}$/.test(fp.parts[n]))) return null;
+  if (!sameKeys(fp, ['hash', 'parts']) || !/^[0-9a-f]{64}$/.test(fp.hash) || !sameKeys(fp.parts, FINGERPRINT_KEYS) || !FINGERPRINT_KEYS.every(n => /^[0-9a-f]{8}$/.test(fp.parts[n])) || fp.hash !== fingerprintHash(fp.parts)) return null;
   if (x.schemaVersion !== SCHEMA_VERSION) return null;
   if (typeof x.collectedAt !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(x.collectedAt) || !Number.isFinite(Date.parse(x.collectedAt))) return null;
   const o = x.os;
@@ -465,7 +505,7 @@ export function validateSheet(x) {
     freeDiskGiB: x.freeDiskGiB,
     shells: x.shells.map(entry),
     tools: x.tools.map(entry),
-    fingerprint: { hash: fp.hash, parts: Object.fromEntries(partNames.map(n => [n, fp.parts[n]])) },
+    fingerprint: { hash: fp.hash, parts: Object.fromEntries(FINGERPRINT_KEYS.map(n => [n, fp.parts[n]])) },
   };
 }
 
@@ -518,7 +558,12 @@ function pathKey(env) {
 export function resolveOnPath(cmd, env, platform) {
   const win = platform === 'win32';
   const flavor = win ? path.win32 : path.posix;
-  const isFile = file => { try { return fs.statSync(file).isFile(); } catch { return false; } };
+  const isFile = file => {
+    try { return fs.statSync(file).isFile(); } catch {
+      // A Windows app-execution alias cannot be followed by stat; its link entry still names a launchable file.
+      try { const l = fs.lstatSync(file); return l.isFile() || l.isSymbolicLink(); } catch { return false; }
+    }
+  };
   if (flavor.isAbsolute(cmd)) return isFile(cmd) ? cmd : null;
   if (/[\\/]/.test(cmd)) return null;
   const exts = win ? (env.PATHEXT || '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean) : [''];
@@ -534,11 +579,16 @@ export function resolveOnPath(cmd, env, platform) {
   return null;
 }
 
-/** The command interpreter, found by a case-insensitive key (Windows spells it COMSPEC or ComSpec) with a fixed fallback. */
-function comSpec(env) {
-  const key = Object.keys(env).find(k => k.toLowerCase() === 'comspec');
-  const root = Object.keys(env).find(k => k.toLowerCase() === 'systemroot');
-  return (key && env[key]) || path.win32.join((root && env[root]) || 'C:\Windows', 'System32', 'cmd.exe');
+/** The command interpreter, found by a case-insensitive key (Windows spells it COMSPEC or ComSpec) with a fixed absolute fallback. */
+export function comSpec(env) {
+  const get = name => { const key = Object.keys(env ?? {}).find(k => k.toLowerCase() === name); return key ? env[key] : undefined; };
+  return get('comspec') || systemToolPath(env, 'cmd.exe');
+}
+
+/** A Windows system tool by absolute path under SystemRoot, never by a bare name that the working folder could shadow. */
+export function systemToolPath(env, name) {
+  const key = Object.keys(env ?? {}).find(k => k.toLowerCase() === 'systemroot');
+  return path.win32.join((key && env[key]) || 'C:\\Windows', 'System32', name);
 }
 
 /** Bytes to text: UTF-16LE when the stream holds NUL bytes (wsl.exe), else UTF-8. */
@@ -548,14 +598,14 @@ function decode(buffer) {
 }
 
 /** End a child and everything it started. Resolves when the process is gone or after a short grace period. */
-function killTree(child, platform) {
+export function killTree(child, platform, env = process.env) {
   return new Promise(resolve => {
     const finish = () => { clearTimeout(grace); resolve(); };
     const grace = setTimeout(resolve, 2000);
     child.once('close', finish);
     try {
       if (platform === 'win32') {
-        const t = spawn('taskkill', ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore', windowsHide: true });
+        const t = spawn(systemToolPath(env, 'taskkill.exe'), ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore', windowsHide: true, cwd: os.tmpdir() });
         t.on('error', () => { try { child.kill('SIGKILL'); } catch { /* gone */ } });
       } else {
         try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); }
@@ -613,7 +663,7 @@ export function realRunner(env, platform) {
     child.stderr.on('data', take('err'));
     timer = setTimeout(async () => {
       settled = true;
-      await killTree(child, platform);
+      await killTree(child, platform, env);
       child.stdout.destroy();
       child.stderr.destroy();
       child.unref();
@@ -644,6 +694,7 @@ export function defaultDeps() {
     monotonic: () => performance.now(),
     readFile: file => fs.readFileSync(file, 'utf8'),
     resolve: cmd => resolveOnPath(cmd, env, process.platform),
+    constrainedMemory: () => (typeof process.constrainedMemory === 'function' ? process.constrainedMemory() : 0),
     statFile: file => { const st = fs.statSync(file); return { size: st.size, mtimeMs: st.mtimeMs }; },
     concurrency: 6,
     run: realRunner(env, process.platform),
@@ -694,21 +745,42 @@ function parseArgs(argv) {
 const readText = file => { try { return fs.readFileSync(file, 'utf8'); } catch { return null; } };
 const isSheetMarkdown = text => typeof text === 'string' && text.replace(/^\ufeff/, '').split(/\r?\n/, 1)[0].trim() === SHEET_HEADER;
 
-/** Where the sheet goes, or why not: inside the working folder, a .md file, never over a file that is not a sheet. */
+/** The nearest existing ancestor of `dir`, as the real path (symbolic links and junctions resolved). */
+function nearestRealpath(dir) {
+  let d = dir;
+  for (;;) {
+    try { return fs.realpathSync(d); } catch { const up = path.dirname(d); if (up === d) return d; d = up; }
+  }
+}
+
+/** True when `target` is `base` or inside it. A name that merely starts with two dots (`..notes.md`) is inside. */
+function isInside(base, target) {
+  const rel = path.relative(base, target);
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
+}
+
+const isLink = file => { try { return fs.lstatSync(file).isSymbolicLink(); } catch { return false; } };
+
+/** Where the sheet goes, or why not: inside the working folder (also by real path), a .md file, never over a file that is not a sheet. */
 function planOutput(out, cwd) {
   if (!/\.md$/i.test(out)) return { error: 'the --out file must end in .md' };
   const mdFile = path.resolve(cwd, out);
-  const rel = path.relative(cwd, mdFile);
-  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) return { error: 'the --out file must stay inside the working folder' };
   const jsonFile = path.join(path.dirname(mdFile), `${path.basename(mdFile, path.extname(mdFile))}.json`);
+  if (mdFile === path.resolve(cwd) || !isInside(path.resolve(cwd), mdFile) || !isInside(nearestRealpath(cwd), nearestRealpath(path.dirname(mdFile)))) {
+    return { error: 'the --out file must stay inside the working folder' };
+  }
+  if (isLink(mdFile) || isLink(jsonFile)) return { error: 'the --out file, or the .json beside it, is a link; links are not followed' };
   const md = readText(mdFile);
-  if (md !== null && md.trim() !== '' && !isSheetMarkdown(md)) return { error: `refusing to overwrite ${path.basename(mdFile)}: its first line is not "${SHEET_HEADER}"${out === DEFAULT_OUT ? '. Delete that file (it is not a sheet) and run collect again.' : ''}` };
+  if (md !== null && md.trim() !== '' && !isSheetMarkdown(md)) {
+    return { error: `refusing to overwrite ${path.basename(mdFile)}: its first line is not "${SHEET_HEADER}"${out === DEFAULT_OUT ? '. Delete that file (it is not a sheet) and run collect again.' : ''}` };
+  }
   const json = readText(jsonFile);
   if (json !== null && json.trim() !== '') {
     const parsed = safely(() => JSON.parse(json), null);
     const ours = isObject(parsed) ? typeof parsed.schemaVersion === 'number' : parsed === null && isSheetMarkdown(md);
     if (!ours) return { error: `refusing to overwrite ${path.basename(jsonFile)}: the .json file beside the sheet is not a system-specs sheet` };
   }
+  const rel = path.relative(cwd, mdFile);
   const shown = path.isAbsolute(out) ? rel.replace(/\\/g, '/') : out.replace(/\\/g, '/');
   return { mdFile, jsonFile, shown };
 }
@@ -725,41 +797,49 @@ function writeAtomic(file, text) {
   }
 }
 
-/** The cached sheet when it is valid and from this machine, else null. Its age does not matter: collection happens once. */
+/** The cached sheet when it is valid (hash equals the hash of its parts) and from this machine, else null. */
 function usableSheet(plan, deps) {
   const raw = readText(plan.jsonFile);
   if (raw === null || !isSheetMarkdown(readText(plan.mdFile))) return null;
   const sheet = validateSheet(safely(() => JSON.parse(raw), null));
   if (!sheet) return null;
-  const here = { family: { win32: 'windows', darwin: 'macos', linux: 'linux' }[deps.platform] ?? 'other', architecture: String(deps.arch), memoryGiB: positiveInt(safely(() => deps.totalmem(), 0) / GiB) };
+  const here = { family: { win32: 'windows', darwin: 'macos', linux: 'linux' }[deps.platform] ?? 'other', architecture: String(deps.arch), memoryGiB: memoryGiBOf(deps) };
   if (sheet.os.family !== here.family || sheet.os.architecture !== here.architecture || sheet.memoryGiB !== here.memoryGiB) return null;
   return sheet;
 }
 
-/** Reuse a usable sheet; its Markdown is rewritten from the validated JSON, never trusted from disk. Null means: collect. */
-function reuse(plan, deps) {
-  const sheet = usableSheet(plan, deps);
-  if (!sheet) return null;
-  try { writeAtomic(plan.mdFile, renderMarkdown(sheet)); } catch { return null; }
-  return sheet;
-}
+/** At most eight names; the rest as a count. */
+const listNames = names => (names.length <= 8 ? names.join(', ') : `${names.slice(0, 8).join(', ')} ... and ${names.length - 8} more`);
 
 /** Read-only: compare the PATH now with the fingerprint in the sheet. No tool is run and nothing is written. */
 function checkSheet(plan, deps) {
+  const stored = safely(() => JSON.parse(readText(plan.jsonFile) ?? ''), null);
+  if (isObject(stored) && typeof stored.schemaVersion === 'number' && stored.schemaVersion !== SCHEMA_VERSION) {
+    return { code: 1, out: '', err: 'older format, run collect (the sheet has another schema number)\n' };
+  }
   const sheet = usableSheet(plan, deps);
   if (!sheet) return { code: 1, out: '', err: 'no usable sheet: run collect first (it is missing, damaged, edited, or from another machine)\n' };
-  const now = computeFingerprint(deps);
-  if (now.hash === sheet.fingerprint.hash) return { code: 0, out: `unchanged (sheet collected ${sheet.collectedAt})\n`, err: '' };
-  const changed = Object.keys(now.parts).filter(name => now.parts[name] !== sheet.fingerprint.parts[name]);
-  return { code: 3, out: `changed: ${changed.join(', ')}\n`, err: '' };
+  const diff = diffParts(computeFingerprint(deps).parts, sheet.fingerprint.parts);
+  const others = diff.filter(name => name !== 'PATH');
+  if (!others.length) return { code: 0, out: `unchanged (sheet collected ${sheet.collectedAt})\n`, err: '' };
+  const lead = diff.includes('PATH') ? 'PATH differs from the collection, so the names may be a PATH effect: ' : '';
+  return { code: 3, out: `changed: ${lead}${listNames(others)}\n`, err: '' };
 }
 
 /** The default folder keeps its own files out of git: a `.gitignore` with `*`. Returns a note when one exists with other content. */
 function ignoreOwnFolder(plan, cwd) {
   if (path.relative(cwd, path.dirname(plan.mdFile)) !== path.dirname(DEFAULT_OUT)) return '';
   const file = path.join(path.dirname(plan.mdFile), '.gitignore');
-  const existing = readText(file);
-  if (existing === null) { fs.writeFileSync(file, '*\n', { flag: 'wx' }); return ''; }
+  let existing = readText(file);
+  if (existing === null) {
+    try {
+      fs.writeFileSync(file, '*\n', { flag: 'wx' });
+      return '';
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+      existing = readText(file) ?? '';
+    }
+  }
   return existing.trim() === '*' || existing.trim() === '' ? '' : ` Note: ${path.dirname(DEFAULT_OUT).replace(/\\/g, '/')}/.gitignore already has other content and was left alone, so check that the sheet is ignored.`;
 }
 
@@ -780,9 +860,18 @@ export async function runCli(argv, deps) {
   if (plan.error) return refuse(plan.error);
   if (parsed.command === 'check') return checkSheet(plan, deps);
 
+  let changedNote = '';
   if (!opts.refresh) {
-    const fresh = reuse(plan, deps);
-    if (fresh) return { code: 0, out: `System specs reused (collected ${fresh.collectedAt}): ${plan.shown}\n`, err: '' };
+    const previous = usableSheet(plan, deps);
+    if (previous) {
+      const diff = diffParts(computeFingerprint(deps).parts, previous.fingerprint.parts);
+      if (!diff.length) {
+        try {
+          writeAtomic(plan.mdFile, renderMarkdown(previous));
+          return { code: 0, out: `System specs reused (collected ${previous.collectedAt}): ${plan.shown}\n`, err: '' };
+        } catch { /* collect again */ }
+      } else changedNote = `; changed since the last sheet: ${listNames(diff)}`;
+    }
   }
 
   const sheet = await collectSpecs(deps);
@@ -795,7 +884,7 @@ export async function runCli(argv, deps) {
   } catch (error) {
     return { code: 1, out: '', err: `could not write the sheet (${error?.code ?? 'error'}); use --json to print it instead\n` };
   }
-  return { code: 0, out: `System specs written: ${plan.shown} (and the .json beside it)${note}\n`, err: '' };
+  return { code: 0, out: `System specs written: ${plan.shown} (and the .json beside it)${changedNote}${note}\n`, err: '' };
 }
 
 const isMain = (() => {
@@ -803,10 +892,17 @@ const isMain = (() => {
 })();
 
 if (isMain) {
-  runCli(process.argv.slice(2), defaultDeps()).then(r => {
-    // Exit explicitly once the output is flushed: a probe that outlived its timeout must never keep the process alive.
-    const finish = () => process.exit(r.code);
-    const writeErr = () => (r.err ? process.stderr.write(r.err, finish) : finish());
-    if (r.out) process.stdout.write(r.out, writeErr); else writeErr();
-  });
+  Promise.resolve()
+    .then(() => runCli(process.argv.slice(2), defaultDeps()))
+    .then(r => {
+      // Exit explicitly once the output is flushed: a probe that outlived its timeout must never keep the process alive.
+      const finish = () => process.exit(r.code);
+      const writeErr = () => (r.err ? process.stderr.write(r.err, finish) : finish());
+      if (r.out) process.stdout.write(r.out, writeErr); else writeErr();
+    })
+    .catch(error => {
+      // A short message only: no stack, no path.
+      process.stderr.write(`system-specs failed (${typeof error?.code === 'string' ? error.code : 'error'}); nothing more was done\n`, () => process.exit(1));
+    });
 }
+
