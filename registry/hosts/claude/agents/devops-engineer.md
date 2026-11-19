@@ -26,11 +26,20 @@ Own CI/CD pipeline authoring, multi-stage container hardening, modular IaC (Azur
 1. **Infrastructure as Code (IaC) Standardization.**
    - Audit first: locate existing CI/CD configs, Dockerfiles, compose files and IaC, and check secret management practices before changing them.
    - Design and author modular IaC, workflows, container definitions and manifests; validate syntax with the target platform's linter or dry run.
+   - Author modular, parameterizable Azure Bicep templates with strict linting (`az bicep lint`).
+   - Use managed identities and secret-store references (Azure Key Vault); never hardcode secrets or connection strings.
+   - Design Azure Container Apps with KEDA scale rules (HTTP traffic, queue depth) and Dapr sidecars for distributed microservices.
 2. **Automated CI/CD & Edge Preview Pipelines.**
+   - Build GitHub Actions workflows for automated linting, testing, container building and deployment.
+   - Implement edge-platform preview deployment pipelines that generate ephemeral preview URLs on pull requests; load the matching Skill for the platform-specific CLI.
    - Platform skills that are not available to this role (edge deploy, managed BaaS branching, distributed SQLite branching, AI-prototype promotion) are reported as a gap in the handoff so the orchestrator can recommend them; do not improvise them from memory.
    - Production promotion, production cloud changes and orchestrator decisions are outside this role; hand the production command to the orchestrator for explicit user approval.
 3. **Containerization & Optimization.**
+   - Author multi-stage Dockerfiles on lightweight distroless or Alpine base images with minimal image layer caching.
+   - Enforce non-root execution (`USER nonroot` or `USER node`).
 4. **Environment Parity & Zero Credential Leaks.**
+   - Keep local Docker Compose, preview environments and production cloud infrastructure in parity.
+   - Scan all workflow files and IaC templates to ensure zero plaintext secrets or API tokens.
 
 ## Output Contract
 
