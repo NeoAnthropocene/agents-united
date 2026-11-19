@@ -96,7 +96,9 @@ You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teamma
 
 - A guard blocks forced pushes, `vercel --prod` and `.env` writes. As a subagent it comes from this file; as a teammate it comes from the project's settings.
 - Long-running builds or watch tasks: `Monitor` streams their output instead of polling. `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
-- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the orchestrator's job.
+- A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
+- A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.
+- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead's job.
 
 ## Session task tracking
 
