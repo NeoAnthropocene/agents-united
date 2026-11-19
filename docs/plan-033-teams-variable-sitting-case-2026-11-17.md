@@ -24,17 +24,19 @@ This is one short interactive case the maintainer can sit himself. It is prepare
 
 Each arm is one prompt in one new interactive session on the maintainer's subscription. An interactive session has no budget cap.
 
+Correction, 2026-11-19: as first written, the preparation pointed at the checkout the factory had been installed into on 2026-11-17, and arm A started it with that checkout's own `dist\cli.js`. By 2026-11-19 that checkout had been rebuilt from a later `dev`, and the maintainer's first attempt at arm A was refused by the launcher: "Claude factory startup: critical guard bytes differ .claude/hooks/agents-united-guard.js. Run 'agents update agent-factory --fanout claude --native' in this workspace." The refusal is the launcher's check doing its work: the installed guard script was older than the build that started it. The case now uses a workspace installed from the same build that starts it. `<workspace>` is a new git folder with `node <built dev checkout>\dist\cli.js add agent-factory -t claude --native --allow-under-construction --copy -y`.
+
 Preparation, once:
 
 ```powershell
-cd C:\github\agents-united\.claude\worktrees\agent-factory-plan-setup-3640f9
+cd <workspace>
 $env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
 ```
 
 Arm A:
 
 ```powershell
-node dist\cli.js start agent-factory --host claude
+node <built dev checkout>\dist\cli.js start agent-factory --host claude
 ```
 
 Arm B (after arm A is closed):
