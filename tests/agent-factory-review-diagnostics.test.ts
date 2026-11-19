@@ -73,7 +73,8 @@ describe('the record check names every refused citation and says what a non-JSON
 
   it('finds the lines of a quote itself and prints where each citation stands', async () => {
     const p = await prepare();
-    const one = p.unique[1]!;
+    // A unique line followed by a line that is not empty, so that the two-line quote really ends on the next line.
+    const one = p.unique.find(item => (p.lines[item.line] ?? '').trim().length > 0)!;
     const next = p.lines[one.line]!;
     const two = `${p.lines[one.line - 1]}\n${next}`;
     p.criterion('task-fit').citations = [p.cite(one.quote)];

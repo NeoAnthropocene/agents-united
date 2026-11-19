@@ -63,7 +63,7 @@ const skillRoot = fileURLToPath(new URL('../', import.meta.url));
 const scriptFile = fileURLToPath(import.meta.url);
 const limits = { envelope: 262144, executable: 134217728 };
 // The citation limits; registry texts and tests read these numbers from here, so they state what the check enforces.
-const CITATION_LIMITS = { maxLines: 5, maxQuoteLines: 5, maxQuoteBytes: 1024 };
+const CITATION_LIMITS = { maxQuoteLines: 5, maxQuoteBytes: 1024 };
 // A refusal lists this many bad citations and says how many more there are.
 const CITATION_LIST_CAP = 10;
 // Text the result controls (a path, an id, the start of the file) is echoed in a refusal, and the coordinator quotes that refusal into the next
@@ -394,6 +394,8 @@ function checkResult(record, resultFile, precheck = false) {
   let bytes;
   try { bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result'); } catch (error) { if (precheck) throw new Environment(error.message); throw error; }
   const result = parseResult(bytes);
+  // The earlier format gave a line range per citation; it is refused before the schema, with a reason that says what changed.
+  if (result !== null && typeof result === 'object' && result.version === 1) fail('Result version 1 is no longer accepted: its citations give a line range. This checker accepts version 2, where a citation gives its source and an exact quote and the checker finds the lines itself (ADR 0071).');
   validate(result, record.resultSchema, 'result');
   if (!job.inputs.some(input => input.required && input.status === 'clear' && input.kind === 'loading'
     && sameBoth(input.path, path.join(skillRoot, 'assets/result.schema.json')))) (precheck ? environment : fail)('Missing result-schema loading pin.');
@@ -402,14 +404,19 @@ function checkResult(record, resultFile, precheck = false) {
     (precheck && result.jobDigest !== record.digest ? environment : fail)('Result fixed job/candidate digest mismatch.');
   }
   if (!same(result.subject, job.subject) || !same(result.inventory, record.inventory)) fail('Result subject/inventory substitution.');
-  // Every citation is inspected and every failure is collected, so one refusal names them all: where the citation is, its source, its range, the
-  // file's length (as the Read tool counts it), every limit it breaks and, for a quote that stands elsewhere in the file, the line it stands on.
+  // Every citation is inspected and every failure is collected, so one refusal names them all: where the citation is, its source, the file's
+  // length (as the Read tool counts it), every limit it breaks and, for a quote that occurs more than once, every line it begins on. A citation gives
+  // its source and an exact quote (ADR 0071); the checker finds the lines itself, and `line` is needed only when the quote occurs more than once.
+  // An accepted citation is resolved to the lines found, and the resolved list is printed with the record.
   const failures = [];
+  const resolved = [];
   let citationTotal = 0;
+  // At most CITATION_LIST_CAP line numbers are written out, then how many more there are.
+  const lineList = values => values.length > CITATION_LIST_CAP ? `${values.slice(0, CITATION_LIST_CAP).join(', ')}, and ${values.length - CITATION_LIST_CAP} more` : values.join(', ');
   const inspect = (cite, where) => {
     citationTotal += 1;
     // Everything the result controls (an id, a path) is echoed through echo(): one short line, never a line break.
-    const base = { where: echo(where), sourceId: echo(cite.sourceId), path: echo(cite.path), startLine: cite.startLine, endLine: cite.endLine, fileLines: null, problems: [], quoteFoundAtLine: null, endLineIsPastLastShown: false };
+    const base = { where: echo(where), sourceId: echo(cite.sourceId), path: echo(cite.path), line: cite.line ?? null, fileLines: null, problems: [], occurrences: [] };
     const refuse = (lead, extra = {}) => failures.push({ ...base, lead, ...extra, problems: extra.problems ?? [lead] });
     let rel;
     try { rel = relative(cite.path); } catch { return refuse(`Invalid contained relative path: ${echo(cite.path)}.`); }
@@ -430,43 +437,52 @@ function checkResult(record, resultFile, precheck = false) {
     try { actual = bytesAt(file, cap, 'Citation source'); } catch (error) { if (precheck) throw new Environment(error.message); throw error; }
     if (precheck && hash(actual) !== pin.sha256) throw new Environment('Citation source hash mismatch.');
     if (cite.sha256 !== pin.sha256 || hash(actual) !== pin.sha256) return refuse('Citation source hash mismatch.', { problems: ['the cited sha256 is not the pinned sha256 of this source'] });
-    const lines = decode(actual).replace(/\r\n?/g, '\n').split('\n');
-    // The checker accepts the empty string after a final newline as a last line, as before; the Read tool does not show it, so the count told to the
-    // evaluator is the Read tool's, and an end line on that phantom line is named.
-    const phantom = lines.length > 1 && lines.at(-1) === '';
-    const shown = phantom ? lines.length - 1 : lines.length;
-    const text = lines.join('\n');
+    const text = decode(actual).replace(/\r\n?/g, '\n');
+    // The empty string after a final newline is not a line the Read tool shows, so the count told to the evaluator leaves it out.
+    const segments = text.split('\n');
+    const fileLines = segments.length > 1 && segments.at(-1) === '' ? segments.length - 1 : segments.length;
     const quote = cite.quote.replace(/\r\n?/g, '\n');
-    const quoteLines = quote.split('\n').length;
-    const at = text.indexOf(quote);
-    const quoteFoundAtLine = at < 0 ? null : text.slice(0, at).split('\n').length;
-    const standsOn = quoteFoundAtLine === null ? 'the quote is not found anywhere in the file'
-      : `the quote stands on line${quoteLines > 1 ? 's' : ''} ${quoteFoundAtLine}${quoteLines > 1 ? `-${quoteFoundAtLine + quoteLines - 1}` : ''} of the file`;
-    const { maxLines, maxQuoteLines, maxQuoteBytes } = CITATION_LIMITS;
+    // One trailing newline of the quote does not begin a further line.
+    const quoteLines = quote.replace(/\n$/, '').split('\n').length;
+    // The start line of every occurrence of the quote, overlapping ones included.
+    const occurrences = [];
+    let line = 1, counted = 0;
+    for (let at = text.indexOf(quote); at >= 0; at = text.indexOf(quote, at + 1)) {
+      for (let newline = text.indexOf('\n', counted); newline >= 0 && newline < at; newline = text.indexOf('\n', counted)) { line += 1; counted = newline + 1; }
+      occurrences.push(line);
+    }
+    const { maxQuoteLines, maxQuoteBytes } = CITATION_LIMITS;
     // Every limit this citation breaks is listed, whether or not another one is broken too; the decision to refuse is the same as with one.
     const problems = [];
-    if (cite.startLine > cite.endLine) problems.push(`the start line ${cite.startLine} is after the end line ${cite.endLine}`);
-    if (cite.endLine > lines.length) problems.push(`the end line ${cite.endLine} is past the end of the file (the Read tool shows ${shown} lines)`);
-    if (cite.startLine <= cite.endLine && cite.endLine - cite.startLine >= maxLines) {
-      problems.push(`the citation spans ${cite.endLine - cite.startLine + 1} lines, at most ${maxLines} are allowed (its end line at most ${maxLines - 1} after its start line)`);
-    }
-    const rangeBad = problems.length > 0;
     const quoteBytes = Buffer.byteLength(quote, 'utf8');
     if (quoteBytes > maxQuoteBytes) problems.push(`the quote is ${quoteBytes} bytes, at most ${maxQuoteBytes} are allowed`);
     if (quoteLines > maxQuoteLines) problems.push(`the quote has ${quoteLines} lines, at most ${maxQuoteLines} are allowed`);
-    if (!lines.slice(cite.startLine - 1, cite.endLine).join('\n').includes(quote)) problems.push('the quote is not inside the cited lines', standsOn);
-    if (!problems.length) return;
-    const onPhantom = phantom && cite.endLine === lines.length;
-    if (onPhantom) problems.push(`line ${lines.length} is the empty line after the final newline, which the Read tool does not show`);
-    refuse(rangeBad ? 'Citation logical line range is invalid or over budget.' : 'Citation quote is absent from the pinned logical lines or over budget.',
-      { fileLines: shown, problems, quoteFoundAtLine, endLineIsPastLastShown: onPhantom });
+    const overBudget = problems.length > 0;
+    let wrongLine = false;
+    if (!occurrences.length) problems.push('the quote is not found anywhere in the file');
+    else if (cite.line === undefined && occurrences.length > 1) {
+      problems.push(`the quote occurs ${occurrences.length} times, beginning on lines ${lineList(occurrences)}; give \`line\` with one of them, or quote more so that it occurs once`);
+    } else if (cite.line !== undefined && !occurrences.includes(cite.line)) {
+      wrongLine = true;
+      problems.push(`\`line\` ${cite.line} is not a line where the quote begins; it begins on line${occurrences.length > 1 ? 's' : ''} ${lineList(occurrences)}`);
+    }
+    if (!problems.length) {
+      const startLine = cite.line ?? occurrences[0];
+      resolved.push({ where: base.where, sourceId: base.sourceId, path: base.path, startLine, endLine: startLine + quoteLines - 1 });
+      return;
+    }
+    const lead = !occurrences.length ? 'Citation quote is not found in the pinned source.'
+      : overBudget ? 'Citation quote is over budget.'
+        : wrongLine ? 'Citation line does not name a line where its quote begins.'
+          : 'Citation quote occurs more than once and names no line.';
+    refuse(lead, { fileLines, problems, occurrences });
   };
   result.criteria.forEach(criterion => criterion.citations.forEach((cite, index) => inspect(cite, `criterion ${criterion.id}, citation ${index + 1}`)));
   result.findings.forEach(finding => finding.citations.forEach((cite, index) => inspect(cite, `finding ${finding.id}, citation ${index + 1}`)));
   if (failures.length) {
     const shown = failures.slice(0, CITATION_LIST_CAP);
     const sentence = problems => problems.join('; ').replace(/\.?$/, '.');
-    const listed = shown.map((item, index) => `${index + 1}. ${item.where}: source ${item.sourceId} (${item.path}), lines ${item.startLine}-${item.endLine}${item.fileLines === null ? '' : `, the file has ${item.fileLines} lines`}: ${sentence(item.problems)}`);
+    const listed = shown.map((item, index) => `${index + 1}. ${item.where}: source ${item.sourceId} (${item.path})${item.fileLines === null ? '' : `, the file has ${item.fileLines} lines`}: ${sentence(item.problems)}`);
     const more = failures.length - shown.length;
     throw new Refusal([`${failures[0].lead} ${failures.length} of ${citationTotal} citations ${failures.length === 1 ? 'is' : 'are'} refused, and one bad citation refuses the whole result; correct every one listed and hand back the complete result again as ONE JSON object.`,
       ...listed, ...(more ? [`...and ${more} more not listed.`] : [])].join('\n'),
@@ -506,10 +522,10 @@ function checkResult(record, resultFile, precheck = false) {
     if (item.status !== check.status || item.exit !== check.exit || item.rawSha256 !== (check.raw?.sha256 ?? null)
       || item.receiptSha256 !== (check.receipt?.sha256 ?? null)) fail(`Returned deterministic evidence contradicts pinned receipts: ${item.id}.`);
   }
-  if (precheck) return { precheck: true, candidateMatch: true, opinion: result.opinion, reviewStatus: result.status };
+  if (precheck) return { precheck: true, candidateMatch: true, opinion: result.opinion, reviewStatus: result.status, citations: resolved };
   record.recheck();
   if (!bytesAt(resultFile, job.budget.maxResultBytes, 'Result postflight').equals(bytes)) fail('Result changed during postflight.');
-  return { result: pinOf(resultFile, bytes), candidateMatch: true, opinion: result.opinion, reviewStatus: result.status };
+  return { result: pinOf(resultFile, bytes), candidateMatch: true, opinion: result.opinion, reviewStatus: result.status, citations: resolved };
 }
 
 const deterministic = { quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false };
