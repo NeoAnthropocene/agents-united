@@ -41,8 +41,9 @@ describe('the shipped review-job builder', () => {
   });
   afterEach(async () => { await fs.remove(fixture.root); });
 
-  const node = (script: string, args: string[], cwd = fixture.workspace) => spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8', timeout: 60_000, env: isolatedTempEnv(path.join(fixture.root, 'tmp')) });
-  const build = (specFile: string) => node(fixture.installed(BUILDER), ['--spec', specFile]);
+  const fixtureTemp = () => path.join(fixture.root, 'tmp');
+  const node = (script: string, args: string[], cwd = fixture.workspace, temp = fixtureTemp()) => spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8', timeout: 60_000, env: isolatedTempEnv(temp) });
+  const build = (specFile: string, temp = fixtureTemp()) => node(fixture.installed(BUILDER), ['--spec', specFile], fixture.workspace, temp);
   const check = (args: string[]) => node(fixture.installed(CHECKER), args);
   // Named as the Skill, as skill-check requires of a Skill folder.
   const candidate = () => path.join(work, 'invoice-action-csv');
@@ -141,11 +142,9 @@ describe('the shipped review-job builder', () => {
   });
 
   it('writes the hand-back hook\'s pointer in the temp folder: named by the job digest, holding the job path and nothing else, and never needed by the checker (ADR 0070)', async () => {
-    const temp = path.join(work, 'tmp');
-    await fs.ensureDir(temp);
-    const env = isolatedTempEnv(temp);
+    const temp = fixtureTemp();
     const specFile = await writeSpec(await skillSpec());
-    const built = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env });
+    const built = build(specFile);
     expect(built.status, built.stderr).toBe(0);
     const out = JSON.parse(built.stdout);
     const pointers = path.join(temp, 'agents-united', 'review-jobs');
@@ -158,7 +157,7 @@ describe('the shipped review-job builder', () => {
     let linked = true;
     try { fs.symlinkSync(real, link, process.platform === 'win32' ? 'junction' : 'dir'); } catch { linked = false; }
     if (linked) {
-      const throughLink = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: isolatedTempEnv(link) });
+      const throughLink = build(specFile, link);
       expect(throughLink.status, throughLink.stderr).toBe(0);
       expect(await fs.readFile(path.join(real, 'agents-united', 'review-jobs', `${JSON.parse(throughLink.stdout).jobDigest}.txt`), 'utf8')).toBe(path.join(review(), 'job.json'));
     }
@@ -168,7 +167,7 @@ describe('the shipped review-job builder', () => {
     expect(checked.status, checked.stderr).toBe(0);
     const file = path.join(work, 'not-a-folder');
     await fs.writeFile(file, 'x');
-    const again = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: isolatedTempEnv(file) });
+    const again = build(specFile, file);
     expect(again.status, again.stderr).toBe(0);
   });
 
