@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { EventEmitter } from 'node:events';
 import { spawn, spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -359,11 +361,11 @@ for (const variant of [
           username: () => user,
           cwd: () => dir,
           env: { PATH: variant.home, USERPROFILE: variant.home, USERNAME: user, COMPUTERNAME: host, GITHUB_TOKEN: 'ghp_SECRETSECRET', OPENAI_API_KEY: 'sk-SECRETSECRET' },
-          cpus: () => [{ model: `Fake CPU ${user}@${host}` }],
-          osVersion: `Windows 11 Pro ${variant.home}`,
-          readFile: p => { if (p === '/etc/os-release') return `PRETTY_NAME="Ubuntu 24.04 /srv/${host}"`; throw new Error('ENOENT'); },
+          cpus: () => [{ model: `Fake CPU of ${host} ${user}@${host}` }],
+          osVersion: `Windows 11 Pro of ${user} ${variant.home}`,
+          readFile: p => { if (p === '/etc/os-release') return `PRETTY_NAME="Ubuntu 24.04 ${host} /srv/${host}"`; throw new Error('ENOENT'); },
         },
-        extraRun: (cmd, args) => (cmd === 'nvidia-smi' ? { status: 'ok', code: 0, out: `GPU ${user}@lab, 8192\n` } : null),
+        extraRun: (cmd, args) => (cmd === 'nvidia-smi' ? { status: 'ok', code: 0, out: `GPU of ${user} ${user}@lab, 8192\n` } : null),
       });
       const res = await specs.runCli(['collect'], deps);
       assert.equal(res.code, 0, res.err);
@@ -903,7 +905,8 @@ test('check: a changed OS release, architecture or memory is reported by name', 
     assert.equal(release.code, 3);
     assert.match(release.out, /os release/);
     const memory = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, totalmem: () => 64 * GiB }).deps);
-    assert.equal(memory.code, 1, 'another memory size is another machine: no usable sheet');
+    assert.equal(memory.code, 3, 'a changed memory value is a change, not another machine');
+    assert.match(memory.out, /memory/);
   } finally { rmTemp(dir); }
 });
 
@@ -972,35 +975,10 @@ test('systemToolPath is absolute under SystemRoot, with a fixed fallback and an 
 test('no spawn in the collector names a bare tool: source check', () => {
   const src = fs.readFileSync(new URL('../../registry/skills/system-specs/scripts/specs.mjs', import.meta.url), 'utf8');
   const spawns = [...src.matchAll(/spawn\(([^,)]+),/g)].map(m => m[1].trim());
-  assert.ok(spawns.length >= 2);
+  assert.ok(spawns.length >= 1);
+  assert.ok(src.includes("spawnFn(systemToolPath("), "taskkill goes through the injectable spawn by absolute path");
   for (const first of spawns) assert.ok(!/^['"`]/.test(first), `spawn(${first}) starts a bare name`);
   assert.doesNotMatch(src, /['"`][A-Za-z]:[A-Za-z]/, 'a drive-relative literal such as C:Windows');
-});
-
-test('Windows: a taskkill decoy in the working folder is not run when a probe times out', { skip: process.platform !== 'win32' }, async t => {
-  const dir = mkTemp();
-  const here = process.cwd();
-  const savedOptions = process.env.NODE_OPTIONS;
-  try {
-    const marker = path.join(dir, 'ran.txt');
-    const hook = path.join(dir, 'hook.cjs');
-    fs.writeFileSync(hook, `if (/taskkill\\.exe$/i.test(process.execPath)) require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'ran');`);
-    fs.copyFileSync(process.execPath, path.join(dir, 'taskkill.exe'));
-    process.env.NODE_OPTIONS = `--require ${JSON.stringify(hook.replace(/\\/g, '/'))}`;
-    process.chdir(dir);
-    // Sanity: a bare-name start from this folder does reach the decoy, so the assertion below is meaningful.
-    spawnSync('taskkill', ['/?'], { cwd: dir, windowsHide: true, timeout: 20000 });
-    if (!fs.existsSync(marker)) { t.skip('the decoy is not reachable by a bare name on this machine'); return; }
-    fs.rmSync(marker);
-    const run = specs.realRunner({ ...process.env, NODE_OPTIONS: '' }, 'win32');
-    const res = await run(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { timeoutMs: 1000 });
-    assert.equal(res.status, 'timeout');
-    assert.ok(!fs.existsSync(marker), 'the decoy taskkill was run');
-  } finally {
-    process.chdir(here);
-    if (savedOptions === undefined) delete process.env.NODE_OPTIONS; else process.env.NODE_OPTIONS = savedOptions;
-    rmTemp(dir);
-  }
 });
 
 // ---- 3 and 4: the fingerprint decides reuse; shells and PATH are part of it
@@ -1069,6 +1047,7 @@ test('check: only the PATH differs is unchanged; PATH plus tools is changed with
     const pathOnly = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, env: { PATH: PATH_B } }).deps);
     assert.equal(pathOnly.code, 0);
     assert.match(pathOnly.out, /^unchanged/);
+    assert.match(pathOnly.out, /\(PATH differs from the collection\)/);
     const both = await specs.runCli(['check'], machine({ node: FILE_A, git: FILE_A }, { cwd: () => dir, env: { PATH: PATH_B } }).deps);
     assert.equal(both.code, 3);
     assert.match(both.out, /^changed: PATH differs from the collection, so the names may be a PATH effect: git\n$/);
@@ -1080,7 +1059,7 @@ test('check: only the PATH differs is unchanged; PATH plus tools is changed with
   } finally { rmTemp(dir); }
 });
 
-test('check says older format for a sheet with another schema number, and never calls the runner', async () => {
+test('check says another format for a sheet with another schema number, and never calls the runner', async () => {
   const dir = mkTemp();
   try {
     await collectedIn(dir, { node: FILE_A });
@@ -1091,7 +1070,7 @@ test('check says older format for a sheet with another schema number, and never 
     const m = machine({ node: FILE_A }, { cwd: () => dir, run: async () => { throw new Error('the runner must not be called'); } });
     const res = await specs.runCli(['check'], m.deps);
     assert.equal(res.code, 1);
-    assert.match(res.out + res.err, /older format, run collect/);
+    assert.match(res.out + res.err, /another format, run collect/);
     const unchanged = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, run: async () => { throw new Error('no'); } }).deps);
     assert.equal(unchanged.code, 1);
     await specs.runCli(['collect', '--refresh'], machine({ node: FILE_A }, { cwd: () => dir }).deps);
@@ -1234,5 +1213,174 @@ test('the recovery sentence appears for the default file in any spelling, and ne
       assert.doesNotMatch(res.err, /[Dd]elete/, spelling);
     }
     assert.equal(fs.readFileSync(path.join(dir, '.agents-united', 'system-specs.md'), 'utf8'), 'not mine');
+  } finally { rmTemp(dir); }
+});
+
+// ================================================================================== fix round 3
+
+// ---- 1: a dangling link is not a tool
+
+test('POSIX: a dangling symlink earlier on PATH does not hide a real tool later on PATH', { skip: process.platform === 'win32' }, () => {
+  const dir1 = mkTemp();
+  const dir2 = mkTemp();
+  try {
+    try { fs.symlinkSync(path.join(dir1, 'gone'), path.join(dir1, 'tool')); } catch { return; }
+    fs.writeFileSync(path.join(dir2, 'tool'), '#!/bin/sh\n', { mode: 0o755 });
+    const env = { PATH: `${dir1}:${dir2}` };
+    assert.equal(specs.resolveOnPath('tool', env, 'linux'), path.join(dir2, 'tool'));
+  } finally { rmTemp(dir1); rmTemp(dir2); }
+});
+
+// ---- 2: account-derived tokens in plain words
+
+test('scrub: a token of five or more characters is removed as a whole word anywhere, except stoplisted words; shorter ones stay path-like', () => {
+  const ctx = (user, host = '') => ({ home: '', user, host, tokens: [] });
+  assert.equal(specs.scrub('Windows 11 Pro of janet', ctx('janet')), 'Windows 11 Pro of <user>');
+  assert.equal(specs.scrub('Acme Linux (build-host-7)', ctx('', 'build-host-7')), 'Acme Linux (<host>)');
+  assert.equal(specs.scrub('Janetown and JANET', ctx('janet')), 'Janetown and <user>', 'a longer word is not touched');
+  assert.equal(specs.scrub('Hyper-V on LAB-NODE-3 guest', ctx('', 'LAB-NODE-3')), 'Hyper-V on <host> guest');
+  for (const word of ['ubuntu', 'debian', 'fedora', 'centos', 'rocky', 'alma', 'alpine', 'arch', 'kali', 'windows', 'server', 'linux', 'intel', 'nvidia', 'apple', 'microsoft', 'admin', 'user', 'root', 'runner']) {
+    assert.equal(specs.scrub(`Vendor ${word} 24.04`, ctx(word)), `Vendor ${word} 24.04`, `${word} is a stoplisted word`);
+    assert.equal(specs.scrub(word, ctx(word)), '<user>', `${word} is still removed as a whole field`);
+  }
+  assert.equal(specs.scrub('chip of jane', ctx('jane')), 'chip of jane', 'a four-character token is not removed from plain words');
+  assert.equal(specs.scrub('jane@lab', ctx('jane')), '<user>@lab', 'but it is removed next to an @');
+});
+
+// ---- 3: collect and check agree about PATH
+
+test('a PATH-only difference: collect reuses with no runner call and says so; check says unchanged and says so; the stored PATH part is kept', async () => {
+  const dir = mkTemp();
+  try {
+    await collectedIn(dir, { node: FILE_A }, { env: { PATH: PATH_A } });
+    const jsonFile = path.join(dir, '.agents-united', 'system-specs.json');
+    const before = fs.readFileSync(jsonFile, 'utf8');
+    const m = machine({ node: FILE_A }, { cwd: () => dir, env: { PATH: PATH_B } });
+    const res = await specs.runCli(['collect'], m.deps);
+    assert.equal(res.code, 0, res.err);
+    assert.equal(m.calls.length, 0, 'no runner call');
+    assert.match(res.out, /reused/);
+    assert.match(res.out, /\(PATH differs from the collection\)/);
+    assert.equal(fs.readFileSync(jsonFile, 'utf8'), before, 'the JSON, with its PATH part, is not overwritten');
+    const check = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, env: { PATH: PATH_B } }).deps);
+    assert.equal(check.code, 0);
+    assert.match(check.out, /^unchanged/);
+    assert.match(check.out, /\(PATH differs from the collection\)/);
+    const same = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, env: { PATH: PATH_A } }).deps);
+    assert.doesNotMatch(same.out, /PATH differs/);
+  } finally { rmTemp(dir); }
+});
+
+// ---- 4: memory is a fingerprint part, not part of the same-machine rule
+
+test('a changed memory value: check exits 3 naming memory, and collect recollects naming it', async () => {
+  const dir = mkTemp();
+  try {
+    await collectedIn(dir, { node: FILE_A });
+    const check = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, totalmem: () => 64 * GiB }).deps);
+    assert.equal(check.code, 3, check.out + check.err);
+    assert.match(check.out, /^changed: memory\n$/);
+    const m = machine({ node: FILE_A }, { cwd: () => dir, totalmem: () => 64 * GiB });
+    const res = await specs.runCli(['collect'], m.deps);
+    assert.equal(res.code, 0, res.err);
+    assert.ok(m.calls.length > 0, 'recollected');
+    assert.match(res.out, /changed since the last sheet: memory/);
+    const after = JSON.parse(fs.readFileSync(path.join(dir, '.agents-united', 'system-specs.json'), 'utf8'));
+    assert.equal(after.memoryGiB, 64);
+  } finally { rmTemp(dir); }
+});
+
+test('the fingerprint ties the sheet fields it hashes: a sheet whose memory or architecture disagrees with its fingerprint is not valid', async () => {
+  const { deps } = machine({ node: FILE_A });
+  const sheet = JSON.parse(JSON.stringify(await specs.collectSpecs(deps)));
+  assert.ok(specs.validateSheet(sheet));
+  assert.equal(specs.validateSheet({ ...sheet, memoryGiB: 64 }), null);
+  assert.equal(specs.validateSheet({ ...sheet, os: { ...sheet.os, architecture: 'arm64' } }), null);
+});
+
+// ---- 5: schema numbers
+
+test('a sheet with a higher schema number is never overwritten (exit 2); a lower one is replaced; check says another format', async () => {
+  const dir = mkTemp();
+  try {
+    await collectedIn(dir, { node: FILE_A });
+    const jsonFile = path.join(dir, '.agents-united', 'system-specs.json');
+    const sheet = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+    sheet.schemaVersion = specs.SCHEMA_VERSION + 1;
+    const higher = JSON.stringify(sheet);
+    fs.writeFileSync(jsonFile, higher);
+    for (const argv of [['collect'], ['collect', '--refresh']]) {
+      const m = machine({ node: FILE_A }, { cwd: () => dir });
+      const res = await specs.runCli(argv, m.deps);
+      assert.equal(res.code, 2, argv.join(' '));
+      assert.match(res.err, /newer/i);
+      assert.ok(!res.err.includes(dir));
+      assert.equal(m.calls.length, 0);
+      assert.equal(fs.readFileSync(jsonFile, 'utf8'), higher, 'untouched');
+    }
+    const check = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir }).deps);
+    assert.equal(check.code, 1);
+    assert.match(check.err, /another format, run collect/);
+    sheet.schemaVersion = specs.SCHEMA_VERSION - 1;
+    fs.writeFileSync(jsonFile, JSON.stringify(sheet));
+    assert.match((await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir }).deps)).err, /another format, run collect/);
+    assert.equal((await specs.runCli(['collect'], machine({ node: FILE_A }, { cwd: () => dir }).deps)).code, 0);
+    assert.equal(JSON.parse(fs.readFileSync(jsonFile, 'utf8')).schemaVersion, specs.SCHEMA_VERSION);
+  } finally { rmTemp(dir); }
+});
+
+test('the fingerprint key list is tied to the schema number: changing the keys needs a new schema', () => {
+  const PINNED = { 3: '15d100fbb581248db723429b564a93a49b6b5e4d2aae27ae6729fcae62155242' };
+  const hash = createHash('sha256').update(JSON.stringify(specs.FINGERPRINT_KEYS)).digest('hex');
+  assert.ok(PINNED[specs.SCHEMA_VERSION], `schema ${specs.SCHEMA_VERSION} has no pinned key list: bump deliberately and pin it`);
+  assert.equal(hash, PINNED[specs.SCHEMA_VERSION], 'FINGERPRINT_KEYS changed without a schema bump');
+});
+
+// ---- 6: the taskkill call, on every platform
+
+test('killTree on win32 starts taskkill by an absolute System32 path, in the temp folder, with exactly /T /F /PID', async () => {
+  const child = new EventEmitter();
+  child.pid = 4242;
+  child.kill = () => {};
+  const calls = [];
+  const fakeSpawn = (command, args, options) => {
+    calls.push({ command, args, options });
+    queueMicrotask(() => child.emit('close'));
+    return new EventEmitter();
+  };
+  await specs.killTree(child, 'win32', { SystemRoot: 'D:\\Win' }, fakeSpawn);
+  assert.equal(calls.length, 1);
+  assert.ok(path.win32.isAbsolute(calls[0].command));
+  assert.equal(calls[0].command, 'D:\\Win\\System32\\taskkill.exe');
+  assert.equal(calls[0].options.cwd, os.tmpdir());
+  assert.deepEqual(calls[0].args, ['/T', '/F', '/PID', '4242']);
+  const fallback = [];
+  const child2 = new EventEmitter();
+  child2.pid = 7;
+  child2.kill = () => {};
+  await specs.killTree(child2, 'win32', {}, (c, a, o) => { fallback.push(c); queueMicrotask(() => child2.emit('close')); return new EventEmitter(); });
+  assert.equal(fallback[0], 'C:\\Windows\\System32\\taskkill.exe');
+});
+
+// ---- 7: a linked output file is refused
+
+test('--out: a .md or a .json beside it that is a link is refused', async t => {
+  const dir = mkTemp();
+  try {
+    fs.writeFileSync(path.join(dir, 'real.md'), '# System specs\n');
+    fs.writeFileSync(path.join(dir, 'real.json'), '{"schemaVersion":3}\n');
+    try {
+      fs.symlinkSync(path.join(dir, 'real.md'), path.join(dir, 'linked.md'), 'file');
+      fs.symlinkSync(path.join(dir, 'real.json'), path.join(dir, 'twin.json'), 'file');
+    } catch { t.skip('a link cannot be made here'); return; }
+    fs.writeFileSync(path.join(dir, 'twin.md'), '# System specs\n');
+    for (const out of ['linked.md', 'twin.md']) {
+      const m = makeDeps({ deps: { cwd: () => dir } });
+      const res = await specs.runCli(['collect', '--out', out], m.deps);
+      assert.equal(res.code, 2, out);
+      assert.match(res.err, /link/, out);
+      assert.equal(m.calls.length, 0);
+    }
+    assert.equal(fs.readFileSync(path.join(dir, 'real.md'), 'utf8'), '# System specs\n');
   } finally { rmTemp(dir); }
 });

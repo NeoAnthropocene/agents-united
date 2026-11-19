@@ -9,8 +9,8 @@
  *
  * `collect` collects once: it writes `.agents-united/system-specs.md` and `.json` beside it (relative to the working folder;
  * `--out` names the Markdown file, which must end in .md and stay inside the working folder; the JSON goes next to it). A valid
- * sheet of this machine is reused whatever its age (the Markdown is rewritten from the validated JSON); `--refresh` always
- * collects again. `--json` prints the JSON to stdout and writes nothing.
+ * sheet of this machine is reused when its environment fingerprint is identical or differs only in PATH, whatever its age (the
+ * Markdown is rewritten from the validated JSON); any other difference collects again. `--refresh` always collects again. `--json` prints the JSON to stdout and writes nothing.
  * `check` is a read-only, tool-free test of whether the environment changed since the sheet was collected: it re-resolves each
  * probed tool on PATH and compares a fingerprint (hashes only) stored in the JSON. It runs no tool and writes nothing.
  *
@@ -146,11 +146,16 @@ export function scrubContext(deps) {
   return { home, user, host, tokens };
 }
 
+/** OS and vendor words that legitimately occur in the free text; an account named like one of them is not removed from plain words. */
+const PLAIN_WORD_STOPLIST = new Set(['ubuntu', 'debian', 'fedora', 'centos', 'rocky', 'alma', 'alpine', 'arch', 'kali', 'windows', 'server', 'linux', 'intel', 'nvidia', 'apple', 'microsoft', 'admin', 'user', 'root', 'runner']);
+
+
 /**
  * Remove private values from a free-text string: the home folder (any separator, any case) becomes `~`, UNC and drive paths and
  * other absolute paths `<path>`. An account-derived token (user name, machine name and the environment values) is replaced only
  * when the whole string equals it or when it touches a path separator or an `@` (`user@host`, `/user/`), never inside ordinary
  * words: a user named ubuntu leaves "Ubuntu 24.04" intact. A token shorter than three characters is replaced only as a whole string.
+ * Tokens of five or more characters are also removed as whole words inside plain text, except OS and vendor words (the stoplist).
  */
 export function scrub(text, ctx = {}) {
   let s = String(text ?? '');
@@ -171,8 +176,14 @@ export function scrub(text, ctx = {}) {
     if (s.trim().toLowerCase() === value.toLowerCase()) return mark;
     if (value.length < 3) continue;
     const body = escapeRe(value);
+    // Next to a path separator or an @, any token of three or more characters goes.
     s = s.replace(new RegExp(`(?<=[\\\\/@~])${body}|${body}(?=[\\\\/@])`, 'gi'), mark);
+    // Inside plain words only a token of five or more characters goes, as a whole word, unless it is an ordinary OS or vendor word.
+    if (value.length >= 5 && !PLAIN_WORD_STOPLIST.has(value.toLowerCase())) {
+      s = s.replace(new RegExp(`(?<![\\p{L}\\p{N}_])${body}(?![\\p{L}\\p{N}_])`, 'giu'), mark);
+    }
   }
+
   return s;
 }
 
@@ -494,6 +505,8 @@ export function validateSheet(x) {
   if (!Array.isArray(x.shells) || x.shells.length > SHELL_NAMES.size || !x.shells.every(s => validEntry(s, SHELL_NAMES))) return null;
   if (!Array.isArray(x.tools) || x.tools.length !== PROBES.length) return null;
   if (!x.tools.every((t, i) => validEntry(t, new Set([PROBES[i].name])))) return null;
+  // The sheet fields that the fingerprint hashes must agree with it.
+  if (fp.parts.memory !== shortHash(`memory|${x.memoryGiB}`) || fp.parts.architecture !== shortHash(`architecture|${o.architecture}`)) return null;
   const entry = e => ({ name: e.name, status: e.status, version: e.version });
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -561,6 +574,7 @@ export function resolveOnPath(cmd, env, platform) {
   const isFile = file => {
     try { return fs.statSync(file).isFile(); } catch {
       // A Windows app-execution alias cannot be followed by stat; its link entry still names a launchable file.
+      if (!win) return false; // a dangling symlink on POSIX is not a tool
       try { const l = fs.lstatSync(file); return l.isFile() || l.isSymbolicLink(); } catch { return false; }
     }
   };
@@ -598,14 +612,14 @@ function decode(buffer) {
 }
 
 /** End a child and everything it started. Resolves when the process is gone or after a short grace period. */
-export function killTree(child, platform, env = process.env) {
+export function killTree(child, platform, env = process.env, spawnFn = spawn) {
   return new Promise(resolve => {
     const finish = () => { clearTimeout(grace); resolve(); };
     const grace = setTimeout(resolve, 2000);
     child.once('close', finish);
     try {
       if (platform === 'win32') {
-        const t = spawn(systemToolPath(env, 'taskkill.exe'), ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore', windowsHide: true, cwd: os.tmpdir() });
+        const t = spawnFn(systemToolPath(env, 'taskkill.exe'), ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore', windowsHide: true, cwd: os.tmpdir() });
         t.on('error', () => { try { child.kill('SIGKILL'); } catch { /* gone */ } });
       } else {
         try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); }
@@ -711,7 +725,7 @@ const HELP = `system-specs: collect the machine facts of this computer into a sm
 
   --out <path.md>     the Markdown file (default ${DEFAULT_OUT.replace(/\\/g, '/')}); must end in .md and stay inside the working folder;
                       the JSON sheet is written beside it
-  --refresh           collect again even when a valid sheet of this machine exists (collect reuses one whatever its age)
+  --refresh           collect again even when the sheet is reusable (collect reuses a valid sheet whose fingerprint is identical, or differs only in PATH)
   --json              print the JSON to stdout and write nothing
 
 check runs no tool and writes nothing: it compares what is on the PATH now with the fingerprint stored in the sheet.
@@ -762,7 +776,7 @@ function isInside(base, target) {
 const isLink = file => { try { return fs.lstatSync(file).isSymbolicLink(); } catch { return false; } };
 
 /** Where the sheet goes, or why not: inside the working folder (also by real path), a .md file, never over a file that is not a sheet. */
-function planOutput(out, cwd) {
+function planOutput(out, cwd, forWrite = true) {
   if (!/\.md$/i.test(out)) return { error: 'the --out file must end in .md' };
   const mdFile = path.resolve(cwd, out);
   const jsonFile = path.join(path.dirname(mdFile), `${path.basename(mdFile, path.extname(mdFile))}.json`);
@@ -778,6 +792,9 @@ function planOutput(out, cwd) {
   if (json !== null && json.trim() !== '') {
     const parsed = safely(() => JSON.parse(json), null);
     const ours = isObject(parsed) ? typeof parsed.schemaVersion === 'number' : parsed === null && isSheetMarkdown(md);
+    if (forWrite && isObject(parsed) && typeof parsed.schemaVersion === 'number' && parsed.schemaVersion > SCHEMA_VERSION) {
+      return { error: `refusing to overwrite ${path.basename(jsonFile)}: it was written by a newer system-specs (schema ${parsed.schemaVersion}); this script writes schema ${SCHEMA_VERSION}` };
+    }
     if (!ours) return { error: `refusing to overwrite ${path.basename(jsonFile)}: the .json file beside the sheet is not a system-specs sheet` };
   }
   const rel = path.relative(cwd, mdFile);
@@ -803,8 +820,8 @@ function usableSheet(plan, deps) {
   if (raw === null || !isSheetMarkdown(readText(plan.mdFile))) return null;
   const sheet = validateSheet(safely(() => JSON.parse(raw), null));
   if (!sheet) return null;
-  const here = { family: { win32: 'windows', darwin: 'macos', linux: 'linux' }[deps.platform] ?? 'other', architecture: String(deps.arch), memoryGiB: memoryGiBOf(deps) };
-  if (sheet.os.family !== here.family || sheet.os.architecture !== here.architecture || sheet.memoryGiB !== here.memoryGiB) return null;
+  const here = { family: { win32: 'windows', darwin: 'macos', linux: 'linux' }[deps.platform] ?? 'other', architecture: String(deps.arch) };
+  if (sheet.os.family !== here.family || sheet.os.architecture !== here.architecture) return null;
   return sheet;
 }
 
@@ -815,16 +832,18 @@ const listNames = names => (names.length <= 8 ? names.join(', ') : `${names.slic
 function checkSheet(plan, deps) {
   const stored = safely(() => JSON.parse(readText(plan.jsonFile) ?? ''), null);
   if (isObject(stored) && typeof stored.schemaVersion === 'number' && stored.schemaVersion !== SCHEMA_VERSION) {
-    return { code: 1, out: '', err: 'older format, run collect (the sheet has another schema number)\n' };
+    return { code: 1, out: '', err: 'another format, run collect (the sheet has another schema number)\n' };
   }
   const sheet = usableSheet(plan, deps);
   if (!sheet) return { code: 1, out: '', err: 'no usable sheet: run collect first (it is missing, damaged, edited, or from another machine)\n' };
   const diff = diffParts(computeFingerprint(deps).parts, sheet.fingerprint.parts);
   const others = diff.filter(name => name !== 'PATH');
-  if (!others.length) return { code: 0, out: `unchanged (sheet collected ${sheet.collectedAt})\n`, err: '' };
+  if (!others.length) return { code: 0, out: `unchanged (sheet collected ${sheet.collectedAt})${diff.length ? PATH_NOTE : ''}\n`, err: '' };
   const lead = diff.includes('PATH') ? 'PATH differs from the collection, so the names may be a PATH effect: ' : '';
   return { code: 3, out: `changed: ${lead}${listNames(others)}\n`, err: '' };
 }
+
+const PATH_NOTE = ' (PATH differs from the collection)';
 
 /** The default folder keeps its own files out of git: a `.gitignore` with `*`. Returns a note when one exists with other content. */
 function ignoreOwnFolder(plan, cwd) {
@@ -856,7 +875,7 @@ export async function runCli(argv, deps) {
   }
 
   const cwd = deps.cwd();
-  const plan = planOutput(opts.out, cwd);
+  const plan = planOutput(opts.out, cwd, parsed.command === 'collect');
   if (plan.error) return refuse(plan.error);
   if (parsed.command === 'check') return checkSheet(plan, deps);
 
@@ -865,10 +884,11 @@ export async function runCli(argv, deps) {
     const previous = usableSheet(plan, deps);
     if (previous) {
       const diff = diffParts(computeFingerprint(deps).parts, previous.fingerprint.parts);
-      if (!diff.length) {
+      // A PATH-only difference is a reuse, as in check: two agents with different PATHs must not overwrite each other's sheet.
+      if (!diff.some(name => name !== 'PATH')) {
         try {
           writeAtomic(plan.mdFile, renderMarkdown(previous));
-          return { code: 0, out: `System specs reused (collected ${previous.collectedAt}): ${plan.shown}\n`, err: '' };
+          return { code: 0, out: `System specs reused (collected ${previous.collectedAt}): ${plan.shown}${diff.length ? PATH_NOTE : ''}\n`, err: '' };
         } catch { /* collect again */ }
       } else changedNote = `; changed since the last sheet: ${listNames(diff)}`;
     }
