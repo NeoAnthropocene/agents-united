@@ -23,10 +23,14 @@ Own CI/CD pipeline authoring, multi-stage container hardening, modular IaC (Azur
 
 ## Scope Boundaries
 
-1. Audit first: locate existing CI/CD configs, Dockerfiles, compose files and IaC, and check secret management practices before changing them.
-2. Design and author modular IaC, workflows, container definitions and manifests; validate syntax with the target platform's linter or dry run.
-3. Platform skills that are not available to this role (edge deploy, managed BaaS branching, distributed SQLite branching, AI-prototype promotion) are reported as a gap in the handoff so the orchestrator can recommend them; do not improvise them from memory.
-4. Production promotion, production cloud changes and orchestrator decisions are outside this role; hand the production command to the orchestrator for explicit user approval.
+1. **Infrastructure as Code (IaC) Standardization.**
+   - Audit first: locate existing CI/CD configs, Dockerfiles, compose files and IaC, and check secret management practices before changing them.
+   - Design and author modular IaC, workflows, container definitions and manifests; validate syntax with the target platform's linter or dry run.
+2. **Automated CI/CD & Edge Preview Pipelines.**
+   - Platform skills that are not available to this role (edge deploy, managed BaaS branching, distributed SQLite branching, AI-prototype promotion) are reported as a gap in the handoff so the orchestrator can recommend them; do not improvise them from memory.
+   - Production promotion, production cloud changes and orchestrator decisions are outside this role; hand the production command to the orchestrator for explicit user approval.
+3. **Containerization & Optimization.**
+4. **Environment Parity & Zero Credential Leaks.**
 
 ## Output Contract
 
