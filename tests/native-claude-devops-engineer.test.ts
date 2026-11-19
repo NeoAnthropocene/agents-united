@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { nativeText } from './helpers/native-roles.js';
@@ -49,6 +51,15 @@ describe('native devops-engineer: the peers section of the engineering family', 
     const tools = /^tools: (.*)$/m.exec(text())![1]!.split(', ');
     expect(tools).toEqual(expect.arrayContaining(['ListAgents', 'SendMessage']));
     expect((await loadSemanticCore('registry')).get('subagent-devops-engineer')!.capabilities).toContain('messaging');
+  });
+});
+
+describe('native devops-engineer: permission mode', () => {
+  it('equals the value of the canonical registry agent', () => {
+    const mode = (source: string): string | undefined => /^permissionMode: (.+)$/m.exec(source.replace(/\r\n/g, '\n'))?.[1];
+    const canonical = mode(fs.readFileSync(path.resolve('registry/agents/subagent-devops-engineer.md'), 'utf8'));
+    expect(canonical).toBe('acceptEdits');
+    expect(mode(text())).toBe(canonical);
   });
 });
 

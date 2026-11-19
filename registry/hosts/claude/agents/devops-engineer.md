@@ -3,6 +3,7 @@ name: devops-engineer
 description: DevOps engineer. Use to design and implement CI/CD pipelines, hardened container definitions, Kubernetes manifests and Bicep or Terraform infrastructure code, with observability wiring and secret-safe release workflows. Production promotion is handed back for explicit user approval.
 model: sonnet
 effort: medium
+permissionMode: acceptEdits
 tools: Bash, Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, Write
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
