@@ -178,7 +178,7 @@ describe('the script file does the same work as the inline script did', () => {
     expect(runScript(SCRIPT, bashCall('git status --short')).status).toBe(0);
     const forced = runScript(SCRIPT, bashCall('git push --force origin main'));
     expect(forced.status).toBe(2);
-    expect(forced.stderr).toBe('Blocked by agents-united guard: git push --force requires explicit human approval outside the agent session.\n');
+    expect(forced.stderr).toBe('Blocked by agents-united guard: git push --force requires explicit human approval outside the agent session. If you mean it, run it yourself in your own terminal.\n');
   });
 
   it('unreadable input exits 2 with the unreadable-input message, both commands and the manual route', async () => {
