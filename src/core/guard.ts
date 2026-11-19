@@ -85,6 +85,19 @@ export const EARLIER_GUARD_SCRIPTS: readonly string[] = [
   String.raw`let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by agents-united guard: unreadable hook input. The input of this tool call could not be read, so the guard cannot tell whether it is safe.\n");process.exit(2)}const t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git push --force";else if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a .env write";if(r){process.stderr.write("Blocked by agents-united guard: "+r+" requires explicit human approval outside the agent session.\n");process.exit(2)}})`,
 ];
 
+/**
+ * The four regex literals of the three rules every lane carries: a forced push, `vercel --prod`, and a `.env` write (by path, and by redirect).
+ * They are the patterns of `EARLIER_GUARD_SCRIPTS[2]`, which the Cline plugin and the Antigravity hook copy, and they stay byte for byte in the
+ * current script. The destructive shell rules of ADR 0074 are Claude-only until the other lanes are ported; the drift tests of the three lanes
+ * compare each file against this constant.
+ */
+export const SHARED_GUARD_PATTERNS: readonly string[] = [
+  String.raw`/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/`,
+  String.raw`/\bvercel\b[^;&|]*--prod\b/`,
+  String.raw`/(^|\/)\.env(\.(?!example$)[^\/]+)?$/`,
+  String.raw`/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/`,
+];
+
 /** Text every version of the destructive guard script carries: the ownership marker (the read-only guard says "read-only guard", so it never matches). */
 export const GUARD_OWNERSHIP_MARKER = 'Blocked by agents-united guard';
 
