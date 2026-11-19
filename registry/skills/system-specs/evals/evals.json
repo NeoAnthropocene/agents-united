@@ -11,7 +11,7 @@
     {
       "id": 2,
       "prompt": "The sheet says podman is absent and terraform is not determined. Write the install steps for the plan using both of them.",
-      "expected_output": "Treats both as not available: says podman was not found and terraform was found but could not be read, proposes an install or check step for each instead of assuming a version, and runs or requests one collect --refresh before treating terraform as unknown."
+      "expected_output": "Treats both as not available: says podman was not found and terraform was found but could not be read, proposes an install or check step for each instead of assuming a version, and treats terraform as unknown: it asks the coordinating agent for one update, or collects again itself only when working alone."
     },
     {
       "id": 3,
