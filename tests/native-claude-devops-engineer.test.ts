@@ -1,7 +1,9 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
+import { attempt } from './helpers/claude-host-hooks.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
@@ -11,7 +13,12 @@ import { nativeText } from './helpers/native-roles.js';
  */
 
 const text = (): string => nativeText('devops-engineer');
-const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(text())![0];
+/** A numbered step of the "How to work" section, not the first line of the file that happens to start with the number. */
+const step = (n: number): string => {
+  const work = /\n## How to work\n([\s\S]*?)(?=\n## )/.exec(text())![1]!;
+  return new RegExp(`^${n}\\. .*$`, 'm').exec(work)![0];
+};
+const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
 
 describe('native devops-engineer: the guard and production claims', () => {
   it('step 5 names exactly what the bound guard blocks, and what it does not', () => {
@@ -21,6 +28,24 @@ describe('native devops-engineer: the guard and production claims', () => {
     for (const other of ['az deployment', 'kubectl apply', 'terraform apply', 'gh workflow run']) expect(five, other).toContain(other);
     expect(five).toMatch(/does not enforce the Safety rule against destructive shell commands/);
     expect(five).toMatch(/your own obligation/);
+  });
+
+  describe('against the real guard script', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-united-devops-guard-'));
+    beforeAll(() => {
+      fs.mkdirSync(path.join(project, '.claude/hooks'), { recursive: true });
+      for (const file of fs.readdirSync(path.resolve('registry/hosts/claude/hooks'))) fs.copyFileSync(path.resolve('registry/hosts/claude/hooks', file), path.join(project, '.claude/hooks', file));
+    });
+    afterAll(() => fs.rmSync(project, { recursive: true, force: true }));
+    const blocked = (command: string): boolean => attempt(text(), project, { tool: 'Bash', input: { command } }, { agentType: 'devops-engineer' }).blocked;
+
+    it.each(['vercel --prod', 'git push --force origin main'])('blocks %s, as step 5 says', command => {
+      expect(blocked(command)).toBe(true);
+    });
+
+    it.each(['terraform apply', 'kubectl apply -f x.yaml', 'az deployment group create --resource-group g --template-file main.bicep', 'gh workflow run x'])('does not block %s, as step 5 says', command => {
+      expect(blocked(command)).toBe(false);
+    });
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
@@ -33,6 +58,13 @@ describe('native devops-engineer: the guard and production claims', () => {
 });
 
 describe('native devops-engineer: the peers section of the engineering family', () => {
+  it("is frontend-architect's section line for line, except the one sentence naming the Tier 2 case", () => {
+    const family = peersSection(nativeText('frontend-architect'));
+    const tier2 = ' or as a teammate of a live Agent Team (Tier 2, the digital agency)';
+    expect(family).toContain(tier2);
+    expect(peersSection(text()).split('\n')).toEqual(family.replace(tier2, ' or as a teammate of a coordinated team').split('\n'));
+  });
+
   it('is the Tier 1 form: a lead-spawned subagent first, no agency, no shutdown frame, no teammate-reality paragraph', () => {
     const body = text();
     expect(body).toContain('You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teammate of a coordinated team. Follow the mode your brief names.');
@@ -40,14 +72,13 @@ describe('native devops-engineer: the peers section of the engineering family', 
     expect(body).not.toContain('shutdown_request');
     expect(body).not.toContain('a brief cannot make you a teammate');
     expect(body).not.toContain('Do not message a peer');
-    expect(body).toContain('- **Relay mode is the default.** You cannot reach a peer by name. Put every question for a peer under `Open items`, and the lead relays it.');
   });
 
   it('step 6 hands the report back through SubagentHandback in the plain form', () => {
     expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
   });
 
-  it('holds exactly the messaging tools its capability gives, and the core declares the capability', async () => {
+  it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {
     const tools = /^tools: (.*)$/m.exec(text())![1]!.split(', ');
     expect(tools).toEqual(expect.arrayContaining(['ListAgents', 'SendMessage']));
     expect((await loadSemanticCore('registry')).get('subagent-devops-engineer')!.capabilities).toContain('messaging');
@@ -71,5 +102,13 @@ describe('native devops-engineer: the shared scope_boundaries', () => {
     expect(scope).toContain('Audit first:');
     expect(scope).toContain('reported as a gap in the handoff');
     expect(scope).toContain('hand the production command to the orchestrator for explicit user approval');
+  });
+
+  it('keeps the Azure-specific obligations conditional on the target platform, so Terraform or AWS work is covered by the generic sentence', async () => {
+    const scope = (await loadSemanticCore('registry')).get('subagent-devops-engineer')!.scope_boundaries;
+    expect(scope).toContain("validate syntax with the target platform's linter or dry run");
+    expect(scope).toContain('on Azure author Bicep templates and lint them with `az bicep lint`');
+    expect(scope).toContain('(on Azure, Key Vault) where the target platform supports them');
+    expect(scope).toContain('Where the target platform supports them, configure KEDA scale rules');
   });
 });
