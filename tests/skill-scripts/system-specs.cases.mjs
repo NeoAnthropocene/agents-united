@@ -97,7 +97,7 @@ test('collect builds the allowlisted sheet from a fake machine', async () => {
   const sheet = await specs.collectSpecs(deps);
   assert.equal(sheet.schemaVersion, specs.SCHEMA_VERSION);
   assert.equal(sheet.collectedAt, '2026-11-19T10:00:00Z');
-  assert.deepEqual(Object.keys(sheet).sort(), ['collectedAt', 'cpu', 'freeDiskGiB', 'gpus', 'memoryGiB', 'os', 'schemaVersion', 'shells', 'tools']);
+  assert.deepEqual(Object.keys(sheet).sort(), ['collectedAt', 'cpu', 'fingerprint', 'freeDiskGiB', 'gpus', 'memoryGiB', 'os', 'schemaVersion', 'shells', 'tools']);
   assert.equal(sheet.os.family, 'windows');
   assert.equal(sheet.os.release, '10.0.26200');
   assert.equal(sheet.os.architecture, 'x64');
@@ -262,25 +262,23 @@ test('--out names the Markdown file and the JSON goes beside it', async () => {
   } finally { rmTemp(dir); }
 });
 
-test('a sheet younger than --max-age is reused; --refresh and an older sheet are collected again', async () => {
+test('collect once: a valid sheet of this machine is reused whatever its age; --refresh always recollects; --max-age no longer exists', async () => {
   const dir = mkTemp();
   try {
     const first = makeDeps({ deps: { cwd: () => dir } });
     await specs.runCli(['collect'], first.deps);
-    const ran = first.calls.length;
-    assert.ok(ran > 0);
-    const later = makeDeps({ deps: { cwd: () => dir, now: () => NOW + 2 * 3600 * 1000 } });
-    const reuse = await specs.runCli(['collect', '--max-age', '24'], later.deps);
+    assert.ok(first.calls.length > 0);
+    const old = makeDeps({ deps: { cwd: () => dir, now: () => NOW + 400 * 24 * 3600 * 1000 } });
+    const reuse = await specs.runCli(['collect'], old.deps);
     assert.equal(reuse.code, 0);
-    assert.equal(later.calls.length, 0, 'no command ran');
+    assert.equal(old.calls.length, 0, 'no command ran for a 400-day-old sheet');
     assert.match(reuse.out, /reused/i);
-    const refresh = makeDeps({ deps: { cwd: () => dir, now: () => NOW + 2 * 3600 * 1000 } });
-    await specs.runCli(['collect', '--max-age', '24', '--refresh'], refresh.deps);
+    const refresh = makeDeps({ deps: { cwd: () => dir, now: () => NOW + 3600 * 1000 } });
+    await specs.runCli(['collect', '--refresh'], refresh.deps);
     assert.ok(refresh.calls.length > 0);
-    const old = makeDeps({ deps: { cwd: () => dir, now: () => NOW + 30 * 3600 * 1000 } });
-    const res = await specs.runCli(['collect', '--max-age', '24'], old.deps);
-    assert.ok(old.calls.length > 0, 'older than max-age is collected again');
-    assert.doesNotMatch(res.out, /reused/i);
+    const gone = await specs.runCli(['collect', '--max-age', '24'], makeDeps().deps);
+    assert.equal(gone.code, 2);
+    assert.doesNotMatch((await specs.runCli(['help'], makeDeps().deps)).out, /max-age/);
   } finally { rmTemp(dir); }
 });
 
@@ -822,4 +820,126 @@ test('cores come from availableParallelism; zero memory, cores or disk read as n
   assert.equal(z.memoryGiB, null);
   assert.equal(z.freeDiskGiB, null);
   assert.match(specs.renderMarkdown(z), /Memory: not determined/);
+});
+
+// ---- fix round 1 addendum: check
+
+const FILE_A = { size: 1000, mtimeMs: 1700000000000 };
+
+/** A fake machine with a resolver and a stat seam; `files` maps a tool command to { size, mtimeMs } or is absent. */
+function machine(files, extra = {}) {
+  const { deps, calls } = makeDeps({
+    deps: {
+      resolve: cmd => (files[cmd] ? `C:\\Users\\fakeuser\\bin\\${cmd}.exe` : null),
+      statFile: file => files[path.win32.basename(file, '.exe')] ?? null,
+      ...extra,
+    },
+  });
+  return { deps, calls };
+}
+
+async function collectedIn(dir, files, extra) {
+  const m = machine(files, { cwd: () => dir, ...extra });
+  assert.equal((await specs.runCli(['collect'], m.deps)).code, 0);
+  return m;
+}
+
+test('check: unchanged when nothing moved, and it starts no child process and writes nothing', async () => {
+  const dir = mkTemp();
+  try {
+    const files = { node: FILE_A, git: FILE_A, docker: FILE_A };
+    await collectedIn(dir, files);
+    const before = fs.readdirSync(path.join(dir, '.agents-united')).map(f => [f, fs.statSync(path.join(dir, '.agents-united', f)).mtimeMs]);
+    const m = machine(files, { cwd: () => dir });
+    const res = await specs.runCli(['check'], m.deps);
+    assert.equal(res.code, 0, res.err);
+    assert.match(res.out, /^unchanged\b/);
+    assert.equal(m.calls.length, 0, 'the runner was never called');
+    const after = fs.readdirSync(path.join(dir, '.agents-united')).map(f => [f, fs.statSync(path.join(dir, '.agents-united', f)).mtimeMs]);
+    assert.deepEqual(after, before);
+  } finally { rmTemp(dir); }
+});
+
+test('check: a tool that appears, disappears, or changes size or time is named, and only by name', async () => {
+  const dir = mkTemp();
+  try {
+    await collectedIn(dir, { node: FILE_A, git: FILE_A, docker: FILE_A });
+    const scenarios = [
+      ['appears', { node: FILE_A, git: FILE_A, docker: FILE_A, podman: FILE_A }, ['podman']],
+      ['disappears', { node: FILE_A, docker: FILE_A }, ['git']],
+      ['changes size', { node: FILE_A, git: { ...FILE_A, size: 1001 }, docker: FILE_A }, ['git']],
+      ['changes time', { node: { ...FILE_A, mtimeMs: FILE_A.mtimeMs + 5000 }, git: FILE_A, docker: FILE_A }, ['node']],
+    ];
+    for (const [label, files, names] of scenarios) {
+      const m = machine(files, { cwd: () => dir });
+      const res = await specs.runCli(['check'], m.deps);
+      assert.equal(res.code, 3, label);
+      assert.match(res.out, /^changed\b/, label);
+      for (const n of names) assert.ok(res.out.includes(n), `${label}: names ${n}`);
+      if (label === 'changes time') assert.ok(!/\bgit\b/.test(res.out), 'only the changed tool is named');
+      assert.ok(!res.out.includes('fakeuser') && !/[A-Za-z]:\\|\.exe/.test(res.out), `${label}: no path in the output`);
+      assert.equal(res.out.trim().split('\n').length, 1, 'one line');
+      assert.equal(m.calls.length, 0);
+    }
+  } finally { rmTemp(dir); }
+});
+
+test('check: a changed OS release, architecture or memory is reported by name', async () => {
+  const dir = mkTemp();
+  try {
+    await collectedIn(dir, { node: FILE_A });
+    const release = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, release: '10.0.99999' }).deps);
+    assert.equal(release.code, 3);
+    assert.match(release.out, /os release/);
+    const memory = await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir, totalmem: () => 64 * GiB }).deps);
+    assert.equal(memory.code, 1, 'another memory size is another machine: no usable sheet');
+  } finally { rmTemp(dir); }
+});
+
+test('check: no usable sheet exits 1 (none, damaged, tampered, another machine) and writes nothing', async () => {
+  const dir = mkTemp();
+  try {
+    const none = await specs.runCli(['check'], machine({}, { cwd: () => dir }).deps);
+    assert.equal(none.code, 1);
+    assert.match(none.out + none.err, /no usable sheet/i);
+    assert.ok(!fs.existsSync(path.join(dir, '.agents-united')));
+    await collectedIn(dir, { node: FILE_A });
+    const jsonFile = path.join(dir, '.agents-united', 'system-specs.json');
+    const sheet = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+    fs.writeFileSync(jsonFile, '{ broken');
+    assert.equal((await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir }).deps)).code, 1);
+    sheet.fingerprint.hash = 'nothex';
+    fs.writeFileSync(jsonFile, JSON.stringify(sheet));
+    assert.equal((await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir }).deps)).code, 1);
+    sheet.fingerprint.hash = 'a'.repeat(64);
+    sheet.os.architecture = 'arm64';
+    fs.writeFileSync(jsonFile, JSON.stringify(sheet));
+    assert.equal((await specs.runCli(['check'], machine({ node: FILE_A }, { cwd: () => dir }).deps)).code, 1);
+  } finally { rmTemp(dir); }
+});
+
+test('the fingerprint stores only hashes: no resolved path, no tool file name, in the JSON', async () => {
+  const dir = mkTemp();
+  try {
+    await collectedIn(dir, { node: FILE_A, git: FILE_A });
+    const raw = fs.readFileSync(path.join(dir, '.agents-united', 'system-specs.json'), 'utf8');
+    const fp = JSON.parse(raw).fingerprint;
+    assert.match(fp.hash, /^[0-9a-f]{64}$/);
+    for (const v of Object.values(fp.parts)) assert.match(v, /^[0-9a-f]{8}$/);
+    assert.ok(Object.keys(fp.parts).includes('node') && Object.keys(fp.parts).includes('os release'));
+    assert.ok(!raw.includes('fakeuser') && !/[A-Za-z]:\\\\|\.exe|\\\\bin/.test(raw), 'no path in the JSON');
+    assert.ok(!raw.includes(String(FILE_A.mtimeMs)), 'no raw file time in the JSON');
+  } finally { rmTemp(dir); }
+});
+
+test('real check: collect then check on this machine reports unchanged, and is quick', async () => {
+  const dir = mkTemp();
+  try {
+    const deps = { ...specs.defaultDeps(), cwd: () => dir };
+    await specs.runCli(['collect'], deps);
+    const t0 = Date.now();
+    const res = await specs.runCli(['check'], deps);
+    assert.equal(res.code, 0, res.out + res.err);
+    assert.ok(Date.now() - t0 < 1500, `check took ${Date.now() - t0} ms`);
+  } finally { rmTemp(dir); }
 });

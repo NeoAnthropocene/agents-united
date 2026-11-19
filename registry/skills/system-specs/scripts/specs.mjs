@@ -3,15 +3,19 @@
  * system-specs: collect the machine facts an agent plans against (OS, CPU, memory, GPU, free disk, shells, developer tools)
  * into a small Markdown sheet and a JSON twin. Node 20+, built-ins only.
  *
- *   node specs.mjs collect [--out <path.md>] [--max-age <hours>] [--refresh] [--json]
+ *   node specs.mjs collect [--out <path.md>] [--refresh] [--json]
+ *   node specs.mjs check [--out <path.md>]
  *   node specs.mjs help
  *
- * `collect` writes `.agents-united/system-specs.md` and `.json` beside it (relative to the working folder; `--out` names the
- * Markdown file, which must end in .md and stay inside the working folder; the JSON goes next to it). A sheet younger than
- * `--max-age` hours (default 24) that passes validation and matches this machine is reused unless `--refresh`; the Markdown is
- * then rewritten from the validated JSON. `--json` prints the JSON to stdout and writes nothing.
+ * `collect` collects once: it writes `.agents-united/system-specs.md` and `.json` beside it (relative to the working folder;
+ * `--out` names the Markdown file, which must end in .md and stay inside the working folder; the JSON goes next to it). A valid
+ * sheet of this machine is reused whatever its age (the Markdown is rewritten from the validated JSON); `--refresh` always
+ * collects again. `--json` prints the JSON to stdout and writes nothing.
+ * `check` is a read-only, tool-free test of whether the environment changed since the sheet was collected: it re-resolves each
+ * probed tool on PATH and compares a fingerprint (hashes only) stored in the JSON. It runs no tool and writes nothing.
  *
- * Exit codes: 0 the sheet was written, reused or printed; 1 the sheet could not be written; 2 a usage error or a refused --out.
+ * Exit codes: collect 0 written, reused or printed, 1 the sheet could not be written; check 0 unchanged, 3 changed (names of the
+ * tools that differ), 1 no usable sheet; both 2 for a usage error or a refused --out.
  * A tool that is missing, slow or broken never fails the run: it is "absent" (not found) or "not determined" (found, but it
  * timed out or failed).
  *
@@ -28,9 +32,8 @@ import { spawn } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export const DEFAULT_OUT = path.join('.agents-united', 'system-specs.md');
-export const DEFAULT_MAX_AGE_HOURS = 24;
 export const SHEET_HEADER = '# System specs';
 const DEFAULT_TIMEOUT_MS = 5000;
 const SLOW_TIMEOUT_MS = 12000;
@@ -328,6 +331,33 @@ async function readOs(deps, gate) {
   return { family, environment, name, distribution, release, architecture: String(deps.arch) };
 }
 
+const shortHash = text => crypto.createHash('sha256').update(text).digest('hex').slice(0, 8);
+
+/**
+ * A fingerprint of the environment, with no tool run: per probed tool, whether it resolves on PATH and, when it does, the size and
+ * modification time of the resolved file; plus OS release, architecture and memory. Only hashes are kept (one short hash per part,
+ * one SHA-256 over all), never a path, so a changed part can be named and nothing private is stored.
+ */
+export function computeFingerprint(deps) {
+  const parts = {};
+  for (const entry of PROBES) {
+    let state = 'absent';
+    for (const cmd of [].concat(entry.cmd)) {
+      const file = resolveCmd(deps, cmd);
+      if (!file) continue;
+      const st = typeof deps.statFile === 'function' ? safely(() => deps.statFile(file), null) : null;
+      state = st ? `found:${st.size}:${Math.round(st.mtimeMs)}` : 'found:?';
+      break;
+    }
+    parts[entry.name] = shortHash(`${entry.name}|${state}`);
+  }
+  parts['os release'] = shortHash(`os release|${deps.release}`);
+  parts.architecture = shortHash(`architecture|${deps.arch}`);
+  parts.memory = shortHash(`memory|${positiveInt(safely(() => deps.totalmem(), 0) / GiB)}`);
+  const hash = crypto.createHash('sha256').update(JSON.stringify(Object.entries(parts))).digest('hex');
+  return { hash, parts };
+}
+
 /**
  * Collect the sheet. `opts.budgetMs` bounds the whole collect: a probe that would start after the budget is "not determined",
  * and a running probe is given no more than the time left.
@@ -386,6 +416,7 @@ export async function collectSpecs(deps, opts = {}) {
     freeDiskGiB: typeof freeBytes === 'number' ? positiveInt(freeBytes / GiB) : null,
     shells: of('shell'),
     tools: of('tool'),
+    fingerprint: computeFingerprint(deps),
   };
 }
 
@@ -406,7 +437,10 @@ function validEntry(e, names) {
  * writes, else null. Nothing is copied from the input except validated values.
  */
 export function validateSheet(x) {
-  if (!sameKeys(x, ['schemaVersion', 'collectedAt', 'os', 'cpu', 'memoryGiB', 'gpus', 'freeDiskGiB', 'shells', 'tools'])) return null;
+  if (!sameKeys(x, ['schemaVersion', 'collectedAt', 'os', 'cpu', 'memoryGiB', 'gpus', 'freeDiskGiB', 'shells', 'tools', 'fingerprint'])) return null;
+  const fp = x.fingerprint;
+  const partNames = [...PROBES.map(p => p.name), 'os release', 'architecture', 'memory'];
+  if (!sameKeys(fp, ['hash', 'parts']) || !/^[0-9a-f]{64}$/.test(fp.hash) || !sameKeys(fp.parts, partNames) || !partNames.every(n => /^[0-9a-f]{8}$/.test(fp.parts[n]))) return null;
   if (x.schemaVersion !== SCHEMA_VERSION) return null;
   if (typeof x.collectedAt !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(x.collectedAt) || !Number.isFinite(Date.parse(x.collectedAt))) return null;
   const o = x.os;
@@ -431,6 +465,7 @@ export function validateSheet(x) {
     freeDiskGiB: x.freeDiskGiB,
     shells: x.shells.map(entry),
     tools: x.tools.map(entry),
+    fingerprint: { hash: fp.hash, parts: Object.fromEntries(partNames.map(n => [n, fp.parts[n]])) },
   };
 }
 
@@ -609,6 +644,7 @@ export function defaultDeps() {
     monotonic: () => performance.now(),
     readFile: file => fs.readFileSync(file, 'utf8'),
     resolve: cmd => resolveOnPath(cmd, env, process.platform),
+    statFile: file => { const st = fs.statSync(file); return { size: st.size, mtimeMs: st.mtimeMs }; },
     concurrency: 6,
     run: realRunner(env, process.platform),
   };
@@ -618,16 +654,19 @@ export function defaultDeps() {
 
 const HELP = `system-specs: collect the machine facts of this computer into a small sheet.
 
-  node specs.mjs collect [--out <path.md>] [--max-age <hours>] [--refresh] [--json]
+  node specs.mjs collect [--out <path.md>] [--refresh] [--json]
+  node specs.mjs check [--out <path.md>]
   node specs.mjs help
 
   --out <path.md>     the Markdown file (default ${DEFAULT_OUT.replace(/\\/g, '/')}); must end in .md and stay inside the working folder;
                       the JSON sheet is written beside it
-  --max-age <hours>   reuse a valid sheet of this machine younger than this (default ${DEFAULT_MAX_AGE_HOURS})
-  --refresh           collect again even when the sheet is fresh
+  --refresh           collect again even when a valid sheet of this machine exists (collect reuses one whatever its age)
   --json              print the JSON to stdout and write nothing
 
-Exit codes: 0 written, reused or printed; 1 the sheet could not be written; 2 usage error or a refused --out.
+check runs no tool and writes nothing: it compares what is on the PATH now with the fingerprint stored in the sheet.
+
+Exit codes: collect 0 written, reused or printed, 1 the sheet could not be written; check 0 unchanged, 3 changed (the names of the
+tools that differ), 1 no usable sheet; both 2 for a usage error or a refused --out.
 `;
 
 const usage = message => ({ code: 2, out: '', err: `${message}\n\n${HELP}` });
@@ -637,22 +676,17 @@ function parseArgs(argv) {
   const [command, ...rest] = argv;
   if (command === undefined) return { error: 'missing command' };
   if (['help', '--help', '-h'].includes(command)) return { command: 'help' };
-  if (command !== 'collect') return { error: `unknown command "${command}"` };
-  const opts = { out: DEFAULT_OUT, maxAge: DEFAULT_MAX_AGE_HOURS, refresh: false, json: false };
+  if (command !== 'collect' && command !== 'check') return { error: `unknown command "${command}"` };
+  const opts = { out: DEFAULT_OUT, refresh: false, json: false };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
-    if (a === '--refresh') opts.refresh = true;
-    else if (a === '--json') opts.json = true;
-    else if (a === '--out' || a === '--max-age') {
+    if (a === '--refresh' && command === 'collect') opts.refresh = true;
+    else if (a === '--json' && command === 'collect') opts.json = true;
+    else if (a === '--out') {
       const value = rest[++i];
       if (value === undefined) return { error: `${a} needs a value` };
-      if (a === '--out') opts.out = value;
-      else {
-        const hours = Number(value);
-        if (value.trim() === '' || !Number.isFinite(hours) || hours < 0) return { error: `--max-age needs a number of hours, 0 or more (got "${value}")` };
-        opts.maxAge = hours;
-      }
-    } else return { error: `unknown option "${a}"` };
+      opts.out = value;
+        } else return { error: `unknown option "${a}"` };
   }
   return { command, opts };
 }
@@ -691,18 +725,33 @@ function writeAtomic(file, text) {
   }
 }
 
-/** A cached sheet of this machine, validated, younger than the window; its Markdown is rewritten from it. Null means: collect again. */
-async function reuse(plan, deps, maxAgeHours) {
+/** The cached sheet when it is valid and from this machine, else null. Its age does not matter: collection happens once. */
+function usableSheet(plan, deps) {
   const raw = readText(plan.jsonFile);
   if (raw === null || !isSheetMarkdown(readText(plan.mdFile))) return null;
   const sheet = validateSheet(safely(() => JSON.parse(raw), null));
   if (!sheet) return null;
-  const ageMs = deps.now() - Date.parse(sheet.collectedAt);
-  if (!(ageMs >= 0 && ageMs < maxAgeHours * 3600 * 1000)) return null;
   const here = { family: { win32: 'windows', darwin: 'macos', linux: 'linux' }[deps.platform] ?? 'other', architecture: String(deps.arch), memoryGiB: positiveInt(safely(() => deps.totalmem(), 0) / GiB) };
   if (sheet.os.family !== here.family || sheet.os.architecture !== here.architecture || sheet.memoryGiB !== here.memoryGiB) return null;
+  return sheet;
+}
+
+/** Reuse a usable sheet; its Markdown is rewritten from the validated JSON, never trusted from disk. Null means: collect. */
+function reuse(plan, deps) {
+  const sheet = usableSheet(plan, deps);
+  if (!sheet) return null;
   try { writeAtomic(plan.mdFile, renderMarkdown(sheet)); } catch { return null; }
-  return { sheet, ageHours: ageMs / 3600000 };
+  return sheet;
+}
+
+/** Read-only: compare the PATH now with the fingerprint in the sheet. No tool is run and nothing is written. */
+function checkSheet(plan, deps) {
+  const sheet = usableSheet(plan, deps);
+  if (!sheet) return { code: 1, out: '', err: 'no usable sheet: run collect first (it is missing, damaged, edited, or from another machine)\n' };
+  const now = computeFingerprint(deps);
+  if (now.hash === sheet.fingerprint.hash) return { code: 0, out: `unchanged (sheet collected ${sheet.collectedAt})\n`, err: '' };
+  const changed = Object.keys(now.parts).filter(name => now.parts[name] !== sheet.fingerprint.parts[name]);
+  return { code: 3, out: `changed: ${changed.join(', ')}\n`, err: '' };
 }
 
 /** The default folder keeps its own files out of git: a `.gitignore` with `*`. Returns a note when one exists with other content. */
@@ -729,10 +778,11 @@ export async function runCli(argv, deps) {
   const cwd = deps.cwd();
   const plan = planOutput(opts.out, cwd);
   if (plan.error) return refuse(plan.error);
+  if (parsed.command === 'check') return checkSheet(plan, deps);
 
   if (!opts.refresh) {
-    const fresh = await reuse(plan, deps, opts.maxAge);
-    if (fresh) return { code: 0, out: `System specs reused (collected ${fresh.sheet.collectedAt}, ${fresh.ageHours.toFixed(1)} h old): ${plan.shown}\n`, err: '' };
+    const fresh = reuse(plan, deps);
+    if (fresh) return { code: 0, out: `System specs reused (collected ${fresh.collectedAt}): ${plan.shown}\n`, err: '' };
   }
 
   const sheet = await collectSpecs(deps);
