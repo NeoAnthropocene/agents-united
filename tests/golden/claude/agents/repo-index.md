@@ -75,29 +75,34 @@ hooks:
               oot|sbin|usr|var)|[a-z]:\\/(windows|users|program files(
               \\(x86\\))?|programdata))$/.test(p.toLowerCase())};const U=b=>{let
               o=\"\",d=0;for(let k=0;k<b.length;k++){const
-              h=b[k];if(h===\"$\"&&b[k+1]===\"(\"){o+=\"$(\";k++;d++}else
+              h=b[k];if(!ps&&h===\"\\\\\"&&k+1<b.length){const
+              g=b[++k];o+=h+(\";&|\\n\\`()$\\\"\".includes(g)?(g===\"(\"?\"\\u0\
+              002\":g===\")\"?\"\\u0003\":\"\\u0001\"):g)}else
+              if(h===\"$\"&&b[k+1]===\"(\"){o+=\"$(\";k++;d++}else
               if(h===\"(\"&&d>0){o+=h;d++}else if(h===\")\"&&d>0){o+=h;d--}else
               if(d===0&&\";&|\\n()\".includes(h))o+=h===\"(\"?\"\\u0002\":h===\
               \")\"?\"\\u0003\":\"\\u0001\";else o+=h}return o};const
               Hd=(x,Q)=>{const re=/(?<!<)<<(?!<)(-?)[
               \\t]*(?:\"([^\"\\n]*)\"|'([^'\\n]*)'|([A-Za-z_][\\w.-]*))/g;let
-              o=\"\",p=0,m;while((m=re.exec(x))!==null){const
-              dl=m[2]??m[3]??m[4],eo=x.indexOf(\"\\n\",re.lastIndex);if(eo<0)br\
-              eak;let s=eo+1,e=s,f=-1;while(e<=x.length){const
+              o=\"\",p=0,m,le=-2,bud=200000;while((m=re.exec(x))!==null){const
+              dl=m[2]??m[3]??m[4];if(le<re.lastIndex)le=x.indexOf(\"\\n\",re.la\
+              stIndex);const eo=le;if(eo<0)break;let
+              s=eo+1,e=s,f=-1,c=0;while(e<=x.length&&c<5000&&bud>0){c++;bud--;c\
+              onst
               ne=x.indexOf(\"\\n\",e),ln=x.slice(e,ne<0?x.length:ne).replace(/\
               \\r$/,\"\");if((m[1]?ln.replace(/^\\t+/,\"\"):ln)===dl){f=e;break\
-              }if(ne<0)break;e=ne+1}const
-              be=f<0?x.length:f,pre=x.slice(Math.max(0,m.index-200),m.index),cu\
-              t=Math.max(pre.lastIndexOf(\";\"),pre.lastIndexOf(\"&\"),pre.last\
-              IndexOf(\"|\"),pre.lastIndexOf(\"(\"),pre.lastIndexOf(\"\\`\"),pr\
-              e.lastIndexOf(\"\\n\")),k=K(pre.slice(cut+1)),a=Z(k,0);const
+              }if(ne<0)break;e=ne+1}if(f<0)continue;const
+              be=f,pre=x.slice(Math.max(0,m.index-200),m.index),cut=Math.max(pr\
+              e.lastIndexOf(\";\"),pre.lastIndexOf(\"&\"),pre.lastIndexOf(\"|\"\
+              ),pre.lastIndexOf(\"(\"),pre.lastIndexOf(\"\\`\"),pre.lastIndexOf(\
+              \"\\n\")),k=K(pre.slice(cut+1)),a=Z(k,0);const
               sh=(a<k.length&&SH.has(B(k[a])))||/\\|\\s*(?:[^\\s|;&]*[\\/\\\\])\
               ?(?:bash|sh|zsh|dash|ksh|fish|pwsh|powershell|cmd)(?:\\.exe)?(?=\
               \\s|$)/i.test(x.slice(re.lastIndex,eo));o+=x.slice(p,s);if(sh)Q.p\
               ush(x.slice(s,be));p=be;re.lastIndex=be}return o+x.slice(p)};const
-              D=(x,d)=>{x=x.replace(/\\\\\\r?\\n/g,\"
+              D=(x,d)=>{const Q=[];x=Hd(x,Q).replace(/\\\\\\r?\\n/g,\"
               \").replace(/\\`\\r?\\n/g,\" \").replace(/\\r/g,\"\");const
-              Q=[];x=Hd(x,Q);const n=x.length;let z=\"\",j=0;while(j<n){const
+              n=x.length;let z=\"\",j=0;while(j<n){const
               q=x[j];if(q===\"#\"&&(j===0||/\\s/.test(x[j-1]))){const
               e=x.indexOf(\"\\n\",j);j=e<0?n:e;continue}if(q!=='\"'&&q!==\"'\")\
               {z+=q;j++;continue}let
@@ -203,29 +208,34 @@ hooks:
               oot|sbin|usr|var)|[a-z]:\\/(windows|users|program files(
               \\(x86\\))?|programdata))$/.test(p.toLowerCase())};const U=b=>{let
               o=\"\",d=0;for(let k=0;k<b.length;k++){const
-              h=b[k];if(h===\"$\"&&b[k+1]===\"(\"){o+=\"$(\";k++;d++}else
+              h=b[k];if(!ps&&h===\"\\\\\"&&k+1<b.length){const
+              g=b[++k];o+=h+(\";&|\\n\\`()$\\\"\".includes(g)?(g===\"(\"?\"\\u0\
+              002\":g===\")\"?\"\\u0003\":\"\\u0001\"):g)}else
+              if(h===\"$\"&&b[k+1]===\"(\"){o+=\"$(\";k++;d++}else
               if(h===\"(\"&&d>0){o+=h;d++}else if(h===\")\"&&d>0){o+=h;d--}else
               if(d===0&&\";&|\\n()\".includes(h))o+=h===\"(\"?\"\\u0002\":h===\
               \")\"?\"\\u0003\":\"\\u0001\";else o+=h}return o};const
               Hd=(x,Q)=>{const re=/(?<!<)<<(?!<)(-?)[
               \\t]*(?:\"([^\"\\n]*)\"|'([^'\\n]*)'|([A-Za-z_][\\w.-]*))/g;let
-              o=\"\",p=0,m;while((m=re.exec(x))!==null){const
-              dl=m[2]??m[3]??m[4],eo=x.indexOf(\"\\n\",re.lastIndex);if(eo<0)br\
-              eak;let s=eo+1,e=s,f=-1;while(e<=x.length){const
+              o=\"\",p=0,m,le=-2,bud=200000;while((m=re.exec(x))!==null){const
+              dl=m[2]??m[3]??m[4];if(le<re.lastIndex)le=x.indexOf(\"\\n\",re.la\
+              stIndex);const eo=le;if(eo<0)break;let
+              s=eo+1,e=s,f=-1,c=0;while(e<=x.length&&c<5000&&bud>0){c++;bud--;c\
+              onst
               ne=x.indexOf(\"\\n\",e),ln=x.slice(e,ne<0?x.length:ne).replace(/\
               \\r$/,\"\");if((m[1]?ln.replace(/^\\t+/,\"\"):ln)===dl){f=e;break\
-              }if(ne<0)break;e=ne+1}const
-              be=f<0?x.length:f,pre=x.slice(Math.max(0,m.index-200),m.index),cu\
-              t=Math.max(pre.lastIndexOf(\";\"),pre.lastIndexOf(\"&\"),pre.last\
-              IndexOf(\"|\"),pre.lastIndexOf(\"(\"),pre.lastIndexOf(\"\\`\"),pr\
-              e.lastIndexOf(\"\\n\")),k=K(pre.slice(cut+1)),a=Z(k,0);const
+              }if(ne<0)break;e=ne+1}if(f<0)continue;const
+              be=f,pre=x.slice(Math.max(0,m.index-200),m.index),cut=Math.max(pr\
+              e.lastIndexOf(\";\"),pre.lastIndexOf(\"&\"),pre.lastIndexOf(\"|\"\
+              ),pre.lastIndexOf(\"(\"),pre.lastIndexOf(\"\\`\"),pre.lastIndexOf(\
+              \"\\n\")),k=K(pre.slice(cut+1)),a=Z(k,0);const
               sh=(a<k.length&&SH.has(B(k[a])))||/\\|\\s*(?:[^\\s|;&]*[\\/\\\\])\
               ?(?:bash|sh|zsh|dash|ksh|fish|pwsh|powershell|cmd)(?:\\.exe)?(?=\
               \\s|$)/i.test(x.slice(re.lastIndex,eo));o+=x.slice(p,s);if(sh)Q.p\
               ush(x.slice(s,be));p=be;re.lastIndex=be}return o+x.slice(p)};const
-              D=(x,d)=>{x=x.replace(/\\\\\\r?\\n/g,\"
+              D=(x,d)=>{const Q=[];x=Hd(x,Q).replace(/\\\\\\r?\\n/g,\"
               \").replace(/\\`\\r?\\n/g,\" \").replace(/\\r/g,\"\");const
-              Q=[];x=Hd(x,Q);const n=x.length;let z=\"\",j=0;while(j<n){const
+              n=x.length;let z=\"\",j=0;while(j<n){const
               q=x[j];if(q===\"#\"&&(j===0||/\\s/.test(x[j-1]))){const
               e=x.indexOf(\"\\n\",j);j=e<0?n:e;continue}if(q!=='\"'&&q!==\"'\")\
               {z+=q;j++;continue}let

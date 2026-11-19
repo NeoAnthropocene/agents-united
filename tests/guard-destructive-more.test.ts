@@ -122,6 +122,28 @@ const BLOCK: Array<[string, string, string]> = [
   ['Bash', 'systemctl halt', 'shutdown'],
   ['Bash', 'mkfs.vfat disk.img', 'format'],
   ['Bash', 'dd if=x of=/dev/nvme0n1', 'format'],
+  // an unterminated here-document, or a << that is not one, hides nothing: the text stays in the stream
+  ['Bash', 'echo $((1 << n))\nsudo x', 'privilege'],
+  ['Bash', 'git commit -m "explain <<EOF form"\nrm -rf /', 'recursive delete'],
+  ['Bash', '# example <<EOF\nsudo reboot', 'privilege'],
+  ['Bash', 'cat <<EOF\nsudo x', 'privilege'],
+  ['Bash', 'cat <<EOF\nline one\\\nEOF\nsudo x', 'privilege'],
+  ['Bash', 'cat <<EOF\nbody\\\nEOF\nrm -rf /', 'recursive delete'],
+  // escaped and unescaped substitutions inside double quotes
+  ['Bash', 'echo "$(sudo x)"', 'privilege'],
+  ['Bash', 'echo "`sudo x`"', 'privilege'],
+  ['Bash', 'echo "$(echo (a); sudo x)"', 'privilege'],
+  ['Bash', 'echo "say \\"hi\\"" && sudo x', 'privilege'],
+  // a pipe into a shell on the operator's line, whatever stands in between
+  ['Bash', 'cat <<EOF | tee x | sh\nsudo x\nEOF', 'privilege'],
+  ['Bash', 'cat <<EOF | zsh\nsudo x\nEOF', 'privilege'],
+  ['PowerShell', 'cat <<EOF | pwsh\nRestart-Computer\nEOF', 'shutdown'],
+  ['PowerShell', 'cat <<EOF | cmd\nrd /s /q C:\\\nEOF', 'recursive delete'],
+  // more wrapper forms, and a UNC path to a program
+  ['Bash', 'env -u X sudo y', 'privilege'],
+  ['Bash', 'timeout --signal=KILL 5 sudo x', 'privilege'],
+  ['Bash', 'xargs -0 -n1 rm -rf /', 'recursive delete'],
+  ['PowerShell', '\\\\server\\tools\\shutdown.exe /s', 'shutdown'],
   // nesting: three shells deep is read
   ['Bash', nest(1), 'privilege'],
   ['Bash', nest(2), 'privilege'],
@@ -138,7 +160,14 @@ const ALLOW: Array<[string, string]> = [
   ['Bash', 'cat <<EOF | grep x\nsudo x\nEOF'],
   ['Bash', "node - <<'EOF'\nconsole.log('sudo x')\nEOF"],
   ['Bash', "python - <<'EOF'\nprint('shutdown')\nEOF"],
-  ['Bash', 'cat <<EOF\nnever closed: sudo x'],
+  ['Bash', 'cat <<EOF\nnever closed: sudo x'], // the line is read as a command; its verb is "never"
+  ['Bash', 'x=$((1 << 3)); echo $x'],
+  ['Bash', 'echo $((1 << 3))'],
+  ['Bash', 'git commit -m "docs: \\`rm -rf /\\` is blocked"'],
+  ['Bash', 'git commit -m "docs: \\$(sudo x) is escaped"'],
+  ['Bash', "echo '$(sudo x)'"],
+  ["Bash", "echo '`sudo x`'"],
+  ['Bash', 'echo "a \\"quoted\\" word" && ls'],
   // comments
   ['Bash', '# done; sudo later'],
   ['Bash', 'echo a #b; sudo x'],
