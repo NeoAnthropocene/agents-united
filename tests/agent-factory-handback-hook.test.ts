@@ -15,6 +15,7 @@ import { HANDBACK_CHECK_REFERENCE, HANDBACK_CHECK_ROLE, HANDBACK_MAX_BLOCKS, exp
 import type { LockfileManifest } from '../src/core/types.js';
 import { prepareProductionEvaluator } from './helpers/factory-evaluator.js';
 import { evaluationResult, evaluationTree, prepareEvaluationJob } from './helpers/factory-evaluation.js';
+import { isolatedTempEnv } from './helpers/isolated-temp.js';
 
 // ADR 0070: a PreToolUse hook on the evaluator's hand-back tool runs the checker's pre-check mode before the result leaves the evaluator.
 // No Host runs here: the hook script is driven as a child process with the hook input on stdin, as the session-guard tests drive their script.
@@ -71,7 +72,7 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
   let temp: string;
   let selected: Awaited<ReturnType<typeof prepareEvaluationJob>>;
   let jobDigest: string;
-  const env = (): NodeJS.ProcessEnv => ({ ...process.env, TEMP: temp, TMP: temp, TMPDIR: temp });
+  const env = (): NodeJS.ProcessEnv => isolatedTempEnv(temp);
   const node = (args: string[], input?: string, extra: NodeJS.ProcessEnv = {}) => spawnSync(process.execPath, args, {
     cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, input, env: { ...env(), ...extra },
   });
