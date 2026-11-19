@@ -10,6 +10,7 @@ import { prepareProductionEvaluator } from './helpers/factory-evaluator.js';
 import { evaluationTree } from './helpers/factory-evaluation.js';
 import { INVOICE_FILES } from './helpers/skill-candidate.js';
 import { NO_SHORT, shortLeafOf } from './helpers/path-spellings.js';
+import { isolatedTempEnv } from './helpers/isolated-temp.js';
 
 /**
  * The shipped review-job builder (P24-B, finding B-3 of Sitting B): the caller hands it only its decisions, it computes every pin and
@@ -22,6 +23,8 @@ const CHECKER = '.claude/skills/evaluate-artifact/scripts/check-review.mjs';
 const SOURCE = path.resolve('registry/skills/evaluate-artifact/scripts/review-job.mjs');
 const CHECKOUT = process.cwd();
 const HEAD = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+// The temp folder of the test runner, resolved as the builder resolves it. The children this suite starts must never write into it.
+const RUNNER_TEMP = fs.realpathSync.native(os.tmpdir());
 const STEM = 'subagent-factory-evaluator';
 const digest = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
 
@@ -33,10 +36,12 @@ describe('the shipped review-job builder', () => {
     await new InstallEngine(new RegistryResolver(fixture.registry)).install('agent-factory', fixture.options);
     work = path.join(fixture.root, 'work');
     await fs.ensureDir(path.join(work, 'saved'));
+    // The builder writes the hand-back hook's pointer into the temp folder (ADR 0070); here that is a folder of the fixture, removed with it.
+    await fs.ensureDir(path.join(fixture.root, 'tmp'));
   });
   afterEach(async () => { await fs.remove(fixture.root); });
 
-  const node = (script: string, args: string[], cwd = fixture.workspace) => spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8', timeout: 60_000 });
+  const node = (script: string, args: string[], cwd = fixture.workspace) => spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8', timeout: 60_000, env: isolatedTempEnv(path.join(fixture.root, 'tmp')) });
   const build = (specFile: string) => node(fixture.installed(BUILDER), ['--spec', specFile]);
   const check = (args: string[]) => node(fixture.installed(CHECKER), args);
   // Named as the Skill, as skill-check requires of a Skill folder.
@@ -127,10 +132,18 @@ describe('the shipped review-job builder', () => {
     expect(result.stdout).toContain('runs no check');
   });
 
+  it('writes its pointer into the test\'s own temp folder and never into the temp folder of the test runner', async () => {
+    const built = build(await writeSpec(await skillSpec()));
+    expect(built.status, built.stderr).toBe(0);
+    const { jobDigest } = JSON.parse(built.stdout) as { jobDigest: string };
+    expect(await fs.pathExists(path.join(RUNNER_TEMP, 'agents-united', 'review-jobs', `${jobDigest}.txt`))).toBe(false);
+    expect(await fs.readdir(path.join(fixture.root, 'tmp', 'agents-united', 'review-jobs'))).toEqual([`${jobDigest}.txt`]);
+  });
+
   it('writes the hand-back hook\'s pointer in the temp folder: named by the job digest, holding the job path and nothing else, and never needed by the checker (ADR 0070)', async () => {
     const temp = path.join(work, 'tmp');
     await fs.ensureDir(temp);
-    const env = { ...process.env, TEMP: temp, TMP: temp, TMPDIR: temp };
+    const env = isolatedTempEnv(temp);
     const specFile = await writeSpec(await skillSpec());
     const built = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env });
     expect(built.status, built.stderr).toBe(0);
@@ -145,7 +158,7 @@ describe('the shipped review-job builder', () => {
     let linked = true;
     try { fs.symlinkSync(real, link, process.platform === 'win32' ? 'junction' : 'dir'); } catch { linked = false; }
     if (linked) {
-      const throughLink = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: { ...process.env, TEMP: link, TMP: link, TMPDIR: link } });
+      const throughLink = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: isolatedTempEnv(link) });
       expect(throughLink.status, throughLink.stderr).toBe(0);
       expect(await fs.readFile(path.join(real, 'agents-united', 'review-jobs', `${JSON.parse(throughLink.stdout).jobDigest}.txt`), 'utf8')).toBe(path.join(review(), 'job.json'));
     }
@@ -155,7 +168,7 @@ describe('the shipped review-job builder', () => {
     expect(checked.status, checked.stderr).toBe(0);
     const file = path.join(work, 'not-a-folder');
     await fs.writeFile(file, 'x');
-    const again = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: { ...process.env, TEMP: file, TMP: file, TMPDIR: file } });
+    const again = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: isolatedTempEnv(file) });
     expect(again.status, again.stderr).toBe(0);
   });
 
