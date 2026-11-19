@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import YAML from 'yaml';
 import { prepareFactoryNative } from './factory-native.js';
-import { readOnlyGuardFileHooks } from '../../src/core/readonly-guard.js';
+import { expectedWorkerHooks } from '../../src/core/handback-check.js';
 import { FLOOR_END, FLOOR_START, renderFloor } from '../../src/core/native-floor.js';
 import { validateCoreSchema } from '../../src/core/semantic-core.js';
 
@@ -27,7 +27,7 @@ export async function prepareFactoryEvaluator(root: string) {
   await fs.outputFile(fixture.source('hosts/claude/agents/factory-evaluator.md'), '---\n' + YAML.stringify({
     name: 'factory-evaluator', description: 'Review one fixed text artifact without changes.', model: 'inherit', effort: 'medium', background: false,
     tools: 'Glob, Grep, ListMcpResourcesTool, Read, ReadMcpResourceTool, ReportFindings, SubagentHandback',
-    skills: ['evaluate-artifact'], hooks: readOnlyGuardFileHooks(),
+    skills: ['evaluate-artifact'], hooks: expectedWorkerHooks('factory-evaluator', 'read-only'),
   }) + `---\n${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\nRead the fixed job before reviewing.\n`);
   const skill = '---\nname: evaluate-artifact\ndescription: Review one fixed candidate.\nmetadata:\n  author: agents-united\n  version: "1.0.0"\n  license: MIT\n---\nRead [the job](references/job.md).\n';
   await fs.outputFile(fixture.source('skills/evaluate-artifact/SKILL.md'), skill);

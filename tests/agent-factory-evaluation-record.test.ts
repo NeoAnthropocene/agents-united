@@ -112,7 +112,8 @@ describe('caller-only review records through the installed evaluator CLI', () =>
     await fs.writeJson(file, citeLog(evaluationResult(selected, JSON.parse(bare.stdout)), 'native-check-raw'));
     const refused = run(['--job', selected.jobFile, '--result', file]);
     expect(refused.status).toBe(1);
-    expect(JSON.parse(refused.stderr).reason).toBe('Citation selects an unavailable/unpinned input or substituted path.');
+    // The refusal keeps its leading phrase and now also says where the citation is (criterion, source, range).
+    expect(JSON.parse(refused.stderr).reason.startsWith('Citation selects an unavailable/unpinned input or substituted path.')).toBe(true);
   });
 
   it('cannot pin the review root\'s own check output as an input, which is why the pin is a copy outside the review root', async () => {
@@ -153,7 +154,8 @@ describe('caller-only review records through the installed evaluator CLI', () =>
     await fs.writeJson(file, result);
     const refused = run(['--job', selected.jobFile, '--result', file]);
     expect(refused.status).toBe(1);
-    expect(JSON.parse(refused.stderr).reason).toBe('Citation selects an unavailable/unpinned input or substituted path.');
+    // The refusal keeps its leading phrase and now also says where the citation is (criterion, source, range).
+    expect(JSON.parse(refused.stderr).reason.startsWith('Citation selects an unavailable/unpinned input or substituted path.')).toBe(true);
   });
 
   // The coordinator's instruction is enough to build a job the checker accepts: the test takes the field list out of the reference text itself

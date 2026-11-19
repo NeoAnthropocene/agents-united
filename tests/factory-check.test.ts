@@ -104,6 +104,11 @@ describe('factory-check: actual shared/native validators through the packaged CL
     await writeRole();
     blocked(['--artifact', artifact], /guard|hook|binding/i);
   });
+  it('refuses the evaluator\'s hand-back hook entry on any other role (ADR 0070)', async () => {
+    meta.hooks = { PreToolUse: [...readOnlyGuardFileHooks().PreToolUse, { matcher: 'SubagentHandback', hooks: [{ type: 'command', command: 'node', args: ['${CLAUDE_PROJECT_DIR}/.claude/skills/evaluate-artifact/scripts/precheck-handback.mjs'] }] }] };
+    await writeRole();
+    blocked(['--artifact', artifact], /guard|hook|binding/i);
+  });
   it('keeps a permitted Skill optional until the task requires its preload', async () => {
     await fs.writeJson(path.join(registry, 'core/subagent-example.contract.json'), { definition: 'subagent-example', workflows: [], skills: ['review-notes'], hooks: [] });
     await fs.outputFile(path.join(registry, 'skills/review-notes/SKILL.md'), '---\nname: review-notes\ndescription: Review notes.\n---\nReview the supplied notes.\n');

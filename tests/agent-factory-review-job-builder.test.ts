@@ -127,6 +127,38 @@ describe('the shipped review-job builder', () => {
     expect(result.stdout).toContain('runs no check');
   });
 
+  it('writes the hand-back hook\'s pointer in the temp folder: named by the job digest, holding the job path and nothing else, and never needed by the checker (ADR 0070)', async () => {
+    const temp = path.join(work, 'tmp');
+    await fs.ensureDir(temp);
+    const env = { ...process.env, TEMP: temp, TMP: temp, TMPDIR: temp };
+    const specFile = await writeSpec(await skillSpec());
+    const built = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env });
+    expect(built.status, built.stderr).toBe(0);
+    const out = JSON.parse(built.stdout);
+    const pointers = path.join(temp, 'agents-united', 'review-jobs');
+    expect(await fs.readdir(pointers)).toEqual([`${out.jobDigest}.txt`]);
+    expect(await fs.readFile(path.join(pointers, `${out.jobDigest}.txt`), 'utf8')).toBe(path.join(review(), 'job.json'));
+    // A temp folder whose path passes a link (macOS /var) is resolved once: the pointer sits in the real folder, where the hook looks for it.
+    const real = path.join(work, 'real-tmp');
+    const link = path.join(work, 'linked-tmp');
+    await fs.ensureDir(real);
+    let linked = true;
+    try { fs.symlinkSync(real, link, process.platform === 'win32' ? 'junction' : 'dir'); } catch { linked = false; }
+    if (linked) {
+      const throughLink = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: { ...process.env, TEMP: link, TMP: link, TMPDIR: link } });
+      expect(throughLink.status, throughLink.stderr).toBe(0);
+      expect(await fs.readFile(path.join(real, 'agents-united', 'review-jobs', `${JSON.parse(throughLink.stdout).jobDigest}.txt`), 'utf8')).toBe(path.join(review(), 'job.json'));
+    }
+    // The pointer is a locator, not evidence: the job checks without it, and the build does not depend on a usable temp folder.
+    await fs.remove(pointers);
+    const checked = check(['--job', path.join(review(), 'job.json')]);
+    expect(checked.status, checked.stderr).toBe(0);
+    const file = path.join(work, 'not-a-folder');
+    await fs.writeFile(file, 'x');
+    const again = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: { ...process.env, TEMP: file, TMP: file, TMPDIR: file } });
+    expect(again.status, again.stderr).toBe(0);
+  });
+
   it('builds a portable Skill job the checker accepts, and a result citing a copied check output passes --result', async () => {
     const { out, job, jobFile, record } = await roundTrip(await skillSpec());
     expect(out).toMatchObject({ version: 1, status: 'job-written', counts: { files: 4, checks: 1, copies: 3 } });

@@ -8,6 +8,11 @@ import { spawnSync } from 'node:child_process';
 
 // Caller-operated consistency checks only. No command in a job/result is executed.
 const fail = message => { throw new Error(message); };
+// A refusal that also carries a list of details (the refused citations), printed beside its reason.
+class Refusal extends Error { constructor(message, details) { super(message); this.details = details; } }
+// A fault of the ENVIRONMENT found inside checkResult in pre-check mode (see precheck): the evaluator cannot repair it, so it is not a refusal of the result.
+class Environment extends Error {}
+const environment = message => { throw new Environment(message); };
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(',')}]`
   : value !== null && typeof value === 'object' ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`
@@ -57,6 +62,20 @@ const unique = (values, label) => { if (new Set(values.map(value => value.toLowe
 const skillRoot = fileURLToPath(new URL('../', import.meta.url));
 const scriptFile = fileURLToPath(import.meta.url);
 const limits = { envelope: 262144, executable: 134217728 };
+// The citation limits; registry texts and tests read these numbers from here, so they state what the check enforces.
+const CITATION_LIMITS = { maxLines: 5, maxQuoteLines: 5, maxQuoteBytes: 1024 };
+// A refusal lists this many bad citations and says how many more there are.
+const CITATION_LIST_CAP = 10;
+// Text the result controls (a path, an id, the start of the file) is echoed in a refusal, and the coordinator quotes that refusal into the next
+// evaluator's prompt. So it is echoed short and on one line: the characters that break a line or hide in one are spelled out, and a value over
+// ECHO_MAX characters is cut with its original length.
+const ECHO_MAX = 120;
+const spelled = value => value.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029\ufeff]/g,
+  char => char === '\n' ? '\\n' : char === '\r' ? '\\r' : char === '\t' ? '\\t' : `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`);
+const echo = value => {
+  const original = String(value), flat = spelled(original);
+  return flat.length > ECHO_MAX ? `${flat.slice(0, ECHO_MAX)}... (${original.length} characters)` : flat;
+};
 
 function absolute(value, label) {
   if (typeof value !== 'string' || !path.isAbsolute(value) || value.includes('\0') || value.split(/[\\/]/).some(part => part === '.' || part === '..')) fail(`${label}: expected absolute path without traversal aliases.`);
@@ -342,40 +361,117 @@ function checkJob(jobFile) {
   return { job, jobPin: pinOf(jobFile, jobBytes), digest: hash(canonical(job)), candidateDigest, inventory, checks, unavailable, recheck, resultSchema: schemas[1].schema };
 }
 
-function checkResult(record, resultFile) {
+// The hand-back must be exactly one JSON object. A prose, fenced, byte-order-marked or trailing-text answer is refused plainly, with the start of the
+// file, so the next evaluator is told what went wrong. The start is quoted with its odd characters (a byte order mark, a line separator) spelled out.
+function parseResult(bytes) {
+  let text;
+  try { text = decode(bytes); } catch (error) { return fail(`Result is not valid UTF-8 text: ${error.message}`); }
+  try { return JSON.parse(text); } catch (error) {
+    const notes = [];
+    if (text.charCodeAt(0) === 0xfeff) notes.push('It starts with a byte order mark (BOM); save the file as plain UTF-8 without one.');
+    if (/^\s*```/.test(text)) notes.push('It starts with a code fence; return the bare JSON object.');
+    const after = /after JSON at position (\d+)/.exec(error.message);
+    if (after) notes.push(`Parsing stopped because text follows the JSON object, starting at character ${after[1]}: ${spelled(JSON.stringify(text.slice(Number(after[1]), Number(after[1]) + 40)))}; return the JSON object alone.`);
+    return fail(`Result is not valid JSON: the hand-back must be exactly ONE JSON object, with no text before or after it, no code fence and no headings. The file starts with ${spelled(JSON.stringify(text.slice(0, 40)))}.${notes.map(note => ` ${note}`).join('')} Parser message: ${echo(error.message)}`);
+  }
+}
+
+// One implementation for two entry points. The saved-file mode (`--job --result`) is the caller's check of the review root's result.json. With `precheck`
+// (`--job --precheck <file>`, ADR 0070) the same parsing, schema, digest, citation, coverage, criteria, finding and evidence checks run on a result file anywhere, with the same
+// reasons. Skipped in pre-check mode, because they only make sense for the saved file: (1) the rule that the file is the review root's own result.json; (2) the
+// postflight that the saved file did not change while it was checked; (3) the second `record.recheck()` of the job's pins, the candidate and the job bytes after the
+// result checks (`checkJob` has just made the first, and a hook has no caller to protect from a swap in between). Nothing else is skipped.
+// In pre-check mode a fault of the ENVIRONMENT found inside this function throws `Environment` (exit 3), not a refusal (exit 1), because the evaluator cannot repair it and the
+// caller's check will report it: the result file missing, unreadable or over the byte budget; the result-schema pin missing from the job; a job at the pointer whose digest is not the result's `jobDigest` (the hook found that job by that
+// digest, so it was rebuilt); a pinned citation source that vanished, grew over its budget or no longer matches its pin. Faults of the RESULT itself still refuse (exit 1):
+// not JSON or not one object, the schema, a wrong `jobId` or `candidateDigest`, subject or inventory, every citation fault, coverage, criteria, findings, open items and
+// deterministic-evidence faults. The saved-file mode refuses all of these with exit 1, as before.
+function checkResult(record, resultFile, precheck = false) {
   const { job } = record;
-  if (!sameBoth(absolute(resultFile, 'Result'), path.join(job.roots.review, 'result.json'))) fail('Result must be the caller-owned review-root result.json.');
-  const bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result');
-  const result = JSON.parse(decode(bytes));
+  const file = absolute(resultFile, 'Result');
+  if (!precheck && !sameBoth(file, path.join(job.roots.review, 'result.json'))) fail('Result must be the caller-owned review-root result.json.');
+  // In pre-check mode a result file that is missing, unreadable or over the byte budget is the environment's fault (the hook wrote it), not the worker's.
+  let bytes;
+  try { bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result'); } catch (error) { if (precheck) throw new Environment(error.message); throw error; }
+  const result = parseResult(bytes);
   validate(result, record.resultSchema, 'result');
   if (!job.inputs.some(input => input.required && input.status === 'clear' && input.kind === 'loading'
-    && sameBoth(input.path, path.join(skillRoot, 'assets/result.schema.json')))) fail('Missing result-schema loading pin.');
-  if (result.jobId !== job.id || result.jobDigest !== record.digest || result.candidateDigest !== record.candidateDigest) fail('Result fixed job/candidate digest mismatch.');
+    && sameBoth(input.path, path.join(skillRoot, 'assets/result.schema.json')))) (precheck ? environment : fail)('Missing result-schema loading pin.');
+  if (result.jobId !== job.id || result.jobDigest !== record.digest || result.candidateDigest !== record.candidateDigest) {
+    // The hook finds the job by the result's own jobDigest, so a job at that place with another digest was rebuilt: the environment's fault. A wrong jobId or candidate digest is the result's.
+    (precheck && result.jobDigest !== record.digest ? environment : fail)('Result fixed job/candidate digest mismatch.');
+  }
   if (!same(result.subject, job.subject) || !same(result.inventory, record.inventory)) fail('Result subject/inventory substitution.');
-  const citation = cite => {
-    const rel = relative(cite.path);
+  // Every citation is inspected and every failure is collected, so one refusal names them all: where the citation is, its source, its range, the
+  // file's length (as the Read tool counts it), every limit it breaks and, for a quote that stands elsewhere in the file, the line it stands on.
+  const failures = [];
+  let citationTotal = 0;
+  const inspect = (cite, where) => {
+    citationTotal += 1;
+    // Everything the result controls (an id, a path) is echoed through echo(): one short line, never a line break.
+    const base = { where: echo(where), sourceId: echo(cite.sourceId), path: echo(cite.path), startLine: cite.startLine, endLine: cite.endLine, fileLines: null, problems: [], quoteFoundAtLine: null, endLineIsPastLastShown: false };
+    const refuse = (lead, extra = {}) => failures.push({ ...base, lead, ...extra, problems: extra.problems ?? [lead] });
+    let rel;
+    try { rel = relative(cite.path); } catch { return refuse(`Invalid contained relative path: ${echo(cite.path)}.`); }
     let file, pin, cap;
     if (cite.sourceId === 'candidate') {
       pin = record.inventory.find(item => item.path === rel);
-      if (!pin) fail(`Citation selects an unreported candidate path: ${rel}.`);
+      if (!pin) return refuse(`Citation selects an unreported candidate path: ${echo(rel)}.`);
       file = path.join(job.roots.candidate, rel);
       cap = job.budget.maxCandidateFileBytes;
     } else {
       pin = job.inputs.find(input => input.id === cite.sourceId && input.status === 'clear');
-      if (!pin || rel !== path.basename(pin.path)) fail('Citation selects an unavailable/unpinned input or substituted path.');
+      if (!pin || rel !== path.basename(pin.path)) return refuse('Citation selects an unavailable/unpinned input or substituted path.');
       file = pin.path;
       cap = job.budget.maxEvidenceFileBytes;
     }
-    const actual = bytesAt(file, cap, 'Citation source');
-    if (cite.sha256 !== pin.sha256 || hash(actual) !== pin.sha256) fail('Citation source hash mismatch.');
+    // A pinned source that vanished, grew over its budget or changed since the job was built is the environment's fault, not the result's (pre-check mode only).
+    let actual;
+    try { actual = bytesAt(file, cap, 'Citation source'); } catch (error) { if (precheck) throw new Environment(error.message); throw error; }
+    if (precheck && hash(actual) !== pin.sha256) throw new Environment('Citation source hash mismatch.');
+    if (cite.sha256 !== pin.sha256 || hash(actual) !== pin.sha256) return refuse('Citation source hash mismatch.', { problems: ['the cited sha256 is not the pinned sha256 of this source'] });
     const lines = decode(actual).replace(/\r\n?/g, '\n').split('\n');
-    if (cite.startLine > cite.endLine || cite.endLine > lines.length || cite.endLine - cite.startLine >= 5) fail('Citation logical line range is invalid or over budget.');
+    // The checker accepts the empty string after a final newline as a last line, as before; the Read tool does not show it, so the count told to the
+    // evaluator is the Read tool's, and an end line on that phantom line is named.
+    const phantom = lines.length > 1 && lines.at(-1) === '';
+    const shown = phantom ? lines.length - 1 : lines.length;
+    const text = lines.join('\n');
     const quote = cite.quote.replace(/\r\n?/g, '\n');
-    if (Buffer.byteLength(quote, 'utf8') > 1024 || quote.split('\n').length > 5
-      || !lines.slice(cite.startLine - 1, cite.endLine).join('\n').includes(quote)) fail('Citation quote is absent from the pinned logical lines or over budget.');
+    const quoteLines = quote.split('\n').length;
+    const at = text.indexOf(quote);
+    const quoteFoundAtLine = at < 0 ? null : text.slice(0, at).split('\n').length;
+    const standsOn = quoteFoundAtLine === null ? 'the quote is not found anywhere in the file'
+      : `the quote stands on line${quoteLines > 1 ? 's' : ''} ${quoteFoundAtLine}${quoteLines > 1 ? `-${quoteFoundAtLine + quoteLines - 1}` : ''} of the file`;
+    const { maxLines, maxQuoteLines, maxQuoteBytes } = CITATION_LIMITS;
+    // Every limit this citation breaks is listed, whether or not another one is broken too; the decision to refuse is the same as with one.
+    const problems = [];
+    if (cite.startLine > cite.endLine) problems.push(`the start line ${cite.startLine} is after the end line ${cite.endLine}`);
+    if (cite.endLine > lines.length) problems.push(`the end line ${cite.endLine} is past the end of the file (the Read tool shows ${shown} lines)`);
+    if (cite.startLine <= cite.endLine && cite.endLine - cite.startLine >= maxLines) {
+      problems.push(`the citation spans ${cite.endLine - cite.startLine + 1} lines, at most ${maxLines} are allowed (its end line at most ${maxLines - 1} after its start line)`);
+    }
+    const rangeBad = problems.length > 0;
+    const quoteBytes = Buffer.byteLength(quote, 'utf8');
+    if (quoteBytes > maxQuoteBytes) problems.push(`the quote is ${quoteBytes} bytes, at most ${maxQuoteBytes} are allowed`);
+    if (quoteLines > maxQuoteLines) problems.push(`the quote has ${quoteLines} lines, at most ${maxQuoteLines} are allowed`);
+    if (!lines.slice(cite.startLine - 1, cite.endLine).join('\n').includes(quote)) problems.push('the quote is not inside the cited lines', standsOn);
+    if (!problems.length) return;
+    const onPhantom = phantom && cite.endLine === lines.length;
+    if (onPhantom) problems.push(`line ${lines.length} is the empty line after the final newline, which the Read tool does not show`);
+    refuse(rangeBad ? 'Citation logical line range is invalid or over budget.' : 'Citation quote is absent from the pinned logical lines or over budget.',
+      { fileLines: shown, problems, quoteFoundAtLine, endLineIsPastLastShown: onPhantom });
   };
-  for (const criterion of result.criteria) criterion.citations.forEach(citation);
-  for (const finding of result.findings) finding.citations.forEach(citation);
+  result.criteria.forEach(criterion => criterion.citations.forEach((cite, index) => inspect(cite, `criterion ${criterion.id}, citation ${index + 1}`)));
+  result.findings.forEach(finding => finding.citations.forEach((cite, index) => inspect(cite, `finding ${finding.id}, citation ${index + 1}`)));
+  if (failures.length) {
+    const shown = failures.slice(0, CITATION_LIST_CAP);
+    const sentence = problems => problems.join('; ').replace(/\.?$/, '.');
+    const listed = shown.map((item, index) => `${index + 1}. ${item.where}: source ${item.sourceId} (${item.path}), lines ${item.startLine}-${item.endLine}${item.fileLines === null ? '' : `, the file has ${item.fileLines} lines`}: ${sentence(item.problems)}`);
+    const more = failures.length - shown.length;
+    throw new Refusal([`${failures[0].lead} ${failures.length} of ${citationTotal} citations ${failures.length === 1 ? 'is' : 'are'} refused, and one bad citation refuses the whole result; correct every one listed and hand back the complete result again as ONE JSON object.`,
+      ...listed, ...(more ? [`...and ${more} more not listed.`] : [])].join('\n'),
+    shown.map(({ lead: _lead, ...detail }) => detail));
+  }
   if (result.findings.length > job.budget.maxFindings || result.openItems.length > job.budget.maxOpenItems) fail('Returned finding/open-item budget exceeded.');
   unique(result.coverage.map(item => item.path), 'Returned coverage');
   if (!same(result.coverage.map(item => item.path).sort(), record.inventory.map(item => item.path).sort())) fail('Returned file coverage is incomplete or substituted.');
@@ -410,28 +506,64 @@ function checkResult(record, resultFile) {
     if (item.status !== check.status || item.exit !== check.exit || item.rawSha256 !== (check.raw?.sha256 ?? null)
       || item.receiptSha256 !== (check.receipt?.sha256 ?? null)) fail(`Returned deterministic evidence contradicts pinned receipts: ${item.id}.`);
   }
+  if (precheck) return { precheck: true, candidateMatch: true, opinion: result.opinion, reviewStatus: result.status };
   record.recheck();
   if (!bytesAt(resultFile, job.budget.maxResultBytes, 'Result postflight').equals(bytes)) fail('Result changed during postflight.');
   return { result: pinOf(resultFile, bytes), candidateMatch: true, opinion: result.opinion, reviewStatus: result.status };
 }
 
+const deterministic = { quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false };
+/** The record fields printed on acceptance, in both entry points, then what the result check added. */
+const recordOutput = (record, result) => JSON.stringify({ version: 1, kind: 'deterministic', recordValid: true, ready: !record.unavailable.some(item => item.required),
+  job: record.jobPin, jobDigest: record.digest, candidateDigest: record.candidateDigest, inventory: record.inventory,
+  checks: record.checks, unavailable: record.unavailable, inputPins: record.job.inputs,
+  ...result, ...deterministic }) + '\n';
+const refusal = error => process.stderr.write(JSON.stringify({ version: 1, kind: 'deterministic', status: 'unavailable', reason: error.message, ...(error.details ? { details: error.details } : {}), ...deterministic }) + '\n');
+
+// The pre-check entry point (ADR 0070): `--precheck <result-file> [--job <absolute-job.json>]`. It is the hook's way to ask "would the caller's check refuse this
+// result?" before the evaluator hands it back. It runs the SAME checks as `--job --result` (one implementation, `checkJob` and `checkResult`), on a result file
+// anywhere, with the same reasons and details. Exit codes: 0 accepted; 1 refused for what the result says (the hook blocks); 3 the fault is the job's, the
+// input's or the environment's (a missing file, a job that no longer checks, an `Environment` fault inside checkResult): the hook lets the hand-back through, because
+// the evaluator cannot repair that and the caller's check decides. Without `--job` it only checks that the file is exactly one JSON object, which needs no job. The saved-file mode keeps its exit code 1 for everything.
+function precheck(values) {
+  let stage = 'input';
+  try {
+    const file = absolute(values.precheck, 'Pre-check result');
+    if (!values.job) {
+      const bytes = bytesAt(file, limits.envelope, 'Result');
+      stage = 'result';
+      const value = parseResult(bytes);
+      // The saved-file mode reaches the same refusal from the schema check, with this text.
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) fail('result: expected object.');
+      process.stdout.write(JSON.stringify({ version: 1, kind: 'deterministic', precheck: 'json-only', ...deterministic }) + '\n');
+      return;
+    }
+    const record = checkJob(absolute(values.job, 'Job argument'));
+    stage = 'result';
+    process.stdout.write(recordOutput(record, checkResult(record, file, true)));
+  } catch (error) {
+    refusal(error);
+    process.exitCode = stage === 'result' && !(error instanceof Environment) ? 1 : 3;
+  }
+}
+
 try {
-  for (const flag of ['job', 'result', 'help']) {
+  for (const flag of ['job', 'result', 'precheck', 'help']) {
     if (process.argv.slice(2).filter(arg => arg === `--${flag}` || arg.startsWith(`--${flag}=`)).length > 1) fail(`Duplicate --${flag} selector.`);
   }
-  const { values, positionals } = parseArgs({ options: { job: { type: 'string' }, result: { type: 'string' }, help: { type: 'boolean' } }, strict: true, allowPositionals: true });
-  if (values.help && !values.job && !values.result && !positionals.length) {
-    process.stdout.write('check-review --job <absolute-job.json> [--result <absolute-result.json>]\nChecks fixed review records; does not run validators or a reviewer.\n');
+  const { values, positionals } = parseArgs({ options: { job: { type: 'string' }, result: { type: 'string' }, precheck: { type: 'string' }, help: { type: 'boolean' } }, strict: true, allowPositionals: true });
+  if (values.precheck !== undefined) {
+    if (values.result || values.help || positionals.length) throw new Error('--precheck takes a result file and optionally --job, nothing else.');
+    precheck(values);
+  } else if (values.help && !values.job && !values.result && !positionals.length) {
+    process.stdout.write('check-review --job <absolute-job.json> [--result <absolute-result.json>]\nChecks fixed review records; does not run validators or a reviewer.\ncheck-review --precheck <result-file> [--job <absolute-job.json>]\nThe same checks on a result file anywhere, for the hand-back hook; exit 0 accepted, 1 refused, 3 the job or the input is at fault.\n');
   } else if (values.job && !values.help && !positionals.length) {
     const record = checkJob(absolute(values.job, 'Job argument'));
     const result = values.result ? checkResult(record, values.result) : {};
-    process.stdout.write(JSON.stringify({ version: 1, kind: 'deterministic', recordValid: true, ready: !record.unavailable.some(item => item.required),
-      job: record.jobPin, jobDigest: record.digest, candidateDigest: record.candidateDigest, inventory: record.inventory,
-      checks: record.checks, unavailable: record.unavailable, inputPins: record.job.inputs,
-      ...result, quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false }) + '\n');
+    process.stdout.write(recordOutput(record, result));
     if (!values.result && record.unavailable.some(item => item.required)) process.exitCode = 1;
   } else throw new Error('A supported absolute --job review record is required.');
 } catch (error) {
-  process.stderr.write(JSON.stringify({ version: 1, kind: 'deterministic', status: 'unavailable', reason: error.message, quality: 'pending', executionProof: 'unverified', live: 'unverified', acceptedDraft: false }) + '\n');
+  refusal(error);
   process.exitCode = 1;
 }

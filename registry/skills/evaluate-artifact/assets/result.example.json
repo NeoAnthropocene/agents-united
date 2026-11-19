@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "jobId": "sample-review",
+  "jobDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "candidateDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "status": "reviewed",
+  "opinion": "changes-requested",
+  "subject": {
+    "kind": "skill",
+    "identity": "sample-skill",
+    "target": null,
+    "paths": ["SKILL.md"],
+    "definition": null
+  },
+  "inventory": [
+    { "path": "SKILL.md", "kind": "file", "bytes": 120, "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" }
+  ],
+  "coverage": [
+    { "path": "SKILL.md", "status": "reviewed", "rationale": "The only subject file, read in full." }
+  ],
+  "criteria": [
+    {
+      "id": "task-fit",
+      "outcome": "satisfactory",
+      "rationale": "The Skill does what the fixed brief asks and stays inside the selected path.",
+      "citations": [
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 7, "endLine": 7, "quote": "Read only the supplied path." }
+      ]
+    },
+    { "id": "shared-semantics", "outcome": "not-applicable", "rationale": "A portable Skill adds no shared pair.", "citations": [] },
+    { "id": "host-fit", "outcome": "not-applicable", "rationale": "The job names no target Host.", "citations": [] },
+    {
+      "id": "dependency-usefulness",
+      "outcome": "satisfactory",
+      "rationale": "The Skill depends on nothing it does not provide.",
+      "citations": [
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 7, "endLine": 7, "quote": "Read only the supplied path." }
+      ]
+    },
+    {
+      "id": "evidence-truthfulness",
+      "outcome": "satisfactory",
+      "rationale": "It claims nothing it did not do.",
+      "citations": [
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 7, "endLine": 7, "quote": "Read only the supplied path." }
+      ]
+    },
+    {
+      "id": "provenance-ownership",
+      "outcome": "satisfactory",
+      "rationale": "The job pins an original work with its author.",
+      "citations": [
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 4, "endLine": 4, "quote": "license: MIT" }
+      ]
+    },
+    {
+      "id": "clarity-maintainability",
+      "outcome": "needs-work",
+      "rationale": "The body is one line and gives no steps.",
+      "citations": [
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 6, "endLine": 7, "quote": "# Sample\nRead only the supplied path." }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "body-has-no-steps",
+      "criterionId": "clarity-maintainability",
+      "severity": "MEDIUM",
+      "confidence": "high",
+      "citations": [
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 7, "endLine": 7, "quote": "Read only the supplied path." }
+      ],
+      "rationale": "The body is a single instruction, so a reader cannot tell what to return.",
+      "correction": "Add a short runbook that names the input, the steps and the form of the answer."
+    }
+  ],
+  "deterministicEvidence": [
+    {
+      "id": "skill-layout",
+      "status": "passed",
+      "exit": 0,
+      "rawSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "receiptSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "observation": "The caller-run layout check passed; this does not authenticate the run or judge quality."
+    }
+  ],
+  "limitations": ["No reviewer or Host was invoked beyond this review; live behavior is unverified."],
+  "live": "unverified",
+  "openItems": [],
+  "acceptedDraft": false,
+  "inventorySource": "caller-provided"
+}
