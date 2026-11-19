@@ -299,7 +299,7 @@ describe('choosing the first entry that is in the pool', () => {
 
   it('a pool with none of a tier entries makes the tier unavailable on that host, says so, and falls through to the next host', async () => {
     const { buildPlan, codexPool } = await lib();
-    const pool = codexPool(codexResponse(CODEX_ALL.filter(([m]) => m.startsWith('gpt-5.6'))));
+    const pool = codexPool(codexResponse(CODEX_ALL.filter(([m]) => m !== 'gpt-6-luna' && m !== 'gpt-6.1-terra')));
     const plan2 = buildPlan(CFG, 'simple', { codex: { windows: status({ pool }) }, claude: { windows: status({ usage: usageOf(80) }) } }, 'windows', undefined, 'read-only');
     expect(plan2.selected.host).toBe('claude');
     const skip = plan2.skipped.find((s: Any) => s.host === 'codex');
@@ -564,7 +564,7 @@ describe('the config shape: ordered lists, and the old one model string per tier
     const { mergeConfig, validateConfig, tierEntries, buildPlan, codexPool } = await lib();
     const merged = mergeConfig(CFG, { hosts: { codex: { tiers: { high: { model: 'gpt-6-sol' } } } } });
     expect(validateConfig(merged)).toEqual([]);
-    expect((tierEntries(merged.hosts.codex.tiers.high) as Any[]).map(e => [e.model, e.effort])).toEqual([['gpt-6-sol', 'high']]);
+    expect((tierEntries(merged.hosts.codex.tiers.high) as Any[]).map(e => [e.model, e.effort])).toEqual([['gpt-6-sol', 'medium']]);
     expect((tierEntries(merged.hosts.codex.tiers.simple) as Any[]).map(e => e.model)).toEqual(['gpt-6-luna', 'gpt-6.1-terra']); // other tiers keep their lists
     const p = buildPlan(merged, 'high', { codex: { windows: status({ pool: codexPool(codexResponse(CODEX_ALL)) }) } }, 'windows', ['codex'], 'read-only');
     expect(p.selected.model).toBe('gpt-6-sol');
@@ -578,7 +578,7 @@ describe('the config shape: ordered lists, and the old one model string per tier
     expect((tierEntries(merged.hosts.codex.tiers.medium) as Any[])[0]).toMatchObject({ model: 'gpt-6.1-sol', effort: 'low', label: 'mine', efforts: { extra: 'xhigh' } });
   });
 
-  it('a user config with only efforts for a tier adds them, key by key, to the first model of the tier', async () => {
+  it('a user config with only efforts for a tier adds them to the tier as its user map; the shipped maps answer the names it lacks', async () => {
     const { mergeConfig, validateConfig, resolveEffort } = await lib();
     const merged = mergeConfig(CFG, { hosts: { antigravity: { tiers: { medium: { efforts: { max: { model: 'gemini-4-hydrogen-xhigh' } } } } } } });
     expect(validateConfig(merged)).toEqual([]);
@@ -676,6 +676,241 @@ describe('on the command line (replayed statuses, nothing is started)', () => {
   });
 });
 
+// ---------------------------------------------------------------------------------------------------- a config written for 1.1.2
+
+describe('a user config written for 1.1.2: a model override defines the tier completely', () => {
+  const over = (host: string, tier: string, t: Any): Any => ({ hosts: { [host]: { tiers: { [tier]: t } } } });
+  const plan = async (cfg: Any, host: string, tier: string, effort?: string, st: Any = status()): Promise<Any> => (await lib()).buildPlan(cfg, tier, { [host]: { windows: st } }, 'windows', [host], 'read-only', effort);
+
+  it('codex high with only a model runs effort medium, as in 1.1.2, with no alternates and nothing from the shipped entries', async () => {
+    const { mergeConfig, tierEntries, validateConfig } = await lib();
+    const cfg = mergeConfig(CFG, over('codex', 'high', { model: 'gpt-6-astra' }));
+    expect(validateConfig(cfg)).toEqual([]);
+    expect(cfg.hosts.codex.tiers.high).toEqual({ model: 'gpt-6-astra', effort: 'medium' });
+    expect(tierEntries(cfg.hosts.codex.tiers.high)).toHaveLength(1);
+    const p = await plan(cfg, 'codex', 'high');
+    expect([p.selected.model, p.selected.effort, p.selected.alternates]).toEqual(['gpt-6-astra', 'medium', undefined]);
+  });
+
+  it('antigravity high with only a model is a normal model at effort medium, never the fixed effort of the shipped Orchestrator', async () => {
+    const { mergeConfig, tierEntries, validateConfig, buildSpec, agyGroupsFor } = await lib();
+    const cfg = mergeConfig(CFG, over('antigravity', 'high', { model: 'gemini-4-argon-medium' }));
+    expect(validateConfig(cfg)).toEqual([]);
+    const [e] = tierEntries(cfg.hosts.antigravity.tiers.high) as Any[];
+    expect([e.model, e.effort, e.fixedEffort, e.efforts, e.quotaGroups]).toEqual(['gemini-4-argon-medium', 'medium', undefined, undefined, undefined]);
+    const p = await plan(cfg, 'antigravity', 'high');
+    expect([p.selected.model, p.selected.effort]).toEqual(['gemini-4-argon-medium', 'medium']);
+    expect(agyGroupsFor('gemini-4-argon-medium', cfg.hosts.antigravity.quotaGroups, e.quotaGroups)).toEqual(['Gemini 4 Argon']); // the host-level prefix rules
+    const args = buildSpec(cfg, 'antigravity', p.selected, 'x', 'read-only', '/w', 'high').args as string[];
+    expect(args[args.indexOf('--model') + 1]).toBe('gemini-4-argon-medium');
+  });
+
+  it('the shipped efforts maps do not merge into a model override; the user gives an efforts map to get --effort variants', async () => {
+    const { mergeConfig } = await lib();
+    const none = mergeConfig(CFG, over('antigravity', 'medium', { model: 'gemini-4-hydrogen-medium' }));
+    const p = await plan(none, 'antigravity', 'medium', 'extra');
+    expect(p.selected.model).toBe('gemini-4-hydrogen-medium'); // 1.1.2 would have said gemini-4-hydrogen-xhigh
+    const own = mergeConfig(CFG, over('antigravity', 'high', { model: 'gemini-4-argon-medium', efforts: { high: { label: 'Argon High', model: 'gemini-4-argon-high' } } }));
+    const q = await plan(own, 'antigravity', 'high', 'high');
+    expect([q.selected.model, q.selected.effort, q.selected.label]).toEqual(['gemini-4-argon-high', 'high', 'Argon High']);
+  });
+
+  it('with --effort and no mapping the note says so and names the config key; a name no host knows gets the same hint in the usage error', async () => {
+    const { mergeConfig, checkEffort } = await lib();
+    const cfg = mergeConfig(CFG, over('antigravity', 'high', { model: 'gemini-4-argon-medium' }));
+    const p = await plan(cfg, 'antigravity', 'high', 'high');
+    expect([p.selected.model, p.selected.effort]).toEqual(['gemini-4-argon-medium', 'medium']);
+    expect(p.selected.effort_note).toMatch(/no "high" effort in the high tier; kept gemini-4-argon-medium \(medium\)/);
+    expect(p.selected.effort_note).toContain('hosts.antigravity.tiers.high.efforts.high');
+    const bad = checkEffort(cfg, 'high', 'high', ['antigravity']) as string;
+    expect(bad).toMatch(/--effort "high" is not an effort of the high tier on antigravity; known: medium/);
+    expect(bad).toContain('hosts.<host>.tiers.high.efforts');
+  });
+
+  it('a one-model host (Claude, Cline) is defined completely by a model override too, including its label', async () => {
+    const { mergeConfig } = await lib();
+    const cfg = mergeConfig(CFG, over('claude', 'high', { model: 'claude-sonnet-5-5' }));
+    expect(cfg.hosts.claude.tiers.high).toEqual({ model: 'claude-sonnet-5-5', effort: 'medium' });
+    expect(mergeConfig(CFG, over('claude', 'high', { model: 'claude-sonnet-5-5', effort: 'high', label: 'S' })).hosts.claude.tiers.high).toEqual({ label: 'S', model: 'claude-sonnet-5-5', effort: 'high' });
+  });
+});
+
+describe('a tier override that gives no model', () => {
+  const over = (host: string, tier: string, t: Any): Any => ({ hosts: { [host]: { tiers: { [tier]: t } } } });
+  const plan = async (cfg: Any, host: string, tier: string, effort?: string, st: Any = status()): Promise<Any> => (await lib()).buildPlan(cfg, tier, { [host]: { windows: st } }, 'windows', [host], 'read-only', effort);
+  const agyFull = async (rows: Row[] = AGY_ALL): Promise<Any> => status({ pool: (await lib()).agyPool(agyText(rows)) });
+
+  it('an effort applies to every entry of the tier that takes one, the alternates included', async () => {
+    const { mergeConfig, tierEntries } = await lib();
+    const cfg = mergeConfig(CFG, over('codex', 'high', { effort: 'low' }));
+    expect((tierEntries(cfg.hosts.codex.tiers.high) as Any[]).map(e => e.effort)).toEqual(['low', 'low', 'low']);
+    const p = await plan(cfg, 'codex', 'high');
+    expect([p.selected.effort, ...p.selected.alternates.map((a: Any) => a.effort)]).toEqual(['low', 'low', 'low']);
+  });
+
+  it('an effort does not reach a fixed entry, and the plan says the user effort was not applied', async () => {
+    const { mergeConfig, tierEntries } = await lib();
+    const cfg = mergeConfig(CFG, over('antigravity', 'high', { effort: 'low' }));
+    const entries = tierEntries(cfg.hosts.antigravity.tiers.high) as Any[];
+    expect(entries.map(e => e.effort)).toEqual(['fixed', 'fixed', 'fixed', 'low']);
+    const p = await plan(cfg, 'antigravity', 'high', undefined, await agyFull());
+    expect([p.selected.model, p.selected.effort]).toEqual(['gemini-pro-orchestrator-neon', 'fixed']);
+    expect(p.selected.effort_note).toMatch(/effort "low" from your config was not applied/);
+    expect(p.selected.effort_note).toMatch(/fixed configuration/);
+    const h = await plan(cfg, 'antigravity', 'high', undefined, await agyFull(NO_ORCHESTRATOR));
+    expect([h.selected.model, h.selected.effort, h.selected.effort_note]).toEqual(['gemini-4-hydrogen-high', 'low', undefined]); // the entry that takes an effort got it
+  });
+
+  it('a label alone applies to the first entry', async () => {
+    const { mergeConfig, tierEntries } = await lib();
+    const cfg = mergeConfig(CFG, over('codex', 'simple', { label: 'mine' }));
+    expect((tierEntries(cfg.hosts.codex.tiers.simple) as Any[]).map(e => e.label)).toEqual(['mine', 'GPT-6.1 Terra']);
+  });
+
+  it("the reviewer's input: a user efforts map wins over an Orchestrator at the head of the shipped tier", async () => {
+    const { mergeConfig, validateConfig } = await lib();
+    const cfg = mergeConfig(CFG, over('antigravity', 'high', { efforts: { high: { label: 'x', model: 'gemini-4-argon-high' } } }));
+    expect(validateConfig(cfg)).toEqual([]);
+    const p = await plan(cfg, 'antigravity', 'high', 'high', await agyFull());
+    expect([p.selected.model, p.selected.effort, p.selected.label]).toEqual(['gemini-4-argon-high', 'high', 'x']);
+    // the shipped list follows as alternates, without a second copy of the chosen model
+    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual(['gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro', 'gemini-4-hydrogen-high']);
+  });
+
+  it('the user map named choice is still subject to the pool and the headroom', async () => {
+    const { mergeConfig, agyPool } = await lib();
+    const cfg = mergeConfig(CFG, over('antigravity', 'high', { efforts: { high: { label: 'x', model: 'gemini-4-argon-high' } } }));
+    const noArgon = AGY_ALL.filter(([s]) => s !== 'gemini-4-argon-high');
+    const p = await plan(cfg, 'antigravity', 'high', 'high', await agyFull(noArgon));
+    expect(p.selected.model).toBe('gemini-pro-orchestrator-neon');
+    expect(p.selected.skipped_models).toEqual(expect.arrayContaining([{ model: 'gemini-4-argon-high', reason: "not in the account's model list" }]));
+    const usage_by_model = { 'gemini-4-argon-high': usageOf(4), 'gemini-pro-orchestrator-neon': usageOf(80) };
+    const q = await plan(cfg, 'antigravity', 'high', 'high', status({ pool: agyPool(agyText(AGY_ALL)), usage_by_model }));
+    expect(q.selected.model).toBe('gemini-pro-orchestrator-neon');
+    expect(q.selected.skipped_models).toEqual(expect.arrayContaining([{ model: 'gemini-4-argon-high', reason: 'headroom 4% below minimum 10%' }]));
+  });
+
+  it('a name the user map does not have falls back to the shipped per-entry maps', async () => {
+    const { mergeConfig } = await lib();
+    const cfg = mergeConfig(CFG, over('antigravity', 'medium', { efforts: { max: { label: 'M', model: 'gemini-4-hydrogen-xhigh' } } }));
+    const m = await plan(cfg, 'antigravity', 'medium', 'max', await agyFull());
+    expect(m.selected.model).toBe('gemini-4-hydrogen-xhigh');
+    const e = await plan(cfg, 'antigravity', 'medium', 'extra', await agyFull());
+    expect(e.selected.model).toBe('gemini-4-hydrogen-xhigh'); // the shipped Hydrogen map answers `extra`
+    const l = await plan(cfg, 'antigravity', 'medium', 'low', await agyFull());
+    expect(l.selected.model).toBe('gemini-4-hydrogen-low');
+  });
+
+  it('a plain effort value in the user map applies to whichever model is chosen', async () => {
+    const { mergeConfig } = await lib();
+    const cfg = mergeConfig(CFG, over('codex', 'medium', { efforts: { extra: 'xhigh' } }));
+    const p = await plan(cfg, 'codex', 'medium', 'extra');
+    expect([p.selected.model, p.selected.effort, p.selected.alternates.map((a: Any) => a.effort)]).toEqual(['gpt-6.2-sol', 'xhigh', ['xhigh']]);
+  });
+
+  it('knows the names of the user map, and checks the user map like any efforts map', async () => {
+    const { mergeConfig, knownEfforts, validateConfig, configuredModels } = await lib();
+    const cfg = mergeConfig(CFG, over('antigravity', 'high', { efforts: { max: { model: 'gemini-4-argon-high' } } }));
+    expect(knownEfforts(cfg, 'high', ['antigravity'])).toContain('max');
+    expect(configuredModels(cfg, 'antigravity')).toContain('gemini-4-argon-high');
+    expect(validateConfig(mergeConfig(CFG, over('antigravity', 'high', { efforts: { max: 'max' } }))).join('\n')).toMatch(/antigravity\/high.*efforts\.max.*model/);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------- noise is not a pool
+
+describe('the parsers do not turn noise into a pool', () => {
+  it('a header line with a tab is not a model', async () => {
+    const { parseAgyModels } = await lib();
+    expect(parseAgyModels('ID\tNAME\n')).toBeNull();
+    expect(parseAgyModels('MODEL ID\tDisplay name\ngemini-3.8-flash-medium\tGemini 3.8 Flash (Medium)\n')).toEqual([{ slug: 'gemini-3.8-flash-medium', name: 'Gemini 3.8 Flash (Medium)' }]);
+  });
+
+  it('an error line printed with exit 0 is not trusted as a pool: the plan treats the list as unknown and the host is not skipped', async () => {
+    const { agyPool, buildPlan } = await lib();
+    const pool = agyPool('error\tnot logged in\n');
+    expect(pool).not.toBeNull(); // the parser alone cannot tell; the check against the config can
+    const p = buildPlan(CFG, 'medium', { antigravity: { windows: status({ pool }) } }, 'windows', ['antigravity'], 'read-only');
+    expect(p.selected.model).toBe('gemini-4-hydrogen-medium');
+    expect(p.pools['antigravity/windows']).toMatchObject({ source: 'unknown' });
+    expect(p.pools['antigravity/windows'].reason).toMatch(/none of the \d+ models this config names for antigravity \(1 read\), so it is not trusted/);
+    expect(p.skipped).toEqual([]);
+  });
+
+  it('the same for Codex: a list with none of the configured models is unknown, not a reason to skip the host', async () => {
+    const { codexPool, buildPlan } = await lib();
+    const pool = codexPool(codexResponse([['gpt-9-x', 'GPT-9 X']]));
+    const p = buildPlan(CFG, 'simple', { codex: { windows: status({ pool }) } }, 'windows', ['codex'], 'read-only');
+    expect(p.selected.model).toBe('gpt-6-luna');
+    expect(p.pools['codex/windows'].source).toBe('unknown');
+  });
+
+  it('a list that names even one configured model is trusted, and a configured pool is never second-guessed', async () => {
+    const { codexPool, buildPlan, mergeConfig } = await lib();
+    const pool = codexPool(codexResponse([['gpt-6.1-sol', 'GPT-6.1 Sol'], ['gpt-9-x', 'GPT-9 X']]));
+    const p = buildPlan(CFG, 'medium', { codex: { windows: status({ pool }) } }, 'windows', ['codex'], 'read-only');
+    expect(p.pools['codex/windows']).toEqual({ source: 'cli', models: 2 });
+    expect(p.selected.model).toBe('gpt-6.1-sol');
+    const cfg = mergeConfig(CFG, { hosts: { codex: { pool: ['gpt-9-x'] } } });
+    const q = buildPlan(cfg, 'simple', { codex: { windows: status() } }, 'windows', ['codex', 'claude'], 'read-only');
+    expect(q.skipped[0].reason).toMatch(/no model of the simple tier is in the configured pool/);
+  });
+
+  it('duplicate lines count once; CRLF and colour codes are read', async () => {
+    const { parseAgyModels } = await lib();
+    const line = 'gemini-3.8-flash-medium\tGemini 3.8 Flash (Medium)';
+    const text = `\u001b[32m${line}\u001b[0m\r\n${line}\r\ngemini-3.8-flash-low\tGemini 3.8 Flash (Low)\r\n`;
+    expect((parseAgyModels(text) as Array<{ slug: string }>).map(r => r.slug)).toEqual(['gemini-3.8-flash-medium', 'gemini-3.8-flash-low']);
+  });
+
+  it('a slug in capitals or with spaces is not a model id', async () => {
+    const { parseAgyModels } = await lib();
+    expect(parseAgyModels('Error\tsomething failed\nfailed to load\tmodels\n')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------- what the plan and the run say
+
+describe('what the plan and the run result say', () => {
+  it('when a model needs two quota groups and the readout has only one, the plan says the other was not in the readout', async () => {
+    const { agyUsageByModel, agyPool, buildPlan, tierEntries, resolveEntry } = await lib();
+    const text = JSON.stringify({ command: { data: { groups: [{ name: 'Gemini Models', buckets: [{ id: 'w', name: 'Weekly', window: 'weekly', remaining_fraction: 0.8, reset_time: 'x' }] }] } } });
+    const resolved = (tierEntries(CFG.hosts.antigravity.tiers.high) as Any[]).map(e => resolveEntry(e, 'antigravity', 'high', undefined));
+    const pool = agyPool(agyText(AGY_ALL));
+    const byModel = agyUsageByModel(text, resolved, pool, CFG.hosts.antigravity.quotaGroups);
+    expect(byModel['gemini-pro-orchestrator-g1-pro'].binding_pct).toBe(80);
+    expect(byModel['gemini-pro-orchestrator-g1-pro'].missing_groups).toEqual(['Gemini 4 Argon']);
+    expect(byModel['gemini-pro-orchestrator-neon'].missing_groups).toBeUndefined();
+    const only = AGY_ALL.filter(([s]) => s !== 'gemini-pro-orchestrator-neon');
+    const p = buildPlan(CFG, 'high', { antigravity: { windows: status({ pool: agyPool(agyText(only)), usage_by_model: byModel }) } }, 'windows', ['antigravity'], 'read-only');
+    expect(p.selected.model).toBe('gemini-pro-orchestrator-g1-pro');
+    expect(p.selected.quota_note).toBe('headroom judged on Gemini Models only: Gemini 4 Argon was not in the /usage readout');
+  });
+
+  it('a run result: each attempt carries the models that were passed over before it', async () => {
+    const { runAttempts } = await lib();
+    const c = { host: 'codex', side: 'windows', model: 'gpt-6.1-terra', effort: 'medium', label: 'T', skipped_models: [{ model: 'gpt-6-luna', reason: "not in the account's model list" }], quota_note: 'q' };
+    const out = await runAttempts({ cands: [c], access: 'read-only', cwd: tmp(), tryOne: async () => ({ rc: 0, stdout: 'ok', stderr: '', seconds: 1 }) });
+    expect(out.attempts[0].skipped_models).toEqual(c.skipped_models);
+    expect(out.attempts[0].quota_note).toBe('q');
+  });
+
+  it('a dry run lists skipped_models on the attempt it would make', () => {
+    const f = path.join(tmp(), 'statuses.json');
+    fs.writeFileSync(f, JSON.stringify({ codex: { windows: status({ pool: JSON.parse(JSON.stringify({ source: 'cli', models: ['gpt-6.1-terra', 'gpt-6.2-sol'], names: {}, efforts: {} })) }) } }));
+    const r = spawnSync(process.execPath, [SCRIPT, 'run', '--tier', 'simple', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', f, '--host', 'codex', '--cwd', tmp()], { encoding: 'utf8', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '', HOST_AGENT_ROUTER_CONFIG: path.join(tmp(), 'none.json') } });
+    expect(JSON.parse(r.stdout).would_try[0].skipped_models).toEqual([{ model: 'gpt-6-luna', reason: "not in the account's model list" }]);
+  });
+
+  it('duplicate entries in a models list are refused with a clear message', async () => {
+    const { mergeConfig, validateConfig } = await lib();
+    const bad = (models: Any[]): string => validateConfig(mergeConfig(CFG, { hosts: { codex: { tiers: { high: { models } } } } })).join('\n');
+    expect(bad(['gpt-6-astra', { model: 'gpt-6-astra', effort: 'high' }])).toMatch(/codex\/high: entry 2 repeats gpt-6-astra \(entry 1\)/);
+    expect(bad([{ displayName: 'Orchestrator (Carbon)' }, { displayName: 'orchestrator (carbon)' }])).toMatch(/codex\/high: entry 2 repeats orchestrator \(carbon\) \(entry 1\)/i);
+    expect(bad(['gpt-6-astra', 'gpt-6.2-sol'])).toBe('');
+  });
+});
+
 // ---------------------------------------------------------------------------------------------------- the documents
 
 describe('the documents state the pool, the tiers and the sources', () => {
@@ -710,6 +945,18 @@ describe('the documents state the pool, the tiers and the sources', () => {
   it('hosts.md has the tier tables of both hosts with the Orchestrator and Codex entries, each dated and sourced', () => {
     const t = doc('references/hosts.md');
     for (const w of ['gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro', 'Orchestrator (Carbon)', 'gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.2-astra', 'fixed configuration', '`ultra`']) expect(t, w).toContain(w);
+  });
+
+  it('hosts.md has a "Coming from 1.1.2" section: what gives the same plan, the two changes, and the old and new first models', () => {
+    const t = doc('references/hosts.md');
+    const i = t.indexOf('## Coming from 1.1.2');
+    expect(i).toBeGreaterThan(-1);
+    const s = t.slice(i, t.indexOf('\n## ', i + 5));
+    for (const w of ['defines that tier completely', 'no longer merge into a model override', 'first model of each shipped tier changed', 'gemini-4-argon-medium', 'gemini-pro-orchestrator-neon', 'gpt-6.1-sol', 'gpt-6.2-sol', 'gpt-6-astra']) expect(s, w).toContain(w);
+    expect(t).not.toContain('changes the first model of the shipped list');
+    expect(t).toContain('quota_note');
+    expect(t).toContain('is not trusted');
+    expect(doc('SKILL.md')).toContain('(plan, and run attempts)');
   });
 
   it('the worked example names the Codex model the medium tier now starts with', () => {

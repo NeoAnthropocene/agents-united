@@ -244,13 +244,14 @@ describe('the default config', () => {
 
   it('lets a user override change one model without restating the rest, and rejects a broken override', async () => {
     const { mergeConfig, validateConfig } = await lib();
-    // The old shape (one model string for a tier) over a list tier: the tier becomes that one model; the other tiers keep their lists.
+    // The 1.1.2 shape (one model string for a tier) defines the tier completely, as before: effort medium (the 1.1.2 default of every tier), nothing inherited from the shipped entries.
     const merged = mergeConfig(CFG, { hosts: { codex: { tiers: { high: { model: 'gpt-6-sol' } } } } });
-    expect(merged.hosts.codex!.tiers.high).toEqual({ model: 'gpt-6-sol', effort: 'high' });
+    expect(merged.hosts.codex!.tiers.high).toEqual({ model: 'gpt-6-sol', effort: 'medium' });
+    expect(mergeConfig(CFG, { hosts: { antigravity: { tiers: { high: { model: 'gemini-4-argon-medium' } } } } }).hosts.antigravity!.tiers.high).toEqual({ model: 'gemini-4-argon-medium', effort: 'medium' }); // never the fixed effort of the shipped Orchestrator
     expect(merged.hosts.codex!.tiers.simple).toEqual(CFG.hosts.codex!.tiers.simple);
     expect(firstOf(CFG.hosts.codex!.tiers.high!).model).toBe('gpt-6.2-astra'); // the base is not mutated
-    // The old shape over an old-shape tier merges key by key, as it always did.
-    expect(mergeConfig(CFG, { hosts: { cline: { tiers: { medium: { model: 'cline-pass/x' } } } } }).hosts.cline!.tiers.medium).toEqual({ label: 'GLM-5.3', model: 'cline-pass/x', effort: 'medium' });
+    // A model override over a one-model tier defines it completely too (1.1.2 kept the label of the model it replaced, which named the wrong model).
+    expect(mergeConfig(CFG, { hosts: { cline: { tiers: { medium: { model: 'cline-pass/x' } } } } }).hosts.cline!.tiers.medium).toEqual({ model: 'cline-pass/x', effort: 'medium' });
     expect(validateConfig(merged)).toEqual([]);
     expect(validateConfig({ ...CFG, priority: ['cline', 'nope'] }).join('\n')).toContain('nope');
     expect(validateConfig(mergeConfig(CFG, { hosts: { claude: { tiers: { high: { model: '' } } } } })).join('\n')).toContain('claude');
@@ -1586,7 +1587,7 @@ describe('an effort choice inside a tier', () => {
     const cfg = mergeConfig(CFGE, { hosts: { antigravity: { tiers: { medium: { efforts: { extra: { model: 'gemini-4-hydrogen-high' }, max: { model: 'gemini-4-hydrogen-xhigh' } } } } } } });
     expect(validateConfig(cfg)).toEqual([]);
     expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').model).toBe('gemini-4-hydrogen-high');
-    expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').label).toBe((agyMedium().efforts!.extra as { label: string }).label); // the label was not restated
+    expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').label).toBe('gemini-4-hydrogen-high'); // since 1.2.0 the user map is the tier's own: the label of the shipped entry of that name is not inherited (name it, or the model name shows)
     expect(resolveEffort(cfg, 'antigravity', 'medium', 'max').model).toBe('gemini-4-hydrogen-xhigh');
     expect(resolveEffort(cfg, 'antigravity', 'medium', 'high').model).toBe('gemini-4-hydrogen-high');
     expect(agyMedium().efforts!.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' }); // the base is not mutated

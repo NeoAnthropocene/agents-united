@@ -181,7 +181,9 @@ export function agyUsageByModel(text, resolved, pool, groups) {
     if (!model || out[model]) continue;
     const names = agyGroupsFor(model, groups, r.quotaGroups);
     const windows = names.length ? parseAgyUsageGroups(text, names) : [];
-    if (windows.length) out[model] = makeUsage(windows, { groups: names });
+    // A group the readout does not have is named, not ignored silently: the figure then rests on the groups that were there.
+    const missing = names.filter(g => !windows.some(w => w.group === g));
+    if (windows.length) out[model] = makeUsage(windows, { groups: names, ...(missing.length ? { missing_groups: missing } : {}) });
   }
   return out;
 }
@@ -226,7 +228,8 @@ export function parseAgyModels(stdout) {
     if (!raw.includes('\t')) continue;
     const [slug, ...rest] = raw.split('\t');
     const name = rest.join('\t').trim();
-    if (/^[A-Za-z0-9][\w.-]*$/.test(slug.trim()) && name) rows.push({ slug: slug.trim(), name });
+    // A model id is lowercase (a header such as `ID<TAB>NAME` or an error line is not one); a line seen twice counts once.
+    if (/^[a-z0-9][a-z0-9._-]*$/.test(slug.trim()) && name && !rows.some(r => r.slug === slug.trim())) rows.push({ slug: slug.trim(), name });
   }
   return rows.length ? rows : null;
 }
@@ -266,6 +269,20 @@ export function slugByName(pool, name) {
   return hit ? hit[0] : null;
 }
 
+/**
+ * A pool read from the host is trusted only if it names at least one model id (or display name) that the host's config names in some tier.
+ * A header or an error line printed with exit 0 parses as a list too; every real model would then be "not in the list" and the host would be
+ * skipped. A list that fails the check is reported as unknown (the router then behaves as with an unreadable list). A configured pool is the
+ * user's word and is not second-guessed.
+ */
+export function trustedPool(pool, cfg, host) {
+  if (!poolKnown(pool) || pool.source === 'config') return pool;
+  const names = configuredModels(cfg, host);
+  const have = new Set([...pool.models, ...Object.values(pool.names ?? {})].map(s => String(s).toLowerCase()));
+  if (names.some(n => have.has(String(n).toLowerCase()))) return pool;
+  return unknownPool(`the list has none of the ${names.length} models this config names for ${host} (${pool.models.length} read), so it is not trusted`);
+}
+
 // ----------------------------------------------------------------------------- config
 
 const isPlain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -280,31 +297,38 @@ function deepMergeInto(dst, src) {
 }
 
 /**
- * A user's tier over the shipped one. A tier is an ordered list (`models`) or, in the old shape, one model with its effort and efforts.
- * - `models` in the user's tier replaces the list; so does an old-shape `model` (the tier becomes that one model: its effort defaults to the
- *   first shipped entry's, its label to the model name, and nothing of the shipped efforts is kept, they belong to other models).
- * - Only effort, label or efforts: they apply to the first model of the shipped list (efforts merge key by key).
- * - A shipped tier that is itself in the old shape merges key by key as it always did.
+ * A user's tier over the shipped one (what a config written for 1.1.2 means now).
+ * - `models` (a list), or a `model` (the 1.1.2 shape), defines the tier completely and inherits NOTHING from the shipped entries: with a
+ *   `model` the effort is the user's `effort` or 'medium' (the 1.1.2 default of every tier, never 'fixed'), the efforts are only the ones the
+ *   user gives, and the quota groups come from the host-level prefix rules.
+ * - Neither: `effort` goes to every shipped entry that takes one (a fixed entry records that the effort was not applied), `label` to the
+ *   first entry, and `efforts` becomes the tier's own map: it answers `--effort` before the per-entry maps of the shipped list (resolveTier).
+ * - A shipped tier that is itself in the old shape (one model) merges key by key as it always did.
  */
 function mergeTier(base, over) {
-  if (!isPlain(base) || !isPlain(over)) return structuredClone(over);
+  if (!isPlain(over)) return structuredClone(over);
   if ('models' in over) return structuredClone(over);
-  if (!Array.isArray(base.models)) return deepMergeInto(structuredClone(base), over);
-  const [first] = tierEntries(base);
   if (over.model !== undefined) {
     return {
       ...(over.label === undefined ? {} : { label: over.label }),
       model: over.model,
-      effort: over.effort ?? first?.effort ?? 'medium',
+      effort: over.effort ?? 'medium',
       ...(over.efforts === undefined ? {} : { efforts: structuredClone(over.efforts) }),
     };
   }
+  if (!isPlain(base)) return structuredClone(over);
+  if (!Array.isArray(base.models)) return deepMergeInto(structuredClone(base), over);
   const out = structuredClone(base);
-  const head = typeof out.models[0] === 'string' ? { model: out.models[0] } : (out.models[0] ?? {});
-  if (over.effort !== undefined) head.effort = over.effort;
-  if (over.label !== undefined) head.label = over.label;
-  if (over.efforts !== undefined) head.efforts = isPlain(over.efforts) && isPlain(head.efforts) ? deepMergeInto(head.efforts, over.efforts) : structuredClone(over.efforts);
-  out.models[0] = head;
+  const entries = out.models.map(e => (isPlain(e) ? e : { model: e }));
+  if (over.effort !== undefined) {
+    for (const e of entries) {
+      if (e.fixedEffort === true) e.configEffort = over.effort;
+      else e.effort = over.effort;
+    }
+  }
+  if (over.label !== undefined && entries[0]) entries[0].label = over.label;
+  out.models = entries;
+  if (over.efforts !== undefined) out.efforts = structuredClone(over.efforts);
   return out;
 }
 
@@ -353,11 +377,18 @@ function validateTier(where, t, effortInModel) {
   }
   if (!Array.isArray(t.models) || t.models.length === 0) return [`${where}: models must be a non-empty list of model names or entries`];
   const errs = [];
+  if (t.efforts !== undefined) errs.push(...validateEfforts(where, t.efforts, effortInModel));
+  const seen = new Map();
   t.models.forEach((raw, i) => {
     const n = i + 1;
     if (typeof raw !== 'string' && !isPlain(raw)) { errs.push(`${where}: entry ${n} must be a model name or an object`); return; }
     const e = typeof raw === 'string' ? { model: raw } : raw;
     if (!nonEmpty(e.model) && !nonEmpty(e.displayName)) errs.push(`${where}: entry ${n} needs a model or a displayName`);
+    const key = nonEmpty(e.model) ? e.model.trim() : nonEmpty(e.displayName) ? e.displayName.trim().toLowerCase() : null;
+    if (key !== null) {
+      if (seen.has(key)) errs.push(`${where}: entry ${n} repeats ${nonEmpty(e.model) ? e.model.trim() : e.displayName.trim().toLowerCase()} (entry ${seen.get(key)}); list each model once`);
+      else seen.set(key, n);
+    }
     if (e.model !== undefined && !nonEmpty(e.model) && nonEmpty(e.displayName)) errs.push(`${where}: entry ${n}: model must be a non-empty string`);
     if (e.fixedEffort !== undefined && typeof e.fixedEffort !== 'boolean') errs.push(`${where}: entry ${n}: fixedEffort must be true or false`);
     if (!WORD.test(e.effort ?? (e.fixedEffort === true ? 'fixed' : (t.effort ?? 'medium')))) errs.push(`${where}: entry ${n} needs an effort (lowercase letters)`);
@@ -467,10 +498,12 @@ export function validateEfforts(where, efforts, effortInModel = false) {
 }
 
 /**
- * The model, effort and label a host/tier runs at when the lead asks for `effort`. No effort, or the tier's own default, keeps the tier.
- * An entry of the tier's `efforts` map wins; a host with no entry keeps its default and says so in `note` (never an error).
+ * The model, effort and label one entry runs at when the lead asks for `effort`. No effort, or the entry's own default, keeps the entry.
+ * The tier's own `efforts` map (`selector`, the user's) answers first with a plain value or an object without a model; then the entry's map;
+ * an entry with no such name keeps its default and says so in `note` (never an error). An object in the selector that names a model is
+ * the choice itself and is placed by `resolveTier`.
  */
-export function resolveEntry(entry, host, tier, effort) {
+export function resolveEntry(entry, host, tier, effort, selector) {
   const name = entry.model ?? entry.displayName;
   const base = {
     model: entry.model, effort: entry.effort, label: entry.label, note: null,
@@ -478,28 +511,56 @@ export function resolveEntry(entry, host, tier, effort) {
     ...(entry.quotaGroups ? { quotaGroups: entry.quotaGroups } : {}),
     ...(entry.fixedEffort ? { fixed: true } : {}),
   };
+  // An Orchestrator has a fixed configuration: no effort changes it, and the plan says so (for `--effort` and for an `effort` in the user's config).
+  if (entry.fixedEffort) {
+    const notes = [];
+    if (effort) notes.push(`${host}: --effort ${JSON.stringify(effort)} was not applied: ${entry.label} has a fixed configuration, so the ${tier} tier keeps ${name}`);
+    if (entry.configEffort) notes.push(`${host}: effort ${JSON.stringify(entry.configEffort)} from your config was not applied: ${entry.label} has a fixed configuration`);
+    return notes.length ? { ...base, note: notes.join('; ') } : base;
+  }
   if (!effort) return base;
-  // An Orchestrator has a fixed configuration: the effort cannot change the model, and the plan says so.
-  if (entry.fixedEffort) return { ...base, note: `${host}: --effort ${JSON.stringify(effort)} was not applied: ${entry.label} has a fixed configuration, so the ${tier} tier keeps ${name}` };
-  const e = entry.efforts?.[effort];
+  const u = selector?.[effort];
+  const userModel = isPlain(u) && nonEmpty(u.model);
+  const e = u !== undefined && !userModel ? u : entry.efforts?.[effort];
   if (typeof e === 'string') return { ...base, effort: e };
   if (isPlain(e)) return { ...base, model: e.model ?? entry.model, effort: e.effort ?? effort, label: e.label ?? e.model ?? base.label };
   if (effort === entry.effort) return base;
-  return { ...base, note: `${host}: no "${effort}" effort in the ${tier} tier; kept ${name} (${entry.effort})` };
+  return { ...base, note: `${host}: no "${effort}" effort in the ${tier} tier; kept ${name} (${entry.effort}); add hosts.${host}.tiers.${tier}.efforts.${effort} to your config to choose one` };
 }
 
-/** `resolveEntry` for the `index`th entry of a tier (the first, the tier's primary model, by default). */
+/** The user's own `efforts` map of a tier that is a list (it answers `--effort` before the per-entry maps), or undefined. */
+const tierSelector = tier => (isPlain(tier) && Array.isArray(tier.models) && isPlain(tier.efforts) ? tier.efforts : undefined);
+
+/**
+ * Every entry of a tier resolved for the asked effort, as { r: resolved, defaultEffort }, in the order they are tried. When the user's map
+ * for that effort names a model, that model comes first (subject to the pool and headroom like any entry; the shipped list follows without a
+ * second copy of it), also when the shipped head of the tier is an Orchestrator.
+ */
+export function resolveTier(tier, host, tierName, effort) {
+  const selector = tierSelector(tier);
+  const out = tierEntries(tier).map(e => ({ r: resolveEntry(e, host, tierName, effort, selector), defaultEffort: e.effort }));
+  const u = effort ? selector?.[effort] : undefined;
+  if (isPlain(u) && nonEmpty(u.model)) {
+    const eff = u.effort ?? effort;
+    return [{ r: { model: u.model, effort: eff, label: u.label ?? u.model, note: null }, defaultEffort: eff }, ...out.filter(x => x.r.model !== u.model)];
+  }
+  return out;
+}
+
+/** The first resolved entry of a tier (or the `index`th): the model, effort, label and note a host/tier runs at. */
 export function resolveEffort(cfg, host, tier, effort, index = 0) {
-  const entries = tierEntries(cfg.hosts[host].tiers[tier]);
-  return resolveEntry(entries[index] ?? entries[0], host, tier, effort);
+  const all = resolveTier(cfg.hosts[host].tiers[tier], host, tier, effort);
+  return (all[index] ?? all[0]).r;
 }
 
-/** Every effort name some host in scope offers for `tier`: the default effort and the keys of the `efforts` map of each entry (a fixed-configuration entry offers none). */
+/** Every effort name some host in scope offers for `tier`: the default effort and the keys of the `efforts` maps (of each entry, and the tier's own); a fixed-configuration entry offers none. */
 export function knownEfforts(cfg, tier, only) {
   const names = new Set();
   for (const host of cfg.priority) {
     if (only?.length && !only.includes(host)) continue;
-    for (const e of tierEntries(cfg.hosts[host]?.tiers?.[tier])) {
+    const tt = cfg.hosts[host]?.tiers?.[tier];
+    for (const n of Object.keys(tierSelector(tt) ?? {})) names.add(n);
+    for (const e of tierEntries(tt)) {
       if (e.fixedEffort) continue;
       names.add(e.effort);
       for (const n of Object.keys(e.efforts ?? {})) names.add(n);
@@ -513,16 +574,20 @@ export function checkEffort(cfg, tier, effort, only) {
   const known = knownEfforts(cfg, tier, only);
   if (known.includes(effort)) return null;
   const hosts = cfg.priority.filter(h => !only?.length || only.includes(h));
-  return `--effort ${JSON.stringify(effort)} is not an effort of the ${tier} tier on ${hosts.join(', ')}; known: ${known.join(', ')}`;
+  return `--effort ${JSON.stringify(effort)} is not an effort of the ${tier} tier on ${hosts.join(', ')}; known: ${known.join(', ')} (an efforts map in hosts.<host>.tiers.${tier}.efforts of your config adds one)`;
 }
 
 /** The model names a host is configured with, tiers and efforts, once each: what `models` checks against the host's own list. */
 export function configuredModels(cfg, host) {
   const out = [];
+  const add = m => { if (m && !out.includes(m)) out.push(m); };
   for (const tier of TIERS) {
-    for (const t of tierEntries(cfg.hosts[host].tiers[tier])) {
-      for (const m of [t.model ?? t.displayName, ...Object.values(t.efforts ?? {}).map(e => (isPlain(e) ? e.model : null))]) if (m && !out.includes(m)) out.push(m);
+    const tt = cfg.hosts[host].tiers[tier];
+    for (const t of tierEntries(tt)) {
+      add(t.model ?? t.displayName);
+      for (const e of Object.values(t.efforts ?? {})) add(isPlain(e) ? e.model : null);
     }
+    for (const e of Object.values(tierSelector(tt) ?? {})) add(isPlain(e) ? e.model : null);
   }
   return out;
 }
@@ -651,43 +716,46 @@ function poolInfo(pool, entryCount) {
 }
 
 /**
- * Which model of the tier a host/side runs. `resolved[i]` is entry `i` resolved for the asked effort. Entries are tried in order: one the
+ * Which model of the tier a host/side runs. `pairs` are the tier's entries resolved for the asked effort (resolveTier). Entries are tried in order: one the
  * account does not have (not in a known pool), one with no model id (Carbon, when the list does not give it), and one whose quota group is
  * below the floor are skipped, each with its reason. The first left is `chosen`, the rest are `alternates` (a refused model moves to the next).
  * With an unknown pool nothing is checked against it: the first entry that has a model id is used.
  */
-function pickModels({ host, tier, entries, resolved, pool, st, min, flagEffort, asked }) {
+function pickModels({ host, tier, pairs, pool, st, min, flagEffort, asked }) {
   const known = poolKnown(pool);
   const where = pool?.source === 'config' ? 'the configured pool' : "the account's model list";
   const accepted = [];
   const skipped = [];
   const lowest = [];
-  resolved.forEach((r0, i) => {
+  for (const { r: r0, defaultEffort } of pairs) {
     let r = r0;
     const name = r.model ?? r.displayName;
     const model = r.model ?? slugByName(pool, r.displayName);
     if (!model) {
       skipped.push({ model: name, reason: known ? `not in ${where}` : "no model id is configured for it and the account's model list is unknown" });
-      return;
+      continue;
     }
     if (known && !pool.models.includes(model)) {
       skipped.push({ model: name, reason: `not in ${where}` });
-      return;
+      continue;
     }
     // A model that does not offer the asked effort keeps the entry's own (Codex: the pool lists the efforts of each model).
     const offered = known ? pool.efforts?.[model] : undefined;
-    if (flagEffort && !r.fixed && asked && offered?.length && !offered.includes(r.effort) && r.effort !== entries[i].effort) {
-      r = { ...r, effort: entries[i].effort, note: `${host}: ${model} does not offer "${r.effort}" on this account; kept ${entries[i].effort}` };
+    if (flagEffort && !r.fixed && asked && offered?.length && !offered.includes(r.effort) && r.effort !== defaultEffort) {
+      r = { ...r, effort: defaultEffort, note: `${host}: ${model} does not offer "${r.effort}" on this account; kept ${defaultEffort}` };
     }
     const usage = st.usage_by_model ? (st.usage_by_model[model] ?? null) : (st.usage ?? null);
     const b = usage?.binding_pct ?? null;
     if (b !== null && b < min) {
       skipped.push({ model: name, reason: `headroom ${b}% below minimum ${min}%` });
       lowest.push(b);
-      return;
+      continue;
     }
-    accepted.push({ model, effort: r.effort, label: r.label ?? model, ...(r.note ? { effort_note: r.note } : {}), usage, binding: b });
-  });
+    // A model that draws on several quota groups, with one of them missing from the readout: say so, the figure is not the whole picture.
+    const missing = usage?.missing_groups ?? [];
+    const quota = missing.length ? { quota_note: `headroom judged on ${(usage.groups ?? []).filter(g => !missing.includes(g)).join(' and ')} only: ${missing.join(' and ')} ${missing.length > 1 ? 'were' : 'was'} not in the /usage readout` } : {};
+    accepted.push({ model, effort: r.effort, label: r.label ?? model, ...(r.note ? { effort_note: r.note } : {}), ...quota, usage, binding: b });
+  }
   if (accepted.length) {
     const [chosen, ...rest] = accepted;
     return { chosen, alternates: rest.map(({ usage: _u, binding: _b, ...a }) => a), skipped, usage: chosen.usage, binding: chosen.binding };
@@ -715,18 +783,17 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
     if (onlyHosts?.length && !onlyHosts.includes(host)) continue;
     const sides = statuses[host] ?? {};
     const hostCfg = cfg.hosts[host];
-    const entries = tierEntries(hostCfg.tiers[tier]);
-    const resolved = entries.map(e => resolveEntry(e, host, tier, effort));
+    const pairs = resolveTier(hostCfg.tiers[tier], host, tier, effort);
     const usable = [];
     const picks = new Map();
     for (const [side, st] of Object.entries(sides)) {
       if (!st.installed) skipped.push({ host, side, reason: `not installed or not runnable${st.error ? ` (${skipNote(st.error)})` : ''}` });
       else if (st.logged_in === false) skipped.push({ host, side, reason: 'not logged in' });
       else {
-        const pool = hostCfg.pool ? configPool(hostCfg.pool) : (st.pool ?? null);
-        const info = poolInfo(pool, entries.length);
+        const pool = hostCfg.pool ? configPool(hostCfg.pool) : trustedPool(st.pool ?? null, cfg, host);
+        const info = poolInfo(pool, pairs.length);
         if (info) pools[`${host}/${side}`] = info;
-        const pick = pickModels({ host, tier, entries, resolved, pool, st, min, flagEffort: !hostCfg.effortInModel, asked: effort });
+        const pick = pickModels({ host, tier, pairs, pool, st, min, flagEffort: !hostCfg.effortInModel, asked: effort });
         if (!pick.chosen) skipped.push({ host, side, reason: pick.reason });
         else { picks.set(side, pick); usable.push([side, pick.binding]); }
       }
@@ -741,6 +808,7 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
       const u = pick.usage ?? {};
       candidates.push({
         host, side, model: c.model, effort: c.effort, label: c.label, ...(c.effort_note ? { effort_note: c.effort_note } : {}),
+        ...(c.quota_note ? { quota_note: c.quota_note } : {}),
         binding_pct: u.binding_pct ?? null, five_hour_pct: u.five_hour_pct ?? null, weekly_pct: u.weekly_pct ?? null,
         ...(pick.alternates.length ? { alternates: pick.alternates } : {}),
         ...(pick.skipped.length ? { skipped_models: pick.skipped } : {}),
@@ -1675,7 +1743,7 @@ async function probeAll(cfg, tier, here, sides, onlyHosts, effort) {
   const jobs = cfg.priority.filter(h => !onlyHosts?.length || onlyHosts.includes(h)).flatMap(h => sides.map(s => [h, s]));
   const results = await Promise.all(jobs.map(async ([host, side]) => {
     // `entries`: every model of the tier, resolved for the asked effort, so the probe can read the quota of each (an Orchestrator draws on two groups).
-    const entries = tierEntries(cfg.hosts[host].tiers[tier]).map(e => resolveEntry(e, host, tier, effort));
+    const entries = resolveTier(cfg.hosts[host].tiers[tier], host, tier, effort).map(p => p.r);
     const payload = { host, side, model: entries.find(r => r.model)?.model ?? '', entries, host_cfg: cfg.hosts[host] };
     try {
       return await callSide(cfg, here, side, 'local-probe', payload, 150_000);
@@ -1711,7 +1779,7 @@ async function cmdStatus(opts, cfg) {
   console.log(`tier=${tier}  here=${here}  floor=${cfg.minHeadroomPct}%  (binding = smaller of 5h / weekly remaining)`);
   console.log(`${'HOST'.padEnd(12)}${'SIDE'.padEnd(9)}${'STATE'.padEnd(22)}${'5H LEFT'.padEnd(9)}${'WEEK LEFT'.padEnd(11)}MODEL`);
   for (const host of cfg.priority) {
-    const first = tierEntries(cfg.hosts[host].tiers[tier]).map(e => resolveEntry(e, host, tier, opts.effort)).find(r => r.model);
+    const first = resolveTier(cfg.hosts[host].tiers[tier], host, tier, opts.effort).map(p => p.r).find(r => r.model);
     for (const [side, st] of Object.entries(statuses[host] ?? {})) {
       const u = st.usage ?? {};
       const state = !st.installed ? 'not runnable' : st.logged_in === false ? 'logged out' : 'ready';
@@ -1724,6 +1792,7 @@ async function cmdStatus(opts, cfg) {
   for (const s of plan.skipped) console.log(`  skipped ${s.host}/${s.side}: ${s.reason}`);
   const noted = new Set(); // one note per host, not one per side
   for (const c of plan.candidates) if (c.effort_note && !noted.has(c.host)) { noted.add(c.host); console.log(`  note ${c.effort_note}`); }
+  for (const c of plan.candidates) if (c.quota_note) console.log(`  note ${c.host}/${c.side}: ${c.quota_note}`);
   for (const c of plan.candidates) for (const s of c.skipped_models ?? []) console.log(`  skipped model ${c.host}/${c.side}: ${s.model}: ${s.reason}`);
   for (const [host, sides] of Object.entries(statuses)) for (const [side, st] of Object.entries(sides)) for (const n of st.notes ?? []) console.log(`  note ${host}/${side}: ${n}`);
   return 0;
@@ -1870,6 +1939,8 @@ export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotT
     const att = { host: c.host, side: c.side, model: c.model, rc: out.rc, seconds: out.seconds, failure };
     last = [c, out];
     if (out.blocked?.length) att.blocked = out.blocked;
+    if (c.skipped_models?.length) att.skipped_models = c.skipped_models; // the models passed over before this one, as the plan shows them
+    if (c.quota_note) att.quota_note = c.quota_note;
     if (guard) {
       end = snap(cwd);
       if (!verdict.ok) {

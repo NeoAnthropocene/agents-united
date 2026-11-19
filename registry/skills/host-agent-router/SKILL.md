@@ -42,8 +42,8 @@ Anti-patterns, with reasons:
 ## Edge Cases & Error Recovery
 - **Exit 2**: print `skipped`, name the host to log in or the window spent; never force it.
 - **Same account on both sides**: figures match, a tie keeps your side. Codex edits prefer WSL (`editSide`).
-- **Directory only inside WSL**: Windows cannot reach it; those candidates are skipped.
-- **`failure: model`**: the next model of the tier on that host ran first (`attempts`). All refused: run `router.mjs models`, fix the config or set `pool`. The plan's `pools`, `skipped_models` say what the account lacks.
+- **Directory only inside WSL**: Windows cannot reach it; skipped.
+- **`failure: model`**: the next model of the tier on that host ran first (`attempts`). All refused: run `router.mjs models`, fix the config or set `pool`. `pools` and `skipped_models` (plan, and run attempts) say what the account lacks.
 - **Cline refuses or hangs**: a refusal falls through if nothing changed, a hang ends at the timeout, `partial` means unfinished: check the tree.
 
 ## Verification Checklist
