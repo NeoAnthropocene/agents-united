@@ -42,7 +42,7 @@ Anti-patterns, with reasons:
 
 ## Edge Cases & Error Recovery
 - **Exit 1 from `collect`**: the folder could not be written. Run with `--json` and keep the output in the conversation.
-- **Exit 2**: a wrong argument, or `--out` refused (not `.md`, outside the working folder, or over a file that is not a sheet).
+- **Exit 2**: a wrong argument, or `--out` refused (not `.md`, outside the working folder, or over a file that is not a sheet). That file is not yours to remove or move: ask the user, then run collect again.
 - **Exit 1 from `check`**: the sheet is missing, damaged, edited or from another machine. Ask the coordinating agent to collect (alone: collect).
 - **A GPU line says "not determined"**: the model or VRAM could not be read without elevated rights; ask the user.
 

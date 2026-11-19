@@ -772,7 +772,7 @@ function planOutput(out, cwd) {
   if (isLink(mdFile) || isLink(jsonFile)) return { error: 'the --out file, or the .json beside it, is a link; links are not followed' };
   const md = readText(mdFile);
   if (md !== null && md.trim() !== '' && !isSheetMarkdown(md)) {
-    return { error: `refusing to overwrite ${path.basename(mdFile)}: its first line is not "${SHEET_HEADER}"${out === DEFAULT_OUT ? '. Delete that file (it is not a sheet) and run collect again.' : ''}` };
+    return { error: `refusing to overwrite ${path.basename(mdFile)}: its first line is not "${SHEET_HEADER}"${mdFile === path.resolve(cwd, DEFAULT_OUT) ? '. That file is not a sheet. Ask the user before removing or moving it, then run collect again.' : ''}` };
   }
   const json = readText(jsonFile);
   if (json !== null && json.trim() !== '') {

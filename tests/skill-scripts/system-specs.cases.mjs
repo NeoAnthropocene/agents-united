@@ -580,7 +580,7 @@ test('an empty Markdown file makes the sheet stale; one without the header is re
     const res = await specs.runCli(['collect'], refused.deps);
     assert.equal(res.code, 2);
     assert.equal(fs.readFileSync(mdFile, 'utf8'), 'not a sheet');
-    assert.match(res.err, /delete (it|that file)/i, 'the default-path refusal says how to recover');
+    assert.match(res.err, /That file is not a sheet\. Ask the user before removing or moving it, then run collect again\./, 'the default-path refusal says how to recover');
     assert.ok(!res.err.includes(dir));
   } finally { rmTemp(dir); }
 });
@@ -682,7 +682,7 @@ test('--out refusals exit 2 with a plain message and change nothing', async () =
       ['sheet', /\.md/],
       [path.join(other, 'elsewhere.md'), /working folder/],
       ['../escape.md', /working folder/],
-      ['notes.md', /# System specs(?![sS]*delete)/],
+      ['notes.md', /# System specs(?![\s\S]*Ask the user)/],
       ['package.md', /\.json/],
     ];
     for (const [out, pattern] of cases) {
@@ -1219,5 +1219,20 @@ test('the command line catches a failure and exits 1 with a short message: no st
     assert.equal(run.status, 1, run.stderr);
     assert.doesNotMatch(run.stderr, /secret|place exploded|\n\s+at /);
     assert.match(run.stderr, /system-specs failed/);
+  } finally { rmTemp(dir); }
+});
+
+test('the recovery sentence appears for the default file in any spelling, and never tells anyone to delete', async () => {
+  const dir = mkTemp();
+  try {
+    fs.mkdirSync(path.join(dir, '.agents-united'));
+    fs.writeFileSync(path.join(dir, '.agents-united', 'system-specs.md'), 'not mine');
+    for (const spelling of ['.agents-united/system-specs.md', '.agents-united\\system-specs.md', './.agents-united/system-specs.md', '.agents-united/../.agents-united/system-specs.md']) {
+      const res = await specs.runCli(['collect', '--out', spelling], makeDeps({ deps: { cwd: () => dir } }).deps);
+      assert.equal(res.code, 2, spelling);
+      assert.match(res.err, /Ask the user before removing or moving it/, spelling);
+      assert.doesNotMatch(res.err, /[Dd]elete/, spelling);
+    }
+    assert.equal(fs.readFileSync(path.join(dir, '.agents-united', 'system-specs.md'), 'utf8'), 'not mine');
   } finally { rmTemp(dir); }
 });
