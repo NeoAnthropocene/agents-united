@@ -382,7 +382,7 @@ function parseResult(bytes) {
 // postflight that the saved file did not change while it was checked; (3) the second `record.recheck()` of the job's pins, the candidate and the job bytes after the
 // result checks (`checkJob` has just made the first, and a hook has no caller to protect from a swap in between). Nothing else is skipped.
 // In pre-check mode a fault of the ENVIRONMENT found inside this function throws `Environment` (exit 3), not a refusal (exit 1), because the evaluator cannot repair it and the
-// caller's check will report it: the result-schema pin missing from the job; a job at the pointer whose digest is not the result's `jobDigest` (the hook found that job by that
+// caller's check will report it: the result file missing, unreadable or over the byte budget; the result-schema pin missing from the job; a job at the pointer whose digest is not the result's `jobDigest` (the hook found that job by that
 // digest, so it was rebuilt); a pinned citation source that vanished, grew over its budget or no longer matches its pin. Faults of the RESULT itself still refuse (exit 1):
 // not JSON or not one object, the schema, a wrong `jobId` or `candidateDigest`, subject or inventory, every citation fault, coverage, criteria, findings, open items and
 // deterministic-evidence faults. The saved-file mode refuses all of these with exit 1, as before.
@@ -390,7 +390,9 @@ function checkResult(record, resultFile, precheck = false) {
   const { job } = record;
   const file = absolute(resultFile, 'Result');
   if (!precheck && !sameBoth(file, path.join(job.roots.review, 'result.json'))) fail('Result must be the caller-owned review-root result.json.');
-  const bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result');
+  // In pre-check mode a result file that is missing, unreadable or over the byte budget is the environment's fault (the hook wrote it), not the worker's.
+  let bytes;
+  try { bytes = bytesAt(resultFile, job.budget.maxResultBytes, 'Result'); } catch (error) { if (precheck) throw new Environment(error.message); throw error; }
   const result = parseResult(bytes);
   validate(result, record.resultSchema, 'result');
   if (!job.inputs.some(input => input.required && input.status === 'clear' && input.kind === 'loading'

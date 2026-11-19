@@ -6,14 +6,16 @@
 // What it does, in order:
 //   1. The hook input is JSON on stdin. The hand-back text is `tool_input.message` (hooks.md, SubagentStop). Anything else (another tool, no message) passes.
 //   2. The text is written to a temporary file and checked as exactly one JSON object. If it is not (prose, a code fence, a syntax fault, an array, a string, a number,
-//      null), the hand-back is blocked with the checker's own reason; no job is needed.
+//      null, empty or only white space), the hand-back is blocked with the checker's own reason; no job is needed. A hand-back larger than the checker's byte limit for a result
+//      (256 KiB) cannot be checked and passes; the caller's check decides.
 //   3. The result names its job by `jobDigest`. The pointer file `<temp>/agents-united/review-jobs/<jobDigest>.txt` (written by review-job.mjs, holding the absolute path of the
 //      job file and nothing else) says where the job is. The pointer is only a locator and is never trusted: the checker verifies the job's own digest against the result's.
 //      No pointer, or a `jobDigest` that is missing or mistyped, means that this worker is not doing a factory review, and the hand-back passes.
 //   4. The checker runs with the job. Exit 1 (the result itself is refused) blocks; exit 0 passes; exit 3 (the environment is at fault: the job no longer checks, a pinned
 //      file changed, the job at the pointer has another digest; the evaluator cannot repair that) passes, and the caller's check will report it.
 //   5. It blocks at most TWO times for one worker, then lets the next hand-back through. The count is kept per session and agent id (`session_id` plus `agent_id` when the Host
-//      gives an agent id; `session_id` alone otherwise, so that two evaluators of one session without an agent id share one count, which errs toward letting a hand-back through).
+//      gives an agent id; `session_id` alone otherwise, so that two evaluators of one session without an agent id share one count, which errs toward letting a hand-back through;
+//      with neither id every worker of that day shares one count, which errs the same way). The count update is not atomic; that matters only for two workers that share a key.
 //      The number is two because the Host has a limit of its own (hooks.md:2026: it tells a worker whose hand-back is denied, up to three times, that the report was not
 //      delivered, and then ends it without a report). The caller's check stays the judge; this hook only gives the evaluator the chance to correct itself.
 //
@@ -29,11 +31,14 @@
 // It writes nothing except its state under <temp>/agents-united/handback-checks/ and one temporary result file. The temporary file is removed on every exit path of this
 // process (a normal end, process.exit, an uncaught exception, a rejected promise, a thrown spawnSync). A hook killed from outside (the Host's timeout, a signal) can leave it
 // behind; the next run removes it once it is a day old. It runs no command except the checker. It does not run in a headless session (`claude -p` skips a project agent's
-// frontmatter hooks, ADR 0042), and the Host provides SubagentHandback only in auto mode.
+// frontmatter hooks, ADR 0042), and the Host provides SubagentHandback only in auto mode. It is also inert when the `node` that runs it is not the one the review job pins (the
+// checker then finds the job at fault, exit 3), and when a pointer is a day old or more (a journey longer than a day leaves it inert).
 //
-// The checker it runs is the check-review.mjs beside this file, resolved from this file's own location, and nothing else: no path, command or code is taken from the environment.
+// The checker it runs is the check-review.mjs beside this file, resolved from this file's own location, and nothing else: no script or command is taken from the environment or from
+// the hook input (the temp folder's location and the `node` that runs it do come from the environment).
 // Test-only seams, never set by the Host, named so that nobody sets them by accident, and ENUMERATED: AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT takes one name from a fixed list
-// (uncaught | rejection | spawn | checker-crash | checker-exit2-silent | checker-not-json | checker-no-reason | checker-hang) and anything else is ignored; each fault is simulated
+// (uncaught | rejection | spawn | temp-write-fail | checker-second-crash | checker-crash | checker-exit2-silent | checker-not-json | checker-no-reason | checker-hang) and anything
+// else is ignored; each fault is simulated
 // inside this script around the checker's child call or its result. AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS takes a positive integer (milliseconds), clamped to 100..90000;
 // any other value is ignored and the bound is 90000.
 import fs from 'node:fs';
@@ -52,7 +57,7 @@ const CHECK_TIMEOUT_MS = Math.min(Math.max(requestedTimeout, 100), DEFAULT_TIMEO
 // The checker beside this file; the only one this hook ever runs.
 const checker = path.join(path.dirname(fileURLToPath(import.meta.url)), 'check-review.mjs');
 // The enumerated test-only faults. Only a name in this list has any effect.
-const FAULTS = ['uncaught', 'rejection', 'spawn', 'checker-crash', 'checker-exit2-silent', 'checker-not-json', 'checker-no-reason', 'checker-hang'];
+const FAULTS = ['uncaught', 'rejection', 'spawn', 'temp-write-fail', 'checker-second-crash', 'checker-crash', 'checker-exit2-silent', 'checker-not-json', 'checker-no-reason', 'checker-hang'];
 const fault = FAULTS.includes(process.env[`${SEAM}FAULT`]) ? process.env[`${SEAM}FAULT`] : null;
 // What the checker's child would have returned, for the faults that simulate its result.
 const SIMULATED = {
@@ -126,16 +131,19 @@ async function main() {
   try { input = JSON.parse(await readStdin()); } catch { return process.exit(0); }
   if (!input || typeof input !== 'object' || input.tool_name !== 'SubagentHandback') return process.exit(0);
   const message = input.tool_input && input.tool_input.message;
-  if (typeof message !== 'string' || !message.trim()) return process.exit(0);
+  // An empty or white-space hand-back is not a JSON object either: it goes to the checker, which refuses it as not JSON.
+  if (typeof message !== 'string') return process.exit(0);
 
   const root = stateRoot();
   if (!root) return process.exit(0);
   sweep(root);
   const file = path.join(root, `handback-${randomBytes(8).toString('hex')}.json`);
+  // The path is assigned before the write, so a write that fails midway is still removed on exit.
+  tempFile = file;
   try {
     fs.mkdirSync(root, { recursive: true });
+    if (fault === 'temp-write-fail') { fs.writeFileSync(file, message.slice(0, 10)); throw new Error('test-only fault'); }
     fs.writeFileSync(file, message);
-    tempFile = file;
   } catch { return process.exit(0); }
   await seamFault();
 
@@ -143,6 +151,7 @@ async function main() {
     try {
       if (fault === 'spawn') throw new Error('test-only fault');
       if (fault && SIMULATED[fault]) return SIMULATED[fault];
+      if (fault === 'checker-second-crash' && args.includes('--job')) return SIMULATED['checker-crash'];
       // checker-hang: a fixed child that never ends, so that the real time bound is what ends it.
       const argv = fault === 'checker-hang' ? ['-e', 'setTimeout(function () {}, 600000)'] : [checker, ...args];
       return spawnSync(process.execPath, argv, { encoding: 'utf8', timeout: CHECK_TIMEOUT_MS, windowsHide: true, maxBuffer: 1 << 20 });

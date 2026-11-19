@@ -144,6 +144,9 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
   it('keeps the cap inside the Host\'s own limit: the Host tells a worker whose hand-back is denied, up to three times, that its report was not delivered (hooks.md:2026), so the hook blocks fewer than three times', () => {
     expect(HANDBACK_MAX_BLOCKS).toBe(2);
     expect(HANDBACK_MAX_BLOCKS).toBeLessThan(3);
+    // Through the hook: the first two attempts are blocked and the third is delivered.
+    const message = JSON.stringify(badResult());
+    expect([hook(message).status, hook(message).status, hook(message).status]).toEqual([2, 2, 0]);
   });
 
   it('counts per worker: the cap in blocks, then the next attempt of the same worker goes through; another worker starts at one', () => {
@@ -403,6 +406,83 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
     expect(stale.status).toBe(0);
     expect(await fs.pathExists(pointerFile())).toBe(false);
     expect(await fs.pathExists(leftover)).toBe(false);
+  });
+
+  it('reads the same cap in the script as in the constant', () => {
+    const source = fs.readFileSync(fixture.installed(HOOK), 'utf8');
+    expect(Number(/const MAX_BLOCKS = (\d+);/.exec(source)?.[1])).toBe(HANDBACK_MAX_BLOCKS);
+  });
+
+  it('in pre-check mode a result file that is missing or over the byte budget is the environment\'s fault (exit 3); the saved-file mode keeps exit 1', async () => {
+    const absent = path.join(temp, 'no-such-result.json');
+    const pre = checker(['--job', selected.jobFile, '--precheck', absent]);
+    expect(pre.status, pre.stderr).toBe(3);
+    const saved = checker(['--job', selected.jobFile, '--result', resultFile()]);
+    expect(saved.status).toBe(1);
+    expect((JSON.parse(saved.stderr) as { reason: string }).reason).toMatch(/missing ordinary file/);
+    const big = path.join(temp, 'big-result.json');
+    await fs.writeFile(big, ' '.repeat((selected.job.budget as { maxResultBytes: number }).maxResultBytes + 1));
+    expect(checker(['--job', selected.jobFile, '--precheck', big]).status).toBe(3);
+    await fs.copy(big, resultFile());
+    expect(checker(['--job', selected.jobFile, '--result', resultFile()]).status).toBe(1);
+  });
+
+  it('removes a temporary file whose write failed midway', async () => {
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), { AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT: 'temp-write-fail' });
+    expect(run.status, run.stderr).toBe(0);
+    expect(await leftovers()).toEqual([]);
+  });
+
+  it.each([
+    ['empty', ''],
+    ['only white space', '  \n\t \n'],
+  ])('blocks a hand-back that is %s: it is not a JSON object', (_name, content) => {
+    const run = hook(content);
+    expect(run.status, run.stderr).toBe(2);
+    expect(run.stderr).toContain('Result is not valid JSON');
+  });
+
+  it('lets a hand-back larger than the checker\'s byte limit through: it cannot be checked, and the caller\'s check decides', () => {
+    const run = hook('x'.repeat(300_000));
+    expect(run.status, run.stderr).toBe(0);
+    expect(run.stderr).toBe('');
+  });
+
+  it('lets the hand-back through when the SECOND checker call, the one with the job, fails', () => {
+    expect(hook(text(badResult())).status).toBe(2);
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult()), { agent_id: 'agent-second' }), { AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT: 'checker-second-crash' });
+    expect(run.status, run.stderr).toBe(0);
+    expect(run.stderr).toBe('');
+  });
+
+  it.skipIf(typeof process.getuid === 'function' && process.getuid() === 0)('lets the hand-back through when the count can be read but not written, and leaves the count as it was', async () => {
+    expect(hook(text(badResult())).status).toBe(2);
+    const [name] = await fs.readdir(stateDir());
+    const file = path.join(stateDir(), name!);
+    await fs.chmod(file, 0o444);
+    try {
+      const run = hook(text(badResult()));
+      expect(run.status, run.stderr).toBe(0);
+      expect((JSON.parse(await fs.readFile(file, 'utf8')) as { blocks: number }).blocks).toBe(1);
+    } finally { await fs.chmod(file, 0o644); }
+  });
+
+  it('counts a worker whose hook input has no session id (the key is the agent id alone), and workers with neither id (one shared count, which errs toward passing)', () => {
+    const agentOnly = { session_id: undefined };
+    expect(firstLine(hook(text(badResult()), agentOnly))).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(firstLine(hook(text(badResult()), agentOnly))).toContain(`attempt 2 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(hook(text(badResult()), agentOnly).status).toBe(0);
+    const neither = { session_id: undefined, agent_id: undefined, agent_type: undefined };
+    expect(hook(text(badResult()), neither).status).toBe(2);
+    expect(hook(text(badResult()), neither).status).toBe(2);
+    expect(hook(text(badResult()), neither).status).toBe(0);
+  });
+
+  it('lets the hand-back through, and creates nothing, when the temp folder does not exist yet', async () => {
+    const missing = path.join(fixture.root, 'not-yet');
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), { TEMP: missing, TMP: missing, TMPDIR: missing });
+    expect(run.status, run.stderr).toBe(0);
+    expect(await fs.pathExists(missing)).toBe(false);
   });
 
   describe('the pre-check mode of check-review.mjs', () => {
