@@ -702,7 +702,7 @@ function planOutput(out, cwd) {
   if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) return { error: 'the --out file must stay inside the working folder' };
   const jsonFile = path.join(path.dirname(mdFile), `${path.basename(mdFile, path.extname(mdFile))}.json`);
   const md = readText(mdFile);
-  if (md !== null && md.trim() !== '' && !isSheetMarkdown(md)) return { error: `refusing to overwrite ${path.basename(mdFile)}: its first line is not "${SHEET_HEADER}"` };
+  if (md !== null && md.trim() !== '' && !isSheetMarkdown(md)) return { error: `refusing to overwrite ${path.basename(mdFile)}: its first line is not "${SHEET_HEADER}"${out === DEFAULT_OUT ? '. Delete that file (it is not a sheet) and run collect again.' : ''}` };
   const json = readText(jsonFile);
   if (json !== null && json.trim() !== '') {
     const parsed = safely(() => JSON.parse(json), null);

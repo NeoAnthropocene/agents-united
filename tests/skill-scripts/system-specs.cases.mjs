@@ -574,6 +574,8 @@ test('an empty Markdown file makes the sheet stale; one without the header is re
     const res = await specs.runCli(['collect'], refused.deps);
     assert.equal(res.code, 2);
     assert.equal(fs.readFileSync(mdFile, 'utf8'), 'not a sheet');
+    assert.match(res.err, /delete (it|that file)/i, 'the default-path refusal says how to recover');
+    assert.ok(!res.err.includes(dir));
   } finally { rmTemp(dir); }
 });
 
@@ -673,7 +675,7 @@ test('--out refusals exit 2 with a plain message and change nothing', async () =
       ['sheet', /\.md/],
       [path.join(other, 'elsewhere.md'), /working folder/],
       ['../escape.md', /working folder/],
-      ['notes.md', /# System specs/],
+      ['notes.md', /# System specs(?![sS]*delete)/],
       ['package.md', /\.json/],
     ];
     for (const [out, pattern] of cases) {
