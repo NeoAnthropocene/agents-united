@@ -142,8 +142,9 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Production changes follow GitOps only: IaC plus CI/CD, never out-of-band.': /Never modify a production cloud resource out-of-band; every change goes through IaC and CI\/CD \(GitOps\)/,
     'A preview deployment is never promoted to production by this role; the production command goes to the orchestrator for explicit user approval.': /Never promote a preview deployment to production yourself; hand the production command to the orchestrator for explicit user approval/,
     'Consult the named Skill before writing platform-specific code; report a missing platform skill instead of improvising.': /Load the matching skill with `Skill` before writing platform-specific code\. A skill that is not installed is a gap to report/,
-    'Hand your result back to the coordinator, not across to a peer.': /Return the report from the Output Contract as your final message through `SubagentHandback`, to the agent that spawned you/,
-    'The handoff report lists peer messages received and open items.': /List peer messages received \(or "none"\) and end with `Open items`/,
+    // Messaging (maintainer decision on the pilot's point a): the comms-law wording of the team-capable specialists, bound under this core's longer invariant texts.
+    'Hand your result back to the coordinator, not across to a peer.': /A hand-off goes back to the agent that spawned you|Your final report is your one hand-?back/,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /\*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`/,
   },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
