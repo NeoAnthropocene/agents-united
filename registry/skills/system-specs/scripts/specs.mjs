@@ -152,10 +152,11 @@ const PLAIN_WORD_STOPLIST = new Set(['ubuntu', 'debian', 'fedora', 'centos', 'ro
 
 /**
  * Remove private values from a free-text string: the home folder (any separator, any case) becomes `~`, UNC and drive paths and
- * other absolute paths `<path>`. An account-derived token (user name, machine name and the environment values) is replaced only
- * when the whole string equals it or when it touches a path separator or an `@` (`user@host`, `/user/`), never inside ordinary
- * words: a user named ubuntu leaves "Ubuntu 24.04" intact. A token shorter than three characters is replaced only as a whole string.
- * Tokens of five or more characters are also removed as whole words inside plain text, except OS and vendor words (the stoplist).
+ * other absolute paths `<path>`. An account-derived token (user name, machine name and the environment values) is replaced when the
+ * whole string equals it, when it touches a path separator or an `@` (`user@host`, `/user/`), and, when it has five or more
+ * characters, as a whole word anywhere in plain text, except OS and vendor words (the stoplist): a user named ubuntu leaves
+ * "Ubuntu 24.04" intact, and a short or stoplisted name inside plain text is not removed. A token shorter than three characters is
+ * replaced only as a whole string.
  */
 export function scrub(text, ctx = {}) {
   let s = String(text ?? '');
