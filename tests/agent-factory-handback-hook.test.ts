@@ -326,19 +326,40 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
     expect(await leftovers()).toEqual([]);
   });
 
+  // The seams are enumerated: one variable whose value names a fault from a fixed list, and a number. No path, command or code comes from the environment.
   it.each([
-    ['crashes', 'throw new Error("boom");'],
-    ['exits 2 with no output', 'process.exit(2);'],
-    ['writes stderr that is not the expected JSON', 'process.stderr.write("not json at all\\n"); process.exit(1);'],
-    ['writes JSON without a reason', 'process.stderr.write(JSON.stringify({ status: "x" }) + "\\n"); process.exit(1);'],
-    ['hangs past the bound', 'setTimeout(() => {}, 600000);'],
-  ])('lets the hand-back through, silently, when the checker %s', async (_name, body) => {
-    const fake = path.join(fixture.root, 'fake-checker.mjs');
-    await fs.writeFile(fake, body);
-    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), { AGENTS_UNITED_TEST_ONLY_HANDBACK_CHECKER: fake, AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS: '700' });
+    ['crashes', 'checker-crash'],
+    ['exits 2 with no output', 'checker-exit2-silent'],
+    ['writes stderr that is not the expected JSON', 'checker-not-json'],
+    ['writes JSON without a reason', 'checker-no-reason'],
+    ['hangs past the bound', 'checker-hang'],
+  ])('lets the hand-back through, silently, when the checker %s', async (_name, fault) => {
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), { AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT: fault, AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS: '700' });
     expect(run.status, run.stderr).toBe(0);
     expect(run.stderr).toBe('');
     expect(await leftovers()).toEqual([]);
+  });
+
+  it('runs only the check-review.mjs beside it: the removed checker variable, set to a script that exits 0 for everything, has no effect', async () => {
+    const fake = path.join(fixture.root, 'always-fine.mjs');
+    await fs.writeFile(fake, 'process.exit(0);');
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), { AGENTS_UNITED_TEST_ONLY_HANDBACK_CHECKER: fake });
+    expect(run.status, run.stderr).toBe(2);
+    expect(firstLine(run)).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(fs.readFileSync(fixture.installed(HOOK), 'utf8')).not.toMatch(/process\.env\[[^\]]*CHECKER/);
+  });
+
+  it.each([
+    ['an unknown fault name', { AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT: 'checker-crash; rm -rf /' }],
+    ['a fault name in the wrong case', { AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT: 'CHECKER-CRASH' }],
+    ['a timeout that is not a number', { AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS: 'soon' }],
+    ['a timeout of zero', { AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS: '0' }],
+    ['a negative timeout', { AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS: '-5' }],
+    ['a fractional timeout', { AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS: '1.5' }],
+    ['a timeout that is a path', { AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS: 'C:\\temp\\x.mjs' }],
+  ])('ignores %s: a bad hand-back is still blocked', (_name, seam) => {
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), seam);
+    expect(run.status, run.stderr).toBe(2);
   });
 
   it.each([

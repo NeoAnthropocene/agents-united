@@ -31,8 +31,11 @@
 // behind; the next run removes it once it is a day old. It runs no command except the checker. It does not run in a headless session (`claude -p` skips a project agent's
 // frontmatter hooks, ADR 0042), and the Host provides SubagentHandback only in auto mode.
 //
-// Test-only seams, never set by the Host, named so that nobody sets them by accident: AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT (uncaught | rejection | spawn),
-// AGENTS_UNITED_TEST_ONLY_HANDBACK_CHECKER (a script to run instead of check-review.mjs) and AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS (the checker's time bound).
+// The checker it runs is the check-review.mjs beside this file, resolved from this file's own location, and nothing else: no path, command or code is taken from the environment.
+// Test-only seams, never set by the Host, named so that nobody sets them by accident, and ENUMERATED: AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT takes one name from a fixed list
+// (uncaught | rejection | spawn | checker-crash | checker-exit2-silent | checker-not-json | checker-no-reason | checker-hang) and anything else is ignored; each fault is simulated
+// inside this script around the checker's child call or its result. AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS takes a positive integer (milliseconds), clamped to 100..90000;
+// any other value is ignored and the bound is 90000.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -43,8 +46,21 @@ import { fileURLToPath } from 'node:url';
 const MAX_BLOCKS = 2;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SEAM = 'AGENTS_UNITED_TEST_ONLY_HANDBACK_';
-const CHECK_TIMEOUT_MS = Number(process.env[`${SEAM}TIMEOUT_MS`]) > 0 ? Number(process.env[`${SEAM}TIMEOUT_MS`]) : 90_000;
-const checker = process.env[`${SEAM}CHECKER`] || path.join(path.dirname(fileURLToPath(import.meta.url)), 'check-review.mjs');
+const DEFAULT_TIMEOUT_MS = 90_000;
+const requestedTimeout = /^[1-9][0-9]{0,8}$/.test(process.env[`${SEAM}TIMEOUT_MS`] ?? '') ? Number(process.env[`${SEAM}TIMEOUT_MS`]) : DEFAULT_TIMEOUT_MS;
+const CHECK_TIMEOUT_MS = Math.min(Math.max(requestedTimeout, 100), DEFAULT_TIMEOUT_MS);
+// The checker beside this file; the only one this hook ever runs.
+const checker = path.join(path.dirname(fileURLToPath(import.meta.url)), 'check-review.mjs');
+// The enumerated test-only faults. Only a name in this list has any effect.
+const FAULTS = ['uncaught', 'rejection', 'spawn', 'checker-crash', 'checker-exit2-silent', 'checker-not-json', 'checker-no-reason', 'checker-hang'];
+const fault = FAULTS.includes(process.env[`${SEAM}FAULT`]) ? process.env[`${SEAM}FAULT`] : null;
+// What the checker's child would have returned, for the faults that simulate its result.
+const SIMULATED = {
+  'checker-crash': { status: 1, stderr: 'Error: test-only crash\n    at <anonymous>\n' },
+  'checker-exit2-silent': { status: 2, stderr: '' },
+  'checker-not-json': { status: 1, stderr: 'not json at all\n' },
+  'checker-no-reason': { status: 1, stderr: `${JSON.stringify({ status: 'unavailable' })}\n` },
+};
 const safe = value => String(value ?? '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
 
 // The temporary result file is removed whenever this process ends, by whatever path.
@@ -100,7 +116,7 @@ function usedBlocks(file) {
 }
 
 async function seamFault() {
-  const kind = process.env[`${SEAM}FAULT`];
+  const kind = fault;
   if (kind === 'uncaught') await new Promise(() => setTimeout(() => { throw new Error('test-only fault'); }, 0));
   if (kind === 'rejection') { Promise.reject(new Error('test-only fault')); await new Promise(resolve => setTimeout(resolve, 50)); }
 }
@@ -125,8 +141,11 @@ async function main() {
 
   const run = args => {
     try {
-      if (process.env[`${SEAM}FAULT`] === 'spawn') throw new Error('test-only fault');
-      return spawnSync(process.execPath, [checker, ...args], { encoding: 'utf8', timeout: CHECK_TIMEOUT_MS, windowsHide: true, maxBuffer: 1 << 20 });
+      if (fault === 'spawn') throw new Error('test-only fault');
+      if (fault && SIMULATED[fault]) return SIMULATED[fault];
+      // checker-hang: a fixed child that never ends, so that the real time bound is what ends it.
+      const argv = fault === 'checker-hang' ? ['-e', 'setTimeout(function () {}, 600000)'] : [checker, ...args];
+      return spawnSync(process.execPath, argv, { encoding: 'utf8', timeout: CHECK_TIMEOUT_MS, windowsHide: true, maxBuffer: 1 << 20 });
     } catch { return { status: null, stderr: '' }; }
   };
   let reason = null;
