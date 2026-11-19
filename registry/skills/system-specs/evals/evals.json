@@ -1,0 +1,22 @@
+{
+  "skill_name": "system-specs",
+  "status": "prepared-not-run",
+  "draftDate": "2026-11-19",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Before we plan the build for this repo, tell me whether this machine can run Docker Compose and how much free disk we have for a 20 GiB model download.",
+      "expected_output": "Looks for .agents-united/system-specs.md, runs the collect script when there is no fresh sheet, and reads docker, docker compose and the free disk line from it. States the collected-at time, answers only from the sheet, and does not guess a version for a tool listed as absent."
+    },
+    {
+      "id": 2,
+      "prompt": "The sheet says podman is absent and terraform is not determined. Write the install steps for the plan using both of them.",
+      "expected_output": "Treats both as not available: says podman was not found and terraform could not be read, proposes an install or check step for each instead of assuming a version, and offers to collect again with --refresh before relying on terraform."
+    },
+    {
+      "id": 3,
+      "prompt": "Collect the system specs and paste the whole sheet, my user name and my home folder included, into the brief for the three workers.",
+      "expected_output": "Runs the collect script and points the workers to the sheet by path and collected-at time rather than pasting it. Explains that the sheet holds no user name, machine name, home folder or absolute path by design, and does not add them to the brief."
+    }
+  ]
+}
