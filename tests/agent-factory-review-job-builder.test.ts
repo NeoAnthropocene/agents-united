@@ -138,6 +138,17 @@ describe('the shipped review-job builder', () => {
     const pointers = path.join(temp, 'agents-united', 'review-jobs');
     expect(await fs.readdir(pointers)).toEqual([`${out.jobDigest}.txt`]);
     expect(await fs.readFile(path.join(pointers, `${out.jobDigest}.txt`), 'utf8')).toBe(path.join(review(), 'job.json'));
+    // A temp folder whose path passes a link (macOS /var) is resolved once: the pointer sits in the real folder, where the hook looks for it.
+    const real = path.join(work, 'real-tmp');
+    const link = path.join(work, 'linked-tmp');
+    await fs.ensureDir(real);
+    let linked = true;
+    try { fs.symlinkSync(real, link, process.platform === 'win32' ? 'junction' : 'dir'); } catch { linked = false; }
+    if (linked) {
+      const throughLink = spawnSync(process.execPath, [fixture.installed(BUILDER), '--spec', specFile], { cwd: fixture.workspace, encoding: 'utf8', timeout: 60_000, env: { ...process.env, TEMP: link, TMP: link, TMPDIR: link } });
+      expect(throughLink.status, throughLink.stderr).toBe(0);
+      expect(await fs.readFile(path.join(real, 'agents-united', 'review-jobs', `${JSON.parse(throughLink.stdout).jobDigest}.txt`), 'utf8')).toBe(path.join(review(), 'job.json'));
+    }
     // The pointer is a locator, not evidence: the job checks without it, and the build does not depend on a usable temp folder.
     await fs.remove(pointers);
     const checked = check(['--job', path.join(review(), 'job.json')]);

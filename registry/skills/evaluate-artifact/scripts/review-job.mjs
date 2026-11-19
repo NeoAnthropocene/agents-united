@@ -580,7 +580,8 @@ function build(specArg) {
   // The hand-back hook (precheck-handback.mjs, ADR 0070) finds the job of a result by its digest. This pointer, in the operating system's temp folder, holds the absolute path of
   // the job file and nothing else. It is a locator only, never evidence: the checker still verifies the job's own digest against the result's. It is best effort: a job is valid without it.
   try {
-    const pointers = path.join(os.tmpdir(), 'agents-united', 'review-jobs');
+    // The temp folder is resolved to its real path (on macOS /var is a link), as the hook resolves it, so that the hook finds the pointer where it is written.
+    const pointers = path.join(fs.realpathSync.native(os.tmpdir()), 'agents-united', 'review-jobs');
     fs.mkdirSync(pointers, { recursive: true });
     fs.writeFileSync(path.join(pointers, `${hash(canonical(job))}.txt`), path.resolve(jobFile));
   } catch { /* no pointer, no hand-back check; the caller's check is the judge */ }

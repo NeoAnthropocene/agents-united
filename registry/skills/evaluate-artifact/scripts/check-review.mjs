@@ -10,6 +10,9 @@ import { spawnSync } from 'node:child_process';
 const fail = message => { throw new Error(message); };
 // A refusal that also carries a list of details (the refused citations), printed beside its reason.
 class Refusal extends Error { constructor(message, details) { super(message); this.details = details; } }
+// A fault of the ENVIRONMENT found inside checkResult in pre-check mode (see precheck): the evaluator cannot repair it, so it is not a refusal of the result.
+class Environment extends Error {}
+const environment = message => { throw new Environment(message); };
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(',')}]`
   : value !== null && typeof value === 'object' ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`
@@ -378,6 +381,11 @@ function parseResult(bytes) {
 // reasons. Skipped in pre-check mode, because they only make sense for the saved file: (1) the rule that the file is the review root's own result.json; (2) the
 // postflight that the saved file did not change while it was checked; (3) the second `record.recheck()` of the job's pins, the candidate and the job bytes after the
 // result checks (`checkJob` has just made the first, and a hook has no caller to protect from a swap in between). Nothing else is skipped.
+// In pre-check mode a fault of the ENVIRONMENT found inside this function throws `Environment` (exit 3), not a refusal (exit 1), because the evaluator cannot repair it and the
+// caller's check will report it: the result-schema pin missing from the job; a job at the pointer whose digest is not the result's `jobDigest` (the hook found that job by that
+// digest, so it was rebuilt); a pinned citation source that vanished, grew over its budget or no longer matches its pin. Faults of the RESULT itself still refuse (exit 1):
+// not JSON or not one object, the schema, a wrong `jobId` or `candidateDigest`, subject or inventory, every citation fault, coverage, criteria, findings, open items and
+// deterministic-evidence faults. The saved-file mode refuses all of these with exit 1, as before.
 function checkResult(record, resultFile, precheck = false) {
   const { job } = record;
   const file = absolute(resultFile, 'Result');
@@ -386,8 +394,11 @@ function checkResult(record, resultFile, precheck = false) {
   const result = parseResult(bytes);
   validate(result, record.resultSchema, 'result');
   if (!job.inputs.some(input => input.required && input.status === 'clear' && input.kind === 'loading'
-    && sameBoth(input.path, path.join(skillRoot, 'assets/result.schema.json')))) fail('Missing result-schema loading pin.');
-  if (result.jobId !== job.id || result.jobDigest !== record.digest || result.candidateDigest !== record.candidateDigest) fail('Result fixed job/candidate digest mismatch.');
+    && sameBoth(input.path, path.join(skillRoot, 'assets/result.schema.json')))) (precheck ? environment : fail)('Missing result-schema loading pin.');
+  if (result.jobId !== job.id || result.jobDigest !== record.digest || result.candidateDigest !== record.candidateDigest) {
+    // The hook finds the job by the result's own jobDigest, so a job at that place with another digest was rebuilt: the environment's fault. A wrong jobId or candidate digest is the result's.
+    (precheck && result.jobDigest !== record.digest ? environment : fail)('Result fixed job/candidate digest mismatch.');
+  }
   if (!same(result.subject, job.subject) || !same(result.inventory, record.inventory)) fail('Result subject/inventory substitution.');
   // Every citation is inspected and every failure is collected, so one refusal names them all: where the citation is, its source, its range, the
   // file's length (as the Read tool counts it), every limit it breaks and, for a quote that stands elsewhere in the file, the line it stands on.
@@ -412,7 +423,10 @@ function checkResult(record, resultFile, precheck = false) {
       file = pin.path;
       cap = job.budget.maxEvidenceFileBytes;
     }
-    const actual = bytesAt(file, cap, 'Citation source');
+    // A pinned source that vanished, grew over its budget or changed since the job was built is the environment's fault, not the result's (pre-check mode only).
+    let actual;
+    try { actual = bytesAt(file, cap, 'Citation source'); } catch (error) { if (precheck) throw new Environment(error.message); throw error; }
+    if (precheck && hash(actual) !== pin.sha256) throw new Environment('Citation source hash mismatch.');
     if (cite.sha256 !== pin.sha256 || hash(actual) !== pin.sha256) return refuse('Citation source hash mismatch.', { problems: ['the cited sha256 is not the pinned sha256 of this source'] });
     const lines = decode(actual).replace(/\r\n?/g, '\n').split('\n');
     // The checker accepts the empty string after a final newline as a last line, as before; the Read tool does not show it, so the count told to the
@@ -506,9 +520,9 @@ const refusal = error => process.stderr.write(JSON.stringify({ version: 1, kind:
 
 // The pre-check entry point (ADR 0070): `--precheck <result-file> [--job <absolute-job.json>]`. It is the hook's way to ask "would the caller's check refuse this
 // result?" before the evaluator hands it back. It runs the SAME checks as `--job --result` (one implementation, `checkJob` and `checkResult`), on a result file
-// anywhere, with the same reasons and details. Exit codes: 0 accepted; 1 refused for what the result says (the hook blocks); 3 the fault is the job's or the
-// input's (a missing file, a job that no longer checks): the hook lets the hand-back through, because the evaluator cannot repair that and the caller's check
-// decides. Without `--job` it only checks that the file is exactly one JSON object, which needs no job. The saved-file mode keeps its exit code 1 for everything.
+// anywhere, with the same reasons and details. Exit codes: 0 accepted; 1 refused for what the result says (the hook blocks); 3 the fault is the job's, the
+// input's or the environment's (a missing file, a job that no longer checks, an `Environment` fault inside checkResult): the hook lets the hand-back through, because
+// the evaluator cannot repair that and the caller's check decides. Without `--job` it only checks that the file is exactly one JSON object, which needs no job. The saved-file mode keeps its exit code 1 for everything.
 function precheck(values) {
   let stage = 'input';
   try {
@@ -516,7 +530,9 @@ function precheck(values) {
     if (!values.job) {
       const bytes = bytesAt(file, limits.envelope, 'Result');
       stage = 'result';
-      parseResult(bytes);
+      const value = parseResult(bytes);
+      // The saved-file mode reaches the same refusal from the schema check, with this text.
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) fail('result: expected object.');
       process.stdout.write(JSON.stringify({ version: 1, kind: 'deterministic', precheck: 'json-only', ...deterministic }) + '\n');
       return;
     }
@@ -525,7 +541,7 @@ function precheck(values) {
     process.stdout.write(recordOutput(record, checkResult(record, file, true)));
   } catch (error) {
     refusal(error);
-    process.exitCode = stage === 'result' ? 1 : 3;
+    process.exitCode = stage === 'result' && !(error instanceof Environment) ? 1 : 3;
   }
 }
 

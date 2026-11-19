@@ -161,14 +161,6 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
     expect(other.stderr.split('\n')[0]).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
   });
 
-  it('keys the count by session and job digest when the input carries no agent id', () => {
-    const message = text(badResult());
-    const noAgent = { agent_id: undefined, agent_type: undefined };
-    expect(hook(message, noAgent).status).toBe(2);
-    expect(hook(message, noAgent).stderr.split('\n')[0]).toContain(`attempt 2 of ${HANDBACK_MAX_BLOCKS}:`);
-    expect(hook(message, { ...noAgent, session_id: 'session-2' }).stderr.split('\n')[0]).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
-  });
-
   it('blocks prose and a fenced record with the not-JSON reason, even when no pointer exists', async () => {
     await fs.remove(pointerFile());
     const prose = hook('RESULT DATA (job sample-review)\n\n## Criteria\n- task-fit: fine\n');
@@ -192,7 +184,6 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
     expect(run.status).toBe(0);
     expect(run.stderr).toBe('');
     expect(hook(JSON.stringify({ some: 'other record' })).status).toBe(0);
-    expect(hook('[1, 2, 3]').status).toBe(0);
   });
 
   it('blocks nothing for a missing or malformed hook input', () => {
@@ -202,15 +193,6 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
       expect(run.status, input).toBe(0);
       expect(run.stderr, input).toBe('');
     }
-  });
-
-  it('refuses as the checker would when the pointer leads to a job whose digest is not the result\'s', async () => {
-    const stranger = 'f'.repeat(64);
-    await writePointer(stranger);
-    const result = { ...goodResult(), jobDigest: stranger };
-    const run = hook(text(result));
-    expect(run.status).toBe(2);
-    expect(run.stderr).toContain('Result fixed job/candidate digest mismatch.');
   });
 
   it('fails open on its own errors: no usable temp folder, a pointer to a missing job, a job that no longer checks', async () => {
@@ -240,6 +222,168 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
     expect(left).toEqual(expect.arrayContaining(['review-jobs', 'handback-checks']));
   });
 
+  // The hook resolves its temp folder once (macOS: /var is a link). The checker keeps refusing a path that passes a link, for jobs and review roots.
+  const LINKS = (() => {
+    try {
+      const probe = fs.mkdtempSync(path.join(os.tmpdir(), 'au-link-probe-'));
+      const link = `${probe}-link`;
+      fs.symlinkSync(probe, link, process.platform === 'win32' ? 'junction' : 'dir');
+      fs.rmSync(link, { recursive: true, force: true });
+      fs.rmSync(probe, { recursive: true, force: true });
+      return true;
+    } catch { return false; }
+  })();
+  const stateDir = () => path.join(temp, 'agents-united', 'handback-checks');
+  const leftovers = async (): Promise<string[]> => ((await fs.pathExists(path.join(temp, 'agents-united'))) ? await fs.readdir(path.join(temp, 'agents-united')) : []).filter(name => /^handback-.*\.json$/.test(name));
+  const noAgent = { agent_id: undefined, agent_type: undefined };
+  const firstLine = (run: { stderr: string }) => run.stderr.split('\n')[0];
+
+  it.skipIf(!LINKS)('still blocks when the temp folder path passes a link: the hook resolves it once, and the checker keeps its symlink rule', async () => {
+    const real = path.join(fixture.root, 'real-tmp');
+    const link = path.join(fixture.root, 'linked-tmp');
+    await fs.ensureDir(real);
+    fs.symlinkSync(real, link, process.platform === 'win32' ? 'junction' : 'dir');
+    await fs.outputFile(path.join(real, 'agents-united', 'review-jobs', `${jobDigest}.txt`), selected.jobFile);
+    // The checker refuses a result file whose path passes a link (exit 3, the input's fault); that rule is not relaxed.
+    await fs.writeJson(path.join(real, 'x.json'), goodResult());
+    expect(checker(['--precheck', path.join(link, 'x.json')]).status).toBe(3);
+    const linked = { TEMP: link, TMP: link, TMPDIR: link };
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), linked);
+    expect(run.status, run.stderr).toBe(2);
+    expect(firstLine(run)).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(await fs.readdir(path.join(real, 'agents-united', 'handback-checks'))).toHaveLength(1);
+  });
+
+  it('counts one worker\'s blocks together, whatever they were for, and never by job digest', () => {
+    // A prose block (no digest) and a JSON block (a digest) are two blocks of one worker.
+    const first = hook('RESULT DATA\n\nprose only', noAgent);
+    expect(first.status).toBe(2);
+    expect(firstLine(first)).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+    const second = hook(text(badResult()), noAgent);
+    expect(second.status).toBe(2);
+    expect(firstLine(second)).toContain(`attempt 2 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(hook('still prose', noAgent).status).toBe(0);
+    expect(hook(text(badResult()), noAgent).status).toBe(0);
+    expect(firstLine(hook(text(badResult()), { ...noAgent, session_id: 'session-2' }))).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+  });
+
+  it('without an agent id, two evaluators of one session share one count (it errs toward letting a hand-back through); with one, the key is session plus agent', () => {
+    expect(hook(text(badResult()), noAgent).status).toBe(2);
+    expect(hook(text(badResult()), noAgent).status).toBe(2);
+    // A fresh evaluator in the same session finds the count used up and is let through.
+    expect(hook(text(badResult()), noAgent).status).toBe(0);
+    // With an agent id: another agent of the session starts at one, and the same agent id in another session starts at one.
+    expect(firstLine(hook(text(badResult()), { agent_id: 'agent-a' }))).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(firstLine(hook(text(badResult()), { agent_id: 'agent-b' }))).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(firstLine(hook(text(badResult()), { agent_id: 'agent-a' }))).toContain(`attempt 2 of ${HANDBACK_MAX_BLOCKS}:`);
+    expect(firstLine(hook(text(badResult()), { agent_id: 'agent-a', session_id: 'session-9' }))).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+  });
+
+  it.each([
+    ['an array', '[1, 2, 3]'],
+    ['a string', '"all fine"'],
+    ['a number', '42'],
+    ['null', 'null'],
+  ])('blocks a hand-back that is %s, with the checker\'s own reason for it', async (_name, content) => {
+    await fs.writeFile(resultFile(), content);
+    const saved = checker(['--job', selected.jobFile, '--result', resultFile()]);
+    expect(saved.status).toBe(1);
+    const reason = (JSON.parse(saved.stderr) as { reason: string }).reason;
+    expect(reason).toBe('result: expected object.');
+    const run = hook(content);
+    expect(run.status, run.stderr).toBe(2);
+    expect(run.stderr).toContain(reason);
+    const alone = checker(['--precheck', resultFile()]);
+    expect(alone.status).toBe(1);
+    expect((JSON.parse(alone.stderr) as { reason: string }).reason).toBe(reason);
+  });
+
+  it('lets a hand-back through when the job at the pointer was rebuilt with another digest (the environment, not the result), and still blocks a wrong candidate digest', async () => {
+    const stranger = 'f'.repeat(64);
+    await writePointer(stranger);
+    const rebuilt = { ...goodResult(), jobDigest: stranger };
+    expect(hook(text(rebuilt)).status).toBe(0);
+    await fs.writeJson(resultFile(), rebuilt);
+    const saved = checker(['--job', selected.jobFile, '--result', resultFile()]);
+    const pre = checker(['--job', selected.jobFile, '--precheck', resultFile()]);
+    expect(saved.status).toBe(1);
+    expect(pre.status).toBe(3);
+    expect((JSON.parse(pre.stderr) as { reason: string }).reason).toBe((JSON.parse(saved.stderr) as { reason: string }).reason);
+    // The right job digest with a wrong candidate digest is the result's own fault.
+    const wrong = hook(text({ ...goodResult(), candidateDigest: 'a'.repeat(64) }), { agent_id: 'agent-wrong' });
+    expect(wrong.status).toBe(2);
+    expect(wrong.stderr).toContain('Result fixed job/candidate digest mismatch.');
+  });
+
+  it.each([
+    ['an uncaught exception', 'uncaught'],
+    ['a rejected promise', 'rejection'],
+    ['a thrown spawnSync', 'spawn'],
+  ])('fails open and leaves no temporary file on %s', async (_name, fault) => {
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), { AGENTS_UNITED_TEST_ONLY_HANDBACK_FAULT: fault });
+    expect(run.status, run.stderr).toBe(0);
+    expect(run.stderr).toBe('');
+    expect(await leftovers()).toEqual([]);
+  });
+
+  it.each([
+    ['crashes', 'throw new Error("boom");'],
+    ['exits 2 with no output', 'process.exit(2);'],
+    ['writes stderr that is not the expected JSON', 'process.stderr.write("not json at all\\n"); process.exit(1);'],
+    ['writes JSON without a reason', 'process.stderr.write(JSON.stringify({ status: "x" }) + "\\n"); process.exit(1);'],
+    ['hangs past the bound', 'setTimeout(() => {}, 600000);'],
+  ])('lets the hand-back through, silently, when the checker %s', async (_name, body) => {
+    const fake = path.join(fixture.root, 'fake-checker.mjs');
+    await fs.writeFile(fake, body);
+    const run = node([fixture.installed(HOOK)], hookInput(text(badResult())), { AGENTS_UNITED_TEST_ONLY_HANDBACK_CHECKER: fake, AGENTS_UNITED_TEST_ONLY_HANDBACK_TIMEOUT_MS: '700' });
+    expect(run.status, run.stderr).toBe(0);
+    expect(run.stderr).toBe('');
+    expect(await leftovers()).toEqual([]);
+  });
+
+  it.each([
+    ['a string', '"x"'],
+    ['a negative number', '{"blocks":-1}'],
+    ['a non-integer', '{"blocks":1.5}'],
+    ['a number in a string', '{"blocks":"1"}'],
+    ['an absurd number', '{"blocks":1000000000000}'],
+    ['no count at all', '{}'],
+    ['not JSON', 'not json {'],
+    ['empty', ''],
+  ])('treats a count file that holds %s as the cap reached, so a corrupt file never blocks for ever', async (_name, content) => {
+    expect(hook(text(badResult())).status).toBe(2);
+    const [name] = await fs.readdir(stateDir());
+    await fs.writeFile(path.join(stateDir(), name!), content);
+    const run = hook(text(badResult()));
+    expect(run.status, run.stderr).toBe(0);
+    expect(run.stderr).toBe('');
+  });
+
+  it('lets the hand-back through when the count cannot be written or read', async () => {
+    await fs.outputFile(stateDir(), 'a file where the folder goes');
+    expect(hook(text(badResult())).status).toBe(0);
+  });
+
+  it('ignores and removes count, pointer and temporary files older than a day', async () => {
+    expect(hook(text(badResult())).status).toBe(2);
+    expect(hook(text(badResult())).status).toBe(2);
+    expect(hook(text(badResult())).status).toBe(0);
+    const old = new Date(Date.now() - 2 * 24 * 3600 * 1000);
+    const [name] = await fs.readdir(stateDir());
+    await fs.utimes(path.join(stateDir(), name!), old, old);
+    const again = hook(text(badResult()));
+    expect(again.status, again.stderr).toBe(2);
+    expect(firstLine(again)).toContain(`attempt 1 of ${HANDBACK_MAX_BLOCKS}:`);
+    const leftover = path.join(temp, 'agents-united', 'handback-deadbeef.json');
+    await fs.outputFile(leftover, '{}');
+    await fs.utimes(leftover, old, old);
+    await fs.utimes(pointerFile(), old, old);
+    const stale = hook(text(badResult()), { agent_id: 'agent-stale' });
+    expect(stale.status).toBe(0);
+    expect(await fs.pathExists(pointerFile())).toBe(false);
+    expect(await fs.pathExists(leftover)).toBe(false);
+  });
+
   describe('the pre-check mode of check-review.mjs', () => {
     const fixtures: Array<[string, () => unknown]> = [
       ['a valid result', () => goodResult()],
@@ -249,7 +393,6 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
         result.criteria[0]!.citations = [{ ...result.criteria[0]!.citations[0]!, startLine: 6, endLine: 6, quote: 'Read only the supplied path.' }];
         return result;
       }],
-      ['a digest of another job', () => ({ ...goodResult(), jobDigest: 'e'.repeat(64) })],
       ['an unknown property', () => ({ ...goodResult(), extra: true })],
     ];
 
