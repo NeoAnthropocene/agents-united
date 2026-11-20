@@ -38,7 +38,7 @@ const SEO_CONTENT_NATIVE = ['marketing-content-strategist', 'orchestrator-market
 const PAID_ACQUISITION_NATIVE = ['marketing-campaign-specialist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'orchestrator-marketing', 'paid-acquisition-specialist'];
 /** What the product-led-growth add-on installs as native files on top of its parent: the PLG strategist and the two marketing roles it works with, with the lead they share. */
 const PLG_NATIVE = ['marketing-conversion-specialist', 'marketing-growth-strategist', 'orchestrator-marketing', 'plg-strategist'];
-/** What the lifecycle-email-marketing add-on installs as native files on top of its parent (n5, slice 5): the lifecycle email specialist and the campaign specialist it works with, with the lead they share. */
+/** What the lifecycle-email-marketing add-on installs as native files on top of its parent: the lifecycle email specialist and the campaign specialist it works with, with the lead they share. */
 const LIFECYCLE_NATIVE = ['lifecycle-email-specialist', 'marketing-campaign-specialist', 'orchestrator-marketing'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
