@@ -32,10 +32,16 @@ describe('native cloud-security-architect: the guard claims', () => {
     expect(five).toContain('It blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, writes to `.env` files (not `.env.example`) and a tool call whose input it cannot read.');
     expect(five).toContain('deletion of a cloud resource group, project or account (`az group delete`, `gcloud projects delete`, an AWS account closure)');
     expect(five).toContain('a recursive delete of a root, home or project folder (`rm -rf /`, `rm -rf ~`, but not `rm -rf build` of an ordinary subfolder), `sudo` and other privilege escalation, shutdown and reboot');
-    expect(five).toContain('It does not stop `terraform apply` or `terraform destroy`, `kubectl apply` or `kubectl delete`, `az deployment`, `aws iam` policy changes or any other change to a live cloud account, network traffic to an external target, or anything hidden in variables, aliases, interpreters, encoded commands or scripts.');
+    expect(five).toContain('It does not stop `terraform apply` or `terraform destroy`, `kubectl apply` or `kubectl delete`, SQL `DROP` statements, an `az deployment` create, `aws iam` policy changes or any other change to a live cloud account, network traffic to an external target, or anything hidden in variables, aliases, interpreters, encoded commands or scripts.');
     expect(five).toMatch(/permissionMode: acceptEdits/);
     expect(five).toMatch(/hand the exact command to the lead for explicit user approval/);
     expect(five).toMatch(/your own obligation/);
+  });
+
+  it('names its two callers, as the canonical agent does', async () => {
+    const mission = (await loadSemanticCore('registry')).get('subagent-cloud-security-architect')!.mission;
+    expect(canonical()).toContain('`orchestrator-security` or `orchestrator-system-architecture`');
+    expect(mission).toContain('`orchestrator-security` or `orchestrator-system-architecture`');
   });
 
   it('does not claim a guard it does not bind', () => {
@@ -85,6 +91,7 @@ describe('native cloud-security-architect: the guard claims', () => {
       'kubectl delete ns prod',
       'az deployment group create -g rg --template-file main.bicep',
       'aws iam put-role-policy --role-name deployer --policy-name p --policy-document file://policy.json',
+      'psql -c "DROP TABLE users"',
       'curl -s https://example.com/login',
       'curl -X POST https://api.example.org/v1/users -d "x=1"',
     ])('Bash `%s` exits 0: the text says the guard does not stop it', command => {
@@ -224,7 +231,7 @@ describe('native cloud-security-architect: the shared pair', () => {
       expect(source, sentence).toContain(sentence);
       expect(scope, sentence).toContain(sentence);
     }
-    for (const duty of ['sts:AssumeRoleWithWebIdentity', 'npx checkov -d ./infra --framework terraform bicep arm --compact', 'CIS Cloud Benchmarks', 'envelope encryption', 'plain-text secrets', 'KMS Key Lockout Prevention', 'Public Access S3 False Positives', 'never poll in a busy loop']) expect(scope, duty).toContain(duty);
+    for (const duty of ['sts:AssumeRoleWithWebIdentity', 'npx checkov -d ./infra --framework terraform bicep arm --compact', 'CIS Cloud Benchmarks', 'envelope encryption', 'plain-text secrets', 'KMS Key Lockout Prevention', 'Public Access S3 False Positives', 'never poll in a busy loop', 'automatic KMS key rotation', 'automatic secret rotation (Secrets Manager, HashiCorp Vault integration)', 'secure VPC peering with private endpoints, security groups, network ACLs and egress filtering', 'Checkov, tfsec, Trivy and Kics', 'AWS Security Hub, GCP Security Command Center and Microsoft Defender for Cloud', 'Pod Security Standards at the Restricted level', 'Cilium or Calico eBPF network policies that default to deny', 'distroless images and Cosign container signing', 'check its health endpoint on demand']) expect(scope, duty).toContain(duty);
   });
 
   it('is tool-free: the shared pair names no host tool', async () => {
