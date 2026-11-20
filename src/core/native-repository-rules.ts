@@ -149,8 +149,10 @@ export function evidencePlaceAt(agent: string, start: number, end: number): Evid
 }
 
 /**
- * True when the span [start, end) is a complete sentence or list item (or several whole ones): it starts at a line start (after indentation and
- * an optional list marker) or after a sentence end, and it ends at a line end or with a sentence end followed by white space.
+ * True when the span [start, end) has the shape of a complete sentence or list item (or several whole ones): it starts at a line start (after
+ * indentation and an optional list marker) or after a sentence end, and it ends at a line end or with a sentence end followed by white space.
+ * A shape test, not grammar: an abbreviation such as "e.g. " counts as a sentence end, and a hard-wrapped continuation line counts as a line
+ * start (ADR 0072, known limits). Native agents are written one paragraph or list item per line, where the shape test is exact.
  */
 export function isCompleteUnit(agent: string, start: number, end: number): boolean {
   const lineStart = agent.lastIndexOf('\n', start - 1) + 1;
@@ -227,7 +229,8 @@ export function coverageFileProblems(core: SemanticCore, agentText: string, cove
     }
     for (const other of first.sharedWith) {
       const partner = evidenced.find(item => item.name === other);
-      if (partner === undefined || !overlaps(first.evidence, partner.evidence)) problems.push(`Invariant coverage: "${first.name}" names "${other}" in "sharedWith", but they do not share evidence.`);
+      if (other === first.name) problems.push(`Invariant coverage: "${first.name}" names itself in "sharedWith".`);
+      else if (partner === undefined || !overlaps(first.evidence, partner.evidence)) problems.push(`Invariant coverage: "${first.name}" names "${other}" in "sharedWith", but they do not share evidence.`);
     }
   }
   for (const invariant of core.invariants) {

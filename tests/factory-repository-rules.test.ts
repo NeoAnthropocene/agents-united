@@ -159,6 +159,7 @@ describe('the rules, one implementation', () => {
     const oneSided = { ...coverage, invariants: items.map((item, at) => (at === 7 ? { ...item, evidence: items[6]!.evidence, sharedWith: [items[6]!.invariant] } : item)) };
     expect(problems(oneSided)).toContain('share evidence; each must name the other');
     expect(problems(withEntry(8, { ...items[8]!, sharedWith: [items[9]!.invariant] }))).toContain('do not share evidence');
+    expect(problems(withEntry(8, { ...items[8]!, sharedWith: [items[8]!.invariant] }))).toContain('names itself in "sharedWith"');
   });
 
   it('accepts what the repository accepts: every committed native role\'s bindings, written as a coverage file, pass the rule (ADR 0072 audit)', async () => {
