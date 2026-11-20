@@ -80,7 +80,8 @@ describe('native orchestrator-security: the guard claims', () => {
     const body = text();
     expect(body).not.toMatch(/blocks[^.\n]*(rm -rf|DROP|sudo|shutdown)/);
     expect(body).not.toMatch(/guard (extension|extended)|ADR 0074|ADR 0073|specs sheet/i);
-    expect(body).toContain('- A guard blocks forced pushes, `vercel --prod`, `.env` writes and a tool call whose input it cannot read, and nothing else. As the main agent it comes from this file; a specialist carries its own copy.');
+    expect(body).toContain('- A guard blocks forced pushes, `vercel --prod`, `.env` writes and a tool call whose input it cannot read, and nothing else. As the main agent it comes from this file; a native specialist carries its own copy from its own file, and a specialist that is still a projection carries the same guard as an inline hook, so none of them is bound by more than this. Brief every specialist on what to hold back.');
+    expect(body).not.toContain('delegate to a specialist that has them');
     expect(section('Delegate')).toContain('**Brief every specialist on what no guard stops**');
   });
 
@@ -180,6 +181,15 @@ describe('native orchestrator-security: posture, mode and first message', () => 
     expect(contract.skills).toEqual(listed);
     expect(listed).toHaveLength(5);
     for (const skill of ['grill-with-docs', 'grill-me', 'threat-modeling', 'security-audit', 'handoff', 'git-guardrails', 'domain-modeling']) expect(text(), skill).toContain(`/${skill}`);
+  });
+
+  it('keeps the canonical unconditional consult gate, the planning aid boundary and proportional grilling, in the core and the native text', async () => {
+    const waiver = "A clear or simple brief is not a waiver; record either the consulted specialists or the user's waiver.";
+    const scope = (await loadSemanticCore('registry')).get('orchestrator-security')!.scope_boundaries;
+    expect(scope).toContain(waiver);
+    expect(text()).toContain(waiver);
+    expect(scope).toContain('a clear, low-risk brief needs one confirmation');
+    expect(scope).toContain('provisional answers and estimates; a concrete deliverable is specialist work');
   });
 
   it('carries every numbered duty and phase of the canonical agent in scope_boundaries, and is tool-free', async () => {
