@@ -152,7 +152,7 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Only transform and opacity are animated; no layout-triggering property is.': /Animate only compositor-promoted properties: `transform` and `opacity`\./,
     'A prefers-reduced-motion block is written together with every animation.': /Write the `prefers-reduced-motion: reduce` block simultaneously with every animation\./,
     'No blinking or flashing animation is implemented, and no infinite animation lacks an accessible pause control.': /- Refuse to implement blinking or flashing animations \(WCAG 2\.3\.1 — seizure risk\)\.\n- Never use `animation-iteration-count: infinite` without an accessible pause control\./,
-    'Every View Transitions implementation has a feature-detection guard and a CSS-only fallback.': /(?=[\s\S]*Always provide a CSS-only fallback\.)[\s\S]*- All View Transitions implementations must include a feature-detection guard\./,
+    'Every View Transitions implementation has a feature-detection guard and a CSS-only fallback.': /\*\*View Transitions API\*\* — [^\n]*Always provide a CSS-only fallback\.[\s\S]*\n- All View Transitions implementations must include a feature-detection guard\./,
   },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
