@@ -48,7 +48,7 @@ describe('native orchestrator-design: its tools', () => {
 
   it('may spawn exactly the eight design types of its domain, through an Agent allowlist and never a bare Agent', () => {
     expect(tools().filter(tool => tool.startsWith('Agent'))).toEqual([allowlist(BUNDLE)]);
-    expect(names()).not.toContain('Agent');
+    expect(tools()).not.toContain('Agent');
     expect(domainTypes(bundles(), BUNDLE).map(type => type.name)).toEqual(DESIGN_TYPES);
     expect(allowlist(BUNDLE)).toBe(`Agent(${DESIGN_TYPES.join(', ')})`);
   });
@@ -183,7 +183,7 @@ describe('native orchestrator-design: what it says it does', () => {
 
   it('states the four boundary constraints of the canonical lead and the design duties, none dropped', async () => {
     const core = fs.readFileSync(path.resolve('registry/core/orchestrator-design.core.md'), 'utf8').replace(/\r\n/g, '\n');
-    for (const needle of ['Forbidden cliché tropes', 'Accessibility mandatory', 'Hardware-accelerated motion', 'Responsive math', 'Subagent-first delegation', 'Consult gate', 'Plan solo, delegate execution']) {
+    for (const needle of ['Forbidden Cliché Tropes', 'Accessibility Mandatory', 'Hardware-Accelerated Motion', 'Responsive Math', 'Subagent-first delegation', 'Consult gate', 'Plan solo, delegate execution']) {
       expect(core, needle).toContain(needle);
     }
     expect(core).toMatch(/clamp\(\)/);
