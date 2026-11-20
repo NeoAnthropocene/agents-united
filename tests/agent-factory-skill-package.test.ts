@@ -190,9 +190,9 @@ describe('one Skill draft, checked return and review records from the actual off
 
     // A synthetic reviewer opinion (no model, no Host): it only exercises the record plumbing on the same candidate digest.
     const skillText = (await fs.readFile(path.join(fx.draft, 'SKILL.md'), 'utf8')).replace(/\r\n/g, '\n').split('\n');
-    const citation = { sourceId: 'candidate', path: 'SKILL.md', sha256: inventory.find(item => item.path === 'SKILL.md')!.sha256, startLine: 2, endLine: 2, quote: skillText[1]! };
+    const citation = { sourceId: 'candidate', path: 'SKILL.md', sha256: inventory.find(item => item.path === 'SKILL.md')!.sha256, quote: skillText[1]! };
     const resultFile = path.join(selected.evidence, 'result.json');
-    await fs.writeJson(resultFile, { version: 1, jobId: job.id, jobDigest: reviewed.jobDigest, candidateDigest: checkDigest,
+    await fs.writeJson(resultFile, { version: 2, jobId: job.id, jobDigest: reviewed.jobDigest, candidateDigest: checkDigest,
       status: 'reviewed', opinion: 'no-blocking-findings', subject: job.subject, inventory, inventorySource: 'caller-provided',
       coverage: inventory.map(item => ({ path: item.path, status: 'reviewed', rationale: 'Synthetic package-proof coverage; no model was invoked.' })),
       criteria: job.rubric.criteria.map(item => ({ id: item.id, outcome: item.applicable ? 'satisfactory' : 'not-applicable',

@@ -95,10 +95,10 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
   afterEach(async () => { await fs.remove(fixture.root); });
 
   const goodResult = () => evaluationResult(selected, { jobDigest });
-  /** A result whose one citation spans seven lines: the kind of fault the pilot's evaluators made. */
+  /** A result whose one citation names a line one off from where its quote begins: the kind of fault the pilot's evaluators made. */
   const badResult = () => {
     const result = goodResult();
-    result.criteria[0]!.citations = [{ ...result.criteria[0]!.citations[0]!, startLine: 1, endLine: 7, quote: 'Read only the supplied path.' }];
+    result.criteria[0]!.citations = [{ ...result.criteria[0]!.citations[0]!, line: 6, quote: 'Read only the supplied path.' }];
     return result;
   };
   const hookInput = (message: unknown, extra: Record<string, unknown> = {}) => JSON.stringify({
@@ -489,10 +489,10 @@ describe('the hand-back hook script, the checker\'s pre-check mode and the point
   describe('the pre-check mode of check-review.mjs', () => {
     const fixtures: Array<[string, () => unknown]> = [
       ['a valid result', () => goodResult()],
-      ['a citation over the line limit', () => badResult()],
-      ['a quote one line off', () => {
+      ['a citation whose line is one off', () => badResult()],
+      ['a quote found nowhere in the file', () => {
         const result = goodResult();
-        result.criteria[0]!.citations = [{ ...result.criteria[0]!.citations[0]!, startLine: 6, endLine: 6, quote: 'Read only the supplied path.' }];
+        result.criteria[0]!.citations = [{ ...result.criteria[0]!.citations[0]!, quote: 'A sentence the candidate does not contain.' }];
         return result;
       }],
       ['an unknown property', () => ({ ...goodResult(), extra: true })],
