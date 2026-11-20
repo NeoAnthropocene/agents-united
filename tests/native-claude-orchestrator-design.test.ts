@@ -1,10 +1,12 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import yaml from 'yaml';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { integrationOf, withRoutes } from '../src/core/claude-mcp-routes.js';
 import { splitTools } from '../src/core/native-guard.js';
 import { checkRoster, domainTypes } from '../src/core/native-roster.js';
+import { attempt } from './helpers/claude-host-hooks.js';
 import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js';
 import { NATIVE_AGENTS_DIR, nativeText } from './helpers/native-roles.js';
 
@@ -40,6 +42,43 @@ const EXPECTED_TOOLS = [
   'TaskGet', 'TaskList', 'TaskStop', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WaitForMcpServers', 'WebFetch', 'WebSearch', 'Write',
   ...withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__playwright', 'mcp__stitch']),
 ];
+
+/** The one sentence every Claude role carries about the guard (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
+const GUARD_SENTENCE =
+  'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+
+describe('native orchestrator-design: the guard claim', () => {
+  it('carries the one guard sentence once, in the step that says to branch first', () => {
+    expect(text().split(GUARD_SENTENCE)).toHaveLength(2);
+    expect(text()).toContain(`branch first. ${GUARD_SENTENCE}`);
+    expect(text()).not.toMatch(/guard blocks forced pushes and/);
+  });
+
+  describe('against the real guard script', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-united-orchestrator-design-guard-'));
+    beforeAll(() => {
+      fs.mkdirSync(path.join(project, '.claude/hooks'), { recursive: true });
+      for (const file of fs.readdirSync(path.resolve('registry/hosts/claude/hooks'))) fs.copyFileSync(path.resolve('registry/hosts/claude/hooks', file), path.join(project, '.claude/hooks', file));
+    });
+    afterAll(() => fs.rmSync(project, { recursive: true, force: true }));
+    const blocked = (tool: string, input: Record<string, unknown>): boolean => attempt(text(), project, { tool, input }, { agentType: 'orchestrator-design' }).blocked;
+
+    it.each(['vercel --prod', 'git push --force origin main', 'rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'az group delete --name g --yes'])('blocks the shell command %s, as the sentence says', command => {
+      expect(blocked('Bash', { command })).toBe(true);
+    });
+
+    it.each(['git status', 'npm test', 'git push origin feature/x', 'rm -rf node_modules'])('does not block the ordinary command %s', command => {
+      expect(blocked('Bash', { command })).toBe(false);
+    });
+
+    it('blocks a PowerShell recursive delete of the home folder, and a write of .env, but not .env.example or a design file', () => {
+      expect(blocked('PowerShell', { command: 'Remove-Item -Recurse -Force $HOME' })).toBe(true);
+      expect(blocked('Write', { file_path: path.join(project, '.env') })).toBe(true);
+      expect(blocked('Write', { file_path: path.join(project, '.env.example') })).toBe(false);
+      expect(blocked('Write', { file_path: path.join(project, 'docs/design/brief.md') })).toBe(false);
+    });
+  });
+});
 
 describe('native orchestrator-design: its tools', () => {
   it('holds exactly this tools set, so a stray tool fails', () => {
