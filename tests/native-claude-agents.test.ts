@@ -72,6 +72,8 @@ const ROLES: RoleSpec[] = [
   { name: 'devops-engineer', stem: 'subagent-devops-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   // The system architect holds editors and no shell (its canonical tools are view, write, replace, grep, find, list): it writes ADRs, C4 diagrams and specs.
   { name: 'system-architect', stem: 'subagent-system-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  // The SysOps and SRE lead holds editors and no shell (its canonical tools are view, write, replace, grep, find, list, plus task and timer tools): it writes runbooks, alert rules, dashboards and post-mortems. Timers (CronCreate) are not granted to a specialist.
+  { name: 'sysops-sre-lead', stem: 'subagent-sysops-sre-lead', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
