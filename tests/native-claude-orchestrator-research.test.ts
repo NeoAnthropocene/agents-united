@@ -142,7 +142,7 @@ describe('native orchestrator-research (a main-thread coordinator)', () => {
   it('keeps the consult gate with its whole budget', () => {
     const plan = normalize(section('Plan with the user'));
     expect(plan).toContain('**Consult before you map.** Before the delegation map, consult at least one relevant specialist with a short, read-only brief, unless the user waived it.');
-    for (const part of ['one to three specialists', 'at most two directed questions per specialist', 'at most two planning rounds', 'at most 1000 words per consult', 'Record who you consulted or the waiver']) expect(plan, part).toContain(part);
+    for (const part of ['one to three specialists', 'at most two directed questions per specialist pair', 'at most two planning rounds', 'at most 1000 words per consult', 'Record who you consulted or the waiver']) expect(plan, part).toContain(part);
     expect(plan).toMatch(/Present the delegation map before executing/);
   });
 
