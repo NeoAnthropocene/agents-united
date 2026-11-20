@@ -61,8 +61,8 @@ describe('native orchestrator-design: its tools', () => {
     expect(text()).toMatch(/design bundles ship no saved workflow/);
   });
 
-  it('holds Playwright, an addition of the master operator beyond the canonical lead', () => {
-    // Decision of the master operator, not of the canonical `orchestrator-design`: the canonical lead declares six servers (stitch, figma,
+  it('holds Playwright, a server beyond the canonical lead, because prototype-tester declares it', () => {
+    // A decision beyond the canonical `orchestrator-design`, which declares six servers (stitch, figma,
     // chrome-devtools-mcp, context7, firecrawl, github). `prototype-tester` declares `playwright`, and a role's server works only if its lead holds it too.
     const canonicalLead = fs.readFileSync(path.resolve('registry/agents/orchestrator-design.md'), 'utf8');
     expect([...canonicalLead.matchAll(/^ {2}- name: (\S+)$/gm)].map(match => match[1]).sort()).toEqual(['chrome-devtools-mcp', 'context7', 'figma', 'firecrawl', 'github', 'stitch']);
