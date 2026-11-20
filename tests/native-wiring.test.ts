@@ -62,7 +62,7 @@ async function unwire(checkout: string): Promise<void> {
   await edit('tests/native-claude-agents.test.ts', text => cut(text, "  { name: 'devops-engineer',", '\n'));
   await edit('tests/helpers/native-invariant-evidence.ts', text => cut(text, '  // `devops-engineer` (the factory pilot', "\n  },\n"));
   await edit('tests/native-claude-own-session.test.ts', text => text.replace('expect(files).toHaveLength(23);', 'expect(files).toHaveLength(22);'));
-  await edit('tests/native-install-lane.test.ts', text => cut(cut(text, "'devops-engineer', ", ''),
+  await edit('tests/native-install-lane.test.ts', text => cut(cut(text, " 'devops-engineer',", ''),
     "  it('installs the native devops-engineer for the devops-engineering bundle", "  it('records the lane", true));
   await edit('tests/cli-e2e.test.ts', text => cut(text, "  it('installs the native devops-engineer for devops-engineering with -t claude --native'", "  it.each(['domain:contributor'", true));
 }
