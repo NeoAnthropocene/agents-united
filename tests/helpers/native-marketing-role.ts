@@ -39,6 +39,9 @@ const ROLE_SPECIFIC_FORBIDDEN = /Chris\b|Campaign Director|digital agency|Deniz|
 export const OUT_OF_DEPARTMENT_HANDOFF = 'A hand-off to a role outside the marketing department, such as the frontend architect, goes to `orchestrator-marketing` under `Open items`: that role is present only when its own Bundle is installed, and in this department it is not the agency persona.';
 const PERSONAS = /\b(Ava|Jamileh|Yavuz|Kaan|Jale|Selin)\b/;
 const IMAGE_TOOL = /\bimage-gen\b|generate_image/;
+/** The shared guard sentence every Claude role carries (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
+const GUARD_SENTENCE =
+  'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
 
 export function describeMarketingRole(spec: MarketingRoleSpec): void {
   const text = (): string => nativeText(spec.role);
@@ -96,7 +99,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
     afterAll(() => fs.rmSync(project, { recursive: true, force: true }));
     const blocked = (tool: string, input: Record<string, unknown>): boolean => attempt(text(), project, { tool, input }, { agentType: spec.role }).blocked;
 
-    it('blocks a .env write through each editor it holds and lets .env.example through, as the Boundaries section says', () => {
+    it('blocks a .env write through each editor it holds and lets .env.example through', () => {
       for (const tool of ['Write', 'Edit']) {
         expect(blocked(tool, { file_path: 'C:\\repo\\.env' }), `${tool} .env`).toBe(true);
         expect(blocked(tool, { file_path: 'C:\\repo\\.env.example' }), `${tool} .env.example`).toBe(false);
@@ -105,15 +108,13 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
       expect(blocked('Write', { file_path: 'C:\\repo\\docs\\content\\plan.md' })).toBe(false);
     });
 
-    it('also blocks a forced push and vercel --prod, which the role cannot run, and nothing else: the Safety rules are its own obligation', () => {
-      expect(attempt(text(), project, { tool: 'Bash', input: { command: 'git push --force origin main' } }, { agentType: spec.role }).offered).toBe(false);
-      for (const command of ['git push --force origin main', 'vercel --prod']) expect(blocked('Bash', { command }), command).toBe(true);
-      for (const command of ['git push --force-with-lease', 'rm -rf build', 'git commit -m x']) expect(blocked('Bash', { command }), command).toBe(false);
+    it('offers the role no shell at all, so the shell forms of the one guard sentence are the script\'s, not the role\'s, and the Safety rules are its own obligation', () => {
+      for (const tool of ['Bash', 'PowerShell']) expect(attempt(text(), project, { tool, input: { command: 'git push --force origin main' } }, { agentType: spec.role }).offered, tool).toBe(false);
       const boundaries = section('Boundaries of this host');
-      expect(boundaries).toContain('A guard blocks writes to `.env` files through `Write`, `Edit` and `NotebookEdit` (`.env.example` passes).');
-      expect(boundaries).toContain('The same script blocks forced pushes and `vercel --prod`, which you cannot run without a shell.');
+      expect(boundaries.split(GUARD_SENTENCE)).toHaveLength(2);
       expect(boundaries).toContain('It enforces nothing else, so the rules in your Safety section are your own obligation.');
-      expect(boundaries).not.toMatch(/blocks[^.]*(production deploys|destructive)/);
+      expect(boundaries).not.toContain('which you cannot run without a shell');
+      expect(boundaries).not.toMatch(/guard blocks[^.]*production deploys/);
     });
 
     it('states where the guard comes from in both modes, and its permission-mode limit', () => {
