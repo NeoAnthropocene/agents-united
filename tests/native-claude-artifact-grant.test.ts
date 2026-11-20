@@ -19,7 +19,7 @@ const HER = 'agency-creative-designer';
 const HER_STEM = 'subagent-marketing-creative-designer';
 const LEAD = 'orchestrator-digital-agency';
 
-describe('the grant: one role holds Artifact', () => {
+describe('the grant: the roles on one core hold Artifact', () => {
   it('has the artifacts class in her core, and in no other native role\'s core', async () => {
     const cores = await loadSemanticCore('registry');
     for (const stem of new Set(NATIVE_ROLES.map(r => r.stem))) {
