@@ -116,9 +116,10 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
     expect(text()).toContain('the guard does not see its calls, so not pushing, merging or creating anything there without being asked is your own obligation.');
   });
 
-  it('step 5 validates only offline, and a plan or dry run against an account needs the brief', () => {
+  it('step 5 validates without a cloud account, says the validators need network access, and a plan or dry run against an account needs the brief', () => {
     const five = step(5);
     for (const command of ['terraform fmt -check', 'terraform init -backend=false', 'terraform validate', 'az bicep lint']) expect(five, command).toContain(command);
+    expect(five).toContain('`terraform init` still downloads providers and modules from their registries, and `az bicep lint` may fetch the Bicep CLI on first use, so these need network access but no cloud account.');
     expect(five).toContain('run it only when your brief authorises it');
     expect(five).toContain('A validator success is not a deployment');
   });
