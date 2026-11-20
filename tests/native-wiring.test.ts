@@ -136,8 +136,29 @@ describe('the wiring generator (ADR 0075, decisions 2 and 3)', () => {
       expect(after, entry.invariant).toBeDefined();
       expect(after.exec(agent)?.[0], entry.invariant).toBe(before.exec(agent)?.[0]);
     }
+    // The role's own test file did not exist in the copy: a stub with its exact tool set, and a case that fails until its claims are written.
+    const stub = now('tests/native-claude-devops-engineer.test.ts');
+    const toolsLine = /^tools: (.*)$/m.exec(agent)![1]!;
+    expect(stub).toContain(`expect(toolsOf(text())).toEqual([${toolsLine.split(', ').map(tool => `'${tool}'`).join(', ')}]);`);
+    expect(stub).toContain('throw new Error(');
     // Run again: nothing left to write.
     expect(planWiring(manifest(), checkout, {}).edits.filter((edit: Json) => edit.action !== 'unchanged')).toEqual([]);
+  });
+
+  it('marks a must-hold list it derived, in the row and in the plan, so a reviewer sees it was not a judgment', async () => {
+    const checkout = await copyCheckout();
+    await unwire(checkout);
+    const m = manifest();
+    delete m.roles[0].mustHold;
+    const plan = planWiring(m, checkout, {});
+    expect(plan.refusals).toEqual([]);
+    const row = plan.edits.find((edit: Json) => edit.file === 'tests/native-claude-agents.test.ts' && edit.action === 'insert');
+    expect(row).toMatchObject({ derived: ['mustHold'] });
+    applyWiring(plan, checkout);
+    const line = read(path.join(checkout, 'tests/native-claude-agents.test.ts')).split('\n').find(text => text.startsWith("  { name: 'devops-engineer',"))!;
+    expect(line).toMatch(/\}, \/\/ mustHold derived from the tools line, not a reviewer's choice$/);
+    // The derived set is #237's set (another order).
+    expect(/mustHold: \[([^\]]*)\]/.exec(line)![1]!.split(', ').sort()).toEqual(manifest().roles[0].mustHold.map((tool: string) => `'${tool}'`).sort());
   });
 
   it('refuses an existing entry that differs, and writes nothing', async () => {
