@@ -12,6 +12,9 @@ import { nativeText } from './helpers/native-roles.js';
  * `schedule` is not carried over (a specialist holds no scheduling tool). Every "blocked" claim of its body is fired at the real guard script.
  */
 
+/** The shared clause every Claude role carries (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
+const COMMON_FORMS = 'the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion)';
+
 const ROLE = 'cloud-infrastructure-architect';
 const text = (): string => nativeText(ROLE);
 const canonical = (): string => fs.readFileSync(path.resolve('registry/agents/subagent-cloud-infrastructure-architect.md'), 'utf8').replace(/\r\n/g, '\n');
@@ -63,23 +66,31 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
 
   it('step 6 names exactly what the bound guard blocks, and what it does not', () => {
     const six = step(6);
-    expect(six).toContain('blocks only forced pushes, `vercel --prod` and `.env` writes');
-    expect(six).not.toMatch(/blocks[^.]*(production deploys|terraform|destructive)/);
-    for (const other of ['terraform apply', 'terraform destroy', 'az deployment', 'kubectl apply', 'gh workflow run']) expect(six, other).toContain(other);
-    expect(six).toMatch(/does not enforce the Safety rule against destructive shell commands/);
+    expect(six).toContain(`blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(six).not.toContain('blocks only');
+    expect(six).not.toContain('does not enforce the Safety rule');
+    // The blocking clause alone: what follows "it is a seat belt" names the commands the guard does NOT stop.
+    const blocking = six.slice(six.indexOf('blocks forced'), six.indexOf('it is a seat belt'));
+    expect(blocking).not.toMatch(/production deploys|terraform|kubectl|az deployment|gh workflow/);
+    expect(six).toContain('Of the cloud commands it stops only `az group delete`, `gcloud projects delete` and an AWS account closure.');
+    for (const other of ['terraform apply', 'terraform destroy', 'az deployment', 'kubectl apply', 'kubectl delete', 'gh workflow run']) expect(six.slice(six.indexOf('It does not stop')), other).toContain(other);
     expect(six).toMatch(/your own obligation/);
   });
 
-  it.each(['Bash', 'PowerShell'] as const)('%s: blocks a forced push, vercel --prod and a redirect into .env, as the Boundaries say', tool => {
-    for (const command of ['git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo KEY=1 > .env', 'echo KEY=1 > config/.env.production']) expect(shell(tool, command), command).toBe(true);
+  it.each(['Bash', 'PowerShell'] as const)('%s: blocks a forced push, vercel --prod, a redirect into .env and the destructive forms step 6 lists, as the Boundaries say', tool => {
+    for (const command of [
+      'git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo KEY=1 > .env', 'echo KEY=1 > config/.env.production',
+      'rm -rf /', 'sudo ls', 'shutdown now', 'az group delete --name g --yes', 'gcloud projects delete my-project',
+    ]) expect(shell(tool, command), command).toBe(true);
   });
 
-  it.each(['Bash', 'PowerShell'] as const)('%s: does not block provisioning, destructive or force-with-lease commands, as step 6 says', tool => {
+  it.each(['Bash', 'PowerShell'] as const)('%s: does not block provisioning, other deletes or force-with-lease commands, as step 6 says', tool => {
     for (const command of [
       'terraform apply -auto-approve',
       'terraform destroy -auto-approve',
       'az deployment group create --resource-group g --template-file main.bicep',
       'kubectl apply -f x.yaml',
+      'kubectl delete -f x.yaml',
       'gh workflow run x',
       'git push --force-with-lease origin feature/x',
       'rm -rf ./build',
@@ -106,9 +117,14 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
 
   it('states what the guard blocks, where it comes from in both modes, and that acceptEdits leaves the limit to the role', () => {
     const boundaries = section(text(), 'Boundaries of this host');
-    expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings. It blocks nothing else, and `permissionMode: acceptEdits` approves your file edits without asking");
+    expect(boundaries).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(boundaries).toContain('`permissionMode: acceptEdits` approves your file edits without asking');
     expect(boundaries).toContain('keeping to infrastructure code, topology documents and ADRs, and changing application source only when your brief asks, is your own obligation.');
-    expect(boundaries).not.toMatch(/blocks[^.]*(production deploys|destructive)/);
+    expect(boundaries).not.toContain('It blocks nothing else');
+    // `.env` tokens stripped, so the match runs to the end of the line instead of stopping at their dot.
+    const claims = boundaries.replace(/`\.env(\.example)?`/g, 'ENV');
+    expect(claims).not.toMatch(/blocks[^\n]*(production deploys|terraform|kubectl|az deployment)/);
+    expect(text().split('A guard blocks')).toHaveLength(2);
   });
 
   it('the guard does not see GitHub MCP calls, so the push, merge and create duty is stated as the role\'s own', () => {
@@ -216,7 +232,7 @@ describe('native cloud-infrastructure-architect: the shared scope_boundaries and
     for (const part of ['topology overview', 'network and compute topology matrix', 'subnet CIDR', 'interconnect mechanism', 'architecture review sign-off']) expect(core.output_contract, part).toContain(part);
   });
 
-  it('claims nothing the canonical agent does not say in its safety lines: the provisioning handback follows from its sign-off and the shell it holds', async () => {
+  it('pins the added safety lines as additions to the canonical text: the provisioning handback follows from its sign-off and the shell it holds', async () => {
     const core = (await loadSemanticCore('registry')).get('subagent-cloud-infrastructure-architect')!;
     expect(core.safety).toContain('Never apply, provision or change a resource in a real cloud account yourself');
     expect(core.safety).toContain('Never expose an internal database or microservice to the public internet in a design');
