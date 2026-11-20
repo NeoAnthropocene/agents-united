@@ -146,6 +146,28 @@ describe('native install lane (agents add --native)', () => {
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
+  // The lead of this bundle has no native agent yet, so nothing is asserted about it here; it is extended when the lead lands.
+  it('installs the native system-architect and backend-architect for the system-architecture bundle, each a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('system-architecture', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    expect(lock.nativeLane).toBe(true);
+    for (const role of ['system-architect', 'backend-architect']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, system-architecture still writes the legacy projection for system-architect', async () => {
+    await new InstallEngine().install('system-architecture', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('system-architect'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
   it('records the lane, and every projection hash matches the file on disk', async () => {
     await install(true);
     const lock = await fs.readJson(lockPath);
