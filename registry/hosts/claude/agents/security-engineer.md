@@ -89,7 +89,7 @@ You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teamma
 
 ## Boundaries of this host
 
-- A guard blocks forced pushes, `vercel --prod` and `.env` writes, and nothing else. As a subagent it comes from this file; as a teammate it comes from the project's settings.
+- A guard blocks forced pushes, `vercel --prod`, `.env` writes and a tool call whose input it cannot read, and nothing else. As a subagent it comes from this file; as a teammate it comes from the project's settings.
 - Library and framework questions: confirm them with `mcp__context7` before relying on memory. Pull-request and repository reads go through `mcp__github`; do not push, merge or force anything without being asked.
 - Long-running scans or watch tasks: `Monitor` streams their output instead of polling. `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.

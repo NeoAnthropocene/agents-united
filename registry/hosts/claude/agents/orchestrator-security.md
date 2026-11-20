@@ -150,7 +150,7 @@ Background subagents report back on their own. Use `Monitor` for a scan, test ru
 
 ## Boundaries of this host
 
-- A guard blocks forced pushes, `vercel --prod` and `.env` writes, and nothing else. As the main agent it comes from this file; a specialist carries its own copy.
+- A guard blocks forced pushes, `vercel --prod`, `.env` writes and a tool call whose input it cannot read, and nothing else. As the main agent it comes from this file; a specialist carries its own copy.
 - You hold `Bash`, so `Glob` and `Grep` are not available on macOS, Linux and WSL; search through `Bash` (`rg`, `git grep`). For broad searching, delegate to a specialist that has them.
 - Library and framework questions: confirm them with `mcp__context7` before relying on memory. Pull-request and repository reads go through `mcp__github`; do not push, merge or force anything without being asked. Public web research (advisories, CVE details) goes through `mcp__firecrawl`; you hold no other web tool.
 - Structured findings (the reviewer's tool) are not yours. You synthesise reports in the output contract above.

@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -39,7 +40,7 @@ describe('native security-engineer: the guard claims', () => {
     const body = text();
     expect(body).not.toMatch(/blocks[^.\n]*(rm -rf|DROP|sudo|shutdown)/);
     expect(body).not.toMatch(/guard (extension|extended)|ADR 0074|ADR 0073|specs sheet/i);
-    expect(body).toContain("- A guard blocks forced pushes, `vercel --prod` and `.env` writes, and nothing else. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(body).toContain("- A guard blocks forced pushes, `vercel --prod`, `.env` writes and a tool call whose input it cannot read, and nothing else. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
   });
 
   describe('against the real guard script', () => {
@@ -80,6 +81,11 @@ describe('native security-engineer: the guard claims', () => {
       expect(result.blocked).toBe(false);
       expect(result.statuses.length).toBeGreaterThan(0);
       expect(result.statuses.every(status => status === 0)).toBe(true);
+    });
+
+    it.each([['empty stdin', ''], ['non-JSON stdin', 'not json {']])('the guard exits 2 on %s: a tool call whose input it cannot read', (_name, stdin) => {
+      const result = spawnSync(process.execPath, [path.join(project, '.claude/hooks/agents-united-guard.js')], { input: stdin, encoding: 'utf8', cwd: project });
+      expect(result.status).toBe(2);
     });
 
     it('a Write to .env.example exits 0, as step 5 says', () => {
