@@ -87,7 +87,7 @@ All marketing orchestration deliverables must follow this structured markdown la
 | `marketing-growth-strategist` | `growth-marketing`, `product-led-growth` | Growth strategist. Use to audit a funnel, model unit economics, design product-led and referral loops, and produce an ICE-scored experiment backlog and growth playbook. Edits files, no shell. Strategy, not production. — edits files; Glob/Grep search; MCP: firecrawl |
 | `paid-acquisition-specialist` | `performance-paid-acquisition` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `plg-strategist` | `product-led-growth` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
-| `seo-specialist` | `seo-content-marketing` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `seo-specialist` | `seo-content-marketing` | Technical SEO specialist. Use to audit crawlability, indexation, metadata, structured data and Core Web Vitals, and to write Schema.org JSON-LD. Edits files and runs commands. Findings and snippets; code fixes go back as recommendations. — edits files and runs commands; searches through Bash; MCP: chrome-devtools-mcp, firecrawl |
 
 Install a missing type by installing a bundle that provides it: `agents add <bundle>` (it keeps the recorded fan-out and native choices).
 <!-- agents-united:roster:end -->
