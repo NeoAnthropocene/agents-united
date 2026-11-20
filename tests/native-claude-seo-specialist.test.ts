@@ -82,7 +82,7 @@ describe('native seo-specialist: build inputs go back to the lead', () => {
 
 describe('native seo-specialist: the guard and the shell, as the Boundaries section says', () => {
   it('opens the Boundaries with the shell and the guard sentence, word for word', () => {
-    expect(section('Boundaries of this host')).toContain('- You hold a shell. Run crawls, header traces and Lighthouse with `Bash`. A guard blocks forced pushes, `vercel --prod` and `.env` writes (through `Write`, `Edit` and `NotebookEdit`, or a shell redirect into `.env`; `.env.example` passes). As a subagent it comes from this file; as a teammate it comes from the project\'s settings. It enforces nothing else, so the rules in your Safety section are your own obligation. Never try to get around it.');
+    expect(section('Boundaries of this host')).toContain('- You hold a shell. Run crawls, header traces and Lighthouse with `Bash`. A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project\'s settings. It enforces nothing else, so the rules in your Safety section are your own obligation. Never try to get around it.');
   });
 
   it('carries nothing of the media-planning consultation that belongs to the digital agency copy', () => {
