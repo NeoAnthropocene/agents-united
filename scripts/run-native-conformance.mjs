@@ -42,7 +42,10 @@ function batchFiles(manifest, checkout) {
 }
 
 const run = (command, args, cwd, env = {}) => {
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8', env: { ...process.env, ...env }, shell: process.platform === 'win32' && command === 'npm', maxBuffer: 256 * 1024 * 1024 });
+  // The agent-teams switch changes what some tests see, so it is removed, not set empty.
+  const childEnv = { ...process.env, ...env };
+  delete childEnv.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS;
+  const result = spawnSync(command, args, { cwd, encoding: 'utf8', env: childEnv, shell: process.platform === 'win32' && command === 'npm', maxBuffer: 256 * 1024 * 1024 });
   return { exit: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 };
 
@@ -85,12 +88,15 @@ function main(argv) {
     if (!step('build', run('npm', ['run', 'build'], tree))) throw new Error('build');
     const manifestCopy = path.join(work, 'manifest.json');
     fs.writeFileSync(manifestCopy, JSON.stringify(manifest));
-    if (!step('wiring', run(process.execPath, [path.join(tree, 'scripts/native-wiring.mjs'), '--manifest', manifestCopy, '--checkout', tree, '--write'], tree))) throw new Error('wiring');
+    // The generator beside this runner, not the base's copy: the base may predate it.
+    const generator = path.join(path.dirname(fileURLToPath(import.meta.url)), 'native-wiring.mjs');
+    if (!step('wiring', run(process.execPath, [generator, '--manifest', manifestCopy, '--checkout', tree, '--write'], tree))) throw new Error('wiring');
     const vitest = path.join(tree, 'node_modules/vitest/vitest.mjs');
-    const env = { CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '' };
+    const env = {};
     step('native blocks', run(process.execPath, [vitest, 'run', 'tests/native-claude-agents.test.ts', '--maxWorkers=1', '--fileParallelism=false'], tree, { ...env, UPDATE_NATIVE: '1' }));
     const own = new Set(manifest.roles.map(role => `tests/native-claude-${role.role}.test.ts`));
-    for (const rel of files) {
+    // The files that exist at the base, after the batch's files were copied in.
+    for (const rel of conformanceFiles(manifest, tree)) {
       // A gate that starts during the run stops it at the next file.
       if (fs.existsSync(path.resolve(args['hold-file']))) {
         report.files.push({ file: rel, exit: null, failures: ['Not run: the hold file appeared during the run.'] });

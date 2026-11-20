@@ -116,16 +116,25 @@ function factsOf(role, checkout) {
   return { text, meta, tools, plain, serverTools, guard, mutating, mustHold, mustHoldDerived, searchTools, workTools, coverage, peers: text.includes('## Working with peers') };
 }
 
-/** `'<invariant>': /<pattern>/flags,` lines of a block that starts at `header` (an object literal opened on that line), at `indent` spaces. */
+/** The helper's named invariant texts (`const COMMS = { key: '<text>', ... }`), which its maps use as computed keys (`[COMMS.key]`). */
+function namedInvariants(text) {
+  const block = /const COMMS = \{([\s\S]*?)\}/.exec(text)?.[1] ?? '';
+  return new Map([...block.matchAll(/^\s+(\w+): '((?:[^'\\]|\\.)*)',$/gm)].map(match => [match[1], match[2].replace(/\\'/g, "'")]));
+}
+
+/** `'<invariant>': /<pattern>/flags,` (or `[COMMS.key]: ...`) lines of a block that starts at `header` (an object literal opened on that line), at `indent` spaces. */
 function patternsIn(text, header, indent) {
   const start = text.indexOf(header);
   if (start < 0) return null;
   const close = text.indexOf(`\n${' '.repeat(indent - 2)}}`, start);
+  const named = namedInvariants(text);
   const patterns = new Map();
-  const line = new RegExp(`^ {${indent}}'((?:[^'\\\\]|\\\\.)*)': \\/(.*)\\/([a-z]*),$`);
+  const line = new RegExp(`^ {${indent}}(?:'((?:[^'\\\\]|\\\\.)*)'|\\[COMMS\\.(\\w+)\\]): \\/(.*)\\/([a-z]*),$`);
   for (const row of text.slice(start, close).split('\n').slice(1)) {
     const match = line.exec(row);
-    if (match) patterns.set(match[1].replace(/\\'/g, "'").replace(/\\\\/g, '\\'), new RegExp(match[2], match[3]));
+    if (!match) continue;
+    const key = match[1] !== undefined ? match[1].replace(/\\'/g, "'").replace(/\\\\/g, '\\') : named.get(match[2]);
+    if (key !== undefined) patterns.set(key, new RegExp(match[3], match[4]));
   }
   return patterns;
 }
