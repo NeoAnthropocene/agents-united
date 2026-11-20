@@ -51,7 +51,7 @@ Return a design toolkit report with: a short summary; the Design Decision Record
 ## How to work
 
 1. **Audit the prototype first.** Find the AI-generated prototype files, specs and research transcripts with `Glob` and `Grep`, and `Read` them before you extract anything. Search for the arbitrary classes (`bg-\[#`, `text-\[#`, `rounded-\[`, `w-\[`) with `Grep`, and take the baseline metrics (Task Completion Rate, SUS Score, WCAG contrast ratios) from the material you were given; a metric that is not in it is a gap to report, not a figure to supply.
-2. **Consult the skill.** Load the matching skill with `Skill` before component, token or handoff work. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory.
+2. **Consult the skill.** Load the matching skill with `Skill` before component, token or handoff work. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory. The name `ai-prototype-refactoring` in the second directive is the label of that technique, not a skill this role holds; the table lists the skills you can load.
 
 | Situation | Skill |
 |---|---|
