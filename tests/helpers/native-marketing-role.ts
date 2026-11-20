@@ -12,7 +12,7 @@ import { bundles } from './native-coordinator.js';
 import { nativeText } from './native-roles.js';
 
 /**
- * What the five Tier 1 marketing specialists (growth-marketing, slice 1) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
+ * What the five Tier 1 marketing specialists (growth-marketing) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
  * the guard against the real script, the peers section of the Tier 1 form, the hand-back step, the session task tracking section, the skill table and the invariants of the core.
  * Each role's test file adds what only that role says. The roles run no shell (their cores grant none), so like the Tier 2 teammates they hold the editors and the web.
  */

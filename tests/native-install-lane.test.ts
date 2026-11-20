@@ -30,7 +30,7 @@ const COMMITTED_NATIVE_ROLES = [
   'marketing-growth-strategist', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'repo-index',
 ];
 const COORDINATORS = ['orchestrator-engineering', 'orchestrator-marketing'];
-/** The lead and the five roles the growth-marketing bundle installs as native files (growth-marketing, slice 1). */
+/** The lead and the five roles the growth-marketing bundle installs as native files (growth-marketing). */
 const GROWTH_MARKETING_NATIVE = ['marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-marketing'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);

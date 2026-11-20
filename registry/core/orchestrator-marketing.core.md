@@ -67,4 +67,4 @@ capabilities:
   - mcp-discovery
 ---
 
-<!-- core: orchestrator-marketing | authored for the Tier 1 growth-marketing native lane (growth-marketing, slice 1) from registry/agents/orchestrator-marketing.md | tool-free by contract (ADR 0021 decision 1) -->
+<!-- core: orchestrator-marketing | authored for the Tier 1 growth-marketing native lane (growth-marketing) from registry/agents/orchestrator-marketing.md | tool-free by contract (ADR 0021 decision 1) -->

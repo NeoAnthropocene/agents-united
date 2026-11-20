@@ -3,7 +3,7 @@ import { describeMarketingRole } from './helpers/native-marketing-role.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * `marketing-growth-strategist` (growth-marketing, slice 1): the second native file on the core the digital agency's growth strategist stands on, in the Tier 1 form of `devops-engineer`.
+ * `marketing-growth-strategist` (growth-marketing): the second native file on the core the digital agency's growth strategist stands on, in the Tier 1 form of `devops-engineer`.
  * What every marketing specialist keeps is in tests/helpers/native-marketing-role.ts; this file holds what only the growth strategist says.
  */
 

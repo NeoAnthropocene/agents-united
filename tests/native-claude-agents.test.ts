@@ -85,7 +85,7 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
-  // Tier 1, the growth-marketing bundle (growth-marketing, slice 1): five second native files on the cores the digital agency already uses (as `frontend-architect` beside `agency-frontend-architect`),
+  // Tier 1, the growth-marketing bundle (growth-marketing): five second native files on the cores the digital agency already uses (as `frontend-architect` beside `agency-frontend-architect`),
   // and a lead cut like the engineering lead's minus saved workflows, code intelligence, structured findings and worktrees. These roles run no shell (their cores grant none), so like the
   // Tier 2 teammates they hold the editors and the web; their servers are their canonical set with the routes, and none holds the image tool (the `image-gen` route is the agency's, ADR 0049).
   ...[
