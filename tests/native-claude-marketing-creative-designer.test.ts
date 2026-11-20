@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { describeMarketingRole } from './helpers/native-marketing-role.js';
+import { describeMarketingRole, OUT_OF_DEPARTMENT_HANDOFF } from './helpers/native-marketing-role.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * `marketing-creative-designer` (n5, slice 1): the second native file on the core the digital agency's creative designer stands on, in the Tier 1 form of `devops-engineer`.
+ * `marketing-creative-designer` (growth-marketing): the second native file on the core the digital agency's creative designer stands on, in the Tier 1 form of `devops-engineer`.
  * It holds the `Artifact` tool because its core has the artifacts class (the ceiling test demands equality), and no image server: no image-generation tool is bound in this lane
- * (the master operator's decision of 2026-11-20), so visual assets are delivered as specifications and briefs. What every marketing specialist keeps is in
+ * (decided during the roll-out, 2026-11-20), so visual assets are delivered as specifications and briefs. What every marketing specialist keeps is in
  * tests/helpers/native-marketing-role.ts; this file holds what only the creative designer says.
  */
 
@@ -66,5 +66,12 @@ describe('native marketing-creative-designer: design, not copy or code', () => {
   it('sources licensed stock through the skill and asks the lead to run the fetch, because it holds no shell', () => {
     expect(step(3)).toContain('the skill `commercial-stock-sourcer`');
     expect(step(3)).toMatch(/you hold editors and no shell, so put its candidate fetch command under `Open items` for the lead/);
+  });
+});
+
+describe('native marketing-creative-designer: the hand-off outside the department', () => {
+  it('carries the one sentence that sends a hand-off to a role outside marketing through the lead', () => {
+    expect(body()).toContain(OUT_OF_DEPARTMENT_HANDOFF);
+    expect(body().split(OUT_OF_DEPARTMENT_HANDOFF).length).toBe(2);
   });
 });

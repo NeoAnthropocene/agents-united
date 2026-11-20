@@ -30,9 +30,9 @@ const COMMITTED_NATIVE_ROLES = [
   'marketing-growth-strategist', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'paid-acquisition-specialist', 'repo-index', 'seo-specialist',
 ];
 const COORDINATORS = ['orchestrator-engineering', 'orchestrator-marketing'];
-/** The lead and the five roles the growth-marketing bundle installs as native files (n5, slice 1). */
+/** The lead and the five roles the growth-marketing bundle installs as native files (growth-marketing). */
 const GROWTH_MARKETING_NATIVE = ['marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-marketing'];
-/** What the seo-content-marketing add-on adds as native files on top of its parent (n5, slice 2): the SEO specialist and the content strategist, with the lead they share. */
+/** What the seo-content-marketing add-on adds as native files on top of its parent: the SEO specialist and the content strategist, with the lead they share. */
 const SEO_CONTENT_NATIVE = ['marketing-content-strategist', 'orchestrator-marketing', 'seo-specialist'];
 /** What the performance-paid-acquisition add-on installs as native files on top of its parent (n5, slice 3): the paid acquisition specialist and the three marketing roles it works with, with the lead they share. */
 const PAID_ACQUISITION_NATIVE = ['marketing-campaign-specialist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'orchestrator-marketing', 'paid-acquisition-specialist'];
