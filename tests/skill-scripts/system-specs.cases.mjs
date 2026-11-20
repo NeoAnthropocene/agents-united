@@ -1206,7 +1206,10 @@ test('the recovery sentence appears for the default file in any spelling, and ne
   try {
     fs.mkdirSync(path.join(dir, '.agents-united'));
     fs.writeFileSync(path.join(dir, '.agents-united', 'system-specs.md'), 'not mine');
-    for (const spelling of ['.agents-united/system-specs.md', '.agents-united\\system-specs.md', './.agents-united/system-specs.md', '.agents-united/../.agents-united/system-specs.md']) {
+    // A backslash separates folders only on Windows; on POSIX it is an ordinary file-name character, so that spelling names a different file.
+    const spellings = ['.agents-united/system-specs.md', './.agents-united/system-specs.md', '.agents-united/../.agents-united/system-specs.md'];
+    if (process.platform === 'win32') spellings.splice(1, 0, '.agents-united\\system-specs.md');
+    for (const spelling of spellings) {
       const res = await specs.runCli(['collect', '--out', spelling], makeDeps({ deps: { cwd: () => dir } }).deps);
       assert.equal(res.code, 2, spelling);
       assert.match(res.err, /Ask the user before removing or moving it/, spelling);
