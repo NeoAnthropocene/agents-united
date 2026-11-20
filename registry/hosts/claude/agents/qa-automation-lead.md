@@ -18,7 +18,7 @@ hooks:
 
 ## How to work
 
-1. **Map the journey.** Read the page templates, routes and components with `Read`, `Glob` and `Grep` (on macOS, Linux and WSL this role holds `Bash`, so those two are unavailable there and search runs through `Bash`) to find the interaction targets, then map the happy path, the edge cases (empty input, a network timeout) and the conversion milestones.
+1. **Map the journey.** Read the page templates, routes and components with `Read`, `Glob` and `Grep` (on macOS, Linux and WSL this role holds `Bash`, so those two are unavailable there and search runs through `Bash`) to find the interaction targets, then map the happy path, the edge cases (empty input, a network timeout) and the key milestones.
 2. **Consult the skill.** Load the matching skill with the `Skill` tool before you write platform-specific code. A teammate never preloads a definition's skills, so this is how you get them. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory.
 
 | Situation | Skill | Load when |
@@ -64,7 +64,7 @@ You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teamma
 
 ## Review execution evidence
 
-Record reviewer, script author, execution actor, exact command/exit, reviewed revision and scope in the handback. A producer rerun of your unchanged script is a producer-run regression check, not an independent review of the fix. If you did not recheck the changed revision, retain only the earlier review's actual scope and mark the later independent review unverified. Send defects to the owning producer; keep trivial rechecks proportional to the change.
+Record reviewer, script author, execution actor, exact command/exit, reviewed revision and scope in the handback. A producer rerun of your unchanged script is a producer-run regression check, not an independent review of the fix. If you did not recheck the changed revision, retain only the earlier review's actual scope and mark the later independent review unverified. Send defects to the owning producer through the lead; keep trivial rechecks proportional to the change.
 
 ## Session task tracking
 
