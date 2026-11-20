@@ -130,6 +130,21 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /You synthesise reports in the output contract above/,
     [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
   },
+  // The business lead: the shared coordinator wording (EVIDENCE) for most; its own for what no other lead states (one document written by the lead, every figure read, one formula per metric, a cited source, the legal boundary, application source left alone, provisional estimates, types not installed).
+  'orchestrator-business': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Plan solo; delegate every execution deliverable to a specialist.': /You delegate every deliverable to a specialist/,
+    'Shared definitions and assumptions are fixed once and handed to parallel slices as fixed inputs.': /\*\*Definitions first\.\*\* When two or more slices share a definition[^\n]*fix it once and hand it to the others as a fixed input before they start/,
+    'The lead writes only the synthesis brief; the specialists write every other deliverable.': /You write only one document yourself: the synthesis brief, built from their reports/,
+    "Every number in the synthesis is checked against the analyst's report and the stated formulas, and a figure the lead has not read is never passed on.": /\*\*Check every number\.\*\* Read each analyst's report and check every figure you synthesise against it and against the stated formulas\. You never pass on a figure you have not read/,
+    'CAC, LTV, ARR and gross margin use one standard formula across all reports, and churn, discount rates and acquisition friction are accounted for.': /\*\*One formula per metric\.\*\* CAC, LTV, ARR and gross margin are standardized across every report\. A projection accounts for churn, discount rates and customer acquisition friction/,
+    'Every strategic claim cites a primary source or a financial model.': /\*\*Cite a primary source or a model\.\*\* Every strategic claim in the brief names the primary source or the financial model behind it/,
+    'Analysis by the legal contract analyst is carried with its boundary: structured technical and operational contract analysis, not formal legal representation or binding legal counsel.': /\*\*Carry the legal boundary\.\*\* Where the brief uses the legal contract analyst's analysis, it states, as a quotation, that this is "structured technical and operational contract analysis to support business decision-making, not formal legal representation or binding legal counsel"/,
+    'The lead modifies no application source code and writes only strategy, documentation and roadmap files.': /\*\*Keep application source untouched\.\*\* No guard stops a write under `src\/`[^\n]*That is your own obligation/,
+    'Provisional estimates during planning are labelled provisional, and a concrete deliverable waits for the accepted delegation map.': /\*\*Give provisional answers as provisional\.\*\* While you plan you may give the user estimates; label each as provisional and name its assumption\. A concrete deliverable waits for the accepted map/,
+    'A specialist type that is not installed is recommended to the user, never improvised.': /\*\*Only delegate to a type in your allowlist and in the install record\.\*\* Never improvise a specialist/,
+  },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,

@@ -26,9 +26,9 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'business-panel-experts', 'code-reviewer', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
 ];
-const COORDINATORS = ['orchestrator-engineering'];
+const COORDINATORS = ['orchestrator-business', 'orchestrator-engineering'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
 const sha256 = (text: string): string => `sha256:${crypto.createHash('sha256').update(text).digest('hex')}`;
@@ -138,13 +138,17 @@ describe('native install lane (agents add --native)', () => {
     expect(record.managedMarker).toBe(true);
   });
 
-  it('installs the native business-panel-experts for the business-strategy bundle, recorded as a managed role of its canonical agent', async () => {
+  it('installs the native lead and business-panel-experts for the business-strategy bundle, each a managed role of its canonical agent', async () => {
     await new InstallEngine().install('business-strategy', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
-    expect(await fs.readFile(claudeAgent('business-panel-experts'), 'utf8')).toBe(expected('business-panel-experts'));
-    const record = (await fs.readJson(lockPath)).projections['.claude/agents/business-panel-experts.md'];
-    expect(record.kind).toBe('role');
-    expect(record.canonical).toBe(canonicalOf('business-panel-experts'));
-    expect(record.managedMarker).toBe(true);
+    const lock = await fs.readJson(lockPath);
+    expect(lock.nativeLane).toBe(true);
+    for (const role of ['orchestrator-business', 'business-panel-experts']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
   });
 
   it('without the native lane, business-strategy still writes the legacy projection for business-panel-experts', async () => {

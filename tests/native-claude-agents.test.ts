@@ -86,6 +86,24 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
+  {
+    name: 'orchestrator-business',
+    stem: 'orchestrator-business',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's four servers, each under its plugin or connector route, because the roles it spawns (the panel binds markitdown) are resolved against the lead's pool.
+    serverTools: withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__firecrawl', 'mcp__github']),
+    mutating: true,
+    // The engineering lead's list minus `Workflow` (no bundle of the business domain installs a saved workflow), `LSP` (the lead writes no code), `ReportFindings` (no reviewer in the department) and the worktree tools (the work is documents).
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'business-strategy',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    // The same pin as the engineering coordinator (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
+    model: 'opus',
+    effort: 'medium',
+  },
   // Tier 2 (plan 032 follow-up 2, ADR 0036): the digital-agency team. Teammates are specialists with editors and no shell, so no `Bash`,
   // `LSP` or worktree; they carry the destructive-command guard in their own frontmatter (it guards them as subagents and the lead's
   // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).

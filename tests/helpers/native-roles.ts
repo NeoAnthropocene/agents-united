@@ -11,6 +11,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'factory-realizer', stem: 'subagent-realize-for-host', tier: 1, coordinator: false },
   { role: 'factory-sync', stem: 'subagent-host-update-sync', tier: 1, coordinator: false },
   { role: 'orchestrator-engineering', stem: 'orchestrator-engineering', tier: 1, coordinator: true },
+  { role: 'orchestrator-business', stem: 'orchestrator-business', tier: 1, coordinator: true },
   { role: 'backend-architect', stem: 'subagent-backend-architect', tier: 1, coordinator: false },
   { role: 'frontend-architect', stem: 'subagent-frontend-architect', tier: 1, coordinator: false },
   { role: 'devops-engineer', stem: 'subagent-devops-engineer', tier: 1, coordinator: false },
