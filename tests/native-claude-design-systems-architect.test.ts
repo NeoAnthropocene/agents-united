@@ -6,6 +6,10 @@ import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { attempt } from './helpers/claude-host-hooks.js';
 import { nativeText } from './helpers/native-roles.js';
 
+/** The one sentence every Claude role carries about the guard (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
+const GUARD_SENTENCE =
+  'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+
 /**
  * The native `design-systems-architect` (design-systems-ops, Tier 1): what its authored body must keep saying. It holds editors and no shell;
  * every claim about the guard, the tools and the peers has to be true of what is bound.
@@ -45,7 +49,8 @@ describe('native design-systems-architect: the guard and acceptEdits claims', ()
     const body = text();
     expect(body).toContain('so the only thing the guard bound to this role can stop is a write to a `.env` file (`.env.example` passes)');
     expect(body).toContain('is your own obligation');
-    expect(body).toContain("- A guard blocks writes to `.env` files (not `.env.example`). As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.`);
+    expect(body.split(GUARD_SENTENCE)).toHaveLength(2);
   });
 
   describe('against the real guard script', () => {
