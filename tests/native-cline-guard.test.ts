@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { GUARD_SCRIPT } from '../src/core/guard.js';
+import { EARLIER_GUARD_SCRIPTS, GUARD_SCRIPT, SHARED_GUARD_PATTERNS } from '../src/core/guard.js';
 
 /**
  * Plan 032 Phase 8 / ADR 0028 — the Cline guard plugin: one reviewed JavaScript file that blocks the destructive things the
@@ -52,10 +52,13 @@ describe('the plugin file', () => {
     expect(source.split('\n').length).toBeLessThan(110);
   });
 
-  it('carries the same patterns as the Claude guard script, so the two cannot drift apart', () => {
-    const literals = [...GUARD_SCRIPT.matchAll(/\/((?:\\.|[^/\\\n])+)\/\.test\(/g)].map(match => match[0].slice(0, -'.test('.length));
-    expect(literals).toHaveLength(4);
-    for (const literal of literals) expect(source, `the Claude guard pattern ${literal}`).toContain(literal);
+  // ADR 0074: the destructive shell rules are Claude-only until the Cline port (a follow-up); until then this plugin carries the three shared rules only.
+  it('carries the three shared rules (forced push, vercel --prod, .env writes) byte for byte as the Claude guard script does; the destructive shell rules are Claude-only until the port (ADR 0074)', () => {
+    const literals = (script: string): string[] => [...script.matchAll(/\/((?:\\.|[^/\\\n])+)\/\.test\(/g)].map(match => match[0].slice(0, -'.test('.length));
+    // The constant is the patterns of the script the lanes copied, and the current Claude script still holds each of them unchanged.
+    expect(literals(EARLIER_GUARD_SCRIPTS[2]!)).toEqual([...SHARED_GUARD_PATTERNS]);
+    for (const literal of SHARED_GUARD_PATTERNS) expect(literals(GUARD_SCRIPT), `the current Claude script keeps ${literal}`).toContain(literal);
+    for (const literal of SHARED_GUARD_PATTERNS) expect(source, `the shared guard pattern ${literal}`).toContain(literal);
   });
 });
 

@@ -184,10 +184,10 @@ describe('the shipped review-job builder', () => {
 
     const raw = job.inputs.find((item: Json) => item.id === 'skill-layout-raw');
     const skill = record.inventory.find((item: Json) => item.path === 'SKILL.md');
-    const cites = [{ sourceId: 'candidate', path: 'SKILL.md', sha256: skill.sha256, startLine: 10, endLine: 10, quote: '# Invoice action CSV' },
-      { sourceId: 'skill-layout-raw', path: 'skill-layout.raw.txt', sha256: raw.sha256, startLine: 1, endLine: 1, quote: 'selected fixture text checked' }];
+    const cites = [{ sourceId: 'candidate', path: 'SKILL.md', sha256: skill.sha256, quote: '# Invoice action CSV' },
+      { sourceId: 'skill-layout-raw', path: 'skill-layout.raw.txt', sha256: raw.sha256, quote: 'selected fixture text checked' }];
     const result = {
-      version: 1, jobId: job.id, jobDigest: out.jobDigest, candidateDigest: out.candidateDigest, status: 'reviewed', opinion: 'no-blocking-findings',
+      version: 2, jobId: job.id, jobDigest: out.jobDigest, candidateDigest: out.candidateDigest, status: 'reviewed', opinion: 'no-blocking-findings',
       subject: job.subject, inventory: record.inventory, inventorySource: 'caller-provided',
       coverage: record.inventory.map((item: Json) => ({ path: item.path, status: 'reviewed', rationale: 'Read in full.' })),
       criteria: job.rubric.criteria.map((item: Json) => ({ id: item.id, outcome: item.applicable ? 'satisfactory' : 'not-applicable', rationale: item.reason, citations: item.applicable ? cites : [] })),
