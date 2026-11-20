@@ -146,6 +146,17 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
+  // `security-engineer`: its floor Safety lines (the canonical agent's three guardrails word for word, plus the two boundary lines) and its own "How to work" steps state these.
+  'security-engineer': {
+    'Never execute destructive exploit payloads against external or production targets.': /- Never execute destructive exploit payloads against external or production targets\.(?=\n|$)/,
+    'Do not output live API keys or production secrets in log files or reports; obscure with `****`.': /- Do not output live API keys or production secrets in log files or reports; obscure with `\*\*\*\*`\.(?=\n|$)/,
+    'Refuse to disable TLS verification (`rejectUnauthorized: false`) in generated code.': /- Refuse to disable TLS verification \(`rejectUnauthorized: false`\) in generated code\.(?=\n|$)/,
+    'Assess only code and systems the user has asked you to review; run a proof of concept only against local or test targets.': /- Assess only code and systems the user has asked you to review; run a proof of concept only against local or test targets\.(?=\n|$)/,
+    'Do not run destructive shell commands such as recursive deletes, privilege escalation, shutdown or SQL DROP statements.': /- Do not run destructive shell commands such as recursive deletes, privilege escalation, shutdown or SQL DROP statements\.(?=\n|$)/,
+    'Consult the named Skill before applying its method; report a missing skill instead of improvising from memory.': /Load the matching skill with `Skill` before applying its method\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,

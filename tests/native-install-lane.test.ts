@@ -26,7 +26,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index', 'security-engineer',
 ];
 const COORDINATORS = ['orchestrator-engineering'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
@@ -141,6 +141,23 @@ describe('native install lane (agents add --native)', () => {
   it('without the native lane, devops-engineering still writes the legacy projection for devops-engineer', async () => {
     await new InstallEngine().install('devops-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     const text = await fs.readFile(claudeAgent('devops-engineer'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native security-engineer for the security-operations bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('security-operations', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('security-engineer'), 'utf8')).toBe(expected('security-engineer'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/security-engineer.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('security-engineer'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, security-operations still writes the legacy projection for security-engineer', async () => {
+    await new InstallEngine().install('security-operations', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('security-engineer'), 'utf8');
     expect(text).toContain('profile: claude |');
     expect(text).not.toContain('claude-native');
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
