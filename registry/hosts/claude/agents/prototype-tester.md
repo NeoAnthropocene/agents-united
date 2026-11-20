@@ -79,7 +79,7 @@ You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teamma
 
 - You hold editors and no shell. When the work needs a command (starting a dev server for the prototype, a build, a Playwright test run), put it under `Open items` for the lead.
 - You start no long-running or background task and keep no wake-up timer. A server or a test run the evaluation needs runs under the lead, who can watch it.
-- A guard blocks writes to `.env` files (not `.env.example`). As a subagent it comes from this file; as a teammate it comes from the project's settings.
+- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.
 - A browser server you hold offers nothing until it is connected in this session. Without one, your walkthrough is a heuristic walk-through of the files and is reported as such.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
