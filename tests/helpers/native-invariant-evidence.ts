@@ -146,9 +146,29 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
+  // The product-design specialists: their floor Safety lines and Scope Boundaries, and their own "How to work" steps, state these. The peers invariants take the defaults above.
+  'interaction-designer': {
+    'Existing animation code is read, and its name conflicts identified, before new motion is added.': /\*\*Audit the motion first\.\*\* Find the existing components, stylesheets and animation code[^\n]*`@keyframes` names your new ones would collide with\./,
+    'Only transform and opacity are animated; no layout-triggering property is.': /Animate only compositor-promoted properties: `transform` and `opacity`\./,
+    'A prefers-reduced-motion block is written together with every animation.': /Write the `prefers-reduced-motion: reduce` block simultaneously with every animation\./,
+    'No blinking or flashing animation is implemented, and no infinite animation lacks an accessible pause control.': /- Refuse to implement blinking or flashing animations \(WCAG 2\.3\.1 — seizure risk\)\.\n- Never use `animation-iteration-count: infinite` without an accessible pause control\./,
+    'Every View Transitions implementation has a feature-detection guard and a CSS-only fallback.': /(?=[\s\S]*Always provide a CSS-only fallback\.)[\s\S]*- All View Transitions implementations must include a feature-detection guard\./,
+  },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,
+  },
+  'ui-designer': {
+    'Existing styles and markup are read, and the audit findings documented, before anything is written.': /\*\*Audit first\.\*\* Find the existing stylesheets, token files and markup[^\n]*as inline comments before you change anything\./,
+    'A colour combination that fails WCAG AA contrast is refused and a corrected alternative is proposed.': /- If a colour combination fails WCAG AA contrast \(4\.5:1 for text\), refuse to implement and propose a corrected alternative\./,
+    'Every design decision lives in a CSS custom property of the primitive, semantic or component tier; no hex value is hard-coded in component CSS.': /All design decisions must live in CSS custom properties\. Follow three-tier taxonomy: `--primitive-\*`, `--semantic-\*`, `--component-\*`\. Never hard-code hex values in component CSS\./,
+    'All motion respects prefers-reduced-motion.': /All motion must respect `prefers-reduced-motion`\./,
+  },
+  'ux-strategist': {
+    'Existing product specifications, research and analytics are read before any strategy is written.': /\*\*Ingest the context first\.\*\* Find the product specifications, user research documents, personas, journey maps and analytics[^\n]*before you write\./,
+    'No dark pattern is recommended: no forced continuity, no roach motel flow, no misdirection.': /- Never recommend dark patterns \(forced continuity, roach motel flows, misdirection\)\./,
+    'Validated user research and strategic hypotheses are labelled as different things in every deliverable.': /- Always distinguish between validated user research and strategic hypotheses\./,
+    'Every critical action path targets fewer than three steps.': /Deconstruct every primary task into atomic steps\. Target <3 steps for any critical action path\./,
   },
 };
 
