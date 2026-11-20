@@ -239,7 +239,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     const opinion = evaluationResult(selected, JSON.parse(reviewPreflight.stdout));
     const lines = updatedText.split('\n'), line = lines.findIndex(value => value === 'Example reviewer.') + 1;
     expect(line).toBeGreaterThan(0);
-    const citation = { sourceId: 'candidate', path: rel, sha256: sha256(updatedText), startLine: line, endLine: line, quote: 'Example reviewer.' };
+    const citation = { sourceId: 'candidate', path: rel, sha256: sha256(updatedText), quote: 'Example reviewer.' };
     opinion.coverage = [{ path: rel, status: 'reviewed', rationale: 'Synthetic package record covers the exact final producer bytes; usefulness unverified.' }];
     for (const criterion of opinion.criteria) criterion.citations = [citation];
     const opinionFile = path.join(selected.evidence, 'result.json');
