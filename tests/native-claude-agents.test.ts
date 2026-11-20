@@ -108,6 +108,22 @@ const ROLES: RoleSpec[] = [
       effort: 'medium',
     })
   ),
+  // The performance-paid-acquisition add-on's specialist (n5, slice 3): the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants no shell, no web and no task tools, so it holds
+  // the editors, the messaging and skill classes and the context7 server with the routes; it holds no image server.
+  {
+    name: 'paid-acquisition-specialist',
+    stem: 'subagent-paid-acquisition-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__context7']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
   // The growth-marketing bundle's SEO specialist (n5, slice 2): a second native file on the core of 'agency-seo-specialist'. Unlike the five marketing roles it holds a shell (its core grants the shell class: crawls,
   // header traces and Lighthouse), so it is guarded as a writer like the Tier 2 SEO specialist. Its servers are its canonical set with the routes; it holds no image server.
   {

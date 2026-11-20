@@ -22,8 +22,8 @@ export interface MarketingRoleSpec {
   role: string;
   /** The canonical registry file stem, e.g. `subagent-marketing-growth-strategist`. */
   type: string;
-  /** The Tier 2 file stood on the same core. */
-  agency: string;
+  /** The Tier 2 file stood on the same core, when there is one. A role on a core of its own leaves it out: its tools are then pinned by the class ceiling in native-claude-agents.test.ts. */
+  agency?: string;
   /** The integrations the canonical agent declares (the routes are derived), none of them an image server. */
   servers: string[];
   /** Whether the core has the artifacts class, and so the role holds the `Artifact` tool. */
@@ -52,7 +52,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
   /** A numbered step of the "How to work" section. */
   const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(section('How to work'))?.[0] ?? '';
   const canonical = (): string => fs.readFileSync(path.resolve('registry/agents', `${spec.type}.md`), 'utf8').replace(/\r\n/g, '\n');
-  const agencyTools = (): string[] => splitTools(/^tools: (.*)$/m.exec(nativeText(spec.agency))![1]!);
+  const agencyTools = (): string[] => splitTools(/^tools: (.*)$/m.exec(nativeText(spec.agency!))![1]!);
 
   describe(`native ${spec.role}: posture and tools`, () => {
     it('is pinned to the specialist posture, with the permission mode of its canonical agent, and says in its description that it edits files and runs no shell', () => {
@@ -64,9 +64,11 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
       expect(meta().description).toContain(spec.shell ? 'Edits files and runs commands.' : 'Edits files, no shell.');
     });
 
-    it('holds the tools of the Tier 2 copy on the same core, minus every image server', () => {
-      const expected = agencyTools().filter(tool => !/image/i.test(tool));
-      expect([...tools()].sort()).toEqual([...expected].sort());
+    it('holds the tools of the Tier 2 copy on the same core when there is one, minus every image server', () => {
+      if (spec.agency) {
+        const expected = agencyTools().filter(tool => !/image/i.test(tool));
+        expect([...tools()].sort()).toEqual([...expected].sort());
+      }
       expect(tools().filter(tool => /image/i.test(tool))).toEqual([]);
       expect(text()).not.toMatch(IMAGE_TOOL);
     });
@@ -81,9 +83,15 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
     it('runs a shell only when its core grants one, spawns nobody and schedules nothing, and holds Artifact only when its core has the artifacts class', async () => {
       const shellTools = ['Bash', 'PowerShell'];
       for (const absent of [...(spec.shell ? [] : shellTools), 'Agent', 'Workflow', 'CronCreate', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'LSP']) expect(tools().map(tool => tool.split('(')[0]), absent).not.toContain(absent);
-      for (const present of [...(spec.shell ? shellTools : []), 'Edit', 'Write', 'Read', 'Glob', 'Grep', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'WebFetch', 'WebSearch', 'TodoWrite']) expect(tools(), present).toContain(present);
-      expect(tools().includes('Artifact')).toBe(spec.artifact);
       const core = (await loadSemanticCore('registry')).get(spec.type)!;
+      // The web and the task tools follow the classes the core grants: a core without `web` or `task-tracking` gets neither, and the body must not claim them.
+      const webTools = ['WebFetch', 'WebSearch'];
+      const taskTools = ['TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite'];
+      const web = (core.capabilities ?? []).includes('web');
+      const tracking = (core.capabilities ?? []).includes('task-tracking');
+      for (const present of [...(spec.shell ? shellTools : []), 'Edit', 'Write', 'Read', 'Glob', 'Grep', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', ...(web ? webTools : []), ...(tracking ? taskTools : [])]) expect(tools(), present).toContain(present);
+      for (const absent of [...(web ? [] : webTools), ...(tracking ? [] : taskTools)]) expect(tools(), absent).not.toContain(absent);
+      expect(tools().includes('Artifact')).toBe(spec.artifact);
       expect(core.capabilities).toContain('messaging');
       expect((core.capabilities ?? []).includes('artifacts')).toBe(spec.artifact);
       if (spec.shell) expect(core.capabilities).toContain('shell');
@@ -231,7 +239,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
   describe(`native ${spec.role}: the invariants of its core`, () => {
     it('are all evidenced in the file as it stands, so no delta has to be declared for this role', async () => {
       const core = (await loadSemanticCore('registry')).get(spec.type)!;
-      expect(core.invariants.length).toBeGreaterThanOrEqual(9);
+      expect(core.invariants.length).toBeGreaterThanOrEqual(8);
       const unbound = core.invariants.filter(invariant => !evidenceFor(spec.role, invariant)?.test(text()));
       expect(unbound).toEqual([]);
     });

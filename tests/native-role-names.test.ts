@@ -139,6 +139,15 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
   });
 
+  it('installs the performance-paid-acquisition add-on under the lane with the native paid-acquisition-specialist and its three marketing roles, and none of the agency-only files', async () => {
+    await install('performance-paid-acquisition', true);
+    for (const name of ['orchestrator-marketing', 'marketing-campaign-specialist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'paid-acquisition-specialist']) {
+      expect(await exists(name), name).toBe(true);
+      expect(fs.readFileSync(agentFile(name), 'utf8'), name).toContain('profile: claude-native');
+    }
+    for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
+  });
+
   it('turning the lane off brings the legacy names back and removes the agency-only files', { timeout: 120_000 }, async () => {
     await install('digital-agency', true);
     for (const name of Object.values(EXPECTED)) expect(await exists(name), `${name} was installed`).toBe(true);

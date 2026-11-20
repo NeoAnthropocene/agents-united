@@ -48,12 +48,12 @@ describe('native orchestrator-marketing: posture and tools', () => {
     expect(domainTypes(bundles(), BUNDLE).map(type => type.name)).toEqual(NINE);
   });
 
-  it('carries the domain map exactly as generated, and says plainly that the three child roles without a native file are not native yet', () => {
+  it('carries the domain map exactly as generated, and says plainly that the two child roles without a native file are not native yet', () => {
     expect(checkRoster(text(), rosterTypes(BUNDLE))).toEqual([]);
-    for (const type of ['lifecycle-email-specialist', 'paid-acquisition-specialist', 'plg-strategist']) {
+    for (const type of ['lifecycle-email-specialist', 'plg-strategist']) {
       expect(text(), type).toMatch(new RegExp(`\\| \`${type}\` \\|[^\\n]*Not yet a native agent`));
     }
-    for (const type of NINE.filter(name => name.startsWith('marketing-') || name === 'seo-specialist')) {
+    for (const type of NINE.filter(name => name.startsWith('marketing-') || name === 'seo-specialist' || name === 'paid-acquisition-specialist')) {
       const row = text().split('\n').find(line => line.startsWith(`| \`${type}\` |`)) ?? '';
       expect(row, type).not.toMatch(/Not yet a native agent/);
     }
