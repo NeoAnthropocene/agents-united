@@ -146,6 +146,18 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
+  // `system-architect`: its floor Safety lines and Scope Boundaries state the domain invariants, its own "How to work" the discovery step; the peers
+  // section is the engineering family's (as `devops-engineer` binds it, under this core's longer invariant texts).
+  'system-architect': {
+    'No architecture with a single point of failure is approved for production.': /- Never approve architectures with single points of failure \(SPOF\) for production environments\.(?=\n|$)/,
+    'Every external data boundary enforces strict input validation and encryption in transit (TLS 1.3).': /- Ensure all external data boundaries enforce strict input validation and encryption in transit \(TLS 1\.3\)\.(?=\n|$)/,
+    'Services do not share a database: each bounded context owns its data.': /Refuse a distributed monolith: services do not share a database; give each bounded context its own data \(database-per-service\)\./,
+    'Every major architectural decision is recorded as an ADR with Context, Decision, Consequences and Status.': /\*\*Architecture Decision Records \(ADRs\)\*\* — Document major architectural decisions following Nygard \/ MADR templates \(Context, Decision, Consequences, Status\)\./,
+    'Map the existing system before designing: read the module layout, APIs and data models first.': /\*\*Map first\.\*\* Read the existing module layout, APIs and data models with `Glob`, `Grep` and `Read` before you design anything\./,
+    'Non-functional requirements carry measurable targets: SLA, SLO, throughput, p99 latency, availability and disaster recovery.': /\*\*Non-Functional Requirements \(NFRs\)\*\* — Enforce SLA, SLO, throughput \(RPS\), latency \(p99\), availability \(99\.99%\), and disaster recovery targets\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,

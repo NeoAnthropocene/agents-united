@@ -14,6 +14,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'backend-architect', stem: 'subagent-backend-architect', tier: 1, coordinator: false },
   { role: 'frontend-architect', stem: 'subagent-frontend-architect', tier: 1, coordinator: false },
   { role: 'devops-engineer', stem: 'subagent-devops-engineer', tier: 1, coordinator: false },
+  { role: 'system-architect', stem: 'subagent-system-architect', tier: 1, coordinator: false },
   { role: 'code-reviewer', stem: 'subagent-code-reviewer', tier: 1, coordinator: false },
   { role: 'repo-index', stem: 'subagent-repo-index', tier: 1, coordinator: false },
   { role: 'orchestrator-digital-agency', stem: 'orchestrator-digital-agency', tier: 2, coordinator: true },

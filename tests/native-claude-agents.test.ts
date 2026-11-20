@@ -70,6 +70,8 @@ const ROLES: RoleSpec[] = [
   { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
   { name: 'frontend-architect', stem: 'subagent-frontend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
   { name: 'devops-engineer', stem: 'subagent-devops-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The system architect holds editors and no shell (its canonical tools are view, write, replace, grep, find, list): it writes ADRs, C4 diagrams and specs.
+  { name: 'system-architect', stem: 'subagent-system-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
