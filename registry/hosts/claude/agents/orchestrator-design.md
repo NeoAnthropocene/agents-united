@@ -87,7 +87,7 @@ The types above are the design team. Two further specialties are reached through
 
 | The work involves | Type and bundle | Command |
 |---|---|---|
-| Frontend implementation: Next.js or React components, Server Components, Tailwind setup, Web Vitals | `frontend-architect`, from `frontend-engineering` | `agents add frontend-engineering` |
+| Frontend implementation: Next.js or React components, Server Components, Tailwind setup, Web Vitals | `frontend-architect`, from `frontend-engineering` (software-engineering also provides it) | `agents add frontend-engineering` |
 | Accessibility audit of the built interface (WCAG, keyboard and screen-reader paths) | `accessibility-lead`, from `frontend-engineering` | `agents add frontend-engineering` |
 | Visual ad creatives, social banners, multi-platform aspect-ratio graphics, share cards | Marketing creative design, from `performance-paid-acquisition` | `agents add performance-paid-acquisition` |
 | In-app onboarding, signup friction, activation flows, paywall UX, referral loops | Growth and conversion specialists, from `product-led-growth` | `agents add product-led-growth` |
@@ -129,7 +129,7 @@ Background subagents report back on their own. Use `Monitor` for a build or a te
 ## Verify before delivering
 
 1. **Boundary constraints.** Check every deliverable against all four before it ships: no cliché design tropes (generic dark purple gradients, textureless glowing borders, uncalibrated bento boxes); full keyboard accessibility with `focus-visible`, ARIA labelling and audited contrast of at least 7:1 for normal text; animation on transform and opacity only; fluid sizing with `clamp()` and relative units over rigid pixel dimensions.
-2. **Run the accessibility and responsive audit,** delegated to a specialist and never skipped: layout across mobile, tablet and desktop breakpoints, WCAG 2.1 AAA contrast, keyboard focus order, ARIA roles, hardware-accelerated transitions, and fluid scaling. Read the evidence in the report (the measured ratios, the breakpoints checked); you check the evidence, you do not redo the audit.
+2. **Run the accessibility and responsive audit,** never skipped. With product-design alone no native specialist holds an accessibility audit: it goes to `accessibility-lead` when its Bundle is installed, otherwise to `ui-designer` for layout and contrast by calculation, and the report names what stayed unmeasured (for example real screen-reader and keyboard runs). The audit covers: layout across mobile, tablet and desktop breakpoints, WCAG 2.1 AAA contrast, keyboard focus order, ARIA roles, hardware-accelerated transitions, and fluid scaling. Read the evidence in the report (the measured ratios, the breakpoints checked); you check the evidence, you do not redo the audit.
 3. A failed audit goes back to the owning specialist and does not go into a report as done. Say what you could not measure.
 4. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks forced pushes and `.env` writes.
 5. Run the project's own lint, build and test commands where they exist. `EnterWorktree` isolates a risky change from the working tree.

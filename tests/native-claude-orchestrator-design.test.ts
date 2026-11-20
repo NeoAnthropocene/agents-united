@@ -181,6 +181,14 @@ describe('native orchestrator-design: what it says it does', () => {
     expect(body).toMatch(/you check the evidence/i);
   });
 
+  it('says truthfully who holds the accessibility audit when product-design stands alone, and that frontend-architect has two providers', () => {
+    const body = text();
+    expect(body).toMatch(/no native specialist holds an accessibility audit/);
+    expect(body).toMatch(/`accessibility-lead` when its Bundle is installed, otherwise to `ui-designer` for layout and contrast by calculation/);
+    expect(body).toMatch(/the report names what stayed unmeasured/);
+    expect(body).toContain('`frontend-architect`, from `frontend-engineering` (software-engineering also provides it)');
+  });
+
   it('states the four boundary constraints of the canonical lead and the design duties, none dropped', async () => {
     const core = fs.readFileSync(path.resolve('registry/core/orchestrator-design.core.md'), 'utf8').replace(/\r\n/g, '\n');
     for (const needle of ['Forbidden Cliché Tropes', 'Accessibility Mandatory', 'Hardware-Accelerated Motion', 'Responsive Math', 'Subagent-first delegation', 'Consult gate', 'Plan solo, delegate execution']) {
