@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
+import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EARLIER_GUARD_SCRIPTS, GUARD_SCRIPT, guardFileHandler, guardHandler, managedGuardHooks, nativeGuardFileHooks, nativeGuardHandler, nativeGuardHooks } from '../src/core/guard.js';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { renderHooks } from '../src/core/native-floor.js';
@@ -24,6 +25,11 @@ const AGENTS = path.resolve('registry/hosts/claude/agents');
 const HOOKS = path.resolve('registry/hosts/claude/hooks');
 const BLOCK = { onFailure: 'block' } as const;
 const handlersOf = (groups: Array<{ hooks: unknown[] }>): HookHandler[] => groups.flatMap(group => group.hooks as HookHandler[]);
+// The project folder and working folder of the spawned hooks: this file's own, made here and removed afterwards. A folder of the checkout such as
+// `scratch/` (ignored by git) is missing in a fresh worktree, and a hook that cannot start there reads as a failed hook, which `onFailure` blocks.
+let hookDir = '';
+beforeAll(() => { hookDir = fs.mkdtempSync(path.join(os.tmpdir(), 'au-guard-fail-closed-')); });
+afterAll(() => { fs.removeSync(hookDir); });
 
 describe('the generated guard handlers carry onFailure "block", last in key order', () => {
   it('the script-file handlers of both guards', () => {
@@ -67,7 +73,9 @@ describe('the generated guard handlers carry onFailure "block", last in key orde
   it('through the Host model: a session-guard handler whose script fails blocks the call', () => {
     const failing = { ...guardHandler(), args: ['-e', 'process.exit(1)'] };
     const agent = `---\n${yaml.stringify({ tools: 'Bash', hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [failing] }] } })}---\n`;
-    const result = attempt(agent, path.resolve('scratch'), { tool: 'Bash', input: { command: 'echo hello world' } });
+    const result = attempt(agent, hookDir, { tool: 'Bash', input: { command: 'echo hello world' } });
+    // The script really ran and exited 1; a hook that could not start (status null) would block too, for another reason.
+    expect(result.statuses).toEqual([1]);
     expect(result.blocked).toBe(true);
     expect(result.reason).toContain(ON_FAILURE_BLOCK_MESSAGE);
   });
@@ -139,18 +147,17 @@ describe('the inline form (a global install) carries the field too', () => {
 
 describe('through the Host model: a payload the destructive guard cannot read blocks the call', () => {
   const role = ClaudeProjector.nativeRoleContent(path.resolve('registry'), 'backend-architect', '.agents/agents/backend-architect.md', 'inline') ?? '';
-  const dir = path.resolve('scratch');
   const bash = { tool: 'Bash', input: { command: 'echo hello world' } };
 
   it.each(['', '   ', '{', 'null', '[]'])('stdin %j blocks, with the unreadable-input reason', stdin => {
-    const result = attempt(role, dir, bash, { stdin });
+    const result = attempt(role, hookDir, bash, { stdin });
     expect(result.fired).toBeGreaterThan(0);
     expect(result.blocked).toBe(true);
     expect(result.reason).toMatch(/^Blocked by agents-united guard: unreadable hook input/);
   });
 
   it('a readable payload for a harmless call still passes', () => {
-    expect(attempt(role, dir, bash).blocked).toBe(false);
+    expect(attempt(role, hookDir, bash).blocked).toBe(false);
   });
 });
 
