@@ -12,11 +12,12 @@ import {
 
 describe('CLI End-to-End Suite (dist/cli.js)', () => {
   const cliPath = path.resolve(process.cwd(), 'dist/cli.js');
-  const e2eDir = path.join(os.tmpdir(), 'au-cli-e2e-workspace');
+  // Each test gets its own new folder: a fixed name in the shared temp folder let two worktrees running this file at once
+  // delete each other's workspace (EBUSY on Windows).
+  let e2eDir = '';
 
   beforeEach(async () => {
-    await fs.remove(e2eDir);
-    await fs.ensureDir(e2eDir);
+    e2eDir = await fs.mkdtemp(path.join(os.tmpdir(), 'au-cli-e2e-'));
   });
 
   afterEach(async () => {
