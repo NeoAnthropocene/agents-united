@@ -97,7 +97,7 @@ All architectural blueprints, system specifications and ADR handoffs must follow
 | `cloud-infrastructure-architect` | `system-architecture-cloud` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `database-administrator` | `system-architecture-data` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `finops-cost-engineer` | `system-architecture-finops` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
-| `sysops-sre-lead` | `sysops-sre` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `sysops-sre-lead` | `sysops-sre` | SysOps and site reliability lead. Use to define SLOs, SLIs and error budgets, design Prometheus, Grafana and OpenTelemetry telemetry, write incident runbooks, alert rules and blameless post-mortems, and plan capacity, patching and disaster recovery. Edits files, no shell. — edits files; Glob/Grep search; MCP: context7, github |
 | `system-architect` | `system-architecture`, `system-architecture-cloud`, `system-architecture-finops` | System architect. Use to design system topology, bounded contexts and interface contracts, draw C4 diagrams in Mermaid, record Architecture Decision Records and set resilience and non-functional targets. Edits files, no shell. — edits files; Glob/Grep search; MCP: context7, github |
 
 Install a missing type by installing a bundle that provides it: `agents add <bundle>` (it keeps the recorded fan-out and native choices).
