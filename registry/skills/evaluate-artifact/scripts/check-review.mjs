@@ -28,27 +28,53 @@ function coverageFilesOf(job) {
     .filter(({ coverage }) => job.candidate.files.some(file => file.path === coverage));
 }
 
+/** A coverage-evidence citation quotes at least this many characters of an entry's evidence, or the whole evidence when it is shorter. */
+const COVERAGE_QUOTE_MIN = 24;
+
 /**
  * The coverage-evidence criterion cites every coverage entry that has evidence: at least one of its citations names the agent file as the
- * candidate and quotes text from inside that entry's evidence. The coverage file is read at the candidate's pinned bytes. Text from the
+ * candidate, quotes text from inside that entry's evidence (at least COVERAGE_QUOTE_MIN characters, or the whole evidence), and resolves to
+ * lines where that evidence stands in the agent. The coverage file and the agent are read at the candidate's pinned bytes. Text from the
  * candidate is echoed, never the result's.
  */
-function coverageCitationProblems(job, record, criterion) {
+function coverageCitationProblems(job, record, criterion, resolved) {
+  const pinnedText = (rel, label) => {
+    const pin = record.inventory.find(item => item.path === rel);
+    const bytes = bytesAt(path.join(job.roots.candidate, rel), job.budget.maxCandidateFileBytes, label);
+    if (!pin || hash(bytes) !== pin.sha256) fail(`${label} changed during review: ${rel}.`);
+    return lf(bytes.toString('utf8'));
+  };
+  const linesAt = criterion.citations.map((_cite, index) => resolved.find(item => item.where === `criterion ${criterion.id}, citation ${index + 1}`));
   for (const { agent, coverage } of coverageFilesOf(job)) {
-    const pin = record.inventory.find(item => item.path === coverage);
-    const bytes = bytesAt(path.join(job.roots.candidate, coverage), job.budget.maxCandidateFileBytes, 'Coverage file');
-    if (!pin || hash(bytes) !== pin.sha256) fail(`Coverage file changed during review: ${coverage}.`);
     let parsed;
-    try { parsed = JSON.parse(lf(bytes.toString('utf8'))); } catch { fail(`Coverage file is not JSON: ${coverage}.`); }
+    try { parsed = JSON.parse(pinnedText(coverage, 'Coverage file')); } catch (error) { if (error instanceof SyntaxError) fail(`Coverage file is not JSON: ${coverage}.`); throw error; }
+    const agentText = pinnedText(agent, 'Agent file');
+    // The line ranges where an evidence text stands in the agent, numbered as the Read tool numbers them.
+    const spansOf = evidence => {
+      const spans = [];
+      for (let at = agentText.indexOf(evidence); at !== -1; at = agentText.indexOf(evidence, at + 1)) {
+        const start = agentText.slice(0, at).split('\n').length;
+        spans.push([start, start + evidence.split('\n').length - 1]);
+      }
+      return spans;
+    };
     const entries = Array.isArray(parsed?.invariants) ? parsed.invariants : [];
     const missing = entries
       .filter(entry => entry && typeof entry.invariant === 'string' && typeof entry.evidence === 'string' && entry.evidence.trim() !== '')
-      .filter(entry => !criterion.citations.some(cite => cite.sourceId === 'candidate' && cite.path === agent
-        && lf(cite.quote).trim() !== '' && lf(entry.evidence).includes(lf(cite.quote).trim())))
+      .filter(entry => {
+        const evidence = lf(entry.evidence).trim();
+        const spans = spansOf(evidence);
+        return !criterion.citations.some((cite, index) => {
+          const quote = lf(cite.quote).trim();
+          const at = linesAt[index];
+          return cite.sourceId === 'candidate' && cite.path === agent && quote.length >= Math.min(COVERAGE_QUOTE_MIN, evidence.length)
+            && evidence.includes(quote) && at !== undefined && spans.some(([first, last]) => at.startLine >= first && at.endLine <= last);
+        });
+      })
       .map(entry => entry.invariant);
     if (missing.length) {
       const shown = missing.slice(0, 10).map(name => JSON.stringify(name.slice(0, 120))).join('; ');
-      fail(`Criterion coverage-evidence has no citation of ${agent} quoting from the evidence of ${missing.length} coverage entr${missing.length === 1 ? 'y' : 'ies'}: ${shown}${missing.length > 10 ? `; and ${missing.length - 10} more` : ''}.`);
+      fail(`Criterion coverage-evidence has no citation of ${agent} quoting at least ${COVERAGE_QUOTE_MIN} characters (or all) of the evidence, where it stands, of ${missing.length} coverage entr${missing.length === 1 ? 'y' : 'ies'}: ${shown}${missing.length > 10 ? `; and ${missing.length - 10} more` : ''}.`);
     }
   }
 }
@@ -542,7 +568,7 @@ function checkResult(record, resultFile, precheck = false) {
     if ((!required.applicable) !== (criterion.outcome === 'not-applicable')) fail(`Returned criterion applicability contradiction: ${criterion.id}.`);
     if (required.required && result.status === 'reviewed' && criterion.outcome === 'unverified') fail(`Complete review leaves required criterion unverified: ${criterion.id}.`);
     if (required.applicable && ['satisfactory', 'needs-work'].includes(criterion.outcome) && !criterion.citations.length) fail(`Required criterion opinion has no pinned citation: ${criterion.id}.`);
-    if (criterion.id === 'coverage-evidence' && required.applicable && ['satisfactory', 'needs-work'].includes(criterion.outcome)) coverageCitationProblems(job, record, criterion);
+    if (criterion.id === 'coverage-evidence' && required.applicable && ['satisfactory', 'needs-work'].includes(criterion.outcome)) coverageCitationProblems(job, record, criterion, resolved);
   }
   unique(result.findings.map(item => item.id), 'Finding IDs');
   if (result.status === 'reviewed' && record.unavailable.some(item => item.required)) fail('Complete review has an unavailable/unperformed required check.');

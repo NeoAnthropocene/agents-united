@@ -513,7 +513,8 @@ function build(specArg) {
   const rubric = JSON.parse(decode(rubricBytes, 'Rubric'));
   const reasons = spec.rubricReasons ?? {};
   for (const id of Object.keys(reasons)) if (!rubric.criteria.some(item => item.id === id)) fail(`Spec rubricReasons names an unknown criterion: ${id}.`);
-  const hasCoverage = subject.kind === 'claude-agent' && paths.some(rel => files.some(item => item.path === coveragePathOf(rel)));
+  // The same rule as check-review.mjs: a subject agent file (ending in .md) with its coverage file beside it in the candidate.
+  const hasCoverage = subject.kind === 'claude-agent' && paths.some(rel => rel.endsWith('.md') && files.some(item => item.path === coveragePathOf(rel)));
   const criteria = rubric.criteria.map(({ id }) => {
     const applicable = id === 'shared-semantics' ? subject.kind !== 'skill' : id === 'host-fit' ? subject.target !== null : id === 'coverage-evidence' ? hasCoverage : true;
     const reason = reasons[id] ?? (applicable ? `Applies to this ${subject.kind} review.`

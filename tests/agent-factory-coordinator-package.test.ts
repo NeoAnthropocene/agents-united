@@ -256,10 +256,20 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     // ADR 0072: coverage evidence applies (a Claude agent with its coverage file) and must cite every evidence entry from inside its evidence.
     expect(selected.job.rubric.criteria.find(item => item.id === 'coverage-evidence')).toMatchObject({ applicable: true, required: true });
     await fs.writeJson(opinionFile, opinion);
+    const coverageRefusal = 'Criterion coverage-evidence has no citation of hosts/claude/agents/example.md quoting at least 24 characters (or all) of the evidence, where it stands, of 1 coverage entry: "Report missing evidence."';
     const uncited = review('--result', opinionFile);
     expect(uncited.status, uncited.stdout + uncited.stderr).toBe(1);
-    expect(JSON.parse(uncited.stderr).reason).toContain('Criterion coverage-evidence has no citation of hosts/claude/agents/example.md quoting from the evidence of 1 coverage entry: "Report missing evidence."');
-    opinion.criteria.find(item => item.id === 'coverage-evidence')!.citations = [{ ...citation, quote: 'Report missing evidence.' }];
+    expect(JSON.parse(uncited.stderr).reason).toContain(coverageRefusal);
+    const coverageCriterion = opinion.criteria.find(item => item.id === 'coverage-evidence')!;
+    // A short piece of the evidence is not a citation of it, nor is a quote of the coverage file itself.
+    for (const cites of [[{ ...citation, quote: 'Report missing' }],[{ ...citation, path: covRel, sha256: sha256(covText), quote: '"evidence": "Report missing evidence."' }]]) {
+      coverageCriterion.citations = cites;
+      await fs.writeJson(opinionFile, opinion);
+      const refused = review('--result', opinionFile);
+      expect(refused.status, refused.stdout + refused.stderr).toBe(1);
+      expect(JSON.parse(refused.stderr).reason).toContain(coverageRefusal);
+    }
+    coverageCriterion.citations = [{ ...citation, quote: 'Report missing evidence.' }];
     await fs.writeJson(opinionFile, opinion);
     const reviewed = review('--result', opinionFile);
     expect(reviewed.status, reviewed.stdout + reviewed.stderr).toBe(0);
