@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 62 canonical agents (9 orchestrators + 53 sub-agents) · 216 skills (145 domain skills + 71 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories; a native-only contributor main and three workers are separate from the canonical agent sources.
+**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 62 canonical agents (9 orchestrators + 53 sub-agents) · 217 skills (146 domain skills + 71 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories; a native-only contributor main and three workers are separate from the canonical agent sources.
 
 ---
 
@@ -274,7 +274,7 @@ agents add full                        # end-user suite; excludes contributor-on
 
 ### Skills
 
-The 216 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 145 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skills) and 71 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 217 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 146 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skills) and 71 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
@@ -546,7 +546,7 @@ Safety is layered: policies that every role follows, plus a hook that enforces t
 - **GPU cost ceilings:** serverless GPU workloads scale to zero (60–300 s) and have concurrency limits.
 - **PII scrubbing:** sensitive personal data is masked before embedding or fine-tuning.
 
-**Enforced by the managed guard hook (Claude Code):** a `PreToolUse` hook blocks `git push --force` (but not `--force-with-lease`), `vercel --prod`, and writes to `.env` files (but not `.env.example`), whether the path comes in `file_path` (Write, Edit, MultiEdit) or `notebook_path` (NotebookEdit). The hook runs in exec form with no shell, so it behaves the same on Windows PowerShell as on macOS and Linux.
+**Enforced by the managed guard hook (Claude Code):** a `PreToolUse` hook blocks `git push --force` (but not `--force-with-lease`), `vercel --prod`, and writes to `.env` files (but not `.env.example`), whether the path comes in `file_path` (Write, Edit, MultiEdit) or `notebook_path` (NotebookEdit). It also blocks the common forms of destructive shell commands, in Bash and PowerShell: a recursive delete of a root, home or project folder (`rm -rf /`, `rm -rf .`, `rm -rf ~`, `Remove-Item -Recurse -Force C:\`; `rm -rf node_modules` and `dist` still work), privilege escalation (`sudo`, `runas`, `Start-Process -Verb RunAs`), shutdown and reboot, disk formatting, and cloud resource-group, project or account deletion (`az group delete`, `gcloud projects delete`). It is a seat belt, not a boundary: it reads the command string, so variables, aliases, interpreters, encoded commands and scripts written to a file then run are not seen. The block message says what was blocked and tells you to run it yourself in your own terminal if you mean it. The hook runs in exec form with no shell, so it behaves the same on Windows PowerShell as on macOS and Linux.
 
 - It needs Claude Code 2.1.295 or later, the supported floor: its handler carries `onFailure: "block"`, so a guard that fails to run blocks the call. `agents doctor --host claude` reports an error below that version; installs and starts still work.
 - It always runs while an Agents United role is active.

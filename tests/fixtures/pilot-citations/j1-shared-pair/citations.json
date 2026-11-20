@@ -1,0 +1,94 @@
+{
+  "origin": "2026-11-18 pilot, journey 1, first evaluator (session c7c43763)",
+  "subjectKind": "shared-pair",
+  "citations": [
+    {
+      "where": "criterion task-fit, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "core/subagent-devops-engineer.contract.json",
+      "quote": "\"definition\": \"subagent-devops-engineer\",\n  \"workflows\": [],",
+      "given": {
+        "startLine": 2,
+        "endLine": 13
+      }
+    },
+    {
+      "where": "criterion shared-semantics, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "core/subagent-devops-engineer.core.md",
+      "quote": "capabilities: [\"read\",\"search\",\"edit\",\"shell\",\"handback\",\"skill\",\"background-monitor\",\"task-tracking\",\"mcp-discovery\"]",
+      "given": {
+        "startLine": 8,
+        "endLine": 8
+      }
+    },
+    {
+      "where": "criterion dependency-usefulness, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "core/subagent-devops-engineer.contract.json",
+      "quote": "\"ci-cd-pipeline-automation\",\n    \"docker-deployment\",\n    \"azure-infrastructure-bicep\",",
+      "given": {
+        "startLine": 4,
+        "endLine": 12
+      }
+    },
+    {
+      "where": "criterion dependency-usefulness, citation 2",
+      "sourceId": "source-definition",
+      "inputKind": "source",
+      "path": "evidence-source-definition.md",
+      "quote": "skills:\n  - ci-cd-pipeline-automation\n  - docker-deployment\n  - azure-infrastructure-bicep",
+      "given": {
+        "startLine": 46,
+        "endLine": 53
+      }
+    },
+    {
+      "where": "criterion evidence-truthfulness, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "core/subagent-devops-engineer.core.md",
+      "quote": "A lint or syntax success is reported as such, not as proof of a deployment.",
+      "given": {
+        "startLine": 5,
+        "endLine": 5
+      }
+    },
+    {
+      "where": "criterion evidence-truthfulness, citation 2",
+      "sourceId": "contract-check-raw",
+      "inputKind": "validator",
+      "path": "contract-check.raw.txt",
+      "quote": "\"valid\": true,",
+      "given": {
+        "startLine": 2,
+        "endLine": 2
+      }
+    },
+    {
+      "where": "criterion provenance-ownership, citation 1",
+      "sourceId": "source-definition",
+      "inputKind": "source",
+      "path": "evidence-source-definition.md",
+      "quote": "**Hub-and-spoke by default.**",
+      "given": {
+        "startLine": 211,
+        "endLine": 211
+      }
+    },
+    {
+      "where": "criterion clarity-maintainability, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "core/subagent-devops-engineer.core.md",
+      "quote": "scope_boundaries: \"1. Audit first:",
+      "given": {
+        "startLine": 4,
+        "endLine": 4
+      }
+    }
+  ]
+}

@@ -193,7 +193,7 @@ All architectural decisions recorded in `docs/adr/` are indexed and summarized b
 
 ## 5. Ecosystem Architecture & Department Domains
 
-The ecosystem catalog maintains **62 canonical agents** (9 Lead/Prime/Organization Orchestrators + 53 Sub-Agents), and **216 modular skills & runbooks** (145 domain skills + 71 workflow playbooks) structured into **37 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles, 3 organization bundles and the under-construction `agent-factory` contributor authoring toolkit). The README counts **35 end-user bundles**, excluding the contributor toolkit and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. A native-only factory main and three workers have shared pairs and native bindings without legacy carriers. Counts derive from the current registry:
+The ecosystem catalog maintains **62 canonical agents** (9 Lead/Prime/Organization Orchestrators + 53 Sub-Agents), and **217 modular skills & runbooks** (146 domain skills + 71 workflow playbooks) structured into **37 bundle entries in `registry/bundles.json`** (7 department Essentials, 23 Addons, the `full` suite, the two `universal-*` bundles, 3 organization bundles and the under-construction `agent-factory` contributor authoring toolkit). The README counts **35 end-user bundles**, excluding the contributor toolkit and `mock-organization-under-construction` placeholder. The registry has **8 end-user department domains**, plus the separate `organization` and `contributor` groups, for 10 distinct `domain` values; the README's department table has nine rows including Organization. A native-only factory main and three workers have shared pairs and native bindings without legacy carriers. Counts derive from the current registry:
 
 ```
 🌐 Agents United Registry Catalog Tree
@@ -279,7 +279,7 @@ The ecosystem catalog maintains **62 canonical agents** (9 Lead/Prime/Organizati
 │       ├── 🤖 Lead: orchestrator-universal (Domain Atlas Dispatcher)
 │       └── ⚡ Skills: grill-me, grill-with-docs, domain-modeling, to-spec, to-tickets, handoff
 └── 🌟  Complete Suite
-    └── 📦 full (Universal Suite — 59 listed agents, 205 end-user Skills: 135 domain + 70 workflows)
+    └── 📦 full (Universal Suite — 59 listed agents, 206 end-user Skills: 136 domain + 70 workflows)
 ```
 
 ---
@@ -302,7 +302,7 @@ When a user runs `agents add <bundle> --fanout claude,cursor,cline,opencode,code
 ### 6.2 Safe Capability Probing & Optional Team-Session Launch
 Bundles are **natively active** in any Cline session after installation (ADR 0013 discovery — no launch step required). `agents start <bundle> [prompt]` is the optional team-session launcher:
 
-Every Bundle explicitly ships the shared `host-agent-router`, `handoff` and `git-guardrails` Skills, including standalone addons, factory and optional 3D placement. Those shared declarations add no physical Skills; the registry now holds 216 Skills and `full` 205. Routing remains dormant until the user requests another host CLI and consents to its named hosts/account spending; existing consent for the same scope is valid. Department leads do not preload the router. Offline checks establish declarations and installation, while actual unprompted model behavior remains unverified ([ADR 0066](docs/adr/0066-dormant-router-contract-in-every-bundle.md)).
+Every Bundle explicitly ships the shared `host-agent-router`, `handoff` and `git-guardrails` Skills, including standalone addons, factory and optional 3D placement. Those shared declarations add no physical Skills; the registry now holds 217 Skills and `full` 206. Routing remains dormant until the user requests another host CLI and consents to its named hosts/account spending; existing consent for the same scope is valid. Department leads do not preload the router. Offline checks establish declarations and installation, while actual unprompted model behavior remains unverified ([ADR 0066](docs/adr/0066-dormant-router-contract-in-every-bundle.md)).
 1. **Capability Probing (`ClineCapabilityProbe`)**:
    - Resolves executable via `CLINE_BIN_PATH`, Windows Node wrapper (`<shim>/node_modules/cline/bin/cline`), Windows `cmd.exe` bridge for `.cmd`/`.bat` shims (Node ≥18.20 rejects spawning them with `shell: false`), or the POSIX binary.
    - Executes read-only semantic versioning check (`version`).
@@ -516,7 +516,7 @@ export interface PlanningLoopConfig {
 
 ### 7.5 Agency media contracts (ADR 0056)
 
-The `digital-agency` and `full` Bundles declare nine original media Skills; the optional 3D Bundle also ships shared `audiovisual-review`. This approved placement keeps commonly coordinated direction, local production, audio finishing and review together while every optional runtime/provider remains scoped and separately authorized. The registry holds 62 canonical agents and 216 Skills; `full` lists 59 agents and 205 end-user Skills, excluding the seven contributor Skills and the four optional 3D Skills. Native Claude source has 29 agents: six engineering roles, six growth-marketing agents (the lead and five roles), Chris, eleven agency specialists, optional Arda and a contributor main plus three workers. These are physical source counts, not evidence of live loading.
+The `digital-agency` and `full` Bundles declare nine original media Skills; the optional 3D Bundle also ships shared `audiovisual-review`. This approved placement keeps commonly coordinated direction, local production, audio finishing and review together while every optional runtime/provider remains scoped and separately authorized. The registry holds 62 canonical agents and 217 Skills; `full` lists 59 agents and 206 end-user Skills, excluding the seven contributor Skills and the four optional 3D Skills. Native Claude source has 23 agents: six engineering roles, Chris, eleven agency specialists, optional Arda and a contributor main plus three workers. These are physical source counts, not evidence of live loading.
 
 The standalone optional `agency-3d-production` Bundle provides Arda and four 3D Skills with `audiovisual-review` and `handoff`, independently of `digital-agency`; Chris routes relevant accepted work to Arda when present. Its initial supported surface is Claude-native workspace installation. A **3D Request** records scope, destination, rights, budgets, route and acceptance; `media/3d.json` holds the selected project route and output paths. The **Asset Provenance Ledger** binds each source to hashes, provenance and a named reviewer’s usage attestation; attestation and hash checks are not legal proof. Unresolved personal-private rights remain unverified, with known restrictions respected. A **3D Shot Handoff** binds the canonical timeline fingerprint, scene and frame range, source and output hashes, and runtime versions; changes invalidate dependent evidence. Human visual and sound acceptance remain separate.
 

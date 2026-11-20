@@ -1,0 +1,127 @@
+{
+  "origin": "2026-11-18 re-run, second evaluator (session 2af38008)",
+  "subjectKind": "claude-agent",
+  "citations": [
+    {
+      "where": "criterion task-fit, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "name: subagent-devops-engineer",
+      "given": {
+        "startLine": 2,
+        "endLine": 2
+      }
+    },
+    {
+      "where": "criterion task-fit, citation 2",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "You are the DevOps Engineering subagent.",
+      "given": {
+        "startLine": 19,
+        "endLine": 19
+      }
+    },
+    {
+      "where": "criterion shared-semantics, citation 1",
+      "sourceId": "shared-core",
+      "inputKind": "shared-core",
+      "path": "subagent-devops-engineer.core.md",
+      "quote": "You are the DevOps Engineering subagent.",
+      "given": {
+        "startLine": 2,
+        "endLine": 2
+      }
+    },
+    {
+      "where": "criterion shared-semantics, citation 2",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "A preview deployment is never promoted to production by this role; the production command goes to the orchestrator for explicit user approval.",
+      "given": {
+        "startLine": 53,
+        "endLine": 53
+      }
+    },
+    {
+      "where": "criterion host-fit, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "tools: Bash, Edit, Glob, Grep, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, Read, ReadMcpResourceTool, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, Write",
+      "given": {
+        "startLine": 7,
+        "endLine": 7
+      }
+    },
+    {
+      "where": "criterion host-fit, citation 2",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "agents-united-guard.js",
+      "given": {
+        "startLine": 10,
+        "endLine": 10
+      }
+    },
+    {
+      "where": "criterion dependency-usefulness, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "Skills are not preloaded; this file declares no Skill dependency.",
+      "given": {
+        "startLine": 62,
+        "endLine": 62
+      }
+    },
+    {
+      "where": "criterion evidence-truthfulness, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "Report only commands you actually ran and their results.",
+      "given": {
+        "startLine": 67,
+        "endLine": 67
+      }
+    },
+    {
+      "where": "criterion provenance-ownership, citation 1",
+      "sourceId": "brief",
+      "inputKind": "provenance",
+      "path": "evidence-brief.md",
+      "quote": "Skills stay shared (ADR 0069); no Claude SKILL.md.",
+      "given": {
+        "startLine": 4,
+        "endLine": 4
+      }
+    },
+    {
+      "where": "criterion clarity-maintainability, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "## Working method",
+      "given": {
+        "startLine": 64,
+        "endLine": 69
+      }
+    },
+    {
+      "where": "finding peer-message-invariant-without-tool, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/subagent-devops-engineer.md",
+      "quote": "Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.",
+      "given": {
+        "startLine": 56,
+        "endLine": 56
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "valid": true,
+  "kind": "deterministic",
+  "definition": "subagent-devops-engineer",
+  "files": [
+    {
+      "path": "C:\\github\\scratch-pilot\\claude-lane-devops\\work\\draft\\pair\\core\\subagent-devops-engineer.core.md",
+      "sha256": "86e40cc81712a151e254a1098d8e16582afed7b7a1fe6897b2db97430a0fde05"
+    },
+    {
+      "path": "C:\\github\\scratch-pilot\\claude-lane-devops\\work\\draft\\pair\\core\\subagent-devops-engineer.contract.json",
+      "sha256": "f6b51e33a321eaa939c900a01439400316a91e09e7b60411cc13f18627d69031"
+    }
+  ],
+  "findings": [],
+  "delivery": "unverified",
+  "quality": "pending",
+  "live": "unverified"
+}
