@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "id": "devops-engineering-pilot",
+  "base": "908c521",
+  "roles": [
+    {
+      "role": "devops-engineer",
+      "definition": "subagent-devops-engineer",
+      "bundle": "devops-engineering",
+      "kind": "specialist",
+      "tier": 1,
+      "canonical": "registry/agents/subagent-devops-engineer.md",
+      "pair": "existing",
+      "native": "registry/hosts/claude/agents/devops-engineer.md",
+      "coverage": "tests/fixtures/pilot-devops/final/agent/devops-engineer.coverage.json",
+      "lead": "orchestrator-engineering",
+      "mustHold": ["Bash", "PowerShell", "Edit", "Write", "NotebookEdit", "Monitor", "TodoWrite", "ToolSearch", "Skill", "SendMessage", "SubagentHandback"]
+    }
+  ],
+  "leads": [],
+  "decisions": [
+    {
+      "id": "devops-messaging",
+      "question": "Does devops-engineer get the messaging capability?",
+      "answer": "Add messaging",
+      "by": "maintainer",
+      "date": "2026-11-19",
+      "roles": ["devops-engineer"]
+    }
+  ]
+}
