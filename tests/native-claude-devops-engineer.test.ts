@@ -13,6 +13,8 @@ import { nativeText } from './helpers/native-roles.js';
  */
 
 const text = (): string => nativeText('devops-engineer');
+/** The shared clause every Claude role carries (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
+const COMMON_FORMS = 'the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion)';
 /** A numbered step of the "How to work" section, not the first line of the file that happens to start with the number. */
 const step = (n: number): string => {
   const work = /\n## How to work\n([\s\S]*?)(?=\n## )/.exec(text())![1]!;
@@ -23,10 +25,12 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 describe('native devops-engineer: the guard and production claims', () => {
   it('step 5 names exactly what the bound guard blocks, and what it does not', () => {
     const five = step(5);
-    expect(five).toContain('blocks only forced pushes, `vercel --prod` and `.env` writes');
+    expect(five).toContain(`blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(five).not.toContain('blocks only');
     expect(five).not.toMatch(/blocks[^.]*production deploys/);
     for (const other of ['az deployment', 'kubectl apply', 'terraform apply', 'gh workflow run']) expect(five, other).toContain(other);
-    expect(five).toMatch(/does not enforce the Safety rule against destructive shell commands/);
+    expect(five).toMatch(/does not stop other deploys/);
+    expect(five).toMatch(/does not catch every destructive form/);
     expect(five).toMatch(/your own obligation/);
   });
 
@@ -39,7 +43,7 @@ describe('native devops-engineer: the guard and production claims', () => {
     afterAll(() => fs.rmSync(project, { recursive: true, force: true }));
     const blocked = (command: string): boolean => attempt(text(), project, { tool: 'Bash', input: { command } }, { agentType: 'devops-engineer' }).blocked;
 
-    it.each(['vercel --prod', 'git push --force origin main'])('blocks %s, as step 5 says', command => {
+    it.each(['vercel --prod', 'git push --force origin main', 'rm -rf /', 'sudo ls', 'shutdown now', 'az group delete --name g --yes'])('blocks %s, as step 5 says', command => {
       expect(blocked(command)).toBe(true);
     });
 
@@ -49,7 +53,7 @@ describe('native devops-engineer: the guard and production claims', () => {
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain("- A guard blocks forced pushes, `vercel --prod` and `.env` writes. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
   });
 
   it('keeps the destructive-command rule in the Safety floor', () => {
@@ -89,7 +93,8 @@ describe('native devops-engineer: the MCP servers of its canonical agent', () =>
   it('holds github and context7 in its tools line and says when to use them', () => {
     const tools = /^tools: (.*)$/m.exec(text())![1]!.split(', ');
     expect(tools).toEqual(expect.arrayContaining(['mcp__github', 'mcp__context7']));
-    expect(text()).toContain('- Library and framework questions: confirm them with `mcp__context7` before relying on memory. Pull-request and repository reads go through `mcp__github`; do not push, merge or force anything without being asked, because a guard blocks forced pushes, `vercel --prod` and `.env` writes.');
+    expect(text()).toContain(`- Library and framework questions: confirm them with \`mcp__context7\` before relying on memory. Pull-request and repository reads go through \`mcp__github\`; do not push, merge or force anything without being asked.`);
+    expect(text().split('A guard blocks')).toHaveLength(2);
   });
 
   it('declares the same servers as the canonical registry agent', () => {
