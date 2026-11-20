@@ -109,8 +109,8 @@ describe('native system-architect: the skill table', () => {
   const carrying = Object.entries(bundles).filter(([, bundle]) => (bundle.agents ?? []).includes('subagent-system-architect.md'));
   const tableSkills = (): string[] => [...section(text(), 'How to work').matchAll(/^\|[^|\n]*\|\s*`([a-z0-9-]+)`\s*\|$/gm)].map(match => match[1]!);
 
-  it('is carried by exactly the three system-architecture bundles', () => {
-    expect(carrying.map(([name]) => name).sort()).toEqual(['system-architecture', 'system-architecture-cloud', 'system-architecture-finops']);
+  it('is carried by the three system-architecture bundles and the aggregate full bundle, and by no other', () => {
+    expect(carrying.map(([name]) => name).sort()).toEqual(['full', 'system-architecture', 'system-architecture-cloud', 'system-architecture-finops']);
   });
 
   it('names only skills that every carrying bundle installs, and that exist', () => {
