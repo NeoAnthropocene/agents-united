@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 62 canonical agents (9 orchestrators + 53 sub-agents) · 216 skills (145 domain skills + 71 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories; a native-only contributor main and three workers are separate from the canonical agent sources.
+**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 62 canonical agents (9 orchestrators + 53 sub-agents) · 217 skills (146 domain skills + 71 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories; a native-only contributor main and three workers are separate from the canonical agent sources.
 
 ---
 
@@ -274,7 +274,7 @@ agents add full                        # end-user suite; excludes contributor-on
 
 ### Skills
 
-The 216 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 145 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skills) and 71 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 217 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 146 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skills) and 71 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 

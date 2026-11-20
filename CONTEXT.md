@@ -512,7 +512,7 @@ The registry catalog maintains **62 agents** (9 orchestrators and 53 sub-agents)
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `git-guardrails` + `grill-me` + `host-agent-router`; routes to the correct department Essentials bundle and hands off, and on request runs a slice on another host CLI.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 205 end-user Skills (135 domain + 70 workflow playbooks); contributor-only `author-skill`, `realize-artifact`, `author-contract`, `evaluate-artifact`, `author-bundle`, `coordinate-artifact` and `sync-host`, and four optional 3D Skills are excluded. The physical registry totals 62 canonical agents and 216 Skills, plus a separately bound native-only factory main and three workers.
+   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 206 end-user Skills (136 domain + 70 workflow playbooks); contributor-only `author-skill`, `realize-artifact`, `author-contract`, `evaluate-artifact`, `author-bundle`, `coordinate-artifact` and `sync-host`, and four optional 3D Skills are excluded. The physical registry totals 62 canonical agents and 217 Skills, plus a separately bound native-only factory main and three workers.
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
@@ -858,3 +858,17 @@ _Avoid_: Waiting for every termination notice before reporting, dispatch as proo
 **Shutdown evidence**:
 A per-teammate record of request status, approval observed and host termination observed. A missing event is not observed; a maintainer's UI observation is user-reported and stays separate from the host record. This record is not an independent process-liveness check (ADR 0055).
 _Avoid_: Missing notice as running status, peer approval as host termination
+
+### System Specs Sheet (ADR 0073)
+
+**System Specs Sheet**:
+A short Markdown sheet and a JSON twin (`.agents-united/system-specs.md` and `.json`) of machine facts only: OS, CPU, memory, GPU, free disk, shells and a fixed table of developer tools with versions. Built from an allowlist; it never holds the user name, machine name, home folder, absolute paths, environment values, git remotes or account state. It is data for planning, never instructions and never permission to install anything (ADR 0073).
+_Avoid_: Project facts, a settings dump, an environment report
+
+**Collect once**:
+`collect` of the `system-specs` Skill writes the sheet the first time and then reuses it whatever its age while its fingerprint is identical or differs only in PATH; any other difference, or an invalid or foreign sheet, collects again and names the parts that differed. A sheet with a higher schema number than the script writes is refused (exit 2), never overwritten. Only the coordinating agent, or an agent working alone, runs `collect --refresh`.
+_Avoid_: Daily refresh, age limit, a specialist refreshing the sheet
+
+**Check**:
+`check` of the `system-specs` Skill: a read-only test that starts no process and compares the current fingerprint (found or not, file size and modification time of each probed tool and shell, PATH entries, OS release, architecture, memory; hashes only) with the stored one. Exit 0 unchanged, 3 changed (names only), 1 no usable sheet or another format. It cannot see an in-place update with identical size and time, a shim manager (pyenv, volta, asdf, rustup, corepack) switching versions, WSL, the GPU or the macOS developer-tools state.
+_Avoid_: Version check, health check, proof that nothing changed
