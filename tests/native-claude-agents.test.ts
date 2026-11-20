@@ -76,6 +76,24 @@ const ROLES: RoleSpec[] = [
   { name: 'interaction-designer', stem: 'subagent-interaction-designer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   { name: 'ui-designer', stem: 'subagent-ui-designer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   { name: 'ux-strategist', stem: 'subagent-ux-strategist', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  // The design lead (Tier 1, a domain lead): the engineering lead's cut minus the code-intelligence, workflow and report classes (no code, no saved workflow, no reviewer findings).
+  // It holds the seven design servers under their plugin or connector routes; Playwright is the master operator's addition beyond the canonical lead (prototype-tester declares it).
+  // It has no image tool and no mode-line gate: product-design is a domain bundle (ADR 0053 covers organization leads).
+  {
+    name: 'orchestrator-design',
+    stem: 'orchestrator-design',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__playwright', 'mcp__stitch']),
+    mutating: true,
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'product-design',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'opus',
+    effort: 'medium',
+  },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
