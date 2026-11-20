@@ -164,6 +164,23 @@ describe('native install lane (agents add --native)', () => {
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
+  it('installs the native qa-automation-lead for the qa-automation bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('qa-automation', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('qa-automation-lead'), 'utf8')).toBe(expected('qa-automation-lead'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/qa-automation-lead.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('qa-automation-lead'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, qa-automation still writes the legacy projection for qa-automation-lead', async () => {
+    await new InstallEngine().install('qa-automation', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('qa-automation-lead'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
   it('records the lane, and every projection hash matches the file on disk', async () => {
     await install(true);
     const lock = await fs.readJson(lockPath);
