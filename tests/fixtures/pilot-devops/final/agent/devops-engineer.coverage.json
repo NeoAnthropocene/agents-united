@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "role": "devops-engineer",
+  "definition": "subagent-devops-engineer",
+  "invariants": [
+    {
+      "invariant": "No plaintext secret, token or connection string appears in a workflow file or IaC template.",
+      "evidence": "- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities."
+    },
+    {
+      "invariant": "Every container runs as a non-root user.",
+      "evidence": "- Never run a container as root; enforce an unprivileged user in every Dockerfile."
+    },
+    {
+      "invariant": "No production container image uses the latest tag.",
+      "evidence": "- Never tag a production container image latest; pin an explicit semantic tag or digest."
+    },
+    {
+      "invariant": "Production changes follow GitOps only: IaC plus CI/CD, never out-of-band.",
+      "evidence": "- Never modify a production cloud resource out-of-band; every change goes through IaC and CI/CD (GitOps)."
+    },
+    {
+      "invariant": "A preview deployment is never promoted to production by this role; the production command goes to the orchestrator for explicit user approval.",
+      "evidence": "- Never promote a preview deployment to production yourself; hand the production command to the orchestrator for explicit user approval."
+    },
+    {
+      "invariant": "Consult the named Skill before writing platform-specific code; report a missing platform skill instead of improvising.",
+      "evidence": "Load the matching skill with `Skill` before writing platform-specific code. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory."
+    },
+    {
+      "invariant": "Hand your result back to the coordinator, not across to a peer.",
+      "evidence": "- **Your final report is your one hand-back.** Do not use `SendMessage` to push results to the lead mid-run."
+    },
+    {
+      "invariant": "Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.",
+      "evidence": "- **Team mode** is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`."
+    },
+    {
+      "invariant": "Check for delivered peer messages before the final report.",
+      "evidence": "**Check your inbox before you finish, and do not wait for a reply.**"
+    },
+    {
+      "invariant": "The handoff report lists peer messages received and open items.",
+      "evidence": "**Report sections, always present:** `Peer messages received` (the sender and gist of each message, or \"none\") and `Open items`"
+    }
+  ]
+}

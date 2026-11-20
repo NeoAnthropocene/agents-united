@@ -227,6 +227,7 @@
               "loading",
               "guard",
               "support",
+              "canonical",
               "validator",
               "runtime",
               "template"

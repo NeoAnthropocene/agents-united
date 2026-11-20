@@ -13,6 +13,7 @@ const MANAGED = ['.claude', '.agents', '.cline', '.cursor', '.codex', '.opencode
 const SCENARIOS = { s0: ['s0-launcher'], s1: ['s1-coord-realize'], s2: ['s2-sync'], s3: ['s3-typed-forks'], s4: ['s4a-factory-guards', 's4b-readonly-probe'], s5: ['s5-with', 's5-without', 's5-control'], s6: ['s6-skill-args'] };
 const STEM = 'subagent-note-checker';
 const AGENT_PATH = 'hosts/claude/agents/note-checker.md';
+const COVERAGE_PATH = AGENT_PATH.replace(/\.md$/, '.coverage.json');
 const HOLDS_DOC = ['docs', 'skill-quality', '2026-11-07-host-source-holds.md'];
 const MAX_NODE_BYTES = 128 * 1024 * 1024;
 
@@ -239,13 +240,13 @@ function buildS1(ctx, folder) {
   const nativeArtifact = path.join(draft, AGENT_PATH);
   const brief = {
     version: 1, kind: 'factory-proof-s1-brief', scenario: 's1',
-    objective: 'Create one Claude Code subagent named note-checker from the supplied shared pair subagent-note-checker: an independent read-only reviewer of one plain-text note. The draft is local to the draft root; the intent is upstream, so after review only the contribution body is prepared.',
+    objective: 'Create one Claude Code subagent named note-checker from the supplied shared pair subagent-note-checker: an independent read-only reviewer of one plain-text note. The draft is local to the draft root; the intent is upstream, so after review only the contribution body is prepared. Beside the agent, write its invariant coverage file (note-checker.coverage.json): every core invariant once, with evidence quoted verbatim from the agent.',
     fixedValues: [{ path: AGENT_PATH, contains: 'Proof fixture note checker.' }],
     unknowns: ['The Claude Code version of the run is unverified until the lead records it.', 'Live behaviour of the realized agent is unverified; only offline checks apply.', 'Whether the independent review raises a finding is unknown; the repair is authorized, not expected.'],
     operation: 'create', intent: 'upstream', jobIdPrefix: 'proof-note-checker',
     pair: { definition: STEM, registry, core: { path: corePath, sha256: sha256(fs.readFileSync(corePath)) }, contract: { path: contractPath, sha256: sha256(fs.readFileSync(contractPath)) }, licence: 'MIT', original: true },
     target: { type: 'agent', paths: [AGENT_PATH], loading: 'subagent', requiredSkills: [] },
-    allowedChanges: { create: [AGENT_PATH], update: [], delete: [] },
+    allowedChanges: { create: [AGENT_PATH, COVERAGE_PATH], update: [], delete: [] },
     authoringHost: { ...host, reason: 'The coordinator and its workers run in the prepared workspace on the Claude Code CLI; the lead records the actual version before the run.' },
     targetHost: { ...host, reason: 'The draft targets the same Claude Code CLI workspace native lane.', minimum: profile.minVersion, reviewedAgainst: profile.reviewedAgainst },
     validation: { checkout: ctx.checkout, head: ctx.head, registry, cli: cliPin, node },
@@ -254,9 +255,9 @@ function buildS1(ctx, folder) {
     checks: [
       run1('pair', ['factory-check', '--registry', registry, '--definition', STEM, '--host', 'claude'], 60),
       run1('contract', ['contract-check', '--registry', registry, '--definition', STEM], 60),
-      run1('native', ['factory-check', '--registry', registry, '--definition', STEM, '--host', 'claude', '--artifact', nativeArtifact, '--loading', 'subagent', '--required-skills', '[]'], 120),
+      run1('native', ['factory-check', '--registry', registry, '--definition', STEM, '--host', 'claude', '--artifact', nativeArtifact, '--loading', 'subagent', '--required-skills', '[]', '--coverage', path.join(draft, COVERAGE_PATH)], 120),
     ],
-    constraints: { maxFiles: 4, maxFileBytes: 65536, maxTotalBytes: 131072, formats: ['.md'], prohibitedActions: ['publish', 'install', 'commit', 'push', 'nested-host-session', 'spend'] },
+    constraints: { maxFiles: 4, maxFileBytes: 65536, maxTotalBytes: 131072, formats: ['.md', '.json'], prohibitedActions: ['publish', 'install', 'commit', 'push', 'nested-host-session', 'spend'] },
     acceptance: [
       { id: 'pair-valid', description: 'The supplied shared pair and the registry folder pass the pinned pair and contract checks.', requiredChecks: ['pair', 'contract'] },
       { id: 'native-valid', description: 'The actual native bytes pass the pinned native check for the supplied pair.', requiredChecks: ['native'] },

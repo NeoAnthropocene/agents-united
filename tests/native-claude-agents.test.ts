@@ -15,6 +15,7 @@ import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
 import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
+import { nativeToolOrder } from '../src/core/native-repository-rules.js';
 import { withRoutes } from '../src/core/claude-mcp-routes.js';
 
 /**
@@ -209,7 +210,7 @@ beforeAll(async () => {
     for (const role of [...ROLES].sort((a, b) => Number(a.mainThread ?? false) - Number(b.mainThread ?? false))) {
       if (!fs.existsSync(fileOf(role))) continue;
       const tools = ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist(role.coordinatorBundle) : tool));
-      const toolsLine = `tools: ${[...[...tools].sort(), ...role.serverTools].join(', ')}`;
+      const toolsLine = `tools: ${nativeToolOrder(tools, role.serverTools).join(', ')}`;
       let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
       if (role.mainThread) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
@@ -271,6 +272,9 @@ describe.each(ROLES)('native Claude $name', role => {
     expect(declaredNames()).toEqual(expect.arrayContaining(role.mustHold));
     expect(declaredNames().filter(tool => !tool.startsWith('mcp__')).sort()).toEqual([...ceilingOf(role)].sort());
     expect(declared().filter(tool => tool.startsWith('mcp__')).sort()).toEqual([...role.serverTools].sort());
+    // The committed tools line is the generator's line, character for character (ADR 0072).
+    const generated = nativeToolOrder(ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist(role.coordinatorBundle) : tool)), role.serverTools);
+    expect(/^tools: (.*)$/m.exec(read())![1]).toBe(generated.join(', '));
   });
 
   it('has Glob and Grep, and no delegation, workflow or scheduling tool', () => {

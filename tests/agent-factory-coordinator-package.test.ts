@@ -82,6 +82,9 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     const pairCheck = { ...allowed, id: 'input-pair', argv: [allowed.argv[0]!, 'factory-check', '--registry', f.registry, '--definition', f.job.artifact.definition, '--host', 'claude'] };
     f.job.checks.push(pairCheck);
     f.job.acceptance[0]!.requiredChecks.push(pairCheck.id);
+    // ADR 0072: a non-factory role declares its coverage file beside the agent, and the native check names it.
+    f.job.allowedChanges.create.push('hosts/claude/agents/example.coverage.json');
+    allowed.argv.push('--coverage', path.join(f.draft, 'hosts/claude/agents/example.coverage.json'));
     const originalBrief = { identity: core.identity, mission: core.mission, scope: core.scope_boundaries, safety: core.safety,
       fixedValues: structuredClone(f.job.constraints.fixedValues), acceptance: structuredClone(f.job.acceptance),
       definition: f.job.artifact.definition, paths: [...f.job.artifact.paths], loading: f.job.artifact.loading };
@@ -93,8 +96,11 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     const pair = spawnSync(pairCheck.executable, pairCheck.argv, { cwd: pairCheck.cwd, encoding: 'utf8' });
     const pairEndedAt = new Date().toISOString();
     expect(pair.status, pair.stdout + pair.stderr).toBe(0);
-    const text = `---\n${YAML.stringify({ name: 'example', description: 'Review the supplied original document.', model: 'inherit', background: false, tools: resolveGrant(loadToolPolicy(f.registry, 'claude'), core.capabilities ?? [], { subagent: true, background: false }).tools.join(', '), hooks: readOnlyGuardFileHooks() })}---\n${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\nReturn bounded findings to the caller.\n`;
+    const text = `---\n${YAML.stringify({ name: 'example', description: 'Review the supplied original document.', model: 'sonnet', effort: 'medium', background: false, tools: resolveGrant(loadToolPolicy(f.registry, 'claude'), core.capabilities ?? [], { subagent: true, background: false }).tools.join(', '), hooks: readOnlyGuardFileHooks() })}---\n${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\nReturn bounded findings to the caller.\nReport missing evidence.\n`;
     await fs.outputFile(path.join(f.draft, f.job.artifact.paths[0]!), text);
+    const covRel = 'hosts/claude/agents/example.coverage.json';
+    const covText = `${JSON.stringify({ version: 1, role: 'example', definition: 'subagent-example', invariants: [{ invariant: 'Report missing evidence.', evidence: 'Report missing evidence.' }] }, null, 2)}\n`;
+    await fs.outputFile(path.join(f.draft, covRel), covText);
     const startedAt = new Date().toISOString();
     const native = spawnSync(allowed.executable, allowed.argv, { cwd: allowed.cwd, encoding: 'utf8' });
     const endedAt = new Date().toISOString();
@@ -108,7 +114,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
       const file = path.join(f!.evidence, index === 0 ? 'pair-stdout.txt' : 'pair-stderr.txt'); await fs.writeFile(file, bytes);
       return { path: file, sha256: sha256(bytes), bytes: Buffer.byteLength(bytes) };
     }));
-    await fs.writeJson(resultFile, { version: 1, jobId: f.job.id, jobDigest: f.digest(), status: 'draft', inventory: [{ path: f.job.artifact.paths[0], kind: 'file', bytes: Buffer.byteLength(text), sha256: sha256(text) }], diff: [{ path: f.job.artifact.paths[0], before: null, after: text }], coverage: f.job.inputs.map(input => ({ input: input.path, sections: input.sections, rationale: 'Original offline fixture uses the pinned native evidence.' })), deltas: [{ kind: 'mapped', subject: 'Class-derived read-only grant and native guard', rationale: 'Checked on actual candidate bytes; live behavior unverified.' }], provenance: { disposition: 'original', evidence: [f.job.inputs.find(input => input.kind === 'core')!.path], findings: [] }, checks: [{ id: pairCheck.id, jobDigest: f.digest(), executable: pairCheck.executable, argv: pairCheck.argv, cwd: pairCheck.cwd, startedAt: pairStartedAt, endedAt: pairEndedAt, exitCode: pair.status, classification: 'passed', stdout: pairLogs[0], stderr: pairLogs[1] }, { id: allowed.id, jobDigest: f.digest(), executable: allowed.executable, argv: allowed.argv, cwd: allowed.cwd, startedAt, endedAt, exitCode: native.status, classification: 'passed', stdout: logs[0], stderr: logs[1] }], quality: { status: 'pending', findings: [] }, live: { status: 'unverified', reason: 'Only offline deterministic validation ran.' }, openItems: ['Independent semantic review and live invocation unverified.'], upstream: null });
+    await fs.writeJson(resultFile, { version: 1, jobId: f.job.id, jobDigest: f.digest(), status: 'draft', inventory: [{ path: f.job.artifact.paths[0], kind: 'file', bytes: Buffer.byteLength(text), sha256: sha256(text) }, { path: covRel, kind: 'file', bytes: Buffer.byteLength(covText), sha256: sha256(covText) }], diff: [{ path: f.job.artifact.paths[0], before: null, after: text }, { path: covRel, before: null, after: covText }], coverage: f.job.inputs.map(input => ({ input: input.path, sections: input.sections, rationale: 'Original offline fixture uses the pinned native evidence.' })), deltas: [{ kind: 'mapped', subject: 'Class-derived read-only grant and native guard', rationale: 'Checked on actual candidate bytes; live behavior unverified.' }], provenance: { disposition: 'original', evidence: [f.job.inputs.find(input => input.kind === 'core')!.path], findings: [] }, checks: [{ id: pairCheck.id, jobDigest: f.digest(), executable: pairCheck.executable, argv: pairCheck.argv, cwd: pairCheck.cwd, startedAt: pairStartedAt, endedAt: pairEndedAt, exitCode: pair.status, classification: 'passed', stdout: pairLogs[0], stderr: pairLogs[1] }, { id: allowed.id, jobDigest: f.digest(), executable: allowed.executable, argv: allowed.argv, cwd: allowed.cwd, startedAt, endedAt, exitCode: native.status, classification: 'passed', stdout: logs[0], stderr: logs[1] }], quality: { status: 'pending', findings: [] }, live: { status: 'unverified', reason: 'Only offline deterministic validation ran.' }, openItems: ['Independent semantic review and live invocation unverified.'], upstream: null });
     const checked = run('check-handback', ['--job', f.jobFile, '--result', resultFile]);
     expect(checked.status, checked.stdout + checked.stderr).toBe(0);
     expect(JSON.parse(checked.stdout)).toMatchObject({ recordValid: true, acceptedDraft: false, quality: 'pending', live: 'unverified' });
@@ -137,8 +143,10 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     const rel = f.job.artifact.paths[0]!, snapshot = path.join(f.evidence, 'r1/baseline', rel);
     await fs.outputFile(snapshot, text);
     f.job.id = 'fixture-1-r1'; f.job.operation = 'update';
-    f.job.allowedChanges = { create: [], update: [rel], delete: [] };
-    f.job.baseline = [{ path: rel, bytes: Buffer.byteLength(text), sha256: sha256(text), snapshot }];
+    const covSnapshot = path.join(f.evidence, 'r1/baseline', covRel);
+    await fs.outputFile(covSnapshot, covText);
+    f.job.allowedChanges = { create: [], update: [rel, covRel], delete: [] };
+    f.job.baseline = [{ path: rel, bytes: Buffer.byteLength(text), sha256: sha256(text), snapshot }, { path: covRel, bytes: Buffer.byteLength(covText), sha256: sha256(covText), snapshot: covSnapshot }];
     await f.save();
     const updatePreflight = run('check-job', ['--job', f.jobFile]);
     expect(updatePreflight.status, updatePreflight.stdout + updatePreflight.stderr).toBe(0);
@@ -159,7 +167,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
         startedAt, endedAt, exitCode: actual.status, classification: 'passed', stdout: pins[0], stderr: pins[1] });
     }
     const updatedResult = { ...originalResult, jobId: f.job.id, jobDigest: f.digest(),
-      inventory: [{ path: rel, kind: 'file', bytes: Buffer.byteLength(updatedText), sha256: sha256(updatedText) }],
+      inventory: [{ path: rel, kind: 'file', bytes: Buffer.byteLength(updatedText), sha256: sha256(updatedText) }, { path: covRel, kind: 'file', bytes: Buffer.byteLength(covText), sha256: sha256(covText) }],
       diff: [{ path: rel, before: text, after: updatedText }], checks: updateChecks };
     const updateResultFile = path.join(f.evidence, 'r1/result.json');
     await fs.writeJson(updateResultFile, updatedResult);
@@ -177,7 +185,9 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
       source: file => path.join(f!.registry, file), installed: file => path.join(target, file) });
     await fs.remove(selected.candidate);
     selected.candidate = f.draft;
-    selected.inventory = [{ bytes: Buffer.byteLength(updatedText), kind: 'file', path: rel, sha256: sha256(updatedText) }];
+    // ADR 0072: the draft root holds the agent and its coverage file; the review's inventory is complete (verification.md), the coverage file as support.
+    selected.inventory = [{ bytes: Buffer.byteLength(updatedText), kind: 'file', path: rel, sha256: sha256(updatedText) }, { bytes: Buffer.byteLength(covText), kind: 'file', path: covRel, sha256: sha256(covText) }]
+      .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
     selected.candidateDigest = sha256(JSON.stringify(selected.inventory));
     selected.job.source = f.job.source;
     selected.job.roots.candidate = f.draft;
@@ -199,7 +209,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     expect(selected.job.fixedValues).toContainEqual({ name: 'read-only-scope', value: 'Read only the supplied document.' });
     expect(selected.job.acceptance[0]).toEqual({ id: originalBrief.acceptance[0]!.id, description: originalBrief.acceptance[0]!.description });
     expect(selected.job.objective).toContain('Example reviewer.');
-    selected.job.candidate.files = selected.inventory.map(item => ({ ...item, role: 'subject' }));
+    selected.job.candidate.files = selected.inventory.map(item => ({ ...item, role: item.path === covRel ? 'support' : 'subject' }));
     selected.job.rubric.criteria = selected.job.rubric.criteria.map(item => ({ ...item, required: true, applicable: true, reason: 'Required for the fixed final Claude agent.' }));
     for (const name of ['agent', 'hook', 'tools', 'orchestration']) {
       const page = { agent: 'agent/sub-agents', hook: 'hook/hooks', tools: 'tools/tools-reference', orchestration: 'orchestration/workflows' }[name];
@@ -223,7 +233,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     Object.assign(selected.job.inputs.find(input => input.kind === 'validator')!, await reviewPin(cli));
     selected.job.roots.read.push(cli);
     const command = { executable: selected.job.runtime.executable,
-      argv: [cli, 'factory-check', '--registry', f.registry, '--definition', 'subagent-example', '--host', 'claude', '--artifact', path.join(f.draft, rel), '--loading', 'subagent', '--required-skills', '[]'], cwd: f.checkout };
+      argv: [cli, 'factory-check', '--registry', f.registry, '--definition', 'subagent-example', '--host', 'claude', '--artifact', path.join(f.draft, rel), '--loading', 'subagent', '--required-skills', '[]', '--coverage', path.join(f.draft, covRel)], cwd: f.checkout };
     const finalValidation = spawnSync(command.executable.path, command.argv, { cwd: command.cwd, encoding: 'utf8' });
     expect(finalValidation.status, finalValidation.stdout + finalValidation.stderr).toBe(0);
     const reviewRaw = path.join(selected.evidence, 'checks/factory-check.raw.txt'), reviewReceipt = path.join(selected.evidence, 'checks/factory-check.receipt.json');
@@ -240,7 +250,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     const lines = updatedText.split('\n'), line = lines.findIndex(value => value === 'Example reviewer.') + 1;
     expect(line).toBeGreaterThan(0);
     const citation = { sourceId: 'candidate', path: rel, sha256: sha256(updatedText), startLine: line, endLine: line, quote: 'Example reviewer.' };
-    opinion.coverage = [{ path: rel, status: 'reviewed', rationale: 'Synthetic package record covers the exact final producer bytes; usefulness unverified.' }];
+    opinion.coverage = [rel, covRel].map(file => ({ path: file, status: 'reviewed', rationale: 'Synthetic package record covers the exact final producer bytes; usefulness unverified.' }));
     for (const criterion of opinion.criteria) criterion.citations = [citation];
     const opinionFile = path.join(selected.evidence, 'result.json');
     await fs.writeJson(opinionFile, opinion);

@@ -139,6 +139,9 @@ export function jsonFile(file, label) {
   return JSON.parse(bytes.toString('utf8'));
 }
 
+/** The coverage file of an agent path: beside the agent, `<name>.coverage.json` (ADR 0072). */
+export const coveragePathFor = agentRel => agentRel.replace(/\.md$/,'.coverage.json');
+
 export function checkJob(job, { postflight = false } = {}) {
   validateRecord(job, schemaFor('job'), 'job');
   const { roots, source, constraints, budget } = job;
@@ -226,7 +229,15 @@ export function checkJob(job, { postflight = false } = {}) {
   }
   for (const item of job.acceptance) for (const id of item.requiredChecks) if (!job.checks.some(check => check.id === id && check.required)) fail(`Acceptance requires unavailable required check ${id}.`);
   unique(job.artifact.requiredSkills, 'Required preloads');
-  const expected = [path.join(source.checkout, 'dist/cli.js'), 'factory-check', '--registry', source.registry, '--definition', job.artifact.definition, '--host', 'claude', '--artifact', path.join(roots.draft, job.artifact.paths[0]), '--loading', job.artifact.loading, '--required-skills', JSON.stringify(job.artifact.requiredSkills)];
+  // ADR 0072: the canonical agent the pair stands for, when the selected registry has one, is a pinned input and the checker's --canonical; the
+  // candidate's coverage file is a second declared output, named in the allowed changes, and the checker's --coverage.
+  const canonicalFile = path.join(source.registry, 'agents', `${job.artifact.definition}.md`);
+  const hasCanonical = fs.statSync(canonicalFile, { throwIfNoEntry: false })?.isFile() ?? false;
+  if (hasCanonical && !pinAt('canonical', canonicalFile)) fail(`Required canonical input must pin its selected source path: ${canonicalFile}`);
+  const coverageRel = coveragePathFor(job.artifact.paths[0]);
+  const hasCoverage = allChanges.includes(coverageRel);
+  const expected = [path.join(source.checkout, 'dist/cli.js'), 'factory-check', '--registry', source.registry, '--definition', job.artifact.definition, '--host', 'claude', '--artifact', path.join(roots.draft, job.artifact.paths[0]), '--loading', job.artifact.loading, '--required-skills', JSON.stringify(job.artifact.requiredSkills),
+    ...(hasCanonical ? ['--canonical', canonicalFile] : []), ...(hasCoverage ? ['--coverage', path.join(roots.draft, coverageRel)] : [])];
   if (job.artifact.paths.length !== 1 || !job.checks.some(check => check.required && same(check.argv, expected))) fail('Required native-validation checker command is missing or changed.');
   for (const fixed of constraints.fixedValues) relative(fixed.path);
   return { digest: hash(canonical(job)), baseline, current };

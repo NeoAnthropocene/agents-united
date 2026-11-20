@@ -349,8 +349,9 @@ cli
   .command('contract-check', 'Validate a shared definition and companion Subagent Contract without native inputs (read-only)')
   .option('--registry <path>', 'Absolute selected source registry')
   .option('--definition <id>', 'Semantic Core/companion contract stem')
-  .action(async (options: { registry?: string; definition?: string }) => {
-    const result = await checkSharedPair({ registryDir: options.registry ?? '', definition: options.definition ?? '' });
+  .option('--canonical <path>', 'Absolute canonical agent the pair stands for; its guardrails and numbered directives must be in the core')
+  .action(async (options: { registry?: string; definition?: string; canonical?: string }) => {
+    const result = await checkSharedPair({ registryDir: options.registry ?? '', definition: options.definition ?? '', canonicalFile: options.canonical });
     console.log(JSON.stringify(result, null, 2));
     if (!result.valid) process.exitCode = 1;
   });
@@ -363,13 +364,15 @@ cli
   .option('--artifact <path>', 'Absolute authored native agent; omit to validate shared inputs first')
   .option('--loading <kind>', 'Native loading context: subagent or main', { default: 'subagent' })
   .option('--required-skills <json>', 'Explicit task-required preloads as a JSON array; permitted Skills are not automatically required', { default: '[]' })
-  .action(async (options: { registry?: string; definition?: string; host: string; artifact?: string; loading: string; requiredSkills: string }) => {
+  .option('--canonical <path>', 'Absolute canonical agent; default <registry>/agents/<definition>.md when it exists')
+  .option('--coverage <path>', "Absolute invariant coverage file of the candidate (needed for any role but a factory worker)")
+  .action(async (options: { registry?: string; definition?: string; host: string; artifact?: string; loading: string; requiredSkills: string; canonical?: string; coverage?: string }) => {
     let result: FactoryCheckResult;
     try {
       const required: unknown = JSON.parse(options.requiredSkills);
       if (!Array.isArray(required) || required.some(id => typeof id !== 'string')) throw new Error('required-skills must be a JSON array of identifiers.');
       if (options.loading !== 'main' && options.loading !== 'subagent') throw new Error('Loading must be subagent or main.');
-      result = await checkFactoryArtifact({ registryDir: options.registry ?? '', definition: options.definition ?? '', host: options.host, artifactPath: options.artifact, loading: options.loading, requiredSkills: required as string[] });
+      result = await checkFactoryArtifact({ registryDir: options.registry ?? '', definition: options.definition ?? '', host: options.host, artifactPath: options.artifact, loading: options.loading, requiredSkills: required as string[], canonicalFile: options.canonical, coverageFile: options.coverage });
     } catch (error) {
       result = { ok: false, kind: 'deterministic', findings: [error instanceof Error ? error.message : String(error)], quality: 'pending', live: 'unverified' };
     }
