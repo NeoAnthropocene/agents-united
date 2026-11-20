@@ -216,7 +216,7 @@ describe('native cloud-security-architect: the shared pair', () => {
       'Zero Long-Lived Access Keys', 'Default-Deny IAM Architecture', 'Automated IaC Security Gate', 'Data-at-Rest & In-Transit Encryption', 'Structured Audit Reporting',
       'Phase 1, Cloud Infrastructure & Policy Audit', 'Phase 2, Threat Modeling & IaC Security Scan', 'Phase 3, Hardening & Policy Remediation', 'Phase 4, Verification & Compliance Check', 'Edge Cases & Error Recovery',
     ];
-    titles.forEach((title, index) => expect(scope, title).toContain(`${index + 1}. **${title}**`));
+    titles.forEach((title, index) => expect(scope, title).toContain(index < 5 ? `${index + 1}. **${title}.**` : `${index + 1}. **${title}**`));
     const source = canonical();
     for (const sentence of [
       'Mandate ephemeral OIDC / Workload Identity Federation for all CI/CD pipelines (GitHub Actions, GitLab CI) and services. Never hard-code or permit static cloud credentials.',
