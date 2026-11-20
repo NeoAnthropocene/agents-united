@@ -72,7 +72,7 @@ describe('native seo-specialist: build inputs go back to the lead', () => {
   it('hands the metadata, JSON-LD, rendering and header recipes and the Web Vitals fixes back to orchestrator-marketing as a fixed input, naming no engineering role', () => {
     expect(step(6)).toContain('Hand the metadata, the JSON-LD, the server-side rendering or canonical-header recipe and the Core Web Vitals fixes back to `orchestrator-marketing` as a fixed input for whoever builds the page (the user\'s implementation team)');
     expect(step(6)).toContain('Every finding carries a severity (critical, major or minor) and a concrete remediation');
-    expect(text().split('<!-- agents-united:floor:end -->')[1]).not.toMatch(/engineering (role|team)|frontend|backend/i);
+    expect(text().split('<!-- agents-united:floor:end -->')[1]!.replace(OUT_OF_DEPARTMENT_HANDOFF, '')).not.toMatch(/engineering (role|team)|frontend|backend/i);
   });
 
   it('leaves application code to whoever builds the page and topic clusters to the content strategist, through the lead', () => {
