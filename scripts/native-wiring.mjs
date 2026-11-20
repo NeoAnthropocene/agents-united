@@ -108,11 +108,12 @@ function factsOf(role, checkout) {
   const guard = /readonly-guard/.test(front[1]) ? 'read-only' : 'destructive';
   const mutating = ['Edit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'].some(tool => plain.includes(tool));
   const derived = plain.filter(tool => !tool.startsWith('mcp__') && !NOT_MUST_HOLD.has(tool));
+  const mustHoldDerived = role.mustHold === undefined;
   const mustHold = role.mustHold ?? [...WRITER_ORDER.filter(tool => derived.includes(tool)), ...derived.filter(tool => !WRITER_ORDER.includes(tool)).sort()];
   const searchTools = plain.includes('LSP') ? undefined : ['Glob', 'Grep', 'Read'].filter(tool => plain.includes(tool));
   const workTools = plain.includes('Bash') ? undefined : ['Edit', 'Write'].filter(tool => plain.includes(tool));
   const coverage = JSON.parse(readText(path.join(checkout, role.coverage)));
-  return { text, meta, plain, serverTools, guard, mutating, mustHold, searchTools, workTools, coverage, peers: text.includes('## Working with peers') };
+  return { text, meta, tools, plain, serverTools, guard, mutating, mustHold, mustHoldDerived, searchTools, workTools, coverage, peers: text.includes('## Working with peers') };
 }
 
 /** `'<invariant>': /<pattern>/flags,` lines of a block that starts at `header` (an object literal opened on that line), at `indent` spaces. */
@@ -140,7 +141,37 @@ function rolesRow(role, facts) {
   if (facts.searchTools) parts.push(`searchTools: ${list(facts.searchTools)}`);
   if (facts.workTools) parts.push(`workTools: ${list(facts.workTools)}`);
   parts.push(`model: '${facts.meta.model}'`, `effort: '${facts.meta.effort}'`);
-  return `  { ${parts.join(', ')} },`;
+  // A must-hold list the manifest did not give is the generator's, not a reviewer's: the row says so.
+  return `  { ${parts.join(', ')} },${facts.mustHoldDerived ? " // mustHold derived from the tools line, not a reviewer's choice" : ''}`;
+}
+
+/** The stub of a role's own test file: its exact tool set from the tools line, and a case that fails until the role's own claims are written. */
+function roleTestStub(role, facts) {
+  return [
+    "import { describe, expect, it } from 'vitest';",
+    "import { splitTools } from '../src/core/native-guard.js';",
+    "import { nativeText } from './helpers/native-roles.js';",
+    '',
+    '/**',
+    ` * Native ${role.role}: what its authored body must keep saying. Generated as a stub by scripts/native-wiring.mjs (ADR 0075): the exact tool set`,
+    " * comes from the tools line; the role's own claims (every guard, tool or Host behaviour its text names, tested against what is bound) are",
+    ' * written by hand, and the last case fails until they are.',
+    ' */',
+    '',
+    `const text = (): string => nativeText('${role.role}');`,
+    'const toolsOf = (body: string): string[] => splitTools(/^tools: (.*)$/m.exec(body)![1]!);',
+    '',
+    `describe('native ${role.role}', () => {`,
+    "  it('holds exactly its tools', () => {",
+    `    expect(toolsOf(text())).toEqual(${list(facts.tools)});`,
+    '  });',
+    '',
+    "  it('states its own claims (written by hand before the pull request)', () => {",
+    `    throw new Error('Write the own claims of ${role.role}: every guard, tool or Host behaviour its text names, tested against what is bound.');`,
+    '  });',
+    '});',
+    '',
+  ].join('\n');
 }
 
 function installCases(role) {
@@ -261,7 +292,11 @@ export function planWiring(manifest, checkout, options = {}) {
           const start = lines.findIndex(line => line.startsWith('const ROLES: RoleSpec[] = ['));
           const block = lines.findIndex((line, index) => index > start && line === '  {');
           if (start < 0 || block < 0) plan.refusals.push(`${FILES.roles}: the ROLES table has no place for a Tier-1 row.`);
-          else { lines.splice(block, 0, row); texts[FILES.roles] = lines.join('\n'); note('roles', 'insert', role.role, 'ROLES row'); }
+          else {
+            lines.splice(block, 0, row);
+            texts[FILES.roles] = lines.join('\n');
+            plan.edits.push({ file: FILES.roles, action: 'insert', role: role.role, what: 'ROLES row', ...(facts.mustHoldDerived ? { derived: ['mustHold'] } : {}) });
+          }
         }
       }
     }
@@ -342,6 +377,19 @@ export function planWiring(manifest, checkout, options = {}) {
         }
       }
       texts[FILES.install] = text;
+    }
+
+    // 7. The role's own test file: a stub when it is missing (its exact tool set, and a case that fails until its claims are written);
+    //    an existing file without the exact tool set gets a proposal, never an edit.
+    {
+      const rel = `tests/native-claude-${role.role}.test.ts`;
+      const file = path.join(checkout, rel);
+      if (!exists(file)) {
+        texts[rel] = roleTestStub(role, facts);
+        plan.edits.push({ file: rel, action: 'create', role: role.role, what: 'role test stub (exact tool set; own claims to be written by hand)' });
+      } else if (!lf(fs.readFileSync(file, 'utf8')).includes(`toEqual(${list(facts.tools)})`)) {
+        plan.proposals.push(`${rel}: add a case that pins the exact tool set: expect(toolsOf(text())).toEqual(${list(facts.tools)}).`);
+      }
     }
 
     // 6. The CLI end-to-end case.
