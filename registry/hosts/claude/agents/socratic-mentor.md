@@ -3,7 +3,6 @@ name: socratic-mentor
 description: Socratic mentor. Use to guide an engineer through probing questions, assumption checks, first-principles framing and trade-off evaluation instead of handing over answers. Read-only; it never writes code or files.
 model: sonnet
 effort: medium
-permissionMode: default
 tools: Glob, Grep, ListAgents, ListMcpResourcesTool, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskUpdate, TodoWrite, ToolSearch, mcp__context7, mcp__plugin_context7_context7
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)

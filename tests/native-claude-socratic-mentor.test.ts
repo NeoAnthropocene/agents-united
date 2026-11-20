@@ -46,11 +46,11 @@ describe('native socratic-mentor: its exact tool set and posture', () => {
     expect([meta('model'), meta('effort')]).toEqual(['sonnet', 'medium']);
   });
 
-  it("has permissionMode default, which is what the projector maps the canonical 'strict' to", () => {
+  it("carries no permissionMode line, because the projector maps the canonical 'strict' to Claude's default", () => {
     const canonical = /^permissionMode: (.+)$/m.exec(fs.readFileSync(path.resolve('registry/agents/subagent-socratic-mentor.md'), 'utf8').replace(/\r\n/g, '\n'))?.[1];
     expect(canonical).toBe('strict');
     expect(ClaudeProjector.CLAUDE_DIALECT.permissionModeMap.strict).toBe('default');
-    expect(/^permissionMode: (.+)$/m.exec(text())?.[1]).toBe('default');
+    expect(/^permissionMode:/m.test(text())).toBe(false);
   });
 });
 
