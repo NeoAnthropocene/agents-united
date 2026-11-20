@@ -221,11 +221,11 @@ describe('the session script blocks with both commands when it cannot do its wor
     expect(result.stderr).toContain('agents update --all --global --no-session-guard');
   });
 
-  it('one template: the patterns are the generic script\'s, and the regex literal count is unchanged', () => {
+  it('one template: the patterns are the generic script\'s, and the regex literal count is the same in every form', () => {
     const count = (script: string): number => [...script.matchAll(/\/((?:\\.|[^/\\\n])+)\/\.test\(/g)].length;
-    expect(count(GUARD_SCRIPT)).toBe(4);
-    expect(count(sessionGuardScript('project'))).toBe(4);
-    expect(count(sessionGuardScript('user'))).toBe(4);
+    expect(count(GUARD_SCRIPT)).toBeGreaterThanOrEqual(4);
+    expect(count(sessionGuardScript('project'))).toBe(count(GUARD_SCRIPT));
+    expect(count(sessionGuardScript('user'))).toBe(count(GUARD_SCRIPT));
     expect(sessionGuardScript('project')).toContain(GUARD_SCRIPT.slice(GUARD_SCRIPT.indexOf('const t=')));
   });
 
@@ -255,7 +255,7 @@ describe('the session script blocks with both commands when it cannot do its wor
     for (const script of [GUARD_SCRIPT, READ_ONLY_GUARD_SCRIPT]) {
       expect(script).not.toContain('agents update');
       expect(script).not.toContain('uncaughtException');
-      expect(script).not.toContain('own terminal');
+      expect(script).not.toContain('To get out');
     }
     expect(guardHandler().args[1]).toBe(GUARD_SCRIPT);
     expect(sessionGuardHandler('project').args).toHaveLength(1); // the session guard names a script file; the text is not in the entry

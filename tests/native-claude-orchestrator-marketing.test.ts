@@ -22,6 +22,9 @@ const NINE = [
   'lifecycle-email-specialist', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer',
   'marketing-growth-strategist', 'paid-acquisition-specialist', 'plg-strategist', 'seo-specialist',
 ];
+/** The shared guard sentence every Claude role carries (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
+const GUARD_SENTENCE =
+  'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
 const text = (): string => nativeText('orchestrator-marketing');
 const meta = (): Record<string, any> => yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(text())![1]!);
 const tools = (): string[] => splitTools(meta().tools);
@@ -183,9 +186,18 @@ describe('native orchestrator-marketing: verification and the guard, against the
   });
 
   it('says exactly what the bound guard blocks, and that everything else is its own obligation', () => {
-    expect(verify()).toContain('A guard blocks forced pushes, `vercel --prod` and `.env` writes');
+    expect(verify().split(GUARD_SENTENCE)).toHaveLength(2);
     expect(verify()).toMatch(/Nothing else is enforced by a hook/);
-    expect(verify()).not.toMatch(/guard blocks[^.]*(production deploys|destructive)/);
+    expect(verify()).not.toMatch(/guard blocks[^.]*production deploys/);
+  });
+
+  it('routes campaign email to the campaign specialist and behaviour-triggered lifecycle email to the lifecycle email specialist, one owner each', async () => {
+    const line = /^7\. \*\*Subagent delegation and campaign execution\.\*\*.*$/m.exec(text())?.[0] ?? '';
+    const route = 'product launch announcements, campaign email (launch announcements and the nurture drips of a campaign) and PR press kits to the campaign specialist; behaviour-triggered lifecycle email (welcome onboarding, inactivity re-engagement, upgrade nudges, milestone and retention journeys) to the lifecycle email specialist, and the campaign specialist does not design those journeys';
+    expect(line).toContain(route);
+    expect(line).not.toContain('email sequences');
+    const core = (await loadSemanticCore('registry')).get('orchestrator-marketing')!;
+    expect(core.scope_boundaries).toContain(route);
   });
 
   describe('the guard', () => {
@@ -197,8 +209,17 @@ describe('native orchestrator-marketing: verification and the guard, against the
     afterAll(() => fs.rmSync(project, { recursive: true, force: true }));
     const blocked = (tool: string, input: Record<string, unknown>): boolean => attempt(text(), project, { tool, input }, { agentType: 'orchestrator-marketing' }).blocked;
 
-    it.each(['git push --force origin main', 'vercel --prod'])('blocks %s, as the verify step says', command => {
+    it.each(['git push --force origin main', 'vercel --prod', 'rm -rf /', 'rm -rf $HOME', 'sudo ls', 'shutdown now'])('blocks %s through Bash, as the verify step says', command => {
       expect(blocked('Bash', { command })).toBe(true);
+    });
+
+    it.each(['git push --force origin main', 'vercel --prod', 'Remove-Item -Recurse -Force C:\\'])('blocks %s through PowerShell, as the verify step says', command => {
+      expect(blocked('PowerShell', { command })).toBe(true);
+    });
+
+    it('blocks a .env write through the other editors the lead holds', () => {
+      expect(blocked('Edit', { file_path: 'C:\\repo\\.env' })).toBe(true);
+      expect(blocked('NotebookEdit', { notebook_path: 'C:\\repo\\.env' })).toBe(true);
     });
 
     it('blocks a write to .env and lets .env.example through', () => {
@@ -206,8 +227,9 @@ describe('native orchestrator-marketing: verification and the guard, against the
       expect(blocked('Write', { file_path: 'C:\\repo\\.env.example' })).toBe(false);
     });
 
-    it('does not block a commit to main, a deploy, or a data-erasing shell command, so the verify step does not claim it', () => {
-      for (const command of ['git commit -m x', 'terraform apply', 'rm -rf build']) expect(blocked('Bash', { command }), command).toBe(false);
+    it('does not block a commit to main, a deploy, a lease push or a recursive delete of a build folder, so the verify step does not claim it', () => {
+      for (const command of ['git commit -m x', 'terraform apply', 'git push --force-with-lease', 'rm -rf build']) expect(blocked('Bash', { command }), command).toBe(false);
+      expect(blocked('PowerShell', { command: 'Remove-Item -Recurse -Force build' })).toBe(false);
     });
   });
 });
