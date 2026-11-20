@@ -48,14 +48,14 @@ describe.each(scripts)('%s', (_name, script) => {
     expect(fire(script, 'NotebookEdit', { file_path: '/repo/a.ipynb', notebook_path: '/repo/.env' })).toBe(0);
   });
 
-  it('keeps the count of regex literals at 4', () => {
-    expect([...script.matchAll(/\/((?:\\.|[^/\\\n])+)\/\.test\(/g)]).toHaveLength(4);
+  it('keeps at least the four regex tests of the earlier rules (ADR 0074 adds the shell rules; tests/guard-destructive-commands.test.ts pins them)', () => {
+    expect([...script.matchAll(/\/((?:\\.|[^/\\\n])+)\/\.test\(/g)].length).toBeGreaterThanOrEqual(4);
   });
 });
 
 describe('the previous script is an earlier form', () => {
   it('is in the one list of earlier scripts, byte for byte, and native roles carrying it are still seen as guarded', () => {
-    expect(EARLIER_GUARD_SCRIPTS).toHaveLength(2);
+    expect(EARLIER_GUARD_SCRIPTS).toHaveLength(3);
     expect(sha(EARLIER_GUARD_SCRIPTS[1])).toBe('fece8789f7fdbde03730130f0b04753ac291fd82d22b04d65fa6b56fc2749222');
     expect(GUARD_SCRIPT).not.toBe(EARLIER_GUARD_SCRIPTS[1]);
     const role = `---\nname: x\ntools: Bash, Edit\nhooks:\n  PreToolUse:\n    - matcher: Bash\n      hooks:\n        - type: command\n          command: node\n          args: ["-e", ${JSON.stringify(EARLIER_GUARD_SCRIPTS[1])}]\n---\nbody\n`;
@@ -63,7 +63,7 @@ describe('the previous script is an earlier form', () => {
   });
 
   it('keeps the session scripts of the version before as earlier forms, byte for byte (project, user, user-project)', () => {
-    expect(EARLIER_SESSION_SCRIPTS.map(sha)).toEqual([
+    expect(EARLIER_SESSION_SCRIPTS.slice(0, 5).map(sha)).toEqual([
       '6ca2aa40dfc6ce4b231eecd5df36d31ee50b806e9def86104dcd70e3ed6941de',
       '1a916c9a8736870cd9ffea6c118976544a23df9d171e5c2b62e43a4994617bdc',
       '10dd8b0aa4abe50ac989e7f3d80ba9f962215a701cfe2fd68e06424981087d06',

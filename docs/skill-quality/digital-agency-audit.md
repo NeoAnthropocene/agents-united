@@ -191,3 +191,11 @@ Host-reported aggregate estimate$8.5951 ($7.3109 original +$1.2842 distinct),hel
 ### Plan 038 local-model catalogue, 2026-10-27 (Europe/Berlin)
 
 The nine media Skill entries and their measured metrics are unchanged: `audio-generation` 17 / 11, `sound-design-direction` 16 / 8, `audio-post-production` 17 / 11, all templated share 0.00, re-measured with `node scripts/skill-quality/measure.ts report` after the Plan 038 edits. `audio-generation/references/local-models.md` now carries a dated five-section catalogue (speech/TTS; sound effects; instrumental music; music with vocals and lyric-to-song; transcription assistance) with per-candidate licence facts, a commercial-use triage and a binding ASR usage contract, and `audio-generation/SKILL.md` gained section routing, language/lyric coverage, the sung-copy rule and the transcription boundary while measuring 40 lines / 5997 characters. No Skill was added, removed or renamed, no Bundle entry changed and no validator threshold was altered. Model installation, inference, listening and licence advice remain **unverified** by design.
+
+### System specs sheet, 2026-11-19
+
+The measure is `node scripts/skill-quality/measure.ts report` (body lines 27, 4 extra files, templated share 0.00, in-house). The Skill is new and written in its own words; it has had static review rounds and no model-run quality audit, and its evals were not run through a model. Its use by the Claude lead and the briefs is described in [ADR 0073](../adr/0073-system-specs-sheet.md) and was not observed in a live session.
+
+| Skill | Loaded by | Provenance | Body lines / extra files | Templated share | Verdict | Priority | Inspiration | Slice |
+|---|---|---|---|---|---|---|---|---|
+| `system-specs` | Chris at Step 0 (collects once); specialists that hold a shell, to run `check` | in-house, original MIT | 27 / 4 | 0.00 | new skill, own words; static checks only | - | original; [ADR 0073](../adr/0073-system-specs-sheet.md) | ADR 0073 |

@@ -55,9 +55,9 @@ describe('evaluator from the actual offline npm package', () => {
     expect(JSON.parse(await fs.readFile(selected.rawFile, 'utf8'))).toMatchObject({ valid: true, kind: 'deterministic' });
     const corePath = 'core/subagent-factory-evaluator.core.md';
     const citation = { sourceId: 'candidate', path: corePath, sha256: selected.inventory.find(item => item.path === corePath)!.sha256,
-      startLine: 2, endLine: 2, quote: 'identity: You are an independent artifact-quality evaluator reviewing one fixed candidate against its original brief.' };
+      quote: 'identity: You are an independent artifact-quality evaluator reviewing one fixed candidate against its original brief.' };
     const resultFile = path.join(selected.evidence, 'result.json');
-    const opinion = { version: 1, jobId: selected.job.id, jobDigest: checked.jobDigest, candidateDigest: selected.candidateDigest,
+    const opinion = { version: 2, jobId: selected.job.id, jobDigest: checked.jobDigest, candidateDigest: selected.candidateDigest,
       status: 'reviewed', opinion: 'no-blocking-findings', subject: selected.job.subject, inventory: selected.inventory, inventorySource: 'caller-provided',
       coverage: selected.inventory.map(item => ({ path: item.path, status: 'reviewed', rationale: 'Synthetic package-proof coverage; no model was invoked.' })),
       criteria: selected.job.rubric.criteria.map(item => ({ id: item.id, outcome: item.applicable ? 'satisfactory' : 'not-applicable',
