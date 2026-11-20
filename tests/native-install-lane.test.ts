@@ -26,7 +26,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'interaction-designer', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index', 'ui-designer', 'ux-strategist',
 ];
 const COORDINATORS = ['orchestrator-engineering'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
@@ -136,6 +136,25 @@ describe('native install lane (agents add --native)', () => {
     expect(record.kind).toBe('role');
     expect(record.canonical).toBe(canonicalOf('devops-engineer'));
     expect(record.managedMarker).toBe(true);
+  });
+
+  it('installs the native ui-designer, ux-strategist and interaction-designer for the product-design bundle, recorded as managed roles of their canonical agents', async () => {
+    await new InstallEngine().install('product-design', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const projections = (await fs.readJson(lockPath)).projections;
+    for (const role of ['interaction-designer', 'ui-designer', 'ux-strategist']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      expect(projections[`.claude/agents/${role}.md`], role).toMatchObject({ kind: 'role', canonical: canonicalOf(role), managedMarker: true });
+    }
+  });
+
+  it('without the native lane, product-design still writes the legacy projection for its three designers', async () => {
+    await new InstallEngine().install('product-design', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['interaction-designer', 'ui-designer', 'ux-strategist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
   it('without the native lane, devops-engineering still writes the legacy projection for devops-engineer', async () => {
