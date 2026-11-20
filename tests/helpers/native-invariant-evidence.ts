@@ -50,7 +50,7 @@ export const EVIDENCE: Record<string, RegExp> = {
   [COMMS.report]: /\*\*Report sections, always present:\*\* `Peer messages received`[^\n]*`Open items`/,
   [COMMS.teamMode]: /\*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`/,
   [COMMS.consult]: /\*\*Planning consultation\.\*\* When the lead consults you before the plan is accepted, answer with a bounded scope-of-work statement/,
-  // The two invariants a Tier-1 marketing specialist core states beside the six shared ones (n5, slice 3; the cores of slices 4 and 5 state the same texts). The Tier 1 peers section carries both as written.
+  // Two invariants a Tier 1 marketing specialist core may state beside the six shared ones; the Tier 1 peers section carries both as written.
   'Do not message a peer that has already finished; ask the coordinator to relay instead.': /A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   'If an expected peer input never arrives, proceed on a stated assumption and list the gap under open items.': /\*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
 
@@ -133,7 +133,7 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /You synthesise reports in the output contract above/,
     [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
   },
-  // The growth-marketing lead (n5, slice 1) shares the engineering lead's wording for what the defaults cover (align first, parallel slices, never loop on status, brief, relay, contract first, consult before you map).
+  // The growth-marketing lead (growth-marketing) shares the engineering lead's wording for what the defaults cover (align first, parallel slices, never loop on status, brief, relay, contract first, consult before you map).
   // The rest is worded for marketing: the delegation duty, the verify step and the four guardrails of the canonical agent. The five marketing roles need an entry only where their wording differs: their invariants are the agency copies' and
   // are bound by the default rules above, as long as the authored body keeps those sentences (the Tier 1 peers section of `devops-engineer` carries the comms ones). The one entry is the creative designer's, below.
   'orchestrator-marketing': {
@@ -146,7 +146,7 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Search metadata is unique per page: titles under 60 characters, descriptions under 155 characters, valid OpenGraph tags.': /\*\*Search metadata\.\*\* Titles are unique and under 60 characters, descriptions under 155 characters/,
     'Email work respects consent, GDPR and CAN-SPAM, and user data is never harvested without consent.': /\*\*Consent and compliance\.\*\* Email work respects consent, GDPR and CAN-SPAM/,
   },
-  // The Tier-1 copy hands the tokens back to orchestrator-marketing because the marketing lead cannot spawn an engineering role: decided by the n5 orchestrator and open to the master operator's review.
+  // The Tier-1 copy hands the tokens back to orchestrator-marketing because the marketing lead cannot spawn an engineering role: decided during the roll-out and open to the maintainer's review.
   'marketing-creative-designer': {
     'Design tokens are handed to engineering as a fixed input before the production build starts.': /Design tokens go back to `orchestrator-marketing` as a fixed input before the production build starts, for whoever builds the page/,
   },

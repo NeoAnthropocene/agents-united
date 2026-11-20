@@ -3,11 +3,11 @@ import path from 'node:path';
 import yaml from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { splitTools } from '../src/core/native-guard.js';
-import { describeMarketingRole } from './helpers/native-marketing-role.js';
+import { describeMarketingRole, OUT_OF_DEPARTMENT_HANDOFF } from './helpers/native-marketing-role.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * `seo-specialist` (n5, slice 2): the second native file on the core the digital agency's SEO specialist stands on, in the Tier 1 form of `devops-engineer`, for the `seo-content-marketing` add-on.
+ * `seo-specialist`: the second native file on the core the digital agency's SEO specialist stands on, in the Tier 1 form of `devops-engineer`, for the `seo-content-marketing` add-on.
  * What every marketing specialist keeps is in tests/helpers/native-marketing-role.ts (here with the shell and the add-on switched on); this file holds what only the SEO specialist says.
  * It is the one marketing role that holds a shell: its core grants the shell class, so it crawls with `curl` and runs Lighthouse, and the guard it carries blocks what the Boundaries section says.
  */
@@ -72,7 +72,7 @@ describe('native seo-specialist: build inputs go back to the lead', () => {
   it('hands the metadata, JSON-LD, rendering and header recipes and the Web Vitals fixes back to orchestrator-marketing as a fixed input, naming no engineering role', () => {
     expect(step(6)).toContain('Hand the metadata, the JSON-LD, the server-side rendering or canonical-header recipe and the Core Web Vitals fixes back to `orchestrator-marketing` as a fixed input for whoever builds the page (the user\'s implementation team)');
     expect(step(6)).toContain('Every finding carries a severity (critical, major or minor) and a concrete remediation');
-    expect(text().split('<!-- agents-united:floor:end -->')[1]).not.toMatch(/engineering (role|team)|frontend|backend/i);
+    expect(text().split('<!-- agents-united:floor:end -->')[1]!.replace(OUT_OF_DEPARTMENT_HANDOFF, '')).not.toMatch(/engineering (role|team)|frontend|backend/i);
   });
 
   it('leaves application code to whoever builds the page and topic clusters to the content strategist, through the lead', () => {
@@ -95,5 +95,13 @@ describe('native seo-specialist: the skill table is the five SEO skills of the a
     const skills = (source: string): string[] => [...source.matchAll(/^\| [^|]+ \| `([a-z0-9-]+)` \|/gm)].map(match => match[1]!).sort();
     expect(skills(text())).toEqual(['debug-optimize-lcp', 'programmatic-seo', 'schema-markup-strategy', 'seo-audit', 'technical-seo-audit']);
     expect(skills(text())).toEqual(skills(nativeText('agency-seo-specialist')));
+  });
+});
+
+describe('native seo-specialist: the hand-off outside the department', () => {
+  it('carries the one sentence that sends a hand-off to a role outside marketing through the lead', () => {
+    const body = nativeText('seo-specialist').split('<!-- agents-united:floor:end -->')[1]!;
+    expect(body).toContain(OUT_OF_DEPARTMENT_HANDOFF);
+    expect(body.split(OUT_OF_DEPARTMENT_HANDOFF).length).toBe(2);
   });
 });

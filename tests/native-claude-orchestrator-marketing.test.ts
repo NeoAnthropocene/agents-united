@@ -12,7 +12,7 @@ import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * The growth-marketing lead `orchestrator-marketing` (n5, slice 1): what its authored body and its tools line must keep saying, beyond the checks every native agent gets in
+ * The growth-marketing lead `orchestrator-marketing` (growth-marketing): what its authored body and its tools line must keep saying, beyond the checks every native agent gets in
  * native-claude-agents.test.ts and the ones every coordinator gets in native-orchestrator.test.ts. It is the Tier 1 form of `orchestrator-engineering`, not the digital agency's:
  * no mode line, no mode-line gate, no Agent Teams, no personas, and no saved workflows (the `workflow-marketing-*` skills are used through `Skill`).
  */
@@ -59,9 +59,9 @@ describe('native orchestrator-marketing: posture and tools', () => {
     }
   });
 
-  it('holds the union of the servers its roles\' canonical agents declare, which goes beyond its own canonical agent on the master operator\'s decision', () => {
-    // Beyond the canonical lead (firecrawl, markitdown, context7, github): stitch, figma, playwright and chrome-devtools-mcp, which its roles' canonical agents declare. This is the master operator's
-    // decision of 2026-11-20. The reason is the host's rule that a subagent gets the MCP tools of the main conversation, and the main conversation of `--agent` is cut to this list (Sitting T).
+  it('holds the union of the servers its roles\' canonical agents declare, which goes beyond its own canonical agent by a decision made during the roll-out', () => {
+    // Beyond the canonical lead (firecrawl, markitdown, context7, github): stitch, figma, playwright and chrome-devtools-mcp, which its roles' canonical agents declare. This was decided during the roll-out
+    // (2026-11-20) and is open to the maintainer's review. The reason is the host's rule that a subagent gets the MCP tools of the main conversation, and the main conversation of `--agent` is cut to this list (Sitting T).
     const servers = (file: string): string[] => {
       const front = yaml.parse(/^---\n([\s\S]*?)\n---/.exec(fs.readFileSync(path.resolve('registry/agents', file), 'utf8').replace(/\r\n/g, '\n'))![1]!) as { mcpServers?: Array<{ name: string } | string> };
       return (front.mcpServers ?? []).map(entry => (typeof entry === 'string' ? entry : entry.name));
@@ -140,6 +140,16 @@ describe('native orchestrator-marketing: the sub-bundle recommendations are the 
       for (const other of NINE.filter(name => !agents.includes(name))) expect(row, `${addon}: ${other}`).not.toContain(`\`${other}\``);
     }
     expect(table().some(line => line.includes('agents add domain:marketing'))).toBe(true);
+  });
+
+  it('recommends the frontend-engineering Bundle, with its frontend architect, for the frontend implementation the department hands off', () => {
+    const row = table().find(line => line.includes('`frontend-engineering`'));
+    expect(row).toBeDefined();
+    expect(row).toContain('Frontend implementation of a page the department specified (pages, components, design tokens).');
+    expect(row).toContain("You cannot spawn this Bundle's types: the user installs it, the page is built under `orchestrator-engineering` or the user's implementation team, and you hand over the tokens and props under `Open items`");
+    expect(row).toContain('agents add frontend-engineering');
+    expect(row).toContain('`frontend-architect`, `accessibility-lead`');
+    expect(bundles()['frontend-engineering'].agents).toEqual(['subagent-frontend-architect.md', 'subagent-accessibility-lead.md']);
   });
 });
 
