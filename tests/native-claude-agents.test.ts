@@ -108,7 +108,7 @@ const ROLES: RoleSpec[] = [
       effort: 'medium',
     })
   ),
-  // The growth-marketing bundle's SEO specialist (n5, slice 2): a second native file on the core of 'agency-seo-specialist'. Unlike the five marketing roles it holds a shell (its core grants the shell class: crawls,
+  // The growth-marketing bundle's SEO specialist: a second native file on the core of 'agency-seo-specialist'. Unlike the five marketing roles it holds a shell (its core grants the shell class: crawls,
   // header traces and Lighthouse), so it is guarded as a writer like the Tier 2 SEO specialist. Its servers are its canonical set with the routes; it holds no image server.
   {
     name: 'seo-specialist',
