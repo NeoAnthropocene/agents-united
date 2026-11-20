@@ -97,10 +97,10 @@ All synthesized research deliverables must follow this structured markdown layou
 | Type | Provided by | Role and what it can do on this host |
 |---|---|---|
 | `deep-research` | `deep-research`, `deep-research-analytics` | Deep technical researcher. Use to research a technical question across official specifications, RFCs, framework documentation, release notes and primary repositories, and to write a sourced report that separates established specifications from experimental features, workarounds and vendor claims. — edits files; Glob/Grep search; MCP: context7, firecrawl |
-| `literature-patent-analyst` | `deep-research-analytics` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `literature-patent-analyst` | `deep-research-analytics` | Literature and patent analyst. Use to review academic papers and patent prior art on a topic, with exact citations, method, hardware and dataset teardowns, independent versus dependent patent claims and a comparative table. Web pages are read only through the firecrawl server. — edits files and runs commands; searches through Bash; MCP: firecrawl, markitdown |
 | `repo-index` | `deep-research` | Read-only codebase indexer. Use to map module dependency graphs, resolve symbol definitions, find circular dependencies and dead files, and draw an architecture map. Never edits files. — read-only; Glob/Grep search; MCP: context7, github |
 | `socratic-mentor` | `deep-research` | Socratic mentor. Use to guide an engineer through probing questions, assumption checks, first-principles framing and trade-off evaluation instead of handing over answers. Read-only; it never writes code or files. — read-only; Glob/Grep search; MCP: context7 |
-| `statistical-analyst` | `deep-research-analytics` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `statistical-analyst` | `deep-research-analytics` | Statistical analyst. Use for hypothesis tests, A/B test sample size and power calculations, distribution fitting, bootstrap and Monte Carlo simulations and model benchmark statistics, with assumptions checked and formulas in KaTeX. Assumed power, alpha and effect size go to the lead. — edits files and runs commands; searches through Bash; Monitor; MCP: markitdown |
 
 Install a missing type by installing a bundle that provides it: `agents add <bundle>` (it keeps the recorded fan-out and native choices).
 <!-- agents-united:roster:end -->
