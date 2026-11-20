@@ -20,6 +20,8 @@ const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
 const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(section('How to analyze'))![0];
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
+/** The shared clause every Claude role with a shell carries (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
+const COMMON_FORMS = 'the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion)';
 const canonical = (): string => fs.readFileSync(path.resolve(`registry/agents/${STEM}.md`), 'utf8').replace(/\r\n/g, '\n');
 
 /** The whole tools line: the read, search, edit, shell, watcher, messaging, hand-back, skill, task and discovery classes of the core, then its one server by every route that exists. */
@@ -76,13 +78,15 @@ describe('native statistical-analyst: acceptEdits, the guard and the obligations
   it('step 5 states the limit of acceptEdits, what the guard blocks and what it does not, and makes the rest an obligation', () => {
     const five = step(5);
     expect(five).toContain('file edits inside the working folder are approved without a prompt');
-    expect(five).toContain('blocks only forced pushes, `vercel --prod` and `.env` writes');
-    expect(five).toMatch(/does not stop a command that deletes files, an edit that overwrites another file/);
+    expect(five).toContain(`blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(five).not.toContain('blocks only');
+    expect(five).toMatch(/does not stop an edit that overwrites another file, a delete of one file or of a build folder/);
+    expect(five).toMatch(/does not catch every destructive form/);
     expect(five).toMatch(/run no destructive command/);
     expect(five).toMatch(/your own obligation/);
   });
 
-  it.each(['git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo x > .env'])('blocks the shell call %s, as step 5 says', command => {
+  it.each(['git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo x > .env', 'rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now'])('blocks the shell call %s, as step 5 says', command => {
     expect(call('Bash', { command }).blocked).toBe(true);
     expect(call('PowerShell', { command }).blocked).toBe(true);
   });
@@ -102,7 +106,8 @@ describe('native statistical-analyst: acceptEdits, the guard and the obligations
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain("- A guard blocks forced pushes, `vercel --prod` and `.env` writes. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });
 
