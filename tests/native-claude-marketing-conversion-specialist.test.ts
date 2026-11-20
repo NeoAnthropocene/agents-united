@@ -3,7 +3,7 @@ import { describeMarketingRole, OUT_OF_DEPARTMENT_HANDOFF } from './helpers/nati
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * `marketing-conversion-specialist` (n5, slice 1): the second native file on the core the digital agency's conversion specialist stands on, in the Tier 1 form of `devops-engineer`.
+ * `marketing-conversion-specialist` (growth-marketing, slice 1): the second native file on the core the digital agency's conversion specialist stands on, in the Tier 1 form of `devops-engineer`.
  * What every marketing specialist keeps is in tests/helpers/native-marketing-role.ts; this file holds what only the conversion specialist says.
  */
 

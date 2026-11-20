@@ -12,7 +12,7 @@ import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * The growth-marketing lead `orchestrator-marketing` (n5, slice 1): what its authored body and its tools line must keep saying, beyond the checks every native agent gets in
+ * The growth-marketing lead `orchestrator-marketing` (growth-marketing, slice 1): what its authored body and its tools line must keep saying, beyond the checks every native agent gets in
  * native-claude-agents.test.ts and the ones every coordinator gets in native-orchestrator.test.ts. It is the Tier 1 form of `orchestrator-engineering`, not the digital agency's:
  * no mode line, no mode-line gate, no Agent Teams, no personas, and no saved workflows (the `workflow-marketing-*` skills are used through `Skill`).
  */
