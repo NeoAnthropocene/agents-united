@@ -96,8 +96,8 @@ const ROLES: RoleSpec[] = [
     // The canonical lead's three servers. No browser: nothing in this domain drives one.
     serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
     mutating: true,
-    // The engineering lead's list minus `Workflow`: no bundle of the architecture domain installs the native workflows (workflow-review, workflow-implement, workflow-test), so the lead holds no
-    // `Workflow` tool (its core declares no `workflow` capability) and fans out with parallel `Agent` calls.
+    // The engineering lead's list minus `Workflow`: the lead's plan does not depend on saved workflows. No Bundle of the architecture domain installs the native workflows (workflow-review,
+    // workflow-implement, workflow-test); `full` lists the lead and does install them, and the lead still fans out with parallel `Agent` calls. So it holds no `Workflow` tool (its core declares no `workflow` capability).
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
     mainThread: true,
     coordinatorBundle: 'system-architecture',

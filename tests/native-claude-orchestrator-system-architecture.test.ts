@@ -4,12 +4,14 @@ import yaml from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { splitTools } from '../src/core/native-guard.js';
 import { checkRoster, domainTypes } from '../src/core/native-roster.js';
+import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js';
 
 /**
  * The native lead of the system-architecture bundle family, a twin of tests/native-orchestrator.test.ts (which pins the engineering lead): it runs as the main thread,
  * may spawn exactly the six types of the architecture domain, and carries a generated domain map. What differs from the engineering lead: it holds no `Workflow` tool
- * and does not run saved workflows (no bundle of the architecture domain installs them), and security architecture is routed to the user, not delegated.
+ * and does not run saved workflows (its plan does not depend on them: no Bundle of the architecture domain installs them, and when `full` does install workflow-review,
+ * workflow-implement and workflow-test the lead still fans out with parallel `Agent` calls), and security architecture is routed to the user, not delegated.
  */
 
 const BUNDLE = 'system-architecture';
@@ -80,7 +82,8 @@ describe('native orchestrator-system-architecture (a main-thread coordinator)', 
     expect(read()).toMatch(/delegate every (domain )?(implementation|slice)/i);
   });
 
-  it('holds no Workflow tool and does not run saved workflows, because no bundle of the architecture domain installs them', () => {
+  // The plan does not depend on saved workflows: no Bundle of the architecture domain installs them (`full` does list the lead and installs them, and the lead still fans out with parallel Agent calls).
+  it('holds no Workflow tool and does not run saved workflows, because its plan does not depend on them', () => {
     const tools = splitTools(frontmatter().tools).map(tool => tool.split('(')[0]);
     expect(tools).not.toContain('Workflow');
     const body = read();
@@ -98,5 +101,33 @@ describe('native orchestrator-system-architecture (a main-thread coordinator)', 
     expect(body).not.toMatch(/security-engineer/);
     expect(body).toContain('agents add security-operations');
     expect(body).toMatch(/Security architecture is not delegated/);
+  });
+});
+
+describe('native orchestrator-system-architecture: the shared core carries the canonical lead\'s duties', () => {
+  const normalize = (value: string): string => value.replace(/\s+/g, ' ').trim();
+  const canonical = (): string => fs.readFileSync(path.resolve('registry/agents/orchestrator-system-architecture.md'), 'utf8').replace(/\r\n/g, '\n');
+  const scope = async (): Promise<string> => normalize((await loadSemanticCore('registry')).get('orchestrator-system-architecture')!.scope_boundaries);
+
+  it('keeps the three Boundary Constraints of the canonical lead, in the core\'s own wording (sentence case, no backticks)', async () => {
+    // The canonical bullets, so a change to them is noticed: the core lower-cases the first word of each rule.
+    const bullets = [...(/\n## [^\n]*Boundary Constraints[^\n]*\n([\s\S]*?)(?=\n## )/.exec(canonical())?.[1] ?? '').matchAll(/^- \*\*(.+?)\*\*: (.+)$/gm)].map(match => match[1]!.toLowerCase());
+    expect(bullets).toEqual(['explicit domain boundaries', 'resilience design', 'documented adrs']);
+    const text = await scope();
+    expect(text).toContain('Boundary constraints:');
+    for (const rule of [
+      '- **Explicit domain boundaries**: enforce strict separation of concerns and clear bounded contexts; prevent circular dependencies between modules.',
+      '- **Resilience design**: require circuit breakers, retry backoffs and fallback handling for all network calls.',
+      '- **Documented ADRs**: every major architectural decision is captured in an ADR document under docs/adr/.',
+    ]) expect(text, rule).toContain(rule);
+  });
+
+  it('keeps the planning consultation gate, and names no security-engineer as a delegate', async () => {
+    const text = await scope();
+    expect(text).toContain('Planning consultation. Before finalizing any delegation map:');
+    expect(text).toContain('**Mandatory specialist consult gate (unconditional)**: consult at least one relevant specialist during planning before emitting the delegation map, unless the user explicitly waives it.');
+    expect(text).toContain('Specialists advise only; they write no deliverable files during planning.');
+    expect(text).toContain('**Then the delegation map**:');
+    expect(text).not.toMatch(/security-engineer/);
   });
 });
