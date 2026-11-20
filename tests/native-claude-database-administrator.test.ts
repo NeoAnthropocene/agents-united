@@ -13,6 +13,9 @@ import { nativeText } from './helpers/native-roles.js';
  * Every "blocked" and "not blocked" claim of its body is fired at the real guard script.
  */
 
+/** The shared clause every Claude role carries (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
+const COMMON_FORMS = 'the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion)';
+
 const ROLE = 'database-administrator';
 const text = (): string => nativeText(ROLE);
 const canonical = (): string => fs.readFileSync(path.resolve('registry/agents/subagent-database-administrator.md'), 'utf8').replace(/\r\n/g, '\n');
@@ -64,18 +67,25 @@ describe('native database-administrator: the guard and live-database claims, aga
 
   it('step 6 names exactly what the bound guard blocks, and what it does not', () => {
     const six = step(6);
-    expect(six).toContain('blocks only forced pushes, `vercel --prod` and `.env` writes');
-    expect(six).not.toMatch(/blocks[^.]*(DROP|migration|psql|destructive)/);
-    for (const other of ['psql', 'mysql', 'pg_restore', 'DROP DATABASE', 'a migration tool']) expect(six, other).toContain(other);
-    expect(six).toMatch(/does not enforce the Safety rule against destructive shell commands/);
+    expect(six).toContain(`blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(six).not.toContain('blocks only');
+    expect(six).not.toContain('does not enforce the Safety rule');
+    // The blocking clause alone: what follows "it is a seat belt" names the commands the guard does NOT stop.
+    const blocking = six.slice(six.indexOf('blocks forced'), six.indexOf('it is a seat belt'));
+    expect(blocking).not.toMatch(/DROP|migration|psql|mysql|pg_restore/);
+    const notStopped = six.slice(six.indexOf('It does not stop'));
+    for (const other of ['psql', 'mysql', 'pg_restore', 'DROP DATABASE', 'a migration tool']) expect(notStopped, other).toContain(other);
     expect(six).toMatch(/your own obligation/);
   });
 
-  it.each(['Bash', 'PowerShell'] as const)('%s: blocks a forced push, vercel --prod and a redirect into .env, as the Boundaries say', tool => {
-    for (const command of ['git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo DATABASE_URL=x > .env', 'echo DATABASE_URL=x > config/.env.production']) expect(shell(tool, command), command).toBe(true);
+  it.each(['Bash', 'PowerShell'] as const)('%s: blocks a forced push, vercel --prod, a redirect into .env and the destructive shell forms, as the Boundaries say', tool => {
+    for (const command of [
+      'git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo DATABASE_URL=x > .env', 'echo DATABASE_URL=x > config/.env.production',
+      'rm -rf /', 'sudo ls', 'shutdown now',
+    ]) expect(shell(tool, command), command).toBe(true);
   });
 
-  it.each(['Bash', 'PowerShell'] as const)('%s: does not block a database client, a restore, a drop, a migration tool or a destructive command, as step 6 says', tool => {
+  it.each(['Bash', 'PowerShell'] as const)('%s: does not block a database client, a restore, a drop, a migration tool or a delete of a build folder, as step 6 says', tool => {
     for (const command of [
       'psql "$DATABASE_URL" -c "DROP TABLE accounts"',
       'psql -h prod-db.internal -c "DROP DATABASE app_production"',
@@ -114,10 +124,15 @@ describe('native database-administrator: the guard and live-database claims, aga
 
   it('states what the guard blocks, where it comes from in both modes, and that acceptEdits leaves the limit to the role', () => {
     const boundaries = section(text(), 'Boundaries of this host');
-    expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings. It blocks nothing else, and `permissionMode: acceptEdits` approves your file edits without asking");
+    expect(boundaries).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(boundaries).toContain('`permissionMode: acceptEdits` approves your file edits without asking');
+    expect(boundaries).not.toContain('It blocks nothing else');
+    expect(text().split('A guard blocks')).toHaveLength(2);
     expect(boundaries).toContain('keeping to migrations, database configuration, runbooks and ADRs, and changing application source only when your brief asks, is your own obligation.');
     expect(boundaries).toContain('`.env` files (not `.env.example`) in `Write`, `Edit`, `MultiEdit` and `NotebookEdit`');
-    expect(boundaries).not.toMatch(/blocks[^.]*(DROP|destructive)/);
+    // `.env` tokens stripped, so the match runs to the end of the line instead of stopping at their dot.
+    const claims = boundaries.replace(/`\.env(\.example)?`/g, 'ENV');
+    expect(claims).not.toMatch(/blocks[^\n]*(DROP|psql|mysql|pg_restore)/);
   });
 
   it('holds no GitHub tool, so the push, merge and create duty is not stated', () => {
@@ -143,7 +158,8 @@ describe('native database-administrator: the guard and live-database claims, aga
   it('step 4 states the Expand and Contract phases, the DDL policy and the division with backend-architect', () => {
     const four = step(4);
     for (const part of ['Expand (add the nullable column and dual-write)', 'Backfill and switch reads', 'Contract (drop the deprecated columns)', '`CREATE INDEX CONCURRENTLY`', '`NOT VALID`', '`VALIDATE CONSTRAINT`']) expect(four, part).toContain(part);
-    expect(four).toContain('API schemas, ORM models and migration code inside the application belong to `backend-architect`');
+    expect(four).toContain("You own the engine side: settings, plan analysis, the DDL review, the Expand and Contract plan and pooling. API contracts and ORM models are `backend-architect`'s. Where a change touches application code or an ORM, or both roles could own the migration, put the part you do not own under `Open items` for the lead to route.");
+    expect(four).not.toContain('migration code inside the application');
   });
 
   it('keeps the live-database handback and the destructive-command rule in the Safety floor', () => {
@@ -244,7 +260,7 @@ describe('native database-administrator: the shared scope_boundaries and safety'
     for (const part of ['database instance profile', 'performance and query plan optimization table', 'latency before and after', 'zero-downtime migration safety checklist']) expect(core.output_contract, part).toContain(part);
   });
 
-  it('claims nothing the canonical agent does not say in its safety lines: the live-database handback is the maintainer\'s decision, and the rest follows from the shell it holds', async () => {
+  it('pins the added safety lines as additions to the canonical text: the live-database handback is the maintainer\'s decision, and the rest follows from the shell it holds', async () => {
     const core = (await loadSemanticCore('registry')).get('subagent-database-administrator')!;
     expect(core.safety).toContain('Never run a migration, a schema change or a data change against a database that is not disposable');
     expect(core.safety).toContain('Run tests, rollbacks and restore drills only in isolated test databases');
