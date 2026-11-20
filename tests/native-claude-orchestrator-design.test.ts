@@ -131,8 +131,8 @@ describe('native orchestrator-design: its domain map', () => {
     expect(after).toContain('`agents add performance-paid-acquisition`');
     expect(after).toContain('`agents add product-led-growth`');
     expect(after).toContain('`agents add domain:design`');
-    expect(after).toMatch(/hand(s)? that work back to the user with the `agents add` line/);
-    expect(after).toMatch(/never pretend(s)? to have done it/);
+    expect(after).toMatch(/hand that work back to the user with the `agents add` line/);
+    expect(after).toMatch(/you never pretend to have done it or improvise a specialist/);
   });
 
   it('tells the user how to install a missing type and refresh the running session', () => {
