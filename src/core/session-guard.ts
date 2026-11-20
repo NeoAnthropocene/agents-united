@@ -212,8 +212,12 @@ export const EARLIER_SESSION_SCRIPTS: readonly string[] = (() => {
   ];
   // The texts that were current when the script moved into a file: today's generic script with the manual route that named "the hook entries
   // that contain 'agents-united guard'" (project, user). The entries of the file form do not contain that text, so the sentence changed.
-  const withEarlierRoute = ALL_KINDS.map(kind => composeSessionScript(GUARD_SCRIPT, hintWithRoute(kind, EARLIER_MANUAL_ROUTE)));
-  return [...hints.map(hint => composeSessionScript(EARLIER_GUARD_SCRIPTS[1], hint)), ...withEarlierRoute];
+  // These are built from the generic script of THEIR time (entry [2] of the earlier list), never from the current GUARD_SCRIPT: when the generic
+  // script changes (ADR 0074) a text built from the current one would change with it, and an installed script would read "modified", not "outdated".
+  const withEarlierRoute = ALL_KINDS.map(kind => composeSessionScript(EARLIER_GUARD_SCRIPTS[2], hintWithRoute(kind, EARLIER_MANUAL_ROUTE)));
+  // The session scripts of the version before ADR 0074: its generic script with the hint and the manual route that are still current.
+  const withCurrentHint = ALL_KINDS.map(kind => composeSessionScript(EARLIER_GUARD_SCRIPTS[2], hintWithRoute(kind, MANUAL_ROUTE)));
+  return [...hints.map(hint => composeSessionScript(EARLIER_GUARD_SCRIPTS[1], hint)), ...withEarlierRoute, ...withCurrentHint];
 })();
 
 /**
