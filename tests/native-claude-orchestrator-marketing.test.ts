@@ -191,6 +191,15 @@ describe('native orchestrator-marketing: verification and the guard, against the
     expect(verify()).not.toMatch(/guard blocks[^.]*production deploys/);
   });
 
+  it('routes campaign email to the campaign specialist and behaviour-triggered lifecycle email to the lifecycle email specialist, one owner each', async () => {
+    const line = /^7\. \*\*Subagent delegation and campaign execution\.\*\*.*$/m.exec(text())?.[0] ?? '';
+    const route = 'product launch announcements, campaign email (launch announcements and the nurture drips of a campaign) and PR press kits to the campaign specialist; behaviour-triggered lifecycle email (welcome onboarding, inactivity re-engagement, upgrade nudges, milestone and retention journeys) to the lifecycle email specialist, and the campaign specialist does not design those journeys';
+    expect(line).toContain(route);
+    expect(line).not.toContain('email sequences');
+    const core = (await loadSemanticCore('registry')).get('orchestrator-marketing')!;
+    expect(core.scope_boundaries).toContain(route);
+  });
+
   describe('the guard', () => {
     const project = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-united-marketing-lead-guard-'));
     beforeAll(() => {
