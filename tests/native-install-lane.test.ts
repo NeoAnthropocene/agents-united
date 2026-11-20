@@ -25,7 +25,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 /** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
-  'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
+  'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'business-panel-experts', 'code-reviewer', 'devops-engineer',
   'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
 ];
 const COORDINATORS = ['orchestrator-engineering'];
@@ -136,6 +136,23 @@ describe('native install lane (agents add --native)', () => {
     expect(record.kind).toBe('role');
     expect(record.canonical).toBe(canonicalOf('devops-engineer'));
     expect(record.managedMarker).toBe(true);
+  });
+
+  it('installs the native business-panel-experts for the business-strategy bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('business-strategy', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('business-panel-experts'), 'utf8')).toBe(expected('business-panel-experts'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/business-panel-experts.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('business-panel-experts'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, business-strategy still writes the legacy projection for business-panel-experts', async () => {
+    await new InstallEngine().install('business-strategy', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('business-panel-experts'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
   it('without the native lane, devops-engineering still writes the legacy projection for devops-engineer', async () => {

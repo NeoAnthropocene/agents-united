@@ -134,6 +134,16 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
   },
+  // `business-panel-experts`: its floor (scope boundaries) states the three business invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'business-panel-experts': {
+    'Every revenue model or cost projection is grounded in industry benchmarks, published case studies, or explicit financial assumptions.': /Every revenue model or cost projection must be grounded in industry benchmarks, published case studies, or explicit financial assumptions\./,
+    'Gross margin per user or transaction is calculated before projecting aggregate revenue.': /Always calculate gross margin per user\/transaction before projecting aggregate revenue\./,
+    'Payback period metrics are provided for all proposed investments.': /Provide clear payback period metrics \(e\.g\. months to recover acquisition\/engineering costs\) for all proposed investments\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
+  },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
     'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities\.(?=\n|$)/,
