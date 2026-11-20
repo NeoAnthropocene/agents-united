@@ -103,8 +103,9 @@ describe('native socratic-mentor: read-only, against the real script', () => {
     expect([result.offered, result.blocked]).toEqual([true, false]);
   });
 
-  it('says exactly that in Boundaries, and that the role holds no tool that writes or runs a command', () => {
-    expect(text()).toContain('- You hold read, search and messaging tools only. A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; put the change in your report as a suggestion for the engineer.');
+  it('says exactly that in Boundaries and in step 5, which also binds the read-only invariant', () => {
+    expect(text()).toContain('- A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; put the change in your report as a suggestion for the engineer.');
+    expect(text()).toContain('this role holds no tool that writes or runs a command, and the guard bound to it blocks any write tool, shell or mutating connected-server tool.');
   });
 });
 
