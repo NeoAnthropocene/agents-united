@@ -1,0 +1,11 @@
+{
+  "definition": "subagent-design-systems-architect",
+  "workflows": [],
+  "skills": [
+    "design-system-tokens",
+    "design-tokens-management",
+    "component-library-management",
+    "ui-component-spec"
+  ],
+  "hooks": []
+}
