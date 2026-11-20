@@ -23,6 +23,7 @@ invariants:
   - "Do not message a peer that has already finished; ask the coordinator to relay instead."
   - "If an expected peer input never arrives, proceed on a stated assumption and list the gap under open items."
 capabilities:
+  - task-tracking
   - read
   - search
   - edit
