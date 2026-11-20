@@ -17,6 +17,15 @@ const canonical = (): string => fs.readFileSync(path.resolve('registry/agents/su
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
 
 describe('native interaction-designer: editors, no shell, no measuring', () => {
+  it('holds exactly this tools set, so a stray tool fails', () => {
+    expect([...tools()].sort()).toEqual(['Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__figma', 'mcp__plugin_figma_figma', 'mcp__stitch'].sort());
+  });
+
+  it('holds the posture of a native specialist: sonnet model, medium effort', () => {
+    expect(/^model: (.*)$/m.exec(text())![1]).toBe('sonnet');
+    expect(/^effort: (.*)$/m.exec(text())![1]).toBe('medium');
+  });
+
   it('holds the editors and no shell', () => {
     expect(tools()).toEqual(expect.arrayContaining(['Edit', 'Write', 'Read', 'Glob', 'Grep', 'Skill', 'SendMessage', 'SubagentHandback']));
     for (const shell of ['Bash', 'PowerShell', 'Monitor']) expect(tools(), shell).not.toContain(shell);
@@ -58,6 +67,15 @@ describe('native interaction-designer: the guard and acceptEdits claims', () => 
     const mode = (source: string): string | undefined => /^permissionMode: (.+)$/m.exec(source)?.[1];
     expect(mode(canonical())).toBe('acceptEdits');
     expect(mode(text())).toBe('acceptEdits');
+  });
+});
+
+describe('native interaction-designer: the canonical scroll and View Transition directives are not tightened', () => {
+  it('feature-detects View Transitions with a CSS-only fallback, and flags a scroll listener instead of forbidding it', () => {
+    const body = text();
+    expect(body).toContain('Feature-detect View Transitions (`document.startViewTransition`) before using one');
+    expect(body).toContain('flag any animation driven by a `scroll` event listener as a performance concern and recommend the scroll-driven animation API instead');
+    expect(body).not.toMatch(/never a scroll event listener|only behind `if \(!document\.startViewTransition\)`/);
   });
 });
 
