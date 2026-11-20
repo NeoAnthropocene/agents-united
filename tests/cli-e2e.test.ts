@@ -120,6 +120,19 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections[rule]).toMatchObject({ host: 'claude', kind: 'rule', canonical: 'rules/skill-attribution.md', owners: ['agent-factory'] });
   });
 
+  it('installs the native devops-engineer for devops-engineering with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'devops-engineering', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/devops-engineer.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: devops-engineer$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('devops-engineering');
+    expect(lock.projections['.claude/agents/devops-engineer.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-devops-engineer.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',
