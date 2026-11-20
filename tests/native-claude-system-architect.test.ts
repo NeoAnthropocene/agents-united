@@ -68,7 +68,7 @@ describe('native system-architect: the guard claims, against the real script', (
     ['Write', { file_path: '/repo/.env.example' }],
     ['Write', { file_path: '/repo/docs/adr/0007-event-driven-orders.md' }],
     ['Edit', { file_path: '/repo/src/service/orders.ts', old_string: 'a', new_string: 'b' }],
-  ])('does not block %s of %j: the guard blocks nothing else on file edits',(tool, input) => {
+  ])('does not block %s of %j: the guard blocks nothing else on file edits', (tool, input) => {
     expect(fire(tool as string, input as Record<string, unknown>).blocked).toBe(false);
   });
 
