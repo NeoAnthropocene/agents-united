@@ -74,7 +74,11 @@ describe('native system-architect: the guard claims, against the real script', (
 
   it('the forced-push and vercel rules are shell rules: the role is offered no shell for them to act on', () => {
     for (const shell of ['Bash', 'PowerShell']) expect(fire(shell, { command: 'git push --force origin main' }).offered, shell).toBe(false);
-    expect(text()).toContain("Its forced-push and `vercel --prod` rules apply to shell commands, which you do not hold. It blocks nothing else, and `permissionMode: acceptEdits` approves your file edits without asking");
+    expect(text()).toContain("Its forced-push, `vercel --prod` and destructive-shell rules (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion) apply to shell commands, which you do not hold. It is a seat belt, not a boundary, it blocks nothing else, and `permissionMode: acceptEdits` approves your file edits without asking");
+  });
+
+  it('the destructive-shell rules are shell rules too: the role is offered no shell for `rm -rf /` or `sudo` to act on', () => {
+    for (const shell of ['Bash', 'PowerShell']) for (const command of ['rm -rf /', 'sudo reboot']) expect(fire(shell, { command }).offered, `${shell} ${command}`).toBe(false);
   });
 
   it('the guard does not see GitHub MCP calls, so the push, merge and create duty is stated as the role\'s own', () => {

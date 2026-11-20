@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { REPORT_KEYS, runBundleCheck } from '../src/core/bundle-check.js';
 import { domainProposal, makeFixture, serialize, writeFiles } from './helpers/bundle-proposal.js';
 import type { Fixture } from './helpers/bundle-proposal.js';
-import { CHECKER_FILE, COORDINATOR_HOOK_RULE, HAND_BACK_HOOK_RULE, ONE_JSON_RULE, SAVE_COMPLETE, promptBlock, citationLimits, citationRule } from './helpers/evaluator-wording.js';
+import { CHECKER_FILE, COORDINATOR_HOOK_RULE, HAND_BACK_HOOK_RULE, OLD_CITATION_RULE_START, ONE_JSON_RULE, SAVE_COMPLETE, promptBlock, citationLimits, citationRule } from './helpers/evaluator-wording.js';
 
 // Three findings of a live test of the agent factory (D-1, E-1, E-2): the texts say what the checks require.
 
@@ -54,9 +54,9 @@ describe('E-1: the evaluator learns the citation limits the record check enforce
   it('finds the limits in the checker source', () => {
     // The numbers come from the checker through the helper; here they only have to be real limits.
     for (const value of Object.values(limits)) expect(Number.isInteger(value) && value > 0).toBe(true);
-    // The checker enforces the numbers it declares; the behaviour itself (five lines pass, six are refused) is tested in agent-factory-review-diagnostics.
-    expect(read(CHECKER_FILE)).toContain('const { maxLines, maxQuoteLines, maxQuoteBytes } = CITATION_LIMITS;');
-    expect(read(CHECKER_FILE)).toContain('cite.endLine - cite.startLine >= maxLines');
+    // The checker enforces the numbers it declares; the behaviour itself is tested in agent-factory-review-diagnostics.
+    expect(read(CHECKER_FILE)).toContain('const { maxQuoteLines, maxQuoteBytes } = CITATION_LIMITS;');
+    expect(read(CHECKER_FILE)).toContain('quoteLines > maxQuoteLines');
     expect(read(CHECKER_FILE)).toContain('quoteBytes > maxQuoteBytes');
   });
 
@@ -99,6 +99,22 @@ describe('E-1: the evaluator learns the citation limits the record check enforce
       expect(text, file).not.toMatch(/bounded (?:actual )?quote/i);
       expect(text, file).not.toMatch(/logical line range/i);
     }
+  });
+
+  // ADR 0071: a citation carries no line range any more. No text an evaluator loads, no coordinator place and the shipped example names one.
+  it.each([...Object.values(EVALUATOR_FILES), ...COORDINATOR_PLACES, 'registry/skills/coordinate-artifact/references/dispatch.md',
+    'registry/skills/evaluate-artifact/assets/result.example.json', 'registry/skills/evaluate-artifact/assets/result.schema.json'])('%s no longer asks for or shows a line range', file => {
+    const text = read(file);
+    expect(text).not.toContain(OLD_CITATION_RULE_START);
+    expect(text).not.toMatch(/startLine|endLine|start\/end lines|line range and quote|line numbers the Read tool shows/);
+  });
+
+  it('ships an example result in the version the checker accepts, with quote-located citations', () => {
+    const example = JSON.parse(read('registry/skills/evaluate-artifact/assets/result.example.json')) as { version: number; criteria: Array<{ citations: Array<Record<string, unknown>> }> };
+    expect(example.version).toBe(2);
+    const citations = example.criteria.flatMap(item => item.citations);
+    expect(citations.length).toBeGreaterThan(0);
+    for (const citation of citations) expect(Object.keys(citation).sort()).toEqual(['path', 'quote', 'sha256', 'sourceId']);
   });
 });
 
