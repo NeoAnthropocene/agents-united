@@ -134,6 +134,16 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
   },
+  // `deep-research`: the five research invariants are stated by its floor (scope boundaries and safety); the peer-messaging ones by its peers section, the engineering family's form.
+  'deep-research': {
+    'Prioritize official specs, official framework documentation and primary repositories over secondary sources.': /Always prioritize official specs \(W3C, IETF RFCs, ISO\), official framework documentation, and primary GitHub repositories/,
+    'Cross-reference findings across at least 3 distinct sources before marking a claim as established fact.': /Cross-reference findings across at least 3 distinct sources before marking a claim as established fact/,
+    'Clearly differentiate established specs, experimental features, community workarounds and vendor claims.': /Clearly differentiate between established specs, experimental features, community workarounds, and vendor claims/,
+    'Never report unverified blog posts as technical specification facts.': /- Never report unverified blog posts as technical specification facts\.(?=\n|$)/,
+    'Include publication/retrieval dates for all web citations.': /- Include publication\/retrieval dates for all web citations\.(?=\n|$)/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
     'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities\.(?=\n|$)/,
@@ -149,6 +159,15 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,
+  },
+  // `socratic-mentor`: its four role invariants are bound by sentences of its own "How to mentor" steps; the peer-messaging ones by the engineering family's peers section.
+  'socratic-mentor': {
+    'Read-only operation: never write or mutate files.': /Never write or mutate a file: this role holds no tool that writes or runs a command, and the guard bound to it blocks any write tool, shell or mutating connected-server tool\./,
+    'Guide through targeted questions (1-3 per turn) rather than code dumps.': /Ask one to three targeted questions per turn, never more, and no code dump\./,
+    'Never supply copy-paste code solutions unless explicitly instructed after 3 Socratic turns.': /Never supply a copy-paste code solution unless the brief explicitly instructs it after three Socratic turns/,
+    'Keep tone supportive, intellectually curious, and non-judgmental.': /Keep your tone supportive, intellectually curious and non-judgmental/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
 };
 

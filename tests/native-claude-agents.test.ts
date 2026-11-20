@@ -28,7 +28,7 @@ interface RoleSpec {
   name: string;
   stem: string;
   guard: 'read-only' | 'destructive';
-  permissionMode?: 'plan' | 'acceptEdits';
+  permissionMode?: 'plan' | 'acceptEdits' | 'default';
   skills: string[];
   /** Explicit server tools (read-only roles) or whole servers (roles that may write, as the legacy lane grants). */
   serverTools: string[];
@@ -70,6 +70,9 @@ const ROLES: RoleSpec[] = [
   { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
   { name: 'frontend-architect', stem: 'subagent-frontend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
   { name: 'devops-engineer', stem: 'subagent-devops-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The research specialists: one writes reports and reads the web (no shell), the other only reads and asks (no tool to put a question to the user: the host never gives it to a subagent).
+  { name: 'deep-research', stem: 'subagent-deep-research', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__firecrawl', 'mcp__context7']), mutating: true, mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'Monitor', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'socratic-mentor', stem: 'subagent-socratic-mentor', guard: 'read-only', permissionMode: 'default', skills: [], serverTools: withRoutes(['mcp__context7']), mutating: false, mustHold: ['Glob', 'Grep', 'Read', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
