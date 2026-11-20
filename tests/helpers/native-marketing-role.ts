@@ -12,7 +12,7 @@ import { bundles } from './native-coordinator.js';
 import { nativeText } from './native-roles.js';
 
 /**
- * What the five Tier 1 marketing specialists (n5, slice 1) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
+ * What the five Tier 1 marketing specialists (growth-marketing) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
  * the guard against the real script, the peers section of the Tier 1 form, the hand-back step, the session task tracking section, the skill table and the invariants of the core.
  * Each role's test file adds what only that role says. The roles run no shell (their cores grant none), so like the Tier 2 teammates they hold the editors and the web.
  */
@@ -38,7 +38,9 @@ export interface MarketingRoleSpec {
   bundle?: string;
 }
 
-const ROLE_SPECIFIC_FORBIDDEN = /Chris\b|Campaign Director|digital agency|Deniz|Emre|Defne|Arda\b|motion designer|sound designer|motion-designer|sound-designer|agency-|workflow-agency-|Media Request|frontend.architect/i;
+const ROLE_SPECIFIC_FORBIDDEN = /Chris\b|Campaign Director|digital agency|Deniz|Emre|Defne|Arda\b|motion designer|sound designer|motion-designer|sound-designer|agency-|workflow-agency-|Media Request/i;
+/** The one sentence the two roles whose floor names the frontend architect carry in their body: a hand-off outside the department goes through the lead. */
+export const OUT_OF_DEPARTMENT_HANDOFF = 'A hand-off to a role outside the marketing department, such as the frontend architect, goes to `orchestrator-marketing` under `Open items`: that role is present only when its own Bundle is installed, and in this department it is not the agency persona.';
 const PERSONAS = /\b(Ava|Jamileh|Yavuz|Kaan|Jale|Selin)\b/;
 const IMAGE_TOOL = /\bimage-gen\b|generate_image/;
 
@@ -155,7 +157,9 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
     it('names no agency person, role or workflow, no persona and no media-production peer in its authored body', () => {
       expect(body()).not.toMatch(ROLE_SPECIFIC_FORBIDDEN);
       expect(body()).not.toMatch(PERSONAS);
-      expect(body()).not.toMatch(/agency/i);
+      // The one hand-off sentence (decided during the roll-out, open to the maintainer's review) names the agency persona and the frontend architect to say they are not here; everything else in the body stays free of both.
+      expect(body().replace(OUT_OF_DEPARTMENT_HANDOFF, '')).not.toMatch(/agency/i);
+      expect(body().replace(OUT_OF_DEPARTMENT_HANDOFF, '')).not.toMatch(/frontend.architect/i);
     });
   });
 

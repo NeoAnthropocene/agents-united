@@ -3,7 +3,7 @@ import { describeMarketingRole } from './helpers/native-marketing-role.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * `marketing-campaign-specialist` (n5, slice 1): the second native file on the core the digital agency's campaign specialist stands on, in the Tier 1 form of `devops-engineer`.
+ * `marketing-campaign-specialist` (growth-marketing): the second native file on the core the digital agency's campaign specialist stands on, in the Tier 1 form of `devops-engineer`.
  * What every marketing specialist keeps is in tests/helpers/native-marketing-role.ts; this file holds what only the campaign specialist says.
  */
 

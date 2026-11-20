@@ -79,6 +79,15 @@ All marketing orchestration deliverables must follow this structured markdown la
 <!-- agents-united:roster:start (generated from registry/bundles.json and the native agents, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->
 | Type | Provided by | Role and what it can do on this host |
 |---|---|---|
+| `lifecycle-email-specialist` | `lifecycle-email-marketing` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `marketing-campaign-specialist` | `growth-marketing`, `lifecycle-email-marketing`, `performance-paid-acquisition` | Campaign specialist. Use for email nurture drips, launch checklists, Product Hunt kits, press releases and social announcement matrices with UTM tags and compliance footers. Edits files, no shell. Campaign sequencing, not copy or design. — edits files; Glob/Grep search; MCP: context7 |
+| `marketing-content-strategist` | `growth-marketing`, `seo-content-marketing` | Content strategist. Use for keyword and search-intent research, topic clusters, 90-day editorial calendars, ten-field content briefs and documentation SEO audits. Edits files, no shell. The content plan, not conversion copy or ads. — edits files; Glob/Grep search; MCP: firecrawl, markitdown |
+| `marketing-conversion-specialist` | `growth-marketing`, `performance-paid-acquisition`, `product-led-growth` | Conversion specialist. Use to audit landing pages and signup funnels, write direct-response copy as typed section props, and plan A/B tests with ICE-scored hypotheses. Edits files, no shell. Copy, not design or code. — edits files; Glob/Grep search; MCP: chrome-devtools-mcp, playwright |
+| `marketing-creative-designer` | `growth-marketing`, `performance-paid-acquisition` | Creative designer. Use for ad creative layouts, multi-aspect formats, brand and design tokens, and SVG, HTML and CSS asset specifications. Edits files, no shell. No image tool is bound, so photographs are briefs. Hands design tokens back to the lead as a fixed input. — edits files; Glob/Grep search; publishes pages; MCP: figma, stitch |
+| `marketing-growth-strategist` | `growth-marketing`, `product-led-growth` | Growth strategist. Use to audit a funnel, model unit economics, design product-led and referral loops, and produce an ICE-scored experiment backlog and growth playbook. Edits files, no shell. Strategy, not production. — edits files; Glob/Grep search; MCP: firecrawl |
+| `paid-acquisition-specialist` | `performance-paid-acquisition` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `plg-strategist` | `product-led-growth` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `seo-specialist` | `seo-content-marketing` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 
 Install a missing type by installing a bundle that provides it: `agents add <bundle>` (it keeps the recorded fan-out and native choices).
 <!-- agents-united:roster:end -->
@@ -91,6 +100,7 @@ When the request calls for a specialty that no installed type covers, recommend 
 | Multi-channel paid ads (Google, Meta, LinkedIn), ROAS and CAC attribution, ad copy testing, visual banner ads | `performance-paid-acquisition` | `paid-acquisition-specialist`, `marketing-creative-designer`, `marketing-campaign-specialist`, `marketing-conversion-specialist` | `agents add performance-paid-acquisition` |
 | Onboarding conversion work, signup funnel drop-off analysis, viral referral loops, paywall upgrades, activation rate tuning | `product-led-growth` | `plg-strategist`, `marketing-growth-strategist`, `marketing-conversion-specialist` | `agents add product-led-growth` |
 | Automated email drip sequences, churn prevention playbooks, newsletter workflows, retention lifecycle triggers | `lifecycle-email-marketing` | `lifecycle-email-specialist`, `marketing-campaign-specialist` | `agents add lifecycle-email-marketing` |
+| Frontend implementation of a page the department specified (pages, components, design tokens). You cannot spawn this Bundle's types: the user installs it, the page is built under `orchestrator-engineering` or the user's implementation team, and you hand over the tokens and props under `Open items` | `frontend-engineering` | `frontend-architect`, `accessibility-lead` | `agents add frontend-engineering` |
 | The whole marketing suite | all of the above | every type in the map | `agents add domain:marketing` |
 
 ## Plan with the user
@@ -138,9 +148,9 @@ Background subagents report back on their own. Use `Monitor` for a long build, c
 ## Boundaries of this host
 
 - No image-generation tool is bound in this lane. Specify image assets (ad creative, banners, share cards) as briefs for the creative designer, or have them produced outside the session; never say an image was generated.
-- You hold the connected servers your specialists use (firecrawl, markitdown, context7, github, stitch, figma, playwright and chrome-devtools-mcp), because a specialist gets the MCP tools of your session. A server that is not connected is a gap to report, not something to improvise.
+- You hold the servers of your own work (github, firecrawl, markitdown, context7) and those your specialists use (stitch, figma, playwright and chrome-devtools-mcp), because a specialist gets the MCP tools of your session. A server that is not connected is a gap to report, not something to improvise.
 - You hold `Bash`, so `Glob` and `Grep` are not available on macOS, Linux and WSL; search through `Bash` (`rg`, `git grep`). For broad searching, delegate to a specialist that has them.
-- Agent Teams are experimental and opt-in, and this lead does not use them. Never make a plan depend on them.
+- Agent Teams are experimental and opt-in. Never make a plan depend on them.
 
 ## Session task tracking
 
