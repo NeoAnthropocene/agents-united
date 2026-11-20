@@ -124,6 +124,10 @@ describe('native qa-automation-lead: the guard claims', () => {
       expect(run('Bash', command)).toBe(false);
     });
 
+    it.each(['Bash', 'PowerShell'])('does not stop a recursive delete of a build folder such as rm -rf node_modules through %s', tool => {
+      expect(run(tool, 'rm -rf node_modules'), `${tool}: rm -rf node_modules`).toBe(false);
+    });
+
     it('does not read what a test asserts: a spec that switches an audit off is written without a block', () => {
       const result = attempt(text(), project, { tool: 'Write', input: { file_path: path.join(project, 'tests/e2e/a11y.spec.ts'), content: "new AxeBuilder({ page }).disableRules(['color-contrast'])" } }, { agentType: 'qa-automation-lead' });
       expect(result.offered).toBe(true);

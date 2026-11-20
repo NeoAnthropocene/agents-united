@@ -125,6 +125,10 @@ describe('native e2e-tester: the guard claims', () => {
     ])('does not stop %s, as step 5 says', command => {
       expect(run('Bash', command)).toBe(false);
     });
+
+    it.each(['Bash', 'PowerShell'])('does not stop a recursive delete of a build folder such as rm -rf node_modules through %s', tool => {
+      expect(run(tool, 'rm -rf node_modules'), `${tool}: rm -rf node_modules`).toBe(false);
+    });
   });
 });
 
