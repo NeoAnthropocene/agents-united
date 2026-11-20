@@ -31,10 +31,10 @@ const KNOWN_GAPS: Record<string, string[]> = {
 const covers = (held: string[], wanted: string): boolean => held.some(h => h === wanted || wanted.startsWith(`${h}__`));
 
 describe('the pool of a coordinator: a teammate gets the MCP tools of the main conversation', () => {
-  for (const lead of ['orchestrator-digital-agency', 'orchestrator-engineering']) {
+  for (const lead of ['orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-system-architecture']) {
     it(`${lead} holds every MCP tool that a role it may spawn holds`, () => {
       const roles = spawnable(lead).filter(exists);
-      expect(roles.length, `the roles ${lead} may spawn that have a native file`).toBeGreaterThan(2);
+      expect(roles.length, `the roles ${lead} may spawn that have a native file`).toBeGreaterThan(1); // two is enough to be a pool: the architecture lead has system-architect and backend-architect natively, the other four types of its domain are not native yet
       const held = toolsOf(lead).filter(t => t.startsWith('mcp__'));
       const missing: string[] = [];
       for (const role of roles) {

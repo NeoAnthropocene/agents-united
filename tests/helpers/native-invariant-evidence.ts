@@ -130,6 +130,18 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /You synthesise reports in the output contract above/,
     [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
   },
+  // The architecture lead: the shared coordinator wording (EVIDENCE) for most, its own for what the engineering lead does not state (no saved workflows, ADRs, bounded contexts, resilience, security routed to the user).
+  'orchestrator-system-architecture': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Consult at least one relevant specialist, read-only, before the delegation map, unless the user waives it.': /\*\*Consult before you map\.\*\* Before the delegation map, consult at least one relevant specialist with a short, read-only brief, unless the user waived it/,
+    "A delegated code slice comes back with the failing-then-passing test output of the specialist's own test-first run.": /for code, the failing-then-passing test output from its own test-first run: you check the evidence, you do not redo the work/,
+    'Verify-then-deliver: no deliverable completes until its deterministic verification criteria pass.': /A red run dispatches diagnosis to the right specialist/,
+    'Every major architectural decision is recorded as an ADR under docs/adr/.': /Record decisions in `CONTEXT\.md` and as ADRs under `docs\/adr\/`/,
+    'Bounded contexts are explicit and modules have no circular dependencies.': /Check every design for explicit bounded contexts with no circular dependencies between modules/,
+    'Every network call in a design has a circuit breaker, a retry backoff and a fallback.': /and for a circuit breaker, a retry backoff and a fallback on every network call/,
+    'Security architecture is recommended to the user as the security-operations bundle, never delegated by this lead.': /\*\*Security architecture is not delegated\.\*\* No type of this domain holds security work/,
+  },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,

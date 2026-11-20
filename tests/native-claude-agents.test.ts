@@ -87,6 +87,24 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
+  {
+    name: 'orchestrator-system-architecture',
+    stem: 'orchestrator-system-architecture',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's three servers. No browser: nothing in this domain drives one.
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
+    mutating: true,
+    // The engineering lead's list minus `Workflow`: no bundle of the architecture domain installs the native workflows (workflow-review, workflow-implement, workflow-test), so the lead holds no
+    // `Workflow` tool (its core declares no `workflow` capability) and fans out with parallel `Agent` calls.
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'system-architecture',
+    // The same pin as the engineering coordinator (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
+    model: 'opus',
+    effort: 'medium',
+  },
   // Tier 2 (plan 032 follow-up 2, ADR 0036): the digital-agency team. Teammates are specialists with editors and no shell, so no `Bash`,
   // `LSP` or worktree; they carry the destructive-command guard in their own frontmatter (it guards them as subagents and the lead's
   // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).

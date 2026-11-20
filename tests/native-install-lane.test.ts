@@ -26,9 +26,9 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index', 'system-architect',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-system-architecture', 'repo-index', 'system-architect',
 ];
-const COORDINATORS = ['orchestrator-engineering'];
+const COORDINATORS = ['orchestrator-engineering', 'orchestrator-system-architecture'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
 const sha256 = (text: string): string => `sha256:${crypto.createHash('sha256').update(text).digest('hex')}`;
@@ -146,12 +146,11 @@ describe('native install lane (agents add --native)', () => {
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
-  // The lead of this bundle has no native agent yet, so nothing is asserted about it here; it is extended when the lead lands.
-  it('installs the native system-architect and backend-architect for the system-architecture bundle, each a managed role of its canonical agent', async () => {
+  it('installs the native lead, system-architect and backend-architect for the system-architecture bundle, each a managed role of its canonical agent', async () => {
     await new InstallEngine().install('system-architecture', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
     const lock = await fs.readJson(lockPath);
     expect(lock.nativeLane).toBe(true);
-    for (const role of ['system-architect', 'backend-architect']) {
+    for (const role of ['orchestrator-system-architecture', 'system-architect', 'backend-architect']) {
       expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
       const record = lock.projections[`.claude/agents/${role}.md`];
       expect(record.kind, role).toBe('role');
