@@ -29,7 +29,7 @@ export const EVIDENCE: Record<string, RegExp> = {
 
   'Read the complete fixed review job before evaluating.': /Read the complete fixed review job and the caller-held job\/candidate digests before reviewing/,
   'Preserve the candidate and its declared review scope.': /Preserve the candidate and its declared review scope: read only the supplied subject\/support and selected evidence/,
-  'Tie findings to supplied source pins and actual quoted lines.': /Tie findings to supplied source pins and actual quoted lines: include source ID, path \(candidate-relative, or the basename of a pinned input's file\), caller-provided hash, line range and quote, severity\/confidence/,
+  'Tie findings to supplied source pins and actual quoted lines.': /Tie findings to supplied source pins and actual quoted lines: include source ID, path \(candidate-relative, or the basename of a pinned input's file\), caller-provided hash and quote, severity\/confidence/,
   'Keep record consistency, evaluator judgment and live proof distinct.': /Keep record consistency, evaluator judgment and live proof distinct\. The caller runs validators and persists\/checks your result/,
   'Return missing required evidence without inventing approval.': /Return missing required evidence without inventing approval\. Apply the fixed rubric/,
   'Never mutate the workspace, registry, git state, lockfile or installed host projections, and never execute commands or compute hashes.': /Never mutate the workspace, registry, git state, lockfile or installed host projections, and never execute commands or compute hashes: you have no shell or editor/,
@@ -129,6 +129,19 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
   'orchestrator-engineering': {
     [COMMS.handBack]: /You synthesise reports in the output contract above/,
     [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+  },
+  // The research lead: the shared coordinator wording (EVIDENCE) for most, its own for what the engineering lead does not state (evidence gathering is delegated, citations, the two-source spot-check, documentation only, recommended bundles).
+  'orchestrator-research': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Plan solo; delegate evidence gathering, logic audit, code mapping, quantitative work and prior-art search to specialists.': /You delegate evidence gathering, logic audit, code mapping, quantitative work and prior-art search to specialists/,
+    'Consult at least one relevant specialist, read-only, before the delegation map, unless the user waives it.': /\*\*Consult before you map\.\*\* Before the delegation map, consult at least one relevant specialist with a short, read-only brief, unless the user waived it/,
+    'The lead searches only to scope a request and to spot-check key claims; evidence gathering is delegated.': /You search only to scope a request and to spot-check key claims/,
+    'Verify-then-deliver: no report completes until every claim is cited and every key claim passed the two-source spot-check.': /A claim that fails the spot-check goes back to the specialist that supplied it/,
+    'Every empirical claim cites an explicit source, and no source is invented.': /Every empirical claim carries an explicit source URL or document reference; never invent a source/,
+    'Key claims are checked against two independent primary sources before delivery.': /Check each key claim yourself against at least two independent primary sources/,
+    'Project runtime source code is not changed; the output is research documentation only.': /Do not change project runtime source code \(`src\/`\); output research documentation only/,
+    'Work beyond research synthesis is recommended to the user as a bundle, never delegated by this lead.': /\*\*Work beyond research synthesis is recommended, not delegated\.\*\*/,
   },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,

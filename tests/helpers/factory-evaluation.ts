@@ -151,10 +151,11 @@ export async function prepareEvaluationKind(fixture: EvaluationFixture, kind: 's
 
 /** Synthetic opinion, explicitly distinct from an invoked evaluator. */
 export function evaluationResult(selected: Awaited<ReturnType<typeof prepareEvaluationJob>>, preflight: { jobDigest: string }) {
-  const citation = { sourceId: 'candidate', path: 'SKILL.md', sha256: selected.inventory[0]!.sha256,
-    startLine: 7, endLine: 7, quote: 'Read only the supplied path.' };
+  // A quote-located citation (ADR 0071): the checker finds the line; `line` is optional and only names one occurrence of a repeated quote.
+  const citation: { sourceId: string; path: string; sha256: string; quote: string; line?: number } = { sourceId: 'candidate', path: 'SKILL.md',
+    sha256: selected.inventory[0]!.sha256, quote: 'Read only the supplied path.' };
   return {
-    version: 1, jobId: selected.job.id, jobDigest: preflight.jobDigest, candidateDigest: selected.candidateDigest,
+    version: 2, jobId: selected.job.id, jobDigest: preflight.jobDigest, candidateDigest: selected.candidateDigest,
     status: 'reviewed', opinion: 'no-blocking-findings', subject: selected.job.subject, inventory: selected.inventory, inventorySource: 'caller-provided',
     coverage: [{ path: 'SKILL.md', status: 'reviewed', rationale: 'Synthetic worked coverage record.' }],
     criteria: selected.job.rubric.criteria.map(item => ({ id: item.id,
