@@ -66,7 +66,7 @@ describe('native socratic-mentor: the question tool is the gap, pinned in code',
 
   it('says in one sentence, without naming the tool, that the lead asks the user', () => {
     const body = text().split('<!-- agents-united:floor:end -->')[1]!;
-    expect(body).toContain('You cannot put a question to the user yourself in this host; put it under `Open items` and the lead asks it.');
+    expect(body).toContain('You cannot put a question to the user yourself in this host. Your own clarifying questions to the user go under `Open items` and the lead asks them; your probing questions go in the report\'s `Probing Questions` section.');
     expect(body).not.toContain('AskUserQuestion');
     expect(body).not.toContain('ask_question');
   });
@@ -104,8 +104,11 @@ describe('native socratic-mentor: read-only, against the real script', () => {
   });
 
   it('says exactly that in Boundaries and in step 5, which also binds the read-only invariant', () => {
-    expect(text()).toContain('- A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; put the change in your report as a suggestion for the engineer.');
-    expect(text()).toContain('this role holds no tool that writes or runs a command, and the guard bound to it blocks any write tool, shell or mutating connected-server tool.');
+    expect(text()).toContain('- A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; put the change in your report as a suggestion for the engineer. As a subagent it comes from this file; as a teammate it does not apply, so the read-only rule is yours alone.');
+    expect(text()).toContain('this role holds no tool that writes a file or runs a command, and as a subagent the guard bound to it blocks any write tool, shell or mutating connected-server tool; as a teammate that guard does not apply, so the read-only rule is yours alone.');
+    expect(text()).toContain('unless explicitly instructed after three Socratic turns');
+    expect(text()).toContain('ask the engineer to state their own conclusions');
+    expect(text()).toContain('The `grill-me` interview is the method: its questions go into your report, at most three, and the lead puts them to the engineer.');
   });
 });
 
