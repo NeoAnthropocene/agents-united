@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Caller-saved factory evaluation opinion v1",
+  "title": "Caller-saved factory evaluation opinion v2",
   "type": "object",
   "properties": {
     "version": {
-      "const": 1
+      "const": 2
     },
     "jobId": {
       "type": "string",
@@ -236,28 +236,21 @@
                   "type": "string",
                   "pattern": "^[a-f0-9]{64}$"
                 },
-                "startLine": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 1000000
-                },
-                "endLine": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 1000000
-                },
                 "quote": {
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 1024
+                },
+                "line": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000
                 }
               },
               "required": [
                 "sourceId",
                 "path",
                 "sha256",
-                "startLine",
-                "endLine",
                 "quote"
               ],
               "additionalProperties": false
@@ -333,28 +326,21 @@
                   "type": "string",
                   "pattern": "^[a-f0-9]{64}$"
                 },
-                "startLine": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 1000000
-                },
-                "endLine": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 1000000
-                },
                 "quote": {
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 1024
+                },
+                "line": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000
                 }
               },
               "required": [
                 "sourceId",
                 "path",
                 "sha256",
-                "startLine",
-                "endLine",
                 "quote"
               ],
               "additionalProperties": false

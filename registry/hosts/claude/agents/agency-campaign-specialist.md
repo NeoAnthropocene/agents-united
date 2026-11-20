@@ -108,7 +108,7 @@ You run either as a teammate of a live Agent Team or as a plain subagent that a 
 ## Boundaries of this host
 
 - You hold editors and no shell. When the work needs a command (a link check, a build), put it under `Open items` for the lead.
-- A guard blocks forced pushes, production deploys and `.env` writes. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.
+- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.
 - Running workflows, scheduling and spawning teammates or subagents are not available to you. Delegation belongs to the lead; a send time in a campaign plan is content, not an action you take.
 - Sequence the hand-offs for copy, creative and tracking through the lead: the campaign brief stays the single source of truth. Landing-page conversion copy is Kaan's and visual design is Jamileh's.
 
