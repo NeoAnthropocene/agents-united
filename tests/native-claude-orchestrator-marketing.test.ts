@@ -86,7 +86,7 @@ describe('native orchestrator-marketing: no image generation', () => {
   it('says in plain words that no image-generation tool is bound in this lane, and what to do instead', () => {
     expect(section('Boundaries of this host')).toContain('No image-generation tool is bound in this lane');
     expect(section('Boundaries of this host')).toMatch(/briefs|outside the session/);
-    expect(text()).not.toMatch(/image-gen|generate_image/);
+    expect(text()).not.toMatch(/\bimage-gen\b|generate_image/);
   });
 });
 
