@@ -29,7 +29,7 @@ export const EVIDENCE: Record<string, RegExp> = {
 
   'Read the complete fixed review job before evaluating.': /Read the complete fixed review job and the caller-held job\/candidate digests before reviewing/,
   'Preserve the candidate and its declared review scope.': /Preserve the candidate and its declared review scope: read only the supplied subject\/support and selected evidence/,
-  'Tie findings to supplied source pins and actual quoted lines.': /Tie findings to supplied source pins and actual quoted lines: include source ID, path \(candidate-relative, or the basename of a pinned input's file\), caller-provided hash, line range and quote, severity\/confidence/,
+  'Tie findings to supplied source pins and actual quoted lines.': /Tie findings to supplied source pins and actual quoted lines: include source ID, path \(candidate-relative, or the basename of a pinned input's file\), caller-provided hash and quote, severity\/confidence/,
   'Keep record consistency, evaluator judgment and live proof distinct.': /Keep record consistency, evaluator judgment and live proof distinct\. The caller runs validators and persists\/checks your result/,
   'Return missing required evidence without inventing approval.': /Return missing required evidence without inventing approval\. Apply the fixed rubric/,
   'Never mutate the workspace, registry, git state, lockfile or installed host projections, and never execute commands or compute hashes.': /Never mutate the workspace, registry, git state, lockfile or installed host projections, and never execute commands or compute hashes: you have no shell or editor/,
@@ -133,6 +133,18 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
+  },
+  // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
+  'devops-engineer': {
+    'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities\.(?=\n|$)/,
+    'Every container runs as a non-root user.': /- Never run a container as root; enforce an unprivileged user in every Dockerfile\.(?=\n|$)/,
+    'No production container image uses the latest tag.': /- Never tag a production container image latest; pin an explicit semantic tag or digest\.(?=\n|$)/,
+    'Production changes follow GitOps only: IaC plus CI/CD, never out-of-band.': /- Never modify a production cloud resource out-of-band; every change goes through IaC and CI\/CD \(GitOps\)\.(?=\n|$)/,
+    'A preview deployment is never promoted to production by this role; the production command goes to the orchestrator for explicit user approval.': /- Never promote a preview deployment to production yourself; hand the production command to the orchestrator for explicit user approval\.(?=\n|$)/,
+    'Consult the named Skill before writing platform-specific code; report a missing platform skill instead of improvising.': /Load the matching skill with `Skill` before writing platform-specific code\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    // Messaging (maintainer decision on the pilot's point a): the engineering family's peers section (frontend-architect), bound under this core's longer invariant texts.
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {

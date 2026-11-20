@@ -69,7 +69,7 @@ All engineering plans, execution summaries, and handoff reports must follow this
 | `code-reviewer` | `software-engineering` | Read-only code review and static analysis. Use proactively after code changes, and before merging, to get a severity-rated report of security, performance, error-handling and hygiene findings with file, line and snippet evidence. Never edits files. — read-only; Glob/Grep search; ReportFindings (foreground); MCP: context7, github |
 | `cross-platform-specialist` | `mobile-development` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `data-engineer` | `backend-distributed-systems` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
-| `devops-engineer` | `devops-engineering` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `devops-engineer` | `devops-engineering` | DevOps engineer. Use to design and implement CI/CD pipelines, hardened container definitions, Kubernetes manifests and Bicep or Terraform infrastructure code, with observability wiring and secret-safe release workflows. Production promotion is handed back for explicit user approval. — edits files and runs commands; searches through Bash; Monitor; MCP: context7, github |
 | `distributed-systems-architect` | `backend-distributed-systems` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `e2e-tester` | `qa-automation` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `frontend-architect` | `frontend-engineering`, `software-engineering` | Frontend architect. Use to design component hierarchies and state management, tune Core Web Vitals (LCP, INP, CLS), and turn AI-generated UI prototypes into production-grade component systems. — edits files and runs commands; searches through Bash; Monitor; worktrees; MCP: chrome-devtools-mcp, context7, stitch |
@@ -134,7 +134,7 @@ Background subagents report back on their own. Use `Monitor` for a test run, bui
 
 ## Verify before delivering
 
-1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks forced pushes, production deploys and `.env` writes.
+1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.
 2. Work test-first: the failing test comes before the implementation, from the specialist, with the output as evidence.
 3. Run the project's own typecheck, test and build commands. A red run dispatches diagnosis to the right specialist. It does not go into a report as done.
 4. `EnterWorktree` isolates a risky change from the working tree.

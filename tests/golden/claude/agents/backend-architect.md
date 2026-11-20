@@ -31,20 +31,132 @@ hooks:
           command: node
           args:
             - -e
-            - 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let
+            - "let s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>{let
               i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof
-              i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by
-              agents-united guard: unreadable hook input. The input of this tool
-              call could not be read, so the guard cannot tell whether it is
-              safe.\n");process.exit(2)}const
-              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let
-              r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
-              push --force";else
-              if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else
-              if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a
-              .env write";if(r){process.stderr.write("Blocked by agents-united
-              guard: "+r+" requires explicit human approval outside the agent
-              session.\n");process.exit(2)}})'
+              i!==\"object\"||Array.isArray(i)){process.stderr.write(\"Blocked
+              by agents-united guard: unreadable hook input. The input of this
+              tool call could not be read, so the guard cannot tell whether it
+              is safe.\\n\");process.exit(2)}const
+              t=i.tool_input||{},c=String(t.command||\"\"),f=String(t.file_path\
+              ||t.notebook_path||\"\").replace(/\\\\/g,\"/\");const
+              ps=i.tool_name===\"PowerShell\",AS=/^[A-Za-z_]\\w*=/;const KW=new
+              Set([\"{\",\"!\",\"then\",\"do\",\"else\",\"if\",\"while\",\"until\
+              \"]),W=new
+              Set([\"env\",\"command\",\"exec\",\"nohup\",\"time\",\"builtin\",\
+              \"xargs\",\"nice\",\"timeout\",...KW]),A=new
+              Set([\"sudo\",\"doas\",\"pkexec\",\"runas\"]),S=new
+              Set([\"shutdown\",\"reboot\",\"halt\",\"poweroff\",\"stop-computer\
+              \",\"restart-computer\"]),SH=new
+              Set([\"bash\",\"sh\",\"zsh\",\"dash\",\"ksh\",\"fish\",\"pwsh\",\
+              \"powershell\",\"cmd\",\"eval\"]);const
+              B=w=>(/^([\\/\\\\]|[A-Za-z]:[\\/\\\\])/.test(w)?w.replace(/^.*[\\/\
+              \\\\]/,\"\"):w).replace(/\\.exe$/i,\"\").toLowerCase();const
+              K=s=>{const o=[];let t=\"\",q=\"\";for(let
+              i=0;i<s.length;i++){const h=s[i];if(q){if(h===q)q=\"\";else
+              t+=h}else if(h==='\"'||h===\"'\")q=h;else
+              if(/\\s/.test(h)){if(t){o.push(t);t=\"\"}}else
+              t+=h}if(t)o.push(t);return
+              o.map(h=>h.replace(/\\u0002/g,\"(\").replace(/\\u0003/g,\")\"))};\
+              const Z=(k,a)=>{while(a<k.length){const
+              w=B(k[a]);if(AS.test(k[a])){a++;continue}if(!W.has(w))return
+              a;if(w===\"command\"&&/^-[vV]$/.test(k[a+1]||\"\"))return
+              a;a++;if(KW.has(w))continue;const
+              v=w===\"env\"?/^-[uSCP]$/:w===\"timeout\"?/^-[sk]$/:w===\"nice\"?\
+              /^-n$/:w===\"xargs\"?/^-[IJnPLdEsa]$/:null;while(a<k.length&&k[a]\
+              [0]===\"-\")a+=v&&v.test(k[a])?2:1;if(w===\"timeout\")a++}return
+              a};const
+              Y=h=>{h=h.slice(Math.max(h.lastIndexOf(\";\"),h.lastIndexOf(\"&\"\
+              ),h.lastIndexOf(\"|\"),h.lastIndexOf(\"\\n\"),h.lastIndexOf(\"(\"\
+              ))+1);const k=K(h);return SH.has(B(k[Z(k,0)]||\"\"))};const
+              F=h=>h.length<64&&/^-[a-z]*r[a-z]*$/i.test(h);const
+              X=x=>{if(x.length>4096)return false;let
+              p=x.replace(/\\\\/g,\"/\").replace(/\\/\\*+$/,\"\"),e=p.length;wh\
+              ile(e>0&&p[e-1]===\"/\")e--;p=e?p.slice(0,e):\"/\";return
+              /^(\\/|~|\\$home|\\$\\{home\\}|\\$env:userprofile|%userprofile%|\
+              \\.\\.?|\\*|\\.git|[a-z]:|\\/(bin|boot|dev|etc|home|lib\\w*|opt|r\
+              oot|sbin|usr|var)|[a-z]:\\/(windows|users|program files(
+              \\(x86\\))?|programdata))$/.test(p.toLowerCase())};const U=b=>{let
+              o=\"\",d=0;for(let k=0;k<b.length;k++){const
+              h=b[k];if(!ps&&h===\"\\\\\"&&k+1<b.length){const
+              g=b[++k];o+=h+(\";&|\\n\\`()$\\\"\".includes(g)?(g===\"(\"?\"\\u0\
+              002\":g===\")\"?\"\\u0003\":\"\\u0001\"):g)}else
+              if(h===\"$\"&&b[k+1]===\"(\"){o+=\"$(\";k++;d++}else
+              if(h===\"(\"&&d>0){o+=h;d++}else if(h===\")\"&&d>0){o+=h;d--}else
+              if(d===0&&\";&|\\n()\".includes(h))o+=h===\"(\"?\"\\u0002\":h===\
+              \")\"?\"\\u0003\":\"\\u0001\";else o+=h}return o};const
+              Hd=(x,Q)=>{const re=/(?<!<)<<(?!<)(-?)[
+              \\t]*(?:\"([^\"\\n]*)\"|'([^'\\n]*)'|([A-Za-z_][\\w.-]*))/g;let
+              o=\"\",p=0,m,le=-2,bud=200000;while((m=re.exec(x))!==null){const
+              dl=m[2]??m[3]??m[4];if(le<re.lastIndex)le=x.indexOf(\"\\n\",re.la\
+              stIndex);const eo=le;if(eo<0)break;let
+              s=eo+1,e=s,f=-1,c=0;while(e<=x.length&&c<5000&&bud>0){c++;bud--;c\
+              onst
+              ne=x.indexOf(\"\\n\",e),ln=x.slice(e,ne<0?x.length:ne).replace(/\
+              \\r$/,\"\");if((m[1]?ln.replace(/^\\t+/,\"\"):ln)===dl){f=e;break\
+              }if(ne<0)break;e=ne+1}if(f<0)continue;const
+              be=f,pre=x.slice(Math.max(0,m.index-200),m.index),cut=Math.max(pr\
+              e.lastIndexOf(\";\"),pre.lastIndexOf(\"&\"),pre.lastIndexOf(\"|\"\
+              ),pre.lastIndexOf(\"(\"),pre.lastIndexOf(\"\\`\"),pre.lastIndexOf(\
+              \"\\n\")),k=K(pre.slice(cut+1)),a=Z(k,0);const
+              sh=(a<k.length&&SH.has(B(k[a])))||/\\|\\s*(?:[^\\s|;&]*[\\/\\\\])\
+              ?(?:bash|sh|zsh|dash|ksh|fish|pwsh|powershell|cmd)(?:\\.exe)?(?=\
+              \\s|$)/i.test(x.slice(re.lastIndex,eo));o+=x.slice(p,s);if(sh)Q.p\
+              ush(x.slice(s,be));p=be;re.lastIndex=be}return o+x.slice(p)};const
+              D=(x,d)=>{const Q=[];x=Hd(x,Q).replace(/\\\\\\r?\\n/g,\"
+              \").replace(/\\`\\r?\\n/g,\" \").replace(/\\r/g,\"\");const
+              n=x.length;let z=\"\",j=0;while(j<n){const
+              q=x[j];if(q===\"#\"&&(j===0||/\\s/.test(x[j-1]))){const
+              e=x.indexOf(\"\\n\",j);j=e<0?n:e;continue}if(q!=='\"'&&q!==\"'\")\
+              {z+=q;j++;continue}let
+              e=j+1;while(e<n&&x[e]!==q)e+=q==='\"'&&x[e]===\"\\\\\"&&!ps?2:1;c\
+              onst
+              b=x.slice(j+1,Math.min(e,n));if(/(?:^|\\s)(?:-[a-z]*c|-command|\\\
+              /[ck])\\s*$|(?:^|\\s)eval\\s*$/i.test(x.slice(Math.max(0,j-60),j)\
+              )&&Y(x.slice(Math.max(0,j-200),j)))Q.push(q==='\"'&&!ps?b.replace\
+              (/\\\\(.)/g,\"$1\"):b);z+=q+(q===\"'\"?b.replace(/[;&|\\n\\`()]/g\
+              ,h=>h===\"(\"?\"\\u0002\":h===\")\"?\"\\u0003\":\"\\u0001\"):U(b)\
+              )+(e<n?q:\"\");j=e+1}if(d<3)for(const p of Q){const
+              y=D(p,d+1);if(y)return y}for(const g of
+              z.split(/[;&|\\n\\`()]|\\$\\(/)){const
+              k=K(g),a=Z(k,0);if(a>=k.length)continue;const
+              v=B(k[a]),R=k.slice(a+1),N=R.filter(h=>h[0]!==\"-\").map(h=>h.toL\
+              owerCase());if(d<3&&SH.has(v)){const
+              ix=v===\"eval\"?-1:R.findIndex(h=>h.length<64&&/^(?:-[a-z]*c|-com\
+              mand|\\/[ck])$/i.test(h));if(v===\"eval\"||(ix>=0&&ix<R.length-1)\
+              ){const y=D(R.slice(ix+1).join(\" \"),d+1);if(y)return
+              y}}if(A.has(v)||v===\"su\"||(/^(start-process|saps|start)$/.test(\
+              v)&&/(^|\\s)-verb[\\s:=]+runas/i.test(R.join(\" \"))))return
+              \"sudo or another privilege
+              escalation\";if(S.has(v)||(v===\"init\"&&/^[06]$/.test(N[0]||\"\"\
+              ))||(v===\"systemctl\"&&/^(poweroff|reboot|halt)$/.test(N[0]||\"\
+              \")))return \"a shutdown or reboot\";const G=(u,w)=>{const
+              o=N.indexOf(u);return
+              o>=0&&N[o+1]===w};if((v===\"az\"&&G(\"group\",\"delete\"))||(v===\
+              \"gcloud\"&&G(\"projects\",\"delete\"))||(v===\"aws\"&&/^(close-a\
+              ccount|delete-organization)$/.test(N[N.indexOf(\"organizations\")\
+              +1]||\"\")&&N.includes(\"organizations\")))return \"a cloud
+              resource-group, project or account
+              deletion\";if(/^mkfs(\\.\\w+)?$/.test(v)||v===\"wipefs\"||v===\"d\
+              iskpart\"||/^(format-volume|clear-disk|initialize-disk)$/.test(v)\
+              ||(v===\"format\"&&R.some(h=>/^[a-z]:$/i.test(h)))||(v===\"dd\"&&\
+              R.some(h=>h.startsWith(\"of=/dev/\")&&!/^of=\\/dev\\/(null|zero|s\
+              tdout|stderr|tty|fd\\/\\d+)$/.test(h)))||(v===\"shred\"&&R.some(h\
+              =>h.startsWith(\"/dev/\"))))return \"a disk or filesystem
+              format\";if(/^(rm|rmdir|rd|del|erase|ri|remove-item|rimraf)$/.tes\
+              t(v)&&(v===\"rimraf\"||R.some(h=>F(h)||h===\"--recursive\"||h.toL\
+              owerCase()===\"/s\"))&&R.some(h=>h[0]!==\"-\"&&!/^\\/[a-z]$/i.tes\
+              t(h)&&X(h)))return \"a recursive delete of a root, home or project
+              folder\"}return \"\"};let
+              r=\"\";if(/\\bgit\\b[^;&|]*\\bpush\\b[^;&|]*(--force(?!-with-leas\
+              e)\\b|(^|\\s)-f\\b)/.test(c))r=\"git push --force\";else
+              if(/\\bvercel\\b[^;&|]*--prod\\b/.test(c))r=\"vercel --prod\";else
+              if(/(^|\\/)\\.env(\\.(?!example$)[^\\/]+)?$/.test(f)||/>\\s*(\\S*\
+              \\/)?\\.env(\\.(?!example\\b)\\S+)?(\\s|$)/.test(c))r=\"a .env
+              write\";else if(c){try{r=D(c,0)}catch(e){r=\"a command the guard
+              could not analyse\"}}if(r){process.stderr.write(\"Blocked by
+              agents-united guard: \"+r+\" requires explicit human approval
+              outside the agent session. If you mean it, run it yourself in your
+              own terminal.\\n\");process.exit(2)}})"
           onFailure: block
     - matcher: Write|Edit|NotebookEdit
       hooks:
@@ -52,20 +164,132 @@ hooks:
           command: node
           args:
             - -e
-            - 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{let
+            - "let s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>{let
               i;try{i=JSON.parse(s.trim())}catch(e){}if(i===null||typeof
-              i!=="object"||Array.isArray(i)){process.stderr.write("Blocked by
-              agents-united guard: unreadable hook input. The input of this tool
-              call could not be read, so the guard cannot tell whether it is
-              safe.\n");process.exit(2)}const
-              t=i.tool_input||{},c=String(t.command||""),f=String(t.file_path||t.notebook_path||"").replace(/\\/g,"/");let
-              r="";if(/\bgit\b[^;&|]*\bpush\b[^;&|]*(--force(?!-with-lease)\b|(^|\s)-f\b)/.test(c))r="git
-              push --force";else
-              if(/\bvercel\b[^;&|]*--prod\b/.test(c))r="vercel --prod";else
-              if(/(^|\/)\.env(\.(?!example$)[^\/]+)?$/.test(f)||/>\s*(\S*\/)?\.env(\.(?!example\b)\S+)?(\s|$)/.test(c))r="a
-              .env write";if(r){process.stderr.write("Blocked by agents-united
-              guard: "+r+" requires explicit human approval outside the agent
-              session.\n");process.exit(2)}})'
+              i!==\"object\"||Array.isArray(i)){process.stderr.write(\"Blocked
+              by agents-united guard: unreadable hook input. The input of this
+              tool call could not be read, so the guard cannot tell whether it
+              is safe.\\n\");process.exit(2)}const
+              t=i.tool_input||{},c=String(t.command||\"\"),f=String(t.file_path\
+              ||t.notebook_path||\"\").replace(/\\\\/g,\"/\");const
+              ps=i.tool_name===\"PowerShell\",AS=/^[A-Za-z_]\\w*=/;const KW=new
+              Set([\"{\",\"!\",\"then\",\"do\",\"else\",\"if\",\"while\",\"until\
+              \"]),W=new
+              Set([\"env\",\"command\",\"exec\",\"nohup\",\"time\",\"builtin\",\
+              \"xargs\",\"nice\",\"timeout\",...KW]),A=new
+              Set([\"sudo\",\"doas\",\"pkexec\",\"runas\"]),S=new
+              Set([\"shutdown\",\"reboot\",\"halt\",\"poweroff\",\"stop-computer\
+              \",\"restart-computer\"]),SH=new
+              Set([\"bash\",\"sh\",\"zsh\",\"dash\",\"ksh\",\"fish\",\"pwsh\",\
+              \"powershell\",\"cmd\",\"eval\"]);const
+              B=w=>(/^([\\/\\\\]|[A-Za-z]:[\\/\\\\])/.test(w)?w.replace(/^.*[\\/\
+              \\\\]/,\"\"):w).replace(/\\.exe$/i,\"\").toLowerCase();const
+              K=s=>{const o=[];let t=\"\",q=\"\";for(let
+              i=0;i<s.length;i++){const h=s[i];if(q){if(h===q)q=\"\";else
+              t+=h}else if(h==='\"'||h===\"'\")q=h;else
+              if(/\\s/.test(h)){if(t){o.push(t);t=\"\"}}else
+              t+=h}if(t)o.push(t);return
+              o.map(h=>h.replace(/\\u0002/g,\"(\").replace(/\\u0003/g,\")\"))};\
+              const Z=(k,a)=>{while(a<k.length){const
+              w=B(k[a]);if(AS.test(k[a])){a++;continue}if(!W.has(w))return
+              a;if(w===\"command\"&&/^-[vV]$/.test(k[a+1]||\"\"))return
+              a;a++;if(KW.has(w))continue;const
+              v=w===\"env\"?/^-[uSCP]$/:w===\"timeout\"?/^-[sk]$/:w===\"nice\"?\
+              /^-n$/:w===\"xargs\"?/^-[IJnPLdEsa]$/:null;while(a<k.length&&k[a]\
+              [0]===\"-\")a+=v&&v.test(k[a])?2:1;if(w===\"timeout\")a++}return
+              a};const
+              Y=h=>{h=h.slice(Math.max(h.lastIndexOf(\";\"),h.lastIndexOf(\"&\"\
+              ),h.lastIndexOf(\"|\"),h.lastIndexOf(\"\\n\"),h.lastIndexOf(\"(\"\
+              ))+1);const k=K(h);return SH.has(B(k[Z(k,0)]||\"\"))};const
+              F=h=>h.length<64&&/^-[a-z]*r[a-z]*$/i.test(h);const
+              X=x=>{if(x.length>4096)return false;let
+              p=x.replace(/\\\\/g,\"/\").replace(/\\/\\*+$/,\"\"),e=p.length;wh\
+              ile(e>0&&p[e-1]===\"/\")e--;p=e?p.slice(0,e):\"/\";return
+              /^(\\/|~|\\$home|\\$\\{home\\}|\\$env:userprofile|%userprofile%|\
+              \\.\\.?|\\*|\\.git|[a-z]:|\\/(bin|boot|dev|etc|home|lib\\w*|opt|r\
+              oot|sbin|usr|var)|[a-z]:\\/(windows|users|program files(
+              \\(x86\\))?|programdata))$/.test(p.toLowerCase())};const U=b=>{let
+              o=\"\",d=0;for(let k=0;k<b.length;k++){const
+              h=b[k];if(!ps&&h===\"\\\\\"&&k+1<b.length){const
+              g=b[++k];o+=h+(\";&|\\n\\`()$\\\"\".includes(g)?(g===\"(\"?\"\\u0\
+              002\":g===\")\"?\"\\u0003\":\"\\u0001\"):g)}else
+              if(h===\"$\"&&b[k+1]===\"(\"){o+=\"$(\";k++;d++}else
+              if(h===\"(\"&&d>0){o+=h;d++}else if(h===\")\"&&d>0){o+=h;d--}else
+              if(d===0&&\";&|\\n()\".includes(h))o+=h===\"(\"?\"\\u0002\":h===\
+              \")\"?\"\\u0003\":\"\\u0001\";else o+=h}return o};const
+              Hd=(x,Q)=>{const re=/(?<!<)<<(?!<)(-?)[
+              \\t]*(?:\"([^\"\\n]*)\"|'([^'\\n]*)'|([A-Za-z_][\\w.-]*))/g;let
+              o=\"\",p=0,m,le=-2,bud=200000;while((m=re.exec(x))!==null){const
+              dl=m[2]??m[3]??m[4];if(le<re.lastIndex)le=x.indexOf(\"\\n\",re.la\
+              stIndex);const eo=le;if(eo<0)break;let
+              s=eo+1,e=s,f=-1,c=0;while(e<=x.length&&c<5000&&bud>0){c++;bud--;c\
+              onst
+              ne=x.indexOf(\"\\n\",e),ln=x.slice(e,ne<0?x.length:ne).replace(/\
+              \\r$/,\"\");if((m[1]?ln.replace(/^\\t+/,\"\"):ln)===dl){f=e;break\
+              }if(ne<0)break;e=ne+1}if(f<0)continue;const
+              be=f,pre=x.slice(Math.max(0,m.index-200),m.index),cut=Math.max(pr\
+              e.lastIndexOf(\";\"),pre.lastIndexOf(\"&\"),pre.lastIndexOf(\"|\"\
+              ),pre.lastIndexOf(\"(\"),pre.lastIndexOf(\"\\`\"),pre.lastIndexOf(\
+              \"\\n\")),k=K(pre.slice(cut+1)),a=Z(k,0);const
+              sh=(a<k.length&&SH.has(B(k[a])))||/\\|\\s*(?:[^\\s|;&]*[\\/\\\\])\
+              ?(?:bash|sh|zsh|dash|ksh|fish|pwsh|powershell|cmd)(?:\\.exe)?(?=\
+              \\s|$)/i.test(x.slice(re.lastIndex,eo));o+=x.slice(p,s);if(sh)Q.p\
+              ush(x.slice(s,be));p=be;re.lastIndex=be}return o+x.slice(p)};const
+              D=(x,d)=>{const Q=[];x=Hd(x,Q).replace(/\\\\\\r?\\n/g,\"
+              \").replace(/\\`\\r?\\n/g,\" \").replace(/\\r/g,\"\");const
+              n=x.length;let z=\"\",j=0;while(j<n){const
+              q=x[j];if(q===\"#\"&&(j===0||/\\s/.test(x[j-1]))){const
+              e=x.indexOf(\"\\n\",j);j=e<0?n:e;continue}if(q!=='\"'&&q!==\"'\")\
+              {z+=q;j++;continue}let
+              e=j+1;while(e<n&&x[e]!==q)e+=q==='\"'&&x[e]===\"\\\\\"&&!ps?2:1;c\
+              onst
+              b=x.slice(j+1,Math.min(e,n));if(/(?:^|\\s)(?:-[a-z]*c|-command|\\\
+              /[ck])\\s*$|(?:^|\\s)eval\\s*$/i.test(x.slice(Math.max(0,j-60),j)\
+              )&&Y(x.slice(Math.max(0,j-200),j)))Q.push(q==='\"'&&!ps?b.replace\
+              (/\\\\(.)/g,\"$1\"):b);z+=q+(q===\"'\"?b.replace(/[;&|\\n\\`()]/g\
+              ,h=>h===\"(\"?\"\\u0002\":h===\")\"?\"\\u0003\":\"\\u0001\"):U(b)\
+              )+(e<n?q:\"\");j=e+1}if(d<3)for(const p of Q){const
+              y=D(p,d+1);if(y)return y}for(const g of
+              z.split(/[;&|\\n\\`()]|\\$\\(/)){const
+              k=K(g),a=Z(k,0);if(a>=k.length)continue;const
+              v=B(k[a]),R=k.slice(a+1),N=R.filter(h=>h[0]!==\"-\").map(h=>h.toL\
+              owerCase());if(d<3&&SH.has(v)){const
+              ix=v===\"eval\"?-1:R.findIndex(h=>h.length<64&&/^(?:-[a-z]*c|-com\
+              mand|\\/[ck])$/i.test(h));if(v===\"eval\"||(ix>=0&&ix<R.length-1)\
+              ){const y=D(R.slice(ix+1).join(\" \"),d+1);if(y)return
+              y}}if(A.has(v)||v===\"su\"||(/^(start-process|saps|start)$/.test(\
+              v)&&/(^|\\s)-verb[\\s:=]+runas/i.test(R.join(\" \"))))return
+              \"sudo or another privilege
+              escalation\";if(S.has(v)||(v===\"init\"&&/^[06]$/.test(N[0]||\"\"\
+              ))||(v===\"systemctl\"&&/^(poweroff|reboot|halt)$/.test(N[0]||\"\
+              \")))return \"a shutdown or reboot\";const G=(u,w)=>{const
+              o=N.indexOf(u);return
+              o>=0&&N[o+1]===w};if((v===\"az\"&&G(\"group\",\"delete\"))||(v===\
+              \"gcloud\"&&G(\"projects\",\"delete\"))||(v===\"aws\"&&/^(close-a\
+              ccount|delete-organization)$/.test(N[N.indexOf(\"organizations\")\
+              +1]||\"\")&&N.includes(\"organizations\")))return \"a cloud
+              resource-group, project or account
+              deletion\";if(/^mkfs(\\.\\w+)?$/.test(v)||v===\"wipefs\"||v===\"d\
+              iskpart\"||/^(format-volume|clear-disk|initialize-disk)$/.test(v)\
+              ||(v===\"format\"&&R.some(h=>/^[a-z]:$/i.test(h)))||(v===\"dd\"&&\
+              R.some(h=>h.startsWith(\"of=/dev/\")&&!/^of=\\/dev\\/(null|zero|s\
+              tdout|stderr|tty|fd\\/\\d+)$/.test(h)))||(v===\"shred\"&&R.some(h\
+              =>h.startsWith(\"/dev/\"))))return \"a disk or filesystem
+              format\";if(/^(rm|rmdir|rd|del|erase|ri|remove-item|rimraf)$/.tes\
+              t(v)&&(v===\"rimraf\"||R.some(h=>F(h)||h===\"--recursive\"||h.toL\
+              owerCase()===\"/s\"))&&R.some(h=>h[0]!==\"-\"&&!/^\\/[a-z]$/i.tes\
+              t(h)&&X(h)))return \"a recursive delete of a root, home or project
+              folder\"}return \"\"};let
+              r=\"\";if(/\\bgit\\b[^;&|]*\\bpush\\b[^;&|]*(--force(?!-with-leas\
+              e)\\b|(^|\\s)-f\\b)/.test(c))r=\"git push --force\";else
+              if(/\\bvercel\\b[^;&|]*--prod\\b/.test(c))r=\"vercel --prod\";else
+              if(/(^|\\/)\\.env(\\.(?!example$)[^\\/]+)?$/.test(f)||/>\\s*(\\S*\
+              \\/)?\\.env(\\.(?!example\\b)\\S+)?(\\s|$)/.test(c))r=\"a .env
+              write\";else if(c){try{r=D(c,0)}catch(e){r=\"a command the guard
+              could not analyse\"}}if(r){process.stderr.write(\"Blocked by
+              agents-united guard: \"+r+\" requires explicit human approval
+              outside the agent session. If you mean it, run it yourself in your
+              own terminal.\\n\");process.exit(2)}})"
           onFailure: block
 ---
 <!-- managed-by: agents-united | profile: claude | canonical: agents/subagent-backend-architect.md | do not edit -->
