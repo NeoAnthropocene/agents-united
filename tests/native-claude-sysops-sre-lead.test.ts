@@ -74,7 +74,7 @@ describe('native sysops-sre-lead: the guard claims, against the real script', ()
     ['Write', { file_path: '/repo/.env.example' }],
     ['Write', { file_path: '/repo/ops/runbooks/database-failover.md' }],
     ['Edit', { file_path: '/repo/ops/prometheus/alert-rules.yml', old_string: 'a', new_string: 'b' }],
-  ])('does not block %s of %j: the guard blocks nothing else', (tool, input) => {
+  ])('does not block %s of %j: the guard blocks nothing else on file edits', (tool, input) => {
     expect(fire(tool as string, input as Record<string, unknown>).blocked).toBe(false);
   });
 
@@ -94,7 +94,8 @@ describe('native sysops-sre-lead: the guard claims, against the real script', ()
 
   it('names no guard behaviour the script does not have', () => {
     const boundaries = section(text(), 'Boundaries of this host');
-    expect(boundaries).not.toMatch(/blocks[^.]*(production deploys|destructive)/);
+    const claims = boundaries.replace(/`\.env(\.example)?`/g, 'ENV');
+    expect(claims).not.toMatch(/blocks[^\n]*(production deploys|terraform|kubectl)/);
   });
 });
 

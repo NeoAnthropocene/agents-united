@@ -72,8 +72,8 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
     // The blocking clause alone: what follows "it is a seat belt" names the commands the guard does NOT stop.
     const blocking = six.slice(six.indexOf('blocks forced'), six.indexOf('it is a seat belt'));
     expect(blocking).not.toMatch(/production deploys|terraform|kubectl|az deployment|gh workflow/);
-    expect(six).toContain('Of the cloud commands it stops only `az group delete`, `gcloud projects delete` and an AWS account closure.');
-    for (const other of ['terraform apply', 'terraform destroy', 'az deployment', 'kubectl apply', 'kubectl delete', 'gh workflow run']) expect(six.slice(six.indexOf('It does not stop')), other).toContain(other);
+    expect(six).toContain('Of the cloud commands it stops only `az ... group delete` forms, `gcloud projects delete` and AWS account closure or organization deletion.');
+    for (const other of ['terraform apply', 'terraform destroy', 'az deployment group create', 'kubectl apply', 'kubectl delete', 'gh workflow run']) expect(six.slice(six.indexOf('It does not stop')), other).toContain(other);
     expect(six).toMatch(/your own obligation/);
   });
 
@@ -81,6 +81,7 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
     for (const command of [
       'git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo KEY=1 > .env', 'echo KEY=1 > config/.env.production',
       'rm -rf /', 'sudo ls', 'shutdown now', 'az group delete --name g --yes', 'gcloud projects delete my-project',
+      'aws organizations close-account --account-id 1', 'az deployment group delete --name d --resource-group g',
     ]) expect(shell(tool, command), command).toBe(true);
   });
 
