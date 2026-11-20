@@ -15,6 +15,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'accessibility-lead', stem: 'subagent-accessibility-lead', tier: 1, coordinator: false },
   { role: 'frontend-architect', stem: 'subagent-frontend-architect', tier: 1, coordinator: false },
   { role: 'devops-engineer', stem: 'subagent-devops-engineer', tier: 1, coordinator: false },
+  { role: 'e2e-tester', stem: 'subagent-e2e-tester', tier: 1, coordinator: false },
   { role: 'code-reviewer', stem: 'subagent-code-reviewer', tier: 1, coordinator: false },
   { role: 'qa-automation-lead', stem: 'subagent-qa-automation-lead', tier: 1, coordinator: false },
   { role: 'repo-index', stem: 'subagent-repo-index', tier: 1, coordinator: false },
