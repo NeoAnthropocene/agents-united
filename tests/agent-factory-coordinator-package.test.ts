@@ -253,6 +253,13 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     opinion.coverage = [rel, covRel].map(file => ({ path: file, status: 'reviewed', rationale: 'Synthetic package record covers the exact final producer bytes; usefulness unverified.' }));
     for (const criterion of opinion.criteria) criterion.citations = [citation];
     const opinionFile = path.join(selected.evidence, 'result.json');
+    // ADR 0072: coverage evidence applies (a Claude agent with its coverage file) and must cite every evidence entry from inside its evidence.
+    expect(selected.job.rubric.criteria.find(item => item.id === 'coverage-evidence')).toMatchObject({ applicable: true, required: true });
+    await fs.writeJson(opinionFile, opinion);
+    const uncited = review('--result', opinionFile);
+    expect(uncited.status, uncited.stdout + uncited.stderr).toBe(1);
+    expect(JSON.parse(uncited.stderr).reason).toContain('Criterion coverage-evidence has no citation of hosts/claude/agents/example.md quoting from the evidence of 1 coverage entry: "Report missing evidence."');
+    opinion.criteria.find(item => item.id === 'coverage-evidence')!.citations = [{ ...citation, quote: 'Report missing evidence.' }];
     await fs.writeJson(opinionFile, opinion);
     const reviewed = review('--result', opinionFile);
     expect(reviewed.status, reviewed.stdout + reviewed.stderr).toBe(0);

@@ -18,11 +18,14 @@ import { loadNativeDeltas, NATIVE_ROLES } from './helpers/native-roles.js';
  * ADR 0072: the repository's rules for a native Claude role live in src/core/native-repository-rules.ts, and two callers use them: the repository's
  * own conformance tests (for the committed roster) and the factory's checks (factory-check, contract-check) for a candidate. The pilot's original
  * devops-engineer candidates (2026-11-18) passed every factory check and failed five repository tests; the same candidates, brought into the
- * repository by hand (feat/devops-engineer-claude-lane, cdc1e0d), pass. Both are fixtures in tests/fixtures/pilot-devops.
+ * repository by hand (PR #237), pass. The originals are fixtures in tests/fixtures/pilot-devops/original; the final member is read from the
+ * registry itself (registry/hosts/claude/agents/devops-engineer.md and registry/core/subagent-devops-engineer.*), so it cannot drift from what the
+ * repository holds. Only its coverage file is a fixture (tests/fixtures/pilot-devops/final).
  */
 
 const ROOT = path.resolve('.');
 const FIXTURES = path.resolve('tests/fixtures/pilot-devops');
+const FINAL_AGENT = path.join(ROOT, 'registry/hosts/claude/agents/devops-engineer.md');
 const STEM = 'subagent-devops-engineer';
 const read = (file: string): string => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 const canonicalOf = (stem: string): string => read(path.join(ROOT, 'registry/agents', `${stem}.md`));
@@ -114,7 +117,7 @@ describe('the rules, one implementation', () => {
   it('checks a candidate\'s coverage file: every invariant once, evidence verbatim in the agent, a delta with a disposition and a rationale', async () => {
     const final = path.join(FIXTURES, 'final');
     const core = (await loadSemanticCore(await stage(final))).get(STEM)!;
-    const agent = read(path.join(final, 'agent/devops-engineer.md'));
+    const agent = read(FINAL_AGENT);
     const coverage = await fs.readJson(path.join(final, 'agent/devops-engineer.coverage.json')) as { invariants: Array<Record<string, unknown>> };
     expect(coverageFileProblems(core, agent, coverage)).toEqual([]);
     const missing = { ...coverage, invariants: coverage.invariants.slice(1) };
@@ -135,7 +138,7 @@ describe('the rules, one implementation', () => {
   it('checks that evidence declares its place, sits there as a complete sentence or list item, and is shared only when both entries say so', async () => {
     const final = path.join(FIXTURES, 'final');
     const core = (await loadSemanticCore(await stage(final))).get(STEM)!;
-    const agent = read(path.join(final, 'agent/devops-engineer.md'));
+    const agent = read(FINAL_AGENT);
     const coverage = await fs.readJson(path.join(final, 'agent/devops-engineer.coverage.json')) as { invariants: Array<Record<string, unknown>> };
     const items = coverage.invariants;
     const withEntry = (index: number, entry: Record<string, unknown>) => ({ ...coverage, invariants: items.map((item, at) => (at === index ? entry : item)) });
@@ -211,13 +214,15 @@ function enclosingUnit(agent: string, start: number, end: number): [number, numb
   return [from, to];
 }
 
-/** A registry holding the repository's cores, profile, tool policy, bindings and canonical agents, with the pair of `variant` in place of the devops pair. */
+/** A registry holding the repository's cores, profile, tool policy, bindings and canonical agents, with the pair of `variant` (when it has one) in place of the devops pair. */
 let scratch = '';
 async function stage(variant: string): Promise<string> {
   const registry = path.join(scratch || (scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'au-repo-rules-'))), path.basename(variant), 'registry');
   if (await fs.pathExists(registry)) return registry;
   for (const rel of ['core', 'hosts/claude', 'agents']) await fs.copy(path.join(ROOT, 'registry', rel), path.join(registry, rel));
-  for (const name of ['subagent-devops-engineer.core.md', 'subagent-devops-engineer.contract.json']) await fs.copy(path.join(variant, 'core', name), path.join(registry, 'core', name));
+  if (await fs.pathExists(path.join(variant, 'core'))) {
+    for (const name of ['subagent-devops-engineer.core.md', 'subagent-devops-engineer.contract.json']) await fs.copy(path.join(variant, 'core', name), path.join(registry, 'core', name));
+  }
   return registry;
 }
 
@@ -229,7 +234,7 @@ describe('the factory\'s checks use the same rules', () => {
   it('factory-check accepts the devops-engineer as it was brought into the repository', async () => {
     const final = path.join(FIXTURES, 'final');
     const registry = await stage(final);
-    const result = await checkFactoryArtifact({ registryDir: registry, definition: STEM, host: 'claude', artifactPath: path.join(final, 'agent/devops-engineer.md'),
+    const result = await checkFactoryArtifact({ registryDir: registry, definition: STEM, host: 'claude', artifactPath: FINAL_AGENT,
       loading: 'subagent', requiredSkills: [], canonicalFile: path.join(registry, 'agents', `${STEM}.md`), coverageFile: path.join(final, 'agent/devops-engineer.coverage.json') });
     expect(result.findings).toEqual([]);
     expect(result.ok).toBe(true);
@@ -252,7 +257,7 @@ describe('the factory\'s checks use the same rules', () => {
   it('factory-check takes the canonical agent from the registry when none is named, and refuses an mcp__ tool the canonical agent does not declare', async () => {
     const final = path.join(FIXTURES, 'final');
     const registry = await stage(final);
-    const agent = read(path.join(final, 'agent/devops-engineer.md')).replace(/^(tools: .*)$/m, '$1, mcp__stitch');
+    const agent = read(FINAL_AGENT).replace(/^(tools: .*)$/m, '$1, mcp__stitch');
     const file = path.join(scratch, 'devops-engineer.md');
     await fs.writeFile(file, agent);
     const result = await checkFactoryArtifact({ registryDir: registry, definition: STEM, host: 'claude', artifactPath: file, loading: 'subagent', requiredSkills: [],
@@ -279,7 +284,7 @@ describe('the factory\'s checks use the same rules', () => {
   it('factory-check refuses a relative canonical or coverage path', async () => {
     const final = path.join(FIXTURES, 'final');
     const registry = await stage(final);
-    const base = { registryDir: registry, definition: STEM, host: 'claude', artifactPath: path.join(final, 'agent/devops-engineer.md'), loading: 'subagent' as const, requiredSkills: [] };
+    const base = { registryDir: registry, definition: STEM, host: 'claude', artifactPath: FINAL_AGENT, loading: 'subagent' as const, requiredSkills: [] };
     const relCanonical = await checkFactoryArtifact({ ...base, canonicalFile: 'agents/subagent-devops-engineer.md', coverageFile: path.join(final, 'agent/devops-engineer.coverage.json') });
     expect(relCanonical.findings.join('\n')).toContain('Canonical agent must be an absolute path');
     const relCoverage = await checkFactoryArtifact({ ...base, coverageFile: 'devops-engineer.coverage.json' });

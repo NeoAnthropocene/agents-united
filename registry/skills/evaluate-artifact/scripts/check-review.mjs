@@ -18,6 +18,40 @@ const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(
   : value !== null && typeof value === 'object' ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`
     : JSON.stringify(value);
 const same = (a, b) => canonical(a) === canonical(b);
+const lf = text => text.replace(/\r\n/g, '\n');
+
+/** The invariant coverage files of a Claude agent review: `<agent without .md>.coverage.json` beside a subject agent, when the candidate holds it (ADR 0072). */
+function coverageFilesOf(job) {
+  if (job.subject.kind !== 'claude-agent') return [];
+  return job.subject.paths.filter(rel => rel.endsWith('.md'))
+    .map(agent => ({ agent, coverage: agent.replace(/\.md$/, '.coverage.json') }))
+    .filter(({ coverage }) => job.candidate.files.some(file => file.path === coverage));
+}
+
+/**
+ * The coverage-evidence criterion cites every coverage entry that has evidence: at least one of its citations names the agent file as the
+ * candidate and quotes text from inside that entry's evidence. The coverage file is read at the candidate's pinned bytes. Text from the
+ * candidate is echoed, never the result's.
+ */
+function coverageCitationProblems(job, record, criterion) {
+  for (const { agent, coverage } of coverageFilesOf(job)) {
+    const pin = record.inventory.find(item => item.path === coverage);
+    const bytes = bytesAt(path.join(job.roots.candidate, coverage), job.budget.maxCandidateFileBytes, 'Coverage file');
+    if (!pin || hash(bytes) !== pin.sha256) fail(`Coverage file changed during review: ${coverage}.`);
+    let parsed;
+    try { parsed = JSON.parse(lf(bytes.toString('utf8'))); } catch { fail(`Coverage file is not JSON: ${coverage}.`); }
+    const entries = Array.isArray(parsed?.invariants) ? parsed.invariants : [];
+    const missing = entries
+      .filter(entry => entry && typeof entry.invariant === 'string' && typeof entry.evidence === 'string' && entry.evidence.trim() !== '')
+      .filter(entry => !criterion.citations.some(cite => cite.sourceId === 'candidate' && cite.path === agent
+        && lf(cite.quote).trim() !== '' && lf(entry.evidence).includes(lf(cite.quote).trim())))
+      .map(entry => entry.invariant);
+    if (missing.length) {
+      const shown = missing.slice(0, 10).map(name => JSON.stringify(name.slice(0, 120))).join('; ');
+      fail(`Criterion coverage-evidence has no citation of ${agent} quoting from the evidence of ${missing.length} coverage entr${missing.length === 1 ? 'y' : 'ies'}: ${shown}${missing.length > 10 ? `; and ${missing.length - 10} more` : ''}.`);
+    }
+  }
+}
 // String comparisons fold case on every platform, as before P27. The physical comparison folds case only on Windows: the native real
 // path spells an existing folder as the volume stores it, so two spellings of one folder become one string where the volume ignores
 // case, and stay two (another folder) where it is case-sensitive. A grant needs both, so on a case-sensitive volume it needs exact case.
@@ -301,8 +335,10 @@ function checkJob(jobFile) {
   if (rubric.version !== job.rubric.version || !same([...job.rubric.criteria.map(item => item.id)].sort(), rubric.criteria.map(item => item.id).sort())) fail('Fixed rubric criterion coverage mismatch.');
   const needsShared = job.subject.kind !== 'skill';
   const needsHost = job.subject.target !== null;
+  const needsCoverage = coverageFilesOf(job).length > 0;
   for (const criterion of job.rubric.criteria) {
-    const applies = criterion.id === 'shared-semantics' ? needsShared : criterion.id === 'host-fit' ? needsHost : true;
+    const applies = criterion.id === 'shared-semantics' ? needsShared : criterion.id === 'host-fit' ? needsHost
+      : criterion.id === 'coverage-evidence' ? needsCoverage : true;
     if (criterion.applicable !== applies || criterion.required !== applies) fail(`Required rubric applicability mismatch: ${criterion.id}.`);
   }
   unique(job.acceptance.map(item => item.id), 'Acceptance IDs');
@@ -506,6 +542,7 @@ function checkResult(record, resultFile, precheck = false) {
     if ((!required.applicable) !== (criterion.outcome === 'not-applicable')) fail(`Returned criterion applicability contradiction: ${criterion.id}.`);
     if (required.required && result.status === 'reviewed' && criterion.outcome === 'unverified') fail(`Complete review leaves required criterion unverified: ${criterion.id}.`);
     if (required.applicable && ['satisfactory', 'needs-work'].includes(criterion.outcome) && !criterion.citations.length) fail(`Required criterion opinion has no pinned citation: ${criterion.id}.`);
+    if (criterion.id === 'coverage-evidence' && required.applicable && ['satisfactory', 'needs-work'].includes(criterion.outcome)) coverageCitationProblems(job, record, criterion);
   }
   unique(result.findings.map(item => item.id), 'Finding IDs');
   if (result.status === 'reviewed' && record.unavailable.some(item => item.required)) fail('Complete review has an unavailable/unperformed required check.');
