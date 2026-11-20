@@ -25,7 +25,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 /** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
-  'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
+  'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'cloud-security-architect', 'code-reviewer', 'devops-engineer',
   'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-security', 'repo-index', 'security-engineer',
 ];
 const COORDINATORS = ['orchestrator-engineering', 'orchestrator-security'];
@@ -152,6 +152,15 @@ describe('native install lane (agents add --native)', () => {
     const record = (await fs.readJson(lockPath)).projections['.claude/agents/security-engineer.md'];
     expect(record.kind).toBe('role');
     expect(record.canonical).toBe(canonicalOf('security-engineer'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('installs the native cloud-security-architect for the secops-cloud-security bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('secops-cloud-security', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('cloud-security-architect'), 'utf8')).toBe(expected('cloud-security-architect'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/cloud-security-architect.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('cloud-security-architect'));
     expect(record.managedMarker).toBe(true);
   });
 
