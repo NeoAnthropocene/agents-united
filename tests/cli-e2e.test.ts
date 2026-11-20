@@ -144,6 +144,12 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.nativeLane).toBe(true);
     expect(lock.installed.bundles).toContain('security-operations');
     expect(lock.projections['.claude/agents/security-engineer.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-security-engineer.md' });
+    // The bundle's lead comes native too, and it is no first-message agent: the domain tier has no mode line.
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-security.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lead).toMatch(/^name: orchestrator-security$/m);
+    expect(lead).toContain('Agent(appsec-penetration-tester, cloud-security-architect, compliance-grc-specialist, security-engineer)');
+    expect(lock.projections['.claude/agents/orchestrator-security.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-security.md' });
   });
 
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {

@@ -26,9 +26,9 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index', 'security-engineer',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-security', 'repo-index', 'security-engineer',
 ];
-const COORDINATORS = ['orchestrator-engineering'];
+const COORDINATORS = ['orchestrator-engineering', 'orchestrator-security'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
 const sha256 = (text: string): string => `sha256:${crypto.createHash('sha256').update(text).digest('hex')}`;
@@ -152,6 +152,15 @@ describe('native install lane (agents add --native)', () => {
     const record = (await fs.readJson(lockPath)).projections['.claude/agents/security-engineer.md'];
     expect(record.kind).toBe('role');
     expect(record.canonical).toBe(canonicalOf('security-engineer'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('installs the native orchestrator-security with the security-operations bundle, recorded as a managed coordinator of its own canonical agent', async () => {
+    await new InstallEngine().install('security-operations', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('orchestrator-security'), 'utf8')).toBe(expected('orchestrator-security'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/orchestrator-security.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe('agents/orchestrator-security.md');
     expect(record.managedMarker).toBe(true);
   });
 

@@ -86,6 +86,23 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
+  // The security lead (Tier 1, domain bundle): a main-thread coordinator of the security domain. Same ceiling as the engineering lead except
+  // that it holds no `Workflow` (the only native workflow a security Bundle installs is workflow-test, whose repair step spawns a type no
+  // security Bundle installs), no web tool (its canonical agent has none; Firecrawl is its web route) and no `ReportFindings` (the reviewer's).
+  {
+    name: 'orchestrator-security',
+    stem: 'orchestrator-security',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
+    mutating: true,
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'security-operations',
+    model: 'opus',
+    effort: 'medium',
+  },
   // Tier 2 (plan 032 follow-up 2, ADR 0036): the digital-agency team. Teammates are specialists with editors and no shell, so no `Bash`,
   // `LSP` or worktree; they carry the destructive-command guard in their own frontmatter (it guards them as subagents and the lead's
   // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).
