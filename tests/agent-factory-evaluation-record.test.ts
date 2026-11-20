@@ -95,7 +95,7 @@ describe('caller-only review records through the installed evaluator CLI', () =>
     expect(preflight.status, preflight.stderr).toBe(0);
     const citeLog = (result: ReturnType<typeof evaluationResult>, sourceId: string) => {
       result.criteria[0]!.citations = [{ sourceId, path: 'native-check.raw.txt', sha256: selected.job.inputs.at(-1)!.sha256,
-        startLine: 1, endLine: 1, quote: 'selected fixture layout checked' }];
+        quote: 'selected fixture layout checked' }];
       return result;
     };
     const file = path.join(selected.evidence, 'result.json');
@@ -149,7 +149,7 @@ describe('caller-only review records through the installed evaluator CLI', () =>
     const preflight = run(['--job', selected.jobFile]);
     expect(preflight.status, preflight.stderr).toBe(0);
     const result = evaluationResult(selected, JSON.parse(preflight.stdout));
-    result.criteria[0]!.citations = [{ sourceId: 'native-check-raw', path: 'native-check.raw.txt', sha256: pin.sha256, startLine: 1, endLine: 1, quote: 'selected fixture layout checked' }];
+    result.criteria[0]!.citations = [{ sourceId: 'native-check-raw', path: 'native-check.raw.txt', sha256: pin.sha256, quote: 'selected fixture layout checked' }];
     const file = path.join(selected.evidence, 'result.json');
     await fs.writeJson(file, result);
     const refused = run(['--job', selected.jobFile, '--result', file]);
@@ -191,7 +191,7 @@ describe('caller-only review records through the installed evaluator CLI', () =>
     const preflight = run(['--job', selected.jobFile]);
     expect(preflight.status, preflight.stderr).toBe(0);
     const result = evaluationResult(selected, JSON.parse(preflight.stdout));
-    result.criteria[0]!.citations = [{ sourceId: input.id as string, path: 'native-check.raw.txt', sha256: pin.sha256, startLine: 1, endLine: 1, quote: 'selected fixture layout checked' }];
+    result.criteria[0]!.citations = [{ sourceId: input.id as string, path: 'native-check.raw.txt', sha256: pin.sha256, quote: 'selected fixture layout checked' }];
     const file = path.join(selected.evidence, 'result.json');
     await fs.writeJson(file, result);
     const actual = run(['--job', selected.jobFile, '--result', file]);
