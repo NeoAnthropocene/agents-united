@@ -152,6 +152,23 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/orchestrator-system-architecture.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-system-architecture.md' });
   });
 
+  it('installs the native cloud-infrastructure-architect, system-architect, the parent natives and the architecture lead for system-architecture-cloud with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'system-architecture-cloud', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/cloud-infrastructure-architect.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: cloud-infrastructure-architect$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('system-architecture-cloud');
+    expect(lock.projections['.claude/agents/cloud-infrastructure-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-cloud-infrastructure-architect.md' });
+    expect(lock.projections['.claude/agents/system-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-system-architect.md' });
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-system-architecture.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lock.projections['.claude/agents/orchestrator-system-architecture.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-system-architecture.md' });
+  });
+
   it('installs the native sysops-sre-lead, its parent natives and the architecture lead for sysops-sre with -t claude --native', async () => {
     const result = spawnSync(process.execPath, [cliPath, 'add', 'sysops-sre', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
     expect(result.status, result.stdout + result.stderr).toBe(0);
