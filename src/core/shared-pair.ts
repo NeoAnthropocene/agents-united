@@ -35,6 +35,7 @@ export async function checkSharedPair(input: SharedPairCheckInput): Promise<Shar
     if (contract.definition !== input.definition) throw new Error('Companion contract definition does not match the requested definition.');
     result.valid = true;
     if (input.canonicalFile !== undefined) {
+      if (!path.isAbsolute(input.canonicalFile)) throw new Error('Canonical agent must be an absolute path.');
       if (!fs.existsSync(input.canonicalFile) || !fs.statSync(input.canonicalFile).isFile()) throw new Error(`Missing canonical agent ${input.canonicalFile}.`);
       const problems = canonicalFloorProblems(cores.get(input.definition)!, fs.readFileSync(input.canonicalFile, 'utf8'));
       if (problems.length > 0) { result.valid = false; result.findings.push(...problems); }

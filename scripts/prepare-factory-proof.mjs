@@ -240,7 +240,7 @@ function buildS1(ctx, folder) {
   const nativeArtifact = path.join(draft, AGENT_PATH);
   const brief = {
     version: 1, kind: 'factory-proof-s1-brief', scenario: 's1',
-    objective: 'Create one Claude Code subagent named note-checker from the supplied shared pair subagent-note-checker: an independent read-only reviewer of one plain-text note. The draft is local to the draft root; the intent is upstream, so after review only the contribution body is prepared. Beside the agent, write its invariant coverage file (note-checker.coverage.json): every core invariant once, with evidence quoted verbatim from the agent.',
+    objective: 'Create one Claude Code subagent named note-checker from the supplied shared pair subagent-note-checker: an independent read-only reviewer of one plain-text note. The draft is local to the draft root; the intent is upstream, so after review only the contribution body is prepared. Beside the agent, write its invariant coverage file (note-checker.coverage.json): every core invariant once, with a complete sentence or list item quoted verbatim from the agent and its place ("in": "body" or "floor").',
     fixedValues: [{ path: AGENT_PATH, contains: 'Proof fixture note checker.' }],
     unknowns: ['The Claude Code version of the run is unverified until the lead records it.', 'Live behaviour of the realized agent is unverified; only offline checks apply.', 'Whether the independent review raises a finding is unknown; the repair is authorized, not expected.'],
     operation: 'create', intent: 'upstream', jobIdPrefix: 'proof-note-checker',

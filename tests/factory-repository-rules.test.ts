@@ -5,11 +5,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { checkFactoryArtifact } from '../src/core/factory-check.js';
 import { checkSharedPair } from '../src/core/shared-pair.js';
+import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import {
   canonicalDirectives, canonicalFloorProblems, canonicalGuardrails, canonicalServerTools, coverageFileProblems, invariantCoverageProblems,
-  nativePosture, nativeToolOrder, postureProblems, sessionTrackingProblems,
+  evidencePlaceAt, nativePosture, nativeToolOrder, nativeToolsWanted, postureProblems, sessionTrackingProblems, type EvidencePlace,
 } from '../src/core/native-repository-rules.js';
+import { evidenceFor } from './helpers/native-invariant-evidence.js';
+import { loadNativeDeltas, NATIVE_ROLES } from './helpers/native-roles.js';
 
 /**
  * ADR 0072: the repository's rules for a native Claude role live in src/core/native-repository-rules.ts, and two callers use them: the repository's
@@ -54,6 +57,23 @@ describe('the rules, one implementation', () => {
 
   it('orders tools as the generator does: the class tools sorted, then the server tools in the canonical agent\'s order', () => {
     expect(nativeToolOrder(['Read', 'ListMcpResourcesTool', 'Grep', 'Bash'], ['mcp__github', 'mcp__context7'])).toEqual(['Bash', 'Grep', 'ListMcpResourcesTool', 'Read', 'mcp__github', 'mcp__context7']);
+  });
+
+  it('lets one well-formed Agent(...) allowlist stand for Agent only in a role that can delegate', () => {
+    const expected = ['Agent', 'Read', 'mcp__github'];
+    expect(nativeToolsWanted(expected, ['Agent(a-role, b-role)', 'Read', 'mcp__github'], { coordinator: true })).toEqual(['Agent(a-role, b-role)', 'Read', 'mcp__github']);
+    // A specialist, a malformed or duplicated list, or a bare Agent beside the list gets no stand-in, so the comparison refuses it.
+    expect(nativeToolsWanted(expected, ['Agent(a-role)', 'Read', 'mcp__github'], { coordinator: false })).toEqual(expected);
+    expect(nativeToolsWanted(expected, ['Agent(a-role,b-role)', 'Read'], { coordinator: true })).toEqual(expected);
+    expect(nativeToolsWanted(expected, ['Agent(Bad Name)', 'Read'], { coordinator: true })).toEqual(expected);
+    expect(nativeToolsWanted(expected, ['Agent(a-role, a-role)', 'Read'], { coordinator: true })).toEqual(expected);
+    expect(nativeToolsWanted(expected, ['Agent', 'Agent(a-role)', 'Read'], { coordinator: true })).toEqual(expected);
+    // Every committed lead's line is accepted in this form.
+    for (const role of ['orchestrator-engineering', 'orchestrator-digital-agency']) {
+      const tools = inspectNativeAgent(nativeOf(role)).tools;
+      const plain = tools.map(tool => (tool.startsWith('Agent(') ? 'Agent' : tool));
+      expect(nativeToolsWanted(plain, tools, { coordinator: true }), role).toEqual(tools);
+    }
   });
 
   it('derives the server tools from the canonical agent: a server grant for a writable role, pinned read-only tools for a read-only role', () => {
@@ -106,8 +126,89 @@ describe('the rules, one implementation', () => {
     const twice = { ...coverage, invariants: [...coverage.invariants, coverage.invariants[0]!] };
     expect(coverageFileProblems(core, agent, twice).join('\n')).toContain('more than once');
     expect(coverageFileProblems(core, agent, null)).not.toEqual([]);
+    // With the expected names, the file must name the checked agent and its pair.
+    expect(coverageFileProblems(core, agent, coverage, { role: 'devops-engineer', definition: STEM })).toEqual([]);
+    expect(coverageFileProblems(core, agent, coverage, { role: 'other-role', definition: STEM }).join('\n')).toContain('role must be "other-role"');
+    expect(coverageFileProblems(core, agent, coverage, { role: 'devops-engineer', definition: 'subagent-other' }).join('\n')).toContain('definition must be "subagent-other"');
+  });
+
+  it('checks that evidence declares its place, sits there as a complete sentence or list item, and is shared only when both entries say so', async () => {
+    const final = path.join(FIXTURES, 'final');
+    const core = (await loadSemanticCore(await stage(final))).get(STEM)!;
+    const agent = read(path.join(final, 'agent/devops-engineer.md'));
+    const coverage = await fs.readJson(path.join(final, 'agent/devops-engineer.coverage.json')) as { invariants: Array<Record<string, unknown>> };
+    const items = coverage.invariants;
+    const withEntry = (index: number, entry: Record<string, unknown>) => ({ ...coverage, invariants: items.map((item, at) => (at === index ? entry : item)) });
+    const problems = (file: unknown) => coverageFileProblems(core, agent, file).join('\n');
+    // The fixture binds five invariants through floor Safety lines and five through the body.
+    expect(items.filter(item => item.in === 'floor')).toHaveLength(5);
+    expect(items.filter(item => item.in === 'body')).toHaveLength(5);
+    // Place: declared, and true.
+    const { in: _place, ...unplaced } = items[6]!;
+    expect(problems(withEntry(6, unplaced))).toContain('must declare its place');
+    expect(problems(withEntry(6, { ...items[6]!, in: 'floor' }))).toContain('is not in the agent\'s Contract Floor');
+    expect(problems(withEntry(0, { ...items[0]!, in: 'body' }))).toContain('own body (outside every generated block)');
+    // A fragment is not evidence; a complete sentence inside a list item is.
+    expect(problems(withEntry(6, { ...items[6]!, evidence: 'use `SendMessage` to push results' }))).toContain('not a complete sentence or list item');
+    expect(problems(withEntry(6, { ...items[6]!, evidence: 'Do not use `SendMessage` to push results to the lead mid-run.' }))).toBe('');
+    // Shared evidence: refused unless both entries name each other; a named share must be real.
+    const shared = { ...coverage, invariants: items.map((item, at) => (at === 7 ? { ...item, evidence: items[6]!.evidence } : item)) };
+    expect(problems(shared)).toContain('share evidence; each must name the other');
+    const declared = { ...coverage, invariants: items.map((item, at) => (at === 6 ? { ...item, sharedWith: [items[7]!.invariant] } : at === 7 ? { ...item, evidence: items[6]!.evidence, sharedWith: [items[6]!.invariant] } : item)) };
+    expect(problems(declared)).toBe('');
+    const oneSided = { ...coverage, invariants: items.map((item, at) => (at === 7 ? { ...item, evidence: items[6]!.evidence, sharedWith: [items[6]!.invariant] } : item)) };
+    expect(problems(oneSided)).toContain('share evidence; each must name the other');
+    expect(problems(withEntry(8, { ...items[8]!, sharedWith: [items[9]!.invariant] }))).toContain('do not share evidence');
+  });
+
+  it('accepts what the repository accepts: every committed native role\'s bindings, written as a coverage file, pass the rule (ADR 0072 audit)', async () => {
+    const cores = await loadSemanticCore(path.join(ROOT, 'registry'));
+    const deltas = loadNativeDeltas(path.join(ROOT, 'registry'), 'claude');
+    let floorBound = 0, sharedEntries = 0;
+    for (const { role, stem } of NATIVE_ROLES) {
+      const agent = nativeOf(role);
+      const core = cores.get(stem)!;
+      const invariants = core.invariants.map(invariant => {
+        const delta = deltas.find(item => item.roles.includes(role) && item.feature === invariant);
+        if (delta) return { invariant, delta: { disposition: delta.disposition, rationale: delta.rationale } };
+        const rule = evidenceFor(role, invariant)!;
+        const flags = rule.flags.includes('g') ? rule.flags : `${rule.flags}g`;
+        const match = [...agent.matchAll(new RegExp(rule.source, flags))].find(m => evidencePlaceAt(agent, m.index!, m.index! + m[0].length) !== undefined);
+        expect(match, `${role}: "${invariant}" has a bound place`).toBeDefined();
+        const [start, end] = enclosingUnit(agent, match!.index!, match!.index! + match![0].length);
+        return { invariant, evidence: agent.slice(start, end), in: evidencePlaceAt(agent, start, end)! };
+      });
+      const evidenced = invariants.filter((item): item is { invariant: string; evidence: string; in: EvidencePlace } => 'evidence' in item);
+      for (const item of evidenced) {
+        const partners = evidenced.filter(other => other !== item && (other.evidence.includes(item.evidence) || item.evidence.includes(other.evidence))).map(other => other.invariant);
+        if (partners.length > 0) { Object.assign(item, { sharedWith: partners }); sharedEntries++; }
+        if (item.in === 'floor') floorBound++;
+      }
+      expect(coverageFileProblems(core, agent, { version: 1, role, definition: stem, invariants }, { role, definition: stem }), role).toEqual([]);
+    }
+    // The design's reason (ADR 0072): bindings in the floor and shared sentences exist in what the repository accepts.
+    expect(floorBound).toBeGreaterThan(0);
+    expect(sharedEntries).toBeGreaterThan(0);
   });
 });
+
+/** The smallest run of whole sentences or list items around [start, end): back to a line start or a sentence end, on to a sentence end or the line end. */
+function enclosingUnit(agent: string, start: number, end: number): [number, number] {
+  const lineStart = agent.lastIndexOf('\n', start - 1) + 1;
+  const firstLine = agent.slice(lineStart, agent.indexOf('\n', lineStart) === -1 ? agent.length : agent.indexOf('\n', lineStart));
+  const indent = /^\s*/.exec(firstLine)![0].length;
+  let from = lineStart + indent;
+  for (const m of firstLine.matchAll(/[.!?][*`)"]*\s+/g)) if (lineStart + m.index! + m[0].length <= start) from = lineStart + m.index! + m[0].length;
+  const lineEndAt = agent.indexOf('\n', Math.max(end - 1, start)) === -1 ? agent.length : agent.indexOf('\n', Math.max(end - 1, start));
+  const lastLineStart = agent.lastIndexOf('\n', lineEndAt - 1) + 1;
+  let to = lineEndAt;
+  for (const m of agent.slice(lastLineStart, lineEndAt).matchAll(/[.!?][*`)"]*(?=\s)/g)) {
+    const at = lastLineStart + m.index! + m[0].length;
+    if (at >= end && at < to) to = at;
+  }
+  while (to > from && /\s/.test(agent[to - 1]!)) to--;
+  return [from, to];
+}
 
 /** A registry holding the repository's cores, profile, tool policy, bindings and canonical agents, with the pair of `variant` in place of the devops pair. */
 let scratch = '';
@@ -157,6 +258,31 @@ describe('the factory\'s checks use the same rules', () => {
       coverageFile: path.join(final, 'agent/devops-engineer.coverage.json') });
     expect(result.ok).toBe(false);
     expect(result.findings.join('\n')).toContain('Native tools differ from the generator\'s form');
+  });
+
+  it('factory-check holds the factory\'s own coordinator to its fixed delegate list (the function native-delta uses)', async () => {
+    const registry = await stage(path.join(FIXTURES, 'final'));
+    const committed = nativeOf('orchestrator-agent-factory');
+    const check = async (text: string) => {
+      const file = path.join(scratch, 'orchestrator-agent-factory.md');
+      await fs.writeFile(file, text);
+      return (await checkFactoryArtifact({ registryDir: registry, definition: 'orchestrator-agent-factory', host: 'claude', artifactPath: file, loading: 'main', requiredSkills: [] })).findings.join('\n');
+    };
+    const fixed = 'coordinate-artifact requires exactly Agent(factory-realizer, factory-evaluator, factory-sync)';
+    expect(await check(committed)).not.toContain(fixed);
+    expect(await check(committed)).not.toContain('Native tools differ');
+    // A well-formed but different list would pass the generic stand-in; the factory coordinator's own rule refuses it.
+    expect(await check(committed.replace(/Agent\([^)]*\)/, 'Agent(factory-realizer, factory-evaluator)'))).toContain(fixed);
+  });
+
+  it('factory-check refuses a relative canonical or coverage path', async () => {
+    const final = path.join(FIXTURES, 'final');
+    const registry = await stage(final);
+    const base = { registryDir: registry, definition: STEM, host: 'claude', artifactPath: path.join(final, 'agent/devops-engineer.md'), loading: 'subagent' as const, requiredSkills: [] };
+    const relCanonical = await checkFactoryArtifact({ ...base, canonicalFile: 'agents/subagent-devops-engineer.md', coverageFile: path.join(final, 'agent/devops-engineer.coverage.json') });
+    expect(relCanonical.findings.join('\n')).toContain('Canonical agent must be an absolute path');
+    const relCoverage = await checkFactoryArtifact({ ...base, coverageFile: 'devops-engineer.coverage.json' });
+    expect(relCoverage.findings.join('\n')).toContain('coverage file must be an absolute path');
   });
 
   it('contract-check refuses the pilot\'s original pair against its canonical agent, and accepts the final pair', async () => {

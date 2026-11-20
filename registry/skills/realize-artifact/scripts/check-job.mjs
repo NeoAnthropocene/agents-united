@@ -204,6 +204,8 @@ export function checkJob(job, { postflight = false } = {}) {
   allChanges.forEach(relative); unique(allChanges, 'Allowed changes overlap');
   job.artifact.paths.forEach(relative); unique(job.artifact.paths, 'Artifact paths');
   for (const rel of job.artifact.paths) if (!/^hosts\/claude\/agents\/[a-z0-9-]+\.md$/.test(rel)) fail(`Unavailable artifact path / type: ${rel}`);
+  // ADR 0072: an agent's coverage file is written beside it, never deleted.
+  for (const rel of job.artifact.paths.map(coveragePathFor)) if (job.allowedChanges.delete.includes(rel)) fail(`A coverage file is written, never deleted: ${rel}`);
   const baseline = new Map();
   unique(job.baseline.map(item => item.path), 'Baseline');
   for (const item of job.baseline) {
@@ -234,11 +236,13 @@ export function checkJob(job, { postflight = false } = {}) {
   const canonicalFile = path.join(source.registry, 'agents', `${job.artifact.definition}.md`);
   const hasCanonical = fs.statSync(canonicalFile, { throwIfNoEntry: false })?.isFile() ?? false;
   if (hasCanonical && !pinAt('canonical', canonicalFile)) fail(`Required canonical input must pin its selected source path: ${canonicalFile}`);
+  if (job.artifact.paths.length !== 1) fail('Required native-validation checker command is missing or changed.');
   const coverageRel = coveragePathFor(job.artifact.paths[0]);
   const hasCoverage = allChanges.includes(coverageRel);
+  if (hasCoverage && !constraints.formats.includes('.json')) fail(`The declared coverage file needs .json among the allowed formats: ${coverageRel}`);
   const expected = [path.join(source.checkout, 'dist/cli.js'), 'factory-check', '--registry', source.registry, '--definition', job.artifact.definition, '--host', 'claude', '--artifact', path.join(roots.draft, job.artifact.paths[0]), '--loading', job.artifact.loading, '--required-skills', JSON.stringify(job.artifact.requiredSkills),
     ...(hasCanonical ? ['--canonical', canonicalFile] : []), ...(hasCoverage ? ['--coverage', path.join(roots.draft, coverageRel)] : [])];
-  if (job.artifact.paths.length !== 1 || !job.checks.some(check => check.required && same(check.argv, expected))) fail('Required native-validation checker command is missing or changed.');
+  if (!job.checks.some(check => check.required && same(check.argv, expected))) fail('Required native-validation checker command is missing or changed.');
   for (const fixed of constraints.fixedValues) relative(fixed.path);
   return { digest: hash(canonical(job)), baseline, current };
 }

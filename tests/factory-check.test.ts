@@ -53,7 +53,7 @@ ${FLOOR_END}
 Return the bounded review to the caller.
 Report incomplete evidence plainly.
 `;
-    await fs.outputJson(coverage, { version: 1, role: 'example', definition: 'subagent-example', invariants: [{ invariant: 'Report incomplete evidence plainly.', evidence: 'Report incomplete evidence plainly.' }] });
+    await fs.outputJson(coverage, { version: 1, role: 'example', definition: 'subagent-example', invariants: [{ invariant: 'Report incomplete evidence plainly.', evidence: 'Report incomplete evidence plainly.', in: 'body' }] });
     await writeRole();
   });
   afterEach(async () => { await fs.remove(root); });

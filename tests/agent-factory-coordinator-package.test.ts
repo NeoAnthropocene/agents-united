@@ -99,7 +99,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     const text = `---\n${YAML.stringify({ name: 'example', description: 'Review the supplied original document.', model: 'sonnet', effort: 'medium', background: false, tools: resolveGrant(loadToolPolicy(f.registry, 'claude'), core.capabilities ?? [], { subagent: true, background: false }).tools.join(', '), hooks: readOnlyGuardFileHooks() })}---\n${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\nReturn bounded findings to the caller.\nReport missing evidence.\n`;
     await fs.outputFile(path.join(f.draft, f.job.artifact.paths[0]!), text);
     const covRel = 'hosts/claude/agents/example.coverage.json';
-    const covText = `${JSON.stringify({ version: 1, role: 'example', definition: 'subagent-example', invariants: [{ invariant: 'Report missing evidence.', evidence: 'Report missing evidence.' }] }, null, 2)}\n`;
+    const covText = `${JSON.stringify({ version: 1, role: 'example', definition: 'subagent-example', invariants: [{ invariant: 'Report missing evidence.', evidence: 'Report missing evidence.', in: 'body' }] }, null, 2)}\n`;
     await fs.outputFile(path.join(f.draft, covRel), covText);
     const startedAt = new Date().toISOString();
     const native = spawnSync(allowed.executable, allowed.argv, { cwd: allowed.cwd, encoding: 'utf8' });

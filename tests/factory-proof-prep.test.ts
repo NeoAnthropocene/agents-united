@@ -315,7 +315,7 @@ describe('S1 is solvable offline', () => {
     fs.writeFileSync(draft, `---\n${yaml.stringify(meta)}---\n${body}\n`);
     const native = b.checks.find((check: Json) => check.id === 'native');
     const coverage = draft.replace(/\.md$/, '.coverage.json');
-    fs.writeFileSync(coverage, `${JSON.stringify({ version: 1, role: 'note-checker', definition: b.pair.definition, invariants: core.invariants.map((invariant: string) => ({ invariant, evidence: invariant })) }, null, 2)}\n`);
+    fs.writeFileSync(coverage, `${JSON.stringify({ version: 1, role: 'note-checker', definition: b.pair.definition, invariants: core.invariants.map((invariant: string) => ({ invariant, evidence: invariant, in: 'body' })) }, null, 2)}\n`);
     expect(b.allowedChanges.create).toContain('hosts/claude/agents/note-checker.coverage.json');
     const argv = (native.argv as string[]).map((arg, index, all) => (all[index - 1] === '--artifact' ? draft : all[index - 1] === '--coverage' ? coverage : arg));
     const result = runNode(argv.slice(0), { cwd: checkout });

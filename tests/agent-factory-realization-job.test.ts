@@ -26,6 +26,30 @@ describe('installed realization job preflight', () => {
     expect(await fs.readFile(f.jobFile)).toEqual(before);
     expect(await fs.readdir(f.evidence)).toEqual(['job.json']);
   });
+  it('ADR 0072: pins the canonical agent the registry holds, and a declared coverage file gets --coverage, the .json format and no deletion', async () => {
+    const native = f.job.checks.find(check => check.id === 'native')!;
+    const coverageRel = 'hosts/claude/agents/example.coverage.json';
+    // A canonical agent in the selected registry must be pinned and named with --canonical.
+    const canonicalFile = path.join(f.registry, 'agents/subagent-example.md');
+    await fs.outputFile(canonicalFile, '# canonical agent fixture\n');
+    blocked(/canonical input/i);
+    f.job.inputs.push({ kind: 'canonical', path: canonicalFile, sha256: sha256(await fs.readFile(canonicalFile)), sections: ['Primary Directives'], status: 'clear' });
+    await f.save(); blocked(/native-validation checker command/i);
+    native.argv.push('--canonical', canonicalFile);
+    await f.save();
+    expect(f.run('check-job').exit, f.run('check-job').raw).toBe(0);
+    // A declared coverage file must be on the same check as --coverage.
+    f.job.allowedChanges.create.push(coverageRel);
+    await f.save(); blocked(/native-validation checker command/i);
+    native.argv.push('--coverage', path.join(f.draft, coverageRel));
+    await f.save();
+    expect(f.run('check-job').exit, f.run('check-job').raw).toBe(0);
+    f.job.constraints.formats = ['.md'];
+    await f.save(); blocked(/\.json among the allowed formats/);
+    f.job.constraints.formats = ['.md', '.json'];
+    f.job.allowedChanges.create.pop(); f.job.allowedChanges.delete.push(coverageRel);
+    await f.save(); blocked(/never deleted/);
+  });
   it('fails unknown nested fields and unsupported adapter/surface rather than ignoring them', async () => {
     Object.assign(f.job.constraints, { surprise: true });
     await f.save(); blocked(/unknown|additional/i);
