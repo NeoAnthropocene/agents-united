@@ -29,7 +29,8 @@ describe('the grant: one role holds Artifact', () => {
   });
 
   it('has Artifact in her tools line, and in no other native role\'s', () => {
-    for (const { role } of NATIVE_ROLES) expect(tools(role).includes('Artifact'), role).toBe(role === HER);
+    // Two native files stand on her core: the agency's and the growth-marketing bundle's (n5). The tool follows the class of the core, so both hold it and no other role does.
+    for (const { role } of NATIVE_ROLES) expect(tools(role).includes('Artifact'), role).toBe(role === HER || role === 'marketing-creative-designer');
   });
 
   it('keeps her other tools as they were: no shell, no delegation, the editors and the connected servers', () => {

@@ -133,6 +133,24 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/devops-engineer.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-devops-engineer.md' });
   });
 
+  it('installs the native growth-marketing lead and its five marketing roles with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'growth-marketing', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-marketing.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lead).toMatch(/^name: orchestrator-marketing$/m);
+    expect(lead).toContain('claude --agent orchestrator-marketing');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('growth-marketing');
+    expect(lock.projections['.claude/agents/orchestrator-marketing.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-marketing.md' });
+    for (const role of ['growth-strategist', 'creative-designer', 'content-strategist', 'conversion-specialist', 'campaign-specialist']) {
+      const text = await fs.readFile(path.join(e2eDir, `.claude/agents/marketing-${role}.md`), 'utf8');
+      expect(text, role).toContain('profile: claude-native');
+      expect(lock.projections[`.claude/agents/marketing-${role}.md`], role).toMatchObject({ host: 'claude', kind: 'role', canonical: `agents/subagent-marketing-${role}.md` });
+    }
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',
