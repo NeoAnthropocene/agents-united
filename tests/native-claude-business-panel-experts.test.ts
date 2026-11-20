@@ -163,7 +163,7 @@ describe('native business-panel-experts: the engineering family sections', () =>
 
   it('names no lead and no sibling in its authored body', () => {
     const body = text().split('<!-- agents-united:floor:end -->')[1]!;
-    expect(body).not.toMatch(/orchestrator-|backend-architect|frontend-architect|devops-engineer|deep-research|Chris|Ava|Kaan|Jale|Selin|Yavuz/);
+    expect(body).not.toMatch(/(orchestrator-w+|backend-architect|frontend-architect|devops-engineer|deep-research|Chris|Ava|Kaan|Jale|Selin|Yavuz)/);
   });
 
   it('step 7 hands the report back through SubagentHandback in the plain form', () => {
