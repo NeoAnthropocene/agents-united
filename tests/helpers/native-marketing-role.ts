@@ -12,7 +12,7 @@ import { bundles } from './native-coordinator.js';
 import { nativeText } from './native-roles.js';
 
 /**
- * What the five Tier 1 marketing specialists (n5, slice 1) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
+ * What the five Tier 1 marketing specialists (growth-marketing, slice 1) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
  * the guard against the real script, the peers section of the Tier 1 form, the hand-back step, the session task tracking section, the skill table and the invariants of the core.
  * Each role's test file adds what only that role says. The roles run no shell (their cores grant none), so like the Tier 2 teammates they hold the editors and the web.
  */
@@ -129,8 +129,9 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
     it('names no agency person, role or workflow, no persona and no media-production peer in its authored body', () => {
       expect(body()).not.toMatch(ROLE_SPECIFIC_FORBIDDEN);
       expect(body()).not.toMatch(PERSONAS);
-      // The one sentence of the master operator's decision names the agency persona to say it is not here; everything else in the body stays free of the word.
+      // The one hand-off sentence (decided during the roll-out, open to the maintainer's review) names the agency persona and the frontend architect to say they are not here; everything else in the body stays free of both.
       expect(body().replace(OUT_OF_DEPARTMENT_HANDOFF, '')).not.toMatch(/agency/i);
+      expect(body().replace(OUT_OF_DEPARTMENT_HANDOFF, '')).not.toMatch(/frontend.architect/i);
     });
   });
 
