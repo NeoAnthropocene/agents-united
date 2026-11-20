@@ -57,4 +57,4 @@ capabilities:
   - mcp-discovery
 ---
 
-<!-- core: orchestrator-design | authored for the Tier-1 native design lead (plan 033 slice n3) from registry/agents/orchestrator-design.md | tool-free by contract (ADR 0021 decision 1) -->
+<!-- core: orchestrator-design | authored for the Tier-1 native design lead (plan 033) from registry/agents/orchestrator-design.md | tool-free by contract (ADR 0021 decision 1) -->
