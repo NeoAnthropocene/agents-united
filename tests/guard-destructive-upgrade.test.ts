@@ -213,7 +213,7 @@ describe('the role texts say one true sentence about the guard', () => {
   const named = [
     'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
     'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer',
-    'backend-architect', 'cloud-infrastructure-architect', 'database-administrator', 'devops-engineer', 'frontend-architect', 'orchestrator-digital-agency', 'orchestrator-engineering',
+    'backend-architect', 'cloud-infrastructure-architect', 'database-administrator', 'devops-engineer', 'finops-cost-engineer', 'frontend-architect', 'orchestrator-digital-agency', 'orchestrator-engineering',
     'orchestrator-system-architecture',
   ];
 

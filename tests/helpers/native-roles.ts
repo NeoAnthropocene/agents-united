@@ -19,6 +19,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'sysops-sre-lead', stem: 'subagent-sysops-sre-lead', tier: 1, coordinator: false },
   { role: 'cloud-infrastructure-architect', stem: 'subagent-cloud-infrastructure-architect', tier: 1, coordinator: false },
   { role: 'database-administrator', stem: 'subagent-database-administrator', tier: 1, coordinator: false },
+  { role: 'finops-cost-engineer', stem: 'subagent-finops-cost-engineer', tier: 1, coordinator: false },
   { role: 'code-reviewer', stem: 'subagent-code-reviewer', tier: 1, coordinator: false },
   { role: 'repo-index', stem: 'subagent-repo-index', tier: 1, coordinator: false },
   { role: 'orchestrator-digital-agency', stem: 'orchestrator-digital-agency', tier: 2, coordinator: true },
