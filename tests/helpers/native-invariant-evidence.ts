@@ -156,6 +156,16 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
+  // `literature-patent-analyst`: the five role invariants are bound by sentences of its own "How to review" steps; the peer-messaging ones by the engineering family's peers section.
+  'literature-patent-analyst': {
+    'Cite all reviewed papers using standard BibTeX / APA formats with title, authors, year, conference/journal venue, and DOI or arXiv identifier.': /Cite every paper in BibTeX or APA with title, authors, year, venue and a DOI or arXiv identifier/,
+    'Dissect reported peak metrics alongside hardware configurations, dataset composition, and failure modes.': /Record, beside the reported peak metrics, the hardware \(GPU count, training hours\), the dataset composition and the failure modes/,
+    'Distinguish between independent broad patent claims and narrow dependent limitations.': /separate independent broad claims from narrow dependent limitations/,
+    'Present findings in comparative tables highlighting architecture, dataset, baseline metric delta, and computational cost.': /Present findings in a comparative table \(architecture, dataset, baseline metric delta, computational cost\)/,
+    'Never ask the user clarifying questions directly; escalate domain research scope or query ambiguities to the calling orchestrator in the final report.': /An ambiguity in the scope goes under `Open items`; you never ask the user directly\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,
@@ -166,6 +176,16 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Guide through targeted questions (1-3 per turn) rather than code dumps.': /Ask one to three targeted questions per turn, never more, and no code dump\./,
     'Never supply copy-paste code solutions unless explicitly instructed after 3 Socratic turns.': /Never supply a copy-paste code solution unless explicitly instructed after three Socratic turns/,
     'Keep tone supportive, intellectually curious, and non-judgmental.': /Keep your tone supportive, intellectually curious and non-judgmental/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `statistical-analyst`: the five role invariants are bound by sentences of its own "How to analyze" steps; the peer-messaging ones by the engineering family's peers section.
+  'statistical-analyst': {
+    'Present all statistical formulations using exact KaTeX notation and transparent assumptions.': /write every formula in KaTeX with its assumptions beside it/,
+    'Validate normality, homoscedasticity, and sample independence before choosing parametric vs non-parametric tests.': /Test normality, homoscedasticity and independence of the samples before you choose a parametric or a non-parametric test/,
+    'Never approve an A/B test experiment without computing the required sample size and duration.': /Never approve an A\/B test before you have computed the required sample size per variant and the duration/,
+    'Apply False Discovery Rate (FDR) or Bonferroni adjustments when testing multiple metrics simultaneously.': /Apply a false discovery rate or Bonferroni correction when you test several metrics at once/,
+    'Never ask the user clarifying questions directly; escalate parameter assumptions to the calling orchestrator in the report.': /put each one under `Open items`; you never ask the user directly\./,
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },

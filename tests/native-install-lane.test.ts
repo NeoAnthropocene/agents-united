@@ -26,7 +26,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'deep-research', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index', 'socratic-mentor',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'literature-patent-analyst', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index', 'socratic-mentor', 'statistical-analyst',
 ];
 const COORDINATORS = ['orchestrator-engineering'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
@@ -161,6 +161,28 @@ describe('native install lane (agents add --native)', () => {
   it('without the native lane, the deep-research bundle still writes the legacy projection for both research specialists', async () => {
     await new InstallEngine().install('deep-research', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     for (const role of ['deep-research', 'socratic-mentor']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native analytics specialists for the deep-research-analytics bundle, recorded as managed roles of their canonical agents', async () => {
+    await new InstallEngine().install('deep-research-analytics', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    for (const role of ['statistical-analyst', 'literature-patent-analyst', 'deep-research']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, the deep-research-analytics bundle still writes the legacy projection for both analytics specialists', async () => {
+    await new InstallEngine().install('deep-research-analytics', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['statistical-analyst', 'literature-patent-analyst']) {
       const text = await fs.readFile(claudeAgent(role), 'utf8');
       expect(text, role).toContain('profile: claude |');
       expect(text, role).not.toContain('claude-native');

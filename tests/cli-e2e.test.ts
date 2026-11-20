@@ -149,6 +149,22 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/socratic-mentor.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-socratic-mentor.md' });
   });
 
+  it('installs the native statistical-analyst and literature-patent-analyst for deep-research-analytics with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'deep-research-analytics', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    for (const role of ['statistical-analyst', 'literature-patent-analyst']) {
+      const text = await fs.readFile(path.join(e2eDir, `.claude/agents/${role}.md`), 'utf8');
+      expect(text, role).toContain('profile: claude-native');
+      expect(text, role).toMatch(new RegExp(`^name: ${role}$`, 'm'));
+      expect(text, role).toContain('## Working with peers');
+    }
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('deep-research-analytics');
+    expect(lock.projections['.claude/agents/statistical-analyst.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-statistical-analyst.md' });
+    expect(lock.projections['.claude/agents/literature-patent-analyst.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-literature-patent-analyst.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',
