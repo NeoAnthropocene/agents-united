@@ -10,22 +10,25 @@ const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'e
 
 export const CHECKER_FILE = 'registry/skills/evaluate-artifact/scripts/check-review.mjs';
 
-export interface CitationLimits { maxLines: number; maxQuoteLines: number; maxQuoteBytes: number }
+export interface CitationLimits { maxQuoteLines: number; maxQuoteBytes: number }
 
 export function citationLimits(): CitationLimits {
   const source = fs.readFileSync(path.join(ROOT, CHECKER_FILE), 'utf8');
-  const match = /const CITATION_LIMITS = \{ maxLines: (\d+), maxQuoteLines: (\d+), maxQuoteBytes: (\d+) \};/.exec(source);
-  if (!match) throw new Error('check-review.mjs no longer declares CITATION_LIMITS = { maxLines, maxQuoteLines, maxQuoteBytes }');
-  return { maxLines: Number(match[1]), maxQuoteLines: Number(match[2]), maxQuoteBytes: Number(match[3]) };
+  const match = /const CITATION_LIMITS = \{ maxQuoteLines: (\d+), maxQuoteBytes: (\d+) \};/.exec(source);
+  if (!match) throw new Error('check-review.mjs no longer declares CITATION_LIMITS = { maxQuoteLines, maxQuoteBytes }');
+  return { maxQuoteLines: Number(match[1]), maxQuoteBytes: Number(match[2]) };
 }
 
-/** The citation rule, as every text an evaluator loads (and every evaluator prompt) states it. */
+/** The citation rule (ADR 0071, quote-located citations), as every text an evaluator loads (and every evaluator prompt) states it. */
 export function citationRule(limits: CitationLimits = citationLimits()): string {
-  const lines = WORDS[limits.maxLines]!, before = WORDS[limits.maxLines - 1]!, quoteLines = WORDS[limits.maxQuoteLines]!;
-  return `A citation covers one line or at most ${lines} consecutive lines (its end line at most ${before} after its start line, and the end line exists in the file), `
-    + `using the line numbers the Read tool shows; its quote is copied exactly from inside those lines and is at most ${quoteLines} lines and ${limits.maxQuoteBytes} bytes; `
+  const quoteLines = WORDS[limits.maxQuoteLines]!;
+  return `A citation gives its source and a quote copied exactly from that file, at most ${quoteLines} lines and ${limits.maxQuoteBytes} bytes, and no line range: `
+    + 'the checker finds the lines itself; give `line` (the line the quote begins on, as the Read tool numbers it) only when the quote occurs more than once in the file; '
     + 'one bad citation gets the whole result refused.';
 }
+
+/** The start of the earlier, line-numbered citation rule that ADR 0071 replaced; no text may carry it any more. */
+export const OLD_CITATION_RULE_START = 'A citation covers one line or at most';
 
 /** The hand-back rule. */
 export const ONE_JSON_RULE = 'Your hand-back (the SubagentHandback message, or your final message where that tool is absent) is exactly ONE JSON object that validates against `assets/result.schema.json`, with no text before or after it, no code fence and no headings.';
