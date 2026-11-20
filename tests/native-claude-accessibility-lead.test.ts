@@ -31,6 +31,15 @@ describe('native accessibility-lead: no command execution, as its canonical agen
     expect(canonicalTools).not.toMatch(/bash|shell|terminal|run_command|powershell/i);
   });
 
+  it('holds exactly this tool set, and pins model and effort', () => {
+    expect([...toolsOf(text())].sort()).toEqual([
+      'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
+      'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__chrome-devtools-mcp', 'mcp__context7',
+    ]);
+    expect(/^model: (.+)$/m.exec(text())![1]).toBe('sonnet');
+    expect(/^effort: (.+)$/m.exec(text())![1]).toBe('medium');
+  });
+
   it('holds the editors its canonical agent holds, and the read and search tools', () => {
     expect(toolsOf(text())).toEqual(expect.arrayContaining(['Read', 'Glob', 'Grep', 'Edit', 'Write', 'NotebookEdit']));
   });
@@ -54,7 +63,7 @@ describe('native accessibility-lead: the guard and permission claims', () => {
     const five = step(5);
     expect(five).toContain('permissionMode: acceptEdits');
     expect(five).toContain('you hold no shell, so no command is approved for you');
-    expect(five).toContain('blocks only writes to `.env` files made with `Write`, `Edit` or `NotebookEdit`');
+    expect(five).toContain('blocks only writes to `.env` files and their variants such as `.env.local` (`.env.example` stays writable), made with `Write`, `Edit` or `NotebookEdit`');
     expect(five).toContain('its rules against forced pushes and `vercel --prod` apply to a shell, which you do not hold');
     expect(five).toContain('It does not stop an overwrite of any other file');
     expect(five).toContain('does not enforce the Safety rule against suppressing an audit rule');
@@ -76,6 +85,11 @@ describe('native accessibility-lead: the guard and permission claims', () => {
       expect(result.blocked).toBe(true);
     });
 
+    it.each(['Write', 'Edit', 'NotebookEdit'])('blocks a %s of a .env variant such as .env.local, as step 5 says', tool => {
+      expect(write(tool, path.join(project, '.env.local')).blocked).toBe(true);
+      expect(write(tool, path.join(project, '.env.production')).blocked).toBe(true);
+    });
+
     it.each(['Write', 'Edit', 'NotebookEdit'])('does not block a %s of .env.example or of an ordinary component, as step 5 says', tool => {
       expect(write(tool, path.join(project, '.env.example')).blocked).toBe(false);
       expect(write(tool, path.join(project, 'src/components/Dialog.tsx')).blocked).toBe(false);
@@ -95,7 +109,7 @@ describe('native accessibility-lead: the guard and permission claims', () => {
   });
 
   it('Boundaries say where the guard comes from in both modes, and that the role runs no command', () => {
-    expect(text()).toContain("- A guard blocks writes to `.env` files. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(text()).toContain("- A guard blocks writes to `.env` files and their variants such as `.env.local`. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
     expect(text()).toContain('- You cannot run commands: the audit, the tests and the build are run by the lead or by a role that holds a shell.');
   });
 
