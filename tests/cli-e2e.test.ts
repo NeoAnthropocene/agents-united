@@ -169,6 +169,24 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/orchestrator-system-architecture.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-system-architecture.md' });
   });
 
+  it('installs the native finops-cost-engineer, system-architect, the parent natives and the architecture lead for system-architecture-finops with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'system-architecture-finops', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/finops-cost-engineer.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: finops-cost-engineer$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('system-architecture-finops');
+    expect(lock.projections['.claude/agents/finops-cost-engineer.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-finops-cost-engineer.md' });
+    expect(lock.projections['.claude/agents/system-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-system-architect.md' });
+    expect(lock.projections['.claude/agents/backend-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-backend-architect.md' });
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-system-architecture.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lock.projections['.claude/agents/orchestrator-system-architecture.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-system-architecture.md' });
+  });
+
   it('installs the native database-administrator, backend-architect, the parent natives and the architecture lead for system-architecture-data with -t claude --native', async () => {
     const result = spawnSync(process.execPath, [cliPath, 'add', 'system-architecture-data', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
     expect(result.status, result.stdout + result.stderr).toBe(0);

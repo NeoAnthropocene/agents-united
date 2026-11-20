@@ -206,6 +206,27 @@ describe('native install lane (agents add --native)', () => {
     }
   });
 
+  it('installs the native finops-cost-engineer with system-architect, the natives of its parent bundle and the lead for the system-architecture-finops bundle, each a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('system-architecture-finops', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    expect(lock.nativeLane).toBe(true);
+    for (const role of ['orchestrator-system-architecture', 'finops-cost-engineer', 'system-architect', 'backend-architect']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, system-architecture-finops still writes the legacy projection for finops-cost-engineer', async () => {
+    await new InstallEngine().install('system-architecture-finops', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('finops-cost-engineer'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
   it('without the native lane, system-architecture-data still writes the legacy projection for database-administrator', async () => {
     await new InstallEngine().install('system-architecture-data', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     const text = await fs.readFile(claudeAgent('database-administrator'), 'utf8');
