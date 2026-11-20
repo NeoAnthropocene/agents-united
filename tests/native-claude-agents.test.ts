@@ -108,8 +108,8 @@ const ROLES: RoleSpec[] = [
       effort: 'medium',
     })
   ),
-  // The performance-paid-acquisition add-on's specialist: the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants no shell and no web but the task-tracking class, so it holds
-  // the editors, the messaging and skill classes, the task tools and the context7 server with the routes; it holds no image server.
+  // The performance-paid-acquisition add-on's specialist: the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants no shell and no web; it does grant task-tracking, so it holds the task tools,
+  // the editors, the messaging and skill classes and the context7 server with the routes; it holds no image server.
   {
     name: 'paid-acquisition-specialist',
     stem: 'subagent-paid-acquisition-specialist',

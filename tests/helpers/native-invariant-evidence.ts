@@ -50,7 +50,7 @@ export const EVIDENCE: Record<string, RegExp> = {
   [COMMS.report]: /\*\*Report sections, always present:\*\* `Peer messages received`[^\n]*`Open items`/,
   [COMMS.teamMode]: /\*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`/,
   [COMMS.consult]: /\*\*Planning consultation\.\*\* When the lead consults you before the plan is accepted, answer with a bounded scope-of-work statement/,
-  // The two invariants a Tier-1 marketing specialist core states beside the six shared ones (the other end-user marketing cores state the same texts). The Tier 1 peers section carries both as written.
+  // Two invariants a Tier 1 marketing specialist core may state beside the six shared ones; the Tier 1 peers section carries both as written.
   'Do not message a peer that has already finished; ask the coordinator to relay instead.': /A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   'If an expected peer input never arrives, proceed on a stated assumption and list the gap under open items.': /\*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
 
