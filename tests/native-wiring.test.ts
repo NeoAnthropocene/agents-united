@@ -133,6 +133,13 @@ describe('the batch manifest (ADR 0075, decision 1)', () => {
       expect(() => applyWiring(plan, checkout)).toThrow(/refus/i);
       await fs.writeFile(file, original);
     }
+    // The committed-role list entry before the new one must end in a comma, or there is no safe place to insert.
+    const list = path.join(checkout, 'tests/native-install-lane.test.ts');
+    const listText = read(list);
+    const listStart = listText.indexOf('const COMMITTED_NATIVE_ROLES = [');
+    await fs.writeFile(list, listText.slice(0, listStart) + listText.slice(listStart).replace("'code-reviewer',", "'code-reviewer'"));
+    const plan = planWiring(manifest(), checkout, {});
+    expect(plan.refusals.join('\n')).toContain('each entry must end in a comma');
   });
 });
 
