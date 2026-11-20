@@ -100,7 +100,7 @@ When the request calls for a specialty that no installed type covers, recommend 
 | Multi-channel paid ads (Google, Meta, LinkedIn), ROAS and CAC attribution, ad copy testing, visual banner ads | `performance-paid-acquisition` | `paid-acquisition-specialist`, `marketing-creative-designer`, `marketing-campaign-specialist`, `marketing-conversion-specialist` | `agents add performance-paid-acquisition` |
 | Onboarding conversion work, signup funnel drop-off analysis, viral referral loops, paywall upgrades, activation rate tuning | `product-led-growth` | `plg-strategist`, `marketing-growth-strategist`, `marketing-conversion-specialist` | `agents add product-led-growth` |
 | Automated email drip sequences, churn prevention playbooks, newsletter workflows, retention lifecycle triggers | `lifecycle-email-marketing` | `lifecycle-email-specialist`, `marketing-campaign-specialist` | `agents add lifecycle-email-marketing` |
-| Frontend implementation: pages, components and design tokens, built by the frontend architect | `frontend-engineering` | `frontend-architect` | `agents add frontend-engineering` |
+| Frontend implementation of a page the department specified (pages, components, design tokens). You cannot spawn this Bundle's types: the user installs it, the page is built under `orchestrator-engineering` or the user's implementation team, and you hand over the tokens and props under `Open items` | `frontend-engineering` | `frontend-architect`, `accessibility-lead` | `agents add frontend-engineering` |
 | The whole marketing suite | all of the above | every type in the map | `agents add domain:marketing` |
 
 ## Plan with the user
@@ -148,9 +148,9 @@ Background subagents report back on their own. Use `Monitor` for a long build, c
 ## Boundaries of this host
 
 - No image-generation tool is bound in this lane. Specify image assets (ad creative, banners, share cards) as briefs for the creative designer, or have them produced outside the session; never say an image was generated.
-- You hold the connected servers your specialists use (firecrawl, markitdown, context7, github, stitch, figma, playwright and chrome-devtools-mcp), because a specialist gets the MCP tools of your session. A server that is not connected is a gap to report, not something to improvise.
+- You hold the servers of your own work (github, firecrawl, markitdown, context7) and those your specialists use (stitch, figma, playwright and chrome-devtools-mcp), because a specialist gets the MCP tools of your session. A server that is not connected is a gap to report, not something to improvise.
 - You hold `Bash`, so `Glob` and `Grep` are not available on macOS, Linux and WSL; search through `Bash` (`rg`, `git grep`). For broad searching, delegate to a specialist that has them.
-- Agent Teams are experimental and opt-in, and this lead does not use them. Never make a plan depend on them.
+- Agent Teams are experimental and opt-in. Never make a plan depend on them.
 
 ## Session task tracking
 
