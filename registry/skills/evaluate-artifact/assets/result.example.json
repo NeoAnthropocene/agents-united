@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "jobId": "sample-review",
   "jobDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "candidateDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -24,7 +24,7 @@
       "outcome": "satisfactory",
       "rationale": "The Skill does what the fixed brief asks and stays inside the selected path.",
       "citations": [
-        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 7, "endLine": 7, "quote": "Read only the supplied path." }
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "quote": "Read only the supplied path." }
       ]
     },
     { "id": "shared-semantics", "outcome": "not-applicable", "rationale": "A portable Skill adds no shared pair.", "citations": [] },
@@ -34,7 +34,7 @@
       "outcome": "satisfactory",
       "rationale": "The Skill depends on nothing it does not provide.",
       "citations": [
-        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 7, "endLine": 7, "quote": "Read only the supplied path." }
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "quote": "Read only the supplied path." }
       ]
     },
     {
@@ -42,7 +42,7 @@
       "outcome": "satisfactory",
       "rationale": "It claims nothing it did not do.",
       "citations": [
-        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 7, "endLine": 7, "quote": "Read only the supplied path." }
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "quote": "Read only the supplied path." }
       ]
     },
     {
@@ -50,7 +50,7 @@
       "outcome": "satisfactory",
       "rationale": "The job pins an original work with its author.",
       "citations": [
-        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 4, "endLine": 4, "quote": "license: MIT" }
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "quote": "license: MIT" }
       ]
     },
     {
@@ -58,7 +58,7 @@
       "outcome": "needs-work",
       "rationale": "The body is one line and gives no steps.",
       "citations": [
-        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 6, "endLine": 7, "quote": "# Sample\nRead only the supplied path." }
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "quote": "# Sample\nRead only the supplied path." }
       ]
     }
   ],
@@ -69,7 +69,7 @@
       "severity": "MEDIUM",
       "confidence": "high",
       "citations": [
-        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "startLine": 7, "endLine": 7, "quote": "Read only the supplied path." }
+        { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "quote": "Read only the supplied path." }
       ],
       "rationale": "The body is a single instruction, so a reader cannot tell what to return.",
       "correction": "Add a short runbook that names the input, the steps and the form of the answer."
