@@ -55,6 +55,7 @@ export function checkManifest(manifest, checkout) {
   if (!manifest || typeof manifest !== 'object') return ['The manifest is not a JSON object.'];
   if (manifest.version !== 1) problems.push('The manifest version must be 1.');
   if (typeof manifest.id !== 'string' || !ID.test(manifest.id)) problems.push('The manifest id must be a kebab-case identifier.');
+  if (typeof manifest.base !== 'string' || !/^[0-9a-f]{7,40}$/.test(manifest.base)) problems.push('The manifest base must be a commit name (7 to 40 hex characters).');
   if (!Array.isArray(manifest.roles) || manifest.roles.length === 0) return [...problems, 'The manifest names no roles.'];
   let bundles = {};
   try { bundles = JSON.parse(readText(path.join(checkout, 'registry/bundles.json'))).bundles ?? {}; } catch { problems.push('registry/bundles.json cannot be read in the checkout.'); }
@@ -77,12 +78,19 @@ export function checkManifest(manifest, checkout) {
       if (typeof role.canonical !== 'string' || !role.canonical) problems.push(`${name}: \`canonical\` must name a file or be null.`);
       else if (!exists(path.join(checkout, role.canonical))) problems.push(`${name}: the canonical agent ${role.canonical} is missing.`);
     }
-    for (const ext of ['core.md', 'contract.json']) {
+    // A new pair is a core and its companion contract; some existing cores predate the companion contract.
+    for (const ext of role.pair === 'new' ? ['core.md', 'contract.json'] : ['core.md']) {
       if (typeof role.definition === 'string' && !exists(path.join(checkout, 'registry/core', `${role.definition}.${ext}`))) problems.push(`${name}: registry/core/${role.definition}.${ext} is missing.`);
     }
     if (role.mustHold !== undefined && (!Array.isArray(role.mustHold) || role.mustHold.some(tool => typeof tool !== 'string' || !tool))) problems.push(`${name}: \`mustHold\` must be a list of tool names.`);
   }
   if (!Array.isArray(manifest.leads)) problems.push('The manifest needs a `leads` list (it may be empty).');
+  for (const lead of Array.isArray(manifest.leads) ? manifest.leads : []) {
+    const name = typeof lead?.lead === 'string' ? lead.lead : '(no lead)';
+    if (typeof lead?.lead !== 'string' || !ID.test(lead.lead)) problems.push('A lead has no kebab-case `lead`.');
+    if (typeof lead?.bundle !== 'string' || !Object.hasOwn(bundles, lead.bundle)) problems.push(`Lead ${name}: the Bundle ${lead?.bundle} is not in registry/bundles.json.`);
+    if (!Array.isArray(lead?.roster) || lead.roster.some(role => typeof role !== 'string' || !ID.test(role))) problems.push(`Lead ${name}: \`roster\` must be a list of kebab-case roles.`);
+  }
   if (!Array.isArray(manifest.decisions)) problems.push('The manifest needs a `decisions` list (it may be empty).');
   for (const decision of manifest.decisions ?? []) {
     const id = decision?.id ?? '(no id)';
@@ -280,10 +288,9 @@ export function planWiring(manifest, checkout, options = {}) {
       else if (current !== undefined) refuse('roster', role.role, 'roster row');
       else {
         const start = texts[FILES.roster].indexOf('export const NATIVE_ROLES');
-        const head = texts[FILES.roster].slice(0, start), body = texts[FILES.roster].slice(start);
-        const next = insertBeforeLine(body, line => { const tier = /^ {2}\{ role: '[^']+', stem: '[^']+', tier: (\d)/.exec(line); return (tier && Number(tier[1]) > role.tier) || line === '];'; }, `${row}\n`);
-        texts[FILES.roster] = head + next;
-        note('roster', 'insert', role.role, 'roster row');
+        const next = start < 0 ? null : insertBeforeLine(texts[FILES.roster].slice(start), line => { const tier = /^ {2}\{ role: '[^']+', stem: '[^']+', tier: (\d)/.exec(line); return (tier && Number(tier[1]) > role.tier) || line === '];'; }, `${row}\n`);
+        if (next === null) plan.refusals.push(`${FILES.roster}: the NATIVE_ROLES list, where a roster row goes, is missing.`);
+        else { texts[FILES.roster] = texts[FILES.roster].slice(0, start) + next; note('roster', 'insert', role.role, 'roster row'); }
       }
     }
 
@@ -346,15 +353,18 @@ export function planWiring(manifest, checkout, options = {}) {
           const block = [header, ...needed.map(entry => `    ${quote(entry.invariant)}: /${escapeRegExp(entry.evidence)}/,`), '  },'].join('\n');
           const lines = evidenceText().split('\n');
           const start = lines.findIndex(line => line.startsWith('export const ROLE_EVIDENCE'));
-          let at = lines.findIndex((line, index) => {
+          let at = start < 0 ? -1 : lines.findIndex((line, index) => {
             if (index <= start) return false;
             const key = /^ {2}'([^']+)': \{$/.exec(line);
             return (key && key[1] > role.role) || line === '};';
           });
-          while (at > start + 1 && lines[at - 1].startsWith('  //')) at--;
-          lines.splice(at, 0, ...block.split('\n'));
-          texts[FILES.evidence] = lines.join('\n');
-          note('evidence', 'insert', role.role, 'evidence block');
+          if (at < 0) plan.refusals.push(`${FILES.evidence}: the ROLE_EVIDENCE map, where an evidence block goes, is missing.`);
+          else {
+            while (at > start + 1 && lines[at - 1].startsWith('  //')) at--;
+            lines.splice(at, 0, ...block.split('\n'));
+            texts[FILES.evidence] = lines.join('\n');
+            note('evidence', 'insert', role.role, 'evidence block');
+          }
         }
       }
     }
@@ -363,15 +373,16 @@ export function planWiring(manifest, checkout, options = {}) {
     {
       let text = texts[FILES.install];
       const listStart = text.indexOf('const COMMITTED_NATIVE_ROLES = [');
-      const listEnd = text.indexOf('];', listStart);
-      const names = [...text.slice(listStart, listEnd).matchAll(/'([a-z0-9-]+)'/g)].map(match => match[1]);
-      if (names.includes(role.role)) note('install', 'unchanged', role.role, 'committed-role list entry');
+      const listEnd = listStart < 0 ? -1 : text.indexOf('];', listStart);
+      const names = listEnd < 0 ? [] : [...text.slice(listStart, listEnd).matchAll(/'([a-z0-9-]+)'/g)].map(match => match[1]);
+      if (names.length === 0) plan.refusals.push(`${FILES.install}: the COMMITTED_NATIVE_ROLES list, where a role's name goes, is missing or empty.`);
+      else if (names.includes(role.role)) note('install', 'unchanged', role.role, 'committed-role list entry');
       else {
         const before = names.filter(name => name < role.role).pop();
         const segment = text.slice(listStart, listEnd);
         const updated = before === undefined ? segment.replace(`'${names[0]}'`, `'${role.role}', '${names[0]}'`) : segment.replace(`'${before}',`, `'${before}', '${role.role}',`);
-        text = text.slice(0, listStart) + updated + text.slice(listEnd);
-        note('install', 'insert', role.role, 'committed-role list entry');
+        if (updated === segment) plan.refusals.push(`${FILES.install}: the committed-role list has no place for ${role.role} (each entry must end in a comma).`);
+        else { text = text.slice(0, listStart) + updated + text.slice(listEnd); note('install', 'insert', role.role, 'committed-role list entry'); }
       }
       if (role.canonical === null) plan.proposals.push(`${FILES.install}: write the install cases of ${role.role} by hand (it has no canonical agent).`);
       else {

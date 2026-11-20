@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "devops-engineering-pilot",
-  "base": "908c521",
+  "base": "df71610a",
   "roles": [
     {
       "role": "devops-engineer",

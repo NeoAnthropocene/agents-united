@@ -45,7 +45,11 @@ const run = (command, args, cwd, env = {}) => {
   // The agent-teams switch changes what some tests see, so it is removed, not set empty.
   const childEnv = { ...process.env, ...env };
   delete childEnv.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS;
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8', env: childEnv, shell: process.platform === 'win32' && command === 'npm', maxBuffer: 256 * 1024 * 1024 });
+  // npm is a script on Windows, so it runs through the shell as one command line (its arguments here are fixed words).
+  const viaShell = process.platform === 'win32' && command === 'npm';
+  const result = viaShell
+    ? spawnSync([command, ...args].join(' '), { cwd, encoding: 'utf8', env: childEnv, shell: true, maxBuffer: 256 * 1024 * 1024 })
+    : spawnSync(command, args, { cwd, encoding: 'utf8', env: childEnv, maxBuffer: 256 * 1024 * 1024 });
   return { exit: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 };
 
@@ -93,7 +97,7 @@ function main(argv) {
     if (!step('wiring', run(process.execPath, [generator, '--manifest', manifestCopy, '--checkout', tree, '--write'], tree))) throw new Error('wiring');
     const vitest = path.join(tree, 'node_modules/vitest/vitest.mjs');
     const env = {};
-    step('native blocks', run(process.execPath, [vitest, 'run', 'tests/native-claude-agents.test.ts', '--maxWorkers=1', '--fileParallelism=false'], tree, { ...env, UPDATE_NATIVE: '1' }));
+    if (!step('native blocks', run(process.execPath, [vitest, 'run', 'tests/native-claude-agents.test.ts', '--maxWorkers=1', '--fileParallelism=false'], tree, { ...env, UPDATE_NATIVE: '1' }))) throw new Error('native blocks');
     const own = new Set(manifest.roles.map(role => `tests/native-claude-${role.role}.test.ts`));
     // The files that exist at the base, after the batch's files were copied in.
     for (const rel of conformanceFiles(manifest, tree)) {
