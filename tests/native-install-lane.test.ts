@@ -26,7 +26,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'lifecycle-email-specialist', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer',
   'marketing-growth-strategist', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'paid-acquisition-specialist', 'plg-strategist', 'repo-index', 'seo-specialist',
 ];
 const COORDINATORS = ['orchestrator-engineering', 'orchestrator-marketing'];
@@ -38,6 +38,8 @@ const SEO_CONTENT_NATIVE = ['marketing-content-strategist', 'orchestrator-market
 const PAID_ACQUISITION_NATIVE = ['marketing-campaign-specialist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'orchestrator-marketing', 'paid-acquisition-specialist'];
 /** What the product-led-growth add-on installs as native files on top of its parent (n5, slice 4): the PLG strategist and the two marketing roles it works with, with the lead they share. */
 const PLG_NATIVE = ['marketing-conversion-specialist', 'marketing-growth-strategist', 'orchestrator-marketing', 'plg-strategist'];
+/** What the lifecycle-email-marketing add-on installs as native files on top of its parent (n5, slice 5): the lifecycle email specialist and the campaign specialist it works with, with the lead they share. */
+const LIFECYCLE_NATIVE = ['lifecycle-email-specialist', 'marketing-campaign-specialist', 'orchestrator-marketing'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
 const sha256 = (text: string): string => `sha256:${crypto.createHash('sha256').update(text).digest('hex')}`;
@@ -245,6 +247,30 @@ describe('native install lane (agents add --native)', () => {
   it('without the native lane, product-led-growth writes the legacy projection for the PLG strategist and its two marketing roles', async () => {
     await new InstallEngine().install('product-led-growth', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     for (const role of ['marketing-conversion-specialist', 'marketing-growth-strategist', 'plg-strategist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native lifecycle email specialist and the campaign specialist for lifecycle-email-marketing, each recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('lifecycle-email-marketing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    for (const role of LIFECYCLE_NATIVE) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections['.claude/agents/' + role + '.md'];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+    // The Tier 2 copy of the campaign core belongs to the digital agency and is not installed here.
+    expect(await fs.pathExists(claudeAgent('agency-campaign-specialist'))).toBe(false);
+  });
+
+  it('without the native lane, lifecycle-email-marketing writes the legacy projection for the lifecycle email specialist and the campaign specialist', async () => {
+    await new InstallEngine().install('lifecycle-email-marketing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['lifecycle-email-specialist', 'marketing-campaign-specialist']) {
       const text = await fs.readFile(claudeAgent(role), 'utf8');
       expect(text, role).toContain('profile: claude |');
       expect(text, role).not.toContain('claude-native');

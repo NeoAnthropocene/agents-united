@@ -124,6 +124,22 @@ const ROLES: RoleSpec[] = [
     model: 'sonnet',
     effort: 'medium',
   },
+  // The lifecycle-email-marketing add-on's specialist (n5, slice 5): the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
+  // the editors, the task tools, the messaging and skill classes and the markitdown server (which has no routes); it holds no image server.
+  {
+    name: 'lifecycle-email-specialist',
+    stem: 'subagent-lifecycle-email-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__markitdown']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
   // The product-led-growth add-on's strategist (n5, slice 4): the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
   // the editors, the task tools, the messaging and skill classes and the context7 server with the routes; it holds no image server.
   {

@@ -17,6 +17,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'code-reviewer', stem: 'subagent-code-reviewer', tier: 1, coordinator: false },
   { role: 'repo-index', stem: 'subagent-repo-index', tier: 1, coordinator: false },
   { role: 'orchestrator-marketing', stem: 'orchestrator-marketing', tier: 1, coordinator: true },
+  { role: 'lifecycle-email-specialist', stem: 'subagent-lifecycle-email-specialist', tier: 1, coordinator: false },
   { role: 'marketing-campaign-specialist', stem: 'subagent-marketing-campaign-specialist', tier: 1, coordinator: false },
   { role: 'marketing-content-strategist', stem: 'subagent-marketing-content-strategist', tier: 1, coordinator: false },
   { role: 'marketing-conversion-specialist', stem: 'subagent-marketing-conversion-specialist', tier: 1, coordinator: false },
