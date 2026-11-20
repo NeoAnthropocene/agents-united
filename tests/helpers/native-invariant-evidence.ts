@@ -173,18 +173,14 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
   // `sysops-sre-lead`: its floor Scope Boundaries state the domain invariants (directive 1 and the four forbidden anti-patterns), its own "How to work" the
   // inspection step; the peers section is the engineering family's, as `system-architect` binds it.
   'sysops-sre-lead': {
-    'Reliability is governed by Service Level Objectives, Service Level Indicators and error budgets.': /**Uptime & SLA/SLO Management** — Define Service Level Objectives (SLOs), Service Level Indicators (SLIs), and error budgets/,
-    'Alerts fire on symptoms that affect SLOs, not on transient blips.': /- Refuse alert fatigue (noisy non-actionable alerts)[^
-]*alert on symptoms affecting SLOs, not transient blips./,
-    'No single point of failure: infrastructure is redundant across zones or regions.': /- Refuse single point of failure (SPOF) infrastructure[^
-]*use multi-AZ and multi-region redundancy./,
-    'No manual, undocumented server change: changes go through managed automation and runbooks.': /- Refuse manual un-documented server changes[^
-]*use managed infrastructure automation and runbooks./,
-    'A disaster recovery backup counts only after an automated restoration drill has proven it.': /- Refuse untested disaster recovery backups[^
-]*prove them with automated backup restoration drills./,
-    'Inspect the existing telemetry configuration and SLI metrics before triaging or designing.': /**Inspect first.** Read the existing telemetry configuration and SLI metrics with `Glob`, `Grep` and `Read` before you triage or design anything./,
-    'Hand your result back to the coordinator, not across to a peer.': /- **Your final report is your one hand-back.** Do not use `SendMessage` to push results to the lead mid-run./,
-    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- **Team mode** is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair (an exchange is one message and its reply) and one directed question per peer per planning round. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead./,
+    'Reliability is governed by Service Level Objectives, Service Level Indicators and error budgets.': /\*\*Uptime & SLA\/SLO Management\*\* — Define Service Level Objectives \(SLOs\), Service Level Indicators \(SLIs\), and error budgets/,
+    'Alerts fire on symptoms that affect SLOs, not on transient blips.': /- Refuse alert fatigue \(noisy non-actionable alerts\)[^\n]*alert on symptoms affecting SLOs, not transient blips\./,
+    'No single point of failure: infrastructure is redundant across zones or regions.': /- Refuse single point of failure \(SPOF\) infrastructure[^\n]*use multi-AZ and multi-region redundancy\./,
+    'No manual, undocumented server change: changes go through managed automation and runbooks.': /- Refuse manual un-documented server changes[^\n]*use managed infrastructure automation and runbooks\./,
+    'A disaster recovery backup counts only after an automated restoration drill has proven it.': /- Refuse untested disaster recovery backups[^\n]*prove them with automated backup restoration drills\./,
+    'Inspect the existing telemetry configuration and SLI metrics before triaging or designing.': /\*\*Inspect first\.\*\* Read the existing telemetry configuration and SLI metrics with `Glob`, `Grep` and `Read` before you triage or design anything: /,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
