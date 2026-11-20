@@ -22,18 +22,18 @@ const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
 const sessionSection = (body: string): string => /\n## Session task tracking\n([\s\S]*)$/.exec(body)![1]!.trim();
 
-/** The whole tools line: the read, search, edit, web, messaging, hand-back, skill, task and discovery classes of the core. No server: the pair declares none. */
+/** The whole tools line: the read, search, edit, web, messaging, hand-back, skill, task and discovery classes of the core. The one server of the pair, markitdown, is bound through its route. */
 const EXPECTED_TOOLS = [
   'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
-  'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write',
+  'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write', 'mcp__markitdown',
 ];
 
 describe('native business-panel-experts: its exact tool set and posture', () => {
-  it('holds exactly these tools: no shell, no server, no watcher, no delegation, no scheduling', () => {
+  it('holds exactly these tools: no shell, only the markitdown server, no watcher, no delegation, no scheduling', () => {
     expect(toolsLine().split(', ')).toEqual(EXPECTED_TOOLS);
     for (const forbidden of ['Bash', 'PowerShell', 'Agent', 'Workflow', 'CronCreate', 'CronList', 'CronDelete', 'Monitor', 'TaskStop', 'AskUserQuestion', 'EnterWorktree', 'ExitWorktree'])
       expect(toolsLine().split(', '), forbidden).not.toContain(forbidden);
-    expect(toolsLine().split(', ').filter(tool => tool.startsWith('mcp__'))).toEqual([]);
+    expect(toolsLine().split(', ').filter(tool => tool.startsWith('mcp__'))).toEqual(['mcp__markitdown']);
   });
 
   it('is sonnet at medium effort, with the canonical permission mode', () => {
