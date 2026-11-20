@@ -18,17 +18,17 @@ const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
 
-/** The whole tools line: the editing, search, web, messaging, hand-back, skill, watcher, task and discovery classes of the core, then the two servers by every route that exists. */
+/** The whole tools line: the editing, search, web, messaging, hand-back, skill, task and discovery classes of the core, then the two servers by every route that exists. */
 const EXPECTED_TOOLS = [
-  'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
-  'TaskCreate', 'TaskGet', 'TaskList', 'TaskStop', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write',
+  'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
+  'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write',
   'mcp__firecrawl', 'mcp__claude_ai_Firecrawl', 'mcp__context7', 'mcp__plugin_context7_context7',
 ];
 
 describe('native deep-research: its exact tool set and posture', () => {
-  it('holds exactly these tools, no shell, no delegation, no scheduling', () => {
+  it('holds exactly these tools, no shell or watcher, no delegation, no scheduling', () => {
     expect(toolsLine().split(', ')).toEqual(EXPECTED_TOOLS);
-    for (const forbidden of ['Bash', 'PowerShell', 'Agent', 'Workflow', 'CronCreate', 'CronList', 'CronDelete', 'AskUserQuestion', 'EnterWorktree', 'ExitWorktree']) expect(toolsLine().split(', '), forbidden).not.toContain(forbidden);
+    for (const forbidden of ['Bash', 'PowerShell', 'Agent', 'Workflow', 'CronCreate', 'CronList', 'CronDelete', 'Monitor', 'TaskStop', 'AskUserQuestion', 'EnterWorktree', 'ExitWorktree']) expect(toolsLine().split(', '), forbidden).not.toContain(forbidden);
   });
 
   it('declares the two servers of its canonical agent, by every route the generator knows', () => {
@@ -55,10 +55,10 @@ describe('native deep-research: the canonical tools that are bound and the one t
     for (const task of ['TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite']) expect(toolsLine().split(', '), task).toContain(task);
   });
 
-  it('says nothing about timers, schedules, cron or a command runner, and starts no background task', () => {
+  it('says nothing about timers, schedules, cron or a command runner, and sends builds and test runs to the lead', () => {
     const body = text();
     expect(body).not.toMatch(/cron|schedul|run_command|timer|liveness/i);
-    expect(body).toContain('Do not start a long-running or background task yourself; builds and test runs go to the lead under `Open items`.');
+    expect(body).toContain('You hold no shell, so builds and test runs go to the lead under `Open items`.');
   });
 });
 
@@ -88,8 +88,9 @@ describe('native deep-research: the permission mode and the guard, against the r
     expect([result.offered, result.blocked]).toEqual([true, false]);
   });
 
-  it('holds no shell, so a shell call is not even offered', () => {
+  it('holds no tool that runs a command, so a shell call is not even offered', () => {
     expect(attempt(text(), project, { tool: 'Bash', input: { command: 'git push --force' } }, { agentType: ROLE }).offered).toBe(false);
+    expect(toolsLine().split(', ')).not.toContain('Monitor');
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
