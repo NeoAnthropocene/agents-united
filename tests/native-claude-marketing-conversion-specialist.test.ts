@@ -40,7 +40,7 @@ describe('native marketing-conversion-specialist: the funnel before the copy', (
 });
 
 describe('native marketing-conversion-specialist: copy, not design or code', () => {
-  it('hands the typed section props to the frontend architect as a fixed input and leaves visual design to the creative designer', () => {
-    expect(text()).toContain('- The typed section props are the contract the frontend architect renders: hand them over as a fixed input, and never produce the design or the component code yourself. Visual design belongs to `marketing-creative-designer`.');
+  it('hands the typed section props back to the lead as a fixed input for whoever builds the page and leaves visual design to the creative designer', () => {
+    expect(text()).toContain('- The typed section props are the contract whoever builds the page renders (the user\'s implementation team): hand them back to `orchestrator-marketing` as a fixed input, and never produce the design or the component code yourself. Visual design belongs to `marketing-creative-designer`.');
   });
 });

@@ -58,9 +58,9 @@ describe('native marketing-creative-designer: when it may publish', () => {
 });
 
 describe('native marketing-creative-designer: design, not copy or code', () => {
-  it('reviews the identity first and hands design tokens to the frontend architect as a fixed input before the production build', () => {
+  it('reviews the identity first and hands design tokens back to the lead as a fixed input before the production build', () => {
     expect(step(1)).toMatch(/^1\. \*\*Review the identity first\.\*\*/);
-    expect(section('Boundaries of this host')).toContain('Design tokens go to the frontend architect as a fixed input before the production build starts; copy belongs to `marketing-conversion-specialist`. Never produce either one\'s deliverable.');
+    expect(section('Boundaries of this host')).toContain('Design tokens go back to `orchestrator-marketing` as a fixed input before the production build starts, for whoever builds the page (the user\'s implementation team); copy belongs to `marketing-conversion-specialist`. Never produce either one\'s deliverable, and never build the production UI.');
   });
 
   it('sources licensed stock through the skill and asks the lead to run the fetch, because it holds no shell', () => {

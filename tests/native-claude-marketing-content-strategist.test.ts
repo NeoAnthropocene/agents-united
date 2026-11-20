@@ -39,7 +39,7 @@ describe('native marketing-content-strategist: the SERP before the brief', () =>
 
 describe('native marketing-content-strategist: hand-offs go through the lead, by type name', () => {
   it('hands each of the ten assets to a marketing type or the engineering team through the lead, as fixed inputs', () => {
-    expect(step(5)).toContain('The newsletter snippet is for `marketing-campaign-specialist`, the visual brief for `marketing-creative-designer`, the code recipe for the frontend architect and the FAQ pairs for `seo-specialist`: hand them over through the lead, as fixed inputs.');
+    expect(step(5)).toContain('The newsletter snippet is for `marketing-campaign-specialist`, the visual brief for `marketing-creative-designer` and the FAQ pairs for `seo-specialist`: hand them over through the lead, as fixed inputs. The code recipe goes back to `orchestrator-marketing` as a fixed input for whoever builds the page (the user\'s implementation team).');
   });
 
   it('confirms topic and keyword ownership before it writes and never claims another specialist\'s cluster', () => {

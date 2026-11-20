@@ -34,7 +34,7 @@ export interface MarketingRoleSpec {
   returns: string;
 }
 
-const ROLE_SPECIFIC_FORBIDDEN = /Chris\b|Campaign Director|digital agency|Deniz|Emre|Defne|Arda\b|motion designer|sound designer|motion-designer|sound-designer|agency-|workflow-agency-|Media Request/i;
+const ROLE_SPECIFIC_FORBIDDEN = /Chris\b|Campaign Director|digital agency|Deniz|Emre|Defne|Arda\b|motion designer|sound designer|motion-designer|sound-designer|agency-|workflow-agency-|Media Request|frontend.architect/i;
 const PERSONAS = /\b(Ava|Jamileh|Yavuz|Kaan|Jale|Selin)\b/;
 const IMAGE_TOOL = /\bimage-gen\b|generate_image/;
 
