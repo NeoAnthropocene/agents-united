@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import yaml from 'yaml';
+import { ClaudeProjector } from '../src/core/claude-projector.js';
+import { guardHandler } from '../src/core/guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { attempt, type Call } from './helpers/claude-host-hooks.js';
 import { allowlist } from './helpers/native-coordinator.js';
@@ -82,6 +85,15 @@ describe('native orchestrator-security: the guard claims', () => {
     expect(body).toContain('- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As the main agent it comes from this file; a native specialist carries its own copy from its own file, and a specialist that is still a projection carries the same guard as an inline hook, so none of them is bound by more than this. Brief every specialist on what to hold back.');
     expect(body).not.toContain('delegate to a specialist that has them');
     expect(section('Delegate')).toContain('**Brief every specialist on what the guard does not stop**');
+  });
+
+  it.each(['appsec-penetration-tester', 'cloud-security-architect', 'compliance-grc-specialist'])('a projected %s carries the guard script on Bash and on Write|Edit|NotebookEdit only, as the Boundaries line says', name => {
+    const rel = `agents/subagent-${name}.md`;
+    const rendered = ClaudeProjector.renderRole(fs.readFileSync(path.resolve('registry', rel), 'utf8'), rel).content.replace(/\r\n/g, '\n');
+    const front = yaml.parse(/^---\n([\s\S]*?)\n---/.exec(rendered)![1]!) as { hooks: { PreToolUse: Array<{ matcher: string; hooks: Array<{ args?: string[] }> }> } };
+    expect(front.hooks.PreToolUse.map(group => group.matcher)).toEqual(['Bash', 'Write|Edit|NotebookEdit']);
+    for (const group of front.hooks.PreToolUse) expect(group.hooks).toEqual([guardHandler()]);
+    expect(text()).toContain('a specialist that is still a projection carries the same guard script as an inline hook, on `Bash` and on `Write|Edit|NotebookEdit` but not on `PowerShell` or `MultiEdit`, so none of them is bound by more than this.');
   });
 
   describe('against the real guard script', () => {
