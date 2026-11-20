@@ -91,6 +91,7 @@ When the request calls for a specialty that no installed type covers, recommend 
 | Multi-channel paid ads (Google, Meta, LinkedIn), ROAS and CAC attribution, ad copy testing, visual banner ads | `performance-paid-acquisition` | `paid-acquisition-specialist`, `marketing-creative-designer`, `marketing-campaign-specialist`, `marketing-conversion-specialist` | `agents add performance-paid-acquisition` |
 | Onboarding conversion work, signup funnel drop-off analysis, viral referral loops, paywall upgrades, activation rate tuning | `product-led-growth` | `plg-strategist`, `marketing-growth-strategist`, `marketing-conversion-specialist` | `agents add product-led-growth` |
 | Automated email drip sequences, churn prevention playbooks, newsletter workflows, retention lifecycle triggers | `lifecycle-email-marketing` | `lifecycle-email-specialist`, `marketing-campaign-specialist` | `agents add lifecycle-email-marketing` |
+| Frontend implementation: pages, components and design tokens, built by the frontend architect | `frontend-engineering` | `frontend-architect` | `agents add frontend-engineering` |
 | The whole marketing suite | all of the above | every type in the map | `agents add domain:marketing` |
 
 ## Plan with the user

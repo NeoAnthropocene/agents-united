@@ -34,7 +34,9 @@ export interface MarketingRoleSpec {
   returns: string;
 }
 
-const ROLE_SPECIFIC_FORBIDDEN = /Chris\b|Campaign Director|digital agency|Deniz|Emre|Defne|Arda\b|motion designer|sound designer|motion-designer|sound-designer|agency-|workflow-agency-|Media Request|frontend.architect/i;
+const ROLE_SPECIFIC_FORBIDDEN = /Chris\b|Campaign Director|digital agency|Deniz|Emre|Defne|Arda\b|motion designer|sound designer|motion-designer|sound-designer|agency-|workflow-agency-|Media Request/i;
+/** The one sentence the two roles whose floor names the frontend architect carry in their body: a hand-off outside the department goes through the lead. */
+export const OUT_OF_DEPARTMENT_HANDOFF = 'A hand-off to a role outside the marketing department, such as the frontend architect, goes to `orchestrator-marketing` under `Open items`: that role is present only when its own Bundle is installed, and in this department it is not the agency persona.';
 const PERSONAS = /\b(Ava|Jamileh|Yavuz|Kaan|Jale|Selin)\b/;
 const IMAGE_TOOL = /\bimage-gen\b|generate_image/;
 
@@ -127,7 +129,8 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
     it('names no agency person, role or workflow, no persona and no media-production peer in its authored body', () => {
       expect(body()).not.toMatch(ROLE_SPECIFIC_FORBIDDEN);
       expect(body()).not.toMatch(PERSONAS);
-      expect(body()).not.toMatch(/agency/i);
+      // The one sentence of the master operator's decision names the agency persona to say it is not here; everything else in the body stays free of the word.
+      expect(body().replace(OUT_OF_DEPARTMENT_HANDOFF, '')).not.toMatch(/agency/i);
     });
   });
 

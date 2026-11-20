@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeMarketingRole } from './helpers/native-marketing-role.js';
+import { describeMarketingRole, OUT_OF_DEPARTMENT_HANDOFF } from './helpers/native-marketing-role.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
@@ -66,5 +66,12 @@ describe('native marketing-creative-designer: design, not copy or code', () => {
   it('sources licensed stock through the skill and asks the lead to run the fetch, because it holds no shell', () => {
     expect(step(3)).toContain('the skill `commercial-stock-sourcer`');
     expect(step(3)).toMatch(/you hold editors and no shell, so put its candidate fetch command under `Open items` for the lead/);
+  });
+});
+
+describe('native marketing-creative-designer: the hand-off outside the department', () => {
+  it('carries the one sentence that sends a hand-off to a role outside marketing through the lead', () => {
+    expect(body()).toContain(OUT_OF_DEPARTMENT_HANDOFF);
+    expect(body().split(OUT_OF_DEPARTMENT_HANDOFF).length).toBe(2);
   });
 });

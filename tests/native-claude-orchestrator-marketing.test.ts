@@ -141,6 +141,15 @@ describe('native orchestrator-marketing: the sub-bundle recommendations are the 
     }
     expect(table().some(line => line.includes('agents add domain:marketing'))).toBe(true);
   });
+
+  it('recommends the frontend-engineering Bundle, with its frontend architect, for the frontend implementation the department hands off', () => {
+    const row = table().find(line => line.includes('`frontend-engineering`'));
+    expect(row).toBeDefined();
+    expect(row).toContain('Frontend implementation: pages, components and design tokens, built by the frontend architect');
+    expect(row).toContain('agents add frontend-engineering');
+    expect(row).toContain('`frontend-architect`');
+    expect(bundles()['frontend-engineering'].agents as string[]).toContain('subagent-frontend-architect.md');
+  });
 });
 
 describe('native orchestrator-marketing: the skills it names', () => {

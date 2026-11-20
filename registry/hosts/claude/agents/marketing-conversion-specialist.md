@@ -112,6 +112,7 @@ You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teamma
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.
 - Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead's job.
 - The typed section props are the contract whoever builds the page renders (the user's implementation team): hand them back to `orchestrator-marketing` as a fixed input, and never produce the design or the component code yourself. Visual design belongs to `marketing-creative-designer`.
+- A hand-off to a role outside the marketing department, such as the frontend architect, goes to `orchestrator-marketing` under `Open items`: that role is present only when its own Bundle is installed, and in this department it is not the agency persona.
 
 ## Session task tracking
 
