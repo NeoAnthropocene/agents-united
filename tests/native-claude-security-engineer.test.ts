@@ -27,20 +27,19 @@ const canonical = (): string => fs.readFileSync(path.resolve('registry/agents/su
 describe('native security-engineer: the guard claims', () => {
   it('step 5 names exactly what the bound guard blocks, and what it does not', () => {
     const five = step(5);
-    expect(five).toContain('blocks only `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, and writes to `.env` files (not `.env.example`)');
-    expect(five).toContain('and it blocks a tool call whose input it cannot read');
-    for (const other of ['rm -rf', 'sudo', 'shutdown', '`DROP`']) expect(five, other).toContain(other);
-    expect(five).toMatch(/does not enforce the Safety rule against destructive shell commands/);
-    expect(five).toMatch(/nothing bound to this role stops network traffic to an external or production target/);
+    expect(five).toContain('is a seat belt, not a boundary');
+    expect(five).toContain('It blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, writes to `.env` files (not `.env.example`) and a tool call whose input it cannot read.');
+    expect(five).toContain('a recursive delete of a root, home or project folder (`rm -rf /`, `rm -rf ~`, but not `rm -rf build` of an ordinary subfolder), `sudo` and other privilege escalation, shutdown and reboot, deletion of a cloud resource group, project or account, and disk formatting');
+    expect(five).toContain('It does not stop SQL `DROP` statements, a recursive delete of an ordinary subfolder, network traffic to an external or production target, or anything hidden in variables, aliases, interpreters, encoded commands or scripts.');
     expect(five).toMatch(/permissionMode: acceptEdits/);
     expect(five).toMatch(/your own obligation/);
   });
 
   it('does not claim a guard it does not bind', () => {
     const body = text();
-    expect(body).not.toMatch(/blocks[^.\n]*(rm -rf|DROP|sudo|shutdown)/);
+    expect(body).not.toMatch(/blocks[^.\n]*\bDROP\b/);
     expect(body).not.toMatch(/guard (extension|extended)|ADR 0074|ADR 0073|specs sheet/i);
-    expect(body).toContain("- A guard blocks forced pushes, `vercel --prod`, `.env` writes and a tool call whose input it cannot read, and nothing else. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(body).toContain("- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
   });
 
   describe('against the real guard script', () => {
@@ -56,7 +55,10 @@ describe('native security-engineer: the guard claims', () => {
     };
     const bash = (command: string): Call => ({ tool: 'Bash', input: { command } });
 
-    it.each(['vercel --prod', 'git push --force origin main', 'git push -f origin main'])('Bash `%s` exits 2, as step 5 says', command => {
+    it.each([
+      'vercel --prod', 'git push --force origin main', 'git push -f origin main',
+      'rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'az group delete -n x',
+    ])('Bash `%s` exits 2, as step 5 says', command => {
       const result = fire(bash(command));
       expect(result.blocked).toBe(true);
       expect(result.statuses).toContain(2);
@@ -71,8 +73,7 @@ describe('native security-engineer: the guard claims', () => {
     it.each([
       'git push --force-with-lease origin main',
       'rm -rf build',
-      'sudo ls',
-      'shutdown now',
+      'echo rm -rf /',
       'psql -c "DROP TABLE users"',
       'curl -s https://example.com/login',
       'curl -X POST https://api.example.org/v1/users -d "x=1"',

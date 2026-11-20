@@ -63,26 +63,25 @@ describe('native orchestrator-security: the code-reviewer deviation', () => {
 });
 
 describe('native orchestrator-security: the guard claims', () => {
-  const guardParagraph = (): string => /^4\. \*\*Hold back what no guard stops\.\*\*.*$/m.exec(section('Verify before delivering'))![0];
+  const guardParagraph = (): string => /^4\. \*\*Hold back what the guard does not stop\.\*\*.*$/m.exec(section('Verify before delivering'))![0];
 
   it('names exactly what the bound guard blocks, and what it does not', () => {
     const paragraph = guardParagraph();
-    expect(paragraph).toContain('blocks only `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, and writes to `.env` files (not `.env.example`)');
-    expect(paragraph).toContain('and it blocks a tool call whose input it cannot read');
-    for (const other of ['rm -rf', 'sudo', 'shutdown', '`DROP`']) expect(paragraph, other).toContain(other);
-    expect(paragraph).toMatch(/does not enforce the Safety rule against destructive shell commands/);
-    expect(paragraph).toMatch(/nothing bound to you or to your specialists stops network traffic to an external or production target/);
+    expect(paragraph).toContain('is a seat belt, not a boundary');
+    expect(paragraph).toContain('It blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, writes to `.env` files (not `.env.example`) and a tool call whose input it cannot read.');
+    expect(paragraph).toContain('a recursive delete of a root, home or project folder (`rm -rf /`, `rm -rf ~`, but not `rm -rf build` of an ordinary subfolder), `sudo` and other privilege escalation, shutdown and reboot, deletion of a cloud resource group, project or account, and disk formatting');
+    expect(paragraph).toContain('It does not stop SQL `DROP` statements, a recursive delete of an ordinary subfolder, network traffic to an external or production target, or anything hidden in variables, aliases, interpreters, encoded commands or scripts.');
     expect(paragraph).toMatch(/permissionMode: acceptEdits/);
     expect(paragraph).toMatch(/Holding these back, and briefing every specialist to hold them back, is your own obligation/);
   });
 
   it('does not claim a guard it does not bind, and briefs the specialists on it', () => {
     const body = text();
-    expect(body).not.toMatch(/blocks[^.\n]*(rm -rf|DROP|sudo|shutdown)/);
+    expect(body).not.toMatch(/blocks[^.\n]*\bDROP\b/);
     expect(body).not.toMatch(/guard (extension|extended)|ADR 0074|ADR 0073|specs sheet/i);
-    expect(body).toContain('- A guard blocks forced pushes, `vercel --prod`, `.env` writes and a tool call whose input it cannot read, and nothing else. As the main agent it comes from this file; a native specialist carries its own copy from its own file, and a specialist that is still a projection carries the same guard as an inline hook, so none of them is bound by more than this. Brief every specialist on what to hold back.');
+    expect(body).toContain('- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As the main agent it comes from this file; a native specialist carries its own copy from its own file, and a specialist that is still a projection carries the same guard as an inline hook, so none of them is bound by more than this. Brief every specialist on what to hold back.');
     expect(body).not.toContain('delegate to a specialist that has them');
-    expect(section('Delegate')).toContain('**Brief every specialist on what no guard stops**');
+    expect(section('Delegate')).toContain('**Brief every specialist on what the guard does not stop**');
   });
 
   describe('against the real guard script', () => {
@@ -98,7 +97,10 @@ describe('native orchestrator-security: the guard claims', () => {
     };
     const bash = (command: string): Call => ({ tool: 'Bash', input: { command } });
 
-    it.each(['vercel --prod', 'git push --force origin main', 'git push -f origin main'])('Bash `%s` exits 2, as the text says', command => {
+    it.each([
+      'vercel --prod', 'git push --force origin main', 'git push -f origin main',
+      'rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'az group delete -n x',
+    ])('Bash `%s` exits 2, as the text says', command => {
       const result = fire(bash(command));
       expect(result.blocked).toBe(true);
       expect(result.statuses).toContain(2);
@@ -113,8 +115,7 @@ describe('native orchestrator-security: the guard claims', () => {
     it.each([
       'git push --force-with-lease origin main',
       'rm -rf build',
-      'sudo ls',
-      'shutdown now',
+      'echo rm -rf /',
       'psql -c "DROP TABLE users"',
       'curl -s https://example.com/login',
       'curl -X POST https://api.example.org/v1/users -d "x=1"',

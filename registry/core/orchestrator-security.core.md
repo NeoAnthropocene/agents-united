@@ -41,7 +41,7 @@ invariants:
   - "The coordinator relays between specialists and wakes a finished peer before expecting its reply."
   - "Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs."
   - "Assess only systems the user has asked you to assess, defensively; nothing is run against an external or production target."
-  - "The bound guard blocks only a few commands; holding back everything else, and briefing specialists to do so, is the lead's own obligation."
+  - "The bound guard is a seat belt that stops only the common forms of a few commands; holding back everything else, and briefing specialists to do so, is the lead's own obligation."
 capabilities:
   - read
   - search
