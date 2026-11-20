@@ -8,7 +8,7 @@ import { describeMarketingRole } from './helpers/native-marketing-role.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * `paid-acquisition-specialist` (n5, slice 3): the first native file on a core of its own, in the Tier 1 form of `devops-engineer`, for the `performance-paid-acquisition` add-on.
+ * `paid-acquisition-specialist`: the first native file on a core of its own, in the Tier 1 form of `devops-engineer`, for the `performance-paid-acquisition` add-on.
  * No Tier 2 copy stands on this core (the digital agency has no paid-acquisition specialist), so its tools are pinned by the class ceiling of its core in native-claude-agents.test.ts and not by a sibling file.
  * What every marketing specialist keeps is in tests/helpers/native-marketing-role.ts (here with the add-on switched on and no Tier 2 copy); this file holds what only the paid acquisition specialist says.
  */

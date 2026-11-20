@@ -99,6 +99,7 @@ You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teamma
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.
 - Running workflows, scheduling and spawning teammates or subagents are not available to you. Delegation is the lead's job.
 - Stay analysis-first: the schema and metadata snippets are your deliverables, and application code belongs to whoever builds the page. Topic clusters are `marketing-content-strategist`'s: ask through the lead.
+- A hand-off to a role outside the marketing department, such as the frontend architect, goes to `orchestrator-marketing` under `Open items`: that role is present only when its own Bundle is installed, and in this department it is not the agency persona.
 
 ## Session task tracking
 

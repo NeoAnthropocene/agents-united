@@ -8,7 +8,7 @@ import { describeMarketingRole } from './helpers/native-marketing-role.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
- * `plg-strategist` (n5, slice 4): the first native file on a core of its own, in the Tier 1 form of `devops-engineer`, for the `product-led-growth` add-on.
+ * `plg-strategist`: the first native file on a core of its own, in the Tier 1 form of `devops-engineer`, for the `product-led-growth` add-on.
  * No Tier 2 copy stands on this core (the digital agency has no PLG strategist), so its tools are pinned by the class ceiling of its core in native-claude-agents.test.ts and not by a sibling file.
  * What every marketing specialist keeps is in tests/helpers/native-marketing-role.ts (here with the add-on switched on and no Tier 2 copy); this file holds what only the PLG strategist says.
  */

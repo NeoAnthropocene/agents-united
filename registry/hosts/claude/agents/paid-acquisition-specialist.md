@@ -4,7 +4,7 @@ description: Paid acquisition specialist. Use to structure search, social and B2
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
-tools: Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, ToolSearch, Write, mcp__context7, mcp__plugin_context7_context7
+tools: Edit, Glob, Grep, ListAgents, ListMcpResourcesTool, NotebookEdit, Read, ReadMcpResourceTool, SendMessage, Skill, SubagentHandback, TaskCreate, TaskGet, TaskList, TaskUpdate, TodoWrite, ToolSearch, Write, mcp__context7, mcp__plugin_context7_context7
 hooks:
   # agents-united:hooks:start (generated from src/core guards, regenerate with UPDATE_NATIVE=1, do not edit)
   PreToolUse: [{"matcher":"Bash|PowerShell","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"],"onFailure":"block"}]},{"matcher":"Write|Edit|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.claude/hooks/agents-united-guard.js"],"onFailure":"block"}]}]

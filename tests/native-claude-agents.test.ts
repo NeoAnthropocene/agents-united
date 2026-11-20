@@ -85,7 +85,7 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
-  // Tier 1, the growth-marketing bundle (n5, slice 1): five second native files on the cores the digital agency already uses (as `frontend-architect` beside `agency-frontend-architect`),
+  // Tier 1, the growth-marketing bundle (growth-marketing): five second native files on the cores the digital agency already uses (as `frontend-architect` beside `agency-frontend-architect`),
   // and a lead cut like the engineering lead's minus saved workflows, code intelligence, structured findings and worktrees. These roles run no shell (their cores grant none), so like the
   // Tier 2 teammates they hold the editors and the web; their servers are their canonical set with the routes, and none holds the image tool (the `image-gen` route is the agency's, ADR 0049).
   ...[
@@ -108,7 +108,7 @@ const ROLES: RoleSpec[] = [
       effort: 'medium',
     })
   ),
-  // The performance-paid-acquisition add-on's specialist (n5, slice 3): the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants no shell, no web and no task tools, so it holds
+  // The performance-paid-acquisition add-on's specialist: the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants no shell and no web; it does grant task-tracking, so it holds the task tools,
   // the editors, the messaging and skill classes and the context7 server with the routes; it holds no image server.
   {
     name: 'paid-acquisition-specialist',
@@ -118,29 +118,13 @@ const ROLES: RoleSpec[] = [
     skills: [],
     serverTools: withRoutes(['mcp__context7']),
     mutating: true,
-    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
     searchTools: ['Glob', 'Grep', 'Read'],
     workTools: ['Edit', 'Write'],
     model: 'sonnet',
     effort: 'medium',
   },
-  // The lifecycle-email-marketing add-on's specialist (n5, slice 5): the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
-  // the editors, the task tools, the messaging and skill classes and the markitdown server (which has no routes); it holds no image server.
-  {
-    name: 'lifecycle-email-specialist',
-    stem: 'subagent-lifecycle-email-specialist',
-    guard: 'destructive',
-    permissionMode: 'acceptEdits',
-    skills: [],
-    serverTools: withRoutes(['mcp__markitdown']),
-    mutating: true,
-    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
-    searchTools: ['Glob', 'Grep', 'Read'],
-    workTools: ['Edit', 'Write'],
-    model: 'sonnet',
-    effort: 'medium',
-  },
-  // The product-led-growth add-on's strategist (n5, slice 4): the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
+  // The product-led-growth add-on's strategist: the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
   // the editors, the task tools, the messaging and skill classes and the context7 server with the routes; it holds no image server.
   {
     name: 'plg-strategist',
@@ -150,13 +134,29 @@ const ROLES: RoleSpec[] = [
     skills: [],
     serverTools: withRoutes(['mcp__context7']),
     mutating: true,
-    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
     searchTools: ['Glob', 'Grep', 'Read'],
     workTools: ['Edit', 'Write'],
     model: 'sonnet',
     effort: 'medium',
   },
-  // The growth-marketing bundle's SEO specialist (n5, slice 2): a second native file on the core of 'agency-seo-specialist'. Unlike the five marketing roles it holds a shell (its core grants the shell class: crawls,
+  // The lifecycle-email-marketing add-on's specialist: a native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
+  // the editors, the task tools, the messaging and skill classes and the markitdown server (which has no routes); it holds no image server.
+  {
+    name: 'lifecycle-email-specialist',
+    stem: 'subagent-lifecycle-email-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__markitdown']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
+  // The growth-marketing bundle's SEO specialist: a second native file on the core of 'agency-seo-specialist'. Unlike the five marketing roles it holds a shell (its core grants the shell class: crawls,
   // header traces and Lighthouse), so it is guarded as a writer like the Tier 2 SEO specialist. Its servers are its canonical set with the routes; it holds no image server.
   {
     name: 'seo-specialist',
@@ -178,7 +178,7 @@ const ROLES: RoleSpec[] = [
     permissionMode: 'acceptEdits',
     skills: [],
     // The union of the servers its roles' canonical agents declare (firecrawl, markitdown, context7, github, stitch, figma, playwright, chrome-devtools-mcp), with the routes as the digital-agency lead has them.
-    // This goes beyond the lead's own canonical agent (firecrawl, markitdown, context7, github) on the master operator's decision (2026-11-20): a subagent gets the MCP tools of the main conversation, and the main conversation of
+    // This goes beyond the lead's own canonical agent (firecrawl, markitdown, context7, github) by a decision made during the roll-out (2026-11-20, open to the maintainer's review): a subagent gets the MCP tools of the main conversation, and the main conversation of
     // `--agent` is cut to this list (Sitting T), so a role's server is worth nothing unless its lead holds it too. No image server: the lead has no image tool in this lane.
     serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch']),
     mutating: true,
