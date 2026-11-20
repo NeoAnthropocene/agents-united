@@ -130,6 +130,14 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /You synthesise reports in the output contract above/,
     [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
   },
+  // The design lead (a domain lead): the engineering lead's wording for the shared invariants, its own for the design ones.
+  'orchestrator-design': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Verify-then-deliver: no deliverable ships until its accessibility and responsive audit passes.': /A failed audit goes back to the owning specialist and does not go into a report as done/,
+    'A specialist type that is not installed is handed back to the user with the `agents add` command, never improvised.': /never pretends to have done it or improvises a specialist/,
+    'Every deliverable honours the four boundary constraints: no cliché tropes, accessibility, compositor-only motion, fluid sizing.': /\*\*Boundary constraints\.\*\* Check every deliverable against all four/,
+  },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
