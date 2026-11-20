@@ -63,8 +63,8 @@ describe('native accessibility-lead: the guard and permission claims', () => {
     const five = step(5);
     expect(five).toContain('permissionMode: acceptEdits');
     expect(five).toContain('you hold no shell, so no command is approved for you');
-    expect(five).toContain('blocks only writes to `.env` files and their variants such as `.env.local` (`.env.example` stays writable), made with `Write`, `Edit` or `NotebookEdit`');
-    expect(five).toContain('its rules against forced pushes and `vercel --prod` apply to a shell, which you do not hold');
+    expect(five).toContain('blocks only writes to `.env` files and their variants such as `.env.local` (`.env.example` stays writable), made with `Write`, `Edit` or `NotebookEdit`, and a call whose input it cannot read');
+    expect(five).toContain('its rules against forced pushes, `vercel --prod` and destructive shell commands apply to a shell, which you do not hold');
     expect(five).toContain('It does not stop an overwrite of any other file');
     expect(five).toContain('does not enforce the Safety rule against suppressing an audit rule');
     expect(five).toMatch(/is your own obligation/);
@@ -100,16 +100,28 @@ describe('native accessibility-lead: the guard and permission claims', () => {
       expect(write('Write', path.join(project, 'package.json')).blocked).toBe(false);
     });
 
-    it('never offers a shell: the guard rules against forced pushes and vercel --prod have no tool to act on', () => {
+    it('blocks a call whose input it cannot read, as step 5 says, and a Write that carries destructive shell text is data', () => {
+      const unreadable = attempt(text(), project, { tool: 'Write' }, { agentType: 'accessibility-lead', stdin: '{' });
+      expect(unreadable.blocked).toBe(true);
+      expect(unreadable.reason).toContain('unreadable hook input');
+      const data = attempt(text(), project, { tool: 'Write', input: { file_path: path.join(project, 'docs/notes.md'), content: 'sudo rm -rf /' } }, { agentType: 'accessibility-lead' });
+      expect(data.blocked).toBe(false);
+    });
+
+    it('never offers a shell: the guard rules against forced pushes, vercel --prod and destructive commands have no tool to act on', () => {
       for (const tool of ['Bash', 'PowerShell']) {
-        const result = attempt(text(), project, { tool, input: { command: 'git push --force origin main' } }, { agentType: 'accessibility-lead' });
-        expect(result.offered, tool).toBe(false);
+        for (const command of ['git push --force origin main', 'vercel --prod', 'sudo rm -rf /']) {
+          const result = attempt(text(), project, { tool, input: { command } }, { agentType: 'accessibility-lead' });
+          expect(result.offered, `${tool}: ${command}`).toBe(false);
+        }
       }
     });
   });
 
-  it('Boundaries say where the guard comes from in both modes, and that the role runs no command', () => {
-    expect(text()).toContain("- A guard blocks writes to `.env` files and their variants such as `.env.local`. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+  it('Boundaries carry the one guard sentence, say the shell rules do not apply to this role, and say where the guard comes from in both modes', () => {
+    const sentence = 'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+    expect(text().split(sentence)).toHaveLength(2);
+    expect(text()).toContain(`- ${sentence} Its shell rules apply only to a shell, which you do not hold. For your \`Write\`, \`Edit\` and \`NotebookEdit\` calls it blocks \`.env\` files and their variants such as \`.env.local\` (\`.env.example\` stays writable), and a call whose input it cannot read; it checks no other file path. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
     expect(text()).toContain('- You cannot run commands: the audit, the tests and the build are run by the lead or by a role that holds a shell.');
   });
 
