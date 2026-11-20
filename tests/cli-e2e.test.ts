@@ -21,7 +21,10 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
   });
 
   afterEach(async () => {
-    await fs.remove(e2eDir);
+    // Clear the name first, so a failed mkdtemp in the next beforeEach never leaves a stale or empty path to remove.
+    const dir = e2eDir;
+    e2eDir = '';
+    if (dir) await fs.remove(dir);
   });
 
   it('should display list of bundles grouped by domain', () => {
