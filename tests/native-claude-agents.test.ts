@@ -88,6 +88,24 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
+  {
+    name: 'orchestrator-research',
+    stem: 'orchestrator-research',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's four servers, each by every route that exists (the research specialists hold firecrawl and context7 by those routes, and a role cannot hold a server its lead does not).
+    serverTools: withRoutes(['mcp__github', 'mcp__context7', 'mcp__firecrawl', 'mcp__markitdown']),
+    mutating: true,
+    // The engineering lead's list minus `Workflow`, `EnterWorktree`, `ExitWorktree` and `LSP` (see the header of tests/native-claude-orchestrator-research.test.ts for the four decided leave-outs).
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill', 'WebSearch', 'WebFetch'],
+    mainThread: true,
+    coordinatorBundle: 'deep-research',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    // The same pin as the other coordinators (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
+    model: 'opus',
+    effort: 'medium',
+  },
   // Tier 2 (plan 032 follow-up 2, ADR 0036): the digital-agency team. Teammates are specialists with editors and no shell, so no `Bash`,
   // `LSP` or worktree; they carry the destructive-command guard in their own frontmatter (it guards them as subagents and the lead's
   // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).

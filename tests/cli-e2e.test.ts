@@ -147,6 +147,11 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.installed.bundles).toContain('deep-research');
     expect(lock.projections['.claude/agents/deep-research.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-deep-research.md' });
     expect(lock.projections['.claude/agents/socratic-mentor.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-socratic-mentor.md' });
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-research.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lead).toMatch(/^name: orchestrator-research$/m);
+    expect(lead).toContain('claude --agent orchestrator-research');
+    expect(lock.projections['.claude/agents/orchestrator-research.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-research.md' });
   });
 
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
