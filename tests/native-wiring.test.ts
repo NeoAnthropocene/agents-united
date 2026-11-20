@@ -93,14 +93,46 @@ describe('the batch manifest (ADR 0075, decision 1)', () => {
     expect(checkManifest({ ...m, roles: [{ ...m.roles[0], native: 'registry/hosts/claude/agents/no-such-role.md' }] }, ROOT).join('\n')).toContain('no-such-role.md');
     expect(checkManifest({ ...m, decisions: [{ ...m.decisions[0], date: null }] }, ROOT).join('\n')).toContain('date');
     expect(checkManifest({ ...m, version: 2 }, ROOT).join('\n')).toContain('version');
+    // The base is a commit name, and a lead names its Bundle and a roster of kebab-case roles.
+    expect(checkManifest({ ...m, base: 'not a commit' }, ROOT).join('\n')).toContain('base');
+    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'no-such-bundle', roster: [] }] }, ROOT).join('\n')).toContain('no-such-bundle');
+    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'software-engineering', roster: ['Not Kebab'] }] }, ROOT).join('\n')).toContain('roster');
+    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'software-engineering', roster: ['devops-engineer'] }] }, ROOT)).toEqual([]);
   });
 
-  it('holds back only the roles an open decision names', () => {
+  it('holds back only the roles an open decision names', async () => {
     const m = manifest();
     const open = { ...m, decisions: [{ ...m.decisions[0], answer: null, date: null, by: 'maintainer' }] };
     const plan = planWiring(open, ROOT, {});
     expect(plan.held).toEqual([{ role: 'devops-engineer', decision: 'devops-messaging' }]);
     expect(plan.edits).toEqual([]);
+    // In a batch of two, the open decision holds back the role it names; the other is wired.
+    const checkout = await copyCheckout();
+    await unwire(checkout);
+    const mixed = { ...open, roles: [m.roles[0], { ...m.roles[0], role: 'backend-architect', definition: 'subagent-backend-architect', bundle: 'software-engineering',
+      canonical: 'registry/agents/subagent-backend-architect.md', native: 'registry/hosts/claude/agents/backend-architect.md' }] };
+    const both = planWiring(mixed, checkout, {});
+    expect(both.held).toEqual([{ role: 'devops-engineer', decision: 'devops-messaging' }]);
+    expect(both.edits.some((edit: Json) => edit.role === 'backend-architect')).toBe(true);
+    expect(both.edits.some((edit: Json) => edit.role === 'devops-engineer')).toBe(false);
+  });
+
+  it('refuses, and writes nothing, when an anchor it inserts at is missing', async () => {
+    const checkout = await copyCheckout();
+    await unwire(checkout);
+    for (const [rel, from, to] of [
+      ['tests/helpers/native-roles.ts', 'export const NATIVE_ROLES', 'export const SOME_OTHER_LIST'],
+      ['tests/helpers/native-invariant-evidence.ts', 'export const ROLE_EVIDENCE', 'export const OTHER_EVIDENCE'],
+      ['tests/native-install-lane.test.ts', 'const COMMITTED_NATIVE_ROLES = [', 'const OTHER_ROLES = ['],
+    ]) {
+      const file = path.join(checkout, rel);
+      const original = read(file);
+      await fs.writeFile(file, original.replace(from, to));
+      const plan = planWiring(manifest(), checkout, {});
+      expect(plan.refusals.join('\n'), rel).toContain(rel);
+      expect(() => applyWiring(plan, checkout)).toThrow(/refus/i);
+      await fs.writeFile(file, original);
+    }
   });
 });
 
