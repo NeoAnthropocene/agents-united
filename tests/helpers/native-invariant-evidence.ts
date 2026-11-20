@@ -166,6 +166,13 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Every identified usability problem is paired with a specific, prioritized recommendation.': /Every identified usability problem must pair with a specific, prioritized recommendation\./,
     'Every usability issue is classified by severity as Critical, Major or Minor.': /Classify every issue as Critical \(blocks task\), Major \(causes significant delay or frustration\) or Minor \(cosmetic or inconvenience\)/,
   },
+  'designer-toolkit-expert': {
+    'AI-generated prototypes, specs and transcripts are inspected, and arbitrary CSS values searched for, before any token is extracted.': /\*\*Audit the prototype first\.\*\* Find the AI-generated prototype files[^\n]*before you extract anything\./,
+    'Every design choice cites WCAG 2.1 AA accessibility standards, cognitive load principles or usability data.': /Every design choice must cite WCAG 2\.1 AA accessibility standards, cognitive load principles, or usability data\./,
+    'Hardcoded colors, arbitrary spacing and bespoke border-radii of an AI prototype are extracted into centralized design tokens.': /Audit AI-generated prototypes \(v0, Lovable\) to extract hardcoded hex colors, arbitrary spacing \(\x60p-\[13px\]\x60\), and bespoke border-radii into centralized design tokens\./,
+    'Interactive component primitives carry keyboard focus states and ARIA roles.': /Ensure all interactive primitives include keyboard focus states \(\x60focus-visible:ring-2\x60\) and ARIA roles\./,
+    'Every major interface architecture decision is documented as a Design Decision Record with its context, options considered, final decision and expected impact.': /Document every major interface architecture decision: Context, Options Considered \(with Pros\/Cons and accessibility trade-offs\), Final Decision & Rationale, and Expected Impact Metrics\./,
+  },
   // The product-design specialists: their floor Safety lines and Scope Boundaries, and their own "How to work" steps, state these. The peers invariants take the defaults above.
   'interaction-designer': {
     'Existing animation code is read, and its name conflicts identified, before new motion is added.': /\*\*Audit the motion first\.\*\* Find the existing components, stylesheets and animation code[^\n]*`@keyframes` names your new ones would collide with\./,
