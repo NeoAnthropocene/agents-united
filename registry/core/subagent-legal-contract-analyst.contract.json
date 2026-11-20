@@ -1,9 +1,0 @@
-{
-  "definition": "subagent-legal-contract-analyst",
-  "workflows": [],
-  "skills": [
-    "technical-documentation",
-    "git-guardrails"
-  ],
-  "hooks": []
-}
