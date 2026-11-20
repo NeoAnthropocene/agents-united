@@ -18,6 +18,15 @@ const contractSkills = (): string[] => JSON.parse(fs.readFileSync(path.resolve('
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
 
 describe('native design-researcher: editors, no shell, no question tool', () => {
+  it('holds exactly this tools set, so a stray tool fails', () => {
+    expect([...tools()].sort()).toEqual(['Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__claude_ai_Firecrawl', 'mcp__firecrawl'].sort());
+  });
+
+  it('holds the posture of a native specialist: sonnet model, medium effort', () => {
+    expect(/^model: (.*)$/m.exec(text())![1]).toBe('sonnet');
+    expect(/^effort: (.*)$/m.exec(text())![1]).toBe('medium');
+  });
+
   it('holds the editors and no shell', () => {
     expect(tools()).toEqual(expect.arrayContaining(['Edit', 'Write', 'Read', 'Glob', 'Grep', 'Skill', 'SendMessage', 'SubagentHandback']));
     for (const shell of ['Bash', 'PowerShell', 'Monitor']) expect(tools(), shell).not.toContain(shell);
