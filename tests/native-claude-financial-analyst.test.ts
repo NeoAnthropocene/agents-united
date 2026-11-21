@@ -204,6 +204,11 @@ describe('native financial-analyst: the engineering family sections', () => {
     expect(body).not.toMatch(/\b(orchestrator-\w+|backend-architect|frontend-architect|devops-engineer|business-panel-experts|legal-contract-analyst|market-intelligence-analyst|operations-strategist|deep-research)\b/);
   });
 
+  it('step 1 says where its search runs on macOS, Linux and WSL, as backend-architect does', () => {
+    const one = /^1\. .*$/m.exec(section('How to model'))![0];
+    expect(one).toContain('with `Glob` and `Grep` (on macOS, Linux and WSL this role holds `Bash`, so those two are unavailable there and search runs through `Bash`)');
+  });
+
   it('step 7 hands the report back through SubagentHandback in the plain form', () => {
     expect(/^7\. .*$/m.exec(section('How to model'))![0]).toBe('7. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
   });
