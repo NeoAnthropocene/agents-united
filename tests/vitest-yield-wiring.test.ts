@@ -1,23 +1,38 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-// Pins the wiring of the setup file that lets the test worker's event loop turn between
-// tests (see that file for the reason). It reads the files; it does not test timing,
-// because showing the real limit takes over a minute.
-const root = resolve(__dirname, '..');
-const setupPath = 'tests/setup/yield-to-runner.ts';
+// Pins the setup file tests/setup/yield-to-runner.ts (see it for the reason) by what it does,
+// not by reading its text: it makes the worker's event loop turn between two tests.
 
-describe('vitest setup file that yields to the runner', () => {
-  it('is listed in setupFiles of the vitest configuration', () => {
-    const config = readFileSync(resolve(root, 'vitest.config.ts'), 'utf8');
-    expect(config).toMatch(/setupFiles\s*:\s*\[[^\]]*['"]tests\/setup\/yield-to-runner\.ts['"]/);
+describe('the setup file yields to the runner between tests', () => {
+  let ranBetweenCases = false;
+
+  it('case 1 schedules a callback for the next turn of the loop and does not wait for it', () => {
+    setImmediate(() => {
+      ranBetweenCases = true;
+    });
+    expect(ranBetweenCases).toBe(false);
   });
 
-  it('registers a beforeEach hook that awaits a turn of the event loop', () => {
-    const setup = readFileSync(resolve(root, setupPath), 'utf8');
-    expect(setup).toMatch(/import\s*\{[^}]*\bbeforeEach\b[^}]*\}\s*from\s*['"]vitest['"]/);
-    expect(setup).toMatch(/beforeEach\(\s*async\s*\(\)\s*=>/);
-    expect(setup).toMatch(/await\s+new Promise<void>\(\(resolve\)\s*=>\s*\{\s*setImmediate\(resolve\)/);
+  it('case 2 sees the callback has run, which is only so if the hook yielded between the cases', () => {
+    expect(ranBetweenCases).toBe(true);
+  });
+});
+
+describe('the setup file still yields while a file uses fake timers', () => {
+  // vi.useFakeTimers() replaces the global setImmediate. A hook that awaited the replaced
+  // function would never resume, so the hook must have kept the real one.
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
+  it('case 1 runs under fake timers', () => {
+    expect(vi.isFakeTimers()).toBe(true);
+  });
+
+  it('case 2 runs under fake timers and was not held up by the hook', () => {
+    expect(vi.isFakeTimers()).toBe(true);
   });
 });
