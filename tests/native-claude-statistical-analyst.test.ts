@@ -16,6 +16,8 @@ import { nativeText } from './helpers/native-roles.js';
 const ROLE = 'statistical-analyst';
 const STEM = 'subagent-statistical-analyst';
 const text = (): string => nativeText(ROLE);
+/** The generated requests block names `schedule` and `Workflow` for every role; these checks read the authored text only. */
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
 const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(section('How to analyze'))![0];
@@ -61,7 +63,7 @@ describe('native statistical-analyst: the canonical tools that are bound and the
   });
 
   it('says nothing about timers, schedules, cron, a command runner or a question tool', () => {
-    expect(text()).not.toMatch(/cron|schedul|run_command|manage_task|timer|liveness|AskUserQuestion|ask_question/i);
+    expect(withoutRequests(text())).not.toMatch(/cron|schedul|run_command|manage_task|timer|liveness|AskUserQuestion|ask_question/i);
   });
 });
 
