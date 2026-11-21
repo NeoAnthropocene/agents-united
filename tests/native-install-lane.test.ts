@@ -24,7 +24,7 @@ const BUNDLE = 'software-engineering';
 const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'orchestrator-engineering', 'repo-index'];
 /** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
-  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'appsec-penetration-tester', 'backend-architect', 'business-panel-experts', 'cloud-security-architect', 'code-reviewer', 'deep-research', 'devops-engineer', 'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'interaction-designer', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'repo-index', 'security-engineer', 'socratic-mentor', 'system-architect', 'ui-designer', 'ux-strategist',
+  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'appsec-penetration-tester', 'backend-architect', 'business-panel-experts', 'cloud-security-architect', 'code-reviewer', 'compliance-grc-specialist', 'deep-research', 'devops-engineer', 'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'interaction-designer', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'repo-index', 'security-engineer', 'socratic-mentor', 'system-architect', 'ui-designer', 'ux-strategist',
 ];
 const COORDINATORS = ['orchestrator-business', 'orchestrator-design', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture'];
 /** The lead and the five roles the growth-marketing bundle installs as native files (growth-marketing). */
@@ -202,6 +202,22 @@ describe('native install lane (agents add --native)', () => {
     expect(record.kind).toBe('role');
     expect(record.canonical).toBe(canonicalOf('appsec-penetration-tester'));
     expect(record.managedMarker).toBe(true);
+  });
+
+  it('installs the native compliance-grc-specialist for the secops-compliance-grc bundle, and only the agency copy for the digital agency', async () => {
+    await new InstallEngine().install('secops-compliance-grc', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('compliance-grc-specialist'), 'utf8')).toBe(expected('compliance-grc-specialist'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/compliance-grc-specialist.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('compliance-grc-specialist'));
+    expect(record.managedMarker).toBe(true);
+    expect(await fs.pathExists(claudeAgent('agency-compliance-grc-specialist'))).toBe(false);
+
+    await fs.remove(workspace);
+    await fs.ensureDir(agentsDir);
+    await new InstallEngine().install('digital-agency', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('agency-compliance-grc-specialist'), 'utf8')).toBe(expected('agency-compliance-grc-specialist'));
+    expect(await fs.pathExists(claudeAgent('compliance-grc-specialist'))).toBe(false);
   });
 
   it('installs the native orchestrator-security with the security-operations bundle, recorded as a managed coordinator of its own canonical agent', async () => {

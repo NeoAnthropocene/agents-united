@@ -17,7 +17,7 @@ const toolsOf = (file: string): string[] => {
 
 describe('user-intended session reach (ADR 0054 amended after controlled tests)', () => {
   it('preserves discovery with messaging and grants neither to the bounded factory workers', async () => {
-    expect(files).toHaveLength(45);
+    expect(files).toHaveLength(46);
     expect(files).toContain('agency-3d-designer.md');
     expect(files.map(file => file.slice(0, -3)).sort()).toEqual(NATIVE_ROLES.map(role => role.role).sort());
     const cores = await loadSemanticCore('registry');

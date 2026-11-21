@@ -182,6 +182,20 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/appsec-penetration-tester.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-appsec-penetration-tester.md' });
   });
 
+  it('installs the native compliance-grc-specialist for secops-compliance-grc with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'secops-compliance-grc', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/compliance-grc-specialist.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: compliance-grc-specialist$/m);
+    expect(text).toContain('## Working with peers');
+    expect(await fs.pathExists(path.join(e2eDir, '.claude/agents/agency-compliance-grc-specialist.md'))).toBe(false);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('secops-compliance-grc');
+    expect(lock.projections['.claude/agents/compliance-grc-specialist.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-compliance-grc-specialist.md' });
+  });
+
   it('installs the native accessibility-lead for frontend-engineering with -t claude --native', async () => {
     const result = spawnSync(process.execPath, [cliPath, 'add', 'frontend-engineering', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
     expect(result.status, result.stdout + result.stderr).toBe(0);
