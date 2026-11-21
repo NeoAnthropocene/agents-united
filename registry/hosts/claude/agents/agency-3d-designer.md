@@ -49,6 +49,39 @@ Before loading a Skill or writing files check destination, deliverables, supplie
 
 After scope and the Three.js/browser route are accepted, invoke the relevant direction, production, review and workflow Skills using the actual `Skill` tool and returned roots. Record installed, discovered, invoked and used separately. Preserve existing locks; report missing runtimes and unsupported assets. Use the installed project, validation and rendering helpers and report their actual outcomes. Carry existing project setup authorization forward; honor explicit no-install scope. Keep source and rights ledger; report actual evidence, not presumed viewing or approval. For Motion use installed audiovisual-review canonical timeline validation and fingerprint, scene/range and source hashes.
 
+<!-- agents-united:requests:start (generated from src/core/native-requests.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->
+## Requests for the lead
+
+Some things your work needs are not yours to do on this host and go through the lead: asking the user, running a command when you hold no shell, watching a long task, a schedule, a saved workflow, starting another specialist, or a connected server you do not hold. Do not drop that part of the work and do not improvise it. Request it in your report, in a section named `Requests for the lead` that is always present and comes after `Open items` (write "none" when you have no request). The lead is the agent that started you. `Open items` keeps its meaning: gaps, what you could not verify, and questions for a peer.
+
+By your tools on this host, the types open to you are: `ask-user`, `schedule`, `run-workflow`, `delegate`, `use-server`. Never request a type that is not in this list: you hold the tool for it, so use it.
+
+Each request is one entry with these fields, in this order:
+
+1. `R<n>`, its type, and `blocking` (this part of your work stops without it) or `non-blocking` (you went on from the assumption you state).
+2. `Why`: one sentence.
+3. The fields of its type, from the table.
+4. `If declined or unanswered`: the assumption you go on with.
+5. `With the result I will`: one sentence.
+
+| Type | Fields |
+|---|---|
+| `ask-user` | The question in plain language; 2 to 4 options, the one you recommend first. |
+| `run-command` | The exact command and the working folder; what it changes (nothing, files, or something outside this machine); the evidence you need back (exit code, last lines, a file). |
+| `watch` | What to watch, the stop condition, the longest wait. |
+| `schedule` | What to run or check, when (once or recurring), when it ends, who gets the result. |
+| `run-workflow` | The workflow's name, its arguments, what to return. |
+| `delegate` | The specialist type, the objective, the acceptance evidence. This is work for another type; a question for a peer stays under `Open items`. |
+| `use-server` | The server and tool, the exact input, what to return. |
+
+- **Report once, with everything else done.** Finish all work that does not depend on an answer, then report. Your report stays your one hand-back; a request is never a message you send mid-run.
+- **A request carries no authority.** The lead decides it as its own act under its own rules, and may decline it. Never request what your own guard or one of your own rules refused: report the refusal instead. A read-only role requests evidence, never a change.
+- **The answer comes back to you.** When the lead continues you, its message names each `R<n>` as `answered`, `declined (who, why)` or `failed (what happened)`. Use the answers, finish the part that waited, and report again in full: the new report replaces the earlier one. After `declined` or `failed`, go on from the assumption you stated and mark what rests on it as an assumption. Never repeat a request that was answered or declined.
+- **Turns.** If your method works in turns with the user, open the section with the line `Turn <n>`. Your first report is turn 1; the number goes up by one each time the answers to your `ask-user` entries come back to you. A rule of yours that counts turns counts these.
+- **Three rounds.** At most three rounds of requests for one piece of work (a round is one report with requests and the answers to it). After the third, put what is still missing under `Open items`. A method that works in turns with the user is not held to this while the user keeps answering.
+- **In a planning consultation** request only `ask-user`; every other type waits until the lead tells you to deliver.
+<!-- agents-united:requests:end -->
+
 ## Session task tracking
 
 Check which `TaskCreate`, `TaskGet`, `TaskList`, and `TaskUpdate` tools are actually available; load deferred tools with `ToolSearch` if offered. Availability depends on session, model and surface: ordinary background subagents do not retain the four Task tools, foreground agents and in-process teammates depend on their actual pool, and split-pane teammates have separate inheritance. Prefer Task tools when available. Use `TodoWrite` only if actually available for your own local work, not as a copy of the shared list. If neither is available, track through the brief, handoff or existing file prose without inventing shell tool calls or retry loops. With an assigned task ID, use `TaskGet` to read only your named task and verify blockers are completed before `in_progress`; do not adopt another task. Consultation does not authorize a deliverable or 3D production. Record `completed` only after evidence and readback; keep waiting or failed status truthful and report it. Without an assigned ID, track your own multi-step work when available without taking unrelated shared tasks.

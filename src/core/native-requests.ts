@@ -10,7 +10,7 @@ export const REQUESTS_START =
   '<!-- agents-united:requests:start (generated from src/core/native-requests.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->';
 export const REQUESTS_END = '<!-- agents-united:requests:end -->';
 
-/** Fixed-job roles with their own hand-back contract: the factory's workers and its coordinator. They carry no block. */
+/** Fixed-job roles with their own hand-back contract: the factory's three roles and its coordinator. They carry no block. */
 export const REQUESTS_EXEMPT_ROLES: readonly string[] = ['factory-realizer', 'factory-evaluator', 'factory-sync', 'orchestrator-agent-factory'];
 
 /** A specialist asks (`specialist`); a lead (`coordinator`) acts. */
