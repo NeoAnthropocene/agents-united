@@ -156,6 +156,19 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/orchestrator-security.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-security.md' });
   });
 
+  it('installs the native cloud-security-architect for secops-cloud-security with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'secops-cloud-security', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/cloud-security-architect.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: cloud-security-architect$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('secops-cloud-security');
+    expect(lock.projections['.claude/agents/cloud-security-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-cloud-security-architect.md' });
+  });
+
   it('installs the native accessibility-lead for frontend-engineering with -t claude --native', async () => {
     const result = spawnSync(process.execPath, [cliPath, 'add', 'frontend-engineering', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
     expect(result.status, result.stdout + result.stderr).toBe(0);
@@ -431,6 +444,73 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.installed.bundles).toContain('deep-research-analytics');
     expect(lock.projections['.claude/agents/statistical-analyst.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-statistical-analyst.md' });
     expect(lock.projections['.claude/agents/literature-patent-analyst.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-literature-patent-analyst.md' });
+  });
+
+  it('installs the native financial-analyst for business-financial-modeling with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'business-financial-modeling', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/financial-analyst.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: financial-analyst$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('business-financial-modeling');
+    expect(lock.projections['.claude/agents/financial-analyst.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-financial-analyst.md' });
+  });
+
+  it('installs the native market-intelligence-analyst for business-market-intelligence with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'business-market-intelligence', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/market-intelligence-analyst.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: market-intelligence-analyst$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('business-market-intelligence');
+    expect(lock.projections['.claude/agents/market-intelligence-analyst.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-market-intelligence-analyst.md' });
+  });
+
+  it('installs the native legal-contract-analyst and operations-strategist for business-operations-legal with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'business-operations-legal', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('business-operations-legal');
+    for (const role of ['legal-contract-analyst', 'operations-strategist']) {
+      const text = await fs.readFile(path.join(e2eDir, `.claude/agents/${role}.md`), 'utf8');
+      expect(text, role).toContain('profile: claude-native');
+      expect(text, role).toMatch(new RegExp(`^name: ${role}$`, 'm'));
+      expect(text, role).toContain('## Working with peers');
+      expect(lock.projections[`.claude/agents/${role}.md`], role).toMatchObject({ host: 'claude', kind: 'role', canonical: `agents/subagent-${role}.md` });
+    }
+  });
+
+  it('installs the native qa-automation-lead for qa-automation with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'qa-automation', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/qa-automation-lead.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: qa-automation-lead$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('qa-automation');
+    expect(lock.projections['.claude/agents/qa-automation-lead.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-qa-automation-lead.md' });
+  });
+
+  it('installs the native e2e-tester for qa-automation with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'qa-automation', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/e2e-tester.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: e2e-tester$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('qa-automation');
+    expect(lock.projections['.claude/agents/e2e-tester.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-e2e-tester.md' });
   });
 
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {

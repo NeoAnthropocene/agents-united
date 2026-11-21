@@ -236,6 +236,46 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
   },
+  // `financial-analyst`: its floor (scope boundaries) states the three finance invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'financial-analyst': {
+    'Every monetization proposal is backed by transparent mathematical formulas and unit economics assumptions.': /Every monetization proposal must be backed by transparent mathematical formulas and unit economics assumptions/,
+    'Financial models present three scenarios: Base Case, Conservative / Downside Case, and Optimistic / Growth Case.': /Always present three-scenario models: \*Base Case\*, \*Conservative \/ Downside Case\*, and \*Optimistic \/ Growth Case\*\./,
+    'Underlying cloud infrastructure COGS are accounted for in Gross Margin calculations.': /Account for underlying infrastructure costs \(LLM token inference, vector storage, egress, database instances\) to calculate true Gross Margin/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
+  },
+  // `market-intelligence-analyst`: its floor (scope boundaries) states the three market invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'market-intelligence-analyst': {
+    'Top-down market reports are always complemented with a bottom-up TAM = Total Potential Accounts x ACV formula.': /Always complement top-down analyst reports with a bottom-up formula: `TAM = Total Potential Accounts x Annual Contract Value \(ACV\)`/,
+    'Competitor assessments remain objective and evaluate strengths, proprietary datasets, network effects and switching costs realistically.': /Avoid ungrounded flattery or disparagement; assess competitor strengths, proprietary datasets, network effects, and switching costs realistically\./,
+    'Proposed product features are explicitly evaluated against the 7 Powers framework.': /Explicitly evaluate proposed product features against Hamilton Helmer's 7 Powers/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
+  },
+  // `legal-contract-analyst`: its floor (scope boundaries and safety) states the three legal invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'legal-contract-analyst': {
+    'Any GPL or AGPL licensed code or libraries integrated into commercial proprietary codebases are strictly flagged.': /Strictly flag any GPL or AGPL licensed code or libraries integrated into commercial proprietary codebases/,
+    'Contract analysis is framed as operational and technical support, never formal legal counsel.': /Provide structured technical and operational contract analysis to support business decision-making, not formal legal representation or binding legal counsel\./,
+    'Every flagged contract clause includes a risk tier (Low, Medium, High, or Dealbreaker) and a concrete redline suggestion.': /Categorize contract clauses into Low, Medium, High, or Dealbreaker risk tiers with concrete redline suggestions/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
+  },
+  // `operations-strategist`: its floor (scope boundaries) states the three operations invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'operations-strategist': {
+    'Every Key Result is strictly quantifiable.': /Every Key Result must be strictly quantifiable/,
+    'Vendor and tooling evaluations use transparent weighted scorecards across Security, Cost, Ease of Integration, and Vendor Longevity.': /apply transparent weighted scorecards across Security, Cost, Ease of Integration, and Vendor Longevity/,
+    'Critical path dependencies and single points of failure (SPOF) are explicitly documented.': /Explicitly document critical path dependencies and single points of failure \(SPOF\) in personnel or vendor systems/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
+  },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
     'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities\.(?=\n|$)/,
@@ -293,6 +333,19 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Friction is quantified with Task Completion Rate, Estimated Time-on-Task, Click-Depth and Error Recovery Speed.': /Quantify friction using Task Completion Rate, Estimated Time-on-Task, Click-Depth, and Error Recovery Speed\./,
     'Empty states, extreme input lengths, network delay fallbacks and multi-device viewport breakdowns are stress-tested.': /Test empty states, extreme input lengths, network delay fallbacks, and multi-device viewport breakdowns\./,
     'Every identified UX friction point is paired with a concrete UI redesign recommendation.': /Pair every identified UX friction point with a concrete UI redesign recommendation\./,
+  },
+  // `cloud-security-architect`: its floor Safety lines (the canonical agent's directive and edge-case rules word for word, plus the boundary lines) and its own "How to work" steps state these.
+  'cloud-security-architect': {
+    'Assess only the cloud accounts, code and systems the user has asked you to assess.': /- Assess only the cloud accounts, code and systems the user has asked you to assess\.(?=\n|$)/,
+    'Never hard-code or permit static cloud credentials.': /- Never hard-code or permit static cloud credentials\.(?=\n|$)/,
+    'Wildcard permissions (`*` on `*`) are strictly prohibited.': /- Wildcard permissions \(`\*` on `\*`\) are strictly prohibited\.(?=\n|$)/,
+    'Never create a KMS key policy without delegating key administration permissions to the root account or dedicated Break-Glass IAM role (`kms:*` with `Principal: "arn:aws:iam::ACCOUNT_ID:root"`).': /- Never create a KMS key policy without delegating key administration permissions to the root account or dedicated Break-Glass IAM role \(`kms:\*` with `Principal: "arn:aws:iam::ACCOUNT_ID:root"`\)\.(?=\n|$)/,
+    'Never apply, destroy or change a live cloud resource or account yourself; hand the exact command to the orchestrator for explicit user approval.': /- Never apply, destroy or change a live cloud resource or account yourself; hand the exact command to the orchestrator for explicit user approval\.(?=\n|$)/,
+    'Scan every Terraform module or Bicep template with Checkov\/Trivy before deployment, failing on high or critical severity findings.': /Scan every Terraform module or Bicep template with Checkov\/Trivy before deployment, failing on high or critical severity findings\./,
+    'Do not run destructive shell commands such as recursive deletes, privilege escalation, shutdown, SQL DROP statements or resource group deletion.': /- Do not run destructive shell commands such as recursive deletes, privilege escalation, shutdown, SQL DROP statements or resource group deletion\.(?=\n|$)/,
+    'Consult the named Skill before applying its method; report a missing skill instead of improvising from memory.': /Load the matching skill with `Skill` before applying its method\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
   // The product-design specialists: their floor Safety lines and Scope Boundaries, and their own "How to work" steps, state these. The peers invariants take the defaults above.
   'interaction-designer': {
@@ -371,6 +424,15 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Never ask the user clarifying questions directly; escalate domain research scope or query ambiguities to the calling orchestrator in the final report.': /An ambiguity in the scope goes to the lead as an `ask-user` entry under `Requests for the lead`; you never ask the user directly\./,
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `e2e-tester` (Bundle `qa-automation`): its floor Safety lines and its own "How to work" steps state these.
+  'e2e-tester': {
+    'Elements are located by role, label or test identifier, never by brittle CSS or XPath selectors.': /Locate elements by role, label or test identifier \(`getByRole`, `getByLabel`, `getByTestId`\), never by brittle CSS or XPath selectors\./,
+    'Page interactions live in Page Object classes, not repeated across specs.': /Put page interactions in Page Object classes, not repeated across specs\./,
+    'A flaky test is never skipped silently: it is quarantined and reported to the lead.': /A flaky test is never skipped silently: quarantine it and report it to the lead/,
+    'A captured storage state or any other credential or session artifact is never committed to source control.': /- Never commit a captured `storageState\.json` or other credential\/session artifact to source control\.(?=\n|$)/,
+    'A suite that cannot run is reported as not run, never as passing.': /report it as not run instead of asserting success\./,
+    'Consult the named Skill before authoring or debugging a spec; report a missing skill instead of improvising.': /Load the matching skill with the `Skill` tool before you author or debug a spec\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
   },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
