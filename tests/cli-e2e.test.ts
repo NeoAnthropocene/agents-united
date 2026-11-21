@@ -404,6 +404,19 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/plg-strategist.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-plg-strategist.md' });
   });
 
+  it('installs the native lifecycle-email-specialist with the lifecycle-email-marketing add-on with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'lifecycle-email-marketing', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/lifecycle-email-specialist.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: lifecycle-email-specialist$/m);
+    expect(text).toContain('Architect the behavior-triggered journeys');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('lifecycle-email-marketing');
+    expect(lock.projections['.claude/agents/lifecycle-email-specialist.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-lifecycle-email-specialist.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',
