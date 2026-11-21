@@ -132,7 +132,7 @@ describe('native literature-patent-analyst: what its steps say', () => {
   });
 
   it('puts scope ambiguities under Open items and never asks the user', () => {
-    expect(step(1)).toContain('An ambiguity in the scope goes under `Open items`; you never ask the user directly.');
+    expect(step(1)).toContain('An ambiguity in the scope goes to the lead as an `ask-user` entry under `Requests for the lead`; you never ask the user directly.');
   });
 
   it('names the skills of its contract in a table of situations it can do with its tools, and they exist', () => {

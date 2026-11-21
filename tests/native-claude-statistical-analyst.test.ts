@@ -121,7 +121,7 @@ describe('native statistical-analyst: what its steps say', () => {
 
   it('puts the assumed significance level, power and effect size under Open items and never asks the user', () => {
     const three = step(3);
-    expect(three).toContain('State the significance level, the power and the minimum detectable effect as assumptions in the report and put each one under `Open items`; you never ask the user directly.');
+    expect(three).toContain('State the significance level, the power and the minimum detectable effect as assumptions in the report and put each one as a non-blocking `ask-user` entry under `Requests for the lead`; you never ask the user directly.');
   });
 
   it('computes with a script through the shell it holds and reports the command', () => {
@@ -134,7 +134,7 @@ describe('native statistical-analyst: what its steps say', () => {
     expect(rows.map(row => row[2])).toEqual(['technical-documentation', 'growth-experiment-design']);
     const contract = JSON.parse(fs.readFileSync(path.resolve(`registry/core/${STEM}.contract.json`), 'utf8')) as { skills: string[] };
     expect(rows.map(row => row[2]).sort()).toEqual([...contract.skills].sort());
-    expect(section('How to analyze')).toContain("A skill's inputs that the brief does not give go under `Open items`; you do not ask the user for them.");
+    expect(section('How to analyze')).toContain("A skill's inputs that the brief does not give go to the lead as `ask-user` entries under `Requests for the lead`; you do not ask the user for them yourself.");
   });
 
   it('says what the watcher and the converter are for, and that the converter may not be connected', () => {

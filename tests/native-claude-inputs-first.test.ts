@@ -65,7 +65,7 @@ describe('every specialist body opens "How to work" with an inputs-first rule', 
       });
 
       it('sends a teammate\'s question to the lead as an ask-user entry under Requests for the lead', () => {
-        expect(rule).toMatch(/As a teammate, put the question as an `ask-user` entry under `Requests for the lead`: the lead asks the user and returns the answer to you/);
+        expect(rule).toMatch(/As a subagent or a teammate, put the question as an `ask-user` entry under `Requests for the lead`: the lead asks the user and returns the answer to you/);
       });
 
       it('defines a required input narrowly, so that a brief with the numbers the question needs is answered in full', () => {
