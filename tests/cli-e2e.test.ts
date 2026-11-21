@@ -172,6 +172,21 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/e2e-tester.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-e2e-tester.md' });
   });
 
+  it('installs the native distributed-systems-architect and data-engineer for backend-distributed-systems with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'backend-distributed-systems', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('backend-distributed-systems');
+    for (const role of ['distributed-systems-architect', 'data-engineer']) {
+      const text = await fs.readFile(path.join(e2eDir, `.claude/agents/${role}.md`), 'utf8');
+      expect(text, role).toContain('profile: claude-native');
+      expect(text, role).toMatch(new RegExp(`^name: ${role}$`, 'm'));
+      expect(text, role).toContain('## Working with peers');
+      expect(lock.projections[`.claude/agents/${role}.md`], role).toMatchObject({ host: 'claude', kind: 'role', canonical: `agents/subagent-${role}.md` });
+    }
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',

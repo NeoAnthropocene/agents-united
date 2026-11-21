@@ -42,7 +42,7 @@ describe('native package helpers', () => {
 
   it('finds a role source by its stripped name, and nothing for a legacy-only role', () => {
     expect(nativeRoleSource(REGISTRY, 'claude', 'code-reviewer')).toBe(path.join(REGISTRY, 'hosts', 'claude', 'agents', 'code-reviewer.md'));
-    expect(nativeRoleSource(REGISTRY, 'claude', 'data-engineer')).toBeUndefined();
+    expect(nativeRoleSource(REGISTRY, 'claude', 'ios-architect')).toBeUndefined();
     expect(nativeRoleSource(REGISTRY, 'claude', '../profile')).toBeUndefined();
   });
 
@@ -121,8 +121,8 @@ describe('native install lane (agents add --native)', () => {
 
   it('keeps the legacy projection for a type that has no native agent, in the same workspace', async () => {
     await install(true);
-    await new InstallEngine().install('backend-distributed-systems', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
-    const legacy = await fs.readFile(claudeAgent('data-engineer'), 'utf8');
+    await new InstallEngine().install('mobile-development', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const legacy = await fs.readFile(claudeAgent('ios-architect'), 'utf8');
     expect(legacy).toContain('profile: claude |');
     expect(legacy).not.toContain('claude-native');
     // The native agents installed earlier are untouched by the second install.
@@ -188,6 +188,27 @@ describe('native install lane (agents add --native)', () => {
     expect(record.kind).toBe('role');
     expect(record.canonical).toBe(canonicalOf('e2e-tester'));
     expect(record.managedMarker).toBe(true);
+  });
+
+  it('installs the native distributed-systems-architect and data-engineer for the backend-distributed-systems bundle, each recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('backend-distributed-systems', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    for (const role of ['distributed-systems-architect', 'data-engineer']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = (await fs.readJson(lockPath)).projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, backend-distributed-systems still writes the legacy projections for distributed-systems-architect and data-engineer', async () => {
+    await new InstallEngine().install('backend-distributed-systems', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['distributed-systems-architect', 'data-engineer']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
   it('without the native lane, qa-automation still writes the legacy projection for e2e-tester', async () => {
