@@ -137,6 +137,25 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/devops-engineer.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-devops-engineer.md' });
   });
 
+  it('installs the native security-engineer for security-operations with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'security-operations', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/security-engineer.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: security-engineer$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('security-operations');
+    expect(lock.projections['.claude/agents/security-engineer.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-security-engineer.md' });
+    // The bundle's lead comes native too, and it is no first-message agent: the domain tier has no mode line.
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-security.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lead).toMatch(/^name: orchestrator-security$/m);
+    expect(lead).toContain('Agent(appsec-penetration-tester, cloud-security-architect, compliance-grc-specialist, security-engineer)');
+    expect(lock.projections['.claude/agents/orchestrator-security.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-security.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',

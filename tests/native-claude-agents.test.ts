@@ -71,6 +71,7 @@ const ROLES: RoleSpec[] = [
   { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
   { name: 'frontend-architect', stem: 'subagent-frontend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
   { name: 'devops-engineer', stem: 'subagent-devops-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'security-engineer', stem: 'subagent-security-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
@@ -83,6 +84,23 @@ const ROLES: RoleSpec[] = [
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'Workflow', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
     mainThread: true,
     // Maintainer decision, plan 032 close-out (after the first real Claude session): the native coordinator is pinned opus / medium.
+    model: 'opus',
+    effort: 'medium',
+  },
+  // The security lead (Tier 1, domain bundle): a main-thread coordinator of the security domain. Same ceiling as the engineering lead except
+  // that it holds no `Workflow` (the only native workflow a security Bundle installs is workflow-test, whose repair step spawns a type no
+  // security Bundle installs), no web tool (its canonical agent has none; Firecrawl is its web route) and no `ReportFindings` (the reviewer's).
+  {
+    name: 'orchestrator-security',
+    stem: 'orchestrator-security',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
+    mutating: true,
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'security-operations',
     model: 'opus',
     effort: 'medium',
   },

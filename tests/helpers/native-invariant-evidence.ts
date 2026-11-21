@@ -130,6 +130,13 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /You synthesise reports in the output contract above/,
     [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
   },
+  // The security lead: the engineering lead's wording for the shared invariants, plus the two security ones it states in its own body.
+  'orchestrator-security': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Assess only systems the user has asked you to assess, defensively; nothing is run against an external or production target.': /\*\*Defensive and authorised work only\.\*\*/,
+    'The bound guard is a seat belt that stops only the common forms of a few commands; holding back everything else, and briefing specialists to do so, is the lead\'s own obligation.': /Holding these back, and briefing every specialist to hold them back, is your own obligation/,
+  },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
@@ -143,6 +150,17 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'A preview deployment is never promoted to production by this role; the production command goes to the orchestrator for explicit user approval.': /- Never promote a preview deployment to production yourself; hand the production command to the orchestrator for explicit user approval\.(?=\n|$)/,
     'Consult the named Skill before writing platform-specific code; report a missing platform skill instead of improvising.': /Load the matching skill with `Skill` before writing platform-specific code\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
     // Messaging (maintainer decision on the pilot's point a): the engineering family's peers section (frontend-architect), bound under this core's longer invariant texts.
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `security-engineer`: its floor Safety lines (the canonical agent's three guardrails word for word, plus the two boundary lines) and its own "How to work" steps state these.
+  'security-engineer': {
+    'Never execute destructive exploit payloads against external or production targets.': /- Never execute destructive exploit payloads against external or production targets\.(?=\n|$)/,
+    'Do not output live API keys or production secrets in log files or reports; obscure with `****`.': /- Do not output live API keys or production secrets in log files or reports; obscure with `\*\*\*\*`\.(?=\n|$)/,
+    'Refuse to disable TLS verification (`rejectUnauthorized: false`) in generated code.': /- Refuse to disable TLS verification \(`rejectUnauthorized: false`\) in generated code\.(?=\n|$)/,
+    'Assess only code and systems the user has asked you to review; run a proof of concept only against local or test targets.': /- Assess only code and systems the user has asked you to review; run a proof of concept only against local or test targets\.(?=\n|$)/,
+    'Do not run destructive shell commands such as recursive deletes, privilege escalation, shutdown or SQL DROP statements.': /- Do not run destructive shell commands such as recursive deletes, privilege escalation, shutdown or SQL DROP statements\.(?=\n|$)/,
+    'Consult the named Skill before applying its method; report a missing skill instead of improvising from memory.': /Load the matching skill with `Skill` before applying its method\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },

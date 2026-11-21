@@ -1,0 +1,12 @@
+{
+  "definition": "orchestrator-security",
+  "workflows": [],
+  "skills": [
+    "security-audit",
+    "git-guardrails",
+    "domain-modeling",
+    "grill-me",
+    "grill-with-docs"
+  ],
+  "hooks": []
+}
